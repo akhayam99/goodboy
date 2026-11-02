@@ -49,6 +49,7 @@ const progressOf = ({ stepCount, statuses }: FactsParams): string =>
     predecessorName: 'previous',
     isOrchestrating: false,
     questions: [],
+    isPlanRevising: false,
   }).progress;
 
 describe('runRowFactsOf progress', () => {
@@ -70,9 +71,15 @@ type WaitParams = {
   readonly run: Parameters<typeof runRowFactsOf>[0]['run'];
   readonly statuses?: ReadonlyArray<Agent['status']>;
   readonly isOrchestrating?: boolean;
+  readonly isPlanRevising?: boolean;
 };
 
-const waitOf = ({ run, statuses = [], isOrchestrating = false }: WaitParams) =>
+const waitOf = ({
+  run,
+  statuses = [],
+  isOrchestrating = false,
+  isPlanRevising = false,
+}: WaitParams) =>
   runRowFactsOf({
     run,
     workflow: workflowOf({ stepCount: 3 }),
@@ -80,7 +87,26 @@ const waitOf = ({ run, statuses = [], isOrchestrating = false }: WaitParams) =>
     predecessorName: 'previous',
     isOrchestrating,
     questions: [],
+    isPlanRevising,
   });
+
+describe('runRowFactsOf plan hold', () => {
+  const heldRun = aWorkflowRun({
+    workflowId: WORKFLOW_ID,
+    orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+  });
+
+  it('says Plan ready and needs you while nobody revises the plan', () => {
+    expect(waitOf({ run: heldRun })).toMatchObject({ dot: 'needsYou', word: 'Plan ready' });
+  });
+
+  it('says Revising plan, as running, while the planner reworks it', () => {
+    expect(waitOf({ run: heldRun, isPlanRevising: true })).toMatchObject({
+      dot: 'running',
+      word: 'Revising plan',
+    });
+  });
+});
 
 describe('runRowFactsOf wait', () => {
   it('names a run that stopped on a failure while nothing runs', () => {

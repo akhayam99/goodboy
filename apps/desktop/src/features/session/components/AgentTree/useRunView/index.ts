@@ -66,6 +66,7 @@ export type RunView = {
   readonly nextStepAgent: Agent | null;
   readonly predecessorName: string;
   readonly primary: RunPrimary | null;
+  readonly isPlanRevising: boolean;
   readonly advance: WorkflowRunAdvance;
 };
 
@@ -83,11 +84,15 @@ const countAgentTree = ({ agent, childrenByParentId }: CountParams): number =>
 type HoldParams = {
   readonly run: WorkflowRun;
   readonly plan: PlanWithCount | null;
+  readonly isRevising: boolean;
 };
 
-const holdOf = ({ run, plan }: HoldParams): RunPlanHold => {
+const holdOf = ({ run, plan, isRevising }: HoldParams): RunPlanHold => {
   if (!isRunHeldForPlan({ run })) {
     return 'none';
+  }
+  if (isRevising) {
+    return 'revising';
   }
   return plan === null ? 'without-plan' : 'with-plan';
 };
@@ -118,6 +123,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
     isOrchestrating,
     costUsd,
   });
+  const isPlanRevising = orchestrator.state.phase === 'plan-revising';
   const view = viewWorkflowAdvance({ state: advance.state });
   const isDiscarded = run.discardedAt != null;
   const stepCount = workflow.steps.length;
@@ -194,11 +200,12 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
         ? 'previous'
         : (predecessor.run.title ?? workflowKindName({ workflow: predecessor.workflow })),
     advance,
+    isPlanRevising,
     primary: runPrimaryOf({
       isDiscarded,
       isFinished: isCompleted,
       isQueuedManual,
-      hold: holdOf({ run, plan }),
+      hold: holdOf({ run, plan, isRevising: isPlanRevising }),
       flow,
     }),
   };

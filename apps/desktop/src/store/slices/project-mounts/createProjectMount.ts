@@ -129,7 +129,9 @@ export const createProjectMount = async ({
       const hasRepoMount = (get().sessionProjectMounts[sessionId] ?? []).some(
         (mount) => mount.branch !== '',
       );
-      const adoptedBranch = hasRepoMount ? undefined : seed?.existingBranch;
+      const adoptedBranch = hasRepoMount
+        ? undefined
+        : (seed?.existingBranch ?? plan.adoptedBranch ?? undefined);
       const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
       const parentDir = `${project.rootPath}/.goodboy/worktrees`;
       let created;

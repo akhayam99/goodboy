@@ -11,6 +11,10 @@ import {
 } from '@goodboy/ui';
 import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import {
+  materializationSeedFor,
+  rememberMaterializationSeed,
+} from '../../../../../store/slices/sessions/materializationSeeds';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
 import { MountPreflightCard } from './MountPreflightCard';
@@ -41,6 +45,7 @@ export const MountProjectList = ({
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
+  const [pickedBranch, setPickedBranch] = useState<string | null>(null);
   const [isMounting, setIsMounting] = useState(false);
   const [failure, setFailure] = useState<MountFailure | null>(null);
   const isSearchable = projects.length > SEARCH_THRESHOLD;
@@ -66,7 +71,7 @@ export const MountProjectList = ({
     ].filter((group) => group.projects.length > 0);
   }, [filtered, isGrouped]);
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
-  const preflightState = useMountPreflight({ sessionId, project: selectedProject });
+  const preflightState = useMountPreflight({ sessionId, project: selectedProject, pickedBranch });
 
   const mountProject = async ({ project }: { readonly project: Project }) => {
     const { preflight } = preflightState;
@@ -82,7 +87,9 @@ export const MountProjectList = ({
           : {
               mountId: preflight.mountId,
               dirName: preflight.targetPath.split('/').at(-1),
-              ...(preflight.branch === null ? {} : { branch: preflight.branch }),
+              ...(preflight.branch === null || preflight.isExistingBranch
+                ? {}
+                : { branch: preflight.branch }),
             }),
       });
       setQuery('');
@@ -114,6 +121,14 @@ export const MountProjectList = ({
         onCancel={() => {
           setFailure(null);
           setSelectedProjectId(null);
+          setPickedBranch(null);
+        }}
+        onPickBranch={({ branch }) => {
+          rememberMaterializationSeed({
+            sessionId,
+            seed: { ...materializationSeedFor({ sessionId }), existingBranch: branch },
+          });
+          setPickedBranch(branch);
         }}
       />
     );

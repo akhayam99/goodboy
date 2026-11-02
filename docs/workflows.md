@@ -460,7 +460,11 @@ read top to bottom at the conversation measure:
 A plan the run is held for is offered once, as **Review plan** in the header,
 which opens the plan drawer (`openPlanDrawer`); a plan question or a step
 question makes **Answer** the verb. The `plan-revising` phase reads "The
-planner is revising the plan" with no verb. **Approve** (`useApproveRunPlan`,
+planner is revising the plan" with no verb, and the run row reads **Revising
+plan** as running. While the planner works on a held plan the run is not
+waiting for the owner: `isRunRevisingPlan` is the one check, and the Needs you
+count, the sidebar mark, the bell place and `runPrimaryOf` (hold `revising`)
+all read it, so **Review plan** returns only when the planner finishes. **Approve** (`useApproveRunPlan`,
 from the drawer or the no-plan primary) calls `approveWorkflowRunPlan` and
 reads its answer: `approved` marks the run as a start of yours
 (`markUserStart`) and raises one **Plan approved** toast, `noop` raises

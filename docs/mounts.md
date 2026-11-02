@@ -51,6 +51,19 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
   `resolveMountNaming.ts`). A branch adopted with `existing` keeps its name;
   only when it is not there does the fork cut a new branch, under the prefix.
+- A goal that names an existing branch adopts it, with no model call
+  (`branchNamedInGoal`, read by `mountPlan`). Only an exact, full branch name
+  counts, local or on origin, written in any language ("lavora sul branch:
+  ak/x"); a partial or fuzzy name never does. A plain word with no `/`, `-`,
+  `_` or `.` counts only when quoted or backticked, and the base branch, `main`,
+  `master`, `develop`, `development` and `trunk` are never adopted from text.
+  It applies to the first repository mount of a session and only when no
+  explicit `existingBranch` seed is set; the seed wins. When the goal names
+  several branches nothing is adopted: the new branch stays and the start
+  confirmation shows "The goal names 2 branches" with one button per branch, and
+  a pick is stored as the seed. The confirmation reads "Uses the existing
+  branch <name>", and when `worktree_branch_holder` says another worktree has
+  the branch checked out it names that path before the mount runs.
 - When another live session, or the repository itself, already owns the name,
   the plan takes `-2`, `-3` and so on. An adopted branch is never renamed. The
   frontend sends the full name; `worktree_create` and `bootstrap_prepare` check

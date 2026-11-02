@@ -20,7 +20,7 @@ export type RunPrimary = {
   readonly label: string;
 };
 
-export type RunPlanHold = 'none' | 'with-plan' | 'without-plan';
+export type RunPlanHold = 'none' | 'with-plan' | 'without-plan' | 'revising';
 
 type DynamicFlow = {
   readonly kind: 'dynamic';
@@ -87,8 +87,9 @@ const dynamicPrimary = ({ flow, hold }: DynamicParams): RunPrimary | null => {
     case 'needs-answer':
       return flow.hasQuestion ? fixed({ kind: 'answer' }) : planEntry({ hold });
     case 'plan-approval':
-    case 'plan-revising':
       return planEntry({ hold });
+    case 'plan-revising':
+      return null;
     case 'paused':
       return fixed({ kind: 'resume' });
     case 'stopped':
@@ -132,6 +133,9 @@ export const runPrimaryOf = ({
   }
   if (isQueuedManual) {
     return fixed({ kind: 'start-run' });
+  }
+  if (hold === 'revising') {
+    return null;
   }
   if (flow.kind === 'dynamic') {
     return dynamicPrimary({ flow, hold });

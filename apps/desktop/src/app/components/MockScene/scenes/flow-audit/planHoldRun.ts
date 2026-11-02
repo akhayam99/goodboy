@@ -4,9 +4,11 @@ import type {
   OpenQuestionId,
   PlanArtifact,
   PlanWithCount,
+  ProviderRunId,
   Session,
   WorkflowRun,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { planAsArtifact } from '../../../../../features/plans/planAsArtifact';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -151,6 +153,19 @@ export const seedWorkflowRunPlanHold = (): void => seedHold({ session: PLAN_HOLD
 
 export const seedWorkflowRunPlanHoldDynamic = (): void =>
   seedHold({ session: PLAN_HOLD_DYNAMIC_SESSION });
+
+export const seedWorkflowRunPlanRevising = (): void => {
+  seedHold({ session: PLAN_HOLD_DYNAMIC_SESSION });
+  useAppStore.setState({
+    agentTurnState: {
+      [PLANNER.id]: {
+        kind: 'running',
+        runId: brandId<ProviderRunId>({ value: 'mock-flow-provider-run-revision' }),
+        startedAt: clock.iso({ at: '2026-09-16T11:20:00.000Z' }),
+      },
+    },
+  });
+};
 
 export const seedWorkflowRunPlanQuestion = (): void => {
   seedHold({ session: PLAN_HOLD_DYNAMIC_SESSION });

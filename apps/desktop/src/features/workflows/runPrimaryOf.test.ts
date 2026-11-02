@@ -35,7 +35,7 @@ const EXPECTED_BY_PHASE: Readonly<Record<OrchestratorPhase, RunPrimaryKind | nul
   blocked: 'hint',
   'needs-approval': null,
   'plan-approval': 'review-plan',
-  'plan-revising': 'review-plan',
+  'plan-revising': null,
   'plan-question': 'answer',
   failed: 'retry',
   'step-failed': null,
@@ -129,6 +129,13 @@ describe('runPrimaryOf edges', () => {
     });
 
     expect(primary?.kind).toBe('review-plan');
+  });
+
+  it('offers nothing while the planner revises a held plan, static or dynamic', () => {
+    expect(live({ hold: 'revising', flow: dynamic({ phase: 'plan-revising' }) })).toBeNull();
+    expect(
+      live({ hold: 'revising', flow: { kind: 'static', isPaused: false, nextStepNumber: 2 } }),
+    ).toBeNull();
   });
 
   it('offers Approve plan only when a held run has no plan to read', () => {

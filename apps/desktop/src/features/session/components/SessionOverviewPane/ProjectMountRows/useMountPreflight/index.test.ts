@@ -81,6 +81,8 @@ const planFor = (overrides: Partial<MountPlan> = {}): MountPlan => ({
   slug: 'ship-it',
   branch: 'ak/ship-it',
   adoptedBranch: null,
+  isAdoptedFromGoal: false,
+  goalBranches: [],
   baseBranch: 'main',
   targetPath: '/repos/goodboy/.goodboy/worktrees/gb-7k2q9x',
   takenBranches: [],
@@ -92,6 +94,7 @@ beforeEach(async () => {
   stubStoryInvoke({
     worktree_list_branch_names: () => h.listBranchNames({ repoPath: repoProject.rootPath }),
     session_dir_exists: false,
+    worktree_branch_holder: null,
   });
   h.listBranchNames.mockReset();
   useAppStore.setState({
@@ -281,5 +284,72 @@ describe('useMountPreflight', () => {
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(h.listBranchNames).not.toHaveBeenCalled();
     expect(result.current.preflight?.branch).toBeNull();
+  });
+
+  const withGoal = ({ goal }: { readonly goal: string }): void => {
+    useAppStore.setState({ sessions: [{ ...session, goal }] });
+  };
+
+  it('uses the existing branch the goal names instead of cutting a new one', async () => {
+    withGoal({ goal: 'lavora sul branch: ak/poc-start-funnel-subdomain' });
+    h.listBranchNames.mockResolvedValue(['main', 'ak/poc-start-funnel-subdomain']);
+    const { result } = renderHook(() =>
+      useMountPreflight({ sessionId: SID, project: repoProject }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.preflight).toMatchObject({
+      branch: 'ak/poc-start-funnel-subdomain',
+      isExistingBranch: true,
+      isNamedByGoal: true,
+      renamedFrom: null,
+      checkedOutAt: null,
+    });
+  });
+
+  it('says where an adopted branch is already checked out', async () => {
+    withGoal({ goal: 'Work on branch ak/poc-start-funnel-subdomain' });
+    h.listBranchNames.mockResolvedValue(['ak/poc-start-funnel-subdomain']);
+    stubStoryInvoke({
+      worktree_list_branch_names: () => h.listBranchNames({ repoPath: repoProject.rootPath }),
+      session_dir_exists: false,
+      worktree_branch_holder: '/repos/goodboy/.goodboy/worktrees/gb-held',
+    });
+    const { result } = renderHook(() =>
+      useMountPreflight({ sessionId: SID, project: repoProject }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.preflight?.checkedOutAt).toBe(
+      '/repos/goodboy/.goodboy/worktrees/gb-held',
+    );
+  });
+
+  it('keeps the new branch and lists both when the goal names two', async () => {
+    withGoal({ goal: 'compare ak/checkout-retries and ak/poc-start-funnel-subdomain' });
+    h.listBranchNames.mockResolvedValue(['ak/checkout-retries', 'ak/poc-start-funnel-subdomain']);
+    const { result } = renderHook(() =>
+      useMountPreflight({ sessionId: SID, project: repoProject }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.preflight).toMatchObject({
+      isExistingBranch: false,
+      goalBranches: ['ak/checkout-retries', 'ak/poc-start-funnel-subdomain'],
+    });
+  });
+
+  it('names the new branch from the goal when it names no branch', async () => {
+    h.listBranchNames.mockResolvedValue(['main', 'ak/poc-start-funnel-subdomain']);
+    const { result } = renderHook(() =>
+      useMountPreflight({ sessionId: SID, project: repoProject }),
+    );
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.preflight).toMatchObject({
+      branch: `${DEFAULT_BRANCH_PREFIX}/ship-the-rebase-row`,
+      isExistingBranch: false,
+      goalBranches: [],
+    });
   });
 });

@@ -67,6 +67,7 @@ type Params = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
   readonly turnByAgentId: ReadonlyMap<string, TurnState>;
+  readonly revisingRunIds: ReadonlyArray<WorkflowRunId>;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -120,13 +121,17 @@ type UnreadParams = {
 const isUnreadOf = ({ agents, agentIds }: UnreadParams): boolean =>
   agents.some((agent) => agentIds.includes(agent.id) && agentHasUnread(agent, false));
 
-type WorkflowRowsParams = Pick<Params, 'attachedRuns' | 'agents' | 'orchestrating' | 'questions'>;
+type WorkflowRowsParams = Pick<
+  Params,
+  'attachedRuns' | 'agents' | 'orchestrating' | 'questions' | 'revisingRunIds'
+>;
 
 const workflowRowsOf = ({
   attachedRuns,
   agents,
   orchestrating,
   questions,
+  revisingRunIds,
 }: WorkflowRowsParams): ReadonlyArray<SessionRun> => {
   const { agentsByRunId } = splitWorkflowRuns({ attachedRuns, agents });
   const nameByRunId = new Map(
@@ -142,6 +147,7 @@ const workflowRowsOf = ({
         run.chainAfterId == null ? 'previous' : (nameByRunId.get(run.chainAfterId) ?? 'previous'),
       isOrchestrating: orchestrating?.[run.id] ?? false,
       questions,
+      isPlanRevising: revisingRunIds.includes(run.id),
     });
     const isOrchestrated = run.executionMode === 'dynamic';
     const isArchived = run.discardedAt != null;
@@ -300,6 +306,7 @@ export const sessionRunsOf = ({
   questions,
   rootTurns,
   turnByAgentId,
+  revisingRunIds,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -315,7 +322,7 @@ export const sessionRunsOf = ({
       agentRowOf({ agent, kind, agents, questions, turn: turnByAgentId.get(agent.id) }),
     );
   return [
-    ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions }),
+    ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingRunIds }),
     ...autoRows,
     ...agentRows,
   ].sort(compareRuns);

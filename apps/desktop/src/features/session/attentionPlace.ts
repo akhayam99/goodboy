@@ -22,7 +22,7 @@ import {
   type RunWaitEntry,
   type RunWaitState,
 } from '../../store/slices/session-view/runWaitEntriesOf';
-import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
+import { runAwaitsPlanReview } from '../plans/runAwaitsPlanReview';
 
 type State = AutoWaitState &
   RunWaitState & {
@@ -87,7 +87,9 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
   if (reason === 'plan-approval') {
     const heldRun = state.sessions
       .find((session) => session.id === sessionId)
-      ?.workflowRuns.find((run) => run.discardedAt == null && isRunHeldForPlan({ run }));
+      ?.workflowRuns.find(
+        (run) => run.discardedAt == null && runAwaitsPlanReview({ state, sessionId, run }),
+      );
     if (heldRun === undefined) {
       return sessionPlace({ sessionId, lens: 'workflows' });
     }

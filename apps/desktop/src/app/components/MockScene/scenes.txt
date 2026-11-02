@@ -1137,6 +1137,7 @@ u34-help-search
 u34-help-shortcuts
 u34-needs-you-question
 u34-needs-you-run-question
+u34-plan-revising
 u34-question-card-states
 u34-t26-lane-window
 u34-t26-pr-slot

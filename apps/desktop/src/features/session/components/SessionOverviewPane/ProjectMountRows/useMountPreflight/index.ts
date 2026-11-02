@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { MountId, Project, SessionId } from '@goodboy/types';
-import { listBranchNames } from '../../../../../worktree/worktree';
+import { listBranchNames, worktreeBranchHolder } from '../../../../../worktree/worktree';
 import { useAppStore } from '../../../../../../store';
 import { allocateMountDirName } from '../../../../../../store/slices/project-mounts/allocateMountDirName';
 import { mountPlan } from '../../../../../../store/slices/sessions/mountPlan';
@@ -16,6 +16,7 @@ export type MountPreflightState = {
 type Params = {
   readonly sessionId: SessionId;
   readonly project: Project | null;
+  readonly pickedBranch?: string | null;
 };
 
 const IDLE = {
@@ -24,7 +25,11 @@ const IDLE = {
   branchScanError: null,
 } satisfies MountPreflightState;
 
-export const useMountPreflight = ({ sessionId, project }: Params): MountPreflightState => {
+export const useMountPreflight = ({
+  sessionId,
+  project,
+  pickedBranch = null,
+}: Params): MountPreflightState => {
   const [state, setState] = useState<MountPreflightState>(IDLE);
   const projectId = project?.id ?? null;
 
@@ -77,15 +82,34 @@ export const useMountPreflight = ({ sessionId, project }: Params): MountPrefligh
           sessionId,
           projectId,
           mountId: plan.mountId,
+          knownBranches: scan.repoBranches,
           dirName,
         });
         if (allocated === null) {
           return;
         }
-        setState({
-          status: 'ready',
-          preflight: resolveMountPreflight({ plan: allocated, repoBranches: scan.repoBranches }),
-          branchScanError: scan.error,
+        const holder =
+          allocated.adoptedBranch === null
+            ? Promise.resolve({ checkedOutAt: null, error: null })
+            : worktreeBranchHolder({
+                repoPath: project.rootPath,
+                branch: allocated.adoptedBranch,
+              })
+                .then((checkedOutAt) => ({ checkedOutAt, error: null }))
+                .catch((error: unknown) => ({ checkedOutAt: null, error: formatError(error) }));
+        return holder.then(({ checkedOutAt, error }) => {
+          if (!isCurrent) {
+            return;
+          }
+          setState({
+            status: 'ready',
+            preflight: resolveMountPreflight({
+              plan: allocated,
+              repoBranches: scan.repoBranches,
+              checkedOutAt,
+            }),
+            branchScanError: scan.error ?? error,
+          });
         });
       })
       .catch((error: unknown) => {
@@ -101,7 +125,7 @@ export const useMountPreflight = ({ sessionId, project }: Params): MountPrefligh
     return () => {
       isCurrent = false;
     };
-  }, [projectId, project, sessionId]);
+  }, [projectId, project, sessionId, pickedBranch]);
 
   return state;
 };

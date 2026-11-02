@@ -3,6 +3,7 @@ import type { MountId, Project, ProjectId, SessionId } from '@goodboy/types';
 import { mountDirName } from '../project-mounts/mountDirName';
 import { branchNamingSettings } from './branchNamingSettings';
 import { branchLeaf } from './branchLeaf';
+import { branchNamedInGoal, type GoalBranchMatch } from './branchNamedInGoal';
 import { materializationSeedFor } from './materializationSeeds';
 import { sessionBranchNaming, type BranchNaming } from './sessionBranchNaming';
 import type { AppStore } from '../../store';
@@ -29,6 +30,8 @@ export type MountPlan = {
   readonly slug: string;
   readonly branch: string | null;
   readonly adoptedBranch: string | null;
+  readonly isAdoptedFromGoal: boolean;
+  readonly goalBranches: ReadonlyArray<string>;
   readonly baseBranch: string | null;
   readonly targetPath: string;
   readonly takenBranches: ReadonlyArray<string>;
@@ -41,6 +44,7 @@ type Params = {
   readonly mountId: MountId;
   readonly taskIdentifiers?: ReadonlyArray<string>;
   readonly repoBranches?: ReadonlyArray<string>;
+  readonly knownBranches?: ReadonlyArray<string>;
   readonly dirName?: string;
 };
 
@@ -64,6 +68,7 @@ export const mountPlan = ({
   mountId,
   taskIdentifiers,
   repoBranches = [],
+  knownBranches,
   dirName,
 }: Params): MountPlan | null => {
   const session =
@@ -113,7 +118,19 @@ export const mountPlan = ({
     namedSlug === '' && named.values['task-id'] === undefined
       ? { ...named, values: { ...named.values, slug: fallbackSlug } }
       : named;
-  const adoptedBranch = seed?.existingBranch ?? null;
+  const hasRepoMount = (state.sessionProjectMounts[sessionId] ?? []).some(
+    (mount) => mount.branch !== '',
+  );
+  const goalMatch: GoalBranchMatch =
+    project.kind === 'repo' && seed?.existingBranch === undefined && !hasRepoMount
+      ? branchNamedInGoal({
+          goal: session.goal,
+          branches: knownBranches ?? repoBranches,
+          baseBranch: project.baseBranch ?? null,
+        })
+      : { kind: 'none' };
+  const goalBranch = goalMatch.kind === 'one' ? goalMatch.branch : null;
+  const adoptedBranch = seed?.existingBranch ?? goalBranch;
   const branch =
     project.kind === 'repo' && adoptedBranch === null
       ? availableBranchName({ ...naming, taken: [...takenBranches, ...repoBranches] })
@@ -127,6 +144,8 @@ export const mountPlan = ({
     slug,
     branch,
     adoptedBranch: project.kind === 'repo' ? adoptedBranch : null,
+    isAdoptedFromGoal: goalBranch !== null && adoptedBranch === goalBranch,
+    goalBranches: goalMatch.kind === 'many' ? goalMatch.branches : [],
     baseBranch: project.kind === 'repo' ? (project.baseBranch ?? null) : null,
     targetPath: targetPathFor({ project, mountId, dirName }),
     takenBranches,
