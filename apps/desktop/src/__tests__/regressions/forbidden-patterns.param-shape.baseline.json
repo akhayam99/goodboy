@@ -1132,7 +1132,7 @@
     "apps/desktop/src/shared/lib/editor.ts": 1,
     "apps/desktop/src/shared/lib/highlight/caps.ts": 1,
     "apps/desktop/src/shared/lib/highlight/codeHighlighter.ts": 2,
-    "apps/desktop/src/shared/lib/highlight/index.ts": 5,
+    "apps/desktop/src/shared/lib/highlight/index.ts": 4,
     "apps/desktop/src/shared/lib/highlight/languages.ts": 2,
     "apps/desktop/src/shared/lib/highlight/theme.ts": 1,
     "apps/desktop/src/shared/lib/highlight/tokenize.ts": 2,

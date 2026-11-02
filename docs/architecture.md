@@ -737,6 +737,16 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   from a screen) always asks. Any other answer, even a refused sign-in, means
   the host is there. The top bar shows one quiet line per host with Retry, and
   Retry asks again for every session that already holds a request of that host.
+- **A silent refresh that finds nothing new writes nothing.** For a mount that
+  already holds an entry, `refreshMountRequest` skips the pending write and
+  writes the result only when the data differs from the stored entry, the
+  `fetchedAt` time aside. A second silent refresh of the same mount while one
+  runs is dropped. A refresh from a screen or a first read still writes both.
+  `noteHostAnswer` still writes on every answer of GitLab and Bitbucket,
+  because its late-answer guard lives in that state.
+- **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
+  sessions array and input tuple, so the board, the top bar and the sidebar
+  share one pass per store change.
 
 ### Database migrations
 

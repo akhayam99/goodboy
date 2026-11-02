@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useOpenStopMountIds } from '../../../../../hooks/useOpenStopMountIds';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionWorktree } from '@goodboy/db';
 import type {
@@ -11,26 +10,13 @@ import type {
   Step,
   TelemetryRecord,
 } from '@goodboy/types';
-import {
-  EMPTY_ARRAY,
-  agentHasUnread,
-  useAppStore,
-  useIsSessionCollectionLoaded,
-  useSessionAnsweredQuestions,
-  useSessionDismissedQuestions,
-  useSessionOpenQuestions,
-} from '../../../../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../../../store';
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
-import { useAttachedWorkflowRuns } from '../../../../../../workflows/useAttachedWorkflowRuns';
-import { useWorkflowAdvanceStates } from '../../../../../../workflows/useWorkflowAdvanceStates';
-import { useLiveAgentTurns } from '../../../../../../../shared/hooks/useLiveAgentTurns';
+import { useSessionWorkModel } from '../../../../../central/useSessionWorkModel';
 import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
 import { logEntriesMatching } from '../../../../../timeline/logSearch';
 import { agentSpendById } from '../../../../../timeline/agentSpendById';
-import {
-  buildTimelineGroups,
-  type TimelineTopLevelEntry,
-} from '../../../../../timeline/buildTimelineGroups';
+import type { TimelineTopLevelEntry } from '../../../../../timeline/buildTimelineGroups';
 import {
   buildTimelineStream,
   liveFoldRootIds,
@@ -47,7 +33,7 @@ import {
   historyBatchDetailOf,
   type HistoryBatchDetail,
 } from '../../../../../timeline/historyBatchDetail';
-import { needsYouOwners, type NeedsYouOwner } from '../../../../../timeline/needsYou';
+import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
 import {
@@ -59,11 +45,6 @@ import { keepEqualById } from '../../../../../../../shared/utils/keepEqualById';
 import { timelineFullGutterOf } from '../timelineFullGutter';
 import { timelineLaneGutterOf } from '../timelineLaneGutter';
 import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
-import { useResolveActivity } from '../../../../../hooks/useResolveActivity';
-import { useJobActivity } from '../../../../../hooks/useJobActivity';
-import { autoRowFacts, type AutoRowFacts } from '../../../../../../auto/autoRowFacts';
-import { useAutoTrees } from '../../../../../../auto/useAutoTrees';
-import { withoutAutoChildren } from '../../../../../../auto/withoutAutoChildren';
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
@@ -101,29 +82,27 @@ export type TimelineRows = {
 
 export const useTimelineRows = ({ session, view, query, explode }: Params): TimelineRows => {
   const sessionId: SessionId = session.id;
-  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
-  const artifacts = useAppStore((s) => s.sessionArtifacts?.[sessionId] ?? EMPTY_ARRAY);
-  const externalTasks = useAppStore((s) => s.sessionExternalTasks?.[sessionId] ?? EMPTY_ARRAY);
-  const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
-  const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
-  const learnings = useAppStore((s) => s.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
-  const loadSessionContextItems = useAppStore((s) => s.loadSessionContextItems);
-  const areEventsLoaded = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
-  const areAgentsLoaded = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
-  const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
-  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
-  const openQuestions = useSessionOpenQuestions(sessionId);
-  const answeredQuestions = useSessionAnsweredQuestions(sessionId);
-  const dismissedQuestions = useSessionDismissedQuestions(sessionId);
-  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
-  const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
-  const workflows = useAttachedWorkflowRuns({ session });
-  const resolveActivity = useResolveActivity({ sessionId });
-  const jobActivity = useJobActivity({ sessionId });
-  const autoTrees = useAutoTrees({ sessionId });
+  const work = useSessionWorkModel({ session });
+  const {
+    agents,
+    worktrees,
+    events,
+    workflows,
+    autoTrees,
+    advanceByRunId,
+    decidingRunIds,
+    unreadAgentIds,
+    liveAgentIds,
+    owners,
+    settledStopIds,
+    turnByAgentId,
+    autoFactsByAgentId,
+    resolveFactsByAgentId,
+    jobFactsByAgentId,
+    isLoaded,
+  } = work;
+  const modelEntries = work.entries;
+  const areAgentsLoaded = liveAgentIds !== undefined;
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
@@ -141,74 +120,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   );
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const [measuredHeights, setMeasuredHeights] = useState<ReadonlyMap<string, number>>(new Map());
-
-  useEffect(() => {
-    void loadSessionEvents({ sessionId });
-  }, [loadSessionEvents, sessionId]);
-
-  useEffect(() => {
-    void loadSessionArtifacts(sessionId);
-  }, [loadSessionArtifacts, sessionId]);
-
-  useEffect(() => {
-    void loadSessionContextItems({ sessionId }).catch(() => undefined);
-  }, [loadSessionContextItems, sessionId]);
-
-  useEffect(() => {
-    void loadSessionAnsweredQuestions(sessionId);
-    void loadSessionDismissedQuestions(sessionId);
-  }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
-
-  const questions = useMemo(
-    () => [...openQuestions, ...answeredQuestions, ...dismissedQuestions],
-    [answeredQuestions, dismissedQuestions, openQuestions],
-  );
-
-  const autoFactsByAgentId = useMemo(() => {
-    const facts = new Map<string, AutoRowFacts>();
-    for (const view of autoTrees) {
-      const rowFacts = autoRowFacts({ view });
-      if (rowFacts !== null) {
-        facts.set(view.tree.rootAgentId, rowFacts);
-      }
-    }
-    return facts;
-  }, [autoTrees]);
-
-  const topLevelAgents = useMemo(
-    () => withoutAutoChildren({ agents, views: autoTrees }),
-    [agents, autoTrees],
-  );
-
-  const model = useMemo(
-    () =>
-      buildTimelineGroups({
-        sessionId,
-        agents: topLevelAgents,
-        workflows,
-        plans,
-        artifacts,
-        externalTasks,
-        questions,
-        worktrees,
-        events,
-        learnings,
-        agentKindOverride,
-      }),
-    [
-      agentKindOverride,
-      topLevelAgents,
-      artifacts,
-      events,
-      externalTasks,
-      learnings,
-      plans,
-      questions,
-      sessionId,
-      workflows,
-      worktrees,
-    ],
-  );
 
   const stepById = useMemo(() => {
     const steps = new Map<string, Step>();
@@ -241,86 +152,16 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     return spend;
   }, [agentRunHistory, agents, telemetry, workflows]);
 
-  const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
-  const turnByAgentId = useLiveAgentTurns({ agents });
-
-  const unreadAgentIds = useMemo(() => {
-    const unread = new Set<string>();
-    for (const agent of agents) {
-      if (agentHasUnread(agent, false)) {
-        unread.add(agent.id);
-      }
-    }
-    return unread;
-  }, [agents]);
-
-  const liveAgentIds = useMemo(
-    () => (areAgentsLoaded ? new Set(agents.map((agent) => agent.id)) : undefined),
-    [agents, areAgentsLoaded],
-  );
-
-  const settledStops = useAppStore((s) => s.settledRebaseStops[sessionId] ?? EMPTY_ARRAY);
-  const settledStopIds = useMemo(() => new Set(settledStops), [settledStops]);
-  const openMountIds = useOpenStopMountIds({ sessionId });
-
-  const decidingRunIds = useMemo(() => {
-    const deciding = new Set<string>();
-    for (const { run } of workflows) {
-      if (orchestratingWorkflowRuns?.[run.id] === true) {
-        deciding.add(run.id);
-      }
-    }
-    return deciding;
-  }, [orchestratingWorkflowRuns, workflows]);
-
-  const owners = useMemo(
-    () =>
-      needsYouOwners({
-        items: buildTimelineStream({
-          entries: model.entries,
-          unreadAgentIds,
-          advanceByRunId,
-          decidingRunIds,
-          dayLabelFor: dayLabel,
-          showQuestions: false,
-          resolveFactsByAgentId: resolveActivity.factsByAgentId,
-          jobFactsByAgentId: jobActivity.factsByAgentId,
-          autoFactsByAgentId,
-          turnByAgentId,
-        }).items,
-        entries: model.entries,
-        events,
-        resolveFactsByAgentId: resolveActivity.factsByAgentId,
-        liveAgentIds,
-        settledStopIds,
-        openMountIds,
-      }),
-    [
-      advanceByRunId,
-      autoFactsByAgentId,
-      decidingRunIds,
-      events,
-      jobActivity,
-      liveAgentIds,
-      model.entries,
-      openMountIds,
-      resolveActivity,
-      settledStopIds,
-      turnByAgentId,
-      unreadAgentIds,
-    ],
-  );
-
   const viewEntries = useMemo(() => {
     const inView = entriesOfView({
-      entries: model.entries,
+      entries: modelEntries,
       events,
       view,
       liveAgentIds,
       settledStopIds,
     });
     return view !== 'activity' ? logEntriesMatching({ entries: inView, query }) : inView;
-  }, [events, liveAgentIds, model.entries, query, settledStopIds, view]);
+  }, [events, liveAgentIds, modelEntries, query, settledStopIds, view]);
 
   const stream = useMemo(
     () =>
@@ -331,8 +172,8 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         decidingRunIds,
         dayLabelFor: dayLabel,
         showQuestions: view !== 'activity',
-        resolveFactsByAgentId: resolveActivity.factsByAgentId,
-        jobFactsByAgentId: jobActivity.factsByAgentId,
+        resolveFactsByAgentId,
+        jobFactsByAgentId,
         autoFactsByAgentId,
         turnByAgentId,
         expandedGroupIds: explode.expandedIds,
@@ -346,8 +187,8 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       decidingRunIds,
       explode.expandedIds,
       explode.fullIds,
-      jobActivity,
-      resolveActivity,
+      jobFactsByAgentId,
+      resolveFactsByAgentId,
       turnByAgentId,
       unreadAgentIds,
       view,
@@ -366,8 +207,8 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
             decidingRunIds,
             dayLabelFor: dayLabel,
             showQuestions: view !== 'activity',
-            resolveFactsByAgentId: resolveActivity.factsByAgentId,
-            jobFactsByAgentId: jobActivity.factsByAgentId,
+            resolveFactsByAgentId,
+            jobFactsByAgentId,
             autoFactsByAgentId,
             turnByAgentId,
             expandedGroupIds,
@@ -380,8 +221,8 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       advanceByRunId,
       autoFactsByAgentId,
       decidingRunIds,
-      jobActivity,
-      resolveActivity,
+      jobFactsByAgentId,
+      resolveFactsByAgentId,
       turnByAgentId,
       unreadAgentIds,
       view,
@@ -389,11 +230,10 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     ],
   );
 
-  const isLoaded = areEventsLoaded && areAgentsLoaded;
   const { keepOpen } = explode;
   const liveRootKey = useMemo(
-    () => liveFoldRootIds({ entries: model.entries }).join(' '),
-    [model.entries],
+    () => liveFoldRootIds({ entries: modelEntries }).join(' '),
+    [modelEntries],
   );
 
   useEffect(() => {
@@ -507,7 +347,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   );
 
   return {
-    entries: model.entries,
+    entries: modelEntries,
     viewEntries,
     events,
     worktrees,
