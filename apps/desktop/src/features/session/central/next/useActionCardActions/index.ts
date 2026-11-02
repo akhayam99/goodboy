@@ -34,6 +34,7 @@ import { foldSecondVerb } from '../foldSecondVerb';
 import { foldVerbs } from '../foldVerbs';
 import { foldedVerbOf } from '../foldedVerbOf';
 import { suggestionPlaceOf } from '../suggestionPlaceOf';
+import { isRunEntryFinished } from '../../done/outcomeLineOf';
 import { useOpenNeedsYou } from '../useOpenNeedsYou';
 
 type Params = {
@@ -200,6 +201,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const navigate = useAppStore((s) => s.navigate);
+  const openDrawer = useAppStore((state) => state.openDrawer);
   const loadAutoTrees = useAppStore((s) => s.loadAutoTrees);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const isAutoOn = useIsAutoOn();
@@ -287,12 +289,40 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   const openAuto = ({ target }: AutoParams) =>
     navigate({ to: agentPlace({ sessionId, agentId: target.rootAgentId }) });
 
+  const resultVerbOf = ({ owner }: OwnerParams): CardVerb | null => {
+    const entry = owner.item?.entry;
+    if (owner.question === null || entry == null) {
+      return null;
+    }
+    const isFinished =
+      entry.kind === 'run'
+        ? isRunEntryFinished({ entry })
+        : entry.kind === 'agent' && entry.agent.status === 'completed';
+    if (!isFinished) {
+      return null;
+    }
+    return verbOf({
+      label: 'See result',
+      run: () => {
+        const row = [...document.querySelectorAll<HTMLElement>('[data-done-latest]')].find(
+          (candidate) => candidate.dataset.doneLatest === entry.id,
+        );
+        if (row !== undefined) {
+          row.scrollIntoView({ block: 'nearest' });
+          row.querySelector<HTMLElement>('button')?.focus();
+          return;
+        }
+        openDrawer({ kind: 'session-log', sessionId, payload: { focusEntryId: entry.id } });
+      },
+    });
+  };
+
   const ownerActions = ({ owner }: OwnerParams): CardActions => ({
     main: verbOf({
       label: ownerVerbOf({ owner }),
       run: () => openNeedsYou({ owner }),
     }),
-    second: null,
+    second: resultVerbOf({ owner }),
     failure: null,
     isBusy: false,
     agentKind: null,
