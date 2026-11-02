@@ -16,7 +16,7 @@ export type MountPreflightState = {
 type Params = {
   readonly sessionId: SessionId;
   readonly project: Project | null;
-  readonly pickedBranch?: string | null;
+  readonly choice?: string | null;
 };
 
 const IDLE = {
@@ -28,7 +28,7 @@ const IDLE = {
 export const useMountPreflight = ({
   sessionId,
   project,
-  pickedBranch = null,
+  choice = null,
 }: Params): MountPreflightState => {
   const [state, setState] = useState<MountPreflightState>(IDLE);
   const projectId = project?.id ?? null;
@@ -125,7 +125,7 @@ export const useMountPreflight = ({
     return () => {
       isCurrent = false;
     };
-  }, [projectId, project, sessionId, pickedBranch]);
+  }, [projectId, project, sessionId, choice]);
 
   return state;
 };

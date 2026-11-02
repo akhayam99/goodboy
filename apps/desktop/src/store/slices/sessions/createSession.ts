@@ -67,6 +67,8 @@ type Input = {
   branchSlug?: string;
   existingBranch?: string;
   fallbackRef?: string;
+  existingWorktreePath?: string;
+  isGoalBranchIgnored?: boolean;
   providerPreference?: SessionProviderPreference;
   workflowId?: WorkflowId;
   autoRun?: boolean;
@@ -91,6 +93,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
     branchSlug,
     existingBranch,
     fallbackRef,
+    existingWorktreePath,
+    isGoalBranchIgnored = false,
     providerPreference,
     workflowId,
     autoRun,
@@ -141,6 +145,8 @@ export const createSession = (set: SetFn, get: GetFn) => {
         ...(trimmedFallbackRef !== undefined && trimmedFallbackRef !== ''
           ? { fallbackRef: trimmedFallbackRef }
           : {}),
+        ...(existingWorktreePath !== undefined ? { existingWorktreePath } : {}),
+        ...(isGoalBranchIgnored ? { isGoalBranchIgnored } : {}),
       },
     });
 

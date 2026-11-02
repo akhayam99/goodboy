@@ -14,6 +14,15 @@ export type StartKind = 'workflow' | 'agent' | 'auto';
 
 export type StartShape = 'orchestrated' | 'preset' | 'agent' | 'autoAgent';
 
+export type DraftBranchChoice = Readonly<{
+  projectId: ProjectId;
+  goal: string;
+  pick:
+    | { kind: 'branch'; branch: string }
+    | { kind: 'worktree'; branch: string; worktreePath: string }
+    | { kind: 'new-branch' };
+}>;
+
 export type SessionDraft = {
   readonly startKind: StartKind | null;
   readonly startShape: StartShape | null;
@@ -36,6 +45,7 @@ export type SessionDraft = {
   readonly autoRouting: AgentKindRouting | null;
   readonly isStarting: boolean;
   readonly startError: string | null;
+  readonly branchChoice: DraftBranchChoice | null;
 };
 
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
@@ -60,6 +70,7 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   autoRouting: null,
   isStarting: false,
   startError: null,
+  branchChoice: null,
 };
 
 export type SessionDraftState = {

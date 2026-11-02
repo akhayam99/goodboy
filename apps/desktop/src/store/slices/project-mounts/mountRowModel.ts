@@ -70,6 +70,7 @@ export type MountRowView = Readonly<{
   isAttached: boolean;
   isMainCheckout: boolean;
   isOnDisk: boolean;
+  isBranchAdopted?: boolean;
   revision: number;
   parallelIndex: number;
   request: MountRequestView | null;
@@ -370,6 +371,7 @@ export const buildMountRows = ({
       isAttached: view.isAttached && view.worktreePath !== null,
       isMainCheckout: view.worktreePath !== null && view.worktreePath === view.repoRoot,
       isOnDisk,
+      isBranchAdopted: view.branchOrigin === 'adopted',
       revision: view.revision,
       parallelIndex: view.parallelIndex,
       request,

@@ -54,6 +54,7 @@ export type SessionRun = Readonly<{
   isRestartStopped: boolean;
   progress: string;
   startedAt: number;
+  revisingSince: number | null;
   agentIds: ReadonlyArray<AgentId>;
   open: SessionRunOpen;
 }>;
@@ -67,7 +68,7 @@ type Params = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
   readonly turnByAgentId: ReadonlyMap<string, TurnState>;
-  readonly revisingRunIds: ReadonlyArray<WorkflowRunId>;
+  readonly revisingStarts: Readonly<Record<string, number>>;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -123,7 +124,7 @@ const isUnreadOf = ({ agents, agentIds }: UnreadParams): boolean =>
 
 type WorkflowRowsParams = Pick<
   Params,
-  'attachedRuns' | 'agents' | 'orchestrating' | 'questions' | 'revisingRunIds'
+  'attachedRuns' | 'agents' | 'orchestrating' | 'questions' | 'revisingStarts'
 >;
 
 const workflowRowsOf = ({
@@ -131,7 +132,7 @@ const workflowRowsOf = ({
   agents,
   orchestrating,
   questions,
-  revisingRunIds,
+  revisingStarts,
 }: WorkflowRowsParams): ReadonlyArray<SessionRun> => {
   const { agentsByRunId } = splitWorkflowRuns({ attachedRuns, agents });
   const nameByRunId = new Map(
@@ -147,7 +148,7 @@ const workflowRowsOf = ({
         run.chainAfterId == null ? 'previous' : (nameByRunId.get(run.chainAfterId) ?? 'previous'),
       isOrchestrating: orchestrating?.[run.id] ?? false,
       questions,
-      isPlanRevising: revisingRunIds.includes(run.id),
+      isPlanRevising: revisingStarts[run.id] !== undefined,
     });
     const isOrchestrated = run.executionMode === 'dynamic';
     const isArchived = run.discardedAt != null;
@@ -173,6 +174,7 @@ const workflowRowsOf = ({
       isRestartStopped: false,
       progress: facts.progress,
       startedAt: timeOf({ value: run.createdAt }),
+      revisingSince: revisingStarts[run.id] ?? null,
       agentIds,
       open: { kind: 'run', runId: run.id },
     };
@@ -235,6 +237,7 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
       count: runAgentCountOf({ agentIds: children.map((child) => child.id) }),
     }),
     startedAt: view === undefined ? timeOf({ value: root.startedAt }) : view.tree.createdAt,
+    revisingSince: null,
     agentIds,
     open: { kind: 'auto', agentId: root.id },
   };
@@ -273,6 +276,7 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     isRestartStopped: state.status === 'stopped' && !state.isFinished && agent.stoppedBy === 'app',
     progress: agentCountLabelOf({ count: runAgentCountOf({ agentIds }) }),
     startedAt: timeOf({ value: agent.startedAt }),
+    revisingSince: null,
     agentIds,
     open: { kind: 'agent', agentId: agent.id },
   };
@@ -306,7 +310,7 @@ export const sessionRunsOf = ({
   questions,
   rootTurns,
   turnByAgentId,
-  revisingRunIds,
+  revisingStarts,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -322,7 +326,7 @@ export const sessionRunsOf = ({
       agentRowOf({ agent, kind, agents, questions, turn: turnByAgentId.get(agent.id) }),
     );
   return [
-    ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingRunIds }),
+    ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingStarts }),
     ...autoRows,
     ...agentRows,
   ].sort(compareRuns);

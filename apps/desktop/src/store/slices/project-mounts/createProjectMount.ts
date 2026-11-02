@@ -16,6 +16,7 @@ import { branchInUseError } from './mountErrors';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountBranchOrigin } from './mountBranchOrigin';
 import { allocateMountDirName } from './allocateMountDirName';
+import { existingWorktreeFor } from './existingWorktree/existingWorktreeFor';
 import { mountViewPatch } from './mountViewPatch';
 import { withRepositoryAndMountLock } from './mountLocks';
 import type { GetFn, SetFn } from './types';
@@ -133,25 +134,34 @@ export const createProjectMount = async ({
         ? undefined
         : (seed?.existingBranch ?? plan.adoptedBranch ?? undefined);
       const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
+      const existingWorktreePath =
+        adoptedBranch === undefined ? undefined : seed?.existingWorktreePath;
       const parentDir = `${project.rootPath}/.goodboy/worktrees`;
       let created;
       await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
       try {
-        created = await createWorktree({
-          repoPath: project.rootPath,
-          branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
-          parentDir,
-          dirName:
-            plannedDirName ??
-            (await allocateMountDirName({
-              mountId,
-              repoPath: project.rootPath,
-              parentDir,
-            })),
-          baseBranch: project.baseBranch ?? undefined,
-          ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
-          ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),
-        });
+        created =
+          existingWorktreePath !== undefined && adoptedBranch !== undefined
+            ? await existingWorktreeFor({
+                repoPath: project.rootPath,
+                branch: adoptedBranch,
+                worktreePath: existingWorktreePath,
+              })
+            : await createWorktree({
+                repoPath: project.rootPath,
+                branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
+                parentDir,
+                dirName:
+                  plannedDirName ??
+                  (await allocateMountDirName({
+                    mountId,
+                    repoPath: project.rootPath,
+                    parentDir,
+                  })),
+                baseBranch: project.baseBranch ?? undefined,
+                ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
+                ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),
+              });
       } catch (error) {
         await get().recordSessionEvent({
           sessionId,
@@ -226,14 +236,16 @@ export const createProjectMount = async ({
         }),
         ...mountViewPatch({ state, sessionId, mount }),
       }));
-      void prepareNewWorktree({
-        saveSetting: get().saveSetting,
-        reportError: get().reportError,
-        sessionId,
-        mountId,
-        project,
-        created,
-      });
+      if (existingWorktreePath === undefined) {
+        void prepareNewWorktree({
+          saveSetting: get().saveSetting,
+          reportError: get().reportError,
+          sessionId,
+          mountId,
+          project,
+          created,
+        });
+      }
       void stampRepoSlug({
         sessionId,
         workspaceId: session.workspaceId,

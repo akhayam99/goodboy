@@ -7,6 +7,7 @@ import type {
 } from '../../features/worktree/worktree';
 import { createInvokeMock, createInvokeRouter } from '../invokeMock';
 import type { InvokeHandlers } from '../invokeMock';
+import type { worktreeBranchHolder } from '../../features/worktree/worktree';
 import { createResolveQueryMocks } from '../../store/slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from '../../store/slices/turn/workflowTurnBreaker';
 import { TEST_NOW } from '@goodboy/types/testing';
@@ -98,6 +99,8 @@ const cleanWorkingTree = {
 const SLOT_SUMMARY_PREFIX = 'Current slot values:';
 
 const TITLE_PROMPT_PREFIX = 'Write one imperative title';
+
+export type BranchHolderArgs = Parameters<typeof worktreeBranchHolder>[0];
 
 type AuxArgs = {
   readonly args: {
@@ -458,6 +461,7 @@ export const storySpies = {
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   createWorktree: vi.fn(),
+  worktreeBranchHolder: vi.fn<typeof worktreeBranchHolder>(async () => null),
   sessionDirExists: vi.fn(async (_args: unknown) => true),
   scratchDirPrepare: vi.fn(async (_args: unknown) => '/tmp/goodboy-root/scratch/session-story'),
   scratchDirRemove: vi.fn(async (_args: unknown) => undefined),

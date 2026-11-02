@@ -63,7 +63,17 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   confirmation shows "The goal names 2 branches" with one button per branch, and
   a pick is stored as the seed. The confirmation reads "Uses the existing
   branch <name>", and when `worktree_branch_holder` says another worktree has
-  the branch checked out it names that path before the mount runs.
+  the branch checked out it names that path and offers "Open the existing
+  worktree" or "Start on a new branch" (`ExistingBranchNotice`, one component
+  for the Overview card and the New session start). Opening the worktree sets
+  the `existingWorktreePath` seed: `createProjectMount` checks the holder again
+  (`existingWorktreeFor`), mounts that path without creating a worktree and
+  skips the worktree setup. A new branch sets `isGoalBranchIgnored`, which
+  `mountPlan` reads. The New session start has no session yet, so it keeps the
+  pick on the draft (`branchChoice`, dropped when the goal or the folder
+  changes) and `startSessionFromDraft` turns it into the same seeds through
+  `createSession`. A mount whose `branchOrigin` is `adopted` reads "Existing
+  branch" in its branch row tooltip.
 - When another live session, or the repository itself, already owns the name,
   the plan takes `-2`, `-3` and so on. An adopted branch is never renamed. The
   frontend sends the full name; `worktree_create` and `bootstrap_prepare` check

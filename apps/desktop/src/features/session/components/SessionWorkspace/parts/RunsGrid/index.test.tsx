@@ -62,7 +62,7 @@ const runsOf = ({ agents, blockedIds = [] }: RunsParams) =>
     questions: [],
     rootTurns: {},
     turnByAgentId: new Map(blockedIds.map((id) => [id, BLOCKED])),
-    revisingRunIds: [],
+    revisingStarts: {},
   });
 
 type GridParams = {
@@ -90,6 +90,20 @@ describe('RunsGrid', () => {
     const rows = within(group).getAllByRole('button');
     expect(rows[0]?.getAttribute('aria-label')).toBe('Open Asker, Agent, Needs permission');
     expect(rows[1]?.getAttribute('aria-label')).toBe('Open Runner, Agent, Running');
+  });
+
+  it('reads the planner elapsed time in the time column while the plan is revised', () => {
+    const agents = [aNowAgent({ key: 'planner', name: 'Planner', status: 'running' })];
+    const runs = runsOf({ agents }).map((run) => ({
+      ...run,
+      revisingSince: Date.now() - 125_000,
+    }));
+
+    renderGrid({ runs });
+
+    const row = screen.getByRole('button', { name: /Open Planner/ });
+    expect(row.textContent).toContain('2m');
+    expect(row.textContent).not.toContain('ago');
   });
 
   it('marks a finished agent with an unread reply', () => {

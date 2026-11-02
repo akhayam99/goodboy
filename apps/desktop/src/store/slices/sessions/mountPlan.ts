@@ -122,7 +122,10 @@ export const mountPlan = ({
     (mount) => mount.branch !== '',
   );
   const goalMatch: GoalBranchMatch =
-    project.kind === 'repo' && seed?.existingBranch === undefined && !hasRepoMount
+    project.kind === 'repo' &&
+    seed?.existingBranch === undefined &&
+    seed?.isGoalBranchIgnored !== true &&
+    !hasRepoMount
       ? branchNamedInGoal({
           goal: session.goal,
           branches: knownBranches ?? repoBranches,

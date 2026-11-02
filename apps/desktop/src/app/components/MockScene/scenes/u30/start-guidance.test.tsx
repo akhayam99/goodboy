@@ -29,7 +29,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 } });
+  stubStoryInvoke({
+    db_select: [],
+    db_execute: { rowsAffected: 0 },
+    worktree_list_branch_names: [],
+  });
 });
 
 afterEach(() => {

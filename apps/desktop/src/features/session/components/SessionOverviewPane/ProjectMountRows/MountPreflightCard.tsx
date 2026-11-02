@@ -2,6 +2,7 @@ import { TriangleAlert } from 'lucide-react';
 import { Button, cn, Eyebrow, FormActions, ICON_SIZE, TruncatedText } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { ExistingBranchNotice } from '../../ExistingBranchNotice';
 import type { MountFailure } from './mountFailure';
 import type { MountPreflightState } from './useMountPreflight';
 
@@ -17,6 +18,8 @@ type Props = {
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
   readonly onPickBranch: (params: PickParams) => void;
+  readonly onUseWorktree: () => void;
+  readonly onNewBranch: () => void;
 };
 
 type RowProps = {
@@ -66,6 +69,8 @@ export const MountPreflightCard = ({
   onConfirm,
   onCancel,
   onPickBranch,
+  onUseWorktree,
+  onNewBranch,
 }: Props) => {
   const GlyphIcon = projectGlyph({ kind: project.kind });
   const { preflight } = state;
@@ -101,37 +106,14 @@ export const MountPreflightCard = ({
           instead.
         </p>
       )}
-      {preflight?.isExistingBranch !== true ? null : (
-        <p role="status" className="text-meta text-muted-foreground">
-          Uses the existing branch {preflight.branch}
-          {preflight.isNamedByGoal ? ', named in the goal.' : '.'}
-        </p>
-      )}
-      {preflight?.checkedOutAt == null ? null : (
-        <p role="status" className="text-meta text-warning">
-          {preflight.branch} is already checked out in another worktree at {preflight.checkedOutAt}.
-        </p>
-      )}
-      {preflight == null || preflight.goalBranches.length === 0 ? null : (
-        <div role="group" aria-label="Branches named in the goal" className="flex flex-col gap-1">
-          <p className="text-meta text-warning">
-            The goal names {preflight.goalBranches.length} branches
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {preflight.goalBranches.map((branch) => (
-              <Button
-                key={branch}
-                variant="ghost"
-                size="sm"
-                disabled={isBusy}
-                onClick={() => onPickBranch({ branch })}
-                className="font-mono"
-              >
-                {branch}
-              </Button>
-            ))}
-          </div>
-        </div>
+      {preflight === null ? null : (
+        <ExistingBranchNotice
+          facts={preflight}
+          isBusy={isBusy}
+          onPickBranch={onPickBranch}
+          onUseWorktree={onUseWorktree}
+          onNewBranch={onNewBranch}
+        />
       )}
       {state.branchScanError === null ? null : (
         <p className="text-meta text-muted-foreground">

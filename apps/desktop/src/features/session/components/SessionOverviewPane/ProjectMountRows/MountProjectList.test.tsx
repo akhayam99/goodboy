@@ -42,7 +42,7 @@ const h = vi.hoisted(() => ({
       isExistingBranch: false,
       isNamedByGoal: false,
       goalBranches: Array.from<string>([]),
-      checkedOutAt: null,
+      checkedOutAt: Array.of<string | null>(null)[0] ?? null,
     },
     branchScanError: null as string | null,
   },
@@ -82,6 +82,7 @@ beforeEach(() => {
   h.preflight.preflight.isExistingBranch = false;
   h.preflight.preflight.isNamedByGoal = false;
   h.preflight.preflight.goalBranches = [];
+  h.preflight.preflight.checkedOutAt = null;
   forgetMaterializationSeed({ sessionId: SID });
   h.preflight.branchScanError = null;
   h.preflight.status = 'ready';
@@ -156,6 +157,33 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'ak/two' }));
 
     expect(materializationSeedFor({ sessionId: SID })?.existingBranch).toBe('ak/two');
+  });
+
+  it('opens the existing worktree when the branch is checked out elsewhere', async () => {
+    h.preflight.preflight.isExistingBranch = true;
+    h.preflight.preflight.checkedOutAt = '/repos/goodboy/.goodboy/worktrees/gb-held';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the existing worktree' }));
+
+    await waitFor(() => expect(h.ensureProjectMounted).toHaveBeenCalledTimes(1));
+    expect(materializationSeedFor({ sessionId: SID })).toMatchObject({
+      existingBranch: 'ak/ship-it',
+      existingWorktreePath: '/repos/goodboy/.goodboy/worktrees/gb-held',
+    });
+  });
+
+  it('starts on a new branch instead when the branch is checked out elsewhere', () => {
+    h.preflight.preflight.isExistingBranch = true;
+    h.preflight.preflight.checkedOutAt = '/repos/goodboy/.goodboy/worktrees/gb-held';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start on a new branch' }));
+
+    expect(h.ensureProjectMounted).not.toHaveBeenCalled();
+    expect(materializationSeedFor({ sessionId: SID })).toEqual({ isGoalBranchIgnored: true });
   });
 
   it('goes back to the list without creating anything', () => {

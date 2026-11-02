@@ -117,6 +117,17 @@ describe('mountPlan and a goal that names a branch', () => {
     expect(plan).toMatchObject({ adoptedBranch: 'ak/chosen', isAdoptedFromGoal: false });
   });
 
+  it('cuts a new branch when the owner chose to ignore the branch the goal names', () => {
+    rememberMaterializationSeed({ sessionId: SID, seed: { isGoalBranchIgnored: true } });
+    const plan = planFor({
+      goal: 'work on ak/named-in-goal',
+      repoBranches: ['ak/named-in-goal'],
+    });
+
+    expect(plan).toMatchObject({ adoptedBranch: null, goalBranches: [] });
+    expect(plan?.branch).not.toBeNull();
+  });
+
   it('adopts nothing for the second repository mount of a session', () => {
     const plan = planFor({
       goal: 'work on ak/named-in-goal',

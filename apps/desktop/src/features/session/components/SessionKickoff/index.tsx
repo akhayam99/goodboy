@@ -10,6 +10,7 @@ import { useStartRun } from '../StartRun/useStartRun';
 import { runModelSlotOfShape } from '../../startRun/runModelSlotOf';
 import { NewSessionStartForm } from '../StartForm/NewSessionStartForm';
 import { startFormKindOfDraft } from '../StartForm/startFormKinds';
+import { StartBranchNotice } from './StartBranchNotice';
 import { StartTaskField } from './StartTaskField';
 import { useRestoreLastStart } from './useRestoreLastStart';
 import { useStartShape } from './useStartShape';
@@ -90,6 +91,7 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
         isSubmitBlocked={!hasGoal || isBusy}
         onSubmit={() => void (kind === null ? autoRun.start() : shapeRun.start())}
       />
+      <StartBranchNotice workspaceId={workspaceId} isDisabled={isBusy} />
       <NewSessionStartForm
         workspaceId={workspaceId}
         suggestedIds={suggestedIds}

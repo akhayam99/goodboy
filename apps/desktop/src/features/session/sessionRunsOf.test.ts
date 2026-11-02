@@ -59,7 +59,7 @@ const runsOf = ({
     questions,
     rootTurns: {},
     turnByAgentId: turns,
-    revisingRunIds: [],
+    revisingStarts: {},
   });
 
 const presetRun = () =>

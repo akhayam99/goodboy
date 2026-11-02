@@ -12,9 +12,10 @@ import {
 import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
-  materializationSeedFor,
-  rememberMaterializationSeed,
-} from '../../../../../store/slices/sessions/materializationSeeds';
+  rememberExistingWorktree,
+  rememberNewBranchChoice,
+  rememberPickedBranch,
+} from '../../../../../store/slices/sessions/branchChoiceSeeds';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
 import { MountPreflightCard } from './MountPreflightCard';
@@ -45,7 +46,7 @@ export const MountProjectList = ({
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<Project['id'] | null>(null);
-  const [pickedBranch, setPickedBranch] = useState<string | null>(null);
+  const [choice, setChoice] = useState<string | null>(null);
   const [isMounting, setIsMounting] = useState(false);
   const [failure, setFailure] = useState<MountFailure | null>(null);
   const isSearchable = projects.length > SEARCH_THRESHOLD;
@@ -71,7 +72,7 @@ export const MountProjectList = ({
     ].filter((group) => group.projects.length > 0);
   }, [filtered, isGrouped]);
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
-  const preflightState = useMountPreflight({ sessionId, project: selectedProject, pickedBranch });
+  const preflightState = useMountPreflight({ sessionId, project: selectedProject, choice });
 
   const mountProject = async ({ project }: { readonly project: Project }) => {
     const { preflight } = preflightState;
@@ -121,14 +122,27 @@ export const MountProjectList = ({
         onCancel={() => {
           setFailure(null);
           setSelectedProjectId(null);
-          setPickedBranch(null);
+          setChoice(null);
         }}
         onPickBranch={({ branch }) => {
-          rememberMaterializationSeed({
+          rememberPickedBranch({ sessionId, branch });
+          setChoice(branch);
+        }}
+        onUseWorktree={() => {
+          const { preflight } = preflightState;
+          if (preflight === null || preflight.branch === null || preflight.checkedOutAt === null) {
+            return;
+          }
+          rememberExistingWorktree({
             sessionId,
-            seed: { ...materializationSeedFor({ sessionId }), existingBranch: branch },
+            branch: preflight.branch,
+            worktreePath: preflight.checkedOutAt,
           });
-          setPickedBranch(branch);
+          void mountProject({ project: selectedProject });
+        }}
+        onNewBranch={() => {
+          rememberNewBranchChoice({ sessionId });
+          setChoice('new-branch');
         }}
       />
     );

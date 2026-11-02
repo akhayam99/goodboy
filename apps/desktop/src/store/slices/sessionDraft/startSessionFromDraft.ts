@@ -8,6 +8,7 @@ import {
 } from '../../../features/session/agent-kind';
 import { markUserStart } from '../../../shared/lib/userStarts';
 import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
+import { branchChoiceInputOf } from './branchChoiceInputOf';
 import { draftGoalText } from './draftGoalText';
 import type { GetFn, SetFn } from './types';
 
@@ -175,6 +176,13 @@ const runStart = (set: SetFn, get: GetFn) => {
     const projectId = mount === null ? (picked[0] ?? null) : mount.projectId;
     const additionalProjectIds = picked.filter((id) => id !== projectId);
     const checkout = start.kind === 'task' ? (start.checkout ?? null) : null;
+    const choiceInput =
+      checkout === null
+        ? branchChoiceInputOf({
+            choice: get().sessionDrafts[workspaceId]?.branchChoice ?? null,
+            projectId,
+          })
+        : {};
     const attachmentInputs = start.kind === 'workflow-run' ? [] : (start.attachmentInputs ?? []);
     const { session } = await get().createSession({
       workspaceId,
@@ -190,6 +198,7 @@ const runStart = (set: SetFn, get: GetFn) => {
         existingBranch: checkout.existingBranch,
         fallbackRef: checkout.fallbackRef,
       }),
+      ...choiceInput,
       ...(candidates.length > 0 && {
         externalTasks: candidates.map((candidate) => ({
           provider: candidate.provider,

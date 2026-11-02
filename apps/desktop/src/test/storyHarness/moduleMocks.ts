@@ -6,6 +6,7 @@ import type {
 import { createDbMock } from '../dbMock';
 import { storyDbStubs } from './dbStubs';
 import {
+  type BranchHolderArgs,
   type WorktreeBaseArgs,
   ghStatus,
   invokeBudgetRuleUpsert,
@@ -172,6 +173,8 @@ export const worktreeModuleMock = () => ({
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
   listBranchCommits: (worktreePath: string) => storySpies.listBranchCommits(worktreePath),
   listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
+  worktreeBranchHolder: ({ repoPath, branch }: BranchHolderArgs) =>
+    storySpies.worktreeBranchHolder({ repoPath, branch }),
   worktreeIsAncestor: vi.fn(async () => true),
   worktreeRemoteHead: vi.fn(async () => ''),
   worktreeDiffRange: vi.fn(async () => ''),
