@@ -20,7 +20,6 @@ import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
-import { pushFixCount } from '../../../resolve/reviewPushCopy';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { isPushFailure } from '../../../resolve/reviewCommentState';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
@@ -162,9 +161,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       : isPushBusy
         ? 'busy'
         : 'idle';
-  const pushingCount =
-    push.phase.kind === 'pushing' ? pushFixCount({ preview: push.phase.preview }) : 0;
-  const pushCount = pushingCount > 0 ? pushingCount : pushableIds.length;
+  const pushCount = branchPushFactsOf({
+    status: diff.status,
+    commits: historyCommits,
+    hasRemoteHead,
+  }).toPush;
 
   const review = useMemo<BranchReviewCounts>(
     () => ({
@@ -448,8 +449,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       .needsYou,
     files: filesCount,
     diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
-    notPushed: branchPushFactsOf({ status: diff.status, commits: historyCommits, hasRemoteHead })
-      .toPush,
+    notPushed: pushCount,
     checks: checksRuns,
     checksUnreadReason,
   });

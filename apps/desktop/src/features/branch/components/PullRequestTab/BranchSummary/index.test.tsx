@@ -65,7 +65,9 @@ describe('BranchSummary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Commits' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open Changes' }));
     expect(onOpen.mock.calls).toEqual([['commits'], ['files']]);
-    expect(screen.getByText('commit, 1 not pushed').textContent).toBe('commit, 1 not pushed');
+    expect(screen.getByText('commit on this branch, 1 not pushed').textContent).toBe(
+      'commit on this branch, 1 not pushed',
+    );
   });
 
   it('opens one folder from the Changes card', () => {

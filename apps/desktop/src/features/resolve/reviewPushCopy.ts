@@ -164,12 +164,6 @@ export const PUSH_MISSING = 'The push was already handled or cancelled. Nothing 
 
 export const PUSH_STALE_FALLBACK = 'Something changed since the preview';
 
-export const pushFixCount = ({
-  preview,
-}: {
-  readonly preview: ResolvePublicationPreview;
-}): number => pushedCount({ preview });
-
 export const PUSH_BUSY = 'Another push is already running for this pull request.';
 
 export const pushFailedSentence = ({ error }: { readonly error: string }): string =>

@@ -9,6 +9,7 @@ export type BranchNextStep = {
   readonly ahead: number | null;
   readonly behind: number | null;
   readonly unpushed: number;
+  readonly originOnly?: number;
   readonly isPushed: boolean;
   readonly diverged: { readonly yours: number; readonly online: number } | null;
   readonly header: 'push' | 'rebase' | null;
@@ -81,7 +82,10 @@ export const branchNextStepOf = ({
     pushState !== null &&
     pushState.kind !== 'not-pushed' &&
     pushState.kind !== 'gone' &&
-    pushState.kind !== 'unknown';
+    pushState.kind !== 'unknown' &&
+    unpushed === 0;
+  const originOnly =
+    push.state.kind === 'behind' || push.state.kind === 'diverged' ? push.state.behind : 0;
   const diverged =
     push.state.kind === 'diverged' ? { yours: push.state.ahead, online: push.state.behind } : null;
   const state = stateOf({
@@ -90,5 +94,5 @@ export const branchNextStepOf = ({
     unpushed,
     isConflict: !isDone && (hasConflictStop || status?.inProgress === 'rebase'),
   });
-  return { state, ahead, behind, unpushed, isPushed, diverged, ...stepOf({ state }) };
+  return { state, ahead, behind, unpushed, originOnly, isPushed, diverged, ...stepOf({ state }) };
 };
