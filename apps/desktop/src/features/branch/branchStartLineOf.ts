@@ -1,5 +1,4 @@
 import type { Tone } from '@goodboy/ui';
-import { BRANCH_STATE_TONE } from '../session/central/branches/branchStateTone';
 import type { BranchNextStep } from './branchNextStepOf';
 
 export type BranchStartLine = {
@@ -13,27 +12,30 @@ type Params = {
   readonly baseBranch: string;
 };
 
-type WordParams = {
-  readonly step: BranchNextStep;
-};
-
-const wordOf = ({ step }: WordParams): Pick<BranchStartLine, 'word' | 'tone'> => {
+export const branchStartLineOf = ({ step, baseBranch }: Params): BranchStartLine => {
   if (step.state === 'conflict') {
-    return { word: 'Rebasing', tone: BRANCH_STATE_TONE.rebasing };
+    return { word: 'Rebasing', tone: 'warning', distance: null };
   }
   if (step.diverged !== null) {
-    return { word: 'Diverged', tone: 'warning' };
+    return {
+      word: `Diverged: ${step.unpushed} not pushed, ${step.diverged.online} only on origin`,
+      tone: 'warning',
+      distance: null,
+    };
   }
-  if (step.isPushed) {
-    return { word: 'Pushed', tone: 'neutral' };
+  if (step.unpushed > 0) {
+    return {
+      word: `${step.unpushed} not pushed`,
+      tone: 'neutral',
+      distance: step.behind === null ? null : `${step.behind} behind ${baseBranch}`,
+    };
   }
-  return { word: 'Not pushed', tone: BRANCH_STATE_TONE['not-pushed'] };
+  if ((step.originOnly ?? 0) > 0) {
+    return { word: `${step.originOnly} only on origin`, tone: 'warning', distance: null };
+  }
+  return {
+    word: step.isPushed ? 'Up to date with origin' : 'Not pushed',
+    tone: 'neutral',
+    distance: null,
+  };
 };
-
-export const branchStartLineOf = ({ step, baseBranch }: Params): BranchStartLine => ({
-  ...wordOf({ step }),
-  distance:
-    step.ahead === null || step.behind === null
-      ? null
-      : `${step.ahead} ahead, ${step.behind} behind ${baseBranch}`,
-});

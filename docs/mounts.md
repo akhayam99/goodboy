@@ -771,3 +771,10 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   (`features/suggestions/useSessionSuggestions/index.ts:447`), so a GitLab or
   Bitbucket branch shows its state in the list and has no Mark ready, Merge or
   Fix checks card yet.
+
+## Confirmed mount folder
+
+A manual mount preview allocates its directory before enabling confirmation.
+Creation uses that same directory, including on Retry. If another writer takes
+it meanwhile, creation reports the failure instead of choosing a different
+folder (`useMountPreflight`, `ensureProjectMounted`, `createProjectMount`).

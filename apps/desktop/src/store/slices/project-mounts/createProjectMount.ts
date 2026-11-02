@@ -80,6 +80,7 @@ type Params = {
   readonly parallelIndex: number;
   readonly taskIdentifiers?: ReadonlyArray<string>;
   readonly branch?: string;
+  readonly dirName?: string;
 };
 
 const FOLDER_IN_PLACE_REFUSAL =
@@ -96,6 +97,7 @@ export const createProjectMount = async ({
   parallelIndex,
   taskIdentifiers,
   branch: plannedBranch,
+  dirName: plannedDirName,
 }: Params): Promise<SessionProjectMount> =>
   withRepositoryAndMountLock({
     repoRoot: project.rootPath,
@@ -137,11 +139,13 @@ export const createProjectMount = async ({
           repoPath: project.rootPath,
           branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
           parentDir,
-          dirName: await allocateMountDirName({
-            mountId,
-            repoPath: project.rootPath,
-            parentDir,
-          }),
+          dirName:
+            plannedDirName ??
+            (await allocateMountDirName({
+              mountId,
+              repoPath: project.rootPath,
+              parentDir,
+            })),
           baseBranch: project.baseBranch ?? undefined,
           ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
           ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),

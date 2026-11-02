@@ -58,7 +58,7 @@ describe('branchRowChipOf during a Rebase all', () => {
 
   it('says Conflict while Auto has not started on it', () => {
     expect(branchRowChipOf({ ...BASE, rebase: branchOf({ state: 'auto' }) })).toMatchObject({
-      text: 'Conflict',
+      text: 'Rebase stopped',
       tone: 'danger',
       reason: 'Waiting for Auto',
       isBreathing: false,

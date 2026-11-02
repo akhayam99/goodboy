@@ -242,8 +242,22 @@ const askLine = ({
   return { text: title, where: null };
 };
 
-const isAskingRow = ({ item }: { readonly item: TimelineRowItem }): boolean =>
-  isRowNeedingYou({ state: item.rowState }) || item.hasSubagentAttention === true;
+type AskingParams = { readonly item: TimelineRowItem };
+
+const isAskingRow = ({ item }: AskingParams): boolean => {
+  const { entry } = item;
+  const questions =
+    entry.kind === 'run'
+      ? openQuestionsOfRun({ entry })
+      : entry.kind === 'agent'
+        ? openQuestionsOfAgent({ entry })
+        : [];
+  return (
+    questions.length > 0 ||
+    isRowNeedingYou({ state: item.rowState }) ||
+    item.hasSubagentAttention === true
+  );
+};
 
 const runOwnerOf = ({
   runItem,

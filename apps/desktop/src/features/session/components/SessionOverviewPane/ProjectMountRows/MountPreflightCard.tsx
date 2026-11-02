@@ -133,7 +133,7 @@ export const MountPreflightCard = ({
         <Button
           size="sm"
           onClick={onConfirm}
-          disabled={isBusy || preflight === null}
+          disabled={isBusy || isPending || preflight === null}
           isBusy={isBusy}
         >
           {failure === null ? 'Add folder' : 'Retry'}
