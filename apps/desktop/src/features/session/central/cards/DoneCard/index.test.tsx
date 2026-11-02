@@ -182,11 +182,13 @@ describe('the Done card lists what finished last', () => {
     const cards = [...document.querySelectorAll('[data-overview-card]')].map((card) =>
       card.getAttribute('data-overview-card'),
     );
-    expect(cards.indexOf('new-since')).toBe(0);
+    expect(cards.indexOf('new-since')).toBe(cards.indexOf('needs-you') + 1);
     expect(cards).toContain('done');
-    expect(newSinceRows()).toHaveLength(2);
+    expect(newSinceRows()).toHaveLength(0);
     expect(newSinceCard().querySelector('[data-new-since-count]')?.textContent).toBe('2');
     within(newSinceCard()).getByRole('button', { name: 'Mark all seen' });
+    fireEvent.click(within(newSinceCard()).getByRole('button', { name: 'Show' }));
+    expect(newSinceRows()).toHaveLength(2);
   });
 
   it('shows no New since you last looked card once everything is seen', async () => {

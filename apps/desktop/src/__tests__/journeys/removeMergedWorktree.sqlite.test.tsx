@@ -170,7 +170,7 @@ const showNext = (view: RenderResult): string => {
 };
 
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
-  view.container.querySelector<HTMLElement>('[data-overview-card="next"]');
+  view.container.querySelector<HTMLElement>('[data-overview-card="branches"]');
 
 const nextCard = (view: RenderResult): HTMLElement => {
   const card = nextCardOf(view);

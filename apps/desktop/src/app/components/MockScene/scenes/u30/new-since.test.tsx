@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -67,32 +67,25 @@ describe('the u30 new since scene', () => {
     expect(MOCK_SCENES['u30-new-since']).toBe(U30_NEW_SINCE_SCENES['u30-new-since']);
   });
 
-  it('reads like a person: plain titles, role and provider, a count of agents, no step list', async () => {
+  it('folds to one row, then lists the three newest with no step list', async () => {
     const { container } = await show();
 
     const card = container.querySelector<HTMLElement>('[data-overview-card="new-since"]');
     if (card === null) {
       throw new Error('no New since card');
     }
+    expect(rowsOf({ card })).toHaveLength(0);
+    expect(card.querySelector('[data-new-since-summary]')?.textContent).toContain(
+      'new since you looked',
+    );
+    fireEvent.click(within(card).getByRole('button', { name: 'Show' }));
     const rows = rowsOf({ card });
-    expect(rows.length).toBeGreaterThanOrEqual(5);
-    const titles = rows.map((row) => row.title);
-    expect(titles).toContain('Typecheck, lint, knip, oxfmt and vitest ok, no commit');
-    expect(titles).toContain('Vitest green, typecheck fails only from the worktree env');
-    expect(titles).toContain('Oxfmt, knip and hook tests green; tsc 2 errors in untouched files');
-    const metas = rows.map((row) => row.meta);
-    expect(metas).toContain('Tester');
-    expect(metas).toContain('Implementer');
-    expect(metas).toContain('Reviewer');
-    expect(metas).toContain('Orchestrated · 3 agents · 3 steps');
-    expect(metas.some((meta) => /^Auto · 2 agents/.test(meta))).toBe(true);
-    for (const meta of metas) {
+    expect(rows).toHaveLength(3);
+    for (const { meta } of rows) {
       expect(meta).not.toBe('Agent');
       expect(meta).not.toMatch(/\d+, \d+/);
       expect(meta).not.toMatch(/answered|decision/);
     }
-    const agentRow = rows.find((row) => row.meta === 'Tester');
-    expect(agentRow?.row.querySelector('[data-testid="agent-header-provider"]')).not.toBeNull();
     expect(within(card).queryByText('Agent')).toBeNull();
   });
 

@@ -37,7 +37,7 @@
   "session -> bootstrap": 1,
   "session -> context": 1,
   "session -> file-versions": 6,
-  "session -> history": 6,
+  "session -> history": 5,
   "session -> inbox": 3,
   "session -> live-state": 1,
   "session -> plans": 1,

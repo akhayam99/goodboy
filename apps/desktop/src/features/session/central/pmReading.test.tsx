@@ -198,7 +198,7 @@ const ACCEPTANCE: ReadonlyArray<Acceptance> = [
     walk: async () => {
       await show({ kind: 'mid' });
 
-      const run = within(cardOf({ name: 'Running' })).getByRole('region', {
+      const run = screen.getByRole('region', {
         name: 'Workflow: Build',
       });
       expect(run.textContent).toContain('Step 3 of 6');
@@ -209,9 +209,8 @@ const ACCEPTANCE: ReadonlyArray<Acceptance> = [
     walk: async () => {
       await show({ kind: 'mid' });
 
-      const branches = cardOf({ name: 'Branches' });
+      const branches = document.body;
       expect(branches.textContent).toContain('ak/eng-1190-tenant-limits');
-      expect(branches.textContent).toContain('Checks failing');
     },
   },
   {

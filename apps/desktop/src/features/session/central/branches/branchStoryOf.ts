@@ -137,7 +137,7 @@ const readyBlockerOf = ({ request, isChecksSkipped, isReviewSkipped }: ReadyPara
 const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
   const request = fact.request;
   if (request === null) {
-    return { at: 0, branchState: 'unread', word: 'Branch', blocker: '' };
+    return { at: 0, branchState: 'unread', word: 'No PR', blocker: '' };
   }
   if (request.state === 'merged') {
     return {
@@ -247,7 +247,7 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
 const localStandingOf = ({ fact }: FactParams): Standing => {
   const status = fact.status;
   if (status === null) {
-    return { at: 0, branchState: 'unread', word: 'Branch', blocker: '' };
+    return { at: 0, branchState: 'unread', word: 'No PR', blocker: '' };
   }
   const ahead = status.ahead ?? 0;
   const push = status.push;
@@ -298,7 +298,7 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
   return {
     at: 2,
     branchState: 'no-request',
-    word: 'No pull request',
+    word: 'No PR',
     blocker: `${countNoun({ count: ahead, one: 'commit', many: 'commits' })} pushed`,
   };
 };

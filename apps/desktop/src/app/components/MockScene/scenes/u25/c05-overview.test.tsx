@@ -81,7 +81,10 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
 };
 
 const nextRows = (): ReadonlyArray<HTMLElement> => {
-  const next = screen.getByRole('region', { name: 'Next' });
+  const next = present({
+    value: document.querySelector<HTMLElement>('[data-overview-card="branches"]'),
+    what: 'Branches card',
+  });
   for (const fold of next.querySelectorAll<HTMLElement>('button[aria-expanded="false"]')) {
     fireEvent.click(fold);
   }

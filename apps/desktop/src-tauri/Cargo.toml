@@ -27,6 +27,7 @@ secret-store-windows = ["keyring/windows-native"]
 
 [build-dependencies]
 tauri-build = { version = "2.7.0", features = [] }
+serde_json = "1.0"
 
 [dependencies]
 serde_json = "1.0"

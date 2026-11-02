@@ -62,13 +62,14 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **Needs you**
 
-- It holds the **Decide** and **Fix** rows of Next: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations.
-- Its header counts them. The rows are flat, like the rows of **Needs you** under it: the icon sits in the same column and the rows are spaced the same.
+- It is the one card for everything that waits for you. First come runs and agents that paused for an answer, oldest first.
+- Then come the **Decide** and **Fix** rows: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations.
+- Its header counts them all. With nothing waiting it shrinks to one line: **Nothing needs you**.
 - With both kinds present, each kind has a quiet label with its count (**Decide 2**, **Fix 1**), no bar and no chevron. With one kind, the rows sit right under the header with no label.
 
 **Running**
 
-- It groups the agents and runs by what you do next. **Needs you** paused for an answer (the **Needs you** card above holds the asks), **Running** works or decides, **Stopped** failed or was stopped by you. A group with nothing in it is not drawn, and a waiting or stopped item never sits under **Running**. Inside a group the items keep the order they started in.
+- It groups the agents and runs in two parts. **Running** works or decides, **Stopped** failed or was stopped by you, and keeps its **Continue**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
 - Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to. It is blank when the run writes nowhere. It shows the project only across two projects.
 - The row then shows its status as a short muted word next to one colored dot, or the run's own next move. Its time sits in a right column that lines up for child agents too. The cause, such as "Origin moved" or "Waits for your go on step 2", sits on a second muted line only for a row that waits or stopped.
@@ -97,7 +98,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **New since you last looked**
 
-- It sits above everything else while something is unread, and lists each unread item, newest first, so you do not need the full log to see what is new. Each row reads like a row of **Done**.
+- It sits right after **Needs you** while something is unread, as one row with the count and the latest item. **Show** opens it in place and lists the three newest unread items. You do not need the full log to see what is new. Each row reads like a row of **Done**.
 - A click opens the item and marks it seen. Showing it does not.
 - **Mark all seen** clears them all.
 - The blue dot on a session in the sidebar says what is new when you hover it, as in "1 new: Step 1 result of the Harborline ledger". It counts the same items as this card.
@@ -115,7 +116,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - A queued pull request shows **In merge queue** on the last step. Every stage names itself on hover.
 - Rows go by whose move it is. Blocked comes first: checks failing, conflicts, changes requested, remote branch gone.
 - Then comes ready to merge, then your move (not pushed, no pull request, draft, nothing committed), then a branch an agent works on. Waiting on others comes last: in review, checks running, in merge queue.
-- Two branches of one rank keep the order they were first seen. A Next card never moves a row.
+- Two branches of one rank keep the order they were first seen. A next step never moves a row. A branch with no pull request reads **No PR**, and one branch alone draws no card.
 - A merged or closed branch leaves the list for the **Done** line.
 - With many branches the list shows eight, and one line counts the rest.
 - The rows hold no button. The verbs stay in **Next**. A right click on a row opens the same branch menu as the rail.
@@ -257,9 +258,10 @@ This part is for contributors and agents who change the feature.
 
 - Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**. `OverviewCard`, `NewSinceCard`, `LiveSection` and the Branches list draw their label with `SectionLabel`, level 2, and `CentralColumn` spaces the cards with `PANE_RHYTHM.groups`.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
-- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Needs you**, **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
+- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause, and `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
 - `useActionCardActions` offers See result for an open question whose run or agent finished.
+- Needs you card: `waitingGroupsOf` takes the live groups `liveSectionIdOf` calls waiting, and `NeedsYouCard` draws them above the Decide and Fix rows. `liveSectionsOf` keeps only Running and Stopped.
 - Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
 - Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.

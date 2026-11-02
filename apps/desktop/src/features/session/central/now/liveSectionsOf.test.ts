@@ -4,6 +4,7 @@ import { brandId, type IsoDateTime } from '@goodboy/types';
 import { FIXTURE_NOW } from '../../../auto/testing/autoViewFixtures';
 import { liveGroupsOf } from './liveGroupsOf';
 import { liveSectionsOf } from './liveSectionsOf';
+import { waitingGroupsOf } from './waitingGroupsOf';
 import { aNowAgent, aNowRun, aNowStepAgent, aNowWorkflow, nowModelOf } from './testing/nowModelOf';
 
 type StatusParams = {
@@ -20,7 +21,7 @@ const sectionsOf = ({ statuses }: StatusParams) => {
 };
 
 describe('liveSectionsOf', () => {
-  it('groups by what you do next: Needs you, then Running, then Stopped', () => {
+  it('groups what runs, then what stopped, and leaves waiting work to the Needs you card', () => {
     expect(
       sectionsOf({
         statuses: [
@@ -30,7 +31,6 @@ describe('liveSectionsOf', () => {
         ],
       }),
     ).toEqual([
-      ['needs-you', ['Check the docs']],
       ['running', ['Rebuild the index']],
       ['stopped', ['Retry the import']],
     ]);
@@ -44,7 +44,7 @@ describe('liveSectionsOf', () => {
       ],
     });
 
-    expect(sections.map(([id]) => id)).toEqual(['needs-you', 'stopped']);
+    expect(sections.map(([id]) => id)).toEqual(['stopped']);
   });
 
   it('leaves out a section with nothing in it', () => {
@@ -53,19 +53,18 @@ describe('liveSectionsOf', () => {
     ]);
   });
 
-  it('names the waiting section Needs you, the same word as the card above the list', () => {
-    const [section] = liveSectionsOf({
-      groups: liveGroupsOf({
-        model: nowModelOf({
-          agents: [aNowAgent({ key: 'docs', name: 'Check the docs', status: 'blocked' })],
-        }),
-        agents: [aNowAgent({ key: 'docs', name: 'Check the docs', status: 'blocked' })],
-        now: FIXTURE_NOW,
-      }),
-    });
+  it('puts a live group in exactly one place: waiting work only in waitingGroupsOf', () => {
+    const agents = [
+      aNowAgent({ key: 'docs', name: 'Check the docs', status: 'blocked' }),
+      aNowAgent({ key: 'index', name: 'Rebuild the index', status: 'running' }),
+    ];
+    const groups = liveGroupsOf({ model: nowModelOf({ agents }), agents, now: FIXTURE_NOW });
+    const inSections = liveSectionsOf({ groups }).flatMap((section) =>
+      section.groups.map((group) => group.title),
+    );
 
-    expect(section?.id).toBe('needs-you');
-    expect(section?.title).toBe('Needs you');
+    expect(waitingGroupsOf({ groups }).map((group) => group.title)).toEqual(['Check the docs']);
+    expect(inSections).toEqual(['Rebuild the index']);
   });
 
   it('draws nothing for no work', () => {

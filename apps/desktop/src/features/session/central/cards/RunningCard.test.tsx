@@ -226,10 +226,12 @@ describe('a run row in the Running card', () => {
     expect(again.hasAttribute('disabled')).toBe(false);
   });
 
-  it('leaves the gate of a running run out of Needs you', async () => {
+  it('puts the gate of a run in the one Needs you card', async () => {
     await show();
 
-    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    within(screen.getByRole('region', { name: 'Needs you' })).getByRole('region', {
+      name: `Workflow: ${RUN_TITLE}`,
+    });
     expect(screen.getAllByRole('button', { name: 'Start step 2' })).toHaveLength(1);
   });
 });

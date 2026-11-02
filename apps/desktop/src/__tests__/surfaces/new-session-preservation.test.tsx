@@ -131,8 +131,9 @@ describe('New session draft and the New forms', () => {
     await mountScene({ name: 'c05-overview-blank' });
 
     const hasNext =
-      document.querySelector('[data-overview-card="needs-you"], [data-overview-card="next"]') !==
-      null;
+      document.querySelector(
+        '[data-overview-card="needs-you"], [data-overview-card="branches"]',
+      ) !== null;
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
       hasNext ? 'secondary' : 'primary',
     );

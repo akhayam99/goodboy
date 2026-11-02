@@ -57,7 +57,7 @@ describe('next follow-ups scenes', () => {
     expect(screen.getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
     expect(within(needsYou()).getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
     expect(
-      within(screen.getByRole('region', { name: 'Running' })).getAllByRole('button', {
+      screen.getAllByRole('button', {
         name: 'Open CI fix · payments-api / test · #318',
       }).length,
     ).toBeGreaterThan(0);

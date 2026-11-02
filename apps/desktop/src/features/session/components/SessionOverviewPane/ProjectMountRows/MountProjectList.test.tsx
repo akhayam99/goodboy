@@ -133,7 +133,7 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     screen.getByText('Reading the branches already in the repository…');
-    expect(screen.getByRole('button', { name: 'Add folder' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Add project' }).hasAttribute('disabled')).toBe(true);
     cleanup();
 
     h.preflight.status = 'ready';
