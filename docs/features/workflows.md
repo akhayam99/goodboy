@@ -18,8 +18,6 @@ A run started from a preset in **Start a run** follows that preset as a plan, an
 
 A preset is a ready sequence of steps, each with its role and model, kept in the Workflows studio. A run started from it follows it as a plan, as above; a run you like can be saved as a preset from its page with **Save as preset**.
 
-A preset is not a skill. A skill is a markdown file next to your code that you call by name with `/skill-name`, for a way of working you repeat; a preset is a run you want again, with its steps in order. Where skills live, and the older `.kay` folder Goodboy still reads, is in [concepts.md](../concepts.md#skills).
-
 ### Built-in workflows
 
 Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you delete stays deleted until you press **Restore built-in workflows**, which keeps your existing workflows as they are.

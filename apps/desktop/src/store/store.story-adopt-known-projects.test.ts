@@ -32,9 +32,6 @@ vi.mock('../features/providers/routing', async () =>
 vi.mock('../features/budget/budget', async () =>
   (await import('./storyHarness')).budgetModuleMock(),
 );
-vi.mock('../features/skills/skills', async () =>
-  (await import('./storyHarness')).skillsModuleMock(),
-);
 vi.mock('../features/workflows/workflows', async () =>
   (await import('./storyHarness')).workflowsModuleMock(),
 );
@@ -108,8 +105,6 @@ beforeAll(async () => {
   useAppStore = await importStore();
   dbMock = await import('@goodboy/db');
   repoMock = await import('../shared/lib/repo');
-  const skillsMock = await import('../features/skills/skills');
-  vi.mocked(skillsMock.invokeSkillRescan).mockResolvedValue([] as never);
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {

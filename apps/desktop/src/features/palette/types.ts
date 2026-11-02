@@ -33,8 +33,7 @@ export type PaletteScope =
   | PullRequestActionTarget
   | HeldScope;
 
-type PaletteGroup =
-  'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';
+type PaletteGroup = 'agent' | 'session' | 'workspace' | 'workflow' | 'script' | 'action' | 'help';
 
 export type PaletteKind =
   | 'verb'

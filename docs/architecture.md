@@ -392,9 +392,9 @@ drop as a window event, never as a webview event) and removes a path the first t
 was never dropped, or was dropped once and already read, is refused with
 `not_dropped`.
 
-No `skill_*` command is registered or listed for a window: the script runner
-stays off until the Skills code is deleted, and `check-tauri-commands.mjs`
-fails if one comes back. `session_dir_remove` takes the session id and removes a
+No `skill_*` command exists: the Skills feature and its script runner are
+deleted, and `check-tauri-commands.mjs` fails if one comes back.
+`session_dir_remove` takes the session id and removes a
 directory only when it is a direct child of a `sessions` folder (or a mount
 inside one) whose `.goodboy` marker names that session, and never through a
 symlink. `worktree_scratch_remove` takes only a direct child of the temp folder
@@ -949,7 +949,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                                                                                                                                                                                                                                          |
 | `sessions`                    | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                                                                                                                                                                                                                                            |
-| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                                                                                                                                                                                                                                    |
+| `skills`                      | ts     | No code writes it. The Skills feature is gone; the backup import and a project move still touch it, and the rows stay for a downgrade.                                                                                                                                                                                                 |
 | `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                                                                                                                                                                                                                                        |
 | `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                                          |
 | `telemetry_records`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
@@ -1230,12 +1230,9 @@ workspace is gone, and the storage scan only ever looks inside
 `<repo>/.goodboy/worktrees/` of those roots. Sizes count allocated blocks,
 the way Finder's "size on disk" does.
 
-Two things live next to your code instead of in `~/.goodboy`. A folder
-project keeps the session folders of sessions made before 0.27.3 in
-`<project-root>/sessions/`; newer sessions write in the folder itself and add
-nothing to it. Skills live
-in `<project-root>/.goodboy/skills/`, the older `<project-root>/.kay/skills/`
-(read until 0.31.0) or `<project-root>/.claude/skills/`.
+A folder project keeps the session folders of sessions made before 0.27.3 in
+`<project-root>/sessions/` next to your code instead of in `~/.goodboy`; newer
+sessions write in the folder itself and add nothing to it.
 
 ### How mounts are saved and recovered
 

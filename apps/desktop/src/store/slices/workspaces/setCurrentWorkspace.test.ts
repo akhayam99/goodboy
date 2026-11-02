@@ -56,9 +56,6 @@ vi.mock('../../../features/budget/budget', () => ({
   invokeBudgetAlertsList: vi.fn(async () => []),
   invokeBudgetRuleList: vi.fn(async () => []),
 }));
-vi.mock('../../../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-}));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeStepDefList: vi.fn(async () => []),
   invokeWorkflowList: vi.fn(async () => []),
@@ -76,7 +73,6 @@ vi.mock('../project-mounts/verifyAvailableWorktrees', () => ({
 }));
 vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 
-import { invokeSkillList } from '../../../features/skills/skills';
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { listSessionsForWorkspace } from '@goodboy/db';
 import { reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
@@ -238,17 +234,6 @@ describe('setCurrentWorkspace mount hydration', () => {
     expect(store.state.sessionActiveMount[UNSELECTED_SESSION_ID]).toBeUndefined();
     expect(store.state.sessionActiveMount[RESTORED_SESSION_ID]).toBe(RESTORED_MOUNT_ID);
     expect(store.state.sessionActiveMount[REPAIRED_SESSION_ID]).toBe(REPAIRED_MOUNT_ID);
-  });
-});
-
-describe('setCurrentWorkspace skills', () => {
-  it('scans no skills from disk while the skills feature is off', async () => {
-    vi.mocked(invokeSkillList).mockClear();
-    const store = harness();
-
-    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
-
-    expect(invokeSkillList).not.toHaveBeenCalled();
   });
 });
 

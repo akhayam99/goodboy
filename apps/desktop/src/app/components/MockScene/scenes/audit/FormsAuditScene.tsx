@@ -1,10 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { PageColumn } from '@goodboy/ui';
-import type { ProjectId, SessionBudget, Skill, WorkflowRun } from '@goodboy/types';
+import type { ProjectId, SessionBudget, WorkflowRun } from '@goodboy/types';
 import { CreatePrPanel } from '../../../../../features/integrations/github/components/PullRequest/CreatePrPanel';
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { NewWorkspaceForm } from '../../../../../shared/components/NewWorkspaceForm';
-import { SkillsPanel } from '../../../../../features/skills/components/SkillsPanel';
 import { StartRun } from '../../../../../features/session/components/StartRun/StartRun';
 import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
 import { SpendLimitEditor } from '../../../../../features/budget/components/SessionSpendPopover/SpendLimitEditor';
@@ -27,7 +26,6 @@ const FORM_KEYS = [
   'pr',
   'mr',
   'link',
-  'skills',
   'agent',
   'spend-run',
   'spend-session',
@@ -50,21 +48,6 @@ const noop = () => undefined;
 
 const LEDGER_ID = 'mock-forms-project-ledger-core' as ProjectId;
 const RELAY_ID = 'mock-forms-project-notify-relay' as ProjectId;
-
-const SKILL = {
-  id: 'mock-forms-skill-replay',
-  workspaceId: WORKSPACE_ID,
-  name: 'replay-dead-letters',
-  description: 'Replays the dead letter queue of notify-relay',
-  filePath: '~/code/harborline/.claude/skills/replay-dead-letters.md',
-  body: 'Read the dead letter queue, replay each message once, report what failed.',
-  frontmatter: {
-    name: 'replay-dead-letters',
-    description: 'Replays the dead letter queue of notify-relay',
-  },
-  createdAt: NOW,
-  updatedAt: NOW,
-} as unknown as Skill;
 
 const RUN = {
   id: 'mock-forms-run-settlement',
@@ -110,12 +93,6 @@ const renderForm = ({ form }: { form: FormKey }): ReactNode => {
       return (
         <PageColumn className="flex flex-col gap-6 py-8">
           <NewWorkspaceForm mode="new" onCreated={noop} />
-        </PageColumn>
-      );
-    case 'skills':
-      return (
-        <PageColumn className="flex flex-col gap-6 py-8">
-          <SkillsPanel workspaceId={WORKSPACE_ID} />
         </PageColumn>
       );
     case 'agent':
@@ -218,8 +195,6 @@ export const FormsAuditScene = () => {
     });
     useAppStore.setState({
       projects: PROJECTS,
-      skills: { [WORKSPACE_ID]: [SKILL] },
-      loadSkills: async () => undefined,
       projectRelocationWorkspaceId: WORKSPACE_ID,
       projectRelocationPhase: 'preview',
       projectRelocationError: null,

@@ -83,8 +83,6 @@ mod secrets;
 mod sentry;
 mod session_dir;
 mod settings_overrides;
-#[allow(dead_code)]
-mod skills;
 mod slack;
 mod step_end_log;
 mod storage;

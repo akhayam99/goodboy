@@ -27,7 +27,6 @@ import type {
   ProjectSentryLink,
   PullRequestState,
   SessionId,
-  Skill,
   Workflow,
   Workspace,
   WorkspaceId,
@@ -294,10 +293,6 @@ export const storySpies = {
     }),
   ),
   invokeSessionBudgetClear: vi.fn(async () => undefined),
-  invokeSkillList: vi.fn(async () => [] as ReadonlyArray<Skill>),
-  invokeSkillUpsert: vi.fn(async () => undefined),
-  invokeSkillDelete: vi.fn(async () => undefined),
-  invokeSkillRescan: vi.fn(async () => [] as ReadonlyArray<Skill>),
   invokeWorkflowList: vi.fn(async () => [] as ReadonlyArray<Workflow>),
   invokeWorkflowUpsert: vi.fn(
     async (_args: Parameters<WorkflowsModule['invokeWorkflowUpsert']>[0]) =>

@@ -32,7 +32,6 @@ import { createSlackDraftsSlice } from './slices/slack-drafts';
 import { createBudgetSlice } from './slices/budget';
 import { createMonitoringSlice } from './slices/monitoring';
 import { monitoringInitialState } from './slices/monitoring/state';
-import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createFileVersionsSlice } from './slices/file-versions';
@@ -195,7 +194,6 @@ import { artifactDraftsInitialState } from './slices/artifactDrafts/state';
 import { permissionsInitialState } from './slices/permissions/state';
 import { attachmentsInitialState } from './slices/attachments/state';
 import { storageInitialState } from './slices/storage/state';
-import { skillsInitialState } from './slices/skills/state';
 import { githubInitialState } from './slices/github/state';
 import { notificationsInitialState } from './slices/notifications/state';
 import { taskArrivalsInitialState } from './slices/taskArrivals/state';
@@ -298,7 +296,6 @@ export type AppStore = AppState &
   ReturnType<typeof createPlansSlice> &
   ReturnType<typeof createOpenQuestionsSlice> &
   ReturnType<typeof createArtifactDraftsSlice> &
-  ReturnType<typeof createSkillsSlice> &
   ReturnType<typeof createBudgetSlice> &
   ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
@@ -367,7 +364,6 @@ const initialState: AppState = {
   ...slotsInitialState,
   ...summariesInitialState,
   ...storageInitialState,
-  ...skillsInitialState,
   ...workflowsInitialState,
   ...agentsInitialState,
   ...overridesInitialState,
@@ -430,7 +426,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSlackDraftsSlice({ set, get }),
   ...createBudgetSlice({ set, get }),
   ...createMonitoringSlice({ set, get }),
-  ...createSkillsSlice({ set, get }),
   ...createStorageSlice({ set, get }),
   ...createDiffCommentsSlice({ set, get }),
   ...createFileVersionsSlice({ set, get }),

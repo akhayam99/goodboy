@@ -34,7 +34,7 @@ runs and artifacts. It only touches a project when the work needs it.
 
 ```text
 workspace
-├── profile, integration bindings, workflows, skills
+├── profile, integration bindings, workflows
 ├── project (repo or folder)
 │   └── scripts, settings override, binding override
 └── session (one goal)
@@ -1459,7 +1459,7 @@ Settings can be set at four levels. The level closest to the work wins:
   not exist, with a named error and no write, and it returns the stored row,
   which the settings screens show. Saves of one workspace run in order; when a
   save fails, only the keys it changed go back to the last saved value.
-- **Workflows, saved steps and skills** belong to the workspace. Built-in
+- **Workflows and saved steps** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
   based on.
@@ -1787,33 +1787,6 @@ Limits steer where work goes. They never lock you out. When every provider is
 over its limit, the message box tells you. You can still send the turn on the
 provider you picked.
 
-## Skills
-
-Skills live next to your code. They are markdown files with frontmatter, and
-Goodboy finds them in every project of the workspace, in these places, in this
-order:
-
-- `<project-root>/.goodboy/skills/*.md`, where a skill you write in Goodboy is
-  saved
-- `<project-root>/.kay/skills/*.md`, the folder older builds wrote, read until
-  0.31.0 (see [versioning.md](versioning.md) → State outside SQLite); when both
-  folders hold a skill of one name, the `.goodboy` one wins
-- `<project-root>/.claude/skills/<name>/SKILL.md`
-
-Each workspace has its own list of skills. There is no global list. Call one
-from the chat with `/skill-name`. A skill runs on any connected provider, not
-only the one whose folder it came from.
-
-Use a skill for a way of working you repeat in many sessions, such as how to
-cut a release or review a migration: it is text you call by name. Use a preset
-for a run you want again, with its steps in order ([workflows.md](features/workflows.md)).
-
-Scripts that come with a skill run only from `<project-root>/.goodboy/skills`
-or, until 0.31.0, `<project-root>/.kay/skills`. Skills found under
-`.claude/skills` are prompts only, so a cloned repository cannot make its
-scripts run when you use a skill. A project that only has `.kay/skills` keeps
-working with no move; Goodboy never renames the folder for you.
-
 ## Editor
 
 When you want to type code yourself, Goodboy opens your editor on the right
@@ -2117,7 +2090,6 @@ An agent materializes a project through the query bridge like this:
 - `packages/types/src/artifact.ts`: artifact kinds, statuses and metadata
 - `packages/core/src/context/marker-parsing.ts`: reads plan markers
 - `packages/types/src/provider-registry.ts`: `ProviderId`
-- `apps/desktop/src-tauri/src/skills.rs`: finds skills
 - `packages/core/src/profile/profileAccess.ts`: which profile fields each
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb

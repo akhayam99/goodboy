@@ -24,8 +24,8 @@ read; a phase that can end the turn early (blocked over budget, lease denied,
 cancelled before the spawn) returns `turnDone` with the result, the others
 return `turnReady` with their values. Side effects run in the order below.
 
-1. `prepareTurn`: the mount and working directory, the agent, the slash skill,
-   the attachments and the workflow step the agent belongs to.
+1. `prepareTurn`: the mount and working directory, the agent, the
+   attachments and the workflow step the agent belongs to.
 2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
    the disconnected-provider gate.
 3. `leaseTurnWriter`: the captured-mount check, the resolver's worktree writer
@@ -1371,10 +1371,7 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
   sits above that, since it is a warning rather than composer content.
-- `resolveSkillPrompt` returns the content unresolved when
-  `WORKSPACE_FEATURES.skills` is off, so a message starting with `/` sends as
-  plain text instead of failing with "unknown skill" while skills are
-  disabled.
+- A message starting with `/` sends as plain text; no slash command is resolved.
 - Sending: the text box is a `PromptField` of kind `message` in its `bare`
   variant (the shell, tray and toolbar stay `ChatInput`'s own): `Enter`
   sends, `Shift+Enter` adds a line, `⌘Enter` sends now while a turn runs.

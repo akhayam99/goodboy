@@ -29,7 +29,6 @@ export type {
   SessionEventId,
   SecurityFindingId,
   SessionId,
-  SkillId,
   StepDefId,
   StepId,
   TelemetryRecordId,
@@ -297,7 +296,6 @@ export type {
 } from './provider-commands';
 export type { ProviderConnectCapability, ProviderConnectTier } from './provider-connect';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
-export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
   BudgetPeriod,

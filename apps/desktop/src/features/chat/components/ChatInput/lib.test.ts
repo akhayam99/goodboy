@@ -60,8 +60,7 @@ describe('CHAT_PREFIX_RE', () => {
     expect(CHAT_PREFIX_RE.test('@agent')).toBe(true);
   });
 
-  it('does not recognise / as a live prefix while WORKSPACE_FEATURES.skills is off', () => {
-    expect(WORKSPACE_FEATURES.skills).toBe(false);
+  it('does not recognise / as a live prefix', () => {
     expect(CHAT_PREFIX_RE.test('/cmd')).toBe(false);
   });
 

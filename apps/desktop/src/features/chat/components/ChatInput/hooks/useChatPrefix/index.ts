@@ -1,13 +1,12 @@
-import { useCallback, useMemo, useState, type RefObject } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, Session, Skill, Workflow } from '@goodboy/types';
+import type { Agent, Session, Workflow } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../../../store';
 import type { ShowToast } from '../../../../../../shared/components/Toast';
 import { parseQuery } from '../../../../../quick-actions/grammar';
 import {
   buildAgentActions,
   buildScriptActions,
-  buildSkillActions,
   buildWorkflowActions,
   type ScriptPick,
 } from '../../../../../quick-actions/registry';
@@ -22,7 +21,6 @@ const NO_RUNS: Readonly<Record<string, { readonly status: string }>> = {};
 const QUICK_EMPTY_HINT: Readonly<Record<string, string>> = {
   '~': 'no workflows yet. create one in workspace settings',
   '@': 'no agents in this session yet',
-  '/': 'no skills yet. create one in settings',
 };
 
 type Params = {
@@ -30,13 +28,9 @@ type Params = {
   readonly value: string;
   readonly setValue: (next: string) => void;
   readonly showToast: ShowToast;
-  readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 
-export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef }: Params) => {
-  const workspaceSkills = useAppStore(
-    useShallow((s) => s.skills[session.workspaceId] ?? EMPTY_ARRAY),
-  );
+export const useChatPrefix = ({ session, value, setValue, showToast }: Params) => {
   const runScript = useAppStore((s) => s.runScript);
   const runDiscoveredScript = useAppStore((s) => s.runDiscoveredScript);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -100,15 +94,6 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     [openDrawer, runDiscoveredScript, runScript, setValue, session.id],
   );
 
-  const onPickSkill = useCallback(
-    (skill: Skill) => {
-      setValue(`/${skill.name} `);
-      setShowPopover(false);
-      wrapperRef.current?.querySelector('textarea')?.focus();
-    },
-    [setValue, wrapperRef],
-  );
-
   const onPickWorkflow = useCallback(
     async (workflow: Workflow) => {
       setValue('');
@@ -167,9 +152,6 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
         () => void onSpawnAgent(),
       );
     }
-    if (symbol === '/') {
-      return buildSkillActions(workspaceSkills, onPickSkill);
-    }
     return null;
   }, [
     parsed.prefix,
@@ -178,12 +160,10 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     workspaceWorkflows,
     sessionAgents,
     sessionAgentKindOverrides,
-    workspaceSkills,
     onPickScript,
     onPickWorkflow,
     onSwitchAgent,
     onSpawnAgent,
-    onPickSkill,
   ]);
 
   const filteredQuickItems = useMemo<ReadonlyArray<QuickActionItem>>(() => {

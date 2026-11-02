@@ -25,7 +25,6 @@
     "features/settings/components/SettingsStudio/WorkspaceProfileSection.tsx": 1,
     "features/settings/components/SettingsStudio/WorkspaceProjectsSection.tsx": 1,
     "features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.tsx": 2,
-    "features/skills/components/SkillsPanel/index.tsx": 1,
     "features/storage/components/StoragePage/WorktreeSection.tsx": 1,
     "features/workflows/closeWorkflowCopy.ts": 1,
     "features/workflows/components/WorkflowStudio/SavedStepsList/index.tsx": 1,

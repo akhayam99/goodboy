@@ -188,7 +188,6 @@
     "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultsGrid.tsx": 1,
     "apps/desktop/src/features/settings/workspaceSettings/fields.ts": 1,
-    "apps/desktop/src/features/skills/components/SkillsPanel/index.tsx": 3,
     "apps/desktop/src/features/storage/components/BranchesSection/BranchBulkBar.tsx": 2,
     "apps/desktop/src/features/storage/components/BranchesSection/index.tsx": 2,
     "apps/desktop/src/features/suggestions/components/NextStepSlot/NextStepRow.tsx": 1,

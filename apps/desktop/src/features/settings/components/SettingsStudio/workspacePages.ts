@@ -1,5 +1,4 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { NAMES } from '../../../../shared/utils/names';
 import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
@@ -10,8 +9,7 @@ export type WorkspacePage =
   | 'general'
   | 'branches'
   | typeof REVIEW_REPLIES_SECTION_ID
-  | typeof PERMISSIONS_SECTION_ID
-  | 'skills';
+  | typeof PERMISSIONS_SECTION_ID;
 
 const TRACK_WITH_GIT_SECTION_ID = 'track-with-git';
 
@@ -54,16 +52,9 @@ const ALL_WORKSPACE_PAGES = [
     label: 'Permissions',
     concept: 'approval',
   },
-  {
-    id: 'skills',
-    label: 'Skills',
-    concept: 'skills',
-  },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
 
-export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_PAGES.filter(
-  (page) => page.id !== 'skills' || WORKSPACE_FEATURES.skills,
-);
+export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_PAGES;
 
 type SectionParams = {
   readonly section?: string;
