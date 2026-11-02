@@ -140,8 +140,8 @@ const BASE_STATE: MockStore = {
   sessionActiveProject: {},
   sessionProjectPrs: { [SESSION_ID]: {} },
   sessionGithub: githubState(null),
-  sessionGitlabMr: {
-    [SESSION_ID]: { mr: mergeRequest, fetchedAt: NOW, loading: false, error: null },
+  sessionRequests: {
+    [SESSION_ID]: { kind: 'gitlab', mr: mergeRequest, fetchedAt: NOW, loading: false, error: null },
   },
   workspaces: [{ id: WORKSPACE_ID, rootPath: '/repo' }],
   workspaceIntegrations: {
@@ -190,7 +190,9 @@ describe('useReviewDiff', () => {
       ...BASE_STATE,
       sessionExternalTasks: { [SESSION_ID]: [] },
       sessionGithub: githubState(pullRequest),
-      sessionGitlabMr: { [SESSION_ID]: { mr: null, fetchedAt: NOW, loading: false, error: null } },
+      sessionRequests: {
+        [SESSION_ID]: { kind: 'gitlab', mr: null, fetchedAt: NOW, loading: false, error: null },
+      },
     };
 
     const { result } = renderHook(() => useReviewDiff({ session }));
@@ -210,7 +212,9 @@ describe('useReviewDiff', () => {
     state = {
       ...BASE_STATE,
       sessionExternalTasks: { [SESSION_ID]: [] },
-      sessionGitlabMr: { [SESSION_ID]: { mr: null, fetchedAt: NOW, loading: false, error: null } },
+      sessionRequests: {
+        [SESSION_ID]: { kind: 'gitlab', mr: null, fetchedAt: NOW, loading: false, error: null },
+      },
     };
 
     const { result } = renderHook(() => useReviewDiff({ session }));
@@ -250,7 +254,9 @@ describe('useReviewDiff', () => {
     state = {
       ...BASE_STATE,
       sessionExternalTasks: {},
-      sessionGitlabMr: { [SESSION_ID]: { mr: null, fetchedAt: NOW, loading: false, error: null } },
+      sessionRequests: {
+        [SESSION_ID]: { kind: 'gitlab', mr: null, fetchedAt: NOW, loading: false, error: null },
+      },
     };
 
     const { result } = renderHook(() => useReviewDiff({ session }));

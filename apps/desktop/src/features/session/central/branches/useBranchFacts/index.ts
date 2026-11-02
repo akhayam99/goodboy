@@ -20,7 +20,7 @@ type Result = {
 
 export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
   const mountGroups = useMountRows({ sessionId });
-  const { mountGithub, mountGitlabMr, mountBitbucketPr } = useSessionMountHosts({ sessionId });
+  const { mountGithub, mountRequests } = useSessionMountHosts({ sessionId });
   const rows = useMemo(() => mountGroups.flatMap((group) => group.rows), [mountGroups]);
   const finishedRows = useMemo(
     () => mountGroups.flatMap((group) => group.finishedRows),
@@ -45,10 +45,7 @@ export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
     for (const row of [...rows, ...finishedRows]) {
       fetchedAtByMountId.set(
         row.mountId,
-        mountGithub?.[row.mountId]?.fetchedAt ??
-          mountGitlabMr?.[row.mountId]?.fetchedAt ??
-          mountBitbucketPr?.[row.mountId]?.fetchedAt ??
-          null,
+        mountGithub?.[row.mountId]?.fetchedAt ?? mountRequests?.[row.mountId]?.fetchedAt ?? null,
       );
       const status = row.worktreePath === null ? undefined : statuses.get(row.worktreePath);
       behindByMountId.set(row.mountId, mainBehindOf({ status, isDone: row.isFinished }));
@@ -78,7 +75,7 @@ export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
       statusByMountId,
       now: Date.now(),
     });
-  }, [finishedRows, groups, mountBitbucketPr, mountGithub, mountGitlabMr, rows, statuses]);
+  }, [finishedRows, groups, mountGithub, mountRequests, rows, statuses]);
   const hasMergedRequest = useMemo(
     () => facts.some((fact) => fact.request?.state === 'merged'),
     [facts],

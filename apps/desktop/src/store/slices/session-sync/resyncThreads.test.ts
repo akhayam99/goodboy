@@ -17,7 +17,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
 
 vi.mock('../../../features/integrations/gitlab/client', async (importOriginal) =>
   (await import('../../storyHarness')).gitlabThreadsClientModuleMock({ importOriginal }),
@@ -150,6 +150,7 @@ const mrOf = ({ iid }: MrParams): GitlabMergeRequest => ({
 const gitlabEntry = ({ iid }: MrParams): MountGitlabMrState => {
   const mr = mrOf({ iid });
   return {
+    kind: 'gitlab',
     mountId: RELAY_MOUNT,
     projectId: RELAY.id,
     revision: 1,
@@ -203,7 +204,7 @@ beforeEach(async () => {
     sessionActiveMount: { [SESSION.id]: RELAY_MOUNT },
     sessionActiveProject: { [SESSION.id]: RELAY.id },
     workspaceIntegrations: { [WORKSPACE.id]: [GITLAB] },
-    mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ iid: 7 }) },
+    mountRequests: { [RELAY_MOUNT]: gitlabEntry({ iid: 7 }) },
     reviewSourceThreads: {},
   });
 });
@@ -224,7 +225,7 @@ describe('resyncSession review threads through the real sweep', () => {
     storySpies.gitlabListMrDiscussions.mockResolvedValue([]);
     stubGitlab({ iid: 8 });
     store.setState({
-      mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ iid: 8 }) },
+      mountRequests: { [RELAY_MOUNT]: gitlabEntry({ iid: 8 }) },
       reviewSourceThreads: {
         [SESSION.id]: {
           [`${MR_URL}/7`]: {

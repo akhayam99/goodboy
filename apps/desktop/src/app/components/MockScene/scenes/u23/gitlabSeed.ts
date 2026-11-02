@@ -18,7 +18,7 @@ import type {
   GitlabMrCommit,
 } from '../../../../../features/integrations/gitlab/client';
 import { useAppStore } from '../../../../../store';
-import type { MountGitlabMrState } from '../../../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../../../store/slices/mount-request/state';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { NOW_ISO, SESSION_ID, WORKSPACE_ID, isoAgo, seedResolveScene } from '../resolveSeed';
 import { prPageHandlers } from './prPageSeed';
@@ -294,6 +294,7 @@ const projectOf = (): Project => {
 };
 
 const mountEntryOf = ({ seed }: { readonly seed: Seed }): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -341,9 +342,10 @@ export const applyGitlabSeed = async ({
     branchTab: { [SESSION_ID]: variant === 'jobs' ? 'checks' : 'pr' },
     sessionGithub: {},
     mountGithub: {},
-    mountGitlabMr: { [MOUNT_ID]: entry },
-    sessionGitlabMr: {
+    mountRequests: { [MOUNT_ID]: entry },
+    sessionRequests: {
       [SESSION_ID]: {
+        kind: 'gitlab',
         mr: seed.mr,
         approvals: seed.approvals,
         fetchedAt: NOW_ISO as IsoDateTime,

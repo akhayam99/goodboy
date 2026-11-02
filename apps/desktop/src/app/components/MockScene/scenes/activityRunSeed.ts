@@ -1495,8 +1495,7 @@ export const seedActivityRunScene = () => {
       [BACKFILL_MOUNT.mountId]: mountGithubEntry({ mount: BACKFILL_MOUNT, pr: BACKFILL_PR }),
       [CONSOLE_MOUNT.mountId]: mountGithubEntry({ mount: CONSOLE_MOUNT, pr: CONSOLE_PR }),
     },
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    mountRequests: {},
     sessionProjectPrs: {
       [SESSION_ID]: {
         [PAYMENTS_ID]: [PAYMENTS_PR, BACKFILL_PR],

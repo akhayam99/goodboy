@@ -130,8 +130,7 @@ const makeStore = () =>
     agentKindOverride: { [RESOLVER]: 'resolver' },
     sessionResolveAttempts: {},
     sessionGithub: {},
-    sessionGitlabMr: {},
-    sessionBitbucketPr: {},
+    sessionRequests: {},
     setCurrentSession: async (id: SessionId | null) => {
       set((state) => ({
         currentSessionId: id,
@@ -414,8 +413,9 @@ describe('navigation slice', () => {
   it('lands the pull request lens on the Branch page for a GitLab merge request', () => {
     const store = makeStore();
     store.setState({
-      sessionGitlabMr: {
+      sessionRequests: {
         [S1]: {
+          kind: 'gitlab',
           mr: {
             id: 57,
             iid: 57,

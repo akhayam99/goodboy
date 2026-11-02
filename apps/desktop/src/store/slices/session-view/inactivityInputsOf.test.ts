@@ -13,7 +13,7 @@ import type {
 import { brandId } from '@goodboy/types';
 import type { MountGithubState, SessionGithubState } from '../../types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
-import type { MountGitlabMrState, SessionGitlabMrState } from '../gitlab-mr/state';
+import type { MountGitlabMrState, SessionGitlabMrState } from '../mount-request/state';
 import { inactivityInputsOf, type InactivityInputsState } from './inactivityInputsOf';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-ledger' });
@@ -117,6 +117,7 @@ const mrOf = ({ updatedAt }: PrParams): GitlabMergeRequest => ({
 });
 
 const gitlabOf = ({ updatedAt }: PrParams): SessionGitlabMrState => ({
+  kind: 'gitlab',
   mr: mrOf({ updatedAt }),
   fetchedAt: null,
   loading: false,
@@ -142,8 +143,8 @@ const stateOf = ({ patch = {} }: StatePatch = {}): InactivityInputsState => ({
   agentQueue: {},
   sessionGithub: {},
   mountGithub: {},
-  sessionGitlabMr: {},
-  mountGitlabMr: {},
+  sessionRequests: {},
+  mountRequests: {},
   sessionProjectMounts: {},
   ...patch,
 });
@@ -203,18 +204,18 @@ describe('inactivityInputsOf', () => {
   });
 
   it('counts a merge request event on the session and on one of its mounts', () => {
-    const sessionGitlabMr = {
+    const sessionRequests = {
       [SESSION_ID]: gitlabOf({ updatedAt: '2026-10-05T09:00:00.000Z' }),
     };
     expect(
-      inactivityInputsOf({ state: stateOf({ patch: { sessionGitlabMr } }), sessionId: SESSION_ID })
+      inactivityInputsOf({ state: stateOf({ patch: { sessionRequests } }), sessionId: SESSION_ID })
         .seenActivityAt,
     ).toBe(Date.parse('2026-10-05T09:00:00.000Z'));
 
     const state = stateOf({
       patch: {
         sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
-        mountGitlabMr: { [MOUNT_ID]: mountGitlabOf({ updatedAt: '2026-10-06T09:00:00.000Z' }) },
+        mountRequests: { [MOUNT_ID]: mountGitlabOf({ updatedAt: '2026-10-06T09:00:00.000Z' }) },
       },
     });
     expect(inactivityInputsOf({ state, sessionId: SESSION_ID }).seenActivityAt).toBe(
@@ -299,7 +300,7 @@ describe('inactivityInputsOf', () => {
     const state = stateOf({
       patch: {
         sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
-        mountGitlabMr: { [MOUNT_ID]: closed },
+        mountRequests: { [MOUNT_ID]: closed },
       },
     });
 

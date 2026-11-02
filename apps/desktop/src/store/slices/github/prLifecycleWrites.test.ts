@@ -574,8 +574,9 @@ describe('pull request writes on a host without a port', () => {
       ...makeState(),
       sessionGithub: {},
       mountGithub: {},
-      sessionGitlabMr: {
+      sessionRequests: {
         [SESSION_ID]: {
+          kind: 'gitlab',
           mr: {
             iid: 12,
             state: 'opened',

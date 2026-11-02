@@ -39,8 +39,8 @@ import { createSessionEventsSlice } from './slices/session-events';
 import { createDormantSpendSlice } from './slices/dormant-spend';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
-import { createGitlabMrSlice, gitlabMrInitialState } from './slices/gitlab-mr';
-import { createBitbucketPrSlice, bitbucketPrInitialState } from './slices/bitbucket-pr';
+import { mountRequestInitialState } from './slices/mount-request/state';
+import { createMountRequestSlice } from './slices/mount-request';
 import { createSlackThreadsSlice, slackThreadsInitialState } from './slices/slack-threads';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import { reviewDraftsInitialState } from './slices/review-drafts/state';
@@ -299,8 +299,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBudgetSlice> &
   ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
-  ReturnType<typeof createGitlabMrSlice> &
-  ReturnType<typeof createBitbucketPrSlice> &
+  ReturnType<typeof createMountRequestSlice> &
   ReturnType<typeof createSlackDraftsSlice> &
   ReturnType<typeof createSlackThreadsSlice> &
   ReturnType<typeof createIntegrationsSlice> &
@@ -376,8 +375,7 @@ const initialState: AppState = {
   ...trackerMovesInitialState,
   ...checkFixCommitsInitialState,
   ...githubInitialState,
-  ...gitlabMrInitialState,
-  ...bitbucketPrInitialState,
+  ...mountRequestInitialState,
   ...slackThreadsInitialState,
   ...reviewDraftsInitialState,
   ...permissionsInitialState,
@@ -433,8 +431,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDormantSpendSlice({ set, get }),
   ...createAttachmentsSlice({ set, get }),
   ...createGithubSlice({ set, get }),
-  ...createGitlabMrSlice({ set, get }),
-  ...createBitbucketPrSlice({ set, get }),
+  ...createMountRequestSlice({ set, get }),
   ...createSlackThreadsSlice({ set, get }),
   ...createReviewDraftsSlice({ set, get }),
   ...createIntegrationsSlice({ set, get }),

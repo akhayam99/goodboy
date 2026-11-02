@@ -9,6 +9,7 @@ vi.mock('../../../shared/lib/editor', async (importOriginal) => ({
   openUrl: vi.fn(async () => undefined),
 }));
 
+import { bitbucketMountsOf } from '../../../store/slices/mount-request/requestOf';
 import { invoke } from '@tauri-apps/api/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
@@ -517,7 +518,7 @@ describe('Checks tab on the second of two Bitbucket mounts', () => {
     spawnAgent = vi.fn(async () => brandId<AgentId>({ value: 'agent-debugger' }));
     const state = useAppStore.getState();
     const mountA = state.sessionMounts[SESSION.id]?.[0];
-    const bitbucketA = Object.values(state.mountBitbucketPr)[0];
+    const bitbucketA = bitbucketMountsOf({ state })[0];
     const prA = bitbucketA?.pr ?? null;
     if (mountA === undefined || bitbucketA === undefined || prA === null) {
       throw new Error('the Bitbucket scene has no mount');
@@ -555,8 +556,8 @@ describe('Checks tab on the second of two Bitbucket mounts', () => {
           },
         ],
       },
-      mountBitbucketPr: {
-        ...state.mountBitbucketPr,
+      mountRequests: {
+        ...state.mountRequests,
         [MOUNT_B]: {
           ...bitbucketA,
           pr: prB,

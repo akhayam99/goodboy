@@ -6,6 +6,7 @@ import type {
 import type { AppState } from '../../types';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { selectActiveMountId } from '../project-mounts/selectors';
+import { bitbucketMountOf } from './requestOf';
 import type { MountBitbucketPrState } from './state';
 
 export type BitbucketRequest = Readonly<{
@@ -17,7 +18,7 @@ export type BitbucketRequest = Readonly<{
 
 type State = Pick<
   AppState,
-  | 'mountBitbucketPr'
+  | 'mountRequests'
   | 'sessions'
   | 'sessionMounts'
   | 'sessionProjectMounts'
@@ -56,9 +57,8 @@ export const selectBitbucketRequest = ({
   mountId,
   prNumber,
 }: Params): BitbucketRequest | null => {
-  const byMount = state.mountBitbucketPr ?? {};
   if (mountId !== undefined) {
-    return requestOf({ entry: byMount[mountId], prNumber });
+    return requestOf({ entry: bitbucketMountOf({ state, mountId }), prNumber });
   }
   const activeId = selectActiveMountId({ state, sessionId });
   const ordered = [
@@ -66,7 +66,7 @@ export const selectBitbucketRequest = ({
     ...sessionMountTargets({ state, sessionId }).map((target) => target.id),
   ];
   for (const id of ordered) {
-    const found = requestOf({ entry: byMount[id], prNumber });
+    const found = requestOf({ entry: bitbucketMountOf({ state, mountId: id }), prNumber });
     if (found !== null) {
       return found;
     }

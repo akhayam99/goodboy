@@ -24,7 +24,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import type { MountBitbucketPrState } from '../../../../store/slices/bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../../../../store/slices/mount-request/state';
 import type { SessionGithubState } from '../../../../store/types';
 import { useBranchIdentity } from './index';
 
@@ -55,6 +55,8 @@ const PR: BitbucketPullRequest = {
 };
 
 const ENTRY: MountBitbucketPrState = {
+  kind: 'bitbucket',
+  selected: null,
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -147,7 +149,7 @@ const identity = () => renderHook(() => useBranchIdentity({ sessionId: SESSION_I
 
 describe('useBranchIdentity on a Bitbucket session', () => {
   it('maps the open request to the state the page reads, with the host and the label', () => {
-    useAppStore.setState({ mountBitbucketPr: { [MOUNT_ID]: ENTRY } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: ENTRY } });
 
     const { result } = identity();
 
@@ -167,7 +169,7 @@ describe('useBranchIdentity on a Bitbucket session', () => {
   });
 
   it('keeps null as null while the host has not answered', () => {
-    useAppStore.setState({ mountBitbucketPr: { [MOUNT_ID]: { ...ENTRY, pr: null, prs: [] } } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: { ...ENTRY, pr: null, prs: [] } } });
 
     const { result } = identity();
 
@@ -176,12 +178,12 @@ describe('useBranchIdentity on a Bitbucket session', () => {
   });
 
   it('follows the request when a refresh brings new checks', () => {
-    useAppStore.setState({ mountBitbucketPr: { [MOUNT_ID]: { ...ENTRY, checks: 'pending' } } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: { ...ENTRY, checks: 'pending' } } });
     const { result } = identity();
     expect(result.current.pr?.checks).toBe('pending');
 
     act(() => {
-      useAppStore.setState({ mountBitbucketPr: { [MOUNT_ID]: { ...ENTRY, checks: 'success' } } });
+      useAppStore.setState({ mountRequests: { [MOUNT_ID]: { ...ENTRY, checks: 'success' } } });
     });
 
     expect(result.current.pr?.checks).toBe('success');
@@ -190,7 +192,7 @@ describe('useBranchIdentity on a Bitbucket session', () => {
   it('lets the GitHub request win when the session has one', () => {
     useAppStore.setState({
       sessionGithub: { [SESSION_ID]: GITHUB },
-      mountBitbucketPr: { [MOUNT_ID]: ENTRY },
+      mountRequests: { [MOUNT_ID]: ENTRY },
     });
 
     const { result } = identity();

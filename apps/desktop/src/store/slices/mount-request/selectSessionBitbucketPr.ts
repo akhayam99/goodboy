@@ -1,6 +1,8 @@
 import type { MountId, SessionId } from '@goodboy/types';
+import { bitbucketMountOf } from './requestOf';
+import { applyBitbucketSelection } from './applyBitbucketSelection';
 import { bitbucketRequestIdentity } from './bitbucketPrLink';
-import { applyMountBitbucketPr } from './mountBitbucketPr';
+import { blankBitbucketEntry } from './blankBitbucketEntry';
 import {
   resolveBitbucketPrContext,
   resolveSessionBitbucketTarget,
@@ -22,13 +24,21 @@ export const selectSessionBitbucketPr = (set: SetFn, get: GetFn) => {
       return;
     }
     const targetMountId = target.mount.id;
-    const known = get().mountBitbucketPr?.[targetMountId]?.repo ?? null;
+    const known = bitbucketMountOf({ state: get(), mountId: targetMountId })?.repo ?? null;
     const repo = known ?? (await resolveBitbucketPrContext({ get, target }))?.repo ?? null;
     const selected =
       pullRequestId === null || repo === null
         ? null
         : bitbucketRequestIdentity({ repo, pullRequestId });
-    set((state) => applyMountBitbucketPr({ state, sessionId, mountId: targetMountId, selected }));
+    set((state) =>
+      applyBitbucketSelection({
+        state,
+        sessionId,
+        mountId: targetMountId,
+        selected,
+        ...(repo === null ? {} : { fallback: blankBitbucketEntry({ target, repo }) }),
+      }),
+    );
     await get().refreshSessionBitbucketPr(sessionId, { force: true, mountId: targetMountId });
   };
 };

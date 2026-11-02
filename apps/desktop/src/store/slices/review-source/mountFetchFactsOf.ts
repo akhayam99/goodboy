@@ -1,4 +1,5 @@
 import type { IsoDateTime, MountId, PullRequestHost, WorkspaceId } from '@goodboy/types';
+import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import type { AppState } from '../../types';
 import type { MountTarget } from '../project-mounts/mountRequests';
 import { mountRequestHostOf, type MountHostState } from './mountRequestHostOf';
@@ -53,7 +54,7 @@ const githubEntryOf = ({ state, mountId }: EntryParams): Entry => {
 };
 
 const gitlabEntryOf = ({ state, mountId }: EntryParams): Entry => {
-  const entry = state.mountGitlabMr?.[mountId];
+  const entry = gitlabMountOf({ state, mountId });
   if (entry === undefined) {
     return NO_ENTRY;
   }
@@ -66,7 +67,7 @@ const gitlabEntryOf = ({ state, mountId }: EntryParams): Entry => {
 };
 
 const bitbucketEntryOf = ({ state, mountId }: EntryParams): Entry => {
-  const entry = state.mountBitbucketPr?.[mountId];
+  const entry = bitbucketMountOf({ state, mountId });
   if (entry === undefined) {
     return NO_ENTRY;
   }

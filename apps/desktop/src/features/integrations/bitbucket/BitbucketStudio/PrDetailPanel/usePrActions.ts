@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
-import type { BitbucketPrWriteParams } from '../../../../../store/slices/bitbucket-pr';
+import type { BitbucketPrWriteParams } from '../../../../../store/slices/mount-request';
 import type { BitbucketRepo } from '../../client';
 import { hostErrorRecoveryOf } from '../../../../../store/slices/notifications/hostErrorRecovery';
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { gitlabSessionOf } from '../../../../../../store/slices/mount-request/requestOf';
 import { Check, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
@@ -67,7 +68,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
   const projectScope = useSessionProjectScope({ sessionId });
   const branchPrs = useAppStore((state) => selectActiveProjectPrs({ state, sessionId }));
-  const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
+  const mergeRequest = useAppStore((state) => gitlabSessionOf({ state, sessionId })?.mr ?? null);
   const tasks = useMemo(
     () => externalTasks.filter((task) => task.provider === provider),
     [externalTasks, provider],

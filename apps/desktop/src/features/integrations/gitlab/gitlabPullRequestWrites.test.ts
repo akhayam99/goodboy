@@ -33,7 +33,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
-import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../store/slices/mount-request/state';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
 import type { GitlabMergeRequest } from './client';
 
@@ -77,6 +77,7 @@ const MR: GitlabMergeRequest = {
 };
 
 const entryOf = ({ mr }: { readonly mr: GitlabMergeRequest }): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -100,7 +101,7 @@ const sentTo = ({ command }: { readonly command: string }): ReadonlyArray<unknow
   h.invoke.mock.calls.filter(([name]) => name === command).map(([, args]) => args);
 
 const seedMr = ({ mr }: { readonly mr: GitlabMergeRequest }): void =>
-  useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: entryOf({ mr }) } });
+  useAppStore.setState({ mountRequests: { [MOUNT_ID]: entryOf({ mr }) } });
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -138,7 +139,7 @@ beforeEach(async () => {
         },
       ],
     },
-    mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: MR }) },
+    mountRequests: { [MOUNT_ID]: entryOf({ mr: MR }) },
     refreshSessionPr: async () => undefined,
     refreshSessionPrDetail: async () => undefined,
     refreshSessionMr: async () => undefined,

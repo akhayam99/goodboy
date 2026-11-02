@@ -12,7 +12,7 @@ import type { BitbucketPullRequest } from '../../../features/integrations/bitbuc
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import { useAppStore, type AppStore } from '../../store';
 import type { MountGithubState } from '../../types';
-import type { MountBitbucketPrState } from '../bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../mount-request/state';
 import { activeReviewSourceOf, selectedReviewEntryOf } from './activeReviewSource';
 import { reviewSourceEntriesOf } from './reviewSourceEntries';
 import { rowBelongsToSource } from './rowBelongsToSource';
@@ -53,6 +53,8 @@ const BITBUCKET_PR: BitbucketPullRequest = {
 };
 
 const BITBUCKET_MOUNT: MountBitbucketPrState = {
+  kind: 'bitbucket',
+  selected: null,
   mountId: BITBUCKET_MOUNT_ID,
   projectId: BITBUCKET_PROJECT_ID,
   revision: 1,
@@ -145,11 +147,11 @@ const stateWith = (overrides: Partial<AppStore> = {}): AppStore => ({
       detailError: null,
     },
   },
-  sessionGitlabMr: { [SESSION]: { mr: MR, fetchedAt: null, loading: false, error: null } },
+  sessionRequests: {
+    [SESSION]: { kind: 'gitlab', mr: MR, fetchedAt: null, loading: false, error: null },
+  },
   mountGithub: {},
-  mountGitlabMr: {},
-  mountBitbucketPr: {},
-  sessionBitbucketPr: {},
+  mountRequests: {},
   diffComments: {},
   reviewSourceThreads: {
     [SESSION]: {
@@ -194,7 +196,7 @@ describe('review sources of a session', () => {
       reviewSourceEntriesOf({
         state: stateWith({
           sessionGithub: {},
-          sessionGitlabMr: {},
+          sessionRequests: {},
           diffComments: state.diffComments,
         }),
         sessionId: SESSION,
@@ -226,7 +228,7 @@ describe('review sources of a session', () => {
   });
 
   it('selects nothing when the session has no request', () => {
-    const state = stateWith({ sessionGithub: {}, sessionGitlabMr: {} });
+    const state = stateWith({ sessionGithub: {}, sessionRequests: {} });
     expect(selectedReviewEntryOf({ state, sessionId: SESSION })).toBeNull();
     expect(activeReviewSourceOf({ state, sessionId: SESSION })).toBeNull();
   });
@@ -285,7 +287,7 @@ describe('review sources of a session', () => {
     });
     const state = stateWith({
       sessionGithub: {},
-      sessionGitlabMr: {},
+      sessionRequests: {},
       sessionMounts: {
         [SESSION]: [mountOf('ledger', 'ledger-core'), mountOf('relay', 'notify-relay')],
       },
@@ -316,9 +318,14 @@ describe('bitbucket as a review source', () => {
   const bitbucketState = (overrides: Partial<AppStore> = {}) =>
     stateWith({
       sessionGithub: {},
-      sessionGitlabMr: {},
-      sessionBitbucketPr: {
-        [SESSION]: { pr: BITBUCKET_PR, fetchedAt: null, loading: false, error: null },
+      sessionRequests: {
+        [SESSION]: {
+          kind: 'bitbucket',
+          pr: BITBUCKET_PR,
+          fetchedAt: null,
+          loading: false,
+          error: null,
+        },
       },
       sessionMounts: {
         [SESSION]: [
@@ -342,7 +349,7 @@ describe('bitbucket as a review source', () => {
           },
         ],
       },
-      mountBitbucketPr: { [BITBUCKET_MOUNT_ID]: BITBUCKET_MOUNT },
+      mountRequests: { [BITBUCKET_MOUNT_ID]: BITBUCKET_MOUNT },
       reviewSourceThreads: {
         [SESSION]: {
           [BITBUCKET_URL]: {
@@ -375,7 +382,7 @@ describe('bitbucket as a review source', () => {
 
   it('leaves a merged pull request out of the picker', () => {
     const state = bitbucketState({
-      mountBitbucketPr: {
+      mountRequests: {
         [BITBUCKET_MOUNT_ID]: {
           ...BITBUCKET_MOUNT,
           pr: { ...BITBUCKET_PR, state: 'MERGED' },

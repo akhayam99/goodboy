@@ -16,7 +16,8 @@ import {
   syncRequestLinks,
 } from '../project-mounts/refreshMountRequest';
 import { nowIso } from '../project-mounts/nowIso';
-import { applyMountGitlabMr } from './mountGitlabMr';
+import { applyMountRequest } from './applyMountRequest';
+import { gitlabMountOf } from './requestOf';
 import { gitlabRequestIdentity, mergeRequestFromLink, toMountMrLink } from './mrLink';
 import { resolveMrContext, type MrContext } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';
@@ -84,13 +85,14 @@ export const refreshMountMr = async ({
     opts,
     host: 'gitlab',
     adapter: {
-      read: (state) => state.mountGitlabMr?.[mountId],
-      apply: ({ state, entry }) => applyMountGitlabMr({ state, sessionId, mountId, gitlab: entry }),
+      read: (state) => gitlabMountOf({ state, mountId }),
+      apply: ({ state, entry }) => applyMountRequest({ state, sessionId, mountId, request: entry }),
       resolveContext: async ({ isCurrent }) => {
         const context = await resolveMrContext({ get, sessionId, target });
         return context === null || !isCurrent() ? null : context;
       },
       pendingEntry: ({ existing, context }) => ({
+        kind: 'gitlab',
         mountId,
         projectId: mount.projectId,
         revision: mount.revision,

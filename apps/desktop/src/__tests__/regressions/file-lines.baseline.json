@@ -27,7 +27,7 @@
   "apps/desktop/src/features/inbox/components/InboxStudio/index.tsx": 662,
   "apps/desktop/src/features/integrations/components/CreateReviewForm/CreateReviewForm.tsx": 459,
   "apps/desktop/src/features/integrations/gitlab/client.ts": 689,
-  "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": 363,
+  "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": 362,
   "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 282,
   "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 676,
   "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 636,

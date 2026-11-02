@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import {
+  bitbucketMountOf,
+  bitbucketSessionOf,
+} from '../../../../store/slices/mount-request/requestOf';
 import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
@@ -58,13 +62,13 @@ export const useBitbucketRemote = ({
   const isBitbucket = remote.isBitbucket;
   const hasResolved = useAppStore((state) =>
     shownMountId === null
-      ? state.sessionBitbucketPr[sessionId]?.fetchedAt != null
-      : state.mountBitbucketPr?.[shownMountId]?.fetchedAt != null,
+      ? bitbucketSessionOf({ state, sessionId })?.fetchedAt != null
+      : bitbucketMountOf({ state, mountId: shownMountId })?.fetchedAt != null,
   );
   const remotePath = remote.path;
   const target = useAppStore((state) => {
     const mountId = shownMountId ?? selectActiveMountId({ state, sessionId });
-    const entry = mountId === null ? undefined : state.mountBitbucketPr?.[mountId];
+    const entry = mountId === null ? undefined : bitbucketMountOf({ state, mountId });
     if (entry?.repo != null) {
       return `https://bitbucket.org/${entry.repo.workspaceSlug}/${entry.repo.repoSlug}/pull-requests/new?source=${encodeURIComponent(entry.branch)}`;
     }

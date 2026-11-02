@@ -54,7 +54,7 @@ A feature is self-contained:
 - Assets (JSON, SVG) live next to the feature that owns them, never in `public/` or a global `src/data/`.
 - `hooks/<useFoo>/`: the feature's hooks, each a folder. A `use*` folder at the feature root or in a plain folder is a legacy shape; `hook-folders-under-hooks.baseline.json` counts them and only falls. A hook tied to one component stays in that component's folder.
 - Sub-areas: a feature that holds several concerns groups each in a folder named for the concept, such as `features/session/{ask,central,timeline,trail,resolve,startRun,panes,context}`. A sub-area follows the same rules inside (modules, `components/`, `hooks/`) and is not a feature: other features import it under the cross-feature rules of its parent.
-- `testing/`: a folder of test builders and fixtures for the code beside it (`features/workspace/testing/`, `store/slices/gitlab-mr/testing/`). Only tests, mock scenes and `storyHarness` import it; product code never does. It is not counted as product by the scans.
+- `testing/`: a folder of test builders and fixtures for the code beside it (`features/workspace/testing/`, `store/slices/mount-request/testing/`). Only tests, mock scenes and `storyHarness` import it; product code never does. It is not counted as product by the scans.
 
 ### One conversation under Ask and Chat
 

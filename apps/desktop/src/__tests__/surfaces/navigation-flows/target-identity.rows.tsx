@@ -3,7 +3,7 @@ import { act } from '@testing-library/react';
 import { waitFor } from '@testing-library/react';
 import { brandId, type IsoDateTime, type SessionProjectMount } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
-import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../store/slices/mount-request/state';
 import { branchPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
@@ -81,6 +81,7 @@ const seedGitlabWriteDestination = (ctx: Ctx): void => {
     throw new Error('the pull request seed has no GitHub mount');
   }
   const writeMr: MountGitlabMrState = {
+    kind: 'gitlab',
     mountId: second.mountId,
     projectId: second.projectId,
     revision: 1,
@@ -96,7 +97,7 @@ const seedGitlabWriteDestination = (ctx: Ctx): void => {
     error: null,
   };
   useAppStore.setState({
-    mountGitlabMr: { ...state.mountGitlabMr, [second.mountId]: writeMr },
+    mountRequests: { ...state.mountRequests, [second.mountId]: writeMr },
     sessionActiveMount: { ...state.sessionActiveMount, [ctx.sessionId]: second.mountId },
   });
 };

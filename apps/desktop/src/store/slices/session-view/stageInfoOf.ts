@@ -1,4 +1,5 @@
 import type { Session, SessionId, SessionStageInfo } from '@goodboy/types';
+import { gitlabSessionOf } from '../mount-request/requestOf';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import type { AppState } from '../../types';
 import { sessionRequestFetchOf } from '../review-source/sessionRequestFetchOf';
@@ -29,11 +30,10 @@ export type StageInfoState = Pick<
   | 'sessionActiveMount'
   | 'sessionActiveProject'
   | 'mountGithub'
-  | 'mountGitlabMr'
-  | 'mountBitbucketPr'
+  | 'mountRequests'
   | 'prSeries'
   | 'sessionGithub'
-  | 'sessionGitlabMr'
+  | 'sessionRequests'
   | 'sessionOpenQuestions'
   | 'sessionPhaseRuns'
   | 'orchestratingWorkflowRuns'
@@ -81,7 +81,7 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     sessionStageRequestOf({ state, sessionId }) ??
     resolveSessionRequest({
       pr: state.sessionGithub[sessionId]?.pr ?? null,
-      mr: state.sessionGitlabMr[sessionId]?.mr ?? null,
+      mr: gitlabSessionOf({ state, sessionId })?.mr ?? null,
     });
   const live = liveWorkOfSession({ state, session });
   const work = summarizeMountWork({ state, sessionId });

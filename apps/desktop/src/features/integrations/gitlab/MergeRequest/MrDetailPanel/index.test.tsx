@@ -24,7 +24,7 @@ type Store = {
   readonly drawer: null;
   readonly sessionPhaseRuns: Record<string, never>;
   readonly agentKindOverride: Record<string, never>;
-  sessionGitlabMr: Record<string, unknown>;
+  sessionRequests: Record<string, unknown>;
   readonly sessionBranches: Record<string, string>;
   projects: ReadonlyArray<Project>;
   readonly refreshSessionMr: ReturnType<typeof vi.fn>;
@@ -77,7 +77,7 @@ const h = vi.hoisted(() => ({
     drawer: null,
     sessionPhaseRuns: {},
     agentKindOverride: {},
-    sessionGitlabMr: {},
+    sessionRequests: {},
     sessionBranches: { 'session-3': 'ak/gitlab-release' },
     projects: Array.of<Project>(),
     refreshSessionMr: vi.fn(async () => undefined),
@@ -162,7 +162,7 @@ beforeEach(() => {
   h.store.navigate.mockClear();
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
-  h.store.sessionGitlabMr = {};
+  h.store.sessionRequests = {};
 });
 
 afterEach(cleanup);

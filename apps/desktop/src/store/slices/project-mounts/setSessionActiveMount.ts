@@ -1,8 +1,7 @@
 import { updateSessionWriteDestination } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { deriveBitbucketProjection } from '../bitbucket-pr/mountBitbucketPr';
+import { deriveRequestProjection } from '../mount-request/applyMountRequest';
 import { deriveGithubProjection } from '../github/mountGithub';
-import { deriveGitlabProjection } from '../gitlab-mr/mountGitlabMr';
 import { findMountById } from './findMountById';
 import { mountError } from './mountErrors';
 import { selectSelectedMountId } from './selectedMountId';
@@ -45,8 +44,7 @@ export const setSessionActiveMount = (set: SetFn, get: GetFn) => {
       return {
         ...patch,
         ...deriveGithubProjection({ state: next, sessionId }),
-        ...deriveGitlabProjection({ state: next, sessionId }),
-        ...deriveBitbucketProjection({ state: next, sessionId }),
+        ...deriveRequestProjection({ state: next, sessionId }),
       };
     });
     if (get().githubStatus?.available === true) {

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { gitlabMountOf } from './requestOf';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -64,7 +65,7 @@ const mergedMrFor = (args: unknown) => {
 const seedMrs = () => {
   useAppStore.setState({
     ...gitlabMrFixture.seedState(),
-    mountGitlabMr: {
+    mountRequests: {
       [ledgerMount]: mountState({
         mountId: ledgerMount,
         projectId: ledger.id,
@@ -182,7 +183,7 @@ describe('mergeMrForSession on the real store', () => {
   });
 
   it('stops before the host when the mount has no request in the store', async () => {
-    useAppStore.setState({ mountGitlabMr: {} });
+    useAppStore.setState({ mountRequests: {} });
 
     await useAppStore.getState().mergeMrForSession({ sessionId: session.id, mountId: relayMount });
 
@@ -200,14 +201,16 @@ describe('mergeMrForSession on the real store', () => {
 
   it('leaves the state alone when the host refuses, and says so loudly', async () => {
     stubHost({ merge: () => Promise.reject(new Error('405 Method Not Allowed: not mergeable')) });
-    const before = useAppStore.getState().mountGitlabMr;
+    const before = useAppStore.getState().mountRequests;
 
     await expect(
       useAppStore.getState().mergeMrForSession({ sessionId: session.id, mountId: relayMount }),
     ).rejects.toThrow('405 Method Not Allowed');
 
-    expect(useAppStore.getState().mountGitlabMr).toBe(before);
-    expect(useAppStore.getState().mountGitlabMr[relayMount]?.mr?.state).toBe('opened');
+    expect(useAppStore.getState().mountRequests).toBe(before);
+    expect(gitlabMountOf({ state: useAppStore.getState(), mountId: relayMount })?.mr?.state).toBe(
+      'opened',
+    );
     expect(invokes({ command: 'gitlab_mr_for_branch' })).toHaveLength(0);
     expect(errorNotifications().map((notification) => notification.title)).toEqual([
       "Couldn't merge !12",
@@ -228,7 +231,9 @@ describe('mergeMrForSession on the real store', () => {
     expect(invokes({ command: 'gitlab_merge_mr' }).map((call) => call.args.mrIid)).toEqual([
       12, 12,
     ]);
-    expect(useAppStore.getState().mountGitlabMr[ledgerMount]?.mr?.iid).toBe(11);
+    expect(gitlabMountOf({ state: useAppStore.getState(), mountId: ledgerMount })?.mr?.iid).toBe(
+      11,
+    );
   });
 
   it('pins the merge to the head of the request the user is looking at', async () => {
@@ -249,7 +254,7 @@ describe('mergeMrForSession on the real store', () => {
 
   it('merges without a pin when the stored request has no head', async () => {
     useAppStore.setState({
-      mountGitlabMr: {
+      mountRequests: {
         [relayMount]: mountState({
           mountId: relayMount,
           projectId: relay.id,

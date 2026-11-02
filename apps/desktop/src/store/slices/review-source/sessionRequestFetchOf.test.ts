@@ -11,7 +11,7 @@ import {
   type SessionMountView,
 } from '@goodboy/types';
 import { aProject, aSession, aWorkspace, TEST_NOW } from '@goodboy/types/testing';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
 import { aMountGithub } from '../github/testing/aMountGithub';
 import type { HostReachability } from '../host-reachability/types';
 import { sessionRequestFetchOf } from './sessionRequestFetchOf';
@@ -82,6 +82,7 @@ type EntryParams = {
 };
 
 const gitlabEntry = ({ fetchedAt, failedAt }: EntryParams): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId: RELAY_MOUNT,
   projectId: RELAY.id,
   revision: 1,
@@ -110,8 +111,7 @@ const stateOf = (overrides: Partial<SessionRequestFetchState> = {}): SessionRequ
   githubStatus: { mode: 'gh-cli', available: true },
   workspaceIntegrations: { [WORKSPACE.id]: [GITLAB] },
   mountGithub: {},
-  mountGitlabMr: {},
-  mountBitbucketPr: {},
+  mountRequests: {},
   hostReachability: {},
   ...overrides,
 });
@@ -126,7 +126,7 @@ describe('sessionRequestFetchOf', () => {
 
   it('is known once GitLab answered with no merge request', () => {
     const state = stateOf({
-      mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: EARLIER, failedAt: null }) },
+      mountRequests: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: EARLIER, failedAt: null }) },
     });
 
     expect(fetchOf(state)).toEqual({ state: 'known', host: 'gitlab' });
@@ -134,7 +134,7 @@ describe('sessionRequestFetchOf', () => {
 
   it('is unreachable when the host reachability says GitLab did not answer', () => {
     const state = stateOf({
-      mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: EARLIER, failedAt: LATER }) },
+      mountRequests: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: EARLIER, failedAt: LATER }) },
       hostReachability: { gitlab: UNREACHABLE },
     });
 
@@ -149,7 +149,7 @@ describe('sessionRequestFetchOf', () => {
 
   it('does not call GitLab unreachable when it answered with a refusal', () => {
     const state = stateOf({
-      mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: EARLIER, failedAt: LATER }) },
+      mountRequests: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: EARLIER, failedAt: LATER }) },
     });
 
     expect(fetchOf(state)).toEqual({ state: 'known', host: 'gitlab' });
@@ -157,7 +157,7 @@ describe('sessionRequestFetchOf', () => {
 
   it('is known again once GitLab recovered', () => {
     const state = stateOf({
-      mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: LATER, failedAt: null }) },
+      mountRequests: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: LATER, failedAt: null }) },
       hostReachability: { gitlab: { status: 'recovered', at: 2 } },
     });
 
@@ -213,7 +213,7 @@ describe('sessionRequestFetchOf', () => {
       mountGithub: {
         [LEDGER_MOUNT]: aMountGithub({ mountId: LEDGER_MOUNT, projectId: LEDGER.id }),
       },
-      mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: null, failedAt: LATER }) },
+      mountRequests: { [RELAY_MOUNT]: gitlabEntry({ fetchedAt: null, failedAt: LATER }) },
       hostReachability: { gitlab: UNREACHABLE },
     });
 

@@ -118,6 +118,7 @@ const makeMr = ({ iid, name }: MrParams): GitlabMergeRequest => ({
 });
 
 const mountState = ({ mountId, projectId, name, mr }: MountStateParams): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId,
   projectId,
   revision: 1,

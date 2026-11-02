@@ -1,4 +1,10 @@
 import type { MountId, SessionId } from '@goodboy/types';
+import {
+  bitbucketMountOf,
+  bitbucketSessionOf,
+  gitlabMountOf,
+  gitlabSessionOf,
+} from '../mount-request/requestOf';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { AppState } from '../../types';
 import { branchGithubOf } from '../github/branchGithubOf';
@@ -7,7 +13,7 @@ import { openBitbucketPullRequestsOf, reviewSourceEntriesOf } from './reviewSour
 import type { ActiveReviewSource, ReviewSourceEntry } from './types';
 
 export type ReviewSourceSelectionState = Parameters<typeof reviewSourceEntriesOf>[0]['state'] &
-  Pick<AppState, 'sessionActiveMount' | 'reviewSourceKeys' | 'sessionBitbucketPr'>;
+  Pick<AppState, 'sessionActiveMount' | 'reviewSourceKeys' | 'sessionRequests'>;
 
 type Params = {
   readonly state: ReviewSourceSelectionState;
@@ -44,8 +50,8 @@ export const selectedReviewEntryOf = ({
     return picked;
   }
   const github = state.sessionGithub?.[sessionId]?.pr ?? null;
-  const gitlab = state.sessionGitlabMr?.[sessionId]?.mr ?? null;
-  const bitbucket = state.sessionBitbucketPr?.[sessionId]?.pr ?? null;
+  const gitlab = gitlabSessionOf({ state, sessionId })?.mr ?? null;
+  const bitbucket = bitbucketSessionOf({ state, sessionId })?.pr ?? null;
   const onActive = entries.filter((entry) => isOnActiveMount({ entry, activeMountId }));
   return (
     onActive.find((entry) => entry.kind === 'github' && entry.number === github?.number) ??
@@ -90,8 +96,8 @@ export const activeReviewSourceOf = ({
   if (entry.kind === 'gitlab' && entry.number !== null) {
     const mr =
       entry.mountId === null
-        ? (state.sessionGitlabMr?.[sessionId]?.mr ?? null)
-        : (state.mountGitlabMr?.[entry.mountId]?.mr ?? null);
+        ? (gitlabSessionOf({ state, sessionId })?.mr ?? null)
+        : (gitlabMountOf({ state, mountId: entry.mountId })?.mr ?? null);
     const threads =
       entry.url === null ? undefined : state.reviewSourceThreads?.[sessionId]?.[entry.url];
     return {
@@ -113,7 +119,7 @@ export const activeReviewSourceOf = ({
   }
   if (entry.kind === 'bitbucket' && entry.number !== null) {
     const mountBitbucket =
-      entry.mountId === null ? undefined : state.mountBitbucketPr?.[entry.mountId];
+      entry.mountId === null ? undefined : bitbucketMountOf({ state, mountId: entry.mountId });
     const pr =
       mountBitbucket === undefined
         ? null

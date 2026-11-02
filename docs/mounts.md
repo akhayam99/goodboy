@@ -479,7 +479,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   `N finished` row per project. Ancestry never decides it, so a row never moves
   when its worktree status arrives.
 - **A GitLab row reads the same facts as a GitHub one.** `refreshSessionMr`
-  fills `mountGitlabMr` per mount and, for an open merge request only, reads it
+  fills the `gitlab` entry of `mountRequests` per mount and, for an open merge request only, reads it
   once more (`gitlab_get_mr`: the head pipeline and the merge status) with its
   approvals (`gitlab_mr_approval_state`), at the cadence of the refresh and in
   no loop of its own. `mapMrToPullRequestState` turns them into `checks`

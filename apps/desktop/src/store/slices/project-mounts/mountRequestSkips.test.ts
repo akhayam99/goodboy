@@ -4,8 +4,8 @@ import { brandId, type IsoDateTime, type MountId, type ProjectId } from '@goodbo
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { MountGithubState } from '../../types';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
-import type { MountBitbucketPrState } from '../bitbucket-pr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
+import type { MountBitbucketPrState } from '../mount-request/state';
 import { mountRequestOf } from './mountRowModel';
 
 const MOUNT = brandId<MountId>({ value: 'mount-1' });
@@ -71,8 +71,10 @@ type StateParams = {
 
 const stateOf = ({ github, gitlab, bitbucket }: StateParams) => ({
   mountGithub: github === undefined ? {} : { [MOUNT]: github },
-  mountGitlabMr: gitlab === undefined ? {} : { [MOUNT]: gitlab },
-  mountBitbucketPr: bitbucket === undefined ? {} : { [MOUNT]: bitbucket },
+  mountRequests: {
+    ...(gitlab === undefined ? {} : { [MOUNT]: gitlab }),
+    ...(bitbucket === undefined ? {} : { [MOUNT]: bitbucket }),
+  },
 });
 
 describe('mountRequestOf, steps the host proves do not apply', () => {
@@ -150,6 +152,7 @@ describe('mountRequestOf, steps the host proves do not apply', () => {
   };
 
   const gitlabOf = ({ headPipeline, approvalsLeft }: GitlabParams): MountGitlabMrState => ({
+    kind: 'gitlab',
     mountId: MOUNT,
     projectId: PROJECT,
     revision: 1,
@@ -233,6 +236,8 @@ describe('mountRequestOf, steps the host proves do not apply', () => {
   };
 
   const bitbucketOf = ({ reviewDecision }: BitbucketParams): MountBitbucketPrState => ({
+    kind: 'bitbucket',
+    selected: null,
     mountId: MOUNT,
     projectId: PROJECT,
     revision: 1,

@@ -1,4 +1,5 @@
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
+import { gitlabSessionOf } from '../../../../../store/slices/mount-request/requestOf';
 import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
 import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
@@ -76,9 +77,7 @@ export const MrDetailPanel = ({
   const session = useAppStore((s) =>
     sessionId == null ? null : (sessionById(s.sessions, sessionId) ?? null),
   );
-  const mrState = useAppStore((s) =>
-    sessionId == null ? undefined : s.sessionGitlabMr[sessionId],
-  );
+  const mrState = useAppStore((s) => gitlabSessionOf({ state: s, sessionId }));
   const sessionBranch = useAppStore((s) =>
     sessionId == null ? null : (s.sessionBranches[sessionId] ?? null),
   );

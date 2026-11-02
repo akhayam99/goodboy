@@ -27,8 +27,8 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import { aMountGithub } from '../github/testing/aMountGithub';
-import type { MountBitbucketPrState } from '../bitbucket-pr/state';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
+import type { MountBitbucketPrState } from '../mount-request/state';
+import type { MountGitlabMrState } from '../mount-request/state';
 import { refreshSessionPrDetail } from '../github/refreshSessionPrDetail';
 import { createResolveThread } from '../resolve/createResolveThread';
 import { REVIEW_REFRESH_CONCURRENCY } from './requestRefreshConcurrency';
@@ -252,6 +252,7 @@ const gitlabEntry = ({
   readonly mr: GitlabMergeRequest | null;
   readonly fetchedAt: MountGitlabMrState['fetchedAt'];
 }): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId: RELAY_MOUNT,
   projectId: RELAY.id,
   revision: 1,
@@ -274,6 +275,8 @@ const bitbucketEntry = ({
   readonly pr: BitbucketPullRequest | null;
   readonly fetchedAt: MountBitbucketPrState['fetchedAt'];
 }): MountBitbucketPrState => ({
+  kind: 'bitbucket',
+  selected: null,
   mountId: PAYMENTS_MOUNT,
   projectId: PAYMENTS.id,
   revision: 1,
@@ -359,8 +362,7 @@ beforeEach(async () => {
     githubStatus: { mode: 'gh-cli', available: true },
     workspaceIntegrations: { [WORKSPACE.id]: [GITLAB, BITBUCKET] },
     mountGithub: {},
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    mountRequests: {},
     currentSessionId: null,
     boardReady: false,
     refreshSessionPr: refreshGithub,
@@ -418,7 +420,7 @@ describe('sweepRequests', () => {
     it('does not send a GitLab remote to gh when the project has no remote yet', () => {
       store.setState({
         projects: [LEDGER, { ...RELAY, remoteUrl: undefined }, PAYMENTS],
-        mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ mr: null, fetchedAt: TEST_NOW }) },
+        mountRequests: { [RELAY_MOUNT]: gitlabEntry({ mr: null, fetchedAt: TEST_NOW }) },
       });
 
       void store.getState().sweepRequests();
@@ -470,8 +472,8 @@ describe('sweepRequests', () => {
     it('skips a request that ended, on GitHub, GitLab and Bitbucket alike', () => {
       store.setState({
         mountGithub: { [LEDGER_MOUNT]: githubEntry({ pr: mergedPr }) },
-        mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ mr: mergedMr, fetchedAt: TEST_NOW }) },
-        mountBitbucketPr: {
+        mountRequests: {
+          [RELAY_MOUNT]: gitlabEntry({ mr: mergedMr, fetchedAt: TEST_NOW }),
           [PAYMENTS_MOUNT]: bitbucketEntry({ pr: declinedPr, fetchedAt: TEST_NOW }),
         },
       });
@@ -498,8 +500,8 @@ describe('sweepRequests', () => {
     it('skips a mount already read with no request when only the focus sweep runs', () => {
       store.setState({
         mountGithub: { [LEDGER_MOUNT]: githubEntry({ pr: null }) },
-        mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ mr: null, fetchedAt: TEST_NOW }) },
-        mountBitbucketPr: {
+        mountRequests: {
+          [RELAY_MOUNT]: gitlabEntry({ mr: null, fetchedAt: TEST_NOW }),
           [PAYMENTS_MOUNT]: bitbucketEntry({ pr: null, fetchedAt: TEST_NOW }),
         },
       });
@@ -513,7 +515,7 @@ describe('sweepRequests', () => {
 
     it('asks again about a mount with no request when the focus sweep is off', () => {
       store.setState({
-        mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ mr: null, fetchedAt: TEST_NOW }) },
+        mountRequests: { [RELAY_MOUNT]: gitlabEntry({ mr: null, fetchedAt: TEST_NOW }) },
       });
 
       void store.getState().sweepRequests({ shouldSkipUnknownRequest: false });
@@ -617,8 +619,8 @@ describe('sweepRequests', () => {
       store.setState({
         currentSessionId: SESSION.id,
         reviewSourceThreads: {},
-        mountGitlabMr: { [RELAY_MOUNT]: gitlabEntry({ mr: openMr, fetchedAt: TEST_NOW }) },
-        mountBitbucketPr: {
+        mountRequests: {
+          [RELAY_MOUNT]: gitlabEntry({ mr: openMr, fetchedAt: TEST_NOW }),
           [PAYMENTS_MOUNT]: bitbucketEntry({ pr: openPr, fetchedAt: TEST_NOW }),
         },
       });
@@ -816,7 +818,7 @@ describe('sweepRequests', () => {
       );
       store.setState({
         sessionMounts: { [SESSION.id]: extra },
-        mountGitlabMr: Object.fromEntries(
+        mountRequests: Object.fromEntries(
           extra.map((mount, index) => [
             mount.id,
             gitlabEntry({
@@ -920,7 +922,7 @@ describe('sweepRequests', () => {
         webUrl: `${openPr.webUrl}/${index}`,
       }));
       store.setState({
-        mountBitbucketPr: {
+        mountRequests: {
           [PAYMENTS_MOUNT]: { ...bitbucketEntry({ pr: prs[0] ?? null, fetchedAt: TEST_NOW }), prs },
         },
       });

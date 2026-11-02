@@ -1,4 +1,5 @@
 import type { IsoDateTime, MountId, PullRequestHost } from '@goodboy/types';
+import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import type { AppState } from '../../types';
 
 export type MountRequestEntry = {
@@ -9,7 +10,7 @@ export type MountRequestEntry = {
 };
 
 type Params = {
-  readonly state: Pick<AppState, 'mountGithub' | 'mountGitlabMr' | 'mountBitbucketPr'>;
+  readonly state: Pick<AppState, 'mountGithub' | 'mountRequests'>;
   readonly host: PullRequestHost;
   readonly mountId: MountId;
 };
@@ -27,7 +28,7 @@ export const mountRequestEntryOf = ({ state, host, mountId }: Params): MountRequ
         };
   }
   if (host === 'gitlab') {
-    const entry = state.mountGitlabMr?.[mountId];
+    const entry = gitlabMountOf({ state, mountId });
     return entry === undefined
       ? null
       : {
@@ -37,7 +38,7 @@ export const mountRequestEntryOf = ({ state, host, mountId }: Params): MountRequ
           isLoading: entry.loading,
         };
   }
-  const entry = state.mountBitbucketPr?.[mountId];
+  const entry = bitbucketMountOf({ state, mountId });
   return entry === undefined
     ? null
     : {

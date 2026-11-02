@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { bitbucketMountsOf } from './requestOf';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -77,7 +78,8 @@ vi.mock('@goodboy/db', async () =>
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-const { createBitbucketPrSlice, bitbucketPrInitialState } = await import('./index');
+const { createMountRequestSlice } = await import('./index');
+const { mountRequestInitialState } = await import('./state');
 
 const SESSION_ID = 'sess-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -145,7 +147,7 @@ const buildStore = ({
   activeMountId = M1,
 }: BuildStoreParams = {}) => {
   let state: TestState = {
-    ...bitbucketPrInitialState,
+    ...mountRequestInitialState,
     workspaceOverrides,
     sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID, goal: 'ship it' }],
     sessionProjectMounts: {},
@@ -169,15 +171,15 @@ const buildStore = ({
     state = { ...state, ...(next as TestState) };
   };
   const get = () => state as unknown as AppStore;
-  const slice = createBitbucketPrSlice({
-    set: set as Parameters<typeof createBitbucketPrSlice>[0]['set'],
-    get: get as Parameters<typeof createBitbucketPrSlice>[0]['get'],
+  const slice = createMountRequestSlice({
+    set: set as Parameters<typeof createMountRequestSlice>[0]['set'],
+    get: get as Parameters<typeof createMountRequestSlice>[0]['get'],
   });
   Object.assign(state, slice);
   return { getState: () => state, slice };
 };
 
-describe('bitbucket-pr slice', () => {
+describe('mount-request slice, bitbucket host', () => {
   beforeEach(() => {
     pullRequestForBranchSpy.mockReset();
     getPullRequestSpy.mockReset();
@@ -200,12 +202,10 @@ describe('bitbucket-pr slice', () => {
     });
     const state = store.getState();
     expect(
-      (state.sessionBitbucketPr as Record<string, { pr: BitbucketPullRequest | null }>)[SESSION_ID]
-        ?.pr?.id,
+      (state.sessionRequests as Record<string, { pr: BitbucketPullRequest | null }>)[SESSION_ID]?.pr
+        ?.id,
     ).toBe(7);
-    expect(
-      (state.sessionBitbucketRepo as Record<string, { repoSlug: string }>)[SESSION_ID]?.repoSlug,
-    ).toBe('rocket');
+    expect(bitbucketMountsOf({ state })[0]?.repo?.repoSlug).toBe('rocket');
   });
 
   it('records the failure instead of clearing the pull request already on screen', async () => {
@@ -217,7 +217,7 @@ describe('bitbucket-pr slice', () => {
     await store.slice.refreshSessionBitbucketPr(SESSION_ID, { force: true });
 
     const entry = (
-      store.getState().sessionBitbucketPr as Record<
+      store.getState().sessionRequests as Record<
         string,
         { pr: BitbucketPullRequest | null; error: string | null; loading: boolean }
       >
@@ -238,7 +238,7 @@ describe('bitbucket-pr slice', () => {
       expect.objectContaining({ pullRequestId: 12, repoSlug: 'rocket' }),
     );
     expect(
-      (store.getState().sessionBitbucketPr as Record<string, { pr: BitbucketPullRequest | null }>)[
+      (store.getState().sessionRequests as Record<string, { pr: BitbucketPullRequest | null }>)[
         SESSION_ID
       ]?.pr?.id,
     ).toBe(12);
@@ -251,7 +251,7 @@ describe('bitbucket-pr slice', () => {
     await store.slice.refreshSessionBitbucketPr(SESSION_ID);
 
     expect(pullRequestForBranchSpy).not.toHaveBeenCalled();
-    expect(store.getState().sessionBitbucketPr).toEqual({});
+    expect(store.getState().sessionRequests).toEqual({});
   });
 });
 
@@ -264,7 +264,7 @@ const REPO = {
 
 const TARGET = { sessionId: SESSION_ID, repo: REPO, pullRequestId: 12 };
 
-describe('bitbucket-pr write verbs', () => {
+describe('mount-request write verbs, bitbucket host', () => {
   beforeEach(() => {
     getPullRequestSpy.mockReset();
     getPullRequestSpy.mockResolvedValue(buildPr(12));
@@ -371,7 +371,7 @@ describe('bitbucket-pr write verbs', () => {
     expect(getPullRequestSpy).toHaveBeenCalledWith(expect.objectContaining({ pullRequestId: 12 }));
     expect(pullRequestForBranchSpy).not.toHaveBeenCalled();
     expect(
-      (store.getState().sessionBitbucketPr as Record<string, { pr: BitbucketPullRequest | null }>)[
+      (store.getState().sessionRequests as Record<string, { pr: BitbucketPullRequest | null }>)[
         SESSION_ID
       ]?.pr?.id,
     ).toBe(12);

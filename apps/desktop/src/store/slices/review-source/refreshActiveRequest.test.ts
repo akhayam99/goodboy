@@ -19,8 +19,8 @@ import {
 } from '../../storyHarness';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { MountGithubState, SessionGithubState } from '../../types';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
-import type { MountBitbucketPrState } from '../bitbucket-pr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
+import type { MountBitbucketPrState } from '../mount-request/state';
 import { refreshActiveRequest } from './refreshActiveRequest';
 import { requestHostOf } from './requestHostOf';
 
@@ -51,6 +51,8 @@ const PR: BitbucketPullRequest = {
 };
 
 const ENTRY: MountBitbucketPrState = {
+  kind: 'bitbucket',
+  selected: null,
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -154,7 +156,7 @@ describe('requestHostOf', () => {
   it('is Bitbucket for a request that is not open any more', () => {
     const declined = { ...PR, state: 'DECLINED' as const };
     useAppStore.setState({
-      mountBitbucketPr: { [MOUNT_ID]: { ...ENTRY, pr: declined, prs: [] } },
+      mountRequests: { [MOUNT_ID]: { ...ENTRY, pr: declined, prs: [] } },
     });
 
     expect(hostNow()).toBe('bitbucket');
@@ -163,7 +165,7 @@ describe('requestHostOf', () => {
   it('keeps GitHub when the session holds a GitHub request', () => {
     useAppStore.setState({
       sessionGithub: { [SESSION_ID]: GITHUB },
-      mountBitbucketPr: { [MOUNT_ID]: ENTRY },
+      mountRequests: { [MOUNT_ID]: ENTRY },
     });
 
     expect(hostNow()).toBe('github');
@@ -188,6 +190,7 @@ describe('requestHostOf with a named mount', () => {
     updatedAt: STAMP,
   };
   const GITLAB: MountGitlabMrState = {
+    kind: 'gitlab',
     mountId: MOUNT_ID,
     projectId: PROJECT_ID,
     revision: 1,
@@ -219,7 +222,7 @@ describe('requestHostOf with a named mount', () => {
         [SESSION_ID]: [VIEW, { ...VIEW, id: GITHUB_MOUNT_ID, mountName: 'ledger-core' }],
       },
       sessionGithub: {},
-      mountGitlabMr: { [MOUNT_ID]: GITLAB },
+      mountRequests: { [MOUNT_ID]: GITLAB },
       mountGithub: { [GITHUB_MOUNT_ID]: GITHUB_MOUNT },
     });
 
@@ -236,7 +239,7 @@ describe('requestHostOf with a named mount', () => {
 
 describe('refreshActiveRequest', () => {
   it('refreshes the Bitbucket request when that is the host', async () => {
-    useAppStore.setState({ mountBitbucketPr: { [MOUNT_ID]: ENTRY } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: ENTRY } });
 
     await refreshActiveRequest({ get: useAppStore.getState, sessionId: SESSION_ID });
 

@@ -18,7 +18,7 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { branchScopeOf } from './branchScopeOf';
 
@@ -70,6 +70,7 @@ const MR: GitlabMergeRequest = {
 };
 
 const ENTRY: MountGitlabMrState = {
+  kind: 'gitlab',
   mountId: WRITE_MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -105,7 +106,7 @@ beforeEach(async () => {
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     sessionProjectMounts: { [SESSION_ID]: [WRITE_MOUNT, SHOWN_MOUNT] },
     sessionGithub: {},
-    mountGitlabMr: { [WRITE_MOUNT_ID]: ENTRY },
+    mountRequests: { [WRITE_MOUNT_ID]: ENTRY },
   });
 });
 
@@ -199,7 +200,7 @@ describe('branchScopeOf', () => {
 
     it('counts the review threads of the request of the shown branch only', () => {
       useAppStore.setState({
-        mountGitlabMr: {
+        mountRequests: {
           [WRITE_MOUNT_ID]: ENTRY,
           [SHOWN_MOUNT_ID]: {
             ...ENTRY,

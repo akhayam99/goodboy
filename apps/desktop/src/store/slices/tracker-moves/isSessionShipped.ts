@@ -10,8 +10,7 @@ type State = Pick<
   | 'mountBranchObservations'
   | 'prSeries'
   | 'mountGithub'
-  | 'mountGitlabMr'
-  | 'mountBitbucketPr'
+  | 'mountRequests'
 >;
 
 type Params = {

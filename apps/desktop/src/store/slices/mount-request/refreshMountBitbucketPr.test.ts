@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { bitbucketMountOf } from './requestOf';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -150,10 +151,8 @@ const harness = (mounts: ReadonlyArray<unknown>) => {
     sessionMounts: { [SESSION_ID]: mounts },
     sessionActiveMount: { [SESSION_ID]: M1 },
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
-    mountBitbucketPr: {},
-    mountSelectedBitbucketPr: {},
-    sessionBitbucketPr: {},
-    sessionBitbucketRepo: {},
+    mountRequests: {},
+    sessionRequests: {},
     recordSessionEventOnce: vi.fn(async () => undefined),
     hostReachability: {},
     noteHostAnswer: vi.fn(),
@@ -170,7 +169,7 @@ const harness = (mounts: ReadonlyArray<unknown>) => {
 
 const mountPrOf = (state: Record<string, unknown>, mountId: MountId) =>
   (
-    state.mountBitbucketPr as Record<
+    state.mountRequests as Record<
       string,
       {
         pr: BitbucketPullRequest | null;
@@ -500,8 +499,7 @@ describe('bitbucket writes per mount', () => {
       pullRequestId: 12,
     });
 
-    const selected = state.mountSelectedBitbucketPr as Record<string, { prNumber: number } | null>;
-    expect(selected[M2]?.prNumber).toBe(12);
-    expect(selected[M1] ?? null).toBeNull();
+    expect(bitbucketMountOf({ state, mountId: M2 })?.selected?.prNumber).toBe(12);
+    expect(bitbucketMountOf({ state, mountId: M1 })?.selected ?? null).toBeNull();
   });
 });

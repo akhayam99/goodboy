@@ -27,7 +27,7 @@ type MockDynamicAction = {
 const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
   state: {
     sessionGithub: {} as Record<string, { pr: PullRequestState | null }>,
-    sessionGitlabMr: {} as Record<string, { mr: GitlabMergeRequest | null }>,
+    sessionRequests: {} as Record<string, { kind: 'gitlab'; mr: GitlabMergeRequest | null }>,
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -144,7 +144,7 @@ const externalTask = {
 
 beforeEach(() => {
   state.sessionGithub = {};
-  state.sessionGitlabMr = {};
+  state.sessionRequests = {};
   state.sessionExternalTasks = {};
   state.sessionWorktrees = {};
   state.sessionProjectMounts = {};
@@ -333,7 +333,9 @@ describe('StageBoardCard one signal', () => {
   });
 
   it('opens the Branch page from a GitLab merge request token', () => {
-    state.sessionGitlabMr = { [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) } };
+    state.sessionRequests = {
+      [SESSION_ID]: { kind: 'gitlab', mr: mergeRequest({ state: 'opened' }) },
+    };
     render(<StageBoardCard session={session} nav={nav} />);
     fireEvent.click(screen.getByRole('button', { name: 'Open pull request 12' }));
     expect(nav.openPullRequest).toHaveBeenCalledWith(session);
@@ -345,7 +347,9 @@ describe('StageBoardCard one signal', () => {
     ['merged', false, 'Merged'],
     ['closed', false, 'Closed'],
   ])('maps GitLab %s with draft %s to the %s word', (mrState, draft, word) => {
-    state.sessionGitlabMr = { [SESSION_ID]: { mr: mergeRequest({ state: mrState, draft }) } };
+    state.sessionRequests = {
+      [SESSION_ID]: { kind: 'gitlab', mr: mergeRequest({ state: mrState, draft }) },
+    };
     render(<StageBoardCard session={session} nav={nav} />);
     expect(
       signalSlot()?.querySelector('[data-tooltip]')?.getAttribute('data-tooltip')?.toLowerCase(),

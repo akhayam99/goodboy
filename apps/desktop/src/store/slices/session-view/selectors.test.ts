@@ -112,9 +112,8 @@ beforeEach(() => {
     mountGithub: {},
     agentDraft: {},
     agentQueue: {},
-    sessionGitlabMr: {},
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    sessionRequests: {},
+    mountRequests: {},
     workspaceIntegrations: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
@@ -272,7 +271,7 @@ describe('useSessionStageInfo settled request state', () => {
     store.state.mountGithub = {
       [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
-    store.state.sessionGitlabMr = { [SESSION_ID]: { mr: gitlabMr('closed') } };
+    store.state.sessionRequests = { [SESSION_ID]: { kind: 'gitlab', mr: gitlabMr('closed') } };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
 
@@ -285,7 +284,7 @@ describe('useSessionStageInfo settled request state', () => {
     store.state.mountGithub = {
       [MOUNT_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
     };
-    store.state.sessionGitlabMr = { [SESSION_ID]: { mr: gitlabMr('merged') } };
+    store.state.sessionRequests = { [SESSION_ID]: { kind: 'gitlab', mr: gitlabMr('merged') } };
 
     const { result } = renderHook(() => useSessionStageInfo(session));
 
@@ -423,8 +422,9 @@ describe('useStageGroupedSessions', () => {
   it('groups a GitLab-only session by its merge request stage', () => {
     store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
-    store.state.sessionGitlabMr = {
+    store.state.sessionRequests = {
       [SESSION_ID]: {
+        kind: 'gitlab',
         mr: {
           iid: 7,
           title: 'Retry the send',
@@ -659,7 +659,7 @@ describe('useSessionStageInfo on a GitLab mount without a merge request', () => 
   }: {
     readonly fetchedAt: string | null;
     readonly failedAt: string | null;
-  }) => ({ mr: null, fetchedAt, failedAt, loading: false, error: null });
+  }) => ({ kind: 'gitlab', mr: null, fetchedAt, failedAt, loading: false, error: null });
 
   it('says it is checking GitLab, never GitHub, before the first answer', () => {
     const session = gitlabSession();
@@ -671,7 +671,7 @@ describe('useSessionStageInfo on a GitLab mount without a merge request', () => 
 
   it('says GitLab is unreachable when the host reachability says it did not answer', () => {
     const session = gitlabSession();
-    store.state.mountGitlabMr = {
+    store.state.mountRequests = {
       [MOUNT_ID]: gitlabEntry({ fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' }),
     };
     store.state.hostReachability = {
@@ -685,7 +685,7 @@ describe('useSessionStageInfo on a GitLab mount without a merge request', () => 
 
   it('claims no merge request once GitLab answered with none', () => {
     const session = gitlabSession();
-    store.state.mountGitlabMr = {
+    store.state.mountRequests = {
       [MOUNT_ID]: gitlabEntry({ fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null }),
     };
 
@@ -709,7 +709,7 @@ describe('useSessionStageInfo on a GitLab mount without a merge request', () => 
     store.state.mountGithub = {
       [MOUNT_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
     };
-    store.state.mountGitlabMr = {
+    store.state.mountRequests = {
       [MOUNT_ID]: gitlabEntry({ fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null }),
     };
 

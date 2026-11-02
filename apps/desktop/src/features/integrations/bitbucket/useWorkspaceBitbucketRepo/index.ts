@@ -3,7 +3,7 @@ import type { BitbucketIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
 import { projectPathFromRemoteUrl } from '../../../../shared/utils/remoteHost';
-import { bitbucketRepoSlug } from '../../../../store/slices/bitbucket-pr/bitbucketRepoSlug';
+import { bitbucketRepoSlug } from '../../../../store/slices/mount-request/bitbucketRepoSlug';
 import type { BitbucketRepo } from '../client';
 
 const slugCache = new Map<string, string | null>();

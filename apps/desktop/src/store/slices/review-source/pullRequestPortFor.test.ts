@@ -40,7 +40,7 @@ import {
 } from '../../storyHarness';
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { MountGithubState, SessionGithubState } from '../../types';
-import type { MountBitbucketPrState } from '../bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../mount-request/state';
 import { pullRequestPortFor } from './pullRequestPortFor';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -134,6 +134,8 @@ const bitbucketPr = (over: Partial<BitbucketPullRequest> = {}): BitbucketPullReq
 });
 
 const bitbucketEntry = (over: Partial<MountBitbucketPrState> = {}): MountBitbucketPrState => ({
+  kind: 'bitbucket',
+  selected: null,
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -213,8 +215,9 @@ describe('pullRequestPortFor', () => {
     useAppStore.setState({
       sessionGithub: {},
       mountGithub: {},
-      sessionGitlabMr: {
+      sessionRequests: {
         [SESSION_ID]: {
+          kind: 'gitlab',
           mr: {
             id: 1,
             iid: 57,
@@ -247,7 +250,7 @@ describe('pullRequestPortFor', () => {
       useAppStore.setState({
         sessionGithub: {},
         mountGithub: {},
-        mountBitbucketPr: { [MOUNT_ID]: bitbucketEntry() },
+        mountRequests: { [MOUNT_ID]: bitbucketEntry() },
       });
     });
 
@@ -273,7 +276,7 @@ describe('pullRequestPortFor', () => {
 
     it('writes the request it is asked for, not the displayed one', async () => {
       useAppStore.setState({
-        mountBitbucketPr: {
+        mountRequests: {
           [MOUNT_ID]: bitbucketEntry({ prs: [bitbucketPr(), bitbucketPr({ id: 43 })] }),
         },
       });
@@ -286,21 +289,21 @@ describe('pullRequestPortFor', () => {
     it('keeps a port for a request that was declined, so its page still reads', async () => {
       const declined = bitbucketPr({ state: 'DECLINED' });
       useAppStore.setState({
-        mountBitbucketPr: { [MOUNT_ID]: bitbucketEntry({ pr: declined, prs: [declined] }) },
+        mountRequests: { [MOUNT_ID]: bitbucketEntry({ pr: declined, prs: [declined] }) },
       });
 
       expect(portOf()).not.toBeNull();
     });
 
     it('has no port without a credential bound repository', () => {
-      useAppStore.setState({ mountBitbucketPr: { [MOUNT_ID]: bitbucketEntry({ repo: null }) } });
+      useAppStore.setState({ mountRequests: { [MOUNT_ID]: bitbucketEntry({ repo: null }) } });
 
       expect(portOf()).toBeNull();
     });
 
     it('has no port without a request on any mount', () => {
       useAppStore.setState({
-        mountBitbucketPr: { [MOUNT_ID]: bitbucketEntry({ pr: null, prs: [] }) },
+        mountRequests: { [MOUNT_ID]: bitbucketEntry({ pr: null, prs: [] }) },
       });
 
       expect(portOf()).toBeNull();

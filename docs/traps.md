@@ -189,7 +189,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only). Wording
   follows the same capabilities: where `canResolve` is false the comment has no
   "Resolve" and the push confirm says the thread stays open.
-  Read `sessionGitlabMr` and `reviewSourceThreads` through the selectors, not
+  Read `sessionRequests` (through `gitlabSessionOf` or `bitbucketSessionOf`) and `reviewSourceThreads` through the selectors, not
   by hand: picking a source in another project calls `setSessionActiveMount`.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing

@@ -153,8 +153,8 @@ const harness = (mounts: ReadonlyArray<unknown>) => {
     sessionMounts: { [SESSION_ID]: mounts },
     sessionActiveMount: { [SESSION_ID]: M1 },
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
-    mountGitlabMr: {},
-    sessionGitlabMr: {},
+    mountRequests: {},
+    sessionRequests: {},
     recordSessionEventOnce: vi.fn(async () => undefined),
     hostReachability: {},
     noteHostAnswer: vi.fn(),
@@ -172,7 +172,7 @@ const harness = (mounts: ReadonlyArray<unknown>) => {
 
 const mountMrOf = (state: Record<string, unknown>, mountId: MountId) =>
   (
-    state.mountGitlabMr as Record<
+    state.mountRequests as Record<
       string,
       {
         mr: GitlabMergeRequest | null;
@@ -218,7 +218,7 @@ describe('refreshSessionMr facts', () => {
 
     await refreshSessionMr(set, get)(SESSION_ID);
 
-    const entry = (state.mountGitlabMr as Record<string, unknown>)[M1] as {
+    const entry = (state.mountRequests as Record<string, unknown>)[M1] as {
       mr: GitlabMergeRequest;
       approvals: unknown;
     };
@@ -236,7 +236,7 @@ describe('refreshSessionMr facts', () => {
 
     await refreshSessionMr(set, get)(SESSION_ID);
 
-    const entry = (state.mountGitlabMr as Record<string, unknown>)[M1] as {
+    const entry = (state.mountRequests as Record<string, unknown>)[M1] as {
       mr: GitlabMergeRequest;
       approvals: unknown;
       error: string | null;
@@ -263,7 +263,7 @@ describe('refreshSessionMr facts', () => {
 
     await refreshSessionMr(set, get)(SESSION_ID);
 
-    const session = (state.sessionGitlabMr as Record<string, { approvals?: unknown }>)[SESSION_ID];
+    const session = (state.sessionRequests as Record<string, { approvals?: unknown }>)[SESSION_ID];
     expect(session?.approvals).toEqual(APPROVALS);
   });
 });

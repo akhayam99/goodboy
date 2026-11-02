@@ -1,7 +1,7 @@
 import { isPullRequestPortError } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
-import { selectBitbucketRequest } from '../bitbucket-pr/selectBitbucketRequest';
+import { selectBitbucketRequest } from '../mount-request/selectBitbucketRequest';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import { sessionPullRequestOf } from '../review-source/sessionPullRequestOf';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';

@@ -1,4 +1,5 @@
 import { bitbucketReviewSource } from '@goodboy/core';
+import { bitbucketMountOf } from '../mount-request/requestOf';
 import type { MountId, SessionId } from '@goodboy/types';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
@@ -26,7 +27,7 @@ export const refreshBitbucketReviewThreads = async ({
   const target = sessionMountTargets({ state: get(), sessionId }).find(
     (candidate) => candidate.id === mountId,
   );
-  const bitbucket = get().mountBitbucketPr?.[mountId];
+  const bitbucket = bitbucketMountOf({ state: get(), mountId });
   const repo = bitbucket?.repo ?? null;
   if (target === undefined || bitbucket === undefined || repo === null) {
     return;

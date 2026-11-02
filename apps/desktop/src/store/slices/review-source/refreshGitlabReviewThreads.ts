@@ -1,4 +1,5 @@
 import { gitlabReviewSource } from '@goodboy/core';
+import { gitlabMountOf } from '../mount-request/requestOf';
 import type { MountId, SessionId } from '@goodboy/types';
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
@@ -27,7 +28,7 @@ export const refreshGitlabReviewThreads = async ({
   const target = sessionMountTargets({ state: get(), sessionId }).find(
     (candidate) => candidate.id === mountId,
   );
-  const gitlab = get().mountGitlabMr?.[mountId];
+  const gitlab = gitlabMountOf({ state: get(), mountId });
   const mr = gitlab?.mr ?? null;
   if (
     session === undefined ||

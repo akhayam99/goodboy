@@ -1,4 +1,5 @@
 import type { SessionId } from '@goodboy/types';
+import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import type { AppState } from '../../types';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { bitbucketThreadsKey, openBitbucketPullRequestsOf } from './reviewSourceEntries';
@@ -11,7 +12,7 @@ type Params = {
 export const currentThreadKeysOf = ({ state, sessionId }: Params): ReadonlySet<string> => {
   const keys = new Set<string>();
   for (const target of sessionMountTargets({ state, sessionId })) {
-    const gitlab = state.mountGitlabMr?.[target.id];
+    const gitlab = gitlabMountOf({ state, mountId: target.id });
     if (
       gitlab !== undefined &&
       gitlab.mr !== null &&
@@ -20,7 +21,7 @@ export const currentThreadKeysOf = ({ state, sessionId }: Params): ReadonlySet<s
     ) {
       keys.add(gitlab.mr.webUrl);
     }
-    const bitbucket = state.mountBitbucketPr?.[target.id];
+    const bitbucket = bitbucketMountOf({ state, mountId: target.id });
     if (bitbucket !== undefined && bitbucket.repo !== null) {
       for (const pr of openBitbucketPullRequestsOf({ bitbucket })) {
         keys.add(bitbucketThreadsKey({ mountId: target.id, pr }));

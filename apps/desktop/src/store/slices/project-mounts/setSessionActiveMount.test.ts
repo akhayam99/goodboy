@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { gitlabSessionOf } from '../mount-request/requestOf';
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
@@ -51,7 +52,7 @@ const harness = ({ cachedPrs }: { readonly cachedPrs: ReadonlyArray<{ number: nu
     },
     sessionGithub: { [SESSION_ID]: { pr: { number: 42 } } },
     sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: cachedPrs } },
-    sessionGitlabMr: { [SESSION_ID]: { mr: { iid: 42 } } },
+    sessionRequests: { [SESSION_ID]: { kind: 'gitlab', mr: { iid: 42 } } },
     sessionSelectedPrNumber: { [SESSION_ID]: 42 },
     githubStatus: { available: true },
     refreshSessionPr,
@@ -97,7 +98,7 @@ describe('setSessionActiveMount', () => {
     });
 
     expect(state.sessionGithub[SESSION_ID]).toBeUndefined();
-    expect(state.sessionGitlabMr[SESSION_ID]).toBeUndefined();
+    expect(state.sessionRequests[SESSION_ID]).toBeUndefined();
     expect(state.sessionSelectedPrNumber[SESSION_ID]).toBeUndefined();
   });
 

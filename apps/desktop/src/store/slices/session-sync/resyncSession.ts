@@ -1,4 +1,5 @@
 import { listExternalTasksForWorkspace } from '@goodboy/db';
+import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import type { SessionId } from '@goodboy/types';
 import { refreshWorktreeStatuses } from '../../runtime/worktreeStatuses/cache';
 import { invalidateLocalBranchesCache } from '../../../features/worktree/worktree';
@@ -67,8 +68,8 @@ const firstRequestError = ({ get, sessionId }: ReadParams): string | null => {
   for (const { mount } of listSessionPrFetches({ state, sessionId })) {
     const error =
       state.mountGithub?.[mount.id]?.error ??
-      state.mountGitlabMr?.[mount.id]?.error ??
-      state.mountBitbucketPr?.[mount.id]?.error ??
+      gitlabMountOf({ state, mountId: mount.id })?.error ??
+      bitbucketMountOf({ state, mountId: mount.id })?.error ??
       null;
     if (error !== null) {
       return error;

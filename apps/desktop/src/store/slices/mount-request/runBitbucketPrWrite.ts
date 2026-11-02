@@ -2,7 +2,8 @@ import type { MountId, SessionId } from '@goodboy/types';
 import type { BitbucketRepo } from '../../../features/integrations/bitbucket/client';
 import { staleHeadErrorOf } from '../../../shared/lib/staleHeadErrorOf';
 import { bitbucketRequestIdentity } from './bitbucketPrLink';
-import { applyMountBitbucketPr } from './mountBitbucketPr';
+import { blankBitbucketEntry } from './blankBitbucketEntry';
+import { applyBitbucketSelection } from './applyBitbucketSelection';
 import { resolveSessionBitbucketTarget } from './resolveBitbucketPrContext';
 import type { GetFn, SetFn } from './types';
 
@@ -36,11 +37,12 @@ export const runBitbucketPrWrite = async ({
     }
     const targetMountId = target.mount.id;
     set((state) =>
-      applyMountBitbucketPr({
+      applyBitbucketSelection({
         state,
         sessionId,
         mountId: targetMountId,
         selected: bitbucketRequestIdentity({ repo, pullRequestId }),
+        fallback: blankBitbucketEntry({ target, repo }),
       }),
     );
     await get().refreshSessionBitbucketPr(sessionId, { force: true, mountId: targetMountId });

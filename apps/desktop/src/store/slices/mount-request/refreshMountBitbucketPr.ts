@@ -25,7 +25,8 @@ import {
   toMountBitbucketPrLink,
 } from './bitbucketPrLink';
 import { nowIso } from '../project-mounts/nowIso';
-import { applyMountBitbucketPr } from './mountBitbucketPr';
+import { applyMountRequest } from './applyMountRequest';
+import { bitbucketMountOf } from './requestOf';
 import { resolveBitbucketPrContext, type BitbucketPrContext } from './resolveBitbucketPrContext';
 import type { GetFn, SetFn } from './types';
 
@@ -105,14 +106,14 @@ export const refreshMountBitbucketPr = async ({
     opts,
     host: 'bitbucket',
     adapter: {
-      read: (state) => state.mountBitbucketPr?.[mountId],
-      apply: ({ state, entry }) =>
-        applyMountBitbucketPr({ state, sessionId, mountId, bitbucket: entry }),
+      read: (state) => bitbucketMountOf({ state, mountId }),
+      apply: ({ state, entry }) => applyMountRequest({ state, sessionId, mountId, request: entry }),
       resolveContext: async ({ isCurrent }) => {
         const context = await resolveBitbucketPrContext({ get, target });
         return context === null || !isCurrent() ? null : context;
       },
       pendingEntry: ({ existing, context }) => ({
+        kind: 'bitbucket',
         mountId,
         projectId: mount.projectId,
         revision: mount.revision,
@@ -128,6 +129,7 @@ export const refreshMountBitbucketPr = async ({
         checks: existing?.checks ?? null,
         reviewDecision: existing?.reviewDecision ?? null,
         pr: existing?.pr ?? null,
+        selected: existing?.selected ?? null,
         fetchedAt: existing?.fetchedAt ?? null,
         failedAt: existing?.failedAt ?? null,
         loading: true,
@@ -135,7 +137,7 @@ export const refreshMountBitbucketPr = async ({
       }),
       load: async ({ context }) => {
         const repo = context.repo;
-        const selected = get().mountSelectedBitbucketPr?.[mountId] ?? null;
+        const selected = bitbucketMountOf({ state: get(), mountId })?.selected ?? null;
         const storedLinks = await listMountPullRequestLinks({
           db: tauriDatabase,
           sessionId,

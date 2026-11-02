@@ -1,7 +1,8 @@
 import { gitlabPullRequestPort, type PullRequestPort } from '@goodboy/core';
+import { gitlabMountOf } from '../../../store/slices/mount-request/requestOf';
 import type { GitlabIntegrationBinding, MountId, SessionId } from '@goodboy/types';
 import type { GetFn } from '../../../store/slice-types';
-import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../store/slices/mount-request/state';
 import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
 import { sessionMountTargets } from '../../../store/slices/project-mounts/mountRequests';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -49,7 +50,7 @@ export const gitlabPortOf = ({
         ].filter((id): id is MountId => id !== null)
       : [mountId];
   const entry = mountIds
-    .map((id) => state.mountGitlabMr?.[id])
+    .map((id) => gitlabMountOf({ state, mountId: id }))
     .find((candidate) => hasMergeRequest(candidate, prNumber));
   if (entry === undefined || entry.mr === null) {
     return null;

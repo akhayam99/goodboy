@@ -178,8 +178,10 @@ export const seedResolveBitbucketScene = ({ selected }: Params): void => {
         ...NOTES.map((note) => noteRow({ note })),
       ],
     },
-    mountBitbucketPr: {
+    mountRequests: {
       [MOUNT_ID]: {
+        kind: 'bitbucket',
+        selected: null,
         pr: PR,
         fetchedAt,
         loading: false,

@@ -802,7 +802,7 @@ and its checks, on GitHub, GitLab and Bitbucket alike (`makeBranchFactsReaders` 
 `pullRequestPortFor` and the review source threads, the same functions the Branch page uses).
 Every reader resolves the request of the mount it is asked about, never the active mount of the
 conversation: the host comes from `mountRequestHostOf` (the remote of that mount), the request is
-the one stored for that `mountId` (`mountGithub`, `mountGitlabMr`, `mountBitbucketPr`), and the
+the one stored for that `mountId` (`mountGithub`, or `mountRequests` for GitLab and Bitbucket), and the
 GitHub threads come from the detail of that mount (`refreshSessionPrDetail` with its `mountId`,
 checked against the request number). A mount with no request reads "none is open"; a mount whose
 request or detail could not be read, or was never read, reads "Facts not available: reason", never

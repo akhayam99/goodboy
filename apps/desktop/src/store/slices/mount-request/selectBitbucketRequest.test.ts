@@ -58,6 +58,8 @@ const entry = (
   mountId: MountId,
   over: Partial<MountBitbucketPrState> = {},
 ): MountBitbucketPrState => ({
+  kind: 'bitbucket',
+  selected: null,
   mountId,
   projectId: PROJECT_ID,
   revision: 1,
@@ -118,7 +120,7 @@ const select = (extra: { readonly mountId?: MountId; readonly prNumber?: number 
 describe('selectBitbucketRequest', () => {
   it('reads the request of the active mount with its repository', () => {
     useAppStore.setState({
-      mountBitbucketPr: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
+      mountRequests: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
     });
 
     expect(select()).toMatchObject({ mountId: FIRST, repo: REPO, pr: { id: 42 } });
@@ -126,7 +128,7 @@ describe('selectBitbucketRequest', () => {
 
   it('falls back to a sibling mount when the active one has none', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [FIRST]: entry(FIRST),
         [SECOND]: entry(SECOND, { pr: pr(43), prs: [pr(43)] }),
       },
@@ -137,7 +139,7 @@ describe('selectBitbucketRequest', () => {
 
   it('asks a named mount and nothing else', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }),
         [SECOND]: entry(SECOND),
       },
@@ -149,7 +151,7 @@ describe('selectBitbucketRequest', () => {
 
   it('finds a request by number among the ones the mount holds', () => {
     useAppStore.setState({
-      mountBitbucketPr: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42), pr(44)] }) },
+      mountRequests: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42), pr(44)] }) },
     });
 
     expect(select({ prNumber: 44 })?.pr.id).toBe(44);
@@ -158,14 +160,14 @@ describe('selectBitbucketRequest', () => {
 
   it('keeps a declined request so its page still reads', () => {
     const declined = pr(42, { state: 'DECLINED' });
-    useAppStore.setState({ mountBitbucketPr: { [FIRST]: entry(FIRST, { pr: declined }) } });
+    useAppStore.setState({ mountRequests: { [FIRST]: entry(FIRST, { pr: declined }) } });
 
     expect(select()?.pr.state).toBe('DECLINED');
   });
 
   it('gives nothing without a bound repository', () => {
     useAppStore.setState({
-      mountBitbucketPr: { [FIRST]: entry(FIRST, { repo: null, pr: pr(42), prs: [pr(42)] }) },
+      mountRequests: { [FIRST]: entry(FIRST, { repo: null, pr: pr(42), prs: [pr(42)] }) },
     });
 
     expect(select()).toBeNull();
@@ -180,7 +182,7 @@ describe('the branch landing tab of a Bitbucket session', () => {
     expect(tabNow()).toBe('pr');
 
     useAppStore.setState({
-      mountBitbucketPr: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
+      mountRequests: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
     });
 
     expect(tabNow()).toBe('pr');
@@ -188,7 +190,7 @@ describe('the branch landing tab of a Bitbucket session', () => {
 
   it('keeps the tab the person chose', () => {
     useAppStore.setState({
-      mountBitbucketPr: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
+      mountRequests: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
       branchTab: { [SESSION_ID]: 'checks' },
     });
 

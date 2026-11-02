@@ -12,7 +12,6 @@
   "apps/desktop/src/store/slices/ask/stopAskReply.ts": 1,
   "apps/desktop/src/store/slices/backup/exportActions.ts": 1,
   "apps/desktop/src/store/slices/backup/importActions.ts": 1,
-  "apps/desktop/src/store/slices/bitbucket-pr/runBitbucketPrWrite.ts": 1,
   "apps/desktop/src/store/slices/boot/hydrate.ts": 1,
   "apps/desktop/src/store/slices/branch-cleanup/loadProjectBranches.ts": 1,
   "apps/desktop/src/store/slices/budget/refreshProviderBudgetStatus.ts": 1,
@@ -36,6 +35,7 @@
   "apps/desktop/src/store/slices/issue-briefs/requestIssueBrief.ts": 1,
   "apps/desktop/src/store/slices/monitoring/stopProcess.ts": 1,
   "apps/desktop/src/store/slices/mount-cleanup/resolveMountCleanup.ts": 1,
+  "apps/desktop/src/store/slices/mount-request/runBitbucketPrWrite.ts": 1,
   "apps/desktop/src/store/slices/notifications/emitNotification.ts": 1,
   "apps/desktop/src/store/slices/notifications/loadNotifications.ts": 1,
   "apps/desktop/src/store/slices/notifications/loadOlderNotifications.ts": 1,
@@ -102,11 +102,11 @@
   "apps/desktop/src/store/slices/updater/checkForUpdates.ts": 1,
   "apps/desktop/src/store/slices/updater/downloadUpdate.ts": 1,
   "apps/desktop/src/store/slices/workflowRouting/applyWorkflowNodeRouting.ts": 1,
+  "apps/desktop/src/store/slices/workflowStudio/loadWorkflowRunHistory.ts": 1,
+  "apps/desktop/src/store/slices/workflowStudio/startWorkflowGeneration.ts": 1,
   "apps/desktop/src/store/slices/workflows/autoContinue.ts": 1,
   "apps/desktop/src/store/slices/workflows/finalizeWorkflowStep.ts": 1,
   "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 1,
   "apps/desktop/src/store/slices/workflows/scoutTree.ts": 1,
-  "apps/desktop/src/store/slices/workflows/sweepIdleRuns.ts": 1,
-  "apps/desktop/src/store/slices/workflowStudio/loadWorkflowRunHistory.ts": 1,
-  "apps/desktop/src/store/slices/workflowStudio/startWorkflowGeneration.ts": 1
+  "apps/desktop/src/store/slices/workflows/sweepIdleRuns.ts": 1
 }

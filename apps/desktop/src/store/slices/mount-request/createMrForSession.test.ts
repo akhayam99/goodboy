@@ -144,14 +144,14 @@ describe('createMrForSession on the real store', () => {
     stubHost({
       create: () => Promise.reject(new Error('403 Forbidden: token lacks api scope')),
     });
-    const before = useAppStore.getState().mountGitlabMr;
+    const before = useAppStore.getState().mountRequests;
 
     await expect(
       useAppStore.getState().createMrForSession({ sessionId: session.id, mountId: relayMount }),
     ).rejects.toThrow('403 Forbidden');
 
-    expect(useAppStore.getState().mountGitlabMr).toBe(before);
-    expect(useAppStore.getState().mountGitlabMr[relayMount]).toBeUndefined();
+    expect(useAppStore.getState().mountRequests).toBe(before);
+    expect(useAppStore.getState().mountRequests[relayMount]).toBeUndefined();
     expect(h.upsertLink).not.toHaveBeenCalled();
     expect(h.insertEvent).not.toHaveBeenCalled();
     expect(invokes({ command: 'gitlab_mr_for_branch' })).toHaveLength(1);

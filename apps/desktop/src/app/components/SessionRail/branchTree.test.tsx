@@ -23,7 +23,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
-import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../store/slices/mount-request/state';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

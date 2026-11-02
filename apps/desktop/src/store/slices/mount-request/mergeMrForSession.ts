@@ -1,4 +1,5 @@
 import type { MountId, PrMergeMethod, SessionId } from '@goodboy/types';
+import { gitlabMountOf } from './requestOf';
 import { formatError } from '@goodboy/ui';
 import { isPullRequestPortError } from '@goodboy/core';
 import { mergeGitlabMr } from '../../../features/integrations/gitlab/mergeGitlabMr';
@@ -22,7 +23,7 @@ export const mergeMrForSession = (_set: SetFn, get: GetFn) => {
     if (target === null) {
       return;
     }
-    const mr = get().mountGitlabMr?.[target.mount.id]?.mr ?? null;
+    const mr = gitlabMountOf({ state: get(), mountId: target.mount.id })?.mr ?? null;
     const context = await resolveMrContext({ get, sessionId, target });
     if (context === null || mr === null) {
       return;
