@@ -62,6 +62,16 @@ const stateWith = (overrides: Partial<MountPlanState> = {}): MountPlanState =>
 const SHORT_WORKTREE_PATH = /^\/repos\/goodboy\/\.goodboy\/worktrees\/gb-[0-9a-z]{6}$/;
 
 describe('mountPlan', () => {
+  it('uses the allocated directory in the confirmation instead of drawing another', () => {
+    const plan = mountPlan({
+      state: stateWith(),
+      sessionId: SID,
+      projectId: PID,
+      mountId: MID,
+      dirName: 'gb-northwind',
+    });
+    expect(plan?.targetPath).toBe(`${repoProject.rootPath}/.goodboy/worktrees/gb-northwind`);
+  });
   afterEach(() => {
     forgetMaterializationSeed({ sessionId: SID });
   });

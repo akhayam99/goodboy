@@ -106,6 +106,39 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('useStartRun guidance', () => {
+  it('keeps the goal and settings after a failure and retries the same session', async () => {
+    const spawnAgent = vi
+      .fn<SpawnFn>()
+      .mockRejectedValueOnce(new Error('The payments-api project could not be opened.'))
+      .mockResolvedValue(AGENT);
+    useAppStore.setState({ spawnAgent });
+    const { result } = renderHook(
+      () =>
+        useStartRun({
+          workspaceId: WORKSPACE.id,
+          sessionId: SESSION.id,
+          prepare: async () => ({ usd: null, source: null }),
+          settleLimit: () => undefined,
+        }),
+      { wrapper: ToastProvider },
+    );
+    act(() => {
+      result.current.setText(QUESTION);
+      result.current.setGuidance(GUIDANCE);
+    });
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(result.current.error).toBe('The payments-api project could not be opened.');
+    expect(result.current.text).toBe(QUESTION);
+    expect(result.current.guidance).toBe(GUIDANCE);
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(result.current.error).toBeNull();
+    expect(spawnAgent.mock.calls.map((call) => call[0])).toEqual([SESSION.id, SESSION.id]);
+    expect(result.current.text).toBe('');
+  });
   it('hands the guidance to the agent a question starts', async () => {
     const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
     useAppStore.setState({ spawnAgent });

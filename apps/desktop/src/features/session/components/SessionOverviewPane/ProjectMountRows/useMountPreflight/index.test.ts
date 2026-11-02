@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type {
   IsoDateTime,
@@ -12,7 +12,14 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../../settings/settings';
-import { emptyOverrides } from '../../../../../../store/storyHarness';
+import {
+  emptyOverrides,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../../../../store/storyHarness';
 import type { MountPlan } from '../../../../../../store/slices/sessions/mountPlan';
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -48,13 +55,21 @@ const session = {
   updatedAt: NOW,
 } satisfies Session;
 
-const h = vi.hoisted(() => ({
+const h = {
   listBranchNames: vi.fn<(params: { readonly repoPath: string }) => Promise<Array<string>>>(),
-  state: {} as Record<string, unknown>,
-}));
+};
 
-vi.mock('../../../../../worktree/worktree', () => ({ listBranchNames: h.listBranchNames }));
-vi.mock('../../../../../../store', () => ({ useAppStore: { getState: () => h.state } }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+
+let useAppStore: StoryStore;
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 import { useMountPreflight } from './index';
 import { resolveMountPreflight } from './resolveMountPreflight';
@@ -72,9 +87,14 @@ const planFor = (overrides: Partial<MountPlan> = {}): MountPlan => ({
   ...overrides,
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({
+    worktree_list_branch_names: () => h.listBranchNames({ repoPath: repoProject.rootPath }),
+    session_dir_exists: false,
+  });
   h.listBranchNames.mockReset();
-  h.state = {
+  useAppStore.setState({
     sessions: [session],
     archivedSessions: {},
     projects: [repoProject],
@@ -82,7 +102,7 @@ beforeEach(() => {
     sessionWorktreeRecords: {},
     sessionProjectMounts: {},
     sessionExternalTasks: {},
-  };
+  });
 });
 
 afterEach(cleanup);
@@ -148,7 +168,76 @@ describe('resolveMountPreflight', () => {
   });
 });
 
+type TransactionParams = { readonly statements: ReadonlyArray<unknown> };
+
+type CreateParams = {
+  readonly args: {
+    readonly parentDir: string;
+    readonly dirName: string;
+    readonly branchName: string;
+  };
+};
+
 describe('useMountPreflight', () => {
+  it('confirms the allocated folder and creates that exact folder after a collision', async () => {
+    let probes = 0;
+    const create = vi.fn(({ args }: CreateParams) => ({
+      worktreePath: `${args.parentDir}/${args.dirName}`,
+      branchName: args.branchName,
+      slug: args.dirName,
+    }));
+    stubStoryInvoke({
+      worktree_list_branch_names: [],
+      session_dir_exists: () => {
+        probes += 1;
+        return probes === 1;
+      },
+      worktree_inspect: {
+        kind: 'foreign-directory',
+        path: '/repos/Harborline/.goodboy/worktrees/gb-taken',
+      },
+      worktree_create: create,
+      gh_run: { stdout: '', stderr: 'no git remotes found', exitCode: 1 },
+      worktree_setup_proposal: null,
+      db_select: [],
+      db_execute: { rowsAffected: 1, lastInsertId: null },
+      db_transaction: ({ statements }: TransactionParams) => ({
+        status: 'committed',
+        results: statements.map(() => ({ rowsAffected: 1, rows: [] })),
+      }),
+    });
+    const { result } = renderHook(() =>
+      useMountPreflight({ sessionId: SID, project: repoProject }),
+    );
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    const preflight = result.current.preflight;
+    if (preflight === null || preflight.branch === null) {
+      throw new Error('The mount preview is missing.');
+    }
+    expect(probes).toBe(2);
+    const input = {
+      sessionId: SID,
+      projectId: PID,
+      mountId: preflight.mountId,
+      reason: 'Add payments-api',
+      branch: preflight.branch,
+      dirName: preflight.targetPath.split('/').at(-1),
+    };
+    create.mockImplementationOnce(() => {
+      throw new Error('The worktree could not be created.');
+    });
+    await expect(useAppStore.getState().ensureProjectMounted(input)).rejects.toThrow(
+      'The worktree could not be created.',
+    );
+    expect(useAppStore.getState().sessionProjectMounts[SID] ?? []).toHaveLength(0);
+    await useAppStore.getState().ensureProjectMounted(input);
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]?.[0].args.dirName).toBe(create.mock.calls[1]?.[0].args.dirName);
+    expect(probes).toBe(2);
+    expect(useAppStore.getState().sessionProjectMounts[SID]?.[0]?.worktreePath).toBe(
+      preflight.targetPath,
+    );
+  });
   it('stays idle with no project selected', () => {
     const { result } = renderHook(() => useMountPreflight({ sessionId: SID, project: null }));
 
@@ -165,7 +254,7 @@ describe('useMountPreflight', () => {
     );
 
     expect(result.current.status).toBe('checking');
-    expect(result.current.preflight?.branch).toBe(derived);
+    expect(result.current.preflight).toBeNull();
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(h.listBranchNames).toHaveBeenCalledWith({ repoPath: '/repos/goodboy' });
@@ -186,7 +275,7 @@ describe('useMountPreflight', () => {
 
   it('skips the branch scan for a folder project', async () => {
     const folder = { ...repoProject, kind: 'folder' } satisfies Project;
-    h.state = { ...h.state, projects: [folder] };
+    useAppStore.setState({ projects: [folder] });
     const { result } = renderHook(() => useMountPreflight({ sessionId: SID, project: folder }));
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
