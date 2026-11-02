@@ -5,7 +5,7 @@
 
 ## The one way
 
-1. Add `apps/desktop/src/app/components/MockScene/scenes/u24/<unit>.tsx` exporting `U24_<UNIT>_SCENES`, a map of scene id to component. The registry globs `scenes/u*/*.tsx`.
+1. Add `apps/desktop/src/app/components/MockScene/scenes/surfaces/<surface>/<unit>.tsx` exporting `<SURFACE>_<UNIT>_SCENES`, a map of scene id to component, in a folder named after the screen. The registry globs `scenes/surfaces/*/*.tsx` and the older `scenes/u*/*.tsx` round folders, which are folded into surface folders at each release ([mock-screenshots.md](../mock-screenshots.md)).
 2. Render the real production component. Seed through the real store; every instant comes from `sceneClock` (`apps/desktop/src/app/components/MockScene/sceneClock.ts`).
 3. Add a twin `<unit>.test.tsx` that mounts each scene and, for clickable writes, clicks the real controls.
 4. Regenerate the list: `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/app/components/MockScene/scenes.registry.test.tsx`. The diff of `scenes.txt` holds only your ids.

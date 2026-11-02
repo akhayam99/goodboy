@@ -8,6 +8,7 @@ import {
   withoutLoneSurrogates,
 } from './issueUrl';
 import { issueTypeLabel, type IssueTypeValue } from './reportIssueTypes';
+import { countNoun } from '../../shared/utils/countNoun';
 
 export type ReportPartId = 'version' | 'system' | 'screen' | 'cliVersions' | 'error' | 'notice';
 
@@ -175,7 +176,7 @@ const countRedactions = ({ parts, excluded }: CountParams): number =>
 export const previewSummary = ({ parts, excluded }: CountParams): string => {
   const count = countRedactions({ parts, excluded });
   const redacted =
-    count === 0 ? 'nothing redacted' : `${count} ${count === 1 ? 'thing' : 'things'} redacted`;
+    count === 0 ? 'nothing redacted' : `${countNoun({ count: count, one: 'thing' })} redacted`;
   return `${redacted} · nothing from your prompts`;
 };
 

@@ -1,6 +1,6 @@
+import { isoFromMs } from './isoFromMs';
 import type {
   AgentId,
-  IsoDateTime,
   SessionDecision,
   SessionDecisionAuthor,
   SessionDecisionStatus,
@@ -34,9 +34,7 @@ const AUTHORS: ReadonlySet<string> = new Set(['agent', 'summarizer', 'user']);
 const isStatus = (value: string): value is SessionDecisionStatus => STATUSES.has(value);
 const isAuthor = (value: string): value is SessionDecisionAuthor => AUTHORS.has(value);
 
-const isoOf = (value: number): IsoDateTime => new Date(value).toISOString() as IsoDateTime;
-
-const toDomain = (row: Row): SessionDecision => ({
+const toSessionDecision = (row: Row): SessionDecision => ({
   id: row.id,
   sessionId: row.session_id as SessionId,
   number: row.number,
@@ -51,9 +49,9 @@ const toDomain = (row: Row): SessionDecision => ({
   closedBy: row.closed_by !== null && isAuthor(row.closed_by) ? row.closed_by : null,
   closedByAgentId: row.closed_by_agent_id === null ? null : (row.closed_by_agent_id as AgentId),
   previousText: row.previous_text,
-  rewordedAt: row.reworded_at === null ? null : isoOf(row.reworded_at),
-  createdAt: isoOf(row.created_at),
-  updatedAt: isoOf(row.updated_at),
+  rewordedAt: row.reworded_at === null ? null : isoFromMs({ ms: row.reworded_at }),
+  createdAt: isoFromMs({ ms: row.created_at }),
+  updatedAt: isoFromMs({ ms: row.updated_at }),
 });
 
 const COLUMNS =
@@ -72,7 +70,7 @@ export const listSessionDecisions = async ({
     `SELECT ${COLUMNS} FROM session_decisions WHERE session_id = ? ORDER BY number`,
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toSessionDecision);
 };
 
 type SaveParams = {

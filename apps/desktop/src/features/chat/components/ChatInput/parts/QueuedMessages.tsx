@@ -5,6 +5,7 @@ import type {
   AgentQueuedStatus,
   AgentQueuedTurn,
 } from '../../../../../store/slices/agentQueue/types';
+import { countNoun } from '../../../../../shared/utils/countNoun';
 
 type QueuedItem = Pick<AgentQueuedTurn, 'id' | 'content' | 'attachments' | 'override' | 'status'>;
 
@@ -27,7 +28,7 @@ const previewOf = ({ item }: { readonly item: QueuedItem }): string => {
     return trimmed;
   }
   const count = item.attachments.length;
-  return `${count} attachment${count === 1 ? '' : 's'}`;
+  return `${countNoun({ count: count, one: 'attachment' })}`;
 };
 
 export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: Props) => {

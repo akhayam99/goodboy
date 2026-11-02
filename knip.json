@@ -4,7 +4,7 @@
     ".": {
       "entry": ["package.json", "eslint.strict.config.mjs"],
       "ignore": ["scripts/rules/forbiddenPatterns.d.mts"],
-      "ignoreDependencies": ["@commitlint/cli"]
+      "ignoreBinaries": ["cwebp", "vite", "preview"]
     },
     "apps/desktop": {
       "entry": ["src/__tests__/regressions/console-guard/*.fixture.ts"],
@@ -13,7 +13,8 @@
         "!src/__tests__/**!",
         "!src/app/components/MockScene/**!",
         "!src/**/testing/**!",
-        "!src/store/storyHarness.ts!"
+        "!src/store/storyHarness.ts!",
+        "src/**/*.css"
       ],
       "ignoreIssues": {
         "src/app/components/BootSplash/index.tsx": ["exports"],
@@ -137,9 +138,9 @@
         "src/store/slices/scripts/state.ts": ["types"],
         "src/store/slices/session-view/index.ts": ["exports"],
         "src/store/slices/session-view/types.ts": ["exports"],
-        "src/features/session/timeline/activityView.ts": ["exports"]
-      },
-      "ignoreDependencies": ["tailwindcss"]
+        "src/features/session/timeline/activityView.ts": ["exports"],
+        "src/shared/lib/testing/hostFailureKinds.ts": ["types"]
+      }
     },
     "packages/core": {
       "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.test.ts"],
@@ -154,16 +155,16 @@
     },
     "packages/ui": {
       "entry": ["src/**/*.test.{ts,tsx}"],
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreIssues": {
+        "src/motionTimings.ts": ["duplicates"]
+      }
     },
     "website": {
-      "entry": [
-        "src/pages/features/main.tsx",
-        "src/pages/content/main.tsx",
-        "src/server/renderSite.tsx"
-      ],
-      "project": ["src/**/*.{ts,tsx}"],
+      "entry": ["src/server/renderSite.tsx"],
+      "project": ["src/**/*.{ts,tsx}", "src/**/*.css"],
       "ignoreDependencies": ["tailwindcss"]
     }
-  }
+  },
+  "ignoreExportsUsedInFile": true
 }

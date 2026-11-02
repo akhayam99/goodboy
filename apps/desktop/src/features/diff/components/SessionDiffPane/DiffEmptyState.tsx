@@ -3,6 +3,7 @@ import { Button, EmptyState, PageColumn } from '@goodboy/ui';
 import type { DiffView } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { DiffAlternate } from '../../hooks/useSessionDiff';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type Props = {
   readonly view: DiffView;
@@ -14,7 +15,7 @@ type Props = {
 
 const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
 
-const filesWord = (count: number): string => `${count} ${count === 1 ? 'file' : 'files'}`;
+const filesWord = (count: number): string => `${countNoun({ count: count, one: 'file' })}`;
 
 const titleOf = ({ view, baseBranch, alternate }: Omit<Props, 'onChange' | 'selector'>): string => {
   if (view.kind === 'commit') {

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  const { sceneInvoke } = await import('../../../../../../test/sceneInvoke');
   return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
 });
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
@@ -13,10 +13,10 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
-} from '../../../../../store/storyHarness';
-import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
-import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { MOCK_SCENES } from '../..';
+} from '../../../../../../store/storyHarness';
+import { runA11yCheck } from '../../../../../../__tests__/a11y/utils';
+import { clearSceneInvoke } from '../../../../../../test/sceneInvoke';
+import { MOCK_SCENES } from '../../..';
 import { U26P_USAGE_CARD_SCENES } from './UsageCardScene';
 
 beforeAll(async () => {

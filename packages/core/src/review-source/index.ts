@@ -60,7 +60,6 @@ export {
   pullRequestReviewerGroupsOf,
   type PullRequestReviewerGroups,
 } from './pullRequestReviewerGroups';
-export { requestStateKind } from './requestStateKind';
 export {
   PULL_REQUEST_CAPABILITY_METHODS,
   PULL_REQUEST_NOUNS,
@@ -79,11 +78,8 @@ export {
   REVIEW_SOURCE_LABEL,
   type ReviewSource,
   type ReviewSourceCapabilities,
-  type ReviewSourceCommitLinkParams,
   type ReviewSourceKind,
   type ReviewSourceReply,
-  type ReviewSourceReplyParams,
   type ReviewSourceResolution,
-  type ReviewSourceResolveParams,
   type ReviewSourceThread,
 } from './types';

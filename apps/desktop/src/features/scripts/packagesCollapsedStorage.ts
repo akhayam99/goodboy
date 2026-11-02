@@ -1,5 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
+import { storageKeyOf } from '../../shared/lib/storageKeyOf';
 
 type ReadParams = {
   readonly workspaceId: WorkspaceId;
@@ -8,9 +9,6 @@ type ReadParams = {
 type WriteParams = ReadParams & {
   readonly overrides: Readonly<Record<string, boolean>>;
 };
-
-const storageKey = ({ workspaceId }: ReadParams): string =>
-  `${STORAGE_PREFIXES.scriptsPackagesCollapsed}${workspaceId}`;
 
 const isBooleanRecord = (value: unknown): value is Readonly<Record<string, boolean>> =>
   typeof value === 'object' &&
@@ -22,7 +20,7 @@ const NO_OVERRIDES: Readonly<Record<string, boolean>> = {};
 
 const overridesPref = ({ workspaceId }: ReadParams) =>
   persistedPref<Readonly<Record<string, boolean>>>({
-    key: storageKey({ workspaceId }),
+    key: storageKeyOf({ prefix: STORAGE_PREFIXES.scriptsPackagesCollapsed, id: workspaceId }),
     fallback: NO_OVERRIDES,
     parse: (raw) => {
       const parsed: unknown = JSON.parse(raw);

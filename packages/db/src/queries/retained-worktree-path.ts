@@ -37,7 +37,7 @@ type TransferMountPathParams = {
 const OWNED = `source_session_id IS NOT NULL AND source_mount_id IS NOT NULL
   AND workspace_id IS NOT NULL AND reason != 'orphan'`;
 
-const toDomain = (row: Row): RetainedWorktreePath => ({
+const toRetainedWorktreePath = (row: Row): RetainedWorktreePath => ({
   ...row,
   lastCheckedAt:
     row.lastCheckedAt === null ? null : (new Date(row.lastCheckedAt).toISOString() as IsoDateTime),
@@ -57,7 +57,7 @@ export const listRetainedWorktreePaths = async ({
      FROM retained_worktree_paths WHERE workspace_id = ? AND ${OWNED} ORDER BY created_at, id`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map(toRetainedWorktreePath);
 };
 
 type RetainedPathInsertParams = {
@@ -169,7 +169,7 @@ export const listAllRetainedWorktreePaths = async ({
     `SELECT ${SELECT_COLUMNS} FROM retained_worktree_paths WHERE ${OWNED} ORDER BY created_at, id`,
     [],
   );
-  return rows.map(toDomain);
+  return rows.map(toRetainedWorktreePath);
 };
 
 export const deleteRetainedWorktreePath = async ({ db, id }: RetainedKeyParams): Promise<void> => {

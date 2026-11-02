@@ -4,6 +4,7 @@ import {
   AUTO_DIGEST_SETTLED_MAX,
   AUTO_DIGEST_TASK_CHARS,
 } from './limits';
+import { oneLine } from './oneLine';
 import type { AutoSubstepRole } from './substep';
 
 export type DigestQuestion = Readonly<{
@@ -34,16 +35,6 @@ export type StateDigestParams = Readonly<{
   delegations: ReadonlyArray<DigestDelegation>;
   nowMs: number;
 }>;
-
-type OneLineParams = {
-  readonly text: string;
-  readonly max: number;
-};
-
-const oneLine = ({ text, max }: OneLineParams): string => {
-  const flat = text.replace(/\s+/g, ' ').trim();
-  return flat.length > max ? `${flat.slice(0, max)}...` : flat;
-};
 
 type AgeParams = {
   readonly ms: number;

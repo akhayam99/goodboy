@@ -1,25 +1,25 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
-import { ToastProvider } from '../../../../../shared/components/Toast';
-import { applyDocumentTheme } from '../../../../../shared/lib/theme';
+import { ToastProvider } from '../../../../../../shared/components/Toast';
+import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   stubStoryInvoke,
-} from '../../../../../store/storyHarness';
-import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
-import { MOCK_SCENES } from '../..';
+} from '../../../../../../store/storyHarness';
+import { runA11yCheck } from '../../../../../../__tests__/a11y/utils';
+import { MOCK_SCENES } from '../../..';
 import { U23P24_ERROR_RECOVERY_SCENES } from './error-recovery';
 
 const SETTLE_MS = 2_000;

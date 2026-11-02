@@ -6,6 +6,7 @@ import { ReadingNotes } from '../../chat/readingOrder/ReadingNotes';
 import type { DelegationResultView } from './delegationResultOf';
 import { DelegationResultChips } from './DelegationResultChips';
 import { summaryNotesOf } from './summaryNotesOf';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 const SUMMARY_ITEM_KEY = 'delegation-summary';
 
@@ -120,7 +121,7 @@ const chipsOf = ({
         kind="reference"
         tone="success"
         icon={<Check size={ICON_SIZE.control} aria-hidden />}
-        label={`${passedCount} ${passedCount === 1 ? 'check' : 'checks'} passed`}
+        label={`${countNoun({ count: passedCount, one: 'check' })} passed`}
       />,
     );
   }

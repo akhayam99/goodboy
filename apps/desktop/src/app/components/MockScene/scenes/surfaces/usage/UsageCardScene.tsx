@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Popover } from '@goodboy/ui';
-import { applyDocumentTheme } from '../../../../../shared/lib/theme';
-import { TurnFooterDetail } from '../../../../../features/chat/components/TurnFooter/TurnFooterDetail';
-import { USAGE_CARD_MAX_WIDTH } from '../../../../../features/chat/utils/usageCardMaxWidth';
-import type { TurnFooterData } from '../../../../../features/chat/components/TurnFooter/useTurnFooter';
+import { applyDocumentTheme } from '../../../../../../shared/lib/theme';
+import { TurnFooterDetail } from '../../../../../../features/chat/components/TurnFooter/TurnFooterDetail';
+import { USAGE_CARD_MAX_WIDTH } from '../../../../../../features/chat/utils/usageCardMaxWidth';
+import type { TurnFooterData } from '../../../../../../features/chat/components/TurnFooter/useTurnFooter';
 
 type Theme = 'dark' | 'light';
 

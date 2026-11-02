@@ -15,6 +15,7 @@ import { asReportType } from '../../../features/reports/reportTypes';
 import { asWireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
 import { asWireframeTarget } from '../../../features/wireframes/wireframeTarget';
 import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
+import { storageKeyOf } from '../../../shared/lib/storageKeyOf';
 import { DEFAULT_WIREFRAME_TARGET } from './defaultArtifactDraft';
 import type {
   ArtifactBasedOn,
@@ -33,9 +34,6 @@ type WriteParams = Params &
   }>;
 
 const EPOCH = new Date(0).toISOString() as IsoDateTime;
-
-const storageKey = ({ sessionId }: Params): string =>
-  `${STORAGE_PREFIXES.artifactDrafts}${sessionId}`;
 
 const readBasedOn = (value: unknown): ArtifactBasedOn => {
   if (!isRecord(value) || value['kind'] !== 'workflow-run') {
@@ -122,7 +120,7 @@ const NO_DRAFTS: SessionArtifactDrafts = {};
 
 const draftsPref = ({ sessionId }: Params) =>
   persistedPref<SessionArtifactDrafts>({
-    key: storageKey({ sessionId }),
+    key: storageKeyOf({ prefix: STORAGE_PREFIXES.artifactDrafts, id: sessionId }),
     fallback: NO_DRAFTS,
     parse: (raw) => {
       const parsed: unknown = JSON.parse(raw);

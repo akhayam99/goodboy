@@ -1,5 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
+import { storageKeyOf } from '../../shared/lib/storageKeyOf';
 import { INBOX_KIND_FILTERS, type InboxKindFilter } from './kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider } from './types';
 
@@ -13,9 +14,6 @@ export type StoredInboxFilters = {
 };
 
 type WriteParams = Params & StoredInboxFilters;
-
-const storageKey = ({ workspaceId }: Params): string =>
-  `${STORAGE_PREFIXES.inboxKindFilter}${workspaceId}`;
 
 const isInboxKindFilter = (value: unknown): value is InboxKindFilter =>
   typeof value === 'string' && INBOX_KIND_FILTERS.some((candidate) => candidate === value);
@@ -47,7 +45,7 @@ const storedSource = ({ source, providers }: SourceParams): InboxProvider | null
 
 const inboxFiltersPref = ({ workspaceId }: Params) =>
   persistedPref<StoredInboxFilters | null>({
-    key: storageKey({ workspaceId }),
+    key: storageKeyOf({ prefix: STORAGE_PREFIXES.inboxKindFilter, id: workspaceId }),
     fallback: null,
     parse: (raw) => {
       if (isInboxKindFilter(raw)) {

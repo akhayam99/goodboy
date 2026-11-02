@@ -1,4 +1,4 @@
-export { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION, scanArtifactBlocks } from './grammar';
+export { scanArtifactBlocks } from './grammar';
 export { locateArtifactSpans } from './locateArtifactBlocks';
 export type { ArtifactScanState } from './grammar';
 export { parseArtifactEnvelope } from './parseArtifactEnvelope';

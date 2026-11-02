@@ -11959,9 +11959,6 @@
     }
   },
   "packages/core/src/orchestrator/parser.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 1
     }
@@ -12015,9 +12012,6 @@
     }
   },
   "packages/core/src/providers/aux-output.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 3
     }
@@ -12642,7 +12636,7 @@
   },
   "packages/db/src/queries/ask-thread.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "packages/db/src/queries/attachment.ts": {
@@ -12657,7 +12651,7 @@
   },
   "packages/db/src/queries/chat.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 11
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -12671,11 +12665,6 @@
   "packages/db/src/queries/context-slot.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "packages/db/src/queries/deleted-branch.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "packages/db/src/queries/diff-comment.ts": {
@@ -13049,7 +13038,7 @@
   },
   "packages/db/src/queries/session-context-item.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 6
     }
   },
   "packages/db/src/queries/session-context-seen.ts": {
@@ -13059,7 +13048,7 @@
   },
   "packages/db/src/queries/session-decision.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "packages/db/src/queries/session-event.test.ts": {
@@ -13141,11 +13130,6 @@
   "packages/db/src/queries/starred-issue.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "packages/db/src/queries/starred-issue.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "packages/db/src/queries/storage-folders.test.ts": {

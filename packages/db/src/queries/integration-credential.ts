@@ -16,7 +16,7 @@ type IntegrationCredentialRow = {
   updated_at: number;
 };
 
-const toDomain = (row: IntegrationCredentialRow): IntegrationCredential => ({
+const toIntegrationCredential = (row: IntegrationCredentialRow): IntegrationCredential => ({
   id: row.id as IntegrationCredentialId,
   provider: row.provider as IntegrationBindingProvider,
   label: row.label,
@@ -31,7 +31,7 @@ export const listIntegrationCredentials = async (
   const rows = await db.select<IntegrationCredentialRow>(
     'SELECT * FROM integration_credentials ORDER BY created_at ASC, id ASC',
   );
-  return rows.map(toDomain);
+  return rows.map(toIntegrationCredential);
 };
 
 export const upsertIntegrationCredential = async (

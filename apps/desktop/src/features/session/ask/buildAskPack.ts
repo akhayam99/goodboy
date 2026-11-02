@@ -143,7 +143,7 @@ const agentRank = (agent: AskPackAgent): number => {
   return 3;
 };
 
-const isLive = (agent: AskPackAgent): boolean => agentRank(agent) < 3;
+const isAgentLive = (agent: AskPackAgent): boolean => agentRank(agent) < 3;
 
 const STATUS_WORD: Readonly<Record<AgentStatus, string>> = {
   pending: 'waiting to start',
@@ -169,8 +169,8 @@ const agentSection = ({
   readonly collector: Collector;
 }): Section => {
   const ordered = [...agents].sort((left, right) => agentRank(left) - agentRank(right));
-  const live = ordered.filter(isLive);
-  const settled = ordered.filter((agent) => !isLive(agent));
+  const live = ordered.filter(isAgentLive);
+  const settled = ordered.filter((agent) => !isAgentLive(agent));
   const shown = [...live, ...settled.slice(0, ASK_PACK_LIMITS.settledAgents)];
   const hidden = ordered.length - shown.length;
   const lines = shown.map((agent, index) => {
@@ -182,7 +182,7 @@ const agentSection = ({
     });
     const word = agent.isNeedsYou ? 'needs you' : STATUS_WORD[agent.status];
     const since = agent.since === null ? '' : ` since ${agent.since}`;
-    const limit = isLive(agent) ? ASK_PACK_LIMITS.liveSummary : ASK_PACK_LIMITS.settledPreview;
+    const limit = isAgentLive(agent) ? ASK_PACK_LIMITS.liveSummary : ASK_PACK_LIMITS.settledPreview;
     const summary =
       agent.summary.trim() === ''
         ? ''

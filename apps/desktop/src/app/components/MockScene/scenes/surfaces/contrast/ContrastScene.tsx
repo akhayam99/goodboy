@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Band } from '@goodboy/ui';
-import { switchContrast } from '../../../../../shared/lib/contrast';
-import { applyDocumentTheme, type Theme } from '../../../../../shared/lib/theme';
-import { ContrastPreferenceField } from '../../../../../features/settings/components/SettingsStudio/ContrastPreferenceField';
+import { switchContrast } from '../../../../../../shared/lib/contrast';
+import { applyDocumentTheme, type Theme } from '../../../../../../shared/lib/theme';
+import { ContrastPreferenceField } from '../../../../../../features/settings/components/SettingsStudio/ContrastPreferenceField';
 
 type Props = {
   readonly theme: Theme;

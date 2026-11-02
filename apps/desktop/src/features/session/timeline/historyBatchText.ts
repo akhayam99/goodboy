@@ -5,6 +5,7 @@ import {
   type HistoryBatchBranch,
   type HistoryBatchOrigin,
 } from './historyBatchesOf';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 export type HistoryBatchFacts = {
   readonly branchCount: number;
@@ -51,9 +52,7 @@ export const historyBatchSubOf = ({ origin, facts }: SubParams): string => {
   const prefix = origin === 'rebase' ? 'Rebase all' : 'Rewrite';
   const parts = [
     ...(facts.pushedCount > 0 ? [`${facts.pushedCount} pushed`] : []),
-    ...(facts.prCount > 0
-      ? [`${facts.prCount} ${facts.prCount === 1 ? 'PR' : 'PRs'} updated`]
-      : []),
+    ...(facts.prCount > 0 ? [`${countNoun({ count: facts.prCount, one: 'PR' })} updated`] : []),
   ];
   return parts.length === 0 ? prefix : `${prefix} · ${parts.join(', ')}`;
 };

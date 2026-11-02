@@ -19,7 +19,7 @@ type Row = {
   readonly disconnectedAt: number | null;
 };
 
-const toDomain = (row: Row): WorktreeRoot => ({
+const toWorktreeRoot = (row: Row): WorktreeRoot => ({
   repoRoot: row.repoRoot,
   firstSeenAt: new Date(row.firstSeenAt).toISOString() as IsoDateTime,
   lastScannedAt:
@@ -48,7 +48,7 @@ export const listWorktreeRoots = async ({ db }: DbParams): Promise<ReadonlyArray
      ORDER BY r.repo_root`,
     [],
   );
-  return rows.map(toDomain);
+  return rows.map(toWorktreeRoot);
 };
 
 type RegisterRootParams = DbParams & {

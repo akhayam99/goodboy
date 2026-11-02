@@ -1,10 +1,11 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 type Params = {
   readonly repoCount: number;
   readonly folderCount: number;
 };
 
 export const projectsCountLine = ({ repoCount, folderCount }: Params): string => {
-  const projects = `${repoCount} ${repoCount === 1 ? 'project' : 'projects'}`;
+  const projects = `${countNoun({ count: repoCount, one: 'project' })}`;
   if (folderCount === 0) {
     return projects;
   }

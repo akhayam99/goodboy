@@ -308,6 +308,4 @@ export const TREE_VIEWS = TREE_SEED.views;
 
 export const TREE_AGENTS = TREE_SEED.agents;
 
-export const TREE_ROOT_IDS = TREE_SEED.rootIds;
-
 export const TREE_LIVE_ROOT_ID: AgentId = TREE_SEED.selectedRootId;

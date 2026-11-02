@@ -23,7 +23,7 @@ type SecurityFindingRow = {
   readonly resolved_at: number | null;
 };
 
-const toDomain = ({ row }: { readonly row: SecurityFindingRow }): SecurityFinding => ({
+const toSecurityFinding = ({ row }: { readonly row: SecurityFindingRow }): SecurityFinding => ({
   id: row.id as SecurityFindingId,
   workspaceId: row.workspace_id as WorkspaceId,
   ...(row.project_id === null ? {} : { projectId: row.project_id as ProjectId }),
@@ -135,7 +135,7 @@ export const listOpenSecurityFindings = async ({
      ORDER BY first_seen_at DESC`,
     [workspaceId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toSecurityFinding({ row }));
 };
 
 export const listDismissedSecurityFindings = async ({
@@ -148,7 +148,7 @@ export const listDismissedSecurityFindings = async ({
      ORDER BY dismissed_at DESC`,
     [workspaceId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toSecurityFinding({ row }));
 };
 
 export const countOpenSecurityFindings = async ({

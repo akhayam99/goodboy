@@ -27,7 +27,7 @@ type TelemetryRow = {
   recorded_at: number;
 };
 
-function toDomain(row: TelemetryRow): TelemetryRecord {
+function toTelemetryRecord(row: TelemetryRow): TelemetryRecord {
   return {
     id: row.id as TelemetryRecordId,
     runId: row.run_id as ProviderRunId,
@@ -76,7 +76,7 @@ export const listTelemetryForSession = async (
     'SELECT * FROM telemetry_records WHERE session_id = ? ORDER BY recorded_at ASC',
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toTelemetryRecord);
 };
 
 type SummaryRow = {

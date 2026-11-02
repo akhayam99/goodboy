@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { brandId, type MountId, type SessionId } from '@goodboy/types';
-import { SETTINGS_PROJECTS } from '../audit/settingsSeed';
-import { ToastProvider } from '../../../../../shared/components/Toast';
-import { useAppStore } from '../../../../../store';
-import { WorktreeSetupOffer } from '../../../../../features/session/components/SessionOverviewPane/ProjectMountRows/WorktreeSetupOffer';
-import { NewWorktreesField } from '../../../../../features/worktree/NewWorktreesField';
-import { mockSceneIpc } from '../mockSceneIpc';
+import { SETTINGS_PROJECTS } from '../../audit/settingsSeed';
+import { ToastProvider } from '../../../../../../shared/components/Toast';
+import { useAppStore } from '../../../../../../store';
+import { WorktreeSetupOffer } from '../../../../../../features/session/components/SessionOverviewPane/ProjectMountRows/WorktreeSetupOffer';
+import { NewWorktreesField } from '../../../../../../features/worktree/NewWorktreesField';
+import { mockSceneIpc } from '../../mockSceneIpc';
 
 type Variant = 'offer' | 'carry';
 

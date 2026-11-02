@@ -26,7 +26,7 @@ type Row = {
 const isStringRecord = (value: unknown): value is Record<string, string> =>
   isJsonRecord(value) && Object.values(value).every((entry) => typeof entry === 'string');
 
-const toDomain = (row: Row): IntegrationDraft => ({
+const toIntegrationDraft = (row: Row): IntegrationDraft => ({
   id: row.id as IntegrationDraftId,
   workspaceId: row.workspace_id as WorkspaceId,
   sessionId: row.session_id as SessionId,
@@ -62,7 +62,7 @@ export const listPendingSlackDrafts = async ({
       ORDER BY created_at ASC`,
     [workspaceId, channelId, threadTs],
   );
-  return rows.map(toDomain);
+  return rows.map(toIntegrationDraft);
 };
 
 type ListPendingSlackDraftsForSessionParams = {
@@ -80,7 +80,7 @@ export const listPendingSlackDraftsForSession = async ({
       ORDER BY created_at ASC`,
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toIntegrationDraft);
 };
 
 type ListPendingIntegrationDraftsForWorkspaceParams = {
@@ -98,7 +98,7 @@ export const listPendingIntegrationDraftsForWorkspace = async ({
       ORDER BY created_at ASC`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map(toIntegrationDraft);
 };
 
 type DecideIntegrationDraftParams = {

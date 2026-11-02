@@ -370,7 +370,7 @@ type PrViewFieldParams<T> = {
   readonly opts: GhRunOptions;
 };
 
-const firstLineOf = ({ text }: { readonly text: string }): string =>
+const firstFilledLineOf = ({ text }: { readonly text: string }): string =>
   text
     .split('\n')
     .map((line) => line.trim())
@@ -397,7 +397,7 @@ const readPrViewField = async <T>({
       return {
         read: classifyGhFailure({ stderr: err.stderr }) === 'denied' ? 'denied' : 'failed',
         value: [],
-        error: firstLineOf({ text: err.stderr }) || err.message,
+        error: firstFilledLineOf({ text: err.stderr }) || err.message,
       };
     }
     if (err instanceof GhJsonParseError) {

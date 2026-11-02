@@ -27,6 +27,7 @@ import { selectProjectById } from '../../../store/slices/projects/selectProjectB
 import { selectSessionById } from '../../../store/slices/sessions/selectSessionById';
 import { resolveRequestedBranchName } from '../../../store/slices/project-mounts/resolveMountNaming';
 import { useAppStore } from '../../../store/store';
+import { bridgeText } from './bridgeText';
 import { executeSeriesRequest, type SeriesBridgeRequest } from './series';
 import { serveHandoff } from '../../../shared/lib/serveHandoff';
 
@@ -65,11 +66,6 @@ const BRIDGE_CODE: Readonly<Record<string, string>> = {
   'project-missing': 'mount_unavailable',
   'repository-unavailable': 'mount_unavailable',
   'revision-conflict': 'request_conflict',
-};
-
-const text = ({ args, key }: { readonly args: BridgeArgs; readonly key: string }): string => {
-  const value = args[key];
-  return typeof value === 'string' ? value.trim() : '';
 };
 
 const truthy = ({ args, key }: { readonly args: BridgeArgs; readonly key: string }): boolean =>
@@ -211,8 +207,8 @@ const forkFrom = async ({ request }: InspectParams): Promise<MountBridgeOutcome>
   if (source === undefined) {
     return { ok: false, error: 'the source mount is not loaded', code: 'mount_unavailable' };
   }
-  const base = text({ args: request.args, key: 'base' });
-  const requested = text({ args: request.args, key: 'branch' });
+  const base = bridgeText({ args: request.args, key: 'base' });
+  const requested = bridgeText({ args: request.args, key: 'branch' });
   const mount = await get().forkMount({
     sessionId: request.sessionId,
     projectId: source.projectId,
@@ -260,7 +256,7 @@ const switchTo = async ({ request }: InspectParams): Promise<MountBridgeOutcome>
     };
   }
   const previous = await loadedMount(request);
-  const requested = text({ args: request.args, key: 'branch' });
+  const requested = bridgeText({ args: request.args, key: 'branch' });
   const session = selectSessionById(get(), request.sessionId);
   const project = selectProjectById(get(), previous?.projectId ?? null);
   const target =
@@ -342,7 +338,7 @@ const activate = async ({ request }: InspectParams): Promise<MountBridgeOutcome>
 
 const resolveMismatch = async ({ request }: InspectParams): Promise<MountBridgeOutcome> => {
   const get = useAppStore.getState;
-  const intent = text({ args: request.args, key: 'intent' });
+  const intent = bridgeText({ args: request.args, key: 'intent' });
   await get().resolveMountBranchMismatch({
     sessionId: request.sessionId,
     mountId: request.mountId,
@@ -398,7 +394,7 @@ const requestReferenceMode = ({
 }: {
   readonly args: BridgeArgs;
 }): 'closing' | 'part-of' | 'none' => {
-  const raw = text({ args, key: 'referenceMode' });
+  const raw = bridgeText({ args, key: 'referenceMode' });
   if (raw === 'closes') {
     return 'closing';
   }
@@ -483,10 +479,10 @@ const createRequest = async ({ request }: InspectParams): Promise<MountBridgeOut
   if (existing !== null) {
     return { ok: true, data: linkResult({ link: existing, created: false }) };
   }
-  const base = text({ args: request.args, key: 'base' });
+  const base = bridgeText({ args: request.args, key: 'base' });
   const draft = !truthy({ args: request.args, key: 'ready' });
-  const title = text({ args: request.args, key: 'title' });
-  const body = text({ args: request.args, key: 'body' });
+  const title = bridgeText({ args: request.args, key: 'title' });
+  const body = bridgeText({ args: request.args, key: 'body' });
   const referenceMode = requestReferenceMode({ args: request.args });
   await host.create({ title, body, draft, referenceMode, base });
   const link = await linkForBranch({

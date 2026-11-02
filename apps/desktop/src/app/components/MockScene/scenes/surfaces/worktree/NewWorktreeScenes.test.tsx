@@ -9,8 +9,8 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
-} from '../../../../../store/storyHarness';
-import { MOCK_SCENES } from '../..';
+} from '../../../../../../store/storyHarness';
+import { MOCK_SCENES } from '../../..';
 import { U23P25_NEW_WORKTREE_SCENES } from './NewWorktreeScenes';
 
 const WAIT = { timeout: 15_000 };

@@ -9,7 +9,7 @@ type ProviderCredentialRow = {
   created_at: number;
 };
 
-function toDomain(row: ProviderCredentialRow): ProviderCredential {
+function toProviderCredential(row: ProviderCredentialRow): ProviderCredential {
   return {
     id: row.id as CredentialId,
     providerId: row.provider_id as ProviderId,
@@ -25,7 +25,7 @@ export const listProviderCredentials = async (
   const rows = await db.select<ProviderCredentialRow>(
     'SELECT * FROM provider_credentials ORDER BY created_at ASC',
   );
-  return rows.map(toDomain);
+  return rows.map(toProviderCredential);
 };
 
 export const insertProviderCredential = async (

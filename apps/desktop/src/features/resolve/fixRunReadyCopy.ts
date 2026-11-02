@@ -1,11 +1,12 @@
 import type { FixRunReady } from './fixRunReady';
+import { countNoun } from '../../shared/utils/countNoun';
 
 type CountParams = {
   readonly count: number;
 };
 
 export const fixRunReadyTitle = ({ count }: CountParams): string =>
-  `Fix run finished: ${count} ${count === 1 ? 'fix' : 'fixes'} ready for you`;
+  `Fix run finished: ${countNoun({ count: count, one: 'fix', many: 'fixes' })} ready for you`;
 
 type BodyParams = {
   readonly ready: FixRunReady;

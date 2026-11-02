@@ -1,6 +1,7 @@
 import type { MountId, PrSeriesId, PrSeriesView, ProjectId, SessionId } from '@goodboy/types';
 import { resolveParentRequest } from '../../../store/slices/pr-series/parentRequest';
 import { useAppStore } from '../../../store/store';
+import { bridgeText } from './bridgeText';
 
 type BridgeArgs = Readonly<Record<string, unknown>>;
 
@@ -20,11 +21,6 @@ export type SeriesBridgeOutcome = {
   readonly error?: string;
   readonly code?: string;
   readonly data?: unknown;
-};
-
-const text = ({ args, key }: { readonly args: BridgeArgs; readonly key: string }): string => {
-  const value = args[key];
-  return typeof value === 'string' ? value.trim() : '';
 };
 
 const count = ({
@@ -83,17 +79,17 @@ const create = async ({ request }: Params): Promise<SeriesBridgeOutcome> => {
     };
   }
   const parentRequest = resolveParentRequest({
-    provider: text({ args: request.args, key: 'parentProvider' }),
-    host: text({ args: request.args, key: 'parentHost' }),
-    repo: text({ args: request.args, key: 'parentRepo' }),
+    provider: bridgeText({ args: request.args, key: 'parentProvider' }),
+    host: bridgeText({ args: request.args, key: 'parentHost' }),
+    repo: bridgeText({ args: request.args, key: 'parentRepo' }),
     number: count({ args: request.args, key: 'parentNumber' }),
   });
-  const workItem = text({ args: request.args, key: 'workItem' });
-  const workItemUrl = text({ args: request.args, key: 'workItemUrl' });
+  const workItem = bridgeText({ args: request.args, key: 'workItem' });
+  const workItemUrl = bridgeText({ args: request.args, key: 'workItemUrl' });
   const series = await useAppStore.getState().createPrSeries({
     sessionId: request.sessionId,
     projectId: request.projectId,
-    name: text({ args: request.args, key: 'name' }),
+    name: bridgeText({ args: request.args, key: 'name' }),
     plannedCount: count({ args: request.args, key: 'total' }),
     workItemIdentifier: workItem === '' ? null : workItem,
     workItemUrl: workItemUrl === '' ? null : workItemUrl,
@@ -115,10 +111,10 @@ const setMember = async ({ request }: Params): Promise<SeriesBridgeOutcome> => {
   if (position === null) {
     return { ok: false, error: '--position needs a positive whole number' };
   }
-  const label = text({ args: request.args, key: 'label' });
+  const label = bridgeText({ args: request.args, key: 'label' });
   const member = await useAppStore.getState().setPrSeriesMember({
     sessionId: request.sessionId,
-    seriesId: text({ args: request.args, key: 'series' }) as PrSeriesId,
+    seriesId: bridgeText({ args: request.args, key: 'series' }) as PrSeriesId,
     position,
     mountId: request.mountId,
     label: label === '' ? null : label,

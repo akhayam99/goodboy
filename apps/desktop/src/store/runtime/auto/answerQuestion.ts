@@ -32,7 +32,7 @@ import type { AgentCommand, BridgeOutcome } from './ports';
 import { readAdmissionSnapshot } from './readAdmissionSnapshot';
 import { refuseOutcome } from './refuseOutcome';
 import type { AgentVerbContext } from './verbContext';
-import { isRecord } from '@goodboy/types/helpers';
+import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
 
 export type AnswerQuestionParams = Readonly<{
   ctx: AgentVerbContext;
@@ -43,19 +43,6 @@ const ABORT_ATTEMPT = 'answer_attempt';
 const ABORT_DELEGATION = 'answer_delegation';
 const ANSWER_CHARS = 8_000;
 const ANSWERED_REASON = 'answered';
-
-type TextParams = {
-  readonly value: unknown;
-  readonly max: number;
-};
-
-const textOf = ({ value, max }: TextParams): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed === '' ? null : trimmed.slice(0, max);
-};
 
 type QuestionTextParams = {
   readonly attempt: AutoAttempt;
@@ -159,9 +146,9 @@ export const answerQuestion = async ({
   command,
 }: AnswerQuestionParams): Promise<BridgeOutcome> => {
   const { grant, args } = command;
-  const delegationText = textOf({ value: args['delegation'], max: 1_000 });
-  const questionId = textOf({ value: args['question'], max: 1_000 });
-  const text = textOf({ value: args['text'], max: ANSWER_CHARS });
+  const delegationText = clippedTextOf({ value: args['delegation'], max: 1_000 });
+  const questionId = clippedTextOf({ value: args['question'], max: 1_000 });
+  const text = clippedTextOf({ value: args['text'], max: ANSWER_CHARS });
   if (delegationText === null || questionId === null || text === null) {
     return refuseOutcome({
       code: 'spec_invalid',
@@ -192,7 +179,7 @@ export const answerQuestion = async ({
   if (delegation.state !== 'paused' || paused.state !== 'paused' || latest?.id !== paused.id) {
     return refuseOutcome({ code: 'not_paused' });
   }
-  const artifactText = textOf({ value: args['artifact'], max: 1_000 });
+  const artifactText = clippedTextOf({ value: args['artifact'], max: 1_000 });
   const report =
     artifactText === null ? null : await reportOf({ ctx, treeId: grant.treeId, artifactText });
   if (artifactText !== null && report === null) {

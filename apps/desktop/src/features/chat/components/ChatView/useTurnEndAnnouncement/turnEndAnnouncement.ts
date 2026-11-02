@@ -1,5 +1,6 @@
 import type { TranscriptItem } from '../../../utils/transcript-items';
 import { turnSummary } from '../../../utils/turnSummary';
+import { countNoun } from '../../../../../shared/utils/countNoun';
 
 type AnyRow = {
   readonly kind: string;
@@ -22,8 +23,6 @@ export const turnEndAnnouncement = ({ rows }: Params): string => {
     return TURN_FINISHED;
   }
   const errors =
-    summary.errorCount === 0
-      ? ''
-      : `, ${summary.errorCount} ${summary.errorCount === 1 ? 'error' : 'errors'}`;
+    summary.errorCount === 0 ? '' : `, ${countNoun({ count: summary.errorCount, one: 'error' })}`;
   return `${TURN_FINISHED}: ${summary.text}${errors}`;
 };

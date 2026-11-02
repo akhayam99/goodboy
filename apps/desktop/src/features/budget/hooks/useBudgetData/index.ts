@@ -1,5 +1,5 @@
-import { formatError } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toError } from '../../../../shared/utils/toError';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -30,10 +30,6 @@ type LoadScopeParams = {
   readonly activeGeneration: number;
 };
 
-type ToErrorParams = {
-  readonly value: unknown;
-};
-
 const EMPTY_LOADING = {
   rules: true,
   alerts: true,
@@ -42,9 +38,6 @@ const EMPTY_LOADING = {
 } satisfies Record<BudgetDataScope, boolean>;
 
 const EMPTY_RESULT = { data: null, error: null };
-
-const toError = ({ value }: ToErrorParams): Error =>
-  value instanceof Error ? value : new Error(formatError(value));
 
 export const useBudgetData = ({ sessionIds }: Params): BudgetData => {
   const generation = useRef(0);

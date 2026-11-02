@@ -1,6 +1,7 @@
 import { parseAutoDelegationRole } from '@goodboy/core';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import { textOf } from '@goodboy/types/helpers';
 import type { AutoDeliveredResult, AutoTreeView } from '../../store/slices/auto-view/state';
 import { AGENT_KIND_META, classifyAgent, kindForRole, type AgentKind } from '../session/agent-kind';
 import type { RowPhase } from '../workTreeModel/rowState';
@@ -70,13 +71,6 @@ const timeOf = ({ value }: TimeParams): number | null => {
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? null : parsed;
 };
-
-type TextParams = {
-  readonly value: unknown;
-};
-
-const textOf = ({ value }: TextParams): string | null =>
-  typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 
 type OutcomeParams = {
   readonly results: ReadonlyArray<AutoDeliveredResult>;

@@ -19,7 +19,7 @@ type GoalAttachmentRow = {
   created_at: number;
 };
 
-function toDomain(row: GoalAttachmentRow): GoalAttachment {
+function toGoalAttachment(row: GoalAttachmentRow): GoalAttachment {
   const ownerId = row.session_id ?? row.workflow_run_id;
   if (ownerId == null) {
     throw new Error(`goal attachment ${row.id} has no owner`);
@@ -82,7 +82,7 @@ const listForOwner = async (
      ORDER BY created_at ASC`,
     [ownerId],
   );
-  return rows.map(toDomain);
+  return rows.map(toGoalAttachment);
 };
 
 export const listGoalAttachmentsForSession = (

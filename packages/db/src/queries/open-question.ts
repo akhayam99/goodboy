@@ -43,7 +43,7 @@ const toSelectMode = (raw: string | null): OpenQuestionSelectMode | undefined =>
   return undefined;
 };
 
-const toDomain = (row: OpenQuestionRow): OpenQuestion => {
+const toOpenQuestion = (row: OpenQuestionRow): OpenQuestion => {
   return {
     id: row.id as OpenQuestionId,
     sessionId: row.session_id as SessionId,
@@ -133,7 +133,7 @@ export const insertOpenQuestion = async (
     input.id,
   ]);
   if (ownRows[0]) {
-    return { question: toDomain(ownRows[0]), inserted: true };
+    return { question: toOpenQuestion(ownRows[0]), inserted: true };
   }
   const existingRows = await db.select<OpenQuestionRow>(
     `SELECT * FROM open_questions WHERE session_id = ? AND text = ? AND status = 'open' LIMIT 1`,
@@ -143,7 +143,7 @@ export const insertOpenQuestion = async (
   if (!existing) {
     throw new Error(`open_question insert failed: ${input.id}`);
   }
-  return { question: toDomain(existing), inserted: false };
+  return { question: toOpenQuestion(existing), inserted: false };
 };
 
 export const listOpenQuestionsForSession = async (
@@ -160,7 +160,7 @@ export const listOpenQuestionsForSession = async (
         `SELECT * FROM open_questions WHERE session_id = ? ORDER BY created_at ASC`,
         [sessionId],
       );
-  return rows.map(toDomain);
+  return rows.map(toOpenQuestion);
 };
 
 export const listResolvedQuestionTextsForSession = async (
@@ -185,7 +185,7 @@ export const getOpenQuestionById = async ({
 }: GetOpenQuestionByIdParams): Promise<OpenQuestion | null> => {
   const rows = await db.select<OpenQuestionRow>('SELECT * FROM open_questions WHERE id = ?', [id]);
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : toOpenQuestion(row);
 };
 
 export type OpenQuestionAnswerProvenance = Readonly<{
@@ -280,7 +280,7 @@ export const supersedeEarlierBlockingQuestions = async ({
      WHERE id IN (${rows.map(() => '?').join(', ')}) AND status = 'open'`,
     [SUPERSEDED_ANSWER, now, now, ...rows.map((row) => row.id)],
   );
-  return rows.map(toDomain);
+  return rows.map(toOpenQuestion);
 };
 
 export const restoreOpenQuestion = async (db: Database, id: OpenQuestionId): Promise<void> => {

@@ -1,4 +1,4 @@
-import { formatError } from '@goodboy/ui';
+import { toError } from '../../../../shared/utils/toError';
 import {
   useCallback,
   useEffect,
@@ -72,10 +72,6 @@ type LoadScopeParams = {
   readonly activeGeneration: number;
 };
 
-type ToErrorParams = {
-  readonly value: unknown;
-};
-
 const EMPTY_LOADING = {
   overview: true,
   shipped: true,
@@ -84,9 +80,6 @@ const EMPTY_LOADING = {
 } satisfies Record<ImpactMetricGroup, boolean>;
 
 const EMPTY_RESULT = { data: null, error: null };
-
-const toError = ({ value }: ToErrorParams): Error =>
-  value instanceof Error ? value : new Error(formatError(value));
 
 export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetrics => {
   const generation = useRef(0);

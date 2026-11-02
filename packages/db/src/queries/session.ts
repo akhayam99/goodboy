@@ -93,7 +93,7 @@ const toProviderPreference = (row: SessionRow): SessionProviderPreference => {
   };
 };
 
-const toDomain = (
+const toSession = (
   row: SessionRow,
   contextSlots: Session['contextSlots'],
   workflowRuns: ReadonlyArray<WorkflowRun> = [],
@@ -344,7 +344,7 @@ export const getSessionById = async (db: Database, id: SessionId): Promise<Sessi
     return null;
   }
   const workflowRuns = await loadWorkflowsForSession(db, id);
-  return toDomain(row, [], workflowRuns);
+  return toSession(row, [], workflowRuns);
 };
 
 const hydrateSessions = async (
@@ -368,7 +368,7 @@ const hydrateSessions = async (
     runsBySession.set(r.session_id, arr);
   }
 
-  return rows.map((row) => toDomain(row, [], runsBySession.get(row.id) ?? []));
+  return rows.map((row) => toSession(row, [], runsBySession.get(row.id) ?? []));
 };
 
 export const listSessionsForWorkspace = async (

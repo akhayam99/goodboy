@@ -4,6 +4,7 @@ import { InlineMarkdown, STRIPED_LIST, cn, formatUsd } from '@goodboy/ui';
 import { formatHours } from '../../utils/formatHours';
 import type { ShippedSession } from '../../utils/shippedSessions';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type Props = {
   readonly sessions: ReadonlyArray<ShippedSession>;
@@ -17,7 +18,7 @@ type MetaParams = {
 const ROW = 'flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-meta';
 
 const metaParts = ({ session }: MetaParams): ReadonlyArray<string> => [
-  `${session.merged} ${session.merged === 1 ? 'PR' : 'PRs'} merged`,
+  `${countNoun({ count: session.merged, one: 'PR' })} merged`,
   ...(session.spendUsd === null ? [] : [formatUsd(session.spendUsd)]),
   ...(session.hours === null ? [] : [formatHours({ hours: session.hours })]),
 ];

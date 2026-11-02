@@ -72,7 +72,8 @@ export const pullRequestEventName = ({
   readonly sessionId: SessionId;
 }): string => `${name}:${sessionId}`;
 
-const isLive = ({ facts }: FactsOnly): boolean => facts.phase === 'open' || facts.phase === 'draft';
+const isPullRequestLive = ({ facts }: FactsOnly): boolean =>
+  facts.phase === 'open' || facts.phase === 'draft';
 
 const isOpenForMerge = ({ facts }: FactsOnly): boolean =>
   facts.phase === 'open' || facts.phase === 'queued';
@@ -259,7 +260,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     shortLabel: () => 'Open log',
     icon: ScrollText,
     group: 'open',
-    when: isLive,
+    when: isPullRequestLive,
     slot: () => 'hover',
     run: ({ facts }) => {
       const fallback =
@@ -386,7 +387,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     icon: PencilLine,
     group: 'act',
     when: ({ facts }) =>
-      isLive({ facts }) &&
+      isPullRequestLive({ facts }) &&
       facts.isOwn &&
       (can({ facts, capability: 'canEditTitle' }) || can({ facts, capability: 'canEditBody' })),
     slot: () => 'hover',
@@ -403,7 +404,9 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     icon: UserPlus,
     group: 'act',
     when: ({ facts }) =>
-      isLive({ facts }) && facts.isOwn && can({ facts, capability: 'canRequestReviewers' }),
+      isPullRequestLive({ facts }) &&
+      facts.isOwn &&
+      can({ facts, capability: 'canRequestReviewers' }),
     slot: () => 'section',
     run: ({ facts, env }) => {
       openPrLens({ env, facts, mode: 'overview' });
@@ -461,7 +464,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     label: ({ facts }) => `Close ${nounsOf({ facts }).long}`,
     icon: CircleX,
     group: 'danger',
-    when: ({ facts }) => isLive({ facts }) && facts.isOwn && can({ facts, capability: 'canClose' }),
+    when: ({ facts }) =>
+      isPullRequestLive({ facts }) && facts.isOwn && can({ facts, capability: 'canClose' }),
     blockedReason: writeBlock,
     pendingLabel: () => 'Closing…',
     doneLabel: ({ facts }) => `Closed ${numberLabel({ facts })}.`,

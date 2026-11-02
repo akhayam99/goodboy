@@ -14,7 +14,7 @@ type ContextSlotRow = {
   enabled: number;
 };
 
-function toDomain(row: ContextSlotRow): ContextSlot {
+function toContextSlot(row: ContextSlotRow): ContextSlot {
   return {
     key: row.key,
     value: row.value,
@@ -130,5 +130,5 @@ export const listContextSlotsForSession = async (
     'SELECT * FROM context_slots WHERE session_id = ? ORDER BY key',
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toContextSlot);
 };

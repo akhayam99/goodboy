@@ -266,7 +266,7 @@ looks easy, the product looks like it's only for easy tasks.
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot. Each one is registered by its id through the `scenes/u*/` glob ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
+screenshot. Each one is registered by its id through the `scenes/u*/` and `scenes/surfaces/*/` globs ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
 from `apps/desktop/src/app/components/MockScene/mockFixtureData.ts` plus its own seed module. Read
 `scenes.txt` before you build anything. The surface you need is often already there,
 and the keys are the `?scene=` values. The scenes cost nothing at runtime when
@@ -857,6 +857,8 @@ Task-link controls have three scenes: `task-links` for idle chips and visible
 branch placement, `task-links-hover` for keyboard focus revealing unlink, and
 `task-links-undo` for compound unlink with the Undo toast and Activity Re-link.
 They use the real overview, chip and placement components in both themes.
+
+A new scene goes in `scenes/surfaces/<surface>/`, a folder named after the screen it shows, never after the round that built it. The `scenes/u*/` round folders are folded at each release: a scene that a surface test or a validate probe already covers is deleted, the rest move to a surface folder with their relative imports one level deeper. Before deleting one, list what reaches it: the scene ids in README and site figures (the figure check fails on an unused key), the probes in `scripts/validate-scenes.mjs`, and `node scripts/scene-backed-tests.mjs`. Moving a folder never changes a scene id, so `scenes.txt` stays as it is.
 
 The sorted scene list is committed at
 `apps/desktop/src/app/components/MockScene/scenes.txt`. The registry discovers

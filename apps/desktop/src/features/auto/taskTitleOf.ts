@@ -17,7 +17,7 @@ const isHeadingLine = ({ text }: TextParams): boolean => {
   return line.startsWith('#') || line.endsWith(':');
 };
 
-const firstLineOf = ({ text }: TextParams): string =>
+const taskLineOf = ({ text }: TextParams): string =>
   text
     .split('\n')
     .filter((line) => !isHeadingLine({ text: line }))
@@ -66,6 +66,6 @@ export const taskTitleOf = ({ request }: Params): string | null => {
   if (typeof task !== 'string') {
     return null;
   }
-  const sentence = firstSentenceOf({ text: firstLineOf({ text: task }) }).trim();
+  const sentence = firstSentenceOf({ text: taskLineOf({ text: task }) }).trim();
   return sentence === '' ? null : cutAtWordOf({ text: sentence });
 };

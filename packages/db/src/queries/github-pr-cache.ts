@@ -29,7 +29,7 @@ const isCachedPullRequest = (value: unknown): value is CachedPullRequest =>
   Object.hasOwn(PULL_REQUEST_STATES, value.state) &&
   typeof value.updatedAt === 'string';
 
-function toDomain(row: Row): GithubPrCacheEntry {
+function toGithubPrCacheEntry(row: Row): GithubPrCacheEntry {
   return {
     branch: row.branch,
     repoSlug: row.repo_slug,
@@ -59,7 +59,7 @@ export const getGithubPrCache = async (
   if (Number.isNaN(fetchedAt) || Date.now() - fetchedAt > CACHE_TTL_MS) {
     return null;
   }
-  return toDomain(first);
+  return toGithubPrCacheEntry(first);
 };
 
 export const upsertGithubPrCache = async (
@@ -79,15 +79,4 @@ export const upsertGithubPrCache = async (
       Number.isNaN(Date.parse(entry.fetchedAt)) ? 0 : Date.parse(entry.fetchedAt),
     ],
   );
-};
-
-export const deleteGithubPrCache = async (
-  db: Database,
-  repoSlug: string,
-  branch: string,
-): Promise<void> => {
-  await db.execute('DELETE FROM github_pr_cache WHERE repo_slug = ? AND branch = ?', [
-    repoSlug,
-    branch,
-  ]);
 };

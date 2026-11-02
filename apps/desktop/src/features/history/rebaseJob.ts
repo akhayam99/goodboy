@@ -5,6 +5,7 @@ import { pushErrorLine } from './pushErrorLine';
 import { rebaseConflictOf } from './rebaseConflictOf';
 import { conflictFilesLabelOf } from './rebaseConflictLine';
 import type { RebaseFileStates } from './rebaseFileStatesOf';
+import { countNoun } from '../../shared/utils/countNoun';
 
 export type RebaseJobState =
   | 'choosing'
@@ -75,7 +76,7 @@ type FirstLineOfParams = {
   readonly text: string;
 };
 
-const firstLineOf = ({ text }: FirstLineOfParams): string => {
+const jobLineOf = ({ text }: FirstLineOfParams): string => {
   const line = text.split('\n')[0]?.trim() ?? '';
   return line.length > LINE_LIMIT ? `${line.slice(0, LINE_LIMIT)}...` : line;
 };
@@ -86,7 +87,7 @@ type DetailOfParams = {
 
 const detailOf = ({ text }: DetailOfParams): string | null => {
   const trimmed = text.trim();
-  return trimmed === '' || trimmed === firstLineOf({ text: trimmed }) ? null : trimmed;
+  return trimmed === '' || trimmed === jobLineOf({ text: trimmed }) ? null : trimmed;
 };
 
 type PushFailureLineParams = {
@@ -134,7 +135,7 @@ const commitsOf = ({ count }: CommitsOfParams): string => {
   if (count === null) {
     return '';
   }
-  return `${count} ${count === 1 ? 'commit' : 'commits'}.`;
+  return `${countNoun({ count: count, one: 'commit' })}.`;
 };
 
 type CountLabelParams = {
@@ -209,7 +210,7 @@ const replayLineOf = ({ run }: ReplayLineOfParams): string => {
   if (count === null) {
     return 'Replaying';
   }
-  return `Replaying ${count} ${count === 1 ? 'commit' : 'commits'}`;
+  return `Replaying ${countNoun({ count: count, one: 'commit' })}`;
 };
 
 type RunningStateOfParams = {
@@ -443,7 +444,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: "Couldn't move the branch",
-        line: firstLineOf({ text: message }),
+        line: jobLineOf({ text: message }),
         detail: detailOf({ text: message }),
       };
     case 'conflict': {
@@ -492,7 +493,7 @@ const copyOf = ({
       return {
         tone: 'danger',
         title: `Couldn't rebase ${projectName} on ${baseBranch}`,
-        line: firstLineOf({ text: message }),
+        line: jobLineOf({ text: message }),
         detail: detailOf({ text: message }),
       };
     default: {

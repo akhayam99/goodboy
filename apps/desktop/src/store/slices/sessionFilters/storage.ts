@@ -1,6 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { STORAGE_PREFIXES, persistedPref } from '../../../shared/lib/storage-keys';
+import { storageKeyOf } from '../../../shared/lib/storageKeyOf';
 
 type PersistedFilters = {
   readonly v: 1;
@@ -15,14 +16,11 @@ type WriteParams = Params & {
   readonly selectedProjectIds: ReadonlyArray<string>;
 };
 
-const storageKey = ({ workspaceId }: Params): string =>
-  `${STORAGE_PREFIXES.sessionFilters}${workspaceId}`;
-
 const NO_PROJECTS: ReadonlyArray<string> = [];
 
 const filtersPref = ({ workspaceId }: Params) =>
   persistedPref<ReadonlyArray<string>>({
-    key: storageKey({ workspaceId }),
+    key: storageKeyOf({ prefix: STORAGE_PREFIXES.sessionFilters, id: workspaceId }),
     fallback: NO_PROJECTS,
     parse: (raw) => {
       const parsed: unknown = JSON.parse(raw);

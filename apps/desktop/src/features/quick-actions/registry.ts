@@ -2,6 +2,7 @@ import type { Agent, AgentId, Workflow } from '@goodboy/types';
 import type { RunnableScript, SessionScriptGroup } from '../scripts/buildSessionScripts';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
+import { countNoun } from '../../shared/utils/countNoun';
 
 export type ScriptPick = {
   readonly script: RunnableScript;
@@ -75,9 +76,7 @@ export const buildWorkflowActions = (
   return workflows.map((workflow) => ({
     id: `workflow:${workflow.id}`,
     label: workflow.name,
-    sublabel:
-      workflow.description ||
-      `${workflow.steps.length} step${workflow.steps.length === 1 ? '' : 's'}`,
+    sublabel: workflow.description || `${countNoun({ count: workflow.steps.length, one: 'step' })}`,
     group: 'workflow',
     perform: () => onPick(workflow),
   }));

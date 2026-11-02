@@ -30,7 +30,7 @@ const PLAN_SCHEMA_VERSION = 1;
 const isPlanArtifact = (artifact: SessionArtifact): artifact is PlanArtifact =>
   artifact.kind === 'plan';
 
-const toDomain = (artifact: PlanArtifact): Plan => {
+const toPlan = (artifact: PlanArtifact): Plan => {
   const clusters = artifact.metadata.clusters;
   return {
     id: artifact.id as PlanId,
@@ -96,7 +96,7 @@ export const listPlansForSession = async (
   return artifacts.filter(isPlanArtifact).map((artifact) => {
     const summary = summaryById.get(artifact.id);
     return {
-      ...toDomain(artifact),
+      ...toPlan(artifact),
       consumptionCount: summary?.consumption_count ?? 0,
       lastConsumer: toLastConsumer(summary),
     };
@@ -164,7 +164,7 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
   if (replayedId !== undefined) {
     const replayed = await loadPlan(db, replayedId as PlanId);
     if (replayed !== null) {
-      return toDomain(replayed);
+      return toPlan(replayed);
     }
   }
   const metadata = input.clusters && input.clusters.length > 0 ? { clusters: input.clusters } : {};
@@ -192,7 +192,7 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
         [sourceTurnId, activeId, input.agentId],
       );
     }
-    return toDomain(updated);
+    return toPlan(updated);
   }
   const created = await insertArtifact({
     db,
@@ -214,7 +214,7 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
   if (!isPlanArtifact(created)) {
     throw new Error(`plan insert failed: ${input.id}`);
   }
-  return toDomain(created);
+  return toPlan(created);
 };
 
 export const updatePlanStatus = async (

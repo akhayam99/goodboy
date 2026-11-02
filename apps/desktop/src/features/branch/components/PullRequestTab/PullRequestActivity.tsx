@@ -33,7 +33,7 @@ const GLYPH_SIZE = ICON_SIZE.row;
 
 const commentsWord = ({ item }: { readonly item: Extract<ActivityItem, { kind: 'comments' }> }) => {
   if (item.needYou > 0) {
-    return `${item.needYou} ${item.needYou === 1 ? 'needs' : 'need'} you`;
+    return `${countNoun({ count: item.needYou, one: 'needs', many: 'need' })} you`;
   }
   return item.open > 0 ? `${item.open} open` : 'all resolved';
 };

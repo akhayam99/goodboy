@@ -3,6 +3,7 @@ import {
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_LEDGER_OUTLINE_CHARS,
 } from './limits';
+import { oneLine } from './oneLine';
 
 export type AutoApprovalView = 'needs_approval' | 'approved' | 'revising';
 
@@ -63,12 +64,6 @@ export type AutoLedgerEntry = Readonly<{
 type EntryLineParams = {
   readonly entry: AutoLedgerEntry;
 };
-
-type OneLineParams = {
-  readonly text: string;
-};
-
-const oneLine = ({ text }: OneLineParams): string => text.replace(/\s+/g, ' ').trim();
 
 const entryLine = ({ entry }: EntryLineParams): string => {
   const last =

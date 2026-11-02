@@ -1,6 +1,7 @@
 import type { PrSeriesId, SessionId } from '@goodboy/types';
 import type { ShowToast } from '../../../shared/components/Toast';
 import type { AppStore } from '../../../store/store';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -29,7 +30,7 @@ export const mergeSeriesAction = ({
     if (result.merged > 0) {
       showToast({
         kind: result.kind === 'done' ? 'success' : 'warning',
-        message: `Merged ${result.merged} ${result.merged === 1 ? 'part' : 'parts'} of ${name} in order`,
+        message: `Merged ${countNoun({ count: result.merged, one: 'part' })} of ${name} in order`,
       });
     }
     if (result.kind === 'stopped') {

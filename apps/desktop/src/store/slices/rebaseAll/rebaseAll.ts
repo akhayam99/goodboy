@@ -46,7 +46,7 @@ type LiveParams = {
   readonly run: RebaseAllRun | undefined;
 };
 
-const isLive = ({ run }: LiveParams): boolean =>
+const isRebaseRunLive = ({ run }: LiveParams): boolean =>
   run !== undefined && (run.phase === 'running' || run.phase === 'handing');
 
 type BranchOutcomeParams = {
@@ -100,7 +100,7 @@ export const rebaseAll = (set: SetFn, get: GetFn) => {
     bringInMountIds = [],
     shouldHandConflicts = true,
   }: RebaseAllInput): Promise<RebaseAllOutcome> => {
-    if (isLive({ run: get().rebaseAllRuns[sessionId] })) {
+    if (isRebaseRunLive({ run: get().rebaseAllRuns[sessionId] })) {
       return 'busy';
     }
     const state = get();

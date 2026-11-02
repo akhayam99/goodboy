@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { MOCK_SCENES } from '../..';
+import { MOCK_SCENES } from '../../..';
 import { U26P_CONTRAST_SCENES } from './ContrastScene';
 
 afterEach(cleanup);

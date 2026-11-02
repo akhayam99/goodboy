@@ -1,4 +1,5 @@
 import { formatHours } from './formatHours';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 type DeltaDirection = 'up' | 'down' | 'flat';
 
@@ -27,7 +28,7 @@ const amount = ({ current, previous, unit }: AmountParams): string => {
   const difference = Math.abs(current - previous);
   if (unit === 'points') {
     const points = Math.round(difference);
-    return `${points} ${points === 1 ? 'pt' : 'pts'}`;
+    return `${countNoun({ count: points, one: 'pt' })}`;
   }
   if (unit === 'hours') {
     return formatHours({ hours: difference });

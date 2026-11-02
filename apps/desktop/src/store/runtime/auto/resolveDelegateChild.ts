@@ -46,6 +46,7 @@ import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
+import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type ChildRefusal = Readonly<{
@@ -80,16 +81,6 @@ const refuse = ({ slot, code, message, latestRevision }: RefuseParams): Resolved
   kind: 'refused',
   refusal: { slot, code, message, ...(latestRevision === undefined ? {} : { latestRevision }) },
 });
-
-type TextParams = {
-  readonly source: Readonly<Record<string, unknown>>;
-  readonly key: string;
-};
-
-const textOf = ({ source, key }: TextParams): string | null => {
-  const value = source[key];
-  return typeof value === 'string' && value !== '' ? value : null;
-};
 
 type UserWordsParams = {
   readonly ctx: AgentVerbContext;
@@ -249,7 +240,8 @@ const reviseTargetOf = async ({
     agentId: registered.ownerAgentId,
     artifactId,
     expectedRevision: revises.expectedRevision,
-    producerMountId: producer === null ? null : textOf({ source: producer.target, key: 'mountId' }),
+    producerMountId:
+      producer === null ? null : textFieldOf({ source: producer.target, key: 'mountId' }),
     producerRouting: producer?.routing ?? {},
     revise: {
       artifactId: revises.artifactId,
@@ -392,7 +384,7 @@ export const resolveDelegateChild = async ({
     return refuse({ slot, code: picked.code, message: picked.message });
   }
   const capturedPath =
-    retry === null ? null : textOf({ source: retry.target, key: 'worktreePath' });
+    retry === null ? null : textFieldOf({ source: retry.target, key: 'worktreePath' });
   if (capturedPath !== null && picked.mount.worktreePath !== capturedPath) {
     return refuse({
       slot,
@@ -432,9 +424,10 @@ export const resolveDelegateChild = async ({
     sessionId: grant.sessionId,
     role,
     fields: {
-      provider: child.provider ?? textOf({ source: producerRouting, key: 'provider' }) ?? undefined,
-      model: child.model ?? textOf({ source: producerRouting, key: 'model' }) ?? undefined,
-      effort: child.effort ?? textOf({ source: producerRouting, key: 'effort' }) ?? undefined,
+      provider:
+        child.provider ?? textFieldOf({ source: producerRouting, key: 'provider' }) ?? undefined,
+      model: child.model ?? textFieldOf({ source: producerRouting, key: 'model' }) ?? undefined,
+      effort: child.effort ?? textFieldOf({ source: producerRouting, key: 'effort' }) ?? undefined,
       taskType: child.taskType ?? undefined,
       difficulty: child.difficulty ?? undefined,
     },

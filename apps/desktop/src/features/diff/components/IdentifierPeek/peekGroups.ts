@@ -1,6 +1,7 @@
 import type { GrepMatch } from '../../../worktree/worktree';
 import { definitionOf } from '../../lib/definitionOf';
 import { definitionOfScope } from '../../lib/definitionOfScope';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type Params = {
   readonly matches: ReadonlyArray<GrepMatch>;
@@ -38,6 +39,6 @@ export const peekGroups = ({ matches, word, changedPaths, changedLines, isExpand
     hiddenCount,
     firstRevealed: isExpanded ? elsewhere[ELSEWHERE_LIMIT] : undefined,
     kind: declarations.find(({ kind }) => kind !== null)?.kind ?? null,
-    summary: `${definitions.length} ${definitions.length === 1 ? 'definition' : 'definitions'} · ${references.length} ${references.length === 1 ? 'use' : 'uses'} · ${changeCount} in this change`,
+    summary: `${countNoun({ count: definitions.length, one: 'definition' })} · ${countNoun({ count: references.length, one: 'use' })} · ${changeCount} in this change`,
   };
 };

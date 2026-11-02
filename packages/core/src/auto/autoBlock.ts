@@ -1,6 +1,6 @@
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
 import { parseProposeSpec } from './proposeSpec';
-import { isRecord } from '@goodboy/types/helpers';
+import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_BLOCK_OPEN = '<<auto>>';
 export const AUTO_BLOCK_CLOSE = '<</auto>>';
@@ -33,19 +33,6 @@ export type ParseAutoBlockParams = Readonly<{
 }>;
 
 type RecordValue = Readonly<Record<string, unknown>>;
-
-type TextParams = {
-  readonly value: unknown;
-  readonly max: number;
-};
-
-const textOf = ({ value, max }: TextParams): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed === '' ? null : trimmed.slice(0, max);
-};
 
 type SliceParams = {
   readonly value: string;
@@ -124,7 +111,7 @@ const delegateOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   if (
     rawId !== undefined &&
     rawId !== null &&
-    textOf({ value: rawId, max: FIELD_CHARS }) === null
+    clippedTextOf({ value: rawId, max: FIELD_CHARS }) === null
   ) {
     return invalid({ reason: '"requestId" must be a non-empty string' });
   }
@@ -132,7 +119,7 @@ const delegateOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
     kind: 'block',
     block: {
       action: 'delegate',
-      requestId: textOf({ value: rawId, max: FIELD_CHARS }),
+      requestId: clippedTextOf({ value: rawId, max: FIELD_CHARS }),
       spec: JSON.stringify({ children }),
     },
   };
@@ -143,7 +130,7 @@ const proposeOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   if (
     rawId !== undefined &&
     rawId !== null &&
-    textOf({ value: rawId, max: FIELD_CHARS }) === null
+    clippedTextOf({ value: rawId, max: FIELD_CHARS }) === null
   ) {
     return invalid({ reason: '"requestId" must be a non-empty string' });
   }
@@ -156,25 +143,25 @@ const proposeOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
     kind: 'block',
     block: {
       action: 'propose',
-      requestId: textOf({ value: rawId, max: FIELD_CHARS }),
+      requestId: clippedTextOf({ value: rawId, max: FIELD_CHARS }),
       spec,
     },
   };
 };
 
 const answerOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
-  const delegation = textOf({ value: fields['delegation'], max: FIELD_CHARS });
-  const question = textOf({ value: fields['question'], max: FIELD_CHARS });
-  const text = textOf({ value: fields['text'], max: ANSWER_CHARS });
+  const delegation = clippedTextOf({ value: fields['delegation'], max: FIELD_CHARS });
+  const question = clippedTextOf({ value: fields['question'], max: FIELD_CHARS });
+  const text = clippedTextOf({ value: fields['text'], max: ANSWER_CHARS });
   if (delegation === null || question === null || text === null) {
     return invalid({ reason: 'an answer block needs "delegation", "question" and "text"' });
   }
-  const artifact = textOf({ value: fields['artifact'], max: FIELD_CHARS });
+  const artifact = clippedTextOf({ value: fields['artifact'], max: FIELD_CHARS });
   return { kind: 'block', block: { action: 'answer', delegation, question, text, artifact } };
 };
 
 const finishOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
-  const summary = textOf({ value: fields['summary'], max: SUMMARY_CHARS });
+  const summary = clippedTextOf({ value: fields['summary'], max: SUMMARY_CHARS });
   if (summary === null) {
     return invalid({ reason: 'a finish block needs a "summary"' });
   }

@@ -2,6 +2,7 @@ import type { PullRequestHost, PullRequestState } from '@goodboy/types';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestNumberLabel } from '../../pullRequestNumberLabel';
 import { BranchStateChip } from '../BranchHeader/BranchStateChip';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type Props = {
   readonly pr: PullRequestState;
@@ -14,7 +15,7 @@ type CommitsParams = {
 };
 
 const commitsOf = ({ count }: CommitsParams): string =>
-  count === null ? 'its commits' : `${count} ${count === 1 ? 'commit' : 'commits'}`;
+  count === null ? 'its commits' : `${countNoun({ count: count, one: 'commit' })}`;
 
 export const PullRequestHeaderLine = ({ pr, host, commitCount }: Props) => {
   const state = pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });

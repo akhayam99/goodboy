@@ -33,7 +33,7 @@ const toIso = (value: number): IsoDateTime => new Date(value).toISOString() as I
 const toIsoOrNull = (value: number | null): IsoDateTime | null =>
   value === null ? null : toIso(value);
 
-const toDomain = (row: Row): WorktreeLedgerEntry => ({
+const toWorktreeLedgerEntry = (row: Row): WorktreeLedgerEntry => ({
   ...row,
   lastCheckedAt: toIsoOrNull(row.lastCheckedAt),
   firstSeenAt: toIso(row.firstSeenAt),
@@ -62,7 +62,7 @@ export const listWorktreeLedger = async ({
     `SELECT ${LEDGER_COLUMNS} FROM retained_worktree_paths ORDER BY repo_root, worktree_path`,
     [],
   );
-  return rows.map(toDomain);
+  return rows.map(toWorktreeLedgerEntry);
 };
 
 export type OrphanLedgerInput = {

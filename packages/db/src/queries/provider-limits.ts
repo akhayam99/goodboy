@@ -51,7 +51,7 @@ type ToDomainParams = {
   readonly row: ProviderLimitsRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): ProviderLimits | null => {
+const toProviderLimits = ({ row }: ToDomainParams): ProviderLimits | null => {
   if (!isProviderId(row.provider_id) || !isStatus(row.status)) {
     return null;
   }
@@ -75,7 +75,7 @@ export const listProviderLimits = async ({
     'SELECT provider_id, plan, status, windows, observed_at FROM provider_limits ORDER BY provider_id',
   );
   return rows.flatMap((row) => {
-    const limits = toDomain({ row });
+    const limits = toProviderLimits({ row });
     return limits === null ? [] : [limits];
   });
 };

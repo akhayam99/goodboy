@@ -1,3 +1,4 @@
+import { capitalized } from '../../shared/utils/capitalized';
 import type { AgentId, ResolveAttempt } from '@goodboy/types';
 import { modelLabel } from '../chat/utils/chat-constants';
 import { launchKeyOf } from '../../store/slices/resolve/resolveLaunch';
@@ -22,9 +23,6 @@ export type FixRun = {
   readonly isLive: boolean;
   readonly model: string;
 };
-
-const capitalized = ({ text }: { readonly text: string }): string =>
-  `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 export const fixRunModelLabel = ({ attempt }: { readonly attempt: ResolveAttempt }): string =>
   attempt.effort === null

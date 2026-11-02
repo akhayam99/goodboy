@@ -41,7 +41,7 @@ type ToDomainParams = {
   readonly row: ProjectRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): Project => ({
+const toProject = ({ row }: ToDomainParams): Project => ({
   id: row.id as ProjectId,
   workspaceId: row.workspace_id as WorkspaceId,
   name: row.name,
@@ -180,7 +180,7 @@ type GetProjectParams = {
 export const getProjectById = async ({ db, id }: GetProjectParams): Promise<Project | null> => {
   const rows = await db.select<ProjectRow>('SELECT * FROM projects WHERE id = ?', [id]);
   const row = rows[0];
-  return row === undefined ? null : toDomain({ row });
+  return row === undefined ? null : toProject({ row });
 };
 
 type ListProjectsParams = {
@@ -198,7 +198,7 @@ export const listProjectsForWorkspace = async ({
      ORDER BY created_at ASC`,
     [workspaceId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toProject({ row }));
 };
 
 export const listAllProjectsForWorkspace = async ({
@@ -209,7 +209,7 @@ export const listAllProjectsForWorkspace = async ({
     `SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at ASC`,
     [workspaceId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toProject({ row }));
 };
 
 type NormalizeRootPathParams = {
@@ -236,7 +236,7 @@ export const findProjectByRootPath = async ({
   const target = normalizeRootPath({ path: rootPath });
   const rows = await db.select<ProjectRow>('SELECT * FROM projects', []);
   const row = rows.find((entry) => normalizeRootPath({ path: entry.root_path }) === target);
-  return row === undefined ? null : toDomain({ row });
+  return row === undefined ? null : toProject({ row });
 };
 
 type FindDisconnectedProjectByIdentityParams = {
@@ -265,7 +265,7 @@ export const findDisconnectedProjectByIdentity = async ({
     [rootCommit, remoteUrl, rootCommit, rootCommit, remoteUrl, remoteUrl, rootCommit, remoteUrl],
   );
   const row = rows[0];
-  return row === undefined ? null : toDomain({ row });
+  return row === undefined ? null : toProject({ row });
 };
 
 type ProjectTimestampParams = {

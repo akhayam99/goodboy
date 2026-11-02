@@ -1,4 +1,5 @@
 import type { AutoOutcome } from '@goodboy/db';
+import { oneLine } from './oneLine';
 import type { ChildClosing, ChildCompletion } from './closing';
 import { checksTextOf } from './checks';
 import { publishTextOf, type ResultPublish } from './publish';
@@ -221,8 +222,6 @@ type RenderResultParams = {
   readonly label?: string;
 };
 
-const oneLine = (text: string): string => text.replace(/\s+/g, ' ').trim();
-
 const REMOTE_MOVED_TEXT = 'The branch changed online while this agent worked';
 const REMOTE_UNKNOWN_TEXT =
   'Whether the branch changed online while this agent worked could not be read';
@@ -252,7 +251,7 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
     `  ran on ${result.routing.provider} ${result.routing.model} ${result.routing.effort}; ${result.process.turns} turns, ${Math.round(result.process.durationMs / 1000)}s, cost ${result.cost.usd === null ? 'unknown' : `${result.cost.usd.toFixed(2)} USD (${result.cost.basis})`}`,
   ];
   if (result.declared.summary !== '') {
-    lines.push(`  it said: ${oneLine(result.declared.summary)}`);
+    lines.push(`  it said: ${oneLine({ text: result.declared.summary })}`);
   }
   if (result.reason === 'missing_tool') {
     lines.push(rerouteHintOf({ role: result.role }));
@@ -286,7 +285,7 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
   for (const artifact of result.artifacts) {
     const base = artifact.baseRevision === null ? '' : ` from version ${artifact.baseRevision}`;
     lines.push(
-      `  artifact ${artifact.id} (${artifact.kind}) "${oneLine(artifact.title)}" version ${artifact.revision}${base}, hash ${artifact.contentHash.slice(0, 12)}`,
+      `  artifact ${artifact.id} (${artifact.kind}) "${oneLine({ text: artifact.title })}" version ${artifact.revision}${base}, hash ${artifact.contentHash.slice(0, 12)}`,
     );
   }
   if (result.artifactPersistence === 'failed') {
@@ -296,7 +295,7 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
     lines.push('  it wrote no report');
   }
   for (const question of result.openQuestions) {
-    lines.push(`  open question ${question.questionId}: ${oneLine(question.text)}`);
+    lines.push(`  open question ${question.questionId}: ${oneLine({ text: question.text })}`);
   }
   return lines.join('\n');
 };

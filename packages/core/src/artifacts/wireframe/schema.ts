@@ -261,7 +261,7 @@ export type WireframeChartNode = NodeBase<'chart'> &
     chartType?: WireframeChartType;
   }>;
 
-export type WireframeContainerNode =
+type WireframeContainerNode =
   WireframeStackNode | WireframeGridNode | WireframeCardNode | WireframeSheetNode;
 
 export type WireframeNode =

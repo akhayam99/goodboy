@@ -1,3 +1,4 @@
+import { isoFromMs } from './isoFromMs';
 import type { DeletedBranch, IsoDateTime, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 
@@ -19,13 +20,11 @@ const COLUMNS = `id, workspace_id AS workspaceId, project_id AS projectId, sessi
   repo_root AS repoRoot, branch, sha, keep_ref AS keepRef, on_origin AS onOrigin,
   deleted_at AS deletedAt, restored_at AS restoredAt`;
 
-const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
-
-const toDomain = (row: Row): DeletedBranch => ({
+const toDeletedBranch = (row: Row): DeletedBranch => ({
   ...row,
   onOrigin: row.onOrigin !== 0,
-  deletedAt: toIso(row.deletedAt),
-  restoredAt: row.restoredAt === null ? null : toIso(row.restoredAt),
+  deletedAt: isoFromMs({ ms: row.deletedAt }),
+  restoredAt: row.restoredAt === null ? null : isoFromMs({ ms: row.restoredAt }),
 });
 
 type InsertDeletedBranchParams = {
@@ -72,7 +71,7 @@ export const listDeletedBranches = async ({
      WHERE workspace_id = ? ORDER BY deleted_at DESC, id`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map(toDeletedBranch);
 };
 
 type GetDeletedBranchParams = {
@@ -86,7 +85,7 @@ export const getDeletedBranch = async ({
 }: GetDeletedBranchParams): Promise<DeletedBranch | null> => {
   const rows = await db.select<Row>(`SELECT ${COLUMNS} FROM deleted_branches WHERE id = ?`, [id]);
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : toDeletedBranch(row);
 };
 
 type MarkDeletedBranchRestoredParams = {
@@ -120,7 +119,7 @@ export const listExpiredDeletedBranches = async ({
      WHERE restored_at IS NULL AND deleted_at < ? ORDER BY deleted_at, id`,
     [Date.parse(before)],
   );
-  return rows.map(toDomain);
+  return rows.map(toDeletedBranch);
 };
 
 type ForgetDeletedBranchParams = {

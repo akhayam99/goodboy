@@ -4,13 +4,13 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { ToastProvider } from '../../../../../shared/components/Toast';
+import { ToastProvider } from '../../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
-} from '../../../../../store/storyHarness';
-import { MOCK_SCENES } from '../..';
+} from '../../../../../../store/storyHarness';
+import { MOCK_SCENES } from '../../..';
 import { P25_STORAGE_SCENES } from './StorageSafeScenes';
 
 const WAIT = { timeout: 15_000 };

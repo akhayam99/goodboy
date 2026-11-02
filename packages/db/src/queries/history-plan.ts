@@ -52,7 +52,7 @@ const parseItems = ({ json }: { readonly json: string }): ReadonlyArray<HistoryS
 const toState = ({ state }: { readonly state: string }): HistoryPlanState =>
   HISTORY_PLAN_STATES.find((candidate) => candidate === state) ?? 'discarded';
 
-const toDomain = ({ row }: { readonly row: HistoryPlanRow }): HistoryPlan => ({
+const toHistoryPlan = ({ row }: { readonly row: HistoryPlanRow }): HistoryPlan => ({
   id: row.id,
   sessionId: row.session_id as SessionId,
   mountId: row.mount_id as MountId,
@@ -83,7 +83,7 @@ export const getDraftHistoryPlan = async ({
     [mountId],
   );
   const row = rows[0];
-  return row === undefined ? null : toDomain({ row });
+  return row === undefined ? null : toHistoryPlan({ row });
 };
 
 type SaveDraftParams = {

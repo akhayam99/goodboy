@@ -27,8 +27,6 @@ const FILES: ReadonlyArray<{
   },
 ];
 
-export const RAIL_FILE_PATHS: ReadonlyArray<string> = FILES.map((file) => file.path);
-
 const PATCH = `${FILES.map((file) =>
   [
     `diff --git a/${file.path} b/${file.path}`,

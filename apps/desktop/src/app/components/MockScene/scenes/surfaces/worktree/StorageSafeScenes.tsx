@@ -1,9 +1,9 @@
-import { useAppStore } from '../../../../../store';
-import type { StorageRemovalSummary } from '../../../../../store/slices/storage/types';
+import { useAppStore } from '../../../../../../store';
+import type { StorageRemovalSummary } from '../../../../../../store/slices/storage/types';
 import { brandId, type SessionId } from '@goodboy/types';
-import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
-import { SettingsFrame } from '../audit/SettingsFrame';
-import { seedStorageScene } from '../brand/StorageScene';
+import type { TerminalTab, TerminalTabId } from '../../../../../../shared/types/terminal';
+import { SettingsFrame } from '../../audit/SettingsFrame';
+import { seedStorageScene } from '../../brand/StorageScene';
 
 type Variant = 'terminal' | 'undo';
 

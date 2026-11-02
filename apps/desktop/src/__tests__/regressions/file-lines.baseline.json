@@ -74,7 +74,7 @@
   "packages/core/src/index.ts": 1128,
   "packages/core/src/providers/cursor/catalog.ts": 1049,
   "packages/core/src/providers/openrouter/catalog.ts": 781,
-  "packages/db/src/index.ts": 841,
+  "packages/db/src/index.ts": 836,
   "packages/db/src/migrations/m118-workspace-containers.ts": 701,
   "packages/db/src/migrations/m125-normalize-timestamps.ts": 767,
   "packages/db/src/queries/impact.ts": 773,

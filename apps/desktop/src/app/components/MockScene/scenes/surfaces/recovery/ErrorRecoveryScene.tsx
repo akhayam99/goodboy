@@ -1,7 +1,7 @@
 import type { Notification } from '@goodboy/db';
 import { brandId, type MountId } from '@goodboy/types';
-import { BellFrame } from '../u28/BellFrame';
-import { BELL_SESSION_ID, rowOf } from '../u28/bellRows';
+import { BellFrame } from '../../u28/BellFrame';
+import { BELL_SESSION_ID, rowOf } from '../../u28/bellRows';
 
 const MOUNT_ID = brandId<MountId>({ value: 'mock-error-recovery-mount-payments-api' });
 

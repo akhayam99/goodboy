@@ -1,5 +1,6 @@
 import { CheckCheck, Trash2 } from 'lucide-react';
 import type { NotificationsActionTarget, ObjectKindDefinition } from '../types';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 export type NotificationsFacts = {
   readonly totalCount: number;
@@ -14,7 +15,7 @@ type CountParams = {
 };
 
 const countWord = ({ count }: CountParams): string =>
-  `${count} ${count === 1 ? 'notification' : 'notifications'}`;
+  `${countNoun({ count: count, one: 'notification' })}`;
 
 export const NOTIFICATIONS_KIND: ObjectKindDefinition<
   NotificationsActionTarget,

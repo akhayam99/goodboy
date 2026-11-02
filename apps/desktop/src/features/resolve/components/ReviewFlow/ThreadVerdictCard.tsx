@@ -4,6 +4,7 @@ import type { ResolveVerdict, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
+import { capitalized } from '../../../../shared/utils/capitalized';
 import { draftRoutingOf } from '../../draftRouting';
 import { RECHECK_LABEL } from '../../reviewFlowCopy';
 import { VERDICT_VIEW } from '../../reviewRemote';
@@ -14,9 +15,6 @@ type Props = {
   readonly verdict: ResolveVerdict;
   readonly isPushed: boolean;
 };
-
-const capitalized = ({ text }: { readonly text: string }): string =>
-  `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 export const ThreadVerdictCard = ({ sessionId, verdict, isPushed }: Props) => {
   const routing = useAppStore(useShallow((s) => draftRoutingOf({ state: s, sessionId })));

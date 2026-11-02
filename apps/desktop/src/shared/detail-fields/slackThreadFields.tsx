@@ -2,6 +2,7 @@ import { MessagesSquare } from 'lucide-react';
 import type { IsoDateTime } from '@goodboy/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
 import type { FactRegistry } from './factTypes';
+import { countNoun } from '../utils/countNoun';
 
 export type SlackThreadProperties = {
   readonly channelName: string;
@@ -20,8 +21,10 @@ const measureOf = ({ replyCount, people }: MeasureParams): string | null => {
   if (replyCount === 0) {
     return null;
   }
-  const replies = `${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`;
-  return people === 0 ? replies : `${replies} · ${people} ${people === 1 ? 'person' : 'people'}`;
+  const replies = `${countNoun({ count: replyCount, one: 'reply', many: 'replies' })}`;
+  return people === 0
+    ? replies
+    : `${replies} · ${countNoun({ count: people, one: 'person', many: 'people' })}`;
 };
 
 export const slackThreadFields: FactRegistry<SlackThreadProperties> = {

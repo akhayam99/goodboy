@@ -5,6 +5,7 @@ import { quoted } from '../../historyEditText';
 import type { HistoryRowMark } from '../../historyRowMarks';
 import { HistoryChangeMark } from './HistoryChangeMark';
 import type { HistoryRowView } from './historyRowLine';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 const moveLabel = ({ delta }: { readonly delta: number }): string =>
   `Moves ${delta < 0 ? 'up' : 'down'} ${Math.abs(delta)} ${Math.abs(delta) === 1 ? 'place' : 'places'} (reorder)`;
@@ -42,7 +43,7 @@ export const HistoryRowMarkList = ({
       <HistoryChangeMark
         key="takes-in"
         action={mark.takesInMode}
-        label={`${mark.takesInMode === 'fixup' ? 'Folds in' : 'Combines'} ${count} ${count === 1 ? 'commit' : 'commits'}`}
+        label={`${mark.takesInMode === 'fixup' ? 'Folds in' : 'Combines'} ${countNoun({ count: count, one: 'commit' })}`}
         facts={mark.takesIn.map((taken, index) => ({
           label: `Commit ${index + 1}`,
           value: titleOf(taken.sha),

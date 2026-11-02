@@ -1,4 +1,4 @@
-import { formatError } from '@goodboy/ui';
+import { toError } from '../../../../shared/utils/toError';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PermissionRule, WorkspaceId } from '@goodboy/types';
 import {
@@ -27,9 +27,6 @@ export type PermissionRules = {
   readonly restore: (rule: PermissionRule) => Promise<void>;
 };
 
-const toError = (value: unknown): Error =>
-  value instanceof Error ? value : new Error(formatError(value));
-
 export const usePermissionRules = ({ workspaceId }: Params): PermissionRules => {
   const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +51,7 @@ export const usePermissionRules = ({ workspaceId }: Params): PermissionRules => 
       if (generation.current !== active) {
         return;
       }
-      setError(toError(value));
+      setError(toError({ value }));
     } finally {
       if (generation.current === active) {
         setIsLoading(false);
