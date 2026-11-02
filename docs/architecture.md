@@ -741,11 +741,13 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   writes the result only when the data differs from the stored entry, the
   `fetchedAt` time aside. A second silent refresh of the same mount while one
   runs is dropped. A refresh from a screen or a first read still writes both.
-  `noteHostAnswer` still writes on every answer of GitLab and Bitbucket,
-  because its late-answer guard lives in that state.
+  `noteHostAnswer` writes only when the host state changes. Its late-answer
+  guard sits in a record the slice owns, which an unchanged answer advances in
+  place, so an older answer is still dropped.
 - **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
   sessions array and input tuple, so the board, the top bar and the sidebar
-  share one pass per store change.
+  share one pass per store change. `cachedStageInfoOf` does the same per
+  session for `useSessionStageInfo` and `useSessionStages`.
 
 ### Database migrations
 
