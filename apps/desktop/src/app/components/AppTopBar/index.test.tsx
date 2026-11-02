@@ -90,6 +90,7 @@ const { currentWorkspace, hooks, store, noAttention } = vi.hoisted(() => {
 vi.mock('../../../store', () => ({
   EMPTY_ARRAY: [],
   useCurrentWorkspace: () => currentWorkspace,
+  useWorkspaces: () => (currentWorkspace === null ? [] : [currentWorkspace]),
   useHasUnreadElsewhere: () => false,
   useAttentionElsewhere: () => ({ count: 0, tone: null }),
   useSessions: () => hooks.sessions,

@@ -210,4 +210,45 @@ describe('WorkspaceIdentityRow', () => {
       expect(container.querySelector('[data-workspace-attention]')).toBeNull();
     });
   });
+
+  describe('while switching workspace', () => {
+    const NORTHWIND = brandId<WorkspaceId>({ value: 'ws-northwind' });
+
+    beforeEach(() => {
+      act(() => {
+        useAppStore.setState({
+          workspaces: [
+            buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Acme', slug: 'acme' }),
+            buildStoryWorkspace({ id: NORTHWIND, name: 'Northwind', slug: 'northwind' }),
+          ],
+        });
+      });
+    });
+
+    it('names the target on the chip and marks it busy', () => {
+      act(() => {
+        useAppStore.setState({ switchingToWorkspaceId: NORTHWIND });
+      });
+      render(<WorkspaceIdentityRow />);
+
+      expect(screen.getByText('Northwind').getAttribute('aria-busy')).toBe('true');
+      expect(screen.queryByText('Acme')).toBeNull();
+    });
+
+    it('keeps the old name and says the switch failed, then retries the same target', () => {
+      const setCurrentWorkspace = vi.fn(async () => undefined);
+      act(() => {
+        useAppStore.setState({
+          workspaceSwitchError: { workspaceId: NORTHWIND, message: 'boom' },
+          setCurrentWorkspace,
+        });
+      });
+      render(<WorkspaceIdentityRow />);
+
+      screen.getByText('Acme');
+      expect(screen.getByRole('alert').textContent).toContain("Couldn't open Northwind.");
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      expect(setCurrentWorkspace).toHaveBeenCalledWith(NORTHWIND);
+    });
+  });
 });

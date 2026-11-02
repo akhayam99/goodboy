@@ -140,8 +140,14 @@ Rows rest quiet. **Stop** and the **⋯** button live in one fixed cell that fil
 
 Set up a new workspace by copying another one. **Copy from…** in a settings page menu takes that page's values from another workspace, and **Copy all pages from…** takes them all. You see what changes before anything is saved, and folders and accounts are never copied.
 
+**Opening another workspace**
+
+Click a workspace and the top bar names it at once, with a soft pulse, while the board shows its loading state. The old workspace stays whole until the new one has loaded. If it cannot open, the top bar keeps the old name and says "Couldn't open Northwind." with a **Retry** button.
+
 ## Under the hood
 
 This part is for contributors and agents who change the feature.
+
+- Switch chip: `WorkspaceIdentityRow` reads `switchingToWorkspaceId` and `workspaceSwitchError` through `useWorkspaceSwitchState`; **Retry** calls `setCurrentWorkspace` with the failed id, and `StageBoard` draws its skeleton while a switch is set.
 
 - Attention count of an open workspace: the window that shows it sends its count to the other windows on `goodboy:attention`.

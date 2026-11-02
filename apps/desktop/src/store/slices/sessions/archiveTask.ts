@@ -2,6 +2,7 @@ import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
 import { archiveSession as archiveSessionInDb } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
+import { touchArchivedCache } from '../summaries/archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
 
@@ -16,6 +17,7 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     const workspaceId = prev.workspaceId;
     const isCurrent = get().currentSessionId === sessionId;
 
+    touchArchivedCache({ workspaceId });
     set((state) => {
       const cached = state.archivedSessions[workspaceId] ?? [];
       return {
@@ -27,6 +29,7 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     try {
       await archiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
+      touchArchivedCache({ workspaceId });
       set((state) => {
         const cached = state.archivedSessions[workspaceId] ?? [];
         return {

@@ -836,7 +836,7 @@ describe('ScriptsPanel', () => {
     rowMenu(group('ledger-core · nw/settlement'), 'dev');
     const item = screen.getByRole('menuitem', { name: /Ask the agent about this/ });
     expect(item.getAttribute('aria-disabled')).toBe('true');
-    expect(item.textContent).toContain('No output yet');
+    expect(item.getAttribute('aria-description')).toContain('No output yet');
     fireEvent.click(item);
 
     expect(state.queueOutputHandoff).not.toHaveBeenCalled();

@@ -127,6 +127,29 @@ describe('loadArchivedSessions', () => {
     expect(useAppStore.getState().archivedSessions[NORTHWIND]).toBeUndefined();
   });
 
+  it('drops a forced read that overlapped an archive, so the archive stays in the cache', async () => {
+    const stale = aSession({ workspaceId: HARBORLINE });
+    const running = aSession({ workspaceId: HARBORLINE });
+    useAppStore.setState({
+      sessions: [running],
+      archivedSessions: { [HARBORLINE]: [stale] },
+    });
+    let release: (rows: ReadonlyArray<Session>) => void = () => undefined;
+    h.listArchivedSessionsForWorkspace.mockImplementation(
+      () =>
+        new Promise<ReadonlyArray<Session>>((resolve) => {
+          release = resolve;
+        }),
+    );
+
+    const reload = load({ isForced: true });
+    await useAppStore.getState().archiveTask(running.id);
+    release([stale]);
+    await reload;
+
+    expect(cached()?.map((s) => s.id)).toEqual([running.id, stale.id]);
+  });
+
   it('keeps the cache empty and rejects when a read fails, then reads again on the next ask', async () => {
     h.listArchivedSessionsForWorkspace.mockRejectedValueOnce(new Error('disk read failed'));
     h.listArchivedSessionsForWorkspace.mockResolvedValueOnce([]);

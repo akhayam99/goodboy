@@ -67,7 +67,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const archived = archivedList ?? EMPTY_ARRAY;
   const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
-  const boardReady = useAppStore((s) => s.boardReady);
+  const boardReady = useAppStore((s) => s.boardReady && s.switchingToWorkspaceId == null);
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );

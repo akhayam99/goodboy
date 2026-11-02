@@ -37,5 +37,7 @@ Tidy many sessions at once. A card has no checkbox: **Shift** click picks a rang
 This part is for contributors and agents who change the feature.
 
 - Done lane menu: `DoneLaneMenu`, the `doneLane` object kind and `doneLaneArchivesOf` give the **Archive all in Done** and **Archive done older than 7 days** actions.
+- Lane window: `StageColumn` draws 50 cards of the `done` and `archived` lanes (`LANE_WINDOW`); selection reads the whole list, so Select all keeps selecting every session. `loadArchivedSessions({ workspaceId, isForced })` serves its cache, joins an in-flight read and re-reads only when forced on window focus (`useArchivedSessionsLoad`). A read that overlapped an archive, restore or delete is dropped (`archivedCacheVersion`), so the action's cache write is never overwritten by the older read.
+- Load gate: `setCurrentWorkspace` sets `boardReady` with the rows, never the PR sweep; `StageBoardCard` reserves the signal width (`card-signal-reserve`).
 - Card signal: `boardSignalOf` reads `attentionWordsOf`, so a new reason needs no second table.
 - Card action in **Needs you**: `attentionPlace` is the place the top bar chip opens.

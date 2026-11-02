@@ -216,6 +216,7 @@ const projectOf = ({
 beforeEach(() => {
   localStorage.clear();
   state.boardReady = true;
+  Object.assign(state, { switchingToWorkspaceId: null });
   state.archivedSessions = { [wsId]: [] };
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
@@ -232,6 +233,13 @@ describe('StageBoard loading gate', () => {
     expect(screen.getByLabelText('Loading board')).toBeDefined();
     expect(screen.queryByTestId('stage-column')).toBeNull();
     expect(screen.queryByText('No sessions yet')).toBeNull();
+  });
+
+  it('shows the skeleton board while a workspace switch is loading', () => {
+    Object.assign(state, { switchingToWorkspaceId: 'ws-northwind' });
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    screen.getByLabelText('Loading board');
+    expect(screen.queryByTestId('stage-column')).toBeNull();
   });
 
   it('renders the empty state once ready with no sessions', () => {

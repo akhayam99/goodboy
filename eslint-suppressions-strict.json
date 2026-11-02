@@ -924,11 +924,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/session-view/splitInactiveSessions.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/session-view/stageInfoOf.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

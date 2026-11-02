@@ -1,9 +1,11 @@
 import { ChevronsUpDown } from 'lucide-react';
 import {
   AnchoredPopover,
+  Button,
   cn,
   ICON_SIZE,
   ROW_INTERACTIVE,
+  Skeleton,
   StatusDot,
   Tooltip,
   useDropdown,
@@ -14,17 +16,20 @@ import {
   useCurrentWorkspace,
   useHasUnreadElsewhere,
 } from '../../../../store';
+import { NAMES } from '../../../../shared/utils/names';
 import { folderCountLabel } from '../../folderCountLabel';
 import { needYouWords } from '../../needYouWords';
 import { WorkspaceAttentionMark } from '../WorkspaceAttentionMark';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
+import { useWorkspaceSwitchState } from './useWorkspaceSwitchState';
 
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
   const subtitle = useAppStore((state) =>
     folderCountLabel({ projects: state.projects, workspaceId: currentWorkspace?.id ?? null }),
   );
+  const { switchingToName, failedName, retry } = useWorkspaceSwitchState();
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const elsewhere = useAttentionElsewhere({ currentId: currentWorkspace?.id ?? null });
   const dropdown = useDropdown({
@@ -39,7 +44,7 @@ export const WorkspaceIdentityRow = () => {
   }
 
   return (
-    <div className="ml-(--titlebar-inset) flex w-full min-w-0 items-center gap-0.5">
+    <div className="relative ml-(--titlebar-inset) flex w-full min-w-0 items-center gap-0.5">
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
@@ -72,7 +77,16 @@ export const WorkspaceIdentityRow = () => {
               )}
             >
               <WorkspaceTile workspace={currentWorkspace} />
-              <span className="truncate text-row text-foreground">{currentWorkspace.name}</span>
+              <span
+                className={cn(
+                  'truncate text-row',
+                  switchingToName === null ? 'text-foreground' : 'text-muted-foreground',
+                )}
+                aria-busy={switchingToName !== null}
+              >
+                {switchingToName ?? currentWorkspace.name}
+              </span>
+              {switchingToName !== null ? <Skeleton className="h-3 w-8 shrink-0" /> : null}
               {elsewhere.tone !== null ? (
                 <WorkspaceAttentionMark
                   count={elsewhere.count}
@@ -94,6 +108,17 @@ export const WorkspaceIdentityRow = () => {
       >
         <WorkspaceSwitcher onClose={dropdown.close} />
       </AnchoredPopover>
+      {failedName !== null ? (
+        <div
+          role="alert"
+          className="absolute top-full left-0 z-10 flex items-center gap-2 text-meta text-danger"
+        >
+          <span>{`Couldn't open ${failedName}.`}</span>
+          <Button size="sm" variant="ghost" onClick={retry}>
+            {NAMES.retry}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 };

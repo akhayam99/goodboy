@@ -2,6 +2,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { listArchivedSessionsForWorkspace } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { switchEpoch } from '../workspaces/switchEpoch';
+import { archivedCacheVersion } from './archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -24,9 +25,13 @@ export const loadArchivedSessions = (set: SetFn, get: GetFn) => {
       return pending;
     }
     const epoch = switchEpoch.value;
+    const version = archivedCacheVersion({ workspaceId });
     const request = (async () => {
       try {
         const archived = await listArchivedSessionsForWorkspace(tauriDatabase, workspaceId);
+        if (archivedCacheVersion({ workspaceId }) !== version) {
+          return;
+        }
         set((state) => ({
           archivedSessions: { ...state.archivedSessions, [workspaceId]: archived },
         }));

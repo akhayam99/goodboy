@@ -28,6 +28,7 @@ import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileV
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { cleanupMountDirectory } from '../mount-cleanup';
 import { forgetMaterializationSeed } from './materializationSeeds';
+import { touchArchivedCache } from '../summaries/archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
 import { projectById } from '../projects/projectIndex';
@@ -214,6 +215,7 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       agentIds: (get().sessionPhaseRuns[sessionId] ?? []).map((agent) => agent.id),
     });
     get().evictSession({ sessionId, mode: 'delete' });
+    touchArchivedCache({ workspaceId: sessionWorkspaceId });
     set((state) => {
       const cachedArchived = state.archivedSessions[sessionWorkspaceId];
       const nextArchived = cachedArchived
