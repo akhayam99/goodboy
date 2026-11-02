@@ -1,11 +1,17 @@
+import { Suspense } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { DrawerFrame, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { ReportStudio } from '../../../features/reports/components/ReportStudio';
-import { WireframeViewer } from '../../../features/wireframes/components/WireframeViewer';
+import { lazyNamed } from '../../../shared/lib/lazyNamed';
 import { readingArtifactOf } from './readingArtifact';
+
+const WireframeViewer = lazyNamed({
+  load: () => import('../../../features/wireframes/components/WireframeViewer'),
+  pick: ({ WireframeViewer }) => WireframeViewer,
+});
 
 type Props = {
   readonly sessionId: SessionId;
@@ -54,7 +60,9 @@ export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props)
         {artifact.kind === 'report' ? (
           <ReportStudio sessionId={sessionId} artifact={artifact} />
         ) : (
-          <WireframeViewer sessionId={sessionId} artifact={artifact} />
+          <Suspense fallback={null}>
+            <WireframeViewer sessionId={sessionId} artifact={artifact} />
+          </Suspense>
         )}
       </div>
     </DrawerFrame>

@@ -465,6 +465,8 @@ describe('content column contract', () => {
       .filter(
         (name) =>
           name !== '' &&
+          name !== 'Suspense' &&
+          name !== 'LensSkeleton' &&
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&
           name !== 'PageTrailContext' &&

@@ -1,8 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { cn, useEscapeLayer, PaneBannerContext, PageTrailContext, PaneShell } from '@goodboy/ui';
-import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
@@ -21,7 +20,8 @@ import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
 import { LinkIssueAction } from '../SessionOverviewPane/LinkIssueAction';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
-import { BranchPage } from '../../../branch/components/BranchPage';
+import { lazyNamed } from '../../../../shared/lib/lazyNamed';
+import { LensSkeleton } from './parts/LensSkeleton';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
@@ -31,6 +31,16 @@ import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { SessionTrail } from './SessionTrail';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
+
+const BranchPage = lazyNamed({
+  load: () => import('../../../branch/components/BranchPage'),
+  pick: ({ BranchPage }) => BranchPage,
+});
+
+const ArtifactStudio = lazyNamed({
+  load: () => import('../../../artifacts/components/ArtifactStudio'),
+  pick: ({ ArtifactStudio }) => ArtifactStudio,
+});
 
 type SessionWorkspaceProps = {
   readonly session: Session;
@@ -124,16 +134,22 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 )
               ) : null}
               {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-              {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
+              {lens === 'plans' ? (
+                <Suspense fallback={<LensSkeleton page="artifacts" label="Loading artifacts" />}>
+                  <ArtifactStudio sessionId={sessionId} />
+                </Suspense>
+              ) : null}
               {lens === 'workflows' ? (
                 <WorkflowsPane session={session} isActive={isActive && showLens} />
               ) : null}
               {lens === 'branch' ? (
-                <BranchPage
-                  session={session}
-                  workingDir={workingDir}
-                  isActive={isActive && showLens}
-                />
+                <Suspense fallback={<LensSkeleton page="branch" label="Loading branch" />}>
+                  <BranchPage
+                    session={session}
+                    workingDir={workingDir}
+                    isActive={isActive && showLens}
+                  />
+                </Suspense>
               ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane

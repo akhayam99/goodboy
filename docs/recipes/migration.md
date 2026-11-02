@@ -12,7 +12,8 @@
 5. Add or change the queries in `packages/db/src/queries/` and the types in `packages/types`.
 6. Regenerate the Rust schema fixture: `GOODBOY_UPDATE_SCHEMA_FIXTURE=1 pnpm --filter @goodboy/db exec vitest run src/migrations/schema-fixture.test.ts`, then commit `apps/desktop/src-tauri/src/test_support/migrated_schema.sql`. Rust tests load it with `crate::test_support::migrated_connection()`; never write a `CREATE TABLE` of a real table by hand in a Rust test. A new string `CHECK` list needs its constant in `check-parity.test.ts`.
 7. Squash migrations of the same feature before their first release: one migration per shipped change, not one per commit. A rebuild of a table that an earlier migration of the same unreleased feature rebuilt is one migration.
-8. If the change moves state that lives outside SQLite, follow [versioning.md](../versioning.md) → State outside SQLite.
+8. Set `LATEST_MIGRATION_VERSION` in `apps/desktop/src/shared/lib/latestMigrationVersion.ts` to the new number. Boot skips loading the migration chunk when `schema_version` already holds that version; `dbBoot.test.ts` fails when the constant and the registry disagree.
+9. If the change moves state that lives outside SQLite, follow [versioning.md](../versioning.md) → State outside SQLite.
 
 ## Label and release
 

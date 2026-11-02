@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { migrations } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { Database } from '@goodboy/db';
+import { LATEST_MIGRATION_VERSION } from './latestMigrationVersion';
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
@@ -81,6 +82,26 @@ describe('database boot', () => {
 
     expect(second.applied).toEqual([]);
     expect(await highestApplied(db)).toBe(LATEST_VERSION);
+  });
+
+  it('pins the latest known version to the migration registry', () => {
+    expect(LATEST_MIGRATION_VERSION).toBe(LATEST_VERSION);
+  });
+
+  it('skips the migration run when the database is already at the latest version', async () => {
+    const db = makeTestDatabase();
+    invokeMock.mockImplementation(backendFor({ db }));
+    const { runDbMigrations } = await loadBoot();
+    await runDbMigrations();
+    invokeMock.mockClear();
+
+    const second = await runDbMigrations();
+
+    const schemaWrites = invokeMock.mock.calls.filter(
+      ([command, args]) => command === 'db_exec' && JSON.stringify(args).includes('schema_version'),
+    );
+    expect(schemaWrites).toEqual([]);
+    expect(second).toEqual({ applied: [], skipped: [], currentVersion: LATEST_VERSION });
   });
 
   it('refuses a database upgraded by a newer build and offers the newest safe snapshot', async () => {

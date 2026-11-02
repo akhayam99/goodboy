@@ -761,6 +761,12 @@ machines that already ran the first. Nothing warns you, and it never catches
 up. Give it a new number before you merge. Once the numbers are different,
 two migrations that touch different tables can run in any order.
 
+Boot (`shared/lib/dbBoot.ts`) reads the highest `schema_version` row first and
+loads the migration code only when it differs from `LATEST_MIGRATION_VERSION`.
+A database that is ahead of the build also loads it, so the downgrade guard
+still runs. The SQLite `user_version` pragma is not used: the backend blocks it
+and the runner never sets it.
+
 The runner splits each migration into parts wherever a `PRAGMA foreign_keys`
 line appears. Each part commits on its own and saves a checkpoint row in
 `schema_migration_segment`. If a migration stops halfway, the next start picks

@@ -394,35 +394,46 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
   });
 
-  it('mounts the Branch page for the branch lens', () => {
+  it('shows the lens skeleton until the Branch page chunk has loaded', async () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('branch-page')).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Loading branch' })).toBeDefined();
+    expect(await screen.findByTestId('branch-page')).toBeDefined();
+    expect(screen.queryByRole('status', { name: 'Loading branch' })).toBeNull();
+  });
+
+  it('mounts the Branch page for the branch lens', async () => {
+    store.activeLens = { [SESSION_ID]: 'branch' };
+    store.selectedAgentId = {};
+
+    render(<SessionWorkspace session={session} isActive />);
+
+    expect(await screen.findByTestId('branch-page')).toBeDefined();
   });
 });
 
 describe('SessionWorkspace code host routing', () => {
-  it('mounts the Branch page for a GitLab session', () => {
+  it('mounts the Branch page for a GitLab session', async () => {
     store.sessionGitlabMr = { [SESSION_ID]: { mr: { iid: 7 } } };
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('branch-page')).toBeDefined();
+    expect(await screen.findByTestId('branch-page')).toBeDefined();
   });
 
-  it('mounts the Branch page for a Bitbucket session', () => {
+  it('mounts the Branch page for a Bitbucket session', async () => {
     store.sessionBitbucketPr = { [SESSION_ID]: { pr: { id: 42 } } };
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('branch-page')).toBeDefined();
+    expect(await screen.findByTestId('branch-page')).toBeDefined();
   });
 });
 
@@ -490,7 +501,7 @@ describe('SessionWorkspace overview layout', () => {
 });
 
 describe('SessionWorkspace page header', () => {
-  it('draws no trail band on any page: the path is the sidebar back row', () => {
+  it('draws no trail band on any page: the path is the sidebar back row', async () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
     const view = render(<SessionWorkspace session={session} isActive />);
@@ -499,7 +510,7 @@ describe('SessionWorkspace page header', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     view.rerender(<SessionWorkspace session={session} isActive />);
     expect(trailBands()).toBe(0);
-    expect(screen.getByTestId('branch-page').textContent).toBe('');
+    expect((await screen.findByTestId('branch-page')).textContent).toBe('');
 
     store.activeLens = { [SESSION_ID]: 'agents' };
     store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
