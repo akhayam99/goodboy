@@ -11,7 +11,7 @@ The Overview is titled with the session's name, with its linked issue key in gra
 It reads top to bottom:
 
 - The goal.
-- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved.
+- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.
 - Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
 - One card per job, in the order of who acts: **Needs you** (you must), **Running** (agents are), **Next** (you may), **Branches** (where each branch stands) and **Done** (finished).
 

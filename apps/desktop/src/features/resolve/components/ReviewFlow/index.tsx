@@ -16,7 +16,6 @@ import {
   Notice,
   PageColumn,
   ScrollFade,
-  Skeleton,
   formatError,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
@@ -30,12 +29,6 @@ import { isReportedError } from '../../../../store/slices/notifications/reported
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
-import { openReview } from '../../../review/openReview';
-import {
-  REVIEW_TARGET_REASON_COPY,
-  reviewTargetErrorLabel,
-  reviewTargetPending,
-} from '../../../review/reviewTargetCopy';
 import { groupsInViewOf, settledCountOf } from '../../commentGroupsView';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
@@ -63,6 +56,9 @@ import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewSc
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewList } from './ReviewList';
+import { ReviewPushLine } from './ReviewPushLine';
+import { ReviewSkeleton } from './ReviewSkeleton';
+import { ReviewTargetNotices } from './ReviewTargetNotices';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
 import type { ReviewPush } from './useReviewPush';
 import { useReviewEntries } from './useReviewEntries';
@@ -71,6 +67,9 @@ type Props = {
   readonly session: Session;
   readonly mountId?: MountId | null;
   readonly push: ReviewPush;
+  readonly pushCount?: number;
+  readonly isPushInHeader?: boolean;
+  readonly onRequestReview?: (() => void) | null;
 };
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
@@ -101,8 +100,6 @@ type FocusRowParams = {
   readonly threadId: string;
 };
 
-const SKELETON_ROWS = [0, 1, 2];
-
 const focusedRowId = (): string | null =>
   document.activeElement instanceof HTMLElement
     ? (document.activeElement.closest('[data-thread-id]')?.getAttribute('data-thread-id') ?? null)
@@ -110,7 +107,14 @@ const focusedRowId = (): string | null =>
 
 const DOCK_BOTTOM_OFFSET = 24;
 
-export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
+export const ReviewFlow = ({
+  session,
+  mountId = null,
+  push,
+  pushCount = 0,
+  isPushInHeader = false,
+  onRequestReview = null,
+}: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const {
@@ -525,16 +529,6 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const isLoading = source !== null && !source.hasDetail && source.isLoading && !hasLocalEntries;
   const isWholeError =
     source !== null && !source.hasDetail && refreshError !== null && !hasLocalEntries;
-  const targetThreadId =
-    reviewTarget === null ? null : reviewFocusThreadId({ destination: reviewTarget.destination });
-  const targetError =
-    reviewTarget === null
-      ? null
-      : reviewTarget.status === 'unavailable' && reviewTarget.reason !== null
-        ? REVIEW_TARGET_REASON_COPY[reviewTarget.reason]
-        : reviewTarget.status === 'failed'
-          ? reviewTarget.error
-          : null;
   const retry = (): void => void refreshReviewSource({ sessionId, force: true });
   const openedIndex =
     openThreadId === null ? -1 : shownEntries.findIndex((entry) => entry.threadId === openThreadId);
@@ -556,16 +550,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       );
     }
     if (isLoading) {
-      return (
-        <div className="flex w-full flex-col gap-3">
-          {SKELETON_ROWS.map((key) => (
-            <div key={key} className="flex flex-col gap-2 px-3 py-2">
-              <Skeleton className="h-3.5 w-40" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ))}
-        </div>
-      );
+      return <ReviewSkeleton />;
     }
     if (entries.length === 0) {
       return <ReviewEmptyState sessionId={sessionId} provider={provider} />;
@@ -617,6 +602,11 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
               }
             />
           </div>
+          <ReviewPushLine
+            count={pushCount}
+            isBusy={isAccepting}
+            onPush={() => void push.press({ isRetry: false })}
+          />
           <div
             aria-hidden
             data-testid="review-list-clearance"
@@ -682,18 +672,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             onRetry={retry}
           />
         )}
-        {reviewTarget?.status === 'pending' && (
-          <p role="status" className="text-meta text-muted-foreground">
-            {reviewTargetPending({ hasThread: targetThreadId !== null })}
-          </p>
-        )}
-        {targetError !== null && reviewTarget !== null && (
-          <ErrorStrip
-            label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
-            error={new Error(targetError)}
-            onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
-          />
-        )}
+        <ReviewTargetNotices sessionId={sessionId} />
         <LaneNotices sessionId={sessionId} lane={lane} mountId={source?.mountId ?? null} />
         {acceptError !== null && (
           <Notice
@@ -710,7 +689,10 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
             mountId={source?.mountId ?? null}
             fixingThreads={isRunLive && run !== null ? run.total : 0}
             waitingFixes={fixRunReady?.threadIds.length ?? 0}
+            unpushedCommits={pushCount}
             onApply={fixRunReady === null ? null : () => void acceptMany(fixRunReady.threadIds)}
+            onPush={isPushInHeader ? null : () => void push.press({ isRetry: false })}
+            onRequestReview={onRequestReview}
           />
         </TabActions>
         <ReviewScopeBar

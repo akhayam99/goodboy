@@ -72,6 +72,16 @@ describe('the comments and counts scenes', () => {
     ).toHaveLength(1);
   });
 
+  it('reads the same number on the header primary and the Needs you group', async () => {
+    mount({ name: 'u34-u39-header' });
+
+    const primary = await screen.findByRole('button', { name: /^(Fix|Fixing|Apply) \d+ / });
+    const list = await screen.findByRole('navigation', { name: 'Comments' });
+    const group = within(list).getByRole('region', { name: 'Needs you' });
+    const shown = Number(/\d+/.exec(primary.textContent ?? '')?.[0]);
+    expect(group.textContent).toContain(String(shown));
+  });
+
   it('keeps a fix on the branch under Done as Fixed', async () => {
     mount({ name: 'u34-u44-groups' });
 

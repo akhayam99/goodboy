@@ -77,6 +77,41 @@ describe('FixCommentsButton', () => {
     expect(onApply).toHaveBeenCalledTimes(1);
   });
 
+  it('reads Push with the commit count and pushes when nothing is left to fix', () => {
+    seedNotesScene({ variant: 'comments-no-pr' });
+    useAppStore.setState({ diffComments: { [CTX_SESSION_ID]: [] }, sessionResolveQueueItems: {} });
+    const onPush = vi.fn();
+
+    render(
+      <FixCommentsButton
+        sessionId={CTX_SESSION_ID}
+        mountId={CTX_PAYMENTS_MOUNT_ID}
+        unpushedCommits={3}
+        onPush={onPush}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Push 3 commits' }));
+
+    expect(onPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads Request review when every comment is settled and the pull request allows it', () => {
+    seedNotesScene({ variant: 'comments-no-pr' });
+    useAppStore.setState({ diffComments: { [CTX_SESSION_ID]: [] }, sessionResolveQueueItems: {} });
+    const onRequestReview = vi.fn();
+
+    render(
+      <FixCommentsButton
+        sessionId={CTX_SESSION_ID}
+        mountId={CTX_PAYMENTS_MOUNT_ID}
+        onRequestReview={onRequestReview}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+
+    expect(onRequestReview).toHaveBeenCalledTimes(1);
+  });
+
   it('opens the fix comments drawer for the session and its mount', () => {
     seedNotesScene({ variant: 'comments-no-pr' });
     mountButton();

@@ -3,7 +3,6 @@ import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
-import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -21,7 +20,6 @@ import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFl
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
-import { isPushFailure } from '../../../resolve/reviewCommentState';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
 import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
@@ -35,7 +33,7 @@ import { MERGE_METHOD_LABEL } from '../../../actions/kinds/pullRequest';
 import { useBranchTab } from '../../hooks/useBranchTab';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
-import type { BranchPushState, BranchReviewCounts } from '../../branchPrimary';
+import { useBranchReviewState } from '../../hooks/useBranchReviewState';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
@@ -139,47 +137,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
   const tab = resolveBranchTab({ tab: storedTab, scope });
   const isReadOnly = isBranchReadOnly(scope);
-  const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
-  const isPushBusy =
-    push.phase.kind === 'preparing' ||
-    push.phase.kind === 'pushing' ||
-    push.phase.kind === 'syncing';
-
-  const pushableIds = useMemo(
-    () =>
-      entries
-        .filter(
-          (entry) =>
-            (entry.state === 'accepted' || entry.state === 'replied') &&
-            entry.remote !== 'on_origin',
-        )
-        .map((entry) => entry.threadId),
-    [entries],
-  );
-  const pushState: BranchPushState =
-    push.phase.kind === 'confirm' || push.phase.kind === 'sync_confirm'
-      ? 'open'
-      : isPushBusy
-        ? 'busy'
-        : 'idle';
-  const pushCount = branchPushFactsOf({
+  const { hasPushFailure, isPushBusy, pushCount, review } = useBranchReviewState({
+    entries,
+    phaseKind: push.phase.kind,
     status: diff.status,
     commits: historyCommits,
     hasRemoteHead,
-  }).toPush;
-
-  const review = useMemo<BranchReviewCounts>(
-    () => ({
-      accepted: pushableIds.length,
-      replies: entries.filter((entry) => entry.remote === 'on_origin').length,
-      failed: entries.filter(
-        (entry) => entry.state === 'failed' && isPushFailure({ row: entry.row }),
-      ).length,
-      isPushing: entries.some((entry) => entry.row.thread.stage === 'publishing'),
-      push: { state: pushState, count: pushCount },
-    }),
-    [entries, pushCount, pushState, pushableIds],
-  );
+  });
 
   const start = useBranchStart({
     sessionId,
@@ -415,7 +379,17 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         </ScrollFade>
       );
     }
-    const visit = { mountId: historyMountId, push, isVisible: isActive };
+    const visit = {
+      mountId: historyMountId,
+      push,
+      pushCount: push.phase.kind === 'idle' ? pushCount : 0,
+      isPushInHeader: controls.secondary?.label.startsWith('Push ') === true,
+      isVisible: isActive,
+      onRequestReview:
+        request.kind === 'allowed'
+          ? () => controls.pullRequestControls.trigger({ actionId: 'pullRequest.requestReview' })
+          : null,
+    };
     return <ReviewFlowVisit session={session} {...visit} />;
   };
 
