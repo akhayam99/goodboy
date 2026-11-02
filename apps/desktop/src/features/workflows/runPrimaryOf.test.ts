@@ -72,14 +72,14 @@ describe('runPrimaryOf over every orchestrator phase', () => {
 
     expect(new Set(labels)).toEqual(
       new Set([
-        'Resume',
+        'Continue',
         'Decide next step',
         'Answer',
         'Raise limit',
         'Retry',
         'Add a hint and continue',
         'Review plan',
-        'Continue the run',
+        'Continue',
       ]),
     );
   });

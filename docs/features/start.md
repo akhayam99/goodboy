@@ -140,7 +140,7 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 - Inside a session the field keeps routing on its own. Write the ask, or type `@Scout` or `~Fix a layout` in the field.
 - ⌘K offers the same **Start a run** and **Start from** each preset.
 - A run you like can be kept from its page with **Save as preset**.
-- While a run lives, **Pause run** (then **Resume run** in its place) and **Stop run** sit as buttons in its header.
+- While a run lives, **Pause run** (then **Continue** in its place) and **Stop run** sit as buttons in its header.
 
 **Tools beside the page**
 

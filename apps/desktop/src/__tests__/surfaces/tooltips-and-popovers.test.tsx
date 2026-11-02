@@ -308,7 +308,6 @@ describe('a cut title in a row is reachable by hover and by keyboard', () => {
             sessionId={FIXTURE_SESSION}
             delegation={delegation}
             card={card}
-            agent={null}
             name={LONG_TITLE}
             revision={null}
             onOpen={onOpen}

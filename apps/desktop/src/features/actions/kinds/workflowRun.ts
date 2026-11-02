@@ -291,7 +291,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.continue',
-      label: 'Continue step',
+      label: NAMES.continue,
       icon: StepForward,
       group: 'act',
       when: ({ facts }) => facts.stoppedAgentId !== null && isLive({ facts }),
@@ -351,7 +351,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.resume',
-      label: 'Resume run',
+      label: NAMES.continue,
       icon: Play,
       group: 'act',
       when: ({ facts }) => facts.canResume,

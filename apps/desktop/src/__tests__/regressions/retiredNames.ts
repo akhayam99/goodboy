@@ -181,4 +181,9 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'add-note', pattern: /\bAdd note\b/, use: NAMES.addComment },
   { id: 'note-on-line', pattern: /\bNote on (?:line|this file)\b/, use: NAMES.addComment },
+  { id: 'resume-bare', pattern: /^Resume$/, use: NAMES.continue },
+  { id: 'resume-run', pattern: /\bResume run\b/, use: NAMES.continue },
+  { id: 'continue-the-run', pattern: /\bContinue the run\b/, use: NAMES.continue },
+  { id: 'continue-step', pattern: /\bContinue step\b/, use: NAMES.continue },
+  { id: 'resume-all', pattern: /\bResume all\b/, use: NAMES.continueAll },
 ];

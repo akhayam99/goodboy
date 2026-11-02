@@ -15,7 +15,7 @@ export type AgentStoppedCopy = {
   readonly title: string;
   readonly body: string | null;
   readonly canContinue: boolean;
-  readonly actionLabel: 'Resume' | 'Continue' | 'Retry through Auto';
+  readonly actionLabel: 'Continue' | 'Retry through Auto';
 };
 
 const stoppedTitle = ({ agent }: { readonly agent: Agent }): string => {
@@ -42,7 +42,7 @@ export const agentStoppedCopy = ({
       actionLabel: 'Retry through Auto',
     };
   }
-  const actionLabel = agent.stoppedBy === 'app' ? 'Resume' : 'Continue';
+  const actionLabel = 'Continue';
   if (agent.doneAt != null) {
     return { title, body: null, canContinue: false, actionLabel };
   }

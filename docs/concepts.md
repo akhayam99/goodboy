@@ -631,7 +631,7 @@ whether you clicked it on the board or in the session overview.
   follow-ups live only on its row. Today that drops the ready step of a
   workflow run (its row has **Start**) and every stage of a CI fix after
   **Analyze** (its row opens the drawer, then has **Start fix** and **Push**).
-  **Resume all** after a restart stays, because no row resumes several
+  **Continue all** after a restart stays, because no row resumes several
   agents at once; a failed agent's **Retry** stays, because its row has none.
 - A permission has one place in the overview: the **Needs you** callout,
   whose button opens the blocked agent. The approve-tool
@@ -643,7 +643,7 @@ whether you clicked it on the board or in the session overview.
   project, run a ready plan, add a proposed project) plus twelve more that
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, resume every agent a restart stopped
-  (one **Resume all**, band 0, standalone and workflow agents alike), retry
+  (one **Continue all**, band 0, standalone and workflow agents alike), retry
   the last standalone agent that failed, analyze a pull request's failing checks,
   push unpushed commits on a clean worktree (counted against the branch's
   own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
@@ -1867,7 +1867,7 @@ session up again in Goodboy.
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn: the square in the composer, the chip in the agent header, the line at the end of the conversation, the agent's menu and the palette all say it. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
+- **Stop** is the one name for ending a running turn: the square in the composer, the line at the end of the conversation, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word

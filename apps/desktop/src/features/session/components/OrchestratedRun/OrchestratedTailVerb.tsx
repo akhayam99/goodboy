@@ -3,6 +3,7 @@ import { CircleStop } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/utils/names';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 
@@ -91,7 +92,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             })
           }
         >
-          Continue step
+          {NAMES.continue}
         </Button>
       );
     case 'restartStep':
@@ -149,7 +150,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             })
           }
         >
-          {verb.isStopped ? `Resume and read ${verb.count} queued` : `Read ${verb.count} queued`}
+          {verb.isStopped ? `Continue and read ${verb.count} queued` : `Read ${verb.count} queued`}
         </Button>
       );
     case 'quiet':
@@ -178,11 +179,11 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           onClick={() =>
             void press({
               task: () => resumeStoppedAgents({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't resume the stopped agents",
+              failure: "Couldn't continue the stopped agents",
             })
           }
         >
-          {verb.count === 1 ? 'Resume' : 'Resume all'}
+          {verb.count === 1 ? NAMES.continue : NAMES.continueAll}
         </Button>
       );
     default: {

@@ -116,18 +116,18 @@ describe('RunsGrid', () => {
     const group = screen.getByRole('list', { name: 'In progress' });
     expect(within(group).getAllByRole('button', { name: /Stopped, Continue/ })).toHaveLength(2);
     expect(screen.queryByRole('list', { name: 'Finished' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Resume all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue all' }));
     await waitFor(() =>
       expect(resumeStoppedAgents).toHaveBeenCalledWith({ sessionId: NOW_SESSION }),
     );
   });
 
-  it('offers no Resume all for a single stopped agent', () => {
+  it('offers no Continue all for a single stopped agent', () => {
     const agents = [aNowAgent({ key: 'only', name: 'Only', status: 'stopped', stoppedBy: 'app' })];
 
     renderGrid({ runs: runsOf({ agents }) });
 
-    expect(screen.queryByRole('button', { name: 'Resume all' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue all' })).toBeNull();
   });
 
   it('stops every running agent from the header and says how many stopped', async () => {

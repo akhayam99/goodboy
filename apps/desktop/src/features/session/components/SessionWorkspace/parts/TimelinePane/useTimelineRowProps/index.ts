@@ -287,7 +287,7 @@ export const useTimelineRowProps = ({
       case 'continue': {
         const { agent } = ask;
         return {
-          label: agent.stoppedBy === 'app' ? ROW_ACTION_LABEL.resume : ROW_ACTION_LABEL.continue,
+          label: ROW_ACTION_LABEL.continue,
           isBusy: pending.pendingKeys.has(agent.id),
           onAct: () =>
             void pending.run({

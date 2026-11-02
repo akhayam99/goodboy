@@ -136,7 +136,6 @@
   "apps/desktop/src/features/session/central/next/NextStackView.tsx": 1,
   "apps/desktop/src/features/session/components/AgentCard/AgentStatusIcon.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUps.tsx": 1,
-  "apps/desktop/src/features/session/components/AgentDetailPane/AgentLiveChip.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentTitle.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentUsageFooter.tsx": 1,
   "apps/desktop/src/features/session/components/AgentHeaderActions.tsx": 1,

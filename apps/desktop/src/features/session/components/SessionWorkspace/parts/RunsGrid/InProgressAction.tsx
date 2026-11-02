@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
 import { useToast } from '../../../../../../shared/components/Toast';
+import { NAMES } from '../../../../../../shared/utils/names';
 import { needsYouText } from '../../../../../../shared/utils/needsYouText';
 import { useAppStore } from '../../../../../../store';
 import { runningAgentCountOf } from '../../../../../../store/runtime/live-work/runningAgentCountOf';
@@ -36,7 +37,7 @@ export const InProgressAction = ({ sessionId, runs }: Props) => {
     try {
       await resumeStoppedAgents({ sessionId });
     } catch (error) {
-      await reportError({ title: "Couldn't resume the stopped agents", error, sessionId });
+      await reportError({ title: "Couldn't continue the stopped agents", error, sessionId });
     } finally {
       setIsResuming(false);
     }
@@ -63,12 +64,12 @@ export const InProgressAction = ({ sessionId, runs }: Props) => {
       {needYou === 0 ? null : <span>{needsYouText({ count: needYou, unit: 'items' })}</span>}
       {runningCount < STOP_ALL_FLOOR ? null : (
         <Button variant="quiet" size="xs" isBusy={isStopping} onClick={() => void stopAll()}>
-          Stop all ({runningCount})
+          {NAMES.stopAll} ({runningCount})
         </Button>
       )}
       {stoppedByRestart < RESUME_FLOOR ? null : (
         <Button variant="quiet" size="xs" isBusy={isResuming} onClick={() => void resume()}>
-          Resume all
+          {NAMES.continueAll}
         </Button>
       )}
     </>

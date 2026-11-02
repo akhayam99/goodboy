@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/utils/names';
 import type { OrchestratorPhase } from './orchestratorState';
 
 export type RunPrimaryKind =
@@ -48,8 +49,8 @@ const LABELS = {
   'review-plan': 'Review plan',
   'approve-plan': 'Approve plan',
   answer: 'Answer',
-  resume: 'Resume',
-  continue: 'Continue the run',
+  resume: NAMES.continue,
+  continue: NAMES.continue,
   retry: 'Retry',
   hint: 'Add a hint and continue',
   'raise-cap': 'Raise limit',

@@ -90,7 +90,7 @@ describe('the next step card', () => {
     expect(pickedLabel()).toContain('Recommended');
     screen.getByText('Spawn a tester first');
     screen.getByText('Ask a reviewer to look');
-    screen.getByRole('button', { name: 'Spawn implementer' });
+    screen.getByRole('button', { name: 'Continue' });
   });
 
   it('marks the waiting state with one warning dot and no rail, label or fill', () => {
@@ -171,7 +171,7 @@ describe('the next step card', () => {
     renderCard();
 
     fireEvent.change(hintBox(), { target: { value: 'keep the retry cap' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => expect(port).toHaveBeenCalledOnce());
     expect(port).toHaveBeenCalledWith({
@@ -198,7 +198,7 @@ describe('the next step card', () => {
 
     fireEvent.keyDown(screen.getByRole('region', { name: 'Next step' }), { key: '2' });
     fireEvent.change(hintBox(), { target: { value: 'cover the idempotency path' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn a tester first' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => expect(sendTurn).toHaveBeenCalledOnce());
     expect(order).toEqual(['decline', 'message']);
@@ -210,13 +210,23 @@ describe('the next step card', () => {
     });
   });
 
+  it('keeps one primary that reads Continue whichever option is picked, with the hint behind a press', () => {
+    renderCard();
+
+    expect(screen.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
+    expect(screen.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /Spawn a tester first/ })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Add a hint' })).toBeNull();
+  });
+
   it('sends no message when the decline lost to another window', async () => {
     registerDelegationDecisionPort({ port: async () => 'lost' });
     const sendTurn = mockSend();
     renderCard();
 
     fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn a tester first' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await screen.findByText(/No longer open/);
     expect(sendTurn).not.toHaveBeenCalled();
@@ -227,10 +237,10 @@ describe('the next step card', () => {
     registerDelegationDecisionPort({ port: async () => 'lost' });
     renderCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await screen.findByText(/No longer open/);
-    expect(screen.queryByRole('button', { name: 'Spawn implementer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
   it('keeps the pick and the hint when the start fails and offers Retry on the same delegation', async () => {
@@ -242,7 +252,7 @@ describe('the next step card', () => {
     renderCard();
 
     fireEvent.change(hintBox(), { target: { value: 'small diff' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await screen.findByText(/database is locked/);
     expect(hintBox().getAttribute('value')).toBe('small diff');
@@ -268,7 +278,7 @@ describe('the next step card', () => {
     renderCard();
 
     fireEvent.click(screen.getByRole('option', { name: /Spawn a tester first/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn a tester first' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await screen.findByText('Declined. Auto was not told.');
     fireEvent.click(screen.getByRole('button', { name: 'Tell Auto' }));
@@ -301,7 +311,7 @@ describe('the next step card', () => {
     registerDelegationDecisionPort({ port: null });
     renderCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await screen.findByText(/can't take this answer/);
     screen.getByRole('button', { name: 'Retry' });

@@ -273,10 +273,10 @@ describe('run rows stay reachable from the preset run level', () => {
     await press(live().getByRole('button', { name: 'Pause run' }));
     expect(runStop()?.kind).toBe('paused');
     expect(document.querySelector('[data-run-verb="workflowRun.pause"]')).toBeNull();
-    expect(live().getByRole('button', { name: 'Resume run' })).toBeDefined();
+    expect(live().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
-  it('Resume run takes the place of Pause run: a failed write keeps it paused, pressing again resumes', async () => {
+  it('Continue takes the place of Pause run: a failed write keeps it paused, pressing again resumes', async () => {
     mockSceneIpc(() => null);
     await mount('c08-run-working');
     const live = () =>
@@ -295,39 +295,39 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(verbs()).toEqual(['workflowRun.resume']);
     const writes = failWritesWith({ marker: 'orchestration_stop_kind' });
 
-    await press(live().getByRole('button', { name: 'Resume run' }));
+    await press(live().getByRole('button', { name: 'Continue' }));
     expect(runStop()?.kind).toBe('paused');
-    expect(live().getByRole('button', { name: 'Resume run' })).toBeDefined();
+    expect(live().getByRole('button', { name: 'Continue' })).toBeDefined();
 
     writes.heal();
-    await press(live().getByRole('button', { name: 'Resume run' }));
+    await press(live().getByRole('button', { name: 'Continue' }));
     expect(runStop() ?? null).toBeNull();
     expect(verbs()).toEqual(['workflowRun.pause']);
   });
 
-  it('Continue step after an interrupted step, on the tail', async () => {
+  it('Continue after an interrupted step, on the tail', async () => {
     await mount('c08-run-working');
     patchAgent({ id: C08_IMPLEMENTER_ID, patch: { status: 'stopped' } });
     await settle();
-    expect(tail().getByRole('button', { name: 'Continue step' })).toBeDefined();
+    expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
-  it('Resume all after a restart, on the tail', async () => {
+  it('Continue all after a restart, on the tail', async () => {
     await mount('c08-run-working');
     patchAgent({ id: C08_IMPLEMENTER_ID, patch: { status: 'stopped', stoppedBy: 'app' } });
     await settle();
     expect(tail().getByText('1 agent stopped when Goodboy closed')).toBeDefined();
-    expect(tail().getByRole('button', { name: 'Resume' })).toBeDefined();
+    expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
-  it('Pause run and Resume: the tail says the run is paused, Resume run lives only in the header', async () => {
+  it('Pause run and Resume: the tail says the run is paused, Continue lives only in the header', async () => {
     await mount('c08-run-ready');
     patchRun({ patch: { orchestrationStop: { kind: 'paused', message: 'Paused by you.' } } });
     await settle();
     expect(tail().getByText('Paused by you')).toBeDefined();
-    expect(tail().queryByRole('button', { name: 'Resume' })).toBeNull();
+    expect(tail().queryByRole('button', { name: 'Continue' })).toBeNull();
     const live = within(nodeOf('[data-run-live-verbs]'));
-    expect(live.getByRole('button', { name: 'Resume run' })).toBeDefined();
+    expect(live.getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
   it('Next step: Start step 3 is the header primary once step 2 is done', async () => {

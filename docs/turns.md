@@ -716,7 +716,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   answers `isAlreadySent` without a second user message. When the backend
   still refuses the spawn with `delivery_duplicate` (another window won), the
   transcript says "This message was already sent." and no fallback starts. No
-  outbox table: a crash ends as "Stopped by restart" with Resume. Auto sends
+  outbox table: a crash ends as "Stopped by restart" with Continue. Auto sends
   its own ids, and Auto is switched off.
   A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
   planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
@@ -762,17 +762,17 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   limits and pins apply, and a resumed step completes like any other.
 - **Anything else stays Stopped by restart.** An agent the marker does not
   name (a crash, a force quit) or one whose provider is disconnected shows
-  "Stopped by restart" with **Resume**, which runs the same resume
+  "Stopped by restart" with **Continue**, which runs the same resume
   (`continueStoppedAgent`). Nothing restarts on its own after a crash.
-  Past the agent itself, Next steps in the overview offers one **Resume all**
+  Past the agent itself, Next steps in the overview offers one **Continue all**
   for every agent the restart stopped in the session, and a workflow run
-  offers the same action on its run tail for its own agents (**Resume** or
-  **Resume all**, `runTailOf` and `orchestratedTailOf`). Both run
+  offers the same action on its run tail for its own agents (**Continue** or
+  **Continue all**, `runTailOf` and `orchestratedTailOf`). Both run
   `resumeStoppedAgents`, which resumes each
   `isStoppedByRestart` agent, never one you stopped and never a fan-out
   container while a child is unfinished (the children are resumed instead), skips an agent a second click
   is already resuming, and reports a failure only after trying the rest.
-- **An Auto child never gets a plain turn.** Continue, Resume and Resume all
+- **An Auto child never gets a plain turn.** Continue and Continue all
   on an agent Auto started go through Auto (`autoRetryRouteOf`): the stopped
   notice offers **Retry through Auto**, which sends Auto "Continue the
   Implementer that stopped (delegation <id>) from where it left off: <task>"
@@ -1355,8 +1355,8 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   shows "Esc again to stop" for 3 s, the second stops, and any open menu,
   drawer or dialog (`transientEscapeLayerCount`, `isOverlayOpen`) takes the
   key first. The page level layer that goes up is a base layer and does not
-  count. The conversation tail (`ConversationTail`) and a live chip in the
-  agent header (`AgentLiveChip`) carry the same Stop.
+  count. The conversation tail (`ConversationTail`) carries the same Stop.
+  The agent header has none.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft

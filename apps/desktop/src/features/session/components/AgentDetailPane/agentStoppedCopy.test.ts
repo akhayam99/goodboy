@@ -57,7 +57,7 @@ describe('agentStoppedCopy', () => {
     expect(copy.canContinue).toBe(false);
   });
 
-  it('says a restart stopped the agent and offers Resume', () => {
+  it('says a restart stopped the agent and offers the same Continue', () => {
     const copy = agentStoppedCopy({
       agent: agentOf({ stoppedBy: 'app' }),
       provider: 'anthropic',
@@ -66,7 +66,7 @@ describe('agentStoppedCopy', () => {
     });
 
     expect(copy.title).toBe('Stopped by restart. What it wrote is kept.');
-    expect(copy.actionLabel).toBe('Resume');
+    expect(copy.actionLabel).toBe('Continue');
     expect(copy.canContinue).toBe(true);
   });
 

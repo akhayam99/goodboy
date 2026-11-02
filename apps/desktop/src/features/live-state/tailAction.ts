@@ -1,12 +1,13 @@
+import { NAMES } from '../../shared/utils/names';
 import type { TailAction, TailActionId } from './tailFacts';
 
 export const TAIL_ACTION = {
-  stop: { id: 'stop', label: 'Stop' },
-  stopAgent: { id: 'stopAgent', label: 'Stop' },
-  stopAuto: { id: 'stopAuto', label: 'Stop' },
+  stop: { id: 'stop', label: NAMES.stop },
+  stopAgent: { id: 'stopAgent', label: NAMES.stop },
+  stopAuto: { id: 'stopAuto', label: NAMES.stop },
   changeApproach: { id: 'changeApproach', label: 'Change approach' },
-  stopStep: { id: 'stopStep', label: 'Stop step' },
-  continue: { id: 'continue', label: 'Continue' },
+  stopStep: { id: 'stopStep', label: NAMES.stopStep },
+  continue: { id: 'continue', label: NAMES.continue },
   retry: { id: 'retry', label: 'Retry' },
   retryThroughAuto: { id: 'retryThroughAuto', label: 'Retry through Auto' },
   raiseLimit: { id: 'raiseLimit', label: 'Raise limit' },
@@ -15,5 +16,5 @@ export const TAIL_ACTION = {
   confirmDelegation: { id: 'confirmDelegation', label: 'Confirm' },
   declineDelegation: { id: 'declineDelegation', label: 'Decline' },
   viewTranscript: { id: 'viewTranscript', label: 'View transcript' },
-  forceStop: { id: 'forceStop', label: 'Force stop' },
+  forceStop: { id: 'forceStop', label: NAMES.forceStop },
 } as const satisfies Record<TailActionId, TailAction>;

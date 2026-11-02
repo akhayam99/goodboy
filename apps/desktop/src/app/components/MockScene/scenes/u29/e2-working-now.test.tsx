@@ -50,7 +50,21 @@ const mount = async ({ hasTwoChildren = false, isRootRunning = true }: MountPara
       <Scene />
     </ToastProvider>,
   );
+  if (!isRootRunning) {
+    await screen.findByRole('region', { name: 'Agents' }, WAIT);
+    act(() => useAppStore.getState().closeDrawer());
+  }
   return screen.findByRole('group', { name: 'Working now' }, WAIT);
+};
+
+const openLine = ({ title }: { readonly title: RegExp }) => {
+  const open = screen
+    .getAllByRole('list', { name: 'Delegations' })
+    .flatMap((list) => within(list).queryAllByRole('button', { name: title }))[0];
+  if (open === undefined) {
+    throw new Error('No child Open action');
+  }
+  return open;
 };
 
 type UpdateParams = {
@@ -185,28 +199,22 @@ describe('Working now in Auto', () => {
     screen.getByPlaceholderText('Message Auto');
   });
 
-  it('returns from All launches to the child selected by a different chip', async () => {
-    const strip = await mount({ hasTwoChildren: true });
-    fireEvent.click(
-      within(strip).getByRole('button', { name: `Reveal ${IMPLEMENTER_TITLE} in Agents` }),
-    );
+  it('returns from All launches to the child selected by a different delegation line', async () => {
+    await mount({ hasTwoChildren: true });
+    fireEvent.click(openLine({ title: /^Open Post one credit/ }));
     const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
     fireEvent.click(within(panel).getByRole('button', { name: 'All launches' }));
     expect(document.querySelector('[data-spawned-panel]')?.getAttribute('data-spawned-panel')).toBe(
       'all',
     );
-    fireEvent.click(
-      within(strip).getByRole('button', { name: `Reveal ${IMPLEMENTER_TITLE} in Agents` }),
-    );
+    fireEvent.click(openLine({ title: /^Open Post one credit/ }));
     await waitFor(() =>
       expect(
         document.querySelector('[data-spawned-panel]')?.getAttribute('data-spawned-panel'),
       ).toBe('auto'),
     );
     fireEvent.click(within(panel).getByRole('button', { name: 'All launches' }));
-    fireEvent.click(
-      within(strip).getByRole('button', { name: `Reveal ${TESTER_TITLE} in Agents` }),
-    );
+    fireEvent.click(openLine({ title: /^Open Test the retry path/ }));
     await waitFor(() =>
       expect(
         document.querySelector('[data-spawned-panel]')?.getAttribute('data-spawned-panel'),
@@ -247,6 +255,21 @@ describe('Working now in Auto', () => {
     expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
     updateChild({ agentId: IMPLEMENTER_ID, state: 'awaiting_confirm' });
     expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
+  });
+
+  it('hides the strip while the Agents drawer is open and shows it again once it closes', async () => {
+    await mount();
+    act(() =>
+      useAppStore.getState().openDrawer({
+        kind: 'spawned',
+        sessionId: AUTO_SESSION.id,
+        payload: null,
+      }),
+    );
+    await screen.findByRole('region', { name: 'Agents' }, WAIT);
+    expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
+    act(() => useAppStore.getState().closeDrawer());
+    screen.getByRole('group', { name: 'Working now' });
   });
 
   it('falls back to launches for a missing reveal target without changing the main selection', async () => {

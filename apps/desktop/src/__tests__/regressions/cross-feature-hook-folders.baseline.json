@@ -39,7 +39,6 @@
   "session -> file-versions": 6,
   "session -> history": 5,
   "session -> inbox": 3,
-  "session -> live-state": 1,
   "session -> plans": 1,
   "session -> suggestions": 3,
   "session -> workflows": 17,

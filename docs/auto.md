@@ -310,14 +310,14 @@ writing to it reopens it to **Deciding**.
   to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
 - **Delegation lines.** Each delegation is in the conversation
   (`AutoDelegationLines`). A settled one is one bare line: its role chip, the
-  task Auto gave and **Open**. A child still in flight is a live card
-  (`AutoChildCard`, no coloured side border): role chip, task, **Open** and
-  **Stop**, then its state word in its meaning's colour (`AUTO_STATE_TONE`),
-  the active work time (`DelegationClock`, the same number as Working now and the
-  Agents row, so a resumed child keeps its earlier work), role and model by name with its effort (`modelLineOf`), and the
-  child's last tool as the activity line. Its facts come from `useChildLive` (`autoChildLive` plus the last tool
-  of the child's transcript) through `autoChildCardFactsOf`. **Stop** names the
-  child; a failed stop leaves the card working with a notice. The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
+  task Auto gave and **Open**. A child still in flight is one line too
+  (`AutoChildCard`, no coloured side border): role chip, role, task, its state
+  word in its meaning's colour (`AUTO_STATE_TONE`) and the active work time
+  (`DelegationClock`, the same number as Working now and the Agents row, so a
+  resumed child keeps its earlier work). The whole line opens the child and its
+  right click menu holds **Stop**, which names the child; a failed stop leaves
+  the line working with a notice. The facts come from `autoChildCardFactsOf`.
+  The lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
   ready". Its reason and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A child that waits for an OK carries the **Next step** card
@@ -435,7 +435,8 @@ writing to it reopens it to **Deciding**.
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
   thinking line of the conversation speaks instead. The **Working now** strip
   (`AutoWorkingNow`) remains above the message field while children start or run,
-  newest first, even during Auto's own turn. Each chip shows the short task title,
+  newest first, even during Auto's own turn, and hidden while the Agents drawer
+  is open, which holds the full tree. Each chip shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
   A chip or a delegation line's **Open** reveals that child in Agents without
   changing the main agent or its draft (`useAutoTreeActions`, the `spawned` drawer
@@ -524,9 +525,10 @@ until the session is reopened.
 
 A child that waits for an OK shows one **Next step** card under its line, never a
 Confirm row (`AutoNextAction`, built by `nextActionOf`). The proposed child is the
-primary tile and button ("Spawn implementer", or "Revise Retry-safe credit
-retries to v3"), the alternatives of the proposal follow as tiles 2 and 3, and an
-optional hint field sits under them. The keys 1 to 3 pick a tile while focus is
+primary tile ("Spawn implementer", or "Revise Retry-safe credit retries to v3"),
+the alternatives of the proposal follow as tiles 2 and 3, and an optional hint
+field sits under them. The button reads **Continue** whichever tile is picked
+(**Retry** after a failure). The keys 1 to 3 pick a tile while focus is
 inside the card; Enter in the hint field runs the pick. The card is the question
 colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side border.
 

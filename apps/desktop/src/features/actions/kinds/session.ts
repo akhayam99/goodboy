@@ -505,7 +505,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.stopAll',
-    label: ({ facts }) => `Stop all running agents (${facts.runningAgentCount})`,
+    label: ({ facts }) => `${NAMES.stopRunning} (${facts.runningAgentCount})`,
     icon: OctagonX,
     group: 'act',
     when: ({ facts }) => isLive({ facts }) && facts.runningAgentCount > 0,

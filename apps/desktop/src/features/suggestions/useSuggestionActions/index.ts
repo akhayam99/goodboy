@@ -322,10 +322,10 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resume-agents') {
       return {
         primary: {
-          label: suggestion.payload.agentIds.length === 1 ? 'Resume' : 'Resume all',
-          shortLabel: 'Resume',
+          label: suggestion.payload.agentIds.length === 1 ? NAMES.continue : NAMES.continueAll,
+          shortLabel: NAMES.continue,
           isDisabled: false,
-          failureTitle: "Couldn't resume the stopped agents",
+          failureTitle: "Couldn't continue the stopped agents",
           run: async () => {
             await resumeStoppedAgents({ sessionId });
           },

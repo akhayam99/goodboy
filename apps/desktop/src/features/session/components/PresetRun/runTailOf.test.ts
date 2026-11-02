@@ -61,11 +61,11 @@ const tailOf = ({ ...overrides }: BaseParams) =>
   });
 
 describe('runTailOf', () => {
-  it('says a paused run is paused and leaves Resume run to the header', () => {
+  it('says a paused run is paused and leaves Continue to the header', () => {
     expect(
       tailOf({
         agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
-        primary: { kind: 'resume', label: 'Resume' },
+        primary: { kind: 'resume', label: 'Continue' },
       }),
     ).toEqual({ state: 'stopped', phrase: 'Paused by you', stepAgentId: null, verb: null });
   });
@@ -89,7 +89,7 @@ describe('runTailOf', () => {
     });
   });
 
-  it('offers Resume all for agents a restart stopped', () => {
+  it('offers Continue all for agents a restart stopped', () => {
     expect(
       tailOf({
         agents: agentsOf({ scout: 'completed', implementer: 'stopped' }),
@@ -185,7 +185,7 @@ describe('runTailOf', () => {
     ).toBe('Needs you');
   });
 
-  it('offers Continue step on a step you stopped', () => {
+  it('offers Continue on a step you stopped', () => {
     expect(
       tailOf({ agents: agentsOf({ scout: 'completed', implementer: 'stopped' }) }),
     ).toMatchObject({

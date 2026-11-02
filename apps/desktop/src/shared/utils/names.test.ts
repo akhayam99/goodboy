@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
 import { describe, expect, it } from 'vitest';
 import { HANDOFF_SECTION_LABEL } from '../../features/chat/utils/handoffLabels';
+import { TAIL_ACTION } from '../../features/live-state/tailAction';
 import { ROLE_LABEL } from '../../features/session/agent-kind';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import { SESSION_STAGE_META } from '../../features/session/session-stage';
@@ -128,6 +129,21 @@ describe('names', () => {
     ]);
     expect(formerNamesOf(NAMES.stop)).toEqual(['Stop the answer']);
     expect(formerNamesOf(NAMES.send)).toEqual(['Send message']);
+  });
+
+  it('names halting and picking up once, and every surface reads the same words', () => {
+    expect([NAMES.stop, NAMES.stopRun, NAMES.forceStop, NAMES.continue, NAMES.continueAll]).toEqual(
+      ['Stop', 'Stop run', 'Force stop', 'Continue', 'Continue all'],
+    );
+    expect(
+      [TAIL_ACTION.stop, TAIL_ACTION.stopAgent, TAIL_ACTION.stopAuto].map((a) => a.label),
+    ).toEqual([NAMES.stop, NAMES.stop, NAMES.stop]);
+    expect(TAIL_ACTION.continue.label).toBe(NAMES.continue);
+    expect(TAIL_ACTION.forceStop.label).toBe(NAMES.forceStop);
+    expect(formerNamesOf(NAMES.continue)).toEqual(
+      expect.arrayContaining(['Resume', 'Resume run', 'Continue the run', 'Continue step']),
+    );
+    expect(formerNamesOf(NAMES.continueAll)).toEqual(['Resume all']);
   });
 
   it('feeds the follow and fix labels from NAMES', () => {

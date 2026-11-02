@@ -53,7 +53,7 @@ describe('the u30 model lines scene', () => {
     expect(MOCK_SCENES['u30-model-lines']).toBe(Scene);
   });
 
-  it('shows the model by name with its effort on every child card and every rail row', async () => {
+  it('shows the model by name with its effort on every rail row, and none on the one line cards', async () => {
     const Scene = U30_MODEL_LINES_SCENES['u30-model-lines'];
     render(
       <ToastProvider>
@@ -62,12 +62,8 @@ describe('the u30 model lines scene', () => {
     );
 
     const cards = await screen.findAllByRole('status', undefined, WAIT);
-    const lines = document.querySelectorAll('[data-auto-child-card] [data-model-line]');
-    expect(lines.length).toBeGreaterThan(0);
     expect(cards.length).toBeGreaterThan(0);
-    for (const line of lines) {
-      expect(line.textContent).toMatch(/^(Opus|Sonnet) 5\.5 (High|Medium|Low)$/);
-    }
+    expect(document.querySelectorAll('[data-auto-child-card] [data-model-line]')).toHaveLength(0);
     const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
     const rowLines = Array.from(
       tree.querySelectorAll('[data-spawned-state-row] [data-model-line]'),

@@ -71,7 +71,7 @@ never exists on one surface only.
   Let Auto take it from here on an old standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
   and the name; Delete agent. A
-  workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
+  workflow run: Open run, View diff; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
@@ -287,15 +287,15 @@ was approved reads Approved with no primary until the run starts the step. The
 run pages (the preset run level and the orchestrated document) hold one
 primary in their header (`runHeaderPrimaryOf`): **Answer** for an open
 question, **Raise limit** at the limit, else the verb of `runPrimaryOf`
-(**Review plan**, **Approve plan**, **Continue the run**, **Retry**, **Decide
+(**Review plan**, **Approve plan**, **Continue**, **Retry**, **Decide
 next step**, **Start step 2**, **Start run**, **Restore**), else **Pause run**
-or, once paused, **Resume run** in the same place (`RunLiveVerbs`, the
+or, once paused, **Continue** in the same place (`RunLiveVerbs`, the
 `workflowRun` registry's own `when`). The tail says the state and keeps only
 its own step verbs. The `⋯` follows See, Steer, Settings, Copy, End: View
-diff, Skip step N (and Pause or Resume run while the header holds another
+diff, Skip step N (and Pause or Continue while the header holds another
 primary), Step routing (orchestrated), Save as preset, Copy
 run summary, **Stop run** (asks first), Archive run and Delete run, never
-**Approve plan**. A failed Pause, Resume or Stop leaves the run as it was,
+**Approve plan**. A failed Pause, Continue or Stop leaves the run as it was,
 reports the error and keeps the word, so pressing it again is the retry.
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.

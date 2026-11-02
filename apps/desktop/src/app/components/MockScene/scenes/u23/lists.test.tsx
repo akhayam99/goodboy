@@ -90,16 +90,17 @@ describe('the u23 list scenes', () => {
     expect(trigger.textContent).not.toMatch(/^Model/);
   });
 
-  it('puts Stop as one word on the composer and the live chip of a running agent, never on the tail', async () => {
+  it('puts Stop as one word on the composer of a running agent only, never on the tail or the header', async () => {
     renderScene('agent-running-stop');
 
     const stops = await screen.findAllByRole('button', { name: 'Stop' });
+    expect(stops).toHaveLength(1);
     expect(stops.every((stop) => stop.textContent === 'Stop' || stop.textContent === '')).toBe(
       true,
     );
     expect(stops.some((stop) => stop.closest('[data-conversation-tail]') !== null)).toBe(false);
     const row = screen.getByTestId('agent-header-title-row');
-    expect(within(row).getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
+    expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
     expect(within(row).queryByText('Next turn:')).toBeNull();
   });
 

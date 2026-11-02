@@ -77,7 +77,6 @@ export const AutoDelegationLines = ({
                 sessionId={sessionId}
                 delegation={delegation}
                 card={card}
-                agent={childAgent}
                 name={name}
                 revision={revision}
                 onOpen={onOpenChild}

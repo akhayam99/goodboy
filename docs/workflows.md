@@ -301,7 +301,7 @@ read top to bottom at the conversation measure:
   **Decide next step**, **Start step 2**, **Start run**, **Retry**, **Continue
   the run**, **Restore**; a run the orchestrator stopped on a human call has no
   header button: its action is the field **Add a hint and continue**, docked in
-  place of the composer), else **Pause run** or **Resume run** as a quiet word
+  place of the composer), else **Pause run** or **Continue** as a quiet word
   (`RunLiveVerbs`); then the run `⋯`. The header stays fixed above the
   scroll, the composer docks below it. The right click on the title lists the
   same items. Asks you is not in this menu: its chip holds it. An archived run shows
@@ -403,10 +403,10 @@ read top to bottom at the conversation measure:
   question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
   send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
-  **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
-  a restart stopped with **Resume**, "Run complete" on a
+  **Continue**, "No output for 15 min" with **Ask it to continue**, agents
+  a restart stopped with **Continue**, "Run complete" on a
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
-  **Stop step** the verb is **Resume and read 2 queued**. A run the
+  **Stop step** the verb is **Continue and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **View transcript** on its tail (`orchestratedTailOf`, the
   last step's agent, same as a failed decision) and **Add a hint and continue** at the dock
@@ -444,12 +444,12 @@ read top to bottom at the conversation measure:
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
 - **The run header** holds one primary. With no move waiting it shows **Pause
-  run**, and once paused **Resume run** (`workflowRun.resume`) in its place;
-  the tail then says Paused by you with no verb of its own, so Resume shows
+  run**, and once paused **Continue** (`workflowRun.resume`) in its place;
+  the tail then says Paused by you with no verb of its own, so Continue shows
   once.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry, in the order See, Steer, Settings, Copy, End: View diff,
-  **Skip step N** for the step in flight (and Pause or Resume run while the
+  **Skip step N** for the step in flight (and Pause or Continue while the
   header holds another primary), Step routing (opens the model per step panel,
   `OrchestratedRouting`), Save as preset, Copy run summary, **Stop run** (asks
   first), Archive run, Delete run.
@@ -470,7 +470,7 @@ stays with the orchestrator for the rest of the run. It waits for the next
 decision until it is read; then it shows as a gray row in the checklist at
 the step where the orchestrator first read it.
 
-- **Queue** is the primary button and waits until the next decision. You may queue several messages and remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the tail shows **Read 2 queued**, and one click starts one new decision with all of them in order. On a run you stopped the same verb reads **Resume and read 2 queued**
+- **Queue** is the primary button and waits until the next decision. You may queue several messages and remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the tail shows **Read 2 queued**, and one click starts one new decision with all of them in order. On a run you stopped the same verb reads **Continue and read 2 queued**
 - **Send now** is the quiet button. It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
 - The help sits in each button's tooltip, not in a sentence under the field. Send now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter sends now. **Preview** shows it as markdown
@@ -620,12 +620,12 @@ an agent, with its role glyph), never a joined tooltip line.
   question, a failed or stuck step with **Restart step**, "Paused
   at the limit" (a step that never started also reads "Not
   started, the run paused at the limit."), the step that is ready, a stopped
-  step with **Continue step**, "Run finished" or "Stopped by you"
+  step with **Continue**, "Run finished" or "Stopped by you"
   with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. The header holds the one primary
   (`runHeaderPrimaryOf`: **Answer**, **Raise limit**, the `runPrimaryOf` verb
   with today's gates, `StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve plan**, or else **Pause
-  run** and **Resume run**); every other verb is on the tail or in the menu.
+  run** and **Continue**); every other verb is on the tail or in the menu.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry: View diff, Asks you (Every step, After the plan, Never, a
   `choices` item, left out of the run pages' menus since its chip holds it), **Skip step N** for the selected step while it has not
@@ -785,7 +785,7 @@ run `⋯` and **Answer** when the run waits on a question.
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
 - A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
 - A quiet step: "No output for 20 min" with the last event the turn sent ("Last event: read_file src/retry/backoff.ts") once a running step has said nothing for 15 minutes. **Ask it to continue** stops the silent turn and sends the agent a message to check where it stands and finish; **Skip** skips it. The clock is the shared `useNow` tick, no timer per agent, and it holds while a tool call or a permission request is still open, because a build or a test suite can print nothing for minutes (`quietSignal.ts`, `useQuietStep`). Goodboy never skips on its own
-- A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrated tail says "Step 2 stopped by you" with **Continue step**
+- A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrated tail says "Step 2 stopped by you" with **Continue**
 - An open question that no row of the run tree shows, such as one the orchestrator holds or one a question delegate asked: "Answer for Implement asks: ...", or "An agent asks: ..." when no agent asked, with the step that waits on it, and **Answer**, which opens the agent that asked at its question, or the questions view when no agent asked. A question a run tree agent asked stays on that agent's row, which already carries the question mark and **Answer**, so the strip never repeats it. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
 
@@ -858,9 +858,9 @@ the session.
 
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
-- **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Resume** starts where the run left off, static or orchestrated, and never changes when to ask
+- **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Continue** starts where the run left off, static or orchestrated, and never changes when to ask
 - **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the run header ends the run ([Closing a workflow](#closing-a-workflow))
-- **Continue the run** starts a stopped run again. It turns autorun back on and asks for the next step
+- **Continue** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
 
@@ -1228,8 +1228,8 @@ An agent you stop (Interrupt, or Stop in the composer) is `stopped`, with
 `stopped` with `stopped_by = app`, and the next time its workspace loads it is
 resumed on its own when the exit was clean (see
 [turns.md](turns.md#surviving-a-reload-or-a-restart)). One it cannot resume
-reads "Stopped by restart" and offers Resume, which runs the same resume. When
-the restart stopped any of the run's agents, the run shows one **Resume all**
+reads "Stopped by restart" and offers Continue, which runs the same resume. When
+the restart stopped any of the run's agents, the run shows one **Continue all**
 above its steps for all of them. A stopped agent is neither settled nor failed: its row, the run and the agent
 header say it was stopped and offer Continue, which sends "Continue from where
 you stopped." as a normal message. A resumed step completes like any other, so

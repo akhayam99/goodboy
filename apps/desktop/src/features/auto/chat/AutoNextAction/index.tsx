@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { Button, ChoiceChips, FormActions, Input, StatusDot, TruncatedText } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 import { AUTO_STATE_TONE } from '../autoStateTone';
 import type { NextAction } from '../nextActionOf';
 import { useNextAction } from './useNextAction';
@@ -20,9 +21,7 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
   const cardRef = useRef<HTMLElement>(null);
   const hintRef = useRef<HTMLInputElement>(null);
   const [isHintOpen, setIsHintOpen] = useState(false);
-  const picked = action.choices.find((choice) => choice.key === model.pickedKey);
   const isRetry = model.error !== null;
-  const label = picked?.label ?? action.choices[0]?.label ?? 'Continue';
   const hasHint = isHintOpen || model.hint !== '';
 
   useEffect(() => {
@@ -122,7 +121,7 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
               busyLabel={isRetry ? 'Retrying' : 'Sending'}
               onClick={() => void model.submit()}
             >
-              {isRetry ? 'Retry' : label}
+              {isRetry ? NAMES.retry : NAMES.continue}
             </Button>
           </FormActions>
         </>

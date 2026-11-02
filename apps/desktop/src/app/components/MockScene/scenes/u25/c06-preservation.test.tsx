@@ -76,12 +76,12 @@ describe('agent rows stay reachable from the one conversation', () => {
     }
   });
 
-  it('Stop: Stop is on the tail, the composer and the header while the turn runs, and in the menu', async () => {
+  it('Stop: one Stop on screen, the composer square, and none in the header menu', async () => {
     await mount({ name: 'c06-agent-working' });
 
-    expect(screen.getAllByRole('button', { name: 'Stop' }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
     const menu = await openAgentMenu();
-    expect(within(menu).getByRole('menuitem', { name: /^Stop/ })).toBeDefined();
+    expect(within(menu).queryByRole('menuitem', { name: /^Stop/ })).toBeNull();
   });
 
   it('Brief outcome: the closing reply carries the outcome, with no band restating it', async () => {

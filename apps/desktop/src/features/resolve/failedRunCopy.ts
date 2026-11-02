@@ -34,7 +34,7 @@ const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
   retry: NAMES.retry,
   retry_reply: 'Post the reply again',
   open_github: 'Open',
-  resume: 'Resume',
+  resume: NAMES.continue,
 };
 
 export const failedVerbOf = ({ action }: { readonly action: ResolveRowAction }): string =>
