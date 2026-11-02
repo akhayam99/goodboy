@@ -15,8 +15,8 @@ import {
   importStore,
   resetStoryStore,
   stubStoryInvoke,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
-import { useAppStore } from '../../../../../store';
 import { MOCK_SCENES } from '../..';
 import { U34_LONG_TRANSCRIPT_SCENES } from './long-transcript';
 import {
@@ -27,8 +27,10 @@ import {
 
 const SCENE = 'u34-t52-long-transcript';
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

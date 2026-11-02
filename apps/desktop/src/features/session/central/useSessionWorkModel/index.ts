@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useOpenStopMountIds } from '../../hooks/useOpenStopMountIds';
 import type { SessionWorktree } from '@goodboy/db';
 import type { Agent, Session, SessionEvent, SessionId, TurnState } from '@goodboy/types';
-import { useSessionWorkLoads } from '../useSessionWorkLoads';
+import type { AgentKind } from '../../agent-kind';
+import { useSessionWorkLoads } from '../../hooks/useSessionWorkLoads';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -69,12 +71,29 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   const learnings = useAppStore((s) => s.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
   const hasLoadedEvents = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const hasLoadedAgents = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
+  const agentKindOverride = useAppStore(
+    useShallow((s) => {
+      const picked: Record<string, AgentKind> = {};
+      for (const agent of agents) {
+        const kind = s.agentKindOverride[agent.id];
+        if (kind !== undefined) {
+          picked[agent.id] = kind;
+        }
+      }
+      return picked;
+    }),
+  );
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
   const dismissedQuestions = useSessionDismissedQuestions(sessionId);
   const workflows = useAttachedWorkflowRuns({ session });
+  const orchestratingRunIds = useAppStore(
+    useShallow((s) =>
+      workflows
+        .filter(({ run }) => s.orchestratingWorkflowRuns?.[run.id] === true)
+        .map(({ run }) => run.id),
+    ),
+  );
   const resolveActivity = useResolveActivity({ sessionId });
   const jobActivity = useJobActivity({ sessionId });
   const autoTrees = useAutoTrees({ sessionId });
@@ -149,15 +168,7 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   const settledStopIds = useMemo(() => new Set(settledStops), [settledStops]);
   const openMountIds = useOpenStopMountIds({ sessionId });
 
-  const decidingRunIds = useMemo(() => {
-    const deciding = new Set<string>();
-    for (const { run } of workflows) {
-      if (orchestratingWorkflowRuns?.[run.id] === true) {
-        deciding.add(run.id);
-      }
-    }
-    return deciding;
-  }, [orchestratingWorkflowRuns, workflows]);
+  const decidingRunIds = useMemo(() => new Set<string>(orchestratingRunIds), [orchestratingRunIds]);
 
   const owners = useMemo(
     () =>

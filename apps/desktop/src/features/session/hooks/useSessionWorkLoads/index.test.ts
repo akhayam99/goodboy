@@ -50,7 +50,7 @@ beforeEach(async () => {
     loadSessionContextItems: loads.context,
     loadSessionAnsweredQuestions: loads.answered,
     loadSessionDismissedQuestions: loads.dismissed,
-  } as never);
+  });
 });
 
 afterEach(cleanup);
