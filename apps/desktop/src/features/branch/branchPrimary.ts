@@ -1,3 +1,4 @@
+import { countNoun } from '../../shared/utils/countNoun';
 import { NAMES } from '../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -107,15 +108,6 @@ const fromTab = ({ tab, label, icon }: TabParams): BranchPrimary => ({
   tab,
 });
 
-type PluralParams = {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-};
-
-const plural = ({ count, one, many }: PluralParams): string =>
-  `${count} ${count === 1 ? one : many}`;
-
 type ReviewActionParams = {
   readonly label: string;
   readonly icon: LucideIcon;
@@ -157,7 +149,7 @@ const secondaryOf = ({
     const isBusy = review.isPushing || review.push.state === 'busy';
     const count = review.push.count;
     return reviewAction({
-      label: `${isBusy ? 'Pushing' : 'Push'} ${count > 0 ? plural({ count, one: 'commit', many: 'commits' }) : 'commits'}`,
+      label: `${isBusy ? 'Pushing' : 'Push'} ${count > 0 ? countNoun({ count, one: 'commit', many: 'commits' }) : 'commits'}`,
       icon: ArrowUp,
       blockedReason: isBusy ? 'Pushing now.' : null,
       isBusy,
@@ -170,7 +162,7 @@ const secondaryOf = ({
   }
   if (review.replies > 0) {
     return reviewAction({
-      label: `Publish ${plural({ count: review.replies, one: 'reply', many: 'replies' })}`,
+      label: `Publish ${countNoun({ count: review.replies, one: 'reply', many: 'replies' })}`,
       icon: ArrowUp,
     });
   }

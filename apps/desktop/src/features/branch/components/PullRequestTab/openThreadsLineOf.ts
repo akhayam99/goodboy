@@ -1,3 +1,5 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
+
 type Params = {
   readonly unresolved: number;
   readonly unreadCount: number;
@@ -9,8 +11,8 @@ export const openThreadsLineOf = ({ unresolved, unreadCount, needYou }: Params):
     return null;
   }
   const parts = [
-    `${unresolved} open ${unresolved === 1 ? 'thread' : 'threads'}`,
-    ...(needYou > 0 ? [`${needYou} ${needYou === 1 ? 'needs' : 'need'} you`] : []),
+    countNoun({ count: unresolved, one: 'open thread' }),
+    ...(needYou > 0 ? [`${countNoun({ count: needYou, one: 'needs', many: 'need' })} you`] : []),
     ...(unreadCount > 0 ? [`${unreadCount} unread`] : []),
   ];
   return parts.join(' · ');

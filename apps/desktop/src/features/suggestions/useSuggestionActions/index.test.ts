@@ -655,7 +655,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Add folder');
+    expect(actions.primary?.label).toBe('Add project');
     actions.primary?.run();
 
     expect(spies.ensureProjectMounted).toHaveBeenCalledWith({

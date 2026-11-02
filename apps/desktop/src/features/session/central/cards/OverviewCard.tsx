@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { SectionLabel } from '@goodboy/ui';
+import { SectionLabel, Tooltip } from '@goodboy/ui';
+import { needsYouText } from '../../../../shared/utils/needsYouText';
 import type { OverviewCardModel } from '../overviewCardsOf';
 
 type Props = {
@@ -43,7 +44,13 @@ export const OverviewCard = ({
           label={card.title}
           count={
             <>
-              <span data-overview-count="">{card.count}</span>
+              {card.id === 'needs-you' ? (
+                <Tooltip content={needsYouText({ count: card.count, unit: 'items' })}>
+                  <span data-overview-count="">{card.count}</span>
+                </Tooltip>
+              ) : (
+                <span data-overview-count="">{card.count}</span>
+              )}
               {countNote === null ? null : <span data-overview-note="">, {countNote}</span>}
             </>
           }

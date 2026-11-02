@@ -125,7 +125,7 @@ describe('WorkspaceScopePanel pages', () => {
   it('opens on Projects with the workspace name, and one page per section', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Folders');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
     screen.getByRole('region', { name: 'Disconnect workspace' });
@@ -352,7 +352,7 @@ describe('copy from another workspace', () => {
     renderPage({ section: 'projects' });
 
     fireEvent.click(
-      within(pageMenu('Folders')).getByRole('menuitem', { name: /Copy all pages from/ }),
+      within(pageMenu('Projects')).getByRole('menuitem', { name: /Copy all pages from/ }),
     );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));

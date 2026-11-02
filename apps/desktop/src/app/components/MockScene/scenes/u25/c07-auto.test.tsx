@@ -291,7 +291,7 @@ describe('c07 Auto scenes', () => {
     expect(ask).toBeDefined();
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
     expect(screen.getByPlaceholderText('Pick a folder, or write to Auto')).toBeDefined();
-    const list = screen.getByRole('list', { name: 'Folders' });
+    const list = screen.getByRole('list', { name: 'Projects' });
     const boxes = within(list).getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThan(1);
     expect(screen.getByText('In this session')).toBeDefined();

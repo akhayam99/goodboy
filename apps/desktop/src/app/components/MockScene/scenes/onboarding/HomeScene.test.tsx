@@ -43,7 +43,7 @@ describe('home scenes', () => {
   it('lists the four workspaces with their folders', async () => {
     await mount({ state: 'list' });
     expect(screen.getAllByRole('button', { name: /^Open [A-Z][a-z]+( web)?$/ })).toHaveLength(4);
-    expect(await screen.findByText('3 folders · ~/Code/harborline')).toBeDefined();
+    expect(await screen.findByText('3 projects · ~/Code/harborline')).toBeDefined();
   });
 
   it('opens the one form in place', async () => {

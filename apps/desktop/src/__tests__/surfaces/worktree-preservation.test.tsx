@@ -229,9 +229,9 @@ describe('branch actions from the branch row', () => {
   it('Add folder on the card and New branch on each repo row stay one click away', async () => {
     await mount('c04-session-worktrees');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
     await advance();
-    const picker = within(screen.getByRole('dialog', { name: 'Add folder' }));
+    const picker = within(screen.getByRole('dialog', { name: 'Add project' }));
     expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
     fireEvent.keyDown(window, { key: 'Escape' });
     await advance();

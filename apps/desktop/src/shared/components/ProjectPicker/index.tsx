@@ -48,7 +48,7 @@ export const ProjectPicker = ({
         onChange={onChange}
         valueLabel={
           <span className="truncate text-muted-foreground">
-            {picked.length === 0 ? emptyValueLabel : 'Add folder'}
+            {picked.length === 0 ? emptyValueLabel : 'Add project'}
           </span>
         }
       />

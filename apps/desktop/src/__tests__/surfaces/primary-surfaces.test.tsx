@@ -407,7 +407,7 @@ describe('primary surfaces mount on real store selectors', () => {
 
   it.each([
     ['app settings', { scope: 'app' }, 'Settings'],
-    ['workspace settings with its rail', { scope: 'workspace' }, 'Folders'],
+    ['workspace settings with its rail', { scope: 'workspace' }, 'Projects'],
     ['the providers page', { scope: 'providers' }, 'Providers'],
     ['a provider page', { scope: 'providers', provider: 'anthropic' as ProviderId }, 'Claude'],
   ] satisfies ReadonlyArray<readonly [string, SettingsFocus, string]>)(

@@ -67,7 +67,7 @@ const entriesOf = ({ groups }: EntriesParams): ReadonlyArray<MenuEntry> =>
   groups.map((group) => ({
     kind: 'radio',
     key: group.id,
-    label: group.label ?? 'Folders',
+    label: group.label ?? 'Projects',
     choices: group.rows.map((row) => ({ id: row.id, label: row.label, isCurrent: row.isCurrent })),
     onSelect: (choice) => {
       group.rows.find((row) => row.id === choice)?.onSelect();
@@ -129,7 +129,7 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
         />
       }
     >
-      <AppMenuList label="Folders" entries={entriesOf({ groups })} onClose={dropdown.close} />
+      <AppMenuList label="Projects" entries={entriesOf({ groups })} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };

@@ -148,14 +148,14 @@ describe('Home', () => {
     expect(screen.getByText(/^v\d/)).toBeDefined();
   });
 
-  it('lists each workspace with its folder count and its folder, never a project', async () => {
+  it('lists each workspace with its project count and its folder', async () => {
     renderHome();
 
-    expect(await screen.findByText('3 folders · ~/Code/harborline')).toBeDefined();
-    expect(screen.queryByText(/project/i)).toBeNull();
+    expect(await screen.findByText('3 projects · ~/Code/harborline')).toBeDefined();
+    expect(screen.queryByText(/3 folders/i)).toBeNull();
   });
 
-  it('says the face of a one folder workspace instead of 1 folder', async () => {
+  it('says the face of a one folder workspace instead of 1 plain folder', async () => {
     const acmeNotes = aWorkspace({ name: 'Acme notes', slug: 'acme-notes' });
     const acmeWeb = aWorkspace({ name: 'Acme web', slug: 'acme-web' });
     const notes = aProject({
@@ -179,7 +179,7 @@ describe('Home', () => {
 
     expect(await screen.findByText('Documents · ~/Documents/acme-notes')).toBeDefined();
     expect(screen.getByText('Code, no git yet · ~/Code/acme-web')).toBeDefined();
-    expect(screen.getByText('3 folders · ~/Code/harborline')).toBeDefined();
+    expect(screen.getByText('3 projects · ~/Code/harborline')).toBeDefined();
   });
 
   it('says how many sessions need you in a workspace and why, before you open it', async () => {
@@ -196,9 +196,9 @@ describe('Home', () => {
     });
     const { container } = renderHome();
 
-    await screen.findByRole('button', { name: 'Open Northwind, 2 need you' });
+    await screen.findByRole('button', { name: 'Open Northwind, 2 sessions need you' });
     const row = container.querySelector('[data-workspace-row="Northwind"]');
-    expect(row?.textContent).toContain('2 need you');
+    expect(row?.textContent).toContain('2 sessions need you');
     expect(row?.textContent).toContain('Checks failing, 1 question for you');
     expect(
       container
@@ -279,7 +279,7 @@ describe('Home', () => {
 
     dialog.picks = [NOTES];
     fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 
     await waitFor(() => expect(onCloseCreate).toHaveBeenCalledOnce());
@@ -304,7 +304,7 @@ describe('Home', () => {
 
     dialog.picks = [NOTES];
     fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 
     await waitFor(() => expect(onCloseCreate).toHaveBeenCalledOnce());

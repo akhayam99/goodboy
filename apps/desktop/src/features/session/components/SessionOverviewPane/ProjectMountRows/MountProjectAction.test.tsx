@@ -35,7 +35,7 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
 });
 
 const openPicker = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 };
 
 describe('MountProjectAction', () => {
@@ -55,7 +55,7 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('tells the workspace has no projects and offers to connect one in the same picker', () => {

@@ -1,3 +1,4 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 import type { PullRequestChecks } from '@goodboy/types';
 
 export type EntryShownFact = 'checks' | 'comments';
@@ -22,15 +23,6 @@ const FINE: WorktreeRowState = { tone: null, reason: null };
 
 const NONE_SHOWN: ReadonlySet<EntryShownFact> = new Set<EntryShownFact>();
 
-type PluralParams = {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-};
-
-const plural = ({ count, one, many }: PluralParams): string =>
-  `${count} ${count === 1 ? one : many}`;
-
 export const worktreeRowStateOf = ({
   checks,
   behind,
@@ -47,7 +39,7 @@ export const worktreeRowStateOf = ({
   if (conflicts !== null && conflicts > 0) {
     return {
       tone: 'warning',
-      reason: plural({ count: conflicts, one: 'conflict', many: 'conflicts' }),
+      reason: countNoun({ count: conflicts, one: 'conflict', many: 'conflicts' }),
     };
   }
   if (isRebasing) {
@@ -62,7 +54,7 @@ export const worktreeRowStateOf = ({
   if (commentsWaiting > 0 && !shownByEntries.has('comments')) {
     return {
       tone: 'warning',
-      reason: plural({
+      reason: countNoun({
         count: commentsWaiting,
         one: 'comment waits for you',
         many: 'comments wait for you',

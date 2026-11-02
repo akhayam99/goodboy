@@ -47,7 +47,7 @@ const continueFromAgents = async (): Promise<void> => {
 
 const createHarborline = async (): Promise<void> => {
   await click(await screen.findByRole('button', { name: /^Choose folder/ }));
-  const folders = within(await screen.findByRole('list', { name: 'Folders' }, WAIT));
+  const folders = within(await screen.findByRole('list', { name: 'Projects' }, WAIT));
   expect(folders.getByText('ledger-core')).toBeDefined();
   const name = screen.getByRole('textbox', { name: 'Workspace name' });
   expect(name).toHaveProperty('value', 'Harborline');
@@ -118,7 +118,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await click(screen.getByRole('button', { name: 'Look in 1 folder' }));
     },
     lands: async () => {
-      const folders = within(await screen.findByRole('list', { name: 'Folders' }, WAIT));
+      const folders = within(await screen.findByRole('list', { name: 'Projects' }, WAIT));
       folders.getByText('notify-relay');
       folders.getByText('payments-api');
       expect(screen.getByRole('textbox', { name: 'Workspace name' })).toHaveProperty(
@@ -141,7 +141,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await click(screen.getByRole('button', { name: 'Clone' }));
     },
     lands: async () => {
-      const folders = within(await screen.findByRole('list', { name: 'Folders' }, WAIT));
+      const folders = within(await screen.findByRole('list', { name: 'Projects' }, WAIT));
       folders.getByText('ledger-core');
       expect(screen.getByRole('textbox', { name: 'Workspace name' })).toHaveProperty(
         'value',

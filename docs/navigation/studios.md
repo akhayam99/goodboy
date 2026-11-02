@@ -290,7 +290,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   Keyboard shortcuts, Storage, Backup and reset, iPhone) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The Workspace pages (Folders, About you, New sessions,
+  the pointer. The Workspace pages (Projects, About you, New sessions,
   Branches, Replies and commits, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers and models nests
@@ -316,16 +316,16 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   while another page is open. The old anchors (`projects`, `profile`,
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
   pick a page (`workspacePageOf`); `track-with-git` (and the old
-  `dev-project`) lands on Folders with the first commit review of the first
+  `dev-project`) lands on Projects with the first commit review of the first
   plain code folder open. The workspace is renamed from the `Name` field of the
-  Folders page, and its name is written once on that page, in the top bar
+  Projects page, and its name is written once on that page, in the top bar
   (the disconnect row says `Disconnect this workspace`). The attribution line
   lives on New sessions only, and Replies and commits links to it. Replies
   and commits holds the reply voice and templates, `Mark thread as resolved`
   and the commit style (`review-replies` stays its page id and anchor); Run
   defaults live under Workflows.
   Tracking a plain folder with git is an inline flow in the Git repository band of the
-  Folders page (`TrackWithGitFlow`, `FolderGitBand`), never a dialog: the
+  Projects page (`TrackWithGitFlow`, `FolderGitBand`), never a dialog: the
   first commit review, then `Publish to GitHub` through the same publish form
   as the first lap (`PublishPanel`). Creating a workspace never opens this
   band by itself: the pick row already offers **Track it with git** for a Code
@@ -341,7 +341,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings
   offers `Restore defaults` and `Copy from…`; under a separator, the menu of
-  every workspace page (Folders included) offers `Copy all pages from…` and
+  every workspace page (Projects included) offers `Copy all pages from…` and
   `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
   popover: pick the workspace, then a preview grouped by page with a
   checkbox per page and the from and to values, then the action row (`Copy N
@@ -470,7 +470,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   warning or danger dot named by its reason (`toolAttention`), and a connected,
   healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
-  Disconnect at the end of Folders, and turn red only in their inline
+  Disconnect at the end of Projects, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,

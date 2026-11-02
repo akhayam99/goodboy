@@ -86,7 +86,7 @@
 - **The top bar carries state, identity and movement.** Movement is Back,
   Forward and Search, clustered in the centre. It never holds a destination.
   The spend chip is state that opens the studio that owns that number, on
-  Impact's Spend tab, and the Limits chips open the Providers menu. The bar
+  Impact's Spend tab, and the Usage chips open the Providers menu. The bar
   never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
   Tasks, Chat, Workflows, Terminal, Impact and Monitoring; Chat and Terminal each end in a plus
@@ -167,7 +167,7 @@
   `useColumnPlace`), so at most one door carries it; inside a session no door
   does: the open session's row is the column's sign and the current page row is
   the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
-  Limits chips, the Goodboy row) is never selected: it only reports
+  Usage chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
   `__tests__/navigation/oneDoor.test.ts` pins the rule.
@@ -310,7 +310,7 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Folders
+**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not

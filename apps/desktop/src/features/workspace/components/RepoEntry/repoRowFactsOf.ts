@@ -1,3 +1,4 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 import type { BaseDivergence } from '@goodboy/types';
 import type { RepoPull } from '../../../../store/slices/repo-divergence/state';
 import { dirtyTreeSentence } from '../../../../shared/lib/dirtyTreeCopy';
@@ -21,14 +22,6 @@ type Params = {
   readonly report: BaseDivergence | undefined;
   readonly pull: RepoPull | undefined;
 };
-
-type PluralParams = {
-  readonly count: number;
-  readonly noun: string;
-};
-
-const plural = ({ count, noun }: PluralParams): string =>
-  `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 type QuietParams = {
   readonly word: string;
@@ -54,7 +47,7 @@ type BehindParams = {
 };
 
 const behindFacts = ({ report, base, upstream }: BehindParams): RepoRowFacts => {
-  const tooltip = `New on ${upstream}: ${plural({ count: report.behind, noun: 'commit' })}. Pull fast-forwards ${base}.`;
+  const tooltip = `New on ${upstream}: ${countNoun({ count: report.behind, one: 'commit' })}. Pull fast-forwards ${base}.`;
   const isOnBase = report.checkoutBranch === base;
   if (isOnBase && report.uncommitted > 0) {
     return {
@@ -102,7 +95,7 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
       return {
         ...quiet({
           word: `${report.ahead} ahead`,
-          tooltip: `Local ${base} has ${plural({ count: report.ahead, noun: 'commit' })} that ${upstream} doesn't. Nothing to pull.`,
+          tooltip: `Local ${base} has ${countNoun({ count: report.ahead, one: 'commit' })} that ${upstream} doesn't. Nothing to pull.`,
           tone: 'muted',
         }),
         glyph: 'ahead',
@@ -111,7 +104,7 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
       return {
         ...quiet({
           word: `Diverged ↑${report.ahead} ↓${report.behind}`,
-          tooltip: `Local ${base} has ${plural({ count: report.ahead, noun: 'commit' })} of its own and ${upstream} has ${plural({ count: report.behind, noun: 'new commit' })}. Goodboy only fast-forwards, so it leaves ${base} as it is: merge or rebase it yourself.`,
+          tooltip: `Local ${base} has ${countNoun({ count: report.ahead, one: 'commit' })} of its own and ${upstream} has ${countNoun({ count: report.behind, one: 'new commit' })}. Goodboy only fast-forwards, so it leaves ${base} as it is: merge or rebase it yourself.`,
           tone: 'warning',
         }),
         glyph: 'diverged',

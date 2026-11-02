@@ -145,16 +145,19 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.tasks)).toContain('Inbox');
   });
 
-  it('calls what a workspace holds a folder and keeps the project words findable', () => {
-    expect([NAMES.folders, NAMES.addFolder, NAMES.gitRepository]).toEqual([
-      'Folders',
-      'Add folder',
+  it('calls a repository a project, keeps folder for a plain folder and finds the old words', () => {
+    expect([NAMES.projects, NAMES.addProject, NAMES.addPlainFolder, NAMES.gitRepository]).toEqual([
+      'Projects',
+      'Add project',
+      'Add a plain folder',
       'Git repository',
     ]);
-    expect(formerNamesOf(NAMES.folders)).toEqual(['Projects', 'Workspace projects']);
-    expect(NAMES.projects).toBe('Projects');
-    expect(formerNamesOf(NAMES.addFolder)).toEqual(
-      expect.arrayContaining(['Add project', 'Link a project', 'Link a repository']),
+    expect(formerNamesOf(NAMES.projects)).toEqual(['Folders', 'Workspace projects']);
+    expect(formerNamesOf(NAMES.addProject)).toEqual(
+      expect.arrayContaining(['Add folder', 'Link a project', 'Link a repository']),
+    );
+    expect(formerNamesOf(NAMES.needsYou)).toEqual(
+      expect.arrayContaining(['Waiting for you', 'Waits on you', 'Waiting for your OK']),
     );
     expect(formerNamesOf(NAMES.gitRepository)).toEqual(['Dev project']);
     expect(formerNamesOf(NAMES.removeFromSession)).toContain('Detach project');
@@ -205,7 +208,7 @@ describe('names', () => {
     ['Autopilot agent', 'autopilot-agent'],
     ['Autopilot mode', 'autopilot-agent'],
     ['Auto mode', 'autopilot-agent'],
-    ['Add project', 'add-project'],
+    ['Add folder', 'add-folder'],
     ['Dev project', 'dev-project'],
     ['Turn this into a dev project', 'dev-project'],
   ])('fails the old phrase %s', (phrase, id) => {
@@ -228,7 +231,7 @@ describe('names', () => {
     'Pick HBL-412',
     'Pick an issue',
     'Pick up a task',
-    'Add folder',
+    'Add project',
     'Git repository',
   ])('lets the new word %s through', (phrase) => {
     expect(RETIRED_NAMES.filter((entry) => entry.pattern.test(phrase))).toEqual([]);

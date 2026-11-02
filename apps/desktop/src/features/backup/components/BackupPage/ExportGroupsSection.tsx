@@ -20,7 +20,7 @@ const GROUP_ROWS: ReadonlyArray<GroupRow> = [
   },
   {
     key: 'projects',
-    label: 'Folders',
+    label: 'Projects',
     help: 'Name, type, description, star, base branch',
     count: (counts) => counts.projects,
   },

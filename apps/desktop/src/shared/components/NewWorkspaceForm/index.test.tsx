@@ -202,7 +202,7 @@ const renderFirstRun = () =>
 const chooseFolder = async ({ path }: PathParams) => {
   dialog.picks = [path];
   click(/choose folder/i);
-  await screen.findByRole('list', { name: 'Folders' });
+  await screen.findByRole('list', { name: 'Projects' });
 };
 
 describe('NewWorkspaceForm', () => {
@@ -221,7 +221,7 @@ describe('NewWorkspaceForm', () => {
     renderFirstRun();
     await chooseFolder({ path: ACME_WEB });
 
-    const row = within(screen.getByRole('list', { name: 'Folders' }));
+    const row = within(screen.getByRole('list', { name: 'Projects' }));
     expect(row.getByText('acme-web')).toBeDefined();
     expect(row.getByText('~/Code/acme-web')).toBeDefined();
     expect(row.getByText('Git')).toBeDefined();
@@ -266,7 +266,7 @@ describe('NewWorkspaceForm', () => {
     renderFirstRun();
     await chooseFolder({ path: DOCS });
 
-    const row = within(screen.getByRole('list', { name: 'Folders' }));
+    const row = within(screen.getByRole('list', { name: 'Projects' }));
     expect(row.getByText('Looks like documents: 86 Markdown files and 12 PDFs')).toBeDefined();
     const faces = row.getByRole('tablist', { name: 'What acme-docs is for' });
     expect(

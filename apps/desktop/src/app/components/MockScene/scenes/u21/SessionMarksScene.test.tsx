@@ -209,7 +209,7 @@ describe('the session marks scene', () => {
     expect(count?.textContent).toBe('9+');
     expect(count?.getAttribute('data-door-signal')).toBe('danger');
     const segment = document.querySelector('[data-top-bar] [data-now-needs-you]');
-    expect(segment?.closest('button')?.getAttribute('aria-label')).toMatch(/^16 need you/);
+    expect(segment?.closest('button')?.getAttribute('aria-label')).toMatch(/^16 sessions need you/);
     expect(segment?.querySelector('.bg-danger')).not.toBeNull();
   });
 

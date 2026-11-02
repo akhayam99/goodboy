@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/utils/names';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type { DotState } from '@goodboy/ui';
 
@@ -18,7 +19,7 @@ const STATES: Readonly<Record<RunHistoryStateKey, RunHistoryState>> = {
   failed: { key: 'failed', label: 'Failed', dot: 'failed' },
   done: { key: 'done', label: 'Done', dot: 'done' },
   stopped: { key: 'stopped', label: 'Stopped', dot: 'idle' },
-  waiting: { key: 'waiting', label: 'Waiting for you', dot: 'needsYou' },
+  waiting: { key: 'waiting', label: NAMES.needsYou, dot: 'needsYou' },
   queued: { key: 'queued', label: 'Not started', dot: 'idle' },
 };
 

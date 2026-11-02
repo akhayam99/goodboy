@@ -294,7 +294,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Workspace settings',
     covers: ['openStudio', 'studio:settings', 'scope:workspace', 'palette:Workspace settings'],
     door: 'palette',
-    open: () => openPalette(/^Workspace settings: Folders/, 'workspace settings folders'),
+    open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings folders'),
     lands: both(
       () => settingsColumn(),
       () => visible('textbox', 'Workspace name'),

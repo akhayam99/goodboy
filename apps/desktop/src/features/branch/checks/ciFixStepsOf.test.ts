@@ -30,7 +30,7 @@ const rowsOf = ({ chain, checkOutcome = 'running' }: RowsParams) =>
 
 describe('ciFixStepsOf', () => {
   it('waits for the user on a proposal', () => {
-    expect(rowsOf({ chain: chainOf({}) })).toEqual(['Proposal:Waiting for you', 'Fix:Not started']);
+    expect(rowsOf({ chain: chainOf({}) })).toEqual(['Proposal:Needs you', 'Fix:Not started']);
   });
   it('shows only the analysis while it runs or found nothing', () => {
     expect(rowsOf({ chain: chainOf({ state: 'analyzing', proposal: null }) })).toEqual([

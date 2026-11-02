@@ -442,7 +442,7 @@ pays for every turn.
   Settings, Open with, when it can take a command: iTerm does, Warp and Ghostty
   do not) runs the same command in your own terminal, and the failure hint shows
   it with **Copy command** at once. Goodboy notices when it finishes
-- **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
+- **How close am I to a limit?** Each Usage chip in the top bar stacks two bars:
   the 5-hour window above, the week below. A bar turns amber from 80%, red and
   full when the window is used up, and fades when the figures are old; the chip
   shows no number. Hover one for every window with its percentage and reset,

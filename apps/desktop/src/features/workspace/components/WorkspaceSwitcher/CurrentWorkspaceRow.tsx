@@ -61,7 +61,7 @@ export const CurrentWorkspaceRow = ({
       <div className="flex min-w-0 items-center gap-1">
         <Button size="xs" variant="secondary" onClick={onAddFolder}>
           <FolderPlus size={ICON_SIZE.row} aria-hidden />
-          Add folder
+          Add project
         </Button>
         <Button size="xs" variant="ghost" onClick={onManageFolders}>
           Manage folders

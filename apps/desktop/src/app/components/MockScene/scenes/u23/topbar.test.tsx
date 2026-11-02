@@ -68,8 +68,8 @@ describe('the u23 top bar scenes', () => {
     await renderScene('topbar-states');
 
     const bar = document.querySelector('[data-top-bar]') as HTMLElement;
-    within(bar).getByRole('button', { name: /^2 need you/ });
-    expect(within(bar).getByRole('toolbar', { name: 'Provider limits' })).toBeDefined();
+    within(bar).getByRole('button', { name: /^2 sessions need you/ });
+    expect(within(bar).getByRole('toolbar', { name: 'Provider usage' })).toBeDefined();
     expect(within(bar).getByRole('button', { name: 'Spend today. Open Impact' })).toBeDefined();
     expect(within(bar).queryByRole('button', { name: 'Impact' })).toBeNull();
     expect(within(bar).queryByRole('button', { name: /theme/i })).toBeNull();
@@ -82,7 +82,7 @@ describe('the u23 top bar scenes', () => {
     const overflow = screen.getAllByRole('button', { name: /more providers?$/ });
     expect(overflow.length).toBeGreaterThan(0);
     for (const chip of overflow) {
-      expect(chip.textContent).toMatch(/^\+\d+$/);
+      expect(chip.textContent).toMatch(/^\+\d+ providers?$/);
       expect(chip.querySelectorAll('[data-limits-mark]').length).toBeGreaterThan(0);
     }
   });

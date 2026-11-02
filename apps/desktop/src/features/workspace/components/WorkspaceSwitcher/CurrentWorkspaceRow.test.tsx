@@ -58,15 +58,15 @@ const labelFor = ({ active }: LabelParams): string => {
       onOpenSettings={vi.fn()}
     />,
   );
-  return screen.getByText(/1 folder ·/).textContent ?? '';
+  return screen.getByText(/1 project ·/).textContent ?? '';
 };
 
 describe('CurrentWorkspaceRow', () => {
   it('counts sessions and calls waiting work active, not running', () => {
-    expect(labelFor({ active: 0 })).toBe('1 folder · nothing active');
+    expect(labelFor({ active: 0 })).toBe('1 project · nothing active');
     cleanup();
-    expect(labelFor({ active: 1 })).toBe('1 folder · 1 session active');
+    expect(labelFor({ active: 1 })).toBe('1 project · 1 session active');
     cleanup();
-    expect(labelFor({ active: 3 })).toBe('1 folder · 3 sessions active');
+    expect(labelFor({ active: 3 })).toBe('1 project · 3 sessions active');
   });
 });

@@ -175,6 +175,7 @@ test file, unless its row above says otherwise.
 | `file-lines.baseline.json`                               | a component past 250 lines or another module past 600                  |
 | `test-file-lines.baseline.json`                          | a test file past 1,000 lines                                           |
 | `duplicate-helper.baseline.json`                         | a private helper name written in three or more files                   |
+| `no-local-plural.baseline.json`                          | a local `plural` helper instead of `countNoun`                         |
 | `cross-feature-hook-folders.baseline.json`               | a `use*` folder at the root of another feature                         |
 | `shared-imports-features.baseline.json`                  | an import from `shared/` into `features/`                              |
 | `flat-component-pairs.baseline.json`                     | a flat `Name.tsx` with a `Name.test.tsx` beside it                     |

@@ -241,7 +241,7 @@ describe('AppTopBar', () => {
     rerender(<AppTopBar onOpenSpend={vi.fn()} onOpenScript={vi.fn()} />);
 
     const right = zones(container)[2];
-    const now = screen.getByRole('button', { name: '2 need you, 1 session running' });
+    const now = screen.getByRole('button', { name: '2 sessions need you, 1 session running' });
     expect(right?.contains(now)).toBe(true);
     expect(now.querySelector('[data-now-needs-you]')).not.toBeNull();
   });

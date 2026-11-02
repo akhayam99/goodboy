@@ -1,3 +1,5 @@
+import { nounFor } from '../../shared/utils/nounFor';
+import { countNoun } from '../../shared/utils/countNoun';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolveCommitStyle, ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publication/publicationOutcome';
@@ -5,9 +7,6 @@ import { NAMES } from '../../shared/utils/names';
 import { openSettings } from '../settings/openSettings';
 import { closingThreadCount } from './closingThreadCount';
 import { pushFailureReason } from './pushFailureReason';
-
-const plural = (count: number, one: string, many: string): string =>
-  `${count} ${count === 1 ? one : many}`;
 
 const pushedCount = ({ preview }: { readonly preview: ResolvePublicationPreview }): number =>
   new Set([
@@ -31,10 +30,10 @@ export const pushConfirmTitle = ({
   const where = repoName === null ? '' : ` in ${repoName}`;
   const commits = pushCommitCount({ preview });
   if (commits > 0 && preview.requiresPush && preview.branch !== '') {
-    return `Push ${plural(commits, 'commit', 'commits')} to ${preview.branch}${where}?`;
+    return `Push ${countNoun({ count: commits, one: 'commit', many: 'commits' })} to ${preview.branch}${where}?`;
   }
   const threads = pushedCount({ preview });
-  return `Push ${plural(threads, 'comment', 'comments')} to #${preview.prNumber}${where}?`;
+  return `Push ${countNoun({ count: threads, one: 'comment', many: 'comments' })} to #${preview.prNumber}${where}?`;
 };
 
 const fixesPart = ({
@@ -50,7 +49,7 @@ const fixesPart = ({
   }
   const fixes = new Set(preview.commits.flatMap((commit) => commit.threadIds)).size;
   const kind = commitStyle === 'fixup' ? 'fixup' : 'new';
-  return `${plural(Math.max(fixes, 1), 'fix', 'fixes')} in ${commits} ${kind} ${commits === 1 ? 'commit' : 'commits'}`;
+  return `${countNoun({ count: Math.max(fixes, 1), one: 'fix', many: 'fixes' })} in ${commits} ${kind} ${nounFor({ count: commits, one: 'commit' })}`;
 };
 
 const closingPart = ({
@@ -63,8 +62,8 @@ const closingPart = ({
   readonly canResolve: boolean;
 }): string =>
   canResolve
-    ? `${plural(closing, 'thread', 'threads')} resolved on ${provider}`
-    : `${plural(closing, 'thread', 'threads')} left open for the reviewer`;
+    ? `${countNoun({ count: closing, one: 'thread', many: 'threads' })} resolved on ${provider}`
+    : `${countNoun({ count: closing, one: 'thread', many: 'threads' })} left open for the reviewer`;
 
 export const pushConfirmBody = ({
   preview,
@@ -80,7 +79,9 @@ export const pushConfirmBody = ({
   const closing = closingThreadCount({ preview });
   const parts = [
     fixesPart({ preview, commitStyle }),
-    preview.replies.length === 0 ? null : plural(preview.replies.length, 'reply', 'replies'),
+    preview.replies.length === 0
+      ? null
+      : countNoun({ count: preview.replies.length, one: 'reply', many: 'replies' }),
     closing === 0 ? null : closingPart({ closing, provider, canResolve }),
   ].flatMap((part) => (part === null ? [] : [part]));
   return `${parts.join(', ')}.`;
@@ -140,13 +141,15 @@ export const pushResultOf = ({
       ? null
       : commits === undefined || commits === 0
         ? `pushed ${shortSha(outcome.pushedHead)}`
-        : `pushed ${plural(commits, 'commit', 'commits')} to origin`,
+        : `pushed ${countNoun({ count: commits, one: 'commit', many: 'commits' })} to origin`,
     outcome.replied === 0
       ? null
-      : `posted ${plural(outcome.replied, 'reply', 'replies')} on ${provider}`,
+      : `posted ${countNoun({ count: outcome.replied, one: 'reply', many: 'replies' })} on ${provider}`,
   ].flatMap((part) => (part === null ? [] : [part]));
   const tail = [
-    outcome.resolved === 0 ? null : `${plural(outcome.resolved, 'thread', 'threads')} resolved.`,
+    outcome.resolved === 0
+      ? null
+      : `${countNoun({ count: outcome.resolved, one: 'thread', many: 'threads' })} resolved.`,
     outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open for the reviewer.`,
   ].flatMap((part) => (part === null ? [] : [part]));
   const sentence = [lead.length === 0 ? null : `${capitalized(lead.join(' and '))}.`, ...tail]

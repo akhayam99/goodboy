@@ -65,7 +65,7 @@
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Projects, Linked work, Artifacts and Add folder live on the
+  Activity. Projects, Linked work, Artifacts and Add project live on the
   session rail's session level. Next and Unassigned notes open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
@@ -230,7 +230,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
   "This worktree is gone", and a session with nothing to browse reads "No
-  folder to browse" with one action, Add folder (`DrawerHost` hands it
+  folder to browse" with one action, Add project (`DrawerHost` hands it
   in as `noFolderAction`, so `features/explore` does not import the session
   feature). Every empty state is an
   `EmptyState` at page size: a title, one line that says what fills it and at

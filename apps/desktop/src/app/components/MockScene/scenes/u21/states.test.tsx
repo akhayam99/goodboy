@@ -92,7 +92,7 @@ describe('the u21 page-state scenes', () => {
     if (empty === null || empty === undefined) {
       throw new Error('no empty state around the heading');
     }
-    expect(within(empty).getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(within(empty).getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('shows the Questions first-time state', async () => {

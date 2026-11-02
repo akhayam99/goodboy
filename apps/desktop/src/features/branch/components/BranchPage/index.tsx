@@ -40,7 +40,7 @@ import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTa
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
-import { commentsCountOf } from '../../../resolve/commentsCountOf';
+import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
 import { worktreeEntryFactsBus } from '../../worktreeEntryFactsBus';
@@ -445,8 +445,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           : null;
   const entryFacts = worktreeEntryFactsOf({
     pullRequestState: scope.state,
-    commentsNeedYou: commentsCountOf({ threads: entries.map((entry) => entry.row.thread) })
-      .needsYou,
+    commentsNeedYou: reviewCounts({ threads: entries.map((e) => e.row.thread) }).needYou,
     files: filesCount,
     diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
     notPushed: pushCount,

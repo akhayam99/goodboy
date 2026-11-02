@@ -39,7 +39,7 @@ describe('MountSuggestionCard', () => {
         'Add storefront-web so Scout can use it in this session. It adds a third folder to this session.',
       ),
     ).toBeTruthy();
-    expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Add folder');
+    expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Add project');
     expect(screen.queryByTestId('mount-suggestion-dismiss')).toBeNull();
   });
 

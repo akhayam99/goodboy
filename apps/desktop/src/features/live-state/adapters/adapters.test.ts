@@ -263,7 +263,7 @@ describe('autoChildLive', () => {
       lastTool: null,
       project: null,
     });
-    expect(facts).toMatchObject({ state: 'needsYou', phrase: 'Waiting for your OK' });
+    expect(facts).toMatchObject({ state: 'needsYou', phrase: 'Needs you' });
     expect(idsOf(facts)).toEqual(['confirmDelegation', 'declineDelegation']);
   });
 
@@ -341,7 +341,7 @@ describe('operation adapters', () => {
       project: null,
       hasQueuedMessage: false,
     });
-    expect(facts?.phrase).toBe('Waiting for your answer');
+    expect(facts?.phrase).toBe('Needs you');
     expect(facts?.startedAt).toBeNull();
   });
 });

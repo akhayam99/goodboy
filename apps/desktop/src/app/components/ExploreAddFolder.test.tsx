@@ -20,11 +20,11 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('ExploreAddFolder', () => {
-  it('offers Add folder for the workspace of the session', () => {
+  it('offers Add project for the workspace of the session', () => {
     useAppStore.setState({ sessions: [sessionFixture()] });
     render(<ExploreAddFolder sessionId={SESSION} />);
 
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('draws nothing for a session it cannot find', () => {

@@ -815,8 +815,8 @@ describe('the folder cards of the session level', () => {
     await mountRail();
 
     const card = within(screen.getByRole('group', { name: 'Projects' }));
-    fireEvent.click(card.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(card.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
 
     expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
     expect(picker.queryByRole('button', { name: 'Add payments-api' })).toBeNull();
@@ -846,8 +846,8 @@ describe('the folder cards of the session level', () => {
     vi.mocked(openDialog).mockResolvedValueOnce('/repos/acme-docs');
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -872,8 +872,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -900,7 +900,7 @@ describe('the folder cards of the session level', () => {
     expect(card.querySelector('[data-project-row]')?.compareDocumentPosition(rebaseAll)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
     );
-    expect(within(card).getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(within(card).getByRole('button', { name: 'New branch in ledger-core' })).toBeDefined();
   });
 
@@ -931,8 +931,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -965,8 +965,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -987,7 +987,7 @@ describe('the folder cards of the session level', () => {
     fireEvent.click(plus);
 
     expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
-    expect(screen.queryByRole('dialog', { name: 'Add folder' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Add project' })).toBeNull();
   });
 
   it('opens the same new branch form when the registry action runs', async () => {
@@ -1048,7 +1048,7 @@ describe('the folder cards of the session level', () => {
     );
     await settle();
 
-    expect(screen.queryByRole('button', { name: 'Add folder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^New branch in/ })).toBeNull();
   });
 });
@@ -1210,7 +1210,7 @@ describe('the worktree pages inside the Projects card', () => {
       throw new Error('the Projects toggle sits in no card');
     }
     await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
-    expect(within(card).getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 });
 

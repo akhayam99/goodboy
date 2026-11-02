@@ -1,3 +1,4 @@
+import { countNoun } from '../../shared/utils/countNoun';
 import {
   Circle,
   CircleAlert,
@@ -151,11 +152,8 @@ const withDetail = ({
 
 const PLANNER_ASKED_DETAIL = 'waiting for your answer';
 
-const plural = ({ count, noun }: { readonly count: number; readonly noun: string }): string =>
-  count === 1 ? `1 ${noun}` : `${count} ${noun}s`;
-
 const partsDetail = ({ count }: { readonly count: number }): string | null =>
-  count === 0 ? null : plural({ count, noun: 'part' });
+  count === 0 ? null : countNoun({ count, one: 'part' });
 
 type StoredParams = Readonly<{
   kind: ArtifactKind;
@@ -215,7 +213,7 @@ const planState = (params: StoredParams): ArtifactState => {
   if (params.openQuestionCount > 0) {
     return withDetail({
       key: 'needs',
-      detail: plural({ count: params.openQuestionCount, noun: 'question' }),
+      detail: countNoun({ count: params.openQuestionCount, one: 'question' }),
     });
   }
   if (params.handoff === 'approved-waiting') {

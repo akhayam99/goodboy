@@ -104,7 +104,7 @@ describe('the chapter list', () => {
     expect(byGroup).toEqual([
       ['What is Goodboy', 'Words'],
       [
-        'Workspaces and folders',
+        'Workspaces and projects',
         'Folders without git',
         'Providers and limits',
         'New session',
@@ -131,7 +131,7 @@ describe('the chapter list', () => {
     expect(new Set(GUIDE_CHAPTERS.map((chapter) => chapter.id)).size).toBe(25);
   });
 
-  it('puts the chapter on folders without git right after Workspaces and folders', () => {
+  it('puts the chapter on folders without git right after Workspaces and projects', () => {
     const ids = GUIDE_CHAPTERS.map((chapter) => chapter.id);
     expect(ids.indexOf('plain-folders')).toBe(ids.indexOf('folders') + 1);
     expect(ids.indexOf('providers')).toBe(ids.indexOf('plain-folders') + 1);
@@ -148,7 +148,7 @@ describe('deep links to a chapter', () => {
   it('maps the ids of renamed chapters to the chapter that took their place', () => {
     expect(
       ['workspace', 'history', 'tools'].map((id) => resolveGuideChapter({ id }).title),
-    ).toEqual(['Workspaces and folders', 'Commits', 'Tasks and integrations']);
+    ).toEqual(['Workspaces and projects', 'Commits', 'Tasks and integrations']);
   });
 
   it('keeps the ids that hover cards, Impact and Storage link to', () => {
@@ -183,12 +183,9 @@ describe('what the Guide may name', () => {
     expect(allText()).not.toContain('Skills');
   });
 
-  it('says folder for a Goodboy folder, never project, past the Projects card it names', () => {
-    expect(
-      allText()
-        .replaceAll(`${NAMES.projects} card`, '')
-        .match(/\bprojects?\b/gi),
-    ).toBeNull();
+  it('says project for a repository and keeps folder for a plain folder', () => {
+    expect(allText()).not.toContain('Settings, Folders');
+    expect(allText()).toContain(NAMES.projects);
   });
 
   it('names nothing the shell moved out of the top bar or renamed', () => {

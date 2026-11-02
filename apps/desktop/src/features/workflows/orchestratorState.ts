@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/utils/names';
 import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
 import type { Tone } from '@goodboy/ui';
 import type {
@@ -71,7 +72,7 @@ type StopPresentation = {
   readonly showsMessage: boolean;
 };
 
-const PAUSED_FOR_ANSWER = 'Waiting for your answer';
+const PAUSED_FOR_ANSWER = NAMES.needsYou;
 
 const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation> = {
   budget: {

@@ -32,7 +32,7 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
         </p>
       )}
       <ul
-        aria-label="Folders"
+        aria-label="Projects"
         className="flex flex-col gap-0.5 overflow-hidden rounded-lg ring-1 ring-border-soft"
       >
         {draft.folders.map((folder) => (
@@ -57,7 +57,7 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
           onClick={() => void draft.addFolder()}
         >
           <Plus size={ICON_SIZE.row} strokeWidth={2} aria-hidden />
-          Add folder
+          Add project
         </Button>
         <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-meta text-faint-foreground">
           <Lock size={ICON_SIZE.row} aria-hidden className="shrink-0" />

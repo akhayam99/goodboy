@@ -182,7 +182,7 @@ describe('runTailOf', () => {
         run: aWorkflowRun({ orchestrationStop: { kind: 'questions', message: 'Asked' } }),
         question: open,
       })?.phrase,
-    ).toBe('Waiting for your answer');
+    ).toBe('Needs you');
   });
 
   it('offers Continue step on a step you stopped', () => {

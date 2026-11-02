@@ -79,7 +79,7 @@ describe('the u33 overview needs you scene', () => {
     const cards = [...needsYou.querySelectorAll('[data-action-card]')];
     expect(cards).toHaveLength(3);
     expect(new Set(cards.map((card) => card.textContent)).size).toBe(3);
-    const waiting = within(container).getByRole('group', { name: 'Waiting for you' });
+    const waiting = within(container).getByRole('group', { name: 'Needs you' });
     expect(waiting.querySelectorAll('[data-live-row]')).toHaveLength(2);
   });
 

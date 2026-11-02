@@ -85,7 +85,7 @@ describe('RunsGrid', () => {
     renderGrid({ runs: runsOf({ agents, blockedIds: ['agent-asker'] }) });
 
     const group = screen.getByRole('list', { name: 'In progress' });
-    screen.getByText('1 needs you');
+    screen.getByText('1 item needs you');
     const rows = within(group).getAllByRole('button');
     expect(rows[0]?.getAttribute('aria-label')).toBe('Open Asker, Agent, Needs permission');
     expect(rows[1]?.getAttribute('aria-label')).toBe('Open Runner, Agent, Running');

@@ -103,8 +103,8 @@ describe('WorkspaceSwitcher', () => {
     ]);
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    const row = screen.getByRole('button', { name: 'Switch to bravo, 2 need you' });
-    expect(row.textContent).toContain('2 need you');
+    const row = screen.getByRole('button', { name: 'Switch to bravo, 2 sessions need you' });
+    expect(row.textContent).toContain('2 sessions need you');
     expect(row.textContent).toContain('1 question for you, Checks failing');
     expect(
       row.querySelector('[data-workspace-attention]')?.getAttribute('data-workspace-attention'),
@@ -117,7 +117,7 @@ describe('WorkspaceSwitcher', () => {
     ]);
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    const row = screen.getByRole('button', { name: 'Switch to bravo, 1 needs you' });
+    const row = screen.getByRole('button', { name: 'Switch to bravo, 1 session needs you' });
     expect(
       row.querySelector('[data-workspace-attention]')?.getAttribute('data-workspace-attention'),
     ).toBe('danger');
@@ -128,7 +128,7 @@ describe('WorkspaceSwitcher', () => {
 
     const row = screen.getByRole('button', { name: 'Switch to bravo' });
     expect(row.querySelector('[data-workspace-attention]')).toBeNull();
-    expect(row.textContent).toContain('1 folder');
+    expect(row.textContent).toContain('1 project');
   });
 
   it('lists other workspaces and opens one on click', async () => {
@@ -374,7 +374,7 @@ describe('WorkspaceSwitcher', () => {
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
     expect(screen.getAllByRole('button', { name: 'New workspace' })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /^Add folder/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Add project/ })).toBeDefined();
     expect(screen.queryByText('Start a new project')).toBeNull();
     expect(screen.queryByText('Open a folder')).toBeNull();
     expect(screen.queryByText('Link a repository')).toBeNull();

@@ -45,7 +45,8 @@ import type {
   ObjectKindDefinition,
   MountActionTarget,
 } from '../types';
-import { abortRebase, plural, rebaseMount, settleRequest } from './gitRuns';
+import { countNoun } from '../../../shared/utils/countNoun';
+import { abortRebase, rebaseMount, settleRequest } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
 import { pushAction } from './pushAction';
 import { mountRebaseConflictOf } from './mountRebaseConflictOf';
@@ -75,7 +76,7 @@ const isAsking = ({ facts }: FactsOnly): boolean =>
   facts.rebaseConflict !== null && !facts.rebaseConflict.isWithAuto;
 
 const changes = ({ count }: { readonly count: number }): string =>
-  plural({ count, one: 'uncommitted change', many: 'uncommitted changes' });
+  countNoun({ count, one: 'uncommitted change', many: 'uncommitted changes' });
 
 const statusParams = ({ facts }: FactsOnly) => ({
   worktreePath: facts.worktreePath ?? '',

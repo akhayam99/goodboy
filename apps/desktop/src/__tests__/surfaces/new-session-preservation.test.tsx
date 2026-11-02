@@ -82,7 +82,7 @@ describe('New session draft and the New forms', () => {
 
     expect(screen.queryByRole('tablist', { name: 'How do you want to start?' })).toBeNull();
     const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
-    expect(kickoff.queryByRole('region', { name: 'Folders' })).toBeNull();
+    expect(kickoff.queryByRole('region', { name: 'Projects' })).toBeNull();
     kickoff.getByRole('tablist', { name: 'What kind of run?' });
     expect(kickoff.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
       'value',

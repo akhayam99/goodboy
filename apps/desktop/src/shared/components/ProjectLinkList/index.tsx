@@ -56,7 +56,7 @@ export const ProjectLinkList = ({
           onClick={() => setIsAdding(true)}
         >
           <Plus size={ICON_SIZE.row} aria-hidden />
-          Add folder
+          Add project
         </Button>
       </div>
       {hint !== undefined && <p className="text-meta text-faint-foreground">{hint}</p>}

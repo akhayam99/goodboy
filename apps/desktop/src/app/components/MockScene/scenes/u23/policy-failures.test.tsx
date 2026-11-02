@@ -213,7 +213,7 @@ describe('the policy and failure scenes', () => {
     );
     await settle();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Folders' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeDefined();
     expect(screen.getAllByText('Harborline')).toHaveLength(1);
     const page = document.querySelector('[data-settings-detail]');
     expect(page).not.toBeNull();

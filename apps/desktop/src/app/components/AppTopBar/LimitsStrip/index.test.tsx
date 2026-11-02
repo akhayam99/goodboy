@@ -109,7 +109,7 @@ afterEach(() => {
 });
 
 const chipButtons = () =>
-  within(screen.getByRole('toolbar', { name: 'Provider limits' }))
+  within(screen.getByRole('toolbar', { name: 'Provider usage' }))
     .getAllByRole('button')
     .filter((button) => button.getAttribute('data-limits-chip') !== 'overflow');
 
@@ -130,7 +130,7 @@ describe('LimitsStrip', () => {
     ]);
     const [overflow] = screen.getAllByRole('button', { name: '2 more providers' });
     fireEvent.click(overflow as HTMLElement);
-    const list = screen.getByRole('list', { name: 'More provider limits' });
+    const list = screen.getByRole('list', { name: 'More provider usage' });
     expect(list.textContent).toContain('Cursor');
     expect(list.textContent).toContain('Gemini');
     expect(list.textContent).toContain('no data');
@@ -140,9 +140,9 @@ describe('LimitsStrip', () => {
     render(<LimitsStrip />);
 
     expect(chipButtons()).toEqual([]);
-    const overflow = screen.getAllByRole('button', { name: 'Provider limits' });
+    const overflow = screen.getAllByRole('button', { name: 'Provider usage' });
     expect(overflow.length).toBeGreaterThan(0);
-    expect(overflow[0]?.textContent).toBe('Limits');
+    expect(overflow[0]?.textContent).toBe('Usage');
   });
 
   it('shows the icon and one bar, the percent only above 70%, every window in the label', () => {
@@ -238,7 +238,7 @@ describe('LimitsStrip', () => {
     setLimits(bothReporting());
     const { container } = render(<LimitsStrip />);
 
-    const toolbar = screen.getByRole('toolbar', { name: 'Provider limits' });
+    const toolbar = screen.getByRole('toolbar', { name: 'Provider usage' });
     expect(toolbar.className).not.toContain('bg-');
     expect(container.textContent).not.toContain('Limits');
   });
@@ -254,10 +254,10 @@ describe('LimitsStrip', () => {
     expect(screen.getByRole('button', { name: '3 more providers' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: '2 more providers' })).toHaveLength(2);
     const three = screen.getByRole('button', { name: '3 more providers' });
-    expect(three.textContent).toBe('+3');
+    expect(three.textContent).toBe('+3 providers');
     expect(marksOf(three)).toEqual(['codex', 'cursor', 'gemini']);
     screen.getAllByRole('button', { name: '2 more providers' }).forEach((chip) => {
-      expect(chip.textContent).toBe('+2');
+      expect(chip.textContent).toBe('+2 providers');
       expect(marksOf(chip)).toEqual(['cursor', 'gemini']);
     });
     expect(screen.queryByRole('button', { name: '0 more providers' })).toBeNull();
@@ -283,13 +283,13 @@ describe('LimitsStrip', () => {
     render(<LimitsStrip />);
 
     const overflow = screen.getByRole('button', { name: '1 more provider' });
-    expect(overflow.textContent).toBe('+1');
+    expect(overflow.textContent).toBe('+1 provider');
     expect(marksOf(overflow)).toEqual(['codex']);
     expect(overflow.querySelector('[data-limits-alert]')?.getAttribute('class')).toContain(
       'text-danger',
     );
     fireEvent.click(overflow);
-    expect(screen.getByRole('list', { name: 'More provider limits' }).textContent).toContain(
+    expect(screen.getByRole('list', { name: 'More provider usage' }).textContent).toContain(
       'Codex',
     );
   });
@@ -350,6 +350,13 @@ describe('LimitsStrip opening the Providers menu', () => {
     setWorkspace(WORKSPACE_ID);
   });
 
+  it('stays on the bar before any figure arrives, so the chips never move', () => {
+    setLimits({});
+    render(<LimitsStrip />);
+
+    screen.getByRole('toolbar', { name: 'Provider usage' });
+  });
+
   it('opens the Providers menu under the strip from any chip, and never leaves for Settings', () => {
     setLimits(bothReporting());
     const listener = vi.fn();
@@ -371,7 +378,7 @@ describe('LimitsStrip opening the Providers menu', () => {
 
     const [overflow] = screen.getAllByRole('button', { name: /more providers?/ });
     fireEvent.click(overflow as HTMLElement);
-    const hidden = within(screen.getByRole('list', { name: 'More provider limits' })).getAllByRole(
+    const hidden = within(screen.getByRole('list', { name: 'More provider usage' })).getAllByRole(
       'button',
     );
     fireEvent.click(hidden[0] as HTMLElement);

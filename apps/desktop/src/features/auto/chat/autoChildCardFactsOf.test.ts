@@ -62,7 +62,7 @@ describe('autoChildCardFactsOf', () => {
     expect(facts).toMatchObject({
       word: 'Needs you',
       tone: 'warning',
-      activity: 'Waiting for your OK',
+      activity: 'Needs you',
     });
   });
 

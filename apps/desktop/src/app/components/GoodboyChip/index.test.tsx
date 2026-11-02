@@ -30,7 +30,7 @@ const { mocks } = vi.hoisted(() => ({
       suggestsProfile: false,
       details: {
         agents: 'Claude is ready',
-        workspace: 'Harborline, 3 folders',
+        workspace: 'Harborline, 3 projects',
         tools: 'Optional',
         'first-session': 'Ask Scout about the code',
       },

@@ -1,3 +1,4 @@
+import { nounFor } from '../../../shared/utils/nounFor';
 import { useState } from 'react';
 import { Button, Notice } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
@@ -9,8 +10,6 @@ type Props = {
   readonly changedCount: number | null;
   readonly isTurnRunning: boolean;
 };
-
-const plural = (count: number): string => (count === 1 ? 'file' : 'files');
 
 export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
   const moveToBootstrap = useAppStore((state) => state.moveToBootstrap);
@@ -46,7 +45,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
       title="Main is on the remote now. Move your work into a session called bootstrap"
       body={
         hasWork
-          ? `${changedCount} changed ${plural(changedCount)} in the folder move into a worktree session. The folder ends clean on main.`
+          ? `${changedCount} changed ${nounFor({ count: changedCount, one: 'file' })} in the folder move into a worktree session. The folder ends clean on main.`
           : 'The folder has no changed files. Finish to start worktree sessions.'
       }
       actions={

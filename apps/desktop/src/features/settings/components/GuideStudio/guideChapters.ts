@@ -42,16 +42,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'folders',
     group: 'daily',
-    title: 'Workspaces and folders',
-    lead: 'A workspace holds what you work on: folders, git repositories or plain ones, and one session can work across several of them.',
+    title: 'Workspaces and projects',
+    lead: 'A workspace holds what you work on: projects, git repositories or plain folders, and one session can work across several of them.',
     points: [
       {
         term: 'One window per workspace',
         desc: 'Open each workspace in its own window, so switching never stops a running agent; while agents run, the switcher offers a new window. After a reload or an update, every window comes back.',
       },
       {
-        term: 'Add a folder',
-        desc: `${NAMES.addFolder}, in the workspace switcher or on Settings, Workspace, ${NAMES.folders}, adds a repository or a plain folder. A star and a one line description on a folder go into every agent brief.`,
+        term: 'Add a project',
+        desc: `${NAMES.addProject}, in the workspace switcher or on Settings, Workspace, ${NAMES.projects}, adds a repository or a plain folder. A star and a one line description on a project go into every agent brief.`,
       },
       {
         term: 'Start from scratch',
@@ -72,7 +72,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.folders}`,
+        label: `Open ${NAMES.projects}`,
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
@@ -89,7 +89,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Code or Documents',
-        desc: 'Picking a folder asks what it is for. Change it later in Settings, Folders.',
+        desc: 'Picking a folder asks what it is for. Change it later in Settings, Projects.',
       },
       {
         term: 'One writer at a time',
@@ -114,7 +114,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.folders}`,
+        label: `Open ${NAMES.projects}`,
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },

@@ -40,7 +40,7 @@ describe('pageSlotOf', () => {
     expect(pageSlotOf({ page: 'runs', facts })).toEqual({
       text: '1',
       tone: 'warning',
-      fact: '1 needs you',
+      fact: '1 item needs you',
     });
   });
 
@@ -48,7 +48,7 @@ describe('pageSlotOf', () => {
     expect(pageSlotOf({ page: 'questions', facts: { ...QUIET, openQuestions: 1 } })).toEqual({
       text: '1',
       tone: 'warning',
-      fact: '1 open',
+      fact: '1 question',
     });
   });
 });

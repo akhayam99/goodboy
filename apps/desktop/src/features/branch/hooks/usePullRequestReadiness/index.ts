@@ -14,6 +14,7 @@ import {
 } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { useUnreadThreads } from '../../../../shared/hooks/useUnreadThreads';
 import { sessionMergeFacts, type PullRequestFacts } from '../../../actions/kinds/pullRequestFacts';
+import { reviewCounts } from '../../../resolve/reviewCounts';
 import { evaluatePrMergeReadiness, type PrMergeReadiness } from '../../../review/prMergeReadiness';
 
 type Params = {
@@ -68,7 +69,7 @@ export const usePullRequestReadiness = ({
       readiness: evaluatePrMergeReadiness({ facts }),
       facts,
       commentsNeedYou: facts.commentsNeedYou,
-      commentsUnread: unread?.length ?? 0,
+      commentsUnread: reviewCounts({ threads: [], unread }).unread,
       reviewers: pullRequestReviewerGroupsOf({ reviewers }),
     };
   }, [github, host, isRebaseStopOpen, sessionId, threads, unread, view]);

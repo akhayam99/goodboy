@@ -96,7 +96,7 @@ export const ProjectGroups = ({
       ) : null}
       {groups.all.length > 0 ? (
         <section
-          aria-label={hasStarred ? 'Other folders' : 'Folders'}
+          aria-label={hasStarred ? 'Other folders' : 'Projects'}
           className="col-span-full grid grid-cols-subgrid gap-y-1"
         >
           {hasStarred ? (

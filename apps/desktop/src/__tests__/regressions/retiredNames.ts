@@ -17,7 +17,14 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'copy-as-brief', pattern: /\bCopy as brief\b/i, use: NAMES.copyContext },
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/i, use: NAMES.spendCap },
   { id: 'link-plain-folder', pattern: /\bLink a plain folder\b/i, use: NAMES.addPlainFolder },
-  { id: 'add-project', pattern: /\bAdd project\b/, use: NAMES.addFolder },
+  { id: 'provider-limits', pattern: /\b(?:More )?[Pp]rovider limits\b/, use: NAMES.usage },
+  { id: 'add-folder', pattern: /^Add folder$/, use: NAMES.addProject },
+  { id: 'folders-noun', pattern: /^Folders$/, use: NAMES.projects },
+  {
+    id: 'waiting-for-you-title',
+    pattern: /^(?:Waiting for you|Waits on you|Waiting for your (?:OK|answer))$/,
+    use: NAMES.needsYou,
+  },
   { id: 'dev-project', pattern: /\b[Dd]ev project\b/, use: NAMES.gitRepository },
   { id: 'link-existing', pattern: /\bLink existing\b/i, use: NAMES.addExisting },
   {
@@ -150,9 +157,9 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'workflow-rules', pattern: /\bWorkflow rules\b/i, use: NAMES.runDefaults },
   { id: 'default-cap', pattern: /\bDefault cap\b/i, use: NAMES.spendCap },
   { id: 'provider-defaults', pattern: /\bProvider defaults\b/i, use: NAMES.models },
-  { id: 'add-another-project', pattern: /\bAdd another project\b/i, use: NAMES.addFolder },
-  { id: 'link-a-project', pattern: /\bLink a (?:project|repository)\b/i, use: NAMES.addFolder },
-  { id: 'workspace-projects', pattern: /\bWorkspace projects\b/i, use: NAMES.folders },
+  { id: 'add-another-project', pattern: /\bAdd another project\b/i, use: NAMES.addProject },
+  { id: 'link-a-project', pattern: /\bLink a (?:project|repository)\b/i, use: NAMES.addProject },
+  { id: 'workspace-projects', pattern: /\bWorkspace projects\b/i, use: NAMES.projects },
   {
     id: 'providers-and-models-amp',
     pattern: /\bProviders & models\b/,

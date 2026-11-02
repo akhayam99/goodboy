@@ -53,7 +53,7 @@ describe('liveSectionsOf', () => {
     ]);
   });
 
-  it('names the waiting section differently from the Needs you card above the list', () => {
+  it('names the waiting section Needs you, the same word as the card above the list', () => {
     const [section] = liveSectionsOf({
       groups: liveGroupsOf({
         model: nowModelOf({
@@ -65,8 +65,7 @@ describe('liveSectionsOf', () => {
     });
 
     expect(section?.id).toBe('needs-you');
-    expect(section?.title).toBe('Waiting for you');
-    expect(section?.title).not.toBe('Needs you');
+    expect(section?.title).toBe('Needs you');
   });
 
   it('draws nothing for no work', () => {

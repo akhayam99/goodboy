@@ -195,7 +195,7 @@ export const FIX_RUN_COPY = {
   statusQueued: 'Queued',
   statusDone: 'Done',
   sharedState: ({ word, count }: SharedStateParams): string => `${count} ${word.toLowerCase()}`,
-  statusWaiting: 'Waiting for you',
+  statusWaiting: NAMES.needsYou,
   gone: 'This comment is no longer on the branch.',
   comment: 'Comment',
   rewritten: 'no longer on this branch, it was squashed or rewritten',

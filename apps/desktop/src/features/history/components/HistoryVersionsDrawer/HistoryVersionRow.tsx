@@ -1,3 +1,4 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 import { useState } from 'react';
 import { Button, ConfirmPopover, Disclosure, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -14,14 +15,6 @@ type Props = {
   readonly hasUpstream: boolean;
   readonly onReset: () => void;
 };
-
-type PluralParams = {
-  readonly count: number;
-  readonly word: string;
-};
-
-const plural = ({ count, word }: PluralParams): string =>
-  `${count} ${word}${count === 1 ? '' : 's'}`;
 
 export const HistoryVersionRow = ({ version, nowSubjects, nowMs, hasUpstream, onReset }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -47,11 +40,11 @@ export const HistoryVersionRow = ({ version, nowSubjects, nowMs, hasUpstream, on
       </div>
       <div className="flex min-w-0 flex-col gap-1 text-meta text-muted-foreground">
         <span>
-          {facts === null ? backup.subject : plural({ count: commits.length, word: 'commit' })}
+          {facts === null ? backup.subject : countNoun({ count: commits.length, one: 'commit' })}
         </span>
         {diff === null || facts === null ? null : (
           <span>
-            {`Now: +${diff.added} / -${diff.removed} commits, ${plural({ count: facts.filesChangedVsNow, word: 'file' })} changed`}
+            {`Now: +${diff.added} / -${diff.removed} commits, ${countNoun({ count: facts.filesChangedVsNow, one: 'file' })} changed`}
           </span>
         )}
       </div>

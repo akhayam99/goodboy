@@ -108,8 +108,8 @@ describe('settingsPaletteEntries', () => {
       (candidate) => candidate.key === `setting:workspace:${page.id}`,
     );
 
-    expect(entry?.label).toBe('Workspace settings: Folders');
-    expect(entry?.secondary).toEqual(expect.arrayContaining(['Projects', 'Workspace projects']));
+    expect(entry?.label).toBe('Workspace settings: Projects');
+    expect(entry?.secondary).toEqual(expect.arrayContaining(['Folders', 'Workspace projects']));
     entry?.run();
     expect(open).toHaveBeenCalledWith({ scope: 'workspace', section: 'projects' });
   });

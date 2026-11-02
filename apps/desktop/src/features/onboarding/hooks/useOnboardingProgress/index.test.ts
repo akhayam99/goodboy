@@ -85,7 +85,7 @@ describe('useOnboardingProgress', () => {
     const { result } = renderHook(() => useOnboardingProgress());
     expect(result.current.details).toEqual({
       agents: 'Claude is ready',
-      workspace: 'Harborline, 3 folders',
+      workspace: 'Harborline, 3 projects',
       tools: 'Optional',
       'first-session': 'Ask Scout about the code',
     });

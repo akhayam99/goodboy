@@ -136,7 +136,7 @@ const { state } = vi.hoisted(() => ({
 vi.mock(
   '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction',
   () => ({
-    MountProjectAction: () => <button type="button">Add folder</button>,
+    MountProjectAction: () => <button type="button">Add project</button>,
   }),
 );
 
@@ -467,7 +467,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
     expect(screen.getByRole('heading', { level: 3, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByText('Scripts run inside a folder of this session.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('says a project could not be read, with the reason and a Retry', () => {

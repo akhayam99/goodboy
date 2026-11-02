@@ -42,7 +42,7 @@ const mount = async ({ state }: MountParams) => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1000);
   });
-  return within(screen.getByRole('list', { name: 'Folders' }));
+  return within(screen.getByRole('list', { name: 'Projects' }));
 };
 
 const selectedFace = (name: string) =>

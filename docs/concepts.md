@@ -167,9 +167,9 @@ git words by `documents-copy-has-no-git-words.test.ts`.
 
 A plain folder starts its first copy of saved versions right after it is
 added, at Create and through `addProject` (`prepareLinkedFolder`, in the
-background; a failure marks the folder failed and Folders settings offers
+background; a failure marks the folder failed and Projects settings offers
 Retry), and `removeProject` forgets that copy once the folder is removed. Home
-names a one folder workspace by its face (`workspaceFaceLabel`), and Folders
+names a one folder workspace by its face (`workspaceFaceLabel`), and Projects
 settings switches it (the Plain folders band, [navigation.md](navigation.md)).
 Storage shows the saved versions of every plain folder once, as one row in
 the app data band (`savedVersionsBytes`, summed in Rust).
@@ -217,7 +217,7 @@ no question asked.
 
 **Disconnect** keeps a workspace and its folders in the database with
 everything they hold, it only hides them. Re-adding the same folder through
-New workspace, or a folder through Add folder, reconnects it and its
+New workspace, or a folder through Add project, reconnects it and its
 sessions instead of creating a duplicate. If the folder moved since it was
 disconnected, Goodboy recognizes it by repository identity and offers to
 locate it the same way a moved folder is located while connected.
@@ -253,19 +253,25 @@ A list never words that agent as running, though. `agentStateOf` in
 its turn and its open questions to the phase, the word, the node and the dot,
 and the Runs grid, the Runs page count, the Running card and the Agents tree all
 read it. A blocked turn is **Needs permission**: a waiting phase, an amber node
-without motion, counted in "N need you" and sorted ahead of what runs. The
+without motion, counted in "N sessions need you" and sorted ahead of what runs. The
 session's **needs-approval** reason in the attention registry reads the same
 fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
 so the agent word and the session count never disagree. A stopped
 agent that is not closed stays in progress as **Stopped, Continue**, and
 **Blocked** is a warning, never a failure.
 
+Needs you counts three units, and each tooltip names its own: sessions ("2
+sessions need you") on the Sessions door, the Now chip, the dock badge and the
+palette; questions ("3 questions") on the Questions entry of the session rail;
+items ("4 items need you") on the Overview card and the Runs group. The bell is
+unchanged. `needsYouText` and `countNoun` write every one of them.
+
 **Needs you** outranks running when what waits is a human input: an open
 question, a tool waiting for your permission, a comment the fix run needs you for,
 or a plan waiting for your approval (a workflow run held at its plan). The
 session sits in needs you while its agents keep working, and the top bar chip,
-the board column, the palette and `⌥⌘↓` all count it there ("1 needs you",
-"2 need you"). An agent error also keeps its place above running. Failing
+the board column, the palette and `⌥⌘↓` all count it there ("1 session needs you",
+"2 sessions need you"). An agent error also keeps its place above running. Failing
 checks, changes requested, comments the fix run could not fix, an approved pull
 request and an unread reply rank below running, because an agent may be working
 on exactly that. Every reason that holds is kept, not only the winner, and the
@@ -1802,18 +1808,21 @@ session up again in Goodboy.
 
 ### Vocabulary rules
 
-- Each word has one meaning. **workspace** is the container, **folder** is
-  what it holds on screen (a repository or a plain folder; `project` in code),
-  **session** is the goal, **agent** is the chat.
-- No screen may use a different word for any of these four. Every surface that
-  creates, adds, lists or manages what a workspace holds says folder: the
-  session overview, Settings, palette labels, notices and aria-labels alike.
-  One card keeps the owner's choice from 0.27.4: the session rail card that
-  holds a session's repositories reads **Projects** (`NAMES.projects`), and
-  Settings and the docs name it so. The old words stay findable as former
-  names (`formerNamesOf` in `shared/utils/names.ts`: Projects and Workspace projects
-  find the Folders page in Settings and the palette, Add project, Dev project);
-  a former name is a search alias, never a label drawn on a screen
+- Each word has one meaning. **workspace** is the container, **project** is
+  a repository it holds on screen (`project` in code), **folder** is a plain
+  folder only, **session** is the goal, **agent** is the chat.
+- No screen may use a different word for any of these. Every surface that
+  creates, adds, lists or manages a repository says project: the session
+  overview, Settings, palette labels, notices and aria-labels alike. The
+  session rail card, the Settings page and the switcher count read
+  **Projects** (`NAMES.projects`, "3 projects, 1 plain folder"), and the door
+  is **Add project** (`NAMES.addProject`) beside **Add a plain folder**.
+  Folder stays in the file picker and for a plain folder. The old words stay
+  findable as former names (`formerNamesOf` in `shared/utils/names.ts`:
+  Folders and Workspace projects find the Projects page in Settings and the
+  palette, Add folder finds Add project, Dev project); a former name is a
+  search alias, never a label drawn on a screen. The retired names guard fails
+  `Folders` and `Add folder` as labels
 - **Task** means one thing: a work item that lives in another tool, such as a
   Linear or Jira issue, a GitHub issue or pull request, or a Sentry error. It
   is what the **Tasks** door lists and what a task link attaches to a
@@ -1827,8 +1836,8 @@ session up again in Goodboy.
 
   | Internal word       | On screen                                         |
   | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | branch (repo), folder (plain folder)              |
-  | mount a project     | Add folder                                        |
+  | mount, branch mount | branch (repo), plain folder                       |
+  | mount a project     | Add project                                       |
   | fork a mount        | New branch                                        |
   | unmount             | Close branch, and Reopen for a closed row         |
   | spawn               | Start (an agent, a reviewer, an implementer)      |

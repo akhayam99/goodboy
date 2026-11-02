@@ -259,7 +259,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('needs-answer');
     expect(state.tone).toBe('warning');
-    expect(state.sentence).toBe('Waiting for your answer');
+    expect(state.sentence).toBe('Needs you');
     expect(state.waitingOnAgentId).toBeNull();
   });
 

@@ -96,7 +96,7 @@ describe('the u26 shell scenes', () => {
     expect(
       within(projectRow('acme-runbooks')).queryByRole('button', { name: /^New branch/ }),
     ).toBeNull();
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('u26-rail-projects-focus puts keyboard focus on the ledger-core plus', async () => {
@@ -108,7 +108,7 @@ describe('the u26 shell scenes', () => {
   it('u26-rail-projects-picker opens the picker with the spare projects and Connect', async () => {
     await mount('u26-rail-projects-picker');
 
-    const picker = within(screen.getByRole('dialog', { name: 'Add folder' }));
+    const picker = within(screen.getByRole('dialog', { name: 'Add project' }));
     expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
     expect(picker.getByRole('button', { name: 'Add cascadia-web' })).toBeDefined();
     expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
@@ -118,14 +118,14 @@ describe('the u26 shell scenes', () => {
     await mount('u26-sidebar-signals');
 
     const door = document.querySelector('[data-side-column] [data-column-door="board"]');
-    expect(door?.getAttribute('aria-label')).toMatch(/^Sessions, 2 need you: /);
+    expect(door?.getAttribute('aria-label')).toMatch(/^Sessions, 2 sessions need you: /);
     expect(door?.querySelector('[data-door-count]')?.textContent).toBe('2');
     expect(
       document
         .querySelector('[data-top-bar] [data-now-needs-you]')
         ?.closest('button')
         ?.getAttribute('aria-label'),
-    ).toMatch(/^2 need you/);
+    ).toMatch(/^2 sessions need you/);
     expect(document.querySelector('[data-column-door="impact"]')).not.toBeNull();
   });
 

@@ -1,3 +1,5 @@
+import { countNoun } from '../../shared/utils/countNoun';
+import { needsYouText } from '../../shared/utils/needsYouText';
 export type CountedPageId = 'files' | 'runs' | 'artifacts' | 'questions';
 
 export type PageCountFacts = {
@@ -11,13 +13,6 @@ export type PageCountFacts = {
 
 const RUNNING_SUFFIX = ' running';
 
-type NounParams = {
-  readonly count: number;
-  readonly noun: string;
-};
-
-const nounOf = ({ count, noun }: NounParams): string => `${count} ${noun}${count === 1 ? '' : 's'}`;
-
 type RunningParams = {
   readonly running: number;
   readonly total: number;
@@ -27,17 +22,17 @@ type RunningParams = {
 
 const runningOr = ({ running, total, noun, waiting = 0 }: RunningParams): string | null => {
   if (waiting > 0) {
-    return `${waiting} ${waiting === 1 ? 'needs' : 'need'} you`;
+    return needsYouText({ count: waiting, unit: 'items' });
   }
   if (running > 0) {
     return `${running}${RUNNING_SUFFIX}`;
   }
-  return total > 0 ? nounOf({ count: total, noun }) : null;
+  return total > 0 ? countNoun({ count: total, one: noun }) : null;
 };
 
 const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => string | null>> = {
   files: (facts) =>
-    facts.changedFiles > 0 ? nounOf({ count: facts.changedFiles, noun: 'file' }) : null,
+    facts.changedFiles > 0 ? countNoun({ count: facts.changedFiles, one: 'file' }) : null,
   runs: (facts) =>
     runningOr({
       running: facts.runningRuns,
@@ -46,8 +41,9 @@ const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => stri
       waiting: facts.waitingRuns,
     }),
   artifacts: (facts) =>
-    facts.artifacts > 0 ? nounOf({ count: facts.artifacts, noun: 'artifact' }) : null,
-  questions: (facts) => (facts.openQuestions > 0 ? `${facts.openQuestions} open` : null),
+    facts.artifacts > 0 ? countNoun({ count: facts.artifacts, one: 'artifact' }) : null,
+  questions: (facts) =>
+    facts.openQuestions > 0 ? countNoun({ count: facts.openQuestions, one: 'question' }) : null,
 };
 
 type WordParams = {

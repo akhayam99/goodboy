@@ -1,3 +1,4 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 import type { ReactNode } from 'react';
 import { CircleAlert, Bot, Check, MessageSquare, Pencil, CircleX } from 'lucide-react';
 import { ClampedProse, ICON_SIZE, SectionHeader, SelectableRow } from '@goodboy/ui';
@@ -29,16 +30,6 @@ type Row = {
 };
 
 const GLYPH_SIZE = ICON_SIZE.row;
-
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
 
 const commentsWord = ({ item }: { readonly item: Extract<ActivityItem, { kind: 'comments' }> }) => {
   if (item.needYou > 0) {
@@ -73,7 +64,7 @@ const rowOf = ({
         line: (
           <>
             <Who name={item.who} /> pushed{' '}
-            {plural({ count: item.count, one: 'commit', many: 'commits' })}{' '}
+            {countNoun({ count: item.count, one: 'commit', many: 'commits' })}{' '}
             <span className="text-code">{item.sha}</span>
           </>
         ),
@@ -112,7 +103,7 @@ const rowOf = ({
               <Who name={item.comments[0]?.who ?? null} /> commented
             </>
           ) : (
-            <>{plural({ count: item.comments.length, one: 'bot', many: 'bots' })} commented</>
+            <>{countNoun({ count: item.comments.length, one: 'bot', many: 'bots' })} commented</>
           ),
         comments:
           item.comments.length === 1
@@ -125,7 +116,7 @@ const rowOf = ({
         glyph: <MessageSquare size={GLYPH_SIZE} aria-hidden />,
         line: (
           <>
-            {plural({ count: item.total, one: 'comment', many: 'comments' })} on files,{' '}
+            {countNoun({ count: item.total, one: 'comment', many: 'comments' })} on files,{' '}
             {commentsWord({ item })}
           </>
         ),

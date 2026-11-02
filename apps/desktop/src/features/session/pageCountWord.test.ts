@@ -44,8 +44,8 @@ describe('pageCountWordOf', () => {
   });
 
   it('names a run that waits on you before a running one', () => {
-    expect(wordOf('runs', { runs: 3, runningRuns: 1, waitingRuns: 2 })).toBe('2 need you');
-    expect(wordOf('runs', { runs: 1, waitingRuns: 1 })).toBe('1 needs you');
+    expect(wordOf('runs', { runs: 3, runningRuns: 1, waitingRuns: 2 })).toBe('2 items need you');
+    expect(wordOf('runs', { runs: 1, waitingRuns: 1 })).toBe('1 item needs you');
   });
 
   it('reads Changes as the files changed in a plain folder', () => {
@@ -54,7 +54,7 @@ describe('pageCountWordOf', () => {
   });
 
   it('reads Questions as the number open', () => {
-    expect(wordOf('questions', { openQuestions: 2 })).toBe('2 open');
+    expect(wordOf('questions', { openQuestions: 2 })).toBe('2 questions');
   });
 
   it('puts the noun last and never a bare number', () => {

@@ -102,7 +102,7 @@ folders the task needs, and it is the one rule for this: `createSession` runs it
 
 ## A new worktree starts usable
 
-A new worktree is a clean checkout, so it lacks what git ignores: the `.env`, the local config, the installed dependencies. Each repository folder has a **Worktree setup** section in Settings, Workspace, Folders (`NewWorktreesField`) with two settings rows per project, never columns, like the first lap phase:
+A new worktree is a clean checkout, so it lacks what git ignores: the `.env`, the local config, the installed dependencies. Each repository folder has a **Worktree setup** section in Settings, Workspace, Projects (`NewWorktreesField`) with two settings rows per project, never columns, like the first lap phase:
 
 - **Carry into every new branch** (`worktree.carry` in `project_values`, a JSON list). The page lists the git-ignored files and folders at the repository (`worktree_carry_candidates`), none ticked. A secret (`is_secret_name`: `.env*`, `*.pem`, `*.key`, `id_rsa` and the like) reads **secret: only when ticked**; dependency and build folders are left out, and a large tree cannot be ticked.
 - **Setup after creation** (`worktree.setup` in `project_values`), prefilled from a lockfile next to its manifest (`worktree_setup_proposal`: `pnpm install`, `yarn install`, `npm install`, `bun install`, `composer install`) with **proposed from pnpm-lock.yaml** until you save. A saved empty value means no setup, an unsaved one means the proposal.

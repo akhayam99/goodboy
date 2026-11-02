@@ -65,7 +65,7 @@ describe('c01 tail scenes', () => {
   it('reads a child that waits for your OK as needing you, with Confirm first', async () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-childconfirm'];
     render(<Scene />);
-    screen.getByText('Waiting for your OK');
+    screen.getByText('Needs you');
     expect(screen.queryByText('Queued')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));

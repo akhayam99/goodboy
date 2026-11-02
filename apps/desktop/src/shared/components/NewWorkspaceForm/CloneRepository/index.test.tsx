@@ -177,7 +177,7 @@ describe('cloning a repository on the Workspace step', () => {
 
     await pressClone();
 
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     screen.getByText('ledger-core');
     expect(callsOf({ command: 'clone_probe' })).toEqual([{ url: LEDGER_URL, destination: LEDGER }]);
     const [cloned] = callsOf({ command: 'clone_repository' });
@@ -311,7 +311,7 @@ describe('cloning a repository on the Workspace step', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
 
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     expect(attempts).toBe(2);
   });
 
@@ -356,7 +356,7 @@ describe('cloning a repository on the Workspace step', () => {
 
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Folders' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Projects' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Clone' })).toHaveProperty('disabled', false);
   });
 
@@ -472,7 +472,7 @@ describe('cloning a repository on the Workspace step', () => {
     await act(async () => {
       validating.resolve(repoAt({ path: LEDGER }));
     });
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     expect(callsOf({ command: 'clone_repository' })).toHaveLength(0);
   });
 

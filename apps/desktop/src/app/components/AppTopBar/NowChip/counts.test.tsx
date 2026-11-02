@@ -106,10 +106,10 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 1 needs you: 1 question for you',
+      'Sessions, 1 session needs you: 1 question for you',
     );
     expect(sessionsDoor().querySelector('[data-door-signal="warning"]')).not.toBeNull();
-    expect(trigger().getAttribute('aria-label')).toBe('1 needs you');
+    expect(trigger().getAttribute('aria-label')).toBe('1 session needs you');
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
@@ -118,7 +118,7 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 2 need you: 1 question for you, The plan waits for your approval',
+      'Sessions, 2 sessions need you: 1 question for you, The plan waits for your approval',
     );
   });
 
@@ -126,7 +126,7 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     seed([asking, working], [asking]);
     renderShell();
 
-    expect(trigger().getAttribute('aria-label')).toBe('1 needs you, 1 session running');
+    expect(trigger().getAttribute('aria-label')).toBe('1 session needs you, 1 session running');
     await act(async () => {
       fireEvent.click(trigger());
     });

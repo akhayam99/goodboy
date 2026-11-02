@@ -1,3 +1,4 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 import type { StageTrackState, Tone } from '@goodboy/ui';
 import type { BranchFacts, BranchRequestFacts } from './branchFactsOf';
 import { BRANCH_STATE_TONE, type BranchState } from './branchStateTone';
@@ -81,12 +82,6 @@ type DetailParams = FactParams & {
   readonly detail: BranchDetailWords | null;
 };
 
-type PluralParams = {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-};
-
 const skipsOf = ({ fact }: FactParams): ReadonlyArray<BranchStepId> => {
   const request = fact.request;
   if (request === null || fact.isStale || request.state === 'closed') {
@@ -101,9 +96,6 @@ const skipsOf = ({ fact }: FactParams): ReadonlyArray<BranchStepId> => {
   }
   return skips;
 };
-
-const plural = ({ count, one, many }: PluralParams): string =>
-  `${count} ${count === 1 ? one : many}`;
 
 const behindPhraseOf = ({ fact }: FactParams): string | null =>
   fact.behind !== null && fact.behind > 0 ? `${fact.behind} behind ${fact.baseBranch}` : null;
@@ -123,7 +115,7 @@ const changesBlockerOf = ({ detail }: OnlyDetailParams): string => {
   if (detail === null || detail.openThreads === 0) {
     return 'A reviewer asked for changes';
   }
-  return `${plural({ count: detail.openThreads, one: 'thread', many: 'threads' })} to answer`;
+  return `${countNoun({ count: detail.openThreads, one: 'thread', many: 'threads' })} to answer`;
 };
 
 type ReadyParams = {
@@ -283,7 +275,7 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       word: 'Nothing committed',
       blocker:
         changed > 0
-          ? plural({ count: changed, one: 'file changed', many: 'files changed' })
+          ? countNoun({ count: changed, one: 'file changed', many: 'files changed' })
           : 'No commits yet',
     };
   }
@@ -292,7 +284,7 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       at: 1,
       branchState: 'not-pushed',
       word: 'Not pushed',
-      blocker: `${plural({ count: ahead, one: 'commit', many: 'commits' })} to push`,
+      blocker: `${countNoun({ count: ahead, one: 'commit', many: 'commits' })} to push`,
     };
   }
   if (push.kind === 'ahead' || push.kind === 'diverged') {
@@ -300,14 +292,14 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       at: 1,
       branchState: 'not-pushed',
       word: 'Not pushed',
-      blocker: `${plural({ count: push.ahead, one: 'commit', many: 'commits' })} to push`,
+      blocker: `${countNoun({ count: push.ahead, one: 'commit', many: 'commits' })} to push`,
     };
   }
   return {
     at: 2,
     branchState: 'no-request',
     word: 'No pull request',
-    blocker: `${plural({ count: ahead, one: 'commit', many: 'commits' })} pushed`,
+    blocker: `${countNoun({ count: ahead, one: 'commit', many: 'commits' })} pushed`,
   };
 };
 
@@ -440,6 +432,6 @@ export const branchFoldOf = ({ entries }: FoldParams): BranchFold => {
     return { shown, hidden, label: null };
   }
   const merged = hidden.filter((entry) => entry.fact.request?.state === 'merged').length;
-  const base = plural({ count: hidden.length, one: 'more branch', many: 'more branches' });
+  const base = countNoun({ count: hidden.length, one: 'more branch', many: 'more branches' });
   return { shown, hidden, label: merged === 0 ? base : `${base}, ${merged} merged` };
 };

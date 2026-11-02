@@ -1,3 +1,5 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
+import { needsYouText } from '../../../../shared/utils/needsYouText';
 import { useEffect } from 'react';
 import type { SessionAttentionReason, SessionId } from '@goodboy/types';
 import {
@@ -52,9 +54,9 @@ const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inl
 
 const chipLabel = ({ needsYou, running, scripts }: CountLabelParams): string =>
   [
-    needsYou > 0 ? `${needsYou} ${needsYou === 1 ? 'needs' : 'need'} you` : '',
-    running > 0 ? `${running} ${running === 1 ? 'session' : 'sessions'} running` : '',
-    scripts > 0 ? `${scripts} ${scripts === 1 ? 'script' : 'scripts'} running` : '',
+    needsYou > 0 ? needsYouText({ count: needsYou, unit: 'sessions' }) : '',
+    running > 0 ? `${countNoun({ count: running, one: 'session' })} running` : '',
+    scripts > 0 ? `${countNoun({ count: scripts, one: 'script' })} running` : '',
   ]
     .filter((part) => part !== '')
     .join(', ');

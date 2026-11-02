@@ -69,7 +69,7 @@ describe('WorkspaceIdentityRow', () => {
     const trigger = screen.getByLabelText('Switch workspace: Acme');
     expect(trigger.getAttribute('title')).toBeNull();
     expect(tooltipTextOf({ element: trigger })).toBe(
-      `Acme, 1 folder${shortcutGlyphs('workspace.switcher')}`,
+      `Acme, 1 project${shortcutGlyphs('workspace.switcher')}`,
     );
   });
 
@@ -139,7 +139,7 @@ describe('WorkspaceIdentityRow', () => {
       expect(mark?.getAttribute('data-workspace-attention')).toBe('warning');
       expect(
         screen
-          .getByLabelText('Switch workspace: Acme, 2 need you in other workspaces')
+          .getByLabelText('Switch workspace: Acme, 2 sessions need you in other workspaces')
           .getAttribute('aria-expanded'),
       ).toBe('false');
     });

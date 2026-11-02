@@ -16,7 +16,8 @@ import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritin
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
-import { abortRebase, plural, rebaseMount, settleRequest } from './gitRuns';
+import { countNoun } from '../../../shared/utils/countNoun';
+import { abortRebase, rebaseMount, settleRequest } from './gitRuns';
 import { mountFactsFor } from './mount';
 import type { MountFacts } from './mountFacts';
 import { pushAction } from './pushAction';
@@ -94,7 +95,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     id: 'diff.rebase',
     label: ({ facts }) =>
       facts.rebaseConflicts > 0
-        ? `Rebase on ${facts.baseBranch} · ${plural({ count: facts.rebaseConflicts, one: 'conflict', many: 'conflicts' })}`
+        ? `Rebase on ${facts.baseBranch} · ${countNoun({ count: facts.rebaseConflicts, one: 'conflict', many: 'conflicts' })}`
         : `Rebase on ${facts.baseBranch}`,
     icon: GitBranch,
     group: 'act',

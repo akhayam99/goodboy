@@ -285,7 +285,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'mount-project') {
       return {
         primary: {
-          label: 'Add folder',
+          label: 'Add project',
           shortLabel: 'Add',
           isDisabled: false,
           failureTitle: "Couldn't add the folder",

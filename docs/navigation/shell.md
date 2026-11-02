@@ -410,18 +410,22 @@ covered.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
-  names the unit: "2 sessions running, 1 script running"), Limits,
+  names the unit: "2 sessions running, 1 script running"), Usage,
   today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
   primary when unread, warning when an unread item carries an action; the count is the Unread
   tab badge in its popover). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  two, and a group with no rows is not drawn. Sessions that need you are not in
-  the bar: the Sessions door of the column carries their warning dot. A script row moves to its
+  two, and a group with no rows is not drawn. Sessions that need you are the first
+  segment of the chip and the Sessions door carries the same count. Needs you counts three
+  units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
+  door, the Now chip, the dock badge and the palette; questions ("3 questions") on the
+  Questions entry of the session rail; items ("4 items need you") on the Overview card and
+  the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
   row opens the session hover card (facts only) after the pointer rests, the
-  same card the sidebar shows. `Limits`: one chip per connected plan provider (Claude, Codex,
+  same card the sidebar shows. `Usage`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and one bar of
   the provider's tighter window; the percent shows in tabular gray above 70%, `Out` with the
@@ -450,20 +454,20 @@ viewport, so app zoom takes the same path as a narrow window:
 
 1. Below `chrome-wide` the command center narrows (its label is `Search`
    at every width; the workspace name lives in its tooltip) and
-   Limits keeps two chips instead of four.
+   Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
-   (`running`, `scripts`, `today`) drop and Limits keeps
+   (`running`, `scripts`, `today`) drop and Usage keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster, the command center, the
-spend figure, the first Limits chip and the bell
-never hide. A Limits chip is
+spend figure, the first Usage chip and the bell
+never hide. A Usage chip is
 the provider glyph and one bar, the percent beside it only above 70%; every
 window lives in its tooltip and its accessible name. A provider with no
-figures yet draws no chip. The Limits chips past the ones that fit, and the
+figures yet draws no chip. The Usage chips past the ones that fit, and the
 providers with no figures, are the only overflow: a `+N providers` chip (`+1
-provider`, never a bare number; with no chip shown it reads `Limits`) takes the
+provider`, never a bare number; with no chip shown it reads `Usage`) takes the
 tone of the worst hidden provider and lists them. It stays visible at every bar width. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.
@@ -472,7 +476,7 @@ only drop under zoom.
   workspaces. ⌘O opens that same popover, never a second one, and the palette
   lists workspaces as rows of its own. `Find a workspace or folder` filters by
   workspace name and by folder path. The current workspace row carries its
-  folder count (`folderCountLabel`, "3 folders"), **Add folder** (the folder
+  folder count (`folderCountLabel`, "3 projects"), **Add project** (the folder
   picker, a repository or a plain folder, then an undo toast) and **Manage
   folders**; the foot holds one **New workspace**, which closes the popover and
   opens the one form. The current workspace sits in its own

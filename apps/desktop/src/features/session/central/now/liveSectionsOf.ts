@@ -19,10 +19,8 @@ type GroupParams = {
 
 const SECTION_ORDER: ReadonlyArray<LiveSectionId> = ['needs-you', 'running', 'stopped'];
 
-const WAITING_FOR_YOU = 'Waiting for you';
-
 const SECTION_TITLE: Readonly<Record<LiveSectionId, string>> = {
-  'needs-you': WAITING_FOR_YOU,
+  'needs-you': NAMES.needsYou,
   running: NAMES.running,
   stopped: 'Stopped',
 };

@@ -19,7 +19,7 @@ const HOMES: Readonly<Record<string, string>> = {
   isProviderId: '@goodboy/types/helpers',
   isoNow: '@goodboy/types/helpers',
   nowIso: '@goodboy/types/helpers',
-  plural: 'shared/utils/pluralize.ts',
+  plural: 'shared/utils/countNoun.ts',
   prefersReducedMotion: 'packages/ui/src/canAnimate.ts',
 };
 

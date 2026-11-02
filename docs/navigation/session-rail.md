@@ -211,7 +211,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   (`branchRowChipOf`) owns every chip text and tone. A late
   answer for a batch that is gone is dropped by run id; Abort lets the branch in
   flight finish and skips the queued ones. The card header carries one `+`
-  (`LevelAddTrigger`, a ghost `xs` icon button named Add folder: no border,
+  (`LevelAddTrigger`, a ghost `xs` icon button named Add project: no border,
   no fill at rest, so the rail stays light) that opens the project picker
   straight away (`MountProjectAction`, no menu first): the workspace projects
   not yet in the session, then `Connect a repo or folder`, which picks a folder,
@@ -1043,7 +1043,7 @@ shows once: in the `Pinned` strip at the top of the lens only when the session
 has more than one project (one click runs one in its group's worktree), and
 only in the rows otherwise. The palette lists pinned scripts under `$` with the
 project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
-their project name too). On the workspace Folders page the open editor card
+their project name too). On the workspace Projects page the open editor card
 of a project ends with a `Scripts` field (`ProjectScriptsField`, label
 `Scripts · N pinned`): it reads the project folder when the card opens
 (`loadProjectRootScripts`, kept in memory by root path), says `On <base>` and

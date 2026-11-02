@@ -86,7 +86,7 @@ describe('settings rail rows', () => {
       'iPhone',
     ]);
     expect(labelsOf('workspace')).toEqual([
-      'Folders',
+      'Projects',
       'About you',
       'New sessions',
       'Branches',

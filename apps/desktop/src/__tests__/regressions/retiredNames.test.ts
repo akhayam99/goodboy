@@ -68,6 +68,29 @@ describe('retired names match whatever the casing', () => {
     },
   );
 
+  it.each([
+    ['Waiting for you', 'waiting-for-you-title'],
+    ['Waits on you', 'waiting-for-you-title'],
+    ['Waiting for your OK', 'waiting-for-you-title'],
+    ['Waiting for your answer', 'waiting-for-you-title'],
+    ['Folders', 'folders-noun'],
+    ['Add folder', 'add-folder'],
+  ])('flags %s as a title or a noun', (text, id) => {
+    expect(retiredIdsIn({ text })).toContain(id);
+  });
+
+  it.each([
+    'Needs you',
+    'Projects',
+    'Add project',
+    'Add a plain folder',
+    'Waiting for your first message',
+    'Choose a folder',
+    '2 projects, 1 plain folder',
+  ])('leaves %s alone', (text) => {
+    expect(retiredIdsIn({ text })).toEqual([]);
+  });
+
   it('leaves a data attribute alone', () => {
     expect(retiredIdsIn({ text: '[data-inbox-key="a"]' })).toEqual([]);
   });
