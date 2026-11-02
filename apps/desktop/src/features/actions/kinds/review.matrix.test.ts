@@ -35,17 +35,17 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'all decided, 2 accepted',
     facts: { accepted: 2 },
-    expected: ['review.push primary Push 2 fixes'],
+    expected: ['review.push primary Push'],
   },
   {
     name: '1 open, 2 accepted',
     facts: { open: 1, accepted: 2 },
-    expected: ['review.push secondary Push 2 fixes'],
+    expected: ['review.push secondary Push'],
   },
   {
     name: 'pushing',
     facts: { accepted: 2, isPushing: true },
-    expected: ['review.push primary Push 2 fixes (Pushing now.)'],
+    expected: ['review.push primary Push (Pushing now.)'],
   },
   {
     name: 'all pushed',

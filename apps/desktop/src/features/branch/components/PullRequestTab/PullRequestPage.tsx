@@ -50,7 +50,6 @@ export type PullRequestPageProps = {
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly commits: ReadonlyArray<BranchCommit>;
-  readonly notPushed?: number;
   readonly files: ReadonlyArray<FileDiff>;
   readonly isDiffLoading: boolean;
   readonly diffError: string | null;
@@ -78,7 +77,6 @@ export const PullRequestPage = ({
   canEdit,
   request,
   commits,
-  notPushed,
   files,
   isDiffLoading,
   diffError,
@@ -128,7 +126,6 @@ export const PullRequestPage = ({
       <PullRequestStatusStrip cells={cells} onOpen={onSelectTab} />
       <BranchSummary
         commits={commits}
-        notPushed={notPushed}
         files={files}
         isLoading={isDiffLoading}
         error={diffError}

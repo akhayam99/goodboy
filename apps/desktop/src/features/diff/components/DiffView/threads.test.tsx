@@ -87,9 +87,8 @@ const commentsWith = (
   extra: Partial<DiffComments> = {},
 ): DiffComments => ({
   threads,
-  submitLabel: 'Add note',
-  composerLabel: 'Note',
-  noun: 'note',
+  submitLabel: 'Add comment',
+  composerLabel: 'Comment',
   allowFileLevel: true,
   onSubmit: vi.fn(),
   onEdit: vi.fn(async () => undefined),
@@ -112,7 +111,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const noteCard = (): HTMLElement => screen.getByRole('article', { name: /^Note from You/ });
+const noteCard = (): HTMLElement => screen.getByRole('article', { name: /^Draft from You/ });
 
 const hostCard = (): HTMLElement =>
   screen.getByRole('article', { name: /^On GitHub from Cascadia Ops/ });
@@ -121,10 +120,10 @@ describe('a note and a host thread on one file', () => {
   it('draw different chips and are both reachable by role', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE, HOST])} />);
 
-    expect(within(noteCard()).getByText('Note')).toBeDefined();
+    expect(within(noteCard()).getByText('Draft')).toBeDefined();
     expect(within(hostCard()).getByText('On GitHub')).toBeDefined();
     expect(within(noteCard()).queryByText('On GitHub')).toBeNull();
-    expect(within(hostCard()).queryByText('Note')).toBeNull();
+    expect(within(hostCard()).queryByText('Draft')).toBeNull();
     expect(within(hostCard()).getByText('Open')).toBeDefined();
   });
 
@@ -132,7 +131,7 @@ describe('a note and a host thread on one file', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE])} />);
 
     const card = noteCard();
-    for (const name of ['Edit', 'Close note', 'Delete']) {
+    for (const name of ['Edit', 'Close comment', 'Delete']) {
       expect(within(card).getByRole('button', { name })).toBeDefined();
     }
     for (const name of ['Reply', 'Resolve', 'Open in Comments']) {
@@ -147,7 +146,7 @@ describe('a note and a host thread on one file', () => {
     for (const name of ['Reply', 'Resolve', 'Open in Comments']) {
       expect(within(card).getByRole('button', { name })).toBeDefined();
     }
-    for (const name of ['Edit', 'Close note', 'Delete']) {
+    for (const name of ['Edit', 'Close comment', 'Delete']) {
       expect(within(card).queryByRole('button', { name })).toBeNull();
     }
   });
@@ -255,7 +254,7 @@ describe('a note in Files', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
-    const box = screen.getByRole('textbox', { name: 'Edit note' });
+    const box = screen.getByRole('textbox', { name: 'Edit comment' });
     fireEvent.change(box, { target: { value: 'Keep the note out of the row, please' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -267,12 +266,12 @@ describe('a note in Files', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={comments} />);
 
     fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Edit note' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit comment' }), {
       target: { value: 'Saved text' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit note' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Edit comment' })).toBeNull());
   });
 
   it('keeps the editor, the typed text and shows the error when the edit fails', async () => {
@@ -282,13 +281,13 @@ describe('a note in Files', () => {
     renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([NOTE], { onEdit })} />);
 
     fireEvent.click(within(noteCard()).getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Edit note' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit comment' }), {
       target: { value: 'Text that must survive' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('Database is locked');
-    const box = screen.getByRole('textbox', { name: 'Edit note' });
+    const box = screen.getByRole('textbox', { name: 'Edit comment' });
     expect(box instanceof HTMLTextAreaElement && box.value).toBe('Text that must survive');
     expect(screen.getByRole('button', { name: 'Save' })).toBeDefined();
   });
@@ -303,7 +302,7 @@ describe('a note in Files', () => {
     );
 
     const card = noteCard();
-    const chip = within(card).getByText('Note');
+    const chip = within(card).getByText('Draft');
     const outcome = within(card).getByText('Fix proposed');
     expect(chip.compareDocumentPosition(outcome) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -510,7 +509,7 @@ describe('landing on a thread', () => {
     const { rerender } = renderWithMenu(
       <DiffView files={[FILE]} comments={comments} viewed={viewed} />,
     );
-    expect(screen.queryByRole('article', { name: /^Note from You/ })).toBeNull();
+    expect(screen.queryByRole('article', { name: /^Draft from You/ })).toBeNull();
 
     rerender(
       <DiffView

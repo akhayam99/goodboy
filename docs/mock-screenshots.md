@@ -532,7 +532,7 @@ The header line (`hints/headerInstruction.ts`) is always what to do now: the
 step's `instruction`; once the step is done, its `result` for at least 2.5
 seconds (`hints/resultDwellMs.ts`; a hint whose result needs
 reading sets `dwellMs`, 3.5 to 4.5 seconds, read through `hints/dwellOf.ts`:
-the waiting card, Follow a helper, Add note, Push; and its optional `settle`
+the waiting card, Follow a helper, Add comment, Push; and its optional `settle`
 runs once after the dwell, as closing the limits popover so the composer takes
 the first click) and until the control of
 the next step is on screen, so a result is never replaced by an instruction

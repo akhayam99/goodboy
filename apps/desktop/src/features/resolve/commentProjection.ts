@@ -15,19 +15,18 @@ export type ResolveWord =
   | 'done'
   | 'left_open';
 
-export type ResolveGroup =
-  'needs_you' | 'working' | 'ready_to_push' | 'open' | 'done' | 'left_open';
+export type ResolveGroup = 'needs_you' | 'working' | 'done' | 'left_open';
 
 type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'resolved_remote';
 
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
-  working: 'Working',
-  question: 'Question for you',
-  to_review: 'Fix ready',
+  working: 'Fixing',
+  question: 'Question',
+  to_review: 'Fix to review',
   push_failed: 'Push failed',
   couldnt_fix: 'Failed',
-  ready: 'Applied',
+  ready: 'Fixed',
   replied: 'Replied',
   done: 'Done',
   left_open: 'Left open',
@@ -53,8 +52,6 @@ export const applyAndResolveLabel = ({ count }: CountParams): string =>
 export const RESOLVE_GROUP_LABEL: Readonly<Record<Exclude<ResolveGroup, 'left_open'>, string>> = {
   needs_you: 'Needs you',
   working: 'Working',
-  ready_to_push: 'Ready to push',
-  open: 'Open',
   done: 'Done',
 };
 
@@ -64,20 +61,18 @@ export const leftOpenGroupLabel = ({ sourceLabel }: { readonly sourceLabel: stri
 export const RESOLVE_LIST_GROUPS: ReadonlyArray<ResolveGroup> = [
   'needs_you',
   'working',
-  'ready_to_push',
-  'open',
   'done',
   'left_open',
 ];
 
 export const RESOLVE_GROUP_OF_WORD: Readonly<Record<ResolveWord, ResolveGroup>> = {
-  open: 'open',
+  open: 'needs_you',
   working: 'working',
   question: 'needs_you',
   to_review: 'needs_you',
   push_failed: 'needs_you',
   couldnt_fix: 'needs_you',
-  ready: 'ready_to_push',
+  ready: 'done',
   replied: 'done',
   done: 'done',
   left_open: 'left_open',

@@ -18,9 +18,9 @@ import { REVIEW_LAUNCH_LABEL } from '../../resolve/reviewLaunchCopy';
 
 type NoteFixGroup = 'open' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
 
-export const NOTE_LOCK_REASON = 'A fixer is working on this note';
+export const NOTE_LOCK_REASON = 'A fixer is working on this comment';
 
-const OPEN_NOTE_WORD = 'Open note';
+const OPEN_NOTE_WORD = 'Open comment';
 const CLOSED_NOTE_WORD = 'Closed';
 
 export type NoteFix = {

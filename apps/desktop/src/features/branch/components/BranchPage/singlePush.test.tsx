@@ -63,7 +63,7 @@ const mount = async ({ threadId }: { readonly threadId: string | null }): Promis
 };
 
 const selectReady = (): string => {
-  const ready = within(list()).getByRole('region', { name: 'Ready to push' });
+  const ready = within(list()).getByRole('region', { name: 'Done' });
   const row = ready.querySelector<HTMLElement>('button[data-thread-id]');
   if (row === null) {
     throw new Error('no ready row');
@@ -272,7 +272,7 @@ describe('one Push at a time', () => {
     await mountReady();
 
     const label = headerPush(/^Push(?: \d+)? commits?$/).textContent ?? '';
-    const ready = within(list()).getByRole('region', { name: 'Ready to push' });
+    const ready = within(list()).getByRole('region', { name: 'Done' });
     const count = Number(/(\d+)/.exec(ready.textContent ?? '')?.[1] ?? 0);
     expect(label).toBe('Push commits');
     expect(count).toBe(3);

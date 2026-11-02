@@ -52,7 +52,7 @@ describe('the unread threads scenes', () => {
 
     const line = await screen.findByTestId('open-threads');
 
-    expect(line.textContent).toBe('6 open threads · 1 needs you · 2 unread');
+    expect(line.textContent).toBe('6 open threads · 4 need you · 2 unread');
   });
 
   it('marks the two unread threads in the Comments tab and keeps the marks for the visit', async () => {
@@ -85,7 +85,7 @@ describe('the unread threads scenes', () => {
       .map((mark) => mark.closest('[class*="group/review-row"]'))
       .filter((element): element is HTMLElement => element instanceof HTMLElement);
 
-    expect(rows.some((row) => within(row).queryByText('Question for you') !== null)).toBe(true);
+    expect(rows.some((row) => within(row).queryByText('Question') !== null)).toBe(true);
     for (const mark of marks) {
       expect(mark.closest('button')).toBeNull();
     }

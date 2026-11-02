@@ -68,13 +68,7 @@ describe('the u23 comments scenes', () => {
   it('puts ten comments in every group, in the delivery order', async () => {
     await renderScene({ name: 'comments-groups' });
 
-    expect(regionTitles()).toEqual([
-      'Needs you',
-      'Working',
-      'Ready to push',
-      'Open',
-      'Left open on GitHub',
-    ]);
+    expect(regionTitles()).toEqual(['Needs you', 'Working', 'Done', 'Left open on GitHub']);
     const counts = Object.fromEntries(
       within(list())
         .getAllByRole('region')
@@ -84,10 +78,9 @@ describe('the u23 comments scenes', () => {
         }),
     );
     expect(counts).toEqual({
-      'Needs you': 5,
+      'Needs you': 6,
       Working: 1,
-      'Ready to push': 1,
-      Open: 1,
+      Done: 1,
       'Left open on GitHub': 1,
     });
     fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
@@ -97,7 +90,7 @@ describe('the u23 comments scenes', () => {
     ).toHaveLength(1);
   });
 
-  it("orders Needs you as Question for you, Push failed, Fix ready, and never calls a failed push Couldn't fix", async () => {
+  it("orders Needs you as Question, Push failed, Fix to review, Open, and never calls a failed push Couldn't fix", async () => {
     await renderScene({ name: 'comments-groups' });
 
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
@@ -105,21 +98,22 @@ describe('the u23 comments scenes', () => {
       (node) => node.textContent,
     );
     expect(words).toEqual([
-      'Question for you',
+      'Question',
       'Push failed',
-      'Fix ready',
-      'Fix ready',
-      'Fix ready',
+      'Fix to review',
+      'Fix to review',
+      'Fix to review',
+      'Open',
     ]);
     expect(within(list()).queryByText("Couldn't fix")).toBeNull();
     expect(within(needsYou).queryByRole('button', { name: /^Apply \d/ })).toBeNull();
   });
 
-  it('shows Ready to push with its count, Push only in the header', async () => {
+  it('shows the fixed comments under Done with their count, Push only in the header', async () => {
     await renderScene({ name: 'comments-ready-to-push' });
 
-    const ready = within(list()).getByRole('region', { name: 'Ready to push' });
-    expect(within(ready).getByRole('heading', { name: 'Ready to push 3' })).toBeDefined();
+    const ready = within(list()).getByRole('region', { name: 'Done' });
+    expect(within(ready).getByRole('heading', { name: 'Done 3' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: /^Push commits$/ })).toHaveLength(1);
     expect(within(ready).queryByRole('button', { name: 'Push commits' })).toBeNull();
     expect(within(ready).getAllByRole('listitem')).toHaveLength(3);

@@ -143,7 +143,6 @@ export const DiffView = ({
       composerLabel: comments.composerLabel,
       allowFileLevel: false,
       onSubmit: comments.onSubmit,
-      ...(comments.noun !== undefined && { noun: comments.noun }),
       ...(comments.onOpenInComments !== undefined && {
         onOpenInComments: comments.onOpenInComments,
       }),

@@ -160,7 +160,7 @@ describe('resolveFactsByAgentId', () => {
         { threadId: 't2', state: 'ready', word: 'To review' },
         { threadId: 't3', state: 'edited', word: 'To review' },
         { threadId: 't4', state: 'needs', word: 'Question' },
-        { threadId: 't5', state: 'drafting', word: 'Working' },
+        { threadId: 't5', state: 'drafting', word: 'Fixing' },
         { threadId: 't6', state: 'failed', word: 'Push failed', isPushFailure: true },
         { threadId: 't7', state: 'accepted', word: 'Ready' },
       ],
@@ -179,7 +179,7 @@ describe('resolveFactsByAgentId', () => {
       reviews: [],
     });
 
-    expect(facts.get('a2')).toEqual({ state: 'drafting', word: 'Working' });
+    expect(facts.get('a2')).toEqual({ state: 'drafting', word: 'Fixing' });
   });
 
   it('uses the newest attempt of an agent and the comment that needs you first', () => {

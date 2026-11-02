@@ -13,7 +13,7 @@ type LabelParams = {
 export const kindsLabelOf = ({ kinds }: LabelParams): string => {
   const parts: Array<string> = [];
   if (kinds.notes > 0) {
-    parts.push(`${kinds.notes} ${kinds.notes === 1 ? 'note' : 'notes'}`);
+    parts.push(`${kinds.notes} ${kinds.notes === 1 ? 'draft' : 'drafts'}`);
   }
   if (kinds.host > 0) {
     parts.push(`${kinds.host} on ${kinds.hostLabel ?? 'the host'}`);

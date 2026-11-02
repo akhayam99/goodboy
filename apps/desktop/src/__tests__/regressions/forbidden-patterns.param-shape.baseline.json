@@ -615,7 +615,7 @@
     "apps/desktop/src/features/providers/routing.ts": 3,
     "apps/desktop/src/features/quick-actions/grammar.ts": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
-    "apps/desktop/src/features/quick-actions/registry.ts": 5,
+    "apps/desktop/src/features/quick-actions/registry.ts": 4,
     "apps/desktop/src/features/reports/allocateReportContext.ts": 2,
     "apps/desktop/src/features/reports/buildReportContext.ts": 14,
     "apps/desktop/src/features/reports/components/ReportStudio/index.tsx": 1,

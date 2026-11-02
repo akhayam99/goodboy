@@ -33,13 +33,13 @@ describe('resolveRowState', () => {
   }
 
   it('says To review for whatever kind of proposal waits for review', () => {
-    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Fix ready');
+    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Fix to review');
   });
 
   it('uses the five words for the stages that are not finished or failed', () => {
-    expect(resolveRowState({ ...base, stage: 'working' }).sentence).toBe('Working');
-    expect(resolveRowState({ ...base, stage: 'asking' }).sentence).toBe('Question for you');
-    expect(resolveRowState({ ...base, stage: 'approved' }).sentence).toBe('Applied');
+    expect(resolveRowState({ ...base, stage: 'working' }).sentence).toBe('Fixing');
+    expect(resolveRowState({ ...base, stage: 'asking' }).sentence).toBe('Question');
+    expect(resolveRowState({ ...base, stage: 'approved' }).sentence).toBe('Fixed');
     expect(resolveRowState({ ...base, stage: 'parked' }).sentence).toBe('Left open');
   });
 

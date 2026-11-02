@@ -96,7 +96,7 @@ describe('the triage outcomes in the Fix comments drawer', () => {
     expect(view.getByRole('button', { name: 'Ask on GitHub' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Post reply' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Resolve without reply' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Close note' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Close comment' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(view.getByText('It conflicts with a fix you accepted before')).toBeDefined();
   });
@@ -160,12 +160,12 @@ describe('the triage actions', () => {
     expect(publish.mock.calls[0]?.[0]).toEqual({ sessionId: SESSION.id, threadId: 'PRRT_bulk_r2' });
   });
 
-  it('closes a local note with Close note', async () => {
+  it('closes a local note with Close comment', async () => {
     const close = vi.fn<StoreState['closeResolvedNote']>(async () => undefined);
     useAppStore.setState({ closeResolvedNote: close });
     await mount({ phase: 'mixed' });
 
-    fireEvent.click(within(drawer()).getByRole('button', { name: 'Close note' }));
+    fireEvent.click(within(drawer()).getByRole('button', { name: 'Close comment' }));
 
     await waitFor(() => expect(close).toHaveBeenCalledOnce());
     expect(close.mock.calls[0]?.[0].threadId).toBe('note:mock-note-triage-cap');

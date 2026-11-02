@@ -98,6 +98,7 @@ export const NAMES = {
   pin: 'Pin session',
   unpin: 'Unpin session',
   notes: 'Notes',
+  addComment: 'Add comment',
   tasks: 'Tasks',
   session: 'Session',
   startSession: 'Start session',

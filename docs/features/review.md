@@ -19,13 +19,13 @@ Handle many comments at once. **Fix comments** checks every open comment, **Use 
 
 ### Review sources
 
-Read pull request comments and your own notes in one list in the Comments section. Each row is the button: author and age, then `path:line`, then the comment; a **Note** chip shows only while the list mixes notes and host threads, and the source switch shows only then. Group labels carry their row count and no verbs, and the Open and Resolved switch shows only once a comment is resolved. **Fix N comments** in the Branch header is the one page action, beside Push.
+Read pull request comments and your own notes in one list in the Comments section. Each row is the button: author and age, then `path:line`, then the comment; a **Draft** chip shows only while the list mixes notes and host threads, and the source switch shows only then. Group labels carry their row count and no verbs, and the Open and Resolved switch shows only once a comment is resolved. **Fix N threads** in the Branch header is the one page action, beside Push.
 
 Open a comment to read it in the drawer beside the list, the same way a failing check opens the Debugger. The drawer holds the code around the line, then the comment and its thread, then its actions at the end: **Fix** as the primary, **Reply** and **Skip** beside it, each with its key (F, R, S), and a `⋯` only when two or more rarer verbs remain. J and K, or the arrow keys, move to the next or previous comment while it is open, and Escape closes it on the row you were on. A verb that fails says why under the actions and its button reads **Retry**. The open comment survives a refresh of the list and a window reload. Reading and replying work on every host, and a Bitbucket thread stays open because Bitbucket cannot resolve it.
 
 ### Comment states
 
-See what each comment needs next. The list groups comments under **Needs you**, **Working**, **Ready to push**, **Done** and **Left open**, and each comment names its state, such as **Question for you**, **Fix ready** or **Failed**. If the reviewer edits a comment after the agent drafted an answer, you choose to redraft or keep the draft.
+See what each comment needs next. The list groups comments under **Needs you**, **Working**, **Done** and **Left open**, and each comment names its state, such as **Question**, **Fix to review** or **Failed**. If the reviewer edits a comment after the agent drafted an answer, you choose to redraft or keep the draft.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-dark.webp">
@@ -124,7 +124,7 @@ A description Goodboy wrote is updated after a history push, so it keeps matchin
 
 ### Read the code
 
-Read the branch against its base in **Files**, unified or split. The changed files sit in a list on the right of the diff that tracks what you marked **Viewed**, with a filter, **All**, **Unviewed** and **Commented** in one menu and **Next unviewed** at its top. Drag its edge to make it wider or fold it away; it stays that way, and **Files** in the diff toolbar brings it back. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit; **Force push** waits in **⋯** behind its confirm.
+Read the branch against its base in **Files**, unified or split. The changed files sit in a list on the right of the diff that tracks what you marked **Viewed**, with a filter, **All**, **Unviewed** and **Commented** in one menu, and **Viewed 2 of 6** with **Next** at its top. Drag its edge to make it wider or fold it away; it stays that way, and **Files** in the diff toolbar brings it back. Quote lines into a note, or choose **Ask agent** to send them to an agent with your question. The Branch header refreshes after a local commit edit; **Force push** waits in **⋯** behind its confirm.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">
@@ -156,7 +156,7 @@ Review someone else's pull request from its diff. Click a line number to leave a
 
 This part is for contributors and agents who change the feature.
 
-- Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N comments**.
+- Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N threads**.
 - Unread threads: `unreadThreadsOf` is the one function. It joins the threads to the comments of the selected source, keeps the threads `rowBelongsToSource` lists, and returns null while the reads or the viewer identity are not loaded. `useUnreadThreads` feeds it to `usePullRequestReadiness` (the line) and to `useThreadVisit` (the dots). `ReviewFlowVisit` mounts `useThreadVisit` above `ReviewFlow` and gives the visit snapshot to `ReviewList` through `ThreadVisitContext`, so it survives the Resolved switch and an empty list. A write is deduped only while it is in flight.
 - Read record: the `thread_reads` table (m239), keyed by session and host thread id, behind the `store/slices/thread-reads` slice. m239 backfills one row per existing `resolve_threads` row at the migration time. `read_at` is the latest time of a comment by someone else among the shown ones, falling back to the fetch time, and the upsert keeps the `MAX`. Memory changes only after the write succeeds and only inside an entry that a load created. A load merges with `max` per thread, so a late load never undoes a mark, and a late `loadThreadReads` answer is dropped.
 - Viewer identity: `viewerIdentityOf` reads the connection that serves the selected source. That is the GitHub status of the session workspace, with the default status only when the workspace has no scoped token. It is the GitLab `username` of the binding for that workspace, project and host. It is the Bitbucket `nickname` of the binding for that workspace and project. Only that canonical id counts, never a display name. It returns null when that connection has none, even if another connection has one, and the unread logic waits.

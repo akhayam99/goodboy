@@ -35,7 +35,7 @@ type DeleteButtonParams = {
   readonly onClick: () => void;
 };
 
-const CLOSE_NOTE_LABEL = 'Close note';
+const CLOSE_NOTE_LABEL = 'Close comment';
 
 const excerpt = (body: string): string => {
   const line = body.split('\n')[0] ?? '';
@@ -48,7 +48,6 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const tint = tintClasses(thread.tone);
-  const noun = comments.noun ?? 'comment';
   const lockReason = thread.lockReason ?? null;
   const isLocked = lockReason !== null;
   const replyCount = thread.replies?.length ?? 0;
@@ -94,7 +93,7 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
   if (editing && comments.onEdit) {
     return (
       <CommentComposer
-        label={`Edit ${noun}`}
+        label="Edit comment"
         submitLabel="Save"
         initialBody={thread.body}
         isBusy={isSaving}
@@ -133,9 +132,9 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
       <ConfirmPopover
         role="danger"
         icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-        title={`Delete this ${noun}?`}
+        title="Delete this comment?"
         description="It is removed from the review."
-        confirmLabel={`Delete ${noun}`}
+        confirmLabel="Delete comment"
         onConfirm={() => comments.onDelete?.(thread.id)}
         trigger={({ arm }) => deleteButton({ onClick: arm })}
       />

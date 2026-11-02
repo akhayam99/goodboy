@@ -66,7 +66,7 @@
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
   Activity. Projects, Linked work, Artifacts and Add project live on the
-  session rail's session level. Next and Unassigned notes open with `SectionHeader`
+  session rail's session level. Next and Unassigned comments open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals
@@ -106,11 +106,11 @@
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
   Comments is one flow: the list grouped by delivery (Needs you, Working,
-  Ready to push, Open, Done and Left open on its host, the last two closed)
+  Done and Left open on its host, the last two closed)
   under the run status line, across the page, and the open comment in the drawer beside it
-  (kind `conversation`, side tier), the same pattern as a check opening the Debugger. A comment reads one word (Question for you, Fix ready,
-  Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
-  in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
+  (kind `conversation`, side tier), the same pattern as a check opening the Debugger. A comment reads one word (Question, Fix to review,
+  Push failed, Failed, Fixing, Fixed, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
+  in `commentProjection.ts` (Fixed is a fix on the branch whose reply is not sent, Replied is a
   thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
   The action that takes a fix is `Apply fix` in the comment drawer and `Apply and resolve N` in the
   selection bar and the drawer; group labels carry their count and no verbs. A fix run is one agent and one transcript for all its comments: answers, retries and

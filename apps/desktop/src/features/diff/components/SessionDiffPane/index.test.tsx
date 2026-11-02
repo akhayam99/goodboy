@@ -284,7 +284,7 @@ describe('SessionDiffPane with the file rail docked on the right', () => {
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-label') ?? button.textContent);
     expect(buttons.slice(0, 3)).toEqual([
-      'Next unviewed2',
+      'Next unviewed file',
       'Keyboard shortcuts',
       'Fold the file list',
     ]);
@@ -338,7 +338,7 @@ describe('SessionDiffPane with the file rail docked on the right', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
     expect(screen.getByRole('menuitemradio', { name: /^Unviewed/ }).textContent).toContain('1');
-    expect(screen.getByRole('button', { name: /^Next unviewed/ }).textContent).toContain('1');
+    screen.getByText(/^Viewed \d+ of \d+$/);
   });
 
   it('jumps to the next unviewed file from the rail head and keeps the rail in place', () => {

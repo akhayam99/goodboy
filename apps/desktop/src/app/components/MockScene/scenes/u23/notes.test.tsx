@@ -46,11 +46,11 @@ describe('the u23 notes scenes', () => {
   it('opens Files with the three notes under their lines and no drawer beside it', async () => {
     renderScene({ name: 'branch-files-notes' });
 
-    const notes = await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    const notes = await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
     expect(notes.length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByRole('region', { name: 'Your notes' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Notes \d/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ threads?$/ })).toBeNull();
   });
 
   it('lists the notes on Comments before a pull request, with no empty state in their place', async () => {

@@ -118,7 +118,7 @@ describe('UnassignedNotes on sqlite', () => {
     });
 
     expect(await storedIds()).toEqual([]);
-    expect(screen.queryByRole('region', { name: 'Unassigned notes' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Unassigned comments' })).toBeNull();
     screen.getByText('2 notes discarded');
 
     await act(async () => {

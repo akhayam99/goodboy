@@ -1,7 +1,6 @@
 import type { PrComment, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import type { CommentThread } from '../integrations/github/comment-threads';
-import type { LaunchNoun } from './reviewLaunchCopy';
 import { launchRowsOf } from './reviewRows';
 
 type Params = {
@@ -9,20 +8,15 @@ type Params = {
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
   readonly comments?: ReadonlyArray<PrComment>;
-  readonly noun?: LaunchNoun;
 };
 
-const NOTHING_TO_DRAFT: Record<LaunchNoun, string> = {
-  comment: 'These comments are no longer on the pull request',
-  note: 'These notes are no longer open',
-};
+const NOTHING_TO_DRAFT = 'These comments are no longer on the pull request';
 
 export const launchThreadsOf = ({
   state,
   sessionId,
   threadIds,
   comments,
-  noun = 'comment',
 }: Params): ReadonlyArray<CommentThread> => {
   const rows = launchRowsOf({
     state,
@@ -34,7 +28,7 @@ export const launchThreadsOf = ({
     return commentThread == null ? [] : [commentThread];
   });
   if (threads.length === 0) {
-    throw new Error(NOTHING_TO_DRAFT[noun]);
+    throw new Error(NOTHING_TO_DRAFT);
   }
   return threads;
 };

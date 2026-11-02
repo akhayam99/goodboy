@@ -104,8 +104,8 @@ describe('useReviewState on sqlite, with a pull request open', () => {
       { wrapper },
     );
 
-    expect(result.current.comments.composerLabel).toBe('Note');
-    expect(result.current.comments.submitLabel).toBe('Add note');
+    expect(result.current.comments.composerLabel).toBe('Comment');
+    expect(result.current.comments.submitLabel).toBe('Add comment');
     expect(result.current.comments.fileComposer).toBeUndefined();
 
     await act(async () => {

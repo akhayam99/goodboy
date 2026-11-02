@@ -36,7 +36,7 @@ import {
   reviewTargetErrorLabel,
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
-import type { ResolveGroup } from '../../commentProjection';
+import { groupsInViewOf, settledCountOf } from '../../commentGroupsView';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { LaneNotices } from './LaneNotices';
@@ -65,7 +65,7 @@ import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewList } from './ReviewList';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
 import type { ReviewPush } from './useReviewPush';
-import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
+import { useReviewEntries } from './useReviewEntries';
 
 type Props = {
   readonly session: Session;
@@ -101,11 +101,6 @@ type FocusRowParams = {
   readonly threadId: string;
 };
 
-type ShownParams = {
-  readonly entry: ReviewEntry;
-  readonly group: ResolveGroup;
-};
-
 const SKELETON_ROWS = [0, 1, 2];
 
 const focusedRowId = (): string | null =>
@@ -127,29 +122,12 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const [pickedScope, setScope] = useState<CommentScope>('branch');
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
   const [pickedState, setCommentState] = useState<CommentState>('open');
-  const resolvedCount = useMemo(
-    () => branchGroups.find(({ group }) => group === 'done')?.entries.length ?? 0,
-    [branchGroups],
-  );
+  const resolvedCount = useMemo(() => settledCountOf({ groups: branchGroups }), [branchGroups]);
   const commentState: CommentState = resolvedCount > 0 ? pickedState : 'open';
-  const allGroups = useMemo(() => {
-    const isShown = ({ entry, group }: ShownParams): boolean => {
-      const isNote = entry.row.thread.originKind === 'diff_comment';
-      if (scope === 'notes' && !isNote) {
-        return false;
-      }
-      if (scope === 'comments' && isNote) {
-        return false;
-      }
-      return commentState === 'resolved' ? group === 'done' : group !== 'done';
-    };
-    return branchGroups
-      .map(({ group, entries: members }) => ({
-        group,
-        entries: members.filter((entry) => isShown({ entry, group })),
-      }))
-      .filter((group) => group.entries.length > 0);
-  }, [branchGroups, commentState, scope]);
+  const allGroups = useMemo(
+    () => groupsInViewOf({ groups: branchGroups, scope, state: commentState }),
+    [branchGroups, commentState, scope],
+  );
   const lane = useLaneStatus({ sessionId, entries: laneEntries });
   const { run, groups, fixRunReady, isRunLive } = useFixRunGroups({
     lane,
@@ -727,7 +705,13 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           />
         )}
         <TabActions>
-          <FixCommentsButton sessionId={sessionId} mountId={source?.mountId ?? null} />
+          <FixCommentsButton
+            sessionId={sessionId}
+            mountId={source?.mountId ?? null}
+            fixingThreads={isRunLive && run !== null ? run.total : 0}
+            waitingFixes={fixRunReady?.threadIds.length ?? 0}
+            onApply={fixRunReady === null ? null : () => void acceptMany(fixRunReady.threadIds)}
+          />
         </TabActions>
         <ReviewScopeBar
           scope={scope}

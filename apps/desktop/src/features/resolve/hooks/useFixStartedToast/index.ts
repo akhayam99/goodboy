@@ -17,14 +17,13 @@ type Params = {
   readonly sessionId: SessionId;
   readonly started: StartedBatch;
   readonly count: number;
-  readonly noun?: 'comment' | 'note';
   readonly isModelChange?: boolean;
 };
 
 export const useFixStartedToast = (): ((params: Params) => void) => {
   const follow = useQuietFollowToast();
   return useCallback(
-    ({ sessionId, started, count, noun = 'comment', isModelChange = false }: Params): void => {
+    ({ sessionId, started, count, isModelChange = false }: Params): void => {
       const state = useAppStore.getState();
       const attempt =
         (state.sessionResolveAttempts[sessionId] ?? []).find(
@@ -37,7 +36,6 @@ export const useFixStartedToast = (): ((params: Params) => void) => {
         title: fixStartedTitleOf({ isQueued: attempt?.phase === 'queued', isModelChange }),
         message: fixStartedMessageOf({
           count,
-          noun,
           where: fixStartedWhereOf({
             repo: source?.repo ?? null,
             prNumber: source?.prNumber ?? null,

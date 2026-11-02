@@ -1153,7 +1153,12 @@ u34-u29-narrow-running
 u34-u30-active-tool
 u34-u31-folded-branches
 u34-u33-branches
+u34-u34-draft
 u34-u35-unpushed
+u34-u38-viewed
+u34-u39-header
+u34-u43-summary
+u34-u44-groups
 u34-u5-question
 u34-u53-palette
 u34-u56-step

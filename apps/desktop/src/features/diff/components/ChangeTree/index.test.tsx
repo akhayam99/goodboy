@@ -103,7 +103,7 @@ describe('ChangeTree on a big change', () => {
     const drawn = screen.getAllByRole('treeitem', { name: /f\d{3}\.ts/ });
     expect(drawn.length).toBeGreaterThan(10);
     expect(drawn.length).toBeLessThan(80);
-    expect(screen.queryByText(/of 600 viewed/)).toBeNull();
+    expect(screen.getAllByText('Viewed 0 of 600')).toHaveLength(1);
   });
 
   it('swaps the drawn rows as the list scrolls and keeps the scroll height', () => {
@@ -205,7 +205,7 @@ describe('ChangeTree', () => {
     expect(deltas.map((delta) => delta?.textContent)).toEqual(['+6−2', '+3−1']);
   });
 
-  it('heads the list with Next unviewed, the keys and Fold, and Fold asks to fold', () => {
+  it('heads the list with Viewed n of m, Next, the keys and Fold, and Fold asks to fold', () => {
     const onFold = vi.fn();
     renderTree({ onFold });
 
@@ -213,7 +213,7 @@ describe('ChangeTree', () => {
       .getAllByRole('button')
       .slice(0, 3)
       .map((button) => button.getAttribute('aria-label') ?? button.textContent);
-    expect(head).toEqual(['Next unviewed4', 'Keyboard shortcuts', 'Fold the file list']);
+    expect(head).toEqual(['Next unviewed file', 'Keyboard shortcuts', 'Fold the file list']);
     fireEvent.click(screen.getByRole('button', { name: 'Fold the file list' }));
     expect(onFold).toHaveBeenCalledTimes(1);
   });
@@ -475,31 +475,25 @@ describe('ChangeTree', () => {
     expect(done.querySelector('circle')).toBeNull();
   });
 
-  it('puts a viewed toggle first on every file row and calls it with the file', () => {
-    const onToggleViewed = vi.fn();
+  it('counts the viewed files once, in the title, and draws a check on a viewed row, no checkbox', () => {
     renderTree({
-      onToggleViewed,
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
     });
 
-    const done = within(itemOf(/package\.json/)).getByRole('button', {
-      name: 'Viewed: package.json',
-    });
-    const open = within(itemOf(/page\.tsx/)).getByRole('button', { name: 'Viewed: page.tsx' });
-    expect(done.getAttribute('aria-pressed')).toBe('true');
-    expect(open.getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(open);
-
-    expect(onToggleViewed).toHaveBeenCalledWith(
-      expect.objectContaining({ path: 'src/ledger/export/page.tsx' }),
-    );
+    expect(screen.getAllByText('Viewed 1 of 4')).toHaveLength(1);
+    within(itemOf(/package\.json/)).getByRole('img', { name: 'Viewed' });
+    expect(within(itemOf(/page\.tsx/)).queryByRole('img', { name: 'Viewed' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Viewed:/ })).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
   });
 
-  it('offers no viewed toggle on a read only change', () => {
-    renderTree({ isReadOnly: true });
+  it('goes to the next unviewed file from Next and says so in its tooltip name', () => {
+    const onNextUnviewed = vi.fn();
+    renderTree({ onNextUnviewed });
 
-    expect(screen.queryByRole('button', { name: /^Viewed:/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Next unviewed file' }));
+
+    expect(onNextUnviewed).toHaveBeenCalledTimes(1);
   });
 
   it('marks a file that changed after it was viewed with an amber dot, still unviewed', () => {
@@ -507,11 +501,8 @@ describe('ChangeTree', () => {
       stateOf: (file) => (file.path === 'package.json' ? 'stale' : 'none'),
     });
 
-    const toggle = within(itemOf(/package\.json/)).getByRole('button', {
-      name: 'Viewed: package.json',
-    });
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
-    expect(toggle.querySelector('span')).not.toBeNull();
+    within(itemOf(/package\.json/)).getByRole('img', { name: 'Changed since you viewed it' });
+    expect(screen.getAllByText('Viewed 0 of 4')).toHaveLength(1);
     expect(
       openFilterMenu().getByRole('menuitemradio', { name: /^Unviewed/ }).textContent,
     ).toContain('4');
@@ -543,13 +534,13 @@ describe('ChangeTree', () => {
             : NO_KINDS,
       });
 
-      const chip = screen.getByRole('img', { name: '2 notes, 1 on GitHub' });
+      const chip = screen.getByRole('img', { name: '2 drafts, 1 on GitHub' });
       expect(chip.textContent).toBe('3');
       fireEvent.mouseEnter(chip.parentElement ?? chip);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
-      expect(screen.getByRole('tooltip').textContent).toBe('2 notes, 1 on GitHub');
+      expect(screen.getByRole('tooltip').textContent).toBe('2 drafts, 1 on GitHub');
     } finally {
       vi.useRealTimers();
     }
@@ -579,7 +570,7 @@ describe('ChangeTree', () => {
     expect(within(row).getByText('StatementBalanceCard.test.tsx')).toBeDefined();
   });
 
-  it('jumps to the next unviewed file from its head button and says how many are left', () => {
+  it('jumps to the next unviewed file from its head button, the count is in the title', () => {
     const onNextUnviewed = vi.fn();
     renderTree({
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
@@ -587,7 +578,7 @@ describe('ChangeTree', () => {
     });
 
     const next = screen.getByRole('button', { name: /^Next unviewed/ });
-    expect(next.textContent).toContain('3');
+    screen.getByText('Viewed 1 of 4');
     fireEvent.click(next);
     expect(onNextUnviewed).toHaveBeenCalledTimes(1);
   });

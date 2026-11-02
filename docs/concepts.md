@@ -1097,7 +1097,7 @@ pull request yet` with `Create pull request`. On GitLab the words are `merge
 request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
 header and its merge ask read them from the host. Comments exists whenever a
 pull request or a comment does, so a branch with only your notes has the section too. It lists the
-pull request threads and your notes together, told apart by a chip (`Note`, `On GitHub`) and
+pull request threads and your notes together, told apart by a chip (`Draft`, `On GitHub`) and
 filtered by `All`, `Notes` and `On GitHub`. Your notes also sit under their line in Files, where
 every open note gets a conversation, and deleting or resolving the note closes it. An agent
 reviewer's comments on a branch without a pull request are kept as notes. When a pull request
@@ -1956,11 +1956,11 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the **Fix comments** button (**Fix 3 comments**). The drawer's own button, **Start fix for 3**, stays.
+  the **Fix comments** button (**Fix 3 threads**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
-- **Push**: sends commits (**Push 2 fixes**, **Retry push** after a failure).
+- **Push**: sends commits (**Push 2 commits**, **Retry push** after a failure).
   **Publish 2 replies** sends replies without a push. **Sync and try again** is
   about the remote branch that moved, not the base.
 - **Rebase on main**: brings the base in, with the base branch's own name.

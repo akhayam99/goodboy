@@ -1623,11 +1623,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       expect(await activeTreeFile()).toContain('notify.ts');
       await visible('navigation', 'Changed files');
       const tree = within(screen.getByRole('navigation', { name: 'Changed files' }));
-      expect(
-        tree
-          .getAllByRole('button', { name: /^Viewed: / })
-          .filter((toggle) => toggle.getAttribute('aria-pressed') === 'true'),
-      ).toHaveLength(1);
+      expect(tree.getAllByRole('img', { name: 'Viewed' })).toHaveLength(1);
     },
   }),
   keyRow({

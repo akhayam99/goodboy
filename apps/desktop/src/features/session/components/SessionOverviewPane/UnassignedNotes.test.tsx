@@ -73,7 +73,7 @@ describe('UnassignedNotes', () => {
       loadDiffComments: async () => undefined,
     });
     render(<UnassignedNotes sessionId={SESSION} />);
-    expect(screen.queryByRole('region', { name: 'Unassigned notes' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Unassigned comments' })).toBeNull();
   });
 
   it('titles the section with a level 2 heading and no count over rows that all show', () => {
@@ -84,8 +84,8 @@ describe('UnassignedNotes', () => {
     render(<UnassignedNotes sessionId={SESSION} />);
 
     const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading.textContent).toBe('Unassigned notes');
-    const region = screen.getByRole('region', { name: 'Unassigned notes' });
+    expect(heading.textContent).toBe('Unassigned comments');
+    const region = screen.getByRole('region', { name: 'Unassigned comments' });
     expect(within(region).queryByText('2')).toBeNull();
   });
 

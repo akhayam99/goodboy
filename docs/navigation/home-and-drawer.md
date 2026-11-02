@@ -491,4 +491,4 @@ opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
 There is no drawer for notes: a note lives on its line in Files and as a row in
 Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
-without a branch sits in `Unassigned notes` on the Session overview.
+without a branch sits in `Unassigned comments` on the Session overview.

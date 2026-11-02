@@ -41,14 +41,47 @@ describe('FixCommentsButton', () => {
 
     mountButton();
 
-    expect(screen.getByRole('button', { name: 'Fix 2 comments' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Fix 2 threads' })).toBeDefined();
+  });
+
+  it('reads Fixing and is disabled while a run is going', () => {
+    seedNotesScene({ variant: 'comments-no-pr' });
+
+    render(
+      <FixCommentsButton
+        sessionId={CTX_SESSION_ID}
+        mountId={CTX_PAYMENTS_MOUNT_ID}
+        fixingThreads={4}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Fixing 4 threads' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
+
+  it('reads Apply and applies the waiting fixes', () => {
+    seedNotesScene({ variant: 'comments-no-pr' });
+    const onApply = vi.fn();
+
+    render(
+      <FixCommentsButton
+        sessionId={CTX_SESSION_ID}
+        mountId={CTX_PAYMENTS_MOUNT_ID}
+        waitingFixes={3}
+        onApply={onApply}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Apply 3 fixes' }));
+
+    expect(onApply).toHaveBeenCalledTimes(1);
   });
 
   it('opens the fix comments drawer for the session and its mount', () => {
     seedNotesScene({ variant: 'comments-no-pr' });
     mountButton();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fix 2 comments' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix 2 threads' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'fix-comments',

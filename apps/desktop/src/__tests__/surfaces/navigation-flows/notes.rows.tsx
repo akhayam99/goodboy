@@ -210,10 +210,10 @@ type NoteTarget = {
 const addNoteOnFile = async ({ file, body }: NoteTarget): Promise<void> => {
   const card = await screen.findByRole('region', { name: new RegExp(`${file}$`) }, WAIT);
   await click(within(card).getByRole('button', { name: 'Comment' }));
-  const field = await screen.findByRole('textbox', { name: /Note on this file/ });
+  const field = await screen.findByRole('textbox', { name: /Comment on this file/ });
   fireEvent.change(field, { target: { value: body } });
   await settle();
-  await click(screen.getByRole('button', { name: 'Add note' }));
+  await click(screen.getByRole('button', { name: 'Add comment' }));
   await settle();
 };
 
@@ -222,7 +222,7 @@ const hasFixComments = async (count: number): Promise<void> => {
     () =>
       expect(
         screen.getByRole('button', {
-          name: `Fix ${count} ${count === 1 ? 'comment' : 'comments'}`,
+          name: `Fix ${count} ${count === 1 ? 'thread' : 'threads'}`,
         }),
       ).toBeDefined(),
     WAIT,
@@ -251,7 +251,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
       await hasFixComments(2);
-      await clickButton('Fix 2 comments');
+      await clickButton('Fix 2 threads');
       await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('fix-comments'), WAIT);
       useAppStore.getState().closeDrawer();
       expect(
@@ -260,7 +260,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       expect(screen.getAllByText(/Log the duplicate once/).length).toBeGreaterThan(0);
       expect(screen.queryByText('No pull request yet')).toBeNull();
       expect(screen.queryByRole('tab', { name: /^On GitHub/ })).toBeNull();
-      expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Fix \d+ threads?$/ })).toBeDefined();
     },
   },
   {
@@ -280,7 +280,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('files')(ctx);
-      expect(await screen.findByRole('article', { name: /^Note from You/ }, WAIT)).toBeDefined();
+      expect(await screen.findByRole('article', { name: /^Draft from You/ }, WAIT)).toBeDefined();
       expect(screen.getByText('Cap the retries at three')).toBeDefined();
       expect(useAppStore.getState().drawer).toBeNull();
     },

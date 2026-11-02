@@ -596,9 +596,9 @@ describe('the Overview grid', () => {
 describe('the Changes summary', () => {
   it('keeps the changes of the branch while the Files tab shows one commit', async () => {
     await show();
-    const card = await screen.findByRole('button', { name: 'Open Changes' });
-    const branchSummary = card.textContent;
-    expect(branchSummary).toContain('6files');
+    const summary = await screen.findByRole('region', { name: 'Summary' });
+    const branchSummary = summary.textContent;
+    expect(branchSummary).toContain('src4 files');
 
     act(() => {
       useAppStore
@@ -614,6 +614,6 @@ describe('the Changes summary', () => {
       await Promise.resolve();
     });
 
-    expect(screen.getByRole('button', { name: 'Open Changes' }).textContent).toBe(branchSummary);
+    expect(screen.getByRole('region', { name: 'Summary' }).textContent).toBe(branchSummary);
   });
 });

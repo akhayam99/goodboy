@@ -110,7 +110,7 @@ describe.each(CASES)('Comments on the $source source', ({ source, first, rows })
 
     const listed = rowsAcrossStates();
     expect(listed.length).toBe(rows + NOTES.length);
-    expect(listed.filter((text) => text.includes('Note'))).toHaveLength(NOTES.length);
+    expect(listed.filter((text) => text.includes('Draft'))).toHaveLength(NOTES.length);
   });
 
   it('lists only the notes under Notes and counts each kind on its tab', async () => {
@@ -121,7 +121,7 @@ describe.each(CASES)('Comments on the $source source', ({ source, first, rows })
 
     const listed = rowsAcrossStates();
     expect(listed).toHaveLength(NOTES.length);
-    expect(listed.some((text) => text.includes('Note'))).toBe(false);
+    expect(listed.some((text) => text.includes('Draft'))).toBe(false);
   });
 
   it('has no source picker and no pull request link of its own', async () => {

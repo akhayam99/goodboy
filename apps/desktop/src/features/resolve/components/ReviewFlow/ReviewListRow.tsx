@@ -11,7 +11,6 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
@@ -37,15 +36,6 @@ type Props = {
   readonly selection: RowSelection | null;
 };
 
-const GROUP_WORDS: ReadonlySet<string> = new Set([
-  'Open',
-  'Working',
-  'Applied',
-  'Replied',
-  'Done',
-  'Left open',
-]);
-
 export const ReviewListRow = ({
   sessionId,
   entry,
@@ -65,16 +55,13 @@ export const ReviewListRow = ({
   const title = entryTitleOf({ entry });
   const qualifier = rowQualifierOf({ entry });
   const selectLabel = `${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim();
-  const isWordShown = !GROUP_WORDS.has(entry.word);
-  const stateWord = isWordShown ? (
+  const stateWord = (
     <span data-row-state className="shrink-0 whitespace-nowrap text-muted-foreground">
       {entry.word}
     </span>
-  ) : null;
-  const meta =
-    note === null
-      ? ''
-      : joinFacts({ facts: [note.author, formatAge({ from: note.createdAtMs, now })] });
+  );
+  const meta = note === null ? '' : (note.author ?? '');
+  const age = note === null ? '' : formatAge({ from: note.createdAtMs, now });
   const place =
     note === null || note.path === null
       ? null
@@ -118,13 +105,19 @@ export const ReviewListRow = ({
               {meta}
             </span>
             {isSourceShown && note !== null && note.source === 'note' ? (
-              <Chip tone="neutral" kind="state" bordered={false} label="Note" />
+              <Chip tone="neutral" kind="state" bordered={false} label="Draft" />
             ) : null}
-            {stateWord === null ? null : qualifier === null ? (
-              stateWord
-            ) : (
-              <Tooltip content={qualifier}>{stateWord}</Tooltip>
-            )}
+            <span
+              data-row-trailing
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums"
+            >
+              {qualifier === null ? stateWord : <Tooltip content={qualifier}>{stateWord}</Tooltip>}
+              {age === '' ? null : (
+                <span data-row-age className="text-faint-foreground">
+                  {age}
+                </span>
+              )}
+            </span>
           </span>
           {place === null ? null : (
             <TruncatedText

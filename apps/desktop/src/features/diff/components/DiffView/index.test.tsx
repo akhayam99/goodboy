@@ -87,8 +87,8 @@ const thread = (overrides: Partial<DiffThread> = {}): DiffThread => ({
 
 const commentsWith = (threads: ReadonlyArray<DiffThread>): DiffComments => ({
   threads,
-  submitLabel: 'Add note',
-  composerLabel: 'Note',
+  submitLabel: 'Add comment',
+  composerLabel: 'Comment',
   allowFileLevel: true,
   onSubmit: vi.fn(),
   onAskAgent: vi.fn(),
@@ -223,7 +223,7 @@ describe('DiffView comments', () => {
     act(() => {
       window.dispatchEvent(new Event('pointerup'));
     });
-    const box = screen.getByRole('textbox', { name: 'Note on line 39' });
+    const box = screen.getByRole('textbox', { name: 'Comment on line 39' });
     fireEvent.change(box, { target: { value: 'Name this floorToCents' } });
     fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
     expect(comments.onSubmit).toHaveBeenCalledWith(
@@ -244,9 +244,9 @@ describe('DiffView comments', () => {
     act(() => {
       window.dispatchEvent(new Event('pointerup'));
     });
-    const box = screen.getByRole('textbox', { name: 'Note on lines 39 to 41' });
+    const box = screen.getByRole('textbox', { name: 'Comment on lines 39 to 41' });
     fireEvent.change(box, { target: { value: 'Early return hides the zero weight path' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
     expect(comments.onSubmit).toHaveBeenCalledWith(
       LEDGER.path,
       { side: 'new', lineNumber: 39, endLineNumber: 41 },
@@ -263,7 +263,7 @@ describe('DiffView comments', () => {
       button: 0,
       shiftKey: true,
     });
-    screen.getByRole('textbox', { name: 'Note on lines 39 to 42' });
+    screen.getByRole('textbox', { name: 'Comment on lines 39 to 42' });
   });
 
   it('cancels the composer with escape', () => {
@@ -283,7 +283,7 @@ describe('DiffView comments', () => {
 
     fireEvent.keyDown(gutter, { key: 'Enter' });
 
-    const box = screen.getByRole('textbox', { name: 'Note on line 39' });
+    const box = screen.getByRole('textbox', { name: 'Comment on line 39' });
     expect(document.activeElement).toBe(box);
     expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' });
     const lineRow = gutter.closest('[role="row"]') as HTMLElement;
@@ -302,7 +302,7 @@ describe('DiffView comments', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
       key: 'Enter',
     });
-    const box = screen.getByRole('textbox', { name: 'Note on line 40' });
+    const box = screen.getByRole('textbox', { name: 'Comment on line 40' });
     fireEvent.change(box, { target: { value: 'Guard a zero weight' } });
     fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
 
@@ -385,7 +385,7 @@ describe('DiffView comments', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
       key: 'Enter',
     });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Note on line 40' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Comment on line 40' }), {
       target: { value: '  Rebuild this from the intro question.  ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Ask agent' }));
@@ -398,7 +398,7 @@ describe('DiffView comments', () => {
     expect(comments.onSubmit).not.toHaveBeenCalled();
   });
 
-  it('shows a note under its line with Fix and Close note, and no control says Resolve', () => {
+  it('shows a note under its line with Fix and Close comment, and no control says Resolve', () => {
     const onFix = vi.fn();
     const comments = commentsWith([
       thread({ actions: [{ id: 'fix', label: 'Fix', isPrimary: true, onClick: onFix }] }),
@@ -407,16 +407,16 @@ describe('DiffView comments', () => {
     screen.getByText('Guard the residual when a weight is zero');
     fireEvent.click(screen.getByRole('button', { name: 'Fix' }));
     expect(onFix).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'Close note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close comment' }));
     expect(comments.onClose).toHaveBeenCalledWith('n1');
     expect(screen.queryAllByRole('button', { name: /^Resolve/ })).toEqual([]);
   });
 
-  it('blocks Close note and Delete on a note a fixer is working on, and says why', () => {
+  it('blocks Close comment and Delete on a note a fixer is working on, and says why', () => {
     const reason = 'A fixer is working on this note';
     const comments = commentsWith([thread({ lockReason: reason, meta: 'Sonnet 5.5 · Medium' })]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
-    const close = screen.getByRole('button', { name: 'Close note' });
+    const close = screen.getByRole('button', { name: 'Close comment' });
     expect(close.hasAttribute('disabled')).toBe(true);
     expect(close.hasAttribute('title')).toBe(false);
     expect(tooltipTextOf({ element: close })).toBe(reason);
@@ -585,9 +585,9 @@ describe('DiffView file-level comments', () => {
     render(<DiffView files={[LEDGER]} comments={comments} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
-    expect(screen.getByText('Note on this file')).toBeDefined();
+    expect(screen.getByText('Comment on this file')).toBeDefined();
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Split this file' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
 
     expect(comments.onSubmit).toHaveBeenCalledWith(LEDGER.path, null, 'Split this file');
   });
@@ -620,7 +620,7 @@ describe('DiffView file-level comments', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
 
-    expect(screen.getByText('Note on this file')).toBeDefined();
+    expect(screen.getByText('Comment on this file')).toBeDefined();
     screen.getByRole('grid');
   });
 

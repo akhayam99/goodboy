@@ -290,8 +290,10 @@ describe('the branch page of a branch with no pull request', () => {
       ),
     );
     expect(
-      within(screen.getByRole('region', { name: 'Summary' })).getByText('5', { selector: 'span' }),
-    ).toBeDefined();
+      within(screen.getByRole('region', { name: 'Summary' })).queryByText('5', {
+        selector: 'span',
+      }),
+    ).toBeNull();
     expect(screen.queryByRole('region', { name: 'In this branch' })).toBeNull();
   });
 

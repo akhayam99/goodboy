@@ -259,9 +259,9 @@ Pull request `None yet`, Remote, Branch, the conflict cell amber), then the crea
 form, prefilled from the branch (`pullRequestPrefillOf`: one commit gives its
 headline, several give the linked issue and the first headline, the description
 lists the commits and `Closes HL-1372` for a Linear issue), and two summary cards
-(`BranchSummary`, numbers from `branchSummaryOf`): `Commits` with the count, how many are not pushed and the last three
-subjects, and `Changes` with the files, the lines added and removed, a bar by top folder and the three biggest
-folders. The files always come from the branch against its base (`useBranchSummaryDiff`, its own read),
+(`BranchSummary`, numbers from `branchSummaryOf`): `Commits` with the last three
+subjects, and `Changes` with a bar by top folder and the three biggest
+folders. Neither card shows a count: the tab strip and the status row own each number once. The files always come from the branch against its base (`useBranchSummaryDiff`, its own read),
 never from the Files tab, which can show one commit or the working tree. Each card opens its tab (Commits, Files); the lists themselves live there. A card reads a skeleton while
 the diff loads and `Couldn't read this` with Retry when it fails. The form works on the branch on screen: it
 reads that mount's status and base branches and opens the pull request from it,
@@ -311,10 +311,10 @@ reopen controls are left out. `E` edits the title in scope
 
 **Comments.** The section header holds a segmented control `All 9 · Notes 3 · On GitHub 6`
 (only while both notes and host threads exist) and `Open · Resolved` (only while there are
-comments), with `Fix N comments` at its right, the one fix action. The list (`Needs you`,
-`Working`, `Ready to push`, `Open`, `Left open on GitHub`; `Done` shows under
+comments), with `Fix N threads` at its right, the one fix action. The list (`Needs you`,
+`Working`, `Done`, `Left open on GitHub`; settled threads show under
 `Resolved`) lists your notes and the pull request threads together, each row with
-the author and its age, its `path:line`, the first line of the body and a `Note` chip only
+the author and its age, its `path:line`, the first line of the body and a `Draft` chip only
 while the list mixes sources. A note keeps `Post to GitHub` (it moves the note into
 the pull request's review draft and closes it) and `Delete` under its thread, and a
 note shows even while the host is still loading or failed to load. The open thread has the code
@@ -339,7 +339,7 @@ registry facts and the rail all read it, so a diverged branch never reads `Pushe
 running count (`worktreeEntryFactsOf`; the comment
 source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
+draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N threads`, in the Branch header on the Comments section, is the one fix launch.
 
 **Files.** The branch against its base, with the changed file list in a rail on the
 right of the Branch page, dedicated to the diff (`FileRail` in `features/diff/components`).
@@ -362,7 +362,7 @@ over the right edge of the diff (`data-file-rail="overlay"`) until a pick, `Esc`
 closes it. Folding and opening move like the session rail (`FileRail` over `useFoldPhase`,
 the page as its frame): the width eases on the 220ms fold token while the list, held at its
 final width, fades out (`fold-label-out`) or in (`fold-label-in`); a switch between docked and
-overlay (the page crossing 880px) remounts the rail in place, with no move. The rail head reads `Next unviewed N`, the keyboard button and Fold, then the
+overlay (the page crossing 880px) remounts the rail in place, with no move. The rail head reads `Viewed N of M` with `Next` (tooltip: go to the next file you have not viewed), the keyboard button and Fold, then the
 filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
 each file row keeps its viewed mark.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
@@ -373,7 +373,7 @@ or filled with a check once every file in it is viewed, tooltip `3 of 5
 viewed`), the path and, only while it is collapsed, its file count and its
 `+N −N` in one muted tone (no green or red; an open folder shows none, its files
 carry them); a file row (28 high, 8 per level with a 1px guide) leads with the viewed
-toggle (a checkbox button, `Viewed: <name>`; an amber dot when the file changed after
+mark (a check once viewed, no checkbox: the file header owns Viewed; an amber dot when the file changed after
 it was viewed; none on a merged or closed pull request), then the name (a rename shows
 `from <old path>` under it, a deleted file is struck through), a comment count chip whose
 tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 300 or more, and
@@ -384,7 +384,7 @@ for a screen reader. A file or folder row has no tooltip: the full path is in th
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
 returns to the diff (and closes a rail that lies over it). A keyboard button beside
-`Next unviewed` at the head of the rail carries the key hint in its tooltip and opens the full list.
+`Next` at the head of the rail carries the key hint in its tooltip and opens the full list.
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
 subsequence of the path, and one filter menu beside the field (`Filter and group files`,
 tinted while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
@@ -594,7 +594,7 @@ header or from anywhere else, and generated or binary files start collapsed.
 `Comment` (the header button, with the count of both kinds; the tree rows carry no comment
 button) opens a composer under the header and scrolls to it. It always saves a local note on the file (the same note a line
 gets, without an anchor), with a pull request or without one; the composer reads
-`Note on this file` and `Add note` in both cases. The note sits under the file
+`Comment on this file` and `Add comment` in both cases. The note sits under the file
 header, counts in the header and the tree row, and lists in Comments
 with the file path and no line. Reaching the pull request is explicit: `Post to GitHub` under the note
 in Comments turns a file note into a `pr_review_drafts` row
@@ -606,15 +606,15 @@ is stale, and skipped on submit, only when its file leaves the pull request.
 Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-`+ Add note` on a line saves the note with the project and branch of the active
+`+ Add comment` on a line saves the note with the project and branch of the active
 mount (`diff_comments.project_id` and `branch`, m223). A note shows `Edit`,
-`Close note` and `Delete` in the diff (`Edit` rewrites the text through
+`Close comment` and `Delete` in the diff (`Edit` rewrites the text through
 `updateDiffCommentBody`; Delete acts at once and offers Undo, which posts the same note again); the one fix action is `Fix comments` in the toolbar. While a fixer
-works on a note, Edit, Close note and Delete are disabled with "A fixer is working on
-this note". Close note goes through `closeResolvedNote`, the same path
+works on a note, Edit, Close comment and Delete are disabled with "A fixer is working on
+this comment". Close comment goes through `closeResolvedNote`, the same path
 Comments uses. The Files tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
-mount used it, and the rest wait in `Unassigned notes` on the Session overview,
+mount used it, and the rest wait in `Unassigned comments` on the Session overview,
 each with `Move to` and `Discard`. `Move to` names the branch when the session
 has one, and opens an inline row of branches (the active one first, one per
 project and branch, no dialog) when it has several; the move goes through
@@ -633,7 +633,7 @@ browser idles, so a large diff stays responsive.
 
 **Notes and host threads in Files.** The diff draws both kinds of thread under their line, in one
 card shell (`CommentThread`), told apart by words and glyph, never by colour alone. A
-note is the `You` tile, the chip `Note`, its state and its age, with `Edit`, `Close note` and
+note is the `You` tile, the chip `Draft`, its state and its age, with `Edit`, `Close comment` and
 `Delete`; a host thread is the host's glyph, the author's avatar and name, the chip `On GitHub`
 (`On GitLab`, `On Bitbucket`), `Open` or `Resolved`, `3 replies` with the replies listed, and
 `Reply` (an inline composer posting through the reply verb, only where the host can

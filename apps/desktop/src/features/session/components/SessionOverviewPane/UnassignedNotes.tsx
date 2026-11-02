@@ -55,11 +55,11 @@ export const UnassignedNotes = ({ sessionId }: Props) => {
     void assignDiffComment(sessionId, noteId, mountId);
 
   return (
-    <section aria-label="Unassigned notes" className="flex min-w-0 flex-col gap-2">
+    <section aria-label="Unassigned comments" className="flex min-w-0 flex-col gap-2">
       <SectionHeader
-        label="Unassigned notes"
+        label="Unassigned comments"
         headingLevel={2}
-        hint="Written before notes were tied to a branch. Move or discard them."
+        hint="Written before comments were tied to a branch. Move or discard them."
         action={
           unassigned.length >= 2 ? (
             <Button

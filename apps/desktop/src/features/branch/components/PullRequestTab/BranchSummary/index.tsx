@@ -9,7 +9,6 @@ import { SummaryCard, type SummaryCardState } from './SummaryCard';
 
 type Props = {
   readonly commits: ReadonlyArray<BranchCommit>;
-  readonly notPushed?: number;
   readonly files: ReadonlyArray<FileDiff>;
   readonly isLoading: boolean;
   readonly error: string | null;
@@ -20,7 +19,6 @@ type Props = {
 
 export const BranchSummary = ({
   commits,
-  notPushed,
   files,
   isLoading,
   error,
@@ -28,10 +26,7 @@ export const BranchSummary = ({
   onOpen,
   onOpenFolder,
 }: Props) => {
-  const summary = useMemo(
-    () => branchSummaryOf({ commits, files, notPushed }),
-    [commits, files, notPushed],
-  );
+  const summary = useMemo(() => branchSummaryOf({ commits, files }), [commits, files]);
   const state: SummaryCardState = error !== null ? 'error' : isLoading ? 'loading' : 'ready';
   if (state === 'ready' && summary.commitCount === 0 && summary.fileCount === 0) {
     return null;

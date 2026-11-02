@@ -72,23 +72,23 @@ describe('the u24 prpage files scenes', () => {
   it('draws a note and a GitHub thread on Files, told apart by chip, with Fix comments in the toolbar', async () => {
     renderScene({ name: 'branch-files-both' });
 
-    const notes = await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    const notes = await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
     expect(notes.length).toBeGreaterThanOrEqual(1);
     const hosts = screen.getAllByRole('article', { name: /^On GitHub from / });
     expect(hosts.length).toBeGreaterThanOrEqual(1);
     for (const note of notes) {
-      expect(within(note).getByText('Note')).toBeDefined();
+      expect(within(note).getByText('Draft')).toBeDefined();
     }
     for (const host of hosts) {
       expect(within(host).getByText('On GitHub')).toBeDefined();
     }
-    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ threads?$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Write review' })).toBeNull();
   });
 
   it('puts the three controls on every file header, with Viewed a checkbox and no native title', async () => {
     renderScene({ name: 'branch-files-both' });
-    await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
 
     const headers = Array.from(
       document.querySelectorAll<HTMLElement>('[data-slot="diff-file-header"]'),
@@ -103,7 +103,7 @@ describe('the u24 prpage files scenes', () => {
 
   it('keeps the file cards inside one page column', async () => {
     renderScene({ name: 'branch-files-both' });
-    await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
 
     const cards = Array.from(document.querySelectorAll('[data-file-card]'));
     expect(cards.length).toBeGreaterThan(1);
@@ -114,7 +114,7 @@ describe('the u24 prpage files scenes', () => {
 
   it('shows Viewed, Comment and one menu on every file header, the rest inside the menu', async () => {
     renderScene({ name: 'branch-files-both' });
-    await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
 
     const [header] = Array.from(
       document.querySelectorAll<HTMLElement>('[data-slot="diff-file-header"]'),
@@ -130,17 +130,17 @@ describe('the u24 prpage files scenes', () => {
 
   it('shows Comments with notes only and no host before a pull request, and no Checks', async () => {
     renderScene({ name: 'branch-files-nopr-notes' });
-    await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(screen.queryAllByRole('article', { name: /^On GitHub/ })).toHaveLength(0);
-    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ threads?$/ })).toBeNull();
   });
 
   it('draws Files at 1920 in the split layout', async () => {
     renderScene({ name: 'branch-files-1920-split' });
-    await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    await screen.findAllByRole('article', { name: /^Draft from You/ }, WAIT);
 
     expect(localStorage.getItem('goodboy:diff-layout-mode')).toBe('split');
   });
@@ -149,12 +149,12 @@ describe('the u24 prpage files scenes', () => {
     renderScene({ name: 'branch-comments-both' });
 
     const list = await screen.findByRole('navigation', { name: 'Comments' }, WAIT);
-    expect(within(list).getAllByText('Note').length).toBeGreaterThanOrEqual(1);
+    expect(within(list).getAllByText('Draft').length).toBeGreaterThanOrEqual(1);
     expect(within(list).queryAllByText('On GitHub')).toHaveLength(0);
     expect(screen.getByRole('tab', { name: /^All/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^On GitHub/ })).toBeDefined();
     expect(screen.queryByRole('tab', { name: 'Resolved' })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Fix \d+ threads?$/ })).toBeDefined();
   });
 });

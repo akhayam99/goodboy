@@ -226,7 +226,7 @@ describe('Overview capabilities from the session Overview', () => {
     );
     await advance();
 
-    screen.getByRole('region', { name: 'Unassigned notes' });
+    screen.getByRole('region', { name: 'Unassigned comments' });
   });
 
   it('leaves the detached mount out of the Ask context and the worktree list', async () => {

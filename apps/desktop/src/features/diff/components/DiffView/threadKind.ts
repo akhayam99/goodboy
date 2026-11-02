@@ -23,5 +23,5 @@ export const kindLabelOf = ({ thread }: ThreadParams): string => {
   if (thread.source === 'host') {
     return `On ${hostLabelOf({ host: thread.host })}`;
   }
-  return thread.kindLabel ?? 'Note';
+  return thread.kindLabel ?? 'Draft';
 };

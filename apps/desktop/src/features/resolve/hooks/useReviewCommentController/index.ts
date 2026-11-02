@@ -240,16 +240,7 @@ export const useReviewCommentController = ({
             hint: null,
           }),
         });
-        announceStart({
-          sessionId,
-          started,
-          count: 1,
-          noun:
-            entries.find((entry) => entry.threadId === threadId)?.row.thread.originKind ===
-            'diff_comment'
-              ? 'note'
-              : 'comment',
-        });
+        announceStart({ sessionId, started, count: 1 });
       } catch (caught) {
         if (!isReportedError(caught)) {
           setError(threadId, formatError(caught));
@@ -258,7 +249,7 @@ export const useReviewCommentController = ({
         setIsSubmitting(false);
       }
     },
-    [announceStart, entries, isSubmitting, sessionId, setError],
+    [announceStart, isSubmitting, sessionId, setError],
   );
 
   const submitCompose = useCallback(async (): Promise<void> => {

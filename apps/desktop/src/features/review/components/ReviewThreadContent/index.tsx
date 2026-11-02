@@ -13,7 +13,7 @@ type Props = {
   readonly onOpenUrl: (url: string) => void;
 };
 
-const NOTE_LABEL = 'Note';
+const DRAFT_LABEL = 'Draft';
 
 const OUTDATED_HINT = 'This comment is anchored to code that later commits changed';
 
@@ -42,7 +42,7 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
             kind="state"
             tone="neutral"
             icon={<MessageSquare size={ICON_SIZE.row} aria-hidden />}
-            label={NOTE_LABEL}
+            label={DRAFT_LABEL}
           />
         )}
         {head.outdated === true && (

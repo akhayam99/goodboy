@@ -81,7 +81,7 @@ describe('the r4 comments scenes', () => {
     screen.getByRole('navigation', { name: 'Comments' });
     expect(drawer()).toBeNull();
     expect(screen.queryByRole('toolbar', { name: 'Comment actions' })).toBeNull();
-    const fix = screen.getByRole('button', { name: /^Fix \d+ comments?$/ });
+    const fix = screen.getByRole('button', { name: /^(Fix|Fixing) \d+ threads?$/ });
     expect(fix.closest('[data-slot="branch-tab-actions"]')).not.toBeNull();
     expect(screen.queryByRole('article', { name: 'Comment' })).toBeNull();
   });

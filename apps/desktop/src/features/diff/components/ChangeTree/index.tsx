@@ -38,6 +38,7 @@ import { FileRow } from './FileRow';
 import { FolderRow } from './FolderRow';
 import { KeyHints } from './KeyHints';
 import { TreeHead } from './TreeHead';
+import { ViewedProgress } from './ViewedProgress';
 import { treeKeyAction } from './treeKeys';
 
 type TreeFilter = {
@@ -287,12 +288,7 @@ export const ChangeTree = ({
       className="flex min-h-0 w-full min-w-0 flex-col"
     >
       <div className="flex shrink-0 items-center justify-between gap-1 px-2 pb-2">
-        <Button size="xs" variant="quiet" disabled={unviewedCount === 0} onClick={onNextUnviewed}>
-          Next unviewed
-          {unviewedCount === 0 ? null : (
-            <span className="tabular-nums text-faint-foreground">{unviewedCount}</span>
-          )}
-        </Button>
+        <ViewedProgress viewed={viewedCount} total={allFiles.length} onNext={onNextUnviewed} />
         <div className="flex shrink-0 items-center gap-1">
           <KeyHints />
           <IconButton

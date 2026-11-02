@@ -173,9 +173,7 @@ describe('Review as one flow', () => {
 
     expect(within(list()).getByRole('region', { name: 'Needs you' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Working' })).toBeDefined();
-    expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
-    expect(within(list()).getByRole('region', { name: 'Open' })).toBeDefined();
-    expect(within(list()).queryByRole('region', { name: 'Done' })).toBeNull();
+    expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Left open on GitHub' })).toBeDefined();
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
     expect(screen.queryByRole('complementary', { name: 'Conversation' })).toBeNull();
@@ -189,8 +187,8 @@ describe('Review as one flow', () => {
   it('counts each state group in its own title and has no summary line or filter menu', async () => {
     await mount({ threadId: null });
 
-    const open = within(list()).getByRole('region', { name: 'Open' });
-    expect(within(open).getByRole('heading').textContent).toMatch(/^Open( \d+)?$/);
+    const open = within(list()).getByRole('region', { name: 'Needs you' });
+    expect(within(open).getByRole('heading').textContent).toMatch(/^Needs you( \d+)?$/);
     showResolved();
     expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
     expect(screen.queryByLabelText('Comment summary')).toBeNull();
@@ -209,13 +207,13 @@ describe('Review as one flow', () => {
     expect(within(list()).queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
-  it('orders the groups Needs you, Working, Ready to push, Open, Left open', async () => {
+  it('orders the groups Needs you, Working, Done, Left open', async () => {
     await mount({ threadId: null });
 
     const titles = within(list())
       .getAllByRole('region')
       .map((region) => region.getAttribute('aria-label'));
-    const wanted = ['Needs you', 'Working', 'Ready to push', 'Open', 'Left open on GitHub'];
+    const wanted = ['Needs you', 'Working', 'Done', 'Left open on GitHub'];
     expect(titles).toEqual(wanted.filter((title) => titles.includes(title)));
     expect(titles[0]).toBe('Needs you');
   });
@@ -233,10 +231,10 @@ describe('Review as one flow', () => {
         (node) => node.textContent ?? '',
       ),
     ];
-    for (const word of ['Fix ready', 'Question for you']) {
+    for (const word of ['Fix to review', 'Question']) {
       expect(words, word).toContain(word);
     }
-    for (const word of ['Working', 'Applied', 'Open', 'Left open', 'Replied', 'Needs you']) {
+    for (const word of ['Working', 'Applied', 'Needs you']) {
       expect(words, word).not.toContain(word);
     }
     expect(words).not.toContain('Skipped');
@@ -449,9 +447,9 @@ describe('Review as one flow', () => {
     await mount({ threadId: null });
 
     const changed = rowDescribed(/Comment changed/);
-    expect(changed.querySelector('[data-row-author]')?.textContent).toMatch(/^kenji-w · /);
+    expect(changed.querySelector('[data-row-author]')?.textContent).toBe('kenji-w');
     expect(changed.querySelector('[data-row-file]')?.textContent).toMatch(/\.ts/);
-    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Fix ready');
+    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Fix to review');
     expect(changed.textContent).not.toContain('Comment changed');
   });
 

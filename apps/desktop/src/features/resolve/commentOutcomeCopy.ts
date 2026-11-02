@@ -26,7 +26,7 @@ export const OUTCOME_ACTION = {
   applyFix: RESOLVE_VOCAB.applyFix,
   discard: 'Discard',
   postReply: 'Post reply',
-  closeNote: 'Close note',
+  closeNote: 'Close comment',
   resolveWithoutReply: 'Resolve without reply',
   answer: 'Answer',
   askOnHost: 'Ask on GitHub',

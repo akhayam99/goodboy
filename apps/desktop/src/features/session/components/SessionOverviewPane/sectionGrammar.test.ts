@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest';
 const FEATURES = join(__dirname, '..', '..', '..');
 
 const SECTIONS = [
-  { name: 'Unassigned notes', file: 'session/components/SessionOverviewPane/UnassignedNotes.tsx' },
+  {
+    name: 'Unassigned comments',
+    file: 'session/components/SessionOverviewPane/UnassignedNotes.tsx',
+  },
 ];
 
 describe('the Overview section headers', () => {

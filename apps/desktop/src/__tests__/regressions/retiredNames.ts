@@ -179,4 +179,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bSwitch to (?:light|dark) mode\b/i,
     use: NAMES.theme,
   },
+  { id: 'add-note', pattern: /\bAdd note\b/, use: NAMES.addComment },
+  { id: 'note-on-line', pattern: /\bNote on (?:line|this file)\b/, use: NAMES.addComment },
 ];

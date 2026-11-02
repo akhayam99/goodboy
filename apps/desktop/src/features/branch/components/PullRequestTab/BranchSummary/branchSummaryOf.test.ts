@@ -67,7 +67,7 @@ describe('branchSummaryOf', () => {
     expect(summary.folders.reduce((sum, folder) => sum + folder.files, 0)).toBe(files.length);
   });
 
-  it('counts binary files without adding lines', () => {
+  it('counts binary files in the file count', () => {
     const summary = branchSummaryOf({
       commits: [],
       files: [
@@ -76,8 +76,6 @@ describe('branchSummaryOf', () => {
       ],
     });
     expect(summary.fileCount).toBe(2);
-    expect(summary.additions).toBe(5);
-    expect(summary.deletions).toBe(2);
   });
 
   it('reads zero files and zero commits as zeros', () => {
@@ -88,7 +86,7 @@ describe('branchSummaryOf', () => {
     expect(summary.hiddenFolderCount).toBe(0);
   });
 
-  it('counts commits, the ones not pushed and the last three subjects', () => {
+  it('counts commits and keeps the last three subjects', () => {
     const summary = branchSummaryOf({
       commits: [
         commit({ subject: 'one', isPushed: false }),
@@ -99,7 +97,6 @@ describe('branchSummaryOf', () => {
       files: [],
     });
     expect(summary.commitCount).toBe(4);
-    expect(summary.notPushed).toBe(2);
     expect(summary.latestSubjects).toEqual(['one', 'two', 'three']);
   });
 });

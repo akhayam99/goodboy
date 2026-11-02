@@ -128,7 +128,6 @@ export const PullRequestTab = ({
       canEdit={canEdit}
       request={request}
       commits={commits}
-      notPushed={start.step.unpushed}
       files={summaryDiff.files}
       isDiffLoading={summaryDiff.isLoading}
       diffError={summaryDiff.error}

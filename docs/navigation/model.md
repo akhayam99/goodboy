@@ -75,7 +75,7 @@
   `restore` glyph. The Sessions door works from every place, the New session
   draft included.
 - **An archived session is read-only until Restore.** Its Overview header holds
-  Restore alone (no Archived chip, no New), and the notices, unassigned notes and
+  Restore alone (no Archived chip, no New), and the notices, unassigned comments and
   Next are not drawn. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing
   restores on its own, so a shelved session never spends by itself.

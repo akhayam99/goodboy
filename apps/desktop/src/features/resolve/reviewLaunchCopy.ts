@@ -6,10 +6,14 @@ export const REVIEW_LAUNCH_LABEL = {
   fixup: 'Fixup of the original',
 } as const;
 
-export type LaunchNoun = 'comment' | 'note';
-
 type CountParams = {
   readonly count: number;
 };
 
 export const fixLabel = ({ count }: CountParams): string => `Fix ${count}`;
+
+export const threadCountText = ({ count }: CountParams): string =>
+  count === 1 ? '1 thread' : `${count} threads`;
+
+export const commitCountText = ({ count }: CountParams): string =>
+  count === 1 ? '1 commit' : `${count} commits`;

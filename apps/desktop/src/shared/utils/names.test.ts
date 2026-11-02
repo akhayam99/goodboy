@@ -75,6 +75,7 @@ describe('names', () => {
       pin: 'Pin session',
       unpin: 'Unpin session',
       notes: 'Notes',
+      addComment: 'Add comment',
       tasks: 'Tasks',
       notifications: 'Notifications',
       reply: 'Reply',
