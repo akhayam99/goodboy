@@ -1,4 +1,5 @@
 import { mockSceneIpc } from './mockSceneIpc';
+import type { IpcHandler } from './sceneIpcAnswer';
 import type { InvokeArgs } from '@tauri-apps/api/core';
 import type {
   BranchCommit,
@@ -968,10 +969,16 @@ const mockBranchCommits = (): ReadonlyArray<BranchCommit> =>
 
 const installResolveMockIpc = ({
   deliveredReplyBody,
+  layeredIpc,
 }: {
   readonly deliveredReplyBody: string | null;
+  readonly layeredIpc: IpcHandler | null;
 }): void => {
   mockSceneIpc((cmd, payload) => {
+    const layered = layeredIpc === null ? null : layeredIpc(cmd, payload);
+    if (layered !== null) {
+      return layered;
+    }
     if (cmd === 'worktree_diff_range') {
       return FAKE_RETRY_DIFF;
     }
@@ -1010,6 +1017,7 @@ type SeedParams = {
   readonly selectable?: boolean;
   readonly deliveredReplyBody?: string | null;
   readonly replyOnly?: ReplyOnlyVariant;
+  readonly layeredIpc?: IpcHandler;
 };
 
 const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
@@ -1205,8 +1213,9 @@ export const seedResolveScene = ({
   selectable = false,
   deliveredReplyBody = null,
   replyOnly,
+  layeredIpc,
 }: SeedParams): void => {
-  installResolveMockIpc({ deliveredReplyBody });
+  installResolveMockIpc({ deliveredReplyBody, layeredIpc: layeredIpc ?? null });
   const failed = failure === undefined ? null : failureSeed({ failure });
   const replied = replyOnly === undefined ? null : replyOnlySeed({ variant: replyOnly });
 

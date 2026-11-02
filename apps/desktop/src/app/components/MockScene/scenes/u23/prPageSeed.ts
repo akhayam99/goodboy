@@ -19,6 +19,7 @@ import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { CTX_STATUS } from '../brand/contextBranch';
 import type { FakeHandlers } from '../brand/fakeTauri';
 import { mockSceneIpc } from '../mockSceneIpc';
+import type { IpcHandler } from '../sceneIpcAnswer';
 import {
   NOW_ISO,
   RESOLVE_SCENE_PR,
@@ -534,18 +535,22 @@ export const prPageMountState = ({ github }: MountStateParams) => ({
   },
 });
 
-export const installPrPageIpc = ({
+export const prPageIpc = ({
   behind,
   unpushed = 0,
   isRebasing = false,
-}: StatusParams): void => {
+}: StatusParams): IpcHandler => {
   const handlers = prPageHandlers({ behind, unpushed, isRebasing });
-  mockSceneIpc((command, payload) => {
+  return (command, payload) => {
     if (command === 'gh_run') {
       return { stdout: prPageGhStdout({ payload }), stderr: '', exitCode: 0 };
     }
     return handlers[command]?.(undefined) ?? null;
-  });
+  };
+};
+
+export const installPrPageIpc = ({ behind, unpushed, isRebasing }: StatusParams): void => {
+  mockSceneIpc(prPageIpc({ behind, unpushed, isRebasing }));
 };
 
 export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }): void => {

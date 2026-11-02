@@ -151,7 +151,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Use reset',
-        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset, and warns when spending it now would waste it.',
+        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset,.',
       },
       {
         term: NAMES.spendCap,
@@ -197,7 +197,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start blank',
-        desc: 'Opens the session on its Overview, to add the goal, folders and work later, titled Named by Goodboy until you rename it.',
+        desc: 'Opens the session on its Overview, to add the goal, folders and work later.',
       },
       {
         term: 'Chat',
@@ -217,8 +217,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The title, the folder and one signal: an open question, a failed check, the pull request in its state color or the agents at work. Rest on it for age, issues and cost.',
       },
       {
-        term: 'Board and List',
-        desc: 'The header switches between lanes and one aligned list; the filter beside it sorts, groups and narrows both.',
+        term: 'Board and sidebar list',
+        desc: 'Lanes on the Sessions page. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
       },
       {
         term: 'Done and archived',
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview cards',
-        desc: "The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. A Running row carries the run's own button. The full log sits in the session menu.",
+        desc: 'The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. Needs you holds runs, questions and fixes. The full log sits in the session menu.',
       },
       {
         term: 'Next',
@@ -446,7 +446,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, Needs you on top. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S.',
+        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S.',
       },
       {
         term: 'Fix comments',
@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -731,7 +731,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.whatsNew,
-        desc: 'Searchable release notes. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
+        desc: 'Release notes in the Help window. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
       },
       {
         term: 'Report a bug',
