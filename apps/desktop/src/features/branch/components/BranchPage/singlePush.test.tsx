@@ -6,6 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import {
@@ -21,6 +22,7 @@ import {
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { seedCommentsScene } from '../../../../app/components/MockScene/scenes/u23/commentsSeed';
+import { prPageHandlers } from '../../../../app/components/MockScene/scenes/u23/prPageSeed';
 import { PUSH_MISSING } from '../../../resolve/reviewPushCopy';
 import { BranchPage } from '.';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
@@ -73,6 +75,11 @@ const selectReady = (): string => {
 };
 
 const mountReady = async (): Promise<void> => {
+  const handlers = prPageHandlers({ behind: 0, unpushed: 3 });
+  vi.mocked(invoke).mockImplementation(
+    async (command: string) =>
+      handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
+  );
   seedCommentsScene({ variant: 'ready-to-push' });
   render(
     <ToastProvider>
@@ -274,12 +281,15 @@ describe('one Push at a time', () => {
     const label = headerPush(/^Push(?: \d+)? commits?$/).textContent ?? '';
     const ready = within(list()).getByRole('region', { name: 'Done' });
     const count = Number(/(\d+)/.exec(ready.textContent ?? '')?.[1] ?? 0);
-    expect(label).toBe('Push commits');
+    expect(label).toBe('Push 3 commits');
     expect(count).toBe(3);
 
     fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
-    expect(prepare).toHaveBeenLastCalledWith({ sessionId: SESSION.id, mountId: null });
+    expect(prepare).toHaveBeenLastCalledWith({
+      sessionId: SESSION.id,
+      mountId: expect.any(String),
+    });
   });
 
   it('pushes only the selected comment from its own detail', async () => {
@@ -293,7 +303,7 @@ describe('one Push at a time', () => {
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenLastCalledWith({
       sessionId: SESSION.id,
-      mountId: null,
+      mountId: expect.any(String),
       threadIds: [threadId],
       isolated: true,
     });

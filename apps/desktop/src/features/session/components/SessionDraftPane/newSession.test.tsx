@@ -295,7 +295,7 @@ describe('New session page', () => {
     await pickKind({ name: /^Orchestrated/ });
 
     expect(isPicked({ name: /^Orchestrated/ })).toBe(true);
-    screen.getByText('Auto plans each next step as it goes.');
+    screen.getByText('Orchestrated plans each next step as it goes.');
     await pickKind({ name: /^Orchestrated/ });
     expect(isPicked({ name: /^Orchestrated/ })).toBe(false);
     screen.getByText('Auto picks how to run it. Or pick a kind.');

@@ -54,7 +54,7 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }:
   const hasText = shown.blocks.length > 0;
   return (
     <div data-testid="ask-turn" className="flex flex-col gap-3">
-      <UserMessageBubble text={question.content} />
+      <UserMessageBubble isOnDrawer text={question.content} />
       {reply === null ? null : (
         <div
           ref={reveal.rootRef}

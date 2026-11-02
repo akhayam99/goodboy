@@ -92,6 +92,12 @@ describe('Ask turn shares the Chat transcript parts', () => {
     expect(container.querySelectorAll('[data-chat-message="user"]')).toHaveLength(1);
   });
 
+  it('draws the question bubble lighter than the drawer so it reads as a turn', () => {
+    const { container } = mount({ reply: REPLY });
+    const bubble = container.querySelector('[data-chat-message="user"]');
+    expect(bubble?.getAttribute('data-surface')).toBe('drawer');
+  });
+
   it('offers one Start work from chat action on a finished answer', () => {
     const started: ChatMessageId[] = [];
     mount({ reply: REPLY, onStartWork: (messageId) => started.push(messageId) });

@@ -240,7 +240,7 @@ describe('the focused Auto launch', () => {
     const { container } = mount({ id: FOCUSED });
 
     const tree = await focusedTree();
-    expect(screen.getByRole('button', { name: 'All launches' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'All runs' })).toBeDefined();
     expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
       '2 working, 3 waiting, 7 done',
     );

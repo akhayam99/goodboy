@@ -13,7 +13,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import type { MountGithubState } from '../../../../../store/types';
+import type { MountGithubState, SessionGithubState } from '../../../../../store/types';
 import { handlersFor } from '../brand/DiffStage';
 import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { CTX_STATUS } from '../brand/contextBranch';
@@ -33,6 +33,7 @@ export type PrPageVariant =
   | 'draft'
   | 'editing'
   | 'none'
+  | 'none-unpushed'
   | 'merge-blocked'
   | 'merge-methods'
   | 'narrow'
@@ -222,6 +223,7 @@ const shapeOf = ({ variant }: { readonly variant: PrPageVariant }): Shape => {
         isMerged: false,
       };
     case 'none':
+    case 'none-unpushed':
       return {
         pr: null,
         reviews: [],
@@ -470,23 +472,74 @@ export const prPageGhStdout = ({ payload }: { readonly payload: unknown }): stri
 
 type StatusParams = {
   readonly behind: number;
+  readonly unpushed?: number;
   readonly isRebasing?: boolean;
 };
 
-const prPageStatus = ({ behind, isRebasing = false }: StatusParams): WorktreeStatus => ({
+const prPageStatus = ({
+  behind,
+  unpushed = 0,
+  isRebasing = false,
+}: StatusParams): WorktreeStatus => ({
   ...CTX_STATUS,
   mainDistance: { kind: 'known', ahead: COMMITS.length, behind },
-  upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+  upstreamDistance: { kind: 'known', ahead: unpushed, behind: 0 },
   ...(isRebasing && { branch: null, inProgress: 'rebase' }),
 });
 
-export const prPageHandlers = ({ behind, isRebasing = false }: StatusParams): FakeHandlers => ({
+export const prPageHandlers = ({
+  behind,
+  unpushed = 0,
+  isRebasing = false,
+}: StatusParams): FakeHandlers => ({
   ...handlersFor(BRANCH_FILES_PATCH),
-  worktree_status: () => prPageStatus({ behind, isRebasing }),
+  worktree_status: () => prPageStatus({ behind, unpushed, isRebasing }),
 });
 
-const installIpc = ({ behind, isRebasing = false }: StatusParams): void => {
-  const handlers = prPageHandlers({ behind, isRebasing });
+type RailGithubParams = {
+  readonly number: number;
+  readonly title: string;
+  readonly headBranch: string;
+  readonly checks: PullRequestState['checks'];
+};
+
+export const railPullRequestGithubOf = ({
+  number,
+  title,
+  headBranch,
+  checks,
+}: RailGithubParams): MountGithubState =>
+  githubOf({ pr: { ...BASE_PR, number, title, headBranch, checks }, detail: null });
+
+const UNPUSHED_BEFORE_PR = 3;
+
+type UnpushedParams = {
+  readonly variant: PrPageVariant;
+};
+
+export const prPageUnpushedOf = ({ variant }: UnpushedParams): number =>
+  variant === 'none-unpushed' ? UNPUSHED_BEFORE_PR : 0;
+
+type MountStateParams = {
+  readonly github: SessionGithubState;
+};
+
+export const prPageMountState = ({ github }: MountStateParams) => ({
+  projects: [projectOf()],
+  sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
+  sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
+  diffMountPath: { [SESSION_ID]: PR_PAGE_WORKTREE },
+  mountGithub: {
+    [MOUNT_ID]: githubOf({ pr: github.pr, detail: github.detail }),
+  },
+});
+
+export const installPrPageIpc = ({
+  behind,
+  unpushed = 0,
+  isRebasing = false,
+}: StatusParams): void => {
+  const handlers = prPageHandlers({ behind, unpushed, isRebasing });
   mockSceneIpc((command, payload) => {
     if (command === 'gh_run') {
       return { stdout: prPageGhStdout({ payload }), stderr: '', exitCode: 0 };
@@ -553,5 +606,5 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
     refreshSessionPr: noop,
     refreshSessionPrDetail: noop,
   });
-  installIpc({ behind: shape.behind, isRebasing });
+  installPrPageIpc({ behind: shape.behind, unpushed: prPageUnpushedOf({ variant }), isRebasing });
 };

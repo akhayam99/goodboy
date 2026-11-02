@@ -2,25 +2,23 @@ import { PullRequestActivitySkeleton } from '../../../../../features/branch/comp
 import { PullRequestStatusStrip } from '../../../../../features/branch/components/PullRequestTab/PullRequestStatusStrip';
 import type { StatusCell } from '../../../../../features/branch/components/PullRequestTab/statusCell';
 
+type PendingParams = Pick<StatusCell, 'id' | 'label'>;
+
+const pendingCell = ({ id, label }: PendingParams): StatusCell => ({
+  id,
+  label,
+  word: '',
+  detail: null,
+  tone: 'neutral',
+  opens: null,
+  isPending: true,
+});
+
 const LOADING_CELLS: ReadonlyArray<StatusCell> = [
-  {
-    id: 'checks',
-    label: 'Checks',
-    word: 'Checking',
-    detail: null,
-    tone: 'neutral',
-    opens: 'checks',
-  },
-  {
-    id: 'review',
-    label: 'Review',
-    word: 'Not reviewed',
-    detail: null,
-    tone: 'neutral',
-    opens: null,
-  },
-  { id: 'merge', label: 'Merge', word: 'Not ready', detail: null, tone: 'neutral', opens: null },
-  { id: 'branch', label: 'Branch', word: 'Up to date', detail: null, tone: 'success', opens: null },
+  pendingCell({ id: 'checks', label: 'Checks' }),
+  pendingCell({ id: 'review', label: 'Review' }),
+  pendingCell({ id: 'merge', label: 'Merge' }),
+  pendingCell({ id: 'branch', label: 'Branch' }),
 ];
 
 export const U34_T37_SCENES = {

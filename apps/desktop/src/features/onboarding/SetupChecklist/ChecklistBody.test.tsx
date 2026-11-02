@@ -41,11 +41,12 @@ const FINISHED = progressOf({ completed: ['agents', 'workspace'], isWizardDone: 
 const dispatched = () => vi.spyOn(window, 'dispatchEvent');
 
 describe('ChecklistBody', () => {
-  it('lists the three steps with the details, done ones without an action', () => {
+  it('lists only the open steps, the done line belongs to the card', () => {
     render(<ChecklistBody progress={PAUSED} isMainWindow onLeave={vi.fn()} />);
 
-    expect(screen.getAllByRole('listitem')).toHaveLength(3);
-    expect(screen.getByText('Harborline, 3 folders')).toBeDefined();
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText('Ask Scout about the code')).toBeDefined();
+    expect(screen.queryByText('Agents and Workspace done')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open Agents' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open Tools' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Start First session' })).toBeDefined();

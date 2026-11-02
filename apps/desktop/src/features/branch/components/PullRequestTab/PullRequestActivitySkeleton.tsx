@@ -1,6 +1,6 @@
 import { Skeleton } from '@goodboy/ui';
 
-const ACTIVITY_SKELETON_ROWS = [0, 1, 2];
+const ACTIVITY_SKELETON_ROWS = [0, 1, 2, 3];
 
 type Props = {
   readonly label: string;

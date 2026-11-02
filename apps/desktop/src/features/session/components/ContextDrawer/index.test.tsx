@@ -170,7 +170,7 @@ describe('ContextDrawer', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Decisions', 'Goal', 'Decisions', 'Summary', 'Explanations']);
+    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Explanations']);
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-context-card]'));
     expect(cards.map((card) => card.getAttribute('data-context-section'))).toEqual([
       'goal',
@@ -288,7 +288,7 @@ describe('ContextDrawer', () => {
     renderDrawer('summary');
 
     expect(screen.queryByText('Problem')).toBeNull();
-    const panel = screen.getByRole('region', { name: 'Decisions' });
+    const panel = screen.getByRole('region', { name: 'Context' });
     expect(within(panel).getByText('State')).toBeDefined();
     expect(within(panel).getByText('Next')).toBeDefined();
   });

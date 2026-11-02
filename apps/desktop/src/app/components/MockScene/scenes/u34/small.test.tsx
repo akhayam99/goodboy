@@ -92,6 +92,12 @@ describe('the small flows scenes', () => {
     await waitFor(() => expect(container.querySelector('[data-worktree-branch]')).not.toBeNull());
     expect(container.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(1);
     expect(screen.queryByRole('button', { name: /^Open rebase of/ })).toBeNull();
+    const rows = [...container.querySelectorAll('[data-worktree-branch]')].map(
+      (row) => row.textContent ?? '',
+    );
+    expect(rows.some((text) => text.includes('#318'))).toBe(true);
+    expect(rows.some((text) => text.includes('#322'))).toBe(true);
+    expect(rows.some((text) => text.includes('harborline/'))).toBe(false);
   });
 
   it('starts the step trail after the session while the column is open', async () => {
@@ -111,6 +117,14 @@ describe('the small flows scenes', () => {
     const alert = screen.getByRole('alert');
     fireEvent.click(within(alert).getByRole('button', { name: 'Connect a provider' }));
     expect(open).toHaveBeenCalledTimes(1);
+    expect(
+      within(alert)
+        .getByRole('button', { name: 'Connect a provider' })
+        .getAttribute('data-variant'),
+    ).toBe('primary');
+    expect(screen.getByRole('button', { name: 'Retry' }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
     expect(
       alert.compareDocumentPosition(screen.getByRole('button', { name: 'Retry' })) &
         Node.DOCUMENT_POSITION_FOLLOWING,

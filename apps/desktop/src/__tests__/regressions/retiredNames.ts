@@ -7,7 +7,6 @@ type RetiredName = {
 };
 
 export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
-  { id: 'show-context', pattern: /^Show context$/, use: NAMES.showDecisions },
   { id: 'cancel-turn', pattern: /\bCancel turn\b/i, use: NAMES.stop },
   { id: 'verbose', pattern: /\bVerbose\b/, use: NAMES.long },
   { id: 'spend-limit', pattern: /\b[Ss]pend limit\b/i, use: NAMES.spendCap },

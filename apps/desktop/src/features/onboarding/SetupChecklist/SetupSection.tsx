@@ -1,8 +1,9 @@
-import { Button, Eyebrow } from '@goodboy/ui';
-import { PROFILE_SUGGESTION, finish, resumeSetup } from '../onboardingSettings';
+import { Button, Eyebrow, Meter } from '@goodboy/ui';
+import { PROFILE_SUGGESTION, finish } from '../onboardingSettings';
 import type { OnboardingProgress } from '../hooks/useOnboardingProgress';
 import { ChecklistBody } from './ChecklistBody';
 import { CompletedBody } from './CompletedBody';
+import { DoneLine } from './DoneLine';
 import { StepRow } from './StepRow';
 import { openSettings } from '../../settings/openSettings';
 
@@ -20,7 +21,7 @@ const openProfile = () => openSettings({ scope: 'workspace', section: 'profile' 
 
 export const SetupSection = ({ progress, isMainWindow, onLeave }: Props) => {
   const { setup } = progress;
-  const canResume = isMainWindow && !progress.isWizardDone;
+  const doneTitles = setup.rows.filter((row) => row.isDone).map((row) => row.title);
   const leaveFor =
     ({ action }: LeaveParams) =>
     () => {
@@ -36,54 +37,38 @@ export const SetupSection = ({ progress, isMainWindow, onLeave }: Props) => {
         </div>
       ) : (
         <>
-          <div className="flex h-6 items-center gap-1 pl-2">
-            <Eyebrow label={`Setup · ${setup.count}`} className="min-w-0 flex-1" />
-            {canResume ? (
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={leaveFor({
-                  action: () => resumeSetup({ hasWorkspace: progress.hasWorkspace }),
-                })}
-              >
-                Resume setup
-              </Button>
-            ) : null}
+          <div className="flex h-6 items-center gap-2 pl-2">
+            <Eyebrow label={`Setup · ${setup.count}`} className="shrink-0" />
+            <Meter
+              label="Setup progress"
+              value={setup.done}
+              max={setup.total}
+              size="xs"
+              className="w-16"
+            />
+            <span className="flex-1" />
             <Button variant="quiet" size="xs" onClick={() => finish()} aria-label="Hide setup">
               Hide
             </Button>
-          </div>
-          <div className="px-2">
-            <div
-              role="progressbar"
-              aria-label="Setup progress"
-              aria-valuemin={0}
-              aria-valuemax={setup.total}
-              aria-valuenow={setup.done}
-              className="h-0.75 overflow-hidden rounded-full bg-fill"
-            >
-              <div
-                className="h-full rounded-full bg-primary motion-safe:transition-[width]"
-                style={{ width: `${setup.fraction * 100}%` }}
-              />
-            </div>
           </div>
           <ChecklistBody progress={progress} isMainWindow={isMainWindow} onLeave={onLeave} />
         </>
       )}
       {progress.suggestsProfile ? (
-        <div className="flex flex-col gap-1">
-          <Eyebrow label="Next" muted className="px-2" />
-          <ul className="flex flex-col">
-            <StepRow
-              title={PROFILE_SUGGESTION.title}
-              detail={PROFILE_SUGGESTION.why}
-              isDone={false}
-              actionLabel="Open"
-              onOpen={leaveFor({ action: openProfile })}
-            />
-          </ul>
-        </div>
+        <ul className="flex flex-col">
+          <StepRow
+            title={PROFILE_SUGGESTION.title}
+            detail={PROFILE_SUGGESTION.why}
+            actionLabel="Open"
+            isLead={false}
+            onOpen={leaveFor({ action: openProfile })}
+          />
+        </ul>
+      ) : null}
+      {!setup.isDone && doneTitles.length > 0 ? (
+        <ul className="flex flex-col">
+          <DoneLine titles={doneTitles} />
+        </ul>
       ) : null}
     </section>
   );

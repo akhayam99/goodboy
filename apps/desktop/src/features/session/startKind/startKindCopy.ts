@@ -85,7 +85,7 @@ export const START_KIND_COPY = {
   shapes: {
     orchestrated: {
       icon: CONCEPT_ICONS.orchestrator,
-      what: 'Auto plans each next step as it goes.',
+      what: 'Orchestrated plans each next step as it goes.',
       whileRuns: 'While it runs, the plan grows one step at a time, each with why.',
     },
     preset: {

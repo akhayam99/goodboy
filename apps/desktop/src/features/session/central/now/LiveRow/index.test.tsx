@@ -29,6 +29,14 @@ const renderRow = ({ title, where = null, reason = null, onOpen = vi.fn() }: Row
   );
 
 describe('a row in the Running card', () => {
+  it('keeps the status and the age in one group, so a narrow row stacks them on one line', () => {
+    renderRow({ title: 'Implementer' });
+
+    const status = screen.getByRole('button', { name: 'Answer' });
+    const age = screen.getByText('14m 43s');
+    expect(status.closest('span')?.parentElement).toBe(age.parentElement?.parentElement);
+  });
+
   it('says the kind once when the title is the kind', () => {
     renderRow({ title: 'Implementer' });
 

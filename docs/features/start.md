@@ -116,7 +116,7 @@ Under the task sits [one start form](#one-start-form).
 
 **Projects** is optional. Search it by name, even with 50 folders in the workspace.
 
-- The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All folders by name.
+- The list opens on Suggested (the folders you used last, then starred ones, five at most) and then All projects by name.
 - It reads **Auto picks**, the folder you pinned, or how many you pinned.
 - A pin always wins. With a folder pinned, nothing else is mounted on start.
 - An Auto agent that has to write and finds no folder picks one the same way, inside the same allowance. It asks where it should work only when the task names no folder of the workspace or the allowance is spent.
@@ -146,14 +146,14 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put while the rail steps into a branch.
 
-| Tool          | Key |
-| ------------- | --- |
-| **Explore**   | ⌘⌥X |
-| **Decisions** | ⌘⌥C |
-| **Ask**       | ⌘L  |
-| **Agents**    | ⌘⌥L |
-| **Scripts**   | ⌘⌥S |
-| **Terminal**  | ⌘⌥T |
+| Tool         | Key |
+| ------------ | --- |
+| **Explore**  | ⌘⌥X |
+| **Context**  | ⌘⌥C |
+| **Ask**      | ⌘L  |
+| **Agents**   | ⌘⌥L |
+| **Scripts**  | ⌘⌥S |
+| **Terminal** | ⌘⌥T |
 
 - Hover one to read its name and key. The active tool shows its name below its icon.
 - **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.

@@ -61,9 +61,41 @@ describe('the setup card', () => {
 
     const setup = screen.getByRole('region', { name: 'Setup' });
     within(setup).getByText('Setup · 2 of 3');
-    expect(within(setup).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
-    expect(within(setup).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(setup).getByRole('meter').getAttribute('aria-valuenow')).toBe('2');
+    expect(within(setup).getAllByRole('listitem')).toHaveLength(2);
     expect(within(setup).queryByText(/about you/i)).toBeNull();
+  });
+
+  it('collapses the done steps into one line after the open step', () => {
+    render(<SetupCard isMainWindow />);
+
+    const rows = within(screen.getByRole('region', { name: 'Setup' })).getAllByRole('listitem');
+    expect(rows[0]?.getAttribute('data-state')).toBe('open');
+    expect(rows[1]?.textContent).toBe('Agents and Workspace done');
+  });
+
+  it('gives the open step its one action, secondary so the page keeps its primary, and no Open link on the quiet row', () => {
+    mocks.progress.suggestsProfile = true;
+    render(<SetupCard isMainWindow />);
+
+    const setup = screen.getByRole('region', { name: 'Setup' });
+    const lead = within(setup).getByRole('button', { name: 'Start First session' });
+    expect(lead.getAttribute('data-variant')).toBe('secondary');
+    expect(setup.querySelectorAll('[data-variant="primary"]')).toHaveLength(0);
+    expect(within(setup).getAllByRole('listitem').at(-1)?.textContent).toBe(
+      'Agents and Workspace done',
+    );
+    expect(within(setup).queryByText('Next')).toBeNull();
+    expect(
+      within(setup).getByRole('button', { name: 'Open Tell agents about you' }).textContent,
+    ).not.toContain('Open');
+  });
+
+  it('sits one section gap above what follows, set by the page rhythm', () => {
+    render(<SetupCard isMainWindow />);
+
+    const card = document.querySelector('[data-slot="setup-card"]');
+    expect(card?.getAttribute('data-rhythm')).toBe('section');
   });
 
   it('is gone once setup is finished or hidden', () => {
@@ -88,14 +120,14 @@ describe('the setup card', () => {
     expect(screen.queryByRole('region', { name: 'Setup' })).toBeNull();
   });
 
-  it('offers Resume setup while setup is paused, at the step it stopped on', () => {
+  it('resumes setup from the open step while setup is paused, at the step it stopped on', () => {
     mocks.progress.wizard = 'later';
     mocks.progress.isWizardDone = false;
     const listener = vi.fn();
     window.addEventListener('goodboy:open-onboarding-wizard', listener);
     render(<SetupCard isMainWindow />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Resume setup' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start First session' }));
 
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-onboarding-wizard', listener);

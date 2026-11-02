@@ -318,7 +318,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Agents key (`lens.agents`, ⌘⌥A) both open Runs, and pressed on Runs go back
   to the Overview.
 
-The tools (Explore, Decisions, Ask, Agents, Scripts, Terminal) are panes, not pages:
+The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
 they open from the session tools column at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -559,7 +559,7 @@ The draft asks no question first (`SessionKickoff`): **Projects** (`WhereChip`) 
 optional and sits in the task field, and **Start blank** sits in the page
 header. Where is a searchable multiple `Listbox` in two groups
 (`projectPickerOptions`): "Suggested" holds at most five (the most recently
-used, then starred ones) and "All folders" lists the rest by name. The draft
+used, then starred ones) and "All projects" lists the rest by name. The draft
 keeps the picks as `projectIds`; the first is the session's project and the
 rest are added with it (`additionalProjectIds`). The page has no visible
 title, the trail names it (a screen reader heading stays, drawn by
@@ -629,15 +629,15 @@ activity yet show the plain overview with its actions.
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
   the action registry whose pick opens its form in the New drawer; filled only
   while nothing runs and Next holds no row) and, on an archived session,
-  Restore. Decisions lives in the session tools.
+  Restore. Context lives in the session tools.
 
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Decisions, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
-Decisions form the reading group; one separator leads to the other tools.
+Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
+Context form the reading group; one separator leads to the other tools.
 Each tool keeps its pane id and shortcut. `SessionToolButton` shows the active
-tool's name below its icon. Every icon's tooltip gives its name, shortcut and
+tool's name below its icon, in a quiet regular weight. Every icon's tooltip gives its name, shortcut and
 any signal reason. Ask uses its own question glyph, distinct from Chat.
 
 The column is a vertical toolbar with one tab stop. Up, Down, Home and End
@@ -660,7 +660,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   step** and the foot "Limit $3.00 · $1.12 spent" (`RunSpendFoot`); on an Auto
   agent or one of its children it shows Auto and its children as a tree, "No
   agents started yet" while Auto has none; Auto's limit sits on the Auto page's
-  settings line (`AgentSettingsLine`), not in this panel. With nothing selected, or after **All launches**, it
+  settings line (`AgentSettingsLine`), not in this panel. With nothing selected, or after **All runs**, it
   lists every live and recent launch of the session newest first
   (`launchesOf` over `sessionRunsOf`: runs that are not archived, orchestrated
   ones included, Auto roots and standalone agents, with the 30 newest finished
@@ -698,7 +698,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's **Working now** chips
   and chat **Open** actions set the Agents drawer's child target without
   navigating the center. The target takes precedence over the main selection
-  (`useSpawnedFocus`); **All launches** still works, and another reveal returns
+  (`useSpawnedFocus`); **All runs** still works, and another reveal returns
   to the target's launch. An Auto
   root is titled by the ask it started with, loaded with the tree view, not
   its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
@@ -734,7 +734,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   board, the studios) already hold the two tools that make sense there as
   column doors: **Terminal** (with New terminal on its plus) and **Chat**
   (with New chat), the workspace conversation that answers what Ask answers
-  for one session. Ask, Explore, Decisions and Scripts read one session, so they
+  for one session. Ask, Explore, Context and Scripts read one session, so they
   exist only inside one, and ⌘L is bound only while a session is visible.
 
 - **One pane at a time.** Every toggle goes through `togglePane`
@@ -753,7 +753,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
   the old `explore` and `scripts` lenses to the panes, so the palette, toasts
   and stored notifications (`open-lens` scripts) still land.
-- **Context signals ride on Decisions.** A 6px dot in the Decisions tool's right
+- **Context signals ride on Context.** A 6px dot in the Context tool's right
   slot (on the folded icon, its corner) marks decisions changed since the last
   look (info), a running summary (info, pulsing) or a failed summary (danger)
   (`useToolSignal`, over `contextNoteOf`); the row's tooltip and accessible

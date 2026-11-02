@@ -95,6 +95,22 @@ describe('FixCommentsButton', () => {
     expect(onPush).toHaveBeenCalledTimes(1);
   });
 
+  it('leaves the push to the header and never offers Request review beside it', () => {
+    seedNotesScene({ variant: 'comments-no-pr' });
+    useAppStore.setState({ diffComments: { [CTX_SESSION_ID]: [] }, sessionResolveQueueItems: {} });
+
+    render(
+      <FixCommentsButton
+        sessionId={CTX_SESSION_ID}
+        mountId={CTX_PAYMENTS_MOUNT_ID}
+        unpushedCommits={3}
+        onRequestReview={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('reads Request review when every comment is settled and the pull request allows it', () => {
     seedNotesScene({ variant: 'comments-no-pr' });
     useAppStore.setState({ diffComments: { [CTX_SESSION_ID]: [] }, sessionResolveQueueItems: {} });

@@ -79,7 +79,8 @@ describe('the c06 conversation scenes', () => {
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByText('Running')).toBeNull();
     expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
-    expect(within(row).queryByText('Sonnet 5.5')).toBeNull();
+    expect(within(row).getByRole('heading', { level: 1 }).textContent).not.toContain('Sonnet 5.5');
+    within(row).getByRole('button', { name: /^Model/ });
     expect(screen.queryByRole('tab')).toBeNull();
   });
 

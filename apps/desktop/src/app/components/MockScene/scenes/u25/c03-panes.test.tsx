@@ -116,7 +116,7 @@ describe('c03 session tools scenes', () => {
   it('opens Context from its own row', async () => {
     await mount('c03-panes-context');
     expect(useAppStore.getState().drawer?.kind).toBe('context');
-    expect(pressed()).toEqual(['Decisions']);
+    expect(pressed()).toEqual(['Context']);
   });
 
   it('keeps the tools in a column right of the content, not in the rail, and no page header holds a pane toggle', async () => {
@@ -137,7 +137,7 @@ describe('c03 session tools scenes', () => {
     const icons = within(cluster()).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
-      'Decisions',
+      'Context',
       'Ask this session',
       'Agents',
       'Scripts',
@@ -164,7 +164,7 @@ describe('c03 session tools scenes', () => {
   it.each([
     ['c03-panes-ask', 'Ask this session'],
     ['c03-panes-explore', 'Explore'],
-    ['c03-panes-context', 'Decisions'],
+    ['c03-panes-context', 'Context'],
     ['c03-panes-scripts', 'Scripts'],
     ['c03-panes-folded', 'Ask this session'],
   ] as const)('%s opens its pane, never the closed layout', async (name, label) => {

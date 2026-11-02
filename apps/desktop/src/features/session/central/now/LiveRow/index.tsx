@@ -80,7 +80,7 @@ export const LiveRow = ({
       </span>
     </span>
     {meter == null ? null : (
-      <span className="relative flex shrink-0 @max-[360px]:col-start-2 @max-[360px]:row-start-3">
+      <span className="relative flex shrink-0 @max-[360px]:col-start-2 @max-[360px]:row-start-4">
         {meter}
       </span>
     )}
@@ -94,10 +94,10 @@ export const LiveRow = ({
         {where}
       </TruncatedText>
     )}
-    <span className="pointer-events-none relative flex shrink-0 items-center gap-2 [&_button]:pointer-events-auto @max-[360px]:contents">
+    <span className="pointer-events-none relative flex shrink-0 items-center gap-2 [&_button]:pointer-events-auto @max-[360px]:col-span-2 @max-[360px]:col-start-2 @max-[360px]:row-start-3 @max-[360px]:justify-end">
       <span
         className={cn(
-          'flex shrink-0 items-center gap-1 @max-[360px]:col-start-3 @max-[360px]:row-start-3 @max-[360px]:w-auto @max-[360px]:justify-end',
+          'flex shrink-0 items-center gap-1 @max-[360px]:w-auto @max-[360px]:justify-end',
           ROW_COLUMNS.status,
         )}
       >
@@ -105,7 +105,7 @@ export const LiveRow = ({
       </span>
       <span
         className={cn(
-          'flex shrink-0 justify-end whitespace-nowrap tabular-nums @max-[360px]:col-start-3 @max-[360px]:row-start-2 @max-[360px]:w-auto',
+          'flex shrink-0 justify-end whitespace-nowrap tabular-nums @max-[360px]:w-auto',
           ROW_COLUMNS.time,
         )}
       >

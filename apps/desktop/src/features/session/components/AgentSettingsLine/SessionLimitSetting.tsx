@@ -28,7 +28,8 @@ const CENT = 0.005;
 const wordsOf = ({ capUsd, spentUsd }: WordsParams): SettingWords => {
   if (capUsd === null) {
     return {
-      value: spentUsd < CENT ? 'none' : `${formatUsd(spentUsd)} spent`,
+      value: 'none',
+      ...(spentUsd >= CENT && { spentText: `${formatUsd(spentUsd)} spent` }),
       source: '',
       chain: 'Session none. Nothing stops this agent.',
     };

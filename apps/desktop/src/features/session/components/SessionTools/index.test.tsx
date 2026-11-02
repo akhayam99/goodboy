@@ -69,14 +69,14 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('stacks Explore, Decisions, Ask, Agents, Scripts and Terminal as icons in a vertical toolbar', () => {
+  it('stacks Explore, Context, Ask, Agents, Scripts and Terminal as icons in a vertical toolbar', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
     const buttons = within(toolbar).getAllByRole('button');
     expect(buttons.map((button) => button.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
-      'Decisions',
+      'Context',
       'Ask this session',
       'Agents',
       'Scripts',
@@ -212,13 +212,13 @@ describe('SessionTools', () => {
 
     seed('running');
     expect(screen.getByTestId('tool-signal').getAttribute('data-signal')).toBe('running');
-    expect(toggle('context').getAttribute('aria-label')).toBe('Decisions, Updating context');
+    expect(toggle('context').getAttribute('aria-label')).toBe('Context, Updating context');
     expect(tooltipTextOf({ element: toggle('context') })).toContain('Updating context');
 
     seed('error');
     expect(screen.getByTestId('tool-signal').getAttribute('data-signal')).toBe('error');
     expect(toggle('context').getAttribute('aria-label')).toBe(
-      "Decisions, Couldn't update the context. Open to retry.",
+      "Context, Couldn't update the context. Open to retry.",
     );
     expect(toggle('ask').getAttribute('aria-label')).toBe('Ask this session');
   });

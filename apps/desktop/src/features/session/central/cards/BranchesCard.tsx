@@ -1,4 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
+import { SectionLabel } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { BranchList } from '../branches/BranchList';
 import type { BranchEntry } from '../branches/branchStoryOf';
@@ -43,6 +44,7 @@ export const BranchesCard = ({
     hasHeader={false}
     regionLabel={entries.length >= 2 ? undefined : card.title}
   >
+    {entries.length >= 2 ? null : <SectionLabel headingLevel={2} label="Next" />}
     <NextStackView
       sessionId={sessionId}
       cards={cards}

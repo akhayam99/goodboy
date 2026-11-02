@@ -25,7 +25,7 @@ export const StartFailureScene = ({ isProviderMissing }: Props) => (
       reasonId="u34-start-reason"
     >
       <Button variant="ghost">Discard</Button>
-      <Button>Retry</Button>
+      <Button variant={isProviderMissing ? 'secondary' : 'primary'}>Retry</Button>
     </StartForm>
   </div>
 );

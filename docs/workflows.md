@@ -1172,7 +1172,7 @@ A hand edit saves against the revision it started from
 revision as author `user` and refreshes the session's plans and artifacts.
 `planEditBlockOf` gives the reason **Edit** is off: the planner is revising,
 comments are unsent ("Send or discard your 3 comments first"), or the plan
-runs as two or more parallel parts ("This plan runs as 3 parallel parts. Ask
+runs as two or more parallel parts ("This plan runs as 3 parts. Ask
 the planner to change it."), because the parts a run fans out from live in the
 plan's metadata and a hand edit keeps them. A body that lists parts twice,
 as `## Parts` in the markdown and as structured parts, shows them once: the

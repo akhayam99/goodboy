@@ -50,7 +50,7 @@ export const CommentsScene = ({ variant }: Props) => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <WorktreeSceneColumn>{page}</WorktreeSceneColumn>
+      <WorktreeSceneColumn session={SESSION}>{page}</WorktreeSceneColumn>
     </main>
   );
 };

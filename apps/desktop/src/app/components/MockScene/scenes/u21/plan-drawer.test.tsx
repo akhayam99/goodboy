@@ -160,7 +160,7 @@ describe('the plan drawer scenes', () => {
     const edit = await screen.findByTestId('plan-drawer-edit');
     expect(edit.hasAttribute('disabled')).toBe(true);
     expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
-      'This plan runs as 3 parallel parts. Ask the planner to change it.',
+      'This plan runs as 3 parts. Ask the planner to change it.',
     );
     const body = screen.getByTestId('plan-body');
     expect(within(body).getAllByText('Replace the CSV query with the ledger view')).toHaveLength(1);

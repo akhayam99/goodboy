@@ -81,7 +81,7 @@ it('opens Agents at 1280, folds the rail, respects a manual unfold, and restores
   expect(rail.hasAttribute('data-rail-folded')).toBe(false);
   expect(container.querySelector('[data-drawer-mode="overlay"]')).not.toBeNull();
   expect(container.querySelector('[data-drawer-scrim]')).not.toBeNull();
-  screen.getByText('Over the page');
+  screen.getByText('Covers the page. Esc to go back');
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   expect(rail.hasAttribute('data-rail-folded')).toBe(false);
   expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('0');

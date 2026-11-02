@@ -136,7 +136,7 @@ describe('the c10 New session scenes', () => {
     const listbox = screen.getByRole('listbox', { name: 'Projects' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
-    expect(within(listbox).queryAllByText(/^(Suggested|All folders)$/).length).toBeGreaterThan(0);
+    expect(within(listbox).queryAllByText(/^(Suggested|All projects)$/).length).toBeGreaterThan(0);
     expect(whereLabel()).toContain('2');
   });
 

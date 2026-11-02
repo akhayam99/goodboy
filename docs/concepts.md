@@ -1046,7 +1046,7 @@ code starts, Goodboy materializes those projects.
 Agents in the same session do **not** see each other's chats. What they share
 is the **session record** on the **Overview**:
 
-- The goal, the decisions and the summary, in that order, in the **Decisions**
+- The goal, the decisions and the summary, in that order, in the **Context**
   drawer (the overview keeps one `Goal` line under the title when the goal
   says more than the title). The summary reads as State, Next, Open questions and Learned, one
   block each, key line first.

@@ -52,7 +52,7 @@ export const SessionTools = ({ sessionId }: Props) => {
       data-testid="session-tools"
       onKeyDown={onKeyDown}
       className={cn(
-        'flex h-full shrink-0 flex-col items-center gap-1 bg-background px-1',
+        'flex h-full shrink-0 flex-col items-center gap-2 bg-background px-0.5',
         PANE_RHYTHM.headerInset,
       )}
     >

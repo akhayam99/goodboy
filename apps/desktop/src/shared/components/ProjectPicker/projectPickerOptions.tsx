@@ -11,13 +11,13 @@ type Params = {
 
 type OptionParams = {
   readonly project: Project;
-  readonly group: 'Suggested' | 'All folders';
+  readonly group: 'Suggested' | 'All projects';
 };
 
 const optionOf = ({ project, group }: OptionParams): ListboxOption<ProjectId> => {
   const Glyph = projectGlyph({ kind: project.kind });
   const baseBranch = project.baseBranch ?? '';
-  const hasBaseBranch = group === 'All folders' && baseBranch !== '';
+  const hasBaseBranch = group === 'All projects' && baseBranch !== '';
   return {
     value: project.id,
     label: project.name,
@@ -34,6 +34,6 @@ export const projectPickerOptions = ({
   const { suggested, all } = projectPickerGroups({ projects, suggestedIds });
   return [
     ...suggested.map((project) => optionOf({ project, group: 'Suggested' })),
-    ...all.map((project) => optionOf({ project, group: 'All folders' })),
+    ...all.map((project) => optionOf({ project, group: 'All projects' })),
   ];
 };

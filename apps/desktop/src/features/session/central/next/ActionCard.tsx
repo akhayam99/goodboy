@@ -154,7 +154,7 @@ export const ActionCard = ({
         data-band={card.band}
         data-testid={`action-card-${card.id}`}
         className={cn(
-          'grid min-h-9 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center rounded-md py-1',
+          'grid min-h-9 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center rounded-md py-1 @max-[360px]:grid-cols-[auto_minmax(0,1fr)] @max-[360px]:gap-y-1',
           ROW_COLUMNS.gap,
           ROW_COLUMNS.inset,
         )}
@@ -205,6 +205,7 @@ export const ActionCard = ({
           )}
         </div>
         <HeaderActions
+          className="@max-[360px]:col-start-2 @max-[360px]:justify-start"
           secondary={
             second === null
               ? null

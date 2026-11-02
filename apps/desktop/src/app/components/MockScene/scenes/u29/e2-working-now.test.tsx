@@ -199,11 +199,11 @@ describe('Working now in Auto', () => {
     screen.getByPlaceholderText('Message Auto');
   });
 
-  it('returns from All launches to the child selected by a different delegation line', async () => {
+  it('returns from All runs to the child selected by a different delegation line', async () => {
     await mount({ hasTwoChildren: true });
     fireEvent.click(openLine({ title: /^Open Post one credit/ }));
     const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
-    fireEvent.click(within(panel).getByRole('button', { name: 'All launches' }));
+    fireEvent.click(within(panel).getByRole('button', { name: 'All runs' }));
     expect(document.querySelector('[data-spawned-panel]')?.getAttribute('data-spawned-panel')).toBe(
       'all',
     );
@@ -213,7 +213,7 @@ describe('Working now in Auto', () => {
         document.querySelector('[data-spawned-panel]')?.getAttribute('data-spawned-panel'),
       ).toBe('auto'),
     );
-    fireEvent.click(within(panel).getByRole('button', { name: 'All launches' }));
+    fireEvent.click(within(panel).getByRole('button', { name: 'All runs' }));
     fireEvent.click(openLine({ title: /^Open Test the retry path/ }));
     await waitFor(() =>
       expect(

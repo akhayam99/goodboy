@@ -11,6 +11,7 @@ type Props = {
   readonly recommended?: boolean;
   readonly mode?: OpenQuestionSelectMode;
   readonly dimmed?: boolean;
+  readonly isFlat?: boolean;
   readonly disabled?: boolean;
   readonly children?: ReactNode;
   readonly onToggle: () => void;
@@ -23,13 +24,14 @@ export const AnswerOptionRow = ({
   recommended = false,
   mode = 'one',
   dimmed = false,
+  isFlat = false,
   disabled = false,
   children,
   onToggle,
 }: Props) => {
   const recommendedId = useId();
   const isMany = mode === 'many';
-  const isPicked = selected && !isMany;
+  const isPicked = selected && !isMany && !isFlat;
 
   return (
     <div
@@ -38,7 +40,7 @@ export const AnswerOptionRow = ({
         'relative grid min-h-8 items-center gap-3 rounded-md px-2 py-1',
         isMany ? 'grid-cols-[16px_minmax(0,1fr)_16px]' : 'grid-cols-[16px_minmax(0,1fr)]',
         'motion-safe:transition-[background-color,opacity] motion-safe:duration-150',
-        selected && 'bg-selected',
+        selected && !isFlat && 'bg-selected',
         !selected && !disabled && 'hover:bg-hover',
         dimmed && 'opacity-50',
       )}

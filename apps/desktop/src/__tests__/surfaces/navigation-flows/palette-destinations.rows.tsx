@@ -69,7 +69,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'context drawer from the session tools',
     covers: ['openContextDrawer', 'drawer:context'],
     open: async () => click(await screen.findByTestId('pane-toggle-context')),
-    lands: () => visible('region', 'Decisions'),
+    lands: () => visible('region', 'Context'),
   },
   {
     name: 'Ask drawer from the session tools',
@@ -78,10 +78,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Ask'),
   },
   {
-    name: 'palette: Show decisions',
-    covers: ['toggleContextDrawer', 'palette:Show decisions'],
-    open: () => openPalette(/^Show decisions/, 'show decisions'),
-    lands: () => visible('region', 'Decisions'),
+    name: 'palette: Show context',
+    covers: ['toggleContextDrawer', 'palette:Show context'],
+    open: () => openPalette(/^Show context/, 'show context'),
+    lands: () => visible('region', 'Context'),
   },
   {
     name: 'palette: Refresh session',

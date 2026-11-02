@@ -133,6 +133,27 @@ describe('SessionTrail', () => {
     expect(screen.queryByRole('button', { name: 'implementer' })).toBeNull();
   });
 
+  it('keeps the session crumb named when the folded rail leaves little room', () => {
+    const widthSpy = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(220);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = () => undefined;
+        disconnect = () => undefined;
+      },
+    );
+    walk({ places: [OVERVIEW, STEP_PLACE] });
+    render(
+      <SessionRailFoldContext value>
+        <SessionTrail sessionId={S1} />
+      </SessionRailFoldContext>,
+    );
+    const first = document.querySelector('[data-trail-segment]');
+    expect(first?.getAttribute('data-trail-state')).toBe('full');
+    expect(crumbNames()[0]).toBe(TITLE);
+    widthSpy.mockRestore();
+    vi.unstubAllGlobals();
+  });
   it('draws nothing on the Overview, which has no way up', () => {
     walk({ places: [OVERVIEW] });
     render(<SessionTrail sessionId={S1} />);

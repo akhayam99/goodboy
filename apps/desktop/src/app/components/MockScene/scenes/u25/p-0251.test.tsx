@@ -71,7 +71,7 @@ describe('the p-0251 scenes', () => {
       </ToastProvider>,
     );
 
-    await screen.findByRole('region', { name: 'Decisions' }, WAIT);
+    await screen.findByRole('region', { name: 'Context' }, WAIT);
     expect(screen.queryByRole('region', { name: 'Changed since you last looked' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark as read' })).toBeNull();
   });

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { TruncatedText } from '@goodboy/ui';
-import type { PlanPartRow } from './planPartRows';
+import type { PlanPartRow } from '../planPartRows';
 
 type Props = {
   readonly row: PlanPartRow;
@@ -20,7 +20,7 @@ export const PlanPartBlock = ({ row, children }: Props) => {
     >
       {children}
       {shown.length === 0 ? (
-        <p className="px-3 pb-2 text-meta text-faint-foreground">Touches every file</p>
+        <p className="px-3 pb-2 text-meta text-faint-foreground">Lists no files</p>
       ) : (
         <ul
           aria-label={`Part ${row.index + 1} touches`}

@@ -126,7 +126,7 @@ the slot's top to its bottom; the slot's own sheet steps aside
 covers the left column) keeps `frame="none"`, which draws only the drawer
 container as a card inset 8px on its right, top and bottom.
 
-**Two tiers, one width each.** A side drawer (Ask, Decisions, a fix run or agent
+**Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes
 from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 (the plan, report and wireframe document, an Explore file, a file diff) opens at
@@ -221,7 +221,7 @@ push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
-drawer repeats its own name in the label. The one exception is the Decisions
+drawer repeats its own name in the label. The one exception is the Context
 drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
@@ -356,7 +356,7 @@ resolver's transcript always opens here, on the Comments tab of its Branch
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old
 versions of that slot, inside the same drawer, with Restore; Escape and the
-header's **Back to current** leave the view before the drawer). The **Decisions** tool in the session tools toggles it
+header's **Back to current** leave the view before the drawer). The **Context** tool in the session tools toggles it
 on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
 Decisions and Summary. The first open shows Summary, later ones the last tab
 used in that session. The chip carries a quiet dot, never a count, when the
@@ -386,7 +386,7 @@ through `requestContextUpdate`, behind any pass in flight and never beside it;
 queued, and the row reads only that queue state, as the pane's first gray line
 (no label). The pane is one scroll with Goal, Decisions, Summary and Learned as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. The
-count lives on the Active group and the change signal on its own group. The engine remains Context in Activity; its drawer and tool are named Decisions.
+count lives on the Active group and the change signal on its own group.
 
 Every section reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
@@ -430,10 +430,10 @@ comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
 In Activity, a `decisions_changed` row that carries `decisionChanges` is a
 disclosure: the row toggles (`Show changes` / `Hide changes`, `aria-expanded`)
 a diff under it, `+ D12`, `D3 → D12` with the reason, `− D5` with the
-withdrawal reason, at most six lines, and **Open in Decisions**. Each decision is
+withdrawal reason, at most six lines, and **Open in Context**. Each decision is
 a three-column grid (sign, id, text): the text wraps whole beside the hanging
 id, and the reason or note sits on its own line under it, never truncated.
-**Open in Decisions** opens the
+**Open in Context** opens the
 drawer on Decisions with those numbers in `payload.highlight` (highlighted for
 2.4s, the closed group opened when one of them is there). The expanded row
 adds the diff's height to its item before `layoutTimelineRail`, so the rail and

@@ -57,7 +57,8 @@ describe('where the Auto limit comes from', () => {
 
   it('says nothing stops an Auto with no limit and no session limit', () => {
     expect(wordsOf({ sessionCapUsd: null, capUsd: null })).toMatchObject({
-      value: '$0.85 spent',
+      value: 'none',
+      spentText: '$0.85 spent',
       source: '',
     });
   });
@@ -71,7 +72,8 @@ describe('where the Auto limit comes from', () => {
         workspaceName: 'Harborline',
       }),
     ).toEqual({
-      value: '$0.85 spent',
+      value: 'none',
+      spentText: '$0.85 spent',
       source: '',
       chain: 'This Auto none, then session none, then Harborline none. Nothing stops this Auto.',
     });

@@ -32,6 +32,13 @@ describe('CustomAnswerField', () => {
     expect(props.onToggle).toHaveBeenCalledOnce();
   });
 
+  it('keeps its number and no selected block while open, so the row does not jump', () => {
+    renderField({ open: true, keyNumber: 3 });
+    const row = screen.getByRole('radio', { name: 'Something else' }).closest('[data-selected]');
+    expect(row?.textContent).toContain('3');
+    expect(row?.querySelector('svg')).toBeNull();
+  });
+
   it('writes into the inline field once open', () => {
     const props = renderField({ open: true });
     fireEvent.change(screen.getByRole('textbox', { name: 'Your answer' }), {

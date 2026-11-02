@@ -11,6 +11,9 @@ import {
   isoAgo,
   seedResolveScene,
 } from '../resolveSeed';
+import { installPrPageIpc, prPageMountState } from './prPageSeed';
+
+const UNPUSHED_COMMITS = 3;
 
 export type CommentsVariant =
   'groups' | 'ready-to-push' | 'push-failed' | 'left-open' | 'action-bar' | 'working';
@@ -124,10 +127,12 @@ const focusOf = ({ variant }: { readonly variant: CommentsVariant }): string => 
 
 export const seedCommentsScene = ({ variant }: { readonly variant: CommentsVariant }): void => {
   seedResolveScene({ expandedThreadId: focusOf({ variant }) });
+  installPrPageIpc({ behind: 0, unpushed: UNPUSHED_COMMITS });
   const state = useAppStore.getState();
   const github = state.sessionGithub[SESSION_ID];
   const queue = queueOf({ variant });
   useAppStore.setState({
+    ...(github === undefined ? {} : prPageMountState({ github })),
     sessionResolveQueueItems: { [SESSION_ID]: queue },
     sessionResolveThreads: { [SESSION_ID]: queue.map((entry) => entry.thread) },
     sessionBranches: { [SESSION_ID]: RESOLVE_SCENE_PR.headBranch },

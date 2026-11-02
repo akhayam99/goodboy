@@ -26,6 +26,18 @@ describe('the u34 pr page loading scene', () => {
     screen.getByRole('group', { name: 'Status' });
   });
 
+  it('draws shapes, not claims, until the data is known: four pending cells and four rows', () => {
+    const Scene = U34_T37_SCENES['u34-t37-pr-page-loading'];
+    const { container } = render(<Scene />);
+
+    expect(container.querySelectorAll('[data-cell][data-pending]')).toHaveLength(4);
+    expect(container.querySelector('[data-pr-status-strip]')?.textContent).toBe(
+      'ChecksReviewMergeBranch',
+    );
+    const rows = screen.getByRole('status', { name: 'Reading the activity' }).children;
+    expect(rows).toHaveLength(4);
+  });
+
   it('keeps the same four strip cells whatever word the checks cell carries', () => {
     const stripOf = ({ word }: { readonly word: string }) => (
       <PullRequestStatusStrip cells={cellsWith({ word })} onOpen={() => undefined} />

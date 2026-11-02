@@ -102,6 +102,7 @@ describe('the comments and counts scenes', () => {
 
     await waitFor(() => expect(screen.getAllByText('Draft').length).toBeGreaterThan(0));
     expect(screen.queryByText('Note')).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Branch pages' })).toBeNull();
   });
 
   it('counts the viewed files once in the file list title', async () => {

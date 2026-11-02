@@ -187,7 +187,9 @@ export const DrawerFrame = ({
             {titleRow}
           </div>
           {drawerContent?.mode === 'overlay' ? (
-            <span className="px-4 text-meta text-muted-foreground">Over the page</span>
+            <span className="px-4 text-meta text-muted-foreground">
+              Covers the page. Esc to go back
+            </span>
           ) : null}
           {meta == null ? null : (
             <p

@@ -1,4 +1,5 @@
-import { Button } from '@goodboy/ui';
+import { CircleAlert } from 'lucide-react';
+import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { openSettings } from '../../../settings/openSettings';
 
@@ -13,11 +14,14 @@ export const StartFailure = ({ error }: Props) => {
   const isProviderMissing = error === PROVIDER_MISSING;
   return (
     <div role="alert" className="flex min-w-0 flex-col gap-2 rounded-md bg-subtle p-3">
-      <p className="text-body text-danger">{error}</p>
+      <p className="flex items-start gap-2 text-ui text-danger">
+        <CircleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+        {error}
+      </p>
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          variant="secondary"
+          variant={isProviderMissing ? 'primary' : 'secondary'}
           onClick={() => {
             if (isProviderMissing) {
               openSettings({ scope: 'providers' });

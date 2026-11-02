@@ -22,8 +22,7 @@ import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
-import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
-import { AgentSettingsLine } from '../AgentSettingsLine';
+import { AgentRunSettings } from './AgentRunSettings';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
@@ -180,22 +179,9 @@ export const AgentDetailPane = ({
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
   const autoView = isAutoRoot ? (autoChat.tree?.view ?? null) : null;
-  const autoBudget =
-    autoView === null || autoView.budget === null
-      ? null
-      : { treeId: autoView.tree.id, facts: autoView.budget };
   const lead = (
     <>
       {context}
-      {runStep === undefined ? (
-        <AgentSettingsLine
-          session={session}
-          kind={<AgentRunRoute session={session} agentId={agent.id} />}
-          auto={autoBudget}
-          asksSlotRef={setAsksSlot}
-          modelsSlotRef={setModelsSlot}
-        />
-      ) : null}
       {isInWorkflowRun ? null : (
         <AgentStoppedNotice
           session={session}
@@ -218,6 +204,17 @@ export const AgentDetailPane = ({
       lead={lead}
       header={
         <AgentHeader
+          settings={
+            runStep === undefined ? (
+              <AgentRunSettings
+                session={session}
+                agent={agent}
+                autoView={autoView}
+                asksSlotRef={setAsksSlot}
+                modelsSlotRef={setModelsSlot}
+              />
+            ) : null
+          }
           title={
             <span
               className="flex min-w-0 items-center gap-2"

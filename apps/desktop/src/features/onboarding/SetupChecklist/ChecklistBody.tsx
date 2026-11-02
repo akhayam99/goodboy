@@ -32,27 +32,32 @@ const actionFor = ({ id, progress, isMainWindow }: ActionParams): (() => void) |
   return AFTER_SETUP[id];
 };
 
-export const ChecklistBody = ({ progress, isMainWindow, onLeave }: Props) => (
-  <ul className="flex flex-col gap-1">
-    {progress.setup.rows.map((row) => {
-      const action = actionFor({ id: row.id, progress, isMainWindow });
-      return (
-        <StepRow
-          key={row.id}
-          title={row.title}
-          detail={progress.details[row.id]}
-          isDone={row.isDone}
-          actionLabel={row.id === 'first-session' ? 'Start' : 'Open'}
-          onOpen={
-            action === null
-              ? null
-              : () => {
-                  onLeave();
-                  action();
-                }
-          }
-        />
-      );
-    })}
-  </ul>
-);
+export const ChecklistBody = ({ progress, isMainWindow, onLeave }: Props) => {
+  const { rows, next } = progress.setup;
+  return (
+    <ul className="flex flex-col gap-1">
+      {rows
+        .filter((row) => !row.isDone)
+        .map((row) => {
+          const action = actionFor({ id: row.id, progress, isMainWindow });
+          return (
+            <StepRow
+              key={row.id}
+              title={row.title}
+              detail={progress.details[row.id]}
+              actionLabel={row.id === 'first-session' ? 'Start' : 'Open'}
+              isLead={row.id === next}
+              onOpen={
+                action === null
+                  ? null
+                  : () => {
+                      onLeave();
+                      action();
+                    }
+              }
+            />
+          );
+        })}
+    </ul>
+  );
+};

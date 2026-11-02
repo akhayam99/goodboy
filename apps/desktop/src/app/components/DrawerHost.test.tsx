@@ -144,7 +144,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
   {
     kind: 'context',
-    region: 'Decisions',
+    region: 'Context',
     seed: seedSession,
     drawer: {
       kind: 'context',
@@ -445,7 +445,7 @@ describe('the Context drawer in its versions view', () => {
 
     renderHost();
 
-    const region = screen.getByRole('region', { name: 'Decisions' });
+    const region = screen.getByRole('region', { name: 'Context' });
     expect(within(region).getByRole('button', { name: 'Back to current' })).toBeDefined();
     expect(within(region).queryByRole('button', { name: 'Close' })).toBeNull();
   });

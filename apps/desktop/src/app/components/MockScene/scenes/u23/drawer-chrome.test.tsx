@@ -93,7 +93,7 @@ describe('the drawer chrome scenes', () => {
   it('headers: Context in versions says Back to current, the others say Close', async () => {
     renderScene('drawer-headers');
 
-    const context = await screen.findByRole('region', { name: 'Decisions' }, WAIT);
+    const context = await screen.findByRole('region', { name: 'Context' }, WAIT);
     expect(within(context).getByRole('button', { name: 'Back to current' })).toBeDefined();
 
     const diff = screen.getByRole('region', { name: 'Changes' });

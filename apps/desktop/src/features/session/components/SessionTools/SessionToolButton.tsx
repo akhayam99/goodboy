@@ -1,4 +1,4 @@
-import { IconButton, cn, selectedIconClass } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, cn, selectedIconClass } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
@@ -26,6 +26,7 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         shortcut={tool.shortcut}
         tooltipSide="left"
         size="md"
+        iconSize={ICON_SIZE.notice}
         aria-pressed={isOpen}
         tabIndex={tabIndex}
         data-testid={`pane-toggle-${tool.pane}`}
@@ -35,7 +36,7 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         onClick={onToggle}
       />
       {isOpen ? (
-        <span aria-hidden className="max-w-full truncate text-chip text-foreground">
+        <span aria-hidden className="whitespace-nowrap text-chip font-normal text-muted-foreground">
           {tool.label}
         </span>
       ) : null}

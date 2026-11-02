@@ -47,7 +47,9 @@ export const SessionTrail = ({ sessionId }: Props) => {
     cache.current = { signature, segments: next };
     return next;
   });
-  const visible = isRailFolded ? segments : segments.slice(1);
+  const visible = isRailFolded
+    ? segments.map((segment, index) => (index === 0 ? { ...segment, isPinned: true } : segment))
+    : segments.slice(1);
   if (visible.length === 0 || segments.length < 2) {
     return null;
   }

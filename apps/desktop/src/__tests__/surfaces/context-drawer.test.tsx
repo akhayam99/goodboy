@@ -120,7 +120,7 @@ describe('Context drawer change marks', () => {
 
     expect(seenAt()).not.toBe(before);
     expect(dot()).toBeNull();
-    const drawer = screen.getByRole('region', { name: 'Decisions' });
+    const drawer = screen.getByRole('region', { name: 'Context' });
     expect(within(drawer).queryByRole('tab', { name: /Decisions/ })).toBeNull();
     expect(within(drawer).getByRole('region', { name: 'Decision records' })).toBeDefined();
     const changed = within(drawer).getByRole('region', { name: 'Changed since you last looked' });
@@ -144,13 +144,13 @@ describe('Context drawer change marks', () => {
     await openContext();
     await settle();
 
-    expect(screen.queryByRole('region', { name: 'Decisions' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Context' })).toBeNull();
     expect(dot()).toBeNull();
 
     await openContext();
     await settle();
 
-    const drawer = screen.getByRole('region', { name: 'Decisions' });
+    const drawer = screen.getByRole('region', { name: 'Context' });
     expect(
       within(drawer).queryByRole('region', { name: 'Changed since you last looked' }),
     ).toBeNull();
@@ -178,16 +178,16 @@ describe('Context drawer mark as read', () => {
     await settle();
     await openContext();
     await settle();
-    const drawer = screen.getByRole('region', { name: 'Decisions' });
+    const drawer = screen.getByRole('region', { name: 'Context' });
     expect(changesRegion()).not.toBeNull();
     expect(within(drawer).queryByRole('img', { name: 'Changed since you last looked' })).toBeNull();
 
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
 
     await waitFor(() => expect(changesRegion()).toBeNull());
-    expect(screen.getByRole('region', { name: 'Decisions' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Context' })).toBeDefined();
     expect(
-      within(screen.getByRole('region', { name: 'Decisions' })).queryByRole('img', {
+      within(screen.getByRole('region', { name: 'Context' })).queryByRole('img', {
         name: 'Changed since you last looked',
       }),
     ).toBeNull();
@@ -260,7 +260,7 @@ describe('Context drawer summary', () => {
     renderSurface();
     await settle();
 
-    const drawer = screen.getByRole('region', { name: 'Decisions' });
+    const drawer = screen.getByRole('region', { name: 'Context' });
     const summary = within(drawer).getByRole('region', { name: 'Summary' });
     const sections = within(summary)
       .getAllByRole('heading', { level: 3 })

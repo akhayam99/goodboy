@@ -38,10 +38,10 @@ export const FixCommentsButton = ({
     fixingThreads,
     waitingFixes: onApply === null ? 0 : waitingFixes,
     fixableThreads: fixable,
-    unpushedCommits: onPush === null ? 0 : unpushedCommits,
+    unpushedCommits,
     hasOpenThreads: unresolved > 0 || onRequestReview === null,
   });
-  if (primary === null) {
+  if (primary === null || (primary.kind === 'push' && onPush === null)) {
     return null;
   }
   const onClick = (): void => {

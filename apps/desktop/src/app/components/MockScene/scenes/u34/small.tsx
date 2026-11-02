@@ -7,7 +7,7 @@ import { StartFailureScene } from './StartFailureScene';
 
 export const U34_SMALL_SCENES = {
   'u34-u22-row-marks': RowMarksScene,
-  'u34-u35-unpushed': () => <PrPageScene variant="none" />,
+  'u34-u35-unpushed': () => <PrPageScene variant="none-unpushed" />,
   'u34-u5-question': SmallDoneScene,
   'u34-u33-branches': () => <RailProjectsScene opens="none" />,
   'u34-u56-step': () => <C09OrchestratedScene state="running" page="step" />,

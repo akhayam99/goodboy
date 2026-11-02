@@ -19,7 +19,6 @@ export type SetupProgress = {
   readonly isDone: boolean;
   readonly next: SetupItemId | null;
   readonly count: string;
-  readonly fraction: number;
 };
 
 type Params = {
@@ -41,6 +40,5 @@ export const setupProgress = ({ completed }: Params): SetupProgress => {
     isDone: done === total,
     next: rows.find((row) => !row.isDone)?.id ?? null,
     count: `${done} of ${total}`,
-    fraction: total === 0 ? 0 : done / total,
   };
 };

@@ -185,8 +185,9 @@ describe('c07 Auto scenes', () => {
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
     const title = screen.getByTestId('agent-header-title-row');
-    expect(within(title).queryByText('Auto agent')).toBeNull();
-    expect(within(title).queryByText('Experimental')).toBeNull();
+    const heading = within(title).getByRole('heading', { level: 1 });
+    expect(within(heading).queryByText('Auto agent')).toBeNull();
+    expect(within(heading).queryByText('Experimental')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('Delegated to')).toBeNull();
     expect(document.querySelectorAll('[data-auto-child-card]').length).toBeGreaterThan(0);

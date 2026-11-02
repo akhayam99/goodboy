@@ -100,7 +100,7 @@ describe('Edit on a plan', () => {
 
   it('is blocked for a plan that runs as parallel parts, naming how many', () => {
     expect(editOf({ parts: 3 })?.blockedReason).toBe(
-      'This plan runs as 3 parallel parts. Ask the planner to change it.',
+      'This plan runs as 3 parts. Ask the planner to change it.',
     );
   });
 

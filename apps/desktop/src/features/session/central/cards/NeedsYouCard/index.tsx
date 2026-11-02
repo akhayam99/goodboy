@@ -56,39 +56,45 @@ export const NeedsYouCard = ({
       </section>
     );
   }
+  const live =
+    waiting.length === 0 ? null : (
+      <div data-needs-you-live="" className="flex min-w-0 flex-col gap-1">
+        {waiting.map((group) => (
+          <EntryWash
+            key={`${group.kind}:${group.id}`}
+            isWashed={washed.has(`${group.kind}:${group.id}`)}
+          >
+            <LiveGroup
+              sessionId={session.id}
+              session={session}
+              group={group}
+              where={whereOf({ mountId: group.mountId })}
+              isLead={group.id === leadRunId}
+            />
+          </EntryWash>
+        ))}
+      </div>
+    );
+  const stack = (
+    <NextStackView
+      sessionId={session.id}
+      cards={cards}
+      overviewCard="needs-you"
+      washedIds={washed}
+      hasHeader={false}
+      canLead
+      actionsFor={actionsFor}
+      openFor={openFor}
+      chipFor={chipFor}
+      branchFor={branchFor}
+      stopRowFor={stopRowFor}
+    />
+  );
+  const isStackFirst = leadRunId === null;
   return (
     <OverviewCard card={card}>
-      {waiting.length === 0 ? null : (
-        <div data-needs-you-live="" className="flex min-w-0 flex-col gap-1">
-          {waiting.map((group) => (
-            <EntryWash
-              key={`${group.kind}:${group.id}`}
-              isWashed={washed.has(`${group.kind}:${group.id}`)}
-            >
-              <LiveGroup
-                sessionId={session.id}
-                session={session}
-                group={group}
-                where={whereOf({ mountId: group.mountId })}
-                isLead={group.id === leadRunId}
-              />
-            </EntryWash>
-          ))}
-        </div>
-      )}
-      <NextStackView
-        sessionId={session.id}
-        cards={cards}
-        overviewCard="needs-you"
-        washedIds={washed}
-        hasHeader={false}
-        canLead
-        actionsFor={actionsFor}
-        openFor={openFor}
-        chipFor={chipFor}
-        branchFor={branchFor}
-        stopRowFor={stopRowFor}
-      />
+      {isStackFirst ? stack : live}
+      {isStackFirst ? live : stack}
     </OverviewCard>
   );
 };

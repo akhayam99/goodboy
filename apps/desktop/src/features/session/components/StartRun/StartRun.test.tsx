@@ -458,7 +458,7 @@ describe('StartRun run as', () => {
 
     pickKind({ name: 'Orchestrated' });
 
-    screen.getByText('Auto plans each next step as it goes.');
+    screen.getByText('Orchestrated plans each next step as it goes.');
     expect(document.querySelector('[data-run-route-line]')).toBeNull();
     expect(isPicked({ name: 'Orchestrated' })).toBe(true);
   });

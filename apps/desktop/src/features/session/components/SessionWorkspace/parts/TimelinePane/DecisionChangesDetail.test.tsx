@@ -75,7 +75,7 @@ describe('DecisionChangesDetail', () => {
 
     expect(screen.getByText('D12')).toBeDefined();
     expect(screen.getByText('withdrawn: drift')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open in Decisions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Context' }));
     expect(onOpenInContext).toHaveBeenCalledTimes(1);
   });
 

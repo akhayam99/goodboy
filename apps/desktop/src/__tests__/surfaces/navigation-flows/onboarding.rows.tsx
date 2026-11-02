@@ -177,7 +177,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'setup card: counts the three steps and offers Resume setup while setup is paused',
+    name: 'setup card: counts the three steps and resumes from the open step while setup is paused',
     covers: ['onboarding:menu-count'],
     seed: 'empty',
     open: async () => {
@@ -190,9 +190,9 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       const setup = within(await screen.findByRole('region', { name: 'Setup' }));
       expect(setup.getByText('Setup · 2 of 3')).toBeDefined();
-      expect(setup.getAllByRole('listitem')).toHaveLength(3);
-      expect(setup.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
-      expect(setup.getByRole('button', { name: 'Resume setup' })).toBeDefined();
+      expect(setup.getAllByRole('listitem')).toHaveLength(2);
+      expect(setup.getByRole('meter').getAttribute('aria-valuenow')).toBe('2');
+      expect(setup.getByRole('button', { name: 'Start First session' })).toBeDefined();
       expect(await savedWizard()).toBe('later');
     },
   },

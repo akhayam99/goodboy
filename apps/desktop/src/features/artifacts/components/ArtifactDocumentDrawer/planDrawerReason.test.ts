@@ -21,7 +21,7 @@ const REVISING: PlanPrimary = {
 
 const NONE: PlanPrimary = { kind: 'none', label: null, reason: null, isSecondary: false };
 
-const SPLIT = 'This plan runs as 3 parallel parts. Ask the planner to change it.';
+const SPLIT = 'This plan runs as 3 parts. Ask the planner to change it.';
 
 describe('planDrawerReasonOf', () => {
   it('prints the reason the primary is off', () => {

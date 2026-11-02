@@ -204,7 +204,7 @@ describe('what the Guide may name', () => {
       'left column',
       'More panes',
       'New drawer',
-      'Decisions drawer',
+      'Context drawer',
     ].forEach((removed) => expect(text).not.toContain(removed));
     expect(text).not.toMatch(/\bcap\b/i);
   });
@@ -288,7 +288,7 @@ describe('the shell chapter', () => {
 
   it('names the session tools in their column at the right of the page', () => {
     const tools = pointOf('shell', 'Session tools');
-    ['Ask', 'Terminal', 'Explore', 'Decisions', 'Scripts', 'right of the session page'].forEach(
+    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'right of the session page'].forEach(
       (tool) => expect(tools).toContain(tool),
     );
     expect(tools).toContain('Fold session rail');
@@ -302,7 +302,7 @@ describe('the start, agent and workflow chapters', () => {
     expect(pointOf('kickoff', 'Start from Tasks')).toContain('Pick from Tasks');
     expect(pointOf('kickoff', 'Pin folders')).toContain('Auto picks');
     expect(pointOf('kickoff', 'Pin folders')).toContain('Suggested');
-    expect(pointOf('kickoff', 'Pin folders')).toContain('All folders');
+    expect(pointOf('kickoff', 'Pin folders')).toContain('All projects');
   });
 
   it('lists the New menu forms by their titles', () => {

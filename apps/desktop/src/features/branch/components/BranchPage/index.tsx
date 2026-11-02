@@ -471,11 +471,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                   <PullRequestHeaderLine
                     pr={pr}
                     host={host}
-                    commitCount={
-                      pullRequestView.view?.number === pr.number
-                        ? pullRequestView.view.commits.length
-                        : null
-                    }
+                    view={pullRequestView.view}
+                    readiness={prReadiness}
+                    isThreadsShown={tab === 'comments'}
                   />
                 ))
               }

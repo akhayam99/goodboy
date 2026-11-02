@@ -189,7 +189,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pin folders',
-        desc: 'The folders chip reads Auto picks: an agent adds the folder it must edit. Pin folders there from Suggested or All folders.',
+        desc: 'The folders chip reads Auto picks: an agent adds the folder it must edit. Pin folders there from Suggested or All projects.',
       },
       {
         term: 'New menu',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Decisions, Ask, Agents, Scripts and Terminal, in two groups, with the active tool named below its icon, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, in two groups, with the active tool named below its icon, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
       },
     ],
     links: [],
@@ -363,15 +363,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Decisions',
-        desc: 'Each decision gets a number and a byline, and one Goodboy records keeps why. Click one in Decisions to edit or remove it, with Undo while the pane is open.',
+        desc: 'Each decision gets a number and a byline, and one Goodboy records keeps why. Click one in Context to edit or remove it, with Undo while the pane is open.',
       },
       {
         term: 'Running summary',
         desc: 'After each turn, State, Next and Learned are updated for the next agent, and an edit you made is kept.',
       },
       {
-        term: 'Decisions pane',
-        desc: `Decisions, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions and summary, with Copy context. A dot on it means something changed since you looked, and Update now queues an update.`,
+        term: 'Context pane',
+        desc: `Context, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions and summary, with Copy context. A dot on it means something changed since you looked, and Update now queues an update.`,
       },
       {
         term: 'Visible to',
@@ -765,7 +765,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Decisions, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal.`,
+        desc: `${shortcutGlyphs('column.toggle')} folds the sidebar, ${shortcutGlyphs('innerColumn.toggle')} the page column. ${shortcutGlyphs('nav.back')} steps the rail out or goes Back, and ${shortcutGlyphs('nav.up')} goes up. In a session, ${shortcutGlyphs('lens.explore')} opens Explore, ${shortcutGlyphs('lens.context')} Context, ${shortcutGlyphs('ask.open')} Ask, ${shortcutGlyphs('session.spawned')} Agents, ${shortcutGlyphs('lens.scripts')} Scripts and ${shortcutGlyphs('session.terminal')} Terminal.`,
       },
       {
         term: 'Terminal',

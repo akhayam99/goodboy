@@ -377,8 +377,8 @@
           "main": true
         },
         {
-          "title": "Decisions drawer",
-          "text": "Open goal, decisions, summary and explanations from any session page with the Decisions button, and copy them all with Copy context.",
+          "title": "Context drawer",
+          "text": "Open goal, decisions, summary and explanations from any session page with the Context button, and copy them all with Copy context.",
           "group": "Shared context",
           "also": "context drawer"
         },

@@ -10,4 +10,5 @@ export type StatusCell = {
   readonly detail: string | null;
   readonly tone: Tone;
   readonly opens: BranchTab | null;
+  readonly isPending?: boolean;
 };

@@ -13,7 +13,9 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
+import { invoke } from '@tauri-apps/api/core';
 import { MOCK_SCENES } from '../..';
+import { prPageHandlers } from './prPageSeed';
 import { U23_COMMENTS_SCENES } from './comments';
 
 beforeAll(async () => {
@@ -109,13 +111,26 @@ describe('the u23 comments scenes', () => {
     expect(within(needsYou).queryByRole('button', { name: /^Apply \d/ })).toBeNull();
   });
 
+  it('lists the sections once, in the tab strip, not again in the rail', async () => {
+    await renderScene({ name: 'comments-groups' });
+
+    const rail = screen.getByRole('complementary', { name: 'Worktree level' });
+    expect(within(rail).queryByRole('button', { name: /^Files/ })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: /^Commits/ })).toBeNull();
+  });
+
   it('shows the fixed comments under Done with their count, Push only in the header', async () => {
+    const handlers = prPageHandlers({ behind: 0, unpushed: 3 });
+    vi.mocked(invoke).mockImplementation(
+      async (command: string) =>
+        handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
+    );
     await renderScene({ name: 'comments-ready-to-push' });
 
     const ready = within(list()).getByRole('region', { name: 'Done' });
     expect(within(ready).getByRole('heading', { name: 'Done 3' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /^Push commits$/ })).toHaveLength(1);
-    expect(within(ready).queryByRole('button', { name: 'Push commits' })).toBeNull();
+    expect(await screen.findAllByRole('button', { name: /^Push 3 commits$/ })).toHaveLength(1);
+    expect(within(ready).queryByRole('button', { name: 'Push 3 commits' })).toBeNull();
     expect(within(ready).getAllByRole('listitem')).toHaveLength(3);
     const first = ready.querySelector<HTMLElement>('button[data-thread-id]');
     expect(first).not.toBeNull();

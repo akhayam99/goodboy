@@ -807,7 +807,7 @@ describe('editing the plan by hand in the drawer', () => {
     {
       name: 'the plan runs as parallel parts',
       seed: { run: 'held', parts: 3 } satisfies PlanDrawerSeed,
-      reason: 'This plan runs as 3 parallel parts. Ask the planner to change it.',
+      reason: 'This plan runs as 3 parts. Ask the planner to change it.',
     },
   ])('disables Edit with its reason when $name', ({ seed, reason }) => {
     seedAndRender(seed);
@@ -821,7 +821,7 @@ describe('editing the plan by hand in the drawer', () => {
     seedAndRender({ run: 'held', parts: 3 });
 
     expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
-      'This plan runs as 3 parallel parts. Ask the planner to change it.',
+      'This plan runs as 3 parts. Ask the planner to change it.',
     );
   });
 

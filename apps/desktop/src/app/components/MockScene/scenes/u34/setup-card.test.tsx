@@ -63,3 +63,15 @@ it('u34-u27-empty-board draws the setup card on the empty board until it is hidd
   within(setup).getByRole('button', { name: 'Hide setup' });
   expect(screen.queryByText('No sessions yet')).not.toBeNull();
 });
+
+it('u34-u27-setup-card sits a section gap above what follows, with its action secondary and the done line last', async () => {
+  mount(U34_SETUP_CARD_SCENES['u34-u27-setup-card']);
+
+  const setup = await screen.findByRole('region', { name: 'Setup' });
+  const card = document.querySelector('[data-slot="setup-card"]');
+  expect(card?.getAttribute('data-rhythm')).toBe('section');
+  within(setup).getByRole('meter', { name: 'Setup progress' });
+  expect(setup.querySelectorAll('[data-variant="primary"]')).toHaveLength(0);
+  expect(setup.querySelectorAll('[data-state="done"]')).toHaveLength(1);
+  expect(within(setup).queryByText('Next')).toBeNull();
+});

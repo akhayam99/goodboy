@@ -1156,6 +1156,7 @@ u34-u24-folded-sessions
 u34-u26-board
 u34-u27-empty-board
 u34-u27-foot-board
+u34-u27-setup-card
 u34-u27-update-card
 u34-u28-agents-open
 u34-u28-drawer-closed
