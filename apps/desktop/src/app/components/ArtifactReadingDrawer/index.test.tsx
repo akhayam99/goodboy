@@ -112,11 +112,11 @@ describe('a report or wireframe opened from its work', () => {
     expect(screen.getByRole('heading', { name: 'Rounding drift in ledger-core' })).toBeDefined();
   });
 
-  it('shows a wireframe stage in the drawer', () => {
+  it('shows a wireframe stage in the drawer', async () => {
     open(WIREFRAME);
     render(<DrawerHost />);
 
-    expect(screen.getByText('Wireframe stage Checkout retry screen')).toBeDefined();
+    expect(await screen.findByText('Wireframe stage Checkout retry screen')).toBeDefined();
   });
 
   it.each([REPORT, WIREFRAME])('has Open in Artifacts and no Expand or Collapse', (id) => {

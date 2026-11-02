@@ -1,3 +1,4 @@
+import { isNullableString } from '../../shared/utils/isNullableString';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 import { deleteSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
@@ -20,16 +21,14 @@ export type WindowLayout = {
   readonly at: number;
 };
 
-const isNullableString = (value: unknown): value is string | null =>
-  value === null || typeof value === 'string';
-
 const isWorkspaceId = (value: unknown): value is WorkspaceId => typeof value === 'string';
 
 const isSessionId = (value: unknown): value is SessionId => typeof value === 'string';
 
-const isViewLens = (value: unknown): value is SessionView['lens'] => isNullableString(value);
+const isViewLens = (value: unknown): value is SessionView['lens'] => isNullableString({ value });
 
-const isViewAgentId = (value: unknown): value is SessionView['agentId'] => isNullableString(value);
+const isViewAgentId = (value: unknown): value is SessionView['agentId'] =>
+  isNullableString({ value });
 
 const isViewTarget = (value: unknown): value is SessionView['target'] =>
   value === null || isRecord(value);

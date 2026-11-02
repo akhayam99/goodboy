@@ -174,7 +174,7 @@ describe('controls hints', () => {
     const ask = within(row).getByTestId('pane-toggle-ask');
     const search = within(row).getByRole('button', { name: /^Search or run \(/ });
     expect(ask.textContent).toBe('');
-    expect(ask.getAttribute('aria-label')).toBe('Ask');
+    expect(ask.getAttribute('aria-label')).toBe('Ask this session');
     expect(ask.querySelector('kbd')).toBeNull();
     expect(search.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
     expect(search.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('palette.open'));

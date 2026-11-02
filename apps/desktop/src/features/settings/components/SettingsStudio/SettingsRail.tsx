@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
-import type { SettingsGroup } from './settingsDirectory';
+import { foldOfPageKey, type SettingsGroup } from './settingsDirectory';
 import { SettingsRailFold } from './SettingsRailFold';
 import { SettingsRailPageGroup } from './SettingsRailPageGroup';
 import { SettingsRailPlaceholder } from './SettingsRailPlaceholder';
-import { isNestedScope, type NestedScope } from './settingsScopes';
+import type { NestedScope } from './settingsScopes';
 
 type Props = {
-  readonly scope: SettingsPageScope;
   readonly pageKey: string | null;
   readonly groups: ReadonlyArray<SettingsGroup>;
   readonly workspaceName: string | null;
@@ -22,11 +21,14 @@ const CLOSED: Folds = { providers: false, tools: false };
 
 type OpenedParams = {
   readonly folds: Folds;
-  readonly scope: SettingsPageScope;
+  readonly groups: ReadonlyArray<SettingsGroup>;
+  readonly pageKey: string | null;
 };
 
-const opened = ({ folds, scope }: OpenedParams): Folds =>
-  isNestedScope(scope) && !folds[scope] ? { ...folds, [scope]: true } : folds;
+const opened = ({ folds, groups, pageKey }: OpenedParams): Folds => {
+  const fold = foldOfPageKey({ groups, pageKey });
+  return fold !== null && !folds[fold] ? { ...folds, [fold]: true } : folds;
+};
 
 type GroupParams = {
   readonly groups: ReadonlyArray<SettingsGroup>;
@@ -37,18 +39,17 @@ const groupOf = ({ groups, scope }: GroupParams): SettingsGroup | undefined =>
   groups.find((group) => group.scope === scope);
 
 export const SettingsRail = ({
-  scope,
   pageKey,
   groups,
   workspaceName,
   onSelect,
   isInColumn = false,
 }: Props) => {
-  const [folds, setFolds] = useState<Folds>(() => opened({ folds: CLOSED, scope }));
-  const [seenScope, setSeenScope] = useState(scope);
-  if (seenScope !== scope) {
-    setSeenScope(scope);
-    setFolds(opened({ folds, scope }));
+  const [folds, setFolds] = useState<Folds>(() => opened({ folds: CLOSED, groups, pageKey }));
+  const [seenPageKey, setSeenPageKey] = useState(pageKey);
+  if (seenPageKey !== pageKey) {
+    setSeenPageKey(pageKey);
+    setFolds(opened({ folds, groups, pageKey }));
   }
 
   const app = groupOf({ groups, scope: 'app' });
@@ -65,22 +66,6 @@ export const SettingsRail = ({
         <SettingsRailPageGroup
           group={app}
           label={app.label}
-          isCurrentGroup={scope === 'app'}
-          pageKey={pageKey}
-          onSelect={onSelect}
-        />
-      )}
-      {workspace === undefined || workspaceName === null ? (
-        <SettingsRailPlaceholder
-          scope="workspace"
-          label="Workspace"
-          line="Open a workspace to see its settings."
-        />
-      ) : (
-        <SettingsRailPageGroup
-          group={workspace}
-          label={`${workspace.label} · ${workspaceName}`}
-          isCurrentGroup={scope === 'workspace'}
           pageKey={pageKey}
           onSelect={onSelect}
         />
@@ -89,27 +74,41 @@ export const SettingsRail = ({
         <SettingsRailFold
           group={providers}
           isOpen={folds.providers}
-          isCurrentGroup={scope === 'providers'}
           pageKey={pageKey}
           onToggle={() => setFolds({ ...folds, providers: !folds.providers })}
           onSelect={onSelect}
         />
       )}
-      {tools === undefined ? (
-        <SettingsRailPlaceholder
-          scope="tools"
-          label="Integrations"
-          line="Integrations belong to a workspace."
-        />
+      {workspace === undefined || workspaceName === null ? (
+        <>
+          <SettingsRailPlaceholder
+            scope="workspace"
+            label="This workspace"
+            line="Open a workspace to see its settings."
+          />
+          <SettingsRailPlaceholder
+            scope="tools"
+            label="Integrations"
+            line="Integrations belong to a workspace."
+          />
+        </>
       ) : (
-        <SettingsRailFold
-          group={tools}
-          isOpen={folds.tools}
-          isCurrentGroup={scope === 'tools'}
+        <SettingsRailPageGroup
+          group={workspace}
+          label={`${workspace.label} · ${workspaceName}`}
           pageKey={pageKey}
-          onToggle={() => setFolds({ ...folds, tools: !folds.tools })}
           onSelect={onSelect}
-        />
+        >
+          {tools === undefined ? null : (
+            <SettingsRailFold
+              group={tools}
+              isOpen={folds.tools}
+              pageKey={pageKey}
+              onToggle={() => setFolds({ ...folds, tools: !folds.tools })}
+              onSelect={onSelect}
+            />
+          )}
+        </SettingsRailPageGroup>
       )}
     </nav>
   );

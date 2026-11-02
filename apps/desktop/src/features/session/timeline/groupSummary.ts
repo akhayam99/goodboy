@@ -1,3 +1,4 @@
+import { nounFor } from '../../../shared/utils/nounFor';
 import type { Tone } from '@goodboy/ui';
 
 const LEADING_COUNT = /^(\d+) /;
@@ -88,16 +89,6 @@ type StepsState = 'steps' | 'answered' | 'context';
 
 const STEPS_ORDER: ReadonlyArray<StepsState> = ['steps', 'answered', 'context'];
 
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}) => (count === 1 ? one : many);
-
 type StepsSummaryParams = {
   readonly kind: StepsGroupKind;
   readonly steps: number;
@@ -125,10 +116,10 @@ export const stepsGroupSummary = ({
         state === 'context'
           ? 'context'
           : state === 'answered'
-            ? `${plural({ count, one: 'question', many: 'questions' })} answered`
+            ? `${nounFor({ count, one: 'question', many: 'questions' })} answered`
             : kind === 'run'
-              ? plural({ count, one: 'step', many: 'steps' })
-              : plural({ count, one: 'subagent', many: 'subagents' }),
+              ? nounFor({ count, one: 'step', many: 'steps' })
+              : nounFor({ count, one: 'subagent', many: 'subagents' }),
       toneOf: () => 'neutral',
       failure: null,
     }).map((part) =>

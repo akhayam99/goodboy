@@ -5,8 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { FileDiff, IsoDateTime } from '@goodboy/types';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { installFakeIntersectionObserver } from '../../../../__tests__/helpers/fakeIntersectionObserver';
 import { DiffView } from '.';
-import type { DiffComments, DiffThread } from './types';
+import type { DiffBodies, DiffBodyState, DiffComments, DiffThread } from './types';
 
 const { fileRenders } = vi.hoisted(() => ({ fileRenders: { current: 0 } }));
 
@@ -87,8 +88,8 @@ const thread = (overrides: Partial<DiffThread> = {}): DiffThread => ({
 
 const commentsWith = (threads: ReadonlyArray<DiffThread>): DiffComments => ({
   threads,
-  submitLabel: 'Add note',
-  composerLabel: 'Note',
+  submitLabel: 'Add comment',
+  composerLabel: 'Comment',
   allowFileLevel: true,
   onSubmit: vi.fn(),
   onAskAgent: vi.fn(),
@@ -223,7 +224,7 @@ describe('DiffView comments', () => {
     act(() => {
       window.dispatchEvent(new Event('pointerup'));
     });
-    const box = screen.getByRole('textbox', { name: 'Note on line 39' });
+    const box = screen.getByRole('textbox', { name: 'Comment on line 39' });
     fireEvent.change(box, { target: { value: 'Name this floorToCents' } });
     fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
     expect(comments.onSubmit).toHaveBeenCalledWith(
@@ -244,9 +245,9 @@ describe('DiffView comments', () => {
     act(() => {
       window.dispatchEvent(new Event('pointerup'));
     });
-    const box = screen.getByRole('textbox', { name: 'Note on lines 39 to 41' });
+    const box = screen.getByRole('textbox', { name: 'Comment on lines 39 to 41' });
     fireEvent.change(box, { target: { value: 'Early return hides the zero weight path' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
     expect(comments.onSubmit).toHaveBeenCalledWith(
       LEDGER.path,
       { side: 'new', lineNumber: 39, endLineNumber: 41 },
@@ -263,7 +264,7 @@ describe('DiffView comments', () => {
       button: 0,
       shiftKey: true,
     });
-    screen.getByRole('textbox', { name: 'Note on lines 39 to 42' });
+    screen.getByRole('textbox', { name: 'Comment on lines 39 to 42' });
   });
 
   it('cancels the composer with escape', () => {
@@ -283,7 +284,7 @@ describe('DiffView comments', () => {
 
     fireEvent.keyDown(gutter, { key: 'Enter' });
 
-    const box = screen.getByRole('textbox', { name: 'Note on line 39' });
+    const box = screen.getByRole('textbox', { name: 'Comment on line 39' });
     expect(document.activeElement).toBe(box);
     expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' });
     const lineRow = gutter.closest('[role="row"]') as HTMLElement;
@@ -302,7 +303,7 @@ describe('DiffView comments', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
       key: 'Enter',
     });
-    const box = screen.getByRole('textbox', { name: 'Note on line 40' });
+    const box = screen.getByRole('textbox', { name: 'Comment on line 40' });
     fireEvent.change(box, { target: { value: 'Guard a zero weight' } });
     fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
 
@@ -320,11 +321,11 @@ describe('DiffView comments', () => {
   });
 
   it.each([
-    [700, true],
-    [1000, false],
+    [700, false],
+    [1000, true],
   ] as const)(
-    'with %ipx for the code, a split choice falls back to unified and says so: %s',
-    (width, isTooNarrow) => {
+    'with %ipx for the code, the Split segment is open: %s, and no sentence says otherwise',
+    (width, isSplitOpen) => {
       vi.stubGlobal(
         'ResizeObserver',
         class {
@@ -341,14 +342,19 @@ describe('DiffView comments', () => {
       );
       render(<DiffView files={[LEDGER]} />);
       fireEvent.click(screen.getByRole('button', { name: /Display/ }));
-      fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
+      const split = screen.getByRole('tab', { name: 'Split' });
+      expect(split.hasAttribute('disabled')).toBe(!isSplitOpen);
+      fireEvent.click(split);
 
       const grid = screen.getByRole('grid');
       expect(grid.innerHTML.includes('grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]')).toBe(
-        !isTooNarrow,
+        isSplitOpen,
       );
-      expect(screen.queryByText('Split needs a wider window') !== null).toBe(isTooNarrow);
-      expect(screen.getByRole('tab', { name: 'Split' }).getAttribute('aria-selected')).toBe('true');
+      expect(screen.queryByText('Split needs a wider window')).toBeNull();
+      expect(split.getAttribute('aria-selected')).toBe(String(isSplitOpen));
+      expect(screen.getByRole('tab', { name: 'Unified' }).getAttribute('aria-selected')).toBe(
+        String(!isSplitOpen),
+      );
       vi.unstubAllGlobals();
     },
   );
@@ -385,7 +391,7 @@ describe('DiffView comments', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
       key: 'Enter',
     });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Note on line 40' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Comment on line 40' }), {
       target: { value: '  Rebuild this from the intro question.  ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Ask agent' }));
@@ -398,7 +404,7 @@ describe('DiffView comments', () => {
     expect(comments.onSubmit).not.toHaveBeenCalled();
   });
 
-  it('shows a note under its line with Fix and Close note, and no control says Resolve', () => {
+  it('shows a note under its line with Fix and Close comment, and no control says Resolve', () => {
     const onFix = vi.fn();
     const comments = commentsWith([
       thread({ actions: [{ id: 'fix', label: 'Fix', isPrimary: true, onClick: onFix }] }),
@@ -407,16 +413,16 @@ describe('DiffView comments', () => {
     screen.getByText('Guard the residual when a weight is zero');
     fireEvent.click(screen.getByRole('button', { name: 'Fix' }));
     expect(onFix).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'Close note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close comment' }));
     expect(comments.onClose).toHaveBeenCalledWith('n1');
     expect(screen.queryAllByRole('button', { name: /^Resolve/ })).toEqual([]);
   });
 
-  it('blocks Close note and Delete on a note a fixer is working on, and says why', () => {
+  it('blocks Close comment and Delete on a note a fixer is working on, and says why', () => {
     const reason = 'A fixer is working on this note';
     const comments = commentsWith([thread({ lockReason: reason, meta: 'Sonnet 5.5 · Medium' })]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
-    const close = screen.getByRole('button', { name: 'Close note' });
+    const close = screen.getByRole('button', { name: 'Close comment' });
     expect(close.hasAttribute('disabled')).toBe(true);
     expect(close.hasAttribute('title')).toBe(false);
     expect(tooltipTextOf({ element: close })).toBe(reason);
@@ -585,9 +591,9 @@ describe('DiffView file-level comments', () => {
     render(<DiffView files={[LEDGER]} comments={comments} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
-    expect(screen.getByText('Note on this file')).toBeDefined();
+    expect(screen.getByText('Comment on this file')).toBeDefined();
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Split this file' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
 
     expect(comments.onSubmit).toHaveBeenCalledWith(LEDGER.path, null, 'Split this file');
   });
@@ -620,7 +626,7 @@ describe('DiffView file-level comments', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
 
-    expect(screen.getByText('Note on this file')).toBeDefined();
+    expect(screen.getByText('Comment on this file')).toBeDefined();
     screen.getByRole('grid');
   });
 
@@ -752,5 +758,76 @@ describe('DiffView window', () => {
     render(<Host />);
 
     await waitFor(() => expect(calls).toContain(target));
+  });
+});
+
+describe('DiffView with bodies on demand', () => {
+  const LEDGER_LIST: FileDiff = { ...LEDGER, hunks: [] };
+  const RELAY_LIST: FileDiff = { ...RELAY, hunks: [] };
+
+  const bodiesOf = (states: Readonly<Record<string, DiffBodyState>>) => {
+    const request = vi.fn();
+    const retry = vi.fn();
+    const bodies: DiffBodies = {
+      stateOf: ({ path }) => states[path] ?? 'pending',
+      request,
+      retry,
+    };
+    return { bodies, request, retry };
+  };
+
+  it('fetches a file when it enters the viewport and not before', () => {
+    const observer = installFakeIntersectionObserver();
+    const { bodies, request } = bodiesOf({});
+    render(<DiffView files={[LEDGER_LIST, RELAY_LIST]} bodies={bodies} />);
+
+    expect(request).not.toHaveBeenCalled();
+
+    observer.show({ attribute: 'data-file-path', keys: [LEDGER.path] });
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith({ path: LEDGER.path });
+
+    observer.show({ attribute: 'data-file-path', keys: [LEDGER.path, RELAY.path] });
+    expect(request).toHaveBeenCalledWith({ path: RELAY.path });
+    observer.restore();
+  });
+
+  it('asks again for a file already seen when the bodies hand out a new request', () => {
+    const observer = installFakeIntersectionObserver();
+    const first = bodiesOf({});
+    const { rerender } = render(<DiffView files={[LEDGER_LIST]} bodies={first.bodies} />);
+    observer.show({ attribute: 'data-file-path', keys: [LEDGER.path] });
+    const second = bodiesOf({});
+
+    rerender(<DiffView files={[LEDGER_LIST]} bodies={second.bodies} />);
+
+    expect(second.request).toHaveBeenCalledWith({ path: LEDGER.path });
+    observer.restore();
+  });
+
+  it('never asks for a file that is loaded', () => {
+    const { bodies, request } = bodiesOf({ [LEDGER.path]: 'loaded' });
+    render(<DiffView files={[LEDGER]} bodies={bodies} />);
+
+    expect(request).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status', { name: 'Loading diff' })).toBeNull();
+  });
+
+  it('holds a placeholder where the body is on its way', () => {
+    const { bodies } = bodiesOf({ [LEDGER.path]: 'pending' });
+    render(<DiffView files={[LEDGER_LIST]} bodies={bodies} />);
+
+    screen.getByRole('status', { name: 'Loading diff' });
+    screen.getByText('+3');
+  });
+
+  it('says a body failed and retries it from the button', () => {
+    const { bodies, retry } = bodiesOf({ [LEDGER.path]: 'failed' });
+    render(<DiffView files={[LEDGER_LIST]} bodies={bodies} />);
+
+    screen.getByText("Couldn't load this diff.");
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(retry).toHaveBeenCalledWith({ path: LEDGER.path });
   });
 });

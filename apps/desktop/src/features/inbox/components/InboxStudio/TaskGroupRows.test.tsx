@@ -4,6 +4,7 @@ import { ListGrid } from '@goodboy/ui';
 import type { InboxRecord } from '../../types';
 import { TaskGroupRows, type TaskLine } from './TaskGroupRows';
 import { TASK_COLUMNS } from './taskColumns';
+import { sourceFailureOf } from '../../sourceFailureOf';
 
 const { rowRenders } = vi.hoisted(() => ({ rowRenders: { current: 0 } }));
 
@@ -136,13 +137,50 @@ describe('TaskGroupRows', () => {
     ).toBe('inbox-option-github_issue_40');
   });
 
-  it('puts a source that did not load as one gray line with a Retry button', () => {
-    const onRetry = vi.fn();
-    render(group({ lines: [{ key: 'linear', text: 'Linear is rate limited.', onRetry }] }));
+  it('puts a source that did not load in a notice with a Retry button', () => {
+    const onAction = vi.fn();
+    render(
+      group({
+        lines: [
+          {
+            key: 'linear',
+            failure: sourceFailureOf({ name: 'Linear', message: 'HTTP 429' }),
+            onAction,
+          },
+        ],
+      }),
+    );
 
-    expect(screen.getByText('Linear is rate limited.')).toBeDefined();
+    expect(screen.getByText('Linear is rate limited').textContent).toBe('Linear is rate limited');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(onRetry).toHaveBeenCalledOnce();
+    expect(onAction).toHaveBeenCalledOnce();
+  });
+
+  it('reads Reconnect for a 401 and keeps the raw line behind Details', () => {
+    const onAction = vi.fn();
+    render(
+      group({
+        lines: [
+          {
+            key: 'sentry',
+            failure: sourceFailureOf({ name: 'Sentry', message: 'The token was refused (401).' }),
+            onAction,
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText('Sentry refused the token').textContent).toBe(
+      'Sentry refused the token',
+    );
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByText('The token was refused (401).')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByRole('button', { name: 'Details' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
+    expect(onAction).toHaveBeenCalledOnce();
   });
 
   it('re-renders only the rows that gain or lose the selection', () => {

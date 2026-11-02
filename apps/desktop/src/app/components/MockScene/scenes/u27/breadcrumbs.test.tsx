@@ -15,10 +15,8 @@ import {
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
-import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 import { MOCK_SCENES } from '../..';
 import { U27_BREADCRUMBS_SCENES } from './breadcrumbs';
-import { BREADCRUMB_PLACES, type BreadcrumbPlaceId } from './breadcrumbs/breadcrumbPlaces';
 
 beforeAll(async () => {
   await importStore();
@@ -58,21 +56,20 @@ describe('breadcrumbs scenes', () => {
     expect(Object.keys(U27_BREADCRUMBS_SCENES)).toHaveLength(10);
   });
 
-  it.each<readonly [string, BreadcrumbPlaceId, ReadonlyArray<string>]>([
-    ['run', 'run', ['Runs', 'Run']],
-    ['step', 'step', ['Runs', 'Run', 'Agent']],
-    ['agent', 'agent', ['Runs', 'Agent']],
-    ['artifact', 'artifact', ['Artifacts', 'Artifact']],
-    ['branch-file', 'branchFile', ['Branch', 'File']],
-  ])('draws the real session trail on the %s page', async (slug, placeId, tail) => {
+  it.each<readonly [string, ReadonlyArray<string>]>([
+    ['run', ['Runs', 'Run']],
+    ['step', ['Runs', 'Run', 'Record the attempts on each delivery in notify-relay']],
+    ['agent', ['Runs', 'Read retry state from the typed endpoint']],
+    ['artifact', ['Artifacts', 'Artifact']],
+    ['branch-file', ['Branch', 'File']],
+  ])('draws the real session trail on the %s page', async (slug, tail) => {
     mount({ id: `u27-breadcrumbs-after-${slug}-light` });
-    const session = BREADCRUMB_PLACES[placeId].session;
     const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' });
     const labels = [...trail.querySelectorAll('[data-trail-piece]')].map(
       (piece) => piece.textContent ?? '',
     );
 
-    expect(labels).toEqual([sessionTitle({ session }), ...tail]);
+    expect(labels).toEqual(tail);
     expect(
       within(trail)
         .getByText(tail.at(-1) ?? '')

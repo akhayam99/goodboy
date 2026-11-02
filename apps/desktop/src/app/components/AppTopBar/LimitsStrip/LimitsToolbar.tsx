@@ -66,7 +66,7 @@ export const LimitsToolbar = ({ chips, nowMs, pressedId, onOpen }: Props) => {
   return (
     <div
       role="toolbar"
-      aria-label="Provider limits"
+      aria-label="Provider usage"
       onKeyDown={moveFocus}
       className="flex shrink-0 items-center gap-1"
     >

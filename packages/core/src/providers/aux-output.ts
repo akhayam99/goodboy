@@ -1,3 +1,4 @@
+import { asRecord } from '../asRecord';
 import type { ProviderId } from '@goodboy/types';
 import { readCursorObjects } from './readCursorObjects';
 
@@ -27,13 +28,6 @@ const ZERO_USAGE: AuxUsage = {
   outputTokens: 0,
   cachedInputTokens: 0,
   cacheCreationInputTokens: 0,
-};
-
-const asRecord = (value: unknown): Record<string, unknown> | null => {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
 };
 
 const asString = (value: unknown): string | null => (typeof value === 'string' ? value : null);
@@ -66,7 +60,7 @@ const readJsonLines = (raw: string): ReadonlyArray<Record<string, unknown>> => {
     } catch {
       continue;
     }
-    const record = asRecord(parsed);
+    const record = asRecord({ value: parsed });
     if (record !== null) {
       out.push(record);
     }
@@ -75,7 +69,7 @@ const readJsonLines = (raw: string): ReadonlyArray<Record<string, unknown>> => {
 };
 
 const readEnvelopeUsage = (value: unknown): AuxUsage => {
-  const usage = asRecord(value);
+  const usage = asRecord({ value });
   if (usage === null) {
     return ZERO_USAGE;
   }
@@ -90,7 +84,7 @@ const readEnvelopeUsage = (value: unknown): AuxUsage => {
 };
 
 const readCodexUsage = (value: unknown): AuxUsage => {
-  const usage = asRecord(value);
+  const usage = asRecord({ value });
   if (usage === null) {
     return ZERO_USAGE;
   }
@@ -120,7 +114,7 @@ const extractAnthropicEnvelope = (trimmed: string): AuxOutput => {
   } catch {
     return plainText({ text: trimmed, envelopeDecoded: false });
   }
-  const payload = asRecord(parsed);
+  const payload = asRecord({ value: parsed });
   if (payload === null) {
     return plainText({ text: trimmed, envelopeDecoded: false });
   }
@@ -172,11 +166,11 @@ const extractCursorStream = (lines: ReadonlyArray<Record<string, unknown>>): Aux
 
   for (const payload of lines) {
     if (payload['type'] === 'assistant') {
-      const message = asRecord(payload['message']);
+      const message = asRecord({ value: payload['message'] });
       const content = message === null ? null : message['content'];
       if (Array.isArray(content)) {
         for (const block of content) {
-          const record = asRecord(block);
+          const record = asRecord({ value: block });
           const text = record === null ? null : asString(record['text']);
           if (record?.['type'] === 'text' && text !== null) {
             chunks.push(text);
@@ -213,7 +207,7 @@ const extractCodexStream = (lines: ReadonlyArray<Record<string, unknown>>): AuxO
 
   for (const payload of lines) {
     if (payload['type'] === 'item.completed') {
-      const item = asRecord(payload['item']);
+      const item = asRecord({ value: payload['item'] });
       const text = item === null ? null : asString(item['text']);
       if (item?.['type'] === 'agent_message' && text !== null) {
         message = text;
@@ -239,9 +233,9 @@ const extractCodexStream = (lines: ReadonlyArray<Record<string, unknown>>): AuxO
 };
 
 const readOpenCodeUsage = (value: unknown): AuxUsage => {
-  const part = asRecord(value);
-  const tokens = asRecord(part?.['tokens']);
-  const cache = asRecord(tokens?.['cache']);
+  const part = asRecord({ value });
+  const tokens = asRecord({ value: part?.['tokens'] });
+  const cache = asRecord({ value: tokens?.['cache'] });
   const estimatedCostUsd = asCount(part?.['cost']);
   return {
     inputTokens: asCount(tokens?.['input']),
@@ -253,8 +247,8 @@ const readOpenCodeUsage = (value: unknown): AuxUsage => {
 };
 
 const readOpenCodeError = (value: unknown): string => {
-  const error = asRecord(value);
-  const data = asRecord(error?.['data']);
+  const error = asRecord({ value });
+  const data = asRecord({ value: error?.['data'] });
   return (
     asString(data?.['message']) ?? asString(error?.['message']) ?? 'opencode reported an error'
   );
@@ -267,7 +261,7 @@ const extractOpenCodeStream = (lines: ReadonlyArray<Record<string, unknown>>): A
   let errorMessage: string | null = null;
   for (const payload of lines) {
     if (payload['type'] === 'text') {
-      const part = asRecord(payload['part']);
+      const part = asRecord({ value: payload['part'] });
       const id = asString(part?.['id']);
       const text = asString(part?.['text']);
       if (id !== null && text !== null) {
@@ -312,11 +306,11 @@ type TokenCountParams = {
 };
 
 const tokenCountOf = ({ details, key }: TokenCountParams): number =>
-  asCount(asRecord(details?.[key])?.['tokenCount']);
+  asCount(asRecord({ value: details?.[key] })?.['tokenCount']);
 
 const readCopilotUsage = ({ value }: CopilotUsageParams): AuxUsage => {
-  const snapshot = asRecord(asRecord(value)?.['accountingSnapshot']);
-  const details = asRecord(snapshot?.['tokenDetails']);
+  const snapshot = asRecord({ value: asRecord({ value })?.['accountingSnapshot'] });
+  const details = asRecord({ value: snapshot?.['tokenDetails'] });
   return {
     inputTokens: tokenCountOf({ details, key: 'input' }),
     outputTokens: tokenCountOf({ details, key: 'output' }),
@@ -330,7 +324,7 @@ const extractCopilotStream = ({ lines }: LinesParams): AuxOutput => {
   let usage = ZERO_USAGE;
   for (const payload of lines) {
     const type = asString(payload['type']);
-    const data = asRecord(payload['data']);
+    const data = asRecord({ value: payload['data'] });
     const content = asString(data?.['content']);
     if (type === 'assistant.message' && content !== null && content.trim().length > 0) {
       message = content;

@@ -1,8 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { listAutoOutbox, setSetting } from '@goodboy/db';
-import { brandId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
-import { writeAutoTreeLimit } from '../features/auto/autoTreeLimit';
+import { brandId, DEFAULT_WORKFLOW_RULES, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
+import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import { currentAutoUserTurnPort } from '../features/auto/autoUserTurnPort';
 import { currentChecksRerunPort } from '../features/auto/checksRerunPort';
 import { currentDelegationDecisionPort } from '../features/auto/delegationDecisionPort';
@@ -38,9 +38,6 @@ vi.mock('../features/providers/routing', async () =>
 );
 vi.mock('../features/budget/budget', async () =>
   (await import('./storyHarness')).budgetModuleMock(),
-);
-vi.mock('../features/skills/skills', async () =>
-  (await import('./storyHarness')).skillsModuleMock(),
 );
 vi.mock('../features/workflows/workflows', async () =>
   (await import('./storyHarness')).workflowsModuleMock(),
@@ -232,6 +229,21 @@ describe('the Auto runtime on the real store', () => {
 });
 
 describe('the tree an Auto agent starts with', () => {
+  type RunLimitParams = {
+    readonly usd: number;
+  };
+
+  const setRunLimit = ({ usd }: RunLimitParams): void => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [brandId<WorkspaceId>({ value: 'workspace-harborline' })]: {
+          ...EMPTY_OVERRIDES,
+          workflowRules: { ...DEFAULT_WORKFLOW_RULES, spendLimitUsd: usd },
+        },
+      },
+    });
+  };
+
   const capOfTree = async (db: Awaited<ReturnType<typeof openStorySqlite>>) => {
     await vi.waitFor(async () => {
       const rows = await db.select<{ cap_usd: number }>('SELECT cap_usd FROM auto_trees');
@@ -243,11 +255,7 @@ describe('the tree an Auto agent starts with', () => {
 
   it('keeps the spend cap of the workspace when the session budget is larger', async () => {
     const db = await seedSessionWithAutoAgent({ kind: 'auto' });
-    await writeAutoTreeLimit({
-      db,
-      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
-      usd: 8,
-    });
+    setRunLimit({ usd: 8 });
     useAppStore.setState({
       sessionBudgets: {
         [AUTO_SEED_SESSION]: {
@@ -266,11 +274,7 @@ describe('the tree an Auto agent starts with', () => {
 
   it('is capped at the budget of its session when it is smaller than the workspace cap', async () => {
     const db = await seedSessionWithAutoAgent({ kind: 'auto' });
-    await writeAutoTreeLimit({
-      db,
-      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
-      usd: 8,
-    });
+    setRunLimit({ usd: 8 });
     useAppStore.setState({
       sessionBudgets: {
         [AUTO_SEED_SESSION]: {
@@ -289,11 +293,7 @@ describe('the tree an Auto agent starts with', () => {
 
   it('keeps the workspace cap under a smaller session budget that only warns', async () => {
     const db = await seedSessionWithAutoAgent({ kind: 'auto' });
-    await writeAutoTreeLimit({
-      db,
-      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
-      usd: 8,
-    });
+    setRunLimit({ usd: 8 });
     useAppStore.setState({
       sessionBudgets: {
         [AUTO_SEED_SESSION]: {
@@ -312,11 +312,7 @@ describe('the tree an Auto agent starts with', () => {
 
   it('is capped at the spend cap of the workspace when the session has no budget', async () => {
     const db = await seedSessionWithAutoAgent({ kind: 'auto' });
-    await writeAutoTreeLimit({
-      db,
-      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
-      usd: 8,
-    });
+    setRunLimit({ usd: 8 });
 
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
 

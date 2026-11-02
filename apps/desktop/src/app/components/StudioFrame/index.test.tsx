@@ -128,7 +128,7 @@ describe('StudioFrame', () => {
       }
       const header = skeleton?.querySelector<HTMLElement>('[data-page-header]');
       expect(header?.getAttribute('data-page')).toBe(meta.page);
-      const isUnderBand = meta.close === 'band';
+      const isUnderBand = meta.close === 'back';
       expect(header?.className.split(' ').includes('pt-3')).toBe(!isUnderBand);
     },
   );
@@ -169,45 +169,47 @@ describe('StudioFrame', () => {
     },
   );
 
-  it.each([
-    ['notifications', 'Close notifications'],
-    ['guide', 'Close guide'],
-    ['changelog', "Close what's new"],
-  ] as const)('puts Close as the last action of the %s page header', (kind, label) => {
-    const { container } = render(
-      <StudioFrame kind={kind} onClose={() => undefined}>
-        <PaneShell title="Page title" actions={<button type="button">Refresh</button>}>
+  it.each(['notifications'] as const)(
+    'draws no Close in the %s page header: the door or Escape leaves',
+    (kind) => {
+      const { container } = render(
+        <StudioFrame kind={kind} onClose={() => undefined}>
+          <PaneShell title="Page title" actions={<button type="button">Refresh</button>}>
+            <p>body</p>
+          </PaneShell>
+        </StudioFrame>,
+      );
+
+      expect(container.querySelector('[data-studio-band]')).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Back to app/ })).toBeNull();
+    },
+  );
+
+  it('gives addWorkspace, which replaces the column, Back to app with the Esc chip', () => {
+    render(
+      <StudioFrame kind="addWorkspace" onClose={() => undefined}>
+        <PaneShell title="New workspace">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,
     );
 
-    expect(container.querySelector('[data-studio-band]')).toBeNull();
-    const header = container.querySelector('[data-slot="pane-header"]');
-    const close = screen.getByRole('button', { name: label });
-    const refresh = screen.getByRole('button', { name: 'Refresh' });
-    expect(header?.contains(close)).toBe(true);
-    expect(refresh.compareDocumentPosition(close)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+    const back = screen.getByRole('button', { name: /^Back to app/ });
+    expect(back.textContent).toContain('Esc');
+    expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 
-  it('closes an overlay from the Close in its page header', () => {
-    vi.useFakeTimers();
-    const onClose = vi.fn();
+  it.each(STUDIO_KINDS)('never draws a Close button around %s', (kind) => {
     render(
-      <StudioFrame kind="notifications" onClose={onClose}>
-        <PaneShell title="Notifications">
+      <StudioFrame kind={kind} onClose={() => undefined}>
+        <PaneShell title="Page title">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close notifications' }));
-    act(() => {
-      vi.advanceTimersByTime(300);
-    });
-
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 
   it('lets a studio body carry its own trail into the band, in place of the root', () => {
@@ -312,7 +314,7 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close new workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Back to app/ }));
     act(() => {
       vi.advanceTimersByTime(300);
     });
@@ -344,7 +346,7 @@ describe('StudioFrame grid', () => {
     },
   );
 
-  it('puts the release Close on its title row in the detail beside the rail, with no band', () => {
+  it("gives What's new, a tab of Help, the same Back to app band and no Close", () => {
     const { container } = render(
       <StudioFrame kind="changelog" onClose={() => undefined}>
         <div className="flex">
@@ -358,35 +360,37 @@ describe('StudioFrame grid', () => {
       </StudioFrame>,
     );
 
-    const close = screen.getByRole('button', { name: "Close what's new" });
-    const rail = screen.getByRole('complementary', { name: 'Rail' });
-    const titleRow = screen
-      .getByRole('heading', { level: 1, name: 'Goodboy 0.27.2' })
-      .closest('[data-slot="pane-header"]');
-    expect(container.querySelector('[data-studio-band]')).toBeNull();
-    expect(titleRow?.contains(close)).toBe(true);
-    expect(rail.contains(close)).toBe(false);
+    expect(
+      container
+        .querySelector('[data-studio-band]')
+        ?.contains(screen.getByRole('button', { name: /^Back to app/ })),
+    ).toBe(true);
+    expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 
-  it("falls back to the band Close in the detail while What's new shows no page header", () => {
+  it('puts Back to app in the band of the guide detail, beside the rail', () => {
     const { container } = render(
-      <StudioFrame kind="changelog" onClose={() => undefined}>
+      <StudioFrame kind="guide" onClose={() => undefined}>
         <div className="flex">
           <aside aria-label="Rail" />
           <StudioDetail>
-            <p>loading releases</p>
+            <PaneShell title="What is Goodboy">
+              <p>body</p>
+            </PaneShell>
           </StudioDetail>
         </div>
       </StudioFrame>,
     );
 
     const band = screen.getByRole('banner');
-    expect(screen.getAllByRole('button', { name: "Close what's new" })).toHaveLength(1);
-    expect(band.contains(screen.getByRole('button', { name: "Close what's new" }))).toBe(true);
+    const back = screen.getByRole('button', { name: /^Back to app/ });
+    expect(band.contains(back)).toBe(true);
+    expect(back.textContent).toContain('Esc');
     expect(container.querySelector('[data-studio-detail]')?.firstElementChild).toBe(band);
+    expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
   });
 
-  it('keeps Close at the right edge of the band column, with no crumb of its own', () => {
+  it('keeps Back to app at the left edge of the band column, with no crumb of its own', () => {
     render(
       <StudioFrame kind="addWorkspace" onClose={() => undefined}>
         <p>body</p>
@@ -395,7 +399,7 @@ describe('StudioFrame grid', () => {
 
     const column = screen.getByRole('banner').querySelector('[data-page-column]') as HTMLElement;
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
-    expect(column.contains(screen.getByRole('button', { name: 'Close new workspace' }))).toBe(true);
+    expect(column.firstElementChild).toBe(screen.getByRole('button', { name: /^Back to app/ }));
   });
 
   it('sits the studio title right under the band, with no extra top inset', () => {

@@ -45,7 +45,7 @@ const HOST_THREADS: ReadonlyArray<{
   },
 ];
 
-export type FilesSceneVariant = 'both' | 'nopr-notes' | 'split' | 'comments';
+export type FilesSceneVariant = 'both' | 'nopr-notes' | 'split' | 'comments' | 'draft';
 
 type Props = {
   readonly variant: FilesSceneVariant;
@@ -141,7 +141,7 @@ export const PrpageFilesScene = ({ variant, stageWidth }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const hasPullRequest = variant !== 'nopr-notes';
+    const hasPullRequest = variant !== 'nopr-notes' && variant !== 'draft';
     if (variant === 'split') {
       window.localStorage.setItem(STORAGE_KEYS.diffLayoutMode, 'split');
     }
@@ -194,7 +194,7 @@ export const PrpageFilesScene = ({ variant, stageWidth }: Props) => {
     >
       <UnderTrailContext.Provider value>
         <StudioBandContext.Provider value={null}>
-          <WorktreeSceneColumn>
+          <WorktreeSceneColumn isRailBare={variant === 'draft'}>
             <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
           </WorktreeSceneColumn>
         </StudioBandContext.Provider>

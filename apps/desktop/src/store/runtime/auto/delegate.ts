@@ -1,6 +1,7 @@
 import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core';
 import { getAutoTree, recordAutoRefusal } from '@goodboy/db';
 import { brandId, type AutoBatchId, type AutoRequestId } from '@goodboy/types';
+import { textOf } from '@goodboy/types/helpers';
 import { replayAdmission, type AdmitChildInput, type AdmitOutcome } from './admit';
 import { delegationReceipt } from './delegationReceipt';
 import type { AgentCommand, BridgeOutcome } from './ports';
@@ -14,18 +15,6 @@ export type DelegateParams = Readonly<{
   command: AgentCommand;
   isProposal?: boolean;
 }>;
-
-type TextParams = {
-  readonly value: unknown;
-};
-
-const textOf = ({ value }: TextParams): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed === '' ? null : trimmed;
-};
 
 type CountedRefusalParams = {
   readonly ctx: AgentVerbContext;

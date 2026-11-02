@@ -12,6 +12,8 @@ import {
 } from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
+import { NAMES } from '../../../../shared/utils/names';
+import { nounFor } from '../../../../shared/utils/nounFor';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { formatLimitReset } from '../../../../features/providers/limits/formatLimitReset';
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
@@ -61,14 +63,14 @@ export const LimitsOverflowPopover = ({
   });
   const { open: isOpen, close, toggle } = dropdown;
   const worst = worstLimitsChip({ chips: hidden });
-  const noun = hidden.length === 1 ? 'provider' : 'providers';
-  const label = hasShownChips ? `${hidden.length} more ${noun}` : 'Provider limits';
+  const noun = nounFor({ count: hidden.length, one: 'provider' });
+  const label = hasShownChips ? `${hidden.length} more ${noun}` : 'Provider usage';
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="More provider limits"
+      ariaLabel="More provider usage"
       hasBackdrop
       {...(className !== undefined && { anchorClassName: className })}
       trigger={
@@ -86,7 +88,7 @@ export const LimitsOverflowPopover = ({
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
-          <span>{hasShownChips ? `+${hidden.length}` : 'Limits'}</span>
+          <span>{hasShownChips ? `+${hidden.length} ${noun}` : NAMES.usage}</span>
           {hasShownChips ? (
             <span data-limits-overflow-marks="" className="flex items-center gap-0.5">
               {hidden.slice(0, MAX_MARKS).map((chip) => (
@@ -107,7 +109,7 @@ export const LimitsOverflowPopover = ({
         </button>
       }
     >
-      <ul aria-label="More provider limits" className="flex flex-col p-2">
+      <ul aria-label="More provider usage" className="flex flex-col p-2">
         {hidden.map((chip) => {
           return (
             <li key={chip.providerId}>

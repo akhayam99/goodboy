@@ -4,18 +4,13 @@ import { OverviewActions } from './OverviewActions';
 
 type Props = {
   readonly session: Session;
-  readonly hasNextLead?: boolean;
 };
 
-export const OverviewHeaderActions = ({ session, hasNextLead = false }: Props) => {
+export const OverviewHeaderActions = ({ session }: Props) => {
   const isArchived = session.archivedAt != null;
   return (
     <div className="flex items-center gap-2">
-      {isArchived ? (
-        <ArchivedRestore session={session} />
-      ) : (
-        <OverviewActions session={session} hasNextLead={hasNextLead} />
-      )}
+      {isArchived ? <ArchivedRestore session={session} /> : <OverviewActions session={session} />}
     </div>
   );
 };

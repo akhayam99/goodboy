@@ -1,6 +1,7 @@
 import type { TranscriptItem } from './transcript-items';
 import { toolFilePath } from './toolFilePath';
 import { toolKind, type ToolKind } from './toolKind';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 export type TurnSummary = {
   readonly text: string;
@@ -186,8 +187,6 @@ export const turnSummary = ({ steps }: Params): TurnSummary | null => {
     text = sentence({ named, otherUses, isNamingFiles });
   }
   const errors =
-    tally.errorCount === 0
-      ? ''
-      : ` (${tally.errorCount} ${tally.errorCount === 1 ? 'error' : 'errors'})`;
+    tally.errorCount === 0 ? '' : ` (${countNoun({ count: tally.errorCount, one: 'error' })})`;
   return { text, errorCount: tally.errorCount, title: `${text}${errors}` };
 };

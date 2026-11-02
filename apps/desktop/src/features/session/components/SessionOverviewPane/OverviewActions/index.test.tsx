@@ -13,15 +13,7 @@ vi.mock('@goodboy/db', async () =>
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { brandedId } from '../../../../history/testing/brandedId';
-import type {
-  Agent,
-  IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
-  Session,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { Agent, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
 import { startRunEventName } from '../../../startRun/startRunEventName';
@@ -135,67 +127,27 @@ const variantOf = () => screen.getByRole('button', { name: 'New' }).getAttribute
 const agentIn = (status: Agent['status']) => anAgent({ sessionId: SESSION_ID, status });
 
 describe('OverviewActions emphasis', () => {
-  it('is primary on an empty session', () => {
+  it('stays the outline button on an empty session', () => {
     render(<OverviewActions session={SESSION} />);
-
-    expect(variantOf()).toBe('primary');
-  });
-
-  it('stays neutral on an idle session while Next holds the filled primary', () => {
-    render(<OverviewActions session={SESSION} hasNextLead />);
 
     expect(variantOf()).toBe('secondary');
   });
 
-  it('is primary when every agent and run has finished', () => {
+  it('stays the outline button once every agent has finished', () => {
     useAppStore.setState({
       sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed'), agentIn('stopped')] },
     });
     render(<OverviewActions session={SESSION} />);
 
-    expect(variantOf()).toBe('primary');
+    expect(variantOf()).toBe('secondary');
   });
 
-  it('stays neutral while one agent is running', () => {
+  it('stays the outline button while an agent runs or is blocked', () => {
     useAppStore.setState({
-      sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed'), agentIn('running')] },
+      sessionPhaseRuns: { [SESSION_ID]: [agentIn('running'), agentIn('blocked')] },
     });
     render(<OverviewActions session={SESSION} />);
 
     expect(variantOf()).toBe('secondary');
-  });
-
-  it('stays neutral while one agent is blocked', () => {
-    useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [agentIn('blocked')] } });
-    render(<OverviewActions session={SESSION} />);
-
-    expect(variantOf()).toBe('secondary');
-  });
-
-  it('stays neutral while a question is open, and turns primary once it is answered', () => {
-    const question: OpenQuestion = {
-      id: brandedId<OpenQuestionId>({ value: 'question-1' }),
-      sessionId: SESSION_ID,
-      text: 'Which ledger?',
-      suggestedAnswers: [],
-      isBlocking: true,
-      userAnswer: null,
-      status: 'open',
-      createdAt: brandedId<IsoDateTime>({ value: '2026-10-14T09:00:00.000Z' }),
-    };
-    useAppStore.setState({
-      sessionPhaseRuns: { [SESSION_ID]: [agentIn('completed')] },
-      sessionOpenQuestions: { [SESSION_ID]: [question] },
-    });
-    render(<OverviewActions session={SESSION} />);
-    expect(variantOf()).toBe('secondary');
-
-    act(() => {
-      useAppStore.setState({
-        sessionOpenQuestions: { [SESSION_ID]: [{ ...question, status: 'answered' }] },
-      });
-    });
-
-    expect(variantOf()).toBe('primary');
   });
 });

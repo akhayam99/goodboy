@@ -12,6 +12,120 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.0
+
+One Needs you card, a Sessions page that is the Board, tabs on the branch page, a shorter setup and a quicker app, and Skills are removed.
+
+### New
+
+#### One Needs you card
+<!-- gb area=sessions image=needs-you-card -->
+
+Runs waiting for you, open questions and fixes to review sit in one Needs you card on the session Overview. It reads Nothing needs you when it is empty.
+
+New since you looked is one row after it that opens to the three newest. A branch without a pull request reads No PR, and one branch alone draws no Branches card.
+
+#### Tabs on the branch page
+<!-- gb area=review image=branch-tabs -->
+
+The branch page has a tab strip under its title: Pull request, Comments, Files, Commits and Checks, each with its count. In the sidebar a branch is one row with one pill, and its pages are those tabs.
+
+#### A shorter setup
+<!-- gb area=app image=setup-card -->
+
+Setup is three steps: Agents, Workspace and First session. Welcome is the head of the Agents step, and Linear or Jira connect from the first session step.
+
+The Setup card shows on an empty Board, reads as a compact checklist with a progress meter, puts the open step first with one button and folds finished steps into one line.
+
+#### Run defaults in one place
+<!-- gb area=settings -->
+
+Run defaults is one page in Settings, under This workspace, and the Workflows studio no longer has a Run defaults tab. The start form, Auto and that page share one limit, and the Auto limit you had is folded in.
+
+On the start form, settings read Label: value and tint when changed. Asks you, Limit and Guidance wait under More until they differ, and a chip links to the page that owns its default with Change default.
+
+#### One Help window
+<!-- gb area=app -->
+
+Guide, What's new and Shortcuts are one Help window with one search. Shortcuts is a read only sheet that links to Settings to change keys.
+
+Windows that replace the sidebar show Back to app with Esc, and their Close buttons are gone.
+
+#### Ask this session
+<!-- gb area=sessions -->
+
+Ask has its own icon, reads Ask this session on hover and opens with a Scope chip naming the session. Questions use the same bubble as Chat, and Start work from chat adds a brief to the session you are asking about.
+
+### Improved
+
+#### The Board is the Sessions page
+<!-- gb area=sessions -->
+
+The Sessions page shows the Board only. The list lives in the sidebar with one filter menu, and finished sessions close it in a Done group that starts shut. Mark all sessions as read is in the palette.
+
+The top bar no longer counts what needs you, and its running slot reads Idle when nothing runs, so nothing slides.
+
+#### Comments grouped by what needs you
+<!-- gb area=review -->
+
+Comments group as Needs you, Working and Done, and read Question, Fix to review and Fixed. One header button follows the state, and fixes count threads. A comment is a Draft in the list until it is posted.
+
+The header shows open, need-you and unread thread counts, and the pull request page no longer repeats the commit and file counts in its two cards.
+
+#### Diffs on a narrow window
+<!-- gb area=review -->
+
+Under about 1470px the file list folds behind a Files button, and Split is greyed with Needs 880px. The file list head reads Viewed 2 of 6 with a Next button, and rows show a check instead of a second checkbox.
+
+Diff bodies load as each file scrolls into view and show a skeleton or a Retry while they load.
+
+#### A lighter agent page
+<!-- gb area=agents -->
+
+The agent page header drops the Stop chip and the Running word, and View transcript sits in the menu. Stop is the square in the message box.
+
+Each Auto delegation is one line with its role, task, state and time. Picking up reads Continue everywhere, and Resume, Resume run and Continue the run are gone.
+
+#### A goal can name an existing branch
+<!-- gb area=workflows -->
+
+A goal that names an existing branch uses that branch instead of cutting a new one, and two names offer a picker. When the branch is checked out in another worktree, you can open that worktree or start on a new branch.
+
+A run whose planner is reworking the plan shows as Revising plan with the time the planner has worked, and Review plan returns when it is done.
+
+#### Switching workspace
+<!-- gb area=app -->
+
+The top bar chip names the workspace you are opening at once and the board shows its loading state. A failed switch says Couldn't open with the name and a Retry, and leaves the current workspace untouched.
+
+#### A quicker app
+<!-- gb area=app -->
+
+The Branch page, artifacts, the wireframe reader, the file diff drawer and the database migration code load when you first need them, so the app starts faster. The download is smaller too.
+
+Loading skeletons no longer flash on fast loads and fade out when data arrives. Opening a session from the board cross-fades, and the board comes back at the same scroll. A lens you leave keeps its scroll and open items.
+
+#### Skills are removed
+<!-- gb area=settings -->
+
+There is no Skills page in Settings and no slash skill prefix in the composer. A message starting with a slash sends as plain text.
+
+Skill files in .goodboy/skills, .kay/skills or .claude/skills are ignored by this version, and your saved skill rows stay in the database.
+
+### Fixed
+
+- The branch header and the Push button quote the same number of commits not pushed, and say when origin has commits you lack. <!-- gb area=review -->
+- A finished run or agent no longer shows a needs-you count, and the open question stays on the Needs you card. <!-- gb area=sessions -->
+- A failed start says why and offers Connect a provider or Copy details. <!-- gb area=providers -->
+- A refused token on Tasks says Reconnect and opens the tool's settings. <!-- gb area=inbox -->
+- Unread works for older GitLab and Bitbucket connections without reconnecting. <!-- gb area=integrations -->
+- A queued message is never sent twice after a crash. <!-- gb area=agents -->
+- Archiving or restoring a session as the window regains focus no longer lets an older read undo it. <!-- gb area=sessions -->
+- Terminal scrollback files are private to you and removed after a week if the tab never returns. <!-- gb area=app -->
+- Rebase on main stays reachable from Branch actions while the branch is behind and another step leads. <!-- gb area=review -->
+- The board skeleton no longer hangs when there is nothing to check. <!-- gb area=sessions -->
+- The notification bell shows its count alone, without a second dot. <!-- gb area=inbox -->
+
 ## Goodboy v0.30.0
 
 The pull request page counts the review threads you have not read, and Comments marks them for that visit.

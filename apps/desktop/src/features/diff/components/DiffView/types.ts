@@ -60,7 +60,6 @@ export type DiffComments = {
   readonly threads: ReadonlyArray<DiffThread>;
   readonly submitLabel: string;
   readonly composerLabel: string;
-  readonly noun?: string;
   readonly allowFileLevel: boolean;
   readonly fileComposer?: { readonly label: string; readonly submitLabel: string };
   readonly onSubmit: (filePath: string, anchor: DiffCommentAnchor | null, body: string) => void;
@@ -82,4 +81,16 @@ export type DiffViewed = {
 export type DiffFileActions = {
   readonly onOpenInEditor?: (path: string) => void;
   readonly onShowWhole?: (file: FileDiff) => void;
+};
+
+export type DiffBodyState = 'loaded' | 'pending' | 'failed';
+
+export type DiffBodyTarget = {
+  readonly path: string;
+};
+
+export type DiffBodies = {
+  readonly stateOf: (target: DiffBodyTarget) => DiffBodyState;
+  readonly request: (target: DiffBodyTarget) => void;
+  readonly retry: (target: DiffBodyTarget) => void;
 };

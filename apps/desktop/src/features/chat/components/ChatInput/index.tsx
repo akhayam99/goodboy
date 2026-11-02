@@ -93,7 +93,7 @@ export const ChatInput = ({
     quickEmptyHint,
     onQuickActionSelect,
     dismissPopover,
-  } = useChatPrefix({ session, value, setValue, showToast, wrapperRef });
+  } = useChatPrefix({ session, value, setValue });
 
   const routing = useTurnRouting({ session, agentId: selectedAgentId });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });

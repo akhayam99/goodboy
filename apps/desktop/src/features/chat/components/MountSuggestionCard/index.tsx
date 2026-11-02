@@ -93,7 +93,7 @@ export const MountSuggestionCard = ({
           onClick={() => void handleMount()}
           data-testid="mount-suggestion-mount"
         >
-          Add folder
+          Add project
         </Button>
         <IconButton
           icon={ChevronRight}

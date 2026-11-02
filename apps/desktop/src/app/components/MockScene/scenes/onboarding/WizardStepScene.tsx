@@ -10,7 +10,6 @@ import {
 } from './wizardSceneSeed';
 
 export type WizardSceneState =
-  | 'welcome'
   | 'agents-ready'
   | 'agents-signin'
   | 'agents-none'
@@ -34,7 +33,6 @@ type SceneSetup = {
 };
 
 const SETUP: Readonly<Record<WizardSceneState, SceneSetup>> = {
-  welcome: { step: 'welcome', agents: 'ready', ws: 'none', hasLinear: false },
   'agents-ready': { step: 'agents', agents: 'ready', ws: 'none', hasLinear: false },
   'agents-signin': { step: 'agents', agents: 'signin', ws: 'none', hasLinear: false },
   'agents-none': { step: 'agents', agents: 'none', ws: 'none', hasLinear: false },
@@ -94,7 +92,7 @@ export const WizardStepScene = ({ state, theme }: Props) => {
       <style>{SETTLED_MOTION}</style>
       <WizardFrame
         mode="full"
-        start={setup.step === 'welcome' ? null : setup.step}
+        start={setup.step}
         providersConnected={1}
         hasWorkspace={workspace !== null}
         workspace={workspace}

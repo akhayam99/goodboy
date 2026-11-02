@@ -13,7 +13,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { GuideStudio } from './components/GuideStudio';
+import { HelpStudio } from '../../app/components/HelpStudio';
 import { clearGuideChapter, peekGuideChapter } from './components/GuideStudio/guideChapterRequest';
 import { openGuideChapter } from './openGuideChapter';
 
@@ -48,7 +48,7 @@ describe.each(LINKS)('the deep link from %s', (_door, id, title) => {
 
   it('lands the Guide on that chapter', async () => {
     openGuideChapter({ id });
-    render(<GuideStudio onClose={vi.fn()} />);
+    render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     const rail = screen.getByRole('navigation', { name: 'Guide chapters' });
     await waitFor(() =>

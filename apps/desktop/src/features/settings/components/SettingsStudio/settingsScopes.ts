@@ -5,10 +5,10 @@ import { NAMES } from '../../../../shared/utils/names';
 export type NestedScope = 'providers' | 'tools';
 
 export const SCOPE_ITEMS = [
-  { scope: 'workspace', label: 'Workspace', concept: 'workspace', needsWorkspace: true },
+  { scope: 'workspace', label: 'This workspace', concept: 'workspace', needsWorkspace: true },
   {
     scope: 'providers',
-    label: NAMES.providersAndModels,
+    label: NAMES.providers,
     concept: 'providers',
     needsWorkspace: false,
   },

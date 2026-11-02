@@ -59,25 +59,21 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   {
     name: 'settings rail: workspace',
     covers: ['openSettings', 'scope:workspace'],
-    open: () => openSettingsRail(/^Folders/),
+    open: () => openSettingsRail(/^Projects/),
     lands: () => visible('textbox', 'Workspace name'),
   },
   {
-    name: 'settings rail: providers and models',
+    name: 'settings rail: models under this workspace',
     covers: ['openSettings', 'openProviders', 'scope:providers'],
-    open: async () => {
-      await openSettingsRail(/^Providers and models/);
-      const rail = await screen.findByRole('list', { name: 'Providers and models settings' });
-      await click(within(rail).getByRole('button', { name: /^Models/ }));
-    },
+    open: () => openSettingsRail(/^Models/),
     lands: () => visible('region', 'Providers'),
   },
   {
     name: 'settings rail: one provider page',
     covers: ['openSettings', 'scope:providers', 'settings:provider'],
     open: async () => {
-      await openSettingsRail(/^Providers and models/);
-      const rail = await screen.findByRole('list', { name: 'Providers and models settings' });
+      await openSettingsRail(/^Providers/);
+      const rail = await screen.findByRole('list', { name: 'Providers settings' });
       await click(within(rail).getByRole('button', { name: /Claude/ }));
     },
     lands: () => heading('Claude'),

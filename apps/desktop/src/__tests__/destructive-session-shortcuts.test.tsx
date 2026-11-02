@@ -84,7 +84,7 @@ vi.mock('../features/session/components/SessionArchiveBridge', () => ({
   SessionArchiveBridge: () => null,
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
-vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
+vi.mock('../app/components/HelpStudio', () => ({ HelpStudio: () => null }));
 vi.mock('../shared/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   useToast: () => ({ showToast: vi.fn() }),
@@ -166,6 +166,9 @@ vi.mock('../store', () => {
     useWorkspaces: () => state.workspaces,
   };
 });
+vi.mock('../store/runtime/auto/startAutoRuntime', () => ({
+  startAutoRuntime: vi.fn(async () => () => undefined),
+}));
 vi.mock('../features/integrations/github/hooks/useGithubPolling', () => ({
   useGithubPolling: vi.fn(),
 }));

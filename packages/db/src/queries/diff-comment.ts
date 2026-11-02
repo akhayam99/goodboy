@@ -35,7 +35,7 @@ export type DiffCommentAuthor = {
   readonly agentId?: AgentId;
 };
 
-function toDomain(row: DiffCommentRow): DiffComment {
+function toDiffComment(row: DiffCommentRow): DiffComment {
   const anchor: DiffCommentAnchor | undefined =
     row.line_number !== null && row.line_side !== null
       ? {
@@ -159,7 +159,7 @@ export const listDiffCommentsForSession = async (
      ORDER BY created_at ASC`,
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toDiffComment);
 };
 
 export const resolveDiffComment = async (db: Database, id: string): Promise<void> => {

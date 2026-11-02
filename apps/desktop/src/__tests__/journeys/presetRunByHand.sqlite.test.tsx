@@ -61,9 +61,6 @@ vi.mock('../../features/providers/routing', async () =>
 vi.mock('../../features/budget/budget', async () =>
   (await import('../../store/storyHarness')).budgetModuleMock(),
 );
-vi.mock('../../features/skills/skills', async () =>
-  (await import('../../store/storyHarness')).skillsModuleMock(),
-);
 vi.mock('../../features/workflows/workflows', async () =>
   (await import('../../store/storyHarness')).workflowsModuleMock(),
 );
@@ -180,11 +177,7 @@ const showPage = (view: RenderResult): string => {
   }
   view.rerender(
     <ToastProvider>
-      <PresetRunPage
-        session={session}
-        focus={{ runId: runIdOfSession(), agentId: null }}
-        isActive
-      />
+      <PresetRunPage session={session} focus={{ runId: runIdOfSession(), agentId: null }} />
     </ToastProvider>,
   );
   return view.container.textContent ?? '';

@@ -9,11 +9,7 @@ vi.mock('../../../shared/lib/editor', () => ({
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BootSplash, bootErrorCategory } from './index';
-import {
-  SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX,
-  SPLASH_TILE_PX,
-  splashShift,
-} from '../../../features/onboarding/OnboardingWizard/useSplashAnchor/splashShift';
+import { SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX, SPLASH_TILE_PX } from './splashTile';
 import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
 import { openUrl } from '../../../shared/lib/editor';
 
@@ -99,15 +95,12 @@ describe('BootSplash boot handoff', () => {
     expect(screen.queryByText(/workspace orchestrator/)).toBeNull();
   });
 
-  it('puts the tile where the Welcome tile lands', () => {
+  it('holds the tile above the window middle', () => {
     render(<BootSplash phase="migrating" error={null} />);
 
     const stack = screen.getByTestId('boot-splash-stack');
     const tileCenterAbove = SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX;
     expect(stack.style.top).toBe(`calc(50% - ${tileCenterAbove + SPLASH_TILE_PX / 2}px)`);
-    expect(splashShift({ markCenter: 0, blockBottom: 0, viewportHeight: 900 })).toBe(
-      900 / 2 - tileCenterAbove,
-    );
   });
 });
 

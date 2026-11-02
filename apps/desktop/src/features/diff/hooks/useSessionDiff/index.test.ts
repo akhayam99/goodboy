@@ -19,6 +19,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
@@ -106,6 +107,7 @@ const cleanBranchAhead = (): WorktreeStatus => ({
 
 const stubCleanTreeWithSixCommits = (): void => {
   stubStoryInvoke({
+    worktree_diff_files: [],
     worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
     worktree_diff_working: '',
     worktree_status: cleanBranchAhead(),
@@ -116,6 +118,7 @@ const stubCleanTreeWithSixCommits = (): void => {
 beforeEach(async () => {
   await resetStoryStore();
   stubStoryInvoke({
+    worktree_diff_files: [],
     worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
     worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
     worktree_commits: [],
@@ -194,6 +197,7 @@ describe('useSessionDiff refresh', () => {
   const holdNextDiff = () => {
     const held: { release: () => void } = { release: () => undefined };
     stubStoryInvoke({
+      worktree_diff_files: [],
       worktree_diff: ({ baseBranch }: BaseArgs) =>
         new Promise<string>((resolve) => {
           held.release = () => resolve(patchFor(baseBranch));
@@ -246,5 +250,326 @@ describe('useSessionDiff refresh', () => {
     expect(result.current.loading).toBe(true);
     expect(result.current.isRefreshing).toBe(false);
     await waitFor(() => expect(result.current.loading).toBe(false));
+  });
+});
+
+describe('useSessionDiff file list', () => {
+  const ENTRIES = [
+    {
+      path: 'src/ledger/export.ts',
+      oldPath: null,
+      status: 'modified',
+      additions: 12,
+      deletions: 3,
+      isBinary: false,
+      isUntracked: false,
+    },
+    {
+      path: 'notes/new.md',
+      oldPath: null,
+      status: 'added',
+      additions: 4,
+      deletions: 0,
+      isBinary: false,
+      isUntracked: true,
+    },
+  ];
+
+  type Held = {
+    release: () => void;
+    fail: () => void;
+  };
+
+  const holdFullDiff = ({ list }: { readonly list: unknown }): Held => {
+    const held: Held = { release: () => undefined, fail: () => undefined };
+    stubStoryInvoke({
+      worktree_diff_files: list,
+      worktree_diff: ({ baseBranch }: BaseArgs) =>
+        new Promise<string>((resolve, reject) => {
+          held.release = () => resolve(patchFor(baseBranch));
+          held.fail = () => reject(new Error('git failed'));
+        }),
+      worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+      worktree_commits: [],
+    });
+    return held;
+  };
+
+  it('shows the tree from the list while the full diff is still on its way', async () => {
+    const held = holdFullDiff({ list: ENTRIES });
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+
+    await waitFor(() => expect(result.current.files).toHaveLength(2));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.bodies).not.toBeNull();
+    expect(result.current.files.map((file) => [file.path, file.additions, file.deletions])).toEqual(
+      [
+        ['notes/new.md', 4, 0],
+        ['src/ledger/export.ts', 12, 3],
+      ],
+    );
+    expect(result.current.files.every((file) => file.hunks.length === 0)).toBe(true);
+
+    act(() => held.release());
+
+    await waitFor(() => expect(result.current.patch).toContain('against-main.txt'));
+    expect(result.current.files.map((file) => file.path)).toEqual([
+      'notes/new.md',
+      'src/ledger/export.ts',
+    ]);
+  });
+
+  it('drops a list that arrives after the full diff', async () => {
+    const list = new Promise<unknown>(() => undefined);
+    stubStoryInvoke({
+      worktree_diff_files: () => list,
+      worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
+      worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+      worktree_commits: [],
+    });
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.bodies).toBeNull();
+    expect(result.current.files.map((file) => file.path)).toEqual(['against-main.txt']);
+    expect(result.current.files[0]?.hunks).toHaveLength(1);
+  });
+
+  it('keeps waiting for the full diff when the list is empty or fails', async () => {
+    const held = holdFullDiff({ list: [] });
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+
+    await waitFor(() => expect(result.current.loading).toBe(true));
+    expect(result.current.files).toHaveLength(0);
+    expect(result.current.bodies).toBeNull();
+
+    act(() => held.release());
+    await waitFor(() => expect(result.current.files).toHaveLength(1));
+  });
+
+  it('keeps the tree when only the full diff for the patch fails', async () => {
+    const held = holdFullDiff({ list: ENTRIES });
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(result.current.bodies).not.toBeNull());
+
+    act(() => held.fail());
+
+    await waitFor(() => expect(result.current.files).toHaveLength(2));
+    expect(result.current.error).toBeNull();
+    expect(result.current.bodies).not.toBeNull();
+  });
+
+  it('does not ask for the list on the working tree view', async () => {
+    holdFullDiff({ list: ENTRIES });
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(result.current.bodies).not.toBeNull());
+    const listCalls = () =>
+      storySpies.tauriInvoke.mock.calls.filter(([command]) => command === 'worktree_diff_files')
+        .length;
+    const before = listCalls();
+    stubStoryInvoke({
+      worktree_diff_files: ENTRIES,
+      worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
+      worktree_diff_working: '',
+      worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+      worktree_commits: [],
+    });
+
+    act(() => result.current.setView({ kind: 'working', scope: 'all' }));
+
+    await waitFor(() => expect(result.current.files).toHaveLength(0));
+    expect(result.current.bodies).toBeNull();
+    expect(listCalls()).toBe(before);
+  });
+});
+
+describe('useSessionDiff file bodies', () => {
+  const ENTRIES = [
+    {
+      path: 'src/ledger/export.ts',
+      oldPath: null,
+      status: 'modified',
+      additions: 12,
+      deletions: 3,
+      isBinary: false,
+      isUntracked: false,
+    },
+    {
+      path: 'src/ledger/post.ts',
+      oldPath: 'src/ledger/credit.ts',
+      status: 'renamed',
+      additions: 2,
+      deletions: 1,
+      isBinary: false,
+      isUntracked: false,
+    },
+    {
+      path: 'assets/logo.png',
+      oldPath: null,
+      status: 'added',
+      additions: 0,
+      deletions: 0,
+      isBinary: true,
+      isUntracked: false,
+    },
+  ];
+
+  const bodyPatch = (path: string): string =>
+    [
+      `diff --git a/${path} b/${path}`,
+      'index 1111111..2222222 100644',
+      `--- a/${path}`,
+      `+++ b/${path}`,
+      '@@ -1 +1 @@',
+      '-before',
+      '+after',
+      '',
+    ].join('\n');
+
+  type FileArgs = BaseArgs & { readonly path: string; readonly oldPath?: string };
+
+  type Gate = { release: () => void; fail: () => void };
+
+  const stubBodies = (): { readonly gates: Map<string, Gate> } => {
+    const gates = new Map<string, Gate>();
+    stubStoryInvoke({
+      worktree_diff_files: ENTRIES,
+      worktree_diff: patchFor(null),
+      worktree_diff_working: '',
+      worktree_diff_file: ({ path }: FileArgs) =>
+        new Promise<string>((resolve, reject) => {
+          gates.set(path, {
+            release: () => resolve(bodyPatch(path)),
+            fail: () => reject(new Error('git failed')),
+          });
+        }),
+      worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+      worktree_commits: [],
+    });
+    return { gates };
+  };
+
+  const openLazy = async () => {
+    const view = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(view.result.current.bodies).not.toBeNull());
+    return view;
+  };
+
+  const gateOf = (gates: Map<string, Gate>, path: string): Gate => {
+    const gate = gates.get(path);
+    if (gate === undefined) {
+      throw new Error(`no request for ${path}`);
+    }
+    return gate;
+  };
+
+  it('fetches nothing for a file until it is asked for', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+
+    expect(gates.size).toBe(0);
+    expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('pending');
+  });
+
+  it('fetches one file when it is asked for and keeps the list counts on the loaded file', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+
+    act(() => result.current.bodies?.request({ path: 'src/ledger/export.ts' }));
+    act(() => result.current.bodies?.request({ path: 'src/ledger/export.ts' }));
+    await waitFor(() => expect(gates.size).toBe(1));
+    act(() => gateOf(gates, 'src/ledger/export.ts').release());
+
+    await waitFor(() =>
+      expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('loaded'),
+    );
+    const loaded = result.current.files.find((file) => file.path === 'src/ledger/export.ts');
+    expect(loaded?.hunks).toHaveLength(1);
+    expect([loaded?.additions, loaded?.deletions]).toEqual([12, 3]);
+    expect(result.current.bodies?.stateOf({ path: 'src/ledger/post.ts' })).toBe('pending');
+  });
+
+  it('asks for a renamed file with its old path', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+
+    act(() => result.current.bodies?.request({ path: 'src/ledger/post.ts' }));
+
+    await waitFor(() => expect(gates.size).toBe(1));
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith(
+      'worktree_diff_file',
+      expect.objectContaining({ path: 'src/ledger/post.ts', oldPath: 'src/ledger/credit.ts' }),
+    );
+  });
+
+  it('counts a binary file as loaded without asking for it', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+
+    act(() => result.current.bodies?.request({ path: 'assets/logo.png' }));
+
+    expect(result.current.bodies?.stateOf({ path: 'assets/logo.png' })).toBe('loaded');
+    expect(gates.size).toBe(0);
+  });
+
+  it('marks a failed file and loads it again on retry', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+
+    act(() => result.current.bodies?.request({ path: 'src/ledger/export.ts' }));
+    await waitFor(() => expect(gates.size).toBe(1));
+    act(() => gateOf(gates, 'src/ledger/export.ts').fail());
+    await waitFor(() =>
+      expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('failed'),
+    );
+
+    act(() => result.current.bodies?.retry({ path: 'src/ledger/export.ts' }));
+    expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('pending');
+    await waitFor(() =>
+      expect(
+        storySpies.tauriInvoke.mock.calls.filter(([command]) => command === 'worktree_diff_file'),
+      ).toHaveLength(2),
+    );
+    act(() => gateOf(gates, 'src/ledger/export.ts').release());
+
+    await waitFor(() =>
+      expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('loaded'),
+    );
+  });
+
+  it('drops a body that arrives after the view changed', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+    act(() => result.current.bodies?.request({ path: 'src/ledger/export.ts' }));
+    await waitFor(() => expect(gates.size).toBe(1));
+
+    act(() => result.current.setView({ kind: 'working', scope: 'all' }));
+    await waitFor(() => expect(result.current.bodies).toBeNull());
+    act(() => gateOf(gates, 'src/ledger/export.ts').release());
+
+    expect(result.current.files).toHaveLength(0);
+    expect(result.current.bodies).toBeNull();
+  });
+
+  it('keeps a loaded body on screen through a refresh and asks for it again', async () => {
+    const { gates } = stubBodies();
+    const { result } = await openLazy();
+    act(() => result.current.bodies?.request({ path: 'src/ledger/export.ts' }));
+    await waitFor(() => expect(gates.size).toBe(1));
+    act(() => gateOf(gates, 'src/ledger/export.ts').release());
+    await waitFor(() =>
+      expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('loaded'),
+    );
+
+    act(() => result.current.refresh());
+    await waitFor(() => expect(result.current.isRefreshing).toBe(false));
+
+    expect(result.current.bodies?.stateOf({ path: 'src/ledger/export.ts' })).toBe('loaded');
+    act(() => result.current.bodies?.request({ path: 'src/ledger/export.ts' }));
+    await waitFor(() =>
+      expect(
+        storySpies.tauriInvoke.mock.calls.filter(([command]) => command === 'worktree_diff_file'),
+      ).toHaveLength(2),
+    );
   });
 });

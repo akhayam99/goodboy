@@ -655,7 +655,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Add folder');
+    expect(actions.primary?.label).toBe('Add project');
     actions.primary?.run();
 
     expect(spies.ensureProjectMounted).toHaveBeenCalledWith({
@@ -1056,7 +1056,7 @@ describe('every suggestion kind', () => {
   it('resumes every agent the restart stopped in one action', async () => {
     const actions = actionsFor({ suggestion: EVERY_KIND['resume-agents'] });
 
-    expect(actions.primary?.label).toBe('Resume all');
+    expect(actions.primary?.label).toBe('Continue all');
     await actions.primary?.run();
 
     expect(spies.resumeStoppedAgents).toHaveBeenCalledWith({ sessionId: SESSION_ID });

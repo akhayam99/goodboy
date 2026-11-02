@@ -12,38 +12,29 @@
 - **The Sessions page frame.** The header is one 44px row, no band above it,
   with the pane title grade (`Sessions` alone, no total: each lane carries its
   own count), then on the right: "N hidden · Clear" while a filter hides
-  sessions (`HiddenByFilters`, one place for Board and List), the **Board** and
-  **List** switch
-  (`SessionViewPrefs.pageView`, kept per workspace in the session view prefs,
-  a version 3 record without it reads Board), and **Filter sessions**
-  (`SessionFilterPopover`). Its icon carries one primary 6px dot while a filter
-  is on. On the Board the filter holds Sort and Project; the List adds Status
-  and Show archived (no Group: the List always groups by stage). Repository state is
-  not here: it lives on the Repositories entry of the top bar (`RepoEntry`).
-  New session is not
+  sessions (`HiddenByFilters`), and **Filter sessions**
+  (`SessionFilterPopover`). The page is the Board only: there is no List view,
+  no switch and no stored page view, and the column is the list. A stored
+  `pageView` in an older prefs record is ignored. The filter icon carries one
+  primary 6px dot while a filter is on. The page filter holds Sort and Project;
+  the column filter holds Sort, Project, Status and Show archived (Group stays
+  in the column). Both are the one `SessionFilterPopover` over the one
+  `SessionViewPrefs` record, so a choice made in one is the choice in the other,
+  and a view menu never changes data. **Mark all as read** is the foot button of
+  the filter popover and the palette command **Mark all sessions as read**.
+  Repository state is not here: it lives on the Repositories entry of the top
+  bar (`RepoEntry`). New session is not
   here: it is the first row of the column. Nothing else sits on that line, and
-  no row sits under it. The List is one `ListGrid` with 32px
-  rows on the 960 list measure: state node 28 (glyph 16, so the title sits 24
-  after it), title led by its issue key in mono when there is one, project 128,
-  signal 96, updated 56, right aligned. It groups by the board lanes, in lane
-  order (`listStageGroupsOf`: Building, Running, Needs you, In review, Done,
-  then Archived under Show archived), each group labelled by `stageWord` with
-  its count from two, an empty group not drawn, and no Inactive group: an
-  inactive session sits in its stage with its age in the last column. Each
-  group label carries one 6px dot in its stage tone, the tone of the Board lane
-  (`stageTrackOf` through `ListStageGroup.tone`, drawn by `ListGridGroup`
-  `mark` before the name, over the node column, static); a row keeps only its state node and no
-  track (the Board cards keep theirs). The list follows the filter's
-  sort and Status, and a row opens its session. Header and lanes share one frame centred in the pane, so the
+  no row sits under it. Header and lanes share one frame centred in the pane, so the
   title's left edge is the first lane's left edge and the actions' right edge is
   the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
-  review, done, archived), each from 13rem to 20rem wide with 0.75rem gaps, and
+  review, done, archived), each from 12.25rem to 20rem wide with 0.75rem gaps, and
   the frame stops at six lanes of 20rem, so a wide or zoomed-out window never
   stretches the board. `boardLanesOf` decides by the frame's width in those rem
   values times the root font size (`BOARD_LANE_MIN_REM` and `BOARD_LANE_GAP_REM`
   in `paneRhythm.ts`, the same numbers the lane classes use; 15px root): six
-  lanes from 1226px; from 1020px five lanes with Done above Archived in the
+  lanes from 1159px; from 964px five lanes with Done above Archived in the
   fifth, each half with its own header, count, empty line and scroll; below
   that the five lanes scroll sideways, the title row stays, and the scroller
   opens at its end so Done and Archived are on screen. Every lane always renders
@@ -75,7 +66,7 @@
   `restore` glyph. The Sessions door works from every place, the New session
   draft included.
 - **An archived session is read-only until Restore.** Its Overview header holds
-  Restore alone (no Archived chip, no New), and the notices, unassigned notes and
+  Restore alone (no Archived chip, no New), and the notices, unassigned comments and
   Next are not drawn. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing
   restores on its own, so a shelved session never spends by itself.
@@ -86,7 +77,7 @@
 - **The top bar carries state, identity and movement.** Movement is Back,
   Forward and Search, clustered in the centre. It never holds a destination.
   The spend chip is state that opens the studio that owns that number, on
-  Impact's Spend tab, and the Limits chips open the Providers menu. The bar
+  Impact's Spend tab, and the Usage chips open the Providers menu. The bar
   never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
   Tasks, Chat, Workflows, Terminal, Impact and Monitoring; Chat and Terminal each end in a plus
@@ -100,7 +91,7 @@
   of them is broken), named "Sessions, 2 need you: Checks failing, 1
   question for you" (`doorSignalOf`). It reads `useNowSessions().attention`, which
   is `useWorkspaceAttention` over every session of the workspace, whatever the
-  project filter, and the first segment of the Now chip reads it too. The palette's
+  project filter. The Now chip does not show it. The palette's
   Needs you rows read the attention group of `useStageGroupedSessions`.
   Monitoring is the door after Impact, its page has no band and no Close, and
   it is the one way to the page in the chrome: the top bar holds no Monitoring
@@ -167,7 +158,7 @@
   `useColumnPlace`), so at most one door carries it; inside a session no door
   does: the open session's row is the column's sign and the current page row is
   the session rail's (see Session rail), one sign per navigation column. A popover trigger (the
-  Limits chips, the Goodboy row) is never selected: it only reports
+  Usage chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
   `__tests__/navigation/oneDoor.test.ts` pins the rule.
@@ -254,7 +245,8 @@ drawer instead of the Terminal page.
      Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
      of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
-     both list the same verbs (`menuParity.test.tsx`), `⋯` keeps its stable order.
+     both list the same verbs (`menuParity.test.tsx`, which counts the verbs
+     inside the **Go to** submenu), `⋯` keeps its stable order.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -310,7 +302,7 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Folders
+**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
@@ -455,11 +447,14 @@ form that was still open.
 
 On screen is the exception: when the target place is the current place (and
 its named drawer is the open one), no studio covers the page and no overlay
-drawer covers it (`data-drawer-mode="overlay"` on the drawer `aside`), the
-toast keeps its title and drops the action. A push drawer leaves the page
-visible, so it does not count as covering.
+drawer covers it (`data-drawer-mode="overlay"` on the drawer `aside`), there is
+no toast at all: a start you caused and can see announces nothing. A push drawer
+leaves the page visible, so it does not count as covering. The same holds for
+the rebase start, the composer's `$`, `~` and `@` picks and a plain Deny; a
+session-long ban is the explicit overflow action and is a line on the
+permission card, not a toast.
 
-A user start raises one toast. The caller passes a `startKey` (a run id or an
+A user start that happens out of sight raises one toast. The caller passes a `startKey` (a run id or an
 agent id) to `useFollowToast`; the key marks the run or agent as user-started
 for 5 seconds (`shared/lib/userStarts.ts`) and becomes the toast's `dedupeKey`
 `follow:<startKey>`. `WorkflowFollowToastBridge` skips a step start whose run

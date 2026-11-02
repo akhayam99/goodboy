@@ -32,8 +32,6 @@ export const wizardCta = ({
   hasFailed,
 }: Params): WizardCta => {
   switch (step) {
-    case 'welcome':
-      return cta({ primary: 'Get started' });
     case 'agents':
       if (hasFailed) {
         return cta({ primary: RETRY_LABEL });

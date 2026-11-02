@@ -145,6 +145,38 @@ describe('NextStackView', () => {
     expect(document.querySelectorAll('[data-action-card]')).toHaveLength(1);
   });
 
+  it('washes only the rows named in washedIds and draws plain rows without it', () => {
+    const [row = SHIP[0]] = SHIP;
+    const { rerender } = render(
+      <ToastProvider>
+        <NextStackView
+          sessionId={HARBORLINE}
+          cards={SHIP}
+          actionsFor={actionsOf({ log: { runs: [] } })}
+          washedIds={new Set([row?.id ?? ''])}
+        />
+      </ToastProvider>,
+    );
+    expect(document.querySelector('[data-entry-wash="on"]')).not.toBeNull();
+
+    rerender(
+      <ToastProvider>
+        <NextStackView
+          sessionId={HARBORLINE}
+          cards={SHIP}
+          actionsFor={actionsOf({ log: { runs: [] } })}
+          washedIds={new Set()}
+        />
+      </ToastProvider>,
+    );
+    expect(document.querySelector('[data-entry-wash="on"]')).toBeNull();
+    expect(document.querySelector('[data-entry-wash="off"]')).not.toBeNull();
+
+    cleanup();
+    show({ cards: SHIP });
+    expect(document.querySelector('[data-entry-wash]')).toBeNull();
+  });
+
   it('labels two kinds of group with a quiet name and the count of the rows it heads', () => {
     show({ cards: TWO_KINDS });
 

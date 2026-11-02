@@ -131,7 +131,6 @@ vi.mock('../features/settings/components/SettingsStudio', () => ({
     <div data-testid="settings-studio" data-scope={focus.scope} data-tool={focus.tool} />
   ),
 }));
-vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
 vi.mock('../shared/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useToast: () => ({ showToast: vi.fn() }),
@@ -181,8 +180,9 @@ vi.mock('../features/impact/components/ImpactStudio', () => ({
     </div>
   ),
 }));
-vi.mock('../features/changelog/components/ChangelogStudio', () => ({
-  ChangelogStudio: () => <div data-testid="changelog-studio">Changelog</div>,
+vi.mock('../app/components/HelpStudio', () => ({
+  HelpStudio: ({ initialTab }: { readonly initialTab: string }) =>
+    initialTab === 'whatsNew' ? <div data-testid="changelog-studio">Changelog</div> : null,
 }));
 vi.mock('../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({
@@ -212,6 +212,9 @@ vi.mock('../features/workspace/hooks/useSessionPinsSync', () => ({
 }));
 vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
+}));
+vi.mock('../store/runtime/auto/startAutoRuntime', () => ({
+  startAutoRuntime: vi.fn(async () => () => undefined),
 }));
 vi.mock('../store', async () => {
   const { useEffect: useMountEffect, useReducer } = await import('react');

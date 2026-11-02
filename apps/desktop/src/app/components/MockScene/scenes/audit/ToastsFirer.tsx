@@ -31,6 +31,25 @@ export const ToastsFirer = ({ variant }: Props) => {
       }
       return;
     }
+    if (variant === 'after') {
+      previewNotification({
+        severity: 'error',
+        message: 'The summarizer timed out after 90s.',
+        title: 'Handoff degraded',
+        context: CONTEXT,
+        persist: true,
+        action: { label: 'Retry', onClick: noop },
+      });
+      previewNotification({
+        severity: 'error',
+        title: 'Push to payments-api failed',
+        message: 'The remote rejected the push.',
+        context: CONTEXT,
+        persist: true,
+        action: { label: 'Open', onClick: noop },
+      });
+      return;
+    }
     if (variant === 'raw') {
       showToast({ kind: 'warning', message: 'The limit is 10 attachments.' });
       showToast({ kind: 'info', message: 'Scout 2 was deleted and can no longer be opened.' });

@@ -15,10 +15,9 @@ const BRANCH_MAX_AGE_MS = 10_000;
 
 type Params = {
   readonly session: Session;
-  readonly isActive: boolean;
 };
 
-export const useSessionBranchSync = ({ session, isActive }: Params): void => {
+export const useSessionBranchSync = ({ session }: Params): void => {
   const sessionId = session.id as SessionId;
   const isBranchless = useIsBranchlessSession({ session });
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
@@ -32,7 +31,7 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
   const seenTurnRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    if (!isActive || projectWorktreePath === null || projectMountId === null || isBranchless) {
+    if (projectWorktreePath === null || projectMountId === null || isBranchless) {
       return;
     }
     const isNewTurn =
@@ -83,7 +82,6 @@ export const useSessionBranchSync = ({ session, isActive }: Params): void => {
       cancelled = true;
     };
   }, [
-    isActive,
     isBranchless,
     lastTurnFinishedAt,
     projectId,

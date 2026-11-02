@@ -2,6 +2,7 @@ import { ChoiceCards, POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, useDropdown } from 
 import { modeSupportFor } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { SettingChip } from '../../../../shared/components/SettingChip';
+import { openPermissionSettings } from '../../../permissions/openPermissionSettings';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { MODE_COPY, PICKER_MODES, type PickerMode } from '../../../permissions/modeCopy';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
@@ -56,6 +57,7 @@ export const StartEditsChip = ({
       words={editsWordsOf({ mode: value, workspaceMode, workspaceName })}
       help={START_KIND_COPY.edits.help}
       error={null}
+      onChangeDefault={openPermissionSettings}
     >
       <ChoiceCards<PickerMode>
         isHintWrapped

@@ -464,7 +464,7 @@ const MATRIX: ReadonlyArray<Row> = [
       ...OPEN,
       'reviewComment.draft primary Fix',
       'reviewComment.skip secondary Skip',
-      'reviewComment.resolveNoReply menu Close the note',
+      'reviewComment.resolveNoReply menu Close the comment',
     ],
   },
 ];

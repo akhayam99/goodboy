@@ -1,4 +1,4 @@
-import { ROW_INTERACTIVE, StatusDot, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Skeleton, StatusDot, cn } from '@goodboy/ui';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { StatusCell } from './statusCell';
 
@@ -18,6 +18,17 @@ export const PullRequestStatusStrip = ({ cells, onOpen }: Props) => (
   >
     {cells.map((cell) => {
       const opens = cell.opens;
+      if (cell.isPending === true) {
+        return (
+          <div key={cell.id} data-cell={cell.id} data-pending="" aria-busy="true" className={CELL}>
+            <span className="text-meta text-muted-foreground">{cell.label}</span>
+            <span className="flex h-4 items-center">
+              <Skeleton className="h-3 w-3/5 rounded-sm" />
+            </span>
+            <span className="min-h-4" />
+          </div>
+        );
+      }
       const content = (
         <>
           <span className="text-meta text-muted-foreground">{cell.label}</span>

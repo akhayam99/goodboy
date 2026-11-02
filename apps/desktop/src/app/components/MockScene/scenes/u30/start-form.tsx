@@ -3,11 +3,11 @@ import type { SessionDraft } from '../../../../../store/slices/sessionDraft/stat
 import { START_PAGE_SEED } from '../u27/startPage/startPageSeedData';
 import { StartFormScene } from './StartFormScene';
 
-const NO_LABELS: ReadonlyArray<string> = [];
+const NO_LABELS: ReadonlyArray<string> = ['More'];
 
 const OPEN_EDITS: ReadonlyArray<string> = ['Edits'];
 
-const OPEN_LIMIT: ReadonlyArray<string> = ['Limit'];
+const OPEN_LIMIT: ReadonlyArray<string> = ['More', 'Limit'];
 
 const BASE = {
   workflowGoal: START_PAGE_SEED.goal,

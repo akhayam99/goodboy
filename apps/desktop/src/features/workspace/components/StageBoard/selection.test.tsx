@@ -386,15 +386,24 @@ describe('StageBoard selection bar', () => {
     if (failed === undefined) {
       throw new Error('sessions missing');
     }
+    let view: ReturnType<typeof mountBoard> | null = null;
     const bulkArchiveTask = vi
       .fn<AppStore['bulkArchiveTask']>()
       .mockImplementationOnce(async (ids) => {
         const succeeded = ids.filter((id) => id !== failed.id);
         markArchived(succeeded);
+        view?.rerender(
+          <ToastProvider>
+            <StageBoard
+              workspaceId={workspace.id}
+              sessions={sessions.filter((session) => !succeeded.includes(session.id))}
+            />
+          </ToastProvider>,
+        );
         return { succeeded, failed: [failed.id] };
       })
       .mockImplementationOnce(async (ids) => ({ succeeded: [...ids], failed: [] }));
-    mountBoard(sessions);
+    view = mountBoard(sessions);
     useAppStore.setState({ bulkArchiveTask });
     tick(GOALS[0] ?? '');
     tick(GOALS[1] ?? '');

@@ -2,6 +2,7 @@ import { beatResolvePublication, claimResolvePublication } from '@goodboy/db';
 import type { ResolvePublication } from '@goodboy/types';
 import { currentWindowLabel } from '../../../../features/workspace/window';
 import { tauriDatabase } from '../../../../shared/lib/db';
+import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
 
 const PUBLICATION_HEARTBEAT_MS = 10_000;
 const PUBLICATION_STALE_MS = 60_000;
@@ -39,13 +40,17 @@ export const startPublicationHeartbeat = async ({
   if (!isClaimed) {
     return null;
   }
-  const timer = setInterval(() => {
-    void beatResolvePublication({
-      db: tauriDatabase,
-      id: publicationId,
-      holder,
-      now: Date.now(),
-    }).catch(() => undefined);
-  }, PUBLICATION_HEARTBEAT_MS);
-  return () => clearInterval(timer);
+  return startPoll({
+    run: () => {
+      void beatResolvePublication({
+        db: tauriDatabase,
+        id: publicationId,
+        holder,
+        now: Date.now(),
+      }).catch(() => undefined);
+    },
+    everyMs: PUBLICATION_HEARTBEAT_MS,
+    gate: 'always',
+    isImmediate: false,
+  });
 };

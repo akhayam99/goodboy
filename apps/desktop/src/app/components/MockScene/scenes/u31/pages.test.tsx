@@ -86,19 +86,20 @@ describe('the u31 pages scenes', () => {
   it('u31-overview names its cards over their rows, with Full log as a quiet button', async () => {
     const { container } = mount({ name: 'u31-overview' });
 
-    await screen.findByText('Waiting for you', undefined, WAIT);
+    await screen.findByText('Needs you', undefined, WAIT);
     const labels = [
       ...container.querySelectorAll<HTMLElement>('[data-overview-card] [data-section-label]'),
     ];
-    expect(labels.map((item) => item.textContent)).toEqual(['Waiting for you', 'Done']);
+    expect(labels.map((item) => item.textContent)).toEqual(['Needs you', 'Done']);
     expect(screen.getByRole('button', { name: 'Full log' }).dataset.variant).toBe('quiet');
   });
 
   it('u31-overview exposes each card as a level 2 heading', async () => {
     mount({ name: 'u31-overview' });
 
-    await screen.findByRole('heading', { level: 2, name: /^Waiting for you/ }, WAIT);
+    await screen.findByRole('heading', { level: 2, name: /^Needs you/ }, WAIT);
     screen.getByRole('heading', { level: 2, name: /^Done/ });
+    expect(screen.queryByRole('heading', { level: 2, name: /^Waiting for you/ })).toBeNull();
   });
 
   it('u31-runs groups the runs under level 2 headings, one title and the facts after it', async () => {

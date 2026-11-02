@@ -122,7 +122,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'mid',
     facts: {
-      cards: ['running', 'next', 'branches', 'done'],
+      cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Answer',
       done: null,
     },
@@ -130,7 +130,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'finished',
     facts: {
-      cards: ['new-since', 'next', 'branches', 'done'],
+      cards: ['needs-you', 'new-since', 'branches', 'done'],
       primary: 'Mark ready',
       done: null,
     },
@@ -138,7 +138,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'stuck',
     facts: {
-      cards: ['needs-you', 'running', 'branches', 'done'],
+      cards: ['needs-you', 'running', 'done'],
       primary: 'Retry',
       done: null,
     },
@@ -146,7 +146,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'orchestrated',
     facts: {
-      cards: ['running', 'branches', 'done'],
+      cards: ['needs-you', 'running', 'done'],
       primary: null,
       done: null,
     },
@@ -154,7 +154,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'agent',
     facts: {
-      cards: ['needs-you', 'running', 'branches', 'done'],
+      cards: ['needs-you', 'done'],
       primary: 'Review',
       done: null,
     },
@@ -162,7 +162,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'branches',
     facts: {
-      cards: ['running', 'next', 'branches', 'done'],
+      cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Answer',
       done: null,
     },
@@ -179,14 +179,14 @@ describe('the central column, kind by kind', () => {
     },
   );
 
-  it('draws the cards Needs you, Running, Next, Branches, Done, with no Now and no Activity', async () => {
+  it('draws the cards Needs you, Running, Branches, Done, with no Now and no Activity', async () => {
     const { container } = await showColumn({ kind: 'mid' });
 
     const column = container.querySelector('[data-central-column]');
     const ids = [...(column?.querySelectorAll(':scope > [data-overview-card]') ?? [])].map((card) =>
       card.getAttribute('data-overview-card'),
     );
-    const order = ['needs-you', 'running', 'next', 'branches', 'done'];
+    const order = ['needs-you', 'running', 'branches', 'done'];
     expect(ids.length).toBeGreaterThan(0);
     expect(
       [...ids].sort((first, second) => order.indexOf(first ?? '') - order.indexOf(second ?? '')),
@@ -200,7 +200,7 @@ describe('the central column, kind by kind', () => {
     await showColumn({ kind: 'agent' });
 
     const card = screen.getByRole('region', { name: 'Needs you' });
-    const rows = card.querySelectorAll('[data-action-card]').length;
+    const rows = card.querySelectorAll('[data-action-card], [data-live-group]').length;
     expect(card.querySelector('[data-overview-count]')?.textContent).toBe(String(rows));
   });
 

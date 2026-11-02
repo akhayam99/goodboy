@@ -6,6 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import {
@@ -21,6 +22,7 @@ import {
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { seedCommentsScene } from '../../../../app/components/MockScene/scenes/u23/commentsSeed';
+import { prPageHandlers } from '../../../../app/components/MockScene/scenes/u23/prPageSeed';
 import { PUSH_MISSING } from '../../../resolve/reviewPushCopy';
 import { BranchPage } from '.';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
@@ -63,7 +65,7 @@ const mount = async ({ threadId }: { readonly threadId: string | null }): Promis
 };
 
 const selectReady = (): string => {
-  const ready = within(list()).getByRole('region', { name: 'Ready to push' });
+  const ready = within(list()).getByRole('region', { name: 'Done' });
   const row = ready.querySelector<HTMLElement>('button[data-thread-id]');
   if (row === null) {
     throw new Error('no ready row');
@@ -73,6 +75,11 @@ const selectReady = (): string => {
 };
 
 const mountReady = async (): Promise<void> => {
+  const handlers = prPageHandlers({ behind: 0, unpushed: 3 });
+  vi.mocked(invoke).mockImplementation(
+    async (command: string) =>
+      handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
+  );
   seedCommentsScene({ variant: 'ready-to-push' });
   render(
     <ToastProvider>
@@ -196,13 +203,13 @@ describe('one Push at a time', () => {
     const { prepare, publish } = stubPush({ preview: CLEAN, publish: () => gate.promise });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
 
     await waitFor(() => expect(publish).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenCalledOnce();
     expect(publish).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: PUBLICATION_ID });
     expect(screen.queryByRole('group', { name: /^Push \d+ commits? to/ })).toBeNull();
-    const busy = headerPush(/^Pushing 1 fix$/);
+    const busy = headerPush(/^Pushing commits$/);
     expect(busy.getAttribute('aria-busy')).toBe('true');
 
     await act(async () => gate.resolve(DONE));
@@ -219,7 +226,7 @@ describe('one Push at a time', () => {
     const { publish, cancel } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mount({ threadId: null });
 
-    const header = headerPush(/^Push \d+ (fix|fixes)$/);
+    const header = headerPush(/^Push(?: \d+)? commits?$/);
     expect(header.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(header);
 
@@ -228,23 +235,23 @@ describe('one Push at a time', () => {
     });
     within(panel).getByText('Not a fix');
     expect(within(panel).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
-    expect(headerPush(/^Push \d+ (fix|fixes)$/).getAttribute('aria-expanded')).toBe('true');
+    expect(headerPush(/^Push(?: \d+)? commits?$/).getAttribute('aria-expanded')).toBe('true');
     expect(publish).not.toHaveBeenCalled();
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: /^Push 2 commits to/ })).toBeNull(),
     );
     expect(publish).not.toHaveBeenCalled();
     expect(cancel).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: PUBLICATION_ID });
-    expect(headerPush(/^Push \d+ (fix|fixes)$/).getAttribute('aria-expanded')).toBe('false');
+    expect(headerPush(/^Push(?: \d+)? commits?$/).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('pushes once from the panel Push', async () => {
     const { publish } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
@@ -257,7 +264,7 @@ describe('one Push at a time', () => {
     const { prepare, publish } = stubPush({ preview: CLEAN, publish: () => gate.promise });
     await mount({ threadId: null });
 
-    const header = headerPush(/^Push \d+ (fix|fixes)$/);
+    const header = headerPush(/^Push(?: \d+)? commits?$/);
     fireEvent.click(header);
     fireEvent.click(header);
     await settle();
@@ -271,15 +278,18 @@ describe('one Push at a time', () => {
     const { prepare } = stubPush({ preview: CLEAN, publish: async () => DONE });
     await mountReady();
 
-    const label = headerPush(/^Push \d+ (fix|fixes)$/).textContent ?? '';
-    const ready = within(list()).getByRole('region', { name: 'Ready to push' });
+    const label = headerPush(/^Push(?: \d+)? commits?$/).textContent ?? '';
+    const ready = within(list()).getByRole('region', { name: 'Done' });
     const count = Number(/(\d+)/.exec(ready.textContent ?? '')?.[1] ?? 0);
-    expect(label).toBe(`Push ${count} ${count === 1 ? 'fix' : 'fixes'}`);
+    expect(label).toBe('Push 3 commits');
     expect(count).toBe(3);
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
-    expect(prepare).toHaveBeenLastCalledWith({ sessionId: SESSION.id, mountId: null });
+    expect(prepare).toHaveBeenLastCalledWith({
+      sessionId: SESSION.id,
+      mountId: expect.any(String),
+    });
   });
 
   it('pushes only the selected comment from its own detail', async () => {
@@ -293,7 +303,7 @@ describe('one Push at a time', () => {
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenLastCalledWith({
       sessionId: SESSION.id,
-      mountId: null,
+      mountId: expect.any(String),
       threadIds: [threadId],
       isolated: true,
     });
@@ -308,7 +318,7 @@ describe('one Push at a time', () => {
     const { publish, cancel } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     await screen.findByRole('group', { name: /^Push 2 commits to/ });
     cleanup();
 
@@ -321,7 +331,7 @@ describe('one Push at a time', () => {
     const { cancel } = stubPush({ preview: DIRTY, publish: async () => ({ kind: 'missing' }) });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
@@ -341,7 +351,7 @@ describe('one Push at a time', () => {
     });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push \d+ (fix|fixes)$/));
+    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 

@@ -1,7 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Button, ListGridGroup, ListGridLine } from '@goodboy/ui';
+import { Button, ListGridGroup, ListGridLine, Notice } from '@goodboy/ui';
 import { useVirtualRows } from '../../../../shared/hooks/useVirtualRows';
 import { TASK_GROUP_CAP, TASK_VIRTUAL_MIN, shownTaskRecords } from '../../shownTaskRecords';
+import type { SourceFailure } from '../../sourceFailureOf';
 import type { InboxRecord } from '../../types';
 import { InboxRow, inboxOptionId } from './InboxRow';
 import { TASK_ROW_HEIGHT } from './taskColumns';
@@ -10,8 +11,8 @@ const NO_NEW_KEYS: ReadonlySet<string> = new Set();
 
 export type TaskLine = {
   readonly key: string;
-  readonly text: string;
-  readonly onRetry?: () => void;
+  readonly failure: SourceFailure;
+  readonly onAction: () => void;
 };
 
 type Props = {
@@ -112,14 +113,19 @@ export const TaskGroupRows = ({
           ? null
           : lines.map((line) => (
               <ListGridLine key={line.key}>
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="min-w-0 truncate">{line.text}</span>
-                  {line.onRetry === undefined ? null : (
-                    <Button variant="ghost" size="xs" onClick={line.onRetry}>
-                      Retry
+                <Notice
+                  tone="warning"
+                  placement="inline"
+                  role="status"
+                  title={line.failure.title}
+                  body={line.failure.body}
+                  detail={line.failure.detail}
+                  actions={
+                    <Button variant="secondary" size="xs" onClick={line.onAction}>
+                      {line.failure.isRefused ? 'Reconnect' : 'Retry'}
                     </Button>
-                  )}
-                </span>
+                  }
+                />
               </ListGridLine>
             ))
       }

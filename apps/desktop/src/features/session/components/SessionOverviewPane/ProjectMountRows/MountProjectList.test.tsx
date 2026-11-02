@@ -5,6 +5,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { MountId, Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { TEST_NOW, aProject } from '@goodboy/types/testing';
 import { emptyOverrides } from '../../../../../store/storyHarness';
+import {
+  forgetMaterializationSeed,
+  materializationSeedFor,
+} from '../../../../../store/slices/sessions/materializationSeeds';
 
 const SID = 'session-1' as SessionId;
 const WID = 'workspace-1' as WorkspaceId;
@@ -35,6 +39,10 @@ const h = vi.hoisted(() => ({
       baseBranch: 'main',
       targetPath: '/repos/goodboy/.goodboy/worktrees/gb-7k2q9x',
       renamedFrom: null as string | null,
+      isExistingBranch: false,
+      isNamedByGoal: false,
+      goalBranches: Array.from<string>([]),
+      checkedOutAt: Array.of<string | null>(null)[0] ?? null,
     },
     branchScanError: null as string | null,
   },
@@ -71,6 +79,11 @@ const renderList = () =>
 beforeEach(() => {
   vi.clearAllMocks();
   h.preflight.preflight.renamedFrom = null;
+  h.preflight.preflight.isExistingBranch = false;
+  h.preflight.preflight.isNamedByGoal = false;
+  h.preflight.preflight.goalBranches = [];
+  h.preflight.preflight.checkedOutAt = null;
+  forgetMaterializationSeed({ sessionId: SID });
   h.preflight.branchScanError = null;
   h.preflight.status = 'ready';
   h.ensureProjectMounted.mockResolvedValue(undefined);
@@ -92,7 +105,7 @@ describe('MountProjectList', () => {
   it('creates with exactly the branch and the mount the preview showed', async () => {
     renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
     await waitFor(() =>
       expect(h.ensureProjectMounted).toHaveBeenCalledWith({
@@ -100,6 +113,7 @@ describe('MountProjectList', () => {
         projectId: PID,
         reason: 'added manually by the user',
         mountId: MID,
+        dirName: 'gb-7k2q9x',
         branch: 'ak/ship-it',
       }),
     );
@@ -113,13 +127,72 @@ describe('MountProjectList', () => {
     expect(screen.getByRole('status').textContent).toContain('ak/taken already exists');
   });
 
+  it('says it uses the existing branch the goal names and leaves the branch to the mount', async () => {
+    h.preflight.preflight.isExistingBranch = true;
+    h.preflight.preflight.isNamedByGoal = true;
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
+
+    expect(screen.getByRole('status').textContent).toContain(
+      'Uses the existing branch ak/ship-it, named in the goal.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    await waitFor(() =>
+      expect(h.ensureProjectMounted).toHaveBeenCalledWith({
+        sessionId: SID,
+        projectId: PID,
+        reason: 'added manually by the user',
+        mountId: MID,
+        dirName: 'gb-7k2q9x',
+      }),
+    );
+  });
+
+  it('offers a picker when the goal names two branches', () => {
+    h.preflight.preflight.goalBranches = ['ak/one', 'ak/two'];
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
+
+    screen.getByText('The goal names 2 branches');
+    fireEvent.click(screen.getByRole('button', { name: 'ak/two' }));
+
+    expect(materializationSeedFor({ sessionId: SID })?.existingBranch).toBe('ak/two');
+  });
+
+  it('opens the existing worktree when the branch is checked out elsewhere', async () => {
+    h.preflight.preflight.isExistingBranch = true;
+    h.preflight.preflight.checkedOutAt = '/repos/goodboy/.goodboy/worktrees/gb-held';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the existing worktree' }));
+
+    await waitFor(() => expect(h.ensureProjectMounted).toHaveBeenCalledTimes(1));
+    expect(materializationSeedFor({ sessionId: SID })).toMatchObject({
+      existingBranch: 'ak/ship-it',
+      existingWorktreePath: '/repos/goodboy/.goodboy/worktrees/gb-held',
+    });
+  });
+
+  it('starts on a new branch instead when the branch is checked out elsewhere', () => {
+    h.preflight.preflight.isExistingBranch = true;
+    h.preflight.preflight.checkedOutAt = '/repos/goodboy/.goodboy/worktrees/gb-held';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start on a new branch' }));
+
+    expect(h.ensureProjectMounted).not.toHaveBeenCalled();
+    expect(materializationSeedFor({ sessionId: SID })).toEqual({ isGoalBranchIgnored: true });
+  });
+
   it('goes back to the list without creating anything', () => {
     renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
     const back = screen.getByRole('button', { name: 'Back' });
     expect(back.closest('[data-slot="form-actions"]')).not.toBeNull();
     expect(back.parentElement).toBe(
-      screen.getByRole('button', { name: 'Add folder' }).parentElement,
+      screen.getByRole('button', { name: 'Add project' }).parentElement,
     );
     fireEvent.click(back);
 
@@ -132,15 +205,19 @@ describe('MountProjectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     screen.getByText('Reading the branches already in the repository…');
+    expect(screen.getByRole('button', { name: 'Add project' }).hasAttribute('disabled')).toBe(true);
+    cleanup();
 
     h.preflight.status = 'ready';
+    renderList();
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
     const deferred: { resolve: () => void } = { resolve: () => undefined };
     h.ensureProjectMounted.mockReturnValueOnce(
       new Promise<undefined>((resolve) => {
         deferred.resolve = () => resolve(undefined);
       }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
     await waitFor(() => screen.getByText('Creating the worktree…'));
     deferred.resolve();
@@ -152,7 +229,7 @@ describe('MountProjectList', () => {
     );
     renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('cannot find base ref: tried origin/main');

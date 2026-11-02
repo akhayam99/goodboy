@@ -124,7 +124,7 @@ describe('SideColumn', () => {
     const foot = nav.querySelector('[data-column-foot]') as HTMLElement;
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
     expect(within(foot).getByTestId('goodboy-chip')).toBeDefined();
-    expect(within(foot).getByRole('button', { name: 'Report a bug' })).toBeDefined();
+    expect(within(foot).queryByRole('button', { name: 'Report a bug' })).toBeNull();
   });
 
   it('names a live terminal in the Terminal row tooltip, no running dot beside the plus', () => {
@@ -390,12 +390,14 @@ describe('SideColumn', () => {
     expect(within(navLayer()).queryAllByRole('separator')).toHaveLength(0);
   });
 
-  it('opens the report sheet from the bug button beside the Goodboy row', () => {
+  it('opens the report sheet from Report a bug in the Goodboy menu, with no bug button in the foot', () => {
     const onReport = vi.fn();
     window.addEventListener(OPEN_REPORT_SHEET_EVENT, onReport);
     mountColumn();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Report a bug' }));
+    expect(screen.queryByRole('button', { name: 'Report a bug' })).toBeNull();
+    fireEvent.click(screen.getByTestId('goodboy-chip'));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Report a bug/ }));
 
     expect(onReport).toHaveBeenCalledOnce();
     window.removeEventListener(OPEN_REPORT_SHEET_EVENT, onReport);

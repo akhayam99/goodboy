@@ -52,7 +52,7 @@ describe('ReportStudio', () => {
     expect(rail.className).toContain('sticky');
     expect(rail.className).toContain('top-0');
     expect(rail.className).toContain('self-start');
-    expect(rail.className).toContain('overflow-y-auto');
+    expect(rail.querySelector('.overflow-y-auto')).not.toBeNull();
   });
 
   it('renders the report through the document template, not the chat markdown scale', () => {

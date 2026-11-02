@@ -183,9 +183,9 @@ const stepStartedWithOneToast = async (ctx: Ctx): Promise<void> => {
     expect(runOf(ctx)?.orchestrationStop).toBeUndefined();
     expect(statusOf(ctx, IMPLEMENT_AGENT_ID)).toBe('running');
   }, WAIT);
-  expect(await screen.findByText('Plan approved', {}, WAIT)).toBeDefined();
-  expect(screen.getByText('Implement started')).toBeDefined();
-  expect(toastCount()).toBe(1);
+  expect(screen.queryByText('Plan approved')).toBeNull();
+  expect(screen.queryByText('Implement started')).toBeNull();
+  expect(toastCount()).toBe(0);
   expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
   expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId]).toBe(RUN_ID);
   expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
@@ -217,7 +217,7 @@ const pressEscape = async (): Promise<void> => {
 
 export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'a run held for its plan: Review plan opens the drawer, the drawer Approve starts the step with one toast',
+    name: 'a run held for its plan: Review plan opens the drawer, the drawer Approve starts the step with no toast',
     covers: ['navigate', 'openDrawer', 'toast:follow'],
     open: reviewThenApproveFromTheDrawer,
     lands: stepStartedWithOneToast,

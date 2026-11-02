@@ -75,7 +75,7 @@ const mount = async ({
 
 describe('a11y, the Ask drawer over the page', () => {
   it('has no violation with the scrim up and the page inert', async () => {
-    const container = await mount({ width: 1000 });
+    const container = await mount({ width: 800 });
 
     expect(
       screen.getByRole('complementary', { name: 'Side panel' }).getAttribute('data-drawer-mode'),

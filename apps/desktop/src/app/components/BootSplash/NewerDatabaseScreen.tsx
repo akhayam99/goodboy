@@ -1,5 +1,5 @@
 import { NEWER_BUILD_MESSAGE } from '@goodboy/db';
-import { Button, cn, formatError, tintClasses } from '@goodboy/ui';
+import { Button, formatError, ToneBar } from '@goodboy/ui';
 import { useCallback, useState } from 'react';
 import { BootBrand } from './BootBrand';
 
@@ -31,11 +31,9 @@ export const NewerDatabaseScreen = ({ restorableSnapshot, onRestore, onQuit }: P
       <BootBrand />
       <div
         role="alert"
-        className={cn(
-          'flex w-full max-w-sm flex-col gap-3 rounded-r-md border-l-2 p-4 text-meta',
-          tintClasses('warning').border,
-        )}
+        className="relative flex w-full max-w-sm flex-col gap-3 rounded-md py-4 pl-5 pr-4 text-meta"
       >
+        <ToneBar tone="warning" density="card" />
         <div className="flex flex-col gap-1">
           <span className="font-medium text-foreground">{NEWER_BUILD_MESSAGE}</span>
           <p className="leading-relaxed text-muted-foreground">

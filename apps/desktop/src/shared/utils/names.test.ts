@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
 import { describe, expect, it } from 'vitest';
 import { HANDOFF_SECTION_LABEL } from '../../features/chat/utils/handoffLabels';
+import { TAIL_ACTION } from '../../features/live-state/tailAction';
 import { ROLE_LABEL } from '../../features/session/agent-kind';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import { SESSION_STAGE_META } from '../../features/session/session-stage';
@@ -75,6 +76,7 @@ describe('names', () => {
       pin: 'Pin session',
       unpin: 'Unpin session',
       notes: 'Notes',
+      addComment: 'Add comment',
       tasks: 'Tasks',
       notifications: 'Notifications',
       reply: 'Reply',
@@ -129,6 +131,21 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.send)).toEqual(['Send message']);
   });
 
+  it('names halting and picking up once, and every surface reads the same words', () => {
+    expect([NAMES.stop, NAMES.stopRun, NAMES.forceStop, NAMES.continue, NAMES.continueAll]).toEqual(
+      ['Stop', 'Stop run', 'Force stop', 'Continue', 'Continue all'],
+    );
+    expect(
+      [TAIL_ACTION.stop, TAIL_ACTION.stopAgent, TAIL_ACTION.stopAuto].map((a) => a.label),
+    ).toEqual([NAMES.stop, NAMES.stop, NAMES.stop]);
+    expect(TAIL_ACTION.continue.label).toBe(NAMES.continue);
+    expect(TAIL_ACTION.forceStop.label).toBe(NAMES.forceStop);
+    expect(formerNamesOf(NAMES.continue)).toEqual(
+      expect.arrayContaining(['Resume', 'Resume run', 'Continue the run', 'Continue step']),
+    );
+    expect(formerNamesOf(NAMES.continueAll)).toEqual(['Resume all']);
+  });
+
   it('feeds the follow and fix labels from NAMES', () => {
     expect(FOLLOW_LABEL).toBe(NAMES.follow);
     expect(fixLabel({ count: 3 })).toBe(`${NAMES.fix} 3`);
@@ -145,16 +162,19 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.tasks)).toContain('Inbox');
   });
 
-  it('calls what a workspace holds a folder and keeps the project words findable', () => {
-    expect([NAMES.folders, NAMES.addFolder, NAMES.gitRepository]).toEqual([
-      'Folders',
-      'Add folder',
+  it('calls a repository a project, keeps folder for a plain folder and finds the old words', () => {
+    expect([NAMES.projects, NAMES.addProject, NAMES.addPlainFolder, NAMES.gitRepository]).toEqual([
+      'Projects',
+      'Add project',
+      'Add a plain folder',
       'Git repository',
     ]);
-    expect(formerNamesOf(NAMES.folders)).toEqual(['Projects', 'Workspace projects']);
-    expect(NAMES.projects).toBe('Projects');
-    expect(formerNamesOf(NAMES.addFolder)).toEqual(
-      expect.arrayContaining(['Add project', 'Link a project', 'Link a repository']),
+    expect(formerNamesOf(NAMES.projects)).toEqual(['Folders', 'Workspace projects']);
+    expect(formerNamesOf(NAMES.addProject)).toEqual(
+      expect.arrayContaining(['Add folder', 'Link a project', 'Link a repository']),
+    );
+    expect(formerNamesOf(NAMES.needsYou)).toEqual(
+      expect.arrayContaining(['Waiting for you', 'Waits on you', 'Waiting for your OK']),
     );
     expect(formerNamesOf(NAMES.gitRepository)).toEqual(['Dev project']);
     expect(formerNamesOf(NAMES.removeFromSession)).toContain('Detach project');
@@ -205,7 +225,7 @@ describe('names', () => {
     ['Autopilot agent', 'autopilot-agent'],
     ['Autopilot mode', 'autopilot-agent'],
     ['Auto mode', 'autopilot-agent'],
-    ['Add project', 'add-project'],
+    ['Add folder', 'add-folder'],
     ['Dev project', 'dev-project'],
     ['Turn this into a dev project', 'dev-project'],
   ])('fails the old phrase %s', (phrase, id) => {
@@ -228,7 +248,7 @@ describe('names', () => {
     'Pick HBL-412',
     'Pick an issue',
     'Pick up a task',
-    'Add folder',
+    'Add project',
     'Git repository',
   ])('lets the new word %s through', (phrase) => {
     expect(RETIRED_NAMES.filter((entry) => entry.pattern.test(phrase))).toEqual([]);

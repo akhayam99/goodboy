@@ -12,12 +12,10 @@ const HOOK_NAME = /^use[A-Z]/;
 const DATABASE_HANDLE_ALLOWED: Readonly<Record<string, number>> = {
   'features/auto/chat/useAutoTreeCap/index.ts': 1,
   'features/auto/plan/useAutoPlanApproval/index.ts': 1,
-  'features/auto/useAutoTreeLimit/index.ts': 1,
   'features/impact/hooks/useImpactMetrics/index.ts': 1,
   'features/palette/hooks/useSessionsEverywhere.ts': 1,
   'features/resolve/hooks/useResolveDeliveryReceipts/index.ts': 1,
   'features/suggestions/useNextStepOutcomes/index.ts': 1,
-  'features/workflows/components/WorkflowRulesPanel/DefaultAutoLimitSetting/index.tsx': 1,
   'features/workflows/hooks/useRemovedBuiltins/index.ts': 1,
   'shared/components/NewWorkspaceForm/folderConflictOf.ts': 1,
 };

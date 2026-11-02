@@ -29,9 +29,6 @@ import { runDefaultKey } from '../../../startRun/runDefaultSetting';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import { workspaceGuidanceOf } from '../../../startRun/workspaceGuidanceOf';
 import type { StartLimit } from '../../../../auto/startLimitOf';
-import type { LimitDefaultParams } from '../../../../auto/limitDefaultFrom';
-import { limitDefaultFromOfKind } from '../../StartForm/limitDefaultFromOfKind';
-import { startFormKindOfRunAs } from '../../StartForm/runAsOfStartKind';
 import {
   agentRoutingOfPin,
   orchestratorRoutingOfPin,
@@ -54,7 +51,7 @@ import type { StartRunFile } from '../../../startRun/startRunFileOf';
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
-  readonly prepare: (params: LimitDefaultParams) => Promise<StartLimit>;
+  readonly prepare: () => StartLimit;
   readonly settleLimit: () => void;
   readonly mount?: SessionDraftMount | null;
   readonly role?: AgentKind | null;
@@ -346,9 +343,7 @@ export const useStartRun = ({
     setIsStarting(true);
     setError(null);
     try {
-      const limit = await prepare({
-        defaultFrom: limitDefaultFromOfKind({ kind: startFormKindOfRunAs({ runAs }) }),
-      });
+      const limit = prepare();
       const { loadSetting } = useAppStore.getState();
       await Promise.all([
         loadSetting(runDefaultKey({ scope: { kind: 'workspace', workspaceId } })),

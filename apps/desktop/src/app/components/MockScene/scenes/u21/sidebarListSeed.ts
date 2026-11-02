@@ -180,7 +180,6 @@ export const seedPinnedSessions = (): Session => {
     sessionGroupExpanded: { [RELAY_ID]: false },
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
-        pageView: 'board',
         sort: 'updatedAt',
         group: 'project',
         isArchivedShown: false,

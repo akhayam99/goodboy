@@ -1,3 +1,4 @@
+import { countNoun } from '../../../shared/utils/countNoun';
 import type { MountId, OpenQuestion, SessionEvent } from '@goodboy/types';
 import { agentDisplayName } from '../../../shared/utils/agentDisplayName';
 import { hasHistoryRecovery } from '../../history/historyRecovery';
@@ -49,16 +50,6 @@ export type NeedsYouOwner = {
   readonly mountId: string | null;
   readonly stopLines?: NeedsYouStopLines;
 };
-
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
 
 const RANK_QUESTION = 0;
 const RANK_PUSH_FAILED = 1;
@@ -128,7 +119,7 @@ const owedText = ({
     ...(owed.toReview === 0 ? [] : [`${owed.toReview} to review`]),
     ...(owed.questions === 0
       ? []
-      : [plural({ count: owed.questions, one: 'question', many: 'questions' })]),
+      : [countNoun({ count: owed.questions, one: 'question', many: 'questions' })]),
     ...(owed.pushFailed === 0 ? [] : [`${owed.pushFailed} push failed`]),
     ...(owed.couldntFix === 0 ? [] : [`${owed.couldntFix} couldn't fix`]),
   ].join(' · ');
@@ -242,8 +233,22 @@ const askLine = ({
   return { text: title, where: null };
 };
 
-const isAskingRow = ({ item }: { readonly item: TimelineRowItem }): boolean =>
-  isRowNeedingYou({ state: item.rowState }) || item.hasSubagentAttention === true;
+type AskingParams = { readonly item: TimelineRowItem };
+
+const isAskingRow = ({ item }: AskingParams): boolean => {
+  const { entry } = item;
+  const questions =
+    entry.kind === 'run'
+      ? openQuestionsOfRun({ entry })
+      : entry.kind === 'agent'
+        ? openQuestionsOfAgent({ entry })
+        : [];
+  return (
+    questions.length > 0 ||
+    isRowNeedingYou({ state: item.rowState }) ||
+    item.hasSubagentAttention === true
+  );
+};
 
 const runOwnerOf = ({
   runItem,
@@ -382,7 +387,7 @@ const ownerOfQuestion = ({ entry }: { readonly entry: TimelineQuestionEntry }): 
     kind: 'question',
     text:
       first === undefined
-        ? plural({ count: entry.questions.length, one: 'question', many: 'questions' })
+        ? countNoun({ count: entry.questions.length, one: 'question', many: 'questions' })
         : first.text,
     where: null,
     at: entry.at,

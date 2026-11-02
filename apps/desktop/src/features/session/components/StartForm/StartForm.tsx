@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { FormActions } from '@goodboy/ui';
 import type { StartFormKind } from './startFormKinds';
+import { StartFailure } from './StartFailure';
 import { StartKindTabs } from './StartKindTabs';
 import { StartSettingsRow } from './StartSettingsRow';
 import type { StartSettingItem } from './startSettingsOf';
@@ -41,7 +42,7 @@ export const StartForm = ({
       <div className="flex min-w-0 flex-col gap-2">
         {onKind === null ? null : (
           <StartKindTabs
-            kind={kind}
+            kind={kind ?? 'auto'}
             hasPresets={hasPresets}
             isDisabled={isDisabled}
             onPick={onKind}
@@ -59,13 +60,13 @@ export const StartForm = ({
     )}
     {fields}
     <StartSettingsRow items={settings} />
+    {error === null ? null : <StartFailure error={error} />}
     <FormActions
       leading={
         note === null ? null : (
           <p className="min-w-0 truncate text-meta text-faint-foreground">{note}</p>
         )
       }
-      error={error}
       reason={reason}
       reasonId={reasonId}
     >

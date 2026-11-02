@@ -631,7 +631,7 @@ describe('IntegrationPane', () => {
 
   it('shows the provider connection form inline when disconnected', async () => {
     useAppStore.setState({ sessionExternalTasks: {} });
-    useAppStore.setState({ workspaceIntegrations: {} });
+    useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] } });
     const listener = vi.fn();
     window.addEventListener('goodboy:open-linear-studio', listener);
 
@@ -654,6 +654,39 @@ describe('IntegrationPane', () => {
     );
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-linear-studio', listener);
+  });
+
+  it('draws a connection skeleton, never the connect form, until the integrations load', () => {
+    vi.useFakeTimers();
+    try {
+      useAppStore.setState({ sessionExternalTasks: {}, workspaceIntegrations: {} });
+
+      render(
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />,
+      );
+      expect(screen.queryByLabelText('API key')).toBeNull();
+      expect(screen.queryByRole('status', { name: 'Checking the connection' })).toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(130);
+      });
+      expect(screen.getAllByRole('status', { name: 'Checking the connection' })).toHaveLength(2);
+      expect(screen.queryByLabelText('API key')).toBeNull();
+
+      act(() => {
+        useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] } });
+      });
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(screen.queryByRole('status', { name: 'Checking the connection' })).toBeNull();
+      screen.getByLabelText('API key');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it.each([['linear', TASK, 'Linear detail GB-42']] as const)(

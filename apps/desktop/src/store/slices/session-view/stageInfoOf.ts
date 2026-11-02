@@ -6,7 +6,7 @@ import { liveWorkOfSession } from '../../runtime/live-work/selectLiveWork';
 import { summarizeMountWork } from '../project-mounts/mountCompletion';
 import { resolveAttentionOf } from '../resolve/resolveAttention';
 import type { AutoViewState } from '../auto-view/state';
-import { isRunHeldForPlan } from '../workflows/workflowPlanApproval';
+import { runAwaitsPlanReview } from '../../../features/plans/runAwaitsPlanReview';
 import { attentionSinceOf } from './attentionSinceOf';
 import { attentionWaitsOf } from './attentionWaitsOf';
 import { deferredReasonsOf } from './deferredReasonsOf';
@@ -118,7 +118,7 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
       isBranchless,
     }),
     hasPlanWaiting: session.workflowRuns.some(
-      (run) => run.discardedAt == null && isRunHeldForPlan({ run }),
+      (run) => run.discardedAt == null && runAwaitsPlanReview({ state, sessionId, run }),
     ),
     ...waits,
     deferredReasons: deferredReasonsOf({

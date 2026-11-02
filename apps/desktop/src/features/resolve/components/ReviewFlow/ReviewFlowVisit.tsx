@@ -7,11 +7,15 @@ type Props = ComponentProps<typeof ReviewFlow> & {
   readonly isVisible: boolean;
 };
 
-export const ReviewFlowVisit = ({ session, mountId = null, push, isVisible }: Props) => {
-  const unreadIds = useThreadVisit({ sessionId: session.id, mountId, isVisible });
+export const ReviewFlowVisit = ({ isVisible, ...flow }: Props) => {
+  const unreadIds = useThreadVisit({
+    sessionId: flow.session.id,
+    mountId: flow.mountId ?? null,
+    isVisible,
+  });
   return (
     <ThreadVisitContext.Provider value={unreadIds}>
-      <ReviewFlow session={session} mountId={mountId} push={push} />
+      <ReviewFlow {...flow} />
     </ThreadVisitContext.Provider>
   );
 };

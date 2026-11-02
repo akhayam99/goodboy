@@ -1,7 +1,9 @@
+import { capitalized } from '../../shared/utils/capitalized';
 import type { AgentId, ResolveAttempt } from '@goodboy/types';
 import { modelLabel } from '../chat/utils/chat-constants';
 import { launchKeyOf } from '../../store/slices/resolve/resolveLaunch';
 import type { ResolveWord } from './commentProjection';
+import { threadCountText } from './reviewLaunchCopy';
 import { reviewTallyOfWords, type ReviewTally } from './reviewTally';
 
 export type FixRunSource = {
@@ -21,9 +23,6 @@ export type FixRun = {
   readonly isLive: boolean;
   readonly model: string;
 };
-
-const capitalized = ({ text }: { readonly text: string }): string =>
-  `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 export const fixRunModelLabel = ({ attempt }: { readonly attempt: ResolveAttempt }): string =>
   attempt.effort === null
@@ -85,8 +84,8 @@ export const fixRunLabel = ({
   readonly total: number;
   readonly prNumber: number | null;
 }): string => {
-  const comments = total === 1 ? '1 comment' : `${total} comments`;
-  return prNumber === null ? `Fix run · ${comments}` : `Fix run · #${prNumber} · ${comments}`;
+  const threads = threadCountText({ count: total });
+  return prNumber === null ? `Fix run · ${threads}` : `Fix run · #${prNumber} · ${threads}`;
 };
 
 export const fixRunThreadIdsOf = ({
@@ -126,13 +125,7 @@ export const fixRunNameOf = ({
   });
 };
 
-export const fixRunTitle = ({
-  run,
-  noun = 'comment',
-}: {
-  readonly run: FixRun;
-  readonly noun?: 'comment' | 'note';
-}): string => {
-  const counted = run.total === 1 ? `1 ${noun}` : `${run.total} ${noun}s`;
+export const fixRunTitle = ({ run }: { readonly run: FixRun }): string => {
+  const counted = threadCountText({ count: run.total });
   return run.isLive ? `Fixing ${counted}` : `Fix run · ${counted}`;
 };

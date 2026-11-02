@@ -373,7 +373,7 @@ describe('the session level projects and linked work', () => {
     expect(within(sessionLayer()).queryByRole('group', { name: 'Folders' })).toBeNull();
     const paymentsRows = within(projects.getByRole('list', { name: 'payments-api worktrees' }));
     const worktree = paymentsRows.getByRole('button', { name: /#418/ });
-    expect(worktree.textContent).not.toContain('#418');
+    expect(worktree.textContent?.startsWith('#418 ')).toBe(true);
     expect(worktree.getAttribute('aria-label')).toContain(`branch goodboy/${openId}`);
     expect(projects.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
 
@@ -760,7 +760,7 @@ describe('the folded session rail', () => {
 
     const icons = within(elementOf('[data-rail-worktrees]', rail())).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label'))).toEqual([
-      `payments-api, goodboy/${openId}, Open, A check failed`,
+      `payments-api, #418, goodboy/${openId}, Open, A check failed`,
     ]);
   });
 

@@ -31,11 +31,11 @@ export const RailPinnedRow = ({ session, isOpen, onSelect }: Props) => {
       className={cn(PINNED_ROW, ROW_INTERACTIVE, isCurrent && 'text-foreground')}
     >
       {unreadLabel === null ? (
-        <StateNode node={node} />
+        <StateNode node={node} hasEmptySlot isUnreadDot />
       ) : (
         <Tooltip content={unreadLabel} side="right">
           <span className="inline-flex">
-            <StateNode node={node} />
+            <StateNode node={node} hasEmptySlot isUnreadDot />
           </span>
         </Tooltip>
       )}

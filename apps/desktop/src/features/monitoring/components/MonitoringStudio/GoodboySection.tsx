@@ -6,6 +6,7 @@ import { LeftoversList } from './LeftoversList';
 import { PortListSection } from './PortListSection';
 import { PortRowItem } from './PortRowItem';
 import { ProcessRowView } from './ProcessRowView';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type Props = {
   readonly rows: ReadonlyArray<PortRow>;
@@ -22,7 +23,7 @@ type SweptParams = {
 };
 
 const sweptLine = ({ count }: SweptParams): string =>
-  `Stopped ${count} ${count === 1 ? 'process' : 'processes'} left by an earlier run`;
+  `Stopped ${countNoun({ count: count, one: 'process', many: 'processes' })} left by an earlier run`;
 
 export const GoodboySection = ({
   rows,

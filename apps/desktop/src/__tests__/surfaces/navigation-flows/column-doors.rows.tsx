@@ -304,7 +304,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['openChangelog', 'studio:changelog'],
     door: 'visible',
     open: async () => {
-      await clickButton(/^Goodboy: setup/);
+      await clickButton(/^Goodboy beta/);
       await clickMenuItem(/^What's new/);
     },
     lands: () => heading(/^Goodboy \d/),
@@ -314,17 +314,17 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['openGuide', 'studio:guide'],
     door: 'visible',
     open: async () => {
-      await clickButton(/^Goodboy: setup/);
+      await clickButton(/^Goodboy beta/);
       await clickMenuItem(/^Guide/);
     },
-    lands: () => studio('Guide'),
+    lands: () => studio('Help'),
   },
   {
     name: 'column: goodboy chip to pair an iPhone',
     covers: ['studio:settings', 'scope:app', 'settings:iphone'],
     door: 'visible',
     open: async () => {
-      await clickButton(/^Goodboy: setup/);
+      await clickButton(/^Goodboy beta/);
       await clickMenuItem(/^Pair an iPhone/);
     },
     lands: both(
@@ -333,9 +333,12 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'column: report a bug opens the sheet',
+    name: 'column: report a bug from the Goodboy menu opens the sheet',
     covers: ['column:report'],
-    open: () => clickButton('Report a bug'),
+    open: async () => {
+      await clickButton(/^Goodboy beta/);
+      await clickMenuItem(/^Report a bug/);
+    },
     lands: () => visible('dialog', 'Report a bug'),
   },
   {

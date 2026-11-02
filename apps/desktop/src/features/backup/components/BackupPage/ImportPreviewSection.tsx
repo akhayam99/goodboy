@@ -14,7 +14,7 @@ const VERDICT_LABEL: Readonly<Record<string, string>> = {
 
 const GROUP_LABEL: Readonly<Record<string, string>> = {
   workspaces: 'Workspaces',
-  projects: 'Folders',
+  projects: 'Projects',
   skills: 'Skills',
   phaseTemplates: 'Workflows',
   permissionRules: 'Permission rules',

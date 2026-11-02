@@ -48,6 +48,7 @@ export {
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   canDrawerPush,
+  isRailFoldNeeded,
   drawerModeOf,
   drawerWidthOf,
   mainWidthOf,
@@ -140,7 +141,6 @@ export {
   MoonshotIcon,
   SentryIcon,
   SlackIcon,
-  XIcon,
 } from './components/brandIcons';
 export { CopilotIcon } from './components/CopilotIcon';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
@@ -235,8 +235,16 @@ export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
 export { FoldLayers } from './components/FoldLayers';
 export type { FoldLayersProps } from './components/FoldLayers';
-export { DURATION_BASE_MS, DURATION_QUICK_MS, DURATION_SLOW_MS } from './motionTimings';
+export {
+  DURATION_BASE_MS,
+  DURATION_QUICK_MS,
+  DURATION_SLOW_MS,
+  SKELETON_FADE_MS,
+  SKELETON_HOLD_MS,
+  SKELETON_SHOW_AFTER_MS,
+} from './motionTimings';
 export { canAnimate } from './canAnimate';
+export { prefersReducedMotion } from './prefersReducedMotion';
 export { useFoldPhase } from './useFoldPhase';
 export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
 export type { ExitSnapshot } from './exitSnapshot';
@@ -304,6 +312,19 @@ export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Skeleton, SkeletonText } from './components/Skeleton';
 export { SkeletonRow } from './components/SkeletonRow';
+export { SkeletonSwap } from './components/SkeletonSwap';
+export { useListMotion } from './useListMotion';
+export type { ListMotionEntry, ListMotionItem, ListMotionPhase } from './useListMotion';
+export { ListItemMotion } from './components/ListItemMotion';
+export { HeightMotion } from './components/HeightMotion';
+export { EntryWash } from './components/EntryWash';
+export { useEntryWash } from './useEntryWash';
+export { useScrollMemory } from './useScrollMemory';
+export { forgetScrollMemory } from './forgetScrollMemory';
+export { PaneSwap } from './components/PaneSwap';
+export type { PaneLayer } from './components/PaneSwap';
+export { useSkeletonGate } from './useSkeletonGate';
+export type { SkeletonGatePhase } from './useSkeletonGate';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
 export { StatusDot } from './components/StatusDot';
@@ -351,11 +372,16 @@ export { ModelBlock } from './components/WorkTree/ModelBlock';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
 export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
-export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
+export {
+  WORK_NODE_GLYPH_SIZE,
+  WORK_NODE_SIZE,
+  WORK_NODE_SIZE_SM,
+} from './components/WorkTree/workNodeSpec';
 export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';
 export { Kbd } from './components/Kbd';
 export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
+export { UNREAD_TITLE } from './unreadTitle';
 export { drawerAsideWidthOf, drawerLayoutOf } from './drawerGeometry';
 export type { DrawerLayout } from './drawerGeometry';
 export type { ChipKind } from './components/Chip';
@@ -402,3 +428,6 @@ export { HeaderActions } from './components/HeaderActions';
 
 export { Disclosure } from './components/Disclosure';
 export type { DisclosureProps } from './components/Disclosure';
+
+export { DrawerContentContext } from './drawerContentContext';
+export { useDrawerContentInset } from './useDrawerContentInset';

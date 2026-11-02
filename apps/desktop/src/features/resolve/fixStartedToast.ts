@@ -1,3 +1,5 @@
+import { threadCountText } from './reviewLaunchCopy';
+
 const FIX_STARTED_TITLE = 'Fix run started';
 
 const FIX_QUEUED_TITLE = 'Fix queued after the current fix';
@@ -17,7 +19,6 @@ type FixStartedTitleParams = {
 
 type FixStartedMessageParams = {
   readonly count: number;
-  readonly noun: 'comment' | 'note';
   readonly where: string | null;
 };
 
@@ -36,8 +37,8 @@ export const fixStartedTitleOf = ({
   return isModelChange ? FIX_NEW_MODEL_TITLE : FIX_STARTED_TITLE;
 };
 
-export const fixStartedMessageOf = ({ count, noun, where }: FixStartedMessageParams): string => {
-  const counted = `${count} ${noun}${count === 1 ? '' : 's'}`;
+export const fixStartedMessageOf = ({ count, where }: FixStartedMessageParams): string => {
+  const counted = threadCountText({ count });
   return where === null ? counted : `${counted} on ${where}`;
 };
 

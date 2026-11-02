@@ -24,7 +24,7 @@ export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props)
         data-limits-chip={chip.providerId}
         data-limits-state={chip.state}
         aria-pressed={isPressed}
-        aria-label={`${PROVIDER_LABEL[chip.providerId]} limits. ${headline}`}
+        aria-label={`${PROVIDER_LABEL[chip.providerId]} usage. ${headline}`}
         onClick={() => onOpen(chip)}
         className={cn(
           TOP_BAR_CONTROL.height,

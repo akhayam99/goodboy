@@ -1,19 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { cn, EmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
-import type {
-  Session,
-  SessionAttentionReason,
-  SessionId,
-  SessionPageView,
-  WorkspaceId,
-} from '@goodboy/types';
+import { cn, ScrollFade } from '@goodboy/ui';
+import type { Session, SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
   useProjectFilteredSessions,
-  useSessionListModel,
-  useSessionViewPrefs,
   useStageGroupedSessions,
 } from '../../../../store';
 import { PANE_RHYTHM } from '@goodboy/ui';
@@ -26,24 +18,23 @@ import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { attentionPlace } from '../../../session/attentionPlace';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
+import { SetupCard } from '../../../onboarding/SetupCard';
+import { useIsMainWindow } from '../../useIsMainWindow';
 import { BlockedBoard } from './BlockedBoard';
+import { BoardSkeleton } from './BoardSkeleton';
 import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
 import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
+import { useArchivedSessionsLoad } from './useArchivedSessionsLoad';
+import { useBoardMotionKey } from './useBoardMotionKey';
 import { useBoardSelection } from './useBoardSelection';
 import { useNeedsYouElsewhere } from './useNeedsYouElsewhere';
 import { SessionsHeader } from './SessionsHeader';
-import { SessionsList } from './SessionsList';
-import { SessionsListSkeleton } from './SessionsListSkeleton';
-import { listStageGroupsOf } from './SessionsList/listStageGroupsOf';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-
-const SKELETON_CARDS = [3, 2, 2, 1, 2, 1];
 
 const SELECTION_VERB_IDS = [
   'sessions.markRead',
@@ -54,37 +45,10 @@ const SELECTION_VERB_IDS = [
 
 const WIDTH_BEFORE_MEASURE = Number.POSITIVE_INFINITY;
 
-type SkeletonProps = {
-  readonly lanes: 5 | 6;
-};
-
 type OpenAttention = {
   readonly sessionId: SessionId;
   readonly reason: SessionAttentionReason | null;
 };
-
-const BoardSkeleton = ({ lanes }: SkeletonProps) => (
-  <div
-    className={cn(
-      'grid min-h-0 w-full flex-1 grid-rows-[minmax(0,1fr)] overflow-hidden',
-      PANE_RHYTHM.board.laneGap,
-      lanes === 6 ? PANE_RHYTHM.board.lanesSix : PANE_RHYTHM.board.lanesFive,
-    )}
-    role="status"
-    aria-label="Loading board"
-  >
-    {SKELETON_CARDS.slice(0, lanes).map((cards, lane) => (
-      <div key={lane} className={cn('flex min-h-0 flex-col', PANE_RHYTHM.board.laneStack)}>
-        <Skeleton className="h-4 w-24 rounded-full" />
-        <div className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
-          {Array.from({ length: cards }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
-          ))}
-        </div>
-      </div>
-    ))}
-  </div>
-);
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -93,22 +57,19 @@ type Props = {
 
 export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
-  const listModel = useSessionListModel(workspaceId, sessions);
   const needsYouElsewhere = useNeedsYouElsewhere({ workspaceId, sessions });
-  const prefs = useSessionViewPrefs(workspaceId);
   const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
   const navigate = useAppStore((s) => s.navigate);
   const clearFilters = useClearSessionFilters({ workspaceId });
-  const view = prefs.pageView;
   const nav = useBoardNavigation();
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
   const archivedList = useAppStore((s) => s.archivedSessions[workspaceId]);
   const archived = archivedList ?? EMPTY_ARRAY;
   const projectArchived = useProjectFilteredSessions({ workspaceId, sessions: archived });
+  const motionResetKey = useBoardMotionKey({ workspaceId });
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
-  const boardReady = useAppStore((s) => s.boardReady);
-  const loadArchivedSessions = useAppStore((s) => s.loadArchivedSessions);
+  const boardReady = useAppStore((s) => s.boardReady && s.switchingToWorkspaceId == null);
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );
@@ -118,17 +79,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const hasProjects = workspaceProjects.length > 0;
   const projectGitStatuses = useProjectGitStatuses({ workspaceId });
   const sessionArchive = useSessionArchive();
+  const isMainWindow = useIsMainWindow();
 
   const onRestore = useCallback(
     (session: Session) => void sessionArchive.restore({ sessions: [session] }),
     [sessionArchive],
-  );
-  const onViewChange = useCallback(
-    (next: SessionPageView) => {
-      closeHover();
-      setSessionViewPrefs({ workspaceId, patch: { pageView: next } });
-    },
-    [closeHover, setSessionViewPrefs, workspaceId],
   );
   const onArchivedShownChange = useCallback(
     (isShown: boolean) => setSessionViewPrefs({ workspaceId, patch: { isArchivedShown: isShown } }),
@@ -142,9 +97,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     [closeHover, navigate],
   );
 
-  useEffect(() => {
-    void loadArchivedSessions(workspaceId);
-  }, [loadArchivedSessions, workspaceId]);
+  useArchivedSessionsLoad({ workspaceId });
 
   const byStage = useMemo(() => {
     const map = new Map<string, ReadonlyArray<Session>>();
@@ -219,15 +172,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       ? 'Sessions branch from the latest commit, and this repository has none yet.'
       : 'Sessions branch from the latest commit. Add another folder in workspace settings, or track this one with git there.';
   const boardShown = groups.reduce((count, group) => count + group.sessions.length, 0);
-  const shownArchived = prefs.isArchivedShown ? projectArchived : EMPTY_ARRAY;
-  const listGroups = listStageGroupsOf({
-    byStage,
-    statusFilter: prefs.statusFilter,
-    archived: shownArchived,
-  });
-  const listShown = listGroups.reduce((count, group) => count + group.sessions.length, 0);
-  const listLiveShown = listShown - shownArchived.length;
-  const hiddenCount = sessions.length - (view === 'board' ? boardShown : listLiveShown);
+  const hiddenCount = sessions.length - boardShown;
   const hoveredId = hover.target?.sessionId ?? null;
   const hoveredSession =
     hoveredId === null ? null : (boardSessions.find((session) => session.id === hoveredId) ?? null);
@@ -236,16 +181,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     <div ref={boardRef} className={cn('relative flex h-full w-full', PANE_RHYTHM.board.pad)}>
       <div
         ref={frame.ref}
-        className={cn(
-          'mx-auto flex h-full min-h-0 w-full flex-col',
-          view === 'list' ? PANE_RHYTHM.board.listMaxWidth : PANE_RHYTHM.board.maxWidth,
-        )}
+        className={cn('mx-auto flex h-full min-h-0 w-full flex-col', PANE_RHYTHM.board.maxWidth)}
       >
         {pending || !empty || hasProjects ? (
           <SessionsHeader
             workspaceId={workspaceId}
-            view={view}
-            onViewChange={onViewChange}
             filterSessions={filterSessions}
             archivedCount={archived.length}
             onArchivedShownChange={onArchivedShownChange}
@@ -255,9 +195,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           />
         ) : null}
 
-        {pending && view === 'board' && <BoardSkeleton lanes={layout.lanes} />}
+        {!pending && hasProjects && empty && <SetupCard isMainWindow={isMainWindow} />}
 
-        {pending && view === 'list' && <SessionsListSkeleton />}
+        {pending && <BoardSkeleton lanes={layout.lanes} />}
 
         {!pending && empty && !hasProjects && workspace !== null && (
           <ScrollFade
@@ -280,7 +220,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           />
         )}
 
-        {!pending && !empty && view === 'board' && (
+        {!pending && !empty && (
           <BoardLanes
             layout={layout}
             byStage={byStage}
@@ -289,29 +229,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             nav={nav}
             selection={selection}
             onRestore={onRestore}
+            motionResetKey={motionResetKey}
             onCardEnter={hover.enter}
             onCardLeave={hover.leave}
           />
-        )}
-
-        {!pending && !empty && view === 'list' && (
-          <ScrollFade className="min-h-0 flex-1">
-            <div className="flex w-full flex-col gap-4">
-              {listShown === 0 ? (
-                <EmptyState
-                  size="section"
-                  icon={CONCEPT_ICONS.sessions}
-                  title="No sessions match"
-                />
-              ) : (
-                <SessionsList
-                  groups={listGroups}
-                  inactiveLabels={listModel.inactiveLabels}
-                  onOpen={nav.selectCard}
-                />
-              )}
-            </div>
-          </ScrollFade>
         )}
       </div>
 

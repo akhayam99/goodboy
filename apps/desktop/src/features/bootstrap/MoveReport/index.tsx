@@ -1,3 +1,4 @@
+import { nounFor } from '../../../shared/utils/nounFor';
 import { Button, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -5,8 +6,6 @@ import { useAppStore } from '../../../store';
 type Props = {
   readonly sessionId: SessionId;
 };
-
-const plural = (count: number): string => (count === 1 ? 'file' : 'files');
 
 export const MoveReport = ({ sessionId }: Props) => {
   const report = useAppStore((state) =>
@@ -40,7 +39,7 @@ export const MoveReport = ({ sessionId }: Props) => {
       placement="inline"
       className="bg-transparent"
       role="status"
-      title={`Moved ${report.movedCount} ${plural(report.movedCount)} into this session`}
+      title={`Moved ${report.movedCount} ${nounFor({ count: report.movedCount, one: 'file' })} into this session`}
       body="The folder is clean on main. Everything from now on starts from the published main."
       actions={
         <Button size="sm" variant="ghost" onClick={() => dismiss({ projectId: report.projectId })}>

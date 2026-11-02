@@ -123,24 +123,23 @@ describe('the CTA rule of the central column', () => {
   });
 
   it.each(cases)(
-    '$name: at most one primary, in the first card or on the first running run that waits',
+    '$name: at most one primary, in the first card or on the first run that waits',
     (params) => {
       const { container } = show(params);
       const column = container.querySelector('[data-central-column]');
       const primaries = column?.querySelectorAll('[data-variant="primary"]') ?? [];
       const firstCard = column?.querySelector('[data-action-card]');
-      const waitingRun = column?.querySelector(
-        '[data-overview-card="running"] [data-live-group][data-state="waiting"]',
-      );
+      const waitingRun = column?.querySelector('[data-live-group][data-state="waiting"]');
 
       expect(primaries.length).toBeLessThanOrEqual(1);
       for (const primary of primaries) {
         const isInCard = firstCard?.contains(primary) === true;
         const isOnRun = waitingRun?.contains(primary) === true;
         expect(isInCard || isOnRun).toBe(true);
-        expect(isOnRun && column?.querySelector('[data-overview-card="needs-you"]') !== null).toBe(
-          false,
-        );
+        expect(
+          isOnRun &&
+            column?.querySelector('[data-overview-card="needs-you"] [data-action-card]') !== null,
+        ).toBe(false);
       }
     },
   );

@@ -1,5 +1,6 @@
 import type { HistoryEdit } from './historyEdits';
 import type { HistoryAction } from './historyRowMarks';
+import { countNoun } from '../../shared/utils/countNoun';
 
 type TitleOf = (sha: string) => string;
 
@@ -44,4 +45,4 @@ export const historyEditText = ({ edit, titleOf, targetTitleOf = titleOf }: Para
 };
 
 export const commitCount = ({ count }: { readonly count: number }): string =>
-  `${count} ${count === 1 ? 'commit' : 'commits'}`;
+  `${countNoun({ count: count, one: 'commit' })}`;

@@ -6,10 +6,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { OnboardingStepId } from '../../../features/onboarding/onboardingSettings';
-import { setupProgress } from '../../../features/onboarding/setupProgress';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -19,40 +17,9 @@ import {
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
-    progress: {
-      completed: new Set<string>(),
-      isCollapsed: true,
-      isFinished: false,
-      wizard: 'done',
-      isWizardDone: true,
-      hasWorkspace: true,
-      hasProjects: true,
-      suggestsProfile: false,
-      details: {
-        agents: 'Claude is ready',
-        workspace: 'Harborline, 3 folders',
-        tools: 'Optional',
-        'first-session': 'Ask Scout about the code',
-      },
-    },
     hasDraft: false,
-    collapse: vi.fn(),
-    finish: vi.fn(),
     openUrl: vi.fn(async () => undefined),
   },
-}));
-
-vi.mock('../../../features/onboarding/onboardingSettings', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  collapse: mocks.collapse,
-  finish: mocks.finish,
-}));
-
-vi.mock('../../../features/onboarding/hooks/useOnboardingProgress', () => ({
-  useOnboardingProgress: () => ({
-    ...mocks.progress,
-    setup: setupProgress({ completed: mocks.progress.completed }),
-  }),
 }));
 
 vi.mock('../../../features/bug-report/hooks/useHasBugReportDraft', () => ({
@@ -69,7 +36,7 @@ vi.mock('../../../shared/lib/editor', () => ({
 
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { APP_VERSION } from '../../../shared/lib/appVersion';
-import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
+import { SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { GoodboyChip } from './index';
 import { OPEN_REPORT_SHEET_EVENT } from '../../../features/bug-report/openReportSheet';
 
@@ -84,12 +51,6 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   useAppStore.setState({ updateVersion: '0.5.2' });
-  mocks.progress.isCollapsed = true;
-  mocks.progress.isFinished = false;
-  mocks.progress.hasProjects = true;
-  mocks.progress.wizard = 'done';
-  mocks.progress.isWizardDone = true;
-  mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace']);
   mocks.hasDraft = false;
 });
 
@@ -120,7 +81,6 @@ const openMenu = () => {
 
 describe('GoodboyChip', () => {
   it('names Goodboy, beta and the version the build stamped at rest', () => {
-    mocks.progress.isFinished = true;
     renderChip();
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
@@ -130,7 +90,6 @@ describe('GoodboyChip', () => {
   it.each(['dark', 'light'] as const)(
     'wraps only the mark and the name in the brand chip in %s mode',
     (theme) => {
-      mocks.progress.isFinished = true;
       applyDocumentTheme({ theme });
       renderChip();
 
@@ -142,22 +101,7 @@ describe('GoodboyChip', () => {
     },
   );
 
-  it('never draws the brand chip on the setup state', () => {
-    applyDocumentTheme({ theme: 'light' });
-    renderChip();
-
-    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
-    expect(chip.querySelector('[data-brand-chip]')).toBeNull();
-  });
-
-  it('says setup and its progress while setup is open', () => {
-    renderChip();
-
-    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
-    expect(chip.textContent).toBe('Setup2 of 4');
-  });
-
-  it('puts the update pill beside the bare lockup, ahead of setup, and keeps it out of the menu', () => {
+  it('puts the update pill beside the bare lockup, and keeps it out of the menu', () => {
     useAppStore.setState({ updaterStatus: 'available' });
     renderChip();
 
@@ -192,7 +136,6 @@ describe('GoodboyChip', () => {
     const header = menu.querySelector('header');
     expect(header?.querySelector('[data-brand-chip]')?.textContent).toBe('Goodboy');
     expect(header?.textContent).toBe(`Goodboy${APP_VERSION} · Beta`);
-    expect(within(menu).getByRole('region', { name: 'Setup' })).toBeDefined();
     [
       'Report a bug',
       'Guide',
@@ -200,7 +143,6 @@ describe('GoodboyChip', () => {
       'Keyboard shortcuts',
       'Pair an iPhone',
       'Sponsor on GitHub',
-      'Follow on X',
     ].forEach((row) => {
       expect(within(menu).getByRole('menuitem', { name: new RegExp(row) })).toBeDefined();
     });
@@ -215,56 +157,6 @@ describe('GoodboyChip', () => {
 
     expect(onOpenChangelog).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
-  });
-
-  it('hides setup from the popover', () => {
-    renderChip();
-
-    fireEvent.click(within(openMenu()).getByRole('button', { name: 'Hide setup' }));
-
-    expect(mocks.finish).toHaveBeenCalledOnce();
-  });
-
-  it('counts the four steps in the menu and the chip from one function', () => {
-    renderChip();
-
-    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
-    const setup = within(openMenu()).getByRole('region', { name: 'Setup' });
-    expect(chip.textContent).toContain('2 of 4');
-    expect(within(setup).getByText('Setup · 2 of 4')).toBeDefined();
-    expect(within(setup).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
-    expect(within(setup).getAllByRole('listitem')).toHaveLength(4);
-    expect(within(setup).queryByText(/about you/i)).toBeNull();
-  });
-
-  it('offers Resume setup while setup is paused, at the step it stopped on', () => {
-    mocks.progress.wizard = 'later';
-    mocks.progress.isWizardDone = false;
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-onboarding-wizard', listener);
-    renderChip();
-
-    fireEvent.click(within(openMenu()).getByRole('button', { name: 'Resume setup' }));
-
-    expect(listener).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
-    window.removeEventListener('goodboy:open-onboarding-wizard', listener);
-  });
-
-  it('offers no Resume setup once setup is done', () => {
-    renderChip();
-
-    expect(within(openMenu()).queryByRole('button', { name: 'Resume setup' })).toBeNull();
-  });
-
-  it('suggests About you after the first session, outside the count', () => {
-    mocks.progress.suggestsProfile = true;
-    renderChip();
-
-    const setup = within(openMenu()).getByRole('region', { name: 'Setup' });
-    expect(within(setup).getByRole('button', { name: 'Open Tell agents about you' })).toBeDefined();
-    expect(within(setup).getByText('Setup · 2 of 4')).toBeDefined();
-    mocks.progress.suggestsProfile = false;
   });
 
   it("opens what's new and shortcuts, and closes on the way out", () => {
@@ -293,7 +185,6 @@ describe('GoodboyChip', () => {
       'Report a bug',
       'Pair an iPhone',
       'Sponsor on GitHub',
-      'Follow on X',
     ]);
     expect(within(menu).getByText('Help')).toBeDefined();
     expect(menu.querySelectorAll('[role="presentation"]')).toHaveLength(2);
@@ -349,18 +240,8 @@ describe('GoodboyChip', () => {
     expect(SPONSOR_URL).toBe('https://github.com/sponsors/akhayam99');
   });
 
-  it('opens the exact X profile', () => {
-    renderChip();
-
-    fireEvent.click(within(openMenu()).getByText('Follow on X'));
-
-    expect(mocks.openUrl).toHaveBeenCalledExactlyOnceWith(SOCIAL_LINKS.x);
-    expect(SOCIAL_LINKS.x).toBe('https://x.com/GoodboyWorks');
-  });
-
   it('ends the help rows with report a bug, says a draft is saved, and hands off to the report sheet', () => {
     mocks.hasDraft = true;
-    mocks.progress.isFinished = true;
     const listener = vi.fn();
     window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
     renderChip();
@@ -375,62 +256,10 @@ describe('GoodboyChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
     window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
   });
-
-  it('opens itself once after the first agent finishes, then remembers it did', async () => {
-    mocks.progress.isCollapsed = false;
-    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
-    await act(async () => {
-      renderChip();
-    });
-
-    expect(mocks.collapse).toHaveBeenCalledOnce();
-    expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();
-  });
-
-  it('never opens itself before the first agent finishes', async () => {
-    mocks.progress.isCollapsed = false;
-    await act(async () => {
-      renderChip();
-    });
-
-    expect(mocks.collapse).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
-  });
-
-  it('never opens itself in the demo and keeps the setup checklist out of the menu', async () => {
-    window.history.replaceState({}, '', '/?scene=demo-twin&director=1');
-    mocks.progress.isCollapsed = false;
-    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
-    await act(async () => {
-      renderChip();
-    });
-
-    expect(mocks.collapse).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
-    expect(screen.getByTestId('goodboy-chip').getAttribute('aria-label')).toBe(REST_LABEL);
-    const menu = openMenu();
-    expect(within(menu).queryByRole('button', { name: 'Hide setup' })).toBeNull();
-    expect(within(menu).queryByRole('region', { name: 'Setup' })).toBeNull();
-    window.history.replaceState({}, '', '/');
-  });
-
-  it('never opens itself over the setup wizard', async () => {
-    mocks.progress.isCollapsed = false;
-    mocks.progress.isWizardDone = false;
-    mocks.progress.wizard = 'open';
-    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
-    await act(async () => {
-      renderChip();
-    });
-
-    expect(mocks.collapse).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
-  });
 });
 
 describe('GoodboyChip in the column and on the rail', () => {
   it('spells Goodboy, beta and the version in the column row at every width', () => {
-    mocks.progress.isFinished = true;
     render(
       <GoodboyChip
         variant="column"
@@ -455,7 +284,7 @@ describe('GoodboyChip in the column and on the rail', () => {
       />,
     );
 
-    const chip = screen.getByRole('button', { name: "Goodboy: setup isn't finished" });
+    const chip = screen.getByRole('button', { name: REST_LABEL });
     expect(chip.textContent).toBe('');
     fireEvent.click(chip);
     expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();
@@ -477,25 +306,5 @@ describe('GoodboyChip in the column and on the rail', () => {
 
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
     expect(screen.getByRole('dialog', { name: 'Goodboy 0.5.2 is available' })).toBeDefined();
-  });
-
-  it('opens itself only from the primary chip, so a peeked column never opens a second menu', async () => {
-    mocks.progress.isCollapsed = false;
-    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
-    await act(async () => {
-      render(
-        <GoodboyChip
-          variant="column"
-          isPrimary={false}
-          onOpenChangelog={vi.fn()}
-          onOpenGuide={vi.fn()}
-          onOpenShortcuts={vi.fn()}
-        />,
-      );
-    });
-
-    expect(mocks.collapse).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
-    expect(screen.queryByTestId('goodboy-chip')).toBeNull();
   });
 });

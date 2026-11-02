@@ -7,6 +7,7 @@ import type {
 } from '../../features/worktree/worktree';
 import { createInvokeMock, createInvokeRouter } from '../invokeMock';
 import type { InvokeHandlers } from '../invokeMock';
+import type { worktreeBranchHolder } from '../../features/worktree/worktree';
 import { createResolveQueryMocks } from '../../store/slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from '../../store/slices/turn/workflowTurnBreaker';
 import { TEST_NOW } from '@goodboy/types/testing';
@@ -27,7 +28,6 @@ import type {
   ProjectSentryLink,
   PullRequestState,
   SessionId,
-  Skill,
   Workflow,
   Workspace,
   WorkspaceId,
@@ -100,12 +100,19 @@ const SLOT_SUMMARY_PREFIX = 'Current slot values:';
 
 const TITLE_PROMPT_PREFIX = 'Write one imperative title';
 
+export type BranchHolderArgs = Parameters<typeof worktreeBranchHolder>[0];
+
 type AuxArgs = {
   readonly args: {
     readonly providerId: string;
     readonly systemPrompt: string;
     readonly userMessage: string;
   };
+};
+
+type ListRegisteredArgs = {
+  readonly repoPath: string;
+  readonly worktreePaths: ReadonlyArray<string>;
 };
 
 export const storySummarizeSession =
@@ -189,6 +196,14 @@ const storyInvokeHandlers = {
   workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],
+  worktree_list_registered: ({ worktreePaths }: ListRegisteredArgs) =>
+    worktreePaths.map((path) => ({
+      kind: 'registered',
+      path,
+      isMain: false,
+      isLocked: false,
+      lockReason: null,
+    })),
   other_tools_scan: { status: 'ready', tools: [] },
   other_tools_cancel: null,
   summarize_session: storySummarizeSession('The step finished.'),
@@ -294,10 +309,6 @@ export const storySpies = {
     }),
   ),
   invokeSessionBudgetClear: vi.fn(async () => undefined),
-  invokeSkillList: vi.fn(async () => [] as ReadonlyArray<Skill>),
-  invokeSkillUpsert: vi.fn(async () => undefined),
-  invokeSkillDelete: vi.fn(async () => undefined),
-  invokeSkillRescan: vi.fn(async () => [] as ReadonlyArray<Skill>),
   invokeWorkflowList: vi.fn(async () => [] as ReadonlyArray<Workflow>),
   invokeWorkflowUpsert: vi.fn(
     async (_args: Parameters<WorkflowsModule['invokeWorkflowUpsert']>[0]) =>
@@ -391,6 +402,7 @@ export const storySpies = {
   gitPush: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   detectRepoSlug: vi.fn(async () => null as string | null),
   listPrsForBranch: vi.fn(async () => [] as ReadonlyArray<PullRequestState>),
+  listPrsForBranches: vi.fn(async (): Promise<Map<string, PullRequestState[]> | null> => null),
   fetchLinkedIssues: vi.fn(async () => []),
   resolveReviewThread: vi.fn(async () => undefined),
   addReviewThreadReply: vi.fn(async () => ({ id: 'reply-id' })),
@@ -450,6 +462,7 @@ export const storySpies = {
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   createWorktree: vi.fn(),
+  worktreeBranchHolder: vi.fn<typeof worktreeBranchHolder>(async () => null),
   sessionDirExists: vi.fn(async (_args: unknown) => true),
   scratchDirPrepare: vi.fn(async (_args: unknown) => '/tmp/goodboy-root/scratch/session-story'),
   scratchDirRemove: vi.fn(async (_args: unknown) => undefined),

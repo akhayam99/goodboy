@@ -602,7 +602,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
     const resume = suggestions.filter((candidate) => candidate.kind === 'resume-agents');
     expect(resume).toHaveLength(1);
-    expect(resume[0]?.title).toBe('Resume 2 stopped agents');
+    expect(resume[0]?.title).toBe('Continue 2 stopped agents');
     expect(resume[0]?.payload).toEqual({ agentIds: ['agent-1', 'agent-2'] });
   });
 
@@ -612,7 +612,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       agents: [agent({ status: 'stopped', isStoppedByRestart: true, label: 'Debugger' })],
     });
     expect(suggestions.find((candidate) => candidate.kind === 'resume-agents')?.title).toBe(
-      'Resume Debugger',
+      'Continue Debugger',
     );
   });
 

@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../../../../../__tests__/helpers/startSettingsRowOf';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -28,7 +29,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 } });
+  stubStoryInvoke({
+    db_select: [],
+    db_execute: { rowsAffected: 0 },
+    worktree_list_branch_names: [],
+  });
 });
 
 afterEach(() => {
@@ -50,7 +55,7 @@ const mount = ({ id }: MountParams): void => {
 };
 
 const settingsRow = async () =>
-  within(await screen.findByRole('group', { name: 'Run settings' }, WAIT));
+  startSettingsRowOf({ group: await screen.findByRole('group', { name: 'Run settings' }, WAIT) });
 
 describe('the u30 start form scenes', () => {
   it('registers every scene', () => {
@@ -63,12 +68,12 @@ describe('the u30 start form scenes', () => {
     mount({ id: 'u30-start-form' });
 
     const row = await settingsRow();
-    row.getByRole('combobox', { name: 'Where' });
+    row.getByRole('combobox', { name: 'Projects' });
     row.getByRole('button', { name: /^Asks you:/ });
     row.getByRole('button', { name: /^Edits:/ });
-    row.getByRole('button', { name: /^Limit \$8\.00/ });
+    row.getByRole('button', { name: /^Limit: \$8\.00/ });
     within(screen.getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem');
-    screen.getByRole('button', { name: 'Start workflow' });
+    screen.getByRole('button', { name: 'Start' });
   });
 
   it('draws the agent kind with a role and no limit or Asks you', async () => {
@@ -76,19 +81,19 @@ describe('the u30 start form scenes', () => {
 
     const row = await settingsRow();
     expect(row.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
-    expect(row.queryByRole('button', { name: /^Limit / })).toBeNull();
+    expect(row.queryByRole('button', { name: /^Limit: / })).toBeNull();
     expect(row.queryByRole('button', { name: /^Asks you:/ })).toBeNull();
-    screen.getByRole('button', { name: 'Start Scout' });
+    screen.getByRole('button', { name: 'Start' });
   });
 
   it('draws the Auto and Orchestrated kinds', async () => {
     mount({ id: 'u30-start-form-auto' });
-    screen.getByRole('button', { name: 'Start Auto agent' });
+    screen.getByRole('button', { name: 'Start' });
     (await settingsRow()).getByRole('button', { name: /^Asks you:/ });
     cleanup();
 
     mount({ id: 'u30-start-form-orchestrated' });
-    expect(await screen.findByRole('button', { name: 'Start workflow' }, WAIT)).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Start' }, WAIT)).toBeDefined();
   });
 
   it('draws the unpicked state that lets Auto pick', async () => {

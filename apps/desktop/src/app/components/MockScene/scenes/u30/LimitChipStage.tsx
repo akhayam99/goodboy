@@ -8,7 +8,6 @@ const DEFAULT_LIMIT = {
   isFromSession: false,
   isDefault: true,
   defaultUsd: 5,
-  defaultFrom: 'auto',
   change: noop,
 } as const;
 
@@ -17,7 +16,6 @@ const TYPED_LIMIT = {
   isFromSession: false,
   isDefault: false,
   defaultUsd: 5,
-  defaultFrom: 'run',
   change: noop,
 } as const;
 
@@ -44,7 +42,12 @@ export const LimitChipStage = () => {
           <span className="text-meta text-muted-foreground">Typed</span>
         </div>
         <div ref={openRef} className="flex items-center gap-2">
-          <AutoLimitChip limit={OPEN_LIMIT} kind="orchestrated" isDisabled={false} />
+          <AutoLimitChip
+            limit={OPEN_LIMIT}
+            kind="orchestrated"
+            isDisabled={false}
+            onChangeDefault={noop}
+          />
           <span className="text-meta text-muted-foreground">Open</span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import { Markdown, PANE_RHYTHM } from '@goodboy/ui';
 import type { ChatMessage } from '@goodboy/types';
+import { UserMessageBubble } from '../../../../shared/components/UserMessageBubble';
 import { ChatImageTile } from './ChatImageTile';
 
 type Props = {
@@ -8,11 +8,7 @@ type Props = {
 };
 
 const ChatUserMessageView = ({ message }: Props) => (
-  <div
-    data-chat-message="user"
-    className={`flex min-w-0 ${PANE_RHYTHM.message.user} flex-col gap-2 self-end wrap-anywhere rounded-lg bg-subtle px-3 py-2 text-prose text-foreground`}
-  >
-    {message.content === '' ? null : <Markdown text={message.content} />}
+  <UserMessageBubble text={message.content}>
     {message.attachments.length === 0 ? null : (
       <div className="flex flex-wrap gap-2">
         {message.attachments.map((attachment) => (
@@ -20,7 +16,7 @@ const ChatUserMessageView = ({ message }: Props) => (
         ))}
       </div>
     )}
-  </div>
+  </UserMessageBubble>
 );
 
 export const ChatUserMessage = memo(ChatUserMessageView);

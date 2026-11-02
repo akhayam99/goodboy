@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAskAgent } from '../useAskAgent';
 import { useNoteFixes } from '../useNoteFixes';
 import { NOTE_LOCK_REASON, type NoteFix } from '../../lib/noteFixes';
@@ -52,9 +53,8 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
     const threadIdOf = new Map(fixes.map((fix) => [fix.note.id, fix.threadId] as const));
     return {
       threads: fixes.map((fix) => threadOf({ fix })),
-      submitLabel: 'Add note',
-      composerLabel: 'Note',
-      noun: 'note',
+      submitLabel: NAMES.addComment,
+      composerLabel: 'Comment',
       allowFileLevel: true,
       onSubmit: (filePath, anchor, body) =>
         void addDiffComment(sessionId, filePath, body, anchor ?? undefined),
@@ -76,7 +76,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
           }
           useAppStore.getState().undoable({
             showToast,
-            title: 'Note deleted',
+            title: 'Comment deleted',
             message: note.body,
             undo: async () => {
               await restoreDiffComment({ note });

@@ -172,12 +172,12 @@ width plus two 8px insets; over the page it is the container width plus the 8px
 handle gutter, because the container is flush with the window's right edge. It
 opens beside the page: the pane gives up the drawer's track and the centred
 column slides left to re-centre in what is left of it (see The content
-column). The drawer pushes only while the page container keeps 560px plus its
-48px of gutters and the room covers the drawer's saved width. That is the one
-breakpoint of the drawer, named `DRAWER_PUSH_RESERVE` (624: 560, 48 and the
-two 8px insets) in `drawerGeometry.ts`: a column at least the reserve plus the
-drawer's width pushes (1024 for a side drawer at 400, 1344 for a reader at
-720), and nothing else in the app measures a width to choose; below that it
+column). The drawer pushes only while the content, excluding the session rail
+and tools, keeps 464px for a side drawer or 560px for a reader, plus 48px of
+gutters. Both tiers include two 8px insets. `drawerLayoutOf` owns this rule;
+`DrawerContentContext` supplies the whole column width and the registered
+content inset. A side drawer at 400 pushes from 928px of content-column width;
+a reader at 720 pushes from 1344px. Below its threshold it
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
@@ -187,9 +187,8 @@ close the drawer. The host is measured after every commit (and by a
 `ResizeObserver` after that), and `drawerLayoutOf` takes its width as
 `edgeWidth`: the overlay card plus the column always fit in the sheet, so the
 column never covers the card's primary or its Close. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
-(720, drag 480 to 1000) or `full` (the whole column, always over the page); each
-tier has its own saved width and a handle. `placement="overlay"` skips the push
-rule for a drawer that always lies over the page; the thresholds (1024 for
+(720, drag 480 to 1000); each tier has its own saved width and a handle. `placement="overlay"` skips the push
+rule for a drawer that always lies over the page; the thresholds (928 for
 `side`, 1344 for `reader`) are pinned by `drawerGeometry.test.ts`. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
@@ -325,8 +324,8 @@ Five rules:
 5. **First-time states sit at the top left of the page column**, in one `EmptyState`
    layout; only the empty chat stage centres.
 
-The Branch page is one detail on one 960 column; its sections are the pages under the entries of the sidebar's
-current branch row of the Projects tree, so the page has no rail of its own (`BranchDetail` draws the studio band first
+The Branch page is one detail on one 960 column; its sections are the tab strip under its title,
+so the page has no rail of its own (`BranchDetail` draws the studio band first
 when a host hands one through `StudioBandContext`).
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
@@ -402,9 +401,8 @@ turn, 12px between paragraphs of a message. The last line sits 48px above the co
 under the top of the view, both in `useScrollPin`.
 
 **The Branch page** is one detail whose header, Ask button and every section body share the 960px
-column, so nothing moves from one section to the next. Its sections are the pages under the current branch row in
-entries in the sidebar; Files opens its file tree under the Files entry, outside the column, so
-the diff keeps the column. The Pull request entry is one column: a label 96 property block in
+column, so nothing moves from one section to the next. Its sections are the tab strip under its title; Files opens its file tree on the right of the
+page, outside the column, so the diff keeps the column. The Pull request entry is one column: a label 96 property block in
 three groups, then the description and the activity. Comments is one full-width list; the open comment and its
 properties read in the comment drawer beside it.
 

@@ -76,10 +76,10 @@ describe('the queue scenes', () => {
     );
   });
 
-  it('queue-stopped-resume offers Resume and read for the queued messages', async () => {
+  it('queue-stopped-resume offers Continue and read for the queued messages', async () => {
     await mount({ name: 'queue-stopped-resume' });
 
-    expect(screen.getByRole('button', { name: /^Resume and read/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Continue and read/ })).toBeDefined();
   });
 
   it('queue-read-finished offers Read 2 queued on the finished run', async () => {

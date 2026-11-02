@@ -1,5 +1,6 @@
 import type { PullRequestHost } from '@goodboy/types';
 import type { CommentFilter } from './commentFilter';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 export const FIX_COMMENTS_LABEL = {
   title: 'Fix comments',
@@ -25,7 +26,7 @@ export const startFixLabel = ({ count }: CountParams): string =>
   count === 0 ? 'Start fix' : `Start fix for ${count}`;
 
 export const fixCommentsAgentName = ({ count }: CountParams): string =>
-  `Fix comments · ${count} ${count === 1 ? 'comment' : 'comments'}`;
+  `Fix comments · ${countNoun({ count: count, one: 'comment' })}`;
 
 export const FIX_COMMENTS_AGENT_PREFIX = 'Fix comments';
 

@@ -76,7 +76,6 @@ const DOOR_SCENES: ReadonlyArray<readonly [string, FramePage]> = [
   ['r4-layout-terminal', 'terminal'],
   ['r4-layout-monitoring', 'monitoring'],
   ['r4-layout-settings', 'settings'],
-  ['r4-layout-guide', 'guideChapter'],
 ];
 
 const LOADING_SCENES: ReadonlyArray<readonly [string, FramePage, string]> = [
@@ -105,6 +104,17 @@ describe('r4 layout scenes', () => {
       return;
     }
     expect(column?.getAttribute('data-width')).toBe(PAGE_MEASURE[page]);
+  });
+
+  it('r4-layout-guide puts its chapter title right under the Back to app band', async () => {
+    const container = await mount('r4-layout-guide');
+
+    expect(pageHeaderOf(container).getAttribute('data-page')).toBe('guideChapter');
+    expect(
+      container
+        .querySelector('[data-studio-band]')
+        ?.contains(screen.getByRole('button', { name: /^Back to app/ })),
+    ).toBe(true);
   });
 
   it('puts the agent conversation of a session on the 720 measure, header included', async () => {

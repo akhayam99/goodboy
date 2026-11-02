@@ -55,7 +55,7 @@ import { NAMES } from '../../../shared/utils/names';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
-import { SESSION_EXTERNAL_OPEN_ACTIONS } from './sessionExternalOpenActions';
+import { SESSION_EXTERNAL_OPEN_ACTIONS, withGoToSubmenu } from './sessionGoToActions';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { SESSION_BRANCH_ACTIONS } from './sessionBranchActions';
 import { mergedFactsOf, type MergedFacts } from './mergedMountsOf';
@@ -141,7 +141,7 @@ const deleteConfirm = ({ facts }: { readonly facts: SessionFacts }): ActionConfi
   ...(!facts.isArchived && { altActionId: 'session.archive' }),
 });
 
-const isLive = ({ facts }: { readonly facts: SessionFacts }): boolean => !facts.isArchived;
+const isUnarchived = ({ facts }: { readonly facts: SessionFacts }): boolean => !facts.isArchived;
 
 const worktreesOf = ({
   facts,
@@ -264,7 +264,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.review,
     group: 'open',
     shortcut: 'lens.review',
-    when: ({ facts }) => isLive({ facts }) && !facts.isBranchless,
+    when: ({ facts }) => isUnarchived({ facts }) && !facts.isBranchless,
     run: ({ facts, env }) =>
       env.getState().navigate({ to: branchPlace({ sessionId: facts.sessionId, tab: 'comments' }) }),
   },
@@ -274,7 +274,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',
-    when: ({ facts }) => isLive({ facts }) && !facts.isBranchless,
+    when: ({ facts }) => isUnarchived({ facts }) && !facts.isBranchless,
     blockedReason: ({ facts }) => (facts.hasMount ? null : NO_MOUNT_REASON),
     run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
   },
@@ -284,7 +284,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',
-    when: ({ facts }) => isLive({ facts }) && facts.isBranchless,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.isBranchless,
     run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
   },
   ...SESSION_EXTERNAL_OPEN_ACTIONS,
@@ -303,7 +303,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.spend',
-    label: 'Spend and limit',
+    label: 'Limit',
     icon: CONCEPT_ICONS.budget,
     group: 'open',
     when: ({ facts }) => !facts.isArchived,
@@ -315,7 +315,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Rename',
     icon: Pencil,
     group: 'act',
-    when: isLive,
+    when: isUnarchived,
     run: ({ facts, env }) => {
       const objectKey = sessionObjectKey({ sessionId: facts.sessionId });
       if (requestRename({ objectKey, anchorKey: env.anchorKey })) {
@@ -333,7 +333,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Mark as unread',
     icon: Mail,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.canMarkUnread && !facts.hasUnread,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.canMarkUnread && !facts.hasUnread,
     run: ({ facts, env }) => env.getState().markSessionUnread({ sessionId: facts.sessionId }),
   },
   {
@@ -341,7 +341,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Mark as read',
     icon: MailOpen,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.hasUnread,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.hasUnread,
     run: ({ facts, env }) => env.getState().markAllAgentsSeen(facts.sessionId),
   },
   {
@@ -362,7 +362,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: NAMES.pin,
     icon: Pin,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && !facts.isPinned,
+    when: ({ facts }) => isUnarchived({ facts }) && !facts.isPinned,
     run: ({ facts, env }) => env.getState().pinSession(facts.sessionId),
   },
   {
@@ -370,7 +370,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: NAMES.unpin,
     icon: PinOff,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.isPinned,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.isPinned,
     run: ({ facts, env }) => env.getState().unpinSession(facts.sessionId),
   },
   {
@@ -379,7 +379,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.refresh,
     group: 'act',
     shortcut: 'session.refresh',
-    when: isLive,
+    when: isUnarchived,
     blockedReason: ({ facts }) => (facts.isRefreshing ? REFRESHING_REASON : null),
     run: ({ facts, env }) => {
       const state = env.getState();
@@ -395,7 +395,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: `Turn on ${NAMES.autopilot}`,
     icon: Rocket,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && !facts.session.autoRun,
+    when: ({ facts }) => isUnarchived({ facts }) && !facts.session.autoRun,
     run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, true),
   },
   {
@@ -403,7 +403,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: `Turn off ${NAMES.autopilot}`,
     icon: Rocket,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.session.autoRun,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.session.autoRun,
     run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, false),
   },
   {
@@ -411,7 +411,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Move up',
     icon: ArrowUp,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinUp,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.isPinned && facts.canMovePinUp,
     run: ({ facts, env }) =>
       env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'up' }),
   },
@@ -420,7 +420,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: 'Move down',
     icon: ArrowDown,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinDown,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.isPinned && facts.canMovePinDown,
     run: ({ facts, env }) =>
       env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'down' }),
   },
@@ -429,7 +429,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: RUN_ROUTE_COPY.label,
     icon: CONCEPT_ICONS.workflows,
     group: 'act',
-    when: isLive,
+    when: isUnarchived,
     run: ({ facts }) => openStartRun({ sessionId: facts.sessionId }),
   },
   {
@@ -438,7 +438,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: Link2,
     group: 'act',
     shortcut: 'session.linkWork',
-    when: isLive,
+    when: isUnarchived,
     run: ({ facts, env }) => {
       openLens({ env, sessionId: facts.sessionId, lens: null });
       dispatchAfterNavigation({ name: linkIssueEventName({ sessionId: facts.sessionId }) });
@@ -449,7 +449,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     label: worktreeTerminalLabel,
     icon: CONCEPT_ICONS.terminal,
     group: 'open',
-    when: ({ facts }) => isLive({ facts }) && worktreesOf({ facts }).length > 0,
+    when: ({ facts }) => isUnarchived({ facts }) && worktreesOf({ facts }).length > 0,
     choices: worktreeTerminalChoices,
     run: ({ facts, env, choice }) => {
       const worktrees = worktreesOf({ facts });
@@ -505,10 +505,10 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.stopAll',
-    label: ({ facts }) => `Stop all running agents (${facts.runningAgentCount})`,
+    label: ({ facts }) => `${NAMES.stopRunning} (${facts.runningAgentCount})`,
     icon: OctagonX,
     group: 'act',
-    when: ({ facts }) => isLive({ facts }) && facts.runningAgentCount > 0,
+    when: ({ facts }) => isUnarchived({ facts }) && facts.runningAgentCount > 0,
     run: async ({ facts, env }) => {
       const result = await stopAllRunningAgents({
         getState: env.getState,
@@ -524,7 +524,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'danger',
     shortcut: 'session.archive',
     isUndoable: true,
-    when: isLive,
+    when: isUnarchived,
     confirm: ({ facts }) =>
       archiveConfirmOf({ sessionCount: 1, runningAgentCount: facts.runningAgentCount }),
     run: ({ facts, env }) => archive({ env, session: facts.session }),
@@ -623,5 +623,5 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       canMarkUnread: unreadTargetOf({ state, sessionId: target.sessionId }) !== null,
     };
   },
-  actions: SESSION_ACTIONS,
+  actions: withGoToSubmenu({ definitions: SESSION_ACTIONS }),
 };

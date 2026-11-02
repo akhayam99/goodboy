@@ -1,3 +1,4 @@
+import { clip } from '../../shared/utils/clip';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 
 export const DIFF_SCOUT_LIMITS = {
@@ -10,11 +11,6 @@ type DiffScout = Readonly<{
   name: string;
   scope: string;
 }>;
-
-const clip = ({ text, limit }: Readonly<{ text: string; limit: number }>): string => {
-  const collapsed = text.trim();
-  return collapsed.length <= limit ? collapsed : `${collapsed.slice(0, limit)}...`;
-};
 
 const pathsLine = ({ paths }: Readonly<{ paths: ReadonlyArray<string> }>): string => {
   if (paths.length === 0) {

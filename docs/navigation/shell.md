@@ -26,8 +26,10 @@ never exists on one surface only.
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
 - **The sidebar session row.** Its right click (and Shift+F10) opens the
-  session kind's menu, the full set of session verbs: Open, the lenses, Rename,
-  Pin session or Unpin session, **Refresh session** (`session.refresh`, the
+  session kind's menu, the full set of session verbs: **Go to** (a submenu
+  with Open, Comments, Files, Open in editor and Open in terminal app; a verb
+  that cannot run stays in it with its reason as a tooltip), Open the full log,
+  Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
   flight), Autopilot, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
@@ -71,7 +73,7 @@ never exists on one surface only.
   Let Auto take it from here on an old standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
   and the name; Delete agent. A
-  workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
+  workflow run: Open run, View diff; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
@@ -187,7 +189,8 @@ never exists on one surface only.
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
   Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
-  with its reason under the label, and does nothing when chosen. A verb that
+  on one line with its reason as the tooltip (and as the row's description for
+  a screen reader), and does nothing when chosen. A verb that
   does not apply to the state is not shown.
 - **Where the webview menu stays.** Every object row answers right click with
   its object menu from `features/actions`, never the webview one. A row whose
@@ -245,8 +248,8 @@ both always visible; one separator
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
-doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
-and a bug icon that opens the report sheet. Every door row has one trailing grid
+doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy row.
+Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
 row (the plus sits in it on Chat and Terminal). A running door draws no dot: what runs is in its
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
@@ -286,15 +289,15 @@ was approved reads Approved with no primary until the run starts the step. The
 run pages (the preset run level and the orchestrated document) hold one
 primary in their header (`runHeaderPrimaryOf`): **Answer** for an open
 question, **Raise limit** at the limit, else the verb of `runPrimaryOf`
-(**Review plan**, **Approve plan**, **Continue the run**, **Retry**, **Decide
+(**Review plan**, **Approve plan**, **Continue**, **Retry**, **Decide
 next step**, **Start step 2**, **Start run**, **Restore**), else **Pause run**
-or, once paused, **Resume run** in the same place (`RunLiveVerbs`, the
+or, once paused, **Continue** in the same place (`RunLiveVerbs`, the
 `workflowRun` registry's own `when`). The tail says the state and keeps only
 its own step verbs. The `⋯` follows See, Steer, Settings, Copy, End: View
-diff, Skip step N (and Pause or Resume run while the header holds another
+diff, Skip step N (and Pause or Continue while the header holds another
 primary), Step routing (orchestrated), Save as preset, Copy
 run summary, **Stop run** (asks first), Archive run and Delete run, never
-**Approve plan**. A failed Pause, Resume or Stop leaves the run as it was,
+**Approve plan**. A failed Pause, Continue or Stop leaves the run as it was,
 reports the error and keeps the word, so pressing it again is the retry.
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
@@ -410,18 +413,22 @@ covered.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
-  names the unit: "2 sessions running, 1 script running"), Limits,
+  names the unit: "2 sessions running, 1 script running"; at zero one muted "Idle" slot is drawn so the chips beside it never move), Usage,
   today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
   primary when unread, warning when an unread item carries an action; the count is the Unread
   tab badge in its popover). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  two, and a group with no rows is not drawn. Sessions that need you are not in
-  the bar: the Sessions door of the column carries their warning dot. A script row moves to its
+  two, and a group with no rows is not drawn. Sessions that need you are not in the
+  bar, in the chip or in its panel: the Sessions door carries the count. Needs you counts three
+  units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
+  door, the dock badge and the palette; questions ("3 questions") on the
+  Questions entry of the session rail; items ("4 items need you") on the Overview card and
+  the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
   row opens the session hover card (facts only) after the pointer rests, the
-  same card the sidebar shows. `Limits`: one chip per connected plan provider (Claude, Codex,
+  same card the sidebar shows. `Usage`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and one bar of
   the provider's tighter window; the percent shows in tabular gray above 70%, `Out` with the
@@ -433,7 +440,7 @@ covered.
   on a provider under `+N`, opens the Providers menu anchored under the strip
   (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
-  Providers and models. Without a workspace a chip still opens that usage page.
+  Providers. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider
   connected the strip is one `Connect a provider` chip that pulses and opens
   the same menu, and nothing shows while providers are still being detected.
@@ -450,20 +457,20 @@ viewport, so app zoom takes the same path as a narrow window:
 
 1. Below `chrome-wide` the command center narrows (its label is `Search`
    at every width; the workspace name lives in its tooltip) and
-   Limits keeps two chips instead of four.
+   Usage keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
-   (`running`, `scripts`, `today`) drop and Limits keeps
+   (`running`, `scripts`, `today`) drop and Usage keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster, the command center, the
-spend figure, the first Limits chip and the bell
-never hide. A Limits chip is
+spend figure, the first Usage chip and the bell
+never hide. A Usage chip is
 the provider glyph and one bar, the percent beside it only above 70%; every
 window lives in its tooltip and its accessible name. A provider with no
-figures yet draws no chip. The Limits chips past the ones that fit, and the
+figures yet draws no chip. The Usage chips past the ones that fit, and the
 providers with no figures, are the only overflow: a `+N providers` chip (`+1
-provider`, never a bare number; with no chip shown it reads `Limits`) takes the
+provider`, never a bare number; with no chip shown it reads `Usage`) takes the
 tone of the worst hidden provider and lists them. It stays visible at every bar width. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.
@@ -472,7 +479,7 @@ only drop under zoom.
   workspaces. ⌘O opens that same popover, never a second one, and the palette
   lists workspaces as rows of its own. `Find a workspace or folder` filters by
   workspace name and by folder path. The current workspace row carries its
-  folder count (`folderCountLabel`, "3 folders"), **Add folder** (the folder
+  folder count (`folderCountLabel`, "3 projects"), **Add project** (the folder
   picker, a repository or a plain folder, then an undo toast) and **Manage
   folders**; the foot holds one **New workspace**, which closes the popover and
   opens the one form. The current workspace sits in its own
@@ -495,21 +502,21 @@ only drop under zoom.
   **Theme: light** and **Theme: system**. Both call `switchTheme({ to })` in
   `shared/lib/theme.ts`, the only writer. The swap stays one paint
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
-- The top bar never edits. Reporting a bug, the setup checklist, the update
+- The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy row and the bug icon beside it.
+  column: the Goodboy row. The setup checklist is a card on the Sessions page.
 
 ## The column foot
 
-Settings (⌘,) sits above the Goodboy row; the bug icon sits right of the row
-and opens the report sheet (⌘I), nothing else. On the rail the three keep their
-place at the bottom: the Settings icon, the bug and the Goodboy mark, which
-carries a dot while an update or setup waits.
+Settings (⌘,) sits above the Goodboy row. There is no setup line and no bug icon:
+Report a bug (⌘I) is in the Goodboy menu. The rail, with no room for a menu row, keeps the three
+in their place at the bottom: the Settings icon, the bug and the Goodboy mark, which
+carries a dot while an update waits.
 
 The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
-update is pending (the bare lockup, then the version pill), setup is unfinished
-(with its progress), or the brand lockup with the installed version. The lockup
+update is pending (the bare lockup, then the version pill), or the brand lockup
+with the installed version. The lockup
 (`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
 "Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
 theme text. The popover header and the rail mark draw the same lockup. The version is
@@ -526,11 +533,11 @@ long for the row truncates.
 pill opens the update card; the column menu holds no update. On the rail, which
 has no room for a pill, the menu's first row is the same pill label and opens
 the same card (`railUpdate` in `GoodboyChip/index.tsx`). The popover header is the
-lockup and "<version> · Beta", and the version opens What's new. Below it sit the
-setup checklist while setup is unfinished, then two labelled groups on the shared
+lockup and "<version> · Beta", and the version opens What's new. Below it sit two
+labelled groups on the shared
 `MenuList` rows of `@goodboy/ui`: **Help** (Guide, What's new, Keyboard shortcuts
 with ⌘/, Report a bug last with ⌘I, and Draft saved when a draft waits) and
-**Goodboy** (`NAMES.pairIphone`, Sponsor on GitHub and Follow on X, the last two
+**Goodboy** (`NAMES.pairIphone` and Sponsor on GitHub, the last
 with the external mark). There is no paragraph under the groups. Guide opens the
 guide studio and Pair an iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
 `{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
@@ -544,9 +551,11 @@ the Storage worktree row's "What is a worktree?" (Words). They share
 `features/settings/openGuideChapter.ts`, and an id the Guide no longer has
 (a renamed chapter keeps its old id as an alias in `resolveGuideChapter.ts`)
 opens What is Goodboy, never an empty page. The Guide shows one chapter per
-page on the `guideChapter` reader frame, with Previous and Next; its rail
-search (`shared/components/RailSearch.tsx`) lists chapters and points, Enter
+page on the `guideChapter` reader frame, with Previous and Next; the Help search
+(`shared/components/RailSearch.tsx`) lists chapters and points, Enter
 opens the first hit and flashes its point, Escape clears it. The chapter
+"Listens" holds one table of prefixes (`PrefixTable`, read from
+`quick-actions/grammar.ts`): `$` means Scripts in the palette and the composer. The chapter
 "Sidebar and session rail" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
 registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
@@ -557,14 +566,18 @@ first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the
 update arrival); the copy inside a peeked column is quiet.
 
-**What's new** is the changelog studio (`ChangelogStudio`): a rail of releases
-grouped by minor, with an Older group below 0.4 (`ChangelogRail`, filtered by
-`RailSearch`), and a reader beside it. `CatchUpReader` (`page="whatsNew"`)
-opens first and sums up everything since the version you last read;
-`ReleaseReader` (`page="release"`) shows one release. Close is the last action
-of the reader's title row (`close: 'header'`), and only when no page header
-renders does the studio fall back to a Close in its band
-(`StudioFrame/index.test.tsx` pins both). A release that is the pending update
+**Help** is one studio (`app/components/HelpStudio`) with three tabs, Guide,
+What's new and Shortcuts, and one search (`RailSearch`, "Search help") over all
+three: a result opens its tab and its chapter, release or shortcut group. The
+Guide and What's new doors open it on their tab (`initialTab`); it replaces the
+column like Settings, so its band holds `Back to app` with the Esc chip at the
+top left and there is no Close (`close: 'back'`, `StudioFrame/index.test.tsx`
+pins it). The Shortcuts tab is the read only sheet with one link, "Customize in
+Settings", because the recorder stays in Settings. The What's new tab is a rail
+of releases grouped by minor, with an Older group below 0.4 (`ChangelogRail`),
+and a reader beside it. `CatchUpReader` (`page="whatsNew"`) opens first and sums
+up everything since the version you last read; `ReleaseReader`
+(`page="release"`) shows one release. A release that is the pending update
 shows `UpdateActions`, the same verbs as the update card, and never a confirm of
 its own.
 
@@ -599,7 +612,7 @@ is not title case, or a key has two owners.
 One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
-lands there: ⌘I from anywhere, the bug icon at the column foot, Report a bug in
+lands there: ⌘I from anywhere, Report a bug in
 the Goodboy menu, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
@@ -651,15 +664,14 @@ before anything moves, so Settings stays open under it.
   keep counting through a sleep, so only the thread's own tick catches it.
 
 First-run setup is a full-screen wizard in one shell that never moves: a header
-with the lockup (a 22 px `BrandTile` and the word, absent on Welcome, where the
-hero is the lockup), a labelled four-step stepper (Agents, Workspace, Tools
-marked Optional, First session) and Set up later at the right; one 600 px
+with the lockup (a 22 px `BrandTile` and the word), a labelled three-step
+stepper (Agents, Workspace, First session) and Set up later at the right; one 600 px
 column whose title starts at the same line on every step; and the form actions
 inline at the end of the step, owned by the step (Back and the primary,
 right-aligned, no divider; Skip on First session only). Steps crossfade in one grid cell (240 ms, 80 ms of
 opacity with reduced motion); the actions are disabled while they do. Escape
 goes through the escape stack: an open inner layer closes first, else setup
-goes back one step; on Welcome and on the first step of a resume it does
+goes back one step; on Agents and on the first step of a resume it does
 nothing, and it never ends setup. Set up later writes `onboarding.wizard =
 later`; entering a step writes `onboarding.step`. A relaunch with setup still
 open reopens at that step (`resumeStep` falls back to Workspace when the step
@@ -667,16 +679,13 @@ needs a workspace that is gone), in the main window only, on Home (see Home
 below); the Goodboy menu offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
-`finish`, `later` and `setBusy`. Welcome is the cover: the boot splash's 84 px
-black tile stays on its pixel with no morph (`useSplashAnchor` puts the tile's
-centre `SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX` above the window middle, the spot
-`BootSplash` draws it), the splash name fades out, the 6% cover backdrop
-(`bg-backdrop-cover`, `--app-backdrop-cover-strength`) shows behind it, and
-agent detection starts there. The boot splash is the tile, the name, a 160 px
+`finish`, `later` and `setBusy`. There is no splash step: the first step is
+Agents, headed "Welcome to Goodboy" with the one sentence and the trust line,
+and agent detection starts there. The boot splash is the tile, the name, a 160 px
 determinate bar and the phase word on that same backdrop. The bar moves one
 sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
 never on a timer, and jumps under reduced motion. On `ready` the bar fills for
-200 ms, then `App` mounts the app or Welcome underneath and `BootSplashExit`
+200 ms, then `App` mounts the app or the setup underneath and `BootSplashExit`
 crossfades the splash out over 200 ms on top of it (same `BootStage`, so the tile
 does not move); reduced motion skips both waits. The window opens hidden and
 `useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
@@ -694,10 +703,13 @@ agent is dropped. The ready count comes from `readyAgents()`; Continue needs one
 ready agent and saves the default agent (`agents.default`), which the new
 workspace takes as its default provider. API key providers sit behind Use an API
 key instead. Workspace is `NewWorkspaceForm` in first-run mode. Tools holds Code
-and Tasks on one step and never leaves the stepper: the host the first
-repository pushes to leads, the others fold under Other code hosts, and with no
-repository Code says why while Tasks still works. Continue with nothing
-connected is the skip; every form binds to the workspace the step opened for.
+and Tasks on one step that is not numbered: First session reaches it from its
+Connect Linear or Jira row (`goTo` tools), and Back, Continue and Escape return
+to First session (`numberedStepOf` keeps First session current in the
+stepper). The host the first repository pushes to leads, the others fold under
+Other code hosts, and with no repository Code says why while Tasks still works.
+Continue with nothing connected is the skip; every form binds to the workspace
+the step opened for.
 Sentry, Slack and the rest live in Settings › Integrations. There is no
 permissions question: every workspace starts on Full access. First session is
 one input card: three starters that name the folder, the agent, Scout reads
@@ -706,15 +718,15 @@ draft (`startSessionFromDraft`); setup is done only once that resolves, and a
 failure keeps the prompt and reads Retry. With a task source connected, Pick up
 an issue lists assigned issues and Draft the brief opens the session draft with
 that issue picked. The draft carries the first folder, so the session lands in
-it. The checklist in the
-Goodboy menu has the stepper's four rows, counted by `setupProgress()` in
-`features/onboarding/setupProgress.ts`, the one function the chip and the menu
-read ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
+it. The setup card on the Sessions page (`features/onboarding/SetupCard`, drawn on the
+board and the empty board until setup is finished or hidden) has the stepper's three
+rows, counted by `setupProgress()` in `features/onboarding/setupProgress.ts`, the one
+function the card reads ("Setup · 2 of 3"). About you is not counted: it is suggested under Next
 once the first session is done. While setup is open or paused a row resumes
-setup at its step; once setup is done Tools reopens its own step. Tools ticks
-when the user moves past it or connects a code host or task source, and the
-first session ticks when an agent finishes a turn, not when a session row
-exists. Old checklist ids map to the four on hydrate.
+setup at its step. The first session ticks when an agent finishes a turn, not
+when a session row exists. Old checklist ids map to the three on hydrate
+(`savedWizardStepOf`): a saved Tools step resumes at First session, a saved
+Welcome step at Agents, and a stored tools entry counts for nothing.
 
 ## Auto in the shell
 
@@ -738,7 +750,7 @@ destination, so it has a door, the icon beside the bell; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
 open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened
-from the Limits strip). Settings > Providers and models is the one home for
+from the Limits strip). Settings > Providers is the one home for
 providers and usage; the menu holds no usage figure and sends there with
 **Manage providers** (a door). It lists the same `ProviderPolicyList` as the
 Models row When a provider is out, writing through the same
@@ -756,7 +768,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
 - **Before any workspace exists, the column keeps its app half**: Settings,
   the Goodboy row and the bug. New session, the doors and the sessions belong
   to a workspace and wait for one. Settings then opens its home with only the
-  App and Providers and models groups, and Providers opens on an account instead
+  App and Providers groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
 

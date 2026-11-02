@@ -10,6 +10,7 @@ import {
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId } from '@goodboy/types';
 import type { ChildRefusal } from './resolveDelegateChild';
+import { textFieldOf } from '../../../shared/utils/textFieldOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type RecoveredRevise = Readonly<{
@@ -34,11 +35,6 @@ export type PrepareRetryParams = Readonly<{
 type TextParams = {
   readonly source: Readonly<Record<string, unknown>>;
   readonly key: string;
-};
-
-const textOf = ({ source, key }: TextParams): string | null => {
-  const value = source[key];
-  return typeof value === 'string' && value !== '' ? value : null;
 };
 
 const listOf = ({ source, key }: TextParams): ReadonlyArray<string> => {
@@ -154,18 +150,18 @@ export const prepareRetry = async ({
   }
   const synthetic: DelegateChildSpec = {
     role: revises === null ? role : null,
-    title: textOf({ source: original.request, key: 'title' }),
-    task: textOf({ source: original.request, key: 'task' }) ?? '',
+    title: textFieldOf({ source: original.request, key: 'title' }),
+    task: textFieldOf({ source: original.request, key: 'task' }) ?? '',
     reason: child.reason,
-    provider: child.provider ?? textOf({ source: original.routing, key: 'provider' }),
-    model: child.model ?? textOf({ source: original.routing, key: 'model' }),
-    effort: child.effort ?? textOf({ source: original.routing, key: 'effort' }),
+    provider: child.provider ?? textFieldOf({ source: original.routing, key: 'provider' }),
+    model: child.model ?? textFieldOf({ source: original.routing, key: 'model' }),
+    effort: child.effort ?? textFieldOf({ source: original.routing, key: 'effort' }),
     taskType: null,
     difficulty: null,
-    doneWhen: textOf({ source: original.request, key: 'doneWhen' }),
-    expected: textOf({ source: original.request, key: 'expected' }),
+    doneWhen: textFieldOf({ source: original.request, key: 'doneWhen' }),
+    expected: textFieldOf({ source: original.request, key: 'expected' }),
     artifactIds: listOf({ source: original.request, key: 'artifactIds' }),
-    mount: textOf({ source: original.target, key: 'mountId' }),
+    mount: textFieldOf({ source: original.target, key: 'mountId' }),
     revises,
     changeFrom: listOf({ source: original.request, key: 'changeFrom' }),
     publish: publishOfRequest({ request: original.request }),

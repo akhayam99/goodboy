@@ -97,6 +97,19 @@ describe('branchFactsOf', () => {
     expect(facts.map((fact) => fact.liveCount)).toEqual([0, 2]);
   });
 
+  it('carries that the branch was adopted from an existing one', () => {
+    const adopted = { ...api, isBranchAdopted: true };
+    const facts = branchFactsOf({
+      rows: [adopted, ledger],
+      fetchedAtByMountId: new Map(),
+      behindByMountId: new Map(),
+      liveCountByMountId: new Map(),
+      now: NOW,
+    });
+
+    expect(facts.map((fact) => fact.isBranchAdopted)).toEqual([true, false]);
+  });
+
   it('has no request for a branch without a pull request', () => {
     const bare = aMountRow({ key: 'bare', projectName: 'notify-relay', branch: 'ak/notify' });
     const [fact] = branchFactsOf({

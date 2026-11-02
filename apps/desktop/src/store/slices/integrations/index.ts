@@ -8,12 +8,14 @@ import { disconnectIntegration } from './disconnectIntegration';
 import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
+import { refreshViewerIdentity } from './refreshViewerIdentity';
 import { updateSlackConfig } from './updateSlackConfig';
 import type { SliceDeps } from '../../slice-types';
 
 export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
   return {
-    loadIntegrations: loadIntegrations(set),
+    loadIntegrations: loadIntegrations(set, get),
+    refreshViewerIdentity: refreshViewerIdentity({ set, get }),
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),

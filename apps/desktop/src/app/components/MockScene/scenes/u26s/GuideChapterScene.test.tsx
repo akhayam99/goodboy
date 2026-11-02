@@ -85,15 +85,15 @@ describe('the secondary Guide scenes', () => {
     expect(rail().getByRole('button', { name: 'Commits' }).getAttribute('aria-current')).toBe(
       'true',
     );
-    expect(screen.getByRole('button', { name: 'Close guide' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Next chapter, Artifacts' })).toBeDefined();
   });
 
   it('u26s-guide-search lists the chapters and points that say limit', async () => {
     await mount({ id: 'u26s-guide-search' });
 
-    const results = within(screen.getByRole('list', { name: 'Guide results' }));
-    expect(results.getByRole('button', { name: 'Providers and limits, Chapter' })).toBeDefined();
+    const results = within(screen.getByRole('list', { name: 'Help results' }));
+    expect(results.getByRole('button', { name: 'Providers and limits, Guide' })).toBeDefined();
     expect(results.getAllByRole('button').length).toBeGreaterThan(3);
     expect(screen.getByRole('heading', { level: 1, name: 'Commits' })).toBeDefined();
   });

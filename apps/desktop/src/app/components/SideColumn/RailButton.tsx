@@ -9,6 +9,7 @@ type Props = {
   readonly id: string;
   readonly icon: LucideIcon;
   readonly label: string;
+  readonly mark?: string | null;
   readonly shortcut?: ShortcutId;
   readonly isCurrent: boolean;
   readonly className?: string;
@@ -39,6 +40,7 @@ export const RailButton = ({
   id,
   icon: Icon,
   label,
+  mark = null,
   shortcut,
   isCurrent,
   className,
@@ -65,9 +67,18 @@ export const RailButton = ({
           }
           onSelect();
         }}
-        className={cn(RAIL_BUTTON, isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE, className)}
+        className={cn(
+          RAIL_BUTTON,
+          mark !== null && 'justify-center px-0',
+          isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE,
+          className,
+        )}
       >
-        {isIconSlotted ? (
+        {mark !== null ? (
+          <span aria-hidden className="text-chip tabular-nums">
+            {mark}
+          </span>
+        ) : isIconSlotted ? (
           <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
             <Icon size={iconSize} aria-hidden className={iconClass} />
           </span>

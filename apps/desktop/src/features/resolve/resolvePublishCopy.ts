@@ -1,18 +1,9 @@
+import { countNoun } from '../../shared/utils/countNoun';
 import type {
   PublicationBlocker,
   ResolvePublicationDrift,
   ResolvePublicationPreview,
 } from '@goodboy/types';
-
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
 
 export const excludedLine = ({
   preview,
@@ -23,7 +14,7 @@ export const excludedLine = ({
   if (count === 0) {
     return null;
   }
-  return `${plural({ count, one: 'comment', many: 'comments' })} ${count === 1 ? 'needs' : 'need'} you first`;
+  return `${countNoun({ count, one: 'comment', many: 'comments' })} ${count === 1 ? 'needs' : 'need'} you first`;
 };
 
 export const driftSentence = ({

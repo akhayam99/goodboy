@@ -69,7 +69,7 @@ describe('the u24 chat-empty scenes', () => {
     });
     await settle();
 
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
   });
 });

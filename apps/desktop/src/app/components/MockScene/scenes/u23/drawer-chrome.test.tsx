@@ -137,7 +137,7 @@ describe('the drawer chrome scenes', () => {
   });
 
   it('toast over an overlay drawer: the stack stays at the right edge', async () => {
-    stubColumnWidth(1000);
+    stubColumnWidth(900);
     renderScene('toast-over-drawer-overlay');
 
     const toast = await screen.findByText('Fix run started', undefined, WAIT);

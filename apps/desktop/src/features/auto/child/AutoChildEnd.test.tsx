@@ -48,7 +48,7 @@ describe('the end of an Auto child pane', () => {
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'awaiting_confirm' });
     show({ delegation });
 
-    screen.getByText('Waiting for your OK');
+    screen.getByText('Needs you');
     expect(screen.queryByText('Queued')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));

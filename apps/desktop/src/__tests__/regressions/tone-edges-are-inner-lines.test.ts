@@ -12,7 +12,7 @@ const TONE_CLASS =
   /\b(?:border|bg|text|ring)-(?:danger|warning|info|success|primary)\b|tintClasses\(|\b(?:accent|tint)\.(?:border|borderSoft|rail)\b/;
 const WINDOW_LINES = 3;
 
-type Reason = 'diff-comment' | 'transcript-rail' | 'boot' | 'log' | 'row';
+type Reason = 'log' | 'row';
 
 type Allowance = {
   readonly count: number;
@@ -20,22 +20,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx': {
-    count: 1,
-    reason: 'diff-comment',
-  },
-  'apps/desktop/src/features/chat/components/TranscriptShell/index.tsx': {
-    count: 2,
-    reason: 'transcript-rail',
-  },
-  'apps/desktop/src/features/chat/components/TranscriptDisclosure.tsx': {
-    count: 1,
-    reason: 'transcript-rail',
-  },
-  'apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx': {
-    count: 1,
-    reason: 'boot',
-  },
   'apps/desktop/src/features/scripts/components/ScriptRunDrawer/ScriptRunLog.tsx': {
     count: 1,
     reason: 'log',

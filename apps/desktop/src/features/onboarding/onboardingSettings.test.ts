@@ -114,10 +114,23 @@ describe('onboarding settings wizard flag', () => {
 describe('onboarding settings setup progress', () => {
   it('hydrates a paused setup and its step', async () => {
     db.settings.set('onboarding.wizard', 'later');
-    db.settings.set('onboarding.step', 'tools');
+    db.settings.set('onboarding.step', 'workspace');
     await hydrateOnboardingFromDb();
     expect(getWizardState()).toBe('later');
-    expect(getWizardStep()).toBe('tools');
+    expect(getWizardStep()).toBe('workspace');
+  });
+
+  it('moves a setup paused on the old Tools step to First session', async () => {
+    db.settings.set('onboarding.wizard', 'later');
+    db.settings.set('onboarding.step', 'tools');
+    await hydrateOnboardingFromDb();
+    expect(getWizardStep()).toBe('first-session');
+  });
+
+  it('moves a step saved on the old Welcome splash to Agents', async () => {
+    db.settings.set('onboarding.step', 'welcome');
+    await hydrateOnboardingFromDb();
+    expect(getWizardStep()).toBe('agents');
   });
 
   it('drops a step it does not know', async () => {
@@ -133,21 +146,21 @@ describe('onboarding settings setup progress', () => {
   });
 
   it('pauses at the current step', async () => {
-    await enterWizardStep({ step: 'tools' });
+    await enterWizardStep({ step: 'first-session' });
     await pauseWizard();
     expect(db.settings.get('onboarding.wizard')).toBe('later');
-    expect(db.settings.get('onboarding.step')).toBe('tools');
+    expect(db.settings.get('onboarding.step')).toBe('first-session');
     expect(getWizardState()).toBe('later');
     expect(getWizardState()).not.toBe('done');
   });
 
   it('resumes from the last written step', async () => {
-    await enterWizardStep({ step: 'tools' });
+    await enterWizardStep({ step: 'first-session' });
     await pauseWizard();
     await hydrateOnboardingFromDb();
     const details = openDetails();
     resumeSetup({ hasWorkspace: true });
-    expect(details).toEqual([{ mode: 'setup', step: 'tools' }]);
+    expect(details).toEqual([{ mode: 'setup', step: 'first-session' }]);
     await vi.waitFor(() => expect(getWizardState()).toBe('open'));
     expect(db.settings.get('onboarding.wizard')).toBe('');
   });
@@ -168,11 +181,11 @@ describe('onboarding settings setup progress', () => {
   it('keeps the last written step when a later write fails, so resume falls back to it', async () => {
     await enterWizardStep({ step: 'workspace' });
     db.failing.add('onboarding.step');
-    await expect(enterWizardStep({ step: 'tools' })).rejects.toThrow('database is locked');
+    await expect(enterWizardStep({ step: 'first-session' })).rejects.toThrow('database is locked');
     expect(getWizardStep()).toBe('workspace');
     db.failing.clear();
-    await enterWizardStep({ step: 'tools' });
-    expect(getWizardStep()).toBe('tools');
+    await enterWizardStep({ step: 'first-session' });
+    expect(getWizardStep()).toBe('first-session');
   });
 
   it('keeps setup open when the pause cannot be written', async () => {
@@ -184,15 +197,15 @@ describe('onboarding settings setup progress', () => {
   it('writes in order, so the last step entered is the one kept', async () => {
     void enterWizardStep({ step: 'agents' });
     void enterWizardStep({ step: 'workspace' });
-    await enterWizardStep({ step: 'tools' });
+    await enterWizardStep({ step: 'first-session' });
     const steps = db.setSetting.mock.calls
       .filter(([key]) => key === 'onboarding.step')
       .map(([, value]) => value);
-    expect(steps).toEqual(['agents', 'workspace', 'tools']);
-    expect(db.settings.get('onboarding.step')).toBe('tools');
+    expect(steps).toEqual(['agents', 'workspace', 'first-session']);
+    expect(db.settings.get('onboarding.step')).toBe('first-session');
   });
 
-  it('maps the old checklist ids to the four steps on hydrate', async () => {
+  it('maps the old checklist ids to the three steps on hydrate and drops the old Tools row', async () => {
     db.settings.set(
       'onboarding.progress',
       JSON.stringify({
@@ -200,15 +213,24 @@ describe('onboarding settings setup progress', () => {
       }),
     );
     await hydrateOnboardingFromDb();
-    expect(getCompleted()).toEqual(['agents', 'workspace', 'tools', 'first-session', 'profile']);
+    expect(getCompleted()).toEqual(['agents', 'workspace', 'first-session', 'profile']);
+  });
+
+  it('drops a stored tools row from the four step list and keeps the rest', async () => {
+    db.settings.set(
+      'onboarding.progress',
+      JSON.stringify({ completed: ['agents', 'workspace', 'tools'] }),
+    );
+    await hydrateOnboardingFromDb();
+    expect(getCompleted()).toEqual(['agents', 'workspace']);
   });
 
   it('persists a completed step under its new id', async () => {
-    markStepComplete('tools');
+    markStepComplete('workspace');
     await vi.waitFor(() =>
       expect(db.setSetting).toHaveBeenCalledWith(
         'onboarding.progress',
-        JSON.stringify({ completed: ['tools'] }),
+        JSON.stringify({ completed: ['workspace'] }),
       ),
     );
   });

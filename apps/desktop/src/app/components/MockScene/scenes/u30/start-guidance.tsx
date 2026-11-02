@@ -3,9 +3,9 @@ import type { SessionDraft } from '../../../../../store/slices/sessionDraft/stat
 import { START_PAGE_SEED } from '../u27/startPage/startPageSeedData';
 import { StartFormScene } from './StartFormScene';
 
-const NO_LABELS: ReadonlyArray<string> = [];
+const NO_LABELS: ReadonlyArray<string> = ['More'];
 
-const OPEN_GUIDANCE: ReadonlyArray<string> = ['Guidance'];
+const OPEN_GUIDANCE: ReadonlyArray<string> = ['More', 'Guidance'];
 
 const WORKSPACE_GUIDANCE =
   'Keep every change inside payments-api. Ask before touching the ledger-core schema.';

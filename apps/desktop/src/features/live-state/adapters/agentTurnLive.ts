@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import type { Agent, TurnState } from '@goodboy/types';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import { TAIL_ACTION } from '../tailAction';
@@ -49,7 +50,7 @@ export const agentTurnLive = ({
   if (turn?.kind === 'blocked') {
     return {
       state: 'waiting',
-      phrase: 'Waiting for your answer',
+      phrase: NAMES.needsYou,
       startedAt: null,
       actions: [TAIL_ACTION.answer],
     };

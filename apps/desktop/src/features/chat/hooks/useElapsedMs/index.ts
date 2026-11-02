@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
 
 type Params = {
   readonly running: boolean;
@@ -22,11 +23,14 @@ export const useElapsedMs = ({
     const begin = startedAt !== null ? Date.parse(startedAt) : Date.now();
     start.current = begin;
     setElapsedMs(Date.now() - begin);
-    const handle = window.setInterval(() => {
-      setElapsedMs(Date.now() - begin);
-    }, 1_000);
+    const stopPoll = startPoll({
+      run: () => setElapsedMs(Date.now() - begin),
+      everyMs: 1_000,
+      gate: 'visible',
+      isImmediate: false,
+    });
     return () => {
-      window.clearInterval(handle);
+      stopPoll();
       setElapsedMs(Date.now() - begin);
     };
   }, [running, startedAt]);

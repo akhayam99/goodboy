@@ -157,7 +157,7 @@ describe('palette verbs follow the session state', () => {
       'Open in editor',
       'Open in terminal app',
       'Open the full log',
-      'Spend and limit',
+      'Open limit',
       'Open ledger-core in terminal',
       'Rename',
       'Pin session',
@@ -169,8 +169,6 @@ describe('palette verbs follow the session state', () => {
       'Copy worktree path',
       'Copy branch name',
       'Copy PR link',
-      'Archive',
-      'Delete',
     ]);
   });
 
@@ -187,7 +185,7 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open comments',
       'Open the full log',
-      'Spend and limit',
+      'Open limit',
       'Rename',
       'Pin session',
       'Refresh session',
@@ -195,8 +193,6 @@ describe('palette verbs follow the session state', () => {
       'Start a run',
       'Link work',
       'Copy title',
-      'Archive',
-      'Delete',
     ]);
     expect(sessionView({ facts, query: 'files' })).toEqual([
       'Open files (Add a folder to this session first)',
@@ -225,7 +221,6 @@ describe('palette verbs follow the session state', () => {
       'Copy worktree path',
       'Copy branch name',
       'Copy PR link',
-      'Delete',
     ]);
     for (const query of ['archive', 'review', 'diff', 'terminal', 'editor', 'rename', 'start']) {
       expect(sessionView({ facts, query })).toEqual([]);
@@ -272,16 +267,7 @@ describe('palette verbs follow the commit state, in the order of its ⋯ menu', 
     [
       'commit with one below',
       COMMIT,
-      [
-        'Rename',
-        'Fold down',
-        'Squash down',
-        'Move up',
-        'Move down',
-        'Copy SHA',
-        'Copy subject',
-        'Remove',
-      ],
+      ['Rename', 'Fold down', 'Squash down', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
     ],
     [
       'oldest commit that takes others in',
@@ -621,11 +607,11 @@ describe('the run verbs follow the run state', () => {
         ['workflowRun.close', 'Stop run'],
         ['workflowRun.copySummary', 'Copy run summary'],
         ['workflowRun.restartStep', 'Restart step'],
-        ['workflowRun.continue', 'Continue step'],
+        ['workflowRun.continue', 'Continue'],
         ['workflowRun.answer', 'Answer'],
       ),
     }).map((entry) => entry.label);
 
-    expect(ordered).toEqual(['Answer', 'Continue step', 'Restart step', 'Stop run']);
+    expect(ordered).toEqual(['Answer', 'Continue', 'Restart step', 'Stop run']);
   });
 });

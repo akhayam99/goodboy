@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button, SectionLabel } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -19,6 +20,8 @@ const MINUTE_MS = 60_000;
 
 const MARK_SEEN_KEY = 'mark-all-seen';
 
+const MAX_VISIBLE_ROWS = 3;
+
 export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
   const openDrawer = useAppStore((state) => state.openDrawer);
   const markAllAgentsSeen = useAppStore((state) => state.markAllAgentsSeen);
@@ -27,8 +30,46 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
   const nowMs = useNow(MINUTE_MS);
   const pending = usePendingAction({ sessionId });
   const leadAgentOf = useLeadAgentOf({ sessionId });
-  if (latest.unreadItems.length === 0) {
+  const [isOpen, setIsOpen] = useState(false);
+  const newest = latest.unreadItems[0];
+  if (newest === undefined) {
     return null;
+  }
+  const markAllSeen = (
+    <Button
+      size="sm"
+      variant="quiet"
+      disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
+      onClick={() =>
+        void pending.run({
+          key: MARK_SEEN_KEY,
+          failureTitle: "Couldn't mark the agents as seen",
+          task: () => markAllAgentsSeen(sessionId),
+        })
+      }
+    >
+      Mark all seen
+    </Button>
+  );
+  if (!isOpen) {
+    return (
+      <section
+        aria-label="New since you last looked"
+        data-overview-card="new-since"
+        className="flex h-10 min-w-0 items-center justify-between gap-2 rounded-lg bg-subtle px-4"
+      >
+        <p data-new-since-summary="" className="min-w-0 truncate text-ui text-muted-foreground">
+          <span data-new-since-count="">{latest.unreadCount}</span> new since you looked, latest:{' '}
+          {newest.row.title}
+        </p>
+        <span className="flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="quiet" onClick={() => setIsOpen(true)}>
+            Show
+          </Button>
+          {markAllSeen}
+        </span>
+      </section>
+    );
   }
   return (
     <section
@@ -42,23 +83,15 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
           label="New since you last looked"
           count={<span data-new-since-count="">{latest.unreadCount}</span>}
         />
-        <Button
-          size="sm"
-          variant="quiet"
-          disabled={pending.pendingKeys.has(MARK_SEEN_KEY)}
-          onClick={() =>
-            void pending.run({
-              key: MARK_SEEN_KEY,
-              failureTitle: "Couldn't mark the agents as seen",
-              task: () => markAllAgentsSeen(sessionId),
-            })
-          }
-        >
-          Mark all seen
-        </Button>
+        <span className="flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="quiet" onClick={() => setIsOpen(false)}>
+            Hide
+          </Button>
+          {markAllSeen}
+        </span>
       </header>
       <ul aria-label="New items" className="flex min-w-0 list-none flex-col gap-1">
-        {latest.unreadItems.map((item) => {
+        {latest.unreadItems.slice(0, MAX_VISIBLE_ROWS).map((item) => {
           const entry = entries.find((candidate) => candidate.id === item.row.entryId);
           const target = entry === undefined ? null : openFor({ entry });
           return (

@@ -124,7 +124,7 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid min-h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-5 text-left select-none',
+        'group/session-card grid min-h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-5 text-left select-none [content-visibility:auto]',
         sessionCardShell({ selected }),
       )}
     >
@@ -213,7 +213,9 @@ export const StageBoardCard = memo(function StageBoardCard({
           data-slot="card-signal"
           className="flex min-w-fit max-w-full flex-1 items-center justify-end"
         >
-          <SessionSignal signal={signal} onOpenRequest={handlePrClick} />
+          <span data-slot="card-signal-reserve" className="inline-flex min-w-14 justify-end">
+            <SessionSignal signal={signal} onOpenRequest={handlePrClick} />
+          </span>
         </span>
       </div>
     </article>

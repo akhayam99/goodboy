@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react';
-import type {
-  ProjectId,
-  SessionGroupKey,
-  SessionPageView,
-  WorkspaceGitStatus,
-} from '@goodboy/types';
+import type { ProjectId, WorkspaceGitStatus } from '@goodboy/types';
 import { StageBoard } from '../../../../../features/workspace/components/StageBoard';
 import { useAppStore, useSessions } from '../../../../../store';
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
 
 export type SessionsSceneConfig = {
-  readonly view: SessionPageView;
-  readonly group?: SessionGroupKey;
   readonly isFiltered?: boolean;
   readonly isEmpty?: boolean;
   readonly repos: 'fine' | 'attention';
@@ -59,7 +52,7 @@ const seedSessions = ({ config }: Props): void => {
   });
   state.setSessionViewPrefs({
     workspaceId: WORKSPACE_ID,
-    patch: { pageView: config.view, group: config.group ?? 'none', isArchivedShown: false },
+    patch: { group: 'none', isArchivedShown: false },
   });
   state.setSelectedProjectIds({
     workspaceId: WORKSPACE_ID,

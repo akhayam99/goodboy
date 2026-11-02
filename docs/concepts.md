@@ -34,7 +34,7 @@ runs and artifacts. It only touches a project when the work needs it.
 
 ```text
 workspace
-├── profile, integration bindings, workflows, skills
+├── profile, integration bindings, workflows
 ├── project (repo or folder)
 │   └── scripts, settings override, binding override
 └── session (one goal)
@@ -167,10 +167,10 @@ git words by `documents-copy-has-no-git-words.test.ts`.
 
 A plain folder starts its first copy of saved versions right after it is
 added, at Create and through `addProject` (`prepareLinkedFolder`, in the
-background; a failure marks the folder failed and Folders settings offers
+background; a failure marks the folder failed and Projects settings offers
 Retry), and `removeProject` forgets that copy once the folder is removed. Home
-names a one folder workspace by its face (`workspaceFaceLabel`), and Folders
-settings switches it (the Plain folders band, [navigation.md](navigation.md)).
+names a one folder workspace by its face (`workspaceFaceLabel`), and Projects
+settings switches it (the folder's own row, [navigation.md](navigation.md)).
 Storage shows the saved versions of every plain folder once, as one row in
 the app data band (`savedVersionsBytes`, summed in Rust).
 
@@ -217,7 +217,7 @@ no question asked.
 
 **Disconnect** keeps a workspace and its folders in the database with
 everything they hold, it only hides them. Re-adding the same folder through
-New workspace, or a folder through Add folder, reconnects it and its
+New workspace, or a folder through Add project, reconnects it and its
 sessions instead of creating a duplicate. If the folder moved since it was
 disconnected, Goodboy recognizes it by repository identity and offers to
 locate it the same way a moved folder is located while connected.
@@ -253,19 +253,24 @@ A list never words that agent as running, though. `agentStateOf` in
 its turn and its open questions to the phase, the word, the node and the dot,
 and the Runs grid, the Runs page count, the Running card and the Agents tree all
 read it. A blocked turn is **Needs permission**: a waiting phase, an amber node
-without motion, counted in "N need you" and sorted ahead of what runs. The
+without motion, counted in "N sessions need you" and sorted ahead of what runs. The
 session's **needs-approval** reason in the attention registry reads the same
 fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
 so the agent word and the session count never disagree. A stopped
 agent that is not closed stays in progress as **Stopped, Continue**, and
 **Blocked** is a warning, never a failure.
 
+Needs you counts three units, and each tooltip names its own: sessions ("2
+sessions need you") on the Sessions door, the dock badge and the palette; questions ("3 questions") on the Questions entry of the session rail;
+items ("4 items need you") on the Overview card and the Runs group. The bell is
+unchanged. `needsYouText` and `countNoun` write every one of them.
+
 **Needs you** outranks running when what waits is a human input: an open
 question, a tool waiting for your permission, a comment the fix run needs you for,
 or a plan waiting for your approval (a workflow run held at its plan). The
 session sits in needs you while its agents keep working, and the top bar chip,
-the board column, the palette and `⌥⌘↓` all count it there ("1 needs you",
-"2 need you"). An agent error also keeps its place above running. Failing
+the board column, the palette and `⌥⌘↓` all count it there ("1 session needs you",
+"2 sessions need you"). An agent error also keeps its place above running. Failing
 checks, changes requested, comments the fix run could not fix, an approved pull
 request and an unread reply rank below running, because an agent may be working
 on exactly that. Every reason that holds is kept, not only the winner, and the
@@ -520,7 +525,7 @@ whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
 never offered there. The block disappears when nothing waits, and there is no
-filter to switch on first. **New** is the one primary, and its menu
+filter to switch on first. **New** is always the outline button, and its menu
 offers **Start a run**, a report or a wireframe. Suggestions live in **Next steps**,
 above Activity, not as a row inside the feed.
 
@@ -626,7 +631,7 @@ whether you clicked it on the board or in the session overview.
   follow-ups live only on its row. Today that drops the ready step of a
   workflow run (its row has **Start**) and every stage of a CI fix after
   **Analyze** (its row opens the drawer, then has **Start fix** and **Push**).
-  **Resume all** after a restart stays, because no row resumes several
+  **Continue all** after a restart stays, because no row resumes several
   agents at once; a failed agent's **Retry** stays, because its row has none.
 - A permission has one place in the overview: the **Needs you** callout,
   whose button opens the blocked agent. The approve-tool
@@ -638,7 +643,7 @@ whether you clicked it on the board or in the session overview.
   project, run a ready plan, add a proposed project) plus twelve more that
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, resume every agent a restart stopped
-  (one **Resume all**, band 0, standalone and workflow agents alike), retry
+  (one **Continue all**, band 0, standalone and workflow agents alike), retry
   the last standalone agent that failed, analyze a pull request's failing checks,
   push unpushed commits on a clean worktree (counted against the branch's
   own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
@@ -1091,7 +1096,7 @@ pull request yet` with `Create pull request`. On GitLab the words are `merge
 request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
 header and its merge ask read them from the host. Comments exists whenever a
 pull request or a comment does, so a branch with only your notes has the section too. It lists the
-pull request threads and your notes together, told apart by a chip (`Note`, `On GitHub`) and
+pull request threads and your notes together, told apart by a chip (`Draft`, `On GitHub`) and
 filtered by `All`, `Notes` and `On GitHub`. Your notes also sit under their line in Files, where
 every open note gets a conversation, and deleting or resolving the note closes it. An agent
 reviewer's comments on a branch without a pull request are kept as notes. When a pull request
@@ -1459,7 +1464,7 @@ Settings can be set at four levels. The level closest to the work wins:
   not exist, with a named error and no write, and it returns the stored row,
   which the settings screens show. Saves of one workspace run in order; when a
   save fails, only the keys it changed go back to the last saved value.
-- **Workflows, saved steps and skills** belong to the workspace. Built-in
+- **Workflows and saved steps** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
   based on.
@@ -1787,33 +1792,6 @@ Limits steer where work goes. They never lock you out. When every provider is
 over its limit, the message box tells you. You can still send the turn on the
 provider you picked.
 
-## Skills
-
-Skills live next to your code. They are markdown files with frontmatter, and
-Goodboy finds them in every project of the workspace, in these places, in this
-order:
-
-- `<project-root>/.goodboy/skills/*.md`, where a skill you write in Goodboy is
-  saved
-- `<project-root>/.kay/skills/*.md`, the folder older builds wrote, read until
-  0.31.0 (see [versioning.md](versioning.md) → State outside SQLite); when both
-  folders hold a skill of one name, the `.goodboy` one wins
-- `<project-root>/.claude/skills/<name>/SKILL.md`
-
-Each workspace has its own list of skills. There is no global list. Call one
-from the chat with `/skill-name`. A skill runs on any connected provider, not
-only the one whose folder it came from.
-
-Use a skill for a way of working you repeat in many sessions, such as how to
-cut a release or review a migration: it is text you call by name. Use a preset
-for a run you want again, with its steps in order ([workflows.md](features/workflows.md)).
-
-Scripts that come with a skill run only from `<project-root>/.goodboy/skills`
-or, until 0.31.0, `<project-root>/.kay/skills`. Skills found under
-`.claude/skills` are prompts only, so a cloned repository cannot make its
-scripts run when you use a skill. A project that only has `.kay/skills` keeps
-working with no move; Goodboy never renames the folder for you.
-
 ## Editor
 
 When you want to type code yourself, Goodboy opens your editor on the right
@@ -1829,18 +1807,21 @@ session up again in Goodboy.
 
 ### Vocabulary rules
 
-- Each word has one meaning. **workspace** is the container, **folder** is
-  what it holds on screen (a repository or a plain folder; `project` in code),
-  **session** is the goal, **agent** is the chat.
-- No screen may use a different word for any of these four. Every surface that
-  creates, adds, lists or manages what a workspace holds says folder: the
-  session overview, Settings, palette labels, notices and aria-labels alike.
-  One card keeps the owner's choice from 0.27.4: the session rail card that
-  holds a session's repositories reads **Projects** (`NAMES.projects`), and
-  Settings and the docs name it so. The old words stay findable as former
-  names (`formerNamesOf` in `shared/utils/names.ts`: Projects and Workspace projects
-  find the Folders page in Settings and the palette, Add project, Dev project);
-  a former name is a search alias, never a label drawn on a screen
+- Each word has one meaning. **workspace** is the container, **project** is
+  a repository it holds on screen (`project` in code), **folder** is a plain
+  folder only, **session** is the goal, **agent** is the chat.
+- No screen may use a different word for any of these. Every surface that
+  creates, adds, lists or manages a repository says project: the session
+  overview, Settings, palette labels, notices and aria-labels alike. The
+  session rail card, the Settings page and the switcher count read
+  **Projects** (`NAMES.projects`, "3 projects, 1 plain folder"), and the door
+  is **Add project** (`NAMES.addProject`) beside **Add a plain folder**.
+  Folder stays in the file picker and for a plain folder. The old words stay
+  findable as former names (`formerNamesOf` in `shared/utils/names.ts`:
+  Folders and Workspace projects find the Projects page in Settings and the
+  palette, Add folder finds Add project, Dev project); a former name is a
+  search alias, never a label drawn on a screen. The retired names guard fails
+  `Folders` and `Add folder` as labels
 - **Task** means one thing: a work item that lives in another tool, such as a
   Linear or Jira issue, a GitHub issue or pull request, or a Sentry error. It
   is what the **Tasks** door lists and what a task link attaches to a
@@ -1854,8 +1835,8 @@ session up again in Goodboy.
 
   | Internal word       | On screen                                         |
   | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | branch (repo), folder (plain folder)              |
-  | mount a project     | Add folder                                        |
+  | mount, branch mount | branch (repo), plain folder                       |
+  | mount a project     | Add project                                       |
   | fork a mount        | New branch                                        |
   | unmount             | Close branch, and Reopen for a closed row         |
   | spawn               | Start (an agent, a reviewer, an implementer)      |
@@ -1886,7 +1867,7 @@ session up again in Goodboy.
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn: the square in the composer, the chip in the agent header, the line at the end of the conversation, the agent's menu and the palette all say it. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
+- **Stop** is the one name for ending a running turn: the square in the composer, the line at the end of the conversation, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word
@@ -1909,7 +1890,7 @@ session up again in Goodboy.
   Shortcuts, iPhone was Pair device and Companion; Security findings is a
   section at the end of Storage). **Branches** is a Workspace page that starts
   with After merge. **Pair an iPhone** is the one verb that opens the iPhone
-  page, **Providers and models** is its group in the rail (it was Providers &
+  page, **Providers** is its group in the rail (it was Providers &
   models), and **Edit commits** is the one name for changing the commits of a
   branch (it was Rewrite history). **Disconnect** is the one verb for a
   provider or tool (it was Sign out). The old words are palette aliases and
@@ -1974,11 +1955,11 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the **Fix comments** button (**Fix 3 comments**). The drawer's own button, **Start fix for 3**, stays.
+  the **Fix comments** button (**Fix 3 threads**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
-- **Push**: sends commits (**Push 2 fixes**, **Retry push** after a failure).
+- **Push**: sends commits (**Push 2 commits**, **Retry push** after a failure).
   **Publish 2 replies** sends replies without a push. **Sync and try again** is
   about the remote branch that moved, not the base.
 - **Rebase on main**: brings the base in, with the base branch's own name.
@@ -2117,7 +2098,6 @@ An agent materializes a project through the query bridge like this:
 - `packages/types/src/artifact.ts`: artifact kinds, statuses and metadata
 - `packages/core/src/context/marker-parsing.ts`: reads plan markers
 - `packages/types/src/provider-registry.ts`: `ProviderId`
-- `apps/desktop/src-tauri/src/skills.rs`: finds skills
 - `packages/core/src/profile/profileAccess.ts`: which profile fields each
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb

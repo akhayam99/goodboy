@@ -13,19 +13,10 @@ type Props = {
   readonly ariaLabel: string;
   readonly reason: string | null;
   readonly isShown: boolean;
-  readonly isExpanded: boolean | undefined;
   readonly onSelect: (() => void) | undefined;
 };
 
-export const BranchRowLine = ({
-  facts,
-  chip,
-  ariaLabel,
-  reason,
-  isShown,
-  isExpanded,
-  onSelect,
-}: Props) => {
+export const BranchRowLine = ({ facts, chip, ariaLabel, reason, isShown, onSelect }: Props) => {
   const mark = pullRequestStateToneOf({ state: facts.state });
   const StateIcon = mark.icon;
   return (
@@ -35,7 +26,6 @@ export const BranchRowLine = ({
           selected={isShown}
           ariaCurrent={isShown ? 'page' : undefined}
           ariaLabel={ariaLabel}
-          {...(isExpanded !== undefined && { isExpanded })}
           {...(onSelect !== undefined && { onClick: onSelect })}
           className={cn('h-7 min-w-0 flex-1 items-center gap-2 pl-1 text-ui', TRAIL_PILL_INSET)}
         >
@@ -55,6 +45,9 @@ export const BranchRowLine = ({
               facts.isFinished && 'text-muted-foreground',
             )}
           >
+            {facts.number === null ? null : (
+              <span className="text-muted-foreground">{facts.number} </span>
+            )}
             {facts.title}
           </span>
           {chip === null ? null : <BranchRowChip chip={chip} />}

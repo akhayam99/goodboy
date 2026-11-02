@@ -1,3 +1,4 @@
+import { needsYouText } from '../../../shared/utils/needsYouText';
 type DoorTone = 'danger' | 'warning' | 'neutral';
 
 export type DoorSignal = {
@@ -121,7 +122,7 @@ export const doorSignalOf = ({
       isUnread: false,
       tone: tone ?? 'warning',
       countText: countTextOf({ count }),
-      fact: factOf({ lead: `${count} ${count === 1 ? 'needs' : 'need'} you`, reasons }),
+      fact: factOf({ lead: needsYouText({ count, unit: 'sessions' }), reasons }),
     };
   }
   if (kind === 'terminal') {

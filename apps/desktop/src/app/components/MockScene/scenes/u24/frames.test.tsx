@@ -42,7 +42,7 @@ describe('the frames scenes', () => {
   });
 
   it.each(['frames-guide-rail', 'frames-guide-pinned'] as const)(
-    'draws the %s title first in the detail with Close in its header, beside the rail',
+    'draws the %s detail with Back to app in its band and no Close, beside the rail',
     async (id) => {
       const Scene = U24_FRAMES_SCENES[id];
       const { container } = render(
@@ -53,10 +53,10 @@ describe('the frames scenes', () => {
 
       const title = await screen.findByRole('heading', { level: 1, name: 'What is Goodboy' });
       const detail = container.querySelector<HTMLElement>('[data-studio-detail]');
-      expect(container.querySelector('[data-studio-band]')).toBeNull();
+      const band = container.querySelector<HTMLElement>('[data-studio-band]');
       expect(detail?.contains(title)).toBe(true);
-      const header = title.closest('[data-slot="pane-header"]');
-      expect(header?.contains(screen.getByRole('button', { name: 'Close guide' }))).toBe(true);
+      expect(band?.contains(screen.getByRole('button', { name: /^Back to app/ }))).toBe(true);
+      expect(screen.queryByRole('button', { name: /^Close/ })).toBeNull();
       expect(screen.getByRole('navigation', { name: 'Guide chapters' }).contains(title)).toBe(
         false,
       );

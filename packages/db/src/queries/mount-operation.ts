@@ -25,7 +25,7 @@ type ListMountOperationsParams = {
   readonly sessionId: SessionId;
 };
 
-const toDomain = (row: Row): MountOperation => ({
+const toMountOperation = (row: Row): MountOperation => ({
   ...row,
   input: parseJsonColumn({ value: row.input, isValid: isJsonValue, fallback: null }),
   result: parseJsonColumn({ value: row.result, isValid: isJsonValue, fallback: null }),
@@ -82,7 +82,7 @@ export const getMountOperation = async ({
     [sessionId, requestId],
   );
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : toMountOperation(row);
 };
 
 export const listMountOperations = async ({
@@ -97,7 +97,7 @@ export const listMountOperations = async ({
      FROM mount_operations WHERE session_id = ? ORDER BY created_at, id`,
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toMountOperation);
 };
 
 export const listUnsettledMountOperations = async ({
@@ -116,5 +116,5 @@ export const listUnsettledMountOperations = async ({
      ORDER BY o.created_at, o.id`,
     [],
   );
-  return rows.map(toDomain);
+  return rows.map(toMountOperation);
 };

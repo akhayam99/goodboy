@@ -57,10 +57,10 @@ describe('planEditBlockOf', () => {
   it('blocks a plan that splits into parallel parts, naming how many', () => {
     expect(
       planEditBlockOf({ plan: aPlan({ clusters: parts(2) }), drafts: [], isRevising: false }),
-    ).toBe('This plan runs as 2 parallel parts. Ask the planner to change it.');
+    ).toBe('This plan runs as 2 parts. Ask the planner to change it.');
     expect(
       planEditBlockOf({ plan: aPlan({ clusters: parts(3) }), drafts: [], isRevising: false }),
-    ).toBe('This plan runs as 3 parallel parts. Ask the planner to change it.');
+    ).toBe('This plan runs as 3 parts. Ask the planner to change it.');
   });
 
   it('lets a single plan be edited', () => {

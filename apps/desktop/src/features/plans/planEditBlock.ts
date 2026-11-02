@@ -19,7 +19,7 @@ export const planEditBlockOf = ({ plan, drafts, isRevising }: Params): string | 
   }
   const parts = plan.clusters?.length ?? 0;
   if (parts >= 2) {
-    return `This plan runs as ${parts} parallel parts. Ask the planner to change it.`;
+    return `This plan runs as ${parts} parts. Ask the planner to change it.`;
   }
   return null;
 };

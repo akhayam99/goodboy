@@ -140,7 +140,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.test.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProjectsSection.test.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.test.tsx": 1,
-  "apps/desktop/src/features/skills/components/SkillsPanel/index.test.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/index.test.tsx": 1,
   "apps/desktop/src/features/suggestions/useSessionSuggestions/index.test.tsx": 1,
   "apps/desktop/src/features/suggestions/useSuggestionActions/index.test.ts": 1,

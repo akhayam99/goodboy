@@ -5,6 +5,7 @@ import { FOCUS_RING } from '../../focusRing';
 import { ICON_SIZE, ICON_STROKE } from '../../iconSize';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { tintClasses } from '../../tint';
+import { ScrollFade } from '../ScrollFade';
 
 export type NoticeTone = 'danger' | 'warning' | 'info' | 'success';
 
@@ -136,12 +137,17 @@ export const Notice = ({
             </button>
           )}
           {hasDetail && isDetailOpen && (
-            <pre
-              id={detailId}
-              className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-3 py-2 text-code text-muted-foreground"
+            <ScrollFade
+              fadeFrom="background"
+              className="max-h-48 w-full rounded-md border border-border-soft bg-background"
             >
-              {detail}
-            </pre>
+              <pre
+                id={detailId}
+                className="whitespace-pre-wrap break-words px-3 py-2 text-code text-muted-foreground"
+              >
+                {detail}
+              </pre>
+            </ScrollFade>
           )}
           {hasContent({ node: children }) && <div className="w-full">{children}</div>}
         </div>

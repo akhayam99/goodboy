@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../../../../../__tests__/helpers/startSettingsRowOf';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -53,7 +54,7 @@ describe('the u27 start page scenes', () => {
     expect(Object.keys(U27_START_PAGE_SCENES)).toHaveLength(8);
   });
 
-  it('opens on four kinds with none picked, and says Auto picks', async () => {
+  it('opens on four kinds with Auto picked, and says Auto picks', async () => {
     mount({ id: 'u27-start-page-after-choice' });
 
     const kinds = await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT);
@@ -62,7 +63,7 @@ describe('the u27 start page scenes', () => {
         .getAllByRole('tab')
         .map((tab) => [tab.textContent, tab.getAttribute('aria-selected')]),
     ).toEqual([
-      ['Auto', 'false'],
+      ['Auto', 'true'],
       ['Agent', 'false'],
       ['Orchestrated', 'false'],
       ['Preset', 'false'],
@@ -73,13 +74,15 @@ describe('the u27 start page scenes', () => {
   it('gives the agent a role and a model, Edits, and no limit', async () => {
     mount({ id: 'u27-start-page-after-agent-form' });
 
-    const row = within(await screen.findByRole('group', { name: 'Run settings' }, WAIT));
+    const row = startSettingsRowOf({
+      group: await screen.findByRole('group', { name: 'Run settings' }, WAIT),
+    });
     expect(row.getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
     row.getByRole('button', { name: /^Model: / });
     row.getByRole('button', { name: /^Edits: / });
     expect(row.queryByText(/Limit/)).toBeNull();
     expect(row.queryByRole('button', { name: /^Asks you/ })).toBeNull();
-    screen.getByRole('button', { name: 'Start Scout' });
+    screen.getByRole('button', { name: 'Start' });
   });
 
   it('shows the preset with its steps, Follow it or Adapt as it goes, and the task attached', async () => {
@@ -91,11 +94,11 @@ describe('the u27 start page scenes', () => {
       within(screen.getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem'),
     ).toHaveLength(3);
     screen.getByRole('tablist', { name: 'With the preset' });
-    const row = within(screen.getByRole('group', { name: 'Run settings' }));
+    const row = startSettingsRowOf({ group: screen.getByRole('group', { name: 'Run settings' }) });
     row.getByRole('button', { name: /^Asks you: Every step/ });
-    expect(row.getByRole('combobox', { name: 'Where' }).textContent).toContain('harbor-portal');
+    expect(row.getByRole('combobox', { name: 'Projects' }).textContent).toContain('harbor-portal');
     screen.getByText('Member pages drift left on wide screens');
-    screen.getByRole('button', { name: 'Start workflow' });
+    screen.getByRole('button', { name: 'Start' });
     fireEvent.click(screen.getByRole('button', { name: 'Remove HBR-142' }));
     expect(await screen.findByRole('combobox', { name: 'Pick from Tasks' }, WAIT)).toBeDefined();
   });
@@ -104,11 +107,9 @@ describe('the u27 start page scenes', () => {
     mount({ id: 'u27-start-page-after-auto-picks' });
 
     const kinds = await screen.findByRole('tablist', { name: 'What kind of run?' }, WAIT);
-    expect(
-      within(kinds)
-        .getAllByRole('tab')
-        .some((tab) => tab.getAttribute('aria-selected') === 'true'),
-    ).toBe(false);
+    expect(within(kinds).getByRole('tab', { name: /^Auto/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
     screen.getByText(/^Starts[ ]as/);
     fireEvent.click(within(kinds).getByRole('tab', { name: /^Orchestrated/ }));
     expect(

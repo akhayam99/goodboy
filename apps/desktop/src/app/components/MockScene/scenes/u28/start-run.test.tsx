@@ -118,6 +118,6 @@ describe('the u28 start run scenes', () => {
   it('shows No limit on the Limit chip when none is set', async () => {
     mount({ id: 'u28-start-run-no-limit' });
 
-    await screen.findByRole('button', { name: 'No limit' }, WAIT);
+    await screen.findByRole('button', { name: 'Limit: none' }, WAIT);
   });
 });

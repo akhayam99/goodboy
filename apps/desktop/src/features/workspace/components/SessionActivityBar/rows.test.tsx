@@ -101,8 +101,11 @@ describe('a session row', () => {
     return renderBar();
   };
 
+  const openDone = () => fireEvent.click(screen.getByRole('button', { name: /^Done/ }));
+
   it('is one line: the title, space, then the state and nothing else', () => {
     mount();
+    openDone();
     for (const session of all) {
       const row = rowOf(session.goal);
       expect(row.children).toHaveLength(2);
@@ -116,6 +119,7 @@ describe('a session row', () => {
 
   it('shows one of five state nodes per session', () => {
     mount();
+    openDone();
     act(() => {
       useAppStore.getState().setSessionViewPrefs({
         workspaceId: harborline.id,

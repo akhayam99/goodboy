@@ -128,13 +128,13 @@ describe('WorkflowRunStartButton', () => {
     expect(screen.getByRole('button', { name: 'Follow' })).toBeDefined();
   });
 
-  it('keeps the title but offers no Follow when the user is already on the run page', async () => {
+  it('raises no toast when the user is already on the run page', async () => {
     useAppStore.getState().navigate({ to: runPage() });
     renderButton({ onStart: async () => undefined });
 
     await pressStart();
 
-    expect(screen.getByText('Run started')).toBeDefined();
+    expect(screen.queryByText('Run started')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Follow' })).toBeNull();
   });
 

@@ -34,7 +34,6 @@ export {
   providersModuleMock,
   routingModuleMock,
   budgetModuleMock,
-  skillsModuleMock,
   workflowsModuleMock,
   plansModuleMock,
   worktreeModuleMock,

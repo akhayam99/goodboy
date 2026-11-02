@@ -117,7 +117,7 @@ describe('likely folders on the Workspace step', () => {
     expect(screen.queryByRole('button', { name: /Choose folder/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Look in 2 folders' }));
 
-    const folders = within(await screen.findByRole('list', { name: 'Folders' }));
+    const folders = within(await screen.findByRole('list', { name: 'Projects' }));
     folders.getByText('ledger-core');
     folders.getByText('notify-relay');
     folders.getByText('payments-api');

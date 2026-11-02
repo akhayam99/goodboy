@@ -20,6 +20,7 @@ export const editsWordsOf = ({ mode, workspaceMode, workspaceName }: Params): Se
   return {
     value: own,
     source: START_KIND_COPY.edits.thisSession,
+    isChanged: true,
     chain: `This session: ${own}. ${workspaceName}: ${MODE_COPY[workspaceMode].label}. The session wins.`,
   };
 };

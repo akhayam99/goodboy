@@ -82,7 +82,7 @@ describe('New session draft and the New forms', () => {
 
     expect(screen.queryByRole('tablist', { name: 'How do you want to start?' })).toBeNull();
     const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
-    expect(kickoff.queryByRole('region', { name: 'Folders' })).toBeNull();
+    expect(kickoff.queryByRole('region', { name: 'Projects' })).toBeNull();
     kickoff.getByRole('tablist', { name: 'What kind of run?' });
     expect(kickoff.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
       'value',
@@ -106,7 +106,7 @@ describe('New session draft and the New forms', () => {
     await mountScene({ name: 'c10-start-projects' });
 
     expect(screen.getByRole('combobox', { name: 'Search folders' })).toHaveProperty('value', 'pay');
-    expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('2 folders');
+    expect(screen.getByRole('combobox', { name: 'Projects' }).textContent).toContain('2');
   });
 
   it('marks a title Goodboy wrote as Named by Goodboy on the session hover card', async () => {
@@ -131,8 +131,9 @@ describe('New session draft and the New forms', () => {
     await mountScene({ name: 'c05-overview-blank' });
 
     const hasNext =
-      document.querySelector('[data-overview-card="needs-you"], [data-overview-card="next"]') !==
-      null;
+      document.querySelector(
+        '[data-overview-card="needs-you"], [data-overview-card="branches"]',
+      ) !== null;
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
       hasNext ? 'secondary' : 'primary',
     );

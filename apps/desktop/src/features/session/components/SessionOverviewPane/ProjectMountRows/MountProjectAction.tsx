@@ -17,7 +17,7 @@ type Props = {
   readonly presentation?: 'icon' | 'button' | 'add';
 };
 
-const LABEL = NAMES.addFolder;
+const LABEL = NAMES.addProject;
 
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });

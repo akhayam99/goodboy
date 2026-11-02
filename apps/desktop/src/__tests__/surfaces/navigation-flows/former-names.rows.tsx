@@ -3,23 +3,17 @@ import { both, heading, lens, openPalette, studio, type Row } from './harness';
 export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'searching Rules finds Run defaults',
-    covers: ['studio:workflow'],
+    covers: ['openSettings', 'scope:workspace'],
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Rules'),
-    lands: both(
-      () => studio('Workflows'),
-      () => heading('Run defaults'),
-    ),
+    lands: () => heading('Run defaults'),
   },
   {
     name: 'searching Workflow rules finds Run defaults',
-    covers: ['studio:workflow'],
+    covers: ['openSettings', 'scope:workspace'],
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Workflow rules'),
-    lands: both(
-      () => studio('Workflows'),
-      () => heading('Run defaults'),
-    ),
+    lands: () => heading('Run defaults'),
   },
   {
     name: 'searching Open Workflows finds Open Runs in a session',
@@ -39,7 +33,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/, 'Changelog'),
     lands: both(
-      () => studio("What's new"),
+      () => studio('Help'),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -64,7 +58,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     covers: ['studio:guide', 'palette:Guide: Commits'],
     door: 'palette',
     open: () => openPalette(/^Guide: Commits/, 'Guide: Commits'),
-    lands: () => studio('Guide'),
+    lands: () => studio('Help'),
   },
   {
     name: 'searching Inbox finds Tasks',

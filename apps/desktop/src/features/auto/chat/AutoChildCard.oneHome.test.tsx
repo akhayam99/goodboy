@@ -71,7 +71,6 @@ const show = ({ onOpen = vi.fn() }: ShowParams = {}) => {
           sessionId={FIXTURE_SESSION}
           delegation={delegation}
           card={delegationCardOf({ delegation, childAgent: null })}
-          agent={null}
           name="Post one credit per retry"
           revision={null}
           onOpen={onOpen}

@@ -15,6 +15,7 @@ import {
   type SuggestionMountEvent,
 } from '../../store/slices/project-mounts/materializationProposals';
 import type { BranchPushState } from '../../shared/lib/branchPushState';
+import { continueAgentsTitleOf } from './continueAgentsTitleOf';
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -355,9 +356,7 @@ export const deriveNextSteps = ({
       kind: 'resume-agents',
       priority: 3,
       band: 0,
-      title: isSingle
-        ? `Resume ${firstStopped.label}`
-        : `Resume ${stoppedByRestart.length} stopped agents`,
+      title: continueAgentsTitleOf({ labels: stoppedByRestart.map((agent) => agent.label) }),
       detail: 'Stopped when Goodboy closed. What they wrote is kept.',
       sessionId,
       targetKey: isSingle ? `agent:${firstStopped.id}` : null,

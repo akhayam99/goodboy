@@ -53,9 +53,6 @@ vi.mock('../../features/providers/routing', async () =>
 vi.mock('../../features/budget/budget', async () =>
   (await import('../../store/storyHarness')).budgetModuleMock(),
 );
-vi.mock('../../features/skills/skills', async () =>
-  (await import('../../store/storyHarness')).skillsModuleMock(),
-);
 vi.mock('../../features/workflows/workflows', async () =>
   (await import('../../store/storyHarness')).workflowsModuleMock(),
 );
@@ -285,7 +282,7 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBe('1 needs you');
+    expect(view.chipLabel()).toBeNull();
   });
 
   it('reads a Bitbucket-only session from its request instead of leaving it on no PR yet', () => {
@@ -316,7 +313,7 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBe('1 needs you');
+    expect(view.chipLabel()).toBeNull();
   });
 
   it('asks for the changes a Bitbucket reviewer requested', () => {
@@ -416,7 +413,7 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'needs-approval' });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBe('1 needs you');
+    expect(view.chipLabel()).toBeNull();
     expect(view.here()).toBe(1);
     expect(view.footer()).toBe(1);
   });
@@ -444,7 +441,7 @@ describe('live work across every mount of a session', () => {
     });
     expect(view.columnOf()).toBe('attention');
     expect(view.needsYou()).toBe(1);
-    expect(view.chipLabel()).toBe('1 needs you');
+    expect(view.chipLabel()).toBeNull();
   });
 
   it('shows work that is only deciding its next step on the stage, the board and the chip', () => {

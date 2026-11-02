@@ -1,22 +1,9 @@
 import { Band } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/utils/names';
 import type { ShortcutGroup } from '../../../../shared/keyboard/registry';
 import { ShortcutRowKeys } from './ShortcutRowKeys';
+import { SHORTCUT_GROUP_LABEL } from './shortcutGroupLabel';
 import { groupWhere, shortcutRows } from './shortcutRows';
 import type { ShortcutRecorder } from './useShortcutRecorder';
-
-const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
-  general: 'General',
-  workspaces: 'Workspaces',
-  navigate: 'Navigate',
-  session: 'Session',
-  views: 'Views',
-  lists: 'Lists',
-  selection: 'Selection',
-  review: NAMES.comments,
-  diff: NAMES.files,
-  window: 'Window',
-};
 
 type Props = {
   readonly group: ShortcutGroup;
@@ -29,7 +16,7 @@ export const ShortcutGroupSurface = ({ group, overrides, recorder }: Props) => {
   return (
     <Band
       inset="content"
-      label={GROUP_LABEL[group]}
+      label={SHORTCUT_GROUP_LABEL[group]}
       hint={sharedWhere ?? undefined}
       headingLevel={3}
     >

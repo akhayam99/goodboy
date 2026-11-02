@@ -9,6 +9,7 @@ import {
   type ResolveGroup,
 } from '../../commentProjection';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
+import { IdentityQuietLine } from './IdentityQuietLine';
 import { ReviewListRow } from './ReviewListRow';
 import { ThreadVisitContext } from './threadVisitContext';
 import type { ReviewEntry, ReviewGroup } from './useReviewEntries';
@@ -65,6 +66,7 @@ export const ReviewList = ({
       data-selecting={checked.size > 0}
       className="group/select-list flex min-w-0 flex-col gap-4"
     >
+      <IdentityQuietLine sessionId={sessionId} />
       {groups.map(({ group, entries, isRun = false }) => {
         const name = isRun ? FIX_RUN_GROUP_LABEL : labelOf({ group, entries });
         const count = countSlotText({ count: entries.length, isBesideGlyph: true });

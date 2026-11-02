@@ -29,8 +29,11 @@ exception is Home, which has no column to give. On Home, New workspace swaps
 the list for the form in place, and the app studios take the whole window:
 Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette
 opens there too.
-Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
-one is open at a time.
+Studios are not part of the breadcrumb IA. They exit on Esc, and only one is
+open at a time. There is no Close button: a studio beside the column leaves by
+its door or Esc, and a studio that replaces the column (Settings, Help, New
+workspace) shows `Back to app` with the Esc chip at the top left
+(`StudioBackButton`, `close: 'back'` in `studioMeta.ts`).
 
 - **An open studio is a history entry.** Opening a studio, or switching from
   one studio to another, pushes an entry over the page underneath
@@ -46,7 +49,7 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Tasks to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle, Close; Settings in the default shell has no band at all,
+  subtitle, Back to app; Settings in the default shell has no band at all,
   so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
@@ -59,13 +62,11 @@ one is open at a time.
   studio open, no frame node exists, so nothing covers the page.
 - **One title per page; the band holds no title.** `StudioBand` never draws a
   crumb title, an icon or a subtitle; the page `h1` is the one title.
-  `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
-  (Tasks, Chat, Workflows, Terminal, Impact, Monitoring: no band, no Close, the
-  top bar Back and Escape leave them), `header` for Notifications, the guide and
-  What's new (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
-  action of the page title row, and the band holds it only until a page header
-  claims it), `band` for the rest (Settings over the window, Add workspace),
-  whose 40px band holds only Close
+  `STUDIO_META[kind].close` places the exit: `none` for the studios beside the
+  column (Tasks, Chat, Workflows, Terminal, Impact, Monitoring, Notifications:
+  no band, no Close, the door or Escape leaves them), `back` for the studios
+  that replace the column (Settings over the window, Help, Add workspace),
+  whose 40px band holds only `Back to app` with the Esc chip at the left
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
@@ -80,7 +81,7 @@ one is open at a time.
   at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the
   one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
-  under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
+  under it (the band keeps the crumb and Back to app only), Help's three tabs and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
@@ -266,8 +267,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   amends the history entry to the concrete page. The rail is the only index,
   portaled into the column (`SettingsColumnNav`, `Back to app` first, then
   `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page on Home: its four groups (App, Workspace, Providers and
-  models, Integrations) come from `settingsDirectory`. Every row is one 28px
+  the page on Home: its three scopes (App, Providers, This workspace, with Integrations nested under it) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
@@ -276,7 +276,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   row shows nothing. The sentence lives on the page: a provider about to run
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
   the usage notice that used to close the Usage band). Every page is also a palette entry
-  (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`), built from
+  (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`, `Workspace settings: Models`), built from
   the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
   column filters those same entries by name and former name, lists them in
   place of the groups, and opens the one picked on the same history entry; with
@@ -290,11 +290,11 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   Keyboard shortcuts, Storage, Backup and reset, iPhone) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The Workspace pages (Folders, About you, New sessions,
+  the pointer. The This workspace pages (Projects, About you, Run defaults, Models,
   Branches, Replies and commits, Permissions) sit the same way under the
-  Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
-  shows one item at a time. Providers and models nests
-  Models and one row per provider, and Integrations nests one row per tool. Those
+  This workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
+  shows one item at a time. Providers nests one row per provider
+  (connections only), and Integrations nests one row per tool under This workspace. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
   detail into slots it owns, and keeps a closing scope mounted until its list
@@ -302,11 +302,11 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Providers and models names its scope in the page header.** Every page of
+- **Providers names its scope in the page header.** Every page of
   the scope (Models and each provider) carries the scope as the meta line of
   its title: the workspace name when one is open, `All workspaces` when there
   is none (`ProviderSettingsScope` passes `scopeLabel`). The legacy trail
-  reads `Workspace` and `Providers and models` without a name, so the name
+  reads `Workspace` and `Providers` without a name, so the name
   appears once per page.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of
@@ -316,33 +316,37 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   while another page is open. The old anchors (`projects`, `profile`,
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
   pick a page (`workspacePageOf`); `track-with-git` (and the old
-  `dev-project`) lands on Folders with the first commit review of the first
+  `dev-project`) lands on Projects with the first commit review of the first
   plain code folder open. The workspace is renamed from the `Name` field of the
-  Folders page, and its name is written once on that page, in the top bar
+  Projects page, and its name is written once on that page, in the top bar
   (the disconnect row says `Disconnect this workspace`). The attribution line
-  lives on New sessions only, and Replies and commits links to it. Replies
+  lives on Run defaults only, and Replies and commits links to it. Replies
   and commits holds the reply voice and templates, `Mark thread as resolved`
   and the commit style (`review-replies` stays its page id and anchor); Run
-  defaults live under Workflows.
-  Tracking a plain folder with git is an inline flow in the Git repository band of the
-  Folders page (`TrackWithGitFlow`, `FolderGitBand`), never a dialog: the
+  defaults is its own page of the workspace settings.
+  The Projects page lists each folder once: one row per repository or plain
+  folder under one count line (`3 projects, 1 plain folder`,
+  `projectsCountLine`). A row opens in place; there is no second card for the
+  same folder. Tracking a plain folder with git is an inline flow in its own
+  row (`TrackWithGitFlow`, `FolderGitCard`), never a dialog: the
   first commit review, then `Publish to GitHub` through the same publish form
   as the first lap (`PublishPanel`). Creating a workspace never opens this
-  band by itself: the pick row already offers **Track it with git** for a Code
-  folder. A documents folder gets no row in the band.
-  The **Plain folders** band (`FolderFacesBand`) lists each plain folder with
-  the switch Code project or Documents (`setFolderPurpose`; when the write
+  row by itself: the pick row already offers **Track it with git** for a Code
+  folder. A documents folder shows no git line in its row. A row opens by
+  itself when its git line has a notice or when the page is opened on
+  `track-with-git` or `folder-options`.
+  The row of a plain folder (`PlainFolderOptions`) holds the
+  switch Code project or Documents (`setFolderPurpose`; when the write
   fails the old face stays, with the error beside it), one line of what the
   face means, and its saved versions: the size against the cap
   (`folderHistorySize`) with Review in Storage, or a failed first copy with
   Retry. Every window reads the faces again on focus (`useFolderFacesOnFocus`,
-  in the top bar watch and on Home). Skills stays
-  hidden behind its feature flag. Precedent: GitHub repository settings and
+  in the top bar watch and on Home). Precedent: GitHub repository settings and
   Linear's settings pages.
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings
   offers `Restore defaults` and `Copy from…`; under a separator, the menu of
-  every workspace page (Folders included) offers `Copy all pages from…` and
+  every workspace page (Projects included) offers `Copy all pages from…` and
   `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
   popover: pick the workspace, then a preview grouped by page with a
   checkbox per page and the from and to values, then the action row (`Copy N
@@ -350,7 +354,7 @@ settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
   preview is computed when the flow opens (`loadFlowSources`), not on every
   render. Which keys a page owns comes from `pageKeys` (`features/settings/
 pageKeys.ts`), typed so a new override key does not compile until it has
-  an owner; provider defaults belong to Providers and models and are never
+  an owner; provider defaults belong to Providers and are never
   copied, and neither are projects, folders, integration accounts,
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
@@ -456,7 +460,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   calls it once per studio and hands the result to the rail and the home, and
   a test mounts the home on the strict `invoke` mock to keep it free of
   commands and loads at render. A dot appears only
-  when something needs doing: warning on Providers and models when a connected
+  when something needs doing: warning on Providers when a connected
   CLI is too old for a model it serves or no provider is connected
   (`selectProviderAttention`, with the reason as the dot's label), info on
   Updates while an app update is ready (`updatesText`), info on Storage with "N GB can go" as
@@ -471,7 +475,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   warning or danger dot named by its reason (`toolAttention`), and a connected,
   healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
-  Disconnect at the end of Folders, and turn red only in their inline
+  Disconnect at the end of Projects, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,

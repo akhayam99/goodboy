@@ -28,7 +28,7 @@ type ToDomainParams = {
   readonly row: SessionExternalTaskRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): SessionExternalTask => {
+const toSessionExternalTask = ({ row }: ToDomainParams): SessionExternalTask => {
   if (isSessionExternalTaskProvider(row.provider) === false) {
     throw new Error(`invalid external task provider: ${row.provider}`);
   }
@@ -105,7 +105,7 @@ export const listExternalTasksForWorkspace = async ({
                CASE t.scope WHEN 'session' THEN 0 ELSE 1 END, t.branch ASC`,
     [workspaceId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toSessionExternalTask({ row }));
 };
 
 type DeleteParams = {

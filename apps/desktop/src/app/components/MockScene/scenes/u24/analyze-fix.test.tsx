@@ -71,7 +71,7 @@ describe('analyze fix scenes', () => {
     expect(within(drawer).getByText(/^Implementer · /)).toBeDefined();
     const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
     expect(within(chain).getByText('Proposal')).toBeDefined();
-    expect(within(chain).getByText('Waiting for you')).toBeDefined();
+    expect(within(chain).getByText('Needs you')).toBeDefined();
     fireEvent.click(within(drawer).getByRole('button', { name: 'Dismiss' }));
     expect(
       within(drawer).getByText('Dismissed. Analyze again for another proposal.'),

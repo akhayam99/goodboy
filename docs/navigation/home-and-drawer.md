@@ -28,7 +28,7 @@ it carries the lockup itself: the 40px `BrandTile`, the word and the version
   pick row.
 - **No workspace yet.** A card that says how a workspace starts, with New
   workspace and, while setup is unfinished in the main window, "Setup paused at
-  Workspace · 1 of 4 done" and **Resume setup** (`useSetupResume`, counted by
+  Workspace · 1 of 3 done" and **Resume setup** (`useSetupResume`, counted by
   `setupProgress`).
 - **Reopen the last workspace on launch**, a switch.
 
@@ -138,20 +138,12 @@ the two saved widths never bleed. There is no third tier: no drawer expands over
 the whole column, the reader tier is the large one. `selectDrawerSizing` picks
 the tier from the drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
-**One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
-own width) minus the drawer's two 8px insets, the page's gutters and the 560px
-the page keeps. The drawer pushes only while the page container keeps 560 plus
-its 48px of gutters and `room` covers the drawer's saved width; it is never
-squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. The mode reads the committed width, never a drag in progress,
-and while it pushes the handle stops at `min(tier max, room)`, so a drag never
-flips the mode. Once a drawer pushes at some width it pushes at every wider one.
-The column and measure pages are centred, and the column slides left to
-re-centre in the space left of the drawer (full tier work surfaces keep their
-left edge and give up their right).
-
-**The thresholds are fixed.** The default side drawer (400) pushes from a 1024
-column and the default reader (720) from a 1344 column; below that they lie over
-the page. `drawerGeometry.test.ts` pins both numbers and
+**One push rule.** The drawer uses the content width after both rails and the
+reserve of its tier, as defined in [styling.md](../styling.md). It pushes at
+its saved width when that fits, and overlays otherwise. The mode reads the
+committed width; a drag stops at the available room and never flips the mode.
+The centred column slides left into the space beside the drawer; a full-tier
+work surface keeps its left edge. `drawerGeometry.test.ts` pins the thresholds;
 `regressions/drawer-rule.test.ts` fails a drawer that measures the window, reads
 a breakpoint or calls `drawerLayoutOf` outside `DrawerColumn`, so every
 width-dependent drawer (fix run, CI fix, terminal, the rest of `DrawerHost`)
@@ -220,6 +212,12 @@ one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
 fills the frame instead. A new kind adds a variant to `DrawerContent` and a
 case to the host.
+
+Opening a side drawer folds the session rail when its expanded width would
+leave too little content for the push rule. A reader folds it at every width.
+Closing restores the saved fold. Unfolding by hand keeps the rail open for
+that drawer, including through resize; the drawer overlays when it cannot
+push. `shellFoldsOf` and `useSessionRailFold` own that temporary fold.
 
 **Header grammar.** The close control always reads `Close`, in every drawer: the
 region is already named by its title (`<section aria-label={title}>`), so no
@@ -312,9 +310,19 @@ revises the plan the body is dimmed and Run plan waits.
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
-`ScrollFade` and the composer in its `dock`. Its header is **Ask** and a **Reset chat**
-icon button (⌘N while focus is inside the panel, also in ⌘K), with no session
-title. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
+`ScrollFade` and the composer in its `dock`. The question bubble
+(`UserMessageBubble`) and the **Start work from chat** button
+(`StartWorkFromChatButton`) are the Chat ones, drawn from `shared/components`;
+the composer is the same `MessageComposer` (`shared/components`) that
+`ChatComposer` wraps, without images. Start work on a
+finished answer adds a brief drafted from the thread to this session and opens
+Start a run there (`startWorkFromAsk`), with no new session. The questions stay
+in the session's `ask` threads and are never listed in the Chat door. Its header is **Ask** and a
+**Reset chat** icon button (⌘N while focus is inside the panel, also in ⌘K), with
+no session title; the session is the scope chip at the top of the thread
+(`AskScope`, **Scope: {session}**). The rail icon has its own glyph
+(`CONCEPT_ICONS.ask`, apart from the Chat door) and reads **Ask this session**
+with ⌘L on hover. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
 the next question makes a new chat id) and the old thread stays under **Earlier**,
 so nothing is lost and no Undo is needed. It waits while a reply streams. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
@@ -348,7 +356,7 @@ resolver's transcript always opens here, on the Comments tab of its Branch
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old
 versions of that slot, inside the same drawer, with Restore; Escape and the
-header's **Back to current** leave the view before the drawer). The **Context** chip in the session header toggles it
+header's **Back to current** leave the view before the drawer). The **Context** tool in the session tools toggles it
 on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
 Decisions and Summary. The first open shows Summary, later ones the last tab
 used in that session. The chip carries a quiet dot, never a count, when the
@@ -371,15 +379,14 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
 full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers and models, Models, scrolled to
+links to the tabs, every value on the same column), **Change model** (Settings, Providers, Models, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is
 queued, and the row reads only that queue state, as the pane's first gray line
 (no label). The pane is one scroll with Goal, Decisions, Summary and Learned as
 sections (`ContextSection`, no tabs); opening it on a section scrolls there. The
-count lives on the Active group and the change signal on its own group. The engine has one name, **Context**, in Activity, in the
-drawer and in these docs.
+count lives on the Active group and the change signal on its own group.
 
 Every section reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
@@ -469,7 +476,7 @@ tooltip says why, never a native title); the body is a status
 line (state, time, project, branch), a `Command` disclosure closed by default,
 and the log, which follows the tail until you scroll up and then offers
 `Jump to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
-hash) wraps at the edge instead of breaking every word. The dock
+hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
 `Ask the agent about this` sits next to it, while the run is live too, and
 hands the log to the session's agent: it queues a text attachment titled
@@ -494,4 +501,4 @@ opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
 There is no drawer for notes: a note lives on its line in Files and as a row in
 Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
-without a branch sits in `Unassigned notes` on the Session overview.
+without a branch sits in `Unassigned comments` on the Session overview.

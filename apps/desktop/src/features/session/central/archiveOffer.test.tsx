@@ -116,7 +116,7 @@ const show = async () => {
   await settle();
 };
 
-describe('the Archive this session offer in Next', () => {
+describe('the Archive this session offer in Branches', () => {
   it('is not offered while the pull request is open', async () => {
     seedCentralColumn({ kind: 'finished' });
     await show();
@@ -129,7 +129,7 @@ describe('the Archive this session offer in Next', () => {
     setRequestState({ state: 'merged' });
     await show();
 
-    const next = screen.getByRole('region', { name: 'Next' });
+    const next = screen.getByRole('region', { name: 'Branches' });
     within(next).getByText('Archive this session');
     expect(next.textContent).toContain('All branches merged');
     within(next).getByRole('button', { name: /^Archive/ });
@@ -149,7 +149,7 @@ describe('the Archive this session offer in Next', () => {
     });
     await show();
 
-    const next = screen.getByRole('region', { name: 'Next' });
+    const next = screen.getByRole('region', { name: 'Branches' });
     expect(next.textContent).toContain('All branches closed');
     await act(async () => {
       fireEvent.click(within(next).getByRole('button', { name: /^Archive/ }));

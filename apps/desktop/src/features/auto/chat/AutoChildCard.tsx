@@ -1,35 +1,23 @@
 import type { AutoDelegation } from '@goodboy/db';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
-import { InteractiveRow, TruncatedText, tintClasses } from '@goodboy/ui';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { InteractiveRow, TruncatedText, cn, tintClasses } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { ObjectMenuArea } from '../../actions/ObjectMenuArea';
-import { AgentModelLine } from '../../providers/modelLine/AgentModelLine';
 import { autoChildCardFactsOf } from './autoChildCardFactsOf';
 import type { DelegationCardModel } from './delegationCardOf';
 import { DelegationClock } from './DelegationClock';
-import { useChildLive } from './hooks/useChildLive';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly delegation: AutoDelegation;
   readonly card: DelegationCardModel;
-  readonly agent: Agent | null;
   readonly name: string;
   readonly revision: string | null;
   readonly onOpen: (agentId: AgentId) => void;
 };
 
-export const AutoChildCard = ({
-  sessionId,
-  delegation,
-  card,
-  agent,
-  name,
-  revision,
-  onOpen,
-}: Props) => {
-  const live = useChildLive({ delegation, agent });
-  const facts = autoChildCardFactsOf({ card, live });
+export const AutoChildCard = ({ sessionId, delegation, card, name, revision, onOpen }: Props) => {
+  const facts = autoChildCardFactsOf({ card });
   return (
     <div data-auto-child-card={delegation.id} data-state={card.status.word} className="min-w-0">
       <ObjectMenuArea
@@ -42,32 +30,22 @@ export const AutoChildCard = ({
           onOpen={() => onOpen(card.childAgentId)}
           radius="lg"
           frameClassName="bg-elevated"
-          className="grid min-w-0 grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1 p-3 text-meta"
+          className="flex min-w-0 items-center gap-2 px-3 py-1 text-meta"
         >
           <AgentKindChip kind={card.role} density="glyph" />
-          <span className="flex min-w-0 items-center gap-2">
-            <TruncatedText
-              isFocusable
-              className="min-w-0 truncate text-foreground"
-              tooltip={card.task ?? name}
-            >
-              {name}
-            </TruncatedText>
-            {revision === null ? null : (
-              <span className="shrink-0 text-muted-foreground">{revision}</span>
-            )}
-          </span>
-          <span className="col-start-2 flex min-w-0 items-center gap-2">
-            <span className={tintClasses(facts.tone).text}>{facts.word}</span>
-            <DelegationClock agentId={card.childAgentId} isLive={card.status.isLive} />
-            <span className="min-w-0 truncate text-muted-foreground">{card.roleLabel}</span>
-            <AgentModelLine line={card.modelLine} className="pointer-events-auto" />
-          </span>
-          {facts.activity === null ? null : (
-            <TruncatedText isFocusable className="col-start-2 min-w-0 text-muted-foreground">
-              {facts.activity}
-            </TruncatedText>
+          <span className="shrink-0 text-muted-foreground">{card.roleLabel}</span>
+          <TruncatedText
+            isFocusable
+            className="min-w-0 flex-1 truncate text-foreground"
+            tooltip={card.task ?? name}
+          >
+            {name}
+          </TruncatedText>
+          {revision === null ? null : (
+            <span className="shrink-0 text-muted-foreground">{revision}</span>
           )}
+          <span className={cn('shrink-0', tintClasses(facts.tone).text)}>{facts.word}</span>
+          <DelegationClock agentId={card.childAgentId} isLive={card.status.isLive} />
         </InteractiveRow>
       </ObjectMenuArea>
     </div>

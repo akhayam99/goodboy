@@ -69,7 +69,7 @@ describe('WorkspaceIdentityRow', () => {
     const trigger = screen.getByLabelText('Switch workspace: Acme');
     expect(trigger.getAttribute('title')).toBeNull();
     expect(tooltipTextOf({ element: trigger })).toBe(
-      `Acme, 1 folder${shortcutGlyphs('workspace.switcher')}`,
+      `Acme, 1 project${shortcutGlyphs('workspace.switcher')}`,
     );
   });
 
@@ -139,7 +139,7 @@ describe('WorkspaceIdentityRow', () => {
       expect(mark?.getAttribute('data-workspace-attention')).toBe('warning');
       expect(
         screen
-          .getByLabelText('Switch workspace: Acme, 2 need you in other workspaces')
+          .getByLabelText('Switch workspace: Acme, 2 sessions need you in other workspaces')
           .getAttribute('aria-expanded'),
       ).toBe('false');
     });
@@ -208,6 +208,47 @@ describe('WorkspaceIdentityRow', () => {
       const { container } = render(<WorkspaceIdentityRow />);
 
       expect(container.querySelector('[data-workspace-attention]')).toBeNull();
+    });
+  });
+
+  describe('while switching workspace', () => {
+    const NORTHWIND = brandId<WorkspaceId>({ value: 'ws-northwind' });
+
+    beforeEach(() => {
+      act(() => {
+        useAppStore.setState({
+          workspaces: [
+            buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Acme', slug: 'acme' }),
+            buildStoryWorkspace({ id: NORTHWIND, name: 'Northwind', slug: 'northwind' }),
+          ],
+        });
+      });
+    });
+
+    it('names the target on the chip and marks it busy', () => {
+      act(() => {
+        useAppStore.setState({ switchingToWorkspaceId: NORTHWIND });
+      });
+      render(<WorkspaceIdentityRow />);
+
+      expect(screen.getByText('Northwind').getAttribute('aria-busy')).toBe('true');
+      expect(screen.queryByText('Acme')).toBeNull();
+    });
+
+    it('keeps the old name and says the switch failed, then retries the same target', () => {
+      const setCurrentWorkspace = vi.fn(async () => undefined);
+      act(() => {
+        useAppStore.setState({
+          workspaceSwitchError: { workspaceId: NORTHWIND, message: 'boom' },
+          setCurrentWorkspace,
+        });
+      });
+      render(<WorkspaceIdentityRow />);
+
+      screen.getByText('Acme');
+      expect(screen.getByRole('alert').textContent).toContain("Couldn't open Northwind.");
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      expect(setCurrentWorkspace).toHaveBeenCalledWith(NORTHWIND);
     });
   });
 });

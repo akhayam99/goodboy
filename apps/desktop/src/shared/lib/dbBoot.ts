@@ -4,13 +4,9 @@ import {
   pickRestorableSnapshot,
   runDatabaseHygiene,
 } from '@goodboy/db';
-import {
-  migrate as runMigrations,
-  runRuntimeMigrations,
-  type MigrateResult,
-  type MigrationSnapshotStorage,
-} from '@goodboy/db/migrations';
+import type { MigrateResult, MigrationSnapshotStorage } from '@goodboy/db/migrations';
 import { invokeDb, tauriDatabase } from './db';
+import { LATEST_MIGRATION_VERSION } from './latestMigrationVersion';
 import { NewerDatabaseError } from './newerDatabase';
 
 const migrationSnapshotStorage: MigrationSnapshotStorage = {
@@ -24,6 +20,19 @@ const migrationSnapshotStorage: MigrationSnapshotStorage = {
   },
 };
 
+type VersionRow = {
+  readonly version: number | null;
+};
+
+const loadMigrations = () => import('@goodboy/db/migrations');
+
+const readAppliedVersion = async (): Promise<number> => {
+  const rows = await tauriDatabase
+    .select<VersionRow>('SELECT MAX(version) AS version FROM schema_version')
+    .catch(() => []);
+  return rows[0]?.version ?? 0;
+};
+
 type RunGuardedMigrationsParams = {
   readonly databasePath: string;
 };
@@ -31,6 +40,11 @@ type RunGuardedMigrationsParams = {
 const runGuardedMigrations = async ({
   databasePath,
 }: RunGuardedMigrationsParams): Promise<MigrateResult> => {
+  const appliedVersion = await readAppliedVersion();
+  if (appliedVersion === LATEST_MIGRATION_VERSION) {
+    return { applied: [], skipped: [], currentVersion: appliedVersion };
+  }
+  const { runRuntimeMigrations } = await loadMigrations();
   try {
     return await runRuntimeMigrations({
       databasePath,
@@ -74,7 +88,8 @@ export const runDbMigrations = async (): Promise<MigrateResult> => {
 
 export const wipeDb = async (): Promise<MigrateResult> => {
   await invokeDb('db_wipe', {});
-  const result = await runMigrations(tauriDatabase);
+  const { migrate } = await loadMigrations();
+  const result = await migrate(tauriDatabase);
   await invokeDb('chat_attachments_prune', {}).catch(() => undefined);
   return result;
 };

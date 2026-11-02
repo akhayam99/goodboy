@@ -439,7 +439,7 @@ describe('StageBoard selection over every lane', () => {
 
   const toolbar = (): HTMLElement => screen.getByRole('toolbar');
 
-  it('selects sixty Done cards and every other card with Select all', () => {
+  it('selects sixty Done cards, draws fifty, and every other card with Select all', () => {
     const building = [sessionOf('Add idempotency keys to the refund endpoint')];
     const done = doneCards(60);
     const shelved = [archivedOf('Update the refund macros for support')];
@@ -452,7 +452,7 @@ describe('StageBoard selection over every lane', () => {
     expect(within(toolbar()).getByText('62 selected')).toBeDefined();
     expect(
       checkboxesIn('done').filter((box) => box.getAttribute('aria-pressed') === 'true'),
-    ).toHaveLength(60);
+    ).toHaveLength(50);
     expect(checkboxesIn('archived')[0]?.getAttribute('aria-pressed')).toBe('true');
   });
 

@@ -47,6 +47,7 @@ export type BranchFacts = Readonly<{
   liveCount: number;
   liveTitle: string | null;
   isFinished: boolean;
+  isBranchAdopted?: boolean;
   status: BranchStatusFacts | null;
   series: BranchSeriesFacts | null;
 }>;
@@ -126,6 +127,7 @@ export const branchFactsOf = ({
       liveCount: liveCountByMountId.get(row.mountId) ?? 0,
       liveTitle: liveTitleByMountId.get(row.mountId) ?? null,
       isFinished: row.isFinished,
+      isBranchAdopted: row.isBranchAdopted === true,
       status: statusByMountId.get(row.mountId) ?? null,
       series:
         row.series === null

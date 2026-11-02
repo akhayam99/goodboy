@@ -38,7 +38,7 @@ type ShapeParams = {
   readonly shape: StartShape;
 };
 
-export const startFormKindOfShape = ({ shape }: ShapeParams): StartFormKind =>
+const startFormKindOfShape = ({ shape }: ShapeParams): StartFormKind =>
   shape === 'autoAgent' ? 'auto' : shape;
 
 type KindParams = {
@@ -57,6 +57,8 @@ export const startFormKindOfDraft = ({
   startKind,
   startShape,
 }: DraftParams): StartFormKind | null =>
-  (startKind === 'workflow' || startKind === 'agent') && startShape !== null
+  (startKind === 'workflow' || startKind === 'agent') &&
+  startShape !== null &&
+  startShape !== 'autoAgent'
     ? startFormKindOfShape({ shape: startShape })
     : null;

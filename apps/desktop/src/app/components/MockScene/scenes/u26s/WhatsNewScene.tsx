@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ChangelogStudio } from '../../../../../features/changelog/components/ChangelogStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { useAppStore } from '../../../../../store';
 import { FramedStudioScene } from '../u23/FramedStudioScene';
 
@@ -57,7 +57,7 @@ const WhatsNewScene = ({ variant }: Props) => {
 
   return (
     <FramedStudioScene kind="changelog" place="changelog" seed={seedDates}>
-      <ChangelogStudio onClose={NOOP} onOpenScreen={NOOP} />
+      <HelpStudio initialTab="whatsNew" onClose={NOOP} onOpenScreen={NOOP} />
     </FramedStudioScene>
   );
 };

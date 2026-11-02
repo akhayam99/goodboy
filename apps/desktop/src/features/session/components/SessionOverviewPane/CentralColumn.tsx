@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { Fragment, useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { HeightMotion, PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
@@ -18,25 +18,23 @@ import { DoneCard } from '../../central/cards/DoneCard';
 import { NewSinceCard } from '../../central/cards/NewSinceCard';
 import { doneSummaryOf } from '../../central/cards/doneSummaryOf';
 import { latestDoneOf } from '../../central/cards/latestDoneOf';
-import { NextRowsCard } from '../../central/cards/NextRowsCard';
+import { NeedsYouCard } from '../../central/cards/NeedsYouCard';
 import { RunningCard } from '../../central/cards/RunningCard';
 import { useDoneRows } from '../../central/done/useDoneRows';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
+import { nextRowCountOf } from '../../central/next/nextRowCountOf';
 import { useNextCards } from '../../central/next/useNextCards';
 import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
 import { useLiveGroups } from '../../central/now/useLiveGroups';
+import { liveSectionIdOf } from '../../central/now/liveSectionIdOf';
 import { runLeadOf } from '../../central/now/runLeadOf';
+import { waitingGroupsOf } from '../../central/now/waitingGroupsOf';
 import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
 import { useSessionWorkModel } from '../../central/useSessionWorkModel';
 
-type LeadChange = {
-  readonly hasLead: boolean;
-};
-
 type Props = {
   readonly session: Session;
-  readonly onLeadChange: (change: LeadChange) => void;
 };
 
 type ChipParams = {
@@ -59,7 +57,7 @@ const chipOf = ({ branchLabelOf, mountId }: ChipParams) => {
   return label === null ? null : <BranchChip label={label} />;
 };
 
-export const CentralColumn = ({ session, onLeadChange }: Props) => {
+export const CentralColumn = ({ session }: Props) => {
   const sessionId = session.id;
   const isArchived = session.archivedAt != null;
   const model = useSessionWorkModel({ session });
@@ -96,34 +94,31 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     [branchNameOf],
   );
   const stopRowFor = useRebaseStopRows({ sessionId });
-  const hasLead = !isArchived && nextCards.length > 0;
+  const waiting = useMemo(() => waitingGroupsOf({ groups }), [groups]);
   const shown = overviewCardsOf({
     cards: nextCards,
-    runningCount: groups.filter((group) => group.state !== 'stuck').length,
-    stuckCount: groups.filter((group) => group.state === 'stuck').length,
+    waitingCount: waiting.length,
+    runningCount: groups.filter((group) => liveSectionIdOf({ group }) === 'running').length,
+    stuckCount: groups.filter((group) => liveSectionIdOf({ group }) === 'stopped').length,
     branchCount: liveEntries.length,
     doneCount: summary.count,
     isArchived,
   });
-  const hasNeedsYou = shown.some((card) => card.id === 'needs-you');
-  const leadRunId = hasNeedsYou ? null : runLeadOf({ groups });
-
-  useEffect(() => {
-    onLeadChange({ hasLead });
-  }, [hasLead, onLeadChange]);
+  const hasNeedsYouRows = nextRowCountOf({ cards: nextCards, card: 'needs-you' }) > 0;
+  const leadRunId = hasNeedsYouRows ? null : runLeadOf({ groups });
 
   const cardViewOf = ({ card }: CardViewParams) => {
     switch (card.id) {
       case 'needs-you':
-      case 'next':
         return (
-          <NextRowsCard
+          <NeedsYouCard
             key={card.id}
-            sessionId={sessionId}
+            session={session}
             card={card}
-            rows={card.id}
+            waiting={waiting}
+            leadRunId={leadRunId}
             cards={nextCards}
-            canLead={card.id === 'needs-you' || (!hasNeedsYou && leadRunId === null)}
+            whereOf={whereOf}
             actionsFor={actionsFor}
             openFor={openFor}
             chipFor={({ card: row }) => chipOf({ branchLabelOf, mountId: row.mountId })}
@@ -145,7 +140,19 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
         );
       case 'branches':
         return (
-          <BranchesCard key={card.id} sessionId={sessionId} card={card} entries={liveEntries} />
+          <BranchesCard
+            key={card.id}
+            sessionId={sessionId}
+            card={card}
+            entries={liveEntries}
+            cards={nextCards}
+            canLead={!hasNeedsYouRows && leadRunId === null}
+            actionsFor={actionsFor}
+            openFor={openFor}
+            chipFor={({ card: row }) => chipOf({ branchLabelOf, mountId: row.mountId })}
+            branchFor={branchFor}
+            stopRowFor={stopRowFor}
+          />
         );
       case 'done':
         return (
@@ -167,10 +174,18 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
 
   return (
     <div data-central-column className={PANE_RHYTHM.groups}>
-      {isArchived ? null : (
-        <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
-      )}
-      {shown.map((card) => cardViewOf({ card }))}
+      {shown.map((card) => (
+        <Fragment key={card.id}>
+          {card.id === 'needs-you' ? (
+            <HeightMotion>{cardViewOf({ card })}</HeightMotion>
+          ) : (
+            cardViewOf({ card })
+          )}
+          {card.id === 'needs-you' ? (
+            <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
+          ) : null}
+        </Fragment>
+      ))}
     </div>
   );
 };

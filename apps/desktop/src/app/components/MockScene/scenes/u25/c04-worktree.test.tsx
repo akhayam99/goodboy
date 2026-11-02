@@ -17,7 +17,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { sectionNames } from '../../../../../test/branchRail';
+import { stripNames, stripTab } from '../../../../../test/branchTabStrip';
 import { MOCK_SCENES } from '../..';
 import { U25_C04_WORKTREE_SCENES } from './c04-worktree';
 
@@ -92,20 +92,20 @@ describe('the c04 worktree level scenes', () => {
 
     expect(screen.getByRole('list', { name: 'payments-api worktrees' })).toBeDefined();
     const ledger = within(screen.getByRole('list', { name: 'ledger-core worktrees' }));
-    expect(ledger.getByRole('button', { name: /#77/ }).textContent).toContain('Failing');
+    expect(ledger.getByRole('button', { name: /#77/ }).textContent).toContain('Checks failing');
     const notify = document.querySelector<HTMLElement>('[data-card-project="notify-relay"]');
     expect(notify?.querySelector('[data-finished-fold]')?.textContent).toBe('1 finished');
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
-  it('c04-worktree-pr-behind shows the current branch, its status line with Rebase and the property block', async () => {
+  it('c04-worktree-pr-behind shows the current branch, the property block, no rail status line', async () => {
     await mount('c04-worktree-pr-behind');
 
     const level = within(worktreeLayer());
     expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
-    expect(level.getByRole('status').textContent).toContain('6 behind main');
-    expect(level.getByRole('button', { name: /^Rebase on main/ })).toBeDefined();
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
+    expect(level.queryByRole('status')).toBeNull();
+    expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
+    expect(stripNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('group', { name: 'Status' }).textContent).toContain('6 behind main');
   });
@@ -113,25 +113,21 @@ describe('the c04 worktree level scenes', () => {
   it('c04-worktree-pr-draft reads Draft in the entry and the State property', async () => {
     await mount('c04-worktree-pr-draft');
 
-    expect(
-      within(worktreeLayer()).getByRole('button', { name: 'Pull request, Draft' }),
-    ).toBeDefined();
+    expect(stripTab({ name: /^Pull request/ }).textContent).toContain('Draft');
     expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
   });
 
   it('c04-worktree-no-pr leaves the entry slot empty and offers the create form', async () => {
     await mount('c04-worktree-no-pr');
 
-    expect(within(worktreeLayer()).getByRole('button', { name: 'Pull request' })).toBeDefined();
+    expect(stripTab({ name: /^Pull request/ }).textContent).toBe('Pull request');
     expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
   });
 
   it('c04-worktree-files selects Files and docks the file list on the right of the diff', async () => {
     await mount('c04-worktree-files');
 
-    const files = within(worktreeLayer()).getByRole('button', { name: /^Files/ });
-    expect(files.getAttribute('aria-current')).toBe('page');
-    expect(files.hasAttribute('aria-expanded')).toBe(false);
+    expect(stripTab({ name: /^Files/ }).getAttribute('aria-selected')).toBe('true');
     expect(within(worktreeLayer()).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     const rail = screen.getByRole('complementary', { name: 'Files' });
     expect(rail.getAttribute('data-file-rail')).toBe('docked');
@@ -146,7 +142,8 @@ describe('the c04 worktree level scenes', () => {
     if (toolbar === null) {
       throw new Error('the folded scene draws no diff toolbar');
     }
-    expect(within(toolbar).getByRole('button', { name: /^Files$/ })).toBeDefined();
+    expect(within(toolbar).getAllByRole('button')[0]?.textContent).toBe('Files6');
+    expect(screen.queryByText('Split needs a wider window')).toBeNull();
   });
 
   it('c04-worktree-files-narrow opens the file list over the diff of a narrow page', async () => {
@@ -161,26 +158,25 @@ describe('the c04 worktree level scenes', () => {
 
   it('c04-worktree-comments and c04-worktree-checks select their entry', async () => {
     await mount('c04-worktree-comments');
-    const comments = within(worktreeLayer()).getByRole('button', { name: /^Comments/ });
-    expect(comments.getAttribute('aria-current')).toBe('page');
+    const comments = stripTab({ name: /^Comments/ });
+    expect(comments.getAttribute('aria-selected')).toBe('true');
     expect(comments.textContent).toBe('Comments');
     expect(screen.queryByRole('tablist', { name: 'Comment source' })).toBeNull();
     cleanup();
 
     await mount('c04-worktree-checks');
-    expect(
-      within(worktreeLayer())
-        .getByRole('button', { name: /^Checks/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(stripTab({ name: /^Checks/ }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('c04-worktree-rebasing says the rebase on the status line with Abort', async () => {
+  it('c04-worktree-rebasing says the stopped rebase in one pill', async () => {
     await mount('c04-worktree-rebasing');
 
-    const line = within(worktreeLayer()).getByRole('status');
-    expect(line.textContent).toContain('Rebasing · 1 conflict');
-    expect(within(worktreeLayer()).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
+    const level = within(worktreeLayer());
+    expect(level.queryByRole('status')).toBeNull();
+    expect(level.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
+    expect(document.querySelector('[data-chip-kind="conflict"]')?.textContent).toBe(
+      'Rebase stopped',
+    );
   });
 
   it('c04-worktree-menu opens the worktree menu', async () => {

@@ -10,7 +10,7 @@ Begin with an empty folder and no repository. **Start from scratch**, inside **N
 
 Start in a plain code folder and add git when you want it. When you pick a folder, Goodboy asks whether it is a **Code project** or **Documents**, preselected from what it holds, and you can change it later in **Settings › Folders**. A code folder can be tracked with git right at Create. **Track with git** in **Settings › Folders** shows the first commit before it happens: what goes in, dependency and build folders left out until you tick them back in, and files that look like secrets, which always stay out and go to `.gitignore`. Nothing leaves your Mac until **Publish to GitHub**. A repository with no commit yet holds sessions back, because a session branches from the latest commit: the empty board says so and its one action, **Make the first commit**, opens the same review in place and reads the repository again once it is made. A plain folder with an empty repository is still edited in place until its first commit. Git you set up outside the app is noticed when the window comes back: a code folder moves to branches between turns and offers **Keep editing in place**, and a documents folder asks first.
 
-A plain folder is edited in place by one session at a time, and the next one waits its turn; reading is never blocked. **Plain folders** in **Settings › Folders** lists each one with its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder. What each turn changed is under **Changes** in the session rail, and it stays there when you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
+A plain folder is edited in place by one session at a time, and the next one waits its turn; reading is never blocked. Each plain folder row in **Settings › Projects** opens to its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder. What each turn changed is under **Changes** in the session rail, and it stays there when you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
 
 ### Workspace with several folders
 
@@ -140,8 +140,14 @@ Rows rest quiet. **Stop** and the **⋯** button live in one fixed cell that fil
 
 Set up a new workspace by copying another one. **Copy from…** in a settings page menu takes that page's values from another workspace, and **Copy all pages from…** takes them all. You see what changes before anything is saved, and folders and accounts are never copied.
 
+**Opening another workspace**
+
+Click a workspace and the top bar names it at once, with a soft pulse, while the board shows its loading state. The old workspace stays whole until the new one has loaded. If it cannot open, the top bar keeps the old name and says "Couldn't open Northwind." with a **Retry** button.
+
 ## Under the hood
 
 This part is for contributors and agents who change the feature.
+
+- Switch chip: `WorkspaceIdentityRow` reads `switchingToWorkspaceId` and `workspaceSwitchError` through `useWorkspaceSwitchState`; **Retry** calls `setCurrentWorkspace` with the failed id, and `StageBoard` draws its skeleton while a switch is set.
 
 - Attention count of an open workspace: the window that shows it sends its count to the other windows on `goodboy:attention`.

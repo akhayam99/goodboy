@@ -47,6 +47,7 @@ export const CustomAnswerField = ({
       selected={open}
       mode={mode}
       dimmed={dimmed}
+      isFlat
       disabled={disabled}
       onToggle={onToggle}
     >

@@ -127,12 +127,12 @@ describe('the Done lane menu', () => {
     expect(bulkArchiveTask).toHaveBeenCalledWith([OLD.id, OLDER.id]);
   });
 
-  it('says so and disables the older item when nothing in Done is older', async () => {
+  it('says so in its description and disables the older item when nothing in Done is older', async () => {
     await open({ sessions: [FRESH] });
 
     const item = screen.getByRole('menuitem', { name: /Archive done older than 7 days/ });
     expect(item.getAttribute('aria-disabled')).toBe('true');
-    screen.getByText('Nothing in Done is older than 7 days.');
+    expect(item.getAttribute('aria-description')).toBe('Nothing in Done is older than 7 days.');
   });
 
   it('keeps the sessions that failed in Done and says how many', async () => {

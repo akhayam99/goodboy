@@ -103,7 +103,7 @@ type CardParams = {
 const cardOf = ({ name }: CardParams) => screen.getByRole('region', { name });
 
 const runRow = ({ title }: { readonly title: string }) =>
-  within(cardOf({ name: 'Running' })).getByRole('region', { name: `Workflow: ${title}` });
+  screen.getByRole('region', { name: `Workflow: ${title}` });
 
 const SAMPLE_ROLES = ['custom', 'implementer', 'reviewer', 'scout', 'tester', 'planner'] as const;
 const SAMPLE_MINUTES = [6, 8, 10, 12, 14, 8, 10, 12, 9] as const;

@@ -23,7 +23,7 @@ what each provider needs and how to connect it, then how it works under the hood
 Every provider lives in the same place:
 
 1. Open **Settings** (`⌘,` on macOS)
-2. Pick the provider under **Providers and models**
+2. Pick the provider under **Providers**
 
 The card shows whether the provider is installed, which account is signed in, and
 its **API keys**. Goodboy runs the provider's own sign-in, so your credentials never
@@ -167,7 +167,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 
 ## Defaults and task models
 
-Go to **Settings** → **Providers and models** → **Models** to choose what a workspace
+Go to **Settings** → **Providers** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
 - **When a provider is out**: the workspace's provider policy, summed up on the row
@@ -330,7 +330,7 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 ## The provider page
 
-Each provider page in **Settings > Providers and models** has four groups, in the
+Each provider page in **Settings > Providers** has four groups, in the
 same order for every provider: **Usage**, **Models in the picker**,
 **Permissions** and **Account**. The header carries the plan (`Team plan`), the
 Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and
@@ -442,7 +442,7 @@ pays for every turn.
   Settings, Open with, when it can take a command: iTerm does, Warp and Ghostty
   do not) runs the same command in your own terminal, and the failure hint shows
   it with **Copy command** at once. Goodboy notices when it finishes
-- **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
+- **How close am I to a limit?** Each Usage chip in the top bar stacks two bars:
   the 5-hour window above, the week below. A bar turns amber from 80%, red and
   full when the window is used up, and fades when the figures are old; the chip
   shows no number. Hover one for every window with its percentage and reset,

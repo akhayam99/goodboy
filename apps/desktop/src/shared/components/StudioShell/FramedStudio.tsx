@@ -1,5 +1,4 @@
 import { useLayoutEffect } from 'react';
-import { closeLabelOf } from './closeLabelOf';
 import type { StudioFrameHandle } from './studioFrameContext';
 import type { StudioShellProps } from './types';
 
@@ -14,7 +13,6 @@ export const FramedStudio = ({
   glyph,
   title,
   subtitle,
-  closeLabel,
   headerAccessory,
   isEscapeEnabled = true,
   children,
@@ -28,11 +26,10 @@ export const FramedStudio = ({
       ...(glyph !== undefined && { glyph }),
       title,
       ...(subtitle !== undefined && { subtitle }),
-      closeLabel: closeLabelOf({ title, closeLabel }),
       ...(headerAccessory !== undefined && { accessory: headerAccessory }),
       isEscapeEnabled,
     });
-  }, [setChrome, icon, tone, glyph, title, subtitle, closeLabel, headerAccessory, isEscapeEnabled]);
+  }, [setChrome, icon, tone, glyph, title, subtitle, headerAccessory, isEscapeEnabled]);
 
   useLayoutEffect(() => () => setChrome(null), [setChrome]);
 

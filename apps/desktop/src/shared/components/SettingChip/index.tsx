@@ -1,6 +1,15 @@
 import type { ReactNode } from 'react';
-import { AnchoredPopover, Button, Tooltip, cn, type DropdownController } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  Tooltip,
+  cn,
+  tintClasses,
+  type DropdownController,
+} from '@goodboy/ui';
 import type { SettingWords } from './settingWords';
+
+const CHANGED_TINT = tintClasses('info');
 
 type Props = {
   readonly dropdown: DropdownController;
@@ -10,6 +19,7 @@ type Props = {
   readonly error: string | null;
   readonly title?: string;
   readonly tooltip?: string;
+  readonly onChangeDefault?: () => void;
   readonly children: ReactNode;
 };
 
@@ -21,9 +31,10 @@ export const SettingChip = ({
   error,
   title = label,
   tooltip,
+  onChangeDefault,
   children,
 }: Props) => {
-  const trigger = (
+  const chip = (
     <Button
       size="xs"
       variant="setting"
@@ -34,15 +45,28 @@ export const SettingChip = ({
         .join(', ')}
       data-setting-chip={label}
       onClick={dropdown.toggle}
-      className={cn('max-w-full', dropdown.open && 'border-border bg-selected')}
-    >
-      <span className="shrink-0 text-faint-foreground">{label}</span>
-      <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
-      {words.source === '' ? null : (
-        <span className="shrink-0 text-faint-foreground">{words.source}</span>
+      data-setting-changed={words.isChanged === true ? '' : undefined}
+      className={cn(
+        'max-w-full',
+        words.isChanged === true && `${CHANGED_TINT.bgSoft} ${CHANGED_TINT.borderSoft}`,
+        dropdown.open && 'border-border bg-selected',
       )}
+    >
+      <span className="shrink-0 text-faint-foreground">{label}:</span>
+      <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
     </Button>
   );
+  const trigger =
+    words.spentText === undefined ? (
+      chip
+    ) : (
+      <span className="inline-flex min-w-0 items-center gap-2">
+        {chip}
+        <span data-setting-spent="" className="shrink-0 text-meta text-faint-foreground">
+          {words.spentText}
+        </span>
+      </span>
+    );
   return (
     <AnchoredPopover
       dropdown={dropdown}
@@ -62,9 +86,16 @@ export const SettingChip = ({
     >
       <div className="flex min-w-0 items-baseline justify-between gap-2">
         <span className="text-row text-foreground">{title}</span>
-        {words.source === '' ? null : (
-          <span className="text-meta text-faint-foreground">{words.source}</span>
-        )}
+        <span className="flex shrink-0 items-baseline gap-2">
+          {words.source === '' ? null : (
+            <span className="text-meta text-faint-foreground">{words.source}</span>
+          )}
+          {onChangeDefault === undefined ? null : (
+            <Button variant="ghost" size="xs" onClick={onChangeDefault}>
+              Change default
+            </Button>
+          )}
+        </span>
       </div>
       <p className="text-meta text-muted-foreground">{help}</p>
       {children}

@@ -122,7 +122,7 @@ describe('Context drawer change marks', () => {
     expect(dot()).toBeNull();
     const drawer = screen.getByRole('region', { name: 'Context' });
     expect(within(drawer).queryByRole('tab', { name: /Decisions/ })).toBeNull();
-    expect(within(drawer).getByRole('region', { name: 'Decisions' })).toBeDefined();
+    expect(within(drawer).getByRole('region', { name: 'Decision records' })).toBeDefined();
     const changed = within(drawer).getByRole('region', { name: 'Changed since you last looked' });
     const labels = within(changed)
       .getAllByRole('button', { name: /: decision \d+$/ })

@@ -64,7 +64,7 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
   'features/context/components/QuestionsTab/QuestionCard/QuestionPager.tsx':
     'a pager between questions',
   'features/integrations/slack/SlackConnectGuide.tsx': 'the previous step of a setup guide',
-  'features/settings/components/SettingsStudio/SettingsColumnNav.tsx':
+  'shared/components/StudioShell/StudioBackButton.tsx':
     'Back to app is the studio Close, not an up',
   'features/session/components/SessionWorkspace/parts/AgentOverlay.tsx':
     'the empty state of a gone agent; the trail above it is the way up',
@@ -229,7 +229,7 @@ describe('every place has a way up', () => {
 
     render(
       <ToastProvider>
-        <SessionWorkspace session={FLOW_SESSION} isActive />
+        <SessionWorkspace session={FLOW_SESSION} />
       </ToastProvider>,
     );
 

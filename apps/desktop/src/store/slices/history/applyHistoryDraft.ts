@@ -29,6 +29,7 @@ import type {
   HistoryStop,
   SetFn,
 } from './types';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 type PlanOfParams = HistoryMountInput & {
   readonly get: GetFn;
@@ -276,7 +277,7 @@ export const applyHistoryDraft = (set: SetFn, get: GetFn) => {
       byAgent: false,
       identity,
       isTreeEqual: trial.isTreeEqual,
-      summary: `${applied.lines.length} ${applied.lines.length === 1 ? 'change' : 'changes'} · ${commitCount({ count: applied.before })} became ${applied.after}`,
+      summary: `${countNoun({ count: applied.lines.length, one: 'change' })} · ${commitCount({ count: applied.before })} became ${applied.after}`,
     });
     if (result === 'stopped' && get().historyRuns[mountId]?.backupRef === null) {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { applied: null } });

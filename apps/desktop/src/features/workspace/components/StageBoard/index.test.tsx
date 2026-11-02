@@ -41,9 +41,8 @@ vi.mock('../../../../store', () => ({
     quietReasons: [],
   }),
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
-  useSessionListModel: () => ({ groups: [], stageBySession: {}, hiddenByFilters: 0 }),
+  useSelectedProjectIds: () => [],
   useSessionViewPrefs: () => ({
-    pageView: 'board',
     sort: 'needsYou',
     group: 'none',
     isArchivedShown: false,
@@ -72,6 +71,10 @@ vi.mock('../../../../shared/components/NewWorkspaceForm', () => ({
       {mode === 'add' ? state.workspaces.find((entry) => entry.id === workspaceId)?.name : null}
     </div>
   ),
+}));
+
+vi.mock('../../../onboarding/SetupCard', () => ({
+  SetupCard: () => <div data-testid="setup-card" />,
 }));
 
 vi.mock('../SessionActivityBar/SessionFilterPopover', () => ({
@@ -214,6 +217,7 @@ const projectOf = ({
 beforeEach(() => {
   localStorage.clear();
   state.boardReady = true;
+  Object.assign(state, { switchingToWorkspaceId: null });
   state.archivedSessions = { [wsId]: [] };
   state.loadArchivedSessions = vi.fn();
   state.workspaces = [workspace];
@@ -232,12 +236,33 @@ describe('StageBoard loading gate', () => {
     expect(screen.queryByText('No sessions yet')).toBeNull();
   });
 
+  it('shows the skeleton board while a workspace switch is loading', () => {
+    Object.assign(state, { switchingToWorkspaceId: 'ws-northwind' });
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    screen.getByLabelText('Loading board');
+    expect(screen.queryByTestId('stage-column')).toBeNull();
+  });
+
   it('renders the empty state once ready with no sessions', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getByText('No sessions yet')).toBeDefined();
     expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+  });
+
+  it('draws the setup card on an empty board only, not on a board with sessions or while loading', () => {
+    const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByTestId('setup-card')).not.toBeNull();
+
+    rerender(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    expect(screen.queryByTestId('setup-card')).toBeNull();
+
+    rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
+
+    state.boardReady = false;
+    rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByTestId('setup-card')).toBeNull();
   });
 
   it('renders stage columns once ready with sessions', () => {
@@ -554,9 +579,14 @@ describe('StageBoard lanes', () => {
     expect(columnNames()).toContain('archived');
   });
 
-  it('asks for the archived list on every open', () => {
+  it('asks for the archived list on open and again, forced, when the window regains focus', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
-    expect(state.loadArchivedSessions).toHaveBeenCalledWith(wsId);
+    expect(state.loadArchivedSessions).toHaveBeenCalledWith({ workspaceId: wsId });
+    fireEvent.focus(window);
+    expect(state.loadArchivedSessions).toHaveBeenLastCalledWith({
+      workspaceId: wsId,
+      isForced: true,
+    });
   });
 });

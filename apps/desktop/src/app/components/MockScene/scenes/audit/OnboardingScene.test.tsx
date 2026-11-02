@@ -120,10 +120,10 @@ describe('onboarding scene', () => {
     ).toEqual(['linear']);
   });
 
-  it('falls back to Welcome on an old numbered step', async () => {
+  it('falls back to Agents on an old numbered step', async () => {
     await mount({ query: '&step=1' });
 
-    await waitFor(() => expect(shownStep()).toBe('welcome'));
+    await waitFor(() => expect(shownStep()).toBe('agents'));
   });
 
   it('walks from the folder pick to a running first session with no native call', async () => {
@@ -133,7 +133,7 @@ describe('onboarding scene', () => {
     fireEvent.click(await enabledButton({ name: /Choose folder/ }));
     fireEvent.click(await enabledButton({ name: /Create workspace/ }));
 
-    await waitFor(() => expect(shownStep()).toBe('tools'));
+    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
     expect(workspaceNames()).toEqual(['Harborline']);
     const state = useAppStore.getState();
     expect(
@@ -141,9 +141,6 @@ describe('onboarding scene', () => {
         .filter((project) => project.workspaceId === state.currentWorkspaceId)
         .map((project) => project.name),
     ).toEqual(['payments-api', 'ledger-core', 'notify-relay']);
-
-    fireEvent.click(await enabledButton({ name: /Continue/ }));
-    await waitFor(() => expect(shownStep()).toBe('first-session'), { timeout: 5000 });
 
     fireEvent.click(await enabledButton({ name: 'Find one small bug' }));
     const demoAnchor = '[data-step="first-session"] [data-demo-anchor="setup-first-start"]';

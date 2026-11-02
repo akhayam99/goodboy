@@ -1,3 +1,4 @@
+import { isNullableString } from '../../shared/utils/isNullableString';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import {
@@ -48,17 +49,14 @@ export type CliTooOldPayload = {
   readonly detail: string;
 };
 
-const isNullableString = (value: unknown): value is string | null =>
-  value === null || typeof value === 'string';
-
 const isCliTooOldPayload = (value: unknown): value is CliTooOldPayload =>
   typeof value === 'object' &&
   value !== null &&
   PROVIDER_IDS.some((providerId) => providerId === Reflect.get(value, 'providerId')) &&
-  isNullableString(Reflect.get(value, 'modelKey')) &&
+  isNullableString({ value: Reflect.get(value, 'modelKey') }) &&
   typeof Reflect.get(value, 'installedVersion') === 'string' &&
   typeof Reflect.get(value, 'requiredVersion') === 'string' &&
-  isNullableString(Reflect.get(value, 'fallbackModelKey')) &&
+  isNullableString({ value: Reflect.get(value, 'fallbackModelKey') }) &&
   typeof Reflect.get(value, 'detail') === 'string';
 
 export const encodeCliTooOldMessage = (payload: CliTooOldPayload): string =>

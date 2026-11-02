@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import type { AgentId, IsoDateTime } from '@goodboy/types';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { formatDuration } from '../../../shared/utils/time/formatDuration';
 import { agentActiveClock } from '../../workTreeModel/agentWorkTime';
 import { WorkTimeContext } from '../../workTreeModel/workTimeSource';
@@ -27,8 +28,12 @@ export const useTailClock = ({
       return;
     }
     setNow(Date.now());
-    const handle = window.setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => window.clearInterval(handle);
+    return startPoll({
+      run: () => setNow(Date.now()),
+      everyMs: TICK_MS,
+      gate: 'visible',
+      isImmediate: false,
+    });
   }, [isWallClock, startedAt]);
   if (!isTicking) {
     return null;

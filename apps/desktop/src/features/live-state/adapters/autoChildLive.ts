@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
 import type { Agent, TurnState } from '@goodboy/types';
 import { TAIL_ACTION } from '../tailAction';
@@ -30,7 +31,7 @@ const QUEUED: TailFacts = {
 
 const WAITS_FOR_OK: TailFacts = {
   state: 'needsYou',
-  phrase: 'Waiting for your OK',
+  phrase: NAMES.needsYou,
   startedAt: null,
   actions: [TAIL_ACTION.confirmDelegation, TAIL_ACTION.declineDelegation],
 };

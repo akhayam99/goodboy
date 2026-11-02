@@ -40,7 +40,7 @@ describe('runHistoryState', () => {
       'Stopped',
     );
     expect(runHistoryState({ run: runOf({ startedSteps: 1, finishedSteps: 1 }) }).label).toBe(
-      'Waiting for you',
+      'Needs you',
     );
     expect(runHistoryState({ run: runOf({}) }).label).toBe('Not started');
   });

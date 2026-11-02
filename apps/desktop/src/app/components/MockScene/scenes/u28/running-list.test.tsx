@@ -86,18 +86,15 @@ describe('the Running list scenes', () => {
     }
   });
 
-  it('groups the rows by what you do next, in that order', async () => {
+  it('groups the Running rows into Running then Stopped, and leaves waiting work to Needs you', async () => {
     await show({ name: KEYS[0] ?? '' });
 
     const running = screen.getByRole('region', { name: 'Running' });
     const ids = [...running.querySelectorAll('[data-live-section]')].map((node) =>
       node.getAttribute('data-live-section'),
     );
-    expect(ids).toEqual(['needs-you', 'running', 'stopped']);
-    expect(within(running).getByRole('group', { name: 'Waiting for you' })).toBe(
-      sectionOf({ id: 'needs-you' }),
-    );
-    expect(within(running).queryByRole('group', { name: 'Needs you' })).toBeNull();
+    expect(ids).toEqual(['running', 'stopped']);
+    expect(within(running).queryByRole('group', { name: 'Waiting for you' })).toBeNull();
   });
 
   it('keeps a waiting or stopped item out of Running', async () => {
@@ -107,8 +104,9 @@ describe('the Running list scenes', () => {
     expect(running.queryByText('Fix the copy')).toBeNull();
     expect(running.queryByText('History rewriter')).toBeNull();
     expect(running.queryByText('Retry the ledger-core import')).toBeNull();
-    within(sectionOf({ id: 'needs-you' })).getByText('Fix the copy');
-    within(sectionOf({ id: 'needs-you' })).getByText('History rewriter');
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    within(needsYou).getByText('Fix the copy');
+    within(needsYou).getByText('History rewriter');
     within(sectionOf({ id: 'stopped' })).getByText('Retry the ledger-core import');
   });
 

@@ -10,9 +10,6 @@ vi.mock('@goodboy/db', async () => (await import('../../store/storyHarness')).db
 vi.mock('../../features/permissions/permissions', async () =>
   (await import('../../store/storyHarness')).permissionsModuleMock(),
 );
-vi.mock('../../features/skills/skills', async () =>
-  (await import('../../store/storyHarness')).skillsModuleMock(),
-);
 vi.mock('../../shared/lib/editor', () => ({
   openInEditor: vi.fn(),
   openUrl: vi.fn(),
@@ -41,11 +38,9 @@ vi.mock('../../features/session/hooks/useSessionArchive', () => ({
 }));
 
 import { DeleteSessionConfirm } from '../../features/session/components/DeleteSessionConfirm';
-import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions/QuickActionsPopover';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { SessionOverviewLoading } from '../../features/session/components/SessionWorkspace/parts/SessionOverviewLoading';
-import { ToastProvider } from '../../shared/components/Toast';
 
 let useAppStore: StoryStore;
 
@@ -63,26 +58,16 @@ const WS_ID = 'ws-test' as WorkspaceId;
 const SESSION_ID = 'sess-1' as SessionId;
 
 describe('empty states', () => {
-  it('SkillsPanel: no skills', () => {
-    render(
-      <ToastProvider>
-        <SkillsPanel workspaceId={WS_ID} />
-      </ToastProvider>,
-    );
-    expect(screen.getByText('No skills yet')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New skill' })).toBeDefined();
-  });
-
-  it('QuickActionsPopover: no skills / empty items', () => {
+  it('QuickActionsPopover: empty items', () => {
     render(
       <QuickActionsPopover
         items={[]}
-        emptyHint="no skills. create one in settings"
+        emptyHint="no workflows yet. create one in workspace settings"
         onSelect={vi.fn()}
         onDismiss={vi.fn()}
       />,
     );
-    expect(screen.getByText('no skills. create one in settings')).toBeDefined();
+    expect(screen.getByText('no workflows yet. create one in workspace settings')).toBeDefined();
     expect(screen.queryAllByRole('option')).toEqual([]);
   });
 

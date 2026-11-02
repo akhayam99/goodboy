@@ -1,13 +1,9 @@
-import type {
-  BitbucketIntegrationBinding,
-  GitlabIntegrationBinding,
-  IntegrationBinding,
-  ProjectId,
-  SessionId,
-} from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { ReviewSourceEntry } from '../review-source/types';
 import { sessionById } from '../sessions/sessionIndex';
+import { viewerBindingOf } from './viewerBindingOf';
+import { viewerNameOf } from './viewerNameOf';
 
 type Params = {
   readonly state: Pick<
@@ -18,30 +14,12 @@ type Params = {
   readonly entry: Pick<ReviewSourceEntry, 'kind' | 'projectId' | 'url'> | null;
 };
 
-type BindingsParams<Binding extends IntegrationBinding> = {
-  readonly bindings: ReadonlyArray<Binding>;
-  readonly projectId: ProjectId | null;
-};
-
 type ValueParams = {
   readonly value: string;
 };
 
-const hostnameOf = ({ value }: ValueParams): string => {
-  const withoutScheme = value.trim().split('://').pop() ?? '';
-  return (withoutScheme.split('/')[0] ?? '').toLowerCase();
-};
-
 const canonicalIdOf = ({ value }: ValueParams): ReadonlySet<string> | null =>
   value === '' ? null : new Set([value.toLowerCase()]);
-
-const mostSpecificOf = <Binding extends IntegrationBinding>({
-  bindings,
-  projectId,
-}: BindingsParams<Binding>): Binding | null =>
-  bindings.find((binding) => projectId !== null && binding.projectId === projectId) ??
-  bindings.find((binding) => binding.projectId === null) ??
-  null;
 
 export const viewerIdentityOf = ({
   state,
@@ -60,27 +38,6 @@ export const viewerIdentityOf = ({
       (workspaceStatus?.scoped === true ? undefined : state.githubStatus?.user);
     return canonicalIdOf({ value: user ?? '' });
   }
-  const bindings = state.workspaceIntegrations?.[session.workspaceId] ?? [];
-  const projectId = entry?.projectId ?? null;
-  if (kind === 'gitlab') {
-    const host = entry?.url == null ? '' : hostnameOf({ value: entry.url });
-    if (host === '') {
-      return null;
-    }
-    const binding = mostSpecificOf({
-      bindings: bindings.filter(
-        (candidate): candidate is GitlabIntegrationBinding =>
-          candidate.provider === 'gitlab' && hostnameOf({ value: candidate.config.host }) === host,
-      ),
-      projectId,
-    });
-    return binding === null ? null : canonicalIdOf({ value: binding.config.username ?? '' });
-  }
-  const binding = mostSpecificOf({
-    bindings: bindings.filter(
-      (candidate): candidate is BitbucketIntegrationBinding => candidate.provider === 'bitbucket',
-    ),
-    projectId,
-  });
-  return binding === null ? null : canonicalIdOf({ value: binding.config.nickname ?? '' });
+  const binding = viewerBindingOf({ state, sessionId, entry });
+  return binding === null ? null : canonicalIdOf({ value: viewerNameOf({ binding }) });
 };

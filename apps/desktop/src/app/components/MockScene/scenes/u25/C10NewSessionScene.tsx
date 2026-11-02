@@ -158,7 +158,9 @@ export const C10NewSessionScene = ({ state }: Props) => {
         window.clearInterval(timer);
         return;
       }
-      const trigger = document.querySelector<HTMLElement>('[role="combobox"][aria-label="Where"]');
+      const trigger = document.querySelector<HTMLElement>(
+        '[role="combobox"][aria-label="Projects"]',
+      );
       if (trigger === null) {
         return;
       }

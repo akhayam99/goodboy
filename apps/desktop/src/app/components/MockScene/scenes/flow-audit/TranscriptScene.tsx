@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
 import { TranscriptFeed } from './TranscriptFeed';
 import { seedChatSurfaces } from './seeds';
 import { useAutoExpand } from './useAutoExpand';
@@ -19,10 +19,10 @@ export const TranscriptScene = () => {
   }
 
   return (
-    <main className="h-screen overflow-auto bg-background text-foreground">
-      <div className={PANE_RHYTHM.body}>
+    <main className="h-screen bg-background text-foreground">
+      <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body}>
         <TranscriptFeed />
-      </div>
+      </ScrollFade>
     </main>
   );
 };

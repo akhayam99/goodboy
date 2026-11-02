@@ -121,9 +121,7 @@ describe('the policy and failure scenes', () => {
     fireEvent.click(within(line).getByRole('button', { name: /^Models:/ }));
     const popover = screen.getByRole('dialog', { name: 'Models' });
     expect(within(popover).getByTestId('rules-policy-summary')).toBeDefined();
-    expect(
-      within(popover).getByRole('button', { name: 'Open Providers and models' }),
-    ).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Open Providers' })).toBeDefined();
     expect(within(popover).queryAllByRole('switch')).toEqual([]);
   });
 
@@ -213,7 +211,7 @@ describe('the policy and failure scenes', () => {
     );
     await settle();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Folders' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeDefined();
     expect(screen.getAllByText('Harborline')).toHaveLength(1);
     const page = document.querySelector('[data-settings-detail]');
     expect(page).not.toBeNull();

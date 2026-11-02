@@ -11,6 +11,7 @@ import { invokeAgentList, invokeWorkflowsForSession } from '../../../features/wo
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
+import { touchArchivedCache } from '../summaries/archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 
 export const unarchiveTask = (set: SetFn, get: GetFn) => {
@@ -24,6 +25,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
     const { archivedAt: _drop, ...restored } = prev;
     const restoredSession = restored as Session;
 
+    touchArchivedCache({ workspaceId });
     set((state) => {
       const cached = state.archivedSessions[workspaceId];
       const nextArchived = cached
@@ -39,6 +41,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
     try {
       await unarchiveSessionInDb(tauriDatabase, sessionId);
     } catch (err) {
+      touchArchivedCache({ workspaceId });
       set((state) => {
         const cached = state.archivedSessions[workspaceId];
         const nextArchived = cached

@@ -120,9 +120,7 @@ describe('the u26 rebase scenes', () => {
         .querySelector('[data-rebase-conflict-count]')
         ?.getAttribute('data-rebase-conflict-count'),
     ).toBe('2');
-    const rail = document.querySelector('[data-rebase-conflict]');
-    expect(rail?.textContent).toContain('Rebase on main stopped: 2 files conflict');
-    expect(rail?.querySelector('button')?.textContent).toBe('Open rebase');
+    expect(document.querySelector('[data-rebase-conflict]')).toBeNull();
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
@@ -201,7 +199,7 @@ describe('the u26 rebase scenes', () => {
     expect(chipOf({ name: 'retry-credit-notes' })).toBeNull();
     expect(chipOf({ name: 'webhook-backoff' })).toBe('Rebasing');
     expect(chipOf({ name: 'retry-copy' })).toBe('Queued');
-    expect(chipOf({ name: 'delivery-metrics' })).toBe('Conflict');
+    expect(chipOf({ name: 'delivery-metrics' })).toBe('Rebase stopped');
     expect(chipOf({ name: 'export-batch' })).toBe('Queued');
     expect(chipOf({ name: 'posting-dedupe' })).toBe('Queued');
     expect(screen.getByRole('status').textContent).toBe('Rebasing 4 of 7');
@@ -227,7 +225,7 @@ describe('the u26 rebase scenes', () => {
     expect(textOf({ name: 'fix-duplicate-credit' })).toBeNull();
     expect(textOf({ name: 'webhook-backoff' })).toBe('Auto resolving');
     expect(textOf({ name: 'retry-copy' })).toBe('Rebased by Auto');
-    expect(textOf({ name: 'delivery-metrics' })).toBe('Conflict');
+    expect(textOf({ name: 'delivery-metrics' })).toBe('Rebase stopped');
     expect(textOf({ name: 'export-batch' })).toBe('Failed');
     expect(
       chipOf({ name: 'webhook-backoff' })

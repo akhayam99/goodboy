@@ -146,7 +146,10 @@ describe('Overview capabilities from the session Overview', () => {
 
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
-    const next = screen.getByRole('region', { name: 'Next' });
+    const next = present({
+      value: document.querySelector<HTMLElement>('[data-overview-card="branches"]'),
+      what: 'the Branches card',
+    });
     const row =
       Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]')).find((candidate) =>
         (candidate.textContent ?? '').includes('Remove the ledger-core worktree'),
@@ -223,7 +226,7 @@ describe('Overview capabilities from the session Overview', () => {
     );
     await advance();
 
-    screen.getByRole('region', { name: 'Unassigned notes' });
+    screen.getByRole('region', { name: 'Unassigned comments' });
   });
 
   it('leaves the detached mount out of the Ask context and the worktree list', async () => {
@@ -278,15 +281,25 @@ describe('Overview capabilities from the session Overview', () => {
     ]);
   });
 
-  it('keeps the exact ask one press away: Answer on the run row opens the question beside the page', async () => {
+  it('keeps the exact ask one press away: Answer on the Needs you card navigates to the question', async () => {
     await mountScene({ name: 'c05-overview-running' });
+    const target = useAppStore.getState().navigate;
+    const places: Array<unknown> = [];
+    act(() => {
+      useAppStore.setState({
+        navigate: (request) => {
+          places.push(request.to);
+          return target(request);
+        },
+      });
+    });
 
-    const running = screen.getByRole('region', { name: 'Running' });
-    fireEvent.click(within(running).getByRole('button', { name: 'Answer' }));
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    fireEvent.click(within(needsYou).getByRole('button', { name: 'Answer' }));
     await advance();
 
-    expect(useAppStore.getState().drawer?.kind).toBe('question');
-    expect(document.querySelector('[data-page="overview"]')).not.toBeNull();
+    expect(places).toHaveLength(1);
+    expect(places[0]).toMatchObject({ at: expect.stringMatching(/^(session|agent)$/) });
   });
 
   it('keeps the full log with its search, the session spend moved to the rail foot', async () => {

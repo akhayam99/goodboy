@@ -287,7 +287,7 @@ export const ContextDrawer = ({
 
   return (
     <DrawerFrame
-      title="Context"
+      title={NAMES.context}
       icon={CONCEPT_ICONS.context}
       iconClassName="text-muted-foreground"
       closeLabel={view === 'versions' ? 'Back to current' : 'Close'}

@@ -89,10 +89,10 @@ describe('the central column scenes', () => {
     screen.getByRole('searchbox', { name: 'Search the log' });
   });
 
-  it('draws the Running, Next and Done cards on the mid scene, the run gate on its row', async () => {
+  it('draws the Needs you, Running and Done cards on the mid scene, the run gate on its row', async () => {
     await show({ name: 'u26-central-mid-light' });
 
-    for (const name of ['Running', 'Next', 'Done']) {
+    for (const name of ['Needs you', 'Running', 'Done']) {
       screen.getByRole('region', { name });
     }
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();

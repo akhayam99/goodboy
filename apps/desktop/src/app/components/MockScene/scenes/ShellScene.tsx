@@ -292,7 +292,7 @@ export const ShellScene = ({ isRail = false }: Props) => {
       hasOwnTrail
       main={
         <div className="relative h-full w-full">
-          <SessionWorkspace session={SESSION} isActive />
+          <SessionWorkspace session={SESSION} />
         </div>
       }
     />

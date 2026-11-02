@@ -9,6 +9,7 @@ import { STUDIO_META } from './studioMeta';
 const SRC = join(__dirname, '..', '..', '..');
 const FEATURES = join(SRC, 'features');
 const WORKSPACE = 'features/session/components/SessionWorkspace/index.tsx';
+const LENS_PANE = 'features/session/components/SessionWorkspace/parts/SessionLensPane.tsx';
 
 const WIDTH_ALLOWLIST = new Set(['shared/components/ImageLightbox/index.tsx']);
 
@@ -185,8 +186,11 @@ const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['addWorkspace']);
 const FULL_BLEED_PLACES: ReadonlySet<string> = new Set(['studio terminal']);
 
 const SPLIT_DETAIL_FILES: Readonly<Partial<Record<StudioKind, ReadonlyArray<string>>>> = {
-  guide: ['features/settings/components/GuideStudio/index.tsx'],
-  changelog: ['features/changelog/components/ChangelogStudio/index.tsx'],
+  guide: [
+    'features/settings/components/GuideStudio/GuideTab.tsx',
+    'app/components/HelpStudio/ShortcutsTab.tsx',
+  ],
+  changelog: ['features/changelog/components/ChangelogStudio/WhatsNewTab.tsx'],
   chat: ['features/workspace-chat/components/ChatStudio.tsx'],
   inbox: ['features/inbox/components/InboxStudio/InboxStudioLayout.tsx'],
   notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
@@ -459,12 +463,17 @@ describe('content column contract', () => {
   });
 
   it('classifies every component the session workspace mounts', () => {
-    const source = read(WORKSPACE);
+    const source = [WORKSPACE, LENS_PANE].map(read).join('\n');
     const mounted = [...source.matchAll(/(?<![\w.])<([A-Z][A-Za-z]+)\b/g)]
       .map((match) => match[1] ?? '')
       .filter(
         (name) =>
           name !== '' &&
+          name !== 'Suspense' &&
+          name !== 'PaneSwap' &&
+          name !== 'SkeletonSwap' &&
+          name !== 'SessionLensPane' &&
+          name !== 'LensSkeleton' &&
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&
           name !== 'PageTrailContext' &&

@@ -1,4 +1,4 @@
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, ScrollFade } from '@goodboy/ui';
 import { useEffect, type ReactNode } from 'react';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -149,8 +149,10 @@ type FrameProps = {
 };
 
 const Frame = ({ children }: FrameProps) => (
-  <main className="h-screen overflow-auto bg-background p-8 text-foreground">
-    <div className="flex items-start gap-8">{children}</div>
+  <main className="h-screen bg-background text-foreground">
+    <ScrollFade className="h-full" viewportClassName="p-8">
+      <div className="flex items-start gap-8">{children}</div>
+    </ScrollFade>
   </main>
 );
 

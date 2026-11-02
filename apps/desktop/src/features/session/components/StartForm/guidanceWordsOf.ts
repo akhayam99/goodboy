@@ -26,6 +26,7 @@ export const guidanceWordsOf = ({ text, workspaceText, workspaceName }: Params):
   return {
     value,
     source: COPY.thisRun,
+    isChanged: true,
     chain: COPY.chainOwn({ name: workspaceName }),
   };
 };

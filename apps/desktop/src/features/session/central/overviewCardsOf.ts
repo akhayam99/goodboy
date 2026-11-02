@@ -2,7 +2,7 @@ import { NAMES } from '../../../shared/utils/names';
 import type { ActionCardModel } from './next/actionCardsOf';
 import { nextRowCountOf } from './next/nextRowCountOf';
 
-type OverviewCardId = 'needs-you' | 'running' | 'next' | 'branches' | 'done';
+type OverviewCardId = 'needs-you' | 'running' | 'branches' | 'done';
 
 export type OverviewCardModel = Readonly<{
   id: OverviewCardId;
@@ -13,13 +13,15 @@ export type OverviewCardModel = Readonly<{
 const TITLE: Readonly<Record<OverviewCardId, string>> = {
   'needs-you': NAMES.needsYou,
   running: NAMES.running,
-  next: 'Next',
   branches: NAMES.branches,
   done: NAMES.done,
 };
 
+const MIN_BRANCHES_FOR_CARD = 2;
+
 type Params = {
   readonly cards: ReadonlyArray<ActionCardModel>;
+  readonly waitingCount: number;
   readonly runningCount: number;
   readonly stuckCount: number;
   readonly branchCount: number;
@@ -29,22 +31,25 @@ type Params = {
 
 export const overviewCardsOf = ({
   cards,
+  waitingCount,
   runningCount,
   stuckCount,
   branchCount,
   doneCount,
   isArchived,
 }: Params): ReadonlyArray<OverviewCardModel> => {
-  const counts: ReadonlyArray<readonly [OverviewCardId, number]> = isArchived
-    ? [['done', doneCount]]
-    : [
-        ['needs-you', nextRowCountOf({ cards, card: 'needs-you' })],
-        ['running', runningCount],
-        ['next', nextRowCountOf({ cards, card: 'next' })],
-        ['branches', branchCount],
-        ['done', doneCount],
-      ];
-  return counts.flatMap(([id, count]) =>
-    count > 0 || (id === 'running' && stuckCount > 0) ? [{ id, title: TITLE[id], count }] : [],
+  if (isArchived) {
+    return doneCount > 0 ? [{ id: 'done', title: TITLE.done, count: doneCount }] : [];
+  }
+  const nextSteps = nextRowCountOf({ cards, card: 'branches' });
+  const hasBranchesCard = branchCount >= MIN_BRANCHES_FOR_CARD || nextSteps > 0;
+  const counts: ReadonlyArray<readonly [OverviewCardId, boolean, number]> = [
+    ['needs-you', true, waitingCount + nextRowCountOf({ cards, card: 'needs-you' })],
+    ['running', runningCount > 0 || stuckCount > 0, runningCount],
+    ['branches', hasBranchesCard, branchCount],
+    ['done', doneCount > 0, doneCount],
+  ];
+  return counts.flatMap(([id, isShown, count]) =>
+    isShown ? [{ id, title: TITLE[id], count }] : [],
   );
 };

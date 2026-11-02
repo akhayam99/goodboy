@@ -112,11 +112,12 @@ describe('ContextMenu', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('keeps a blocked row visible with its reason and never runs it', () => {
+  it('keeps a blocked row on one line, its reason a tooltip and a description, and never runs it', () => {
     const { spies, onClose } = renderMenu();
     const row = screen.getByRole('menuitem', { name: /Diff/ });
     expect(row.getAttribute('aria-disabled')).toBe('true');
-    expect(row.textContent).toContain('Add a project to this session first');
+    expect(row.textContent).not.toContain('Add a project to this session first');
+    expect(row.getAttribute('aria-description')).toBe('Add a project to this session first');
     fireEvent.click(row);
     expect(spies.blocked).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();

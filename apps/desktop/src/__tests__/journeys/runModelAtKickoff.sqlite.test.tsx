@@ -47,9 +47,6 @@ vi.mock('../../features/providers/routing', async () =>
 vi.mock('../../features/budget/budget', async () =>
   (await import('../../store/storyHarness')).budgetModuleMock(),
 );
-vi.mock('../../features/skills/skills', async () =>
-  (await import('../../store/storyHarness')).skillsModuleMock(),
-);
 vi.mock('../../features/worktree/worktree', async () =>
   (await import('../../store/storyHarness')).worktreeModuleMock(),
 );
@@ -171,7 +168,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     pickCursor();
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
     expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
@@ -186,7 +183,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
 
     pickCursor();
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
@@ -201,7 +198,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
 
     pickCursor();
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
     expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
@@ -215,7 +212,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
     expect(spawnAgent.mock.calls[0]?.[1]).not.toHaveProperty('provider');

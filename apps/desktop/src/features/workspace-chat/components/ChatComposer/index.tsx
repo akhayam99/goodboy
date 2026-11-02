@@ -1,20 +1,16 @@
 import { useState } from 'react';
 
-import { PromptField } from '../../../../shared/components/PromptField';
-import { SendStopControl } from '../../../../shared/components/SendStopControl';
-import { usePromptFiles, type PromptFileFilter } from '../../../../shared/hooks/usePromptFiles';
+import {
+  MessageComposer,
+  type MessageComposerMessage,
+} from '../../../../shared/components/MessageComposer';
 import { restoreDraftOnFailedSend } from '../../../../shared/utils/restoreDraftOnFailedSend';
 import type { WorkspaceId } from '@goodboy/types';
-import type { PendingAttachment } from '../../../attachments/pendingAttachment';
-import { CHAT_IMAGE_ACCEPT, isChatImage } from '../../chatImageKinds';
 import type { ChatRouting } from '../../../conversation/chatRouting';
 import { useChatImagesOn } from '../../hooks/useChatImagesOn';
 import { ChatRoutingPicker } from './ChatRoutingPicker';
 
-export type ChatComposerMessage = {
-  readonly text: string;
-  readonly images: ReadonlyArray<PendingAttachment>;
-};
+export type ChatComposerMessage = MessageComposerMessage;
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -28,14 +24,6 @@ type Props = {
   readonly onRouting: (routing: ChatRouting) => void;
 };
 
-const CHAT_IMAGES: PromptFileFilter = {
-  accept: CHAT_IMAGE_ACCEPT,
-  noun: 'images',
-  isAccepted: isChatImage,
-};
-
-const SEND_FAILED = "Couldn't attach the images. Try again.";
-
 export const ChatComposer = ({
   workspaceId,
   placeholder,
@@ -48,61 +36,33 @@ export const ChatComposer = ({
   onRouting,
 }: Props) => {
   const [text, setText] = useState('');
-  const [sendNotice, setSendNotice] = useState<string | null>(null);
   const isImagesOn = useChatImagesOn();
-  const images = usePromptFiles({ note: '', isEnabled: isImagesOn, only: CHAT_IMAGES });
-  const attached = isImagesOn ? images.attachments : [];
-  const canSend = (text.trim() !== '' || attached.length > 0) && !isStreaming;
-
-  const send = (): void => {
-    if (!canSend) {
-      return;
-    }
-    const sentText = text;
-    const sentImages = attached;
-    setText('');
-    setSendNotice(null);
-    images.clear();
-    void onSend({ text: sentText.trim(), images: sentImages }).then((isSent) => {
-      if (isSent) {
-        return;
-      }
-      setText((current) => restoreDraftOnFailedSend({ sent: sentText, current }));
-      images.setAttachments(sentImages);
-      setSendNotice(sentImages.length > 0 ? SEND_FAILED : null);
-    });
-  };
 
   return (
-    <PromptField
-      kind="message"
+    <MessageComposer
       label="Message"
-      value={text}
-      onChange={setText}
-      onSubmit={send}
-      {...(isImagesOn && { files: images.files })}
-      notice={sendNotice ?? images.notice}
       placeholder={placeholder}
-      autoFocus={isAutoFocused}
+      text={text}
+      onTextChange={setText}
+      onRestoreText={({ sent }) =>
+        setText((current) => restoreDraftOnFailedSend({ sent, current }))
+      }
+      isStreaming={isStreaming}
+      isStopping={isStopping}
+      isImagesOn={isImagesOn}
+      isAutoFocused={isAutoFocused}
       minRows={2}
       maxRows={14}
-      className="w-full"
-      textClassName="text-prose"
       footerStart={
         <ChatRoutingPicker workspaceId={workspaceId} routing={routing} onChange={onRouting} />
       }
-      actions={
-        <>
-          <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
-            Read only. Nothing is changed.
-          </span>
-          <SendStopControl
-            canSend={canSend}
-            stop={isStreaming ? { isStopping, onStop } : undefined}
-            onSend={send}
-          />
-        </>
+      hint={
+        <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
+          Read only. Nothing is changed.
+        </span>
       }
+      onSend={onSend}
+      onStop={onStop}
     />
   );
 };

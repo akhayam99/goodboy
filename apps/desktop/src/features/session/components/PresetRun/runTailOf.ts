@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/utils/names';
 import type { Agent, AgentId, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
 import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
@@ -109,7 +110,7 @@ const primaryTailOf = ({
         verb,
       };
     case 'answer':
-      return { state: 'waiting', phrase: 'Waiting for your answer', stepAgentId: null, verb };
+      return { state: 'waiting', phrase: NAMES.needsYou, stepAgentId: null, verb };
     case 'continue':
     case 'retry':
     case 'hint':
@@ -187,7 +188,7 @@ export const runTailOf = ({
   if (question !== null) {
     return {
       state: stoppedTail?.state ?? 'waiting',
-      phrase: stoppedTail?.phrase ?? 'Waiting for your answer',
+      phrase: stoppedTail?.phrase ?? NAMES.needsYou,
       stepAgentId: null,
       verb: { kind: 'answer', question },
     };

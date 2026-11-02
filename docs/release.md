@@ -146,13 +146,13 @@ One card is the only prompt (`features/updater/components/UpdateArrivalCard.tsx`
 and one hook gives every surface the same verbs (`useUpdateCard`, state from
 `updateCardStateOf`, copy from `updateCardCopy`):
 
-| State          | Card says                                       | Verbs                                                                    |
-| -------------- | ----------------------------------------------- | ------------------------------------------------------------------------ |
-| Available      | Goodboy 0.27.2 is available                     | Later, What's new, **Update now** (downloads, then the card turns Ready) |
-| Ready          | Goodboy 0.27.2 is ready                         | Later, What's new, **Restart now**                                       |
-| Agents running | 2 agents are running                            | Later, Restart now, **Restart when they finish**                         |
-| Failed         | Goodboy 0.27.2 did not install, with the reason | Later, **Retry** (downloads or installs again, without a new check)      |
-| Queued         | Restarts when 2 agents finish                   | Later, Cancel restart, **Restart now**                                   |
+| State          | Card says                                       | Verbs                                                                                               |
+| -------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Available      | Goodboy 0.27.2 is available                     | Later, **Update now** (downloads, then the card turns Ready), and a What's new link in the sentence |
+| Ready          | Goodboy 0.27.2 is ready                         | Later, **Restart now**, and a What's new link in the sentence                                       |
+| Agents running | 2 agents are running                            | Later, Restart now, **Restart when they finish**                                                    |
+| Failed         | Goodboy 0.27.2 did not install, with the reason | Later, **Retry** (downloads or installs again, without a new check)                                 |
+| Queued         | Restarts when 2 agents finish                   | Later, Cancel restart, **Restart now**                                                              |
 
 The version pill in the Goodboy row, and in the corner of Home
 (`WorkspaceLauncher`), opens and closes the card (`toggleUpdateCard`). The card

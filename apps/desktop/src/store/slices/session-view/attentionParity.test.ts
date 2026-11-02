@@ -88,6 +88,14 @@ describe('the Rust workspace count and attentionCountOf', () => {
     }
   });
 
+  it('holds a counted case for every reason Rust generates from the source', () => {
+    const covered = new Set(
+      parity.cases.filter((parityCase) => parityCase.isCounted).flatMap((entry) => entry.reasons),
+    );
+
+    expect(parity.reasons.filter(({ reason }) => !covered.has(reason))).toEqual([]);
+  });
+
   it.each(parity.cases.map((parityCase) => [parityCase.name, parityCase] as const))(
     'agree on: %s',
     (_name, parityCase) => {

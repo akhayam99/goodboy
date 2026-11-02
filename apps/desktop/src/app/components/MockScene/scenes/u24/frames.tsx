@@ -1,4 +1,4 @@
-import { GuideStudio } from '../../../../../features/settings/components/GuideStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { ChatRoomScene } from '../ChatRoomScene';
 import { OverviewFullScene } from '../OverviewFullScene';
 import { FramedStudioScene } from '../u23/FramedStudioScene';
@@ -14,14 +14,14 @@ export const U24_FRAMES_SCENES = {
   'frames-guide-rail': () => (
     <FrameStage id="frames-guide-rail" width={RAIL_WIDTH_PX}>
       <FramedStudioScene kind="guide" place="link">
-        <GuideStudio onClose={noop} />
+        <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
       </FramedStudioScene>
     </FrameStage>
   ),
   'frames-guide-pinned': () => (
     <FrameStage id="frames-guide-pinned" width={PINNED_WIDTH_PX}>
       <FramedStudioScene kind="guide" place="link">
-        <GuideStudio onClose={noop} />
+        <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
       </FramedStudioScene>
     </FrameStage>
   ),

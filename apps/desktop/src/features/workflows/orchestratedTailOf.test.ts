@@ -85,10 +85,10 @@ const tailOf = ({ orchestrator, agents = [DONE], primary = null, queuedCount = 0
   });
 
 describe('orchestratedTailOf', () => {
-  it('says a paused run is paused and leaves Resume run to the header', () => {
+  it('says a paused run is paused and leaves Continue to the header', () => {
     const tail = tailOf({
       orchestrator: stateOf({ phase: 'paused', sentence: 'Paused by you' }),
-      primary: { kind: 'resume', label: 'Resume' },
+      primary: { kind: 'resume', label: 'Continue' },
     });
     expect(tail?.phrase).toBe('Paused by you');
     expect(tail?.verbs).toEqual([]);
@@ -215,7 +215,7 @@ describe('orchestratedTailOf', () => {
     expect(done.verbs).toEqual([{ kind: 'readQueued', count: 2, isStopped: false }]);
     const stopped = tailOf({
       orchestrator: stateOf({ phase: 'stopped', sentence: 'Stopped by you' }),
-      primary: { kind: 'continue', label: 'Continue the run' },
+      primary: { kind: 'continue', label: 'Continue' },
       queuedCount: 1,
     });
     expect(stopped.verbs).toEqual([{ kind: 'readQueued', count: 1, isStopped: true }]);

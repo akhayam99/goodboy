@@ -1,8 +1,10 @@
 import { memo, useMemo } from 'react';
-import { Notice, PANE_RHYTHM, WorkNode } from '@goodboy/ui';
-import type { ChatMessage, SessionId } from '@goodboy/types';
+import { Notice, WorkNode } from '@goodboy/ui';
+import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useRevealedMarkdown } from '../../../../chat/reveal/useRevealedMarkdown';
+import { StartWorkFromChatButton } from '../../../../../shared/components/StartWorkFromChatButton';
+import { UserMessageBubble } from '../../../../../shared/components/UserMessageBubble';
 import type { AskButtonFacts } from '../../askButtons';
 import type { AskHandle } from '../../askHandles';
 import { useAskActions } from '../../hooks/useAskActions';
@@ -17,6 +19,7 @@ type Props = {
   readonly reply: ChatMessage | null;
   readonly facts: AskButtonFacts;
   readonly onOpen: (handle: AskHandle) => void;
+  readonly onStartWork: (messageId: ChatMessageId) => void;
 };
 
 const NO_HANDLES: ReadonlyArray<AskHandle> = [];
@@ -25,7 +28,7 @@ const EMPTY_ANSWER: ParsedAskAnswer = { blocks: [], cited: [], suggestion: null 
 
 const ANSWER_ITEM_KEY = 'answer';
 
-const AskTurnView = ({ sessionId, question, reply, facts, onOpen }: Props) => {
+const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }: Props) => {
   const handles = useAppStore((state) =>
     reply === null ? NO_HANDLES : (state.askHandles[reply.id] ?? NO_HANDLES),
   );
@@ -51,11 +54,7 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen }: Props) => {
   const hasText = shown.blocks.length > 0;
   return (
     <div data-testid="ask-turn" className="flex flex-col gap-3">
-      <div
-        className={`${PANE_RHYTHM.message.user} self-end rounded-lg bg-fill px-3 py-2 text-prose text-foreground`}
-      >
-        {question.content}
-      </div>
+      <UserMessageBubble isOnDrawer text={question.content} />
       {reply === null ? null : (
         <div
           ref={reveal.rootRef}
@@ -89,6 +88,11 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen }: Props) => {
             <p className="text-meta text-faint-foreground">Stopped</p>
           ) : null}
           {isDone ? <AskActions actions={actions} /> : null}
+          {isDone && hasText ? (
+            <div className="flex">
+              <StartWorkFromChatButton messageId={reply.id} onStartWork={onStartWork} />
+            </div>
+          ) : null}
           {isWriting ? null : <AskReplyFooter message={reply} costUsd={costUsd} />}
         </div>
       )}

@@ -1,3 +1,4 @@
+import { countNoun } from '../../../../shared/utils/countNoun';
 import { useEffect } from 'react';
 import type { SessionAttentionReason, SessionId } from '@goodboy/types';
 import {
@@ -28,7 +29,6 @@ import { useHoverCardTarget } from '../../../../features/workspace/components/Se
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
 import { attentionPlace } from '../../../../features/session/attentionPlace';
-import { goToNextNeedsYou } from '../../../../features/workspace/components/SessionSwitcher/goToNextNeedsYou';
 
 type Props = {
   readonly onOpenScript: (run: RunningScript) => void;
@@ -40,7 +40,6 @@ type SelectParams = {
 };
 
 type CountLabelParams = {
-  readonly needsYou: number;
   readonly running: number;
   readonly scripts: number;
 };
@@ -50,19 +49,17 @@ const PANEL_MAX_HEIGHT = 480;
 const SEGMENT = 'flex items-center gap-1';
 const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inline';
 
-const chipLabel = ({ needsYou, running, scripts }: CountLabelParams): string =>
+const chipLabel = ({ running, scripts }: CountLabelParams): string =>
   [
-    needsYou > 0 ? `${needsYou} ${needsYou === 1 ? 'needs' : 'need'} you` : '',
-    running > 0 ? `${running} ${running === 1 ? 'session' : 'sessions'} running` : '',
-    scripts > 0 ? `${scripts} ${scripts === 1 ? 'script' : 'scripts'} running` : '',
+    running > 0 ? `${countNoun({ count: running, one: 'session' })} running` : '',
+    scripts > 0 ? `${countNoun({ count: scripts, one: 'script' })} running` : '',
   ]
     .filter((part) => part !== '')
     .join(', ');
 
 export const NowChip = ({ onOpenScript }: Props) => {
   const workspace = useCurrentWorkspace();
-  const { running, attention } = useNowSessions({});
-  const needsYou = attention.countedSessions;
+  const { running } = useNowSessions({});
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
@@ -77,8 +74,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const now = useNow(1_000, isOpen && scripts.length > 0);
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
-  const hoveredSession =
-    [...needsYou, ...running].find((session) => session.id === hover.target?.sessionId) ?? null;
+  const hoveredSession = running.find((session) => session.id === hover.target?.sessionId) ?? null;
 
   useEffect(() => {
     if (!isOpen) {
@@ -86,7 +82,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
     }
   }, [isOpen, closeHover]);
 
-  const total = needsYou.length + running.length + scripts.length;
+  const total = running.length + scripts.length;
 
   useEffect(() => {
     if (total === 0) {
@@ -95,7 +91,18 @@ export const NowChip = ({ onOpenScript }: Props) => {
   }, [close, total]);
 
   if (total === 0) {
-    return null;
+    return (
+      <span
+        data-now-idle=""
+        className={cn(
+          TOP_BAR_CONTROL.height,
+          'flex shrink-0 items-center gap-1 px-2 text-meta text-muted-foreground',
+        )}
+      >
+        <StatusDot tone="neutral" size="sm" isRing />
+        <span>Idle</span>
+      </span>
+    );
   }
 
   const selectSession = ({ sessionId, reason }: SelectParams) => {
@@ -117,16 +124,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
     void cancelScript(run.sessionId, run.scriptId);
   };
 
-  const goToNext = () => {
-    close();
-    goToNextNeedsYou({ state: useAppStore.getState() });
-  };
-
-  const label = chipLabel({
-    needsYou: needsYou.length,
-    running: running.length,
-    scripts: scripts.length,
-  });
+  const label = chipLabel({ running: running.length, scripts: scripts.length });
   const ScriptsIcon = CONCEPT_ICONS.scripts;
 
   return (
@@ -136,11 +134,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
       ariaLabel="Now"
       hasBackdrop
       trigger={
-        <Tooltip
-          content={label}
-          isSuppressed={isOpen}
-          {...(needsYou.length > 0 && { shortcut: 'session.nextNeedsYou' })}
-        >
+        <Tooltip content={label} isSuppressed={isOpen}>
           <button
             type="button"
             onClick={toggle}
@@ -154,15 +148,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
               isOpen ? 'bg-muted' : 'hover:bg-hover',
             )}
           >
-            {needsYou.length > 0 ? (
-              <span className={SEGMENT} data-now-needs-you="">
-                <StatusDot tone={attention.tone === 'danger' ? 'danger' : 'warning'} size="sm" />
-                <span className="tabular-nums text-foreground">{needsYou.length}</span>
-                <span className={SEGMENT_WORD}>
-                  {needsYou.length === 1 ? 'needs you' : 'need you'}
-                </span>
-              </span>
-            ) : null}
             {running.length > 0 ? (
               <span className={SEGMENT}>
                 <StatusDot tone="info" size="sm" />
@@ -197,19 +182,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
         fadeSize={16}
         fadeFrom="elevated"
       >
-        {needsYou.length > 0 ? (
-          <NowGroup label="Needs you" count={needsYou.length} tone="warning">
-            {needsYou.map((session) => (
-              <NeedsYouSessionRow
-                key={session.id}
-                session={session}
-                onSelect={selectSession}
-                onHoverEnter={hover.enter}
-                onHoverLeave={hover.leave}
-              />
-            ))}
-          </NowGroup>
-        ) : null}
         {running.length > 0 ? (
           <NowGroup label="Running" count={running.length} tone="info">
             {running.map((session) => (
@@ -239,11 +211,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
         ) : null}
       </ScrollFade>
       <div className="flex px-1 py-1">
-        {needsYou.length > 0 ? (
-          <Button size="sm" variant="ghost" onClick={goToNext}>
-            Next that needs you
-          </Button>
-        ) : null}
         <Button size="sm" variant="ghost" onClick={openMonitoring}>
           Open Monitoring
         </Button>

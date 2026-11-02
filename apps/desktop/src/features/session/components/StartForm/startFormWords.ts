@@ -1,6 +1,5 @@
 import type { AutoLimitKind } from '../../../auto/autoLimitCopy';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
-import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { startShapeOfFormKind, type StartFormKind } from './startFormKinds';
 
 type HintParams = {
@@ -81,19 +80,4 @@ export const startReasonOf = ({ hasGoal, kind, hasPreset }: ReasonParams): strin
     return START_KIND_COPY.goalNeeded;
   }
   return kind === 'preset' && !hasPreset ? START_KIND_COPY.presetNeeded : null;
-};
-
-type LabelParams = {
-  readonly kind: StartFormKind | null;
-  readonly role: string;
-};
-
-export const startLabelOf = ({ kind, role }: LabelParams): string => {
-  if (kind === null) {
-    return RUN_ROUTE_COPY.start;
-  }
-  if (kind === 'agent') {
-    return START_KIND_COPY.start.agent({ role });
-  }
-  return kind === 'auto' ? START_KIND_COPY.start.autoAgent : START_KIND_COPY.start[kind];
 };

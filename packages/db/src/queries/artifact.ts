@@ -210,7 +210,7 @@ const artifactStatus = (value: string): ArtifactStatus => {
   throw new Error(`Invalid artifact status: ${value}`);
 };
 
-const toDomain = (row: ArtifactRow): SessionArtifact => {
+const toSessionArtifact = (row: ArtifactRow): SessionArtifact => {
   const kind = artifactKind(row.kind);
   const common = {
     id: row.id as ArtifactId,
@@ -274,7 +274,7 @@ type ToDomainOrSkipParams = {
 
 const toDomainOrSkip = ({ row }: ToDomainOrSkipParams): SessionArtifact | null => {
   try {
-    return toDomain(row);
+    return toSessionArtifact(row);
   } catch (error) {
     console.warn(`[artifact] skipped row ${row.id}: ${skippedReason({ error })}`);
     return null;
@@ -287,7 +287,7 @@ const selectArtifact = async ({
 }: ArtifactIdParams): Promise<SessionArtifact | null> => {
   const rows = await db.select<ArtifactRow>(`${ARTIFACT_SELECT} WHERE id = ?`, [artifactId]);
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : toSessionArtifact(row);
 };
 
 export const insertArtifact = async ({
@@ -357,7 +357,7 @@ export const getArtifactBySourceTurn = async ({
     [agentId, sourceTurnId],
   );
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : toSessionArtifact(row);
 };
 
 export const listArtifactsForSession = async ({

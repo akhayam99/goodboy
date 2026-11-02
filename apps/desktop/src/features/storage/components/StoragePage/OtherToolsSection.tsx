@@ -1,6 +1,14 @@
 import { useEffect } from 'react';
 import { Info, Lock, Wrench } from 'lucide-react';
-import { Band, BandRow, ICON_SIZE, SectionHeader } from '@goodboy/ui';
+import {
+  Band,
+  BandRow,
+  EmptyLine,
+  ICON_SIZE,
+  SectionHeader,
+  Skeleton,
+  SkeletonRow,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 
 import { revealInFileManager } from '../../../../shared/lib/reveal';
@@ -46,18 +54,23 @@ export const OtherToolsSection = () => {
           </span>
         }
         action={
-          <span className="text-meta text-faint-foreground">
-            {isMeasuring && shown.length === 0
-              ? 'Measuring…'
-              : `${formatBytes({ bytes: total })} · not counted in what can go`}
-          </span>
+          isMeasuring && shown.length === 0 ? (
+            <Skeleton className="h-3 w-32 rounded-sm" />
+          ) : (
+            <span className="text-meta text-faint-foreground">
+              {`${formatBytes({ bytes: total })} · not counted in what can go`}
+            </span>
+          )
         }
       />
       <Band>
-        {shown.length === 0 ? (
-          <p className="px-2 py-2 text-meta text-muted-foreground">
-            {isMeasuring ? 'Measuring…' : 'No other tool keeps more than 100 MB on this Mac.'}
-          </p>
+        {shown.length === 0 && isMeasuring ? (
+          <>
+            <SkeletonRow label="Measuring the other tools" />
+            <SkeletonRow label="Measuring the other tools" />
+          </>
+        ) : shown.length === 0 ? (
+          <EmptyLine>No other tool keeps more than 100 MB on this Mac.</EmptyLine>
         ) : (
           shown.map((tool) => <OtherToolRow key={tool.id} tool={tool} onReveal={onReveal} />)
         )}

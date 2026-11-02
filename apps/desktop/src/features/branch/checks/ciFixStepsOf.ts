@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import type { Agent } from '@goodboy/types';
 import type { CheckChain } from '../../../store/slices/agents/selectCheckChain';
 import type { CheckOutcome } from './checkOutcomeOf';
@@ -47,7 +48,7 @@ const firstStepOf = ({ chain, hasFixLanded }: StepParams) => {
     return { name: 'Proposal', detail: 'Dismissed', tone: 'neutral' as const };
   }
   if (chain.fix === null) {
-    return { name: 'Proposal', detail: 'Waiting for you', tone: 'warning' as const };
+    return { name: 'Proposal', detail: NAMES.needsYou, tone: 'warning' as const };
   }
   return { name: 'Proposal', detail: 'Accepted', tone: 'neutral' as const };
 };

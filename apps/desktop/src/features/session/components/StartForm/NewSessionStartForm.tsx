@@ -6,37 +6,27 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { NAMES } from '../../../../shared/utils/names';
-import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
-import { AutoLevelChip } from '../../../auto/level/AutoLevelChip';
-import { AGENT_KIND_META } from '../../agent-kind';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
-import { limitDefaultFromOfKind } from './limitDefaultFromOfKind';
 import { limitKindOfRoute } from '../../startRun/limitKindOfRoute';
 import { routeLineOf } from '../../startRun/routeLineOf';
-import { StartAsksSetting } from '../SessionKickoff/StartAsksSetting';
 import { StartPresetFields } from '../SessionKickoff/StartPresetFields';
-import { StartRoleField } from '../SessionKickoff/StartRoleField';
 import { WhereChip } from '../SessionKickoff/WhereChip';
 import type { StartShapeModel } from '../SessionKickoff/useStartShape';
-import { RunModelChip } from '../StartRun/RunModelChip';
 import type { RunModelView } from '../StartRun/useRunModel';
 import type { StartRunModel } from '../StartRun/useStartRun';
-import { StartEditsSetting } from './StartEditsSetting';
 import { StartForm } from './StartForm';
-import { StartGuidanceSetting } from './StartGuidanceSetting';
 import { useDraftAgentModel } from './useDraftAgentModel';
 import { startFormKindOfDraft, startShapeOfFormKind, type StartFormKind } from './startFormKinds';
 import {
   startAsksOf,
   startFormHintOf,
   startFormNoteOf,
-  startLabelOf,
   startGuidanceReaderOf,
   startLimitKindOf,
   startReasonOf,
 } from './startFormWords';
-import { startSettingsOf } from './startSettingsOf';
+import { startSettingItemsOf } from './startSettingItemsOf';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -108,7 +98,6 @@ export const NewSessionStartForm = ({
   const isPlan = route.route.shape === 'plan';
   const asks = startAsksOf({ kind, isAutoLead, isPlan });
   const guidanceReader = startGuidanceReaderOf({ kind, isAutoLead, isPlan });
-  const limitView = limit.viewOf({ defaultFrom: limitDefaultFromOfKind({ kind }) });
   const limitKind = startLimitKindOf({
     kind,
     routeKind: limitKindOfRoute({ route: route.route }),
@@ -129,7 +118,7 @@ export const NewSessionStartForm = ({
       : startFormHintOf({ kind });
 
   const pickKind = ({ next }: PickParams): void => {
-    if (next === kind) {
+    if (next === 'auto' || next === kind) {
       patchSessionDraft({
         workspaceId,
         patch: { startKind: 'auto', startShape: null, hasChosenStart: true },
@@ -146,64 +135,41 @@ export const NewSessionStartForm = ({
     });
   };
 
-  const settings = startSettingsOf({
+  const settings = startSettingItemsOf({
     kind,
-    nodes: {
-      where: (
-        <WhereChip workspaceId={workspaceId} suggestedIds={suggestedIds} isDisabled={isDisabled} />
-      ),
-      role: (
-        <StartRoleField
-          value={draft.agentKind}
-          isDisabled={isDisabled}
-          onChange={(next) =>
-            patchSessionDraft({ workspaceId, patch: { agentKind: next, agentRouting: null } })
-          }
-        />
-      ),
-      model: <RunModelChip model={model} isDisabled={isDisabled} />,
-      asks:
-        asks === 'level' ? (
-          <AutoLevelChip
-            value={autoRun.level}
-            workspaceLevel={autoRun.workspaceLevel}
-            error={null}
-            workspaceName={workspaceName}
-            isDisabled={isDisabled}
-            onPick={({ next }) => autoRun.setLevel(next)}
-          />
-        ) : asks === 'steps' ? (
-          <StartAsksSetting
-            workspaceId={workspaceId}
-            autonomy={draft.autonomy}
-            isDisabled={isDisabled}
-            onPick={({ next }) => patchSessionDraft({ workspaceId, patch: { autonomy: next } })}
-          />
-        ) : null,
-      edits: (
-        <StartEditsSetting
-          workspaceId={workspaceId}
-          sessionId={null}
-          picked={draft.permissionMode}
-          provider={model.effective.provider}
-          isDisabled={isDisabled}
-          onPick={({ next }) => patchSessionDraft({ workspaceId, patch: { permissionMode: next } })}
-        />
-      ),
-      limit:
-        limitKind === null ? null : (
-          <AutoLimitChip limit={limitView} kind={limitKind} isDisabled={isDisabled} />
-        ),
-      guidance: (
-        <StartGuidanceSetting
-          workspaceId={workspaceId}
-          picked={draft.guidance}
-          reader={guidanceReader}
-          isDisabled={isDisabled}
-          onPick={({ next }) => patchSessionDraft({ workspaceId, patch: { guidance: next } })}
-        />
-      ),
+    workspaceId,
+    sessionId: null,
+    workspaceName,
+    isDisabled,
+    model,
+    where: (
+      <WhereChip workspaceId={workspaceId} suggestedIds={suggestedIds} isDisabled={isDisabled} />
+    ),
+    role: {
+      value: draft.agentKind,
+      onChange: ({ next }) =>
+        patchSessionDraft({ workspaceId, patch: { agentKind: next, agentRouting: null } }),
     },
+    asks,
+    level: {
+      value: autoRun.level,
+      workspaceLevel: autoRun.workspaceLevel,
+      onPick: ({ next }) => autoRun.setLevel(next),
+    },
+    autonomy: {
+      value: draft.autonomy,
+      onPick: ({ next }) => patchSessionDraft({ workspaceId, patch: { autonomy: next } }),
+    },
+    edits: {
+      value: draft.permissionMode,
+      onPick: ({ next }) => patchSessionDraft({ workspaceId, patch: { permissionMode: next } }),
+    },
+    guidance: {
+      value: draft.guidance,
+      reader: guidanceReader,
+      onPick: ({ next }) => patchSessionDraft({ workspaceId, patch: { guidance: next } }),
+    },
+    limit: { view: limit.view, kind: limitKind },
   });
 
   return (
@@ -248,9 +214,7 @@ export const NewSessionStartForm = ({
         onClick={() => void run.start()}
         {...(reason !== null && { 'aria-describedby': reasonId })}
       >
-        {run.error === null
-          ? startLabelOf({ kind, role: AGENT_KIND_META[draft.agentKind].noun })
-          : NAMES.retry}
+        {run.error === null ? NAMES.start : NAMES.retry}
       </Button>
     </StartForm>
   );

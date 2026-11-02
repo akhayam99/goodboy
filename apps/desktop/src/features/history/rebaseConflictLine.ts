@@ -1,3 +1,4 @@
+import { countNoun } from '../../shared/utils/countNoun';
 type FilesParams = {
   readonly files: ReadonlyArray<string>;
 };
@@ -15,7 +16,7 @@ type CountParams = {
 };
 
 const conflictCountLabelOf = ({ count }: CountParams): string =>
-  `${count} ${count === 1 ? 'file' : 'files'}`;
+  `${countNoun({ count: count, one: 'file' })}`;
 
 type LineParams = {
   readonly files: ReadonlyArray<string>;

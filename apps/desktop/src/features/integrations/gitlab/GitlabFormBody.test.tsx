@@ -12,6 +12,7 @@ const { state, ghStatusMock, ghClearTokenMock } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectGitlab: vi.fn(async () => undefined),
+    refreshViewerIdentity: vi.fn(async () => []),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
@@ -46,6 +47,7 @@ const gitlabIntegration: GitlabIntegrationBinding = {
 beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectGitlab = vi.fn(async () => undefined);
+  state.refreshViewerIdentity = vi.fn(async () => []);
   state.disconnectIntegration = vi.fn(async () => undefined);
   state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
@@ -233,6 +235,35 @@ describe('GitlabFormBody', () => {
       );
       expect(ghStatusMock).not.toHaveBeenCalled();
       expect(ghClearTokenMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('identity health line', () => {
+    it('is the first line of a connection that has no stored username, and Reconnect re-reads it', async () => {
+      state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
+      render(<GitlabFormBody workspaceId={WS_ID} />);
+
+      const line = screen.getByText('Unread needs your username.').closest('p');
+      if (line === null) {
+        throw new Error('The health line is missing.');
+      }
+      expect(line.nextElementSibling?.textContent).toContain('Connected as octo');
+      fireEvent.click(within(line).getByRole('button', { name: 'Reconnect' }));
+
+      await waitFor(() =>
+        expect(state.refreshViewerIdentity).toHaveBeenCalledWith({ workspaceId: WS_ID }),
+      );
+    });
+
+    it('is gone once the username is stored', () => {
+      state.workspaceIntegrations = {
+        [WS_ID]: [
+          { ...gitlabIntegration, config: { ...gitlabIntegration.config, username: 'nadia-p' } },
+        ],
+      };
+      render(<GitlabFormBody workspaceId={WS_ID} />);
+
+      expect(screen.queryByText('Unread needs your username.')).toBeNull();
     });
   });
 

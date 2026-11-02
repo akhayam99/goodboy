@@ -8,6 +8,8 @@ import { seedFlowSession } from '../flow-audit/seeds';
 import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
 import { RULES_PROVIDERS, rulesProviderLimits } from './workflowRulesSeed';
+import { SettingsFrame } from './SettingsFrame';
+import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
 
 const noop = () => undefined;
 
@@ -47,12 +49,11 @@ const editedBuiltin = (): Workflow | null => {
 
 const seedRules = (): void => {
   useAppStore.setState({
-    workflowStudioView: 'rules',
     providers: RULES_PROVIDERS,
     refreshProviders: async () => undefined,
     providerLimits: HAS_LIMITS ? rulesProviderLimits() : {},
     workspaceOverrides: {
-      [WORKSPACE_ID]: {
+      [SETTINGS_WORKSPACE_ID]: {
         ...OVERRIDES,
         providerPool: [
           { id: 'anthropic', state: 'on' },
@@ -96,9 +97,6 @@ const seedStudio = (): void => {
       return kept;
     },
   });
-  if (IS_RULES) {
-    seedRules();
-  }
   if (IS_CONFIRM_ERROR) {
     const workflow = editedBuiltin();
     useAppStore.setState({
@@ -136,6 +134,10 @@ export const WorkflowStudioScene = () => {
 
   if (!isReady) {
     return null;
+  }
+
+  if (IS_RULES) {
+    return <SettingsFrame focus={{ scope: 'workspace', section: 'general' }} seed={seedRules} />;
   }
 
   return <WorkflowStudio workspaceId={WORKSPACE_ID} onClose={noop} />;

@@ -18,7 +18,7 @@ type Row = {
   readonly createdAt: number;
 };
 
-const toDomain = (row: Row): ProjectSentryLink => ({
+const toProjectSentryLink = (row: Row): ProjectSentryLink => ({
   ...row,
   createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
 });
@@ -42,7 +42,7 @@ export const listProjectSentryLinks = async ({
      ORDER BY l.created_at, l.id`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map(toProjectSentryLink);
 };
 
 type AddParams = {

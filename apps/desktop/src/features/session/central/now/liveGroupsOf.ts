@@ -1,3 +1,4 @@
+import { isRunEntryFinished } from '../done/outcomeLineOf';
 import type { AutoPhase } from '@goodboy/db';
 import type { Agent, AgentId, MountId, Step, TurnState } from '@goodboy/types';
 import { autoGroupOf, type AutoGroup } from '../../../auto/autoGroupOf';
@@ -200,6 +201,9 @@ type RunParams = {
 };
 
 const runGroupOf = ({ entry, rowState, model }: RunParams): LiveRunGroup | null => {
+  if (isRunEntryFinished({ entry })) {
+    return null;
+  }
   const baseState = stateOfPhase({ phase: rowState.phase });
   if (baseState === null) {
     return null;

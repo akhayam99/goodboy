@@ -106,12 +106,6 @@ const MARKS: ReadonlyArray<Mark> = [
     words: 'Checks failing',
   },
   {
-    title: 'Add a Harborline export schema',
-    tone: 'neutral',
-    state: 'marker',
-    words: 'In review',
-  },
-  {
     title: 'Land the Harborline webhook retries',
     tone: 'primary',
     state: 'merging',
@@ -126,6 +120,12 @@ const MARKS: ReadonlyArray<Mark> = [
 ];
 
 const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name: title });
+
+const unreadTitles = (): ReadonlyArray<string> =>
+  screen
+    .getAllByRole('option')
+    .filter((row) => row.hasAttribute('data-unread'))
+    .map((row) => row.getAttribute('aria-label') ?? row.textContent ?? '');
 
 describe('the session marks scene', () => {
   it.each(MARKS.map((mark) => [mark.title, mark] as const))(
@@ -158,7 +158,20 @@ describe('the session marks scene', () => {
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
   });
 
-  it('draws the unread dot on the unread reply and nowhere else', async () => {
+  it('keeps an empty slot on a row with nothing to say, so the titles stay aligned', async () => {
+    render(
+      <ToastProvider>
+        <SessionMarksScene />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(rowOf('Add a Harborline export schema')).toBeDefined());
+    const row = rowOf('Add a Harborline export schema');
+
+    expect(row.querySelector('[role="img"]')).toBeNull();
+    expect(row.querySelector('[data-testid="state-node-slot"]')).not.toBeNull();
+  });
+
+  it('sets the unread reply in the strong row weight and nothing else', async () => {
     render(
       <ToastProvider>
         <SessionMarksScene />
@@ -166,10 +179,7 @@ describe('the session marks scene', () => {
     );
     await waitFor(() => expect(rowOf('Review the Acme import mapper')).toBeDefined());
 
-    const unseen = screen
-      .getAllByRole('img', { hidden: true })
-      .filter((node) => (node.getAttribute('aria-label') ?? '').endsWith(', unseen'));
-    expect(unseen.map((node) => node.getAttribute('aria-label'))).toEqual(['New reply, unseen']);
+    expect(unreadTitles()).toEqual(['Review the Acme import mapper']);
   });
 
   it('clears the unread reply with Mark all as read in the Sessions options menu, then turns the button off', async () => {
@@ -179,11 +189,7 @@ describe('the session marks scene', () => {
       </ToastProvider>,
     );
     await waitFor(() => expect(rowOf('Review the Acme import mapper')).toBeDefined());
-    const unseenCount = () =>
-      screen
-        .getAllByRole('img', { hidden: true })
-        .filter((node) => (node.getAttribute('aria-label') ?? '').endsWith(', unseen')).length;
-    expect(unseenCount()).toBe(1);
+    expect(unreadTitles()).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     const menu = screen.getByRole('dialog', { name: 'Filter sessions' });
@@ -191,13 +197,13 @@ describe('the session marks scene', () => {
       fireEvent.click(within(menu).getByRole('button', { name: 'Mark all as read' }));
     });
 
-    expect(unseenCount()).toBe(0);
+    expect(unreadTitles()).toHaveLength(0);
     expect(
       within(menu).getByRole('button', { name: 'Mark all as read' }).hasAttribute('disabled'),
     ).toBe(true);
   });
 
-  it('counts the sessions that need you on the Sessions door and in the top bar, red as one is broken', async () => {
+  it('counts the sessions that need you on the Sessions door alone, red as one is broken', async () => {
     render(
       <ToastProvider>
         <SessionMarksScene />
@@ -208,9 +214,7 @@ describe('the session marks scene', () => {
     const count = document.querySelector('[data-column-door="board"] [data-door-count]');
     expect(count?.textContent).toBe('9+');
     expect(count?.getAttribute('data-door-signal')).toBe('danger');
-    const segment = document.querySelector('[data-top-bar] [data-now-needs-you]');
-    expect(segment?.closest('button')?.getAttribute('aria-label')).toMatch(/^16 need you/);
-    expect(segment?.querySelector('.bg-danger')).not.toBeNull();
+    expect(document.querySelector('[data-top-bar] [data-now-needs-you]')).toBeNull();
   });
 
   it('keeps red for the error, a stopped run, a push that failed and failing checks only', async () => {

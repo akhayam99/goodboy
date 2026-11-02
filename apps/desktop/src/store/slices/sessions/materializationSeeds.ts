@@ -5,6 +5,8 @@ export type SessionMaterializationSeed = {
   readonly sessionSlug?: string;
   readonly existingBranch?: string;
   readonly fallbackRef?: string;
+  readonly existingWorktreePath?: string;
+  readonly isGoalBranchIgnored?: boolean;
 };
 
 const seeds = new Map<SessionId, SessionMaterializationSeed>();
@@ -30,7 +32,7 @@ export const consumeAdoptionSeed = ({ sessionId }: SessionParams): void => {
   if (seed === undefined) {
     return;
   }
-  const { existingBranch: _branch, fallbackRef: _ref, ...rest } = seed;
+  const { existingBranch: _branch, fallbackRef: _ref, existingWorktreePath: _path, ...rest } = seed;
   seeds.set(sessionId, rest);
 };
 

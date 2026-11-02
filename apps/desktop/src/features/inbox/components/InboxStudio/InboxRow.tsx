@@ -96,7 +96,7 @@ const InboxRowView = ({
         >
           {isNew ? (
             <span data-task-new="" role="img" aria-label="New" className="flex shrink-0">
-              <StatusDot tone="primary" size="sm" />
+              <StatusDot tone="unread" size="sm" />
             </span>
           ) : null}
           <span className="truncate">{record.title}</span>

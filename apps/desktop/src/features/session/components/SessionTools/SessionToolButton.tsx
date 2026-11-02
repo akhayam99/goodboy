@@ -1,4 +1,4 @@
-import { IconButton, cn, selectedIconClass } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, cn, selectedIconClass } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
@@ -15,16 +15,18 @@ type Props = {
 };
 
 export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onToggle }: Props) => {
-  const label = signal === null ? tool.label : `${tool.label}, ${signal.note}`;
+  const name = tool.fullLabel ?? tool.label;
+  const label = signal === null ? name : `${name}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   return (
-    <span className="relative flex">
+    <span className="relative flex min-w-0 flex-col items-center gap-0.5">
       <IconButton
         icon={tool.icon}
         label={label}
         shortcut={tool.shortcut}
         tooltipSide="left"
         size="md"
+        iconSize={ICON_SIZE.notice}
         aria-pressed={isOpen}
         tabIndex={tabIndex}
         data-testid={`pane-toggle-${tool.pane}`}
@@ -33,6 +35,11 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         onFocus={onFocus}
         onClick={onToggle}
       />
+      {isOpen ? (
+        <span aria-hidden className="whitespace-nowrap text-chip font-normal text-muted-foreground">
+          {tool.label}
+        </span>
+      ) : null}
       {signal === null ? null : <ToolSignalDot signal={signal} />}
     </span>
   );

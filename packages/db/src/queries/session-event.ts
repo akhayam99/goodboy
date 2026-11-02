@@ -228,7 +228,7 @@ type ToDomainParams = {
   readonly row: SessionEventRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): SessionEvent => ({
+const toSessionEvent = ({ row }: ToDomainParams): SessionEvent => ({
   id: row.id as SessionEventId,
   sessionId: row.session_id as SessionId,
   kind: row.kind as SessionEventKind,
@@ -271,5 +271,5 @@ export const listSessionEvents = async ({
       ORDER BY created_at ASC, id ASC`,
     [sessionId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toSessionEvent({ row }));
 };

@@ -161,7 +161,7 @@ describe('fixRunTitle', () => {
     });
     const idle = fixRunOf({ sources: [source('t1', 'ready', FIRST)] });
 
-    expect(live === null ? '' : fixRunTitle({ run: live })).toBe('Fixing 2 comments');
-    expect(idle === null ? '' : fixRunTitle({ run: idle })).toBe('Fix run · 1 comment');
+    expect(live === null ? '' : fixRunTitle({ run: live })).toBe('Fixing 2 threads');
+    expect(idle === null ? '' : fixRunTitle({ run: idle })).toBe('Fix run · 1 thread');
   });
 });

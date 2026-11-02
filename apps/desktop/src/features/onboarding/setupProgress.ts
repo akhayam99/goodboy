@@ -1,6 +1,5 @@
 import {
   NUMBERED_WIZARD_STEPS,
-  OPTIONAL_WIZARD_STEPS,
   WIZARD_STEP_LABEL,
   type NumberedWizardStepId,
 } from './OnboardingWizard/wizardSteps';
@@ -11,7 +10,6 @@ type SetupRow = {
   readonly id: SetupItemId;
   readonly title: string;
   readonly isDone: boolean;
-  readonly isOptional: boolean;
 };
 
 export type SetupProgress = {
@@ -21,7 +19,6 @@ export type SetupProgress = {
   readonly isDone: boolean;
   readonly next: SetupItemId | null;
   readonly count: string;
-  readonly fraction: number;
 };
 
 type Params = {
@@ -33,7 +30,6 @@ export const setupProgress = ({ completed }: Params): SetupProgress => {
     id,
     title: WIZARD_STEP_LABEL[id],
     isDone: completed.has(id),
-    isOptional: OPTIONAL_WIZARD_STEPS.has(id),
   }));
   const done = rows.filter((row) => row.isDone).length;
   const total = rows.length;
@@ -44,6 +40,5 @@ export const setupProgress = ({ completed }: Params): SetupProgress => {
     isDone: done === total,
     next: rows.find((row) => !row.isDone)?.id ?? null,
     count: `${done} of ${total}`,
-    fraction: total === 0 ? 0 : done / total,
   };
 };

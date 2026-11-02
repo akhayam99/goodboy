@@ -1,5 +1,4 @@
 import { SegmentedTabs } from '@goodboy/ui';
-import { NAMES } from '../../../../shared/utils/names';
 import type { StudioHomeView } from '../../studioHomeView';
 
 type Props = {
@@ -27,7 +26,6 @@ export const StudioHomeTabs = ({ value, workflowCount, stepCount, onChange }: Pr
         label: 'Saved steps',
         ...(stepCount > 0 && value !== 'steps' && { badge: stepCount }),
       },
-      { value: 'rules', label: NAMES.runDefaults },
     ]}
   />
 );

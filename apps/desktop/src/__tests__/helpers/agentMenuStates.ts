@@ -31,6 +31,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.moveToAuto (Wait for the turn to end first.)',
@@ -45,6 +46,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.stop',
@@ -63,6 +65,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.close',
@@ -78,6 +81,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.moveToAuto',
@@ -92,6 +96,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.close',
@@ -107,6 +112,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.moveToAuto',
@@ -121,6 +127,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes',
+      'agent.transcript',
       'agent.rename',
       'agent.reopen',
       'agent.moveToAuto',
@@ -150,6 +157,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
     [
       'agent.open',
       'agent.changes (This session has no folder yet)',
+      'agent.transcript',
       'agent.message',
       'agent.rename',
       'agent.moveToAuto',

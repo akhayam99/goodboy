@@ -53,4 +53,65 @@ describe('the u34 question card states scene', () => {
       expect(node.querySelectorAll('h2[data-question-header]')).toHaveLength(1);
     }
   });
+
+  const caseNode = ({
+    container,
+    name,
+  }: {
+    readonly container: HTMLElement;
+    readonly name: string;
+  }) => {
+    const node = container.querySelector<HTMLElement>(`[data-qc-case="${name}"]`);
+    if (node === null) {
+      throw new Error(`no case ${name}`);
+    }
+    return node;
+  };
+
+  const mountScene = () => {
+    const Scene = U34_QUESTION_CARD_SCENES[SCENE];
+    return render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+  };
+
+  it('keeps the Something else row on the option geometry when it opens', () => {
+    const { container } = mountScene();
+
+    const rowOf = (name: string) => {
+      const label = caseNode({ container, name }).querySelector<HTMLElement>(
+        'button[aria-label="Something else"]',
+      );
+      return label?.closest<HTMLElement>('[data-selected], .grid') ?? null;
+    };
+    const closed = rowOf('single');
+    const open = rowOf('custom-open');
+
+    expect(closed?.children).toHaveLength(2);
+    expect(open?.children).toHaveLength(2);
+    expect(open?.className.replace('bg-selected', '').trim()).toBe(
+      closed?.className.replace('hover:bg-hover', '').trim(),
+    );
+    const openColumn = open?.children[1];
+    expect(openColumn?.firstElementChild?.getAttribute('aria-label')).toBe('Something else');
+    expect(openColumn?.querySelector('textarea')?.value).toBe('Batch only the Northwind ones');
+  });
+
+  it('gives answered and resolved cards one result shape with the status row last', () => {
+    const { container } = mountScene();
+
+    const answered = caseNode({ container, name: 'answered' });
+    const resolved = caseNode({ container, name: 'resolved-by-agent' });
+
+    for (const node of [answered, resolved]) {
+      const result = node.querySelector('[data-question-result]');
+      expect(result?.lastElementChild?.querySelector('[role="status"]')).not.toBeNull();
+    }
+    const answer = answered.querySelector<HTMLElement>('[data-question-answer]');
+    expect(answer?.textContent).toBe('Batch them');
+    expect(resolved.querySelector('[data-question-answer]')).toBeNull();
+    expect(resolved.querySelector('[role="status"]')?.textContent).toBe('Resolved by the agent');
+  });
 });

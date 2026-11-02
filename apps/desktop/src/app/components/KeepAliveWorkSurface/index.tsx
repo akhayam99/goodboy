@@ -1,3 +1,4 @@
+import { Activity } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { SessionWorkspace } from '../../../features/session/components/SessionWorkspace';
 import { useSessionById } from '../../../store';
@@ -16,10 +17,12 @@ export const KeepAliveWorkSurface = ({ sessionId, isActive }: KeepAliveWorkSurfa
     return null;
   }
   return (
-    <div hidden={!isActive} className="absolute inset-0">
-      <PanelBoundary leaveLabel="Go to the board" onLeave={goToBoard}>
-        <SessionWorkspace session={session} isActive={isActive} />
-      </PanelBoundary>
-    </div>
+    <Activity mode={isActive ? 'visible' : 'hidden'}>
+      <div className="absolute inset-0">
+        <PanelBoundary leaveLabel="Go to the board" onLeave={goToBoard}>
+          <SessionWorkspace session={session} />
+        </PanelBoundary>
+      </div>
+    </Activity>
   );
 };

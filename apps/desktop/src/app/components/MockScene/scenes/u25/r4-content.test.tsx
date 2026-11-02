@@ -81,7 +81,7 @@ describe('the r4 content scenes', () => {
   it('r4-context-cards draws Goal, Decisions, Summary and Explanations as cards', async () => {
     await mount('r4-context-cards');
 
-    expect(contextCards()).toEqual(['Goal', 'Decisions', 'Summary', 'Explanations']);
+    expect(contextCards()).toEqual(['Goal', 'Decision records', 'Summary', 'Explanations']);
     document.querySelectorAll<HTMLElement>('[data-context-card]').forEach((card) => {
       expect(card.querySelector('[data-band] h2')).not.toBeNull();
     });

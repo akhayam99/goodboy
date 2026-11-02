@@ -78,7 +78,7 @@ const goalsOnScreen = (): ReadonlyArray<string> =>
 
 const tickFolder = ({ dialog, name }: { readonly dialog: HTMLElement; readonly name: string }) =>
   fireEvent.click(
-    within(within(dialog).getByRole('group', { name: 'Folder' })).getByRole('checkbox', { name }),
+    within(within(dialog).getByRole('group', { name: 'Project' })).getByRole('checkbox', { name }),
   );
 
 const prefs = () => useAppStore.getState().sessionViewPrefs[harborline.id];

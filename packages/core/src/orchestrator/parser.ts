@@ -1,3 +1,4 @@
+import { asRecord } from '../asRecord';
 import type {
   EffortLevel,
   ProviderId,
@@ -17,13 +18,6 @@ const START_MARKER = '<<orchestrator>>';
 const END_MARKER = '<</orchestrator>>';
 const SUMMARY_START_MARKER = '<<run-summary>>';
 const SUMMARY_END_MARKER = '<</run-summary>>';
-
-const asRecord = (value: unknown): Record<string, unknown> | null => {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-};
 
 const nonEmptyString = (value: unknown): string | null => {
   if (typeof value !== 'string' || value.trim().length === 0) {
@@ -158,7 +152,7 @@ type StepParams = {
 };
 
 const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => {
-  const step = asRecord(value);
+  const step = asRecord({ value });
   if (step === null) {
     return null;
   }
@@ -216,7 +210,7 @@ export const parseOrchestratorDecision = ({
   if (slice === null) {
     return null;
   }
-  const decision = asRecord(parseJson(slice));
+  const decision = asRecord({ value: parseJson(slice) });
   if (decision === null) {
     return null;
   }

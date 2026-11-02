@@ -33,13 +33,13 @@ afterEach(() => {
 });
 
 describe('fileSignature', () => {
-  it('changes with the status, the counts and the hunks', () => {
+  it('changes with the status and the counts, and not with whether the hunks are loaded', () => {
     const base = fileSignature(fileAt());
 
     expect(fileSignature(fileAt())).toBe(base);
     expect(fileSignature(fileAt({ additions: 4 }))).not.toBe(base);
     expect(fileSignature(fileAt({ status: 'renamed' }))).not.toBe(base);
-    expect(fileSignature(fileAt({ hunks: [] }))).not.toBe(base);
+    expect(fileSignature(fileAt({ hunks: [] }))).toBe(base);
   });
 });
 
@@ -51,6 +51,21 @@ describe('viewedStateOf', () => {
     expect(viewedStateOf(file, {})).toBe('none');
     expect(viewedStateOf(file, map)).toBe('viewed');
     expect(viewedStateOf(fileAt({ deletions: 9 }), map)).toBe('stale');
+  });
+
+  it('keeps a mark saved with the hunk headers viewed once the hunks are loaded', () => {
+    const file = fileAt();
+    const map = { [file.path]: 'modified:3:1:1:@@ -1,4 +1,6 @@' };
+
+    expect(viewedStateOf(file, map)).toBe('viewed');
+    expect(viewedStateOf(fileAt({ deletions: 9 }), map)).toBe('stale');
+  });
+
+  it('reads the same mark on a file whose hunks are not loaded yet', () => {
+    const file = fileAt();
+    const map = { [file.path]: fileSignature(file) };
+
+    expect(viewedStateOf(fileAt({ hunks: [] }), map)).toBe('viewed');
   });
 });
 

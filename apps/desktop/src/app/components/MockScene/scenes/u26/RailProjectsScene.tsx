@@ -24,7 +24,7 @@ const seed = (): void => {
 };
 
 const SELECTORS: Readonly<Record<Exclude<Opens, 'none'>, string>> = {
-  picker: '[data-level-card] button[aria-label="Add folder"]',
+  picker: '[data-level-card] button[aria-label="Add project"]',
   focus: 'button[aria-label="New branch in ledger-core"]',
 };
 

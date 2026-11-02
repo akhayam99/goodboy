@@ -8,10 +8,8 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { ChevronRight, List } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { Divider, Eyebrow, ScrollFade, EmptyState } from '@goodboy/ui';
+import { Divider } from '@goodboy/ui';
 import { NAMES } from '../../../../shared/utils/names';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { parseQuery } from '../../../quick-actions/grammar';
 import {
   buildActionList,
@@ -42,15 +40,17 @@ import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { PaletteModeProps } from '../../paletteModeTypes';
 import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
-import { hasOwnPreviewOf, paletteBodyLayoutOf } from './paletteBodyLayout';
+import { hasOwnPreviewOf, paletteBodyLayoutOf, paletteListMaxHeightOf } from './paletteBodyLayout';
 import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
-import type { PaletteEntry, PaletteScope } from '../../types';
+import type { PaletteEntry } from '../../types';
 import { PaletteInputRow } from '../PaletteOverlay/PaletteInputRow';
 import { ScopeChip } from '../PaletteOverlay/ScopeChip';
-import { CommandRowView } from './CommandRowView';
+import { CommandsList } from './CommandsList';
 import { EntryPreview } from './EntryPreview';
 import { PreviewHints } from './PreviewHints';
+import { sessionIdOfScope } from './sessionIdOfScope';
+import { useIsScopeLoaded } from './useIsScopeLoaded';
 import { useScopeInfo } from './useScopeInfo';
 import { VerbConfirm } from './VerbConfirm';
 
@@ -73,15 +73,6 @@ type Props = PaletteModeProps & {
 const NO_ASKS: ReadonlyArray<PaletteEntry> = [];
 
 const ALL_ACTIONS_KEY = 'level:session-actions';
-
-const sessionIdOf = (scope: PaletteScope | null): SessionId | null =>
-  scope !== null &&
-  (scope.kind === 'session' ||
-    scope.kind === 'agent' ||
-    scope.kind === 'workflowRun' ||
-    scope.kind === 'pullRequest')
-    ? scope.sessionId
-    : null;
 
 const REGISTRY_LENS_KEYS: ReadonlySet<string> = new Set(['lens:review', 'lens:files']);
 
@@ -115,7 +106,7 @@ export const CommandsBody = ({
   const scopeTarget: ObjectTarget | null =
     scope === null || scope.kind === 'workspace' ? null : scope;
   const scopeActions = useObjectActions({ target: scopeTarget, env });
-  const scopeSessionId = sessionIdOf(scope);
+  const scopeSessionId = sessionIdOfScope({ scope });
   const parentTarget = useMemo<ObjectTarget | null>(
     () =>
       scopeSessionId !== null && scope?.kind !== 'session'
@@ -128,6 +119,7 @@ export const CommandsBody = ({
   const entries = useCommandEntries();
   const needsYou = useNeedsYouEntries();
   const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
+  const isScopeLoaded = useIsScopeLoaded({ scopeSessionId });
   const activePalette = scopeSessionId === null ? null : palette;
   const runTarget = scope?.kind === 'workflowRun' ? null : (activePalette?.run?.target ?? null);
   const liveTarget = scope?.kind === 'agent' ? null : (activePalette?.liveAgent?.target ?? null);
@@ -423,6 +415,16 @@ export const CommandsBody = ({
     [scope?.kind, level, query, builtSections],
   );
   const rows = useMemo(() => flattenRows(sections), [sections]);
+  const listMaxHeight = useMemo(
+    () =>
+      paletteListMaxHeightOf({
+        sections: sections.map((section) => ({
+          hasTitle: section.title !== null,
+          rowCount: section.rows.length,
+        })),
+      }),
+    [sections],
+  );
   const rowKeys = useMemo(() => rows.map((row) => row.item.key), [rows]);
   const cursor = useListboxCursor({
     ids: rowKeys,
@@ -664,55 +666,19 @@ export const CommandsBody = ({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1">
-            <ScrollFade className="max-h-[320px] min-h-0 min-w-0 flex-1" fadeFrom="floating">
-              <ul
-                ref={listRef}
-                id={listboxId}
-                role="listbox"
-                aria-label="Commands"
-                className="flex flex-col p-1"
-              >
-                {rows.length === 0 ? (
-                  <li role="presentation">
-                    <EmptyState
-                      size="section"
-                      icon={CONCEPT_ICONS.search}
-                      tone={CONCEPT_TONE.search}
-                      title={
-                        (level === null ? query : filter).trim() === ''
-                          ? 'Nothing to do here yet'
-                          : `Nothing matches “${(level === null ? query : filter).trim()}”`
-                      }
-                      className="justify-center"
-                    />
-                  </li>
-                ) : (
-                  sections.flatMap((section, sectionIndex) => [
-                    ...(section.title === null
-                      ? []
-                      : [
-                          <li
-                            key={`section:${section.title}`}
-                            role="presentation"
-                            className="flex h-6 items-end px-2"
-                          >
-                            <Eyebrow label={section.title} />
-                          </li>,
-                        ]),
-                    ...section.rows.map((row) => (
-                      <CommandRowView
-                        key={`${sectionIndex}:${row.item.key}`}
-                        row={row}
-                        id={optionId({ id: row.item.key })}
-                        isSelected={row.item.key === selected?.item.key}
-                        onHover={() => selectRow({ id: row.item.key })}
-                        onRun={() => activate(row.item)}
-                      />
-                    )),
-                  ])
-                )}
-              </ul>
-            </ScrollFade>
+            <CommandsList
+              listRef={listRef}
+              listboxId={listboxId}
+              maxHeight={listMaxHeight}
+              sections={sections}
+              selectedKey={selected?.item.key ?? null}
+              query={level === null ? query : filter}
+              isLoaded={isScopeLoaded}
+              gateKey={scopeInfo?.key ?? 'workspace'}
+              optionId={optionId}
+              onSelect={selectRow}
+              onRun={activate}
+            />
             {selected !== null && layout.previewShown && (
               <>
                 <Divider orientation="vertical" className="hidden md:block" />

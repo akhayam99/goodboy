@@ -1,32 +1,44 @@
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { Button, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import { StepMark } from './StepMark';
 
 type Props = {
   readonly title: string;
   readonly detail: string;
-  readonly isDone: boolean;
   readonly actionLabel: string;
+  readonly isLead: boolean;
   readonly onOpen: (() => void) | null;
 };
 
 const ROW_CLASS = 'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left';
 
-export const StepRow = ({ title, detail, isDone, actionLabel, onOpen }: Props) => {
+export const StepRow = ({ title, detail, actionLabel, isLead, onOpen }: Props) => {
   const text = (
     <span className="flex min-w-0 flex-1 flex-col">
-      <span
-        className={cn('truncate text-row', isDone ? 'text-muted-foreground' : 'text-foreground')}
-      >
-        {title}
-      </span>
+      <span className="truncate text-row text-foreground">{title}</span>
       <span className="truncate text-meta text-faint-foreground">{detail}</span>
     </span>
   );
-  if (isDone || onOpen === null) {
+  if (onOpen === null) {
     return (
-      <li data-state={isDone ? 'done' : 'open'} className={ROW_CLASS}>
-        <StepMark isDone={isDone} />
+      <li data-state="open" className={ROW_CLASS}>
+        <StepMark isDone={false} />
         {text}
+      </li>
+    );
+  }
+  if (isLead) {
+    return (
+      <li data-state="open" data-lead="" className={ROW_CLASS}>
+        <StepMark isDone={false} />
+        {text}
+        <Button
+          variant="secondary"
+          size="xs"
+          onClick={onOpen}
+          aria-label={`${actionLabel} ${title}`}
+        >
+          {actionLabel}
+        </Button>
       </li>
     );
   }
@@ -40,7 +52,6 @@ export const StepRow = ({ title, detail, isDone, actionLabel, onOpen }: Props) =
       >
         <StepMark isDone={false} />
         {text}
-        <span className="shrink-0 text-meta text-primary">{actionLabel}</span>
       </button>
     </li>
   );

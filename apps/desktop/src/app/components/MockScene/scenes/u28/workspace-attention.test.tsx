@@ -68,12 +68,12 @@ describe('the workspace attention scene', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Switch or open a workspace' });
     const northwind = within(dialog).getByRole('button', {
-      name: 'Switch to Northwind, 2 need you',
+      name: 'Switch to Northwind, 2 sessions need you',
     });
     expect(northwind.textContent).toContain('Checks failing, 1 question for you');
     expect(
       within(dialog)
-        .getByRole('button', { name: 'Switch to Acme, 1 needs you' })
+        .getByRole('button', { name: 'Switch to Acme, 1 session needs you' })
         .querySelector('[data-workspace-attention]')
         ?.getAttribute('data-workspace-attention'),
     ).toBe('warning');
@@ -84,7 +84,7 @@ describe('the workspace attention scene', () => {
 
     const trigger = container.querySelector('button[aria-label^="Switch workspace"]');
     expect(trigger?.getAttribute('aria-label')).toBe(
-      'Switch workspace: Harborline, 3 need you in other workspaces',
+      'Switch workspace: Harborline, 3 sessions need you in other workspaces',
     );
     expect(trigger?.querySelector('[data-workspace-attention="danger"]')?.textContent).toBe('3');
   });

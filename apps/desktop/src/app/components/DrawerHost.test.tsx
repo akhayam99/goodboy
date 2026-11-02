@@ -379,13 +379,13 @@ afterEach(() => {
 describe('every drawer names its close control Close', () => {
   it.each(ENTRIES.map((entry) => [`${entry.kind}: ${entry.region}`, entry] as const))(
     '%s',
-    (_label, entry) => {
+    async (_label, entry) => {
       entry.seed?.();
       useAppStore.setState({ drawer: entry.drawer });
 
       renderHost();
 
-      const region = screen.getByRole('region', { name: entry.region });
+      const region = await screen.findByRole('region', { name: entry.region });
       expect(within(region).getByRole('button', { name: 'Close' })).toBeDefined();
       const namedCloses = within(region)
         .queryAllByRole('button', { name: /^Close .+/ })

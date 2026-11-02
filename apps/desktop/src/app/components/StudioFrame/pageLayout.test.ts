@@ -220,7 +220,7 @@ describe('one page layout', () => {
   it('registers a page root for every studio door that opens a page', () => {
     const doors = new Set(DOOR_PAGES.map((root) => root.page));
     const studioPages = Object.values(STUDIO_META).flatMap((meta) =>
-      meta.page !== null && meta.close !== 'band' ? [meta.page] : [],
+      meta.page !== null && meta.close !== 'back' ? [meta.page] : [],
     );
 
     expect(studioPages.filter((page) => !doors.has(page))).toEqual([]);
@@ -314,8 +314,7 @@ describe('empty states and skeletons on the page inset', () => {
     const board = read('features/workspace/components/StageBoard/index.tsx');
 
     expect(drifted).toEqual([]);
-    expect(board).toMatch(/view === 'board' && <BoardSkeleton/);
-    expect(board).toMatch(/view === 'list' && <SessionsListSkeleton/);
+    expect(board).toMatch(/pending && <BoardSkeleton/);
   });
 
   it('puts every page empty state on the page column, at its top left', () => {

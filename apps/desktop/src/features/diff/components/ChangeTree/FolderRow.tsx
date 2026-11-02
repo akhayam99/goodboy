@@ -6,6 +6,7 @@ import type { TreeRow } from '../../lib/changeTree';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { Delta } from './Delta';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type FolderTreeRow = Extract<TreeRow, { readonly kind: 'folder' }>;
 
@@ -73,7 +74,7 @@ export const FolderRow = ({
         />
         <ViewedRing viewed={viewedCount} total={row.fileCount} />
         <Tooltip
-          content={`${row.fileCount} ${row.fileCount === 1 ? 'file' : 'files'}`}
+          content={`${countNoun({ count: row.fileCount, one: 'file' })}`}
           anchorClassName="min-w-0 flex-1"
         >
           <span className="block min-w-0 truncate">{row.label}</span>

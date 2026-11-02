@@ -213,7 +213,7 @@ describe('ChangeTree', () => {
       .getAllByRole('button')
       .slice(0, 3)
       .map((button) => button.getAttribute('aria-label') ?? button.textContent);
-    expect(head).toEqual(['Next unviewed4', 'Keyboard shortcuts', 'Fold the file list']);
+    expect(head).toEqual(['Next unviewed file', 'Keyboard shortcuts', 'Fold the file list']);
     fireEvent.click(screen.getByRole('button', { name: 'Fold the file list' }));
     expect(onFold).toHaveBeenCalledTimes(1);
   });
@@ -475,31 +475,15 @@ describe('ChangeTree', () => {
     expect(done.querySelector('circle')).toBeNull();
   });
 
-  it('puts a viewed toggle first on every file row and calls it with the file', () => {
-    const onToggleViewed = vi.fn();
+  it('draws a check on a viewed row and no second checkbox on any row', () => {
     renderTree({
-      onToggleViewed,
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
     });
 
-    const done = within(itemOf(/package\.json/)).getByRole('button', {
-      name: 'Viewed: package.json',
-    });
-    const open = within(itemOf(/page\.tsx/)).getByRole('button', { name: 'Viewed: page.tsx' });
-    expect(done.getAttribute('aria-pressed')).toBe('true');
-    expect(open.getAttribute('aria-pressed')).toBe('false');
-
-    fireEvent.click(open);
-
-    expect(onToggleViewed).toHaveBeenCalledWith(
-      expect.objectContaining({ path: 'src/ledger/export/page.tsx' }),
-    );
-  });
-
-  it('offers no viewed toggle on a read only change', () => {
-    renderTree({ isReadOnly: true });
-
+    within(itemOf(/package\.json/)).getByRole('img', { name: 'Viewed' });
+    expect(within(itemOf(/page\.tsx/)).queryByRole('img', { name: 'Viewed' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Viewed:/ })).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
   });
 
   it('marks a file that changed after it was viewed with an amber dot, still unviewed', () => {
@@ -507,11 +491,10 @@ describe('ChangeTree', () => {
       stateOf: (file) => (file.path === 'package.json' ? 'stale' : 'none'),
     });
 
-    const toggle = within(itemOf(/package\.json/)).getByRole('button', {
-      name: 'Viewed: package.json',
+    const mark = within(itemOf(/package\.json/)).getByRole('img', {
+      name: 'Changed since you viewed it',
     });
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
-    expect(toggle.querySelector('span')).not.toBeNull();
+    expect(mark.querySelector('span')).not.toBeNull();
     expect(
       openFilterMenu().getByRole('menuitemradio', { name: /^Unviewed/ }).textContent,
     ).toContain('4');
@@ -543,13 +526,13 @@ describe('ChangeTree', () => {
             : NO_KINDS,
       });
 
-      const chip = screen.getByRole('img', { name: '2 notes, 1 on GitHub' });
+      const chip = screen.getByRole('img', { name: '2 drafts, 1 on GitHub' });
       expect(chip.textContent).toBe('3');
       fireEvent.mouseEnter(chip.parentElement ?? chip);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
-      expect(screen.getByRole('tooltip').textContent).toBe('2 notes, 1 on GitHub');
+      expect(screen.getByRole('tooltip').textContent).toBe('2 drafts, 1 on GitHub');
     } finally {
       vi.useRealTimers();
     }
@@ -579,15 +562,16 @@ describe('ChangeTree', () => {
     expect(within(row).getByText('StatementBalanceCard.test.tsx')).toBeDefined();
   });
 
-  it('jumps to the next unviewed file from its head button and says how many are left', () => {
+  it('titles the head Viewed N of M and jumps to the next unviewed file from Next', () => {
     const onNextUnviewed = vi.fn();
     renderTree({
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
       onNextUnviewed,
     });
 
+    screen.getByText('Viewed 1 of 4');
     const next = screen.getByRole('button', { name: /^Next unviewed/ });
-    expect(next.textContent).toContain('3');
+    expect(next.textContent).toBe('Next');
     fireEvent.click(next);
     expect(onNextUnviewed).toHaveBeenCalledTimes(1);
   });

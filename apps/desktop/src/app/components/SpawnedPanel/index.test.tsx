@@ -57,13 +57,13 @@ const panelMode = (): string | null =>
 const panel = (): HTMLElement => screen.getByRole('region', { name: 'Agents' });
 
 describe('the Agents panel', () => {
-  it('follows the open run, lists every launch on All launches, and follows the run picked there', async () => {
+  it('follows the open run, lists every launch on All runs, and follows the run picked there', async () => {
     await mount('c08-run-working');
 
     expect(panelMode()).toBe('run');
     expect(within(panel()).getByText('Fix flaky tests in the ledger export')).toBeDefined();
 
-    fireEvent.click(within(panel()).getByRole('button', { name: 'All launches' }));
+    fireEvent.click(within(panel()).getByRole('button', { name: 'All runs' }));
     expect(panelMode()).toBe('all');
     const launches = within(panel()).getByRole('tree', { name: 'Launches' });
     const heads = within(launches)

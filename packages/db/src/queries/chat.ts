@@ -1,3 +1,4 @@
+import { isoFromMs } from './isoFromMs';
 import {
   CHAT_MESSAGE_ROLES,
   CHAT_MESSAGE_STATUSES,
@@ -96,8 +97,6 @@ const CHAT_COLUMNS = `c.id, c.workspace_id AS workspaceId, c.title, c.provider, 
 const MESSAGE_COLUMNS = `id, chat_id AS chatId, role, content, status, reads, error, provider, model, effort,
   created_at AS createdAt, updated_at AS updatedAt`;
 
-const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
-
 const toMs = (iso: IsoDateTime): number => Date.parse(iso);
 
 const isRole = (value: string): value is ChatMessageRole =>
@@ -129,11 +128,11 @@ const toSummary = ({ row, modelsUsed, messageCount }: ToSummaryParams): ChatSumm
     provider: row.provider,
     model: row.model,
     effort: toEffort(row.effort),
-    pinnedAt: row.pinnedAt === null ? null : toIso(row.pinnedAt),
-    archivedAt: row.archivedAt === null ? null : toIso(row.archivedAt),
-    lastActivityAt: toIso(row.lastActivityAt),
-    createdAt: toIso(row.createdAt),
-    updatedAt: toIso(row.updatedAt),
+    pinnedAt: row.pinnedAt === null ? null : isoFromMs({ ms: row.pinnedAt }),
+    archivedAt: row.archivedAt === null ? null : isoFromMs({ ms: row.archivedAt }),
+    lastActivityAt: isoFromMs({ ms: row.lastActivityAt }),
+    createdAt: isoFromMs({ ms: row.createdAt }),
+    updatedAt: isoFromMs({ ms: row.updatedAt }),
     preview: row.preview,
     modelsUsed,
     messageCount,
@@ -150,7 +149,7 @@ const toAttachment = (row: AttachmentRow): ChatMessageAttachment => ({
   fileName: row.fileName,
   mimeType: row.mimeType,
   byteSize: row.byteSize,
-  createdAt: toIso(row.createdAt),
+  createdAt: isoFromMs({ ms: row.createdAt }),
 });
 
 type ToMessageParams = {
@@ -174,8 +173,8 @@ const toMessage = ({ row, attachments }: ToMessageParams): ChatMessage | null =>
     model: row.model,
     effort: toEffort(row.effort),
     attachments,
-    createdAt: toIso(row.createdAt),
-    updatedAt: toIso(row.updatedAt),
+    createdAt: isoFromMs({ ms: row.createdAt }),
+    updatedAt: isoFromMs({ ms: row.updatedAt }),
   };
 };
 
@@ -503,7 +502,7 @@ const toLink = (row: LinkRow): ChatSessionLink | null => {
     sessionId: row.sessionId as SessionId,
     messageId: row.messageId === null ? null : (row.messageId as ChatMessageId),
     kind: row.kind,
-    createdAt: toIso(row.createdAt),
+    createdAt: isoFromMs({ ms: row.createdAt }),
   };
 };
 

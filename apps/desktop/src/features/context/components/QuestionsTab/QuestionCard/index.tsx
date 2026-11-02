@@ -94,7 +94,7 @@ export const QuestionCard = ({
   const isLive = state === 'open' || state === 'staged';
   const isBlockingNow = question.isBlocking && isOpen;
   const answerText = question.userAnswer ?? '';
-  const showsAnswerBox =
+  const showsAnswerLine =
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
 
   const dismiss = isOpen && !question.isBlocking && !isWaiting ? onDismiss : null;
@@ -179,11 +179,6 @@ export const QuestionCard = ({
         pager={pager}
         onDismiss={dismiss}
       />
-      {showsAnswerBox && (
-        <p className="rounded-md bg-fill px-3 py-2 text-body text-foreground select-text">
-          {answerText}
-        </p>
-      )}
       {isLive && isWaiting && (
         <DelegateWaitingRow
           onOpen={delegate.onOpenDelegate}
@@ -227,6 +222,7 @@ export const QuestionCard = ({
       {!isOpen && (
         <QuestionAnswerDone
           label={questionDoneLabel({ state, question, askerName, answeredByName, isHandedOff })}
+          answer={showsAnswerLine ? answerText : null}
           onUndo={onUndo}
         />
       )}

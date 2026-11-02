@@ -1,6 +1,14 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { AnchoredPopover, EmptyLine, ICON_SIZE, Input, Kbd, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  EmptyLine,
+  ICON_SIZE,
+  Input,
+  Kbd,
+  ScrollFade,
+  useDropdown,
+} from '@goodboy/ui';
 
 import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -155,40 +163,37 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           className="h-7 pl-7 text-meta"
         />
       </label>
-      <ul
-        id={listId}
-        role="listbox"
-        aria-label="Steps"
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2"
-      >
-        <AddStepMenuOption
-          id={blankId}
-          isActive={active === 0}
-          lead={<Plus size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />}
-          name="Blank step"
-          note=""
-          trail={active === 0 ? <Kbd look="cap">Enter</Kbd> : null}
-          onHover={() => setActiveIndex(0)}
-          onPick={() => pick(null)}
-        />
-        {builtin.length > 0 ? (
-          <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
-            Built in
-          </li>
-        ) : null}
-        {builtin.map((step, index) => renderStep(step, index + 1))}
-        {workspace.length > 0 ? (
-          <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
-            This workspace
-          </li>
-        ) : null}
-        {workspace.map((step, index) => renderStep(step, index + 1 + builtin.length))}
-        {needle !== '' && builtin.length === 0 && workspace.length === 0 ? (
-          <li role="presentation" className="px-2 py-1">
-            <EmptyLine>No saved steps match that search</EmptyLine>
-          </li>
-        ) : null}
-      </ul>
+      <ScrollFade className="min-h-0 flex-1">
+        <ul id={listId} role="listbox" aria-label="Steps" className="flex flex-col px-2 pb-2">
+          <AddStepMenuOption
+            id={blankId}
+            isActive={active === 0}
+            lead={<Plus size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />}
+            name="Blank step"
+            note=""
+            trail={active === 0 ? <Kbd look="cap">Enter</Kbd> : null}
+            onHover={() => setActiveIndex(0)}
+            onPick={() => pick(null)}
+          />
+          {builtin.length > 0 ? (
+            <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
+              Built in
+            </li>
+          ) : null}
+          {builtin.map((step, index) => renderStep(step, index + 1))}
+          {workspace.length > 0 ? (
+            <li role="presentation" className="px-2 pb-0.5 pt-2 text-eyebrow text-faint-foreground">
+              This workspace
+            </li>
+          ) : null}
+          {workspace.map((step, index) => renderStep(step, index + 1 + builtin.length))}
+          {needle !== '' && builtin.length === 0 && workspace.length === 0 ? (
+            <li role="presentation" className="px-2 py-1">
+              <EmptyLine>No saved steps match that search</EmptyLine>
+            </li>
+          ) : null}
+        </ul>
+      </ScrollFade>
     </AnchoredPopover>
   );
 };

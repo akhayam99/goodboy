@@ -19,7 +19,7 @@ import {
 import { openCountWord } from '../../../../../../features/inbox/openCountWord';
 import { taskGroupTotalsOf } from '../../../../../../features/inbox/taskGroupTotalsOf';
 import { NAMES } from '../../../../../../shared/utils/names';
-import { sourceFailureLine } from '../../../../../../features/inbox/sourceFailureLine';
+import { sourceFailureOf } from '../../../../../../features/inbox/sourceFailureOf';
 import { taskGroupsOf, type TaskGroupBy } from '../../../../../../features/inbox/taskGroups';
 import type { TaskScope } from '../../../../../../features/inbox/taskListViewStorage';
 import {
@@ -120,11 +120,11 @@ export const TasksStage = ({
   const failing = INBOX_PROVIDERS.filter((provider) => failures[provider] !== undefined);
   const lineOf = (provider: InboxProvider) => ({
     key: provider,
-    text: sourceFailureLine({
+    failure: sourceFailureOf({
       name: integrationLabel({ provider }),
       message: failures[provider] ?? '',
     }),
-    onRetry: noop,
+    onAction: noop,
   });
   const handlers = {
     selectedKey,

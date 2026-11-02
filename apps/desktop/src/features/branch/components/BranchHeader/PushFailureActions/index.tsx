@@ -3,7 +3,6 @@ import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { PushFixStatusLine } from '../../../../../shared/components/PushFixStatusLine';
-import { StaleDepsAction } from '../../../../../shared/components/StaleDepsAction';
 import { usePushFix } from '../../../../../shared/hooks/usePushFix';
 import { NAMES } from '../../../../../shared/utils/names';
 import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
@@ -17,7 +16,6 @@ type Props = {
   readonly confirmedRemoteSha: string | null;
   readonly message: string;
   readonly onResolved: () => void;
-  readonly onRetry: () => void;
 };
 
 export const PushFailureActions = ({
@@ -28,7 +26,6 @@ export const PushFailureActions = ({
   confirmedRemoteSha,
   message,
   onResolved,
-  onRetry,
 }: Props) => {
   const [isFixing, setIsFixing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
@@ -82,7 +79,6 @@ export const PushFailureActions = ({
       )}
       {fix.kind !== 'working' && (
         <>
-          <StaleDepsAction sessionId={sessionId} mountId={mountId} onInstalled={onRetry} />
           <Button
             size="sm"
             variant="secondary"

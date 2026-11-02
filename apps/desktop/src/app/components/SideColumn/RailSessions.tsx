@@ -9,7 +9,7 @@ import { RailFlyoutBody } from './RailFlyoutBody';
 import { RailMoreButton } from './RailMoreButton';
 import { RailSessionButton, type RailSessionSign } from './RailSessionButton';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
-import { RAIL_PINNED_LIMIT, useRailPinned } from './useRailPinned';
+import { useRailPinned } from './useRailPinned';
 import { useRailFlyout, type RailFlyoutKey } from './useRailFlyout';
 
 type Props = {
@@ -34,7 +34,7 @@ const focusFirstFlyoutRow = (): void => {
 
 export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) => {
   const sessions = useSessions();
-  const { all: pinned } = useRailPinned({ workspaceId });
+  const { all: pinned, shown } = useRailPinned({ workspaceId });
   const flyout = useRailFlyout();
   const isStudioOver = isStudioOverSession({ place });
   const hasOpenSession = place === null || isStudioOver;
@@ -42,9 +42,11 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
     !hasOpenSession || currentSessionId === null
       ? null
       : (sessionById(sessions, currentSessionId) ?? null);
-  const shown = pinned.slice(0, RAIL_PINNED_LIMIT);
-  const extra = pinned.length - shown.length;
   const hasOpenTail = open !== null && !shown.some((session) => session.id === open.id);
+  const extra =
+    pinned.length -
+    shown.length -
+    (hasOpenTail && pinned.some((session) => session.id === open.id) ? 1 : 0);
   const sign: RailSessionSign = place === null ? 'current' : 'remembered';
   const { target, close } = flyout;
   const hover = useHoverCardTarget();
@@ -84,6 +86,7 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
       session={session}
       sign={sign}
       hasFlyout
+      isOpenTail={hasOpenTail}
       onSelect={() => select(session.id as SessionId)}
       onEnter={enterWith('session')}
       onLeave={flyout.leave}
@@ -111,13 +114,9 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
   }
 
   return (
-    <div className="flex flex-col items-center gap-1 pt-2" data-rail-sessions="">
+    <div className="flex flex-col items-center gap-1 px-2 pt-2" data-rail-sessions="">
       {shown.map((session) => (session.id === open?.id ? openNodeOf(session) : pinNodeOf(session)))}
-      {hasOpenTail ? (
-        <div data-slot="rail-open-tail" className="contents">
-          {openNodeOf(open)}
-        </div>
-      ) : null}
+      {hasOpenTail ? openNodeOf(open) : null}
       {extra > 0 ? (
         <RailMoreButton
           count={extra}
@@ -139,7 +138,7 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
       />
       <RailFlyout
         target={target}
-        label={target?.key === 'more' ? 'Pinned sessions' : 'Session pages'}
+        label={target?.key === 'more' ? 'Sessions' : 'Session pages'}
         onKeep={flyout.keep}
         onLeave={flyout.leave}
         onClose={flyout.close}

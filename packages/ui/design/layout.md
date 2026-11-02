@@ -16,7 +16,7 @@ what it holds live in [docs/navigation/shell.md](../../../docs/navigation/shell.
 | New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
 | door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
 | current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
-| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                         |
+| foot        | Settings as a door, then the Goodboy row (`flex-1`); no setup line, no bug icon                          |
 | rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
@@ -209,7 +209,7 @@ line composer returns to its gutter number, a file composer to Comment on
 file, a plan block composer to its comment button. Ask agent on a diff line
 opens that agent's conversation in the `transcript` drawer with the quote in
 its field; the diff stays. A split diff needs 880px for its code: under that it
-draws unified and the toolbar says `Split needs a wider window`, and the
+draws unified with the Split segment disabled (tooltip `Needs 880px`), and the
 choice comes back with room.
 
 **Work panes use the full width.** A pane whose body is a working surface (the

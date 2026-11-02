@@ -41,7 +41,7 @@ import {
   seedSettingsBase,
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { OnboardingWizard } from '../../features/onboarding/OnboardingWizard';
-import { openWizardStep } from '../../features/onboarding/onboardingSettings';
+import { resumeSetup } from '../../features/onboarding/onboardingSettings';
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
 import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDetail';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
@@ -147,19 +147,10 @@ describe('main flows on the real store', () => {
       loadSetting: vi.fn(async () => null),
       loadWorkspaceValue: vi.fn(async () => null),
     });
-    useAppStore.setState((state) => ({
-      workspaceValues: {
-        ...state.workspaceValues,
-        [SETTINGS_WORKSPACE.id]: {
-          ...state.workspaceValues[SETTINGS_WORKSPACE.id],
-          'auto.treeLimitUsd': '5',
-        },
-      },
-    }));
 
     await mountFlow(<OnboardingWizard />);
     await act(async () => {
-      openWizardStep('first-session');
+      resumeSetup({ step: 'first-session', hasWorkspace: true });
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
     fireEvent.click(await screen.findByRole('button', { name: 'Start' }));
@@ -187,12 +178,6 @@ describe('main flows on the real store', () => {
       loadSetting: vi.fn(async () => null),
       loadWorkspaceValue: vi.fn(async () => null),
     });
-    useAppStore.setState((state) => ({
-      workspaceValues: {
-        ...state.workspaceValues,
-        [WORKSPACE_ID]: { ...state.workspaceValues[WORKSPACE_ID], 'auto.treeLimitUsd': '5' },
-      },
-    }));
 
     await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
@@ -331,7 +316,8 @@ describe('main flows on the real store', () => {
         onClose={() => undefined}
       />,
     );
-    const rail = screen.getByRole('list', { name: 'Providers and models settings' });
+    fireEvent.click(screen.getByRole('button', { name: /^Providers/ }));
+    const rail = screen.getByRole('list', { name: 'Providers settings' });
     expect(screen.queryByRole('heading', { name: 'Claude' })).toBeNull();
     fireEvent.click(within(rail).getByRole('button', { name: /Claude/ }));
     expect(onScopeChange).toHaveBeenCalledWith({ scope: 'providers', provider: 'anthropic' });

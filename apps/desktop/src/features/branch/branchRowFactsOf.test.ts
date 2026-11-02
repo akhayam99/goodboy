@@ -120,21 +120,26 @@ describe('the facts of a branch row', () => {
     expect(branchRowFactsOf(BASE).isFinished).toBe(false);
   });
 
-  it('shows the one signal worst first: failing, then conflict, then behind', () => {
+  it('shows the one signal worst first: Rebase stopped, then failing, then behind', () => {
     const all = { checks: [run('failure'), run('failure')], conflicts: 2, behind: 6 };
     expect(branchRowFactsOf({ ...BASE, ...all }).signal).toEqual({
-      kind: 'failing',
-      tone: 'danger',
-      text: '2 failing',
+      kind: 'conflict',
+      tone: 'warning',
+      text: 'Rebase stopped',
     });
     expect(branchRowFactsOf({ ...BASE, ...all, checks: [run('success')] }).signal).toEqual({
       kind: 'conflict',
       tone: 'warning',
-      text: 'Conflict',
+      text: 'Rebase stopped',
     });
     expect(
       branchRowFactsOf({ ...BASE, ...all, checks: [run('success')], conflicts: 0 }).signal,
     ).toEqual({ kind: 'behind', tone: 'warning', text: '6 behind' });
+  });
+
+  it('puts not pushed after behind', () => {
+    expect(branchRowFactsOf({ ...BASE, behind: 6, notPushed: 3 }).signal?.text).toBe('6 behind');
+    expect(branchRowFactsOf({ ...BASE, notPushed: 3 }).signal?.text).toBe('3 not pushed');
   });
 
   it('shows no signal for running checks, a clean branch or an unknown distance', () => {
@@ -160,7 +165,7 @@ describe('the facts of a branch row', () => {
     const request = { ...requestOf({ provider: 'bitbucket' }), checks: 'failure' } as const;
     const facts = branchRowFactsOf({ ...BASE, request });
     expect(facts.checks).toBeNull();
-    expect(facts.signal?.text).toBe('Failing');
+    expect(facts.signal?.text).toBe('Checks failing');
   });
 
   it('reads aloud the title, number, state, branch and signal', () => {

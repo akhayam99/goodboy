@@ -179,7 +179,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () => expect(getSection(/^Pull request/).getAttribute('aria-current')).toBe('page'),
+        () => expect(getSection(/^Pull request/).getAttribute('aria-selected')).toBe('true'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();
@@ -245,13 +245,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: Run defaults',
-    covers: ['studio:workflow', 'palette:Run defaults'],
+    covers: ['openSettings', 'scope:workspace', 'palette:Run defaults'],
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'run defaults'),
-    lands: both(
-      () => studio('Workflows'),
-      () => heading('Run defaults'),
-    ),
+    lands: () => heading('Run defaults'),
   },
   {
     name: 'palette: Impact',
@@ -276,7 +273,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/),
     lands: both(
-      () => studio("What's new"),
+      () => studio('Help'),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -294,7 +291,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Workspace settings',
     covers: ['openStudio', 'studio:settings', 'scope:workspace', 'palette:Workspace settings'],
     door: 'palette',
-    open: () => openPalette(/^Workspace settings: Folders/, 'workspace settings folders'),
+    open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings folders'),
     lands: both(
       () => settingsColumn(),
       () => visible('textbox', 'Workspace name'),
@@ -449,7 +446,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
     door: 'palette',
     open: () => openPalette(/^Guide/),
-    lands: () => studio('Guide'),
+    lands: () => studio('Help'),
   },
   {
     name: 'palette verb: Rename',

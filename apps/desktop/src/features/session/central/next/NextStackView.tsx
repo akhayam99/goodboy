@@ -27,6 +27,7 @@ type Props = {
   readonly branchFor?: (params: NextCardParams) => NextBranchName | null;
   readonly stopRowFor?: RebaseStopRowFor;
   readonly overviewCard?: NextOverviewCardId | null;
+  readonly washedIds?: ReadonlySet<string>;
   readonly hasHeader?: boolean;
   readonly canLead?: boolean;
 };
@@ -40,6 +41,7 @@ export const NextStackView = ({
   branchFor,
   stopRowFor,
   overviewCard = null,
+  washedIds,
   hasHeader = true,
   canLead = true,
 }: Props) => {
@@ -115,6 +117,7 @@ export const NextStackView = ({
             hasLabel={hasLabels}
             isLead={group.id === leadId}
             isNarrow={isNarrow}
+            washedIds={washedIds}
             actionsFor={actionsFor}
             openFor={openFor}
             chipFor={chipFor}

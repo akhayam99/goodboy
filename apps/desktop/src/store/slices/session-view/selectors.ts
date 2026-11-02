@@ -24,13 +24,15 @@ import { usePinnedSessionIds } from '../session-pins/selectors';
 import { filterSessionsByStatus, withExemptSessions } from './filterSessionList';
 import { sortAndGroupSessions, type AttentionSinceBySession } from './sortAndGroupSessions';
 import { layoutSessionColumn, type SessionColumnLayout } from './layoutSessionColumn';
-import { splitInactiveSessions } from './splitInactiveSessions';
+import { splitDoneSessions } from './splitDoneSessions';
 import { useSessionInactivity } from './useSessionInactivity';
 import { projectsBySession } from './projectOfSession';
 import { DEFAULT_PREFS, type GroupedSessions } from './types';
 import { attentionCountOf, type AttentionCount } from './attentionCountOf';
 import { integrationsByWorkspace } from './integrationsByWorkspace';
-import { stageInfoOf, type StageInfoState } from './stageInfoOf';
+import { cachedStageInfoOf } from './cachedStageInfoOf';
+import type { StageInfoState } from './stageInfoOf';
+import { stageInfosOf } from './stageInfosOf';
 
 export const useSessionViewPrefs = (workspaceId: WorkspaceId | null): SessionViewPrefs => {
   const prefs = useAppStore((s) =>
@@ -81,14 +83,16 @@ const pickBySessions = <T>({
 };
 
 export const useSessionStageInfo = (session: Session): SessionStageInfo =>
-  useAppStore(useShallow((s) => stageInfoOf(s, session)));
+  useAppStore(useShallow((s) => cachedStageInfoOf({ state: s, session })));
 
 export const useSessionStages = (
   sessions: ReadonlyArray<Session>,
 ): Readonly<Record<string, SessionStage>> =>
   useAppStore(
     useShallow((s) =>
-      Object.fromEntries(sessions.map((session) => [session.id, stageInfoOf(s, session).stage])),
+      Object.fromEntries(
+        sessions.map((session) => [session.id, cachedStageInfoOf({ state: s, session }).stage]),
+      ),
     ),
   );
 
@@ -235,12 +239,13 @@ const useStageSources = ({
       sessionDismissedNextSteps,
       sessionArtifacts,
     };
+    const infoMap = stageInfosOf({ state: partial });
     const stageMap: Record<SessionId, SessionStage> = {};
-    const infoMap: Record<SessionId, SessionStageInfo> = {};
     for (const session of filteredSessions) {
-      const info = stageInfoOf(partial, session);
-      stageMap[session.id] = info.stage;
-      infoMap[session.id] = info;
+      const info = infoMap[session.id];
+      if (info !== undefined) {
+        stageMap[session.id] = info.stage;
+      }
     }
     return { stageMap, infoMap };
   }, [
@@ -313,14 +318,14 @@ const useLastTurnBySession = (sessions: ReadonlyArray<Session>): Readonly<Record
     }),
   );
 
-export type SessionListModel = {
+type SessionListModel = {
   readonly groups: ReadonlyArray<GroupedSessions>;
   readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
   readonly hiddenByFilters: number;
   readonly inactiveLabels: Readonly<Record<SessionId, string>>;
 };
 
-export const useSessionListModel = (
+const useSessionListModel = (
   workspaceId: WorkspaceId | null,
   sessions: ReadonlyArray<Session>,
 ): SessionListModel => {
@@ -381,7 +386,7 @@ export const useSessionListModel = (
           : {},
     });
     return {
-      groups: splitInactiveSessions({ groups: sorted, inactiveSince: inactivity.since }),
+      groups: splitDoneSessions({ groups: sorted, stageBySession: stages, exemptIds }),
       stageBySession: stages,
       hiddenByFilters: sessions.length - shown.length,
       inactiveLabels: inactivity.labels,

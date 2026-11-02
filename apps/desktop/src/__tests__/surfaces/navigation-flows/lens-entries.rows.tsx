@@ -24,6 +24,9 @@ const openObjectMenu = async (element: Element): Promise<void> => {
 };
 
 const runMenuItem = async (label: RegExp): Promise<void> => {
+  if (screen.queryByRole('menuitem', { name: label }) === null) {
+    await click(await screen.findByRole('menuitem', { name: 'Go to' }));
+  }
   await click(await screen.findByRole('menuitem', { name: label }));
 };
 

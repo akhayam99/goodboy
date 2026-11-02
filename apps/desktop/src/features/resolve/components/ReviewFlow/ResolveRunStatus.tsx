@@ -13,12 +13,10 @@ type Props = {
   readonly onStop: () => void;
   readonly lane?: LaneStatus | null;
   readonly actions?: ReactNode;
-  readonly noun?: 'comment' | 'note';
 };
 
 type FactsParams = Pick<Props, 'run' | 'onOpenTranscript'> & {
   readonly lane: LaneStatus | null;
-  readonly noun: 'comment' | 'note';
 };
 
 const startedAtOf = ({ run }: Pick<FactsParams, 'run'>): IsoDateTime | null =>
@@ -26,13 +24,13 @@ const startedAtOf = ({ run }: Pick<FactsParams, 'run'>): IsoDateTime | null =>
     ? null
     : brandId<IsoDateTime>({ value: new Date(run.attempt.startedAt).toISOString() });
 
-const factsOf = ({ run, lane, noun, onOpenTranscript }: FactsParams): TailFacts => {
+const factsOf = ({ run, lane, onOpenTranscript }: FactsParams): TailFacts => {
   const isLive = run.isLive || lane !== null;
   const actions: ReadonlyArray<TailAction> =
     onOpenTranscript === null ? [] : [TAIL_ACTION.viewTranscript];
   return {
     state: isLive ? 'working' : run.tally.pushFailed > 0 ? 'failed' : 'idle',
-    phrase: lane === null ? fixRunTitle({ run, noun }) : lane.line,
+    phrase: lane === null ? fixRunTitle({ run }) : lane.line,
     startedAt: isLive ? startedAtOf({ run }) : null,
     actions,
   };
@@ -44,7 +42,6 @@ export const ResolveRunStatus = ({
   onStop,
   lane = null,
   actions = null,
-  noun = 'comment',
 }: Props) => {
   const onAction = (id: TailActionId): void => {
     if (id === 'viewTranscript') {
@@ -55,7 +52,7 @@ export const ResolveRunStatus = ({
   return (
     <section aria-label="Fix run status" data-testid="resolve-run-status" className="min-w-0">
       <TailLine
-        facts={factsOf({ run, lane, noun, onOpenTranscript })}
+        facts={factsOf({ run, lane, onOpenTranscript })}
         onAction={onAction}
         verbs={
           actions === null && !isLive ? null : (

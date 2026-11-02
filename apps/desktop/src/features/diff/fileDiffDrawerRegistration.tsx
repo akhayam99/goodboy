@@ -1,7 +1,13 @@
+import { Suspense } from 'react';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRegistration } from '../../store/slices/drawer/drawerRegistration';
-import { FileDiffDrawer } from './components/FileDiffDrawer';
+import { lazyNamed } from '../../shared/lib/lazyNamed';
 import { FileWholeDrawer } from './components/FileWholeDrawer';
+
+const FileDiffDrawer = lazyNamed({
+  load: () => import('./components/FileDiffDrawer'),
+  pick: ({ FileDiffDrawer }) => FileDiffDrawer,
+});
 
 export const fileDiffDrawerRegistration: DrawerRegistration<'file-diff'> = {
   kind: 'file-diff',
@@ -17,13 +23,14 @@ export const fileDiffDrawerRegistration: DrawerRegistration<'file-diff'> = {
       );
     }
     return (
-      <FileDiffDrawer
-        key={drawerKey(drawer)}
-        sessionId={drawer.sessionId}
-        source={drawer.payload.source}
-        path={drawer.payload.path}
-        onClose={closeDrawer}
-      />
+      <Suspense key={drawerKey(drawer)} fallback={null}>
+        <FileDiffDrawer
+          sessionId={drawer.sessionId}
+          source={drawer.payload.source}
+          path={drawer.payload.path}
+          onClose={closeDrawer}
+        />
+      </Suspense>
     );
   },
 };

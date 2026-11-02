@@ -5,7 +5,7 @@ import type { AutoChoice, AutoJob, AutoSlotId, CuratedProviderId } from './autoJ
 import { EFFORT_LADDER, type Rung } from './effortLadder';
 import { SLOT_RUNGS } from './slotRungs';
 
-export type { AutoChoice, AutoJob, AutoSlotId, CuratedProviderId } from './autoJob';
+export type { AutoChoice, AutoSlotId, CuratedProviderId } from './autoJob';
 
 type JobColumn = Readonly<Record<AutoSlotId, ReadonlyArray<AutoJob>>>;
 

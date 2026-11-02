@@ -168,7 +168,8 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'auto-chat-nocap' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 spent/);
+    expect(limitChip().getAttribute('aria-label')).toBe('Limit: none');
+    expect(document.querySelector('[data-setting-spent]')?.textContent).toBe('$0.27 spent');
     expect(limitChip().textContent).not.toMatch(/left/);
   });
 

@@ -9,10 +9,6 @@ type ShapeCard = Readonly<{
   whileRuns: string;
 }>;
 
-type RoleParams = {
-  readonly role: string;
-};
-
 type NameParams = {
   readonly name: string;
 };
@@ -31,8 +27,10 @@ export const START_KIND_COPY = {
     preset: 'Preset',
   },
   settings: 'Run settings',
+  more: 'More',
+  less: 'Less',
   edits: {
-    label: 'Edits',
+    label: NAMES.edits,
     help: 'What agents may do in this session. The chat box changes it later.',
     thisSession: 'this session',
   },
@@ -59,9 +57,9 @@ export const START_KIND_COPY = {
   goalPlaceholder: 'Describe the goal, or pick one from Tasks',
   pickTask: 'Pick from Tasks',
   where: {
-    label: 'Where',
+    label: 'Projects',
     auto: 'Auto picks',
-    count: ({ count }: CountParams) => `${count} folders`,
+    count: ({ count }: CountParams) => `${count}`,
   },
   searchTasks: 'Search tasks',
   noTasks: 'No open tasks in this workspace',
@@ -78,12 +76,6 @@ export const START_KIND_COPY = {
     adaptLine: 'Auto may add, skip or move a step, and says why.',
   },
   role: 'Role',
-  start: {
-    orchestrated: NAMES.startRun,
-    preset: NAMES.startRun,
-    agent: ({ role }: RoleParams) => `Start ${role}`,
-    autoAgent: `Start ${NAMES.runKind.autoAgent}`,
-  },
   starting: 'Starting',
   discard: 'Discard',
   goalNeeded: 'Write the goal first.',
@@ -93,7 +85,7 @@ export const START_KIND_COPY = {
   shapes: {
     orchestrated: {
       icon: CONCEPT_ICONS.orchestrator,
-      what: 'Auto plans each next step as it goes.',
+      what: 'Orchestrated plans each next step as it goes.',
       whileRuns: 'While it runs, the plan grows one step at a time, each with why.',
     },
     preset: {

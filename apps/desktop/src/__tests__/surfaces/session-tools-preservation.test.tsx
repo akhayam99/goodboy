@@ -84,14 +84,14 @@ describe('session tools rows stay reachable', () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
     await mountSession({ sessionId });
 
-    await press('Ask');
+    await press('Ask this session');
     expect(drawerKind()).toBe('ask');
 
     act(() => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'agents' }) });
     });
     await settle();
-    expect(within(tools()).getByRole('button', { name: 'Ask' })).toBeDefined();
+    expect(within(tools()).getByRole('button', { name: 'Ask this session' })).toBeDefined();
     expect(paneToggles()).toEqual([]);
   });
 

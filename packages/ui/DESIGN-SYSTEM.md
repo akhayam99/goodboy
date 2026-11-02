@@ -262,13 +262,15 @@ state is a `StateDot` or a glyph in a 16px column.
 
 `StateDot` is the one state mark of a list or a sidebar slot: a 6px
 `StatusDot` named by its state word (the tooltip and the accessible name),
-`running` (info), `needsYou` (warning), `failed` (danger), `unread` (primary),
+`running` (info), `needsYou` (warning), `failed` (danger), `unread` (the quiet `unread` tone: a reduced-chroma cyan, 6.3:1 on dark and 3.8:1 on light, never used on a button),
 `done` (success), and `idle` and `stopped`, a neutral ring with a transparent
 fill on every background. A running dot pulses (under `motion-safe`) only when
 the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
 chrome (top bar chips, doors, rail slots) stays static. A count next to a door
 lives in the dot's tooltip, never as colored text. The Sessions door is the one exception: it
 says how many sessions need you as a number (see the door pill below). The Tasks door carries the quiet `unread` dot while an item assigned to you arrived since you last looked (`taskNewKeys`, its count in the tooltip).
+
+A session row carries one mark: the state of the node, or an empty 14px slot when the session is idle so titles keep one left edge (`StateNode` with `hasEmptySlot`). Unread is the title in `text-row-strong`, never a second dot on the mark (`UNREAD_TITLE`); only a row with no room for a title (the icon rail) or no 13px weighted role (the pinned and switcher rows at 12px) keeps the quiet dot (`isUnreadDot`).
 
 Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
 show the grid, its groups, every dot and the type specimen.
@@ -549,13 +551,15 @@ The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: 
 
 **Text that is already visible.** A tooltip never repeats what the screen shows. A branch name, a title or a row label that fits has no tooltip; one that can be cut goes through `TruncatedText`, which opens the full text only when the element is cut. A reason that must stay readable (the Auto blocked tail) passes `lines={2}`: it wraps to two lines before it is cut, and `isFocusable` puts it in the tab order only while it is cut so the keyboard opens the same tooltip. A title cut inside an `InteractiveRow` (the Auto child card, a run tree row, an artifact row, a plan part) opens its tooltip like any other: the row lets `TruncatedText` take the pointer and passes a click on it to the row, so the row stays one click target. A cell of a `ListGridRow` without its own tooltip is a `TruncatedText` too, so a cut cell shows its whole text. A control that falls back to its own visible text (`MessageAction`, `RecordActions`) shows a tooltip only when it has something else to say, such as a blocked reason, through `OptionalTooltip`. A native `title` attribute is never used: the `native-title` baseline is empty and the guard is a ban, so a reason on a disabled control or a status line goes through `Tooltip`. The term hint component is gone: a word that stays on screen gets a `tooltip` on its option, and a definition with facts is a `FactCard` with one row. Where the state word sits inside a row that already has its own tooltip (the timeline state line), only the inner mark keeps it.
 
+A side drawer reserves 464px of content plus gutters; a reader reserves 560px.
+`drawerLayoutOf` excludes any content inset registered through `useDrawerContentInset`.
 A right drawer is its own container, never a card inside the sheet: it takes `drawer` (see Surfaces), `frame-edge` and `rounded-frame` like the sheet it stands beside. Over the page it is flush with the window edge (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
 (`rounded-lg border border-border bg-floating shadow-lg`, from
 `packages/ui/src/floatingSurface.ts`). `Popover`, `ContextMenu`,
-`MenuChoicePanel`, the crumb menu, the history arrow menu, the session hover
+`MenuChoicePanel`, `MenuSubmenuPanel` (a row with `children` opens its rows beside it: ArrowRight opens, ArrowLeft closes and returns focus to the row, Escape closes the whole menu), the crumb menu, the history arrow menu, the session hover
 card, the session switcher, the update arrival card and the delete confirm
 take it as it is; a site adds layout and padding only, never a border, a fill or
 a shadow of its own. So do the find bars, the selection bars and their confirm,
@@ -831,15 +835,24 @@ the Tailwind name `animate-pulse` (`--animate-pulse` points at it), so the
 app has one breathing animation, not two: a loading skeleton and a running
 sign share the same period and dip, and the surface they sit on says which
 one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
-`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `studio-body-in`,
+`nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
 `layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
 `drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
 `popover-in`, `fold-fade-in`, `fold-fade-out`, `level-in-forward`,
 `level-in-back`, `level-out-forward`, `level-out-back`, `wizard-fade-in`,
-`wizard-fade-out`, `wizard-step-in`, `wizard-step-out`, `welcome-word-out`,
-`welcome-rise`) move content between states and sit outside the meanings.
+`wizard-fade-out`, `wizard-step-in`, `wizard-step-out`) move content between
+states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
 section does not name, and on a name here that `styles.css` does not define.
+
+**Skeleton timing.** One hook, `useSkeletonGate`, and one swap component,
+`SkeletonSwap`, in the UI package hold the rule for every skeleton: nothing
+shows for the first 120 ms (`SKELETON_SHOW_AFTER_MS`), a skeleton that has
+appeared stays at least 160 ms (`SKELETON_HOLD_MS`), and it fades out over
+120 ms (`SKELETON_FADE_MS`) from the moment the data is there and the hold is
+met. The rule applies to the first mount per key: a mount that already has
+data shows content at once, and a refresh never brings a skeleton back.
+Reduced motion swaps in place at the same times.
 
 **Three durations, two curves.** Every transition and animation takes one of
 `--duration-quick` (120ms: a popover, a fade, anything that leaves),

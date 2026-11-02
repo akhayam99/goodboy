@@ -8,10 +8,15 @@ import type {
   StartSessionFromDraftParams,
 } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { useFollowToast } from '../../../../../shared/hooks/useFollowToast';
+import { useShowToast } from '../../../../../shared/components/Toast/useShowToast';
+import { selectWritableMounts } from '../../../../../store/slices/project-mounts/selectors';
+import { startDepsLineOf } from './startDepsLineOf';
 
 const STARTED_SESSION_TITLE = 'Session started';
 
 const STARTED_RUN_TITLE = 'Run started';
+
+const DEPS_TITLE = 'Dependencies';
 
 type TitleParams = {
   readonly start: SessionDraftStart;
@@ -32,9 +37,17 @@ export const useStartFromDraft = (): ((
 ) => Promise<Session>) => {
   const startSessionFromDraft = useAppStore((state) => state.startSessionFromDraft);
   const followStart = useFollowToast();
+  const showToast = useShowToast();
   return useCallback(
     async (params: StartSessionFromDraftParams): Promise<Session> => {
       const session = await startSessionFromDraft(params);
+      void startDepsLineOf({
+        targets: selectWritableMounts({ state: useAppStore.getState(), sessionId: session.id }),
+      }).then((line) => {
+        if (line !== null) {
+          showToast({ kind: 'warning', title: DEPS_TITLE, message: line });
+        }
+      });
       followStart({
         title: startedTitleOf({ start: params.start }),
         message: inlineMarkdownText({ text: session.goal }),
@@ -43,6 +56,6 @@ export const useStartFromDraft = (): ((
       });
       return session;
     },
-    [followStart, startSessionFromDraft],
+    [followStart, showToast, startSessionFromDraft],
   );
 };

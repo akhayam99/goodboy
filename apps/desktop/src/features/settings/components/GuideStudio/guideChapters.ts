@@ -42,16 +42,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'folders',
     group: 'daily',
-    title: 'Workspaces and folders',
-    lead: 'A workspace holds what you work on: folders, git repositories or plain ones, and one session can work across several of them.',
+    title: 'Workspaces and projects',
+    lead: 'A workspace holds what you work on: projects, git repositories or plain folders, and one session can work across several of them.',
     points: [
       {
         term: 'One window per workspace',
         desc: 'Open each workspace in its own window, so switching never stops a running agent; while agents run, the switcher offers a new window. After a reload or an update, every window comes back.',
       },
       {
-        term: 'Add a folder',
-        desc: `${NAMES.addFolder}, in the workspace switcher or on Settings, Workspace, ${NAMES.folders}, adds a repository or a plain folder. A star and a one line description on a folder go into every agent brief.`,
+        term: 'Add a project',
+        desc: `${NAMES.addProject}, in the workspace switcher or on Settings, Workspace, ${NAMES.projects}, adds a repository or a plain folder. A star and a one line description on a project go into every agent brief.`,
       },
       {
         term: 'Start from scratch',
@@ -72,7 +72,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.folders}`,
+        label: `Open ${NAMES.projects}`,
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
@@ -89,7 +89,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Code or Documents',
-        desc: 'Picking a folder asks what it is for. Change it later in Settings, Folders.',
+        desc: 'Picking a folder asks what it is for. Change it later in Settings, Projects.',
       },
       {
         term: 'One writer at a time',
@@ -114,7 +114,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.folders}`,
+        label: `Open ${NAMES.projects}`,
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
@@ -131,7 +131,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One page per provider',
-        desc: `${NAMES.providersAndModels}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
+        desc: `${NAMES.providers}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
       },
       {
         term: 'Usage in the top bar',
@@ -151,7 +151,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Use reset',
-        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset, and warns when spending it now would waste it.',
+        desc: 'When Codex offers a free reset, its page shows the expiry and Use reset,.',
       },
       {
         term: NAMES.spendCap,
@@ -160,7 +160,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: `Open ${NAMES.providersAndModels}`,
+        label: `Open ${NAMES.providers}`,
         target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'providers' } } },
       },
       {
@@ -188,8 +188,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: `${NAMES.startSession}, on an issue in Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page.`,
       },
       {
-        term: 'Where',
-        desc: 'Reads Auto picks: an agent adds the folder it must edit. Pin folders here from Suggested or All folders.',
+        term: 'Pin folders',
+        desc: 'The folders chip reads Auto picks: an agent adds the folder it must edit. Pin folders there from Suggested or All projects.',
       },
       {
         term: 'New menu',
@@ -197,7 +197,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start blank',
-        desc: 'Opens the session on its Overview, to add the goal, folders and work later, titled Named by Goodboy until you rename it.',
+        desc: 'Opens the session on its Overview, to add the goal, folders and work later.',
       },
       {
         term: 'Chat',
@@ -217,8 +217,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The title, the folder and one signal: an open question, a failed check, the pull request in its state color or the agents at work. Rest on it for age, issues and cost.',
       },
       {
-        term: 'Board and List',
-        desc: 'The header switches between lanes and one aligned list; the filter beside it sorts, groups and narrows both.',
+        term: 'Board and sidebar list',
+        desc: 'Lanes on the Sessions page. The sidebar lists the same sessions, and its filter menu sorts, groups and narrows them.',
       },
       {
         term: 'Done and archived',
@@ -256,7 +256,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived. Idle sessions move to Inactive after three days.',
+        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived. Finished sessions close the list in Done.',
       },
       {
         term: 'Pin a session',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, in three groups, named on hover, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, in two groups, with the active tool named below its icon, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
       },
     ],
     links: [],
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview cards',
-        desc: "The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. A Running row carries the run's own button. The full log sits in the session menu.",
+        desc: 'The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. Needs you holds runs, questions and fixes. The full log sits in the session menu.',
       },
       {
         term: 'Next',
@@ -446,7 +446,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'Review threads and your own notes in one list, Needs you on top. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S.',
+        desc: 'Review threads and your own notes in one list, grouped Needs you, Working and Done. A row opens a drawer with the code, the thread and Fix, Reply and Skip on F, R and S.',
       },
       {
         term: 'Fix comments',
@@ -454,7 +454,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The diff, with the changed files on the right and Next unviewed on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
+        desc: 'The diff, with the file list behind Files and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Checks',
@@ -678,7 +678,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providersAndModels} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
+        desc: `Settings, or ${shortcutGlyphs('settings.open')}, opens on the page you used last. The rail groups App, This workspace, ${NAMES.providers} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
@@ -731,7 +731,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.whatsNew,
-        desc: 'Searchable release notes. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
+        desc: 'Release notes in the Help window. After an update, one page covers the releases you skipped, and a release that changes your data in one direction carries a mark.',
       },
       {
         term: 'Report a bug',

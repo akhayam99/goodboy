@@ -40,7 +40,7 @@ export const folderStatusLabel = ({ folder, status, liveTerminals }: StatusParam
     case 'in-use':
       return 'In use';
     case 'checking':
-      return 'Checking…';
+      return 'Checking this folder';
     case 'safe':
       return 'Safe to remove';
     case 'terminal-open':

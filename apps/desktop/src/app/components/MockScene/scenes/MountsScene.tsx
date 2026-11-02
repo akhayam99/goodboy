@@ -21,12 +21,16 @@ import type {
   Session,
   SessionId,
   SessionMountView,
+  WorkflowId,
+  WorkflowRun,
+  WorkflowRunId,
   Workspace,
   WorkspaceId,
   SessionExternalTask,
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { brandedId } from '../../../../features/history/testing/brandedId';
 import {
   applyMountViews,
   toProjectMounts,
@@ -303,6 +307,16 @@ const viewsOf = (seeds: ReadonlyArray<MountSeed>): ReadonlyArray<SessionMountVie
     createdAt: NOW,
     updatedAt: NOW,
   }));
+
+const STARTED_RUN: WorkflowRun = {
+  id: brandedId<WorkflowRunId>({ value: 'mock-run-mount-rows' }),
+  workflowId: brandedId<WorkflowId>({ value: 'mock-workflow-mount-rows' }),
+  ordinal: 0,
+  currentStep: 0,
+  autoRun: false,
+  triggerMode: 'immediate',
+  executionMode: 'static',
+};
 
 const SESSION: Session = {
   id: SESSION_ID,
@@ -713,6 +727,9 @@ const sessionOf = ({ variant }: SessionParams): Session => {
   }
   if (variant === 'linked-title') {
     return { ...SESSION, goal: `[HBL-391] ${SESSION.goal}` };
+  }
+  if (variant === 'gone-branch' || variant === 'gone-branch-restore') {
+    return { ...SESSION, workflowRuns: [STARTED_RUN] };
   }
   return SESSION;
 };

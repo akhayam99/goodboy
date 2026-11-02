@@ -57,8 +57,6 @@ function renderChatPrefix() {
       session,
       value: '~',
       setValue: vi.fn(),
-      showToast: vi.fn(),
-      wrapperRef: { current: null },
     }),
   );
 }
@@ -67,7 +65,6 @@ beforeEach(() => {
   mockAttach.mockClear();
   useAppStore.setState({
     ...initialState,
-    skills: {},
     projectScripts: {},
     phaseTemplates: { [WS_ID]: [workflow] },
     sessionPhaseRuns: {},
@@ -121,8 +118,6 @@ const renderScripts = (value: string) =>
       session,
       value,
       setValue: vi.fn(),
-      showToast: vi.fn(),
-      wrapperRef: { current: null },
     }),
   );
 

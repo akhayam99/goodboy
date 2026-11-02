@@ -1,6 +1,7 @@
 import type { Tone } from '@goodboy/ui';
 import type { CommentOutcomeKind } from './commentOutcome';
 import { RESOLVE_VOCAB, RESOLVE_WORD_LABEL } from './commentProjection';
+import { countNoun } from '../../shared/utils/countNoun';
 
 export const OUTCOME_LABEL: Readonly<Record<CommentOutcomeKind, string>> = {
   waiting: 'Waiting',
@@ -26,7 +27,7 @@ export const OUTCOME_ACTION = {
   applyFix: RESOLVE_VOCAB.applyFix,
   discard: 'Discard',
   postReply: 'Post reply',
-  closeNote: 'Close note',
+  closeNote: 'Close comment',
   resolveWithoutReply: 'Resolve without reply',
   answer: 'Answer',
   askOnHost: 'Ask on GitHub',
@@ -43,7 +44,7 @@ type CountParams = {
 };
 
 export const postRepliesLabel = ({ count }: CountParams): string =>
-  `Post ${count} ${count === 1 ? 'reply' : 'replies'}`;
+  `Post ${countNoun({ count: count, one: 'reply', many: 'replies' })}`;
 
 type ShaParams = {
   readonly sha: string;

@@ -17,7 +17,7 @@ type MessageRow = {
   created_at: number;
 };
 
-function toDomain(row: MessageRow): Message {
+function toMessage(row: MessageRow): Message {
   return {
     id: row.id as MessageId,
     sessionId: row.session_id as SessionId,
@@ -52,7 +52,7 @@ export const listMessagesForSession = async (
     'SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC',
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toMessage);
 };
 
 export const listMessagesForAgent = async (
@@ -65,7 +65,7 @@ export const listMessagesForAgent = async (
       'SELECT * FROM messages WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?',
       [agentId, opts.limit],
     );
-    const out = rows.map(toDomain);
+    const out = rows.map(toMessage);
     out.reverse();
     return out;
   }
@@ -73,5 +73,5 @@ export const listMessagesForAgent = async (
     'SELECT * FROM messages WHERE agent_id = ? ORDER BY created_at ASC',
     [agentId],
   );
-  return rows.map(toDomain);
+  return rows.map(toMessage);
 };

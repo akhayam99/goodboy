@@ -8,8 +8,8 @@ import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { APP_SECTIONS, appSectionOf, type AppSection } from './appSections';
 import type { RailSubtitles } from './railSubtitles';
-import { SCOPE_ITEMS } from './settingsScopes';
-import { WORKSPACE_PAGES, workspacePageOf } from './workspacePages';
+import { SCOPE_ITEMS, isNestedScope, type NestedScope } from './settingsScopes';
+import { WORKSPACE_PAGES, workspacePageOf, type WorkspacePage } from './workspacePages';
 
 type Concept = keyof typeof CONCEPT_ICONS;
 
@@ -102,6 +102,22 @@ type FoldParams = {
   readonly group: SettingsGroup;
 };
 
+type FoldOfPageParams = {
+  readonly groups: ReadonlyArray<SettingsGroup>;
+  readonly pageKey: string | null;
+};
+
+export const foldOfPageKey = ({ groups, pageKey }: FoldOfPageParams): NestedScope | null => {
+  const group = groups.find(
+    (candidate) =>
+      isNestedScope(candidate.scope) && candidate.pages.some((page) => page.key === pageKey),
+  );
+  return group !== undefined && isNestedScope(group.scope) ? group.scope : null;
+};
+
+export const foldAttentionLinesOf = ({ group }: FoldParams): string =>
+  group.pages.flatMap((page) => (page.attention === null ? [] : [page.attention.text])).join('; ');
+
 export const foldAttentionOf = ({ group }: FoldParams): SettingsAttention | null =>
   worstAttention({
     attentions: [
@@ -150,50 +166,56 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
   })),
 });
 
+const MODELS_AFTER_PAGE: WorkspacePage = 'general';
+
+export const MODELS_PAGE_KEY = 'providers:defaults';
+
+const modelsPage: SettingsPage = {
+  key: MODELS_PAGE_KEY,
+  label: NAMES.models,
+  attention: null,
+  target: { scope: 'providers' },
+};
+
+const workspacePagesOf = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> =>
+  WORKSPACE_PAGES.flatMap((page): ReadonlyArray<SettingsPage> => {
+    const entry: SettingsPage = {
+      key: `workspace:${page.id}`,
+      label: page.label,
+      attention:
+        page.id === 'projects'
+          ? attentionOf({
+              text: status.subtitles.workspaceText,
+              tone: status.subtitles.workspaceTone,
+            })
+          : null,
+      target: { scope: 'workspace', section: page.id },
+    };
+    return page.id === MODELS_AFTER_PAGE ? [entry, modelsPage] : [entry];
+  });
+
 const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   ...scopeMeta('workspace'),
   place: workspaceName ?? 'This workspace',
   attention: status.subtitles.workspaceText,
   tone: status.subtitles.workspaceTone,
-  pages: WORKSPACE_PAGES.map((page): SettingsPage => ({
-    key: `workspace:${page.id}`,
-    label: page.label,
-    attention:
-      page.id === 'projects'
-        ? attentionOf({
-            text: status.subtitles.workspaceText,
-            tone: status.subtitles.workspaceTone,
-          })
-        : null,
-    target: { scope: 'workspace', section: page.id },
-  })),
+  pages: workspacePagesOf({ status }),
 });
 
-const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<SettingsPage> => {
-  const defaults: ReadonlyArray<SettingsPage> =
-    workspaceName === null
-      ? []
-      : [
-          {
-            key: 'providers:defaults',
-            label: NAMES.models,
-            attention: null,
-            target: { scope: 'providers' },
-          },
-        ];
+const providerPages = ({ status }: Pick<Params, 'status'>): ReadonlyArray<SettingsPage> => {
   const accounts = status.providers.map((provider): SettingsPage => ({
     key: `provider:${provider.id}`,
     label: provider.label,
     attention: attentionOf({ text: provider.status.subtitle, tone: provider.status.tone }),
     target: { scope: 'providers', provider: provider.id },
   }));
-  if (defaults.length + accounts.length > 0) {
-    return [...defaults, ...accounts];
+  if (accounts.length > 0) {
+    return accounts;
   }
   return [
     {
-      key: 'providers',
-      label: NAMES.providersAndModels,
+      key: 'providers:defaults',
+      label: NAMES.providers,
       attention: attentionOf({
         text: status.subtitles.providersText,
         tone: status.subtitles.providersTone,
@@ -208,7 +230,7 @@ const providersGroup = (params: Params): SettingsGroup => ({
   place: params.workspaceName ?? 'This Mac',
   attention: params.status.subtitles.providersText,
   tone: params.status.subtitles.providersTone,
-  pages: providerPages(params),
+  pages: providerPages({ status: params.status }),
 });
 
 type ToolAttentionParams = {

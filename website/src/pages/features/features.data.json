@@ -19,7 +19,7 @@
       "items": [
         {
           "title": "Welcome to Goodboy",
-          "text": "Four short steps take you from install to a first agent reading your code.",
+          "text": "Three short steps take you from install to a first agent reading your code.",
           "group": "Set up",
           "main": true
         },
@@ -325,13 +325,6 @@
           "shown": true
         },
         {
-          "title": "List view",
-          "text": "See every session in one table, grouped by the same stages as the board, with aligned columns: key, title, project, signal and last update.",
-          "group": "The board",
-          "also": "sessions list",
-          "shown": true
-        },
-        {
           "title": "Done and Archived lanes",
           "text": "Done and Archived are lanes of their own, always in view, each with a line that says when it is empty.",
           "group": "The board",
@@ -385,7 +378,7 @@
         },
         {
           "title": "Context drawer",
-          "text": "Open the goal, decisions and summary from any session page. Copy them out as a brief and see what changed since you last looked.",
+          "text": "Open goal, decisions, summary and explanations from any session page with the Context button, and copy them all with Copy context.",
           "group": "Shared context",
           "also": "context drawer"
         },
@@ -606,7 +599,7 @@
         },
         {
           "title": "Run defaults",
-          "text": "Set once what every new run starts with, on the same chips a run shows: when it asks, a limit, the models, the Auto limit and guidance.",
+          "text": "Set once what every new run starts with, on the same chips a run shows: when it asks, a limit, the models, the limit and guidance.",
           "group": "Workflows",
           "also": "run defaults",
           "shown": true

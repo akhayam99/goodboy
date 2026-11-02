@@ -26,7 +26,8 @@ import { StageBoard } from './index';
 
 const MOUNT_BUDGET_MS = 8000;
 const SELECT_ALL_BUDGET_MS = 3000;
-const DONE_COUNT = 300;
+const DONE_COUNT = 1000;
+const LANE_WINDOW = 50;
 
 const NOW = '2026-10-07T09:00:00.000Z' as IsoDateTime;
 
@@ -71,8 +72,8 @@ const mergedGithub = (number: number) => ({
   detailError: null,
 });
 
-describe('StageBoard with 300 Done sessions, performance', () => {
-  it('renders every Done card and selects them all within the budgets', () => {
+describe('StageBoard with 1000 Done sessions, performance', () => {
+  it('windows the Done lane to fifty cards and still selects them all within the budgets', () => {
     const done: ReadonlyArray<Session> = Array.from({ length: DONE_COUNT }, (_, index) =>
       aSession({ workspaceId: workspace.id, goal: `Ship the settlement change ${index + 1}` }),
     );
@@ -98,7 +99,7 @@ describe('StageBoard with 300 Done sessions, performance', () => {
     const mountElapsed = performance.now() - mountStarted;
 
     const lane = screen.getByRole('group', { name: 'done' });
-    expect(lane.querySelectorAll('article[data-select-id]')).toHaveLength(DONE_COUNT);
+    expect(lane.querySelectorAll('article[data-select-id]')).toHaveLength(LANE_WINDOW);
     expect(mountElapsed).toBeLessThan(MOUNT_BUDGET_MS);
 
     fireEvent.click(within(lane).getAllByRole('button', { pressed: false })[0] as HTMLElement, {

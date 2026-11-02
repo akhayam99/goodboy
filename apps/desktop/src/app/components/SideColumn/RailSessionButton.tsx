@@ -1,8 +1,8 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
-import { StateNode } from '../../../shared/components/StateNode';
+import { railInitialsOf } from '../../../shared/utils/railInitialsOf';
 import { useObjectMenuTrigger } from '../../../features/actions/useObjectMenuTrigger';
 import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT } from './RailButton';
 
@@ -12,6 +12,7 @@ type Props = {
   readonly session: Session;
   readonly sign: RailSessionSign;
   readonly hasFlyout: boolean;
+  readonly isOpenTail?: boolean;
   readonly onSelect: () => void;
   readonly onEnter?: (event: MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>) => void;
   readonly onLeave?: () => void;
@@ -22,6 +23,7 @@ export const RailSessionButton = ({
   session,
   sign,
   hasFlyout,
+  isOpenTail = false,
   onSelect,
   onEnter,
   onLeave,
@@ -37,42 +39,46 @@ export const RailSessionButton = ({
     anchorKey: `rail-session:${session.id}`,
   });
   return (
-    <button
-      type="button"
-      data-rail-session={session.id}
-      aria-label={label}
-      aria-current={isCurrent ? 'page' : undefined}
-      aria-haspopup={hasFlyout ? 'dialog' : undefined}
-      onClick={() => {
-        if (isCurrent) {
-          return;
-        }
-        onSelect();
-      }}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onFocus={onEnter}
-      onBlur={onLeave}
-      onKeyDown={(event) => {
-        menu.onKeyDown(event);
-        onKeyDown?.(event);
-      }}
-      onContextMenu={menu.onContextMenu}
-      className={cn(
-        RAIL_NODE_BUTTON,
-        isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE,
-        sign === 'remembered' && 'text-foreground',
-      )}
-    >
-      {unreadLabel === null ? (
-        <StateNode node={node} isOnSelectedRow={isCurrent} />
-      ) : (
-        <Tooltip content={unreadLabel} side="right">
-          <span className="inline-flex">
-            <StateNode node={node} isOnSelectedRow={isCurrent} />
-          </span>
-        </Tooltip>
-      )}
-    </button>
+    <Tooltip content={label} side="right">
+      <button
+        type="button"
+        data-rail-session={session.id}
+        data-slot={isOpenTail ? 'rail-open-tail' : undefined}
+        aria-label={label}
+        aria-current={isCurrent ? 'page' : undefined}
+        aria-haspopup={hasFlyout ? 'dialog' : undefined}
+        onClick={() => {
+          if (isCurrent) {
+            return;
+          }
+          onSelect();
+        }}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+        onFocus={onEnter}
+        onBlur={onLeave}
+        onKeyDown={(event) => {
+          menu.onKeyDown(event);
+          onKeyDown?.(event);
+        }}
+        onContextMenu={menu.onContextMenu}
+        className={cn(
+          RAIL_NODE_BUTTON,
+          isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE,
+          sign === 'remembered' && 'text-foreground',
+        )}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            'flex size-6 items-center justify-center rounded-full text-chip ring-1 ring-inset',
+            tintClasses(node.tone).text,
+            tintClasses(node.tone).ring,
+          )}
+        >
+          {railInitialsOf({ title: text })}
+        </span>
+      </button>
+    </Tooltip>
   );
 };

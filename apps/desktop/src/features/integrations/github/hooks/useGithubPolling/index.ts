@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import type { SessionId } from '@goodboy/types';
 import { usePoll } from '../../../../../shared/lib/usePoll';
 import { useAppStore, useSessions } from '../../../../../store';
+import { changedBranchSessions } from './changedBranchSessions';
+import { parseBranchSignature } from './parseBranchSignature';
 
 const POLL_INTERVAL_MS = 5 * 60_000;
 
@@ -23,10 +26,32 @@ export const useGithubPolling = (): void => {
     }
     return acc;
   });
+  const knownBranches = useRef<ReadonlyMap<SessionId, string> | null>(null);
 
   useEffect(() => {
     void sweepRequests();
-  }, [sweepRequests, githubAvailable, hostBindingSignature, branchSignature]);
+  }, [sweepRequests, githubAvailable, hostBindingSignature]);
+
+  useEffect(() => {
+    const next = parseBranchSignature({ signature: branchSignature });
+    const previous = knownBranches.current;
+    knownBranches.current = next;
+    if (previous === null) {
+      return;
+    }
+    const changed = changedBranchSessions({ previous, next });
+    if (changed.length === 0) {
+      return;
+    }
+    if (changed.length > 1) {
+      void sweepRequests();
+      return;
+    }
+    const [sessionId] = changed;
+    if (sessionId !== undefined) {
+      void sweepRequests({ sessionId });
+    }
+  }, [sweepRequests, branchSignature]);
 
   usePoll({
     run: () => sweepRequests({ shouldSkipUnknownRequest: true }),

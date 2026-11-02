@@ -9,6 +9,7 @@ import {
   STRIPED_MIN_ROWS,
   STRIPED_ROW,
   STRIPED_TABLE,
+  ScrollFade,
   Tooltip,
   TruncatedText,
   cn,
@@ -89,7 +90,7 @@ export const TurnsTable = ({
         />
       ) : (
         <div className="flex max-w-full flex-col gap-1">
-          <div className="max-w-full overflow-x-auto">
+          <ScrollFade orientation="horizontal" className="max-w-full">
             <table className={cn('w-full min-w-[36rem] text-left text-meta', STRIPED_TABLE)}>
               <thead className="text-eyebrow text-faint-foreground">
                 <tr>
@@ -161,7 +162,7 @@ export const TurnsTable = ({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollFade>
           {remaining > 0 && (
             <Button
               variant="secondary"

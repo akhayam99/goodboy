@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { startSettingsRowOf } from '../../helpers/startSettingsRowOf';
 import type {
   IsoDateTime,
   Session,
@@ -86,10 +87,6 @@ const installFakes = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId as WorkspaceId;
   useAppStore.setState({
-    workspaceValues: {
-      ...state.workspaceValues,
-      [workspaceId]: { ...state.workspaceValues[workspaceId], 'auto.treeLimitUsd': '5' },
-    },
     starredIssues: { [workspaceId]: [starredIssue()] },
     requestIssueBrief: async (params) => {
       startCalls.briefs.push(params);
@@ -285,21 +282,23 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       ]);
       expect(kinds.getByRole('tab', { name: 'Preset' }).getAttribute('aria-selected')).toBe('true');
       const task = within(screen.getByRole('region', { name: 'Goal' }));
-      expect(task.queryByRole('combobox', { name: 'Where' })).toBeNull();
-      const settings = within(screen.getByRole('group', { name: 'Run settings' }));
-      settings.getByRole('combobox', { name: 'Where' });
+      expect(task.queryByRole('combobox', { name: 'Projects' })).toBeNull();
+      const settings = startSettingsRowOf({
+        group: screen.getByRole('group', { name: 'Run settings' }),
+      });
+      settings.getByRole('combobox', { name: 'Projects' });
       settings.getByRole('button', { name: /^Asks you:/ });
       settings.getByRole('button', { name: /^Edits:/ });
-      settings.getByRole('button', { name: /^(Limit |No limit)/ });
+      settings.getByRole('button', { name: /^Limit:/ });
     },
   },
   {
-    name: 'Start from the draft, on the kind started last, creates the session and the run, with one Follow toast and three clicks',
+    name: 'Start from the draft, on the kind started last, creates the session and the run, with no toast and three clicks',
     covers: ['navigate', 'toast:follow'],
     open: async (ctx) => {
       await openTasksAndStartOn({ ctx, lastStart: 'orchestrated' });
       await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
-      counted(await screen.findByRole('button', { name: 'Start workflow' }, WAIT));
+      counted(await screen.findByRole('button', { name: 'Start' }, WAIT));
       await settle(6);
     },
     lands: async () => {
@@ -311,7 +310,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       });
       expect(startCalls.runs[0]?.sessionId).toBe(newSessionId);
       await waitFor(() => expect(useAppStore.getState().currentSessionId).toBe(newSessionId), WAIT);
-      expect(await screen.findAllByText('Run started', {}, WAIT)).toHaveLength(1);
+      expect(screen.queryByText('Run started')).toBeNull();
       expect(toastTitles('Session started')).toHaveLength(0);
       expect(clicks).toBeLessThanOrEqual(3);
     },
@@ -346,7 +345,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
         throw new Error('the review did not create a session');
       }
       await branchTab('pr')({ sessionId: newSessionId });
-      expect(await screen.findAllByText('Review started', {}, WAIT)).toHaveLength(1);
+      expect(screen.queryByText('Review started')).toBeNull();
       expect(clicks).toBeLessThanOrEqual(2);
     },
   },

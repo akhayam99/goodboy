@@ -176,6 +176,7 @@ const ChatListRowView = ({
               isOnSelectedRow={isSelected || isChecked}
               isNamed
               isCheckboxSlot
+              isUnreadDot
             />
             <SelectionCheckbox
               checked={isChecked}

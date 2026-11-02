@@ -202,6 +202,19 @@ describe('refreshSessionPr across mounts', () => {
     expect(h.links.map((link) => link.prNumber).sort()).toEqual([11, 12]);
   });
 
+  it('uses the requests a batched sweep already fetched without asking gh again', async () => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.listPrsForBranch.mockRejectedValue(new Error('must not run'));
+
+    await refreshSessionPr(set, get)(SESSION_ID, {
+      mountId: M1,
+      prefetched: [makePr({ number: 21, branch: 'ak/part-one' })],
+    });
+
+    expect(h.listPrsForBranch).not.toHaveBeenCalled();
+    expect(mountGithubOf(state, M1)?.pr?.number).toBe(21);
+  });
+
   it('restores each mount request from its persisted link after a restart', async () => {
     const first = harness([
       mountView({ id: M1, branch: 'ak/part-one' }),

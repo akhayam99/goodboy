@@ -51,10 +51,10 @@ const renderWorkflows = async (): Promise<void> => {
 const grid = (): HTMLElement => screen.getByRole('list', { name: 'Workflows' });
 
 describe('Workflows rows stay reachable from the Workflows grid', () => {
-  it('keeps the Run defaults and Saved steps tabs in the switch', async () => {
+  it('keeps the Saved steps tab in the switch and no Run defaults tab', async () => {
     await renderWorkflows();
 
-    expect(screen.getByRole('tab', { name: 'Run defaults' })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Run defaults' })).toBeNull();
     expect(screen.getByRole('tab', { name: /Saved steps/ })).toBeDefined();
   });
 

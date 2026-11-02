@@ -3,7 +3,7 @@ import { AUTO_FACTS_MOUNTS_MAX } from './limits';
 import { parseDelegatePublish, type DelegatePublish } from './publish';
 import type { AutoRefusalCode } from './refusals';
 import { parseAutoDelegationRole, type AutoDelegationRole } from './roles';
-import { isRecord } from '@goodboy/types/helpers';
+import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
 
 export const DELEGATE_TASK_CHARS = 8_000;
 export const DELEGATE_FIELD_CHARS = 1_000;
@@ -57,25 +57,12 @@ export type DelegateSpecOutcome =
 
 type RecordValue = Readonly<Record<string, unknown>>;
 
-type TextParams = {
-  readonly value: unknown;
-  readonly max: number;
-};
-
-const textOf = ({ value, max }: TextParams): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed === '' ? null : trimmed.slice(0, max);
-};
-
 type TitleParams = {
   readonly value: unknown;
 };
 
 const titleOf = ({ value }: TitleParams): string | null => {
-  const text = textOf({ value, max: DELEGATE_FIELD_CHARS });
+  const text = clippedTextOf({ value, max: DELEGATE_FIELD_CHARS });
   if (text === null) {
     return null;
   }
@@ -92,7 +79,7 @@ const listOf = ({ value }: ListParams): ReadonlyArray<string> => {
   }
   const out: string[] = [];
   for (const entry of value) {
-    const text = textOf({ value: entry, max: DELEGATE_FIELD_CHARS });
+    const text = clippedTextOf({ value: entry, max: DELEGATE_FIELD_CHARS });
     if (text !== null && !out.includes(text)) {
       out.push(text);
     }
@@ -111,7 +98,7 @@ const reviseOf = ({ value }: ReviseParams): DelegateRevise | null | 'invalid' =>
   if (!isRecord(value)) {
     return 'invalid';
   }
-  const artifactId = textOf({ value: value['artifactId'], max: DELEGATE_FIELD_CHARS });
+  const artifactId = clippedTextOf({ value: value['artifactId'], max: DELEGATE_FIELD_CHARS });
   const revision = value['expectedRevision'];
   if (artifactId === null || typeof revision !== 'number' || !Number.isInteger(revision)) {
     return 'invalid';
@@ -169,7 +156,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       message: `child ${slot + 1}: a retry repeats the earlier work as it was, so ${clash} cannot be set. Drop "${clash}" or drop "retryOf"`,
     });
   }
-  const reason = textOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });
+  const reason = clippedTextOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });
   if (reason === null) {
     return refuse({
       slot,
@@ -184,9 +171,9 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       title: null,
       task: '',
       reason,
-      provider: textOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
-      model: textOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
-      effort: textOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
+      provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
+      model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
+      effort: clippedTextOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
       taskType: null,
       difficulty: null,
       doneWhen: null,
@@ -224,7 +211,7 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       message: `child ${slot + 1}: revises needs artifactId and expectedRevision`,
     });
   }
-  const retryOf = textOf({ value: raw['retryOf'], max: DELEGATE_FIELD_CHARS });
+  const retryOf = clippedTextOf({ value: raw['retryOf'], max: DELEGATE_FIELD_CHARS });
   if (retryOf !== null) {
     return retryChild({ raw, slot, retryOf });
   }
@@ -249,11 +236,11 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
   if (revises === null && role === null) {
     return refuse({ slot, code: 'spec_invalid', message: `child ${slot + 1} needs a role` });
   }
-  const task = textOf({ value: raw['task'], max: DELEGATE_TASK_CHARS });
+  const task = clippedTextOf({ value: raw['task'], max: DELEGATE_TASK_CHARS });
   if (revises === null && task === null) {
     return refuse({ slot, code: 'spec_invalid', message: `child ${slot + 1} needs a task` });
   }
-  const reason = textOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });
+  const reason = clippedTextOf({ value: raw['reason'], max: DELEGATE_REASON_CHARS });
   if (reason === null) {
     return refuse({
       slot,
@@ -268,21 +255,21 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       title: titleOf({ value: raw['title'] }),
       task: task ?? '',
       reason,
-      provider: textOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
-      model: textOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
-      effort: textOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
-      taskType: textOf({ value: raw['taskType'], max: DELEGATE_FIELD_CHARS }),
-      difficulty: textOf({ value: raw['difficulty'], max: DELEGATE_FIELD_CHARS }),
-      doneWhen: textOf({ value: raw['doneWhen'], max: DELEGATE_FIELD_CHARS }),
-      expected: textOf({ value: raw['expected'], max: DELEGATE_FIELD_CHARS }),
+      provider: clippedTextOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
+      model: clippedTextOf({ value: raw['model'], max: DELEGATE_FIELD_CHARS }),
+      effort: clippedTextOf({ value: raw['effort'], max: DELEGATE_FIELD_CHARS }),
+      taskType: clippedTextOf({ value: raw['taskType'], max: DELEGATE_FIELD_CHARS }),
+      difficulty: clippedTextOf({ value: raw['difficulty'], max: DELEGATE_FIELD_CHARS }),
+      doneWhen: clippedTextOf({ value: raw['doneWhen'], max: DELEGATE_FIELD_CHARS }),
+      expected: clippedTextOf({ value: raw['expected'], max: DELEGATE_FIELD_CHARS }),
       artifactIds: listOf({ value: raw['artifacts'] }),
-      mount: textOf({ value: raw['mount'], max: DELEGATE_FIELD_CHARS }),
+      mount: clippedTextOf({ value: raw['mount'], max: DELEGATE_FIELD_CHARS }),
       revises,
       changeFrom: listOf({ value: raw['changeFrom'] }),
       publish,
       facts: listOf({ value: raw['facts'] }).slice(0, AUTO_FACTS_MOUNTS_MAX),
       decisions: listOf({ value: raw['decisions'] }),
-      forQuestion: textOf({ value: raw['forQuestion'], max: DELEGATE_FIELD_CHARS }),
+      forQuestion: clippedTextOf({ value: raw['forQuestion'], max: DELEGATE_FIELD_CHARS }),
       retryOf: null,
       shouldConfirm: raw['confirm'] === true,
     },

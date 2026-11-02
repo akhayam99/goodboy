@@ -41,7 +41,10 @@ const paneOf = ({
   readonly sidebarPx: number;
 }): number => Math.round(windowPx / zoom) - sidebarPx;
 
-const roomOf = (main: number): number => main - 16 - 48 - 560;
+type RoomParams = { readonly main: number; readonly sizing: DrawerSizing };
+
+const roomOf = ({ main, sizing }: RoomParams): number =>
+  main - 16 - 48 - (sizing === 'side' ? 464 : 560);
 
 const layoutOf = ({
   columnWidth,
@@ -97,7 +100,7 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
     (savedWidth) => {
       const offenders = MAINS.filter((main) => {
         const layout = drawerLayoutOf({ main, sizing, savedWidth });
-        const room = roomOf(main);
+        const room = roomOf({ main, sizing });
         const expected =
           room >= savedWidth
             ? { mode: 'push', width: savedWidth }
@@ -131,7 +134,10 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
           mode: layout.mode,
           drawerWidthPx: layout.width,
         });
-        return layout.mode === 'push' && pageWidth < COLUMN_MIN_PUSH + COLUMN_GUTTERS;
+        return (
+          layout.mode === 'push' &&
+          pageWidth < (sizing === 'reader' ? 560 : COLUMN_MIN_PUSH) + COLUMN_GUTTERS
+        );
       });
 
       expect(cramped).toEqual([]);
@@ -147,7 +153,7 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
     expect(firstPush).toBeGreaterThan(0);
     expect(modes.slice(0, firstPush).every((mode) => mode === 'overlay')).toBe(true);
     expect(modes.slice(firstPush).every((mode) => mode === 'push')).toBe(true);
-    expect(MAINS[firstPush]).toBe(624 + tier.fallback);
+    expect(MAINS[firstPush]).toBe((sizing === 'side' ? 528 : 624) + tier.fallback);
   });
 
   it('never narrows as the page grows, within overlay and within push', () => {
@@ -168,7 +174,7 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
     const offenders = MAINS.filter((main) => {
       const layout = drawerLayoutOf({ main, sizing, savedWidth: tier.fallback });
       return layout.mode === 'push'
-        ? layout.dragMax !== Math.min(tier.max, roomOf(main))
+        ? layout.dragMax !== Math.min(tier.max, roomOf({ main, sizing }))
         : layout.dragMax !== Math.min(tier.max, main - 16);
     });
 
@@ -204,8 +210,8 @@ describe.each(TIERS)('one push rule for the %s tier', (sizing) => {
 });
 
 describe('the named widths of the plan', () => {
-  it('lies a side drawer over a 1000px main and pushes it at 1200', () => {
-    expect(drawerLayoutOf({ main: 1000, sizing: 'side', savedWidth: 400 })).toEqual({
+  it('lies a side drawer over a 900px main and pushes it at 1200', () => {
+    expect(drawerLayoutOf({ main: 900, sizing: 'side', savedWidth: 400 })).toEqual({
       mode: 'overlay',
       width: 400,
       dragMax: RIGHT_DRAWER_MAX,
@@ -249,7 +255,7 @@ describe('the named widths of the plan', () => {
   });
 
   it('overlays rather than squeezes a saved 560 side drawer, and keeps the saved width', () => {
-    expect(drawerLayoutOf({ main: 1100, sizing: 'side', savedWidth: 560 })).toEqual({
+    expect(drawerLayoutOf({ main: 1000, sizing: 'side', savedWidth: 560 })).toEqual({
       mode: 'overlay',
       width: 560,
       dragMax: 560,
@@ -276,9 +282,11 @@ describe('drawer geometry across the width matrix', () => {
         expect(drawerWidthPx).toBe(
           sizing === 'reader' ? READER_DRAWER_DEFAULT : RIGHT_DRAWER_DEFAULT,
         );
-        expect(mainPx).toBeGreaterThanOrEqual(COLUMN_MIN_PUSH + COLUMN_GUTTERS);
+        expect(mainPx).toBeGreaterThanOrEqual(
+          (sizing === 'reader' ? 560 : COLUMN_MIN_PUSH) + COLUMN_GUTTERS,
+        );
         expect(mainPx + drawerTrackOf(drawerWidthPx)).toBe(columnWidth);
-        expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
+        expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx, sizing })).toBe(true);
         return;
       }
       expect(mode).toBe('overlay');
@@ -421,7 +429,7 @@ describe('page box: the centred column against the drawer', () => {
 
   it('shrinks beside the drawer while it pushes, and keeps the full column once it overlays', () => {
     const pushed = layoutOf({ columnWidth: 1100, sizing: 'side' });
-    const overlaid = layoutOf({ columnWidth: 1000, sizing: 'side' });
+    const overlaid = layoutOf({ columnWidth: 900, sizing: 'side' });
 
     expect(pushed.mode).toBe('push');
     expect(
@@ -429,19 +437,19 @@ describe('page box: the centred column against the drawer', () => {
     ).toBe(pushed.mainPx);
     expect(overlaid.mode).toBe('overlay');
     expect(
-      pageBoxOf({ paneWidth: 1000, tier: 'column', drawerWidthPx: overlaid.drawerWidthPx }).width,
-    ).toBe(1000);
+      pageBoxOf({ paneWidth: 900, tier: 'column', drawerWidthPx: overlaid.drawerWidthPx }).width,
+    ).toBe(900);
   });
 });
 
 describe('the one drawer rule: fixed thresholds', () => {
-  const SIDE_THRESHOLD = 1024;
+  const SIDE_THRESHOLD = 928;
   const READER_THRESHOLD = 1344;
 
   it('names the one breakpoint: the reserve plus the drawer width', () => {
-    expect(DRAWER_PUSH_RESERVE).toBe(624);
+    expect(DRAWER_PUSH_RESERVE).toBe(528);
     expect(DRAWER_PUSH_RESERVE + RIGHT_DRAWER_DEFAULT).toBe(SIDE_THRESHOLD);
-    expect(DRAWER_PUSH_RESERVE + READER_DRAWER_DEFAULT).toBe(READER_THRESHOLD);
+    expect(624 + READER_DRAWER_DEFAULT).toBe(READER_THRESHOLD);
   });
 
   it('pushes a default side drawer from a 1024 column and lays it over below', () => {
@@ -464,7 +472,7 @@ describe('the one drawer rule: fixed thresholds', () => {
     const fixed = DRAWER_INSET * 2 + COLUMN_GUTTERS + COLUMN_MIN_PUSH;
 
     expect(SIDE_THRESHOLD).toBe(RIGHT_DRAWER_DEFAULT + fixed);
-    expect(READER_THRESHOLD).toBe(READER_DRAWER_DEFAULT + fixed);
+    expect(READER_THRESHOLD).toBe(READER_DRAWER_DEFAULT + 16 + 48 + 560);
   });
 
   it('never goes under the narrowest widths of today to fit a small window', () => {

@@ -1,6 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useOpenStopMountIds } from '../../hooks/useOpenStopMountIds';
-import type { Session, SessionEvent, SessionId, TurnState } from '@goodboy/types';
+import type { SessionWorktree } from '@goodboy/db';
+import type { Agent, Session, SessionEvent, SessionId, TurnState } from '@goodboy/types';
+import type { AgentKind } from '../../agent-kind';
+import { useSessionWorkLoads } from '../../hooks/useSessionWorkLoads';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -38,6 +42,9 @@ type Params = {
 
 export type SessionWorkModel = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly worktrees: ReadonlyArray<SessionWorktree>;
+  readonly settledStopIds: ReadonlySet<string>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly autoTrees: ReadonlyArray<AutoTreeView>;
   readonly workflows: ReadonlyArray<AttachedRun>;
@@ -62,44 +69,37 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   const worktrees = useAppStore((s) => s.sessionWorktreeRecords?.[sessionId] ?? EMPTY_ARRAY);
   const events = useAppStore((s) => s.sessionEvents?.[sessionId] ?? EMPTY_ARRAY);
   const learnings = useAppStore((s) => s.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
-  const loadSessionContextItems = useAppStore((s) => s.loadSessionContextItems);
-  const reportError = useAppStore((s) => s.reportError);
   const hasLoadedEvents = useAppStore((s) => s.sessionEvents?.[sessionId] !== undefined);
   const hasLoadedAgents = useIsSessionCollectionLoaded({ sessionId, collection: 'agents' });
-  const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
-  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
+  const agentKindOverride = useAppStore(
+    useShallow((s) => {
+      const picked: Record<string, AgentKind> = {};
+      for (const agent of agents) {
+        const kind = s.agentKindOverride[agent.id];
+        if (kind !== undefined) {
+          picked[agent.id] = kind;
+        }
+      }
+      return picked;
+    }),
+  );
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
   const dismissedQuestions = useSessionDismissedQuestions(sessionId);
-  const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
-  const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
   const workflows = useAttachedWorkflowRuns({ session });
+  const orchestratingRunIds = useAppStore(
+    useShallow((s) =>
+      workflows
+        .filter(({ run }) => s.orchestratingWorkflowRuns?.[run.id] === true)
+        .map(({ run }) => run.id),
+    ),
+  );
   const resolveActivity = useResolveActivity({ sessionId });
   const jobActivity = useJobActivity({ sessionId });
   const autoTrees = useAutoTrees({ sessionId });
   const settledStops = useAppStore((s) => s.settledRebaseStops[sessionId] ?? EMPTY_ARRAY);
   useRebaseStatuses({ sessionId });
-
-  useEffect(() => {
-    void loadSessionEvents({ sessionId });
-  }, [loadSessionEvents, sessionId]);
-
-  useEffect(() => {
-    void loadSessionArtifacts(sessionId);
-  }, [loadSessionArtifacts, sessionId]);
-
-  useEffect(() => {
-    loadSessionContextItems({ sessionId }).catch((error: unknown) => {
-      void reportError({ title: "Couldn't load the session notes", error, sessionId });
-    });
-  }, [loadSessionContextItems, reportError, sessionId]);
-
-  useEffect(() => {
-    void loadSessionAnsweredQuestions(sessionId);
-    void loadSessionDismissedQuestions(sessionId);
-  }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
+  useSessionWorkLoads({ sessionId });
 
   const questions = useMemo(
     () => [...openQuestions, ...answeredQuestions, ...dismissedQuestions],
@@ -168,15 +168,7 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   const settledStopIds = useMemo(() => new Set(settledStops), [settledStops]);
   const openMountIds = useOpenStopMountIds({ sessionId });
 
-  const decidingRunIds = useMemo(() => {
-    const deciding = new Set<string>();
-    for (const { run } of workflows) {
-      if (orchestratingWorkflowRuns?.[run.id] === true) {
-        deciding.add(run.id);
-      }
-    }
-    return deciding;
-  }, [orchestratingWorkflowRuns, workflows]);
+  const decidingRunIds = useMemo(() => new Set<string>(orchestratingRunIds), [orchestratingRunIds]);
 
   const owners = useMemo(
     () =>
@@ -218,6 +210,9 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
 
   return {
     entries: model.entries,
+    agents,
+    worktrees,
+    settledStopIds,
     events,
     autoTrees,
     workflows,

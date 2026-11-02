@@ -8,7 +8,7 @@ import { requestNounLabel } from '../../../../features/branch/requestNounLabel';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
 import { useBranchTab } from '../../../../features/branch/hooks/useBranchTab';
 import { useWorktreeEntryFacts } from '../../../../features/branch/hooks/useWorktreeEntryFacts';
-import { WorktreeEntrySlot } from '../../../../features/branch/components/WorktreeEntrySlot';
+import { WorktreeEntrySlot } from './WorktreeEntrySlot';
 import { WORKTREE_ENTRY_ICONS } from '../../../../features/branch/worktreeEntryIcons';
 
 import { ICON_SIZE, SelectableRow } from '@goodboy/ui';

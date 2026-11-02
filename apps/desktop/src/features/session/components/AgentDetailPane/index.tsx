@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ScrollText } from 'lucide-react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { GhostActionButton, PaneShell } from '@goodboy/ui';
+import { PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import {
@@ -12,7 +11,6 @@ import {
   useSessionOpenQuestions,
   useTranscript,
 } from '../../../../store';
-import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { executedRoutingOf } from '../../../auto/executedRoutingOf';
 import { agentHeadingOf } from './agentHeadingOf';
@@ -24,12 +22,10 @@ import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
-import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
-import { AgentSettingsLine } from '../AgentSettingsLine';
+import { AgentRunSettings } from './AgentRunSettings';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
-import { AgentLiveChip } from './AgentLiveChip';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
@@ -63,7 +59,11 @@ type Props = {
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
 
-const AUTO_HEADER_VERBS: ReadonlyArray<string> = ['agent.markAutoFinished'];
+const STOP_VERB = 'agent.stop';
+
+const AUTO_HEADER_VERBS: ReadonlyArray<string> = [STOP_VERB, 'agent.markAutoFinished'];
+
+const HEADER_VERBS: ReadonlyArray<string> = [STOP_VERB];
 
 export const AgentDetailPane = ({
   session,
@@ -95,11 +95,6 @@ export const AgentDetailPane = ({
   const [modelsSlot, setModelsSlot] = useState<HTMLElement | null>(null);
   const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
-  const toggleDrawer = useAppStore((state) => state.toggleDrawer);
-  const isTranscriptOpen = useAppStore((state) => {
-    const drawer = selectOpenDrawer(state);
-    return drawer?.kind === 'transcript' && drawer.payload.agentId === agent.id;
-  });
   const events = useTranscript(agent.id);
   const brief = useMemo(() => briefLineOf({ events }), [events]);
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
@@ -175,8 +170,6 @@ export const AgentDetailPane = ({
 
   const openTranscript: OpenTranscriptAt = ({ turn }) =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
-  const toggleTranscript = () =>
-    toggleDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id } });
   const heading = agentHeadingOf({ name: agent.name, kind, brief });
   const isChipShown = !isAutoRoot && heading !== AGENT_KIND_META[kind].noun;
   const shownRouting = executedRoutingOf({ executed, fallback: routing });
@@ -186,22 +179,9 @@ export const AgentDetailPane = ({
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
   const autoView = isAutoRoot ? (autoChat.tree?.view ?? null) : null;
-  const autoBudget =
-    autoView === null || autoView.budget === null
-      ? null
-      : { treeId: autoView.tree.id, facts: autoView.budget };
   const lead = (
     <>
       {context}
-      {runStep === undefined ? (
-        <AgentSettingsLine
-          session={session}
-          kind={<AgentRunRoute session={session} agentId={agent.id} />}
-          auto={autoBudget}
-          asksSlotRef={setAsksSlot}
-          modelsSlotRef={setModelsSlot}
-        />
-      ) : null}
       {isInWorkflowRun ? null : (
         <AgentStoppedNotice
           session={session}
@@ -224,6 +204,17 @@ export const AgentDetailPane = ({
       lead={lead}
       header={
         <AgentHeader
+          settings={
+            runStep === undefined ? (
+              <AgentRunSettings
+                session={session}
+                agent={agent}
+                autoView={autoView}
+                asksSlotRef={setAsksSlot}
+                modelsSlotRef={setModelsSlot}
+              />
+            ) : null
+          }
           title={
             <span
               className="flex min-w-0 items-center gap-2"
@@ -243,27 +234,16 @@ export const AgentDetailPane = ({
           }
           actions={
             <>
-              {runStep === undefined ? (
-                <AgentLiveChip sessionId={session.id} agent={agent} />
-              ) : null}
               {isAutoRoot ? (
                 <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
               ) : null}
-              {isAutoRoot || runStep !== undefined ? null : (
-                <GhostActionButton
-                  icon={ScrollText}
-                  label={isTranscriptOpen ? 'Hide transcript' : 'View transcript'}
-                  pressed={isTranscriptOpen}
-                  onClick={toggleTranscript}
-                />
-              )}
               {runStep === undefined ? (
                 <AgentHeaderActions
                   key={agent.id}
                   agent={agent}
                   sessionId={session.id}
                   hasStateButton={false}
-                  {...(isAutoRoot && { omit: AUTO_HEADER_VERBS })}
+                  omit={isAutoRoot ? AUTO_HEADER_VERBS : HEADER_VERBS}
                   onDeleted={onBack}
                 />
               ) : (

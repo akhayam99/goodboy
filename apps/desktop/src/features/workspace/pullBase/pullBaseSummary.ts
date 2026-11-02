@@ -1,3 +1,4 @@
+import { countNoun } from '../../../shared/utils/countNoun';
 import type { PullOutcome } from './pullBaseInRepos';
 
 type SummaryParams = {
@@ -10,14 +11,6 @@ export type PullSummary = {
   readonly kind: 'success' | 'info';
 };
 
-type CountParams = {
-  readonly count: number;
-  readonly noun: string;
-};
-
-const plural = ({ count, noun }: CountParams): string =>
-  `${count} ${noun}${count === 1 ? '' : 's'}`;
-
 const lineOf = (outcome: PullOutcome): string => {
   if (outcome.kind !== 'updated') {
     return `${outcome.name}: ${outcome.reason}`;
@@ -25,7 +18,7 @@ const lineOf = (outcome: PullOutcome): string => {
   const pulled =
     outcome.commits === 0
       ? `${outcome.base} already up to date`
-      : `${outcome.base} updated, ${plural({ count: outcome.commits, noun: 'new commit' })}`;
+      : `${outcome.base} updated, ${countNoun({ count: outcome.commits, one: 'new commit' })}`;
   const stays =
     outcome.checkoutBranch === null || outcome.checkoutBranch === outcome.base
       ? ''
@@ -37,7 +30,7 @@ export const pullBaseSummary = ({ outcomes }: SummaryParams): PullSummary => {
   const updated = outcomes.filter((outcome) => outcome.kind === 'updated').length;
   const skipped = outcomes.filter((outcome) => outcome.kind === 'skipped').length;
   const failed = outcomes.filter((outcome) => outcome.kind === 'failed').length;
-  const parts = [`Updated ${plural({ count: updated, noun: 'repo' })}`];
+  const parts = [`Updated ${countNoun({ count: updated, one: 'repo' })}`];
   if (skipped > 0) {
     parts.push(`${skipped} skipped`);
   }

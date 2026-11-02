@@ -73,7 +73,7 @@ export const WhereChip = ({ workspaceId, suggestedIds, isDisabled }: Props) => {
       className={START_PICK_TRIGGER}
       valueLabel={
         <>
-          <span className="shrink-0 text-faint-foreground">{START_KIND_COPY.where.label}</span>
+          <span className="shrink-0 text-faint-foreground">{START_KIND_COPY.where.label}:</span>
           <span className="min-w-0 truncate text-foreground">{value}</span>
         </>
       }

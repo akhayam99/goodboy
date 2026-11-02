@@ -18,7 +18,6 @@ describe('row action labels', () => {
       openPlan: 'Open plan',
       open: 'Open',
       start: 'Start',
-      resume: 'Resume',
       retry: 'Retry',
     });
   });

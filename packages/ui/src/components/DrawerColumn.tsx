@@ -1,3 +1,5 @@
+import { DrawerContentContext } from '../drawerContentContext';
+import { useDrawerColumnWidth } from '../useDrawerColumnWidth';
 import {
   useCallback,
   useEffect,
@@ -58,26 +60,6 @@ const useEdgeHost = () => {
   return { host, setHost, width };
 };
 
-const useMeasuredWidth = () => {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState<number | null>(null);
-  useEffect(() => {
-    const node = ref.current;
-    if (node === null || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry !== undefined) {
-        setWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
-};
-
 type UnmeasuredParams = {
   readonly savedWidth: number;
   readonly sizing: DrawerSizing;
@@ -131,7 +113,8 @@ export const DrawerColumn = ({
   leftResize = 'idle',
   className,
 }: DrawerColumnProps) => {
-  const column = useMeasuredWidth();
+  const column = useDrawerColumnWidth();
+  const [contentInset, setInset] = useState(0);
   const edge = useEdgeHost();
   const asideRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -169,6 +152,7 @@ export const DrawerColumn = ({
       ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing, placement })
       : drawerLayoutOf({
           main: column.width,
+          contentInset,
           sizing,
           savedWidth: resizable.width,
           placement,
@@ -228,137 +212,147 @@ export const DrawerColumn = ({
   const sheetState: SheetEdge = isPushed ? 'pushed' : sheetEdge;
 
   return (
-    <div
-      ref={column.ref}
-      className={cn(
-        'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
-        isSheet && isPushed && 'pb-2',
-        className,
-      )}
+    <DrawerContentContext.Provider
+      value={{ columnWidth: column.width, savedWidth: resizable.width, setInset, mode }}
     >
       <div
-        data-container="page"
-        data-drawer-main=""
-        inert={isOverlay}
-        {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
+        ref={column.ref}
         className={cn(
-          'flex min-h-0 min-w-0 flex-1 flex-col',
-          isSheet && 'overflow-hidden bg-background',
-          isSheet && SHEET_CLASSES[sheetState],
+          'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
+          isSheet && isPushed && 'pb-2',
+          className,
         )}
       >
-        <DrawerEdgeContext.Provider value={isEdgeShown ? edge.host : null}>
-          {main}
-        </DrawerEdgeContext.Provider>
-      </div>
-      {isOverlayOpen || isOverlayExit ? (
         <div
-          aria-hidden
-          data-drawer-scrim=""
-          onMouseDown={isExiting ? undefined : (event) => event.preventDefault()}
-          onClick={isExiting ? undefined : () => dismissTopEscapeLayer()}
+          data-container="page"
+          data-drawer-main=""
+          inert={isOverlay}
+          {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
           className={cn(
-            'absolute inset-0 z-10 bg-scrim',
-            isSheet && SCRIM_RADIUS[sheetState],
-            isOverlayExit && 'pointer-events-none animate-drawer-fade-out',
-            !isOverlayExit && !exit.isResumed && 'motion-safe:animate-fade-in',
+            'flex min-h-0 min-w-0 flex-1 flex-col',
+            isSheet && 'overflow-hidden bg-background',
+            isSheet && SHEET_CLASSES[sheetState],
           )}
-        />
-      ) : null}
-      {isEdgeShown ? (
-        <div
-          ref={edge.setHost}
-          data-drawer-edge=""
-          className={cn(
-            'absolute right-0 z-30 flex empty:hidden',
-            isSheet ? 'inset-y-px' : 'inset-y-0',
-          )}
-        />
-      ) : null}
-      <aside
-        ref={setAside}
-        aria-label={ariaLabel}
-        data-drawer-mode={mode}
-        data-drawer-exit={isExiting ? '' : undefined}
-        data-drawer-sizing={sizing}
-        inert={!isOpen}
-        style={asideStyle}
-        className={cn(
-          'flex min-h-0 shrink-0 justify-end',
-          isFloating
-            ? cn('pointer-events-none absolute bottom-0 right-0 z-20', isSheet ? 'top-px' : 'top-0')
-            : 'relative overflow-clip motion-safe:transition-[width]',
-          'duration-200 ease-enter',
-        )}
-      >
-        {isOpen || isExiting ? (
+        >
+          <DrawerEdgeContext.Provider value={isEdgeShown ? edge.host : null}>
+            {main}
+          </DrawerEdgeContext.Provider>
+        </div>
+        {isOverlayOpen || isOverlayExit ? (
           <div
+            aria-hidden
+            data-drawer-scrim=""
+            onMouseDown={isExiting ? undefined : (event) => event.preventDefault()}
+            onClick={isExiting ? undefined : () => dismissTopEscapeLayer()}
             className={cn(
-              'flex min-h-0 min-w-0 flex-1',
-              !isFloating && 'pr-2',
-              !isFloating && !isSheet && 'py-2',
+              'absolute inset-0 z-10 bg-scrim',
+              isSheet && SCRIM_RADIUS[sheetState],
+              isOverlayExit && 'pointer-events-none animate-drawer-fade-out',
+              !isOverlayExit && !exit.isResumed && 'motion-safe:animate-fade-in',
             )}
-            ref={trackRef}
-            style={{ minWidth: isFloating ? asideWidth : 0 }}
-          >
+          />
+        ) : null}
+        {isEdgeShown ? (
+          <div
+            ref={edge.setHost}
+            data-drawer-edge=""
+            className={cn(
+              'absolute right-0 z-30 flex empty:hidden',
+              isSheet ? 'inset-y-px' : 'inset-y-0',
+            )}
+          />
+        ) : null}
+        <aside
+          ref={setAside}
+          aria-label={ariaLabel}
+          data-drawer-mode={mode}
+          data-drawer-exit={isExiting ? '' : undefined}
+          data-drawer-sizing={sizing}
+          inert={!isOpen}
+          style={asideStyle}
+          className={cn(
+            'flex min-h-0 shrink-0 justify-end',
+            isFloating
+              ? cn(
+                  'pointer-events-none absolute bottom-0 right-0 z-20',
+                  isSheet ? 'top-px' : 'top-0',
+                )
+              : 'relative overflow-clip motion-safe:transition-[width]',
+            'duration-200 ease-enter',
+          )}
+        >
+          {isOpen || isExiting ? (
             <div
-              className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}
-            >
-              {isOpen ? (
-                <ResizeHandle
-                  {...resizable.handleProps}
-                  max={layout.dragMax}
-                  value={layout.width}
-                  side="right"
-                  ariaLabel={resizeLabel}
-                />
-              ) : null}
-            </div>
-            <div
-              ref={cardRef}
-              data-container="drawer"
-              data-drawer-card=""
-              tabIndex={isOverlay ? -1 : undefined}
-              inert={isExiting}
               className={cn(
-                'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-drawer',
-                isFloating
-                  ? 'rounded-l-frame border-l border-frame-edge shadow-xl focus-visible:outline-none'
-                  : 'items-end rounded-frame border border-frame-edge',
-                isOverlay && 'pointer-events-auto',
-                isOverlay && !exit.isResumed && 'motion-safe:animate-drawer-overlay-in',
-                isExiting && 'pointer-events-none',
-                isOverlayExit &&
-                  'motion-safe:animate-drawer-overlay-out motion-reduce:animate-drawer-fade-out',
+                'flex min-h-0 min-w-0 flex-1',
+                !isFloating && 'pr-2',
+                !isFloating && !isSheet && 'py-2',
               )}
+              ref={trackRef}
+              style={{ minWidth: isFloating ? asideWidth : 0 }}
             >
               <div
-                data-drawer-content=""
                 className={cn(
-                  'flex min-h-0 min-w-0 flex-1 flex-col',
-                  !isFloating && PUSH_CONTENT,
-                  !isFloating &&
-                    !isExiting &&
-                    !exit.isResumed &&
-                    'motion-safe:animate-drawer-content-in',
-                  isPushExit && 'motion-safe:animate-drawer-content-out',
+                  'flex w-2 shrink-0 justify-center',
+                  isOverlay && 'pointer-events-auto',
+                )}
+              >
+                {isOpen ? (
+                  <ResizeHandle
+                    {...resizable.handleProps}
+                    max={layout.dragMax}
+                    value={layout.width}
+                    side="right"
+                    ariaLabel={resizeLabel}
+                  />
+                ) : null}
+              </div>
+              <div
+                ref={cardRef}
+                data-container="drawer"
+                data-drawer-card=""
+                tabIndex={isOverlay ? -1 : undefined}
+                inert={isExiting}
+                className={cn(
+                  'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-drawer',
+                  isFloating
+                    ? 'rounded-l-frame border-l border-frame-edge shadow-xl focus-visible:outline-none'
+                    : 'items-end rounded-frame border border-frame-edge',
+                  isOverlay && 'pointer-events-auto',
+                  isOverlay && !exit.isResumed && 'motion-safe:animate-drawer-overlay-in',
+                  isExiting && 'pointer-events-none',
+                  isOverlayExit &&
+                    'motion-safe:animate-drawer-overlay-out motion-reduce:animate-drawer-fade-out',
                 )}
               >
                 <div
-                  key={isExiting ? `${drawerKey}:exit` : drawerKey}
-                  ref={isExiting ? mountSnapshot : contentRef}
+                  data-drawer-content=""
                   className={cn(
                     'flex min-h-0 min-w-0 flex-1 flex-col',
-                    !isExiting && 'motion-safe:animate-drawer-swap',
+                    !isFloating && PUSH_CONTENT,
+                    !isFloating &&
+                      !isExiting &&
+                      !exit.isResumed &&
+                      'motion-safe:animate-drawer-content-in',
+                    isPushExit && 'motion-safe:animate-drawer-content-out',
                   )}
                 >
-                  {isOpen ? drawer : null}
+                  <div
+                    key={isExiting ? `${drawerKey}:exit` : drawerKey}
+                    ref={isExiting ? mountSnapshot : contentRef}
+                    className={cn(
+                      'flex min-h-0 min-w-0 flex-1 flex-col',
+                      !isExiting && 'motion-safe:animate-drawer-swap',
+                    )}
+                  >
+                    {isOpen ? drawer : null}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : null}
-      </aside>
-    </div>
+          ) : null}
+        </aside>
+      </div>
+    </DrawerContentContext.Provider>
   );
 };

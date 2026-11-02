@@ -1,0 +1,279 @@
+{
+  "mutations": [
+    "resolveReviewThread",
+    "addPullRequestReviewThreadReply",
+    "updatePullRequestReviewComment",
+    "addPullRequestReview",
+    "addPullRequestReviewThread",
+    "submitPullRequestReview",
+    "deletePullRequestReview"
+  ],
+  "shapes": [
+    {
+      "id": "pr-view",
+      "verb": ["pr", "view"],
+      "positional": ["{ref}?"],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--json", "slot": "fields" },
+        { "name": "--jq", "slot": "text" }
+      ]
+    },
+    {
+      "id": "pr-list",
+      "verb": ["pr", "list"],
+      "positional": [],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--head", "slot": "text" },
+        { "name": "--state", "values": ["open", "closed", "merged", "all"] },
+        { "name": "--limit", "slot": "number" },
+        { "name": "--json", "slot": "fields" },
+        { "name": "--search", "slot": "text" }
+      ]
+    },
+    {
+      "id": "pr-create",
+      "verb": ["pr", "create"],
+      "positional": [],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--head", "slot": "text" },
+        { "name": "--base", "slot": "text" },
+        { "name": "--title", "slot": "text" },
+        { "name": "--body", "slot": "text" },
+        { "name": "--fill", "slot": null },
+        { "name": "--draft", "slot": null }
+      ]
+    },
+    {
+      "id": "pr-edit",
+      "verb": ["pr", "edit"],
+      "positional": ["{ref}"],
+      "flags": [
+        { "name": "--title", "slot": "text" },
+        { "name": "--body", "slot": "text" },
+        { "name": "--add-reviewer", "slot": "text" }
+      ]
+    },
+    {
+      "id": "pr-ready",
+      "verb": ["pr", "ready"],
+      "positional": ["{ref}?"],
+      "flags": [{ "name": "--undo", "slot": null }]
+    },
+    {
+      "id": "pr-merge",
+      "verb": ["pr", "merge"],
+      "positional": ["{ref}?"],
+      "flags": [
+        { "name": "--squash", "slot": null },
+        { "name": "--merge", "slot": null },
+        { "name": "--rebase", "slot": null },
+        { "name": "--disable-auto", "slot": null },
+        { "name": "--match-head-commit", "slot": "sha" }
+      ]
+    },
+    {
+      "id": "pr-close",
+      "verb": ["pr", "close"],
+      "positional": ["{ref}"],
+      "flags": []
+    },
+    {
+      "id": "pr-reopen",
+      "verb": ["pr", "reopen"],
+      "positional": ["{ref}"],
+      "flags": []
+    },
+    {
+      "id": "pr-diff",
+      "verb": ["pr", "diff"],
+      "positional": ["{ref}?"],
+      "flags": [{ "name": "--repo", "slot": "slug" }]
+    },
+    {
+      "id": "pr-checks",
+      "verb": ["pr", "checks"],
+      "positional": ["{ref}?"],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--json", "slot": "fields" }
+      ]
+    },
+    {
+      "id": "pr-comment",
+      "verb": ["pr", "comment"],
+      "positional": ["{ref}?"],
+      "flags": [{ "name": "--body", "slot": "text" }]
+    },
+    {
+      "id": "issue-view",
+      "verb": ["issue", "view"],
+      "positional": ["{number}"],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--json", "slot": "fields" }
+      ]
+    },
+    {
+      "id": "issue-list",
+      "verb": ["issue", "list"],
+      "positional": [],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--assignee", "slot": "text" },
+        { "name": "--state", "values": ["open", "closed", "all"] },
+        { "name": "--limit", "slot": "number" },
+        { "name": "--json", "slot": "fields" }
+      ]
+    },
+    {
+      "id": "issue-create",
+      "verb": ["issue", "create"],
+      "positional": [],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--title", "slot": "text" },
+        { "name": "--body", "slot": "text" }
+      ]
+    },
+    {
+      "id": "issue-comment",
+      "verb": ["issue", "comment"],
+      "positional": ["{number}"],
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--body", "slot": "text" }
+      ]
+    },
+    {
+      "id": "search-issues",
+      "verb": ["search", "issues"],
+      "positional": [],
+      "tail": "text",
+      "flags": [
+        { "name": "--repo", "slot": "slug" },
+        { "name": "--state", "values": ["open", "closed"] },
+        { "name": "--json", "slot": "fields" },
+        { "name": "--limit", "slot": "number" }
+      ]
+    },
+    {
+      "id": "run-view-failed-log",
+      "verb": ["run", "view"],
+      "positional": ["{number}"],
+      "flags": [
+        { "name": "--job", "slot": "number" },
+        { "name": "--log-failed", "slot": null }
+      ]
+    },
+    {
+      "id": "repo-view",
+      "verb": ["repo", "view"],
+      "positional": ["{slug}?"],
+      "flags": [
+        { "name": "--json", "slot": "fields" },
+        { "name": "--jq", "slot": "text" },
+        { "name": "-q", "slot": "text" }
+      ]
+    },
+    {
+      "id": "repo-list",
+      "verb": ["repo", "list"],
+      "positional": [],
+      "flags": [
+        { "name": "--limit", "slot": "number" },
+        { "name": "--json", "slot": "fields" }
+      ]
+    },
+    {
+      "id": "repo-create",
+      "verb": ["repo", "create"],
+      "positional": ["{word}"],
+      "flags": [
+        { "name": "--public", "slot": null },
+        { "name": "--private", "slot": null }
+      ]
+    },
+    {
+      "id": "api-user",
+      "verb": ["api"],
+      "positional": ["user"],
+      "flags": []
+    },
+    {
+      "id": "api-graphql",
+      "verb": ["api"],
+      "positional": ["graphql"],
+      "isGraphql": true,
+      "flags": [
+        { "name": "-f", "slot": "assignment", "isRepeatable": true },
+        { "name": "-F", "slot": "assignment", "isRepeatable": true }
+      ]
+    },
+    {
+      "id": "api-issue-patch",
+      "verb": ["api"],
+      "positional": ["repos/{slug}/issues/{number}"],
+      "flags": [
+        { "name": "-X", "values": ["PATCH"], "isRequired": true },
+        { "name": "-f", "slot": "assignment", "isRepeatable": true }
+      ]
+    },
+    {
+      "id": "api-issue-comments-read",
+      "verb": ["api"],
+      "positional": ["repos/{slug}/issues/{number}/comments"],
+      "flags": [{ "name": "--paginate", "slot": null }]
+    },
+    {
+      "id": "api-issue-comments-create",
+      "verb": ["api"],
+      "positional": ["repos/{slug}/issues/{number}/comments"],
+      "flags": [
+        { "name": "-X", "values": ["POST"], "isRequired": true },
+        { "name": "-f", "slot": "assignment", "isRepeatable": true }
+      ]
+    },
+    {
+      "id": "api-pull-comments-read",
+      "verb": ["api"],
+      "positional": ["repos/{slug}/pulls/{number}/comments"],
+      "flags": [{ "name": "--paginate", "slot": null }]
+    },
+    {
+      "id": "api-search-issues",
+      "verb": ["api"],
+      "positional": ["search/issues"],
+      "flags": [
+        { "name": "-X", "values": ["GET"], "isRequired": true },
+        { "name": "-f", "slot": "assignment", "isRepeatable": true }
+      ]
+    },
+    {
+      "id": "api-collaborators",
+      "verb": ["api"],
+      "positional": ["repos/{slug}/collaborators?per_page=100"],
+      "flags": [{ "name": "--jq", "slot": "text" }]
+    },
+    {
+      "id": "api-repo-read",
+      "verb": ["api"],
+      "positional": ["repos/{slug}"],
+      "flags": [{ "name": "--jq", "slot": "text" }]
+    },
+    {
+      "id": "api-branches",
+      "verb": ["api"],
+      "positional": ["repos/{owner}/{repo}/branches?per_page=100"],
+      "flags": [{ "name": "--jq", "slot": "text" }]
+    },
+    {
+      "id": "api-commit-diff",
+      "verb": ["api"],
+      "positional": ["repos/{slug}/commits/{sha}"],
+      "flags": [{ "name": "-H", "values": ["Accept: application/vnd.github.diff"] }]
+    }
+  ]
+}

@@ -9,7 +9,7 @@ type Params = Readonly<{
 
 const KINDS = new Set(['plan', 'report', 'wireframe']);
 
-const isLive = (artifact: SessionArtifact): boolean => artifact.status !== 'discarded';
+const isArtifactLive = (artifact: SessionArtifact): boolean => artifact.status !== 'discarded';
 
 type ReplacedParams = Readonly<{
   artifacts: ReadonlyArray<SessionArtifact>;
@@ -37,7 +37,7 @@ export const resolveReplacedPlan = ({
     (artifact) =>
       artifact.kind === 'plan' &&
       artifact.agentId === agentId &&
-      isLive(artifact) &&
+      isArtifactLive(artifact) &&
       artifact.revision >= 2,
   );
   const owners =
@@ -59,7 +59,9 @@ export const resolveArtifactForBlock = ({
   if (!KINDS.has(artifactKind)) {
     return null;
   }
-  const live = artifacts.filter((artifact) => artifact.kind === artifactKind && isLive(artifact));
+  const live = artifacts.filter(
+    (artifact) => artifact.kind === artifactKind && isArtifactLive(artifact),
+  );
   const direct =
     runId === null ? null : (live.find((artifact) => artifact.sourceTurnId === runId) ?? null);
   if (direct !== null) {

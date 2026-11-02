@@ -9,7 +9,6 @@ import type {
 } from '../../../../store/slices/project-mounts/mountRowModel';
 
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
-import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 import { FinishedFold } from './FinishedFold';
 import { WorktreeRow } from './WorktreeRow';
@@ -21,7 +20,6 @@ type Props = {
   readonly group: MountProjectGroup;
   readonly tree: RailTreeOpen;
   readonly statuses: ReadonlyMap<string, WorktreeStatus>;
-  readonly diffStats: ReadonlyMap<string, EntryDiffStat>;
   readonly shownPath: string | null;
   readonly openedPath: string | null;
   readonly isBatchSettled: boolean;
@@ -36,7 +34,6 @@ export const ProjectTree = ({
   group,
   tree,
   statuses,
-  diffStats,
   shownPath,
   openedPath,
   isBatchSettled,
@@ -66,12 +63,10 @@ export const ProjectTree = ({
       <WorktreeRow
         sessionId={sessionId}
         row={row}
-        tree={tree}
         status={row.worktreePath === null ? null : (statuses.get(row.worktreePath) ?? null)}
         isShown={row.worktreePath !== null && row.worktreePath === shownPath}
         isOpened={row.worktreePath !== null && row.worktreePath === openedPath}
         isBatchSettled={isBatchSettled}
-        diff={row.worktreePath === null ? null : (diffStats.get(row.worktreePath) ?? null)}
       />
     </li>
   );

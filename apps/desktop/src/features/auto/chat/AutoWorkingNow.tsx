@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { AutoWorkingChild } from './AutoWorkingChild';
 import { useAutoTreeActions } from './useAutoTreeActions';
 
@@ -11,6 +13,7 @@ type Props = {
 
 export const AutoWorkingNow = ({ sessionId, view }: Props) => {
   const { openChild } = useAutoTreeActions({ sessionId });
+  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'spawned');
   const children = useMemo(
     () =>
       view.delegations
@@ -19,7 +22,7 @@ export const AutoWorkingNow = ({ sessionId, view }: Props) => {
         .sort((left, right) => right.createdAt - left.createdAt),
     [view.delegations],
   );
-  if (children.length === 0) {
+  if (isDrawerOpen || children.length === 0) {
     return null;
   }
   return (

@@ -12,7 +12,6 @@ import {
   cn,
   DrawerColumn,
   PAGE_FRAME,
-  PaneActionsContext,
   readStudioRailWidth,
   SHEET_CLASSES,
   StudioSlotContext,
@@ -21,8 +20,6 @@ import {
 } from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
 import { StudioBandContext } from '../../../shared/components/StudioShell/studioBandContext';
-import { HeaderCloseButton } from '../../../shared/components/StudioShell/HeaderCloseButton';
-import { useHeaderCloseClaim } from '../../../shared/components/StudioShell/useHeaderCloseClaim';
 import {
   StudioFrameContext,
   type StudioChrome,
@@ -100,25 +97,17 @@ export const StudioFrame = ({
     [requestClose, trailSlot, claimTrail, isDrawerHost],
   );
   const title = chrome?.title ?? meta.title;
-  const closeLabel = chrome?.closeLabel ?? meta.closeLabel;
   const accessory = chrome?.accessory ?? null;
-  const headerCloseClaim = useHeaderCloseClaim();
-  const isHeaderClose = isClosable && meta.close === 'header';
-  const isBandClose =
-    isClosable && (meta.close === 'band' || (isHeaderClose && !headerCloseClaim.isClaimed));
-  const headerClose = isHeaderClose ? (
-    <HeaderCloseButton label={closeLabel} onClose={requestClose} onClaim={headerCloseClaim.claim} />
-  ) : null;
+  const isBandClose = isClosable && meta.close === 'back';
   const isBandDrawn = hasBand && (isBandClose || trailClaims > 0 || accessory !== null);
   const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
-  const isSkeletonUnderBand = hasBand && isClosable && meta.close === 'band';
+  const isSkeletonUnderBand = hasBand && isClosable && meta.close === 'back';
   const bandNode = isBandDrawn ? (
     <StudioBand
       label={title}
       width={meta.tier}
-      closeLabel={closeLabel}
       isClosable={isBandClose}
       accessory={accessory}
       trailSlotRef={setTrailSlot}
@@ -153,11 +142,7 @@ export const StudioFrame = ({
           }
         >
           <StudioBandContext.Provider value={isSplit ? bandNode : null}>
-            <PaneActionsContext.Provider value={headerClose}>
-              <UnderTrailContext.Provider value={isUnderTrail}>
-                {children}
-              </UnderTrailContext.Provider>
-            </PaneActionsContext.Provider>
+            <UnderTrailContext.Provider value={isUnderTrail}>{children}</UnderTrailContext.Provider>
           </StudioBandContext.Provider>
         </Suspense>
       </div>

@@ -1,5 +1,5 @@
 import type { MouseEventHandler, ReactNode } from 'react';
-import { cn, tintClasses, type Tone, Tooltip } from '@goodboy/ui';
+import { cn, tintClasses, ToneBar, type Tone, Tooltip } from '@goodboy/ui';
 
 type Variant = 'boxed' | 'leftBorder' | 'pill' | 'plain';
 
@@ -36,12 +36,16 @@ export const TranscriptShell = ({
 }: Props) => {
   const accent = tintClasses(tone);
   const hasRail = tone !== 'neutral';
+  const bar =
+    variant === 'boxed' ? (
+      <ToneBar tone={tone} density="card" className={cn(!emphasis && 'opacity-50')} />
+    ) : variant === 'leftBorder' && hasRail ? (
+      <ToneBar tone={tone} density="row" />
+    ) : null;
   const shellClassName = cn(
-    variant === 'boxed' && 'rounded-r-md border-l-2 py-2 pl-3 pr-3',
-    variant === 'boxed' && (emphasis ? accent.border : accent.borderSoft),
-    variant === 'leftBorder' &&
-      (hasRail ? 'rounded-r-md border-l-2 py-1 pl-2 pr-2' : 'py-1 pl-2 pr-2'),
-    variant === 'leftBorder' && hasRail && accent.border,
+    variant === 'boxed' && 'relative rounded-md py-2 pl-4 pr-3',
+    variant === 'leftBorder' && 'relative py-1 pl-3 pr-2',
+    variant === 'leftBorder' && hasRail && 'rounded-md',
     variant === 'pill' && 'rounded-full border px-3 py-1',
     variant === 'pill' && accent.border,
     variant === 'pill' && accent.bg,
@@ -59,6 +63,7 @@ export const TranscriptShell = ({
           data-testid={testId}
           className={shellClassName}
         >
+          {bar}
           {children}
         </button>
       </Tooltip>
@@ -72,6 +77,7 @@ export const TranscriptShell = ({
       data-testid={testId}
       onContextMenu={onContextMenu}
     >
+      {bar}
       {children}
     </div>
   );

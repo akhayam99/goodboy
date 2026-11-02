@@ -5,6 +5,7 @@ import { conflictFilesLabelOf } from './rebaseConflictLine';
 import { rebaseConflictOf } from './rebaseConflictOf';
 import { rebaseJobOf, type RebaseJobState } from './rebaseJob';
 import type { RebaseStop } from './rebaseStopOf';
+import { countNoun } from '../../shared/utils/countNoun';
 
 type RebaseStopVerb = 'resolve-auto' | 'bring-in' | 'retry-rebase' | 'fix-push' | 'open';
 
@@ -28,7 +29,7 @@ type FilesParams = {
   readonly count: number;
 };
 
-const filesOf = ({ count }: FilesParams): string => `${count} ${count === 1 ? 'file' : 'files'}`;
+const filesOf = ({ count }: FilesParams): string => `${countNoun({ count: count, one: 'file' })}`;
 
 type PathParams = {
   readonly path: string;

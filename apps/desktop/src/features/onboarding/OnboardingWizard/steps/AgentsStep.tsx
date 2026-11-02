@@ -129,8 +129,8 @@ export const AgentsStep = ({ mode, isLocked, onBack, onDone, setBusy }: Props) =
   return (
     <div className="flex flex-col gap-6" onKeyDown={onKeyDown}>
       <StepHeading
-        title="Your agents"
-        line="Goodboy runs the coding agents already on this Mac. One ready agent is enough."
+        title="Welcome to Goodboy"
+        line="Goodboy runs coding agents side by side on your own repositories, one session for each goal. Nothing is pushed until you say so. It runs the agents already on this Mac, and one ready agent is enough."
       />
       {isAnswered && readyCount === 0 && rows.every((row) => !row.isFound) ? (
         <Notice

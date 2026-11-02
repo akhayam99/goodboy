@@ -79,6 +79,25 @@ describe('the motion registry names every keyframe and only those', () => {
     expect(registrySection()).toContain(`${WORD_OF_COUNT[meaning.length]} animations, one meaning`);
   });
 
+  it('defines the three live-layer primitives and their animation tokens', () => {
+    const defined = keyframeNames();
+    expect(defined).toEqual(expect.arrayContaining(['pane-in', 'pane-out', 'item-out']));
+    expect(defined).toContain('nav-step-in-back');
+    expect(defined).not.toContain('nav-step-out');
+    expect(CSS).toMatch(/--animate-pane-out:\s*pane-out\s+var\(--duration-quick\)/);
+    expect(CSS).toMatch(/--animate-item-out:\s*item-out\s+var\(--duration-quick\)/);
+    expect(CSS).toMatch(/--animate-pane-in:\s*pane-in\s+var\(--duration-base\)/);
+  });
+
+  it('keeps PaneSwap on live layers, never on a snapshot copy', () => {
+    const source = readFileSync(
+      join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src', 'components', 'PaneSwap.tsx'),
+      'utf8',
+    );
+    expect(source).not.toContain('exitSnapshot');
+    expect(source).toContain('Activity');
+  });
+
   it('keeps the skeleton on the soft-pulse keyframes', () => {
     expect(CSS).toMatch(/--animate-pulse:\s*soft-pulse\s+var\(--loop-pulse\)/);
   });

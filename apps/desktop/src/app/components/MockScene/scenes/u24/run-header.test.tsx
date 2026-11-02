@@ -118,12 +118,12 @@ describe('the run header scenes on the orchestrated document', () => {
     expect(bar.contains(entries[0] ?? null)).toBe(true);
   });
 
-  it('shows Resume run where Pause run was, with Stop run in the menu', async () => {
+  it('shows Continue where Pause run was, with Stop run in the menu', async () => {
     renderScene('run-header-paused');
 
     const bar = await header();
     expect(within(tail()).getByText('Paused by you')).toBeDefined();
-    expect(within(tail()).queryByRole('button', { name: 'Resume' })).toBeNull();
+    expect(within(tail()).queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(document.querySelectorAll('[data-hint-chip="queued"]')).toHaveLength(2);
     expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
     const verbs = bar.querySelector('[data-run-live-verbs]');
@@ -135,7 +135,7 @@ describe('the run header scenes on the orchestrated document', () => {
     expect(within(bar).queryByRole('button', { name: 'Pause run' })).toBeNull();
     expect(within(bar).queryByRole('button', { name: 'Stop run' })).toBeNull();
     fireEvent.click(within(bar).getByRole('button', { name: /run actions$/ }));
-    expect(within(screen.getByRole('menu')).queryByText('Resume run')).toBeNull();
+    expect(within(screen.getByRole('menu')).queryByText('Continue')).toBeNull();
     fireEvent.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /^Stop run/ }));
     expect(await screen.findByText('Stop this run?')).toBeDefined();
   });

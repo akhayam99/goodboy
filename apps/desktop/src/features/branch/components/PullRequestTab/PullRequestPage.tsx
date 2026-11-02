@@ -4,7 +4,7 @@ import {
   REVIEW_SOURCE_LABEL,
   type PullRequestFailureKind,
 } from '@goodboy/core';
-import { SkeletonRow } from '@goodboy/ui';
+import { SkeletonSwap } from '@goodboy/ui';
 import type {
   BranchCommit,
   FileDiff,
@@ -27,6 +27,7 @@ import { pullRequestActivityOf } from './activityOf';
 import { BranchSummary } from './BranchSummary';
 import { OpenThreadsLink } from './OpenThreadsLink';
 import { PullRequestActivity } from './PullRequestActivity';
+import { PullRequestActivitySkeleton } from './PullRequestActivitySkeleton';
 import { PullRequestDescription } from './PullRequestDescription';
 import { PullRequestProperties } from './PullRequestProperties';
 import { PullRequestStatusStrip } from './PullRequestStatusStrip';
@@ -175,16 +176,22 @@ export const PullRequestPage = ({
               error={viewError}
               onReload={onReload}
             />
-          ) : view === null ? (
-            <SkeletonRow label={ACTIVITY_LOADING} />
           ) : (
-            <PullRequestActivity
-              items={items}
-              nouns={nouns}
-              baseBranch={pr.baseBranch}
-              onOpenComments={() => onSelectTab('comments')}
-              onOpenChecks={() => onSelectTab('checks')}
-            />
+            <SkeletonSwap
+              gateKey={`pr-activity:${sessionId}:${pr.number}`}
+              isLoaded={view !== null}
+              skeleton={<PullRequestActivitySkeleton label={ACTIVITY_LOADING} />}
+            >
+              {view === null ? null : (
+                <PullRequestActivity
+                  items={items}
+                  nouns={nouns}
+                  baseBranch={pr.baseBranch}
+                  onOpenComments={() => onSelectTab('comments')}
+                  onOpenChecks={() => onSelectTab('checks')}
+                />
+              )}
+            </SkeletonSwap>
           )}
         </div>
       </div>

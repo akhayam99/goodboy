@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BootPhase } from '../../../store/slices/boot/state';
-import {
-  SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX,
-  SPLASH_TILE_PX,
-} from '../../../features/onboarding/OnboardingWizard/useSplashAnchor/splashShift';
+import { SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX, SPLASH_TILE_PX } from './splashTile';
 import { BootBrand } from './BootBrand';
 import { BootProgress } from './BootProgress';
 import { BOOT_PHASE_LABEL } from './bootPhaseLabel';

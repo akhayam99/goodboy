@@ -58,7 +58,7 @@ const seed = (sessions: ReadonlyArray<Session>, questions: ReadonlyArray<Session
   seedColumn({ store: useAppStore, sessions, questions });
 };
 
-const trigger = () => screen.getByRole('button', { name: /^\d+ (needs?|sessions?|scripts?) / });
+const trigger = () => screen.getByRole('button', { name: /running/ });
 
 const noop = () => undefined;
 
@@ -106,10 +106,10 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 1 needs you: 1 question for you',
+      'Sessions, 1 session needs you: 1 question for you',
     );
     expect(sessionsDoor().querySelector('[data-door-signal="warning"]')).not.toBeNull();
-    expect(trigger().getAttribute('aria-label')).toBe('1 needs you');
+    expect(document.querySelector('[data-now-needs-you]')).toBeNull();
     expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
@@ -118,22 +118,20 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 2 need you: 1 question for you, The plan waits for your approval',
+      'Sessions, 2 sessions need you: 1 question for you, The plan waits for your approval',
     );
   });
 
-  it('lists a running session that has a question under needs you, not under running', async () => {
+  it('keeps a running session that has a question out of the Now chip: it counts on the Sessions door', async () => {
     seed([asking, working], [asking]);
     renderShell();
 
-    expect(trigger().getAttribute('aria-label')).toBe('1 needs you, 1 session running');
+    expect(trigger().getAttribute('aria-label')).toBe('1 session running');
     await act(async () => {
       fireEvent.click(trigger());
     });
     const panel = screen.getByRole('dialog', { name: 'Now' });
     const running = within(within(panel).getByRole('list', { name: 'Running' }));
-    const needsYou = within(within(panel).getByRole('list', { name: 'Needs you' }));
-    needsYou.getByText('Running and asking');
     expect(running.queryByText('Running and asking')).toBeNull();
     expect(running.getByText('Running and quiet')).toBeDefined();
   });

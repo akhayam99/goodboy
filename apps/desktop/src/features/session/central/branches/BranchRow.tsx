@@ -49,8 +49,9 @@ export const BranchRow = ({ sessionId, entry, isProjectShown, isNarrow = false }
   const openCell = (
     <ChevronRight key="open" size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
   );
+  const branchTip = fact.isBranchAdopted === true ? `Existing branch: ${fact.branch}` : fact.branch;
   const narrowCells = [
-    <Tooltip key="branch" content={fact.branch}>
+    <Tooltip key="branch" content={branchTip}>
       <span className="flex min-w-0 flex-col gap-0.5">
         {branchLine}
         <span data-branch-meta="" className="flex min-w-0 items-baseline gap-2 text-meta">
@@ -64,7 +65,7 @@ export const BranchRow = ({ sessionId, entry, isProjectShown, isNarrow = false }
     openCell,
   ];
   const wideCells = [
-    <Tooltip key="branch" content={fact.branch}>
+    <Tooltip key="branch" content={branchTip}>
       {branchLine}
     </Tooltip>,
     ...(isProjectShown ? [fact.projectName] : []),

@@ -116,7 +116,7 @@ describe('ProjectGroups', () => {
 
     expect(screen.getByText('Starred')).toBeDefined();
     expect(screen.getByText('Other folders')).toBeDefined();
-    expect(screen.queryByText('All folders')).toBeNull();
+    expect(screen.queryByText('All projects')).toBeNull();
   });
 
   it('draws no group label when nothing is starred, the one group needs none', () => {

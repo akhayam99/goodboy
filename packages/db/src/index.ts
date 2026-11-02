@@ -335,7 +335,6 @@ export {
   updateSessionMountBranch,
   updateSessionMountLifecycle,
   updateSessionWorktreeRepoSlug,
-  listAllSessionWorktrees,
   detachSessionMounts,
   listMountPathOwnership,
   type MountDetachment,
@@ -402,11 +401,7 @@ export {
   insertProviderCredential,
   deleteProviderCredential,
 } from './queries/provider-credential';
-export {
-  getGithubPrCache,
-  upsertGithubPrCache,
-  deleteGithubPrCache,
-} from './queries/github-pr-cache';
+export { getGithubPrCache, upsertGithubPrCache } from './queries/github-pr-cache';
 export {
   insertDiffComment,
   listDiffCommentsForSession,

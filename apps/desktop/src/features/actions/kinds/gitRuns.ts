@@ -1,3 +1,4 @@
+import { countNoun } from '../../../shared/utils/countNoun';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ReviewTargetOutcome } from '../../../store/slices/review-navigation/types';
 import { readOnlineRemoteSha } from '../../../store/runtime/worktreeStatuses/onlyOnline';
@@ -18,16 +19,6 @@ type StatusParams = {
   readonly worktreePath: string;
   readonly baseBranch: string | null;
 };
-
-export const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
 
 type PushFacts = {
   readonly branch: string;
@@ -68,7 +59,7 @@ export const forcePushConfirm = ({ onlyOnline }: ForceConfirmParams): ActionConf
   const lost = onlyOnline ?? [];
   if (lost.length > 0) {
     return {
-      title: `Replace the online copy and drop ${plural({ count: lost.length, one: 'commit', many: 'commits' })}?`,
+      title: `Replace the online copy and drop ${countNoun({ count: lost.length, one: 'commit', many: 'commits' })}?`,
       description: 'These exist only online and are lost if you force push.',
       notes: lostCommitsNotes({ subjects: lost.map((commit) => commit.subject) }),
       confirmLabel: 'Force push anyway',
@@ -91,13 +82,13 @@ export const pushConfirm = ({ facts }: PushParams): ActionConfirm | null =>
 
 export const pushLabel = ({ facts }: PushParams): string => {
   const own = facts.isDiverged && facts.ahead > 0 ? facts.ahead : facts.unpushed;
-  const noun = plural({ count: own, one: 'commit', many: 'commits' });
+  const noun = countNoun({ count: own, one: 'commit', many: 'commits' });
   return facts.isDiverged ? `Force push ${noun}` : `Push ${noun}`;
 };
 
 export const pushDoneLabel = ({ facts }: PushParams): string => {
   const own = facts.isDiverged && facts.ahead > 0 ? facts.ahead : facts.unpushed;
-  const noun = plural({ count: own, one: 'commit', many: 'commits' });
+  const noun = countNoun({ count: own, one: 'commit', many: 'commits' });
   return facts.isDiverged ? `Force pushed ${noun} to origin.` : `Pushed ${noun} to origin.`;
 };
 

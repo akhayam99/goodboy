@@ -21,7 +21,7 @@ type IntegrationBindingRow = {
   updated_at: number;
 };
 
-const toDomain = (row: IntegrationBindingRow): ReadonlyArray<IntegrationBinding> => {
+const toIntegrationBindings = (row: IntegrationBindingRow): ReadonlyArray<IntegrationBinding> => {
   const config = parseJsonColumn<Readonly<Record<string, unknown>> | null>({
     value: row.config,
     isValid: isJsonRecord,
@@ -84,7 +84,7 @@ export const listIntegrationBindingsForWorkspace = async ({
      ORDER BY provider ASC, project_id IS NOT NULL, created_at ASC`,
     [workspaceId],
   );
-  return rows.flatMap(toDomain);
+  return rows.flatMap(toIntegrationBindings);
 };
 
 type GetParams = {
@@ -107,7 +107,7 @@ export const getIntegrationBinding = async ({
     [workspaceId, provider, projectId],
   );
   const row = rows[0];
-  return row === undefined ? null : (toDomain(row)[0] ?? null);
+  return row === undefined ? null : (toIntegrationBindings(row)[0] ?? null);
 };
 
 type DeleteScopeParams = {

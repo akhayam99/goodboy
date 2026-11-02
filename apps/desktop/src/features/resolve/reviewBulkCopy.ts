@@ -1,14 +1,5 @@
+import { countNoun } from '../../shared/utils/countNoun';
 import { applyAndResolveLabel } from './commentProjection';
-
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
 
 export const REVIEW_BULK_LABEL = {
   runActions: 'Fix run actions',
@@ -31,10 +22,10 @@ export const retryCouldntFixLabel = ({ count }: { readonly count: number }): str
   `Retry ${count} that couldn't fix`;
 
 export const answersTitle = ({ count }: { readonly count: number }): string =>
-  `Answer ${plural({ count, one: 'question', many: 'questions' })}`;
+  `Answer ${countNoun({ count, one: 'question', many: 'questions' })}`;
 
 export const answersContinueLabel = ({ count }: { readonly count: number }): string =>
-  `Continue with ${plural({ count, one: 'answer', many: 'answers' })}`;
+  `Continue with ${countNoun({ count, one: 'answer', many: 'answers' })}`;
 
 export const acceptCountLabel = ({ count }: { readonly count: number }): string =>
   applyAndResolveLabel({ count });
@@ -47,4 +38,4 @@ export const bulkAcceptFailureLine = ({
 }: {
   readonly count: number;
   readonly message: string;
-}): string => `${plural({ count, one: 'comment', many: 'comments' })} not accepted. ${message}`;
+}): string => `${countNoun({ count, one: 'comment', many: 'comments' })} not accepted. ${message}`;

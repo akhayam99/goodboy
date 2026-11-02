@@ -109,26 +109,29 @@ describe('the u23 frame scenes', () => {
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
   });
 
-  it.each([
-    ['frame-studio-inbox', false],
-    ['frame-studio-workflows', false],
-    ['frame-studio-impact', false],
-    ['frame-studio-guide', true],
-  ] as const)('draws no band around %s, its title alone on the column', async (id, hasClose) => {
-    const { container } = await renderScene(id);
+  it.each(['frame-studio-inbox', 'frame-studio-workflows', 'frame-studio-impact'] as const)(
+    'draws no band around %s, its title alone on the column',
+    async (id) => {
+      const { container } = await renderScene(id);
+
+      await waitFor(() => expect(visibleH1s()).toHaveLength(1));
+      expect(container.querySelector('[data-studio-band]')).toBeNull();
+      const header = visibleH1s()[0]?.closest('[data-slot="pane-header"]');
+      expect(visibleH1s()[0]?.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
+        'column',
+      );
+      expect(header?.hasAttribute('data-under-trail')).toBe(false);
+      expect(screen.queryAllByRole('button', { name: /^Close/ })).toHaveLength(0);
+    },
+  );
+
+  it('draws the Help band with Back to app over the chapter title, and no Close', async () => {
+    const { container } = await renderScene('frame-studio-guide');
 
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
-    expect(container.querySelector('[data-studio-band]')).toBeNull();
-    const header = visibleH1s()[0]?.closest('[data-slot="pane-header"]');
-    expect(visibleH1s()[0]?.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
-      'column',
-    );
-    expect(header?.hasAttribute('data-under-trail')).toBe(false);
-    expect(
-      screen
-        .queryAllByRole('button', { name: /^Close/ })
-        .filter((button) => header?.contains(button) === true),
-    ).toHaveLength(hasClose ? 1 : 0);
+    const band = container.querySelector('[data-studio-band]');
+    expect(band?.contains(screen.getByRole('button', { name: /^Back to app/ }))).toBe(true);
+    expect(screen.queryAllByRole('button', { name: /^Close/ })).toHaveLength(0);
   });
 
   it('gives Workflows its title and the tab strip with its one primary under it', async () => {

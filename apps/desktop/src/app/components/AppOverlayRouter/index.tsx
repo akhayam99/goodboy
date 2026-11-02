@@ -4,7 +4,7 @@ import { DeleteSessionOverlay } from './DeleteSessionOverlay';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
-import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
+import { lazyNamed } from '../../../shared/lib/lazyNamed';
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
 import { isAppScopeOverlay } from '../../hooks/useAppOverlays/overlayState';
@@ -12,6 +12,11 @@ import type { PaletteRequest } from '../../../features/palette/paletteModeTypes'
 import { AppScopeOverlays } from './AppScopeOverlays';
 import { AppStudio } from './AppStudio';
 import type { OpenChangelogScreenParams } from './studioParams';
+
+const OnboardingWizard = lazyNamed({
+  load: () => import('../../../features/onboarding/OnboardingWizard'),
+  pick: ({ OnboardingWizard }) => OnboardingWizard,
+});
 
 type Props = {
   readonly overlay: StudioPlace | null;

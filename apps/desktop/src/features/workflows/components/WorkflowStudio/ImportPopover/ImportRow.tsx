@@ -2,6 +2,7 @@ import { Checkbox } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { classifyStep } from '../../../../session/agent-kind';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
+import { countNoun } from '../../../../../shared/utils/countNoun';
 
 type Props = {
   readonly workflow: Workflow;
@@ -42,7 +43,7 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
           ))}
         </span>
         <span className="text-meta tabular-nums text-faint-foreground">
-          {`${count} ${count === 1 ? 'step' : 'steps'}`}
+          {`${countNoun({ count: count, one: 'step' })}`}
         </span>
       </div>
     </li>

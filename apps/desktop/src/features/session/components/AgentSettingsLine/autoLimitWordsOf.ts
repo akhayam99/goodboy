@@ -52,7 +52,8 @@ export const autoLimitWordsOf = ({
   );
   if (limits.length === 0) {
     return {
-      value: facts.spentUsd < CENT ? 'none' : `${formatUsd(facts.spentUsd)} spent`,
+      value: 'none',
+      ...(facts.spentUsd >= CENT && { spentText: `${formatUsd(facts.spentUsd)} spent` }),
       source: '',
       chain: `${chain} Nothing stops this Auto.`,
     };

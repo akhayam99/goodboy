@@ -28,6 +28,7 @@ export const SpawnedRunHead = ({ session, run, workflow, hasChildren, rail, rail
     predecessorName: view.predecessorName,
     isOrchestrating: view.isOrchestrating,
     questions,
+    isPlanRevising: view.isPlanRevising,
   });
   return (
     <ObjectMenuArea

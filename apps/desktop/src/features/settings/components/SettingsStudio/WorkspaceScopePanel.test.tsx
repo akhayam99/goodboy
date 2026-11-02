@@ -125,7 +125,7 @@ describe('WorkspaceScopePanel pages', () => {
   it('opens on Projects with the workspace name, and one page per section', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Folders');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
     screen.getByRole('region', { name: 'Disconnect workspace' });
@@ -146,11 +146,11 @@ describe('WorkspaceScopePanel pages', () => {
     },
   );
 
-  it('says the workspace has no folders yet in the Folders header', () => {
+  it('says the workspace has no projects yet in the header', () => {
     renderPage();
 
     const header = screen.getByRole('heading', { level: 1 }).closest('[data-page-header]');
-    expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No folders yet');
+    expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No projects yet');
   });
 
   it('opens Branches with After merge first and Check again in the header', () => {
@@ -352,14 +352,14 @@ describe('copy from another workspace', () => {
     renderPage({ section: 'projects' });
 
     fireEvent.click(
-      within(pageMenu('Folders')).getByRole('menuitem', { name: /Copy all pages from/ }),
+      within(pageMenu('Projects')).getByRole('menuitem', { name: /Copy all pages from/ }),
     );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 3 pages.');
-    ['New sessions', 'Branches', 'Replies and commits'].forEach((page) =>
+    ['Run defaults', 'Branches', 'Replies and commits'].forEach((page) =>
       within(flow).getByRole('checkbox', { name: `Include ${page}` }),
     );
     fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include Branches' }));
@@ -477,6 +477,7 @@ describe('track with git', () => {
         commitCount: 0,
         remoteUrl: null,
       }),
+      project_scripts_scan: () => [],
       folder_git_first_commit_plan: () => ({
         rootPath: '/work/harborline/runbooks',
         start: 'no_git',

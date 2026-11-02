@@ -1,3 +1,4 @@
+import { isoFromMs } from './isoFromMs';
 import type {
   AgentId,
   AgentRole,
@@ -75,9 +76,7 @@ const kindOf = ({ value }: { readonly value: string }): SessionContextItemKind =
 const statusOf = ({ value }: { readonly value: string }): SessionContextItemStatus =>
   value === 'dismissed' ? 'dismissed' : 'active';
 
-const isoOf = (value: number): IsoDateTime => new Date(value).toISOString() as IsoDateTime;
-
-const toDomain = (row: Row): SessionContextItem => ({
+const toSessionContextItem = (row: Row): SessionContextItem => ({
   id: row.id as SessionContextItemId,
   sessionId: row.session_id === null ? null : (row.session_id as SessionId),
   workspaceId: row.workspace_id as WorkspaceId,
@@ -94,8 +93,8 @@ const toDomain = (row: Row): SessionContextItem => ({
   status: statusOf({ value: row.status }),
   projectName: row.project_name,
   isSessionDeleted: row.is_session_deleted === 1,
-  createdAt: isoOf(row.created_at),
-  updatedAt: isoOf(row.updated_at),
+  createdAt: isoFromMs({ ms: row.created_at }),
+  updatedAt: isoFromMs({ ms: row.updated_at }),
 });
 
 const SELECT = `SELECT
@@ -167,7 +166,7 @@ export const listSessionContextItems = async ({
       ORDER BY i.created_at DESC, i.id ASC`,
     [sessionId],
   );
-  return rows.map(toDomain);
+  return rows.map(toSessionContextItem);
 };
 
 type RoleParams = SessionParams & {
@@ -187,7 +186,7 @@ export const listSessionContextItemsForRole = async ({
       ORDER BY i.created_at ASC, i.id ASC`,
     [sessionId, role],
   );
-  return rows.map(toDomain);
+  return rows.map(toSessionContextItem);
 };
 
 type WorkspaceParams = {
@@ -205,7 +204,7 @@ export const listWorkspaceLearnings = async ({
       ORDER BY i.created_at DESC, i.id ASC`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map(toSessionContextItem);
 };
 
 type StatusParams = {

@@ -3,7 +3,6 @@ export const QUESTION_CARD_WIDTHS = [360, 960, 1440];
 export const QUESTION_CARD_READY = '[data-qc-case] [data-question-header]';
 export const QUESTION_CARD_BASELINE_PX = 1;
 export const QUESTION_CARD_PAGER_PX = 1;
-export const QUESTION_CARD_EMPTY_PX = 4;
 export const QUESTION_CARD_DOT_PX = 1;
 export const QUESTION_CARD_EDGE_PX = 1;
 

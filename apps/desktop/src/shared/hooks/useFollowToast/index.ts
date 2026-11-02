@@ -46,20 +46,21 @@ const useFollowOn = ({
         drawer,
         isOverlayOpen: isOverlayDrawerOpen(),
       });
+      if (isShown) {
+        return;
+      }
       showToast({
         kind: 'info',
         title,
         message,
         ...(startKey !== undefined && { dedupeKey: followDedupeKey({ startKey }) }),
-        ...(!isShown && {
-          action: {
-            label,
-            onClick: () => {
-              navigate({ to: target.place, ...(drawer !== null && { drawer }) });
-              onFollow?.();
-            },
+        action: {
+          label,
+          onClick: () => {
+            navigate({ to: target.place, ...(drawer !== null && { drawer }) });
+            onFollow?.();
           },
-        }),
+        },
       });
     },
     [navigate, showToast],

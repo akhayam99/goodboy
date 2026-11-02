@@ -54,7 +54,7 @@ describe('SecurityFindingsSection', () => {
   it('loads findings on mount and shows the empty state once ready', async () => {
     render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('Checking…')).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Checking saved scripts' })).toBeDefined();
     await waitFor(() =>
       expect(screen.getByText('No findings in your saved scripts.')).toBeDefined(),
     );

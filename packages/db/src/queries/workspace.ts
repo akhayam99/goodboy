@@ -70,7 +70,7 @@ type ToDomainParams = {
   readonly row: WorkspaceRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): Workspace => {
+const toWorkspace = ({ row }: ToDomainParams): Workspace => {
   const profile = profileFromRow({ row });
   return {
     id: row.id as WorkspaceId,
@@ -188,7 +188,7 @@ export const getWorkspaceById = async ({
 }: GetWorkspaceParams): Promise<Workspace | null> => {
   const rows = await db.select<WorkspaceRow>(`${WORKSPACE_SELECT} WHERE w.id = ?`, [id]);
   const row = rows[0];
-  return row === undefined ? null : toDomain({ row });
+  return row === undefined ? null : toWorkspace({ row });
 };
 
 type ListWorkspacesParams = {
@@ -203,7 +203,7 @@ export const listWorkspaces = async ({
      WHERE w.deleted_at IS NULL AND w.disconnected_at IS NULL
      ORDER BY w.created_at DESC`,
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toWorkspace({ row }));
 };
 
 type ListDisconnectedWorkspacesParams = {
@@ -218,7 +218,7 @@ export const listDisconnectedWorkspaces = async ({
      WHERE w.deleted_at IS NULL AND w.disconnected_at IS NOT NULL
      ORDER BY w.disconnected_at DESC`,
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toWorkspace({ row }));
 };
 
 type WorkspaceTimestampParams = {

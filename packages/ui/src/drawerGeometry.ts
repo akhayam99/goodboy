@@ -6,7 +6,8 @@ export const RIGHT_DRAWER_DEFAULT = 400;
 export const READER_DRAWER_MIN = 480;
 export const READER_DRAWER_MAX = 1000;
 export const READER_DRAWER_DEFAULT = 720;
-export const COLUMN_MIN_PUSH = 560;
+export const COLUMN_MIN_PUSH = 464;
+const READER_COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
 export const DRAWER_EXIT_MS = DURATION_QUICK_MS;
@@ -34,14 +35,27 @@ export const drawerTrackOf = (drawerWidthPx: number): number => drawerWidthPx + 
 type PushParams = {
   readonly mainWidthPx: number;
   readonly drawerWidthPx: number;
+  readonly sizing?: DrawerSizing;
 };
 
 export const DRAWER_PUSH_RESERVE = DRAWER_INSET * 2 + COLUMN_GUTTERS + COLUMN_MIN_PUSH;
 
-const pushRoomOf = (mainWidthPx: number): number => mainWidthPx - DRAWER_PUSH_RESERVE;
+type RoomParams = {
+  readonly mainWidthPx: number;
+  readonly sizing: DrawerSizing;
+};
 
-export const canDrawerPush = ({ mainWidthPx, drawerWidthPx }: PushParams): boolean =>
-  pushRoomOf(mainWidthPx) >= drawerWidthPx;
+const pushRoomOf = ({ mainWidthPx, sizing }: RoomParams): number =>
+  mainWidthPx -
+  DRAWER_INSET * 2 -
+  COLUMN_GUTTERS -
+  (sizing === 'reader' ? READER_COLUMN_MIN_PUSH : COLUMN_MIN_PUSH);
+
+export const canDrawerPush = ({
+  mainWidthPx,
+  drawerWidthPx,
+  sizing = 'side',
+}: PushParams): boolean => pushRoomOf({ mainWidthPx, sizing }) >= drawerWidthPx;
 
 export type DrawerLayout = {
   readonly mode: Exclude<DrawerMode, 'closed'>;
@@ -55,6 +69,7 @@ type LayoutParams = {
   readonly savedWidth: number;
   readonly placement?: DrawerPlacement;
   readonly edgeWidth?: number;
+  readonly contentInset?: number;
 };
 
 export const drawerLayoutOf = ({
@@ -63,9 +78,10 @@ export const drawerLayoutOf = ({
   savedWidth,
   placement = 'auto',
   edgeWidth = 0,
+  contentInset = 0,
 }: LayoutParams): DrawerLayout => {
   const tier = DRAWER_TIERS[sizing];
-  const room = pushRoomOf(main);
+  const room = pushRoomOf({ mainWidthPx: main - contentInset, sizing });
   if (placement === 'auto' && room >= savedWidth) {
     return {
       mode: 'push',
@@ -183,3 +199,15 @@ export const pageBoxOf = ({
   const left = (space - width) / 2;
   return { left, right: left + width, width };
 };
+
+type FoldParams = {
+  readonly mainWidthPx: number;
+  readonly drawerWidthPx?: number;
+  readonly sizing: DrawerSizing;
+};
+
+export const isRailFoldNeeded = ({
+  mainWidthPx,
+  drawerWidthPx = RIGHT_DRAWER_DEFAULT,
+  sizing,
+}: FoldParams): boolean => !canDrawerPush({ mainWidthPx, drawerWidthPx, sizing });

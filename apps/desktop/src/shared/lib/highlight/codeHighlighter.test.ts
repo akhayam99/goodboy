@@ -1,6 +1,9 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { APP_CODE_HIGHLIGHTER } from './codeHighlighter';
+import { installInlineHighlightWorker } from '../../../test/installInlineHighlightWorker';
+
+beforeAll(installInlineHighlightWorker);
 
 describe('APP_CODE_HIGHLIGHTER', () => {
   it('highlights a markdown fence by its name through the shared highlighter', async () => {

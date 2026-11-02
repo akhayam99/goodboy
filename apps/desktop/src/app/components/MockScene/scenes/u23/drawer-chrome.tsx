@@ -5,7 +5,7 @@ import { ToastRaiser } from './drawerChrome/ToastRaiser';
 import { prepareAskDraft, prepareToast } from './drawerChrome/prepare';
 
 const PUSH_WIDTH_PX = 1440;
-const OVERLAY_WIDTH_PX = 1000;
+const OVERLAY_WIDTH_PX = 900;
 
 export const U23_DRAWER_CHROME_SCENES = {
   'drawer-ask-draft': () => <DrawerStage width={PUSH_WIDTH_PX} prepare={prepareAskDraft} />,

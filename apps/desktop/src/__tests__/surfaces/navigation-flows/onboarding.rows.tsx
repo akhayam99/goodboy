@@ -27,14 +27,7 @@ const pressEscape = async (): Promise<void> => {
 };
 
 const getStarted = async (): Promise<void> => {
-  await waitFor(
-    () =>
-      expect(within(wizardDialog()).getByRole('status').textContent).toBe(
-        'Found Claude on this Mac',
-      ),
-    WAIT,
-  );
-  await click(await screen.findByRole('button', { name: /^Get started/ }));
+  await heading('Welcome to Goodboy');
   await onStep('agents');
 };
 
@@ -47,20 +40,18 @@ const continueFromAgents = async (): Promise<void> => {
 
 const createHarborline = async (): Promise<void> => {
   await click(await screen.findByRole('button', { name: /^Choose folder/ }));
-  const folders = within(await screen.findByRole('list', { name: 'Folders' }, WAIT));
+  const folders = within(await screen.findByRole('list', { name: 'Projects' }, WAIT));
   expect(folders.getByText('ledger-core')).toBeDefined();
   const name = screen.getByRole('textbox', { name: 'Workspace name' });
   expect(name).toHaveProperty('value', 'Harborline');
   await click(screen.getByRole('button', { name: /^Create workspace/ }));
-  await onStep('tools');
+  await onStep('first-session');
 };
 
 const reachFirstSession = async (): Promise<void> => {
   await getStarted();
   await continueFromAgents();
   await createHarborline();
-  await click(await screen.findByRole('button', { name: /^Continue/ }));
-  await onStep('first-session');
 };
 
 const closed = async (): Promise<void> => {
@@ -73,14 +64,14 @@ const closed = async (): Promise<void> => {
 
 export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'first launch: an empty database opens Welcome over the real App',
+    name: 'first launch: an empty database opens the Agents step under the Welcome heading',
     covers: ['onboarding:welcome'],
     seed: 'empty',
     open: async () => undefined,
     lands: async () => {
       await heading('Welcome to Goodboy');
-      await visible('button', /^Get started/);
-      expect(stepOf()).toBe('welcome');
+      await visible('button', /^Continue/);
+      expect(stepOf()).toBe('agents');
       expect(useAppStore.getState().workspaces).toEqual([]);
       expect(await savedWizard()).toBeNull();
     },
@@ -91,15 +82,15 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     seed: 'empty',
     open: async () => {
       await pressEscape();
-      expect(stepOf()).toBe('welcome');
-      await getStarted();
+      expect(stepOf()).toBe('agents');
+      await continueFromAgents();
       await pressEscape();
     },
     lands: async () => {
-      await onStep('welcome');
+      await onStep('agents');
       await pressEscape();
       expect(screen.getByRole('dialog', { name: 'Goodboy setup' })).toBeDefined();
-      expect(stepOf()).toBe('welcome');
+      expect(stepOf()).toBe('agents');
       expect(await savedWizard()).toBeNull();
     },
   },
@@ -118,7 +109,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await click(screen.getByRole('button', { name: 'Look in 1 folder' }));
     },
     lands: async () => {
-      const folders = within(await screen.findByRole('list', { name: 'Folders' }, WAIT));
+      const folders = within(await screen.findByRole('list', { name: 'Projects' }, WAIT));
       folders.getByText('notify-relay');
       folders.getByText('payments-api');
       expect(screen.getByRole('textbox', { name: 'Workspace name' })).toHaveProperty(
@@ -141,7 +132,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await click(screen.getByRole('button', { name: 'Clone' }));
     },
     lands: async () => {
-      const folders = within(await screen.findByRole('list', { name: 'Folders' }, WAIT));
+      const folders = within(await screen.findByRole('list', { name: 'Projects' }, WAIT));
       folders.getByText('ledger-core');
       expect(screen.getByRole('textbox', { name: 'Workspace name' })).toHaveProperty(
         'value',
@@ -164,8 +155,8 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       expect(field).toHaveProperty('value', expect.stringContaining('Explain how ledger-core'));
       expect(screen.getByRole('region', { name: 'Start a run' })).toBeDefined();
       expect(screen.queryByRole('tablist', { name: 'What kind of run?' })).toBeNull();
-      expect(screen.queryByRole('group', { name: 'Run settings' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
+      expect(screen.getByRole('group', { name: 'Run settings' })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Limit: none' })).toBeNull();
       expect(screen.queryByText('reads only')).toBeNull();
     },
   },
@@ -186,7 +177,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'setup menu: counts the four steps and offers Resume setup while setup is paused',
+    name: 'setup card: counts the three steps and resumes from the open step while setup is paused',
     covers: ['onboarding:menu-count'],
     seed: 'empty',
     open: async () => {
@@ -195,15 +186,13 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await createHarborline();
       await click(await screen.findByRole('button', { name: 'Set up later' }));
       await closed();
-      await click(await screen.findByRole('button', { name: "Goodboy: setup isn't finished" }));
     },
     lands: async () => {
-      const menu = await screen.findByRole('dialog', { name: 'Goodboy' });
-      const setup = within(within(menu).getByRole('region', { name: 'Setup' }));
-      expect(setup.getByText('Setup · 2 of 4')).toBeDefined();
-      expect(setup.getAllByRole('listitem')).toHaveLength(4);
-      expect(setup.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
-      expect(setup.getByRole('button', { name: 'Resume setup' })).toBeDefined();
+      const setup = within(await screen.findByRole('region', { name: 'Setup' }));
+      expect(setup.getByText('Setup · 2 of 3')).toBeDefined();
+      expect(setup.getAllByRole('listitem')).toHaveLength(2);
+      expect(setup.getByRole('meter').getAttribute('aria-valuenow')).toBe('2');
+      expect(setup.getByRole('button', { name: 'Start First session' })).toBeDefined();
       expect(await savedWizard()).toBe('later');
     },
   },

@@ -17,8 +17,9 @@ import {
 } from '../../../../../store/storyHarness';
 import { findSectionRow, sectionNames } from '../../../../../test/branchRail';
 import { U23_PR_PAGE_SCENES } from './pr-page';
+import { PrPageScene } from './PrPageScene';
 import { SESSION_ID } from '../resolveSeed';
-import { prPageGhStdout, prPageHandlers } from './prPageSeed';
+import { prPageGhStdout, prPageHandlers, prPageUnpushedOf } from './prPageSeed';
 
 let store: StoryStore;
 
@@ -46,11 +47,12 @@ const draw = ({ name }: { readonly name: SceneName }) => {
 
 type AnswerParams = {
   readonly behind: number;
+  readonly unpushed?: number;
   readonly isRebasing?: boolean;
 };
 
-const answerWith = ({ behind, isRebasing = false }: AnswerParams): void => {
-  const handlers = prPageHandlers({ behind, isRebasing });
+const answerWith = ({ behind, unpushed = 0, isRebasing = false }: AnswerParams): void => {
+  const handlers = prPageHandlers({ behind, unpushed, isRebasing });
   vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
     if (command === 'gh_run') {
       return { stdout: prPageGhStdout({ payload: args }), stderr: '', exitCode: 0 };
@@ -256,7 +258,7 @@ describe('the branch page of a branch with no pull request', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'hl/fix-duplicate-credit' }),
     ).toBeDefined();
-    expect(header().textContent).toBe('Pushed5 ahead, 3 behind main');
+    expect(header().textContent).toBe('Up to date with origin');
     await waitFor(() =>
       expect(
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
@@ -267,6 +269,19 @@ describe('the branch page of a branch with no pull request', () => {
     const strip = screen.getByRole('group', { name: 'Status' });
     expect(within(strip).getByText('3 behind')).toBeDefined();
     expect(within(strip).getByText('None yet')).toBeDefined();
+  });
+
+  it('says 3 not pushed, never up to date, when the seed holds three unpushed commits', async () => {
+    answerWith({ behind: 0, unpushed: prPageUnpushedOf({ variant: 'none-unpushed' }) });
+    const Scene = () => <PrPageScene variant="none-unpushed" />;
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+
+    await waitFor(() => expect(header().textContent).toContain('3 not pushed'));
+    expect(header().textContent).not.toContain('Up to date with origin');
   });
 
   it('makes Create the one primary once the branch is pushed and up to date', async () => {
@@ -290,8 +305,10 @@ describe('the branch page of a branch with no pull request', () => {
       ),
     );
     expect(
-      within(screen.getByRole('region', { name: 'Summary' })).getByText('5', { selector: 'span' }),
-    ).toBeDefined();
+      within(screen.getByRole('region', { name: 'Summary' })).queryByText('5', {
+        selector: 'span',
+      }),
+    ).toBeNull();
     expect(screen.queryByRole('region', { name: 'In this branch' })).toBeNull();
   });
 

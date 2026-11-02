@@ -46,7 +46,7 @@ describe('comments-triage scenes', () => {
     show({ name: 'fixcomments-mixed' });
     const drawer = await drawerOf();
     await waitFor(() =>
-      expect(within(drawer).getByRole('button', { name: 'Close note' })).toBeDefined(),
+      expect(within(drawer).getByRole('button', { name: 'Close comment' })).toBeDefined(),
     );
     expect(within(drawer).getByRole('button', { name: 'Apply and resolve 2' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Post 1 reply' })).toBeDefined();

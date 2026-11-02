@@ -65,7 +65,15 @@ describe('BranchSummary', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Commits' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open Changes' }));
     expect(onOpen.mock.calls).toEqual([['commits'], ['files']]);
-    expect(screen.getByText('commit, 1 not pushed').textContent).toBe('commit, 1 not pushed');
+  });
+
+  it('shows the last subjects and no count, so the tab strip owns Commits and Files', () => {
+    draw({});
+    screen.getByText('Keep the event id on every credit row');
+    const section = screen.getByRole('region', { name: 'Summary' });
+    expect(section.textContent).not.toMatch(/not pushed/);
+    expect(section.textContent).not.toMatch(/\+\d|-\d/);
+    expect(screen.queryByText('1')).toBeNull();
   });
 
   it('opens one folder from the Changes card', () => {

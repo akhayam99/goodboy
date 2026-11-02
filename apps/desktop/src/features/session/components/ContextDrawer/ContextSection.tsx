@@ -25,7 +25,7 @@ export const ContextSection = ({ section, count, action, visibility = null, chil
 
   return (
     <section
-      aria-label={label}
+      aria-label={section === 'decisions' ? 'Decision records' : label}
       data-context-section={section}
       data-context-card=""
       className="min-w-0 scroll-mt-3"

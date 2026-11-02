@@ -12,7 +12,6 @@ const ALLOWED = new Set([
 const BRAND_TILE_FILE = 'shared/components/BrandTile.tsx';
 const BRAND_TILE_IMPORTERS = new Set([
   'app/components/BootSplash/BootBrand.tsx',
-  'features/onboarding/OnboardingWizard/steps/WelcomeStep.tsx',
   'features/onboarding/OnboardingWizard/WizardHeader.tsx',
   'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
@@ -50,7 +49,7 @@ describe('DogMascot', () => {
     expect(users).toEqual([...ALLOWED].sort());
   });
 
-  it('lets only the boot splash, the welcome step, the setup header and the launcher draw the brand tile', () => {
+  it('lets only the boot splash, the setup header and the launcher draw the brand tile', () => {
     const importers = sourcePaths()
       .filter(
         ({ path, text }) =>

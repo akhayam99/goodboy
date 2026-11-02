@@ -12,7 +12,7 @@ Most pictures follow one team and one task. Harborline keeps three repos, paymen
 
 Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
-- **Welcome to Goodboy**: Four short steps take you from install to a first agent reading your code.
+- **Welcome to Goodboy**: Three short steps take you from install to a first agent reading your code.
 - **Your agents**: Goodboy runs the coding agents already on this Mac, and one ready agent is enough.
 - **Your first workspace**: A workspace is what you work on: one repository, or a folder that holds several.
 - **Home**: A window with no workspace open shows Home, which lists your workspaces with their folder count and where their folders live.
@@ -67,7 +67,6 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 - **Stage board**: See where each task stands without moving cards around.
 - **Session card**: Read a task at a glance: its title on two lines, its project in gray, and one signal at the right.
-- **List view**: Scan every session in one table.
 
 [More on the board](docs/features/board.md)
 
@@ -117,7 +116,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 - **Start a workflow**: A workflow run starts from the New session page: pick Orchestrated or Preset, and press Start workflow.
 - **Orchestrated**: Give a goal and a model picks each next step, with its role, model, effort and a reason.
-- **Run defaults**: Set what every new run starts with in the Run defaults tab.
+- **Run defaults**: Set what every new run starts with on the Run defaults page in Settings.
 - **Workflow run**: Follow a run step by step, with its sub-agents under their agent and one button that moves it on.
 - **Limit**: Cap what a run or a session can spend, and choose Pause workflows or Warn only.
 
@@ -148,7 +147,7 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 [More on plans, reports and wireframes](docs/features/artifacts.md)
 
-<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="explanations"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
+<a id="decisions"></a><a id="see-why-each-decision-was-made"></a><a id="running-summary"></a><a id="context-drawer"></a><a id="decisions-drawer"></a><a id="who-receives-what"></a><a id="learned"></a><a id="explanations"></a><a id="context-budgets"></a><a id="plans-handed-to-the-next-agent"></a>
 
 ## Shared context
 

@@ -77,7 +77,7 @@ describe('workspaceFolderPath', () => {
 });
 
 describe('folderCountLabel', () => {
-  it('says folders, one or many, and skips disconnected ones', () => {
+  it('says projects, one or many, and skips disconnected ones', () => {
     const projects = [
       folder({ rootPath: '/mock/Code/acme-web' }),
       folder({ rootPath: '/mock/Code/acme-api' }),
@@ -85,8 +85,25 @@ describe('folderCountLabel', () => {
       folder({ rootPath: '/mock/Code/payments-api', workspaceId: NORTHWIND }),
     ];
 
-    expect(folderCountLabel({ projects, workspaceId: HARBORLINE })).toBe('2 folders');
-    expect(folderCountLabel({ projects, workspaceId: NORTHWIND })).toBe('1 folder');
-    expect(folderCountLabel({ projects, workspaceId: null })).toBe('0 folders');
+    expect(folderCountLabel({ projects, workspaceId: HARBORLINE })).toBe('2 projects');
+    expect(folderCountLabel({ projects, workspaceId: NORTHWIND })).toBe('1 project');
+    expect(folderCountLabel({ projects, workspaceId: null })).toBe('0 projects');
+  });
+
+  it('counts a plain folder apart from the projects', () => {
+    const projects = [
+      folder({ rootPath: '/mock/Code/acme-web' }),
+      folder({ rootPath: '/mock/Code/acme-api' }),
+      folder({ rootPath: '/mock/Code/notify-relay' }),
+      aProject({ workspaceId: HARBORLINE, rootPath: '/mock/Code/runbooks', kind: 'folder' }),
+    ];
+    const onlyPlain = projects.slice(3);
+
+    expect(folderCountLabel({ projects, workspaceId: HARBORLINE })).toBe(
+      '3 projects, 1 plain folder',
+    );
+    expect(folderCountLabel({ projects: onlyPlain, workspaceId: HARBORLINE })).toBe(
+      '1 plain folder',
+    );
   });
 });

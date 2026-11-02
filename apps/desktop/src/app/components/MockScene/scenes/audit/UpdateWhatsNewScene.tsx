@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { ChangelogStudio } from '../../../../../features/changelog/components/ChangelogStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { parseChangelog } from '../../../../../features/changelog/parseChangelog';
 import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';
@@ -98,7 +98,11 @@ export const UpdateWhatsNewScene = () => {
     <ToastProvider>
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         {isChangelogOpen ? (
-          <ChangelogStudio onClose={() => setIsChangelogOpen(false)} onOpenScreen={noop} />
+          <HelpStudio
+            initialTab="whatsNew"
+            onClose={() => setIsChangelogOpen(false)}
+            onOpenScreen={noop}
+          />
         ) : (
           <div className="flex h-9 items-center justify-end px-3">
             <UpdatePill hasCard onOpenChangelog={() => setIsChangelogOpen(true)} />

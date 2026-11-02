@@ -12,7 +12,7 @@ const PLACES: ReadonlyArray<readonly [string, string]> = [
   ['the README', 'README.md'],
   ['the website hero', join('website', 'src', 'sections', 'Hero.tsx')],
   [
-    'the Welcome step',
+    'the Agents step',
     join(
       'apps',
       'desktop',
@@ -21,7 +21,7 @@ const PLACES: ReadonlyArray<readonly [string, string]> = [
       'onboarding',
       'OnboardingWizard',
       'steps',
-      'WelcomeStep.tsx',
+      'AgentsStep.tsx',
     ),
   ],
 ];

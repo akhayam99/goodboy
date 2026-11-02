@@ -5,6 +5,7 @@ import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLin
 import type { ModelLine } from '../../../../../providers/modelLine/modelLineOf';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
+import { formatSpan } from '../../../../../../shared/utils/time/formatSpan';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
 
@@ -33,6 +34,18 @@ type MenuAgentParams = {
 
 const menuAgentOf = ({ run }: MenuAgentParams): AgentId | null =>
   run.open.kind === 'run' ? null : run.open.agentId;
+
+type TimeParams = {
+  readonly run: SessionRun;
+  readonly now: number;
+};
+
+const timeCellOf = ({ run, now }: TimeParams): string => {
+  if (run.revisingSince !== null) {
+    return formatSpan({ from: run.revisingSince, to: now });
+  }
+  return run.startedAt === 0 ? '' : formatAge({ from: new Date(run.startedAt).toISOString(), now });
+};
 
 export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }: Props) => {
   const agentId = menuAgentOf({ run });
@@ -67,7 +80,7 @@ export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }:
         run.stateWord,
         run.progress,
         costUsd === null ? '' : formatUsd(costUsd),
-        run.startedAt === 0 ? '' : formatAge({ from: new Date(run.startedAt).toISOString(), now }),
+        timeCellOf({ run, now }),
       ]}
     />
   );

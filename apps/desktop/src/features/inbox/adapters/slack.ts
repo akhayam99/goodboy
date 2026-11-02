@@ -1,5 +1,6 @@
 import type { SlackThreadGroup } from '../../integrations/slack/SlackStudio/useSlackThreads';
 import type { InboxRecord } from '../types';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 type Params = {
   readonly groups: ReadonlyArray<SlackThreadGroup>;
@@ -38,7 +39,7 @@ export const adaptSlackThreads = ({ groups, now }: Params): InboxRecord[] =>
         stateLabel: isActive ? 'Active' : 'Open',
         updatedAt,
         url: '',
-        context: `${head.replyCount} ${head.replyCount === 1 ? 'reply' : 'replies'}`,
+        context: `${countNoun({ count: head.replyCount, one: 'reply', many: 'replies' })}`,
         payload: { provider: 'slack', kind: 'thread', channel, head, sessionId },
       };
     }),

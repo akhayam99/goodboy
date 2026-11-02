@@ -47,8 +47,7 @@ Which helper to use depends on what the process runs.
 - Everything else gets the resolved `PATH` on top of the app's own environment. Use `command`. It sets `PATH` and does not clear anything else, so the child inherits every variable the app process holds. Nothing here is an allowlist.
 
 `run_git_push` gets the full environment. A repo's `pre-push` hook can read
-variables set in `~/.zshrc`, like registry tokens or tool settings. `skill_run_script`
-gets it too, because a skill script is the user's own bash. `PATH`
+variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
 and `TERM` are set after the login environment is copied, so they win over
 anything your profile sets.
 
@@ -371,7 +370,10 @@ and `exclude` for the goodboy directory, `git` for the shared runner, and
 files and re-exports their items, so callers keep writing
 `crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
 helper another file needs is `pub(super)`; nothing else leaves its file. Tests
-sit in a `tests.rs` beside the file they cover.
+sit in a `tests.rs` beside the file they cover. `worktree_list_registered`
+inspects many folders of one repo with a single `git worktree list`; opening a
+workspace calls it once per repo, in the background after the first paint, and a
+turn start waits for that verdict for at most five seconds.
 
 ### Diff file sides
 
@@ -383,7 +385,7 @@ also walks the path with `openat` and `O_NOFOLLOW`, so a file swapped for a
 symlink after the check is refused (unix only; other platforms refuse, and
 `open_file_within` falls back to `resolve_within` where an attachment must still
 work). `local_image_read`, `attachment_read`, `attachment_write`,
-`attachment_delete`, `explore_*`, the single-file diff and `skill_run_script` all
+`attachment_delete`, `explore_*` and the single-file diff all
 go through it; a new command that takes a path must too.
 
 `attachment_read_dropped` accepts only a path the window reported in a drag drop
@@ -393,9 +395,9 @@ drop as a window event, never as a webview event) and removes a path the first t
 was never dropped, or was dropped once and already read, is refused with
 `not_dropped`.
 
-`skill_run_script` takes the skill id, not a root. The roots come from the
-skill's workspace projects in the database, and the script must resolve inside
-`<root>/.kay/skills`. `session_dir_remove` takes the session id and removes a
+No `skill_*` command exists: the Skills feature and its script runner are
+deleted, and `check-tauri-commands.mjs` fails if one comes back.
+`session_dir_remove` takes the session id and removes a
 directory only when it is a direct child of a `sessions` folder (or a mount
 inside one) whose `.goodboy` marker names that session, and never through a
 symlink. `worktree_scratch_remove` takes only a direct child of the temp folder
@@ -442,7 +444,10 @@ the steps and resolves the revisions, `merge_tree` and `predict` build the
 in-memory prediction, `reservation` and `copies` own the throwaway copies
 under the app folder, `trial` and `check` replay a plan in a copy and verify
 the result, `journal`, `preflight` and `apply` move the branch safely,
-`backups` keeps the restore refs, `run` chains preflight and trial, `rebase`
+`backups` keeps the restore refs, `reason` holds the codes Rust returns when it
+cannot read the worktree (`status-unreadable`, `changed-unreadable` and the
+like; the sentence for each lives in `features/history/historyReasonCopy.ts`,
+and `invokeHistory` swaps a code for its sentence at the bridge), `run` chains preflight and trial, `rebase`
 and `remote` read origin, `rewriter` collects an agent rewrite, and `runner`,
 `commits` and `types` hold what they share. `mod.rs` only declares the files
 and re-exports the items lib.rs, `turn.rs` and the worktree module use, so
@@ -658,6 +663,17 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   tests in `remote_image.rs` pin each range and its public neighbours; a new
   range changes both lists.
 
+### Hidden pages
+
+- **A page that is not on screen is hidden under React `Activity`, not unmounted
+  and not kept running.** The board, the session frame and the draft are layers
+  of one `PaneSwap` in `App`; the five kept-alive session pages
+  (`KEEP_ALIVE_CAP`) are each wrapped in `Activity` by `KeepAliveWorkSurface`.
+  A hidden page keeps its state, drafts and pending turns, its effects are
+  cleaned up, and it does not re-render on store writes. A hook that must work
+  for a hidden page cannot live in a page effect: `useSessionBranchSync` runs
+  only for the visible session and re-reads the branch when it shows again.
+
 ### Render errors
 
 - **A render error ends one panel, not the window.** `PanelBoundary`
@@ -737,6 +753,18 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
   from a screen) always asks. Any other answer, even a refused sign-in, means
   the host is there. The top bar shows one quiet line per host with Retry, and
   Retry asks again for every session that already holds a request of that host.
+- **A silent refresh that finds nothing new writes nothing.** For a mount that
+  already holds an entry, `refreshMountRequest` skips the pending write and
+  writes the result only when the data differs from the stored entry, the
+  `fetchedAt` time aside. A second silent refresh of the same mount while one
+  runs is dropped. A refresh from a screen or a first read still writes both.
+  `noteHostAnswer` writes only when the host state changes. Its late-answer
+  guard sits in a record the slice owns, which an unchanged answer advances in
+  place, so an older answer is still dropped.
+- **Stage info is derived once.** `stageInfosOf` memoizes the derivation per
+  sessions array and input tuple, so the board, the top bar and the sidebar
+  share one pass per store change. `cachedStageInfoOf` does the same per
+  session for `useSessionStageInfo` and `useSessionStages`.
 
 ### Database migrations
 
@@ -749,6 +777,12 @@ two branches both add version N, the second one to merge never runs on
 machines that already ran the first. Nothing warns you, and it never catches
 up. Give it a new number before you merge. Once the numbers are different,
 two migrations that touch different tables can run in any order.
+
+Boot (`shared/lib/dbBoot.ts`) reads the highest `schema_version` row first and
+loads the migration code only when it differs from `LATEST_MIGRATION_VERSION`.
+A database that is ahead of the build also loads it, so the downgrade guard
+still runs. The SQLite `user_version` pragma is not used: the backend blocks it
+and the runner never sets it.
 
 The runner splits each migration into parts wherever a `PRAGMA foreign_keys`
 line appears. Each part commits on its own and saves a checkpoint row in
@@ -841,6 +875,32 @@ not the table. The atomic agent operations moved with the agents: the routing
 gate, the fan-out of a delegated batch and the status stamps are guarded
 statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
 one transaction in `saveWorkflow`.
+
+One owner per table is the rule. The owner defines the columns, the
+migrations, the row type and every write; the other side reads the table with a
+query that names the columns it needs and never writes it outside a listed
+exception. A column both sides must agree on (a status word, a kind) is a
+constant with a twin in the other language, and
+`apps/desktop/src/__tests__/regressions/rust-twin-constants.test.ts` fails when
+the two copies differ. Migrations stay in TypeScript: Rust does not carry a
+second copy of the schema, and the migration code loads only when the database
+is behind the build (see Database migrations). Rust reads these tables while it
+runs, so a rename or a dropped column in one of them has to change the Rust
+query in the same commit:
+
+- Owned by TypeScript, read by Rust: `agents`, `chat_message_attachments`,
+  `chats`, `context_slots`, `github_pr_cache`, `goal_attachments`,
+  `integration_drafts`, `messages`, `mount_operations`, `mount_pr_links`, `open_questions`,
+  `project_scripts`, `projects`, `resolve_threads`, `retained_worktree_paths`,
+  `search_docs`, `search_index`, `security_findings`, `session_artifacts`,
+  `session_external_tasks`, `session_workflows`, `session_worktrees`,
+  `sessions`, `settings`, `steps`, `telemetry_records`, `turn_events`,
+  `workflows`, `workspace_profiles`, `workspaces`, `worktree_roots`.
+- Owned by Rust, read by Rust and TypeScript: `budget_alerts`, `budget_rules`,
+  `integration_bindings`, `integration_credentials`, `permission_audit_log`,
+  `permission_audit_retry`, `permission_rules`, `project_relocations`,
+  `session_budgets`, `skills`, `step_library`.
+- Read for boot only: `schema_version`.
 
 The `ts` rows below have a ratchet:
 `packages/db/src/migrations/rust-writer-map.test.ts` reads this table, scans
@@ -940,7 +1000,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                                                                                                                                                                                                                                          |
 | `sessions`                    | ts     |                                                                                                                                                                                                                                                                                                                                        |
 | `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                                                                                                                                                                                                                                            |
-| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                                                                                                                                                                                                                                    |
+| `skills`                      | rust   | The Skills feature is gone. Only the backup import (`config_export/apply.rs`) and a project move still write it, and the rows stay for a downgrade.                                                                                                                                                                                    |
 | `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                                                                                                                                                                                                                                        |
 | `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                                          |
 | `telemetry_records`           | ts     |                                                                                                                                                                                                                                                                                                                                        |
@@ -950,7 +1010,7 @@ The count only falls: remove a line when the write moves behind a command.
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                                                                                                                                                                                                                                     |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                                                                                                                                                                                                                                          |
 | `workspace_starred_issues`    | ts     |                                                                                                                                                                                                                                                                                                                                        |
-| `workspace_values`            | ts     | Per-workspace values (`auto.treeLimitUsd`, `auto.level`, `run.guidance`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                     |
+| `workspace_values`            | ts     | Per-workspace values (`auto.level`, `run.guidance`, `terminal.workspaceFolder`, `sessions.pinned`), keys registered in `queries/entity-value.ts`; deleted with the workspace.                                                                                                                                                          |
 | `workspaces`                  | ts     | Exceptions: the backup import and the override columns, which have one writer, `patch_workspace_overrides` in `settings_overrides.rs`. It writes only the columns a patch names, refuses a value the column does not allow, and returns the stored row; `packages/db` only reads them.                                                 |
 | `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                                                                                                                                                                                                                                        |
 
@@ -1097,7 +1157,7 @@ kept.
   every fifteen seconds, which also renews the owner lease. The interval starts with the
   runtime and stops only on teardown. Each tick also starts the tree
   of an Auto agent that has none (`startAutoTrees.ts`), capped at the budget of its session,
-  else at the `workspace_values` key `auto.treeLimitUsd`, else with no cap
+  else at the Limit of the Run defaults of the workspace (`runDefaultLimitOf`), else with no cap
   (`autoTreeCapUsd`). It hands the screens the ports they call, the answer to a
   confirm card (`confirmDelegation`) and the Stop button (`stopTree`); the Stop button
   reports a tree that did not stop, and one that another window runs. When delegation is
@@ -1221,12 +1281,9 @@ workspace is gone, and the storage scan only ever looks inside
 `<repo>/.goodboy/worktrees/` of those roots. Sizes count allocated blocks,
 the way Finder's "size on disk" does.
 
-Two things live next to your code instead of in `~/.goodboy`. A folder
-project keeps the session folders of sessions made before 0.27.3 in
-`<project-root>/sessions/`; newer sessions write in the folder itself and add
-nothing to it. Skills live
-in `<project-root>/.goodboy/skills/`, the older `<project-root>/.kay/skills/`
-(read until 0.31.0) or `<project-root>/.claude/skills/`.
+A folder project keeps the session folders of sessions made before 0.27.3 in
+`<project-root>/sessions/` next to your code instead of in `~/.goodboy`; newer
+sessions write in the folder itself and add nothing to it.
 
 ### How mounts are saved and recovered
 

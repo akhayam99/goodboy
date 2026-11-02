@@ -232,7 +232,7 @@ describe('the Explore project chip with two projects', () => {
 
     fireEvent.click(projectChip('Folder ledger-core, hl/ledger-rounding'));
 
-    const menu = await screen.findByRole('menu', { name: 'Folders' });
+    const menu = await screen.findByRole('menu', { name: 'Projects' });
     expect(within(menu).getByRole('group', { name: 'ledger-core' })).toBeDefined();
     expect(within(menu).getByRole('group', { name: 'notify-relay' })).toBeDefined();
     const rows = within(menu).getAllByRole('menuitemradio');
@@ -251,7 +251,7 @@ describe('the Explore project chip with two projects', () => {
 
     fireEvent.click(projectChip('Folder ledger-core, hl/ledger-rounding'));
     fireEvent.click(
-      within(await screen.findByRole('menu', { name: 'Folders' })).getByRole('menuitemradio', {
+      within(await screen.findByRole('menu', { name: 'Projects' })).getByRole('menuitemradio', {
         name: /hl\/notify/,
       }),
     );
@@ -395,7 +395,7 @@ describe('the Explore pane with nothing to browse and an action', () => {
         <ObjectMenuProvider>
           <ExplorePane
             sessionId={SESSION_ID}
-            noFolderAction={<button type="button">Add folder</button>}
+            noFolderAction={<button type="button">Add project</button>}
             onClose={vi.fn()}
           />
         </ObjectMenuProvider>
@@ -403,7 +403,7 @@ describe('the Explore pane with nothing to browse and an action', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'No folder to browse' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 });
 

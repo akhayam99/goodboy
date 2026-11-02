@@ -19,7 +19,7 @@ import { sortAndGroupSessions } from '../../../../store/slices/session-view/sort
 import type { SessionColumnLayout } from '../../../../store/slices/session-view/layoutSessionColumn';
 import {
   FOLD_LIMIT,
-  INACTIVE_GROUP_KEY,
+  DONE_GROUP_KEY,
   PINNED_GROUP_KEY,
 } from '../../../../store/slices/session-view/types';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
@@ -238,9 +238,8 @@ export const SessionActivityBar = ({
   const hoveredSession =
     hoveredId === null ? null : (everySession.find((session) => session.id === hoveredId) ?? null);
 
-  const total = column.groups.reduce((count, group) => count + group.total, 0);
   const foldableTotal = column.groups
-    .filter((group) => group.key !== PINNED_GROUP_KEY && group.key !== INACTIVE_GROUP_KEY)
+    .filter((group) => group.key !== PINNED_GROUP_KEY && group.key !== DONE_GROUP_KEY)
     .reduce((count, group) => count + group.total, 0);
   const isFoldShown =
     !column.isGrouped &&
@@ -252,6 +251,7 @@ export const SessionActivityBar = ({
     const rowProps = {
       session,
       isArchived,
+      isIdle: column.inactiveLabels[id] !== undefined,
       isSelected: isSelected(id),
       isListbox,
       onEditingChange,
@@ -277,7 +277,7 @@ export const SessionActivityBar = ({
     column.isGrouped || group.label !== null;
   const countOf = ({ group }: GroupParams): number | null => {
     const isFolded =
-      group.key === PINNED_GROUP_KEY || (!column.isGrouped && group.key !== INACTIVE_GROUP_KEY);
+      group.key === PINNED_GROUP_KEY || (!column.isGrouped && group.key !== DONE_GROUP_KEY);
     if (isFolded || group.total < 2) {
       return null;
     }
@@ -299,7 +299,7 @@ export const SessionActivityBar = ({
             total={countOf({ group })}
             title={presentation === null ? undefined : stateDescription({ presentation })}
             isCollapsed={group.isCollapsed}
-            onToggle={column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined}
+            onToggle={group.isToggleable ? () => toggleSessionGroup({ key: group.key }) : undefined}
           />
         ) : null}
         {group.isCollapsed ? null : (
@@ -339,7 +339,7 @@ export const SessionActivityBar = ({
           )}
         >
           {column.groups
-            .filter((group) => group.key !== INACTIVE_GROUP_KEY)
+            .filter((group) => group.key !== DONE_GROUP_KEY)
             .map((group) => renderGroup({ group }))}
 
           {isFoldShown ? (
@@ -359,7 +359,7 @@ export const SessionActivityBar = ({
           ) : null}
 
           {column.groups
-            .filter((group) => group.key === INACTIVE_GROUP_KEY)
+            .filter((group) => group.key === DONE_GROUP_KEY)
             .map((group) => renderGroup({ group }))}
 
           {column.hiddenByFilters > 0 ? (
@@ -396,7 +396,7 @@ export const SessionActivityBar = ({
 
           {lasso.rect != null ? <LassoBox rect={lasso.rect} /> : null}
 
-          {total === 0 && shownArchived.length === 0 ? (
+          {column.groups.length === 0 && shownArchived.length === 0 ? (
             <EmptyState
               size="section"
               icon={CONCEPT_ICONS.sessions}

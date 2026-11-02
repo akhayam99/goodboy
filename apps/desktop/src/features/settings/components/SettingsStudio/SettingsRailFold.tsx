@@ -3,26 +3,18 @@ import { ChevronRight } from 'lucide-react';
 import { cn, Eyebrow, ICON_SIZE, Reveal, ROW_INTERACTIVE, StatusDot } from '@goodboy/ui';
 
 import type { SettingsScopeChange } from '../../settingsFocus';
-import { foldAttentionOf, type SettingsGroup } from './settingsDirectory';
+import { foldAttentionLinesOf, foldAttentionOf, type SettingsGroup } from './settingsDirectory';
 import { SettingsRailPageList } from './SettingsRailPageList';
 
 type Props = {
   readonly group: SettingsGroup;
   readonly isOpen: boolean;
-  readonly isCurrentGroup: boolean;
   readonly pageKey: string | null;
   readonly onToggle: () => void;
   readonly onSelect: (params: SettingsScopeChange) => void;
 };
 
-export const SettingsRailFold = ({
-  group,
-  isOpen,
-  isCurrentGroup,
-  pageKey,
-  onToggle,
-  onSelect,
-}: Props) => {
+export const SettingsRailFold = ({ group, isOpen, pageKey, onToggle, onSelect }: Props) => {
   const listId = useId();
   const worst = foldAttentionOf({ group });
   return (
@@ -47,18 +39,17 @@ export const SettingsRailFold = ({
             <Eyebrow muted label={group.label} />
           </span>
           {isOpen || worst === null ? null : (
-            <StatusDot tone={worst.tone} size="sm" ariaLabel={worst.text} />
+            <StatusDot
+              tone={worst.tone}
+              size="sm"
+              ariaLabel={worst.text}
+              title={foldAttentionLinesOf({ group })}
+            />
           )}
         </button>
       </h2>
       <Reveal open={isOpen}>
-        <SettingsRailPageList
-          id={listId}
-          group={group}
-          isCurrentGroup={isCurrentGroup}
-          pageKey={pageKey}
-          onSelect={onSelect}
-        />
+        <SettingsRailPageList id={listId} group={group} pageKey={pageKey} onSelect={onSelect} />
       </Reveal>
     </div>
   );

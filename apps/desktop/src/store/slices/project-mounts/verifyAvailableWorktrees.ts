@@ -1,15 +1,7 @@
-import { getSessionMount, updateSessionMountLifecycle } from '@goodboy/db';
-import type { IsoDateTime, MountId, Project, ProjectId, SessionId } from '@goodboy/types';
+import type { Project, SessionId } from '@goodboy/types';
 import { inspectWorktree } from '../../../features/worktree/worktree';
-import { tauriDatabase } from '../../../shared/lib/db';
 import { projectById } from '../projects/projectIndex';
-
-type WorktreeCandidate = {
-  readonly id: string;
-  readonly projectId?: ProjectId;
-  readonly worktreePath: string | null;
-  readonly revision?: number;
-};
+import { markWorktreeMissing, type WorktreeCandidate } from './verify/markWorktreeMissing';
 
 type Params<Candidate extends WorktreeCandidate> = {
   readonly sessionId: SessionId;
@@ -50,26 +42,7 @@ export const verifyAvailableWorktrees = async <Candidate extends WorktreeCandida
       continue;
     }
     missing.push(candidate.id);
-    const storedRevision =
-      candidate.revision ??
-      (
-        await getSessionMount({
-          db: tauriDatabase,
-          sessionId,
-          mountId: candidate.id as MountId,
-        }).catch(() => null)
-      )?.revision ??
-      0;
-    await updateSessionMountLifecycle({
-      db: tauriDatabase,
-      sessionId,
-      mountId: candidate.id as MountId,
-      worktreePath: null,
-      isAttached: false,
-      diskState: 'missing',
-      expectedRevision: storedRevision,
-      updatedAt: new Date().toISOString() as IsoDateTime,
-    }).catch(() => undefined);
+    await markWorktreeMissing({ sessionId, candidate });
   }
   return { available, missing };
 };

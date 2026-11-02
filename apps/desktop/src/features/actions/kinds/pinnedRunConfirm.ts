@@ -1,6 +1,6 @@
 import { PINNED_RUN_COPY } from '../../workflows/pinnedRunCopy';
 import type { ActionConfirm } from '../types';
-import { plural } from './gitRuns';
+import { countNoun } from '../../../shared/utils/countNoun';
 import type { MountFacts } from './mountFacts';
 
 type Params = { readonly facts: MountFacts };
@@ -10,7 +10,7 @@ export const pinnedRunConfirm = ({ facts }: Params): ActionConfirm => {
     label: facts.pinnedRunLabel ?? '',
     count: facts.pinnedRunIds.length,
   });
-  const kept = plural({
+  const kept = countNoun({
     count: facts.dirty,
     one: 'uncommitted change',
     many: 'uncommitted changes',

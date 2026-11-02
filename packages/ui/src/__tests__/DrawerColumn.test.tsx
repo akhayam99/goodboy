@@ -192,11 +192,11 @@ describe('DrawerColumn pushing', () => {
     expect(panel().hasAttribute('inert')).toBe(true);
   });
 
-  it('pushes only when the main area keeps a 560px column beside the drawer track', () => {
+  it('pushes only when the main area keeps a 464px column beside the drawer track', () => {
     expect(canDrawerPush({ mainWidthPx: 1166, drawerWidthPx: 400 })).toBe(true);
-    expect(canDrawerPush({ mainWidthPx: 1024, drawerWidthPx: 400 })).toBe(true);
-    expect(canDrawerPush({ mainWidthPx: 1023, drawerWidthPx: 400 })).toBe(false);
-    expect(canDrawerPush({ mainWidthPx: 934, drawerWidthPx: 400 })).toBe(false);
+    expect(canDrawerPush({ mainWidthPx: 928, drawerWidthPx: 400 })).toBe(true);
+    expect(canDrawerPush({ mainWidthPx: 927, drawerWidthPx: 400 })).toBe(false);
+    expect(canDrawerPush({ mainWidthPx: 900, drawerWidthPx: 400 })).toBe(false);
   });
 
   it('adds no scrim, no inert page and no focus move while it pushes', () => {
@@ -568,7 +568,7 @@ describe('DrawerColumn sizes', () => {
 
     fireEvent.mouseUp(window);
 
-    expect(room).toBe(476);
+    expect(room).toBe(560);
     expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBe(String(room));
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
   });
@@ -726,7 +726,7 @@ describe('DrawerColumn as two containers', () => {
 
 describe('DrawerColumn one rule for every width', () => {
   it.each([
-    ['side', 1023, 'overlay'],
+    ['side', 927, 'overlay'],
     ['side', 1024, 'push'],
     ['reader', 1343, 'overlay'],
     ['reader', 1344, 'push'],

@@ -141,7 +141,7 @@ afterEach(() => {
 const createFrom = async ({ path }: PathParams) => {
   dialog.picks = [path];
   fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
-  await screen.findByRole('list', { name: 'Folders' });
+  await screen.findByRole('list', { name: 'Projects' });
   fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 };
 

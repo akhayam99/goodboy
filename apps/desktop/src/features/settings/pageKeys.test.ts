@@ -111,7 +111,7 @@ describe('workspace settings plans', () => {
       current: snapshot({ workflowRules: DEFAULT_WORKFLOW_RULES }),
     });
 
-    expect(copy.map((page) => page.page)).toEqual(['workflow-rules']);
+    expect(copy.map((page) => page.page)).toEqual(['general']);
     expect(copy[0]?.items.map((item) => [item.from, item.to, item.write])).toEqual([
       [
         'Every step · No limit · No guidance',

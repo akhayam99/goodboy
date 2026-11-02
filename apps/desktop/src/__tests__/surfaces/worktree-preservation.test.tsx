@@ -13,6 +13,7 @@ import { ToastProvider } from '../../shared/components/Toast';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
+import { stripTab } from '../../test/branchTabStrip';
 import { BRANCH_TAB_REGISTRY } from '../../features/branch/branchTabs';
 import { U25_C04_WORKTREE_SCENES } from '../../app/components/MockScene/scenes/u25/c04-worktree';
 
@@ -61,7 +62,7 @@ const level = () => {
 };
 
 const entry = async (name: RegExp): Promise<void> => {
-  fireEvent.click(level().getByRole('button', { name }));
+  fireEvent.click(stripTab({ name }));
   await advance();
 };
 
@@ -82,7 +83,7 @@ describe('Branch page capabilities from the branch tree', () => {
     await mount('c04-worktree-pr-behind');
 
     for (const name of [/^Pull request/, /^Comments/, /^Files/]) {
-      expect(level().getByRole('button', { name })).toBeDefined();
+      expect(stripTab({ name })).toBeDefined();
     }
     expect(BRANCH_TAB_REGISTRY.pr.shortcut).toBe('lens.pr');
     expect(BRANCH_TAB_REGISTRY.comments.shortcut).toBe('lens.review');
@@ -136,18 +137,19 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(worktree.some((label) => /Copy branch name/.test(label))).toBe(true);
   });
 
-  it('a stopped rebase keeps Abort on the status line, its one home', async () => {
+  it('a stopped rebase keeps Abort on the stop panel under the page header, its one home', async () => {
     await mount('c04-worktree-rebasing');
 
-    expect(level().getByRole('button', { name: 'Abort rebase' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Abort rebase' }).length).toBe(1);
     const labels = await branchMenu();
     expect(labels.some((label) => /Abort rebase/.test(label))).toBe(false);
   });
 
-  it('Rebase has one home, the status line, while the branch is behind', async () => {
+  it('Rebase has one home, the Branch actions menu, while the branch is behind and another step leads', async () => {
     await mount('c04-worktree-pr-behind');
 
-    expect(level().getByRole('button', { name: /^Rebase on main/ })).toBeDefined();
+    const labels = await branchMenu();
+    expect(labels.filter((label) => /^Rebase on main/.test(label))).toHaveLength(1);
     expect(
       within(screen.getByRole('group', { name: 'Properties' })).queryByRole('button', {
         name: /Rebase/,
@@ -185,11 +187,7 @@ describe('Branch page capabilities from the branch tree', () => {
     await mount('c04-worktree-pr-behind');
 
     await entry(/^Commits/);
-    expect(
-      level()
-        .getByRole('button', { name: /^Commits/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(stripTab({ name: /^Commits/ }).getAttribute('aria-selected')).toBe('true');
     await entry(/^Checks/);
     expect(screen.getByRole('region', { name: 'Checks' })).toBeDefined();
   });
@@ -228,9 +226,9 @@ describe('branch actions from the branch row', () => {
   it('Add folder on the card and New branch on each repo row stay one click away', async () => {
     await mount('c04-session-worktrees');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
     await advance();
-    const picker = within(screen.getByRole('dialog', { name: 'Add folder' }));
+    const picker = within(screen.getByRole('dialog', { name: 'Add project' }));
     expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
     fireEvent.keyDown(window, { key: 'Escape' });
     await advance();

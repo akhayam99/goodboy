@@ -7,12 +7,12 @@ type Params = {
 };
 
 export const folderMetaOf = ({ projects, workspaceId }: Params): string => {
-  const folders = projects.filter(
+  const linked = projects.filter(
     (project) => project.workspaceId === workspaceId && project.disconnectedAt === undefined,
   );
-  if (folders.length === 0) {
-    return 'No folders yet';
+  if (linked.length === 0) {
+    return 'No projects yet';
   }
-  const withGit = folders.filter((project) => project.kind === 'repo').length;
-  return `${pluralize(folders.length, 'folder')} · ${withGit} with git`;
+  const withGit = linked.filter((project) => project.kind === 'repo').length;
+  return `${pluralize(linked.length, 'project')} · ${withGit} with git`;
 };

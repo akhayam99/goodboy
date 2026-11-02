@@ -1,6 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { Download, Search } from 'lucide-react';
-import { AnchoredPopover, Button, FormActions, ICON_SIZE, Input, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  FormActions,
+  ICON_SIZE,
+  Input,
+  ScrollFade,
+  useDropdown,
+} from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 
@@ -116,7 +124,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
           </span>
         ) : null}
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-2 pb-2">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col gap-3 px-2 pb-2">
         {emptyText === null ? (
           <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
             {visible.map(({ group, workflows }) => (
@@ -171,7 +179,7 @@ export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importB
             {count > 0 ? `Import ${count}` : 'Import'}
           </Button>
         </FormActions>
-      </div>
+      </ScrollFade>
     </AnchoredPopover>
   );
 };

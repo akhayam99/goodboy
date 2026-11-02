@@ -1,5 +1,5 @@
+import { isoFromMs } from './isoFromMs';
 import type {
-  IsoDateTime,
   SessionExternalTaskProvider,
   StarredIssue,
   StarredIssueState,
@@ -25,12 +25,10 @@ const COLUMNS = `workspace_id AS workspaceId, provider, external_id AS externalI
   container, title, url, state, state_label AS stateLabel, starred_at AS starredAt,
   refreshed_at AS refreshedAt`;
 
-const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
-
-const toDomain = (row: Row): StarredIssue => ({
+const toStarredIssue = (row: Row): StarredIssue => ({
   ...row,
-  starredAt: toIso(row.starredAt),
-  refreshedAt: row.refreshedAt === null ? null : toIso(row.refreshedAt),
+  starredAt: isoFromMs({ ms: row.starredAt }),
+  refreshedAt: row.refreshedAt === null ? null : isoFromMs({ ms: row.refreshedAt }),
 });
 
 type WorkspaceParams = {
@@ -47,7 +45,7 @@ export const listStarredIssues = async ({
      ORDER BY starred_at DESC, external_id`,
     [workspaceId],
   );
-  return rows.map(toDomain);
+  return rows.map(toStarredIssue);
 };
 
 type StarIssueParams = {

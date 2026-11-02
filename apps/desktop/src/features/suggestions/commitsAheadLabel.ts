@@ -1,6 +1,7 @@
+import { countNoun } from '../../shared/utils/countNoun';
 type Params = {
   readonly ahead: number;
 };
 
 export const commitsAheadLabel = ({ ahead }: Params): string =>
-  `${ahead} ${ahead === 1 ? 'commit' : 'commits'} ahead`;
+  `${countNoun({ count: ahead, one: 'commit' })} ahead`;

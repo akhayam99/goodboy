@@ -24,7 +24,7 @@ export const BlockedMountStepShotScene = () => {
       className="flex min-h-0 bg-background text-foreground"
     >
       <SessionFrame session={session}>
-        <SessionWorkspace session={session} isActive />
+        <SessionWorkspace session={session} />
       </SessionFrame>
     </div>
   );

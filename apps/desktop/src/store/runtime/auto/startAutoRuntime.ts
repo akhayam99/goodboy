@@ -6,7 +6,8 @@ import {
   currentAutoUserTurnPort,
   registerAutoUserTurnPort,
 } from '../../../features/auto/autoUserTurnPort';
-import { readAutoTreeLimit } from '../../../features/auto/autoTreeLimit';
+import { startAutoLimitFold } from '../../../features/auto/startAutoLimitFold';
+import { runDefaultLimitOf } from '../../slices/workflows/runLimit/runDefaultLimitOf';
 import { pausingSessionCapOf } from '../../../features/budget/pausingSessionCapOf';
 import {
   currentChecksRerunPort,
@@ -34,6 +35,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../store';
 import type { AutoRuntime } from './createAutoRuntime';
 import { followArtifactAnnouncements } from './followArtifactAnnouncements';
+import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 import { makeAutoRuntime } from './makeAutoRuntime';
 import type { SleepParams } from './startDeliveredTurn';
 import {
@@ -123,6 +125,7 @@ export const startAutoRuntime = async ({
     return forwardToMain({ bus });
   }
   const getState = useAppStore.getState;
+  const stopLimitFold = startAutoLimitFold();
   const holder: { runtime: AutoRuntime | null } = { runtime: null };
   const runtimeOf = (): AutoRuntime => {
     holder.runtime ??= makeAutoRuntime({
@@ -202,6 +205,7 @@ export const startAutoRuntime = async ({
     },
   });
   const unregister = (): void => {
+    stopLimitFold();
     unserve();
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
@@ -221,7 +225,12 @@ export const startAutoRuntime = async ({
     sessionCapUsd: ({ sessionId }: SessionCapParams) =>
       pausingSessionCapOf({ budget: getState().sessionBudgets[sessionId] }),
     workspaceLimitUsd: ({ workspaceId }: WorkspaceLimitParams) =>
-      readAutoTreeLimit({ db, workspaceId: brandId<WorkspaceId>({ value: workspaceId }) }),
+      Promise.resolve(
+        runDefaultLimitOf({
+          state: getState(),
+          workspaceId: brandId<WorkspaceId>({ value: workspaceId }),
+        }),
+      ),
   };
   registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
   registerAutoUserTurnPort({
@@ -269,9 +278,9 @@ export const startAutoRuntime = async ({
       });
   };
   run();
-  const timer = setInterval(run, tickMs);
+  const stopPoll = startPoll({ run, everyMs: tickMs, gate: 'always', isImmediate: false });
   return () => {
-    clearInterval(timer);
+    stopPoll();
     unregister();
   };
 };

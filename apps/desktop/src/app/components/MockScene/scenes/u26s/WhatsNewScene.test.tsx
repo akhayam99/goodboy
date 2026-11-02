@@ -64,6 +64,6 @@ describe('the secondary What is new scenes', () => {
     const rail = await screen.findByRole('navigation', { name: 'Releases' }, WAIT);
 
     await waitFor(() => expect(within(rail).getAllByText(/Installed/).length).toBe(1), WAIT);
-    expect(screen.getByRole('searchbox', { name: 'Search releases' })).toBeDefined();
+    expect(screen.getByRole('searchbox', { name: 'Search help' })).toBeDefined();
   });
 });

@@ -14,8 +14,7 @@ const ANY_PROMPT_FIELD = /<PromptField\b/g;
 const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/chat/components/ChatInput/index.tsx': ['message'],
   'features/history/JobBanner/JobBannerNote.tsx': ['document'],
-  'features/workspace-chat/components/ChatComposer/index.tsx': ['message'],
-  'features/session/ask/components/AskDrawer/AskComposer.tsx': ['message'],
+  'shared/components/MessageComposer.tsx': ['message'],
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
   'features/session/components/OrchestratedRun/OrchestratedBlockedStep.tsx': ['message'],
   'features/session/components/OrchestratedRun/OrchestratedContinue.tsx': ['message'],
@@ -54,7 +53,6 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
   'features/chat/components/ChatView/SlackDraftCard.tsx': 'a Slack reply, read by people',
   'features/history/components/CommitsHistory/RewordEditor.tsx': 'a commit message',
   'features/scripts/components/ScriptEditor/index.tsx': 'a shell script',
-  'features/skills/components/SkillsPanel/index.tsx': 'a saved skill file',
   'features/settings/components/SettingsStudio/ReplyStyleNoteField.tsx': 'a setting',
   'features/settings/components/SettingsStudio/ReplyTemplateField.tsx': 'a setting',
   'features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx':

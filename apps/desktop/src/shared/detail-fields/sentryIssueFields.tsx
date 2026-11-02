@@ -5,6 +5,7 @@ import type { InboxState } from '../../features/inbox/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
 import type { FactRegistry } from './factTypes';
 import { sentryTagLabel } from './sentryTagLabel';
+import { countNoun } from '../utils/countNoun';
 
 export type SentryIssueProperties = {
   readonly status: string | null;
@@ -33,7 +34,7 @@ type MeasureParams = {
 const measureOf = ({ count, userCount }: MeasureParams): string | null => {
   const parts = [
     count == null || count === '' ? null : `${count} events`,
-    userCount == null ? null : `${userCount} ${userCount === 1 ? 'user' : 'users'}`,
+    userCount == null ? null : `${countNoun({ count: userCount, one: 'user' })}`,
   ].filter((part): part is string => part != null);
   return parts.length === 0 ? null : parts.join(' · ');
 };

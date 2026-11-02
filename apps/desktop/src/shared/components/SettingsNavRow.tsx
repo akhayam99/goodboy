@@ -26,7 +26,7 @@ export const SettingsNavRow = ({ label, isCurrent = false, status = null, onClic
       <StatusDot
         tone={status.tone}
         size="sm"
-        {...(status.label !== null && { ariaLabel: status.label })}
+        {...(status.label !== null && { ariaLabel: status.label, title: status.label })}
       />
     )}
   </SelectableRow>

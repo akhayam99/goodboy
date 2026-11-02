@@ -1,4 +1,6 @@
-use super::{common_git_dir_with, inspect_worktree_with, worktree_git_dir_with};
+use super::{
+    common_git_dir_with, inspect_worktree_with, inspect_worktrees_with, worktree_git_dir_with,
+};
 use crate::worktree::git::git;
 use crate::worktree::types::WorktreeInspection;
 use std::path::{Path, PathBuf};
@@ -75,6 +77,47 @@ fn inspection_distinguishes_registered_missing_foreign_and_unavailable() {
         unavailable_result,
         WorktreeInspection::RepositoryUnavailable { .. }
     ));
+}
+
+#[test]
+fn listing_many_worktrees_runs_one_worktree_list_per_repo() {
+    let root = init_repo("list-registered");
+    let first = add_worktree(&root, "first");
+    let second = add_worktree(&root, "second");
+    let missing = root.join("missing");
+    let paths = vec![
+        first.to_string_lossy().into_owned(),
+        second.to_string_lossy().into_owned(),
+        missing.to_string_lossy().into_owned(),
+    ];
+    let mut list_calls = 0;
+    let mut run_git = |cwd: &Path, args: &[&str]| {
+        if args.first() == Some(&"worktree") && args.get(1) == Some(&"list") {
+            list_calls += 1;
+        }
+        git(cwd, args)
+    };
+
+    let results = inspect_worktrees_with(&root, &paths, &mut run_git);
+
+    assert_eq!(list_calls, 1);
+    assert_eq!(results.len(), 3);
+    assert!(matches!(results[0], WorktreeInspection::Registered { .. }));
+    assert!(matches!(results[1], WorktreeInspection::Registered { .. }));
+    assert!(matches!(results[2], WorktreeInspection::Missing { .. }));
+}
+
+#[test]
+fn listing_for_an_unavailable_repo_marks_every_path_unavailable() {
+    let unavailable = temp_root("list-unavailable").join("gone");
+    let paths = vec!["/a".to_string(), "/b".to_string()];
+    let mut run_git = |cwd: &Path, args: &[&str]| git(cwd, args);
+
+    let results = inspect_worktrees_with(&unavailable, &paths, &mut run_git);
+
+    assert!(results
+        .iter()
+        .all(|result| matches!(result, WorktreeInspection::RepositoryUnavailable { .. })));
 }
 
 #[test]

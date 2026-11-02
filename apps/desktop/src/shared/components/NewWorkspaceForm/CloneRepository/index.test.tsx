@@ -177,7 +177,7 @@ describe('cloning a repository on the Workspace step', () => {
 
     await pressClone();
 
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     screen.getByText('ledger-core');
     expect(callsOf({ command: 'clone_probe' })).toEqual([{ url: LEDGER_URL, destination: LEDGER }]);
     const [cloned] = callsOf({ command: 'clone_repository' });
@@ -245,7 +245,7 @@ describe('cloning a repository on the Workspace step', () => {
       step: 'Sign in with git',
     },
   ])(
-    'says one line and points to the Tools step when $label has no login',
+    'says one line and points to Integrations when $label has no login',
     async ({ label, text, step }) => {
       stubStoryInvoke({
         ...FOLDER_ANSWERS,
@@ -258,7 +258,7 @@ describe('cloning a repository on the Workspace step', () => {
       const alert = await screen.findByRole('alert');
       expect(alert.textContent).toContain(`No ${label} login found`);
       expect(alert.textContent).toContain(step);
-      expect(alert.textContent).toContain('Tools step');
+      expect(alert.textContent).toContain('Integrations');
       expect(alert.textContent).toContain('A public repository needs no login.');
       expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
       expect(callsOf({ command: 'clone_repository' })).toHaveLength(0);
@@ -311,7 +311,7 @@ describe('cloning a repository on the Workspace step', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     });
 
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     expect(attempts).toBe(2);
   });
 
@@ -356,7 +356,7 @@ describe('cloning a repository on the Workspace step', () => {
 
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Folders' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Projects' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Clone' })).toHaveProperty('disabled', false);
   });
 
@@ -472,7 +472,7 @@ describe('cloning a repository on the Workspace step', () => {
     await act(async () => {
       validating.resolve(repoAt({ path: LEDGER }));
     });
-    await screen.findByRole('list', { name: 'Folders' });
+    await screen.findByRole('list', { name: 'Projects' });
     expect(callsOf({ command: 'clone_repository' })).toHaveLength(0);
   });
 

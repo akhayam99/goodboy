@@ -1,0 +1,2 @@
+export const SPLASH_TILE_PX = 84;
+export const SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX = 53;

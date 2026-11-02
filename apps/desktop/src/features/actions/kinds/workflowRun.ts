@@ -137,7 +137,7 @@ const runStateOf = ({
   return isHalted ? 'failed' : 'paused';
 };
 
-const isLive = ({ facts }: { readonly facts: WorkflowRunFacts }): boolean =>
+const isWorkflowRunLive = ({ facts }: { readonly facts: WorkflowRunFacts }): boolean =>
   facts.state !== 'discarded' && facts.state !== 'done';
 
 type RoutingParams = {
@@ -271,7 +271,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: 'Answer',
       icon: MessageCircleQuestion,
       group: 'act',
-      when: ({ facts }) => facts.openQuestionId !== null && isLive({ facts }),
+      when: ({ facts }) => facts.openQuestionId !== null && isWorkflowRunLive({ facts }),
       run: ({ facts, env }) => {
         if (facts.openQuestionId !== null) {
           useOpenQuestions.getState().focusQuestion(facts.openQuestionId);
@@ -291,10 +291,10 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.continue',
-      label: 'Continue step',
+      label: NAMES.continue,
       icon: StepForward,
       group: 'act',
-      when: ({ facts }) => facts.stoppedAgentId !== null && isLive({ facts }),
+      when: ({ facts }) => facts.stoppedAgentId !== null && isWorkflowRunLive({ facts }),
       run: ({ facts, env }) => {
         if (facts.stoppedAgentId !== null) {
           void env
@@ -351,7 +351,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.resume',
-      label: 'Resume run',
+      label: NAMES.continue,
       icon: Play,
       group: 'act',
       when: ({ facts }) => facts.canResume,
@@ -396,7 +396,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: NAMES.asksYou,
       icon: SlidersHorizontal,
       group: 'act',
-      when: ({ facts }) => isLive({ facts }),
+      when: ({ facts }) => isWorkflowRunLive({ facts }),
       choices: ({ facts }) =>
         RUN_AUTONOMY_OPTIONS.map((option) => ({
           id: option.key,
@@ -448,7 +448,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: CLOSE_WORKFLOW_COPY.label,
       icon: Square,
       group: 'danger',
-      when: ({ facts }) => facts.isClosable && isLive({ facts }),
+      when: ({ facts }) => facts.isClosable && isWorkflowRunLive({ facts }),
       confirm: () => ({
         title: CLOSE_WORKFLOW_COPY.title,
         description: CLOSE_WORKFLOW_COPY.description,

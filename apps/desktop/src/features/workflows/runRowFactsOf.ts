@@ -31,6 +31,7 @@ type Params = {
   readonly predecessorName: string;
   readonly isOrchestrating: boolean;
   readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly isPlanRevising: boolean;
 };
 
 type StateFacts = {
@@ -82,6 +83,7 @@ const stateOf = ({
   predecessorName,
   isOrchestrating,
   questions,
+  isPlanRevising,
 }: Params): StateFacts => {
   if (run.discardedAt != null) {
     return { dot: 'idle', word: 'Archived' };
@@ -98,7 +100,9 @@ const stateOf = ({
     return { dot: 'idle', word: 'Paused' };
   }
   if (isRunHeldForPlan({ run })) {
-    return { dot: 'needsYou', word: 'Plan ready' };
+    return isPlanRevising
+      ? { dot: 'running', word: 'Revising plan' }
+      : { dot: 'needsYou', word: 'Plan ready' };
   }
   if (stop?.kind === 'operator') {
     return isOrchestrating
@@ -138,6 +142,7 @@ export const runRowFactsOf = ({
   predecessorName,
   isOrchestrating,
   questions,
+  isPlanRevising,
 }: Params): RunRowFacts => {
   const { wait = null, ...state } = stateOf({
     run,
@@ -146,6 +151,7 @@ export const runRowFactsOf = ({
     predecessorName,
     isOrchestrating,
     questions,
+    isPlanRevising,
   });
   return {
     ...state,

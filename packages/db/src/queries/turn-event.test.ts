@@ -49,6 +49,28 @@ describe('turn event queries', () => {
     );
   });
 
+  it('finds a delivered turn by its delivery id for that agent only', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-1',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'queued', deliveryId: 'queue:q1', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-2',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'plain', at },
+    });
+
+    await expect(countUserTextEvents({ db, agentId, deliveryId: 'queue:q1' })).resolves.toBe(1);
+    await expect(countUserTextEvents({ db, agentId, deliveryId: 'queue:q2' })).resolves.toBe(0);
+    await expect(
+      countUserTextEvents({ db, agentId: otherAgentId, deliveryId: 'queue:q1' }),
+    ).resolves.toBe(0);
+    await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
+  });
+
   it('counts only user_text payloads for the requested agent', async () => {
     await insertTurnEvent(db, {
       id: 'event-1',

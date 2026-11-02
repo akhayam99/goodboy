@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { AgentId } from '@goodboy/types';
 import { agentPlace } from '../../../store';
-import { type Row, WAIT, click, settle, useAppStore } from './harness';
+import { type Row, WAIT, click, settle, shownAll, useAppStore } from './harness';
 import {
   PREVIEW,
   SEEDS,
@@ -111,9 +111,9 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         name: /^Push 2 commits to hl\/fix-duplicate-credit in \S+\?$/,
       });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
-      expect(
-        document.querySelectorAll('[data-slot="header-actions"] button[data-variant="primary"]'),
-      ).toHaveLength(0);
+      expect(shownAll('[data-slot="header-actions"] button[data-variant="primary"]')).toHaveLength(
+        0,
+      );
       const confirmButton = within(confirm).getByRole('button', { name: 'Push' });
       expect(confirmButton.getAttribute('data-variant')).toBe('primary');
       expect(confirm.querySelector('[data-testid="tone-bar"]')).toBeNull();
@@ -166,11 +166,13 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       if (first == null) {
         throw new Error('no agent opened');
       }
-      const viewTranscript = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
+      const menu = await screen.findByRole('button', { name: 'More agent actions' }, WAIT);
       expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
       expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
 
-      await click(viewTranscript);
+      await click(menu);
+      await click(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT));
       await waitFor(() => {
         const drawer = state().drawer;
         expect(drawer?.kind).toBe('transcript');

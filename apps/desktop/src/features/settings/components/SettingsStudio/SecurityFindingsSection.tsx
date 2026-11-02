@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
-import { Band, Button, EmptyLine, SectionHeader } from '@goodboy/ui';
+import { Band, Button, EmptyLine, SectionHeader, SkeletonRow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { SECRET_KIND_LABEL, SecurityFindingRow } from './SecurityFindingRow';
 
@@ -74,7 +74,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
       )}
       {status === 'loading' && open.length === 0 && (
         <Band inset="content">
-          <EmptyLine>Checking…</EmptyLine>
+          <SkeletonRow label="Checking saved scripts" />
         </Band>
       )}
       {status === 'ready' && open.length === 0 && (

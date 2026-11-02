@@ -78,7 +78,6 @@ const showColumn = async ({ kind }: ShowParams) => {
     throw new Error('The seed must hold the session');
   }
   let commits = 0;
-  const onLeadChange = vi.fn();
   render(
     <ToastProvider>
       <AutoReleaseContext.Provider value>
@@ -88,7 +87,7 @@ const showColumn = async ({ kind }: ShowParams) => {
             commits += 1;
           }}
         >
-          <CentralColumn session={session} onLeadChange={onLeadChange} />
+          <CentralColumn session={session} />
         </Profiler>
       </AutoReleaseContext.Provider>
     </ToastProvider>,

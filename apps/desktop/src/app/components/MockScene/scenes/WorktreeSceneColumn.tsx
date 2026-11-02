@@ -8,10 +8,11 @@ import { SceneBranchTabs } from './SceneBranchTabs';
 
 type Props = {
   readonly session?: Session;
+  readonly isRailBare?: boolean;
   readonly children: ReactNode;
 };
 
-export const WorktreeSceneColumn = ({ session, children }: Props) => {
+export const WorktreeSceneColumn = ({ session, isRailBare = false, children }: Props) => {
   const currentSessionId = useAppStore((state) => state.currentSessionId);
   return (
     <div className="flex h-full min-h-0 min-w-0">
@@ -23,7 +24,9 @@ export const WorktreeSceneColumn = ({ session, children }: Props) => {
           <SessionLevel session={session} isActive />
         ) : (
           <ScrollFade className="min-h-0 flex-1">
-            {currentSessionId === null ? null : <SceneBranchTabs sessionId={currentSessionId} />}
+            {currentSessionId === null || isRailBare ? null : (
+              <SceneBranchTabs sessionId={currentSessionId} />
+            )}
           </ScrollFade>
         )}
       </aside>

@@ -1,9 +1,22 @@
 import { TriangleAlert } from 'lucide-react';
-import { Button, cn, Eyebrow, FormActions, ICON_SIZE, TruncatedText } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Eyebrow,
+  FormActions,
+  ICON_SIZE,
+  ScrollFade,
+  TruncatedText,
+} from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { ExistingBranchNotice } from '../../ExistingBranchNotice';
 import type { MountFailure } from './mountFailure';
 import type { MountPreflightState } from './useMountPreflight';
+
+type PickParams = {
+  readonly branch: string;
+};
 
 type Props = {
   readonly project: Project;
@@ -12,6 +25,9 @@ type Props = {
   readonly failure: MountFailure | null;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
+  readonly onPickBranch: (params: PickParams) => void;
+  readonly onUseWorktree: () => void;
+  readonly onNewBranch: () => void;
 };
 
 type RowProps = {
@@ -60,6 +76,9 @@ export const MountPreflightCard = ({
   failure,
   onConfirm,
   onCancel,
+  onPickBranch,
+  onUseWorktree,
+  onNewBranch,
 }: Props) => {
   const GlyphIcon = projectGlyph({ kind: project.kind });
   const { preflight } = state;
@@ -95,6 +114,15 @@ export const MountPreflightCard = ({
           instead.
         </p>
       )}
+      {preflight === null ? null : (
+        <ExistingBranchNotice
+          facts={preflight}
+          isBusy={isBusy}
+          onPickBranch={onPickBranch}
+          onUseWorktree={onUseWorktree}
+          onNewBranch={onNewBranch}
+        />
+      )}
       {state.branchScanError === null ? null : (
         <p className="text-meta text-muted-foreground">
           Could not read the existing branches, so a name clash was not ruled out:{' '}
@@ -114,9 +142,11 @@ export const MountPreflightCard = ({
           </p>
           <details className="text-meta text-muted-foreground">
             <summary className="cursor-pointer select-none">Technical detail</summary>
-            <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded-md bg-subtle p-2 font-mono text-chip">
-              {failure.detail}
-            </pre>
+            <ScrollFade fadeFrom="subtle" className="mt-1 max-h-32 rounded-md bg-subtle">
+              <pre className="whitespace-pre-wrap break-all p-2 font-mono text-chip">
+                {failure.detail}
+              </pre>
+            </ScrollFade>
           </details>
         </div>
       )}
@@ -133,10 +163,10 @@ export const MountPreflightCard = ({
         <Button
           size="sm"
           onClick={onConfirm}
-          disabled={isBusy || preflight === null}
+          disabled={isBusy || isPending || preflight === null}
           isBusy={isBusy}
         >
-          {failure === null ? 'Add folder' : 'Retry'}
+          {failure === null ? 'Add project' : 'Retry'}
         </Button>
       </FormActions>
     </section>

@@ -31,6 +31,7 @@ const resolveOne = <F>({
     icon: definition.iconOf?.({ facts }) ?? definition.icon,
     iconClassName: definition.iconClassName ?? null,
     group: definition.group,
+    ...(definition.submenu !== undefined && { submenu: definition.submenu }),
     slot: definition.slot?.({ facts }) ?? 'menu',
     pendingLabel: definition.pendingLabel?.({ facts }) ?? null,
     doneLabel: definition.doneLabel?.({ facts }) ?? null,

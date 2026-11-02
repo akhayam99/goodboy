@@ -13,6 +13,13 @@
   above its title). The row is fixed (`h-8`, centred, never wraps, a long title
   truncates), no glyph ever indents the title, and the crumb names the structure while
   the `h1` names the object. `frameGeometryOf` (`packages/ui`) is that table.
+- **A lens you leave stays alive.** `SessionWorkspace` gives the lens panes to one
+  `PaneSwap`, keyed by surface, and keeps the last three visited (`LENS_KEEP_ALIVE_CAP`)
+  mounted under `Activity`: scroll, filters and open threads come back as they were, and
+  the panes cross-fade. A lens older than three loses its state; `useScrollMemory`
+  (`packages/ui`, 50 keys, LRU, `<sessionId>|<slot>`) puts the Branch page's scroll back
+  only once its data is loaded, never into the short skeleton, and `evictSession` clears
+  it on delete. After a swap that the user caused, focus moves to the new pane's `h1`.
 - **A first-lap session says where it works in one notice.** Before main is on the
   remote the Overview notices slot holds one row, `Not published yet` with Publish
   (`LapPublishNotice`; Retry when the remote did not answer, `Checking the remote`
@@ -65,8 +72,8 @@
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Projects, Linked work, Artifacts and Add folder live on the
-  session rail's session level. Next and Unassigned notes open with `SectionHeader`
+  Activity. Projects, Linked work, Artifacts and Add project live on the
+  session rail's session level. Next and Unassigned comments open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals
@@ -106,11 +113,11 @@
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
   Comments is one flow: the list grouped by delivery (Needs you, Working,
-  Ready to push, Open, Done and Left open on its host, the last two closed)
+  Done and Left open on its host, the last two closed)
   under the run status line, across the page, and the open comment in the drawer beside it
-  (kind `conversation`, side tier), the same pattern as a check opening the Debugger. A comment reads one word (Question for you, Fix ready,
-  Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
-  in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
+  (kind `conversation`, side tier), the same pattern as a check opening the Debugger. A comment reads one word (Question, Fix to review,
+  Push failed, Failed, Fixing, Fixed, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
+  in `commentProjection.ts` (Fixed is a fix on the branch whose reply is not sent, Replied is a
   thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
   The action that takes a fix is `Apply fix` in the comment drawer and `Apply and resolve N` in the
   selection bar and the drawer; group labels carry their count and no verbs. A fix run is one agent and one transcript for all its comments: answers, retries and
@@ -230,7 +237,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
   "This worktree is gone", and a session with nothing to browse reads "No
-  folder to browse" with one action, Add folder (`DrawerHost` hands it
+  folder to browse" with one action, Add project (`DrawerHost` hands it
   in as `noFolderAction`, so `features/explore` does not import the session
   feature). Every empty state is an
   `EmptyState` at page size: a title, one line that says what fills it and at
@@ -309,7 +316,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   starts. With auto-run off, nothing advances without a click.
 - **The Agent page always has its header.** Every agent page (the planner,
   Scribe, a missing or loading agent) renders one header row: role chip, title,
-  provider mark, View transcript, overflow. The composer model chip always names
+  provider mark, overflow (which holds View transcript). The composer model chip always names
   the model the next turn will use, with its provider mark, never a bare
   `Model` word. Each turn footer shows the model chip, the duration and the
   cost; tokens, cache share and context window sit in its detail popover. The

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { DrawerFrame, IconButton } from '@goodboy/ui';
-import type { ArtifactId, ChatMessage, Session } from '@goodboy/types';
+import type { ArtifactId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { isAskStreaming } from '../../../../../store/slices/ask/isAskStreaming';
 import { requestAskFocus } from '../../askFocusEvent';
 import { askTurnsOf } from '../../askTurnsOf';
+import { startWorkFromAsk } from '../../startWorkFromAsk';
 import { useAskActionFacts } from '../../hooks/useAskActionFacts';
 import { useAskChipOpen } from '../../hooks/useAskChipOpen';
 import { useAskResetRequest } from '../../hooks/useAskResetRequest';
@@ -15,6 +16,7 @@ import { useAskRightNow } from '../../hooks/useAskRightNow';
 import { AskComposer } from './AskComposer';
 import { AskEarlier } from './AskEarlier';
 import { AskPlanView } from './AskPlanView';
+import { AskScope } from './AskScope';
 import { AskSuggestions } from './AskSuggestions';
 import { AskTurn } from './AskTurn';
 
@@ -44,6 +46,8 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   const rightNow = useAskRightNow({ session });
   const facts = useAskActionFacts({ sessionId });
   const [insideId, setInsideId] = useState<ArtifactId | null>(null);
+  const createSession = useAppStore((state) => state.createSession);
+  const reportError = useAppStore((state) => state.reportError);
   const endRef = useRef<HTMLDivElement | null>(null);
   const onOpen = useAskChipOpen({ sessionId, onOpenInside: setInsideId });
   const turns = useMemo(() => askTurnsOf({ messages }), [messages]);
@@ -78,6 +82,28 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   useAskResetShortcut({ onReset: reset });
   useAskResetRequest({ sessionId, onReset: reset });
 
+  const thread = useMemo(
+    () => (threads ?? []).find((candidate) => candidate.id === threadId) ?? null,
+    [threadId, threads],
+  );
+
+  const startWork = useCallback(
+    (anchorMessageId: ChatMessageId) => {
+      if (thread === null) {
+        return;
+      }
+      void startWorkFromAsk({ sessionId, thread, messages, anchorMessageId, createSession }).catch(
+        (error: unknown) =>
+          reportError({
+            title: "Couldn't start the work",
+            error,
+            workspaceId: thread.workspaceId,
+          }),
+      );
+    },
+    [createSession, messages, reportError, sessionId, thread],
+  );
+
   const composer =
     insideId === null ? (
       <AskComposer
@@ -110,6 +136,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
       ) : (
         <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
+          <AskScope session={session} />
           {turns.length === 0 && rightNow.suggestions.length > 0 ? (
             <AskSuggestions
               suggestions={rightNow.suggestions}
@@ -130,6 +157,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
               reply={turn.reply}
               facts={facts}
               onOpen={onOpen}
+              onStartWork={startWork}
             />
           ))}
           <div ref={endRef} />

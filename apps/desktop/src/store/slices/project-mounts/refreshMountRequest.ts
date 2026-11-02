@@ -8,6 +8,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isSameData } from '../../../shared/utils/isSameData';
 import type { HostFailureKind } from '../../../shared/lib/hostFailure';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import { isHostAskDue } from '../host-reachability/isHostAskDue';
@@ -87,6 +88,19 @@ type HostParams = {
 const hostFailureKindOf = ({ error }: HostParams): HostFailureKind | null =>
   error instanceof CommandError ? (error.failure?.kind ?? null) : null;
 
+const quietInFlight = new Set<string>();
+
+type ComparableParams = {
+  readonly entry: unknown;
+};
+
+const comparableOf = ({ entry }: ComparableParams): unknown => {
+  if (typeof entry !== 'object' || entry === null) {
+    return entry;
+  }
+  return Object.fromEntries(Object.entries(entry).filter(([key]) => key !== 'fetchedAt'));
+};
+
 const loadMountRequest = async <TEntry extends LoadingEntry, TContext>({
   set,
   get,
@@ -106,45 +120,74 @@ const loadMountRequest = async <TEntry extends LoadingEntry, TContext>({
   if (context === null) {
     return null;
   }
-  set((state) => adapter.apply({ state, entry: adapter.pendingEntry({ existing, context }) }));
-  const maxAttempts = (opts?.retries ?? 0) + 1;
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    try {
-      const outcome = await adapter.load({ existing, context, isCurrent });
-      if (outcome.kind === 'stale' || !isCurrent()) {
+  const isQuiet = opts?.silent === true && existing !== undefined;
+  const quietKey = `${sessionId}:${mount.id}`;
+  if (isQuiet) {
+    if (quietInFlight.has(quietKey)) {
+      return null;
+    }
+    quietInFlight.add(quietKey);
+  }
+  try {
+    if (!isQuiet) {
+      set((state) => adapter.apply({ state, entry: adapter.pendingEntry({ existing, context }) }));
+    }
+    const maxAttempts = (opts?.retries ?? 0) + 1;
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const outcome = await adapter.load({ existing, context, isCurrent });
+        if (outcome.kind === 'stale' || !isCurrent()) {
+          return 'ok';
+        }
+        set((state) => {
+          const current = adapter.read(state);
+          const next = outcome.next(current);
+          if (next === null) {
+            return state;
+          }
+          if (
+            isQuiet &&
+            isSameData({
+              first: comparableOf({ entry: current }),
+              second: comparableOf({ entry: next }),
+            })
+          ) {
+            return state;
+          }
+          return adapter.apply({ state, entry: next });
+        });
+        if (outcome.after !== undefined) {
+          await outcome.after();
+        }
         return 'ok';
+      } catch (error) {
+        lastError = error;
       }
-      set((state) => {
-        const next = outcome.next(adapter.read(state));
-        return next === null ? state : adapter.apply({ state, entry: next });
+    }
+    const failureKind = hostFailureKindOf({ error: lastError });
+    if (!isCurrent()) {
+      return failureKind;
+    }
+    set((state) => {
+      const current = adapter.read(state);
+      if (current === undefined) {
+        return state;
+      }
+      return adapter.apply({
+        state,
+        entry: adapter.failedEntry({
+          current,
+          error: opts?.silent === true ? null : formatError(lastError),
+        }),
       });
-      if (outcome.after !== undefined) {
-        await outcome.after();
-      }
-      return 'ok';
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  const failureKind = hostFailureKindOf({ error: lastError });
-  if (!isCurrent()) {
-    return failureKind;
-  }
-  set((state) => {
-    const current = adapter.read(state);
-    if (current === undefined) {
-      return state;
-    }
-    return adapter.apply({
-      state,
-      entry: adapter.failedEntry({
-        current,
-        error: opts?.silent === true ? null : formatError(lastError),
-      }),
     });
-  });
-  return failureKind;
+    return failureKind;
+  } finally {
+    if (isQuiet) {
+      quietInFlight.delete(quietKey);
+    }
+  }
 };
 
 export const refreshMountRequest = async <TEntry extends LoadingEntry, TContext>({

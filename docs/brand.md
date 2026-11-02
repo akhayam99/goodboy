@@ -54,10 +54,8 @@ The app shows the mark in three places: the Goodboy chip (the row at the
 foot of the column, the mark on its rail, and the header of its menu), the
 boot splash (the same black tile, drawn by `BootBrand`), and the lockup on first
 run and Home. That lockup is the black tile with the white mark, then the word.
-Welcome shows it at hero size, on the boot splash's tile, at the same spot
-(`SPLASH_TILE_PX`). The setup header and Home show it small. These three use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared
-ratios and `--color-brand`. A frame shows the mark once, so Welcome's header draws none.
-Empty states inside a workspace and agent kinds still draw no dog. They use a
+The setup header and Home show it small. These use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared
+ratios and `--color-brand`. Empty states inside a workspace and agent kinds still draw no dog. They use a
 concept tile (`ConceptTile`), the stage chips or the kind chip. A ratchet
 (`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to `BrandLockup`,
 `BootBrand` and `BrandTile`, and pins the importers of `BrandTile` to

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { DrawerContentContext } from '../drawerContentContext';
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { X } from 'lucide-react';
 import { cn } from '../cn';
@@ -88,6 +89,7 @@ export const DrawerFrame = ({
   const sectionRef = useRef<HTMLElement | null>(null);
   const dockRef = useRef<HTMLDivElement | null>(null);
   const hasToolbar = toolbar != null;
+  const drawerContent = useContext(DrawerContentContext);
 
   useEscapeLayer(() => {
     const active = document.activeElement;
@@ -184,6 +186,11 @@ export const DrawerFrame = ({
           >
             {titleRow}
           </div>
+          {drawerContent?.mode === 'overlay' ? (
+            <span className="px-4 text-meta text-muted-foreground">
+              Covers the page. Esc to go back
+            </span>
+          ) : null}
           {meta == null ? null : (
             <p
               data-drawer-meta=""

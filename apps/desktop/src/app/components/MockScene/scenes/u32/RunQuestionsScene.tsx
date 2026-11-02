@@ -26,7 +26,7 @@ export const RunQuestionsScene = () => {
     >
       <div className="flex min-h-0 min-w-0 flex-1 p-6">
         <SessionFrame session={session}>
-          <SessionWorkspace session={session} isActive />
+          <SessionWorkspace session={session} />
         </SessionFrame>
       </div>
     </div>

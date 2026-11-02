@@ -33,7 +33,7 @@ describe('reviewTallyOfWords', () => {
 
   it('counts every word once and sums the ones that need you', () => {
     expect(reviewTallyOfWords({ words })).toEqual({
-      needsYou: 5,
+      needsYou: 6,
       question: 1,
       toReview: 2,
       pushFailed: 1,
@@ -81,7 +81,7 @@ describe('reviewTallyOf', () => {
     ];
 
     expect(reviewTallyOf({ rows })).toEqual({
-      needsYou: 5,
+      needsYou: 6,
       question: 1,
       toReview: 2,
       pushFailed: 1,
@@ -118,7 +118,7 @@ describe('commentsCountOf', () => {
     const count = commentsCountOf({ threads: rows.map((row) => row.thread) });
     const tally = reviewTallyOf({ rows });
 
-    expect(count.needsYou).toBe(5);
+    expect(count.needsYou).toBe(6);
     expect(count.needsYou).toBe(tally.needsYou);
     expect(count.fixable).toBe(tally.fixable);
     expect(count.unresolved).toBe(7);

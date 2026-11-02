@@ -21,7 +21,7 @@ export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
       onClick={onChoose}
       className="h-9 items-center gap-3 px-3 text-meta"
     >
-      <StateNode node={node} />
+      <StateNode node={node} hasEmptySlot isUnreadDot />
       <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       <span className="shrink-0 text-meta text-faint-foreground">{summary.age}</span>
     </SelectableRow>

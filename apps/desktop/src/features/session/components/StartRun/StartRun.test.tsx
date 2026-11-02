@@ -114,12 +114,18 @@ type RenderParams = {
   readonly sessionId: SessionId;
 };
 
-const renderField = ({ sessionId }: RenderParams) =>
-  render(
+const renderField = ({ sessionId }: RenderParams) => {
+  const view = render(
     <ToastProvider>
       <StartRun workspaceId={WORKSPACE.id} sessionId={sessionId} />
     </ToastProvider>,
   );
+  const more = screen.queryByRole('button', { name: /^More/ });
+  if (more !== null) {
+    fireEvent.click(more);
+  }
+  return view;
+};
 
 type AskParams = {
   readonly text: string;
@@ -378,6 +384,19 @@ describe('StartRun', () => {
 
     await waitFor(() => expect(field()).toHaveProperty('value', QUESTION));
   });
+
+  it('opens a chat brief on the same chip row and the one Start button', async () => {
+    renderField({ sessionId: SESSION.id });
+
+    window.dispatchEvent(
+      new CustomEvent(`goodboy:start-run:${SESSION.id}`, { detail: { text: QUESTION } }),
+    );
+
+    await waitFor(() => expect(field()).toHaveProperty('value', QUESTION));
+    const group = screen.getByRole('group', { name: 'Run settings' });
+    expect(within(group).getAllByRole('button').length).toBeGreaterThan(1);
+    expect(screen.getByRole('button', { name: /^Start$/ }).hasAttribute('disabled')).toBe(false);
+  });
 });
 
 type PickParams = {
@@ -439,7 +458,7 @@ describe('StartRun run as', () => {
 
     pickKind({ name: 'Orchestrated' });
 
-    screen.getByText('Auto plans each next step as it goes.');
+    screen.getByText('Orchestrated plans each next step as it goes.');
     expect(document.querySelector('[data-run-route-line]')).toBeNull();
     expect(isPicked({ name: 'Orchestrated' })).toBe(true);
   });
@@ -447,16 +466,16 @@ describe('StartRun run as', () => {
   it('shows the limit chip for an Auto or workflow kind and none for an agent', () => {
     renderField({ sessionId: SESSION.id });
 
-    screen.getByRole('button', { name: 'No limit' });
+    screen.getByRole('button', { name: 'Limit: none' });
 
     pickKind({ name: 'Orchestrated' });
 
-    screen.getByRole('button', { name: 'No limit' });
+    screen.getByRole('button', { name: 'Limit: none' });
 
     pickKind({ name: 'Agent' });
 
-    expect(screen.queryByRole('button', { name: 'No limit' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Limit / })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Limit: none' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Limit: / })).toBeNull();
   });
 
   it('shows Asks you for an Auto run and for a workflow, and none for an agent', () => {
@@ -615,7 +634,7 @@ describe('StartRun run as', () => {
     expect(setSessionPermissionMode).not.toHaveBeenCalled();
   });
 
-  it('writes no Auto limit when a run starts and the person set none', async () => {
+  it('writes no run default when a run starts and the person set none', async () => {
     useAppStore.setState({
       savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
       attachWorkflowToSession: vi.fn<AttachFn>(async () => undefined),
@@ -626,13 +645,7 @@ describe('StartRun run as', () => {
     ask({ text: 'center every member page' });
 
     await waitFor(() => expect(field()).toHaveProperty('value', ''));
-    expect(
-      await getWorkspaceValue({
-        db: storySqlite(),
-        workspaceId: WORKSPACE.id,
-        key: 'auto.treeLimitUsd',
-      }),
-    ).toBeNull();
+    expect(useAppStore.getState().workspaceOverrides[WORKSPACE.id]).toBeUndefined();
   });
 });
 

@@ -15,7 +15,7 @@ export const START_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Setup',
-        desc: `The first launch walks through Agents, Workspace, Tools and First session, and Tools can wait. Home lists your workspaces under New workspace, ${shortcutGlyphs('home.newWorkspace')}, and offers Resume setup until you have one.`,
+        desc: `The first launch walks through Agents, Workspace and First session, and you can connect your tools from the last one. Home lists your workspaces under New workspace, ${shortcutGlyphs('home.newWorkspace')}, and offers Resume setup until you have one.`,
       },
       {
         term: 'This Guide',

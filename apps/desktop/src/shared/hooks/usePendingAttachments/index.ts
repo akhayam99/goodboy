@@ -20,6 +20,7 @@ import {
   extFromMime,
   type PendingAttachment,
 } from '../../../features/attachments/pendingAttachment';
+import { countNoun } from '../../utils/countNoun';
 
 export type PersistArgs = {
   readonly id: string;
@@ -115,7 +116,7 @@ export const usePendingAttachments = ({
       if (skipped > 0) {
         showToast({
           kind: 'warning',
-          message: `Skipped ${skipped} file${skipped === 1 ? '' : 's'} of an unsupported type.`,
+          message: `Skipped ${countNoun({ count: skipped, one: 'file' })} of an unsupported type.`,
         });
       }
       const accepted: PendingAttachment[] = [];
@@ -170,7 +171,7 @@ export const usePendingAttachments = ({
     if (unsupported > 0) {
       showToast({
         kind: 'warning',
-        message: `Skipped ${unsupported} file${unsupported === 1 ? '' : 's'} of an unsupported type.`,
+        message: `Skipped ${countNoun({ count: unsupported, one: 'file' })} of an unsupported type.`,
       });
     }
     const dropped: PendingAttachment[] = [];

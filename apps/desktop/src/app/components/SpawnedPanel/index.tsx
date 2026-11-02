@@ -45,7 +45,7 @@ export const SpawnedPanel = ({ sessionId, onClose }: Props) => {
       icon={CONCEPT_ICONS.agents}
       onClose={onClose}
       {...(shown !== null && {
-        back: { label: 'All launches', onBack: () => setListedFor({ key: focusKey, drawer }) },
+        back: { label: 'All runs', onBack: () => setListedFor({ key: focusKey, drawer }) },
       })}
     >
       <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>

@@ -94,7 +94,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ patch_workspace_overrides: null });
+  stubStoryInvoke({ patch_workspace_overrides: null, db_select: () => [] });
   useAppStore.setState({
     workspaces: [HARBORLINE],
     currentWorkspaceId: HARBORLINE.id,
@@ -141,7 +141,7 @@ describe('WorkflowRulesPanel', () => {
   it('starts on the defaults with one chip per setting and the guidance field', () => {
     panel();
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Run defaults' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'New runs' })).toBeDefined();
     expect(
       within(screen.getByRole('group', { name: 'Run defaults' }))
         .getAllByRole('button')
@@ -150,7 +150,6 @@ describe('WorkflowRulesPanel', () => {
       'Asks you: Every step, new runs',
       'Limit: none, new runs',
       'Models: Claude, Codex · Cursor as backup, new runs',
-      'Auto limit: none',
     ]);
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });
@@ -224,14 +223,14 @@ describe('WorkflowRulesPanel', () => {
     );
   });
 
-  it('opens Providers and models from the Models chip', () => {
+  it('opens Providers from the Models chip', () => {
     const received: Array<unknown> = [];
     const listener = (event: Event) => received.push((event as CustomEvent).detail);
     window.addEventListener('goodboy:open-settings', listener);
     panel();
 
     fireEvent.click(chip('Models'));
-    fireEvent.click(screen.getByRole('button', { name: 'Open Providers and models' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Providers' }));
     window.removeEventListener('goodboy:open-settings', listener);
 
     expect(received).toEqual([{ scope: 'providers', section: undefined }]);
@@ -253,6 +252,7 @@ describe('WorkflowRulesPanel', () => {
     const polished = '- Group the commits by concern at the end.\n- Open the PR as a draft.';
     stubStoryInvoke({
       patch_workspace_overrides: null,
+      db_select: () => [],
       summarize_session: {
         stdout: JSON.stringify({ result: `<<guidance>>\n${polished}\n<</guidance>>` }),
         stderr: '',

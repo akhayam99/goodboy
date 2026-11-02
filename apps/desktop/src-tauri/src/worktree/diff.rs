@@ -1,7 +1,10 @@
 use super::base::{normalized_base, resolve_base};
+use super::changed_files::{parse_name_status_z, parse_numstat_z, ChangedEntry};
 use super::error::WorktreeError;
 use super::git::{git_plain_paths, resolve_commit, validated_rev};
 use crate::util::scoped_path::{resolve_within, ScopedPathError};
+use serde::Serialize;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 #[tauri::command]
@@ -32,6 +35,112 @@ pub(super) fn worktree_diff_blocking(
     Ok(format!("{tracked}{}", untracked_new_file_diffs(p)))
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffFileEntry {
+    pub path: String,
+    pub old_path: Option<String>,
+    pub status: &'static str,
+    pub additions: u32,
+    pub deletions: u32,
+    pub is_binary: bool,
+    pub is_untracked: bool,
+}
+
+#[tauri::command]
+pub async fn worktree_diff_files(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<Vec<DiffFileEntry>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_diff_files_blocking(worktree_path, base_branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+pub(super) fn worktree_diff_files_blocking(
+    worktree_path: String,
+    base_branch: Option<String>,
+) -> Result<Vec<DiffFileEntry>, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let configured_base = normalized_base(base_branch.as_deref());
+    let resolved = resolve_base(p, configured_base)
+        .map(|(_, merge_base)| merge_base)
+        .ok_or_else(|| WorktreeError::Git {
+            message: "cannot resolve base branch merge-base".to_string(),
+        })?;
+    let numstat = git_plain_paths(p, &["diff", "--numstat", "-z", "-M", &resolved])?;
+    let name_status = git_plain_paths(p, &["diff", "--name-status", "-z", "-M", &resolved])?;
+    let statuses = parse_name_status_z(&name_status);
+    let by_path: HashMap<&str, &ChangedEntry> = statuses
+        .iter()
+        .map(|entry| (entry.path.as_str(), entry))
+        .collect();
+    let mut entries: Vec<DiffFileEntry> = Vec::new();
+    for row in parse_numstat_z(&numstat) {
+        let known = by_path.get(row.path).copied();
+        entries.push(DiffFileEntry {
+            path: row.path.to_string(),
+            old_path: known.and_then(|entry| entry.from.clone()),
+            status: known.map_or("modified", |entry| entry.status),
+            additions: row.additions.parse().unwrap_or(0),
+            deletions: row.deletions.parse().unwrap_or(0),
+            is_binary: row.additions == "-",
+            is_untracked: false,
+        });
+    }
+    let counted: HashSet<String> = entries.iter().map(|entry| entry.path.clone()).collect();
+    for entry in &statuses {
+        if counted.contains(&entry.path) {
+            continue;
+        }
+        entries.push(DiffFileEntry {
+            path: entry.path.clone(),
+            old_path: entry.from.clone(),
+            status: entry.status,
+            additions: 0,
+            deletions: 0,
+            is_binary: false,
+            is_untracked: false,
+        });
+    }
+    let untracked = git_plain_paths(p, &["ls-files", "--others", "--exclude-standard", "-z"])?;
+    for rel in untracked.split('\0').filter(|rel| !rel.is_empty()) {
+        entries.push(untracked_entry_for(p, rel));
+    }
+    entries.sort_by(|a, b| a.path.cmp(&b.path));
+    entries.dedup_by(|a, b| a.path == b.path);
+    Ok(entries)
+}
+
+fn untracked_entry_for(p: &Path, rel: &str) -> DiffFileEntry {
+    let bytes = std::fs::read(p.join(rel)).unwrap_or_default();
+    let text = (!bytes.contains(&0))
+        .then(|| String::from_utf8(bytes).ok())
+        .flatten();
+    let additions = text.as_deref().map_or(0, |content| {
+        let breaks = content.matches('\n').count();
+        match content {
+            "" => 0,
+            _ if content.ends_with('\n') => breaks,
+            _ => breaks + 1,
+        }
+    });
+    DiffFileEntry {
+        path: rel.to_string(),
+        old_path: None,
+        status: "added",
+        additions: additions as u32,
+        deletions: 0,
+        is_binary: text.is_none(),
+        is_untracked: true,
+    }
+}
+
 /// Unified diff for a SINGLE file `rel_path` inside the worktree, against the
 /// same merge-base `worktree_diff` uses. The path is taken as worktree-relative
 /// and confined to the worktree: any `..` traversal or path that resolves
@@ -42,9 +151,10 @@ pub async fn worktree_diff_file(
     worktree_path: String,
     base_branch: Option<String>,
     path: String,
+    old_path: Option<String>,
 ) -> Result<String, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
-        worktree_diff_file_blocking(worktree_path, base_branch, path)
+        worktree_diff_file_blocking(worktree_path, base_branch, path, old_path)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -54,6 +164,7 @@ fn worktree_diff_file_blocking(
     worktree_path: String,
     base_branch: Option<String>,
     path: String,
+    old_path: Option<String>,
 ) -> Result<String, WorktreeError> {
     let p = Path::new(&worktree_path);
     if !p.exists() {
@@ -68,7 +179,15 @@ fn worktree_diff_file_blocking(
         })?;
     // `-- <path>` scopes the diff to the one file. Pathspec is anchored at the
     // worktree root (already confined above), so no traversal is possible.
-    let tracked = git_plain_paths(p, &["diff", &resolved, "--", &rel])?;
+    let old_rel = match old_path.as_deref() {
+        Some(old) => Some(confine_rel_path(p, old)?),
+        None => None,
+    };
+    let mut args: Vec<&str> = vec!["diff", &resolved, "--", &rel];
+    if let Some(old) = old_rel.as_deref() {
+        args.push(old);
+    }
+    let tracked = git_plain_paths(p, &args)?;
     if !tracked.is_empty() {
         return Ok(tracked);
     }

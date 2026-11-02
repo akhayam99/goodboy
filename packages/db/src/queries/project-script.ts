@@ -15,7 +15,7 @@ type ToDomainParams = {
   readonly row: ProjectScriptRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): ProjectScript => ({
+const toProjectScript = ({ row }: ToDomainParams): ProjectScript => ({
   id: row.id as ProjectScriptId,
   projectId: row.project_id as ProjectId,
   name: row.name,
@@ -38,7 +38,7 @@ export const listProjectScripts = async ({
     'SELECT * FROM project_scripts WHERE project_id = ? ORDER BY sort_order ASC, created_at ASC',
     [projectId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toProjectScript({ row }));
 };
 
 type UpsertProjectScriptParams = {

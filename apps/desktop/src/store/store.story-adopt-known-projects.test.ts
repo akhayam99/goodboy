@@ -32,9 +32,6 @@ vi.mock('../features/providers/routing', async () =>
 vi.mock('../features/budget/budget', async () =>
   (await import('./storyHarness')).budgetModuleMock(),
 );
-vi.mock('../features/skills/skills', async () =>
-  (await import('./storyHarness')).skillsModuleMock(),
-);
 vi.mock('../features/workflows/workflows', async () =>
   (await import('./storyHarness')).workflowsModuleMock(),
 );
@@ -108,8 +105,6 @@ beforeAll(async () => {
   useAppStore = await importStore();
   dbMock = await import('@goodboy/db');
   repoMock = await import('../shared/lib/repo');
-  const skillsMock = await import('../features/skills/skills');
-  vi.mocked(skillsMock.invokeSkillRescan).mockResolvedValue([] as never);
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {
@@ -247,7 +242,7 @@ describe('story: two migrated shells fuse into one workspace board', () => {
     expect(state.workspaces.map((workspace) => workspace.id)).toEqual([acme.id]);
     expect(state.projects.map((project) => project.workspaceId)).toEqual([acme.id, acme.id]);
 
-    await state.loadArchivedSessions(acme.id);
+    await state.loadArchivedSessions({ workspaceId: acme.id });
     const archived = useAppStore.getState().archivedSessions[acme.id] ?? [];
     expect(archived).toHaveLength(1);
     expect(useAppStore.getState().sessions.length + archived.length).toBe(9);

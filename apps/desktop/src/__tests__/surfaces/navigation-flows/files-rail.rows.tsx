@@ -46,7 +46,7 @@ const escape = async (): Promise<void> => {
   await settle();
 };
 
-const railNav = (): HTMLElement | null => screen.queryByRole('navigation', { name: 'Worktree' });
+const railNav = (): HTMLElement | null => screen.queryByRole('tablist', { name: 'Branch pages' });
 
 const fileRail = (): HTMLElement | null => screen.queryByRole('complementary', { name: 'Files' });
 
@@ -106,8 +106,9 @@ const openBranchOnComments = async (ctx: Ctx): Promise<void> => {
   await branchTab('comments')(ctx);
 };
 
-const rememberFrame = (): void => {
-  frame = { title: headerPart('h1'), rail: railNav() as HTMLElement };
+const rememberFrame = async (): Promise<void> => {
+  const title = await waitFor(() => headerPart('h1'), WAIT);
+  frame = { title, rail: railNav() as HTMLElement };
 };
 
 const expectSameFrame = (): void => {
@@ -137,7 +138,7 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       stubPane({ width: DOCKED_PANE });
       await openBranchOnComments(ctx);
-      rememberFrame();
+      await rememberFrame();
       await visit({ ctx, tab: 'files' });
       await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
       expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
@@ -165,7 +166,7 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       stubPane({ width: DOCKED_PANE });
       await openBranchOnComments(ctx);
-      rememberFrame();
+      await rememberFrame();
       await visit({ ctx, tab: 'files' });
       await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
 

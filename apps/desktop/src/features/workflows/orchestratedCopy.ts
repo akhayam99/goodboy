@@ -1,3 +1,4 @@
+import { countNoun } from '../../shared/utils/countNoun';
 type StepParams = {
   readonly step: number;
 };
@@ -58,7 +59,7 @@ export const ORCHESTRATED_COPY = {
   skippedStep: ({ step, reason }: SkippedParams): string =>
     reason === '' ? `Skipped: ${step}` : `Skipped: ${step} · ${reason}`,
   fromPreset: ({ name, closeness }: PresetParams): string => `From ${name} · ${closeness}`,
-  changes: ({ count }: CountParams): string => `${count} ${count === 1 ? 'change' : 'changes'}`,
+  changes: ({ count }: CountParams): string => `${countNoun({ count: count, one: 'change' })}`,
   continueLabel: 'Continue with a hint',
   continueAction: 'Continue',
   hintLabel: 'Add a hint and continue',

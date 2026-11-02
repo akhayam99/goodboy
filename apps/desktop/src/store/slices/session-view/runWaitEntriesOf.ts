@@ -2,13 +2,18 @@ import type { Agent, Session, Workflow, WorkflowRunId } from '@goodboy/types';
 import { splitWorkflowRuns } from '../../../features/workflows/activeWorkflowRuns';
 import { runRowFactsOf, type RunWait } from '../../../features/workflows/runRowFactsOf';
 import type { AppState } from '../../types';
+import {
+  isRunRevisingPlanIn,
+  type PlanReviewState,
+} from '../../../features/plans/isRunRevisingPlanIn';
 
-export type RunWaitState = Partial<
-  Pick<
-    AppState,
-    'sessionOpenQuestions' | 'orchestratingWorkflowRuns' | 'phaseTemplates' | 'sessionWorkflows'
-  >
->;
+export type RunWaitState = PlanReviewState &
+  Partial<
+    Pick<
+      AppState,
+      'sessionOpenQuestions' | 'orchestratingWorkflowRuns' | 'phaseTemplates' | 'sessionWorkflows'
+    >
+  >;
 
 export type RunWaitEntry = {
   readonly runId: WorkflowRunId;
@@ -53,6 +58,7 @@ export const runWaitEntriesOf = ({
       predecessorName: 'previous',
       isOrchestrating: state.orchestratingWorkflowRuns?.[run.id] ?? false,
       questions,
+      isPlanRevising: isRunRevisingPlanIn({ state, sessionId, run }),
     });
     return wait === null ? [] : [{ runId: run.id, wait }];
   });

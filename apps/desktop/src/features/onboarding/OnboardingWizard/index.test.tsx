@@ -47,15 +47,6 @@ vi.mock('./Stepper', () => ({
   Stepper: ({ current }: { current: string }) => <div data-testid="stepper">{current}</div>,
 }));
 vi.mock('./defaultAgent', () => ({ applyDefaultAgent: async () => undefined }));
-vi.mock('./steps/WelcomeStep', () => ({
-  WelcomeStep: ({ onStart }: { onStart: () => void }) => (
-    <div data-testid="WelcomeStep">
-      <button type="button" onClick={onStart}>
-        Get started
-      </button>
-    </div>
-  ),
-}));
 vi.mock('./steps/AgentsStep', async () => {
   const { useState } = await import('react');
   const { useEscapeLayer } = await import('@goodboy/ui');
@@ -272,22 +263,23 @@ describe('OnboardingWizard', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('opens on Welcome with the stepper, no lockup, and Set up later', () => {
+  it('opens on Agents with the stepper, the lockup in the header, and Set up later', () => {
     const { container } = render(<OnboardingWizard />);
-    expect(screen.getByTestId('WelcomeStep')).toBeDefined();
-    expect(screen.getByTestId('stepper').textContent).toBe('welcome');
-    expect(container.querySelector('[data-brand-tile]')).toBeNull();
+    expect(screen.getByTestId('AgentsStep')).toBeDefined();
+    expect(stepOf()).toBe('agents');
+    expect(screen.getByTestId('stepper').textContent).toBe('agents');
+    const header = container.querySelector('header');
+    expect(header?.querySelector('[data-brand-tile]')).not.toBeNull();
+    expect(header?.textContent).toContain('Goodboy');
     expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
     expect(screen.getByRole('button', { name: /^set up later$/i })).toBeDefined();
     expect(screen.getByRole('dialog', { name: 'Goodboy setup' })).toBeDefined();
   });
 
-  it('draws the lockup in the header on every step after Welcome', () => {
-    const { container } = render(<OnboardingWizard />);
-    click(/get started/i);
-    const header = container.querySelector('header');
-    expect(header?.querySelector('[data-brand-tile]')).not.toBeNull();
-    expect(header?.textContent).toContain('Goodboy');
+  it('has no splash step and no backdrop before the first step', () => {
+    render(<OnboardingWizard />);
+    expect(screen.queryByTestId('wizard-backdrop')).toBeNull();
+    expect(screen.queryByTestId('WelcomeStep')).toBeNull();
   });
 
   it('lets a returning user set setup aside before a workspace exists', () => {
@@ -303,19 +295,18 @@ describe('OnboardingWizard', () => {
   it('pauses at the current step on Set up later', () => {
     vi.useFakeTimers();
     render(<OnboardingWizard />);
-    click(/get started/i);
     expect(setupStore.enterWizardStep).toHaveBeenLastCalledWith({ step: 'agents' });
     click(/set up later/i);
     vi.advanceTimersByTime(250);
     expect(setupStore.pauseWizard).toHaveBeenCalledOnce();
   });
 
-  it('keeps setup open on Escape at Welcome', () => {
+  it('keeps setup open on Escape at Agents', () => {
     vi.useFakeTimers();
     render(<OnboardingWizard />);
     pressEscape();
     vi.advanceTimersByTime(250);
-    expect(screen.getByTestId('WelcomeStep')).toBeDefined();
+    expect(screen.getByTestId('AgentsStep')).toBeDefined();
     expect(setupStore.finishWizard).not.toHaveBeenCalled();
     expect(setupStore.pauseWizard).not.toHaveBeenCalled();
     expect(hookState.close).not.toHaveBeenCalled();
@@ -325,37 +316,34 @@ describe('OnboardingWizard', () => {
     vi.useFakeTimers();
     setHook({ providersConnected: 1 });
     render(<OnboardingWizard />);
-    click(/get started/i);
     click(/^continue$/i);
     expect(stepOf()).toBe('workspace');
     pressEscape();
     expect(stepOf()).toBe('agents');
     pressEscape();
-    expect(stepOf()).toBe('welcome');
-    pressEscape();
     vi.advanceTimersByTime(250);
-    expect(stepOf()).toBe('welcome');
+    expect(stepOf()).toBe('agents');
     expect(setupStore.finishWizard).not.toHaveBeenCalled();
     expect(hookState.close).not.toHaveBeenCalled();
   });
 
   it('closes the innermost open thing on Escape before going back', () => {
+    setHook({ providersConnected: 1 });
     render(<OnboardingWizard />);
-    click(/get started/i);
+    click(/^continue$/i);
+    click(/form back/i);
     click(/open panel/i);
     expect(screen.getByTestId('inner-panel')).toBeDefined();
     pressEscape();
     expect(screen.queryByTestId('inner-panel')).toBeNull();
     expect(stepOf()).toBe('agents');
     pressEscape();
-    expect(stepOf()).toBe('welcome');
+    expect(stepOf()).toBe('agents');
   });
 
-  it('writes each step on entering it, never Welcome', () => {
+  it('writes each numbered step on entering it', () => {
     setHook({ providersConnected: 1 });
     render(<OnboardingWizard />);
-    expect(setupStore.enterWizardStep).not.toHaveBeenCalled();
-    click(/get started/i);
     click(/^continue$/i);
     expect(setupStore.enterWizardStep.mock.calls.map(([params]) => params)).toEqual([
       { step: 'agents' },
@@ -367,15 +355,10 @@ describe('OnboardingWizard', () => {
     setHook(readyState({ kind: 'repo' }));
     render(<OnboardingWizard />);
     const classes = [screen.getByTestId('wizard-column').className];
-    click(/get started/i);
-    classes.push(screen.getByTestId('wizard-column').className);
     click(/^continue$/i);
     classes.push(screen.getByTestId('wizard-column').className);
     click(/create workspace/i);
-    await waitFor(() => expect(stepOf()).toBe('tools'));
-    classes.push(screen.getByTestId('wizard-column').className);
-    click(/^continue$/i);
-    expect(stepOf()).toBe('first-session');
+    await waitFor(() => expect(stepOf()).toBe('first-session'));
     classes.push(screen.getByTestId('wizard-column').className);
     expect(new Set(classes).size).toBe(1);
     expect(classes[0]).toContain('max-w-[600px]');
@@ -383,12 +366,12 @@ describe('OnboardingWizard', () => {
 
   describe('resume', () => {
     it('reopens at the saved step with the steps before it behind Back', () => {
-      setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'tools' });
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'first-session' });
       render(<OnboardingWizard />);
-      expect(stepOf()).toBe('tools');
-      expect(screen.getByTestId('stepper').textContent).toBe('tools');
-      expect(setupStore.enterWizardStep).toHaveBeenCalledWith({ step: 'tools' });
-      click(/^back$/i);
+      expect(stepOf()).toBe('first-session');
+      expect(screen.getByTestId('stepper').textContent).toBe('first-session');
+      expect(setupStore.enterWizardStep).toHaveBeenCalledWith({ step: 'first-session' });
+      fireEvent.keyDown(window, { key: 'Escape' });
       expect(stepOf()).toBe('workspace');
     });
 
@@ -399,34 +382,24 @@ describe('OnboardingWizard', () => {
       expect(stepOf()).toBe('agents');
       expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
     });
-
-    it('marks Tools done once the user moves past it', () => {
-      setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'tools' });
-      render(<OnboardingWizard />);
-      click(/^continue$/i);
-      expect(setupStore.markStepComplete).toHaveBeenCalledWith('tools');
-      expect(stepOf()).toBe('first-session');
-    });
   });
 
   describe('workspace step', () => {
     it('leaves the action row to the form, so the frame draws none', () => {
       setHook({ providersConnected: 1 });
       render(<OnboardingWizard />);
-      click(/get started/i);
       click(/^continue$/i);
       expect(screen.getByTestId('WorkspaceStep')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
       expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
     });
 
-    it('makes the created workspace current, then goes on to Tools', async () => {
+    it('makes the created workspace current, then goes on to the first session', async () => {
       setHook(readyState({ kind: 'repo' }));
       render(<OnboardingWizard />);
-      click(/get started/i);
       click(/^continue$/i);
       click(/create workspace/i);
-      await waitFor(() => expect(stepOf()).toBe('tools'));
+      await waitFor(() => expect(stepOf()).toBe('first-session'));
       expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
     });
 
@@ -434,7 +407,6 @@ describe('OnboardingWizard', () => {
       storeActions.setCurrentWorkspace.mockRejectedValue(new Error('the folder moved'));
       setHook(readyState({ kind: 'repo' }));
       render(<OnboardingWizard />);
-      click(/get started/i);
       click(/^continue$/i);
       click(/create workspace/i);
 
@@ -450,33 +422,9 @@ describe('OnboardingWizard', () => {
     it('takes the form Back to the agents step', () => {
       setHook({ providersConnected: 1 });
       render(<OnboardingWizard />);
-      click(/get started/i);
       click(/^continue$/i);
       click(/form back/i);
       expect(stepOf()).toBe('agents');
-    });
-  });
-
-  describe('tools', () => {
-    const reachTools = async ({ kind }: { readonly kind: Project['kind'] }) => {
-      setHook(readyState({ kind }));
-      render(<OnboardingWizard />);
-      click(/get started/i);
-      click(/^continue$/i);
-      click(/create workspace/i);
-      await waitFor(() => expect(stepOf()).toBe('tools'));
-    };
-
-    it('keeps Tools in the stepper for a plain folder', async () => {
-      await reachTools({ kind: 'folder' });
-      expect(screen.getByTestId('ToolsStep').getAttribute('data-kind')).toBe('folder');
-    });
-
-    it('continues with nothing connected, then lands on the first session', async () => {
-      await reachTools({ kind: 'repo' });
-      expect(screen.queryByRole('button', { name: /skip/i })).toBeNull();
-      click(/^continue$/i);
-      expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
     });
   });
 
@@ -484,11 +432,9 @@ describe('OnboardingWizard', () => {
     const reachFirstSession = async () => {
       setHook(readyState({ kind: 'repo' }));
       render(<OnboardingWizard />);
-      click(/get started/i);
       click(/^continue$/i);
       click(/create workspace/i);
-      await waitFor(() => expect(stepOf()).toBe('tools'));
-      click(/^continue$/i);
+      await waitFor(() => expect(stepOf()).toBe('first-session'));
       expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
     };
 
@@ -523,18 +469,55 @@ describe('OnboardingWizard', () => {
       });
     });
 
-    it('takes the missing task source back to Tools', async () => {
-      await reachFirstSession();
-      click(/^open tools$/i);
-      expect(stepOf()).toBe('tools');
-    });
-
     it('skips with the one skip word and ends setup', async () => {
       await reachFirstSession();
       click(/^skip$/i);
       await waitFor(() => expect(setupStore.finishWizard).toHaveBeenCalledOnce(), {
         timeout: 1000,
       });
+    });
+  });
+
+  describe('tools side step', () => {
+    const reachTools = async ({ kind }: { readonly kind: Project['kind'] }) => {
+      setHook(readyState({ kind }));
+      render(<OnboardingWizard />);
+      click(/^continue$/i);
+      click(/create workspace/i);
+      await waitFor(() => expect(stepOf()).toBe('first-session'));
+      click(/^open tools$/i);
+      expect(stepOf()).toBe('tools');
+    };
+
+    it('opens from the first session and keeps First session current in the stepper', async () => {
+      await reachTools({ kind: 'repo' });
+      expect(screen.getByTestId('ToolsStep')).toBeDefined();
+      expect(screen.getByTestId('stepper').textContent).toBe('tools');
+    });
+
+    it('works for a plain folder', async () => {
+      await reachTools({ kind: 'folder' });
+      expect(screen.getByTestId('ToolsStep').getAttribute('data-kind')).toBe('folder');
+    });
+
+    it('goes back to the first session on Back, on Continue and on Escape', async () => {
+      await reachTools({ kind: 'repo' });
+      click(/^back$/i);
+      expect(stepOf()).toBe('first-session');
+
+      click(/^open tools$/i);
+      click(/^continue$/i);
+      expect(stepOf()).toBe('first-session');
+
+      click(/^open tools$/i);
+      pressEscape();
+      expect(stepOf()).toBe('first-session');
+    });
+
+    it('writes no step and marks nothing done while it is open', async () => {
+      await reachTools({ kind: 'repo' });
+      expect(setupStore.enterWizardStep).toHaveBeenLastCalledWith({ step: 'first-session' });
+      expect(setupStore.markStepComplete).not.toHaveBeenCalled();
     });
   });
 
@@ -566,16 +549,6 @@ describe('OnboardingWizard', () => {
       vi.advanceTimersByTime(250);
       expect(hookState.close).toHaveBeenCalledOnce();
       expect(setupStore.pauseWizard).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('cover', () => {
-    it('lays the app backdrop behind Welcome only', () => {
-      setHook({ providersConnected: 1 });
-      render(<OnboardingWizard />);
-      expect(screen.getByTestId('wizard-backdrop').getAttribute('data-state')).toBe('shown');
-      click(/get started/i);
-      expect(screen.getByTestId('wizard-backdrop').getAttribute('data-state')).toBe('hidden');
     });
   });
 });

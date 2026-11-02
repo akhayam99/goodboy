@@ -66,7 +66,7 @@ describe('the c06 conversation scenes', () => {
     }
   });
 
-  it('c06-agent-working keeps one header row with role, title, provider and the live chip, and no tabs or model', async () => {
+  it('c06-agent-working keeps one header row with role, title, provider and the menu, and no tabs, model, state word or Stop', async () => {
     await mount({ name: 'c06-agent-working' });
 
     const row = titleRow();
@@ -75,11 +75,12 @@ describe('the c06 conversation scenes', () => {
     expect(mark.getAttribute('aria-label')).toBe('Claude');
     expect(mark.textContent).toBe('');
     expect(within(row).queryByRole('button', { name: 'Rename agent' })).toBeNull();
-    expect(within(row).getByRole('button', { name: 'View transcript' })).toBeDefined();
+    expect(within(row).queryByRole('button', { name: 'View transcript' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
-    within(row).getByText('Running');
-    within(row).getByRole('button', { name: 'Stop' });
-    expect(within(row).queryByText('Sonnet 5.5')).toBeNull();
+    expect(within(row).queryByText('Running')).toBeNull();
+    expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(within(row).getByRole('heading', { level: 1 }).textContent).not.toContain('Sonnet 5.5');
+    within(row).getByRole('button', { name: /^Model/ });
     expect(screen.queryByRole('tab')).toBeNull();
   });
 
@@ -99,19 +100,18 @@ describe('the c06 conversation scenes', () => {
     ]);
   });
 
-  it('c06-agent-working carries Stop in the header, none on the tail, and a visible Send now in the composer', async () => {
+  it('c06-agent-working carries one Stop, the composer square, and a visible Send now', async () => {
     await mount({ name: 'c06-agent-working' });
     const cancel = vi.fn(async () => undefined);
     act(() => useAppStore.setState({ cancelCurrentTurn: cancel }));
 
     const stops = screen.getAllByRole('button', { name: 'Stop' });
-    expect(stops.some((button) => button.closest('[data-conversation-tail]') !== null)).toBe(false);
-    const stop = within(screen.getByTestId('agent-header-title-row')).getByRole('button', {
-      name: 'Stop',
-    });
-    fireEvent.click(stop);
+    expect(stops).toHaveLength(1);
+    expect(stops[0]!.closest('[data-conversation-tail]')).toBeNull();
+    fireEvent.click(stops[0]!);
     expect(cancel).toHaveBeenCalledWith(C06_SESSION_ID, C06_AGENT_ID, 'user');
     expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: /Interrupt/ })).toBeNull();
   });
 
   it('c06-agent-finished ends each turn with its summary line and final answer only', async () => {
@@ -285,14 +285,13 @@ describe('the c06 conversation scenes', () => {
     expect(screen.getByText(/estimated at API prices/)).toBeDefined();
   });
 
-  it('c06-agent-transcript toggles the header verb to a pressed Hide transcript', async () => {
+  it('c06-agent-transcript opens the transcript from the header menu, not from a header button', async () => {
     await mount({ name: 'c06-agent-finished' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
-    const hide = screen.getByRole('button', { name: 'Hide transcript' });
-    expect(hide.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(hide);
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'View transcript' }));
+    expect(useAppStore.getState().drawer?.kind).toBe('transcript');
   });
 
   it('c06-agents-empty shows the empty Runs page as the Start a run field, no Start an agent', async () => {

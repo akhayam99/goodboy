@@ -2,6 +2,7 @@ import { Button, FormActions, Notice } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LocateMovedProjectRow } from './LocateMovedProjectRow';
+import { countNoun } from '../../../../shared/utils/countNoun';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -36,11 +37,11 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
       <Notice
         tone="success"
         placement="inline"
-        title={`Moved ${completed.length} ${completed.length === 1 ? 'folder' : 'folders'}. ${sessionFolderCount} session folders are back.`}
+        title={`Moved ${countNoun({ count: completed.length, one: 'folder' })}. ${sessionFolderCount} session folders are back.`}
         detail={
           repairFailures.length === 0
             ? null
-            : `Git links or saved versions could not be carried over for ${repairFailures.length} ${repairFailures.length === 1 ? 'folder' : 'folders'}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
+            : `Git links or saved versions could not be carried over for ${countNoun({ count: repairFailures.length, one: 'folder' })}.${repairReason?.repairError == null ? '' : ` ${repairReason.repairError}`}`
         }
         actions={
           <Button variant="secondary" size="sm" onClick={() => void undo()}>

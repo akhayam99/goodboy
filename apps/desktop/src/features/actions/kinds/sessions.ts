@@ -9,6 +9,7 @@ import { unreadTargetOf } from '../../../store/slices/agents/unreadTargetOf';
 import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasUnread';
 import type { ObjectKindDefinition, SessionsActionTarget } from '../types';
 import { lifecyclePortsOf } from './lifecyclePortsOf';
+import { countNoun } from '../../../shared/utils/countNoun';
 
 export type SessionsFacts = {
   readonly sessions: ReadonlyArray<Session>;
@@ -20,7 +21,7 @@ export type SessionsFacts = {
 };
 
 const countLabel = ({ verb, count }: { readonly verb: string; readonly count: number }): string =>
-  `${verb} ${count} ${count === 1 ? 'session' : 'sessions'}`;
+  `${verb} ${countNoun({ count: count, one: 'session' })}`;
 
 type NotArchivedParams = {
   readonly failed: ReadonlyArray<Session>;

@@ -221,6 +221,19 @@ fn cleanup_locks_the_shared_ref_and_keeps_a_newer_stash() {
 }
 
 #[test]
+fn an_unreadable_status_returns_a_reason_code_not_a_sentence() {
+    let error = parse_dirty("x\0").unwrap_err();
+    assert!(matches!(
+        &error,
+        crate::worktree::WorktreeError::Reason { code } if code == "changed-unreadable"
+    ));
+    assert_eq!(
+        serde_json::to_value(&error).unwrap(),
+        serde_json::json!({ "kind": "reason", "message": "changed-unreadable" })
+    );
+}
+
+#[test]
 fn status_paths_preserve_whitespace_rename_sides_and_deduplicate() {
     assert_eq!(
         parse_dirty(" M space \n.txt\0R  new.txt\0old.txt\0 M old.txt\0?? untracked\0").unwrap(),

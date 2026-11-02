@@ -101,13 +101,13 @@ describe('runSection', () => {
   it('lists the run, its verbs in state order and Open Runs, with no start of its own', () => {
     const rows = runSection({
       row: entry('run:a', 'Ship a fix'),
-      verbs: [verb('workflowRun.close', 'Stop run'), verb('workflowRun.continue', 'Continue step')],
+      verbs: [verb('workflowRun.close', 'Stop run'), verb('workflowRun.continue', 'Continue')],
       openRuns: entry('lens:workflows', 'Open Runs'),
     });
 
     expect(rows.map((row) => row.label)).toEqual([
       'Ship a fix',
-      'Continue step',
+      'Continue',
       'Stop run',
       'Open Runs',
     ]);

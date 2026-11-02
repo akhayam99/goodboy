@@ -1,6 +1,6 @@
 import { memo, useEffect, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
+import { ROW_INTERACTIVE, UNREAD_TITLE, cn, tintClasses } from '@goodboy/ui';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
@@ -35,6 +35,7 @@ type Props = {
   readonly isActive: boolean;
   readonly isCurrent?: boolean;
   readonly isArchived?: boolean;
+  readonly isIdle?: boolean;
   readonly isSelected?: boolean;
   readonly isListbox?: boolean;
   readonly onEditingChange?: (params: EditingChange) => void;
@@ -51,6 +52,7 @@ const SessionActivityItemView = ({
   isActive,
   isCurrent = false,
   isArchived = false,
+  isIdle = false,
   isSelected = false,
   isListbox = true,
   onEditingChange,
@@ -134,6 +136,7 @@ const SessionActivityItemView = ({
   }
 
   const isCalm =
+    isIdle ||
     node.kind === 'idle' ||
     node.kind === 'queue' ||
     node.kind === 'done' ||
@@ -146,6 +149,7 @@ const SessionActivityItemView = ({
         role={isListbox ? 'option' : undefined}
         data-select-id={session.id}
         data-node-kind={node.kind}
+        data-unread={node.hasUnread ? '' : undefined}
         aria-selected={isListbox ? isSelected : undefined}
         aria-pressed={isListbox ? undefined : isSelected}
         aria-current={isCurrent ? 'page' : undefined}
@@ -174,7 +178,8 @@ const SessionActivityItemView = ({
           onModifierClick(sessionId, event);
         }}
         className={cn(
-          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left text-ui',
+          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left',
+          node.hasUnread ? UNREAD_TITLE : 'text-ui',
           ROW_INTERACTIVE,
           isCalm ? 'text-muted-foreground' : 'text-foreground',
           isActive && 'font-medium text-foreground',
@@ -184,7 +189,7 @@ const SessionActivityItemView = ({
       >
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
         <span data-row-state="" className="flex shrink-0 items-center">
-          <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} />
+          <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} hasEmptySlot />
         </span>
       </button>
       <span id={descriptionId} className="sr-only">

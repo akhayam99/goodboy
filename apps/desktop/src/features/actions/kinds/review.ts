@@ -47,14 +47,8 @@ export type ReviewFacts = {
 
 const PUSHING_REASON = 'Pushing now.';
 
-const pushLabel = ({
-  accepted,
-  failed,
-}: {
-  readonly accepted: number;
-  readonly failed: number;
-}): string =>
-  failed > 0 ? `Retry push for ${failed}` : `Push ${accepted} ${accepted === 1 ? 'fix' : 'fixes'}`;
+const pushLabel = ({ failed }: { readonly failed: number }): string =>
+  failed > 0 ? `Retry push for ${failed}` : 'Push';
 
 const reviewTargetOf = ({
   state,

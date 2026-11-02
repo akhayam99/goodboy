@@ -57,7 +57,7 @@ export const ChatEmpty = ({
             </p>
             {hasProjects ? null : (
               <Button variant="secondary" size="sm" onClick={onAddProject}>
-                Add folder
+                Add project
               </Button>
             )}
           </div>

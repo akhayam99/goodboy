@@ -6,7 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { cn, CountToggle, formatError, PaneShell } from '@goodboy/ui';
+import { cn, CountToggle, formatError, PaneShell, SkeletonRow, useSkeletonGate } from '@goodboy/ui';
 import { EmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectSessionById } from '../../../../../../store/slices/sessions/selectSessionById';
@@ -21,6 +21,7 @@ import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
+import { PROVIDER_META } from './providerMeta';
 import { isTaskOnScreen } from './isTaskOnScreen';
 import { TaskPlacementMenu } from './TaskPlacementMenu';
 import { RecordFrameContext } from '../../../../../../shared/components/StudioDetail/RecordFrameContext';
@@ -32,17 +33,13 @@ import { PROVIDER_LENS } from '../../../../../integrations/providerLens';
 import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { LinkIssueAction } from '../../../SessionOverviewPane/LinkIssueAction';
 
+const INTEGRATION_CHECK_ROWS = [0, 1];
+
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly provider: Exclude<SessionExternalTaskProvider, 'github' | 'sentry'>;
 };
-
-type ProviderMeta = Readonly<{
-  label: string;
-  nounPlural: string;
-  linkHint: string;
-}>;
 
 type UnlinkParams = {
   readonly task: SessionExternalTask;
@@ -50,44 +47,6 @@ type UnlinkParams = {
 
 type OpenTaskParams = {
   readonly taskKey: string;
-};
-
-const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
-  linear: {
-    label: 'Linear',
-    nounPlural: 'issues',
-    linkHint: 'Search your assigned Linear issues or paste a URL to link one to this session.',
-  },
-  sentry: {
-    label: 'Sentry',
-    nounPlural: 'issues',
-    linkHint: 'Search your assigned Sentry issues or paste a URL to link one to this session.',
-  },
-  gitlab: {
-    label: 'GitLab',
-    nounPlural: 'issues',
-    linkHint: 'Search your assigned GitLab issues or paste a URL to link one to this session.',
-  },
-  jira: {
-    label: 'Jira',
-    nounPlural: 'issues',
-    linkHint: 'Search your assigned Jira issues or paste a URL to link one to this session.',
-  },
-  github: {
-    label: 'GitHub',
-    nounPlural: 'issues',
-    linkHint: 'Search your assigned GitHub issues or paste a URL to link one to this session.',
-  },
-  bitbucket: {
-    label: 'Bitbucket',
-    nounPlural: 'pull requests',
-    linkHint: 'Paste a Bitbucket pull request URL to link one to this session.',
-  },
-  slack: {
-    label: 'Slack',
-    nounPlural: 'threads',
-    linkHint: 'Pick a thread from a channel you are in, or paste a Slack permalink to link one.',
-  },
 };
 
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
@@ -122,6 +81,15 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
   });
   const hasTasks = tasks.length > 0;
+  const hasLoadedIntegrations = useAppStore(
+    (state) => state.workspaceIntegrations[workspaceId] !== undefined,
+  );
+  const checkPhase = useSkeletonGate({
+    gateKey: `${workspaceId}:${provider}`,
+    isLoaded: hasLoadedIntegrations,
+  });
+  const isCheckShown = checkPhase === 'skeleton' || checkPhase === 'fading';
+  const isCheckSettled = checkPhase === 'ready';
   const session = useAppStore((state) => selectSessionById(state, sessionId));
   const linkAction =
     session === null ? undefined : <LinkIssueAction session={session} initialSource={provider} />;
@@ -219,10 +187,15 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       title={meta.label}
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
-      {!connection.isConnected ? (
+      {isCheckShown
+        ? INTEGRATION_CHECK_ROWS.map((row) => (
+            <SkeletonRow key={row} label="Checking the connection" />
+          ))
+        : null}
+      {isCheckSettled && !connection.isConnected ? (
         <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
       ) : null}
-      {connection.isConnected && !hasTasks ? (
+      {isCheckSettled && connection.isConnected && !hasTasks ? (
         <EmptyState
           size="section"
           icon={CONCEPT_ICONS.integrations}

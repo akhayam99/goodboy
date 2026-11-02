@@ -26,7 +26,7 @@ type ToDomainParams = {
   readonly row: FileVersionRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): FileVersion => ({
+const toFileVersion = ({ row }: ToDomainParams): FileVersion => ({
   id: row.id as FileVersionId,
   sessionId: row.session_id as SessionId,
   relativePath: row.relative_path,
@@ -82,7 +82,7 @@ export const listFileVersionsForSession = async ({
       ORDER BY captured_at DESC, id DESC`,
     [sessionId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toFileVersion({ row }));
 };
 
 type PruneForPathParams = {
@@ -115,7 +115,7 @@ export const pruneFileVersionsForPath = async ({
     `DELETE FROM file_versions WHERE id IN (${placeholders})`,
     rows.map((row) => row.id),
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toFileVersion({ row }));
 };
 
 type DeleteParams = {

@@ -11,7 +11,6 @@ export const MonitoringStudio = ({ onClose }: Props) => (
     icon={CONCEPT_ICONS.monitoring}
     tone={CONCEPT_TONE.monitoring}
     title="Monitoring"
-    closeLabel="Close monitoring"
     onClose={onClose}
   >
     {() => <MonitoringPage />}

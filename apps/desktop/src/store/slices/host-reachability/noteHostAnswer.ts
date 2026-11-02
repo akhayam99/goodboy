@@ -9,19 +9,26 @@ type Params = {
   readonly askedAt: number;
 };
 
+type OwnedAnswers = Partial<Record<ReachabilityHost, number>>;
+
 export const noteHostAnswer = ({ set, get }: SliceDeps) => {
+  let ownedAnswers: OwnedAnswers | null = null;
   return ({ host, answer, askedAt }: Params): void => {
-    if (askedAt < (get().hostAnsweredAt[host] ?? 0)) {
+    const state = get();
+    if (askedAt < (state.hostAnsweredAt[host] ?? 0)) {
       return;
     }
-    const now = Date.now();
-    set((state) => ({
-      hostAnsweredAt: { ...state.hostAnsweredAt, [host]: askedAt },
-      hostReachability: withHost({
-        map: state.hostReachability,
-        host,
-        next: reachabilityAfter({ previous: state.hostReachability[host], answer, now }),
-      }),
+    const previous = state.hostReachability[host];
+    const next = reachabilityAfter({ previous, answer, now: Date.now() });
+    if (next === previous && ownedAnswers !== null && state.hostAnsweredAt === ownedAnswers) {
+      ownedAnswers[host] = askedAt;
+      return;
+    }
+    const answered: OwnedAnswers = { ...state.hostAnsweredAt, [host]: askedAt };
+    ownedAnswers = answered;
+    set((current) => ({
+      hostAnsweredAt: answered,
+      hostReachability: withHost({ map: current.hostReachability, host, next }),
     }));
   };
 };

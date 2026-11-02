@@ -130,7 +130,7 @@ export const WorkNode = ({
           aria-hidden
           className={cn(
             'absolute -right-0.5 -top-0.5 size-1.5 rounded-full ring-1 ring-background',
-            tintClasses('primary').dot,
+            tintClasses('unread').dot,
           )}
         />
       )}

@@ -1,8 +1,8 @@
+import { isoFromMs } from './isoFromMs';
 import {
   isEffortLevel,
   type AskThread,
   type ChatId,
-  type IsoDateTime,
   type SessionId,
   type WorkspaceId,
 } from '@goodboy/types';
@@ -22,8 +22,6 @@ type AskThreadRow = {
   readonly messageCount: number;
 };
 
-const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
-
 const toThread = (row: AskThreadRow): AskThread | null => {
   if (!isProviderId(row.provider)) {
     return null;
@@ -36,8 +34,8 @@ const toThread = (row: AskThreadRow): AskThread | null => {
     provider: row.provider,
     model: row.model,
     effort: row.effort !== null && isEffortLevel(row.effort) ? row.effort : null,
-    lastActivityAt: toIso(row.lastActivityAt),
-    createdAt: toIso(row.createdAt),
+    lastActivityAt: isoFromMs({ ms: row.lastActivityAt }),
+    createdAt: isoFromMs({ ms: row.createdAt }),
     messageCount: row.messageCount,
   };
 };

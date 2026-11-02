@@ -9,12 +9,17 @@ import { ProjectGroups } from './ProjectGroups';
 
 const FILTER_VISIBLE_FROM = 10;
 
+type ProjectParams = {
+  readonly project: Project;
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly emptyHint?: string;
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
   readonly editorScripts?: (params: { readonly project: Project }) => ReactNode;
+  readonly isRowInitiallyOpen?: (params: ProjectParams) => boolean;
   readonly heading?: (params: { readonly count: number }) => ReactNode;
   readonly hint?: string;
 };
@@ -25,6 +30,7 @@ export const ProjectLinkList = ({
   editorExtra,
   rowBadge,
   editorScripts,
+  isRowInitiallyOpen,
   heading,
   hint,
 }: Props) => {
@@ -43,8 +49,8 @@ export const ProjectLinkList = ({
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter folders"
-            aria-label="Filter folders"
+            placeholder="Filter projects"
+            aria-label="Filter projects"
             className="h-8 w-48 rounded-md border border-border-soft bg-background px-2 text-meta text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
           />
         ) : null}
@@ -56,7 +62,7 @@ export const ProjectLinkList = ({
           onClick={() => setIsAdding(true)}
         >
           <Plus size={ICON_SIZE.row} aria-hidden />
-          Add folder
+          Add project
         </Button>
       </div>
       {hint !== undefined && <p className="text-meta text-faint-foreground">{hint}</p>}
@@ -91,6 +97,7 @@ export const ProjectLinkList = ({
           editorExtra={editorExtra}
           rowBadge={rowBadge}
           editorScripts={editorScripts}
+          isRowInitiallyOpen={isRowInitiallyOpen}
         />
       ) : null}
       {linking.error !== null && (

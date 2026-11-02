@@ -56,7 +56,7 @@ export const IntrosScene = ({ page, isEmpty }: Props) => {
       </div>
       <main className="relative flex min-w-0 flex-1">
         <SessionFrame session={session}>
-          <SessionWorkspace session={session} isActive />
+          <SessionWorkspace session={session} />
         </SessionFrame>
       </main>
     </div>

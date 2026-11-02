@@ -33,9 +33,6 @@ vi.mock('../features/providers/routing', async () =>
 vi.mock('../features/budget/budget', async () =>
   (await import('./storyHarness')).budgetModuleMock(),
 );
-vi.mock('../features/skills/skills', async () =>
-  (await import('./storyHarness')).skillsModuleMock(),
-);
 vi.mock('../features/workflows/workflows', async () =>
   (await import('./storyHarness')).workflowsModuleMock(),
 );
@@ -169,6 +166,52 @@ describe('story: starting a run from the new session draft', () => {
     release();
     await pending;
     expect(draftOf()).toBeUndefined();
+  });
+
+  it('mounts the worktree that already holds the branch the owner chose to open', async () => {
+    const heldAt = '/tmp/app/.goodboy/worktrees/gb-held';
+    storySpies.worktreeBranchHolder.mockResolvedValue(heldAt);
+    useAppStore.getState().openSessionDraft();
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: {
+        projectIds: [PROJECT_ID],
+        branchChoice: {
+          projectId: PROJECT_ID,
+          goal: 'Speed up the ledger export',
+          pick: { kind: 'worktree', branch: 'ak/ledger-export', worktreePath: heldAt },
+        },
+      },
+    });
+    const run = vi.fn<(session: Session) => Promise<void>>().mockResolvedValue(undefined);
+
+    const session = await startRun({ run });
+
+    expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    const [mount] = useAppStore.getState().sessionProjectMounts[session.id] ?? [];
+    expect(mount).toMatchObject({ worktreePath: heldAt, branch: 'ak/ledger-export' });
+  });
+
+  it('adopts the branch the owner picked when the goal names several', async () => {
+    useAppStore.getState().openSessionDraft();
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: {
+        projectIds: [PROJECT_ID],
+        branchChoice: {
+          projectId: PROJECT_ID,
+          goal: 'Speed up the ledger export',
+          pick: { kind: 'branch', branch: 'ak/ledger-export' },
+        },
+      },
+    });
+    const run = vi.fn<(session: Session) => Promise<void>>().mockResolvedValue(undefined);
+
+    await startRun({ run });
+
+    expect(storySpies.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({ existingBranch: 'ak/ledger-export' }),
+    );
   });
 
   it('two fast clicks create one session and run once', async () => {

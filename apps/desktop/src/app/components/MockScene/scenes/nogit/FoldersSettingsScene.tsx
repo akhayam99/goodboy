@@ -31,5 +31,5 @@ export const FoldersSettingsScene = () => {
     });
   }, []);
 
-  return <SettingsFrame focus={{ scope: 'workspace', section: 'projects' }} seed={seed} />;
+  return <SettingsFrame focus={{ scope: 'workspace', section: 'folder-options' }} seed={seed} />;
 };

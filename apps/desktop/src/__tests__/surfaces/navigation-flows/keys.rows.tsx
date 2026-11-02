@@ -484,7 +484,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect((await findSection(/^Pull request/)).getAttribute('aria-current')).toBe('page');
+      expect((await findSection(/^Pull request/)).getAttribute('aria-selected')).toBe('true');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -1623,11 +1623,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       expect(await activeTreeFile()).toContain('notify.ts');
       await visible('navigation', 'Changed files');
       const tree = within(screen.getByRole('navigation', { name: 'Changed files' }));
-      expect(
-        tree
-          .getAllByRole('button', { name: /^Viewed: / })
-          .filter((toggle) => toggle.getAttribute('aria-pressed') === 'true'),
-      ).toHaveLength(1);
+      expect(tree.getAllByRole('img', { name: 'Viewed' })).toHaveLength(1);
     },
   }),
   keyRow({
@@ -1700,7 +1696,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       const composer = await openAgentChat(ctx);
       await pressed('session.permissions', composer);
     },
-    lands: () => visible('dialog', 'Asks you'),
+    lands: () => visible('dialog', 'Edits'),
   }),
   keyRow({
     id: 'composer.newLine',

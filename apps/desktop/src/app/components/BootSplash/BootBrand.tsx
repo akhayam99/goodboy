@@ -1,5 +1,5 @@
 import { BrandTile } from '../../../shared/components/BrandTile';
-import { SPLASH_TILE_PX } from '../../../features/onboarding/OnboardingWizard/useSplashAnchor/splashShift';
+import { SPLASH_TILE_PX } from './splashTile';
 
 export const BootBrand = () => (
   <div className="flex flex-col items-center gap-4">

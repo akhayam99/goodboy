@@ -187,15 +187,26 @@ export const SessionDiffPane = ({
     [openInEditor, showWhole, workingDir],
   );
 
+  const filesToggle =
+    rail.isShown || !hasTree ? null : (
+      <Button size="sm" variant="quiet" onClick={panel.focus}>
+        <PanelRightOpen size={ICON_SIZE.row} aria-hidden />
+        Files
+        <span className="tabular-nums text-faint-foreground">{review.allFiles.length}</span>
+      </Button>
+    );
   const selector = (
-    <DiffViewSelector
-      view={diff.view}
-      onChange={diff.setView}
-      commits={diff.commits}
-      status={diff.status}
-      baseBranch={baseBranch}
-      loading={diff.loading}
-    />
+    <>
+      {filesToggle}
+      <DiffViewSelector
+        view={diff.view}
+        onChange={diff.setView}
+        commits={diff.commits}
+        status={diff.status}
+        baseBranch={baseBranch}
+        loading={diff.loading}
+      />
+    </>
   );
   const showsDiff = !diff.loading && diff.error === null && !isEmpty && !isFilteredOut;
   const metaNotice =
@@ -207,14 +218,6 @@ export const SessionDiffPane = ({
           </p>
         </Tooltip>
       </PageColumn>
-    );
-
-  const filesToggle =
-    rail.isShown || !hasTree ? null : (
-      <Button size="sm" variant="quiet" onClick={panel.focus}>
-        <PanelRightOpen size={ICON_SIZE.row} aria-hidden />
-        Files
-      </Button>
     );
 
   const body = diff.loading ? (
@@ -257,6 +260,7 @@ export const SessionDiffPane = ({
   ) : (
     <DiffView
       files={review.tree.files}
+      bodies={diff.bodies}
       loadFileSides={loadFileSides}
       comments={review.comments}
       viewed={review.viewed}
@@ -271,12 +275,7 @@ export const SessionDiffPane = ({
       columnWidth="full"
       identifierPeek={identifierPeek}
       toolbarStart={selector}
-      toolbarEnd={
-        <>
-          {toolbarEnd}
-          {filesToggle}
-        </>
-      }
+      toolbarEnd={toolbarEnd}
     />
   );
 

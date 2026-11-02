@@ -11,6 +11,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
+import { railPullRequestGithubOf } from '../u23/prPageSeed';
 
 const clock = sceneClock({ anchor: '2026-10-17T09:00:00.000Z' });
 
@@ -51,6 +52,30 @@ const CARD: ReadonlyArray<CardProject> = [
   { name: 'ledger-core', kind: 'repo', branches: ['harborline/ledger-backfill'] },
   { name: 'acme-runbooks', kind: 'folder', branches: [''] },
 ];
+
+type RailPr = {
+  readonly number: number;
+  readonly title: string;
+  readonly checks: 'pending' | 'success' | 'failure' | null;
+};
+
+const RAIL_PRS: Readonly<Record<string, RailPr>> = {
+  'harborline/webhook-retries': {
+    number: 318,
+    title: 'Stop retried webhooks posting a second credit',
+    checks: 'failure',
+  },
+  'harborline/idempotency-keys': {
+    number: 322,
+    title: 'Add an idempotency guard to the credit writer',
+    checks: 'success',
+  },
+  'harborline/ledger-backfill': {
+    number: 325,
+    title: 'Backfill the ledger after the retry fix',
+    checks: 'success',
+  },
+};
 
 const SPARE: ReadonlyArray<string> = ['notify-relay', 'cascadia-web'];
 
@@ -118,6 +143,14 @@ export const seedProjectsCard = ({ sessionId, workspaceId }: SeedParams): void =
   const mounts = CARD.flatMap((project) =>
     project.branches.map((branch, index) => mountOf({ sessionId, project, branch, index })),
   );
+  const mountGithub = Object.fromEntries(
+    mounts.flatMap((mount) => {
+      const pr = RAIL_PRS[mount.branch];
+      return pr === undefined
+        ? []
+        : [[mount.mountId, railPullRequestGithubOf({ ...pr, headBranch: mount.branch })]];
+    }),
+  );
   useAppStore.setState((state) => ({
     projects: [
       ...state.projects.filter((project) => project.workspaceId !== workspaceId),
@@ -125,6 +158,6 @@ export const seedProjectsCard = ({ sessionId, workspaceId }: SeedParams): void =
     ],
     sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: mounts },
     sessionBranches: { ...state.sessionBranches, [sessionId]: mounts[0]?.branch ?? '' },
-    mountGithub: {},
+    mountGithub,
   }));
 };

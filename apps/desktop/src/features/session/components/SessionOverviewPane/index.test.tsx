@@ -35,6 +35,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -76,7 +77,11 @@ type PaneParams = {
 };
 
 const renderPane = ({ session = SESSION }: PaneParams = {}) =>
-  render(<SessionOverviewPane session={session} />);
+  render(
+    <ToastProvider>
+      <SessionOverviewPane session={session} />
+    </ToastProvider>,
+  );
 
 describe('SessionOverviewPane', () => {
   it('stacks the notices and then the overview cards as body sections in that order', () => {
@@ -84,7 +89,7 @@ describe('SessionOverviewPane', () => {
 
     const body = container.querySelector('[data-slot="pane-body"]');
     const header = container.querySelector('[data-slot="pane-header"]');
-    const names = ['Notices', 'Overview cards'];
+    const names = ['Notices', 'Start a run', 'Overview cards'];
     const sections = names.map((name) => screen.getByRole('region', { name }));
     sections.forEach((section) => expect(section.parentElement).toBe(body));
     expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual(sections);
@@ -145,7 +150,11 @@ describe('SessionOverviewPane', () => {
     );
     const renamed = useAppStore.getState().sessions.find((row) => row.id === SESSION_ID);
     expect(renamed?.goal).toBe('Key redeliveries by event id');
-    rerender(<SessionOverviewPane session={renamed ?? SESSION} />);
+    rerender(
+      <ToastProvider>
+        <SessionOverviewPane session={renamed ?? SESSION} />
+      </ToastProvider>,
+    );
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Key redeliveries by event id',
     );

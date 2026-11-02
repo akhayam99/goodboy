@@ -347,10 +347,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       await applyNeedsYou({ count: 2 });
     },
     lands: async () => {
-      await waitFor(
-        () => expect(nodeText(group('Ready to push'))).toContain('Ready to push 2'),
-        WAIT,
-      );
+      await waitFor(() => expect(nodeText(group('Done'))).toContain('Done 2'), WAIT);
       expect(rowCount(group('Needs you'))).toBe(1);
       expect(screen.getAllByRole('button', { name: /^Push 2/ })).toHaveLength(1);
       sidebarNamesTheBranches();
@@ -396,14 +393,14 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       });
       await openComments(ctx);
 
-      await click(await screen.findByRole('button', { name: 'Fix 3 comments' }));
+      await click(await screen.findByRole('button', { name: 'Fix 3 threads' }));
       const drawer = await screen.findByRole('region', { name: 'Fix comments' }, WAIT);
       await click(within(drawer).getByRole('button', { name: 'Start fix for 3' }));
       await settle();
     },
     lands: async (ctx) => {
       expect(await screen.findByText('Fix run started', undefined, WAIT)).toBeDefined();
-      expect(screen.getByText(/^3 comments on /)).toBeDefined();
+      expect(screen.getByText(/^3 threads on /)).toBeDefined();
       const follow = screen.getAllByRole('button', { name: 'Follow' });
       expect(follow).toHaveLength(1);
       await clickButton('Follow');

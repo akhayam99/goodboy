@@ -238,7 +238,7 @@ export const FirstSessionStep = ({
               </>
             )}
           />
-          {issues.hasSources ? null : <NoIssueSource onOpenTools={onOpenTools} />}
+          {issues.hasSources ? null : <NoIssueSource onConnect={onOpenTools} />}
         </div>
       )}
     </div>

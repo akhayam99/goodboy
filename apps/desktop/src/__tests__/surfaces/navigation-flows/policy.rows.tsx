@@ -43,7 +43,7 @@ const openProvidersPolicy = async (): Promise<void> => {
       },
     },
   });
-  await openPalette(/^Providers: Models/, 'Models');
+  await openPalette(/^Workspace settings: Models/, 'Models');
   await heading('Models');
   await click(await screen.findByRole('button', { name: /^Claude, Codex/, expanded: false }));
 };
@@ -61,7 +61,7 @@ const runDefaultsShowsALink = async (): Promise<void> => {
   await heading('Run defaults');
   await click(await screen.findByRole('button', { name: /^Models: / }));
   const band = await screen.findByRole('dialog', { name: 'Models' });
-  expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
+  expect(within(band).getByRole('button', { name: 'Open Providers' })).toBeDefined();
   expect(within(band).getByTestId('rules-policy-summary').textContent).toMatch(/^Claude, Codex/);
   expect(within(band).queryAllByRole('switch')).toEqual([]);
   expect(screen.queryByRole('switch', { name: SPREAD_LABEL })).toBeNull();
@@ -113,14 +113,14 @@ export const POLICY_ROWS: ReadonlyArray<Row> = [
     lands: runDefaultsShowsALink,
   },
   {
-    name: 'policy: the link in Run defaults opens Providers and models on the same policy',
+    name: 'policy: the link in Run defaults opens Providers on the same policy',
     covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'scope:providers'],
     door: 'palette',
     open: async () => {
       await flipSpreadInProviders();
       await openPalette(/^Run defaults/, 'run defaults');
       await runDefaultsShowsALink();
-      await clickButton('Open Providers and models');
+      await clickButton('Open Providers');
     },
     lands: async () => {
       await heading('Models');

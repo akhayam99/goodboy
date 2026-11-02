@@ -54,7 +54,7 @@ When the database cannot be opened at all, the start screen offers **Retry** fir
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them. **Settings › App › Updates** shows the installed version and **Check for updates**.
+Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now** and **Later**, and a **What's new** link in its sentence. With agents running, **Restart when they finish** waits for them. **Settings › App › Updates** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">
@@ -65,7 +65,7 @@ Get updates in the background, then see what is new. When one is ready, the vers
 
 ### Changelog in the app
 
-Read release notes inside the app, searchable, with links into the screen each change touched. Every release in the list shows its version, its date and whether it is installed, and a release that changes your data carries a quiet mark. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
+Read release notes inside the app, in the **What's new** tab of Help, searchable, with links into the screen each change touched. Every release in the list shows its version, its date and whether it is installed, and a release that changes your data carries a quiet mark. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-dark.webp">
@@ -80,7 +80,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters, one per page with Previous and Next. Search the rail and press Enter to land on the point you need, and the links at the end of a chapter open its screen. Open **Guide** from the Goodboy menu or the palette.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds three tabs, **Guide**, **What's new** and **Shortcuts**, with one search over all three. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Shortcuts** is a read only sheet with a link to **Customize in Settings**. **Back to app** at the top left, or Esc, leaves Help. Open **Guide** from the Goodboy menu or the palette.
 
 **Also in this area**
 

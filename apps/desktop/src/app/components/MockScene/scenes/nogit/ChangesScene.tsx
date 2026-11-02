@@ -326,9 +326,7 @@ export const ChangesScene = ({ theme, view }: Props) => {
   return (
     <ShellFrame
       session={MEMO}
-      main={
-        view === 'chat' ? <ChatView session={MEMO} /> : <SessionWorkspace session={MEMO} isActive />
-      }
+      main={view === 'chat' ? <ChatView session={MEMO} /> : <SessionWorkspace session={MEMO} />}
     />
   );
 };

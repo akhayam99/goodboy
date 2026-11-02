@@ -147,7 +147,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           {inSession.length === 0 ? null : (
             <p className="text-eyebrow text-muted-foreground">In this session</p>
           )}
-          <ul aria-label="Folders" className="flex min-w-0 flex-col">
+          <ul aria-label="Projects" className="flex min-w-0 flex-col">
             {(isAnotherOpen ? all : inSession).map((candidate) => (
               <li key={candidate.key} className="flex h-7 min-w-0 items-center gap-2">
                 <Checkbox

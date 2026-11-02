@@ -5,7 +5,7 @@ import { EFFORT_LEVELS } from '../../utils/chat-constants';
 
 export const RUNNING_KINDS = new Set(['starting', 'running']);
 
-const CHAT_GROUP_ORDER: ReadonlyArray<QuickActionGroup> = ['script', 'workflow', 'skill', 'agent'];
+const CHAT_GROUP_ORDER: ReadonlyArray<QuickActionGroup> = ['script', 'workflow', 'agent'];
 
 export const CHAT_PREFIXES = CHAT_GROUP_ORDER.flatMap((group) =>
   PREFIXES.filter((prefix) => prefix.group === group),

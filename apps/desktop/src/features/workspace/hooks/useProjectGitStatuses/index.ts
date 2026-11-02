@@ -1,9 +1,8 @@
+import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
-import { usePoll } from '../../../../shared/lib/usePoll';
 import { useAppStore } from '../../../../store';
-
-const POLL_INTERVAL_MS = 30_000;
+import { watchProjectGitStatuses } from './watchProjectGitStatuses';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -28,19 +27,17 @@ export const useProjectGitStatuses = ({
     useShallow((state) => projects.map((project) => state.projectGitStatus[project.id] ?? null)),
   );
   const loadProjectGitStatus = useAppStore((state) => state.loadProjectGitStatus);
-  const projectIds = projects.map((project) => project.id);
-  const projectIdsKey = projectIds.join('\u0000');
+  const projectIds = useMemo(() => projects.map((project) => project.id), [projects]);
 
-  usePoll({
-    run: () => {
-      for (const projectId of projectIds) {
-        void loadProjectGitStatus({ projectId });
-      }
-    },
-    everyMs: POLL_INTERVAL_MS,
-    isEnabled: projectIds.length > 0,
-    restartKey: projectIdsKey,
-  });
+  useEffect(() => {
+    if (projectIds.length === 0) {
+      return undefined;
+    }
+    return watchProjectGitStatuses({
+      projectIds,
+      load: ({ projectId }) => void loadProjectGitStatus({ projectId }),
+    });
+  }, [projectIds, loadProjectGitStatus]);
 
   return projects.map((project, index) => ({ project, status: statuses[index] ?? null }));
 };

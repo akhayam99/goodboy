@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { BitbucketIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
+import { IdentityHealthLine } from '../components/IdentityHealthLine';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { normalizeWorkspaceSlug } from './normalizeWorkspaceSlug';
@@ -41,15 +42,18 @@ export const BitbucketFormBody = ({
 
   if (bitbucket != null) {
     return (
-      <IntegrationConnectedRow
-        provider="bitbucket"
-        credentialId={bitbucket?.credentialId ?? null}
-        primary={`Connected as ${bitbucket.config.displayName ?? bitbucket.config.email}`}
-        secondary={`bitbucket.org/${bitbucket.config.workspaceSlug}`}
-        disconnectDescription={disconnectDescriptionOf({ provider: 'bitbucket' })}
-        hasHeaderDisconnect={hasHeaderDisconnect}
-        onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'bitbucket' })}
-      />
+      <div className="flex w-full min-w-0 flex-col gap-2">
+        <IdentityHealthLine workspaceId={workspaceId} binding={bitbucket} />
+        <IntegrationConnectedRow
+          provider="bitbucket"
+          credentialId={bitbucket?.credentialId ?? null}
+          primary={`Connected as ${bitbucket.config.displayName ?? bitbucket.config.email}`}
+          secondary={`bitbucket.org/${bitbucket.config.workspaceSlug}`}
+          disconnectDescription={disconnectDescriptionOf({ provider: 'bitbucket' })}
+          hasHeaderDisconnect={hasHeaderDisconnect}
+          onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'bitbucket' })}
+        />
+      </div>
     );
   }
 

@@ -242,8 +242,14 @@ describe('a grouped list', () => {
     expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(running) }) });
   });
 
-  it('moves a merged session nobody wrote to after the merge to the end of the list at once', () => {
+  it('keeps a merged session nobody wrote to after the merge in the shut Done group, out of the walk', () => {
     const { result } = mountGrouped(false, false);
+    result.current({ delta: 1 });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('walks into that Done group once the list opens it', () => {
+    const { result } = mountGrouped(true, false);
     result.current({ delta: 1 });
     expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(merged) }) });
   });

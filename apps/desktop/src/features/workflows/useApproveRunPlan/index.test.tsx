@@ -81,7 +81,7 @@ afterEach(() => {
 });
 
 describe('approving the plan of a run', () => {
-  it('raises one Plan approved toast with no action, because the run page is the one on screen', async () => {
+  it('raises no toast, because the run page the user caused it from is the one on screen', async () => {
     act(() =>
       useAppStore.getState().navigate({
         to: sessionPlace({ sessionId, lens: 'workflows', target: { kind: 'run', runId: RUN_ID } }),
@@ -91,10 +91,8 @@ describe('approving the plan of a run', () => {
     await approve();
 
     expect(approveWorkflowRunPlan).toHaveBeenCalledWith(sessionId, RUN_ID);
-    expect(await screen.findByText('Plan approved')).toBeDefined();
-    expect(screen.getByText('The run goes on')).toBeDefined();
+    expect(screen.queryByText('Plan approved')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
-    expect(screen.getAllByText('Plan approved')).toHaveLength(1);
   });
 
   it('marks the run as a start of yours, so the step bridge stays quiet', async () => {

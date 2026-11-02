@@ -11,7 +11,7 @@ type RawParams = {
   readonly raw: string | null | undefined;
 };
 
-export const parseAutoTreeLimit = ({ raw }: RawParams): number | null => {
+const parseAutoTreeLimit = ({ raw }: RawParams): number | null => {
   if (raw === null || raw === undefined) {
     return null;
   }

@@ -21,6 +21,7 @@ export const RunIdentityRow = ({ session, run, workflow }: Props) => {
     predecessorName: view.predecessorName,
     isOrchestrating: view.isOrchestrating,
     questions,
+    isPlanRevising: view.isPlanRevising,
   });
   const rename = useWorkflowRunTitleRename({
     sessionId: session.id,

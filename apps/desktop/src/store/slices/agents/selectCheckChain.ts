@@ -39,7 +39,7 @@ export type CheckChain = {
 
 const NO_EVENTS = [] as const;
 
-const isLive = (agent: Agent, turn: TurnState | undefined): boolean =>
+const isFixLive = (agent: Agent, turn: TurnState | undefined): boolean =>
   turn?.kind === 'starting' ||
   turn?.kind === 'running' ||
   turn?.kind === 'blocked' ||
@@ -80,7 +80,7 @@ export const selectCheckChain = ({ state, sessionId, url }: Params): CheckChain 
   if (fix !== null) {
     const events = state.transcripts[fix.id];
     const fact = state.checkFixCommits[fix.id];
-    if (isLive(fix, state.agentTurnState[fix.id])) {
+    if (isFixLive(fix, state.agentTurnState[fix.id])) {
       return { ...base, state: 'fixing', commit: null, commitCount: 0 };
     }
     if (fix.status !== 'completed') {

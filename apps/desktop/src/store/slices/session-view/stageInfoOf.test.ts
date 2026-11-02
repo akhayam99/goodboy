@@ -16,7 +16,10 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import {
   brandId,
+  type AgentId,
+  type ProviderRunId,
   type StepId,
+  type TurnState,
   type IntegrationDraft,
   type IntegrationDraftId,
   type IsoDateTime,
@@ -42,6 +45,7 @@ import {
   seedColumn,
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
+import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import { useSessionStageInfo } from './selectors';
 import { stageInfoOf } from './stageInfoOf';
 
@@ -425,5 +429,59 @@ describe('stageInfoOf and work that never opens a pull request', () => {
     useAppStore.setState({ sessionBranches: { [session.id]: 'hl/retry-limits' } });
 
     expect(infoOf(session)).toMatchObject({ stage: 'building' });
+  });
+});
+
+describe('stageInfoOf and a plan the planner is revising', () => {
+  const PLANNER = brandId<AgentId>({ value: 'agent-planner-revising' });
+  const REVISING_RUN = brandId<ProviderRunId>({ value: 'run-revision-2' });
+
+  type SeedParams = {
+    readonly session: Session;
+    readonly turn: TurnState | undefined;
+  };
+
+  const seedPlanner = ({ session, turn }: SeedParams): void => {
+    const sessionId = brandId<SessionId>({ value: session.id });
+    const plan = aPlan({ sessionId, agentId: PLANNER });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [session.id]: [
+          anAgent({
+            id: PLANNER,
+            sessionId,
+            kind: 'planner',
+            status: turn === undefined ? 'completed' : 'running',
+            workflowRunId: brandId<WorkflowRunId>({ value: 'run-held' }),
+          }),
+        ],
+      },
+      sessionPlans: { [session.id]: [plan] },
+      sessionArtifacts: {
+        [session.id]: [aStoredPlan({ sessionId, agentId: PLANNER, revision: 1 }, plan)],
+      },
+      agentTurnState: turn === undefined ? {} : { [PLANNER]: turn },
+    });
+  };
+
+  it('does not ask for a review while the planner is working again', () => {
+    const session = seeded({
+      session: { ...sessionOf({ goal: 'Retry webhooks' }), workflowRuns: [held('run-held')] },
+    });
+    seedPlanner({
+      session,
+      turn: { kind: 'running', runId: REVISING_RUN, startedAt: at('2026-10-06T09:00:00.000Z') },
+    });
+
+    expect(infoOf(session).attention).not.toBe('plan-approval');
+  });
+
+  it('asks for the review again once the planner is done', () => {
+    const session = seeded({
+      session: { ...sessionOf({ goal: 'Retry webhooks' }), workflowRuns: [held('run-held')] },
+    });
+    seedPlanner({ session, turn: undefined });
+
+    expect(infoOf(session)).toMatchObject({ stage: 'attention', attention: 'plan-approval' });
   });
 });

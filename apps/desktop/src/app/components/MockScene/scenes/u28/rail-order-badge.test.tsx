@@ -67,8 +67,8 @@ describe('rail order and badge scenes', () => {
       within(toolbar)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Explore', 'Context', 'Ask', 'Agents', 'Scripts', 'Terminal']);
-    expect(within(toolbar).getAllByRole('separator')).toHaveLength(2);
+    ).toEqual(['Explore', 'Context', 'Ask this session', 'Agents', 'Scripts', 'Terminal']);
+    expect(within(toolbar).getAllByRole('separator')).toHaveLength(1);
   });
 
   it('sessions-door-counts draws a tone dot and a muted number, red only for a broken one', () => {

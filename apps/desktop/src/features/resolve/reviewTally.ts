@@ -29,7 +29,7 @@ export const reviewTallyOfWords = ({
   const couldntFix = count('couldnt_fix');
   const open = count('open');
   return {
-    needsYou: question + toReview + pushFailed + couldntFix,
+    needsYou: question + toReview + pushFailed + couldntFix + open,
     question,
     toReview,
     pushFailed,

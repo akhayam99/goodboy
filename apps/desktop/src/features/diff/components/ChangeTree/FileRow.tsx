@@ -1,7 +1,6 @@
 import { Check, MessageSquare } from 'lucide-react';
 import {
   cn,
-  FOCUS_RING,
   ICON_SIZE,
   ICON_STROKE,
   ROW_INTERACTIVE,
@@ -35,25 +34,20 @@ type Props = {
   readonly kinds: CommentKinds;
   readonly nameLength: number | null;
   readonly hasDelta: boolean;
-  readonly canToggleViewed: boolean;
   readonly fileActions: DiffFileActions | null;
   readonly onPick: () => void;
-  readonly onToggleViewed: () => void;
 };
 
 const EXTENSION = /\.[^./]*$/;
 const LAST_SEGMENT = /[^/]*$/;
-const TOGGLE_SLOT_PX = 22;
+const MARK_SLOT_PX = 22;
 
 type TipParams = {
   readonly state: ViewedState;
 };
 
 const viewedTipOf = ({ state }: TipParams): string => {
-  if (state === 'viewed') {
-    return 'Viewed';
-  }
-  return state === 'stale' ? 'Changed since you viewed it' : 'Mark as viewed';
+  return state === 'viewed' ? 'Viewed' : 'Changed since you viewed it';
 };
 
 export const FileRow = ({
@@ -66,10 +60,8 @@ export const FileRow = ({
   kinds,
   nameLength,
   hasDelta,
-  canToggleViewed,
   fileActions,
   onPick,
-  onToggleViewed,
 }: Props) => {
   const menu = useObjectMenuTrigger({
     target: { kind: 'diffFile', facts: diffFileFactsOf({ file: row.file, fileActions }) },
@@ -99,7 +91,7 @@ export const FileRow = ({
         tabIndex={-1}
         onClick={onPick}
         style={{
-          paddingLeft: treeIndentPx({ depth: row.depth }) + TOGGLE_SLOT_PX,
+          paddingLeft: treeIndentPx({ depth: row.depth }) + MARK_SLOT_PX,
           height: rowHeightOf(row),
         }}
         className={cn(
@@ -160,30 +152,22 @@ export const FileRow = ({
           {row.file.status === 'modified' ? '' : STATUS_LETTER[row.file.status]}
         </span>
       </button>
-      {canToggleViewed ? (
+      {isViewed || state === 'stale' ? (
         <div
-          className="absolute top-1/2 -translate-y-1/2"
+          className="pointer-events-none absolute top-1/2 -translate-y-1/2"
           style={{ left: treeIndentPx({ depth: row.depth }) + 2 }}
         >
-          <Tooltip content={viewedTipOf({ state })} anchorClassName="flex">
-            <button
-              type="button"
-              tabIndex={-1}
-              aria-label={`Viewed: ${row.name}`}
-              aria-pressed={isViewed}
-              onClick={onToggleViewed}
-              className={cn(
-                'flex size-4 items-center justify-center rounded-sm border text-background',
-                FOCUS_RING,
-                isViewed ? 'border-primary bg-primary' : 'border-border bg-transparent',
-              )}
-            >
-              {isViewed ? (
-                <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
-              ) : null}
-              {state === 'stale' ? <StatusDot size="sm" tone="warning" /> : null}
-            </button>
-          </Tooltip>
+          <span
+            role="img"
+            aria-label={viewedTipOf({ state })}
+            className="flex size-4 items-center justify-center text-success"
+          >
+            {isViewed ? (
+              <Check size={ICON_SIZE.mark} strokeWidth={ICON_STROKE.check} aria-hidden />
+            ) : (
+              <StatusDot size="sm" tone="warning" />
+            )}
+          </span>
         </div>
       ) : null}
     </li>

@@ -1,16 +1,9 @@
 import type { WorkflowImportPick } from '../../../../../store/slices/workflows/copyWorkflowsFromWorkspaces';
+import { countNoun } from '../../../../../shared/utils/countNoun';
 
 type PicksParams = {
   readonly picks: ReadonlyArray<WorkflowImportPick>;
 };
-
-type PluralParams = {
-  readonly count: number;
-  readonly noun: string;
-};
-
-const plural = ({ count, noun }: PluralParams): string =>
-  `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 const sourceOf = ({ picks }: PicksParams): string => {
   const names = new Set(picks.map((pick) => pick.sourceWorkspaceName));
@@ -18,7 +11,7 @@ const sourceOf = ({ picks }: PicksParams): string => {
   if (names.size === 1 && only !== undefined) {
     return only;
   }
-  return plural({ count: names.size, noun: 'workspace' });
+  return countNoun({ count: names.size, one: 'workspace' });
 };
 
 export const selectionSummary = ({ picks }: PicksParams): string => {
@@ -29,7 +22,7 @@ export const selectionSummary = ({ picks }: PicksParams): string => {
 };
 
 export const importedToast = ({ picks }: PicksParams): string =>
-  `Imported ${plural({ count: picks.length, noun: 'workflow' })} from ${sourceOf({ picks })}`;
+  `Imported ${countNoun({ count: picks.length, one: 'workflow' })} from ${sourceOf({ picks })}`;
 
 type CountParams = {
   readonly workflows: number;
@@ -37,4 +30,4 @@ type CountParams = {
 };
 
 export const catalogCount = ({ workflows, workspaces }: CountParams): string =>
-  `${plural({ count: workflows, noun: 'workflow' })} in ${plural({ count: workspaces, noun: 'workspace' })}`;
+  `${countNoun({ count: workflows, one: 'workflow' })} in ${countNoun({ count: workspaces, one: 'workspace' })}`;

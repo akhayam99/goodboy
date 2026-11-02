@@ -1,4 +1,5 @@
 import { formatUsd } from '@goodboy/ui';
+import { countNoun } from '../../shared/utils/countNoun';
 
 type Params = {
   readonly rangeLabel: string;
@@ -10,7 +11,7 @@ export const impactMeta = ({ rangeLabel, sessionCount, spentUsd }: Params): stri
   if (sessionCount === null) {
     return rangeLabel;
   }
-  const done = `${sessionCount} ${sessionCount === 1 ? 'session' : 'sessions'} done`;
+  const done = `${countNoun({ count: sessionCount, one: 'session' })} done`;
   if (sessionCount === 0) {
     return done;
   }

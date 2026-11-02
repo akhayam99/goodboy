@@ -1,6 +1,6 @@
 import { mockIPC } from '@tauri-apps/api/mocks';
 import { PaneShell } from '@goodboy/ui';
-import { GuideStudio } from '../../../../../features/settings/components/GuideStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { ImpactStudio } from '../../../../../features/impact/components/ImpactStudio';
 import { WorkflowStudio } from '../../../../../features/workflows/components/WorkflowStudio';
 import { StudioDetail } from '../../../../../shared/components/StudioShell/StudioDetail';
@@ -64,7 +64,7 @@ export const U23_FRAME_SCENES = {
   ),
   'frame-studio-guide': () => (
     <FramedStudioScene kind="guide" place="link">
-      <GuideStudio onClose={noop} />
+      <HelpStudio initialTab="guide" onClose={noop} onOpenScreen={noop} />
     </FramedStudioScene>
   ),
   'frame-questions': OpenQuestionsScene,

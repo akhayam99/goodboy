@@ -1,3 +1,4 @@
+import { PALETTE_ROW_PX } from './paletteBodyLayout';
 import { ChevronRight } from 'lucide-react';
 import { cn, ICON_SIZE, KeyHint } from '@goodboy/ui';
 
@@ -43,8 +44,9 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
       aria-disabled={isBlocked || undefined}
       data-key={item.key}
       data-selected={isSelected || undefined}
+      style={{ height: PALETTE_ROW_PX }}
       className={cn(
-        'flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2 text-body',
+        'flex shrink-0 cursor-pointer items-center gap-2 rounded-sm px-2 text-body',
         isSelected ? 'bg-selected' : 'hover:bg-hover',
       )}
       onMouseMove={onHover}

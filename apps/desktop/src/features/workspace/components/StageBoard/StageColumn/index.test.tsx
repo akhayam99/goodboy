@@ -84,6 +84,78 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('StageColumn motion', () => {
+  const sessionsOf = (count: number) =>
+    Array.from({ length: count }, (_, index) => makeSession(`s${index}`, `Task ${index}`));
+
+  it('keeps a card that leaves in its place for the exit and then drops it', () => {
+    vi.useFakeTimers();
+    const view = renderColumn({ sessions: sessionsOf(3) });
+
+    view.rerender(
+      <ToastProvider>
+        <StageColumn
+          spec={{ kind: 'stage', stage: 'building' }}
+          sessions={[sessionsOf(3)[0]!, sessionsOf(3)[2]!]}
+          nav={nav}
+          selection={makeSelection()}
+          onClearSelection={noop}
+          onRestore={noop}
+        />
+      </ToastProvider>,
+    );
+
+    expect(view.container.querySelector('[data-list-motion="leaving"]')?.textContent).toBe('');
+    expect(screen.getAllByRole('button', { hidden: true })).toHaveLength(3);
+
+    act(() => {
+      vi.advanceTimersByTime(320);
+    });
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('never animates a refresh of more than 20 cards', () => {
+    const view = renderColumn({ sessions: sessionsOf(2) });
+
+    view.rerender(
+      <ToastProvider>
+        <StageColumn
+          spec={{ kind: 'stage', stage: 'building' }}
+          sessions={sessionsOf(30)}
+          nav={nav}
+          selection={makeSelection()}
+          onClearSelection={noop}
+          onRestore={noop}
+        />
+      </ToastProvider>,
+    );
+
+    expect(view.container.querySelector('[data-list-motion="entering"]')).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(30);
+  });
+
+  it('does not animate when the filter key changes with the list', () => {
+    const view = renderColumn({ sessions: sessionsOf(3) });
+
+    view.rerender(
+      <ToastProvider>
+        <StageColumn
+          spec={{ kind: 'stage', stage: 'building' }}
+          sessions={sessionsOf(2)}
+          nav={nav}
+          selection={makeSelection()}
+          onClearSelection={noop}
+          onRestore={noop}
+          motionResetKey="payments-api"
+        />
+      </ToastProvider>,
+    );
+
+    expect(view.container.querySelector('[data-list-motion="leaving"]')).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+});
+
 describe('StageColumn', () => {
   it('names an empty lane in one line inside it, without a sentence or a count', () => {
     renderColumn({ spec: { kind: 'stage', stage: 'attention' } });
@@ -218,5 +290,47 @@ describe('StageColumn', () => {
     });
 
     expect(screen.getByRole('tooltip').querySelector('kbd')).toBeNull();
+  });
+});
+
+describe('StageColumn window', () => {
+  const many = (count: number): ReadonlyArray<Session> =>
+    Array.from({ length: count }, (_, index) => makeSession(`s-${index}`, `task ${index}`));
+
+  it('draws 50 archived cards, keeps the real total and reveals the rest on one click', () => {
+    renderColumn({ spec: { kind: 'archived' }, sessions: many(237) });
+    const lane = screen.getByRole('group', { name: 'archived' });
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(50);
+    expect(within(lane).getByText('237').textContent).toBe('237');
+
+    fireEvent.click(within(lane).getByRole('button', { name: 'Show 187 more' }));
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(237);
+    expect(within(lane).queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
+  });
+
+  it('windows the done lane the same way', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'done' }, sessions: many(60) });
+    const lane = screen.getByRole('group', { name: 'done' });
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(50);
+    expect(within(lane).getByRole('button', { name: 'Show 10 more' }).textContent).toBe(
+      'Show 10 more',
+    );
+  });
+
+  it('draws every card of a live lane, however long', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'building' }, sessions: many(80) });
+    const lane = screen.getByRole('group', { name: 'building' });
+
+    expect(within(lane).getAllByRole('button', { name: /^card / })).toHaveLength(80);
+    expect(within(lane).queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
+  });
+
+  it('offers no button when the lane fits the window', () => {
+    renderColumn({ spec: { kind: 'archived' }, sessions: many(50) });
+
+    expect(screen.queryByRole('button', { name: /Show \d+ more/ })).toBeNull();
   });
 });

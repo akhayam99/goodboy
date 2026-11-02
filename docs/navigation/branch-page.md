@@ -13,11 +13,11 @@ Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
 **Frame.** The Branch page is the center of the Projects tree (Session
-rail): one detail with no rail of its own. Its sections are the pages under
-the current branch row of the tree (`SessionLevel/WorktreeEntries`); the page
-publishes its counts once (`worktreeEntryFactsBus`, read by the folded rail)
-and the tree computes the same facts for its rows (`worktreeEntryFactsOf`). A host
-with no session rail (a scene, a test) shows the page alone. The
+rail): one detail with no rail of its own. Its sections are the tab strip under
+its title (`BranchTabStrip`); the page computes its counts once
+(`worktreeEntryFactsOf`) and publishes them for the folded rail
+(`worktreeEntryFactsBus`). The tree row of the branch has no rows under it, only
+one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next.
 
@@ -59,7 +59,8 @@ none once it is pushed and up to date, where the create form's `Create pull requ
 primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Mark ready` or
 `Reopen` waits in `⋯`, disabled with its reason, and runs through the header's own confirm and
 failure line from there; the header never repeats its primary in `⋯`. A stopped rebase shows no
-primary, with `Abort rebase` in the rebase banner and on the worktree status line. The Merge
+primary, with `Abort rebase` in the rebase banner only. While the branch is behind and another step
+leads (`Fix checks`, say), `Rebase on main` waits in `⋯`, its one home. The Merge
 cell of the status strip says the blocker once (`Blocked by checks`).
 One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
 blockers are a merged, closed, queued or draft pull request, conflicts, checks
@@ -184,7 +185,7 @@ Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never ap
 request. A row is 28px with an icon, the label and one fixed right-aligned slot
 (`worktreeEntryFactsOf`; empty until a count is known, the fact in the tooltip), then a chevron
 column that only Files fills. The current row carries `aria-current="page"`,
-Up and Down move between rows while the list has focus, and a pick replaces the address. Merged and
+Up and Down move between rows while the list has focus, and a pick replaces the address. The page repeats the same entries as a tab strip under the title (`BranchTabStrip`, a `tablist` named `Branch pages`), each tab with the count of the same `worktreeEntryFactsOf` fact the row reads, so the strip and the rail never drift; the active tab keeps its count. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
@@ -225,7 +226,7 @@ detail: Checks (`2 passed`, `1 failing` with the failing names, `Running, 2 of 3
 `Waiting on dana-r`, `Changes requested`, `Approved by dana-r`), Merge (`Blocked by checks`,
 `Conflicts` in amber as in the branch state map, `Ready` with the merge method, `Queued` with the
 queue line, `Merged`) and Branch (`Up to date`, `7 behind main`, `Rebasing`, `Diverged` when
-someone pushed online). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
+someone pushed online). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
 the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
 requests another), `Bots that commented` (bots whose only review is a comment, with no verdict,
 `pullRequestReviewerGroupsOf` in core), `Author` and `Linked issues`, all read from the branch on
@@ -352,18 +353,18 @@ diff, so the column re-centres in the space left of it the way it slides for a r
 It opens at 320px, its left edge resizes it from 260 to 560 (`Resize the file list`, a double
 click resets it) and the width is kept in `goodboy:diff-file-rail-width:v1`. `Fold the file
 list` in its head folds it and `goodboy:diff-file-rail-folded:v1` remembers that; folded, the
-diff toolbar ends in `Files N`, which opens it again, and `F` or `/` open it too (`useFileRail`).
+diff toolbar starts with `Files N`, which opens it again, and `F` or `/` open it too (`useFileRail`).
 The rail belongs to the page, not to the drawer slot: a side or reader drawer pushes or lies
 over the whole page (rail included) by the push rule of Drawers below. The rail docks while
-the page is 880px or wider (560 for the diff plus the rail); a narrower page (a pushing drawer,
+the page is 1224px or wider (880 for the code, the 320 rail and the gutters, so split stays open beside it); a narrower page (a pushing drawer,
 a small window) folds it without writing the saved choice, and `Files N`, `F` or `/` then open it
 over the right edge of the diff (`data-file-rail="overlay"`) until a pick, `Esc` or Fold
 closes it. Folding and opening move like the session rail (`FileRail` over `useFoldPhase`,
 the page as its frame): the width eases on the 220ms fold token while the list, held at its
 final width, fades out (`fold-label-out`) or in (`fold-label-in`); a switch between docked and
-overlay (the page crossing 880px) remounts the rail in place, with no move. The rail head reads `Next unviewed N`, the keyboard button and Fold, then the
+overlay (the page crossing 1224px) remounts the rail in place, with no move. The rail head reads `Viewed N of M` with a `Next` button, the keyboard button and Fold, then the
 filter field (`/`) with the filter menu beside it (scope and grouping), then the tree;
-each file row keeps its viewed mark.
+a viewed file row shows a check, and the one control for Viewed is the file header.
 The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
 then `Display ⌄`. Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
@@ -383,7 +384,7 @@ for a screen reader. A file or folder row has no tooltip: the full path is in th
 its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
 the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
 returns to the diff (and closes a rail that lies over it). A keyboard button beside
-`Next unviewed` at the head of the rail carries the key hint in its tooltip and opens the full list.
+`Next` at the head of the rail carries the key hint in its tooltip and opens the full list.
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
 subsequence of the path, and one filter menu beside the field (`Filter and group files`,
 tinted while a scope is on) holds `Show: All | Unviewed N | Commented N`, which narrows it
@@ -411,7 +412,24 @@ as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
 scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
 link from another page such as `Open in Files`. A refresh keeps the tree and
 the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
-on the first load and when the scope changes. The diff resets its mounted
+on the first load and when the scope changes. On the branch scope the tree and
+the file counts come first from one cheap call, `worktree_diff_files`: a list of
+`{ path, oldPath, status, additions, deletions, isBinary, isUntracked }` read from
+`git diff --numstat` and `--name-status` plus `ls-files --others`, so an untracked
+file shows as new with its line count. With that list the page is ready at once: the
+tree, the file headers and every count come from the list and never change when a
+body arrives. A file body loads when its card scrolls into view (`worktree_diff_file`
+with the old path of a rename, parsed in a worker through `parseDiffAsync`; without a
+worker the parse runs on the main thread). Until then the card holds a 96px
+`Loading diff` skeleton, and a body that fails says so with `Retry`. A binary file asks
+for nothing. `useDiffBodies` owns the bodies: a body that answers after the view or
+the branch changed is dropped, and a refresh keeps the bodies on screen while the new
+list and the visible bodies load again. A list that arrives after the full diff is
+dropped, and an empty or failed list falls back to the full diff, parsed as before. The
+full diff still loads in the background for `patch` (Copy patch) but is never parsed
+when the list answered. The Comments tab asks for the body of a thread's file before it
+draws the code around the comment. A viewed mark is read from status and counts alone
+(`fileSignature`), so it holds with or without the hunks loaded. The diff resets its mounted
 batch, its observer and its place only when the list of paths changes, never on
 a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with
@@ -430,8 +448,8 @@ whole file) the header draws that one as a quiet word instead of a `⋯` of one 
 marked, loaded for the same view as the page (branch, working tree or commit). The drawer starts
 in the page's Display layout and has its own Unified and Split toggle in its header: it is local
 state and never changes the page's Display setting. A merged or closed pull request hides Viewed, Comment, Reply and
-the other writes. Split needs a column content of 880 or more, otherwise `Display` says
-`Split needs a wider window`. The write review form is not on this toolbar: it opens from the
+the other writes. Split needs a column content of 880 or more, otherwise the `Split` segment under `Display`
+is disabled with the tooltip `Needs 880px`. The write review form is not on this toolbar: it opens from the
 pull request's `Write review` action and swaps the tab body for the review form with line
 drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
 

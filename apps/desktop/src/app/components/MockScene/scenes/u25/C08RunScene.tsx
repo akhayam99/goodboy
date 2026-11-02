@@ -111,7 +111,7 @@ export const C08RunScene = ({ state, selection, click = 'none', isFolded = false
         <DrawerColumn
           main={
             <SessionFrame session={session}>
-              <SessionWorkspace session={session} isActive />
+              <SessionWorkspace session={session} />
             </SessionFrame>
           }
           drawer={isDrawerOpen ? <DrawerHost /> : null}

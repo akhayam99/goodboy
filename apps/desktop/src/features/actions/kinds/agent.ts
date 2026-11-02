@@ -193,7 +193,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'View transcript',
       icon: ScrollText,
       group: 'open',
-      when: ({ facts }) => classifyAgent({ agent: facts.agent, override: null }) === 'auto',
+      when: ({ facts }) => !facts.isWorkflowStep,
       run: ({ facts, env }) => {
         openAgent({ env, facts });
         env.getState().openDrawer({
@@ -205,7 +205,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     },
     {
       id: 'agent.stop',
-      label: 'Stop',
+      label: NAMES.stop,
       icon: OctagonX,
       group: 'act',
       when: ({ facts }) => facts.isTurnRunning,

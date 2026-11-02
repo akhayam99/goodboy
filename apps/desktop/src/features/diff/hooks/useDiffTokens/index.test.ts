@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { DiffHunk } from '@goodboy/types';
 import { buildDiffStreams, tokensForLine, useDiffTokens } from '.';
+import { installInlineHighlightWorker } from '../../../../test/installInlineHighlightWorker';
+
+beforeAll(installInlineHighlightWorker);
 
 const HUNK: DiffHunk = {
   header: '@@ -1,3 +1,3 @@',

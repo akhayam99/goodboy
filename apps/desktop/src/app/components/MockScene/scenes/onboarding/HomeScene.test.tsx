@@ -43,7 +43,7 @@ describe('home scenes', () => {
   it('lists the four workspaces with their folders', async () => {
     await mount({ state: 'list' });
     expect(screen.getAllByRole('button', { name: /^Open [A-Z][a-z]+( web)?$/ })).toHaveLength(4);
-    expect(await screen.findByText('3 folders · ~/Code/harborline')).toBeDefined();
+    expect(await screen.findByText('3 projects · ~/Code/harborline')).toBeDefined();
   });
 
   it('opens the one form in place', async () => {
@@ -54,6 +54,6 @@ describe('home scenes', () => {
   it('says no workspace yet with setup paused at Workspace', async () => {
     await mount({ state: 'empty' });
     expect(screen.getByRole('heading', { name: 'No workspace yet' })).toBeDefined();
-    expect(await screen.findByText('Setup paused at Workspace · 1 of 4 done')).toBeDefined();
+    expect(await screen.findByText('Setup paused at Workspace · 1 of 3 done')).toBeDefined();
   });
 });

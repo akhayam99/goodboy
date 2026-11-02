@@ -1,3 +1,4 @@
+import { countNoun } from '../../shared/utils/countNoun';
 import type { ReviewSourceKind } from '@goodboy/core';
 import type { PullRequestState } from '@goodboy/types';
 
@@ -36,16 +37,6 @@ const MERGE_CHECKED_BY_HOST = 'Bitbucket checks this when you merge';
 const UNKNOWN_REASON = 'GitHub has not finished checking whether this branch merges.';
 const FIX_RUN_LIVE = 'A run is live on this branch';
 
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}): string => `${count} ${count === 1 ? one : many}`;
-
 const baseOf = ({ facts }: { readonly facts: MergeReadinessFacts }): string =>
   facts.pr?.baseBranch ?? 'the base branch';
 
@@ -81,7 +72,7 @@ const checksBlocker = ({ facts }: { readonly facts: MergeReadinessFacts }): stri
   }
   if (facts.checks === 'pending') {
     return facts.runningChecks > 0
-      ? `${plural({ count: facts.runningChecks, one: 'check', many: 'checks' })} still running.`
+      ? `${countNoun({ count: facts.runningChecks, one: 'check', many: 'checks' })} still running.`
       : 'Checks are still running.';
   }
   return null;
@@ -136,7 +127,7 @@ const blockersOf = ({ facts }: { readonly facts: MergeReadinessFacts }): Readonl
 
 const commentsCaveat = ({ facts }: { readonly facts: MergeReadinessFacts }): string | null =>
   facts.commentsNeedYou > 0
-    ? `${plural({ count: facts.commentsNeedYou, one: 'comment needs', many: 'comments need' })} you`
+    ? `${countNoun({ count: facts.commentsNeedYou, one: 'comment needs', many: 'comments need' })} you`
     : null;
 
 const caveatsOf = ({ facts }: { readonly facts: MergeReadinessFacts }): ReadonlyArray<string> => {

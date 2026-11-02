@@ -79,9 +79,6 @@ vi.mock('../../../features/providers/routing', async () =>
 vi.mock('../../../features/budget/budget', async () =>
   (await import('../../storyHarness')).budgetModuleMock(),
 );
-vi.mock('../../../features/skills/skills', async () =>
-  (await import('../../storyHarness')).skillsModuleMock(),
-);
 vi.mock('../../../features/workflows/workflows', async () =>
   (await import('../../storyHarness')).workflowsModuleMock(),
 );
@@ -184,6 +181,12 @@ const mountView = ({ id, project }: MountParams): SessionMountView => ({
   createdAt: TEST_NOW,
   updatedAt: TEST_NOW,
 });
+
+type SluggedParams = {
+  readonly id: MountId;
+  readonly branch: string;
+  readonly repoSlug: string;
+};
 
 type EndedParams = {
   readonly projectId: ProjectId;
@@ -410,7 +413,6 @@ describe('sweepRequests', () => {
       expect(refreshGithub).not.toHaveBeenCalled();
       expect(refreshGitlab).toHaveBeenCalledTimes(1);
       expect(refreshBitbucket).toHaveBeenCalledTimes(1);
-      expect(store.getState().boardReady).toBe(true);
     });
 
     it('does not send a GitLab remote to gh when the project has no remote yet', () => {
@@ -427,32 +429,8 @@ describe('sweepRequests', () => {
     });
   });
 
-  describe('boardReady', () => {
-    it('releases at once when no host can be asked', () => {
-      store.setState({
-        githubStatus: { mode: 'absent', available: false },
-        workspaceIntegrations: {},
-      });
-
-      void store.getState().sweepRequests();
-
-      expect(store.getState().boardReady).toBe(true);
-      expect(refreshGithub).not.toHaveBeenCalled();
-    });
-
-    it('stays unreleased when gh answers and no mount has a branch to ask about', () => {
-      store.setState({
-        sessionMounts: {
-          [SESSION.id]: [{ ...mountView({ id: LEDGER_MOUNT, project: LEDGER }), branch: '' }],
-        },
-      });
-
-      void store.getState().sweepRequests();
-
-      expect(store.getState().boardReady).toBe(false);
-    });
-
-    it('releases after every host settled and not before', async () => {
+  describe('the board', () => {
+    it('is never gated by a sweep: boardReady is left as the workspace load set it', async () => {
       const gates: Array<() => void> = [];
       for (const spy of [refreshGithub, refreshGitlab, refreshBitbucket]) {
         spy.mockImplementation(
@@ -462,36 +440,29 @@ describe('sweepRequests', () => {
             }),
         );
       }
+      store.setState({ boardReady: true });
 
       void store.getState().sweepRequests();
       expect(gates).toHaveLength(3);
+      expect(store.getState().boardReady).toBe(true);
 
-      gates[0]?.();
-      gates[1]?.();
-      await flush();
-      expect(store.getState().boardReady).toBe(false);
-
-      gates[2]?.();
+      for (const release of gates) {
+        release();
+      }
       await flush();
       expect(store.getState().boardReady).toBe(true);
     });
 
-    it('drops the release when the workspace changed while it waited', async () => {
-      let release: () => void = () => undefined;
-      refreshGithub.mockImplementation(
-        () =>
-          new Promise<undefined>((resolve) => {
-            release = () => resolve(undefined);
-          }),
-      );
-      store.setState({ sessionMounts: mountsOf(LEDGER_MOUNT) });
+    it('stays as it was when nothing can be asked', () => {
+      store.setState({
+        githubStatus: { mode: 'absent', available: false },
+        workspaceIntegrations: {},
+      });
 
       void store.getState().sweepRequests();
-      store.setState({ currentWorkspaceId: OTHER_WORKSPACE });
-      release();
-      await flush();
 
       expect(store.getState().boardReady).toBe(false);
+      expect(refreshGithub).not.toHaveBeenCalled();
     });
   });
 
@@ -1010,6 +981,126 @@ describe('sweepRequests', () => {
     });
   });
 
+  describe('batched GitHub sweep', () => {
+    const LEDGER_SLUG = 'harborline/ledger-core';
+
+    beforeEach(() => {
+      storySpies.listPrsForBranches.mockReset();
+      storySpies.listPrsForBranches.mockResolvedValue(null);
+    });
+
+    const slugged = ({ id, branch, repoSlug }: SluggedParams): SessionMountView => ({
+      ...mountView({ id, project: LEDGER }),
+      branch,
+      repoSlug,
+    });
+
+    const mountIdOf = (name: string) => brandId<MountId>({ value: name });
+
+    const useMounts = (mounts: ReadonlyArray<SessionMountView>) => {
+      store.setState({ sessionMounts: { [SESSION.id]: mounts } });
+    };
+
+    const optionsOf = (spy: typeof refreshGithub) =>
+      spy.mock.calls.flatMap(([, options]) =>
+        typeof options === 'object' && options !== null
+          ? [
+              {
+                mountId: 'mountId' in options ? options.mountId : undefined,
+                prefetched: 'prefetched' in options ? options.prefetched : undefined,
+              },
+            ]
+          : [],
+      );
+
+    it('asks gh once for every branch of a repo instead of once per mount', async () => {
+      const prs: Array<PullRequestState> = [mergedPr];
+      storySpies.listPrsForBranches.mockResolvedValue(
+        new Map([
+          ['ak/one', prs],
+          ['ak/two', []],
+          ['ak/three', []],
+        ]),
+      );
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-three'), branch: 'ak/three', repoSlug: LEDGER_SLUG }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(storySpies.listPrsForBranches).toHaveBeenCalledTimes(1);
+      expect(storySpies.listPrsForBranches).toHaveBeenCalledWith(
+        expect.objectContaining({
+          repo: LEDGER_SLUG,
+          branches: ['ak/one', 'ak/two', 'ak/three'],
+        }),
+      );
+      expect(refreshGithub).toHaveBeenCalledTimes(3);
+      const one = optionsOf(refreshGithub).find((options) => options.mountId === 'mount-one');
+      expect(one?.prefetched).toEqual(prs);
+    });
+
+    it('asks once per repo when the mounts span two repos', async () => {
+      storySpies.listPrsForBranches.mockResolvedValue(new Map());
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+        slugged({
+          id: mountIdOf('mount-three'),
+          branch: 'ak/three',
+          repoSlug: 'harborline/payments-api',
+        }),
+        slugged({
+          id: mountIdOf('mount-four'),
+          branch: 'ak/four',
+          repoSlug: 'harborline/payments-api',
+        }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(storySpies.listPrsForBranches).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves a lone mount on its own request', async () => {
+      useMounts([slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG })]);
+
+      await store.getState().sweepRequests();
+
+      expect(storySpies.listPrsForBranches).not.toHaveBeenCalled();
+      expect(refreshGithub).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to one request per mount when the batch cannot answer', async () => {
+      storySpies.listPrsForBranches.mockResolvedValue(null);
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(refreshGithub).toHaveBeenCalledTimes(2);
+      expect(optionsOf(refreshGithub).every((options) => options.prefetched === undefined)).toBe(
+        true,
+      );
+    });
+
+    it('still refreshes every mount when the batch throws', async () => {
+      storySpies.listPrsForBranches.mockRejectedValue(new Error('gh gone'));
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(refreshGithub).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('concurrency cap', () => {
     it('starts at most the cap of refreshes before any settles', async () => {
       const extra = Array.from({ length: REVIEW_REFRESH_CONCURRENCY + 2 }, (_, index) =>
@@ -1043,7 +1134,6 @@ describe('sweepRequests', () => {
       }
       await flush();
       expect(refreshGithub).toHaveBeenCalledTimes(REVIEW_REFRESH_CONCURRENCY + 2);
-      expect(store.getState().boardReady).toBe(true);
     });
   });
 });

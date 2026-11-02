@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/utils/names';
 import type { OrchestratorPhase } from './orchestratorState';
 
 export type RunPrimaryKind =
@@ -19,7 +20,7 @@ export type RunPrimary = {
   readonly label: string;
 };
 
-export type RunPlanHold = 'none' | 'with-plan' | 'without-plan';
+export type RunPlanHold = 'none' | 'with-plan' | 'without-plan' | 'revising';
 
 type DynamicFlow = {
   readonly kind: 'dynamic';
@@ -48,8 +49,8 @@ const LABELS = {
   'review-plan': 'Review plan',
   'approve-plan': 'Approve plan',
   answer: 'Answer',
-  resume: 'Resume',
-  continue: 'Continue the run',
+  resume: NAMES.continue,
+  continue: NAMES.continue,
   retry: 'Retry',
   hint: 'Add a hint and continue',
   'raise-cap': 'Raise limit',
@@ -86,8 +87,9 @@ const dynamicPrimary = ({ flow, hold }: DynamicParams): RunPrimary | null => {
     case 'needs-answer':
       return flow.hasQuestion ? fixed({ kind: 'answer' }) : planEntry({ hold });
     case 'plan-approval':
-    case 'plan-revising':
       return planEntry({ hold });
+    case 'plan-revising':
+      return null;
     case 'paused':
       return fixed({ kind: 'resume' });
     case 'stopped':
@@ -131,6 +133,9 @@ export const runPrimaryOf = ({
   }
   if (isQueuedManual) {
     return fixed({ kind: 'start-run' });
+  }
+  if (hold === 'revising') {
+    return null;
   }
   if (flow.kind === 'dynamic') {
     return dynamicPrimary({ flow, hold });

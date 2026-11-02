@@ -23,7 +23,6 @@ import { repoIdentity, validateGitRepo } from '../../../shared/lib/repo';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { nameFromFolder } from '../../../features/workspace/nameFromFolder';
 import { folderName } from '../terminal/terminalOwner';
-import { rescanWorkspaceSkills } from './workspaceSkills';
 import { workspaceSlug } from './slug';
 import type { GetFn, SetFn } from './types';
 
@@ -181,8 +180,6 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
     await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id).catch(() => undefined);
     const templates = await invokeWorkflowList(workspace.id).catch(() => []);
     set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates } }));
-    const skills = await rescanWorkspaceSkills(workspace.id);
-    set((state) => ({ skills: { ...state.skills, [workspace.id]: skills } }));
 
     return workspace;
   };

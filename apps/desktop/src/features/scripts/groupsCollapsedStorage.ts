@@ -1,5 +1,6 @@
 import type { MountId, WorkspaceId } from '@goodboy/types';
 import { STORAGE_PREFIXES, persistedPref } from '../../shared/lib/storage-keys';
+import { storageKeyOf } from '../../shared/lib/storageKeyOf';
 
 type ReadParams = {
   readonly workspaceId: WorkspaceId;
@@ -9,9 +10,6 @@ type WriteParams = ReadParams & {
   readonly collapsed: ReadonlySet<MountId>;
 };
 
-const storageKey = ({ workspaceId }: ReadParams): string =>
-  `${STORAGE_PREFIXES.scriptsGroupsCollapsed}${workspaceId}`;
-
 const isStringArray = (value: unknown): value is ReadonlyArray<string> =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
@@ -19,7 +17,7 @@ const EMPTY_GROUPS: ReadonlySet<MountId> = new Set();
 
 const groupsPref = ({ workspaceId }: ReadParams) =>
   persistedPref<ReadonlySet<MountId>>({
-    key: storageKey({ workspaceId }),
+    key: storageKeyOf({ prefix: STORAGE_PREFIXES.scriptsGroupsCollapsed, id: workspaceId }),
     fallback: EMPTY_GROUPS,
     parse: (raw) => {
       const parsed: unknown = JSON.parse(raw);

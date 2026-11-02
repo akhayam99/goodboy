@@ -42,6 +42,7 @@ const hasLinear = ({ state }: StateParams): boolean =>
 const WIZARD_COLUMN = '[data-testid="wizard-column"]';
 const WORKSPACE_CREATE = '[data-step="workspace"] [data-demo-anchor="setup-create"]';
 const LINEAR_CONNECT = '[data-step="tools"] button[aria-label="Connect Linear"]';
+const OPEN_TOOLS = '[data-step="first-session"] [data-demo-anchor="setup-open-tools"]';
 
 export const BRING_HINTS: ReadonlyArray<DemoHint> = [
   {
@@ -56,6 +57,19 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     isBlocked: isOtherControl,
     revealWhen: ({ root }) => hasElement({ root, selector: WORKSPACE_CREATE }),
     doneWhen: isPastStep({ step: 'workspace' }),
+  },
+  {
+    id: 'setup-open-tools',
+    label: 'Open the issue sources',
+    copy: 'Connect an issue source',
+    instruction: "Press **Connect Linear or Jira** to bring Harborline's issues into Goodboy.",
+    result: 'The tools you can connect are listed here.',
+    beat: 0,
+    anchor: OPEN_TOOLS,
+    focus: WIZARD_COLUMN,
+    isBlocked: isOtherControl,
+    revealWhen: ({ root }) => hasElement({ root, selector: OPEN_TOOLS }),
+    doneWhen: isOnStep({ step: 'tools' }),
   },
   {
     id: 'setup-linear',
@@ -75,12 +89,12 @@ export const BRING_HINTS: ReadonlyArray<DemoHint> = [
     label: 'Keep connected tools',
     copy: 'Continue with these tools',
     instruction: 'Press **Continue** to finish setting up Harborline.',
-    result: 'Setup is done, and HBL-412, the duplicate-credit bug, is ready to pick up.',
+    result: 'Back on the first session, HBL-412, the duplicate-credit bug, is ready to pick up.',
     beat: 0,
     anchor: '[data-step="tools"] [data-demo-anchor="setup-continue"]',
     focus: WIZARD_COLUMN,
     isBlocked: isOtherControl,
     revealWhen: isOnStep({ step: 'tools' }),
-    doneWhen: isPastStep({ step: 'tools' }),
+    doneWhen: isOnStep({ step: 'first-session' }),
   },
 ];

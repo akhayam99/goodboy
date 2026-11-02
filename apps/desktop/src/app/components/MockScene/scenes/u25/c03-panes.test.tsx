@@ -78,7 +78,7 @@ describe('c03 session tools scenes', () => {
   it('opens Ask beside the overview', async () => {
     await mount('c03-panes-ask');
     expect(useAppStore.getState().drawer?.kind).toBe('ask');
-    expect(pressed()).toEqual(['Ask']);
+    expect(pressed()).toEqual(['Ask this session']);
   });
 
   it('opens the terminal on the worktree this session last used, with the scope picker', async () => {
@@ -138,7 +138,7 @@ describe('c03 session tools scenes', () => {
     expect(icons.map((icon) => icon.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
       'Context',
-      'Ask',
+      'Ask this session',
       'Agents',
       'Scripts',
       'Terminal',
@@ -162,11 +162,11 @@ describe('c03 session tools scenes', () => {
   });
 
   it.each([
-    ['c03-panes-ask', 'Ask'],
+    ['c03-panes-ask', 'Ask this session'],
     ['c03-panes-explore', 'Explore'],
     ['c03-panes-context', 'Context'],
     ['c03-panes-scripts', 'Scripts'],
-    ['c03-panes-folded', 'Ask'],
+    ['c03-panes-folded', 'Ask this session'],
   ] as const)('%s opens its pane, never the closed layout', async (name, label) => {
     await mount(name);
     expect(useAppStore.getState().drawer).not.toBeNull();

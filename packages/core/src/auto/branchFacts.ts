@@ -5,6 +5,7 @@ import {
   AUTO_FACTS_THREAD_CHARS,
   AUTO_FACTS_THREADS_MAX,
 } from './limits';
+import { oneLine } from './oneLine';
 
 export type BranchFactsPart<Value> =
   Readonly<{ kind: 'ok'; value: Value }> | Readonly<{ kind: 'unavailable'; reason: string }>;
@@ -69,16 +70,6 @@ type CappedParams<Item> = {
 const cappedLines = <Item>({ items, max, line }: CappedParams<Item>): ReadonlyArray<string> => {
   const shown = items.slice(0, max).map((item) => `  - ${line(item)}`);
   return items.length > max ? [...shown, `  - and ${items.length - max} more`] : shown;
-};
-
-type OneLineParams = {
-  readonly text: string;
-  readonly max: number;
-};
-
-const oneLine = ({ text, max }: OneLineParams): string => {
-  const flat = text.replace(/\s+/g, ' ').trim();
-  return flat.length > max ? `${flat.slice(0, max)}...` : flat;
 };
 
 const commitLines = (commits: ReadonlyArray<BranchFactsCommit>): ReadonlyArray<string> => [

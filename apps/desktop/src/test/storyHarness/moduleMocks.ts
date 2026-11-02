@@ -6,6 +6,7 @@ import type {
 import { createDbMock } from '../dbMock';
 import { storyDbStubs } from './dbStubs';
 import {
+  type BranchHolderArgs,
   type WorktreeBaseArgs,
   ghStatus,
   invokeBudgetRuleUpsert,
@@ -92,14 +93,6 @@ export const budgetModuleMock = () => ({
   invokeCheckProviderBudget: vi.fn(async () => undefined),
 });
 
-export const skillsModuleMock = () => ({
-  invokeSkillList: storySpies.invokeSkillList,
-  invokeSkillUpsert: storySpies.invokeSkillUpsert,
-  invokeSkillDelete: storySpies.invokeSkillDelete,
-  invokeSkillRescan: storySpies.invokeSkillRescan,
-  resolveSkillInvocation: vi.fn(),
-});
-
 export const workflowsModuleMock = () => ({
   invokeWorkflowList: storySpies.invokeWorkflowList,
   invokeWorkflowUpsert: storySpies.invokeWorkflowUpsert,
@@ -180,6 +173,8 @@ export const worktreeModuleMock = () => ({
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
   listBranchCommits: (worktreePath: string) => storySpies.listBranchCommits(worktreePath),
   listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
+  worktreeBranchHolder: ({ repoPath, branch }: BranchHolderArgs) =>
+    storySpies.worktreeBranchHolder({ repoPath, branch }),
   worktreeIsAncestor: vi.fn(async () => true),
   worktreeRemoteHead: vi.fn(async () => ''),
   worktreeDiffRange: vi.fn(async () => ''),
@@ -253,6 +248,7 @@ export const coreModuleMock = async (importOriginal: () => Promise<Record<string
   ...(await importOriginal()),
   detectRepoSlug: storySpies.detectRepoSlug,
   listPrsForBranch: storySpies.listPrsForBranch,
+  listPrsForBranches: storySpies.listPrsForBranches,
   getPrForBranch: vi.fn(async () => null),
   fetchPrDetail: storySpies.fetchPrDetail,
   fetchLinkedIssues: storySpies.fetchLinkedIssues,

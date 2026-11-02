@@ -51,6 +51,29 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
   `resolveMountNaming.ts`). A branch adopted with `existing` keeps its name;
   only when it is not there does the fork cut a new branch, under the prefix.
+- A goal that names an existing branch adopts it, with no model call
+  (`branchNamedInGoal`, read by `mountPlan`). Only an exact, full branch name
+  counts, local or on origin, written in any language ("lavora sul branch:
+  ak/x"); a partial or fuzzy name never does. A plain word with no `/`, `-`,
+  `_` or `.` counts only when quoted or backticked, and the base branch, `main`,
+  `master`, `develop`, `development` and `trunk` are never adopted from text.
+  It applies to the first repository mount of a session and only when no
+  explicit `existingBranch` seed is set; the seed wins. When the goal names
+  several branches nothing is adopted: the new branch stays and the start
+  confirmation shows "The goal names 2 branches" with one button per branch, and
+  a pick is stored as the seed. The confirmation reads "Uses the existing
+  branch <name>", and when `worktree_branch_holder` says another worktree has
+  the branch checked out it names that path and offers "Open the existing
+  worktree" or "Start on a new branch" (`ExistingBranchNotice`, one component
+  for the Overview card and the New session start). Opening the worktree sets
+  the `existingWorktreePath` seed: `createProjectMount` checks the holder again
+  (`existingWorktreeFor`), mounts that path without creating a worktree and
+  skips the worktree setup. A new branch sets `isGoalBranchIgnored`, which
+  `mountPlan` reads. The New session start has no session yet, so it keeps the
+  pick on the draft (`branchChoice`, dropped when the goal or the folder
+  changes) and `startSessionFromDraft` turns it into the same seeds through
+  `createSession`. A mount whose `branchOrigin` is `adopted` reads "Existing
+  branch" in its branch row tooltip.
 - When another live session, or the repository itself, already owns the name,
   the plan takes `-2`, `-3` and so on. An adopted branch is never renamed. The
   frontend sends the full name; `worktree_create` and `bootstrap_prepare` check
@@ -71,7 +94,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 
 ## Who picks the folders
 
-A new session starts from its task, not from a folder. With nothing pinned in **Where**,
+A new session starts from its task, not from a folder. With nothing pinned in **Projects**,
 `mountTaskFolders` (`store/slices/project-mounts/mountTaskFolders.ts`) mounts at start the
 folders the task needs, and it is the one rule for this: `createSession` runs it when
 `startSessionFromDraft` passes `shouldPickFolders`, and Auto runs it for a writer with no folder
@@ -87,7 +110,7 @@ folders the task needs, and it is the one rule for this: `createSession` runs it
   mount nothing. A name shorter than four characters (`web`, `app`) matches only in backticks
   or as `owner/repo`, so a plain word in the task mounts nothing. The match is a plain index
   scan, no regex.
-- **A pin wins.** Any folder pinned in **Where** turns the rule off; only the pins are mounted.
+- **A pin wins.** Any folder pinned in **Projects** turns the rule off; only the pins are mounted.
 - **One allowance.** Each candidate goes through `admitProjectMount`, the same gate and proposal
   step an agent's `<<materialize>>` uses (`materializationGate`): the active project, task-linked
   projects and two more per session mount at once, and the next becomes a mount proposal the
@@ -102,7 +125,7 @@ folders the task needs, and it is the one rule for this: `createSession` runs it
 
 ## A new worktree starts usable
 
-A new worktree is a clean checkout, so it lacks what git ignores: the `.env`, the local config, the installed dependencies. Each repository folder has a **Worktree setup** section in Settings, Workspace, Folders (`NewWorktreesField`) with two settings rows per project, never columns, like the first lap phase:
+A new worktree is a clean checkout, so it lacks what git ignores: the `.env`, the local config, the installed dependencies. Each repository folder has a **Worktree setup** section in Settings, Workspace, Projects (`NewWorktreesField`) with two settings rows per project, never columns, like the first lap phase:
 
 - **Carry into every new branch** (`worktree.carry` in `project_values`, a JSON list). The page lists the git-ignored files and folders at the repository (`worktree_carry_candidates`), none ticked. A secret (`is_secret_name`: `.env*`, `*.pem`, `*.key`, `id_rsa` and the like) reads **secret: only when ticked**; dependency and build folders are left out, and a large tree cannot be ticked.
 - **Setup after creation** (`worktree.setup` in `project_values`), prefilled from a lockfile next to its manifest (`worktree_setup_proposal`: `pnpm install`, `yarn install`, `npm install`, `bun install`, `composer install`) with **proposed from pnpm-lock.yaml** until you save. A saved empty value means no setup, an unsaved one means the proposal.
@@ -484,8 +507,11 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   or whose request merged or closed, and skips a mount fetched in the last 5s
   (turn end) or 60s (focus). `useGithubPolling` still sweeps on boot, on a
   branch change and every 5 minutes, through `sweepRequests`, which asks the
-  host each mount lives on (GitHub, GitLab or Bitbucket, [hosts.md](./hosts.md)),
-  but its timer and its visibility sweep
+  host each mount lives on (GitHub, GitLab or Bitbucket, [hosts.md](./hosts.md)).
+  When a sweep holds two or more GitHub mounts of one repo, it reads every branch
+  of that repo with one batched `gh api graphql` request (`listPrsForBranches`,
+  20 branches per request, behind the `gh_run` allowlist) and hands each mount
+  its answer; if that request fails, each mount asks on its own. Its timer and its visibility sweep
   skip mounts already fetched with no request, so only the recheck finds a PR
   opened outside the app. There is no faster global poll.
 - **The push count re-reads with the request.** Every push surface (the
@@ -636,10 +662,9 @@ action the user can see, or allows one on a mount the user sees as gone.
 
 The Overview has no Projects section. A worktree is a one line row of the
 Projects tree in the session rail (`WorktreeRow`: state glyph, the pull request
-title or the branch, at most one chip: failing, conflict or behind). The
-current branch alone opens in place under its row: the status line with
-Rebase, then its pages (Pull request, Comments, Files with the diff stat,
-Commits, Checks). Its row menu (the `⋯`, a right click, Shift+F10) holds the
+title or the branch, at most one chip: failing, conflict or behind). A branch
+is one row with no rows under it; its pages (Pull request, Comments, Files,
+Commits, Checks) are the tab strip of the Branch page. Its row menu (the `⋯`, a right click, Shift+F10) holds the
 `mount` kind of the action registry (`features/actions/kinds/mount.ts`). The
 navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).
 
@@ -771,3 +796,10 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   (`features/suggestions/useSessionSuggestions/index.ts:447`), so a GitLab or
   Bitbucket branch shows its state in the list and has no Mark ready, Merge or
   Fix checks card yet.
+
+## Confirmed mount folder
+
+A manual mount preview allocates its directory before enabling confirmation.
+Creation uses that same directory, including on Retry. If another writer takes
+it meanwhile, creation reports the failure instead of choosing a different
+folder (`useMountPreflight`, `ensureProjectMounted`, `createProjectMount`).

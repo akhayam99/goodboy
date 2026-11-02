@@ -8,7 +8,6 @@ export type StudioChrome = {
   readonly glyph?: ReactNode;
   readonly title: string;
   readonly subtitle?: string;
-  readonly closeLabel: string;
   readonly accessory?: ReactNode;
   readonly isEscapeEnabled: boolean;
 };

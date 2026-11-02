@@ -7,7 +7,7 @@ import type {
 } from '@goodboy/types';
 import type { PendingAttachment } from '../../../features/attachments/pendingAttachment';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
-import { chatImageFileName, chatImageMime } from '../../../features/workspace-chat/chatImageKinds';
+import { chatImageFileName, chatImageMime } from '../../../shared/utils/chatImageKinds';
 
 type Params = {
   readonly chatId: ChatId;

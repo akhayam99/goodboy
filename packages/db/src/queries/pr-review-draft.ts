@@ -29,7 +29,7 @@ type ToDomainParams = {
   readonly row: PrReviewDraftRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): PrReviewDraft => ({
+const toPrReviewDraft = ({ row }: ToDomainParams): PrReviewDraft => ({
   id: row.id,
   sessionId: row.session_id as SessionId,
   provider: row.provider as ReviewablePrProvider,
@@ -92,7 +92,7 @@ export const listPrReviewDraftsForSession = async ({
       ORDER BY created_at ASC, id ASC`,
     [sessionId],
   );
-  return rows.map((row) => toDomain({ row }));
+  return rows.map((row) => toPrReviewDraft({ row }));
 };
 
 type UpdateBodyParams = {

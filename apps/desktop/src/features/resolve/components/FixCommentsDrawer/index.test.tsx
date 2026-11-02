@@ -308,7 +308,7 @@ describe('the Fix comments button', () => {
     render(<FixCommentsButton sessionId={SESSION.id} mountId={null} />);
 
     fireEvent.click(
-      await screen.findByRole('button', { name: `Fix ${BULK_LAUNCH_THREAD_IDS.length} comments` }),
+      await screen.findByRole('button', { name: `Fix ${BULK_LAUNCH_THREAD_IDS.length} threads` }),
     );
 
     expect(useAppStore.getState().drawer?.kind).toBe('fix-comments');

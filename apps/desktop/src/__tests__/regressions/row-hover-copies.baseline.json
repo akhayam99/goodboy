@@ -17,7 +17,6 @@
   "features/session/components/SessionOverviewPane/GoalTeaser.tsx": 1,
   "features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplateOption.tsx": 1,
   "features/settings/components/SettingsStudio/FlowSourcePicker.tsx": 1,
-  "features/settings/components/SettingsStudio/SettingsColumnNav.tsx": 1,
   "features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": 1,
   "features/workspace/components/WorkspaceSwitcher/index.tsx": 1,
   "features/workspace-chat/components/ChatList/ChatListGroup.tsx": 1,

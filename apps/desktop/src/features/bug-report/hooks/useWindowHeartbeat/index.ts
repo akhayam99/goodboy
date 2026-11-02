@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
+import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
 
 const HEARTBEAT_MS = 5_000;
 
@@ -26,13 +27,17 @@ export const useWindowHeartbeat = ({ onResumed }: Params): void => {
         return;
       }
     };
-    const timer = window.setInterval(() => void beat(), HEARTBEAT_MS);
+    const stopPoll = startPoll({
+      run: () => void beat(),
+      everyMs: HEARTBEAT_MS,
+      gate: 'always',
+      isImmediate: true,
+    });
     const onVisibility = (): void => void beat();
     document.addEventListener('visibilitychange', onVisibility);
-    void beat();
     return () => {
       isActive = false;
-      window.clearInterval(timer);
+      stopPoll();
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [onResumed]);

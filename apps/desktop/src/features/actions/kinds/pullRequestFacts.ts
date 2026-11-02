@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
 import type { SessionGithubState } from '../../../store/types';
-import { commentsCountOf } from '../../resolve/commentsCountOf';
+import { reviewCounts } from '../../resolve/reviewCounts';
 import { checksCountsOf, checksGroupsOf } from '../../integrations/github/checksRollup';
 
 type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
@@ -58,11 +58,11 @@ export const fixSignalsOf = ({
 }: {
   readonly threads: ReadonlyArray<ResolveThread>;
 }): FixSignals => {
-  const count = commentsCountOf({
+  const count = reviewCounts({
     threads: threads.filter((thread) => thread.originKind !== 'diff_comment'),
   });
   return {
-    commentsNeedYou: count.needsYou,
+    commentsNeedYou: count.needYou,
     commentsUnresolved: count.unresolved,
     isFixRunLive: threads.some(
       (thread) => thread.originKind !== 'diff_comment' && thread.state === 'working',

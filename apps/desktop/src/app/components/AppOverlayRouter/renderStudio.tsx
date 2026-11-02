@@ -6,9 +6,9 @@ const SettingsStudio = lazyNamed({
   load: () => import('../../../features/settings/components/SettingsStudio'),
   pick: ({ SettingsStudio }) => SettingsStudio,
 });
-const GuideStudio = lazyNamed({
-  load: () => import('../../../features/settings/components/GuideStudio'),
-  pick: ({ GuideStudio }) => GuideStudio,
+const HelpStudio = lazyNamed({
+  load: () => import('../HelpStudio'),
+  pick: ({ HelpStudio }) => HelpStudio,
 });
 const WorkspaceLinkStudio = lazyNamed({
   load: () => import('../../../features/workspace/components/WorkspaceLinkStudio'),
@@ -25,10 +25,6 @@ const InboxStudio = lazyNamed({
 const ImpactStudio = lazyNamed({
   load: () => import('../../../features/impact/components/ImpactStudio'),
   pick: ({ ImpactStudio }) => ImpactStudio,
-});
-const ChangelogStudio = lazyNamed({
-  load: () => import('../../../features/changelog/components/ChangelogStudio'),
-  pick: ({ ChangelogStudio }) => ChangelogStudio,
 });
 const NotificationsStudio = lazyNamed({
   load: () => import('../../../features/notifications/components/NotificationsStudio'),
@@ -72,7 +68,7 @@ export const renderStudio = ({
         />
       );
     case 'guide':
-      return <GuideStudio onClose={close} />;
+      return <HelpStudio initialTab="guide" onClose={close} onOpenScreen={onOpenChangelogScreen} />;
     case 'addWorkspace':
       return <WorkspaceLinkStudio onClose={close} />;
     case 'workflow':
@@ -103,7 +99,7 @@ export const renderStudio = ({
       );
     case 'changelog':
       return currentWorkspace === null ? null : (
-        <ChangelogStudio onClose={close} onOpenScreen={onOpenChangelogScreen} />
+        <HelpStudio initialTab="whatsNew" onClose={close} onOpenScreen={onOpenChangelogScreen} />
       );
     case 'notifications':
       return currentWorkspace === null ? null : <NotificationsStudio onClose={close} />;

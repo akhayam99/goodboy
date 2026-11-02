@@ -29,7 +29,7 @@ export type WorkNodeSize = 'md' | 'sm';
 
 export const WORK_NODE_SIZE = 20;
 
-const WORK_NODE_SIZE_SM = 14;
+export const WORK_NODE_SIZE_SM = 14;
 
 export const WORK_NODE_GLYPH_SIZE = 12;
 
@@ -191,6 +191,7 @@ export const WORK_NODE_MIXED_STROKE: Record<Tone, string> = {
   warning: 'stroke-warning',
   danger: 'stroke-danger',
   primary: 'stroke-primary',
+  unread: 'stroke-unread',
   merged: 'stroke-merged',
   draft: 'stroke-faint-foreground',
   neutral: 'stroke-faint-foreground',

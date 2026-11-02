@@ -24,8 +24,8 @@ read; a phase that can end the turn early (blocked over budget, lease denied,
 cancelled before the spawn) returns `turnDone` with the result, the others
 return `turnReady` with their values. Side effects run in the order below.
 
-1. `prepareTurn`: the mount and working directory, the agent, the slash skill,
-   the attachments and the workflow step the agent belongs to.
+1. `prepareTurn`: the mount and working directory, the agent, the
+   attachments and the workflow step the agent belongs to.
 2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
    the disconnected-provider gate.
 3. `leaseTurnWriter`: the captured-mount check, the resolver's worktree writer
@@ -705,13 +705,18 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   a live run is never forgotten. Every hand-sent turn passes one too:
   `sendTurn` mints `hand:<uuid>` for a turn the caller gave none (and for
   every fallback retry, which is a new attempt), and a caller that sends the
-  same message twice gives the same id (the queue sends `queue:<id>`). A second
+  same message twice gives the same id (the queue sends `queue:<id>`). The
+  registry forgets every id when the app restarts, so the saved `user_text`
+  event carries the `deliveryId` too, and `deliverQueuedTurn` asks
+  `countUserTextEvents` for that id before it sends: a queued message whose turn is already
+  saved is removed from the queue, never sent again. If that check fails the
+  message stays queued and the error shows. A second
   send of a known id never starts a run: `sendTurn` first asks
   `turn_delivery_lookup` and keeps the ids it is sending in this window, and
   answers `isAlreadySent` without a second user message. When the backend
   still refuses the spawn with `delivery_duplicate` (another window won), the
   transcript says "This message was already sent." and no fallback starts. No
-  outbox table: a crash ends as "Stopped by restart" with Resume. Auto sends
+  outbox table: a crash ends as "Stopped by restart" with Continue. Auto sends
   its own ids, and Auto is switched off.
   A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
   planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
@@ -757,17 +762,17 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   limits and pins apply, and a resumed step completes like any other.
 - **Anything else stays Stopped by restart.** An agent the marker does not
   name (a crash, a force quit) or one whose provider is disconnected shows
-  "Stopped by restart" with **Resume**, which runs the same resume
+  "Stopped by restart" with **Continue**, which runs the same resume
   (`continueStoppedAgent`). Nothing restarts on its own after a crash.
-  Past the agent itself, Next steps in the overview offers one **Resume all**
+  Past the agent itself, Next steps in the overview offers one **Continue all**
   for every agent the restart stopped in the session, and a workflow run
-  offers the same action on its run tail for its own agents (**Resume** or
-  **Resume all**, `runTailOf` and `orchestratedTailOf`). Both run
+  offers the same action on its run tail for its own agents (**Continue** or
+  **Continue all**, `runTailOf` and `orchestratedTailOf`). Both run
   `resumeStoppedAgents`, which resumes each
   `isStoppedByRestart` agent, never one you stopped and never a fan-out
   container while a child is unfinished (the children are resumed instead), skips an agent a second click
   is already resuming, and reports a failure only after trying the rest.
-- **An Auto child never gets a plain turn.** Continue, Resume and Resume all
+- **An Auto child never gets a plain turn.** Continue and Continue all
   on an agent Auto started go through Auto (`autoRetryRouteOf`): the stopped
   notice offers **Retry through Auto**, which sends Auto "Continue the
   Implementer that stopped (delegation <id>) from where it left off: <task>"
@@ -1350,8 +1355,8 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   shows "Esc again to stop" for 3 s, the second stops, and any open menu,
   drawer or dialog (`transientEscapeLayerCount`, `isOverlayOpen`) takes the
   key first. The page level layer that goes up is a base layer and does not
-  count. The conversation tail (`ConversationTail`) and a live chip in the
-  agent header (`AgentLiveChip`) carry the same Stop.
+  count. The conversation tail (`ConversationTail`) carries the same Stop.
+  The agent header has none.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft
@@ -1366,10 +1371,7 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
   sits above that, since it is a warning rather than composer content.
-- `resolveSkillPrompt` returns the content unresolved when
-  `WORKSPACE_FEATURES.skills` is off, so a message starting with `/` sends as
-  plain text instead of failing with "unknown skill" while skills are
-  disabled.
+- A message starting with `/` sends as plain text; no slash command is resolved.
 - Sending: the text box is a `PromptField` of kind `message` in its `bare`
   variant (the shell, tray and toolbar stay `ChatInput`'s own): `Enter`
   sends, `Shift+Enter` adds a line, `⌘Enter` sends now while a turn runs.

@@ -1,17 +1,13 @@
 import type { Session, SessionId, SessionStage, SessionViewPrefs } from '@goodboy/types';
 import { foldSessions } from './foldSessions';
 import { isSessionGroupCollapsed } from './isSessionGroupCollapsed';
-import {
-  INACTIVE_GROUP_KEY,
-  INACTIVE_GROUP_LABEL,
-  PINNED_GROUP_KEY,
-  type GroupedSessions,
-} from './types';
+import { DONE_GROUP_KEY, DONE_GROUP_LABEL, PINNED_GROUP_KEY, type GroupedSessions } from './types';
 
 type ColumnGroup = {
   readonly key: string;
   readonly label: string | null;
   readonly isCollapsed: boolean;
+  readonly isToggleable: boolean;
   readonly total: number;
   readonly sessions: ReadonlyArray<Session>;
 };
@@ -92,15 +88,20 @@ export const layoutSessionColumn = ({
           key: group.key,
           label: group.label ?? null,
           isCollapsed: isSessionGroupCollapsed({ key: group.key, overrides: groupExpanded }),
+          isToggleable: true,
           total: totalByKey.get(group.key) ?? group.sessions.length,
           sessions: group.sessions,
         };
       }
-      if (group.key === INACTIVE_GROUP_KEY) {
+      if (group.key === DONE_GROUP_KEY) {
         return {
           key: group.key,
-          label: INACTIVE_GROUP_LABEL,
-          isCollapsed: false,
+          label: DONE_GROUP_LABEL,
+          isCollapsed: isSessionGroupCollapsed({
+            key: group.key,
+            overrides: { [group.key]: prefs.statusFilter.includes('done'), ...groupExpanded },
+          }),
+          isToggleable: true,
           total: group.sessions.length,
           sessions: group.sessions,
         };
@@ -116,6 +117,7 @@ export const layoutSessionColumn = ({
         key: group.key,
         label: pinned.length === 0 ? null : OTHER_SESSIONS_LABEL,
         isCollapsed: false,
+        isToggleable: false,
         total: group.sessions.length,
         sessions: folded.visible,
       };
@@ -133,6 +135,7 @@ export const layoutSessionColumn = ({
             isCollapsed:
               isGrouped &&
               isSessionGroupCollapsed({ key: PINNED_GROUP_KEY, overrides: groupExpanded }),
+            isToggleable: isGrouped,
             total: pinned.length,
             sessions: pinned,
           },

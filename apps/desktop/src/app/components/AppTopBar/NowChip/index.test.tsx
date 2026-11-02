@@ -34,7 +34,6 @@ const { hooks, store, noAttention } = vi.hoisted(() => {
       }>,
       workspace: { id: 'ws-1', name: 'Harborline' } as { id: string; name: string } | null,
       attention: noAttention(),
-      goNext: vi.fn(),
     },
     store: {
       navigate: vi.fn(),
@@ -63,10 +62,6 @@ vi.mock('../../../../store', async () => {
   };
 });
 
-vi.mock('../../../../features/workspace/components/SessionSwitcher/goToNextNeedsYou', () => ({
-  goToNextNeedsYou: (params: unknown) => hooks.goNext(params),
-}));
-
 vi.mock('../../../../features/workspace/components/SessionHoverCard', () => ({
   SessionHoverCard: ({ session }: { readonly session: Session | null }) =>
     session === null ? null : <div data-testid="session-hover-card">{session.goal}</div>,
@@ -93,7 +88,6 @@ const withScript = () => {
 beforeEach(() => {
   hooks.groups = [];
   hooks.attention = noAttention();
-  hooks.goNext.mockClear();
   hooks.workspace = { id: 'ws-1', name: 'Harborline' };
   store.scriptRuns = {};
   store.sessions = [];
@@ -116,7 +110,7 @@ const needing = (...sessions: ReadonlyArray<Session>): void => {
   };
 };
 
-const trigger = () => screen.getByRole('button', { name: /need|running/ });
+const trigger = () => screen.getByRole('button', { name: /running/ });
 
 const open = async () => {
   await act(async () => {
@@ -126,95 +120,44 @@ const open = async () => {
 };
 
 describe('NowChip', () => {
-  it('draws nothing when nothing needs you, runs or plays a script', () => {
+  it('draws one muted Idle slot, never nothing, when no session runs and no script plays', () => {
     const { container } = render(<NowChip onOpenScript={vi.fn()} />);
 
-    expect(container.firstChild).toBeNull();
+    const slot = container.querySelector('[data-now-idle]');
+    expect(slot?.textContent).toBe('Idle');
+    expect(slot?.className).toContain('text-muted-foreground');
+    expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
   it('shows only the segments above zero, and names them all in one label', () => {
     hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
-    const { rerender } = render(<NowChip onOpenScript={vi.fn()} />);
+    const { container, rerender } = render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('1 session running');
-    expect(screen.queryByText('sessions need you')).toBeNull();
-    expect(screen.queryByText('session needs you')).toBeNull();
+    expect(container.querySelector('[data-now-idle]')).toBeNull();
     expect(screen.queryByText('scripts')).toBeNull();
 
-    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
-    needing(NEEDS, session({ id: 'session-needs-2', goal: 'Choose the retry window' }));
     withScript();
     rerender(<NowChip onOpenScript={vi.fn()} />);
 
-    expect(trigger().getAttribute('aria-label')).toBe(
-      '2 need you, 1 session running, 1 script running',
-    );
-    expect(screen.getByText('need you').className).toContain('@min-chrome-labels/topbar:inline');
+    expect(trigger().getAttribute('aria-label')).toBe('1 session running, 1 script running');
     expect(screen.getByText('scripts').className).toContain('@min-chrome-labels/topbar:inline');
   });
 
-  it('groups needs you and scripts in one popover and skips an empty group', async () => {
-    needing(NEEDS);
-    withScript();
-    render(<NowChip onOpenScript={vi.fn()} />);
-
-    const panel = await open();
-
-    expect(within(panel).getByText('Now in Harborline')).toBeDefined();
-    within(panel).getByRole('list', { name: 'Needs you' });
-    within(panel).getByText('Pick the retry backoff for notify-relay');
-    expect(within(panel).queryByRole('list', { name: 'Running' })).toBeNull();
-    within(panel).getByRole('list', { name: 'Scripts' });
-  });
-
-  it('draws the needs you count alone when nothing runs, in amber', () => {
-    needing(NEEDS);
-    const { container } = render(<NowChip onOpenScript={vi.fn()} />);
-
-    expect(trigger().getAttribute('aria-label')).toBe('1 needs you');
-    expect(container.querySelector('[data-now-needs-you] .bg-warning')).not.toBeNull();
-  });
-
-  it('turns the needs you dot red when a counted session is broken', () => {
-    needing(NEEDS);
-    hooks.attention = { ...hooks.attention, tone: 'danger' };
-    const { container } = render(<NowChip onOpenScript={vi.fn()} />);
-
-    expect(container.querySelector('[data-now-needs-you] .bg-danger')).not.toBeNull();
-  });
-
-  it('asks for the next session that needs you from the popover, and closes it', async () => {
-    needing(NEEDS);
-    render(<NowChip onOpenScript={vi.fn()} />);
-
-    const panel = await open();
-    await act(async () => {
-      fireEvent.click(within(panel).getByRole('button', { name: 'Next that needs you' }));
-    });
-
-    expect(hooks.goNext).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
-  });
-
-  it('offers no next button while nothing needs you', async () => {
+  it('leaves needs you to the Sessions door and the Overview: no segment, no group, no next button', async () => {
     hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
-    render(<NowChip onOpenScript={vi.fn()} />);
+    needing(NEEDS, session({ id: 'session-needs-2', goal: 'Choose the retry window' }));
+    withScript();
+    const { container } = render(<NowChip onOpenScript={vi.fn()} />);
 
+    expect(trigger().getAttribute('aria-label')).toBe('1 session running, 1 script running');
+    expect(container.querySelector('[data-now-needs-you]')).toBeNull();
     const panel = await open();
-
+    expect(within(panel).queryByRole('list', { name: 'Needs you' })).toBeNull();
+    expect(within(panel).queryByText('Pick the retry backoff for notify-relay')).toBeNull();
     expect(within(panel).queryByRole('button', { name: 'Next that needs you' })).toBeNull();
-  });
-
-  it('opens a session that needs you from its row', async () => {
-    needing(NEEDS);
-    render(<NowChip onOpenScript={vi.fn()} />);
-
-    const panel = await open();
-    await act(async () => {
-      fireEvent.click(within(panel).getByText('Pick the retry backoff for notify-relay'));
-    });
-
-    expect(store.navigate).toHaveBeenCalledOnce();
+    within(panel).getByRole('list', { name: 'Running' });
+    within(panel).getByRole('list', { name: 'Scripts' });
   });
 
   it('opens a session from its row and closes', async () => {

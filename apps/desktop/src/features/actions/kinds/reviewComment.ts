@@ -658,7 +658,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.resolveNoReply',
-      label: ({ facts }) => (facts.isNote ? 'Close the note' : NAMES.resolve),
+      label: ({ facts }) => (facts.isNote ? 'Close the comment' : NAMES.resolve),
       icon: CircleCheck,
       group: 'act',
       when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,

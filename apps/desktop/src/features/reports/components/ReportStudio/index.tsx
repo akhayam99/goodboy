@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, ScrollFade } from '@goodboy/ui';
 import type { ReportArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { buildReportOutline } from '../../reportOutline';
@@ -57,14 +57,16 @@ export const ReportStudio = ({ sessionId, artifact }: Props) => {
       {hasOutline && isOutlineAside ? (
         <aside
           data-testid="report-outline-rail"
-          className="sticky top-0 flex max-h-[60vh] w-45 shrink-0 flex-col self-start overflow-y-auto"
+          className="sticky top-0 flex max-h-[60vh] w-45 shrink-0 flex-col self-start"
         >
-          <ReportOutlineNav
-            entries={outline}
-            activeId={activeHeadingId}
-            showHeader
-            onSelect={scrollToHeading}
-          />
+          <ScrollFade className="min-h-0 flex-1">
+            <ReportOutlineNav
+              entries={outline}
+              activeId={activeHeadingId}
+              showHeader
+              onSelect={scrollToHeading}
+            />
+          </ScrollFade>
         </aside>
       ) : null}
       {hasOutline && !isOutlineAside ? (

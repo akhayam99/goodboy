@@ -33,7 +33,7 @@ export const AgentSettingsLine = ({ session, kind, auto, asksSlotRef, modelsSlot
   const sessionCapUsd = useAppStore((state) =>
     pausingSessionCapOf({ budget: state.sessionBudgets[sessionId] }),
   );
-  const workspaceLimitUsd = useAutoTreeLimit({ workspaceId }).viewOf({ defaultFrom: 'auto' }).usd;
+  const workspaceLimitUsd = useAutoTreeLimit({ workspaceId }).view.usd;
   return (
     <div
       role="group"

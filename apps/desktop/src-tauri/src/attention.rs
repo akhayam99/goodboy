@@ -24,33 +24,9 @@ struct Reason {
     kind: Kind,
 }
 
-const REASONS: [Reason; 5] = [
-    Reason {
-        code: "agent-error",
-        tone: Tone::Danger,
-        kind: Kind::Error,
-    },
-    Reason {
-        code: "push-failed",
-        tone: Tone::Danger,
-        kind: Kind::Other,
-    },
-    Reason {
-        code: "open-question",
-        tone: Tone::Warning,
-        kind: Kind::HumanInput,
-    },
-    Reason {
-        code: "fix-needs-you",
-        tone: Tone::Warning,
-        kind: Kind::HumanInput,
-    },
-    Reason {
-        code: "ci-failed",
-        tone: Tone::Danger,
-        kind: Kind::Other,
-    },
-];
+include!(concat!(env!("OUT_DIR"), "/attention_reasons.rs"));
+
+const _: () = assert!(REASONS.len() == 5);
 
 const SESSION_FACTS_SQL: &str = "
     SELECT

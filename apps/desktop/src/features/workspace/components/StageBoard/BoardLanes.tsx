@@ -8,6 +8,7 @@ import { BOARD_STAGES } from './boardStages';
 import { StageColumn } from './StageColumn';
 import type { BoardNavigation } from './useBoardNavigation';
 import type { BoardSelection } from './useBoardSelection';
+import { useLaneTravel } from './useLaneTravel';
 
 const LANE_STAGES = BOARD_STAGES.filter((stage) => stage !== 'done');
 
@@ -26,6 +27,7 @@ type Props = {
   readonly nav: BoardNavigation;
   readonly selection: BoardSelection;
   readonly onRestore: (session: Session) => void;
+  readonly motionResetKey: string;
   readonly onCardEnter: (target: CardHover) => void;
   readonly onCardLeave: () => void;
 };
@@ -43,6 +45,7 @@ export const BoardLanes = ({
   nav,
   selection,
   onRestore,
+  motionResetKey,
   onCardEnter,
   onCardLeave,
 }: Props) => {
@@ -64,6 +67,11 @@ export const BoardLanes = ({
   );
   const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
   const placement = layout.stacked ? 'half' : 'lane';
+  const travelerIds = useLaneTravel({
+    byStage,
+    resetKey: motionResetKey,
+    containerRef: columnsRef,
+  });
 
   const done = (
     <StageColumn
@@ -74,6 +82,8 @@ export const BoardLanes = ({
       onClearSelection={selection.clearAll}
       onRestore={onRestore}
       placement={placement}
+      motionResetKey={motionResetKey}
+      travelerIds={travelerIds}
       onCardEnter={onCardEnter}
       onCardLeave={onCardLeave}
     />
@@ -88,6 +98,7 @@ export const BoardLanes = ({
       onRestore={onRestore}
       placement={placement}
       isLoading={isArchivedLoading}
+      motionResetKey={motionResetKey}
       onCardEnter={onCardEnter}
       onCardLeave={onCardLeave}
     />
@@ -119,6 +130,8 @@ export const BoardLanes = ({
             selection={selection}
             onClearSelection={selection.clearAll}
             onRestore={onRestore}
+            motionResetKey={motionResetKey}
+            travelerIds={travelerIds}
             onCardEnter={onCardEnter}
             onCardLeave={onCardLeave}
           />

@@ -424,21 +424,6 @@ export const updateSessionWorktreeRepoSlug = async ({
   );
 };
 
-export const listAllSessionWorktrees = async (
-  db: Database,
-): Promise<ReadonlyArray<SessionWorktree>> => {
-  const rows = await db.select<SessionWorktreeRow>(
-    `SELECT mount.* FROM session_worktrees mount
-     JOIN sessions s ON s.id = mount.session_id
-     WHERE s.deleted_at IS NULL AND mount.worktree_path IS NOT NULL AND mount.is_attached = 1`,
-    [],
-  );
-  return rows.flatMap((row) => {
-    const worktree = toPresentWorktree(row);
-    return worktree === null ? [] : [worktree];
-  });
-};
-
 export type MountPathOwnership = {
   readonly mountId: MountId;
   readonly sessionId: SessionId;

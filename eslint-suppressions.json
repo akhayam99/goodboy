@@ -6,7 +6,7 @@
   },
   "apps/desktop/src/__tests__/a11y/smoke.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/__tests__/actions/menuParity.test.tsx": {
@@ -553,11 +553,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/app/components/KeepAliveWorkSurface/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -822,7 +817,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/audit/FormsAuditScene.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
+      "count": 8
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/audit/ImpactScopesScene.tsx": {
@@ -2114,11 +2109,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/changelog/components/ChangelogStudio/ChangelogRail.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/changelog/components/ChangelogStudio/FeatureBlock.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -2137,11 +2127,6 @@
   "apps/desktop/src/features/changelog/components/ChangelogStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
-    }
-  },
-  "apps/desktop/src/features/changelog/components/ChangelogStudio/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/changelog/components/ReleaseNoticeBridge/index.test.tsx": {
@@ -2899,7 +2884,7 @@
   },
   "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 6
+      "count": 5
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -4104,14 +4089,9 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/onboarding/hooks/useOnboardingProgress/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/onboarding/hooks/useOnboardingProgress/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 7
+      "count": 5
     },
     "react-hooks/exhaustive-deps": {
       "count": 4
@@ -5416,7 +5396,7 @@
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/useMountPreflight/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 5
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/useMountPreflight/index.ts": {
@@ -5479,10 +5459,10 @@
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.test.tsx": {
@@ -5634,7 +5614,7 @@
       "count": 2
     },
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/questionsLensModel.test.ts": {
@@ -5939,7 +5919,7 @@
   },
   "apps/desktop/src/features/settings/components/GuideStudio/parts/ListensExtra.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/AppGeneralSection.test.tsx": {
@@ -6113,21 +6093,6 @@
   "apps/desktop/src/features/settings/workspaceSettings/fields.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 5
-    }
-  },
-  "apps/desktop/src/features/skills/components/SkillsPanel/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/skills/components/SkillsPanel/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/features/skills/skills.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
     }
   },
   "apps/desktop/src/features/storage/branches/classifyBranch.test.ts": {
@@ -7874,11 +7839,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/shared/lib/highlight/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/shared/lib/highlight/languages.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -9345,11 +9305,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/store/slices/project-mounts/verifyAvailableWorktrees.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/store/slices/project-mounts/writeDestination.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10
@@ -10381,11 +10336,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/skills/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
-    }
-  },
   "apps/desktop/src/store/slices/slack-drafts/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
@@ -10710,19 +10660,6 @@
   "apps/desktop/src/store/slices/turn/resolveErrorTurnMessage.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/turn/resolveSkillPrompt.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
-  "apps/desktop/src/store/slices/turn/resolveSkillPrompt.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/store/slices/turn/resolveTurnModelSelection.ts": {
@@ -11633,7 +11570,7 @@
   },
   "apps/desktop/src/store/store.story-adopt-known-projects.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 8
     },
     "@typescript-eslint/naming-convention": {
       "count": 3
@@ -11790,7 +11727,7 @@
   },
   "apps/desktop/src/test/storyHarness/spies.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 34
+      "count": 32
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -12022,9 +11959,6 @@
     }
   },
   "packages/core/src/orchestrator/parser.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 1
     }
@@ -12078,9 +12012,6 @@
     }
   },
   "packages/core/src/providers/aux-output.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 3
     }
@@ -12376,11 +12307,6 @@
   "packages/core/src/settings/__tests__/resolver.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 18
-    }
-  },
-  "packages/core/src/skills/executor.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
     }
   },
   "packages/core/src/summarizer/client.test.ts": {
@@ -12710,7 +12636,7 @@
   },
   "packages/db/src/queries/ask-thread.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "packages/db/src/queries/attachment.ts": {
@@ -12725,7 +12651,7 @@
   },
   "packages/db/src/queries/chat.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 11
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -12739,11 +12665,6 @@
   "packages/db/src/queries/context-slot.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "packages/db/src/queries/deleted-branch.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "packages/db/src/queries/diff-comment.ts": {
@@ -13117,7 +13038,7 @@
   },
   "packages/db/src/queries/session-context-item.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 6
     }
   },
   "packages/db/src/queries/session-context-seen.ts": {
@@ -13127,7 +13048,7 @@
   },
   "packages/db/src/queries/session-decision.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "packages/db/src/queries/session-event.test.ts": {
@@ -13209,11 +13130,6 @@
   "packages/db/src/queries/starred-issue.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "packages/db/src/queries/starred-issue.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "packages/db/src/queries/storage-folders.test.ts": {

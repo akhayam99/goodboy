@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { ChangelogStudio } from '../../../../../features/changelog/components/ChangelogStudio';
+import { HelpStudio } from '../../../HelpStudio';
 import { useAppStore } from '../../../../../store';
 import { sceneParam } from './sceneParams';
 
@@ -45,7 +45,7 @@ export const ChangelogScene = () => {
   return (
     <ToastProvider>
       <main className="h-screen overflow-hidden bg-background text-foreground">
-        <ChangelogStudio onClose={noop} onOpenScreen={noop} />
+        <HelpStudio initialTab="whatsNew" onClose={noop} onOpenScreen={noop} />
       </main>
     </ToastProvider>
   );

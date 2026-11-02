@@ -119,8 +119,8 @@ describe('Fix comments', () => {
     const { spawnAgent, createResolveBatch } = stubAgents();
     await mount({ stage: 'launch' });
 
-    const header = screen.getByRole('button', { name: 'Fix 9 comments' });
-    expect(screen.getAllByRole('button', { name: /^Fix \d+ comments?$/ })).toHaveLength(1);
+    const header = screen.getByRole('button', { name: 'Fix 9 threads' });
+    expect(screen.getAllByRole('button', { name: /^Fix \d+ threads?$/ })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Fix \d+ open comments?/ })).toBeNull();
     fireEvent.click(header);
 
@@ -325,11 +325,12 @@ describe('accept in bulk', () => {
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
   });
 
-  it('keeps accepted comments under Ready to push, as Ready, until they are pushed', async () => {
+  it('keeps accepted comments under Done, as Fixed, until they are pushed', async () => {
     await mount({ stage: 'accepted' });
 
-    const ready = within(list()).getByRole('region', { name: 'Ready to push' });
+    const ready = within(list()).getByRole('region', { name: 'Done' });
     expect(within(ready).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(ready).getAllByText('Fixed')).toHaveLength(5);
     expect(within(ready).queryByText('Applied')).toBeNull();
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();

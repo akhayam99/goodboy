@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/utils/names';
 import { runPlace } from '../../../workflows/runPlace';
 import { useAnswerQuestion } from '../../../workflows/useAnswerQuestion';
 import { RaiseCapPrimary } from '../AgentTree/RunHeader/RaiseCapPrimary';
@@ -120,7 +121,7 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
             })
           }
         >
-          Continue step
+          {NAMES.continue}
         </Button>
       );
     case 'resumeAll':
@@ -134,11 +135,11 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
               task: async () => {
                 await resumeStoppedAgents({ sessionId, workflowRunId: runId });
               },
-              failure: "Couldn't resume the stopped agents",
+              failure: "Couldn't continue the stopped agents",
             })
           }
         >
-          {verb.count === 1 ? 'Resume' : 'Resume all'}
+          {verb.count === 1 ? NAMES.continue : NAMES.continueAll}
         </Button>
       );
     default: {

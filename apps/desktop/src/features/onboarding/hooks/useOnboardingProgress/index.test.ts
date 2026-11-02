@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OnboardingStepId } from '../../onboardingSettings';
 
@@ -7,17 +7,14 @@ type Workspace = { id: string; name?: string; profile?: { roles: ReadonlyArray<s
 let completed: Array<OnboardingStepId> = [];
 const workspaces: Array<Workspace> = [];
 let currentWorkspaceId: string | null = null;
-let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 let sessionPhaseRuns: Record<string, Array<{ status: string }>> = {};
 let agentTurnState: Record<string, { kind: string }> = {};
 let providers: Array<{ id: string; connection: string }> = [];
 let projects: Array<{ workspaceId: string }> = [];
 let wizardState = 'done';
-let githubStatus: { mode: string } | null = null;
 
-const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
+const { markStepCompleteMock } = vi.hoisted(() => ({
   markStepCompleteMock: vi.fn(),
-  ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
 }));
 
 vi.mock('../../onboardingSettings', () => ({
@@ -29,10 +26,6 @@ vi.mock('../../onboardingSettings', () => ({
   markStepComplete: markStepCompleteMock,
 }));
 
-vi.mock('../../../integrations/github/github', () => ({
-  ghStatus: ghStatusMock,
-}));
-
 vi.mock('../../../../store', () => ({
   useAppStore: (selector: (s: object) => unknown) =>
     selector({
@@ -40,9 +33,7 @@ vi.mock('../../../../store', () => ({
       agentTurnState,
       providers,
       projects,
-      githubStatus,
       currentWorkspaceId,
-      workspaceIntegrations,
     }),
   useWorkspaces: () => workspaces,
 }));
@@ -52,15 +43,11 @@ const reset = () => {
   wizardState = 'done';
   workspaces.length = 0;
   currentWorkspaceId = null;
-  workspaceIntegrations = {};
   sessionPhaseRuns = {};
   agentTurnState = {};
   providers = [];
   projects = [];
-  githubStatus = null;
   markStepCompleteMock.mockReset();
-  ghStatusMock.mockReset();
-  ghStatusMock.mockResolvedValue({ scoped: false });
 };
 
 import { useOnboardingProgress } from './index';
@@ -85,45 +72,9 @@ describe('useOnboardingProgress', () => {
     const { result } = renderHook(() => useOnboardingProgress());
     expect(result.current.details).toEqual({
       agents: 'Claude is ready',
-      workspace: 'Harborline, 3 folders',
-      tools: 'Optional',
+      workspace: 'Harborline, 3 projects',
       'first-session': 'Ask Scout about the code',
     });
-  });
-
-  it('marks Tools when GitLab or Bitbucket is connected for the workspace', () => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'bitbucket' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
-  });
-
-  it('marks Tools once gh status reports a scoped token', async () => {
-    workspaces.push({ id: 'w1' });
-    ghStatusMock.mockResolvedValue({ scoped: true });
-    renderHook(() => useOnboardingProgress());
-    await waitFor(() => expect(markStepCompleteMock).toHaveBeenCalledWith('tools'));
-  });
-
-  it('marks Tools when gh is signed in on this Mac', () => {
-    workspaces.push({ id: 'w1' });
-    githubStatus = { mode: 'cli' };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
-  });
-
-  it.each(['linear', 'jira'])('marks Tools when %s is connected', (provider) => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
-  });
-
-  it('does not count Sentry or Slack as a task manager', () => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'sentry' }, { provider: 'slack' }] };
-    renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools');
   });
 
   it('leaves the first session open while an agent only exists', () => {
@@ -149,19 +100,17 @@ describe('useOnboardingProgress', () => {
     expect(result.current.completed.has('profile')).toBe(true);
   });
 
-  it('skips already-completed steps and never re-queries gh status', () => {
-    completed = ['tools'];
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
+  it('skips steps that are already completed', () => {
+    completed = ['agents'];
+    providers = [{ id: 'anthropic', connection: 'connected' }];
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools');
-    expect(ghStatusMock).not.toHaveBeenCalled();
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('agents');
   });
 
-  it('counts the four setup steps through setupProgress, About you left out', () => {
+  it('counts the three setup steps through setupProgress, About you left out', () => {
     completed = ['agents', 'workspace', 'profile'];
     const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.setup.count).toBe('2 of 4');
+    expect(result.current.setup.count).toBe('2 of 3');
     expect(result.current.setup.isDone).toBe(false);
     expect(result.current.isWizardDone).toBe(true);
   });

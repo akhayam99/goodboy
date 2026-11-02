@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
+import { SPLIT_MIN_INNER_PX } from '../useDiffLayoutMode/effectiveDiffLayout';
 
-const FILE_RAIL_DOCK_MIN_PX = 880;
+const FILE_RAIL_WIDTH_PX = 320;
+const FILE_RAIL_GUTTERS_PX = 24;
+const FILE_RAIL_DOCK_MIN_PX = SPLIT_MIN_INNER_PX + FILE_RAIL_WIDTH_PX + FILE_RAIL_GUTTERS_PX;
 
 const foldedPref = persistedPref<boolean>({
   key: STORAGE_KEYS.diffFileRailFolded,

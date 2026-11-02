@@ -62,6 +62,7 @@ const runsOf = ({ agents, blockedIds = [] }: RunsParams) =>
     questions: [],
     rootTurns: {},
     turnByAgentId: new Map(blockedIds.map((id) => [id, BLOCKED])),
+    revisingStarts: {},
   });
 
 type GridParams = {
@@ -85,10 +86,24 @@ describe('RunsGrid', () => {
     renderGrid({ runs: runsOf({ agents, blockedIds: ['agent-asker'] }) });
 
     const group = screen.getByRole('list', { name: 'In progress' });
-    screen.getByText('1 needs you');
+    screen.getByText('1 item needs you');
     const rows = within(group).getAllByRole('button');
     expect(rows[0]?.getAttribute('aria-label')).toBe('Open Asker, Agent, Needs permission');
     expect(rows[1]?.getAttribute('aria-label')).toBe('Open Runner, Agent, Running');
+  });
+
+  it('reads the planner elapsed time in the time column while the plan is revised', () => {
+    const agents = [aNowAgent({ key: 'planner', name: 'Planner', status: 'running' })];
+    const runs = runsOf({ agents }).map((run) => ({
+      ...run,
+      revisingSince: Date.now() - 125_000,
+    }));
+
+    renderGrid({ runs });
+
+    const row = screen.getByRole('button', { name: /Open Planner/ });
+    expect(row.textContent).toContain('2m');
+    expect(row.textContent).not.toContain('ago');
   });
 
   it('marks a finished agent with an unread reply', () => {
@@ -116,18 +131,18 @@ describe('RunsGrid', () => {
     const group = screen.getByRole('list', { name: 'In progress' });
     expect(within(group).getAllByRole('button', { name: /Stopped, Continue/ })).toHaveLength(2);
     expect(screen.queryByRole('list', { name: 'Finished' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Resume all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue all' }));
     await waitFor(() =>
       expect(resumeStoppedAgents).toHaveBeenCalledWith({ sessionId: NOW_SESSION }),
     );
   });
 
-  it('offers no Resume all for a single stopped agent', () => {
+  it('offers no Continue all for a single stopped agent', () => {
     const agents = [aNowAgent({ key: 'only', name: 'Only', status: 'stopped', stoppedBy: 'app' })];
 
     renderGrid({ runs: runsOf({ agents }) });
 
-    expect(screen.queryByRole('button', { name: 'Resume all' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue all' })).toBeNull();
   });
 
   it('stops every running agent from the header and says how many stopped', async () => {

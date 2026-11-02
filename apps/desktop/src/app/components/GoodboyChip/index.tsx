@@ -13,15 +13,13 @@ import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCar
 import { updatePillLabel } from '../../../features/updater/updateCardCopy';
 import { toggleUpdateCard } from '../../../features/updater/updateCardRequest';
 import { UpdatePill } from '../../../features/updater/components/UpdatePill';
-import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
+import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboardingSettings';
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
-import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { openReportSheet } from '../../../features/bug-report/openReportSheet';
 import { useHasBugReportDraft } from '../../../features/bug-report/hooks/useHasBugReportDraft';
 import { openUrl } from '../../../shared/lib/editor';
-import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
-import { isDirectedScene } from '../../../shared/utils/isDirectedScene';
+import { SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
 import { GoodboyMenu } from './GoodboyMenu';
@@ -43,7 +41,6 @@ const REST_LABEL = 'Goodboy beta: version, help and sponsor';
 
 const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
   update: REST_LABEL,
-  setup: "Goodboy: setup isn't finished",
   rest: REST_LABEL,
 };
 
@@ -60,7 +57,6 @@ export const GoodboyChip = ({
   variant = 'column',
   isPrimary = true,
 }: Props) => {
-  const progress = useOnboardingProgress();
   const update = useUpdateCardState();
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
@@ -71,17 +67,7 @@ export const GoodboyChip = ({
   });
   const { open: isOpen, close, toggle } = dropdown;
   const hasUpdate = update.state !== null;
-  const isDemo = isDirectedScene();
-  const isSetupOpen =
-    !isDemo && !progress.isFinished && progress.hasProjects && !progress.setup.isDone;
-  const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
-  const shouldAutoOpen =
-    isPrimary &&
-    !isDemo &&
-    !progress.isFinished &&
-    progress.isWizardDone &&
-    progress.completed.has('first-session') &&
-    !progress.isCollapsed;
+  const state: GoodboyChipState = hasUpdate ? 'update' : 'rest';
   const isInMainWindow = useIsMainWindow();
   const hasRowPill = variant === 'column' && hasUpdate;
   const railUpdate =
@@ -121,14 +107,6 @@ export const GoodboyChip = ({
     dropdown.containerRef.current?.querySelector<HTMLElement>('[data-goodboy-chip]')?.focus();
   }, [isOpen, dropdown.containerRef]);
 
-  useEffect(() => {
-    if (!shouldAutoOpen) {
-      return;
-    }
-    collapse();
-    window.dispatchEvent(new CustomEvent(OPEN_GOODBOY_MENU_EVENT));
-  }, [shouldAutoOpen]);
-
   const leaveFor =
     ({ action }: { readonly action: () => void }) =>
     () => {
@@ -159,16 +137,11 @@ export const GoodboyChip = ({
       >
         <GoodboyChipLabel
           state={state}
-          progress={progress}
           installedVersion={version}
           isMarkOnly={variant === 'rail'}
         />
         {variant === 'rail' && state !== 'rest' ? (
-          <StatusDot
-            tone={state === 'update' ? 'primary' : 'warning'}
-            size="sm"
-            className="absolute right-1 top-1"
-          />
+          <StatusDot tone="primary" size="sm" className="absolute right-1 top-1" />
         ) : null}
       </button>
     </Tooltip>
@@ -204,12 +177,9 @@ export const GoodboyChip = ({
       >
         <GoodboyMenu
           version={version}
-          progress={progress}
-          isMainWindow={isInMainWindow}
           hasDraft={hasDraft}
           railUpdate={railUpdate}
           onClose={close}
-          onLeave={close}
           onReport={leaveFor({ action: () => openReportSheet() })}
           onOpenGuide={leaveFor({ action: onOpenGuide })}
           onPairDevice={leaveFor({
@@ -219,9 +189,6 @@ export const GoodboyChip = ({
           onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
           onSponsor={() => {
             void openUrl(SPONSOR_URL);
-          }}
-          onFollowX={() => {
-            void openUrl(SOCIAL_LINKS.x);
           }}
         />
       </AnchoredPopover>

@@ -129,13 +129,13 @@ describe('new workspace scenes', () => {
     screen.getByRole('button', { name: 'Cancel' });
   });
 
-  it('says in one line that no login was found and points to the Tools step', async () => {
+  it('says in one line that no login was found and points to Integrations', async () => {
     await mount({ state: 'clone-auth' });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toContain('No GitHub login found');
-    expect(alert.textContent).toContain('Tools step');
+    expect(alert.textContent).toContain('Integrations');
   });
 });

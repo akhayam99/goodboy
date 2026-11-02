@@ -55,9 +55,6 @@ vi.mock('../../features/providers/routing', async () =>
 vi.mock('../../features/budget/budget', async () =>
   (await import('../../store/storyHarness')).budgetModuleMock(),
 );
-vi.mock('../../features/skills/skills', async () =>
-  (await import('../../store/storyHarness')).skillsModuleMock(),
-);
 vi.mock('../../features/worktree/worktree', async () =>
   (await import('../../store/storyHarness')).worktreeModuleMock(),
 );
@@ -165,7 +162,7 @@ const showNext = (view: RenderResult): string => {
   view.rerender(
     <ToastProvider>
       <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
-        <CentralColumn session={session} onLeadChange={() => undefined} />
+        <CentralColumn session={session} />
       </WorkTimeProvider>
     </ToastProvider>,
   );
@@ -173,7 +170,7 @@ const showNext = (view: RenderResult): string => {
 };
 
 const nextCardOf = (view: RenderResult): HTMLElement | null =>
-  view.container.querySelector<HTMLElement>('[data-overview-card="next"]');
+  view.container.querySelector<HTMLElement>('[data-overview-card="branches"]');
 
 const nextCard = (view: RenderResult): HTMLElement => {
   const card = nextCardOf(view);

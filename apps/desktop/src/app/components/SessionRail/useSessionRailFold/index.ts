@@ -3,6 +3,7 @@ import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys
 
 type Params = {
   readonly isNarrow: boolean;
+  readonly isDrawerOpen?: boolean;
 };
 
 export type SessionRailFold = {
@@ -17,17 +18,20 @@ const foldedPref = persistedPref<boolean>({
   fallback: false,
 });
 
-export const useSessionRailFold = ({ isNarrow }: Params): SessionRailFold => {
+export const useSessionRailFold = ({
+  isNarrow,
+  isDrawerOpen = isNarrow,
+}: Params): SessionRailFold => {
   const [isFoldPicked, setIsFoldPicked] = useState(foldedPref.read);
   const [isOpenedNarrow, setIsOpenedNarrow] = useState(false);
   const isFolded = isFoldPicked || (isNarrow && !isOpenedNarrow);
 
   useEffect(() => {
-    if (isNarrow) {
+    if (isDrawerOpen) {
       return;
     }
     setIsOpenedNarrow(false);
-  }, [isNarrow]);
+  }, [isDrawerOpen]);
 
   const toggle = useCallback(() => {
     if (isNarrow && !isFolded) {

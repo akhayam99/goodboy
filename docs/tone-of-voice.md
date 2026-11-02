@@ -83,7 +83,7 @@ talking to a market. There are two voices:
   not, will not and have not, and its baseline only falls.
 - **One sentence says what Goodboy is.** "Goodboy runs coding agents side by
   side on your own repositories, one session for each goal." opens the README,
-  the website hero lead and the Welcome step, and `one-sentence.test.ts` keeps
+  the website hero lead and the Agents step, and `one-sentence.test.ts` keeps
   the three equal. ADE is spelled out once, where the site defines it, and
   never stands in for that sentence.
 - **The product name keeps its capital.** Goodboy, never goodboy, in running

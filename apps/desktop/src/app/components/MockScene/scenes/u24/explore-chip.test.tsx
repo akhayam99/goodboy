@@ -52,7 +52,7 @@ describe('the explore chip scenes', () => {
   it('exploremulti opens the menu with both projects and a check on the one shown', async () => {
     mount({ id: 'exploremulti' });
 
-    const menu = await screen.findByRole('menu', { name: 'Folders' }, WAIT);
+    const menu = await screen.findByRole('menu', { name: 'Projects' }, WAIT);
     const rows = within(menu).getAllByRole('menuitemradio');
     expect(rows).toHaveLength(2);
     expect(within(menu).getByRole('group', { name: 'payments-api' })).toBeDefined();
@@ -64,7 +64,7 @@ describe('the explore chip scenes', () => {
   it('exploremulti browses the second project when you pick it', async () => {
     mount({ id: 'exploremulti' });
 
-    const menu = await screen.findByRole('menu', { name: 'Folders' }, WAIT);
+    const menu = await screen.findByRole('menu', { name: 'Projects' }, WAIT);
     fireEvent.click(within(menu).getByRole('menuitemradio', { name: /hl\/surface-retry/ }));
 
     expect(await screen.findByRole('treeitem', { name: 'retry-policy.md' }, WAIT)).toBeDefined();

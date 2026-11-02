@@ -69,7 +69,7 @@ describe('the Debugger drawer', () => {
     const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
     expect(within(chain).getAllByRole('listitem')).toHaveLength(2);
     expect(within(chain).getByText('Proposal')).toBeDefined();
-    expect(within(chain).getByText('Waiting for you')).toBeDefined();
+    expect(within(chain).getByText('Needs you')).toBeDefined();
     expect(within(drawer).queryByText('Sonnet 5.5')).toBeNull();
     expect(within(drawer).getByRole('button', { name: /^Transcript of / })).toBeDefined();
   });

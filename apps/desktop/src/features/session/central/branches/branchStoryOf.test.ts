@@ -144,16 +144,16 @@ describe('branchStoryOf, no pull request', () => {
     expect(story.rank).toBe(2);
   });
 
-  it('says No pull request once pushed, in a neutral tone', () => {
+  it('says No PR once pushed, in a neutral tone', () => {
     const story = storyOf({ fact: factOf({ status: status({ ahead: 2 }) }) });
-    expect(story.word).toBe('No pull request');
+    expect(story.word).toBe('No PR');
     expect(story.blocker).toBe('2 commits pushed');
     expect(story.tone).toBe('neutral');
   });
 
   it('says what is unknown when the status is not read yet', () => {
     const story = storyOf({ fact: factOf({}) });
-    expect(story.word).toBe('Branch');
+    expect(story.word).toBe('No PR');
     expect(story.blocker).toBe('');
   });
 });

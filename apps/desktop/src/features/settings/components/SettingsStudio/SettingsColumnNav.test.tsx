@@ -64,7 +64,6 @@ const mountWithRail = () =>
       groups={GROUPS}
       rail={
         <SettingsRail
-          scope="app"
           pageKey="app:general"
           groups={GROUPS}
           workspaceName="Harborline"
@@ -103,14 +102,14 @@ describe('SettingsColumnNav', () => {
       within(nav)
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['App', 'Workspace · Harborline', 'Providers and models', 'Integrations']);
+    ).toEqual(['App', 'Providers', 'This workspace · Harborline', 'Integrations']);
     expect(within(nav).queryByRole('button', { name: 'App' })).toBeNull();
-    expect(within(nav).queryByRole('button', { name: /^Workspace/ })).toBeNull();
+    expect(within(nav).queryByRole('button', { name: /^This workspace/ })).toBeNull();
     expect(
       within(nav)
         .getAllByRole('button', { expanded: false })
         .map((fold) => fold.textContent),
-    ).toEqual(['Providers and models', 'Integrations']);
+    ).toEqual(['Providers', 'Integrations']);
   });
 
   it('draws every page row as one line of text', () => {
@@ -129,7 +128,7 @@ describe('SettingsColumnNav', () => {
     mountWithRail();
     const nav = screen.getByRole('navigation', { name: 'Settings scopes' });
 
-    const providers = within(nav).getByRole('button', { name: /^Providers and models/ });
+    const providers = within(nav).getByRole('button', { name: /^Providers/ });
     expect(
       within(providers).getByRole('img', { name: 'Claude is about to run out' }),
     ).toBeDefined();

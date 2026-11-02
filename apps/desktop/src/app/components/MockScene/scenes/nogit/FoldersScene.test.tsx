@@ -31,13 +31,13 @@ describe('the folder face scenes', () => {
       await screen.findByText('Code, no git yet · ~/Code/acme-web', undefined, WAIT),
     ).toBeDefined();
     expect(screen.getByText('Documents · ~/Documents/acme-notes')).toBeDefined();
-    expect(screen.getByText('3 folders · ~/Code/harborline')).toBeDefined();
+    expect(screen.getByText('3 projects · ~/Code/harborline')).toBeDefined();
   });
 
   it('settings shows the switch and the saved versions of acme-notes', async () => {
     render(<FoldersScene state="settings" theme="light" />);
 
-    const band = await screen.findByRole('region', { name: 'Plain folders' }, WAIT);
+    const band = await screen.findByRole('group', { name: 'acme-notes, what it is for' }, WAIT);
     const faces = within(band).getByRole('tablist', { name: 'What acme-notes is for' });
     expect(
       within(faces).getByRole('tab', { name: 'Documents' }).getAttribute('aria-selected'),

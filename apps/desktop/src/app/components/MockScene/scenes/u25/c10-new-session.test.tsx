@@ -72,7 +72,8 @@ const FORM_SCENES: ReadonlyArray<readonly [SceneId, string]> = [
   ['c10-new-wireframe', 'Draw a wireframe'],
 ];
 
-const whereLabel = (): string => screen.getByRole('combobox', { name: 'Where' }).textContent ?? '';
+const whereLabel = (): string =>
+  screen.getByRole('combobox', { name: 'Projects' }).textContent ?? '';
 
 describe('the c10 New session scenes', () => {
   it('registers one scene per state of the New session page and the New forms', () => {
@@ -106,7 +107,7 @@ describe('the c10 New session scenes', () => {
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
-    expect(whereLabel()).toContain('2 folders');
+    expect(whereLabel()).toContain('2');
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
   });
 
@@ -132,11 +133,11 @@ describe('the c10 New session scenes', () => {
     expect(workspaceProjects).toHaveLength(50);
     const search = screen.getByRole('combobox', { name: 'Search folders' });
     expect(search).toHaveProperty('value', 'pay');
-    const listbox = screen.getByRole('listbox', { name: 'Where' });
+    const listbox = screen.getByRole('listbox', { name: 'Projects' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
-    expect(within(listbox).queryAllByText(/^(Suggested|All folders)$/).length).toBeGreaterThan(0);
-    expect(whereLabel()).toContain('2 folders');
+    expect(within(listbox).queryAllByText(/^(Suggested|All projects)$/).length).toBeGreaterThan(0);
+    expect(whereLabel()).toContain('2');
   });
 
   it('c10-start-failed keeps the draft, says why and turns Start into Retry', async () => {

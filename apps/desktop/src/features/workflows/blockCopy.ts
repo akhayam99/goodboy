@@ -6,6 +6,6 @@ export const WORKFLOW_BLOCK_COPY: Record<WorkflowBlockReason, string> = {
   'failed-step': 'The current step failed or is blocked.',
   'stopped-step': 'You stopped the current step. The run does not pass a stopped step.',
   'turn-running': 'This step is still working.',
-  paused: 'The run is paused. Resume it to start the next step.',
+  paused: 'The run is paused. Continue it to start the next step.',
   'plan-approval': 'The plan is ready. Approve it to start the rest of the run.',
 };

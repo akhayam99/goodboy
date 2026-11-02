@@ -170,7 +170,7 @@ const toMountIds = (value: unknown): ReadonlyArray<MountId> => {
     .map((entry) => entry as MountId);
 };
 
-const toDomain = (row: ProvenanceRow): ArtifactProvenance => ({
+const toArtifactProvenance = (row: ProvenanceRow): ArtifactProvenance => ({
   agentId: row.agent_id as AgentId,
   sessionId: row.session_id as SessionId,
   kind: artifactKind(row.kind),
@@ -254,7 +254,7 @@ export const getArtifactProvenance = async ({
 }: DatabaseParams & { readonly agentId: AgentId }): Promise<ArtifactProvenance | null> => {
   const rows = await db.select<ProvenanceRow>(`${PROVENANCE_SELECT} WHERE agent_id = ?`, [agentId]);
   const row = rows[0];
-  return row === undefined ? null : toDomain(row);
+  return row === undefined ? null : toArtifactProvenance(row);
 };
 
 export const updateArtifactRun = async ({

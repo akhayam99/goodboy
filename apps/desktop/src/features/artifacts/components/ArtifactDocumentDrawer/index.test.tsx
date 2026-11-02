@@ -341,7 +341,7 @@ describe('approving from the drawer', () => {
     await waitFor(() => expect(seen).toEqual([true]));
   });
 
-  it('closes the drawer over the run page and raises one toast without a Follow action', async () => {
+  it('closes the drawer over the run page and raises no toast, the run page in sight says it (U58)', async () => {
     seedPlanDrawer({ run: 'held' });
     stubApprove({ kind: 'approved', next: 'continues', agentId: null });
     useAppStore.getState().navigate({
@@ -357,8 +357,7 @@ describe('approving from the drawer', () => {
     fireEvent.click(screen.getByTestId('plan-primary'));
 
     await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
-    expect(await screen.findAllByText('Plan approved')).toHaveLength(1);
-    expect(screen.getByText('The run goes on')).toBeDefined();
+    expect(screen.queryByText('Plan approved')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
   });
 
@@ -808,7 +807,7 @@ describe('editing the plan by hand in the drawer', () => {
     {
       name: 'the plan runs as parallel parts',
       seed: { run: 'held', parts: 3 } satisfies PlanDrawerSeed,
-      reason: 'This plan runs as 3 parallel parts. Ask the planner to change it.',
+      reason: 'This plan runs as 3 parts. Ask the planner to change it.',
     },
   ])('disables Edit with its reason when $name', ({ seed, reason }) => {
     seedAndRender(seed);
@@ -822,7 +821,7 @@ describe('editing the plan by hand in the drawer', () => {
     seedAndRender({ run: 'held', parts: 3 });
 
     expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
-      'This plan runs as 3 parallel parts. Ask the planner to change it.',
+      'This plan runs as 3 parts. Ask the planner to change it.',
     );
   });
 

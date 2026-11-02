@@ -1,6 +1,15 @@
 import { useId, type ReactNode } from 'react';
 import { TriangleAlert, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronRight } from 'lucide-react';
-import { Button, cn, ICON_SIZE, IconButton, Reveal, ROW_INTERACTIVE, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  ICON_SIZE,
+  IconButton,
+  Reveal,
+  ROW_INTERACTIVE,
+  Skeleton,
+  Tooltip,
+} from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { RepoRowFacts, RepoRowGlyph, RepoRowTone } from './repoRowFactsOf';
@@ -139,7 +148,7 @@ export const RepoEntryRow = ({
               className={cn('flex shrink-0 items-center gap-1 text-meta', TONE_CLASS[facts.tone])}
             >
               {glyphOf({ glyph: facts.glyph })}
-              {facts.word}
+              {facts.word === '' ? <Skeleton className="h-3 w-14" /> : facts.word}
             </span>
           </Tooltip>
           {primaryOf({ project, base, facts, isChecking, onPull, onRetry })}

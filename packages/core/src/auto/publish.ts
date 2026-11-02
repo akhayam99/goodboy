@@ -1,4 +1,4 @@
-import { isRecord } from '@goodboy/types/helpers';
+import { isRecord, textOf } from '@goodboy/types/helpers';
 
 export type PublishMode = 'push' | 'force';
 
@@ -27,13 +27,6 @@ export type ResultPublish = Readonly<{
 }>;
 
 export const PUBLISH_MAX_TRIES = 2;
-
-type TextParams = {
-  readonly value: unknown;
-};
-
-const textOf = ({ value }: TextParams): string | null =>
-  typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 
 type RawParams = {
   readonly value: unknown;

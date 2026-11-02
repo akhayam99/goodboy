@@ -170,29 +170,13 @@ const levelCount = (): number => document.querySelectorAll('[data-level-layer="w
 const railLevel = (): string | null =>
   screen.getByRole('navigation', { name: 'Session' }).getAttribute('data-session-rail');
 
-const statusLine = (): HTMLElement => {
-  const line = document.querySelector<HTMLElement>('[data-worktree-status]');
-  if (line === null) {
-    throw new Error('the current branch shows no status line');
-  }
-  return line;
-};
-
-const failureLine = (): HTMLElement => {
-  const failure = document.querySelector<HTMLElement>('[data-branch-failure]');
-  if (failure === null) {
-    throw new Error('the current branch shows no error under its line');
-  }
-  return failure;
-};
-
 const menuLabels = async (): Promise<ReadonlyArray<string>> =>
   (await screen.findAllByRole('menuitem')).map((item) => item.textContent ?? '');
 
 const ACTIONS = `payments-api · ${mount.branch} actions`;
 
 describe('one tree for every branch', () => {
-  it('opens a branch in place: its pages expand under the row and the rail never drills into a second level', async () => {
+  it('opens a branch page from its row and the rail never drills into a second level', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
     const row = rowButton('payments-api', /#418/);
@@ -206,47 +190,25 @@ describe('one tree for every branch', () => {
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(railLevel()).toBe('session');
     expect(levelCount()).toBe(0);
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('true');
-    expect(entryLabels(entriesOf('payments-api'))).toEqual([
-      'Pull request',
-      'Comments',
-      'Files',
-      'Commits',
-      'Checks',
-    ]);
+    expect(rowButton('payments-api', /#418/).hasAttribute('aria-expanded')).toBe(false);
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
   });
 
-  it('names the pull request entry by its number alone, so the label is never cut by the reference', async () => {
+  it('keeps the current branch on its page when its row is clicked again', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
-
-    const reference = entriesOf('payments-api').querySelector('[data-entry-reference]');
-    expect(reference?.textContent).toBe('#418');
-    const label = reference?.parentElement?.querySelector('[data-entry-label]');
-    expect(label?.textContent).toBe('Pull request');
-  });
-
-  it('collapses and expands the current branch from its row and stays on its page', async () => {
-    seedTwoProjects({ status: worktreeStatusOf({}) });
-    await openWorktree();
-    await mountRail();
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('true');
     const path = useAppStore.getState().diffMountPath[sessionId];
 
     fireEvent.click(rowButton('payments-api', /#418/));
     await settle();
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('false');
-    expect(projectRows('payments-api').querySelector('[data-worktree-entries]')).toBeNull();
+
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(useAppStore.getState().diffMountPath[sessionId]).toBe(path);
-
-    fireEvent.click(rowButton('payments-api', /#418/));
-    await settle();
-    expect(rowButton('payments-api', /#418/).getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
   });
 
-  it('lands a saved branch lens on the tree with that branch current and its pages open', async () => {
+  it('lands a saved branch lens on the tree with that branch current and one row per branch', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
@@ -255,7 +217,7 @@ describe('one tree for every branch', () => {
     expect(levelCount()).toBe(0);
     const row = rowButton('payments-api', /#418/);
     expect(row.getAttribute('aria-current')).toBe('page');
-    expect(entryLabels(entriesOf('payments-api'))).toContain('Files');
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
     expect(rowButton('ledger-core', /#77/).hasAttribute('aria-current')).toBe(false);
   });
 
@@ -331,64 +293,26 @@ describe('one tree for every branch', () => {
     expect(document.querySelector('[data-worktree-status]')).toBeNull();
   });
 
-  it('says how far behind the current branch is and rebases that mount once from its line', async () => {
-    const rebaseBranch = vi.fn(async () => 'rebased' as const);
+  it('shows a behind pill without a row rebase action', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 6 }) });
-    useAppStore.setState({ rebaseBranch });
     await openWorktree();
     await mountRail();
-
-    const line = await waitFor(statusLine);
-    expect(line.textContent).toContain('6 behind main');
-    expect(line.closest('[data-card-project]')?.getAttribute('data-card-project')).toBe(
-      'payments-api',
-    );
-    fireEvent.click(within(line).getByRole('button', { name: 'Rebase on main' }));
-    await settle();
-
-    expect(rebaseBranch).toHaveBeenCalledTimes(1);
-    expect(rebaseBranch).toHaveBeenCalledWith({ sessionId, mountId: mount.mountId });
-  });
-
-  it('keeps the line and shows the error under it when a rebase fails, and rebases again on retry', async () => {
-    const rebaseBranch = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('origin cannot be reached'))
-      .mockResolvedValue('rebased');
-    seedTwoProjects({ status: worktreeStatusOf({ behind: 6 }) });
-    useAppStore.setState({ rebaseBranch });
-    await openWorktree();
-    await mountRail();
-
-    const line = await waitFor(statusLine);
-    fireEvent.click(within(line).getByRole('button', { name: 'Rebase on main' }));
-    await settle();
-
-    const failure = failureLine();
-    expect(failure.textContent).toContain('origin cannot be reached');
-    expect(statusLine().textContent).toContain('6 behind main');
     expect(
-      statusLine().compareDocumentPosition(failure) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-
-    fireEvent.click(within(failure).getByRole('button', { name: 'Retry' }));
-    await settle();
-
-    expect(rebaseBranch).toHaveBeenCalledTimes(2);
-    expect(rebaseBranch).toHaveBeenLastCalledWith({ sessionId, mountId: mount.mountId });
+      within(rowButton('payments-api', /#418/)).getByTestId('branch-row-chip').textContent,
+    ).toBe('6 behind');
+    expect(document.querySelector('[data-worktree-status]')).toBeNull();
+    expect(document.querySelector('[data-worktree-verb]')).toBeNull();
   });
 
-  it('says a rebase is running and asks before Abort runs', async () => {
+  it('shows one stopped pill without Open rebase below the row', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ unmerged: 1, inProgress: 'rebase' }) });
     await openWorktree();
     await mountRail();
-
-    const line = await waitFor(statusLine);
-    expect(line.textContent).toContain('Rebasing · 1 conflict');
-    fireEvent.click(within(line).getByRole('button', { name: 'Abort rebase' }));
-    await settle();
-
-    expect(screen.getByRole('group', { name: 'Abort the rebase?' })).toBeDefined();
+    expect(
+      within(rowButton('payments-api', /#418/)).getByTestId('branch-row-chip').textContent,
+    ).toBe('Rebase stopped');
+    expect(screen.queryByRole('button', { name: /^Open rebase of/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
   });
 });
 
@@ -435,7 +359,30 @@ const branchesIn = (list: HTMLElement): ReadonlyArray<string> =>
   );
 
 describe('the branch rows', () => {
-  it('draws one line: the pull request title, else the branch name in mono, with no number or branch beside it', async () => {
+  it('keeps two titles with the same prefix distinct by their leading numbers', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    const first = extraMount({ seed: { name: 'northwind-one' }, state: 'open', number: 322 });
+    const second = extraMount({ seed: { name: 'northwind-two' }, state: 'open', number: 323 });
+    useAppStore.setState((state) => ({
+      mountGithub: Object.fromEntries(
+        Object.entries(state.mountGithub).map(([id, value]) => [
+          id,
+          (id === first || id === second) && value.pr !== null
+            ? { ...value, pr: { ...value.pr, title: 'Add an idempotency guard to payments-api' } }
+            : value,
+        ]),
+      ),
+    }));
+    await mountRail();
+    expect(
+      rowButton('payments-api', /#322/).querySelector('[data-worktree-branch]')?.textContent,
+    ).toBe('#322 Add an idempotency guard to payments-api');
+    expect(
+      rowButton('payments-api', /#323/).querySelector('[data-worktree-branch]')?.textContent,
+    ).toBe('#323 Add an idempotency guard to payments-api');
+  });
+
+  it('draws one line: the pull request title, else the branch name in mono, with the number first', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     useAppStore.setState((state) => {
       const ledger = state.mountGithub[ledgerMount.mountId];
@@ -446,7 +393,7 @@ describe('the branch rows', () => {
     await mountRail();
 
     const titled = rowButton('payments-api', /#418/);
-    expect(titled.textContent).toBe('Retry window');
+    expect(titled.textContent).toBe('#418 Retry window');
     expect(titled.querySelector('[data-worktree-branch]')?.getAttribute('data-title-kind')).toBe(
       'request',
     );
@@ -516,7 +463,7 @@ describe('the branch rows', () => {
     await waitFor(() =>
       expect(
         within(rowButton('ledger-core', /#77/)).getByTestId('branch-row-chip').textContent,
-      ).toBe('Conflict'),
+      ).toBe('Rebase stopped'),
     );
   });
 
@@ -699,7 +646,7 @@ describe('rebase all on the rows', () => {
     ).not.toBeNull();
     expect(chipOf('payments-api', /branch hl\/four/)?.textContent).toBe('Queued');
     expect(chipOf('payments-api', /branch hl\/four/)?.closest('[data-is-breathing]')).toBeNull();
-    expect(chipOf('payments-api', /branch hl\/five/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/five/)?.textContent).toBe('Rebase stopped');
     expect(chipOf('payments-api', /branch hl\/six/)?.textContent).toBe('Failed');
   });
 
@@ -790,7 +737,7 @@ describe('rebase all on the rows', () => {
       phase: 'done',
     });
     await settle();
-    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Rebase stopped');
     expect(chipOf('payments-api', /branch hl\/two/)?.textContent).toBe('Failed');
 
     stubStoryInvoke({
@@ -825,7 +772,7 @@ describe('rebase all on the rows', () => {
     });
     await settle();
 
-    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Rebase stopped');
   });
 
   it('offers Dismiss in the header once the batch is done and clears every chip', async () => {
@@ -846,8 +793,8 @@ describe('the folder cards of the session level', () => {
     await mountRail();
 
     const card = within(screen.getByRole('group', { name: 'Projects' }));
-    fireEvent.click(card.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(card.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
 
     expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
     expect(picker.queryByRole('button', { name: 'Add payments-api' })).toBeNull();
@@ -872,12 +819,13 @@ describe('the folder cards of the session level', () => {
       scan_child_repos: () => [],
       repo_identity: () => ({ rootCommits: [], remoteUrl: null }),
       worktree_list_branch_names: () => ['main'],
+      session_dir_exists: () => false,
     });
     vi.mocked(openDialog).mockResolvedValueOnce('/repos/acme-docs');
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -902,8 +850,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -930,7 +878,7 @@ describe('the folder cards of the session level', () => {
     expect(card.querySelector('[data-project-row]')?.compareDocumentPosition(rebaseAll)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
     );
-    expect(within(card).getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(within(card).getByRole('button', { name: 'New branch in ledger-core' })).toBeDefined();
   });
 
@@ -961,8 +909,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -995,8 +943,8 @@ describe('the folder cards of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -1017,7 +965,7 @@ describe('the folder cards of the session level', () => {
     fireEvent.click(plus);
 
     expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
-    expect(screen.queryByRole('dialog', { name: 'Add folder' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Add project' })).toBeNull();
   });
 
   it('opens the same new branch form when the registry action runs', async () => {
@@ -1078,7 +1026,7 @@ describe('the folder cards of the session level', () => {
     );
     await settle();
 
-    expect(screen.queryByRole('button', { name: 'Add folder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^New branch in/ })).toBeNull();
   });
 });
@@ -1111,81 +1059,32 @@ const seedChangedFiles = ({ additions, deletions }: ChangedParams) => {
   });
 };
 
-const entriesOf = (name: string): HTMLElement => {
-  const list = projectRows(name).querySelector<HTMLElement>('[data-worktree-entries]');
-  if (list === null) {
-    throw new Error(`${name} shows no worktree pages`);
-  }
-  return list;
-};
-
-const expandBranch = async (name: string): Promise<void> => {
-  const row = worktreeButton(projectRows(name));
-  if (row.getAttribute('aria-expanded') === 'true') {
-    return;
-  }
-  await act(async () => {
-    fireEvent.click(row);
-  });
-  await settle();
-};
-
-const entryLabels = (list: HTMLElement): ReadonlyArray<string> =>
-  [...list.querySelectorAll('[data-entry-label]')].map((label) => label.textContent ?? '');
-
-describe('the worktree pages inside the Projects card', () => {
-  it('lists Pull request, Comments, Files, Commits and Checks under a worktree with a pull request', async () => {
+describe('the branch row inside the Projects card', () => {
+  it('draws no page rows under a branch, with a pull request or without one', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     seedChangedFiles({ additions: 652, deletions: 99 });
+    await openWorktree();
     await mountRail();
-    await expandBranch('payments-api');
 
-    expect(entryLabels(entriesOf('payments-api'))).toEqual([
-      'Pull request',
-      'Comments',
-      'Files',
-      'Commits',
-      'Checks',
-    ]);
-    await waitFor(() =>
-      expect(
-        within(entriesOf('payments-api'))
-          .getByRole('button', { name: /^Files/ })
-          .querySelector('[data-testid="diff-stat"]')?.textContent,
-      ).toBe('+652-99'),
-    );
-    expect(
-      within(entriesOf('payments-api'))
-        .getByRole('button', { name: /^Files/ })
-        .getAttribute('aria-label'),
-    ).toBe('Files, +652 -99');
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Checks/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Commits/ })).toBeNull();
   });
 
-  it('lists Pull request, Files and Commits under a worktree with no pull request', async () => {
-    seed({ status: worktreeStatusOf({}) });
-    useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
-    await mountRail();
-    await expandBranch('payments-api');
-
-    expect(entryLabels(entriesOf('payments-api'))).toEqual(['Pull request', 'Files', 'Commits']);
-  });
-
-  it('opens the worktree page of an entry directly, on its tab', async () => {
+  it('opens the branch page on the stored tab when its row is clicked', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     useAppStore.setState({ setSessionActiveMount: vi.fn(async () => undefined) });
     await mountRail();
-    await expandBranch('payments-api');
 
     await act(async () => {
-      fireEvent.click(within(entriesOf('payments-api')).getByRole('button', { name: /^Files/ }));
+      fireEvent.click(rowButton('payments-api', /#418/));
     });
 
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
     expect(useAppStore.getState().diffMountPath[sessionId]).toBe(mount.worktreePath);
-    expect(useAppStore.getState().branchTab?.[sessionId]).toBe('files');
   });
 
-  it('puts the failing count on the Checks entry and the one chip on its worktree row', async () => {
+  it('carries the failing count in the one chip of its row', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     patchRequest({ mountId: mount.mountId, patch: { checks: 'failure' } });
@@ -1215,9 +1114,6 @@ describe('the worktree pages inside the Projects card', () => {
     });
     await mountRail();
 
-    const checks = within(entriesOf('payments-api')).getByRole('button', { name: /^Checks/ });
-    expect(checks.getAttribute('aria-label')).toBe('Checks, 1 failing');
-    expect(checks.querySelector('[data-entry-slot]')?.textContent).toBe('1');
     expect(
       within(worktreeButton(projectRows('payments-api'))).getByTestId('branch-row-chip')
         .textContent,
@@ -1240,7 +1136,7 @@ describe('the worktree pages inside the Projects card', () => {
       throw new Error('the Projects toggle sits in no card');
     }
     await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
-    expect(within(card).getByRole('button', { name: 'Add folder' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 });
 
@@ -1277,37 +1173,28 @@ const failChecks = ({ mountId, prNumber }: FailParams) => {
 const projectToggle = (name: string): HTMLElement =>
   screen.getByRole('button', { name: new RegExp(`^${name}, \\d+ branch`) });
 
-const branchOpen = (name: string): string | null =>
-  worktreeButton(projectRows(name)).getAttribute('aria-expanded');
-
 const prMarkOf = (name: string): Element | null =>
   worktreeButton(projectRows(name)).querySelector('[data-pr-state]');
 
 describe('the Projects tree', () => {
-  it('opens folders and closes every branch until one is current, even one that needs you', async () => {
+  it('opens folders and never expands a branch row, even one that needs you', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     failChecks({ mountId: mount.mountId, prNumber: 418 });
     await mountRail();
 
     expect(projectToggle('payments-api').getAttribute('aria-expanded')).toBe('true');
     expect(projectToggle('ledger-core').getAttribute('aria-expanded')).toBe('true');
-    expect(branchOpen('payments-api')).toBeNull();
-    expect(branchOpen('ledger-core')).toBeNull();
+    expect(worktreeButton(projectRows('payments-api')).hasAttribute('aria-expanded')).toBe(false);
+    expect(worktreeButton(projectRows('ledger-core')).hasAttribute('aria-expanded')).toBe(false);
     expect(document.querySelector('[data-worktree-entries]')).toBeNull();
   });
 
-  it('opens the current branch only, and closes it when another branch becomes current', async () => {
+  it('marks only the current branch row as the page', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
-    expect(branchOpen('payments-api')).toBe('true');
-    expect(branchOpen('ledger-core')).toBeNull();
-
-    await expandBranch('ledger-core');
-
-    expect(branchOpen('ledger-core')).toBe('true');
-    expect(branchOpen('payments-api')).toBeNull();
-    expect(document.querySelectorAll('[data-worktree-entries]')).toHaveLength(1);
+    expect(worktreeButton(projectRows('payments-api')).getAttribute('aria-current')).toBe('page');
+    expect(worktreeButton(projectRows('ledger-core')).hasAttribute('aria-current')).toBe(false);
   });
 
   it('toggles a folder and keeps the other one', async () => {
@@ -1326,7 +1213,6 @@ describe('the Projects tree', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();
     await mountRail();
-    fireEvent.click(worktreeButton(projectRows('payments-api')));
     fireEvent.click(projectToggle('ledger-core'));
     await settle();
     cleanup();
@@ -1334,7 +1220,6 @@ describe('the Projects tree', () => {
     await mountRail();
 
     expect(projectToggle('ledger-core').getAttribute('aria-expanded')).toBe('false');
-    expect(branchOpen('payments-api')).toBe('false');
     const stored: unknown = JSON.parse(
       localStorage.getItem(STORAGE_KEYS.sessionRailTreeOpen) ?? '{}',
     );

@@ -41,14 +41,14 @@ describe('doorSignalOf', () => {
       isUnread: false,
       tone: 'warning',
       countText: '2',
-      fact: '2 need you: Checks failing, 1 question for you',
+      fact: '2 sessions need you: Checks failing, 1 question for you',
     });
   });
 
   it('says one session needs you in the singular, with the count 1 beside the dot', () => {
     const signal = doorSignalOf({ kind: 'board', count: 1, tone: 'warning', reasons: [], ...NONE });
 
-    expect(signal?.fact).toBe('1 needs you');
+    expect(signal?.fact).toBe('1 session needs you');
     expect(signal?.countText).toBe('1');
   });
 
@@ -70,7 +70,7 @@ describe('doorSignalOf', () => {
     ).toBe('9+');
     expect(
       doorSignalOf({ kind: 'board', count: 31, tone: 'warning', reasons: [], ...NONE })?.fact,
-    ).toBe('31 need you');
+    ).toBe('31 sessions need you');
   });
 
   it('draws a quiet neutral dot, never a number, when only replies and approvals wait', () => {

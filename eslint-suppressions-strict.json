@@ -1,7 +1,7 @@
 {
   "apps/desktop/src/App.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/__tests__/regressions/no-unstable-zustand-selectors.test.ts": {
@@ -461,7 +461,7 @@
   },
   "apps/desktop/src/features/quick-actions/registry.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/resolve/resolveFixupTargets.ts": {
@@ -537,11 +537,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/OpenWithBand.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/skills/skills.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/storage/groupStorageFolders.ts": {
@@ -929,11 +924,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/session-view/splitInactiveSessions.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/session-view/stageInfoOf.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -1057,11 +1047,6 @@
   "apps/desktop/src/store/slices/turn/recoverTurnFailure.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/turn/resolveSkillPrompt.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
     }
   },
   "apps/desktop/src/store/slices/turn/retrySummarizer.ts": {

@@ -213,9 +213,10 @@ describe('the open session on the rail', () => {
     ]);
   });
 
-  it('shows nothing on the Board, where no session is open', () => {
+  it('keeps resting sessions behind the count on the Board', () => {
     mountRail({ place: 'board', currentSessionId: null });
-    expect(document.querySelector('[data-rail-sessions]')).toBeNull();
+    expect(screen.getByRole('button', { name: '1 more session' }).textContent).toBe('+1');
+    expect(document.querySelectorAll('[data-rail-session]')).toHaveLength(0);
   });
 
   it('shows nothing in the app scope', () => {
@@ -313,8 +314,8 @@ describe('the pinned sessions on the rail', () => {
     expect(railOrder()).toEqual([...pinned.map((session) => session.id), open.id]);
     expect(buttons[0]?.getAttribute('aria-label')).toContain('Pinned work 1');
     const tail = document.querySelector('[data-slot="rail-open-tail"]');
-    expect(tail?.querySelectorAll('[data-rail-session]')).toHaveLength(1);
-    expect(tail?.querySelector(`[data-rail-session="${open.id}"]`)).not.toBeNull();
+    expect(tail?.getAttribute('data-rail-session')).toBe(open.id);
+    expect(tail?.textContent).toBe('FW');
     expect(currentNodes()).toEqual([open.id]);
   });
 
@@ -337,7 +338,7 @@ describe('the pinned sessions on the rail', () => {
     const pinned = pinnedSessions(9);
     mountRail({ pinned, currentSessionId: pinnedId(pinned, 8) });
     const tail = document.querySelector('[data-slot="rail-open-tail"]');
-    expect(tail?.querySelector(`[data-rail-session="${pinned[8]?.id}"]`)).not.toBeNull();
+    expect(tail?.getAttribute('data-rail-session')).toBe(pinned[8]?.id);
     expect(railOrder().slice(0, 7)).toEqual(pinned.slice(0, 7).map((session) => session.id));
     expect(document.querySelector<HTMLElement>('[data-rail-more]')?.textContent).toBe('+2');
   });
@@ -382,7 +383,7 @@ describe('the pinned sessions on the rail', () => {
     expect(more.textContent).toBe('+2');
     fireEvent.click(more);
     const rows = within(flyout() as HTMLElement).getAllByRole('button');
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(10);
     expect(rows.map((row) => row.textContent)).toContain('Pinned work 9');
   });
 
@@ -433,7 +434,7 @@ describe('the pinned sessions on the rail', () => {
     mountRail({ pinned });
     hoverOpenSession();
     const card = within(flyout() as HTMLElement);
-    expect(card.getByText('Pinned')).toBeDefined();
+    expect(card.getByText('Sessions')).toBeDefined();
     expect(card.getByRole('button', { name: 'Pinned work 1' })).toBeDefined();
     expect(card.getByRole('button', { name: 'Pinned work 2' })).toBeDefined();
   });

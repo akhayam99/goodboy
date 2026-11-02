@@ -6,7 +6,6 @@ import type {
   ResolveLaunchChoice,
   SessionId,
 } from '@goodboy/types';
-import type { LaunchNoun } from './reviewLaunchCopy';
 import type { AppStore } from '../../store/store';
 import { sessionResolveStyle } from '../../store/sessionReplySettings';
 import { dropLaunchedSelection } from './dropLaunchedSelection';
@@ -22,7 +21,6 @@ type Params = {
   readonly mountId?: MountId;
   readonly expectedMountRevision?: number;
   readonly onWrite?: () => void;
-  readonly noun?: LaunchNoun;
   readonly name?: string;
   readonly parentAgentId?: AgentId;
 };
@@ -53,7 +51,6 @@ export const startBatch = async ({
   mountId,
   expectedMountRevision,
   onWrite,
-  noun = 'comment',
   name,
   parentAgentId,
 }: Params): Promise<StartedBatch> => {
@@ -62,7 +59,6 @@ export const startBatch = async ({
     state,
     sessionId,
     threadIds,
-    noun,
     ...(comments !== undefined && { comments }),
   });
   onWrite?.();
