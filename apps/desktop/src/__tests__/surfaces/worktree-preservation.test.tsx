@@ -136,18 +136,19 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(worktree.some((label) => /Copy branch name/.test(label))).toBe(true);
   });
 
-  it('a stopped rebase keeps Abort on the status line, its one home', async () => {
+  it('a stopped rebase keeps Abort on the stop panel under the page header, its one home', async () => {
     await mount('c04-worktree-rebasing');
 
-    expect(level().getByRole('button', { name: 'Abort rebase' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Abort rebase' }).length).toBe(1);
     const labels = await branchMenu();
     expect(labels.some((label) => /Abort rebase/.test(label))).toBe(false);
   });
 
-  it('Rebase has one home, the status line, while the branch is behind', async () => {
+  it('Rebase has one home, the Branch actions menu, while the branch is behind and another step leads', async () => {
     await mount('c04-worktree-pr-behind');
 
-    expect(level().getByRole('button', { name: /^Rebase on main/ })).toBeDefined();
+    const labels = await branchMenu();
+    expect(labels.filter((label) => /^Rebase on main/.test(label))).toHaveLength(1);
     expect(
       within(screen.getByRole('group', { name: 'Properties' })).queryByRole('button', {
         name: /Rebase/,

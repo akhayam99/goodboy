@@ -59,7 +59,8 @@ none once it is pushed and up to date, where the create form's `Create pull requ
 primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Mark ready` or
 `Reopen` waits in `⋯`, disabled with its reason, and runs through the header's own confirm and
 failure line from there; the header never repeats its primary in `⋯`. A stopped rebase shows no
-primary, with `Abort rebase` in the rebase banner and on the worktree status line. The Merge
+primary, with `Abort rebase` in the rebase banner only. While the branch is behind and another step
+leads (`Fix checks`, say), `Rebase on main` waits in `⋯`, its one home. The Merge
 cell of the status strip says the blocker once (`Blocked by checks`).
 One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
 blockers are a merged, closed, queued or draft pull request, conflicts, checks

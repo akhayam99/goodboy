@@ -278,15 +278,25 @@ describe('Overview capabilities from the session Overview', () => {
     ]);
   });
 
-  it('keeps the exact ask one press away: Answer on the run row opens the question beside the page', async () => {
+  it('keeps the exact ask one press away: Answer on the Needs you card navigates to the question', async () => {
     await mountScene({ name: 'c05-overview-running' });
+    const target = useAppStore.getState().navigate;
+    const places: Array<unknown> = [];
+    act(() => {
+      useAppStore.setState({
+        navigate: (request) => {
+          places.push(request.to);
+          return target(request);
+        },
+      });
+    });
 
-    const running = screen.getByRole('region', { name: 'Running' });
-    fireEvent.click(within(running).getByRole('button', { name: 'Answer' }));
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    fireEvent.click(within(needsYou).getByRole('button', { name: 'Answer' }));
     await advance();
 
-    expect(useAppStore.getState().drawer?.kind).toBe('question');
-    expect(document.querySelector('[data-page="overview"]')).not.toBeNull();
+    expect(places).toHaveLength(1);
+    expect(places[0]).toMatchObject({ at: expect.stringMatching(/^(session|agent)$/) });
   });
 
   it('keeps the full log with its search, the session spend moved to the rail foot', async () => {

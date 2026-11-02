@@ -124,7 +124,13 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
       await openBranchPage();
       await branchTab('pr')(ctx);
       await visitTab(/^Files/);
-      await click(await screen.findByRole('button', { name: SECOND_BRANCH }, WAIT));
+      await click(
+        await screen.findByRole(
+          'button',
+          { name: (name) => name.startsWith(`${SECOND_BRANCH},`) || name === SECOND_BRANCH },
+          WAIT,
+        ),
+      );
       await settle(8);
     },
     lands: async (ctx) => {

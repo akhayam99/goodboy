@@ -613,7 +613,12 @@ describe('BranchHeader action row', () => {
 
 describe('BranchHeader overflow', () => {
   it('holds the pull request verbs and Change base, never a worktree verb of the identity menu', () => {
-    expect(BRANCH_MENU_DIFF).toEqual(['diff.push', 'diff.changeBase', 'diff.copyPatch']);
+    expect(BRANCH_MENU_DIFF).toEqual([
+      'diff.push',
+      'diff.rebase',
+      'diff.changeBase',
+      'diff.copyPatch',
+    ]);
     withMountPr();
     status = statusOf({ changed: 3 });
     renderHeader({ pr: PR });
