@@ -89,6 +89,7 @@ export const RevealAskScene = ({ theme, landsAfterMs }: Props) => {
           reply={reply}
           facts={FACTS}
           onOpen={() => undefined}
+          onStartWork={() => undefined}
         />
       </div>
     </div>

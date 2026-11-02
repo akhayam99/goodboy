@@ -72,6 +72,7 @@ const turnOf = ({ reply }: { readonly reply: ChatMessage }) => (
     reply={reply}
     facts={FACTS}
     onOpen={() => undefined}
+    onStartWork={() => undefined}
   />
 );
 

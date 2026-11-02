@@ -77,7 +77,7 @@ describe('SessionTools', () => {
     expect(buttons.map((button) => button.getAttribute('aria-label')?.split(',')[0])).toEqual([
       'Explore',
       'Decisions',
-      'Ask',
+      'Ask this session',
       'Agents',
       'Scripts',
       'Terminal',
@@ -220,7 +220,7 @@ describe('SessionTools', () => {
     expect(toggle('context').getAttribute('aria-label')).toBe(
       "Decisions, Couldn't update the context. Open to retry.",
     );
-    expect(toggle('ask').getAttribute('aria-label')).toBe('Ask');
+    expect(toggle('ask').getAttribute('aria-label')).toBe('Ask this session');
   });
 
   it('opens one pane at a time: a second toggle replaces the first', async () => {

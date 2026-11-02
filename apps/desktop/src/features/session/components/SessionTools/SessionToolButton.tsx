@@ -15,7 +15,8 @@ type Props = {
 };
 
 export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onToggle }: Props) => {
-  const label = signal === null ? tool.label : `${tool.label}, ${signal.note}`;
+  const name = tool.fullLabel ?? tool.label;
+  const label = signal === null ? name : `${name}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   return (
     <span className="relative flex min-w-0 flex-col items-center gap-0.5">

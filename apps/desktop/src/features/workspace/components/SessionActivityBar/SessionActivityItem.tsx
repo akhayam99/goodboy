@@ -146,6 +146,7 @@ const SessionActivityItemView = ({
         role={isListbox ? 'option' : undefined}
         data-select-id={session.id}
         data-node-kind={node.kind}
+        data-unread={node.hasUnread ? '' : undefined}
         aria-selected={isListbox ? isSelected : undefined}
         aria-pressed={isListbox ? undefined : isSelected}
         aria-current={isCurrent ? 'page' : undefined}

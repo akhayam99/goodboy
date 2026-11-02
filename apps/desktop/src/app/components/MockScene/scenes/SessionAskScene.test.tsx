@@ -57,6 +57,12 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).getByText('Read only')).toBeDefined();
   });
 
+  it('opens the drawer already scoped to the session, with its own glyph and tooltip name', async () => {
+    const trigger = await renderState('rightnow');
+    expect(within(askDrawer()).getByTestId('ask-scope').textContent).toContain('Scope: ');
+    expect(trigger.getAttribute('aria-label')).toBe('Ask this session');
+  });
+
   it('closes and reopens from the trail button', async () => {
     const trigger = await renderState('closed');
     expect(trigger.getAttribute('aria-pressed')).toBe('false');

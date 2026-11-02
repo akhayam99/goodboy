@@ -112,7 +112,7 @@ export const CONCEPT_ICONS = {
   approval: Hand,
   archive: Archive,
   artifacts: Shapes,
-  ask: MessageCircleQuestionMark,
+  ask: MessageSquareText,
   auto: Orbit,
   autoRouting: Route,
   autorun: Gauge,

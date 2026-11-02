@@ -196,7 +196,6 @@
   "apps/desktop/src/features/workspace-chat/components/ChatList/ChatSessionMark.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatList/ChatUndoRow.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatList/index.tsx": 1,
-  "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatAssistantMessage.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatEmpty.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatHandoffNote.tsx": 1,
   "apps/desktop/src/features/workspace-chat/components/ChatRoom/ChatImageTile.tsx": 1,

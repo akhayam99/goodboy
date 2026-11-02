@@ -12,7 +12,6 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
-import { UNREAD_TITLE } from '@goodboy/ui';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { SessionMarksScene } from './SessionMarksScene';
 
@@ -125,7 +124,7 @@ const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name:
 const unreadTitles = (): ReadonlyArray<string> =>
   screen
     .getAllByRole('option')
-    .filter((row) => row.classList.contains(UNREAD_TITLE))
+    .filter((row) => row.hasAttribute('data-unread'))
     .map((row) => row.getAttribute('aria-label') ?? row.textContent ?? '');
 
 describe('the session marks scene', () => {

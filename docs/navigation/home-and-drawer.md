@@ -310,9 +310,18 @@ revises the plan the body is dimmed and Run plan waits.
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
-`ScrollFade` and the composer in its `dock`. Its header is **Ask** and a **Reset chat**
-icon button (⌘N while focus is inside the panel, also in ⌘K), with no session
-title. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
+`ScrollFade` and the composer in its `dock`. The question bubble
+(`UserMessageBubble`) and the **Start work from chat** button
+(`StartWorkFromChatButton`) are the Chat ones, drawn from `shared/components`;
+the composer is the same `PromptField` and `SendStopControl`. Start work on a
+finished answer adds a brief drafted from the thread to this session and opens
+Start a run there (`startWorkFromAsk`), with no new session. The questions stay
+in the session's `ask` threads and are never listed in the Chat door. Its header is **Ask** and a
+**Reset chat** icon button (⌘N while focus is inside the panel, also in ⌘K), with
+no session title; the session is the scope chip at the top of the thread
+(`AskScope`, **Scope: {session}**). The rail icon has its own glyph
+(`CONCEPT_ICONS.ask`, apart from the Chat door) and reads **Ask this session**
+with ⌘L on hover. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
 the next question makes a new chat id) and the old thread stays under **Earlier**,
 so nothing is lost and no Undo is needed. It waits while a reply streams. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five

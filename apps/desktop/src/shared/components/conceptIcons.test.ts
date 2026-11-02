@@ -30,6 +30,11 @@ describe('CONCEPT_ICONS', () => {
     expect(CONCEPT_ICONS.terminal).toBe(SquareTerminal);
   });
 
+  it('keeps Ask this session apart from the Chat door and from Help', () => {
+    expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.chat);
+    expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.help);
+  });
+
   it('separates a mounted project from the project itself', () => {
     expect(CONCEPT_ICONS.mount).not.toBe(CONCEPT_ICONS.projectRepo);
     expect(CONCEPT_ICONS.mount).not.toBe(CONCEPT_ICONS.projectFolder);

@@ -1,9 +1,7 @@
 import { memo } from 'react';
-import { Play } from 'lucide-react';
-import { CopyButton, ICON_SIZE, Markdown, Notice, FOCUS_RING, cn } from '@goodboy/ui';
+import { CopyButton, ICON_SIZE, Markdown, Notice } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
 
-import { NAMES } from '../../../../shared/utils/names';
 import { chatAnswerMeta } from '../../chatAnswerMeta';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
@@ -11,6 +9,7 @@ import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/Provi
 import { useRevealedMarkdown } from '../../../chat/reveal/useRevealedMarkdown';
 import { ChatReads } from './ChatReads';
 import { ChatTyping } from './ChatTyping';
+import { StartWorkFromChatButton } from '../../../../shared/components/StartWorkFromChatButton';
 
 type Props = {
   readonly message: ChatMessage;
@@ -72,17 +71,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
         <div className="-ml-2 flex h-7 items-center gap-1">
           <div className="flex items-center gap-1">
             {onStartWork === undefined ? null : (
-              <button
-                type="button"
-                onClick={() => onStartWork(message.id)}
-                className={cn(
-                  'flex h-6 items-center gap-1 rounded-md px-2 text-meta text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
-                  FOCUS_RING,
-                )}
-              >
-                <Play size={ICON_SIZE.row} aria-hidden />
-                {NAMES.startWorkFromChat}
-              </button>
+              <StartWorkFromChatButton messageId={message.id} onStartWork={onStartWork} />
             )}
           </div>
           <span className="flex-1" />

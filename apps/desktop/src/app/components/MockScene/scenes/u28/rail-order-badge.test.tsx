@@ -67,7 +67,7 @@ describe('rail order and badge scenes', () => {
       within(toolbar)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual(['Explore', 'Decisions', 'Ask', 'Agents', 'Scripts', 'Terminal']);
+    ).toEqual(['Explore', 'Decisions', 'Ask this session', 'Agents', 'Scripts', 'Terminal']);
     expect(within(toolbar).getAllByRole('separator')).toHaveLength(1);
   });
 

@@ -11,6 +11,7 @@ export type SessionTool = {
   readonly group: SessionToolGroup;
   readonly icon: LucideIcon;
   readonly label: string;
+  readonly fullLabel?: string;
   readonly shortcut: ShortcutId;
 };
 
@@ -34,6 +35,7 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
     group: 'work',
     icon: CONCEPT_ICONS.ask,
     label: 'Ask',
+    fullLabel: 'Ask this session',
     shortcut: 'ask.open',
   },
   {
