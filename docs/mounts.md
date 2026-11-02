@@ -507,8 +507,11 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   or whose request merged or closed, and skips a mount fetched in the last 5s
   (turn end) or 60s (focus). `useGithubPolling` still sweeps on boot, on a
   branch change and every 5 minutes, through `sweepRequests`, which asks the
-  host each mount lives on (GitHub, GitLab or Bitbucket, [hosts.md](./hosts.md)),
-  but its timer and its visibility sweep
+  host each mount lives on (GitHub, GitLab or Bitbucket, [hosts.md](./hosts.md)).
+  When a sweep holds two or more GitHub mounts of one repo, it reads every branch
+  of that repo with one batched `gh api graphql` request (`listPrsForBranches`,
+  20 branches per request, behind the `gh_run` allowlist) and hands each mount
+  its answer; if that request fails, each mount asks on its own. Its timer and its visibility sweep
   skip mounts already fetched with no request, so only the recheck finds a PR
   opened outside the app. There is no faster global poll.
 - **The push count re-reads with the request.** Every push surface (the

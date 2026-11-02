@@ -402,6 +402,7 @@ export const storySpies = {
   gitPush: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
   detectRepoSlug: vi.fn(async () => null as string | null),
   listPrsForBranch: vi.fn(async () => [] as ReadonlyArray<PullRequestState>),
+  listPrsForBranches: vi.fn(async (): Promise<Map<string, PullRequestState[]> | null> => null),
   fetchLinkedIssues: vi.fn(async () => []),
   resolveReviewThread: vi.fn(async () => undefined),
   addReviewThreadReply: vi.fn(async () => ({ id: 'reply-id' })),

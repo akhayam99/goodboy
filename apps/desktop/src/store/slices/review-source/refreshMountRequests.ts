@@ -2,7 +2,10 @@ import type { PullRequestHost, SessionId } from '@goodboy/types';
 import type { GetFn } from '../../slice-types';
 import type { RefreshPrOptions } from '../github/refreshMountPr';
 
-type RefreshRequestsOptions = Pick<RefreshPrOptions, 'mountId' | 'force' | 'silent' | 'retries'>;
+type RefreshRequestsOptions = Pick<
+  RefreshPrOptions,
+  'mountId' | 'force' | 'silent' | 'retries' | 'prefetched'
+>;
 
 type Params = Readonly<{
   get: GetFn;

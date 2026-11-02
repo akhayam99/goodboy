@@ -36,6 +36,7 @@ export type RefreshPrOptions = {
   readonly force?: boolean;
   readonly silent?: boolean;
   readonly retries?: number;
+  readonly prefetched?: ReadonlyArray<PullRequestState>;
 };
 
 type Params = {
@@ -180,7 +181,10 @@ export const refreshMountPr = async ({
                   },
           };
         }
-        const fetched = await listPrsForBranch(tauriGhRunner, repository, branch, ghOptions);
+        const fetched =
+          wanted === null && opts?.prefetched !== undefined
+            ? opts.prefetched
+            : await listPrsForBranch(tauriGhRunner, repository, branch, ghOptions);
         const observedAt = new Date().toISOString() as IsoDateTime;
         const nextLinks = await syncRequestLinks<PullRequestState>({
           get,

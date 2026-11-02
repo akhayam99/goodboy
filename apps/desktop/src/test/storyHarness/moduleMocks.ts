@@ -248,6 +248,7 @@ export const coreModuleMock = async (importOriginal: () => Promise<Record<string
   ...(await importOriginal()),
   detectRepoSlug: storySpies.detectRepoSlug,
   listPrsForBranch: storySpies.listPrsForBranch,
+  listPrsForBranches: storySpies.listPrsForBranches,
   getPrForBranch: vi.fn(async () => null),
   fetchPrDetail: storySpies.fetchPrDetail,
   fetchLinkedIssues: storySpies.fetchLinkedIssues,

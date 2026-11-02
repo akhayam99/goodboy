@@ -182,6 +182,12 @@ const mountView = ({ id, project }: MountParams): SessionMountView => ({
   updatedAt: TEST_NOW,
 });
 
+type SluggedParams = {
+  readonly id: MountId;
+  readonly branch: string;
+  readonly repoSlug: string;
+};
+
 type EndedParams = {
   readonly projectId: ProjectId;
 };
@@ -972,6 +978,126 @@ describe('sweepRequests', () => {
       await store.getState().sweepRequests({ sessionId: SESSION.id, isForced: true });
 
       expect(threadsOf({ key: gitlabKey })?.error).toBe('gitlab unreachable');
+    });
+  });
+
+  describe('batched GitHub sweep', () => {
+    const LEDGER_SLUG = 'harborline/ledger-core';
+
+    beforeEach(() => {
+      storySpies.listPrsForBranches.mockReset();
+      storySpies.listPrsForBranches.mockResolvedValue(null);
+    });
+
+    const slugged = ({ id, branch, repoSlug }: SluggedParams): SessionMountView => ({
+      ...mountView({ id, project: LEDGER }),
+      branch,
+      repoSlug,
+    });
+
+    const mountIdOf = (name: string) => brandId<MountId>({ value: name });
+
+    const useMounts = (mounts: ReadonlyArray<SessionMountView>) => {
+      store.setState({ sessionMounts: { [SESSION.id]: mounts } });
+    };
+
+    const optionsOf = (spy: typeof refreshGithub) =>
+      spy.mock.calls.flatMap(([, options]) =>
+        typeof options === 'object' && options !== null
+          ? [
+              {
+                mountId: 'mountId' in options ? options.mountId : undefined,
+                prefetched: 'prefetched' in options ? options.prefetched : undefined,
+              },
+            ]
+          : [],
+      );
+
+    it('asks gh once for every branch of a repo instead of once per mount', async () => {
+      const prs: Array<PullRequestState> = [mergedPr];
+      storySpies.listPrsForBranches.mockResolvedValue(
+        new Map([
+          ['ak/one', prs],
+          ['ak/two', []],
+          ['ak/three', []],
+        ]),
+      );
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-three'), branch: 'ak/three', repoSlug: LEDGER_SLUG }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(storySpies.listPrsForBranches).toHaveBeenCalledTimes(1);
+      expect(storySpies.listPrsForBranches).toHaveBeenCalledWith(
+        expect.objectContaining({
+          repo: LEDGER_SLUG,
+          branches: ['ak/one', 'ak/two', 'ak/three'],
+        }),
+      );
+      expect(refreshGithub).toHaveBeenCalledTimes(3);
+      const one = optionsOf(refreshGithub).find((options) => options.mountId === 'mount-one');
+      expect(one?.prefetched).toEqual(prs);
+    });
+
+    it('asks once per repo when the mounts span two repos', async () => {
+      storySpies.listPrsForBranches.mockResolvedValue(new Map());
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+        slugged({
+          id: mountIdOf('mount-three'),
+          branch: 'ak/three',
+          repoSlug: 'harborline/payments-api',
+        }),
+        slugged({
+          id: mountIdOf('mount-four'),
+          branch: 'ak/four',
+          repoSlug: 'harborline/payments-api',
+        }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(storySpies.listPrsForBranches).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves a lone mount on its own request', async () => {
+      useMounts([slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG })]);
+
+      await store.getState().sweepRequests();
+
+      expect(storySpies.listPrsForBranches).not.toHaveBeenCalled();
+      expect(refreshGithub).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to one request per mount when the batch cannot answer', async () => {
+      storySpies.listPrsForBranches.mockResolvedValue(null);
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(refreshGithub).toHaveBeenCalledTimes(2);
+      expect(optionsOf(refreshGithub).every((options) => options.prefetched === undefined)).toBe(
+        true,
+      );
+    });
+
+    it('still refreshes every mount when the batch throws', async () => {
+      storySpies.listPrsForBranches.mockRejectedValue(new Error('gh gone'));
+      useMounts([
+        slugged({ id: mountIdOf('mount-one'), branch: 'ak/one', repoSlug: LEDGER_SLUG }),
+        slugged({ id: mountIdOf('mount-two'), branch: 'ak/two', repoSlug: LEDGER_SLUG }),
+      ]);
+
+      await store.getState().sweepRequests();
+
+      expect(refreshGithub).toHaveBeenCalledTimes(2);
     });
   });
 
