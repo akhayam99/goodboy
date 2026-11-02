@@ -47,8 +47,7 @@ Which helper to use depends on what the process runs.
 - Everything else gets the resolved `PATH` on top of the app's own environment. Use `command`. It sets `PATH` and does not clear anything else, so the child inherits every variable the app process holds. Nothing here is an allowlist.
 
 `run_git_push` gets the full environment. A repo's `pre-push` hook can read
-variables set in `~/.zshrc`, like registry tokens or tool settings. `skill_run_script`
-gets it too, because a skill script is the user's own bash. `PATH`
+variables set in `~/.zshrc`, like registry tokens or tool settings. `PATH`
 and `TERM` are set after the login environment is copied, so they win over
 anything your profile sets.
 
@@ -383,7 +382,7 @@ also walks the path with `openat` and `O_NOFOLLOW`, so a file swapped for a
 symlink after the check is refused (unix only; other platforms refuse, and
 `open_file_within` falls back to `resolve_within` where an attachment must still
 work). `local_image_read`, `attachment_read`, `attachment_write`,
-`attachment_delete`, `explore_*`, the single-file diff and `skill_run_script` all
+`attachment_delete`, `explore_*` and the single-file diff all
 go through it; a new command that takes a path must too.
 
 `attachment_read_dropped` accepts only a path the window reported in a drag drop
@@ -393,9 +392,9 @@ drop as a window event, never as a webview event) and removes a path the first t
 was never dropped, or was dropped once and already read, is refused with
 `not_dropped`.
 
-`skill_run_script` takes the skill id, not a root. The roots come from the
-skill's workspace projects in the database, and the script must resolve inside
-`<root>/.kay/skills`. `session_dir_remove` takes the session id and removes a
+No `skill_*` command is registered or listed for a window: the script runner
+stays off until the Skills code is deleted, and `check-tauri-commands.mjs`
+fails if one comes back. `session_dir_remove` takes the session id and removes a
 directory only when it is a direct child of a `sessions` folder (or a mount
 inside one) whose `.goodboy` marker names that session, and never through a
 symlink. `worktree_scratch_remove` takes only a direct child of the temp folder

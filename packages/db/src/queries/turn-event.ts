@@ -13,6 +13,7 @@ type TurnEventRow = {
 type CountUserTextEventsParams = {
   readonly db: Database;
   readonly agentId: AgentId;
+  readonly deliveryId?: string;
 };
 
 type CountRow = {
@@ -44,6 +45,7 @@ const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
         ...(event.model !== undefined ? { model: markTruncated(event.model) } : {}),
         ...(event.handoffId !== undefined ? { handoffId: event.handoffId } : {}),
         ...(event.sentVia !== undefined ? { sentVia: event.sentVia } : {}),
+        ...(event.deliveryId !== undefined ? { deliveryId: event.deliveryId } : {}),
         ...(event.deliveredBy !== undefined ? { deliveredBy: event.deliveredBy } : {}),
         at: event.at,
       };
@@ -293,12 +295,14 @@ export const listTurnEventsForSession = async (
 export const countUserTextEvents = async ({
   db,
   agentId,
+  deliveryId,
 }: CountUserTextEventsParams): Promise<number> => {
   const rows = await db.select<CountRow>(
     `SELECT COUNT(*) AS count
      FROM turn_events
-     WHERE agent_id = ? AND json_extract(payload, '$.kind') = 'user_text'`,
-    [agentId],
+     WHERE agent_id = ? AND json_extract(payload, '$.kind') = 'user_text'
+       AND (? IS NULL OR json_extract(payload, '$.deliveryId') = ?)`,
+    [agentId, deliveryId ?? null, deliveryId ?? null],
   );
   return rows[0]?.count ?? 0;
 };

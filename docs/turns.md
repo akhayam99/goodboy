@@ -705,7 +705,12 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   a live run is never forgotten. Every hand-sent turn passes one too:
   `sendTurn` mints `hand:<uuid>` for a turn the caller gave none (and for
   every fallback retry, which is a new attempt), and a caller that sends the
-  same message twice gives the same id (the queue sends `queue:<id>`). A second
+  same message twice gives the same id (the queue sends `queue:<id>`). The
+  registry forgets every id when the app restarts, so the saved `user_text`
+  event carries the `deliveryId` too, and `deliverQueuedTurn` asks
+  `countUserTextEvents` for that id before it sends: a queued message whose turn is already
+  saved is removed from the queue, never sent again. If that check fails the
+  message stays queued and the error shows. A second
   send of a known id never starts a run: `sendTurn` first asks
   `turn_delivery_lookup` and keeps the ids it is sending in this window, and
   answers `isAlreadySent` without a second user message. When the backend
