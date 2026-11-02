@@ -98,6 +98,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       model,
       ...(isHandoffTurn && { handoffId: activeAgentId }),
       ...(sentVia !== undefined && { sentVia }),
+      ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
       ...(ctx.input.origin === 'delegation' && { deliveredBy: 'auto' as const }),
       at: userMessage.createdAt,
     });

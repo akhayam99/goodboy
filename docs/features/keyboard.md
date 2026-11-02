@@ -54,7 +54,7 @@ The strip ends with the same controls on every scope.
 **Reload and restart**
 
 - Shells survive a reload. The tabs come back in the same order with the same active tab.
-- A restart reopens each tab on its folder with the saved scrollback. That is up to 256 KiB per tab, kept in the app data and deleted with the tab.
+- A restart reopens each tab on its folder with the saved scrollback. That is up to 256 KiB per tab, kept in the app data in files only you can read. They go with the tab, or after a week if it never comes back.
 - The tab shows the line "Session restored. The previous process ended." It says so when the folder is gone.
 
 **Dot on Terminal**

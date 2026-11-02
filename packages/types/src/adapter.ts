@@ -42,6 +42,7 @@ export type TurnEvent =
       model?: string;
       handoffId?: AgentId;
       sentVia?: UserTurnSentVia;
+      deliveryId?: string;
       deliveredBy?: 'auto';
       at: IsoDateTime;
     }
