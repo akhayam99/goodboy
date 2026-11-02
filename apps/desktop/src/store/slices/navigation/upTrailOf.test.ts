@@ -85,9 +85,9 @@ describe('upTrailOf', () => {
       }),
       [TITLE, 'Runs', 'Run'],
     ],
-    ['a run step', agentAt({ agentId: STEP }), [TITLE, 'Runs', 'Run', 'Agent']],
-    ['an agent', agentAt({ agentId: SCOUT }), [TITLE, 'Runs', 'Agent']],
-    ['a resolver', agentAt({ agentId: RESOLVER }), [TITLE, 'Comments', 'Agent']],
+    ['a run step', agentAt({ agentId: STEP }), [TITLE, 'Runs', 'Run', 'implementer']],
+    ['an agent', agentAt({ agentId: SCOUT }), [TITLE, 'Runs', 'scout']],
+    ['a resolver', agentAt({ agentId: RESOLVER }), [TITLE, 'Comments', 'resolve: ana on a.ts:4']],
     [
       'an artifact',
       sessionPlace({

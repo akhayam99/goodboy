@@ -1,9 +1,10 @@
-import { useRef } from 'react';
+import { useContext, useRef } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Trail, type TrailSegmentModel } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { AppState } from '../../../../store/types';
 import { captureLocation } from '../../../../store/slices/navigation/captureLocation';
+import { SessionRailFoldContext } from '../../sessionRailFoldContext';
 import { upTrailOf } from '../../../../store/slices/navigation/upTrailOf';
 
 type Props = {
@@ -35,6 +36,7 @@ const trailOf = ({ state, sessionId }: TrailParams): ReadonlyArray<TrailSegmentM
 };
 
 export const SessionTrail = ({ sessionId }: Props) => {
+  const isRailFolded = useContext(SessionRailFoldContext);
   const cache = useRef<Cached | null>(null);
   const segments = useAppStore((state) => {
     const next = trailOf({ state, sessionId });
@@ -45,8 +47,9 @@ export const SessionTrail = ({ sessionId }: Props) => {
     cache.current = { signature, segments: next };
     return next;
   });
-  if (segments.length < 2) {
+  const visible = isRailFolded ? segments : segments.slice(1);
+  if (visible.length === 0 || segments.length < 2) {
     return null;
   }
-  return <Trail segments={segments} />;
+  return <Trail segments={visible} />;
 };
