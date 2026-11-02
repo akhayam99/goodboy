@@ -1,6 +1,6 @@
 import type { DiffLayoutMode } from './diffLayoutMode';
 
-const SPLIT_MIN_INNER_PX = 880;
+export const SPLIT_MIN_INNER_PX = 880;
 
 type Params = {
   readonly preference: DiffLayoutMode;
@@ -9,12 +9,13 @@ type Params = {
 
 export type EffectiveDiffLayout = {
   readonly layout: DiffLayoutMode;
-  readonly isSplitTooNarrow: boolean;
+  readonly isSplitAvailable: boolean;
 };
 
 export const effectiveDiffLayout = ({ preference, innerWidthPx }: Params): EffectiveDiffLayout => {
-  if (preference !== 'split' || innerWidthPx === null || innerWidthPx >= SPLIT_MIN_INNER_PX) {
-    return { layout: preference, isSplitTooNarrow: false };
+  const isSplitAvailable = innerWidthPx === null || innerWidthPx >= SPLIT_MIN_INNER_PX;
+  if (preference === 'split' && !isSplitAvailable) {
+    return { layout: 'unified', isSplitAvailable };
   }
-  return { layout: 'unified', isSplitTooNarrow: true };
+  return { layout: preference, isSplitAvailable };
 };

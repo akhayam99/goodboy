@@ -8,21 +8,21 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { ICON_SIZE, PageColumn, ScrollFade, Skeleton } from '@goodboy/ui';
+import { PageColumn, ScrollFade, Skeleton } from '@goodboy/ui';
 import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
 import type { FileDiff } from '@goodboy/types';
-import { Info } from 'lucide-react';
 import { useDiffLayoutMode } from '../../hooks/useDiffLayoutMode';
 import { effectiveDiffLayout } from '../../hooks/useDiffLayoutMode/effectiveDiffLayout';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
 
 import { useDiffWrap } from '../../hooks/useDiffWrap';
+import { useRequestSeenBodies } from '../../hooks/useRequestSeenBodies';
 import type { FileSidesLoader } from '../../hooks/useFileSides';
 import { PeekHost, type IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
-import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
+import type { DiffBodies, DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 export type { DiffComments, DiffThread } from './types';
 
@@ -34,6 +34,7 @@ const FILE_CARD_SELECTOR = '[data-file-card]';
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
+  readonly bodies?: DiffBodies | null;
   readonly loadFileSides?: FileSidesLoader | null;
   readonly registerExpandAll?:
     ((path: string, expand: (() => Promise<void>) | null) => void) | null;
@@ -60,8 +61,6 @@ type Props = {
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
 
-const SPLIT_TOO_NARROW = 'Split needs a wider window';
-
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
   files.find((file) => file.path === path || path.endsWith(`/${file.path}`))?.path ?? null;
 
@@ -73,6 +72,7 @@ const snapToTop = (element: HTMLElement) =>
 
 export const DiffView = ({
   files,
+  bodies = null,
   loadFileSides = null,
   registerExpandAll = null,
   comments = null,
@@ -319,6 +319,8 @@ export const DiffView = ({
     };
   }, [pathsKey, syncActivePath]);
 
+  useRequestSeenBodies({ bodies, seen });
+
   const registerRef = useCallback((path: string): RefCallback<HTMLElement> => {
     const existing = refCallbacks.current.get(path);
     if (existing) {
@@ -470,6 +472,8 @@ export const DiffView = ({
           fileActions={fileActions}
           registerRef={registerRef(file.path)}
           isVisible={seen.has(file.path)}
+          bodyState={bodies?.stateOf({ path: file.path }) ?? 'loaded'}
+          onRetryBody={bodies?.retry ?? null}
           isReadOnly={isReadOnly}
           isWhole={isWholeFile}
           focusThreadId={threadFocusOf.get(file.path) ?? null}
@@ -512,16 +516,7 @@ export const DiffView = ({
     >
       <div className="flex min-w-0 items-center gap-2">{toolbarStart}</div>
       <div className="flex shrink-0 items-center gap-2">
-        {fit.isSplitTooNarrow ? (
-          <span
-            data-testid="diff-split-too-narrow"
-            className="inline-flex items-center gap-1 text-meta text-muted-foreground"
-          >
-            <Info size={ICON_SIZE.row} aria-hidden />
-            {SPLIT_TOO_NARROW}
-          </span>
-        ) : null}
-        <DisplayMenu layout={savedLayout} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
+        <DisplayMenu fit={fit} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
         {toolbarEnd}
       </div>
     </div>

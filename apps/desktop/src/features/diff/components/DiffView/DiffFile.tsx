@@ -16,10 +16,13 @@ import { useFileSides, type FileSidesLoader } from '../../hooks/useFileSides';
 import { useDiffTokens } from '../../hooks/useDiffTokens';
 import { bodyEstimatePx } from '../../lib/bodyEstimatePx';
 import { isGeneratedPath } from '../../lib/fileStatus';
+import { lineText } from '../../lib/lineText';
+import { BodyNotice } from './BodyNotice';
 import { CommentComposer } from './CommentComposer';
 import { CommentThread } from './CommentThread';
 import { DiffRows, type LineSelection, type LineSpot } from './DiffRows';
 import { FileHeader } from './FileHeader';
+import type { DiffBodyState, DiffBodyTarget } from './types';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
 const INITIAL_VISIBLE_LINES = 1000;
@@ -37,6 +40,8 @@ type Props = {
   readonly fileActions: DiffFileActions | null;
   readonly registerRef: RefCallback<HTMLElement>;
   readonly isVisible: boolean;
+  readonly bodyState: DiffBodyState;
+  readonly onRetryBody: ((target: DiffBodyTarget) => void) | null;
   readonly isReadOnly: boolean;
   readonly isWhole: boolean;
   readonly focusThreadId: string | null;
@@ -61,21 +66,6 @@ const rangeLabel = (anchor: DiffCommentAnchor): string =>
     ? `lines ${anchor.lineNumber} to ${anchor.endLineNumber}`
     : `line ${anchor.lineNumber}`;
 
-const lineText = (file: FileDiff, anchor: DiffCommentAnchor): string => {
-  const out: string[] = [];
-  const hi = anchorEnd(anchor);
-  for (const hunk of file.hunks) {
-    for (const line of hunk.lines) {
-      const number = anchor.side === 'old' ? line.oldLine : line.newLine;
-      const onSide = anchor.side === 'old' ? line.kind !== 'add' : line.kind !== 'del';
-      if (onSide && number !== null && number >= anchor.lineNumber && number <= hi) {
-        out.push(line.text);
-      }
-    }
-  }
-  return out.join('\n');
-};
-
 const DiffFileView = ({
   file,
   loadFileSides,
@@ -88,12 +78,15 @@ const DiffFileView = ({
   fileActions,
   registerRef,
   isVisible,
+  bodyState,
+  onRetryBody,
   isReadOnly,
   isWhole,
   focusThreadId,
   onThreadFocused,
 }: Props) => {
-  const context = useFileSides({ file, load: loadFileSides });
+  const isBodyLoaded = bodyState === 'loaded';
+  const context = useFileSides({ file, load: isBodyLoaded ? loadFileSides : null });
   const tokenHunks = useMemo(() => {
     if (context.gaps.length === 0) {
       return file.hunks;
@@ -178,7 +171,7 @@ const DiffFileView = ({
   const tokens = useDiffTokens({
     path: file.path,
     hunks: tokenHunks,
-    enabled: isVisible && !collapsed && !file.binary,
+    enabled: isVisible && !collapsed && !file.binary && isBodyLoaded,
   });
 
   const canComment = comments !== null && !isReadOnly;
@@ -296,7 +289,10 @@ const DiffFileView = ({
                     comments.onAskAgent?.({
                       filePath: file.path,
                       anchor: composer.anchor,
-                      text: lineText({ ...file, hunks: tokenHunks }, composer.anchor),
+                      text: lineText({
+                        file: { ...file, hunks: tokenHunks },
+                        anchor: composer.anchor,
+                      }),
                       ...(note.length > 0 && { note }),
                     });
                     setComposer(null);
@@ -422,7 +418,9 @@ const DiffFileView = ({
               ) : null}
             </div>
           ) : null}
-          {file.binary || (file.hunks.length === 0 && !hasContext) ? (
+          {bodyState !== 'loaded' ? (
+            <BodyNotice state={bodyState} path={file.path} onRetry={onRetryBody} />
+          ) : file.binary || (file.hunks.length === 0 && !hasContext) ? (
             <EmptyState
               size="section"
               icon={CONCEPT_ICONS.diff}

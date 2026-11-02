@@ -34,10 +34,8 @@ type Props = {
   readonly kinds: CommentKinds;
   readonly nameLength: number | null;
   readonly hasDelta: boolean;
-  readonly canToggleViewed: boolean;
   readonly fileActions: DiffFileActions | null;
   readonly onPick: () => void;
-  readonly onToggleViewed: () => void;
 };
 
 const EXTENSION = /\.[^./]*$/;
@@ -49,10 +47,7 @@ type TipParams = {
 };
 
 const viewedTipOf = ({ state }: TipParams): string => {
-  if (state === 'viewed') {
-    return 'Viewed';
-  }
-  return 'Changed since you viewed it';
+  return state === 'viewed' ? 'Viewed' : 'Changed since you viewed it';
 };
 
 export const FileRow = ({
@@ -65,10 +60,8 @@ export const FileRow = ({
   kinds,
   nameLength,
   hasDelta,
-  canToggleViewed,
   fileActions,
   onPick,
-  onToggleViewed,
 }: Props) => {
   const menu = useObjectMenuTrigger({
     target: { kind: 'diffFile', facts: diffFileFactsOf({ file: row.file, fileActions }) },
@@ -159,7 +152,7 @@ export const FileRow = ({
           {row.file.status === 'modified' ? '' : STATUS_LETTER[row.file.status]}
         </span>
       </button>
-      {state === 'none' ? null : (
+      {isViewed || state === 'stale' ? (
         <div
           className="pointer-events-none absolute top-1/2 -translate-y-1/2"
           style={{ left: treeIndentPx({ depth: row.depth }) + 2 }}
@@ -176,7 +169,7 @@ export const FileRow = ({
             )}
           </span>
         </div>
-      )}
+      ) : null}
     </li>
   );
 };

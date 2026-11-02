@@ -199,6 +199,7 @@ const diffOf = (): SessionDiff => ({
   patch: '',
   loading: false,
   isRefreshing: false,
+  bodies: null,
   error: null,
   view: { kind: 'branch' },
   setView: vi.fn(),

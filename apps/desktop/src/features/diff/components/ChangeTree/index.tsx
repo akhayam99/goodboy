@@ -7,15 +7,7 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from 'react';
-import { PanelRightClose } from 'lucide-react';
-import {
-  EmptyLine,
-  Button,
-  IconButton,
-  ScrollFade,
-  treeIndentPx,
-  useEscapeLayer,
-} from '@goodboy/ui';
+import { EmptyLine, Button, ScrollFade, treeIndentPx, useEscapeLayer } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import {
@@ -36,9 +28,8 @@ import {
 } from '../../../../shared/utils/windowRows';
 import { FileRow } from './FileRow';
 import { FolderRow } from './FolderRow';
-import { KeyHints } from './KeyHints';
 import { TreeHead } from './TreeHead';
-import { ViewedProgress } from './ViewedProgress';
+import { TreeTitle } from './TreeTitle';
 import { treeKeyAction } from './treeKeys';
 
 type TreeFilter = {
@@ -287,18 +278,12 @@ export const ChangeTree = ({
       aria-label="Changed files"
       className="flex min-h-0 w-full min-w-0 flex-col"
     >
-      <div className="flex shrink-0 items-center justify-between gap-1 px-2 pb-2">
-        <ViewedProgress viewed={viewedCount} total={allFiles.length} onNext={onNextUnviewed} />
-        <div className="flex shrink-0 items-center gap-1">
-          <KeyHints />
-          <IconButton
-            icon={PanelRightClose}
-            size="xs"
-            label="Fold the file list"
-            onClick={onFold}
-          />
-        </div>
-      </div>
+      <TreeTitle
+        viewedCount={viewedCount}
+        total={allFiles.length}
+        onNext={onNextUnviewed}
+        onFold={onFold}
+      />
       <TreeHead
         total={allFiles.length}
         unviewed={unviewedCount}
@@ -379,13 +364,11 @@ export const ChangeTree = ({
                   count: kinds.notes + kinds.host,
                 })}
                 hasDelta={hasDelta}
-                canToggleViewed={!isReadOnly}
                 fileActions={fileActions}
                 onPick={() => {
                   setCursorId(row.id);
                   onPick(row.id);
                 }}
-                onToggleViewed={() => onToggleViewed(row.file)}
               />
             );
           })}

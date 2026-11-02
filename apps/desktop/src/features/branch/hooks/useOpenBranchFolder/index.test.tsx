@@ -31,6 +31,7 @@ const diffOf = ({ view }: DiffParams): SessionDiff => ({
   patch: '',
   loading: false,
   isRefreshing: false,
+  bodies: null,
   error: null,
   view,
   setView: vi.fn(),

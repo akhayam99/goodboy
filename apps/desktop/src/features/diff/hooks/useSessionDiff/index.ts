@@ -14,7 +14,11 @@ import {
   worktreeDiffWorking,
   worktreeStatus,
 } from '../../../worktree/worktree';
+import { worktreeDiffFiles } from '../../../worktree/worktreeDiffFiles';
 import { orderLikeTree } from '../../lib/changeTree';
+import { fileOfEntry } from '../../lib/fileOfEntry';
+import { parseDiffAsync } from '../../lib/parseDiffAsync';
+import { useDiffBodies } from '../useDiffBodies';
 import {
   fileSignature,
   readReviewedMap,
@@ -22,7 +26,7 @@ import {
   writeReviewedMap,
   type ReviewedMap,
 } from '../../lib/reviewedFiles';
-import type { DiffViewed } from '../../components/DiffView/types';
+import type { DiffBodies, DiffViewed } from '../../components/DiffView/types';
 
 const DEFAULT_VIEW: DiffView = { kind: 'branch' };
 
@@ -94,6 +98,7 @@ export type SessionDiff = {
   readonly patch: string;
   readonly loading: boolean;
   readonly isRefreshing: boolean;
+  readonly bodies: DiffBodies | null;
   readonly error: string | null;
   readonly view: DiffView;
   readonly setView: (view: DiffView) => void;
@@ -115,7 +120,9 @@ export const useSessionDiff = ({
   diffFocus = null,
   branchRevision = 0,
 }: Params): SessionDiff => {
-  const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
+  const [parsedFiles, setParsedFiles] = useState<ReadonlyArray<FileDiff>>([]);
+  const [entryFiles, setEntryFiles] = useState<ReadonlyArray<FileDiff>>([]);
+  const [isLazy, setIsLazy] = useState(false);
   const [patch, setPatch] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -224,22 +231,59 @@ export const useSessionDiff = ({
     let cancelled = false;
     const source = JSON.stringify([worktreePath, baseBranch, view]);
     const isReload = loadedSource.current === source && loader === null;
+    const canList = worktreePath !== null && view.kind === 'branch' && loader === null;
+    let hasFullDiff = false;
+    let isListed = false;
     setLoading(!isReload);
     setIsRefreshing(isReload);
     setError(null);
+    if (!canList) {
+      setIsLazy(false);
+    }
+    if (canList) {
+      worktreeDiffFiles({ worktreePath, baseBranch })
+        .then((entries) => {
+          if (cancelled || hasFullDiff || !Array.isArray(entries) || entries.length === 0) {
+            return;
+          }
+          isListed = true;
+          loadedSource.current = source;
+          setEntryFiles(orderLikeTree({ files: entries.map((entry) => fileOfEntry({ entry })) }));
+          setIsLazy(true);
+          setLoading(false);
+          setIsRefreshing(false);
+        })
+        .catch(() => {
+          isListed = false;
+        });
+    }
     fetcher()
       .then((raw) => {
         if (cancelled) {
           return;
         }
-        loadedSource.current = source;
+        hasFullDiff = true;
         setPatch(raw);
-        setFiles(orderLikeTree({ files: parseUnifiedDiff(raw) }));
-        setLoading(false);
-        setIsRefreshing(false);
+        if (isListed) {
+          return;
+        }
+        loadedSource.current = source;
+        return parseDiffAsync({ raw }).then((parsed) => {
+          if (cancelled) {
+            return;
+          }
+          setIsLazy(false);
+          setParsedFiles(orderLikeTree({ files: parsed }));
+          setLoading(false);
+          setIsRefreshing(false);
+        });
       })
       .catch((err: unknown) => {
         if (cancelled) {
+          return;
+        }
+        hasFullDiff = true;
+        if (isListed) {
           return;
         }
         setError(formatError(err));
@@ -251,6 +295,18 @@ export const useSessionDiff = ({
     };
   }, [worktreePath, baseBranch, view, refreshTick, loader]);
 
+  const baseFiles = isLazy ? entryFiles : parsedFiles;
+  const sourceKey = useMemo(
+    () => JSON.stringify([worktreePath, baseBranch, view]),
+    [worktreePath, baseBranch, view],
+  );
+  const { files, bodies } = useDiffBodies({
+    baseFiles,
+    isLazy,
+    worktreePath,
+    baseBranch,
+    sourceKey,
+  });
   const isEmptyView = !loading && error === null && files.length === 0;
 
   useEffect(() => {
@@ -280,7 +336,7 @@ export const useSessionDiff = ({
 
   useEffect(() => {
     setReviewedMap(readReviewedMap(sessionId, view, mountId));
-  }, [sessionId, view, mountId, files]);
+  }, [sessionId, view, mountId, baseFiles]);
 
   useEffect(() => {
     if (sessionId !== null) {
@@ -313,6 +369,7 @@ export const useSessionDiff = ({
     patch,
     loading,
     isRefreshing,
+    bodies,
     error,
     view,
     setView,

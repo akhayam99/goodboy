@@ -8,16 +8,18 @@ import {
   FOCUS_RING,
 } from '@goodboy/ui';
 import type { DiffLayoutMode } from '../../hooks/useDiffLayoutMode/diffLayoutMode';
+import type { EffectiveDiffLayout } from '../../hooks/useDiffLayoutMode/effectiveDiffLayout';
 import { DiffLayoutToggle } from '../DiffLayoutToggle';
 
 type Props = {
-  readonly layout: DiffLayoutMode;
+  readonly fit: EffectiveDiffLayout;
   readonly onLayout: (mode: DiffLayoutMode) => void;
   readonly wrap: boolean;
   readonly onWrap: (next: boolean) => void;
 };
 
-export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
+export const DisplayMenu = ({ fit, onLayout, wrap, onWrap }: Props) => {
+  const { layout, isSplitAvailable } = fit;
   const dropdown = useDropdown({
     width: 'w-[240px]',
     expectedHeight: 140,
@@ -52,7 +54,7 @@ export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-meta text-muted-foreground">Layout</span>
-        <DiffLayoutToggle mode={layout} onChange={onLayout} />
+        <DiffLayoutToggle mode={layout} onChange={onLayout} isSplitAvailable={isSplitAvailable} />
       </div>
       <OptionalTooltip content={isSplit ? 'Split view always wraps' : undefined}>
         <button

@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { cn, FOCUS_RING } from '@goodboy/ui';
 import { LINE_FILL, SIGN_TEXT } from '../../diff/lib/lineTone';
 import { threadLocationOf } from '../../resolve/threadLocationOf';
 import type { ResolveQueueRow } from '../../resolve/buildResolveQueueRows';
 import { useBranchDiff } from '../branchDiffContext';
-import { hunkAround } from '../hunkAround';
+import { fileForPath, hunkAround } from '../hunkAround';
 
 type Props = {
   readonly row: ResolveQueueRow;
@@ -16,6 +16,16 @@ const SIGN = { add: '+', del: '-', context: ' ' } as const;
 export const ThreadHunk = ({ row, onOpenInDiff }: Props) => {
   const diff = useBranchDiff();
   const location = threadLocationOf({ row });
+  const bodies = diff?.bodies ?? null;
+  const filePath =
+    diff === null || location === null || location.path === null
+      ? null
+      : (fileForPath({ files: diff.files, path: location.path })?.path ?? null);
+  useEffect(() => {
+    if (bodies !== null && filePath !== null) {
+      bodies.request({ path: filePath });
+    }
+  }, [bodies, filePath]);
   const window = useMemo(
     () =>
       diff === null || location === null || location.path === null

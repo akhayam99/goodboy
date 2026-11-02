@@ -209,7 +209,7 @@ line composer returns to its gutter number, a file composer to Comment on
 file, a plan block composer to its comment button. Ask agent on a diff line
 opens that agent's conversation in the `transcript` drawer with the quote in
 its field; the diff stays. A split diff needs 880px for its code: under that it
-draws unified and the toolbar says `Split needs a wider window`, and the
+draws unified with the Split segment disabled (tooltip `Needs 880px`), and the
 choice comes back with room.
 
 **Work panes use the full width.** A pane whose body is a working surface (the

@@ -2899,7 +2899,7 @@
   },
   "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 6
+      "count": 5
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1

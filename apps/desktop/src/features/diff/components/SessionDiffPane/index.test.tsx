@@ -114,6 +114,7 @@ const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
   patch: '',
   loading: false,
   isRefreshing: false,
+  bodies: null,
   error: null,
   view: { kind: 'branch' },
   setView: vi.fn(),
@@ -321,7 +322,7 @@ describe('SessionDiffPane with the file rail docked on the right', () => {
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
   });
 
-  it('counts the unviewed files on the filter and the rail head, from the whole review', () => {
+  it('counts the viewed files on the rail head and the unviewed on the filter, from the whole review', () => {
     const diff = {
       ...diffOf(FILES),
       viewed: {
@@ -338,7 +339,7 @@ describe('SessionDiffPane with the file rail docked on the right', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
     expect(screen.getByRole('menuitemradio', { name: /^Unviewed/ }).textContent).toContain('1');
-    screen.getByText(/^Viewed \d+ of \d+$/);
+    within(railOf()).getByText('Viewed 1 of 2');
   });
 
   it('jumps to the next unviewed file from the rail head and keeps the rail in place', () => {
@@ -375,7 +376,7 @@ describe('SessionDiffPane with the file rail folded', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
     expect(localStorage.getItem(FOLDED_KEY)).toBe('1');
-    expect(toolbarFiles()?.textContent).toBe('Files');
+    expect(toolbarFiles()?.textContent).toBe('Files2');
 
     cleanup();
     renderPane({ diff: diffOf(FILES) });
@@ -433,6 +434,26 @@ describe('SessionDiffPane with the file rail folded', () => {
 describe('SessionDiffPane on a page too narrow to dock the rail', () => {
   it('draws no rail and offers Files N in the toolbar', () => {
     renderPane({ diff: diffOf(FILES), pageWidth: 700 });
+
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+    expect(toolbarFiles()).not.toBeNull();
+  });
+
+  it('puts Files N first in the toolbar, before the comparison', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 700 });
+
+    const first = within(screen.getByTestId('diff-toolbar')).getAllByRole('button')[0];
+    expect(first?.textContent).toBe('Files2');
+  });
+
+  it('keeps the rail as a column from 1224px, the width of 880px of code beside it', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 1224 });
+
+    expect(railOf().getAttribute('data-file-rail')).toBe('docked');
+  });
+
+  it('turns the rail into a popover one pixel under that width', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 1223 });
 
     expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
     expect(toolbarFiles()).not.toBeNull();

@@ -146,7 +146,8 @@ describe('the c04 worktree level scenes', () => {
     if (toolbar === null) {
       throw new Error('the folded scene draws no diff toolbar');
     }
-    expect(within(toolbar).getByRole('button', { name: /^Files$/ })).toBeDefined();
+    expect(within(toolbar).getAllByRole('button')[0]?.textContent).toBe('Files6');
+    expect(screen.queryByText('Split needs a wider window')).toBeNull();
   });
 
   it('c04-worktree-files-narrow opens the file list over the diff of a narrow page', async () => {

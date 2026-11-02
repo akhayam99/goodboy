@@ -1,5 +1,6 @@
 use super::{
-    worktree_diff_commit_blocking, worktree_diff_range_blocking, worktree_diff_working_blocking,
+    worktree_diff_commit_blocking, worktree_diff_files_blocking, worktree_diff_range_blocking,
+    worktree_diff_working_blocking, DiffFileEntry,
 };
 use crate::worktree::git::git;
 use std::path::{Path, PathBuf};
@@ -120,4 +121,153 @@ fn a_deleted_file_path_inside_the_worktree_is_still_accepted() {
         super::confine_rel_path(&root, "gone/old.ts").unwrap(),
         "gone/old.ts"
     );
+}
+
+fn branch_files(root: &Path) -> Vec<DiffFileEntry> {
+    worktree_diff_files_blocking(root.to_string_lossy().into_owned(), Some("main".into())).unwrap()
+}
+
+fn entry_of<'a>(entries: &'a [DiffFileEntry], path: &str) -> &'a DiffFileEntry {
+    entries
+        .iter()
+        .find(|entry| entry.path == path)
+        .unwrap_or_else(|| panic!("no entry for {path}"))
+}
+
+#[test]
+fn the_file_list_counts_tracked_edits_adds_and_deletes_against_the_merge_base() {
+    let root = repo_with("list-tracked", "keep.ts");
+    std::fs::write(root.join("gone.ts"), "a\nb\n").unwrap();
+    git_ok(&root, &["add", "gone.ts"]);
+    git_ok(&root, &["commit", "-m", "second"]);
+    git_ok(&root, &["checkout", "-b", "feat"]);
+    std::fs::write(root.join("keep.ts"), "one\ntwo\nthree\n").unwrap();
+    std::fs::write(root.join("fresh.ts"), "x\n").unwrap();
+    git_ok(&root, &["add", "fresh.ts"]);
+    git_ok(&root, &["rm", "-q", "gone.ts"]);
+    git_ok(&root, &["commit", "-am", "work"]);
+
+    let entries = branch_files(&root);
+
+    assert_eq!(entries.len(), 3);
+    let kept = entry_of(&entries, "keep.ts");
+    assert_eq!(
+        (kept.status, kept.additions, kept.deletions),
+        ("modified", 2, 0)
+    );
+    let fresh = entry_of(&entries, "fresh.ts");
+    assert_eq!(
+        (fresh.status, fresh.additions, fresh.is_untracked),
+        ("added", 1, false)
+    );
+    let gone = entry_of(&entries, "gone.ts");
+    assert_eq!(
+        (gone.status, gone.additions, gone.deletions),
+        ("deleted", 0, 2)
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn the_file_list_keeps_the_old_path_of_a_rename() {
+    let root = repo_with("list-rename", "old.ts");
+    git_ok(&root, &["checkout", "-b", "feat"]);
+    git_ok(&root, &["mv", "old.ts", "new.ts"]);
+    git_ok(&root, &["commit", "-m", "move"]);
+
+    let entries = branch_files(&root);
+
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].path, "new.ts");
+    assert_eq!(entries[0].old_path.as_deref(), Some("old.ts"));
+    assert_eq!(entries[0].status, "renamed");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_single_file_diff_with_the_old_path_keeps_the_rename() {
+    let root = repo_with("file-rename", "old.ts");
+    git_ok(&root, &["checkout", "-b", "feat"]);
+    git_ok(&root, &["mv", "old.ts", "new.ts"]);
+    git_ok(&root, &["commit", "-m", "move"]);
+    let worktree = root.to_string_lossy().into_owned();
+
+    let alone = super::worktree_diff_file_blocking(
+        worktree.clone(),
+        Some("main".into()),
+        "new.ts".into(),
+        None,
+    )
+    .unwrap();
+    let paired = super::worktree_diff_file_blocking(
+        worktree,
+        Some("main".into()),
+        "new.ts".into(),
+        Some("old.ts".into()),
+    )
+    .unwrap();
+
+    assert!(alone.contains("new file mode"));
+    assert!(paired.contains("rename from old.ts"));
+    assert!(paired.contains("rename to new.ts"));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_single_file_diff_refuses_an_old_path_outside_the_worktree() {
+    let root = repo_with("file-old-outside", "a.ts");
+
+    let result = super::worktree_diff_file_blocking(
+        root.to_string_lossy().into_owned(),
+        Some("main".into()),
+        "a.ts".into(),
+        Some("../b.ts".into()),
+    );
+
+    assert!(result.is_err());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn the_file_list_marks_a_tracked_binary_and_an_untracked_file() {
+    let root = repo_with("list-binary", "base.ts");
+    git_ok(&root, &["checkout", "-b", "feat"]);
+    std::fs::write(root.join("logo.bin"), [0u8, 1, 2, 0]).unwrap();
+    git_ok(&root, &["add", "logo.bin"]);
+    git_ok(&root, &["commit", "-m", "bin"]);
+    std::fs::write(root.join("naïve.ts"), "a\nb\nc").unwrap();
+    std::fs::write(root.join("blob.dat"), [0u8, 9]).unwrap();
+    std::fs::write(root.join("empty.ts"), "").unwrap();
+
+    let entries = branch_files(&root);
+
+    let logo = entry_of(&entries, "logo.bin");
+    assert!(logo.is_binary && !logo.is_untracked);
+    let naive = entry_of(&entries, "naïve.ts");
+    assert_eq!((naive.status, naive.additions), ("added", 3));
+    assert!(naive.is_untracked && !naive.is_binary);
+    let blob = entry_of(&entries, "blob.dat");
+    assert!(blob.is_untracked && blob.is_binary);
+    let empty = entry_of(&entries, "empty.ts");
+    assert_eq!((empty.additions, empty.is_binary), (0, false));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn the_file_list_agrees_with_the_full_diff_on_which_files_changed() {
+    let root = repo_with("list-agree", "a.ts");
+    git_ok(&root, &["checkout", "-b", "feat"]);
+    std::fs::write(root.join("a.ts"), "two\n").unwrap();
+    std::fs::write(root.join("b.ts"), "new\n").unwrap();
+
+    let entries = branch_files(&root);
+    let full =
+        super::worktree_diff_blocking(root.to_string_lossy().into_owned(), Some("main".into()))
+            .unwrap();
+
+    for entry in &entries {
+        assert!(full.contains(&format!("diff --git a/{0} b/{0}", entry.path)));
+    }
+    assert_eq!(full.matches("diff --git").count(), entries.len());
+    std::fs::remove_dir_all(root).unwrap();
 }

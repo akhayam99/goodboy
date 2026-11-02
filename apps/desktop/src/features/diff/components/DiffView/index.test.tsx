@@ -5,8 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { FileDiff, IsoDateTime } from '@goodboy/types';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { installFakeIntersectionObserver } from '../../../../__tests__/helpers/fakeIntersectionObserver';
 import { DiffView } from '.';
-import type { DiffComments, DiffThread } from './types';
+import type { DiffBodies, DiffBodyState, DiffComments, DiffThread } from './types';
 
 const { fileRenders } = vi.hoisted(() => ({ fileRenders: { current: 0 } }));
 
@@ -320,11 +321,11 @@ describe('DiffView comments', () => {
   });
 
   it.each([
-    [700, true],
-    [1000, false],
+    [700, false],
+    [1000, true],
   ] as const)(
-    'with %ipx for the code, a split choice falls back to unified and says so: %s',
-    (width, isTooNarrow) => {
+    'with %ipx for the code, the Split segment is open: %s, and no sentence says otherwise',
+    (width, isSplitOpen) => {
       vi.stubGlobal(
         'ResizeObserver',
         class {
@@ -341,14 +342,19 @@ describe('DiffView comments', () => {
       );
       render(<DiffView files={[LEDGER]} />);
       fireEvent.click(screen.getByRole('button', { name: /Display/ }));
-      fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
+      const split = screen.getByRole('tab', { name: 'Split' });
+      expect(split.hasAttribute('disabled')).toBe(!isSplitOpen);
+      fireEvent.click(split);
 
       const grid = screen.getByRole('grid');
       expect(grid.innerHTML.includes('grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]')).toBe(
-        !isTooNarrow,
+        isSplitOpen,
       );
-      expect(screen.queryByText('Split needs a wider window') !== null).toBe(isTooNarrow);
-      expect(screen.getByRole('tab', { name: 'Split' }).getAttribute('aria-selected')).toBe('true');
+      expect(screen.queryByText('Split needs a wider window')).toBeNull();
+      expect(split.getAttribute('aria-selected')).toBe(String(isSplitOpen));
+      expect(screen.getByRole('tab', { name: 'Unified' }).getAttribute('aria-selected')).toBe(
+        String(!isSplitOpen),
+      );
       vi.unstubAllGlobals();
     },
   );
@@ -752,5 +758,76 @@ describe('DiffView window', () => {
     render(<Host />);
 
     await waitFor(() => expect(calls).toContain(target));
+  });
+});
+
+describe('DiffView with bodies on demand', () => {
+  const LEDGER_LIST: FileDiff = { ...LEDGER, hunks: [] };
+  const RELAY_LIST: FileDiff = { ...RELAY, hunks: [] };
+
+  const bodiesOf = (states: Readonly<Record<string, DiffBodyState>>) => {
+    const request = vi.fn();
+    const retry = vi.fn();
+    const bodies: DiffBodies = {
+      stateOf: ({ path }) => states[path] ?? 'pending',
+      request,
+      retry,
+    };
+    return { bodies, request, retry };
+  };
+
+  it('fetches a file when it enters the viewport and not before', () => {
+    const observer = installFakeIntersectionObserver();
+    const { bodies, request } = bodiesOf({});
+    render(<DiffView files={[LEDGER_LIST, RELAY_LIST]} bodies={bodies} />);
+
+    expect(request).not.toHaveBeenCalled();
+
+    observer.show({ attribute: 'data-file-path', keys: [LEDGER.path] });
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith({ path: LEDGER.path });
+
+    observer.show({ attribute: 'data-file-path', keys: [LEDGER.path, RELAY.path] });
+    expect(request).toHaveBeenCalledWith({ path: RELAY.path });
+    observer.restore();
+  });
+
+  it('asks again for a file already seen when the bodies hand out a new request', () => {
+    const observer = installFakeIntersectionObserver();
+    const first = bodiesOf({});
+    const { rerender } = render(<DiffView files={[LEDGER_LIST]} bodies={first.bodies} />);
+    observer.show({ attribute: 'data-file-path', keys: [LEDGER.path] });
+    const second = bodiesOf({});
+
+    rerender(<DiffView files={[LEDGER_LIST]} bodies={second.bodies} />);
+
+    expect(second.request).toHaveBeenCalledWith({ path: LEDGER.path });
+    observer.restore();
+  });
+
+  it('never asks for a file that is loaded', () => {
+    const { bodies, request } = bodiesOf({ [LEDGER.path]: 'loaded' });
+    render(<DiffView files={[LEDGER]} bodies={bodies} />);
+
+    expect(request).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status', { name: 'Loading diff' })).toBeNull();
+  });
+
+  it('holds a placeholder where the body is on its way', () => {
+    const { bodies } = bodiesOf({ [LEDGER.path]: 'pending' });
+    render(<DiffView files={[LEDGER_LIST]} bodies={bodies} />);
+
+    screen.getByRole('status', { name: 'Loading diff' });
+    screen.getByText('+3');
+  });
+
+  it('says a body failed and retries it from the button', () => {
+    const { bodies, retry } = bodiesOf({ [LEDGER.path]: 'failed' });
+    render(<DiffView files={[LEDGER_LIST]} bodies={bodies} />);
+
+    screen.getByText("Couldn't load this diff.");
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(retry).toHaveBeenCalledWith({ path: LEDGER.path });
   });
 });

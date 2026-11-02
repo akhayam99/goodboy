@@ -16,9 +16,14 @@ const viewKeyOf = (view: DiffView): string => {
 };
 
 export const fileSignature = (file: FileDiff): string =>
-  `${file.status}:${file.additions}:${file.deletions}:${file.hunks.length}:${file.hunks
-    .map((hunk) => hunk.header)
-    .join('§')}`;
+  `${file.status}:${file.additions}:${file.deletions}`;
+
+type HunkSignatureParams = {
+  readonly file: FileDiff;
+};
+
+const hunkSignature = ({ file }: HunkSignatureParams): string =>
+  `${fileSignature(file)}:${file.hunks.length}:${file.hunks.map((hunk) => hunk.header).join('§')}`;
 
 const unmountedKey = (sessionId: SessionId | null, view: DiffView): string | null =>
   sessionId ? `${STORAGE_PREFIXES.diffReviewed}${sessionId}:${viewKeyOf(view)}` : null;
@@ -74,5 +79,7 @@ export const viewedStateOf = (file: FileDiff, map: ReviewedMap): ViewedState => 
   if (!saved) {
     return 'none';
   }
-  return saved === fileSignature(file) ? 'viewed' : 'stale';
+  const isSame = saved === fileSignature(file);
+  const isSameAsBefore = file.hunks.length > 0 && saved === hunkSignature({ file });
+  return isSame || isSameAsBefore ? 'viewed' : 'stale';
 };

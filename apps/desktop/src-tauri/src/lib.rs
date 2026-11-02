@@ -388,6 +388,7 @@ pub fn run() {
             worktree::worktree_remote_url,
             worktree::worktree_diff,
             worktree::worktree_diff_file,
+            worktree::worktree_diff_files,
             worktree::worktree_file_sides,
             worktree::worktree_grep_word,
             worktree::worktree_changed_files,

@@ -19,15 +19,21 @@ const DEFAULT_RADIUS = 3;
 
 const lineNumberOf = (line: DiffHunkLine): number | null => line.newLine ?? line.oldLine;
 
+type MatchParams = {
+  readonly files: ReadonlyArray<FileDiff>;
+  readonly path: string;
+};
+
+export const fileForPath = ({ files, path }: MatchParams): FileDiff | undefined =>
+  files.find((candidate) => candidate.path === path || path.endsWith(`/${candidate.path}`));
+
 export const hunkAround = ({
   files,
   path,
   line,
   radius = DEFAULT_RADIUS,
 }: Params): HunkWindow | null => {
-  const file = files.find(
-    (candidate) => candidate.path === path || path.endsWith(`/${candidate.path}`),
-  );
+  const file = fileForPath({ files, path });
   if (file === undefined || line === null) {
     return null;
   }

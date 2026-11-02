@@ -368,6 +368,7 @@
     "worktree_diff",
     "worktree_diff_commit",
     "worktree_diff_file",
+    "worktree_diff_files",
     "worktree_diff_range",
     "worktree_diff_working",
     "worktree_directory_size",

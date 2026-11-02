@@ -454,7 +454,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The diff, with the changed files on the right and Next unviewed on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
+        desc: 'The diff, with the file list behind Files and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Checks',

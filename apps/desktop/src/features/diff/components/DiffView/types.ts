@@ -82,3 +82,15 @@ export type DiffFileActions = {
   readonly onOpenInEditor?: (path: string) => void;
   readonly onShowWhole?: (file: FileDiff) => void;
 };
+
+export type DiffBodyState = 'loaded' | 'pending' | 'failed';
+
+export type DiffBodyTarget = {
+  readonly path: string;
+};
+
+export type DiffBodies = {
+  readonly stateOf: (target: DiffBodyTarget) => DiffBodyState;
+  readonly request: (target: DiffBodyTarget) => void;
+  readonly retry: (target: DiffBodyTarget) => void;
+};

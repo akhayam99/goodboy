@@ -25,7 +25,7 @@ pub struct ChangedFilesSummary {
 const LANDED_FILE_LIMIT: usize = 400;
 const UNTRACKED_COUNT_LIMIT_BYTES: u64 = 1_048_576;
 
-fn parse_name_status_z(raw: &str) -> Vec<ChangedEntry> {
+pub(super) fn parse_name_status_z(raw: &str) -> Vec<ChangedEntry> {
     let mut tokens = raw.split('\0').filter(|token| !token.is_empty());
     let mut entries = Vec::new();
     while let Some(code) = tokens.next() {
@@ -68,14 +68,14 @@ fn parse_name_status_z(raw: &str) -> Vec<ChangedEntry> {
     entries
 }
 
-struct NumstatRow<'a> {
-    additions: &'a str,
-    deletions: &'a str,
-    path: &'a str,
-    display: String,
+pub(super) struct NumstatRow<'a> {
+    pub(super) additions: &'a str,
+    pub(super) deletions: &'a str,
+    pub(super) path: &'a str,
+    pub(super) display: String,
 }
 
-fn parse_numstat_z(raw: &str) -> Vec<NumstatRow<'_>> {
+pub(super) fn parse_numstat_z(raw: &str) -> Vec<NumstatRow<'_>> {
     let mut tokens = raw.split('\0').filter(|token| !token.is_empty());
     let mut rows = Vec::new();
     while let Some(token) = tokens.next() {
