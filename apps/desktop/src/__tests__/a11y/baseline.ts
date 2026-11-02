@@ -7,8 +7,6 @@ export const A11Y_BASELINE = {
   'ToastProvider empty': [],
   'BootSplash loading': [],
   'BootSplash error': [],
-  'SkillsPanel empty': [],
-  'SkillsPanel populated': [],
   'QuickActionsPopover empty': [],
   'QuickActionsPopover populated': [],
   'AppScopePanel open': [],

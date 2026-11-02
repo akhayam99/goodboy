@@ -1,4 +1,4 @@
-import type { Agent, AgentId, Skill, Workflow } from '@goodboy/types';
+import type { Agent, AgentId, Workflow } from '@goodboy/types';
 import type { RunnableScript, SessionScriptGroup } from '../scripts/buildSessionScripts';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
@@ -66,19 +66,6 @@ export const buildScriptActions = ({
       perform: () => onPick({ script, group }),
     }));
   });
-};
-
-export const buildSkillActions = (
-  skills: ReadonlyArray<Skill>,
-  onPick: (skill: Skill) => void,
-): ReadonlyArray<QuickActionItem> => {
-  return skills.map((skill) => ({
-    id: `skill:${skill.id}`,
-    label: skill.name,
-    sublabel: skill.description || undefined,
-    group: 'skill',
-    perform: () => onPick(skill),
-  }));
 };
 
 export const buildWorkflowActions = (

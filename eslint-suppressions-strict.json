@@ -539,11 +539,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/skills/skills.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/storage/groupStorageFolders.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -1057,11 +1052,6 @@
   "apps/desktop/src/store/slices/turn/recoverTurnFailure.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/turn/resolveSkillPrompt.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
     }
   },
   "apps/desktop/src/store/slices/turn/retrySummarizer.ts": {

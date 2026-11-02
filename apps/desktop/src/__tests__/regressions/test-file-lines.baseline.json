@@ -1,7 +1,7 @@
 {
   "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 2192,
   "apps/desktop/src/app/components/SessionRail/branchTree.test.tsx": 1198,
-  "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 1185,
+  "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 1183,
   "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 1264,
   "apps/desktop/src/features/session/timeline/buildTimelineStream/index.test.ts": 3136,
   "apps/desktop/src/features/suggestions/deriveNextSteps.test.ts": 1121,
@@ -14,11 +14,11 @@
   "apps/desktop/src/store/slices/resolve/drainResolveQueue.test.ts": 1475,
   "apps/desktop/src/store/slices/resolve/index.test.ts": 1650,
   "apps/desktop/src/store/slices/resolve/publication/publishConversations.test.ts": 1630,
-  "apps/desktop/src/store/slices/sessions/index.test.ts": 1916,
+  "apps/desktop/src/store/slices/sessions/index.test.ts": 1913,
   "apps/desktop/src/store/slices/workflows/clusterImplementation.test.ts": 1758,
   "apps/desktop/src/store/slices/workflows/orchestrateNextStep.test.ts": 2214,
-  "apps/desktop/src/store/store.sendturn-agent-routing.test.ts": 2792,
-  "apps/desktop/src/store/store.summarizer-queue.test.ts": 1201,
+  "apps/desktop/src/store/store.sendturn-agent-routing.test.ts": 2789,
+  "apps/desktop/src/store/store.summarizer-queue.test.ts": 1198,
   "packages/core/src/context/extractors.test.ts": 1400,
   "packages/db/src/queries/session-workflow.test.ts": 1153,
   "packages/ui/src/__tests__/DrawerColumn.test.tsx": 1109

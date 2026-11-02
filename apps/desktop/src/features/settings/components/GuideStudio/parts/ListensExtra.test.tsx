@@ -41,11 +41,7 @@ describe('ListensExtra', () => {
       .parentElement as HTMLElement;
     const composer = screen.getByText('In the composer').parentElement as HTMLElement;
 
-    expect([...symbolsIn(palette)].sort()).toEqual(
-      PREFIXES.filter((prefix) => prefix.group !== 'skill')
-        .map((prefix) => prefix.symbol)
-        .sort(),
-    );
+    expect([...symbolsIn(palette)].sort()).toEqual(PREFIXES.map((prefix) => prefix.symbol).sort());
     expect(symbolsIn(palette)).toContain('~');
     expect(symbolsIn(composer)).toContain('~');
   });

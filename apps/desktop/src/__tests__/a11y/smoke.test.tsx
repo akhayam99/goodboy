@@ -15,7 +15,6 @@ vi.mock('../../store', async () => {
   const buildState = () => ({
     ...sliceInitialStates(),
     notifications: [],
-    skills: {},
     budgetAlerts: [],
     providers: [],
     settings: {},
@@ -46,8 +45,6 @@ vi.mock('../../store', async () => {
     clearNotifications: vi.fn(),
     refreshProviders: vi.fn(),
     loadSkills: vi.fn(),
-    saveSkill: vi.fn(),
-    deleteSkill: vi.fn(),
     rescanSkills: vi.fn(),
     createSession: vi.fn(),
     loadSetting: vi.fn().mockResolvedValue(null),
@@ -117,12 +114,11 @@ vi.mock('../../shared/lib/editor', () => ({
 import { afterEach, describe, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { Notification } from '@goodboy/db';
-import type { IsoDateTime, Skill, SkillId, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
 import { expectBaseline } from './baseline';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
 import { AppScopePanel } from '../../features/settings/components/SettingsStudio/AppScopePanel';
-import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions/QuickActionsPopover';
 import type { QuickActionItem } from '../../features/quick-actions/types';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -166,23 +162,6 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
   },
 ];
 
-const buildSkill = ({ id, name }: { id: string; name: string }): Skill => ({
-  id: id as SkillId,
-  workspaceId: WS_ID,
-  name,
-  description: `${name} for the Northwind services`,
-  filePath: `.claude/skills/${name}/SKILL.md`,
-  body: 'Steps.',
-  frontmatter: { name, description: `${name} for the Northwind services` },
-  createdAt: AT,
-  updatedAt: AT,
-});
-
-const SKILLS: ReadonlyArray<Skill> = [
-  buildSkill({ id: 'skill-1', name: 'release-notes' }),
-  buildSkill({ id: 'skill-2', name: 'migration-review' }),
-];
-
 const QUICK_ACTIONS: ReadonlyArray<QuickActionItem> = [
   { id: 'qa-1', label: 'test', sublabel: 'pnpm test', group: 'script', perform: vi.fn() },
   { id: 'qa-2', label: 'lint', sublabel: 'pnpm lint', group: 'script', perform: vi.fn() },
@@ -220,19 +199,6 @@ describe('a11y smoke, BootSplash', () => {
   it('boot error', async () => {
     const { container } = render(<BootSplash phase="error" error="failed to connect" />);
     await expectBaseline({ name: 'BootSplash error', container });
-  });
-});
-
-describe('a11y smoke, SkillsPanel', () => {
-  it('no skills', async () => {
-    const { container } = renderInToasts(<SkillsPanel workspaceId={WS_ID} />);
-    await expectBaseline({ name: 'SkillsPanel empty', container });
-  });
-
-  it('two skills', async () => {
-    storeSeed.current = { skills: { [WS_ID]: SKILLS } };
-    const { container } = renderInToasts(<SkillsPanel workspaceId={WS_ID} />);
-    await expectBaseline({ name: 'SkillsPanel populated', container });
   });
 });
 

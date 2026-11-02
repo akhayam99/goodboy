@@ -174,11 +174,13 @@ describe('what the Guide may name', () => {
   it('names no page a feature flag hides', () => {
     const pages: ReadonlyArray<readonly [boolean, string]> = [
       [WORKSPACE_FEATURES.workflows, 'Workflows'],
-      [WORKSPACE_FEATURES.skills, 'Skills'],
     ];
     const hidden = pages.filter(([isOn]) => !isOn).map(([, label]) => label);
-    expect(hidden).toContain('Skills');
     hidden.forEach((label) => expect(allText()).not.toContain(label));
+  });
+
+  it('names no Skills page, the feature is gone', () => {
+    expect(allText()).not.toContain('Skills');
   });
 
   it('says folder for a Goodboy folder, never project, past the Projects card it names', () => {
