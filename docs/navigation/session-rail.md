@@ -38,15 +38,15 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   `ActionStatusLine`),
   **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
   the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
-  the `session` registry kind), which holds **Spend and limit**
+  the `session` registry kind), which holds **Limit**
   (`session.spend`), **Archive** and **Delete** with the rest of the session's
   verbs. Autopilot has no rail control: Turn on Autopilot and Turn off
   Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
   click menu and the palette. An archived session shows only the `⋯`, with
-  **Restore** and **Delete**. The rail has no foot: **Spend and limit** and
+  **Restore** and **Delete**. The rail has no foot: **Limit** and
   **Raise limit** on a paused run open the session spend popover from the edit
   host in `SessionFrame` (`SessionCostChip` with `placement="editHost"`,
-  `requestSessionSpendLimitEdit`, `sessionSpendLines`). **Spend and limit** on
+  `requestSessionSpendLimitEdit`, `sessionSpendLines`). **Limit** on
   another session, from its sidebar row or the workspace board, opens that
   session and holds the request by its id until its edit host mounts and takes
   it once (`openSessionSpendLimitEdit`, `pendingSpendEdit`); going anywhere else
@@ -403,7 +403,7 @@ first, and the rest follow their last activity (`activityKeyOf`: the later of
 the last finished turn and `sessions.updated_at`). Opening a session writes
 `sessions.last_opened_at` and never moves a row, so the list holds still while
 you click through it. A row moves only when its session has new activity or
-starts needing you, or when it leaves or rejoins the Inactive group below. `last_opened_at` feeds `⌃Tab` and the switcher's recents
+starts needing you, or when it leaves or rejoins the Done group below. `last_opened_at` feeds `⌃Tab` and the switcher's recents
 only. The Board's default order uses the same key. With no grouping the first
 eight rows show and the rest sit under **Show N more**, remembered per
 workspace. A session that needs you and the open session are never folded. A
@@ -411,50 +411,37 @@ grouped list shows every group, finished groups start collapsed, and nothing
 folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
 pressing `⌘⇧]` four times from the first row visits the next four sessions.
 
-**A session nobody touched for three days moves to an Inactive group at the
-bottom.** One pure function, `sessionInactivityOf`
-(`store/slices/session-view/sessionInactivityOf.ts`), owns the decision. A
-session is inactive only when every one of these holds: it is not pinned, not
-the open session, has no queued message (`agentQueue`) and no unsent draft
-(`agentDraft`) on any of its agents, its own state is not starting, running,
-blocked or error, its stage info is quiet (stage not needs you or running, no
-attention reason and no second reason, so a question, an approval, a
-permission, a failed check, a merge queue or an unread reply all keep it up),
-it was not opened in the last 24 hours (`RECENTLY_OPENED_MS`), and its last
-activity is more than 72 hours old (`INACTIVE_AFTER_MS`, strictly older, so a
-session exactly at the edge stays). The last activity is the latest of
-`created_at`, `updated_at` (bumped when the session's state changes),
-`last_opened_at`, the state's own time, each run's start and
-each hint sent to its orchestrator, and what `inactivityInputsOf` saw: each
-agent's start, finish, completion, stop, close and last view, and the
-`updatedAt` and `mergedAt` of the session's pull request and of every pull
-request on its mounts, and the same two fields of the session's GitLab merge
-request and of every merge request on its mounts (`sessionGitlabMr`,
-`mountGitlabMr`), which move on a push or a review. A message you send
-starts a turn, which keeps the session up while it runs and stamps the agent's
-finish when it ends. Three days lets a Friday session survive the weekend; the
-24 hour floor is stated on its own so a session you opened in the last day
-stays up whatever the threshold. A session whose stage is done by a merged or
-closed pull request does not wait for the three days: it leaves the live list at
-once, unless you wrote after the request ended (the latest turn of a
-conversation agent, not a resolver, rewriter, scribe, CI or Auto agent and not a
-child agent, is later than the end by more than five minutes), which
-`inactivityInputsOf` reports as `requestEndedAt` and `personTurnAt`. Every other
-rule above still holds, so writing again brings it back. The threshold and
-the floor are constants, with no setting. `useSessionInactivity` runs the
-function for every listed session on a one minute clock (`useNow`) and keeps
-the same map while no session crosses the line; `splitInactiveSessions` then
-pulls the inactive sessions out of every group, drops a group it leaves empty
-and appends one group with the key `inactive`, newest activity first,
-whatever the sort. The sidebar draws it last as **Inactive** with its count
-from two, after the fold, never folded; in a grouped list it is a toggle like
-the others, open by default. Its rows show the title alone: the label already
-says Inactive, and the age lives on the hover card. The List view of the
-Sessions page groups by stage like the Board and draws no Inactive group: an
-inactive row stays in its stage, and its last column reads its age in the same
-form as every other row ("4d ago", `inactiveWords` over `formatAge`). A change to any input recomputes at once, so
-opening, an agent starting, a new reply, a draft or a pull request event puts
-the row straight back in the list. `⌘⇧[` and `⌘⇧]` walk the Inactive rows too.
+**Finished sessions close the list in one Done group.** One word names the end:
+a session whose stage is done (a merged or closed pull request, or an answer,
+a report, a plan or a finished edit once its reply is read) leaves the live
+rows and sits in a **Done** group at the end of the column, shut by default,
+with its count from two, in the order the sort gives (`splitDoneSessions`, key
+`done`). Opening the header shows the rows and `⌘⇧[` and `⌘⇧]` walk them only
+while it is open; the open or shut choice is remembered like any group
+(`sessionGroupExpanded`). The group opens by itself while the Status filter
+asks for Done, unless you shut it. The open session and a pinned session
+never move into it. A list grouped by stage already has a Done group and gets
+no second one. Archived stays a lane of the Board and the **Show archived**
+switch of the column filter.
+
+**A session nobody touched for three days fades, in place.** One pure function,
+`sessionInactivityOf` (`store/slices/session-view/sessionInactivityOf.ts`), owns
+the decision. A session is idle only when every one of these holds: it is not
+pinned, not the open session, has no queued message (`agentQueue`) and no
+unsent draft (`agentDraft`) on any of its agents, its own state is not
+starting, running, blocked or error, its stage info is quiet (so a question, an
+approval, a permission, a failed check, a merge queue or an unread reply all
+keep it up), it was not opened in the last 24 hours (`RECENTLY_OPENED_MS`), and
+its last activity is more than 72 hours old (`INACTIVE_AFTER_MS`). The last
+activity is the latest of `created_at`, `updated_at`, `last_opened_at`, the
+state's own time, each run's start and each hint sent to its orchestrator, and
+what `inactivityInputsOf` saw (agent starts, finishes and views, and the
+`updatedAt` and `mergedAt` of the session's pull and merge requests).
+`useSessionInactivity` runs the function for every listed session on a one
+minute clock (`useNow`). An idle row keeps its place and draws its title in the
+calm tone; the age lives on the hover card. A change to any input recomputes at
+once, so opening, an agent starting, a new reply, a draft or a pull request
+event brings the row back to full tone.
 
 **Pin a session and it stays at the top of the list.** **Pin session** and
 **Unpin session** are session actions (the row's right-click menu, `⌘K` and

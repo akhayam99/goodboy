@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { ListFilter } from 'lucide-react';
 import {
   AnchoredPopover,
@@ -26,7 +25,7 @@ import {
 } from '../../../../../store';
 import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
-import { sessionHasUnread } from '../../../../../store/slices/session-view/sessionHasUnread';
+import { useUnreadSessionIds } from '../../../../../shared/hooks/useUnreadSessionIds';
 import { DEFAULT_PREFS } from '../../../../../store/slices/session-view/types';
 import { DisplayValueRow } from './DisplayValueRow';
 import { FilterCheckRow } from './FilterCheckRow';
@@ -56,7 +55,7 @@ const GROUP_OPTIONS: ReadonlyArray<ListboxOption<SessionGroupKey>> = [
   { value: 'none', label: 'None' },
   { value: 'pr', label: 'PR state' },
   { value: 'stage', label: 'Stage' },
-  { value: 'project', label: 'Folder' },
+  { value: 'project', label: 'Project' },
 ];
 
 const MENU_WIDTH = 240;
@@ -88,14 +87,7 @@ export const SessionFilterPopover = ({
   const projectOptions = useProjectFilterOptions({ workspaceId, sessions });
   const stageBySession = useSessionStages(sessions);
   const markSessionsRead = useAppStore((state) => state.markSessionsRead);
-  const unreadIds = useAppStore(
-    useShallow((state) =>
-      sessions
-        .filter((session) => session.archivedAt == null)
-        .filter((session) => sessionHasUnread({ state, sessionId: session.id }))
-        .map((session) => session.id),
-    ),
-  );
+  const unreadIds = useUnreadSessionIds({ sessions });
 
   const { hold, release } = useSidebarPeekHold();
   const dropdown = useDropdown({
@@ -228,9 +220,9 @@ export const SessionFilterPopover = ({
               </div>
             ) : null}
             {isProjectFacet ? (
-              <div role="group" aria-label="Folder" className="flex flex-col">
+              <div role="group" aria-label="Project" className="flex flex-col">
                 <span aria-hidden className={SUBHEAD}>
-                  Folder
+                  Project
                 </span>
                 {projectOptions.map((option) => (
                   <FilterCheckRow

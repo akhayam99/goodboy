@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
-import { ICON_SIZE, PageColumn, PaneShell, ScrollFade, tintClasses } from '@goodboy/ui';
+import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
 import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
@@ -48,13 +48,14 @@ import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
+import { BranchStartLine } from '../BranchStartLine';
+import { BranchTabStrip } from '../BranchTabStrip';
 import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
 import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const NO_PREFILL = { title: '', body: '' };
 
@@ -472,18 +473,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     />
   );
 
-  const startLine = isBranchStart ? (
-    <span
-      data-branch-start-line={start.step.state}
-      className="flex min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground"
-    >
-      <span className={`inline-flex items-center gap-1 ${tintClasses(start.line.tone).text}`}>
-        <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />
-        {start.line.word}
-      </span>
-      {start.line.distance === null ? null : <span>{start.line.distance}</span>}
-    </span>
-  ) : null;
+  const startLine = isBranchStart ? <BranchStartLine start={start} /> : null;
 
   const detail = (
     <BranchDetail>
@@ -524,6 +514,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               pageAction={tab === 'comments' ? tabActionsSlotNode : null}
               onMutated={onMutated}
             />
+            <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
             <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
             {baseRow}
             <div data-rebase-flow-hook="" className="flex min-w-0 flex-col empty:hidden">

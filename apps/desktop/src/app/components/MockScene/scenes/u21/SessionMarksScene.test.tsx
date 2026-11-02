@@ -203,7 +203,7 @@ describe('the session marks scene', () => {
     ).toBe(true);
   });
 
-  it('counts the sessions that need you on the Sessions door and in the top bar, red as one is broken', async () => {
+  it('counts the sessions that need you on the Sessions door alone, red as one is broken', async () => {
     render(
       <ToastProvider>
         <SessionMarksScene />
@@ -214,9 +214,7 @@ describe('the session marks scene', () => {
     const count = document.querySelector('[data-column-door="board"] [data-door-count]');
     expect(count?.textContent).toBe('9+');
     expect(count?.getAttribute('data-door-signal')).toBe('danger');
-    const segment = document.querySelector('[data-top-bar] [data-now-needs-you]');
-    expect(segment?.closest('button')?.getAttribute('aria-label')).toMatch(/^16 sessions need you/);
-    expect(segment?.querySelector('.bg-danger')).not.toBeNull();
+    expect(document.querySelector('[data-top-bar] [data-now-needs-you]')).toBeNull();
   });
 
   it('keeps red for the error, a stopped run, a push that failed and failing checks only', async () => {

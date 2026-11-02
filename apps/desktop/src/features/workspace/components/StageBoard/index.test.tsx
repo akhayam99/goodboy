@@ -41,9 +41,7 @@ vi.mock('../../../../store', () => ({
     quietReasons: [],
   }),
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
-  useSessionListModel: () => ({ groups: [], stageBySession: {}, hiddenByFilters: 0 }),
   useSessionViewPrefs: () => ({
-    pageView: 'board',
     sort: 'needsYou',
     group: 'none',
     isArchivedShown: false,
@@ -72,6 +70,10 @@ vi.mock('../../../../shared/components/NewWorkspaceForm', () => ({
       {mode === 'add' ? state.workspaces.find((entry) => entry.id === workspaceId)?.name : null}
     </div>
   ),
+}));
+
+vi.mock('../../../onboarding/SetupCard', () => ({
+  SetupCard: () => <div data-testid="setup-card" />,
 }));
 
 vi.mock('../SessionActivityBar/SessionFilterPopover', () => ({
@@ -238,6 +240,18 @@ describe('StageBoard loading gate', () => {
     expect(screen.getByText('No sessions yet')).toBeDefined();
     expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
+  });
+
+  it('draws the setup card on an empty board and on a board with sessions, not while loading', () => {
+    const { rerender } = render(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByTestId('setup-card')).not.toBeNull();
+
+    rerender(<StageBoard workspaceId={wsId} sessions={[session]} />);
+    expect(screen.queryByTestId('setup-card')).not.toBeNull();
+
+    state.boardReady = false;
+    rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
+    expect(screen.queryByTestId('setup-card')).toBeNull();
   });
 
   it('renders stage columns once ready with sessions', () => {

@@ -185,7 +185,7 @@ Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never ap
 request. A row is 28px with an icon, the label and one fixed right-aligned slot
 (`worktreeEntryFactsOf`; empty until a count is known, the fact in the tooltip), then a chevron
 column that only Files fills. The current row carries `aria-current="page"`,
-Up and Down move between rows while the list has focus, and a pick replaces the address. Merged and
+Up and Down move between rows while the list has focus, and a pick replaces the address. The page repeats the same entries as a tab strip under the title (`BranchTabStrip`, a `tablist` named `Branch pages`), each tab with the count of the same `worktreeEntryFactsOf` fact the row reads, so the strip and the rail never drift; the active tab keeps its count. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else

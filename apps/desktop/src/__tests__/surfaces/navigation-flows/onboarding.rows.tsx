@@ -186,7 +186,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'setup menu: counts the four steps and offers Resume setup while setup is paused',
+    name: 'setup card: counts the four steps and offers Resume setup while setup is paused',
     covers: ['onboarding:menu-count'],
     seed: 'empty',
     open: async () => {
@@ -195,11 +195,9 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await createHarborline();
       await click(await screen.findByRole('button', { name: 'Set up later' }));
       await closed();
-      await click(await screen.findByRole('button', { name: "Goodboy: setup isn't finished" }));
     },
     lands: async () => {
-      const menu = await screen.findByRole('dialog', { name: 'Goodboy' });
-      const setup = within(within(menu).getByRole('region', { name: 'Setup' }));
+      const setup = within(await screen.findByRole('region', { name: 'Setup' }));
       expect(setup.getByText('Setup · 2 of 4')).toBeDefined();
       expect(setup.getAllByRole('listitem')).toHaveLength(4);
       expect(setup.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');

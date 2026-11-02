@@ -325,13 +325,6 @@
           "shown": true
         },
         {
-          "title": "List view",
-          "text": "See every session in one table, grouped by the same stages as the board, with aligned columns: key, title, project, signal and last update.",
-          "group": "The board",
-          "also": "sessions list",
-          "shown": true
-        },
-        {
           "title": "Done and Archived lanes",
           "text": "Done and Archived are lanes of their own, always in view, each with a line that says when it is empty.",
           "group": "The board",

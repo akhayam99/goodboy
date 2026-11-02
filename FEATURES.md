@@ -67,7 +67,6 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 - **Stage board**: See where each task stands without moving cards around.
 - **Session card**: Read a task at a glance: its title on two lines, its project in gray, and one signal at the right.
-- **List view**: Scan every session in one table.
 
 [More on the board](docs/features/board.md)
 

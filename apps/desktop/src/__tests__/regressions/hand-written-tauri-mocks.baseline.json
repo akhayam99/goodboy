@@ -207,7 +207,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u25/p-0251b.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/p-side-info.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/ports.test.tsx": 1,
-  "apps/desktop/src/app/components/MockScene/scenes/u25/r1-inactive.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r1-motion.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-brand.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-chatlist.test.tsx": 1,

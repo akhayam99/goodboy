@@ -17,15 +17,15 @@ There is no checkbox.
 - A quiet line under the list says so until you pick something.
 - **Mark as unread** in the same menu keeps a row lit until you open it again. **Mark as read** clears it. With several rows picked, the bar says **Mark 3 as read**.
 
-**Inactive**
+**Done**
 
-A session nobody touched for three days moves to an **Inactive** group at the bottom, newest first. Rest the pointer on it to see when it last moved.
+A finished session moves to a **Done** group at the end of the list. It starts shut, so the list stays short; open it to reopen a merged session. The open session and a pinned one never move there.
 
-A pinned session, the open one, one with work running or waiting on you, an unread reply or a draft never moves there. Touching an inactive session brings it straight back up.
+A session nobody touched for three days stays where it is and fades. Rest the pointer on it to see when it last moved. Touching it brings it back to full tone.
 
 **Flip through recent sessions.** Hold **Control** and press **Tab** to flip through recent sessions without the list.
 
-**Sort, group and filter.** The funnel at the right of the **Sessions** row sorts, groups and filters the list. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, and **Reset** once anything is changed.
+**Sort, group and filter.** The funnel at the right of the **Sessions** row sorts, groups and filters the list, and the funnel on the Sessions page is the same menu. **Sort** and **Group** come on top. Then come checkboxes for the statuses and projects that have sessions, **Show archived**, **Mark all as read**, and **Reset** once anything is changed.
 
 **Right click.** A right click on any session opens all its actions: pin, refresh, rename, archive and delete. Archive and delete ask first. An archived session comes back with Undo or Restore.
 
@@ -51,7 +51,7 @@ Keep the sessions you return to at the top of the list. **Pin session** in a row
 
 ### Now chip
 
-Know what runs from any screen. The chip in the top bar counts the sessions that need you, then the sessions and scripts running, and a click opens a list where each row jumps to its session, with the sessions that need you first and a **Next that needs you** button. Sessions that need you show as a number on **Sessions** in the sidebar, with a small amber dot and a muted number, the dot red when one of them is broken, 9+ above nine. The same count leads the chip in the top bar, as **3 need you**, and its tooltip teaches **⌥⌘↓**, the key to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
+Know what runs from any screen. The chip in the top bar counts the sessions and scripts running, and reads a muted **Idle** when nothing does, so the chips beside it stay put. A click opens a list where each row jumps to its session. Sessions that need you show as a number on **Sessions** in the sidebar, with a small amber dot and a muted number, the dot red when one of them is broken, 9+ above nine. The top bar does not repeat it; **⌥⌘↓** goes to the next one. Rest on the door for the reasons, and click it for the board, where **Needs you** comes first. The count ignores the project filter, so a session in another project is still counted, and the board says **2 more need you in other projects** with a way to clear the filter. A reply to read or an approval to merge shows only a quiet gray dot, not a number. A run that stopped, paused at its limit or waits for you to continue, an Auto agent waiting for your OK and a Slack reply waiting for approval count like a question does.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">

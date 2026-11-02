@@ -17,7 +17,7 @@ import { sortAndGroupSessions } from './sortAndGroupSessions';
 import {
   DEFAULT_PREFS,
   FOLD_LIMIT,
-  INACTIVE_GROUP_KEY,
+  DONE_GROUP_KEY,
   PINNED_GROUP_KEY,
   type SessionProjectRef,
 } from './types';
@@ -392,18 +392,16 @@ describe('the Pinned group', () => {
   });
 });
 
-describe('the Inactive group', () => {
+describe('the Done group', () => {
   const active = sessions(10);
-  const inactive = Array.from({ length: 3 }, (_, index) =>
-    aSession({ goal: `Quiet ${index + 1}` }),
-  );
+  const done = Array.from({ length: 3 }, (_, index) => aSession({ goal: `Finished ${index + 1}` }));
   const STAGE_PREFS: SessionViewPrefs = { ...DEFAULT_PREFS, group: 'stage' };
   const groups = [
     { key: 'all', sessions: active },
-    { key: INACTIVE_GROUP_KEY, label: 'Inactive', sessions: inactive },
+    { key: DONE_GROUP_KEY, label: 'Done', sessions: done },
   ];
 
-  it('closes a flat list with a labeled Inactive group that never folds', () => {
+  it('closes a flat list with a labeled Done group, closed by default', () => {
     const result = layoutSessionColumn({
       groups,
       prefs: DEFAULT_PREFS,
@@ -415,14 +413,45 @@ describe('the Inactive group', () => {
 
     expect(result.groups.map((group) => [group.key, group.label, group.total])).toEqual([
       ['all', null, 10],
-      [INACTIVE_GROUP_KEY, 'Inactive', 3],
+      [DONE_GROUP_KEY, 'Done', 3],
     ]);
-    expect(result.groups[1]?.sessions).toEqual(inactive);
+    expect(result.groups[1]?.isCollapsed).toBe(true);
+    expect(result.order).not.toContain(done[0]?.id);
     expect(result.hiddenCount).toBe(2);
-    expect(result.order.slice(-3)).toEqual(inactive.map((session) => session.id));
   });
 
-  it('is a group you can fold in a grouped list, open by default', () => {
+  it('opens when you open it and lists its sessions last', () => {
+    const result = layoutSessionColumn({
+      groups,
+      prefs: DEFAULT_PREFS,
+      groupExpanded: { [DONE_GROUP_KEY]: true },
+      currentSessionId: null,
+      stageBySession: {},
+      pinnedIds: [],
+    });
+
+    expect(result.groups[1]?.isCollapsed).toBe(false);
+    expect(result.groups[1]?.sessions).toEqual(done);
+    expect(result.order.slice(-3)).toEqual(done.map((session) => session.id));
+  });
+
+  it('opens by itself while the status filter asks for Done, unless you shut it', () => {
+    const asked = {
+      groups,
+      prefs: { ...DEFAULT_PREFS, statusFilter: ['done' as const] },
+      currentSessionId: null,
+      stageBySession: {},
+      pinnedIds: [],
+    };
+
+    expect(layoutSessionColumn({ ...asked, groupExpanded: {} }).groups[1]?.isCollapsed).toBe(false);
+    expect(
+      layoutSessionColumn({ ...asked, groupExpanded: { [DONE_GROUP_KEY]: false } }).groups[1]
+        ?.isCollapsed,
+    ).toBe(true);
+  });
+
+  it('is a group you can fold in a grouped list', () => {
     const grouped = {
       groups,
       prefs: STAGE_PREFS,
@@ -431,14 +460,13 @@ describe('the Inactive group', () => {
       pinnedIds: [],
     };
 
-    const open = layoutSessionColumn({ ...grouped, groupExpanded: {} });
-    expect(open.groups.at(-1)?.isCollapsed).toBe(false);
-
-    const folded = layoutSessionColumn({
-      ...grouped,
-      groupExpanded: { [INACTIVE_GROUP_KEY]: false },
-    });
+    const folded = layoutSessionColumn({ ...grouped, groupExpanded: {} });
     expect(folded.groups.at(-1)?.isCollapsed).toBe(true);
-    expect(folded.order).not.toContain(inactive[0]?.id);
+
+    const open = layoutSessionColumn({
+      ...grouped,
+      groupExpanded: { [DONE_GROUP_KEY]: true },
+    });
+    expect(open.groups.at(-1)?.isCollapsed).toBe(false);
   });
 });

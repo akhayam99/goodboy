@@ -21,9 +21,9 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
   const Icon = entry.icon;
   const isBlocked = entry.blockedReason != null || entry.isDisabled === true;
   const hasChoices = entry.choices != null && entry.choices.length > 0;
-  const detail = entry.blockedReason ?? entry.description ?? null;
+  const detail = entry.description ?? null;
   return (
-    <OptionalTooltip content={entry.tooltip} side="right">
+    <OptionalTooltip content={entry.tooltip ?? entry.blockedReason} side="right">
       <button
         ref={rowRef}
         type="button"

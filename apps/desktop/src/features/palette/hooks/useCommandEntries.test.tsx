@@ -10,8 +10,9 @@ vi.mock('@tauri-apps/api/event', async () =>
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace, anAgent } from '@goodboy/types/testing';
 import type {
+  AgentId,
   ChatId,
   ChatMessageId,
   IsoDateTime,
@@ -362,5 +363,30 @@ describe('the palette New terminal entry', () => {
     });
 
     expect(newTerminal()?.label).toBe('New terminal');
+  });
+});
+
+describe('the palette entry to mark every session as read', () => {
+  const unreadAgent = anAgent({
+    id: brandedId<AgentId>({ value: 'agent-round-totals' }),
+    sessionId: SESSION_ID,
+    status: 'completed',
+    lastFinishedAt: brandedId<IsoDateTime>({ value: '2026-10-06T09:00:00.000Z' }),
+  });
+
+  it('is not listed while nothing is unread', () => {
+    expect(entryKeys()).not.toContain('action:mark-all-sessions-read');
+  });
+
+  it('is listed once a session has an unread reply, and marks that session read', () => {
+    const markSessionsRead = vi.fn(async () => undefined);
+    useAppStore.setState({ markSessionsRead, sessionPhaseRuns: { [SESSION_ID]: [unreadAgent] } });
+    const entry = entryFor('action:mark-all-sessions-read');
+
+    expect(entry?.label).toBe('Mark all sessions as read');
+    act(() => {
+      entry?.run();
+    });
+    expect(markSessionsRead).toHaveBeenCalledWith({ sessionIds: [SESSION_ID] });
   });
 });

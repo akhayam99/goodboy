@@ -171,15 +171,6 @@ export const markStepComplete = (id: OnboardingStepId): void => {
 
 export const isCollapsed = (): boolean => cache.collapsed;
 
-export const collapse = (): void => {
-  if (cache.collapsed) {
-    return;
-  }
-  cache.collapsed = true;
-  flushFlag({ key: SETTING_COLLAPSED, isOn: true });
-  announce();
-};
-
 export const isFinished = (): boolean => cache.finished;
 
 export const finish = (): void => {

@@ -54,7 +54,6 @@
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1,
-    "apps/desktop/src/features/workspace/components/StageBoard/index.tsx": 1,
     "packages/ui/src/components/EmptyState.tsx": 1,
     "packages/ui/src/components/Popover.tsx": 1,
     "packages/ui/src/components/Skeleton.tsx": 1
@@ -259,7 +258,6 @@
     "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/SpendButton.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 1,
-    "apps/desktop/src/app/components/GoodboyChip/GoodboyChipLabel.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactMountRows.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.tsx": 1,

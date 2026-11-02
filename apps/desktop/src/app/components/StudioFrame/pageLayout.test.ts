@@ -314,8 +314,7 @@ describe('empty states and skeletons on the page inset', () => {
     const board = read('features/workspace/components/StageBoard/index.tsx');
 
     expect(drifted).toEqual([]);
-    expect(board).toMatch(/view === 'board' && <BoardSkeleton/);
-    expect(board).toMatch(/view === 'list' && <SessionsListSkeleton/);
+    expect(board).toMatch(/pending && <BoardSkeleton/);
   });
 
   it('puts every page empty state on the page column, at its top left', () => {

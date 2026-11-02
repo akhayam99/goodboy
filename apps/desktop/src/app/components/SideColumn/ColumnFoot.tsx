@@ -1,7 +1,6 @@
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { GoodboyChip } from '../GoodboyChip';
 import { ColumnDoorRow } from './ColumnDoorRow';
-import { ReportBugButton } from './ReportBugButton';
 import type { ColumnActions } from './columnDoors';
 import type { ColumnPlace } from './columnPlace';
 
@@ -25,15 +24,12 @@ export const ColumnFoot = ({ place, isPrimary, actions, onNavigate }: Props) => 
         onNavigate?.();
       }}
     />
-    <div className="flex min-w-0 items-center gap-1">
-      <GoodboyChip
-        variant="column"
-        isPrimary={isPrimary}
-        onOpenChangelog={actions.openChangelog}
-        onOpenGuide={actions.openGuide}
-        onOpenShortcuts={actions.openShortcuts}
-      />
-      <ReportBugButton />
-    </div>
+    <GoodboyChip
+      variant="column"
+      isPrimary={isPrimary}
+      onOpenChangelog={actions.openChangelog}
+      onOpenGuide={actions.openGuide}
+      onOpenShortcuts={actions.openShortcuts}
+    />
   </div>
 );

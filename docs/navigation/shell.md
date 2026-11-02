@@ -187,7 +187,8 @@ never exists on one surface only.
   about 10 seconds and Cmd+Z undoes the latest operation outside a text field.
   Reversible removals never ask for confirmation. Removing a commit on the Commits tab acts immediately with Undo.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
-  with its reason under the label, and does nothing when chosen. A verb that
+  on one line with its reason as the tooltip (and as the row's description for
+  a screen reader), and does nothing when chosen. A verb that
   does not apply to the state is not shown.
 - **Where the webview menu stays.** Every object row answers right click with
   its object menu from `features/actions`, never the webview one. A row whose
@@ -245,8 +246,8 @@ both always visible; one separator
 (`SessionNavSidebar`), whose first row is New session (`NewSessionRow`, ⌘N, shaped like a
 session row, selected while the draft is open, a primary dot and `Draft in progress` while a
 draft waits) and whose group headers carry no top margin: the list's one gap (`listGap`, equal to the
-doors' gap) spaces the groups; then at the foot Settings (⌘,), the Goodboy row
-and a bug icon that opens the report sheet. Every door row has one trailing grid
+doors' gap) spaces the groups; then at the foot Settings (⌘,) and the Goodboy row.
+Every door row has one trailing grid
 (`ColumnDoorRow`): a 20px signal slot right aligned, then a 24px action slot reserved on every
 row (the plus sits in it on Chat and Terminal). A running door draws no dot: what runs is in its
 tooltip and accessible name, so unread (primary) and running never share a hue in one column; a
@@ -410,17 +411,17 @@ covered.
 - Right, in this order: the Now chip (running, scripts, each
   only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
   session that needs you is not counted as running; its dots are static, and its tooltip
-  names the unit: "2 sessions running, 1 script running"), Usage,
+  names the unit: "2 sessions running, 1 script running"; at zero one muted "Idle" slot is drawn so the chips beside it never move), Usage,
   today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
   primary when unread, warning when an unread item carries an action; the count is the Unread
   tab badge in its popover). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  two, and a group with no rows is not drawn. Sessions that need you are the first
-  segment of the chip and the Sessions door carries the same count. Needs you counts three
+  two, and a group with no rows is not drawn. Sessions that need you are not in the
+  bar, in the chip or in its panel: the Sessions door carries the count. Needs you counts three
   units, and each tooltip names its own: sessions ("2 sessions need you") on the Sessions
-  door, the Now chip, the dock badge and the palette; questions ("3 questions") on the
+  door, the dock badge and the palette; questions ("3 questions") on the
   Questions entry of the session rail; items ("4 items need you") on the Overview card and
   the Runs group. The bell is unchanged. A script row moves to its
   session and opens that run's output in the right drawer. A running session
@@ -499,21 +500,21 @@ only drop under zoom.
   **Theme: light** and **Theme: system**. Both call `switchTheme({ to })` in
   `shared/lib/theme.ts`, the only writer. The swap stays one paint
   (`theme-switch-is-one-paint`). No shortcut is bound to it.
-- The top bar never edits. Reporting a bug, the setup checklist, the update
+- The top bar never edits. Reporting a bug, the update
   and the version are about Goodboy itself, so they live at the foot of the
-  column: the Goodboy row and the bug icon beside it.
+  column: the Goodboy row. The setup checklist is a card on the Sessions page.
 
 ## The column foot
 
-Settings (⌘,) sits above the Goodboy row; the bug icon sits right of the row
-and opens the report sheet (⌘I), nothing else. On the rail the three keep their
-place at the bottom: the Settings icon, the bug and the Goodboy mark, which
-carries a dot while an update or setup waits.
+Settings (⌘,) sits above the Goodboy row. There is no setup line and no bug icon:
+Report a bug (⌘I) is in the Goodboy menu. The rail, with no room for a menu row, keeps the three
+in their place at the bottom: the Settings icon, the bug and the Goodboy mark, which
+carries a dot while an update waits.
 
 The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
-update is pending (the bare lockup, then the version pill), setup is unfinished
-(with its progress), or the brand lockup with the installed version. The lockup
+update is pending (the bare lockup, then the version pill), or the brand lockup
+with the installed version. The lockup
 (`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
 "Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
 theme text. The popover header and the rail mark draw the same lockup. The version is
@@ -530,11 +531,11 @@ long for the row truncates.
 pill opens the update card; the column menu holds no update. On the rail, which
 has no room for a pill, the menu's first row is the same pill label and opens
 the same card (`railUpdate` in `GoodboyChip/index.tsx`). The popover header is the
-lockup and "<version> · Beta", and the version opens What's new. Below it sit the
-setup checklist while setup is unfinished, then two labelled groups on the shared
+lockup and "<version> · Beta", and the version opens What's new. Below it sit two
+labelled groups on the shared
 `MenuList` rows of `@goodboy/ui`: **Help** (Guide, What's new, Keyboard shortcuts
 with ⌘/, Report a bug last with ⌘I, and Draft saved when a draft waits) and
-**Goodboy** (`NAMES.pairIphone`, Sponsor on GitHub and Follow on X, the last two
+**Goodboy** (`NAMES.pairIphone` and Sponsor on GitHub, the last
 with the external mark). There is no paragraph under the groups. Guide opens the
 guide studio and Pair an iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
 `{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
@@ -603,7 +604,7 @@ is not title case, or a key has two owners.
 One sheet files every report. `ReportSheetHost`
 (`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
 the window, centred, with no overlay: the page under it stays live. Every door
-lands there: ⌘I from anywhere, the bug icon at the column foot, Report a bug in
+lands there: ⌘I from anywhere, Report a bug in
 the Goodboy menu, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
@@ -710,10 +711,10 @@ draft (`startSessionFromDraft`); setup is done only once that resolves, and a
 failure keeps the prompt and reads Retry. With a task source connected, Pick up
 an issue lists assigned issues and Draft the brief opens the session draft with
 that issue picked. The draft carries the first folder, so the session lands in
-it. The checklist in the
-Goodboy menu has the stepper's four rows, counted by `setupProgress()` in
-`features/onboarding/setupProgress.ts`, the one function the chip and the menu
-read ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
+it. The setup card on the Sessions page (`features/onboarding/SetupCard`, drawn on the
+board and the empty board until setup is finished or hidden) has the stepper's four
+rows, counted by `setupProgress()` in `features/onboarding/setupProgress.ts`, the one
+function the card reads ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
 once the first session is done. While setup is open or paused a row resumes
 setup at its step; once setup is done Tools reopens its own step. Tools ticks
 when the user moves past it or connects a code host or task source, and the

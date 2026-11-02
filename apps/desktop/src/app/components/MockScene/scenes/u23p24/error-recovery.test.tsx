@@ -66,7 +66,9 @@ describe('the error recovery scene', () => {
   it('offers each error its way out as a button on the row', async () => {
     await mount();
 
-    const rows = screen.getAllByRole('listitem');
+    const rows = screen
+      .getAllByRole('listitem')
+      .filter((row) => row.closest('[data-slot="setup-card"]') === null);
     expect(rows).toHaveLength(5);
     const rowAt = ({ index }: { index: number }) => within(rows[index] ?? document.body);
     rowAt({ index: 0 }).getByRole('button', { name: 'Retry push' });

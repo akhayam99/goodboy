@@ -147,7 +147,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u25/p-cta-feedback.test.tsx": 2,
   "apps/desktop/src/app/components/MockScene/scenes/u25/p-side-info.test.tsx": 2,
   "apps/desktop/src/app/components/MockScene/scenes/u25/ports.test.tsx": 27,
-  "apps/desktop/src/app/components/MockScene/scenes/u25/r1-inactive.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-chatlist.test.tsx": 3,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-comments.test.tsx": 2,
   "apps/desktop/src/app/components/MockScene/scenes/u25/r4-content.test.tsx": 4,

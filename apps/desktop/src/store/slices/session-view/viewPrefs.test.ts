@@ -60,7 +60,6 @@ describe('the session list prefs of a workspace', () => {
   it('start on Needs you first, no grouping, archived hidden and the fold closed', () => {
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual({
-      pageView: 'board',
       sort: 'needsYou',
       group: 'none',
       isArchivedShown: false,
@@ -77,11 +76,9 @@ describe('the session list prefs of a workspace', () => {
       isArchivedShown: true,
       isFoldOpen: true,
       statusFilter: ['attention', 'running'],
-      pageView: 'list',
     });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual({
-      pageView: 'list',
       sort: 'goal',
       group: 'project',
       isArchivedShown: true,
@@ -101,7 +98,6 @@ describe('the session list prefs of a workspace', () => {
     });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual({
-      pageView: 'board',
       sort: 'goal',
       group: 'stage',
       isArchivedShown: true,
@@ -115,18 +111,10 @@ describe('the session list prefs of a workspace', () => {
     });
   });
 
-  it('read an older version 3 record without a page view as the Board', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 3, sort: 'goal', group: 'none' });
+  it('drop the page view a record from before the Board only page still carries', () => {
+    ls.store[storageKey(WS)] = JSON.stringify({ ...DEFAULT_PREFS, v: 3, pageView: 'list' });
     const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS).pageView).toBe('board');
-  });
-
-  it('round-trip the List page view and drop a view it does not know', () => {
-    const { actions } = buildSlice();
-    actions.setSessionViewPrefs({ workspaceId: WS, patch: { pageView: 'list' } });
-    expect(buildSlice().actions.getSessionViewPrefs(WS).pageView).toBe('list');
-    ls.store[storageKey(WS)] = JSON.stringify({ ...DEFAULT_PREFS, v: 3, pageView: 'grid' });
-    expect(buildSlice().actions.getSessionViewPrefs(WS).pageView).toBe('board');
+    expect(actions.getSessionViewPrefs(WS)).toEqual(DEFAULT_PREFS);
   });
 
   it('round-trip a status filter through version 3', () => {
@@ -182,7 +170,6 @@ describe('changing the session list prefs', () => {
     actions.getSessionViewPrefs(WS);
     actions.setSessionViewPrefs({ workspaceId: WS, patch: { group: 'stage' } });
     expect(getState().sessionViewPrefs[WS]).toEqual({
-      pageView: 'board',
       sort: 'createdAt',
       group: 'stage',
       isArchivedShown: false,

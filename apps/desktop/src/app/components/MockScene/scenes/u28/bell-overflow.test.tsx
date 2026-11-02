@@ -76,7 +76,9 @@ describe('the bell overflow scene', () => {
     expect(document.querySelector('[data-bell-dot]')?.getAttribute('data-bell-dot')).toBe(
       'warning',
     );
-    const rows = screen.getAllByRole('listitem');
+    const rows = screen
+      .getAllByRole('listitem')
+      .filter((row) => row.closest('[data-slot="setup-card"]') === null);
     expect(rows).toHaveLength(11);
     expect(rows.every((row) => row.querySelector('[data-unread-dot]') !== null)).toBe(true);
     within(screen.getByRole('tab', { name: /unread/i })).getByText('11');
@@ -88,7 +90,9 @@ describe('the bell overflow scene', () => {
       await vi.advanceTimersByTimeAsync(1_000);
     });
 
-    const rows = screen.getAllByRole('listitem');
+    const rows = screen
+      .getAllByRole('listitem')
+      .filter((row) => row.closest('[data-slot="setup-card"]') === null);
     expect(rows).toHaveLength(4);
     const opened = rows.filter((row) => row.querySelector('[data-notification-acted]') !== null);
     expect(opened).toHaveLength(1);

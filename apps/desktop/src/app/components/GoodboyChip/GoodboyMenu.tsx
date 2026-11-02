@@ -1,12 +1,9 @@
 import { ArrowUpCircle, Heart, Smartphone } from 'lucide-react';
-import { Divider, XIcon, type MenuEntry, FOCUS_RING, cn } from '@goodboy/ui';
+import { Divider, type MenuEntry, FOCUS_RING, cn } from '@goodboy/ui';
 import { AppMenuList } from '../../../features/actions/AppMenuList';
-import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
-import { SetupSection } from '../../../features/onboarding/SetupChecklist/SetupSection';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { NAMES } from '../../../shared/utils/names';
-import { isDirectedScene } from '../../../shared/utils/isDirectedScene';
 import { BrandLockup } from './BrandLockup';
 
 type RailUpdate = {
@@ -16,38 +13,29 @@ type RailUpdate = {
 
 type Props = {
   readonly version: string | null;
-  readonly progress: OnboardingProgress;
-  readonly isMainWindow: boolean;
   readonly hasDraft: boolean;
   readonly railUpdate: RailUpdate | null;
   readonly onClose: () => void;
-  readonly onLeave: () => void;
   readonly onReport: () => void;
   readonly onOpenGuide: () => void;
   readonly onPairDevice: () => void;
   readonly onOpenChangelog: () => void;
   readonly onOpenShortcuts: () => void;
   readonly onSponsor: () => void;
-  readonly onFollowX: () => void;
 };
 
 export const GoodboyMenu = ({
   version,
-  progress,
-  isMainWindow,
   hasDraft,
   railUpdate,
   onClose,
-  onLeave,
   onReport,
   onOpenGuide,
   onPairDevice,
   onOpenChangelog,
   onOpenShortcuts,
   onSponsor,
-  onFollowX,
 }: Props) => {
-  const showsSetup = !isDirectedScene() && !progress.isFinished && progress.hasProjects;
   const reportGlyph = shortcutGlyphs('report.open');
 
   const updateEntries: ReadonlyArray<MenuEntry> =
@@ -114,14 +102,6 @@ export const GoodboyMenu = ({
       isExternal: true,
       onSelect: onSponsor,
     },
-    {
-      kind: 'item',
-      key: 'follow',
-      label: 'Follow on X',
-      icon: XIcon,
-      isExternal: true,
-      onSelect: onFollowX,
-    },
   ];
 
   return (
@@ -141,11 +121,6 @@ export const GoodboyMenu = ({
         </button>
       </header>
       <Divider />
-      {showsSetup ? (
-        <div className="py-2">
-          <SetupSection progress={progress} isMainWindow={isMainWindow} onLeave={onLeave} />
-        </div>
-      ) : null}
       <AppMenuList label="Goodboy" entries={entries} onClose={onClose} />
     </>
   );

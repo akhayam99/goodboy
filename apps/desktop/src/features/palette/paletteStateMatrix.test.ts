@@ -157,7 +157,7 @@ describe('palette verbs follow the session state', () => {
       'Open in editor',
       'Open in terminal app',
       'Open the full log',
-      'Spend and limit',
+      'Open limit',
       'Open ledger-core in terminal',
       'Rename',
       'Pin session',
@@ -185,7 +185,7 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open comments',
       'Open the full log',
-      'Spend and limit',
+      'Open limit',
       'Rename',
       'Pin session',
       'Refresh session',

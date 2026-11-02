@@ -303,7 +303,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.spend',
-    label: 'Spend and limit',
+    label: 'Limit',
     icon: CONCEPT_ICONS.budget,
     group: 'open',
     when: ({ facts }) => !facts.isArchived,

@@ -16,6 +16,7 @@ import {
   useWorkspaces,
 } from '../../../store';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
+import { useUnreadSessionIds } from '../../../shared/hooks/useUnreadSessionIds';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { NAMES, formerNamesOf } from '../../../shared/utils/names';
@@ -35,7 +36,6 @@ import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openWorkflowRules } from '../../workflows/openWorkflowRules';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
-import { folderCountLabel } from '../../workspace/folderCountLabel';
 import { openNewWorkspace } from '../../workspace/openNewWorkspace';
 import { useIsMainWindow } from '../../workspace/useIsMainWindow';
 import { getWizardState, resumeSetup } from '../../onboarding/onboardingSettings';
@@ -54,6 +54,8 @@ import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
+import { markAllReadEntries } from '../sources/markAllReadEntries';
+import { workspaceEntries } from '../sources/workspaceEntries';
 import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
 import { useScriptPins } from '../../scripts';
 import { runPinnedScript } from '../../scripts/runPinnedScript';
@@ -140,6 +142,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const projectGitStatus = useAppStore((s) => s.projectGitStatus);
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
+  const markSessionsRead = useAppStore((s) => s.markSessionsRead);
+  const unreadSessionIds = useUnreadSessionIds({ sessions });
   const { showToast } = useToast();
   const innerColumn = useCurrentInnerColumn();
   const isInMainWindow = useIsMainWindow();
@@ -195,6 +199,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       });
     }
 
+    out.push(...markAllReadEntries({ sessionIds: unreadSessionIds, markRead: markSessionsRead }));
+
     if (sessionId !== null) {
       out.push(
         ...agentEntries({
@@ -235,19 +241,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       out.push(contextPaletteEntryOf({ sessionId, toggle: toggleContextDrawer }));
     }
 
-    for (const workspace of workspaces) {
-      out.push({
-        key: `workspace:${workspace.id}`,
-        label: workspace.name,
-        kind: 'workspace',
-        group: 'workspace',
-        icon: CONCEPT_ICONS.workspace,
-        detail: folderCountLabel({ projects, workspaceId: workspace.id }),
-        tag: 'Workspace',
-        run: () =>
-          void openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' }),
-      });
-    }
+    out.push(...workspaceEntries({ workspaces, projects, open: openWorkspace }));
 
     if (hasWorkspace) {
       const workspaceId = currentWorkspace.id;
@@ -651,6 +645,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     toggleContextDrawer,
     runScript,
     reportError,
+    markSessionsRead,
+    unreadSessionIds,
     showToast,
     settingsGroups,
     innerColumn,

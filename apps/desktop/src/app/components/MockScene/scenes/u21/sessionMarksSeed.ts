@@ -449,9 +449,9 @@ export const seedSessionMarks = (): Session => {
     },
     autoTreeViews: { ...state.autoTreeViews, [idOf('autowait')]: [AUTO_VIEW] },
     sessionSlackDrafts: { ...state.sessionSlackDrafts, [idOf('slack')]: [SLACK_DRAFT] },
+    sessionGroupExpanded: { done: true },
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
-        pageView: 'board',
         sort: 'needsYou',
         group: 'none',
         isArchivedShown: false,

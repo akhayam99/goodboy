@@ -35,6 +35,7 @@ type Props = {
   readonly isActive: boolean;
   readonly isCurrent?: boolean;
   readonly isArchived?: boolean;
+  readonly isIdle?: boolean;
   readonly isSelected?: boolean;
   readonly isListbox?: boolean;
   readonly onEditingChange?: (params: EditingChange) => void;
@@ -51,6 +52,7 @@ const SessionActivityItemView = ({
   isActive,
   isCurrent = false,
   isArchived = false,
+  isIdle = false,
   isSelected = false,
   isListbox = true,
   onEditingChange,
@@ -134,6 +136,7 @@ const SessionActivityItemView = ({
   }
 
   const isCalm =
+    isIdle ||
     node.kind === 'idle' ||
     node.kind === 'queue' ||
     node.kind === 'done' ||

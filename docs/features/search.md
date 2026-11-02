@@ -20,7 +20,7 @@ Click a session and its row stays selected. The session opens with its own rail 
 - a **Projects** card that folds each folder and branch. Every branch is led by its pull request icon in its color and holds its pull request, comments, files and checks.
 - a **Linked** card with the work linked to it
 
-The **⋯** holds **Spend and limit**, **Archive** and **Delete** with the session's other actions.
+The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.
 
 At the right of the page, the session tools are a column of icons, each named with its shortcut on hover: **Explore**, **Decisions**, **Ask this session**, **Agents**, **Scripts** and **Terminal**. The active tool shows its name below its icon. A thin line separates reading from the other tools.
 

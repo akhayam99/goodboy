@@ -223,7 +223,7 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: /theme/i })).toBeNull();
   });
 
-  it('shows the needs you count as the first segment of the Now chip, and not at zero', () => {
+  it('keeps needs you out of the Now chip, which counts only what runs', () => {
     hooks.groups = [{ key: 'running', sessions: [ATTENTION_SESSION] }];
     hooks.rollup = { attentionCount: 2, runningCount: 1, todaySpend: 5.04 };
     const { container, rerender } = renderBar();
@@ -241,9 +241,10 @@ describe('AppTopBar', () => {
     rerender(<AppTopBar onOpenSpend={vi.fn()} onOpenScript={vi.fn()} />);
 
     const right = zones(container)[2];
-    const now = screen.getByRole('button', { name: '2 sessions need you, 1 session running' });
+    const now = screen.getByRole('button', { name: '1 session running' });
     expect(right?.contains(now)).toBe(true);
-    expect(now.querySelector('[data-now-needs-you]')).not.toBeNull();
+    expect(container.querySelector('[data-now-needs-you]')).toBeNull();
+    expect(screen.queryByText(/need you/)).toBeNull();
   });
 
   it('puts the bell right after spend, with no theme switch between them', () => {
@@ -265,10 +266,11 @@ describe('AppTopBar', () => {
     expect(screen.queryByTestId('update-indicator')).toBeNull();
   });
 
-  it('leaves the now chip out when nothing needs you, and keeps spend', () => {
-    renderBar();
+  it('draws the muted Idle slot in place of the now chip when nothing runs, and keeps spend', () => {
+    const { container } = renderBar();
 
     expect(screen.queryByRole('button', { name: /need|running/ })).toBeNull();
+    expect(container.querySelector('[data-now-idle]')?.textContent).toBe('Idle');
     expect(screen.getByRole('button', { name: SPEND_LABEL })).toBeDefined();
   });
 

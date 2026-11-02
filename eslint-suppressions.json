@@ -553,11 +553,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/app/components/KeepAliveWorkSurface/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

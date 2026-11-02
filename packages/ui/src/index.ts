@@ -141,7 +141,6 @@ export {
   MoonshotIcon,
   SentryIcon,
   SlackIcon,
-  XIcon,
 } from './components/brandIcons';
 export { CopilotIcon } from './components/CopilotIcon';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';

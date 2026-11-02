@@ -114,18 +114,13 @@ describe('the u26 shell scenes', () => {
     expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
   });
 
-  it('u26-sidebar-signals marks Sessions with the count and says it in the top bar too', async () => {
+  it('u26-sidebar-signals marks Sessions with the count and says nothing about it in the top bar', async () => {
     await mount('u26-sidebar-signals');
 
     const door = document.querySelector('[data-side-column] [data-column-door="board"]');
     expect(door?.getAttribute('aria-label')).toMatch(/^Sessions, 2 sessions need you: /);
     expect(door?.querySelector('[data-door-count]')?.textContent).toBe('2');
-    expect(
-      document
-        .querySelector('[data-top-bar] [data-now-needs-you]')
-        ?.closest('button')
-        ?.getAttribute('aria-label'),
-    ).toMatch(/^2 sessions need you/);
+    expect(document.querySelector('[data-top-bar] [data-now-needs-you]')).toBeNull();
     expect(document.querySelector('[data-column-door="impact"]')).not.toBeNull();
   });
 

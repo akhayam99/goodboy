@@ -278,7 +278,31 @@ describe('Branch page header and sections', () => {
     );
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
-    expect(screen.queryByRole('tablist', { name: /^Branch/ })).toBeNull();
+  });
+
+  it('draws the five sections as a tab strip under the title, each count the one the rail row reads', async () => {
+    await mount();
+
+    const strip = screen.getByRole('tablist', { name: 'Branch pages' });
+    const tabs = within(strip).getAllByRole('tab');
+    expect(tabs.map((tab) => (tab.textContent ?? '').replace(/[^A-Za-z ]/g, '').trim())).toEqual([
+      'Pull request',
+      'Comments',
+      'Files',
+      'Commits',
+      'Checks',
+    ]);
+    expect(
+      within(strip)
+        .getByRole('tab', { name: /^Comments/ })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
+    for (const name of [/^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+      const count = (text: string | null): string => (text ?? '').replace(/^[A-Za-z ]+/, '').trim();
+      expect(count(within(strip).getByRole('tab', { name }).textContent)).toBe(
+        count(railRow(name).textContent),
+      );
+    }
   });
 
   it('carries one primary at most and none of the controls of the neighbouring pages', async () => {

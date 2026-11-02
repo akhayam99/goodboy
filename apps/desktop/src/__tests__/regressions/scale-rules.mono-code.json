@@ -83,7 +83,6 @@
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": "path",
   "apps/desktop/src/features/workspace/components/RepoEntry/RepoEntryRow.tsx": "branch",
   "apps/desktop/src/features/workspace/components/SessionRowTitle.tsx": "identifier",
-  "apps/desktop/src/features/workspace/components/StageBoard/SessionsList/SessionListRow.tsx": "identifier",
   "apps/desktop/src/features/worktree/BranchSwitchPanel/index.tsx": "branch",
   "apps/desktop/src/shared/components/Conversation/MessageRow.tsx": "identifier",
   "apps/desktop/src/shared/components/DescriptionSection/index.tsx": "code",

@@ -256,7 +256,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rows',
-        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived. Idle sessions move to Inactive after three days.',
+        desc: 'One line each, its mark amber when you must act and red when something broke. The funnel on Sessions holds Sort, Group, Filter and Show archived. Finished sessions close the list in Done.',
       },
       {
         term: 'Pin a session',

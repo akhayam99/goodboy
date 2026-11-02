@@ -23,7 +23,7 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 beforeEach(async () => {
   await resetStoryStore();
-  stubStoryInvoke({ db_select: [], worktree_status: null });
+  stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 0 }, worktree_status: null });
 });
 afterEach(cleanup);
 
