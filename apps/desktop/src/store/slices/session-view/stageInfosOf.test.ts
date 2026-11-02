@@ -31,11 +31,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  const sessions = [sessionOf({ goal: 'Retry webhooks' }), sessionOf({ goal: 'Fix rounding' })];
+  const current = sessionOf({ goal: 'Retry webhooks' });
   seedColumn({
     store: useAppStore,
-    sessions,
-    currentSessionId: sessions[0].id as SessionId,
+    sessions: [current, sessionOf({ goal: 'Fix rounding' })],
+    currentSessionId: current.id as SessionId,
   });
 });
 

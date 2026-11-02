@@ -239,7 +239,10 @@ const useStageSources = ({
     const infoMap = stageInfosOf({ state: partial });
     const stageMap: Record<SessionId, SessionStage> = {};
     for (const session of filteredSessions) {
-      stageMap[session.id] = infoMap[session.id].stage;
+      const info = infoMap[session.id];
+      if (info !== undefined) {
+        stageMap[session.id] = info.stage;
+      }
     }
     return { stageMap, infoMap };
   }, [
