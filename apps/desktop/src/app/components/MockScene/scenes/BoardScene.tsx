@@ -801,11 +801,17 @@ export const seedBoardScene = (): void => {
   });
 };
 
-type BoardSceneProps = {
-  readonly seed?: () => void;
+type BoardFrame = {
+  readonly widthPx: number;
+  readonly columnPx: number;
 };
 
-export const BoardScene = ({ seed = seedBoardScene }: BoardSceneProps) => {
+type BoardSceneProps = {
+  readonly seed?: () => void;
+  readonly frame?: BoardFrame;
+};
+
+export const BoardScene = ({ seed = seedBoardScene, frame }: BoardSceneProps) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -817,14 +823,30 @@ export const BoardScene = ({ seed = seedBoardScene }: BoardSceneProps) => {
     return null;
   }
 
-  return <BoardSceneContent />;
+  return <BoardSceneContent frame={frame} />;
 };
 
-const BoardSceneContent = () => {
+type ContentProps = {
+  readonly frame?: BoardFrame;
+};
+
+const BoardSceneContent = ({ frame }: ContentProps) => {
   const sessions = useSessions();
+  const board = <StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />;
+  if (frame === undefined) {
+    return <main className="h-screen overflow-hidden bg-background text-foreground">{board}</main>;
+  }
   return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      <StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />
-    </main>
+    <div
+      className="flex h-screen overflow-hidden bg-background text-foreground"
+      style={{ width: frame.widthPx }}
+    >
+      <aside
+        aria-label="Sessions column"
+        className="h-full shrink-0 border-r border-border-soft"
+        style={{ width: frame.columnPx }}
+      />
+      <main className="h-full min-w-0 flex-1 overflow-hidden">{board}</main>
+    </div>
   );
 };

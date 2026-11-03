@@ -43,6 +43,26 @@ describe('the reviewer comment block', () => {
     expect(screen.getByText('The backoff never kicks in.')).toBeDefined();
   });
 
+  it('sets the comment body as body copy, never at the reading size above the drawer title', () => {
+    render(<ReviewerCommentBlock commentThread={THREAD} />);
+
+    const paragraph = screen.getByText('This retries forever on a 500.');
+    const root = paragraph.closest<HTMLElement>('[class*="[&_p]:text-body"]');
+    expect(root?.className.split(' ')).toContain('text-body');
+  });
+
+  it('sets a bot comment body as body copy too, paragraphs included', () => {
+    render(
+      <ReviewerCommentBlock
+        commentThread={{ ...THREAD, head: { ...THREAD.head, author: 'harbor-bot' } }}
+      />,
+    );
+
+    const paragraph = screen.getByText('This retries forever on a 500.');
+    const root = paragraph.closest<HTMLElement>('[class*="[&_p]:text-body"]');
+    expect(root?.className.split(' ')).toContain('text-body');
+  });
+
   it('says the comment is gone instead of rendering an empty block', () => {
     render(<ReviewerCommentBlock commentThread={null} />);
 

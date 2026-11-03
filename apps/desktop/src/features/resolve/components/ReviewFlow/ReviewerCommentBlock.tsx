@@ -14,7 +14,11 @@ export const ReviewerCommentBlock = ({ commentThread }: Props) =>
     <p className="text-body text-muted-foreground">{RESOLVE_COMMENT_UNAVAILABLE}</p>
   ) : (
     <div className="flex min-w-0 max-w-[var(--measure)] flex-col gap-2 [overflow-wrap:anywhere]">
-      <ThreadBody body={commentThread.head.body} isClamped={isBot(commentThread.head.author)} />
+      <ThreadBody
+        body={commentThread.head.body}
+        isClamped={isBot(commentThread.head.author)}
+        isCompact
+      />
       <ThreadReplies replies={threadReplyItemsOf({ replies: commentThread.replies })} />
     </div>
   );

@@ -10,10 +10,18 @@ type Props = {
   readonly nowMs: number;
   readonly leadAgent: Agent | null;
   readonly openLabel: string;
+  readonly hasDotColumn?: boolean;
   readonly onOpen: () => void;
 };
 
-export const LatestDoneRow = ({ item, nowMs, leadAgent, openLabel, onOpen }: Props) => {
+export const LatestDoneRow = ({
+  item,
+  nowMs,
+  leadAgent,
+  openLabel,
+  hasDotColumn = true,
+  onOpen,
+}: Props) => {
   const { row, isUnread } = item;
   return (
     <li data-done-latest={row.id} data-unread={isUnread ? '' : undefined} className="min-w-0">
@@ -21,11 +29,15 @@ export const LatestDoneRow = ({ item, nowMs, leadAgent, openLabel, onOpen }: Pro
         label={openLabel}
         isSelected={false}
         onOpen={onOpen}
-        className="grid min-h-9 min-w-0 grid-cols-[1rem_minmax(0,1fr)_auto] items-center gap-x-2 px-2 py-1"
+        className={`grid min-h-9 min-w-0 items-center gap-x-2 px-2 py-1 ${
+          hasDotColumn ? 'grid-cols-[1rem_minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)_auto]'
+        }`}
       >
-        <span className="flex size-4 items-center justify-center">
-          {isUnread ? <StateDot state="unread" label="Unread reply" /> : null}
-        </span>
+        {hasDotColumn ? (
+          <span className="flex size-4 items-center justify-center">
+            {isUnread ? <StateDot state="unread" label="Unread reply" /> : null}
+          </span>
+        ) : null}
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-row text-foreground">{row.title}</span>
           <span className="flex min-w-0 items-center gap-1 text-meta text-muted-foreground">

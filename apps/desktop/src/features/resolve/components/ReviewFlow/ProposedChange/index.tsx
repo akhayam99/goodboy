@@ -1,9 +1,9 @@
 import { SectionHeader, Skeleton, cn } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
-import { LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
-import { inlineChangePlan } from '../../inlineChangePlan';
-import { changeSummaryLine } from '../../resolveItemCopy';
-import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
+import { HANGING_INDENT, LINE_FILL, SIGN_TEXT } from '../../../../diff/lib/lineTone';
+import { inlineChangePlan } from '../../../inlineChangePlan';
+import { changeSummaryLine } from '../../../resolveItemCopy';
+import { REVIEW_FLOW_LABEL } from '../../../reviewFlowCopy';
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
@@ -66,7 +66,10 @@ export const ProposedChange = ({ files, isLoading, error, isCompact = false }: P
                   <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[line.kind])}>
                     {SIGN[line.kind]}
                   </span>
-                  <span className="min-w-0 whitespace-pre-wrap break-words text-foreground">
+                  <span
+                    style={HANGING_INDENT}
+                    className="min-w-0 whitespace-pre-wrap break-words text-foreground"
+                  >
                     {line.text}
                   </span>
                 </p>

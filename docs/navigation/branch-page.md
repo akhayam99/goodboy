@@ -258,7 +258,8 @@ and a failure that does not name `pre-push` leaves the last result, a remote
 Pull request `None yet`, Remote, Branch, the conflict cell amber), then the create
 form, prefilled from the branch (`pullRequestPrefillOf`: one commit gives its
 headline, several give the linked issue and the first headline, the description
-lists the commits and `Closes HL-1372` for a Linear issue), and two summary cards
+lists the other commits, never a `fixup!`, `squash!` or `amend!` one and never the one the
+headline already says, and `Closes HL-1372` for a Linear issue), and two summary cards
 (`BranchSummary`, numbers from `branchSummaryOf`): `Commits` with the count, how many are not pushed and the last three
 subjects, and `Changes` with the files, the lines added and removed, a bar by top folder and the three biggest
 folders. The files always come from the branch against its base (`useBranchSummaryDiff`, its own read),

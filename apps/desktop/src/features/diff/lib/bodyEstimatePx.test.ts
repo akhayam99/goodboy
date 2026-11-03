@@ -6,6 +6,7 @@ type FileParams = {
   readonly count: number;
   readonly hunks?: number;
   readonly isBinary?: boolean;
+  readonly context?: string;
 };
 
 const linesOf = (count: number): DiffHunkLine[] =>
@@ -16,14 +17,19 @@ const linesOf = (count: number): DiffHunkLine[] =>
     newLine: index + 1,
   }));
 
-const fileOf = ({ count, hunks = 1, isBinary = false }: FileParams): FileDiff => ({
+const fileOf = ({
+  count,
+  hunks = 1,
+  isBinary = false,
+  context = ' allocate',
+}: FileParams): FileDiff => ({
   path: 'ledger-core/src/entries.ts',
   status: 'modified',
   additions: count,
   deletions: 0,
   binary: isBinary,
   hunks: Array.from({ length: hunks }, (_, index) => ({
-    header: `@@ -1,0 +${index},${count} @@`,
+    header: `@@ -1,0 +${index},${count} @@${context}`,
     oldStart: 1,
     newStart: index + 1,
     oldLines: 0,
@@ -43,6 +49,10 @@ describe('bodyEstimatePx', () => {
 
   it('adds a header row per hunk', () => {
     expect(estimate(fileOf({ count: 5, hunks: 2 }))).toBe(2 * (28 + 5 * 20) + 8);
+  });
+
+  it('adds no row for a hunk without a function context', () => {
+    expect(estimate(fileOf({ count: 3, context: '' }))).toBe(3 * 20 + 8);
   });
 
   it('stops at the lines shown before Show more', () => {

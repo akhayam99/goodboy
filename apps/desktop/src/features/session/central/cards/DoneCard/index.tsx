@@ -33,10 +33,10 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
   const leadAgentOf = useLeadAgentOf({ sessionId });
   const openLog = ({ focusEntryId }: LogParams) =>
     openDrawer({ kind: 'session-log', sessionId, payload: { focusEntryId } });
+  const hasDotColumn = latest.items.some((item) => item.isUnread);
   return (
     <OverviewCard
       card={card}
-      countNote={latest.unreadCount === 0 ? null : `${latest.unreadCount} unread`}
       aside={
         <Button size="sm" variant="quiet" onClick={() => openLog({ focusEntryId: null })}>
           Full log
@@ -44,7 +44,10 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
       }
     >
       {summary.line === '' ? null : (
-        <p data-done-line="" className="min-w-0 text-ui text-muted-foreground">
+        <p
+          data-done-line=""
+          className={`min-w-0 text-ui text-muted-foreground ${hasDotColumn ? 'pl-8 pr-2' : 'px-2'}`}
+        >
           {summary.line}
         </p>
       )}
@@ -58,6 +61,7 @@ export const DoneCard = ({ sessionId, card, summary, latest, entries }: Props) =
                 key={item.row.id}
                 item={item}
                 nowMs={nowMs}
+                hasDotColumn={hasDotColumn}
                 leadAgent={leadAgentOf({ agentId: item.row.leadAgentId })}
                 openLabel={
                   target === null

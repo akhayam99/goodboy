@@ -120,6 +120,21 @@ describe('DiffView rendering', () => {
     expect(screen.getAllByRole('row').length).toBeGreaterThan(6);
   });
 
+  it('draws a hunk row only when the hunk has a function context to show', () => {
+    const { unmount } = render(<DiffView files={[LEDGER]} />);
+    const hunks = document.querySelectorAll('[data-slot="diff-hunk"]');
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]?.textContent).toBe('export const allocate');
+    unmount();
+
+    render(<DiffView files={[RELAY]} />);
+    expect(document.querySelector('[data-slot="diff-hunk"]')).toBeNull();
+    const rows = within(screen.getByRole('grid')).getAllByRole('row');
+    expect(rows.map((row) => row.getAttribute('aria-rowindex'))).toEqual(
+      rows.map((_, index) => String(index + 2)),
+    );
+  });
+
   it('anchors the reading position in script on the file scroller, never in css', () => {
     render(<DiffView files={[LEDGER, RELAY]} />);
     const viewport = document

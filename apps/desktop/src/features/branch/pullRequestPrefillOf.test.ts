@@ -40,7 +40,6 @@ describe('pullRequestPrefillOf', () => {
     expect(prefill.title).toBe('HL-1372: Shorten the member nav labels');
     expect(prefill.body).toBe(
       [
-        '- Shorten the member nav labels',
         '- Move the nav copy into navLabels',
         '- Update the nav snapshot tests',
         '',
@@ -64,6 +63,7 @@ describe('pullRequestPrefillOf', () => {
 
     expect(prefill.title).toBe('#412: Shorten the member nav labels');
     expect(prefill.body).not.toContain('Closes');
+    expect(prefill.body).not.toContain('Shorten the member nav labels');
   });
 
   it('skips an issue of another branch and one the branch is only part of', () => {
@@ -78,6 +78,21 @@ describe('pullRequestPrefillOf', () => {
 
     expect(prefill.title).toBe('Shorten the member nav labels');
     expect(prefill.body).not.toContain('Closes');
+  });
+
+  it('leaves fixup commits out and does not repeat the title in the body', () => {
+    const prefill = pullRequestPrefillOf({
+      commits: [
+        commit({ subject: 'Keep the processor event id on every credit row', timestamp: 100 }),
+        commit({ subject: 'Reject a second posting for the same event id', timestamp: 200 }),
+        commit({ subject: 'fixup! Reject a second posting for the same event id', timestamp: 300 }),
+      ],
+      tasks: [],
+      branch: BRANCH,
+    });
+
+    expect(prefill.title).toBe('Keep the processor event id on every credit row');
+    expect(prefill.body).toBe('- Reject a second posting for the same event id');
   });
 
   it('falls back to the issue title when the branch has no commit yet', () => {

@@ -9,18 +9,10 @@ type Props = {
   readonly hasHeader?: boolean;
   readonly regionLabel?: string;
   readonly aside?: ReactNode;
-  readonly countNote?: string | null;
   readonly children: ReactNode;
 };
 
-export const OverviewCard = ({
-  card,
-  hasHeader = true,
-  regionLabel,
-  aside,
-  countNote = null,
-  children,
-}: Props) => {
+export const OverviewCard = ({ card, hasHeader = true, regionLabel, aside, children }: Props) => {
   if (!hasHeader && regionLabel !== undefined) {
     return (
       <section aria-label={regionLabel} data-overview-card={card.id} className={SURFACE}>
@@ -42,16 +34,13 @@ export const OverviewCard = ({
           headingLevel={2}
           label={card.title}
           count={
-            <>
-              {card.id === 'needs-you' ? (
-                <Tooltip content={needsYouText({ count: card.count, unit: 'items' })}>
-                  <span data-overview-count="">{card.count}</span>
-                </Tooltip>
-              ) : (
+            card.id === 'needs-you' ? (
+              <Tooltip content={needsYouText({ count: card.count, unit: 'items' })}>
                 <span data-overview-count="">{card.count}</span>
-              )}
-              {countNote === null ? null : <span data-overview-note="">, {countNote}</span>}
-            </>
+              </Tooltip>
+            ) : (
+              <span data-overview-count="">{card.count}</span>
+            )
           }
         />
         {aside}

@@ -12,6 +12,19 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.4
+
+Scrolled pages lose the full-width line under the header, and diffs and branch pages read cleaner.
+
+### Fixed
+
+- Scrolling a page no longer draws a line across the whole window under its header; the content fades under it instead. <!-- gb area=app -->
+- Diff cards lose the blank band under the file header when a hunk has no function name. <!-- gb area=review -->
+- Wrapped code in comment previews and proposed changes hangs under the code instead of under the gutter, and the comment text is body size. <!-- gb area=review -->
+- A branch with no pull request is titled by its branch name on every tab. <!-- gb area=review -->
+- The drafted pull request description skips fixup commits and does not repeat its headline. <!-- gb area=review -->
+- The Done card on the Overview no longer repeats the unread count, and a seen row has no empty dot gutter. <!-- gb area=sessions -->
+
 ## Goodboy v0.31.3
 
 Orchestrated run summaries name things you can find in the app.
