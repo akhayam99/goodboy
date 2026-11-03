@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.3
+
+Orchestrated run summaries name things you can find in the app.
+
+### Fixed
+
+- Orchestrated run summaries and reasons name review threads, decisions and commits by what you can find in the app, never by a label a step made up. <!-- gb area=agents -->
+
 ## Goodboy v0.31.2
 
 The orchestrator hint box keeps what you are typing when a step ends.

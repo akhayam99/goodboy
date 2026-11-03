@@ -106,6 +106,8 @@ describe('summarizeStepOutput', () => {
 
     expect(systemPrompt).toContain('An ordered per-file refactor plan.');
     expect(systemPrompt).toContain('File paths touched');
+    expect(systemPrompt).toContain('Never use a label the step made up');
+    expect(systemPrompt).toContain('"thread D"');
   });
 
   it('bounds long output before invoking the summarizer and preserves its end', async () => {

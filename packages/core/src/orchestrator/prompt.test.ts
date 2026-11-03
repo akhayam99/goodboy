@@ -399,6 +399,15 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
     }
   });
 
+  it('forbids labels the operator has not seen in every operator facing string', () => {
+    for (const prompt of [ORCHESTRATOR_SYSTEM_PROMPT, ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT]) {
+      expect(prompt).toContain('never by a label a step made up');
+      expect(prompt).toContain('"thread D"');
+      expect(prompt).toContain('every run-summary entry');
+      expect(prompt).toContain('translate it before writing');
+    }
+  });
+
   it('gives reason an operator facing contract', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('reason is written for the operator');
   });
