@@ -687,7 +687,7 @@ export const ReviewFlow = ({
           <FixCommentsButton
             sessionId={sessionId}
             mountId={source?.mountId ?? null}
-            fixingThreads={isRunLive && run !== null ? run.total : 0}
+            liveRun={isRunLive ? run : null}
             waitingFixes={fixRunReady?.threadIds.length ?? 0}
             unpushedCommits={pushCount}
             onApply={fixRunReady === null ? null : () => void acceptMany(fixRunReady.threadIds)}

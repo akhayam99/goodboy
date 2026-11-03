@@ -135,6 +135,8 @@ describe('a note in Comments', () => {
     const list = screen.getByRole('navigation', { name: 'Comments' });
     expect(within(list).queryAllByText('Note')).toHaveLength(0);
     expect(list.querySelectorAll('[data-row-author]')).toHaveLength(NOTES.length);
-    expect(screen.getAllByRole('button', { name: /^(Fix|Fixing) \d+ threads?$/ })).toHaveLength(1);
+    expect(
+      screen.getAllByRole('button', { name: /^(Fix|Fixing) (\d+ of )?\d+ threads?$/ }),
+    ).toHaveLength(1);
   });
 });

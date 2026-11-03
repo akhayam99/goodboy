@@ -663,3 +663,5 @@ a note in a drawer land on the note: Files at its card (the card scrolls into vi
 the branch has no pull request, its thread in Comments when it has one (`openReviewTarget` for a
 `notes` destination, `reviewRequest` for a compose request, `Open in Files` from a thread).
 Opening the run transcript of a note keeps its drawer beside Files.
+
+The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentsCountOf` counts the threads of a pull request: `open threads` is every thread that is not resolved and not left open on the host, `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is the same `need you` over every thread on the branch, notes included. While a fix run works, `Fixing 1 of 4 threads` (`fixingCountText`, used by the header button and by `fixRunTitle`) says how many of the run are still being fixed out of all its threads, and reads `Fixing 4 threads` when all of them are. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes the comment left open on the host that `open threads` leaves out.

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { headerPrimaryOf } from './commentsHeader';
 
 const IDLE = {
-  fixingThreads: 0,
+  fixing: null,
   waitingFixes: 0,
   fixableThreads: 0,
   unpushedCommits: 0,
@@ -20,10 +20,19 @@ describe('headerPrimaryOf', () => {
   });
 
   it('fixing: is disabled and counts the threads in the run', () => {
-    expect(headerPrimaryOf({ ...IDLE, fixingThreads: 4, fixableThreads: 2 })).toEqual({
+    expect(
+      headerPrimaryOf({ ...IDLE, fixing: { working: 4, total: 4 }, fixableThreads: 2 }),
+    ).toEqual({
       kind: 'fixing',
       label: 'Fixing 4 threads',
       isDisabled: true,
+    });
+  });
+
+  it('fixing: says how many of the run are still being fixed when some are done', () => {
+    expect(headerPrimaryOf({ ...IDLE, fixing: { working: 1, total: 4 } })).toMatchObject({
+      kind: 'fixing',
+      label: 'Fixing 1 of 4 threads',
     });
   });
 

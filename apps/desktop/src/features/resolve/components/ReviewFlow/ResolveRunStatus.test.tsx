@@ -78,7 +78,7 @@ describe('ResolveRunStatus', () => {
     renderStatus({});
 
     const line = within(screen.getByTestId('resolve-run-status'));
-    expect(line.getByText('Fixing 8 threads')).toBeDefined();
+    expect(line.getByText('Fixing 2 of 8 threads')).toBeDefined();
     expect(line.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
     expect(line.queryByText('Sonnet 5.5 · Medium')).toBeNull();
     expect(document.querySelector('[data-tail]')).not.toBeNull();

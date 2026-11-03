@@ -131,25 +131,22 @@ export const seedCommentsScene = ({ variant }: { readonly variant: CommentsVaria
     layeredIpc: prPageIpc({ behind: 0, unpushed: UNPUSHED_COMMITS }),
   });
   const state = useAppStore.getState();
-  const github = state.sessionGithub[SESSION_ID];
+  const seeded = state.sessionGithub[SESSION_ID];
+  const github =
+    variant === 'groups' && seeded?.detail != null
+      ? {
+          ...seeded,
+          detail: { ...seeded.detail, comments: [...seeded.detail.comments, PUSH_FAILED_COMMENT] },
+        }
+      : seeded;
   const queue = queueOf({ variant });
   useAppStore.setState({
     ...(github === undefined ? {} : prPageMountState({ github })),
     sessionResolveQueueItems: { [SESSION_ID]: queue },
     sessionResolveThreads: { [SESSION_ID]: queue.map((entry) => entry.thread) },
     sessionBranches: { [SESSION_ID]: RESOLVE_SCENE_PR.headBranch },
-    ...(variant === 'groups' &&
-      github?.detail != null && {
-        sessionGithub: {
-          ...state.sessionGithub,
-          [SESSION_ID]: {
-            ...github,
-            detail: {
-              ...github.detail,
-              comments: [...github.detail.comments, PUSH_FAILED_COMMENT],
-            },
-          },
-        },
-      }),
+    ...(github === undefined
+      ? {}
+      : { sessionGithub: { ...state.sessionGithub, [SESSION_ID]: github } }),
   });
 };

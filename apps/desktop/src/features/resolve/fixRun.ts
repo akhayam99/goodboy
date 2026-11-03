@@ -3,7 +3,7 @@ import type { AgentId, ResolveAttempt } from '@goodboy/types';
 import { modelLabel } from '../chat/utils/chat-constants';
 import { launchKeyOf } from '../../store/slices/resolve/resolveLaunch';
 import type { ResolveWord } from './commentProjection';
-import { threadCountText } from './reviewLaunchCopy';
+import { fixingCountText, threadCountText, type FixingCount } from './reviewLaunchCopy';
 import { reviewTallyOfWords, type ReviewTally } from './reviewTally';
 
 export type FixRunSource = {
@@ -125,7 +125,20 @@ export const fixRunNameOf = ({
   });
 };
 
+export type FixRunCount = Pick<FixRun, 'total' | 'tally'>;
+
+type FixingParams = {
+  readonly run: FixRunCount;
+};
+
+export const fixingOf = ({ run }: FixingParams): FixingCount => ({
+  working: run.tally.working,
+  total: run.total,
+});
+
 export const fixRunTitle = ({ run }: { readonly run: FixRun }): string => {
-  const counted = threadCountText({ count: run.total });
-  return run.isLive ? `Fixing ${counted}` : `Fix run · ${counted}`;
+  if (run.isLive) {
+    return fixingCountText(fixingOf({ run }));
+  }
+  return `Fix run · ${threadCountText({ count: run.total })}`;
 };

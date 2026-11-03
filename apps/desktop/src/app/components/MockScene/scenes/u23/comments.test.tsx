@@ -111,6 +111,14 @@ describe('the u23 comments scenes', () => {
     expect(within(needsYou).queryByRole('button', { name: /^Apply \d/ })).toBeNull();
   });
 
+  it('gives the failed push row the reviewer comment, never Comment unavailable', async () => {
+    await renderScene({ name: 'comments-groups' });
+
+    const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
+    expect(within(needsYou).queryByText('Comment unavailable')).toBeNull();
+    expect(within(needsYou).getAllByText(/carry the processor event id/)).not.toHaveLength(0);
+  });
+
   it('lists the sections once, in the tab strip, not again in the rail', async () => {
     await renderScene({ name: 'comments-groups' });
 
@@ -138,6 +146,27 @@ describe('the u23 comments scenes', () => {
       fireEvent.click(first);
     }
     expect(await within(bar()).findByRole('button', { name: 'Push only this one' })).toBeDefined();
+  });
+
+  it('names what each number counts on the ready to push page', async () => {
+    const handlers = prPageHandlers({ behind: 0, unpushed: 3 });
+    vi.mocked(invoke).mockImplementation(
+      async (command: string) =>
+        handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
+    );
+    await renderScene({ name: 'comments-ready-to-push' });
+
+    expect(screen.getAllByText('7 open threads · 3 need you').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('tab', { name: /^Comments\s*3$/ })).toHaveLength(1);
+    expect(screen.getAllByText('Fixing 1 of 4 threads').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Fixing 4 threads')).toBeNull();
+    const first = within(list())
+      .getByRole('region', { name: 'Done' })
+      .querySelector<HTMLElement>('button[data-thread-id]');
+    if (first !== null) {
+      fireEvent.click(first);
+    }
+    expect(await screen.findByText(/^\d of 8 comments$/)).toBeDefined();
   });
 
   it('draws a failed push as Push failed in Needs you, with a red mark on the session', async () => {

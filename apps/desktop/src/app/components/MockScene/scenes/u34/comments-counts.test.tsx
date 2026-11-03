@@ -68,7 +68,9 @@ describe('the comments and counts scenes', () => {
       .map((region) => region.getAttribute('aria-label'));
     expect(titles).toEqual(['Needs you', 'Working', 'Done', 'Left open on GitHub']);
     expect(
-      screen.getAllByRole('button', { name: /^(Fix|Fixing|Apply) \d+ (threads?|fixes)$/ }),
+      screen.getAllByRole('button', {
+        name: /^(Fix|Fixing|Apply) (\d+ of )?\d+ (threads?|fixes)$/,
+      }),
     ).toHaveLength(1);
   });
 

@@ -4,13 +4,14 @@ import { useAppStore } from '../../../store';
 import { openFixComments } from '../../../store/slices/resolve/openFixComments';
 import { commentsCountOf } from '../commentsCountOf';
 import { headerPrimaryOf } from '../commentsHeader';
+import { fixingOf, type FixRunCount } from '../fixRun';
 import { useReviewEntries } from './ReviewFlow/useReviewEntries';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly mountId: MountId | null;
   readonly focusThreadId?: string | null;
-  readonly fixingThreads?: number;
+  readonly liveRun?: FixRunCount | null;
   readonly waitingFixes?: number;
   readonly unpushedCommits?: number;
   readonly onApply?: (() => void) | null;
@@ -22,7 +23,7 @@ export const FixCommentsButton = ({
   sessionId,
   mountId,
   focusThreadId = null,
-  fixingThreads = 0,
+  liveRun = null,
   waitingFixes = 0,
   unpushedCommits = 0,
   onApply = null,
@@ -35,7 +36,7 @@ export const FixCommentsButton = ({
     threads: all.map((entry) => entry.row.thread),
   });
   const primary = headerPrimaryOf({
-    fixingThreads,
+    fixing: liveRun === null ? null : fixingOf({ run: liveRun }),
     waitingFixes: onApply === null ? 0 : waitingFixes,
     fixableThreads: fixable,
     unpushedCommits,
