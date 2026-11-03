@@ -17,6 +17,7 @@ type Props = {
   readonly footerStart?: ReactNode;
   readonly draft?: string;
   readonly onDraftChange?: (text: string) => void;
+  readonly onRestore?: (text: string) => void;
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<boolean>;
 };
 
@@ -63,6 +64,7 @@ export const OrchestratorHintComposer = ({
   footerStart,
   draft,
   onDraftChange,
+  onRestore,
   onSubmit,
 }: Props) => {
   const [localText, setLocalText] = useState('');
@@ -105,7 +107,8 @@ export const OrchestratorHintComposer = ({
     if (isSaved) {
       return;
     }
-    if (textRef.current === '') {
+    onRestore?.(sent);
+    if (onRestore === undefined && textRef.current === '') {
       setText({ next: sent });
     }
     files.setAttachments((current) => (current.length === 0 ? staged : current));

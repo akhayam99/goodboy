@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -100,6 +100,55 @@ describe('orchestrator hint draft', () => {
       ),
     );
     expect(field()).toHaveProperty('value', 'retry the settlement export');
+  });
+
+  it('does not overwrite a newer draft when a send fails after a remount', async () => {
+    const { run } = hintRowsFixture.seed({ hints: [], agentCount: 2 });
+    let fail: (error: Error) => void = () => undefined;
+    useAppStore.setState({
+      addWorkflowOrchestratorHint: () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+      reportError: async () => undefined,
+    });
+    const first = mountBody();
+    fireEvent.change(field(), { target: { value: 'first message' } });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    first.unmount();
+    mountBody();
+    fireEvent.change(field(), { target: { value: 'newer draft' } });
+
+    await act(async () => {
+      fail(new Error('disk full'));
+    });
+
+    expect(useAppStore.getState().orchestratorHintDrafts[run.id]).toBe('newer draft');
+    expect(field()).toHaveProperty('value', 'newer draft');
+  });
+
+  it('restores the failed message after a remount when the run draft is still empty', async () => {
+    const { run } = hintRowsFixture.seed({ hints: [], agentCount: 2 });
+    let fail: (error: Error) => void = () => undefined;
+    useAppStore.setState({
+      addWorkflowOrchestratorHint: () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+      reportError: async () => undefined,
+    });
+    const first = mountBody();
+    fireEvent.change(field(), { target: { value: 'first message' } });
+    fireEvent.keyDown(field(), { key: 'Enter' });
+    first.unmount();
+    mountBody();
+
+    await act(async () => {
+      fail(new Error('disk full'));
+    });
+
+    expect(useAppStore.getState().orchestratorHintDrafts[run.id]).toBe('first message');
+    expect(field()).toHaveProperty('value', 'first message');
   });
 
   it('does not show one run draft in another run', () => {

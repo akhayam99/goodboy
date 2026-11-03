@@ -53,6 +53,18 @@ describe('orchestrator hint drafts slice', () => {
     expect(useAppStore.getState().orchestratorHintDrafts).toEqual({});
   });
 
+  it('restores a failed message only while the run draft is empty', () => {
+    const { restoreOrchestratorHintDraft, setOrchestratorHintDraft } = useAppStore.getState();
+    restoreOrchestratorHintDraft({ workflowRunId: RUN_A, text: 'failed message' });
+    expect(useAppStore.getState().orchestratorHintDrafts).toEqual({ [RUN_A]: 'failed message' });
+
+    setOrchestratorHintDraft({ workflowRunId: RUN_A, text: 'newer draft' });
+    restoreOrchestratorHintDraft({ workflowRunId: RUN_A, text: 'failed message' });
+    restoreOrchestratorHintDraft({ workflowRunId: RUN_B, text: '' });
+
+    expect(useAppStore.getState().orchestratorHintDrafts).toEqual({ [RUN_A]: 'newer draft' });
+  });
+
   it('leaves state alone when clearing a run with no draft', () => {
     const before = useAppStore.getState().orchestratorHintDrafts;
     useAppStore.getState().setOrchestratorHintDraft({ workflowRunId: RUN_A, text: '' });
