@@ -13615,7 +13615,7 @@
   },
   "packages/ui/src/components/PaneShell/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 14
+      "count": 13
     }
   },
   "packages/ui/src/components/RailCard.tsx": {

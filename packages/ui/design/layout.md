@@ -135,7 +135,8 @@ draws it as the first body block on the column, once, so the title never moves. 
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
-live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
+live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body that fades
+softly under it, with no hairline across the pane,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a chat composer to the bottom of the same column.
 A form's actions never go in `dock`: they are `FormActions` at the end of the

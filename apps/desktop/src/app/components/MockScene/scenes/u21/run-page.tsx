@@ -39,8 +39,8 @@ const seedPlanQuestion = (): void => {
 };
 
 const scrollerOf = (): HTMLElement | null => {
-  const edge = document.querySelector('[data-slot="scroll-edge"]');
-  const scroller = edge?.previousElementSibling ?? null;
+  const body = document.querySelector('[data-slot="pane-body"]');
+  const scroller = body?.closest('.mask-fade-y') ?? null;
   return scroller instanceof HTMLElement ? scroller : null;
 };
 

@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import { LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
+import { HANGING_INDENT, LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
 import type { WordSegment } from '../../wordSegments';
 
 export const SourceChangeLine = ({
@@ -14,7 +14,10 @@ export const SourceChangeLine = ({
       {kind === 'add' ? '+' : '-'}
     </span>
     <span className="sr-only">{kind === 'add' ? 'After: ' : 'Before: '}</span>
-    <span className="min-w-0 whitespace-pre-wrap break-words text-foreground [overflow-wrap:anywhere]">
+    <span
+      style={HANGING_INDENT}
+      className="min-w-0 whitespace-pre-wrap break-words text-foreground [overflow-wrap:anywhere]"
+    >
       {segments.map((segment, index) => (
         <span
           key={`${index}-${segment.text}`}

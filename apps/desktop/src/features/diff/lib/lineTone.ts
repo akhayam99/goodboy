@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 
@@ -28,3 +29,5 @@ export const SELECTED_FILL = cn(SELECT.bg);
 export const SELECTED_RAIL = 'shadow-[inset_2px_0_0_var(--color-primary)]';
 
 export const EMPTY_SIDE_FILL = 'bg-subtle';
+
+export const HANGING_INDENT: CSSProperties = { paddingInlineStart: '2ch', textIndent: '-2ch' };

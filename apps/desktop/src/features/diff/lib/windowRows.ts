@@ -3,6 +3,7 @@ import { buildDiffRows, type DiffRow } from './diffRows';
 import { buildDiffPairRows, type DiffPairRow } from './diffPairRows';
 import { visibleDiffRows } from './visibleDiffRows';
 import type { ContextGap } from './contextGaps';
+import { hunkContextOf } from './hunkContextOf';
 
 type Params = {
   readonly hunks: ReadonlyArray<DiffHunk>;
@@ -59,6 +60,9 @@ export const windowRows = ({
   for (const row of original) {
     if (row.type === 'header') {
       appendGap({ gap: gaps[row.hunkIndex] });
+      if (hunkContextOf({ label: row.header }) === '') {
+        continue;
+      }
     }
     rows.push(row);
   }
