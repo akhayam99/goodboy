@@ -10,7 +10,8 @@ describe('parseChangelog', () => {
   it('parses the real CHANGELOG.md without throwing', () => {
     const content = readFileSync(CHANGELOG_PATH, 'utf8');
     const releases = parseChangelog({ text: content });
-    expect(releases.length).toBe(170);
+    const headings = content.split('\n').filter((line) => line.startsWith('## Goodboy v'));
+    expect(releases.length).toBe(headings.length);
   });
 
   it('parses v0.7.0 into the v2 shape with New, Improved and Fixed', () => {

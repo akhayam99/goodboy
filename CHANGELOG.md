@@ -12,6 +12,15 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.2
+
+The orchestrator hint box keeps what you are typing when a step ends.
+
+### Fixed
+
+- The orchestrator hint box keeps unsent text when a step ends or the run finishes, and a failed send never replaces a newer draft. <!-- gb area=agents -->
+- A diff whose text is missing shows as not loaded instead of throwing in the background. <!-- gb area=review -->
+
 ## Goodboy v0.31.1
 
 An identifier peek in the right drawer, a folded sidebar that shows only sessions with news, named session tools and a smoother stream.

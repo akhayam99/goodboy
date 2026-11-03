@@ -30,6 +30,9 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   const isOrchestrating = useAppStore(
     (state) => state.orchestratingWorkflowRuns?.[run.id] ?? false,
   );
+  const draft = useAppStore((state) => state.orchestratorHintDrafts[run.id] ?? '');
+  const setOrchestratorHintDraft = useAppStore((state) => state.setOrchestratorHintDraft);
+  const restoreOrchestratorHintDraft = useAppStore((state) => state.restoreOrchestratorHintDraft);
   const waiting = (run.orchestratorHints ?? NO_HINTS).filter((hint) => hint.consumedAt == null);
   const isStepRunning = agents.some((agent) => agent.status === 'running');
   const isAnyQueued = waiting.some((hint) => !readingIds.includes(hint.id));
@@ -73,6 +76,9 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
         isPaused={isRunPaused({ run })}
         placeholder={ORCHESTRATED_COPY.composerPlaceholder}
         readNowLabel="Send now"
+        draft={draft}
+        onDraftChange={(text) => setOrchestratorHintDraft({ workflowRunId: run.id, text })}
+        onRestore={(text) => restoreOrchestratorHintDraft({ workflowRunId: run.id, text })}
         footerStart={
           <OrchestratorRoutingRow sessionId={sessionId} run={run} disabled={isOrchestrating} />
         }
