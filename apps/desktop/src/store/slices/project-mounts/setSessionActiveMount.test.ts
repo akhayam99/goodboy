@@ -1,5 +1,4 @@
 // @vitest-environment node
-import { gitlabSessionOf } from '../mount-request/requestOf';
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
