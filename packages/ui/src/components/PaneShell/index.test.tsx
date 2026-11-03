@@ -27,33 +27,28 @@ describe('PaneShell', () => {
     );
   });
 
-  it('scrolls a body pane under a line edge, and leaves the other two modes alone', () => {
-    const edgeOf = (scroll: 'pane' | 'body' | 'self') => {
-      const { container, unmount } = render(
+  it.each(['pane', 'body', 'self'] as const)(
+    'draws no hairline under the header with scroll %s',
+    (scroll) => {
+      const { container } = render(
         <PaneShell title="Notifications" scroll={scroll}>
           <p>Body copy</p>
         </PaneShell>,
       );
-      const count = container.querySelectorAll('[data-slot="scroll-edge"]').length;
-      unmount();
-      return count;
-    };
 
-    expect(edgeOf('body')).toBe(1);
-    expect(edgeOf('pane')).toBe(0);
-    expect(edgeOf('self')).toBe(0);
-  });
+      expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+    },
+  );
 
-  it('keeps the body header outside the scroller the line edge belongs to', () => {
-    const { container } = render(
+  it('keeps the body header outside the scroller and lets the content fade under it', () => {
+    render(
       <PaneShell title="Notifications" scroll="body">
         <p>Body copy</p>
       </PaneShell>,
     );
 
-    const edge = container.querySelector('[data-slot="scroll-edge"]') as HTMLElement;
-    const scroller = edge.parentElement as HTMLElement;
-    expect(scroller.contains(screen.getByText('Body copy'))).toBe(true);
+    const scroller = screen.getByText('Body copy').closest('.mask-fade-y') as HTMLElement;
+    expect(scroller).not.toBeNull();
     expect(scroller.contains(screen.getByRole('heading', { name: 'Notifications' }))).toBe(false);
   });
 
