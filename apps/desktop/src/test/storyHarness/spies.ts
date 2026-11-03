@@ -33,6 +33,7 @@ import type {
   WorkspaceId,
   Session,
 } from '@goodboy/types';
+import { WIZARD_WINDOW_DECISION } from '../../features/onboarding/OnboardingWizard/wizardWindowDecision';
 
 export const STORY_NOW: IsoDateTime = TEST_NOW;
 
@@ -628,6 +629,7 @@ export const resetStorySpies = () => {
 export const resetStoryStore = async () => {
   const { useAppStore } = await importStoreModule();
   resetStorySpies();
+  WIZARD_WINDOW_DECISION.hasDecided = false;
   useAppStore.setState({
     ...pristineActions.get(useAppStore),
     ...useAppStore.getInitialState(),
