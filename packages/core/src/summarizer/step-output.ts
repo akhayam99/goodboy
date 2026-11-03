@@ -38,6 +38,8 @@ Preserve useful facts in this priority order:
 
 The first line MUST be a one-line outcome summary of 120 characters or fewer. The complete response MUST be 1200 characters or fewer. Keep concrete paths, identifiers, commands, results, and unresolved issues. Remove narration, repetition, greetings, and raw tool output.
 
+The summary is read by an operator who never saw the step. Never use a label the step made up (a letter or code such as "thread D" or "D519", an internal id). Name a review thread by who wrote it, where (file:line) and a few words of what it asks, a decision by its number and rule ("decision 18"), a commit by its short sha and subject. Translate such a label from the output before writing.
+
 Output ONLY the compact markdown summary. No preamble, no surrounding quotes, no JSON, and no markdown fence.`;
 
 type Params = {

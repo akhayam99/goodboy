@@ -108,6 +108,32 @@ describe('summarizeStepOutput', () => {
     expect(systemPrompt).toContain('File paths touched');
   });
 
+  it('tells the summarizer never to carry a label the step made up', async () => {
+    let request: Record<string, unknown> | undefined;
+    const invokeFn: SummarizerDeps['invokeFn'] = async <T>(
+      _cmd: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => {
+      request = args;
+      return { stdout: 'Left open.', stderr: '', exitCode: 0 } as T;
+    };
+
+    await summarizeStepOutput({
+      providerId: 'cursor',
+      model: 'composer-2-fast',
+      invokeFn,
+      output: 'Thread D needs a decision. The reply planned by D519 was not confirmed.',
+    });
+    const args = request?.['args'];
+    const systemPrompt =
+      typeof args === 'object' && args !== null && 'systemPrompt' in args
+        ? String(args.systemPrompt)
+        : '';
+
+    expect(systemPrompt).toContain('Never use a label the step made up');
+    expect(systemPrompt).toContain('"thread D"');
+  });
+
   it('bounds long output before invoking the summarizer and preserves its end', async () => {
     let request: Record<string, unknown> | undefined;
     const invokeFn: SummarizerDeps['invokeFn'] = async <T>(

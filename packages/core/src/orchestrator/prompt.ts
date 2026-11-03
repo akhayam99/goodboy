@@ -106,6 +106,8 @@ ${routingSection({ isModelPickEnabled })}
 
 reason is written for the operator, not for you. Say why this step is needed now: what the step before it left open, what this one settles. One or two sentences, plain markdown, never a recap of what already happened. For done and blocked, say what the run achieved and what is left.
 
+Every operator facing string (the reason of next, done and blocked, and every run-summary entry) names things only by what the operator can find in the app, never by a label a step made up, such as "thread D", "D519" or an internal id. Name a review thread by who wrote it, where (file:line) and a few words of what it asks, a decision by its number as the Context drawer shows it ("decision 18") and its rule in a few words, a commit by its short sha and subject. When a step output uses such a label, translate it before writing.
+
 ${ORCHESTRATOR_LANGUAGE_RULE}
 
 ${canReadFiles ? READ_FILES_RESPONSE : NO_TOOLS_RESPONSE} on a single line, using \\n escapes for any newlines inside strings, and nothing else:
