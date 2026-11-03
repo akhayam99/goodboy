@@ -33,13 +33,12 @@ import type {
   WorkspaceId,
   Session,
 } from '@goodboy/types';
-import { WIZARD_WINDOW_DECISION } from '../../features/onboarding/OnboardingWizard/wizardWindowDecision';
 
 export const STORY_NOW: IsoDateTime = TEST_NOW;
 
 export const STORE_IMPORT_TIMEOUT_MS = 60_000;
 
-const pristineActions = new WeakMap<object, Readonly<Record<string, unknown>>>();
+export const pristineActions = new WeakMap<object, Readonly<Record<string, unknown>>>();
 
 type ActionsOfParams = {
   readonly state: object;
@@ -624,17 +623,4 @@ export const resetStorySpies = () => {
       lockReason: null,
     }),
   );
-};
-
-export const resetStoryStore = async () => {
-  const { useAppStore } = await importStoreModule();
-  resetStorySpies();
-  WIZARD_WINDOW_DECISION.hasDecided = false;
-  useAppStore.setState({
-    ...pristineActions.get(useAppStore),
-    ...useAppStore.getInitialState(),
-  });
-  if (typeof globalThis.localStorage !== 'undefined') {
-    globalThis.localStorage.clear();
-  }
 };

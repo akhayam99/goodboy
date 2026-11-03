@@ -18,8 +18,8 @@ export {
   storyResolveQueries,
   stubStoryInvoke,
   resetStorySpies,
-  resetStoryStore,
 } from './spies';
+export { resetStoryStore } from './resetStoryStore';
 export { storyDbStubs } from './dbStubs';
 export { sliceInitialStates } from './sliceStates';
 export {
