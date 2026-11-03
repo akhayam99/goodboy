@@ -16,7 +16,11 @@ export const ThreadBody = ({ body, isClamped, isCompact = false }: Props) => {
   }
   if (isClamped) {
     return (
-      <ClampedProse text={text} lines={3} className={isCompact ? 'text-body' : 'text-prose'} />
+      <ClampedProse
+        text={text}
+        lines={3}
+        className={isCompact ? COMPACT_MARKDOWN_CLASS : 'text-prose'}
+      />
     );
   }
   return <Markdown text={text} className={isCompact ? COMPACT_MARKDOWN_CLASS : 'text-prose'} />;

@@ -54,10 +54,7 @@ export const pullRequestPrefillOf = ({ commits, tasks, branch }: Params): PullRe
     .filter((subject, index, all) => all.indexOf(subject) === index);
   const issues = tasks.filter((task) => isClosedByBranch({ task, branch }));
   const title = titleOf({ subjects, issue: issues[0] ?? null });
-  const listed =
-    subjects.length > 1
-      ? subjects.filter((subject) => subject !== title).map((subject) => `- ${subject}`)
-      : [];
+  const listed = subjects.slice(1).map((subject) => `- ${subject}`);
   const closes = issues
     .filter((task) => task.provider === 'linear')
     .map((task) => `Closes ${task.identifier}`);

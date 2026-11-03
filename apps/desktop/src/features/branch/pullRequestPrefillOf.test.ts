@@ -40,7 +40,6 @@ describe('pullRequestPrefillOf', () => {
     expect(prefill.title).toBe('HL-1372: Shorten the member nav labels');
     expect(prefill.body).toBe(
       [
-        '- Shorten the member nav labels',
         '- Move the nav copy into navLabels',
         '- Update the nav snapshot tests',
         '',
@@ -64,6 +63,7 @@ describe('pullRequestPrefillOf', () => {
 
     expect(prefill.title).toBe('#412: Shorten the member nav labels');
     expect(prefill.body).not.toContain('Closes');
+    expect(prefill.body).not.toContain('Shorten the member nav labels');
   });
 
   it('skips an issue of another branch and one the branch is only part of', () => {
