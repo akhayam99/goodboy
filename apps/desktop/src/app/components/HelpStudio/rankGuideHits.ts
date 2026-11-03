@@ -31,6 +31,6 @@ export const rankGuideHits = ({ hits, query }: Params): ReadonlyArray<GuideHit> 
   const needle = query.trim().toLowerCase();
   return hits
     .map((hit, index) => ({ hit, index, score: scoreOf({ hit, query: needle, words }) }))
-    .sort((a, b) => a.score - b.score || a.index - b.index)
+    .sort((a, b) => (a.score === b.score ? a.index - b.index : a.score - b.score))
     .map((entry) => entry.hit);
 };
