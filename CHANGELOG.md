@@ -58,6 +58,7 @@ Title matches lead the results, and each guide result shows a line of context wi
 
 ### Fixed
 
+- Setup no longer reopens at the Agents step right after your first session starts. <!-- gb area=app -->
 - Branch rows keep the width of the status word, with the word in a tooltip when it is cut. <!-- gb area=review -->
 - A fix run question has one Answer button on its card. <!-- gb area=review -->
 - Next in the file list is drawn as a button. <!-- gb area=review -->

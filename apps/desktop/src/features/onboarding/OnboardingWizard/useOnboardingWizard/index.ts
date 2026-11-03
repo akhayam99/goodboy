@@ -10,6 +10,7 @@ import {
   type OpenWizardDetail,
 } from '../../onboardingSettings';
 import { resumeStep, type WizardMode, type WizardStepId } from '../wizardSteps';
+import { WIZARD_WINDOW_DECISION } from '../wizardWindowDecision';
 
 export type OnboardingWizardState = {
   readonly isOpen: boolean;
@@ -58,12 +59,14 @@ export const useOnboardingWizard = ({ isMainWindow }: Params): OnboardingWizardS
 
   const show = useCallback((next: Opening) => {
     isDecided.current = true;
+    WIZARD_WINDOW_DECISION.hasDecided = true;
     isOpenRef.current = true;
     setOpening(next);
   }, []);
 
   const close = useCallback(() => {
     isDecided.current = true;
+    WIZARD_WINDOW_DECISION.hasDecided = true;
     isOpenRef.current = false;
     setOpening(CLOSED);
   }, []);
@@ -96,7 +99,7 @@ export const useOnboardingWizard = ({ isMainWindow }: Params): OnboardingWizardS
   }, [isMainWindow, show, close]);
 
   useLayoutEffect(() => {
-    if (isDecided.current || !hydrated || !isMainWindow) {
+    if (isDecided.current || WIZARD_WINDOW_DECISION.hasDecided || !hydrated || !isMainWindow) {
       return;
     }
     if (getWizardState() !== 'open') {
