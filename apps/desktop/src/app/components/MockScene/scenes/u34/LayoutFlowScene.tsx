@@ -12,6 +12,10 @@ import { RailSessionButton } from '../../../SideColumn/RailSessionButton';
 import { SESSION } from '../activityRunSeed';
 import { seedRunningList } from '../u28/runningList/runningListSeed';
 
+const LIMITS_GOAL = 'Add the tenant limit check to payout creation';
+
+const LIMITS_SESSION = { ...SESSION, goal: LIMITS_GOAL };
+
 type Props = {
   readonly isDrawerOpen?: boolean;
   readonly isFolded?: boolean;
@@ -29,6 +33,11 @@ export const LayoutFlowScene = ({
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, isFolded ? '1' : '0');
     seedRunningList();
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((session) =>
+        session.id === SESSION.id ? { ...session, goal: LIMITS_GOAL } : session,
+      ),
+    }));
     if (isDrawerOpen) {
       useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION.id, payload: null });
     }
@@ -39,7 +48,7 @@ export const LayoutFlowScene = ({
   }
   const overview = (
     <ScrollFade className="h-full">
-      <SessionOverviewPane session={SESSION} />
+      <SessionOverviewPane session={LIMITS_SESSION} />
     </ScrollFade>
   );
   if (isNarrowRow) {
@@ -60,14 +69,14 @@ export const LayoutFlowScene = ({
           leftSidebar={
             <div className="flex flex-col items-center gap-2 p-2">
               <RailSessionButton
-                session={SESSION}
+                session={LIMITS_SESSION}
                 sign="current"
                 hasFlyout={false}
                 onSelect={() => undefined}
               />
             </div>
           }
-          main={<SessionFrame session={SESSION}>{overview}</SessionFrame>}
+          main={<SessionFrame session={LIMITS_SESSION}>{overview}</SessionFrame>}
           drawer={drawer === null ? null : <DrawerHost />}
           drawerSizing={sizing}
         />
