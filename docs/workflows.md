@@ -907,8 +907,8 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/features/workflows/components/WorkflowsPanel/`: the Studio. `useWorkflowEditor` owns the open workflow, autosave and Draft steps; `WorkflowStudio/WorkflowList` is the home and `WorkflowStudio/WorkflowEditor` the editor on the step tree. The Studio leaves the time and cost columns empty: a preset has no run to estimate from
 - `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
-- `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows
-- `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`
+- `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows, among them no label the step made up
+- `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`. Every operator facing string (a reason, a run-summary entry) names a thread, decision or commit by what the operator can find in the app, never by a label a step invented
 - `packages/core/src/workflows/library.ts`: `WORKFLOW_LIBRARY`, the presets that come with the app
 - `packages/core/src/workflows/builtinSteps.ts`: `BUILTIN_STEPS`, the built-in saved steps. They live in code, not in `step_library`
 - `apps/desktop/src/features/workflows/savedSteps.ts`: one shape for built-in and workspace steps. `AddStepMenu` and `WorkflowStudio/SavedStepsList` read it through `useSavedSteps`
