@@ -18,7 +18,7 @@ The orchestrator hint box keeps what you are typing when a step ends.
 
 ### Fixed
 
-- The orchestrator hint box keeps your unsent text when a step ends or the run page changes, and a failed send still keeps it. <!-- gb area=agents -->
+- The orchestrator hint box keeps unsent text when a step ends or the run finishes, and a failed send never replaces a newer draft. <!-- gb area=agents -->
 - A diff whose text is missing shows as not loaded instead of throwing in the background. <!-- gb area=review -->
 
 ## Goodboy v0.31.1
