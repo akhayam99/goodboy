@@ -44,7 +44,7 @@ it.each(Object.entries(U34_BOARD_PALETTE_SCENES))(
     if (id === 'u34-u26-board') {
       const column = screen.getByLabelText('Sessions column');
       expect(column.style.width).toBe('244px');
-      expect((column.parentElement as HTMLElement).style.width).toBe('1280px');
+      expect(column.parentElement?.style.width).toBe('1280px');
     }
   },
 );
