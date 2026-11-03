@@ -4,6 +4,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/__tests__/regressions/console-guard/*.fixture.ts'],
-    setupFiles: ['src/test/failOnConsole.ts', 'src/test/failOnUnexpectedCalls.ts'],
+    setupFiles: [
+      'src/test/failOnConsole.ts',
+      'src/test/failOnUnexpectedCalls.ts',
+      'src/test/resetWizardWindow.ts',
+    ],
   },
 });
