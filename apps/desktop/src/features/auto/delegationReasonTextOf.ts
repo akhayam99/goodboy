@@ -1,4 +1,4 @@
-import { AUTO_CHILD_IDLE_MINUTES } from '@goodboy/core';
+import { AUTO_CHILD_IDLE_MINUTES } from '@goodboy/core/auto';
 
 const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['deadline_passed', 'It ran out of time.'],

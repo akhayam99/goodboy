@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { registerSendNowPort, type SendNowPort } from '../../sendNowPort';

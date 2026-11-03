@@ -18,7 +18,7 @@ import {
   ScrollFade,
   formatError,
 } from '@goodboy/ui';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { MountId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
@@ -687,7 +687,7 @@ export const ReviewFlow = ({
           <FixCommentsButton
             sessionId={sessionId}
             mountId={source?.mountId ?? null}
-            fixingThreads={isRunLive && run !== null ? run.total : 0}
+            liveRun={isRunLive ? run : null}
             waitingFixes={fixRunReady?.threadIds.length ?? 0}
             unpushedCommits={pushCount}
             onApply={fixRunReady === null ? null : () => void acceptMany(fixRunReady.threadIds)}

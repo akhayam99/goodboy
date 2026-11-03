@@ -30,12 +30,12 @@ describe('project symbol peek scenes', () => {
   it('expands references without leaving the diff', async () => {
     const Scene = U25_DIFF_PEEK_SCENES['diff-peek-more'];
     render(<Scene />);
-    const more = await screen.findByRole('button', { name: 'Show 6 more' });
+    const more = await screen.findByRole('button', { name: 'Show 5 more' });
     const name = 'apps/payments-api/src/ledger-core/components/notify-relay.tsx:37';
     expect(screen.queryByRole('button', { name })).toBeNull();
     await userEvent.click(more);
     screen.getByRole('button', { name });
-    expect(screen.queryByRole('button', { name: 'Show 6 more' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show 5 more' })).toBeNull();
   });
 
   it('keeps library props quiet even when a dependency has a declaration', async () => {

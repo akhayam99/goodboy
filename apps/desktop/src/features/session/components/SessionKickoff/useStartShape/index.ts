@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';

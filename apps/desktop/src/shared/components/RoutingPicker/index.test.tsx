@@ -9,7 +9,7 @@ import {
   getModelProvider,
   resolveModelArgs,
   resolveStoredModelSelection,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';

@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+import { gitlabMountOf } from '../../../store/slices/mount-request/requestOf';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationBindingId, IntegrationCredentialId, IsoDateTime } from '@goodboy/types';
 import type {
@@ -44,17 +45,18 @@ const readApprovals = async (): Promise<GitlabMrApprovalState> =>
 const rereadMergeRequest = async ({ ctx }: { readonly ctx: Ctx }): Promise<void> => {
   const state = useAppStore.getState();
   const mount = state.sessionProjectMounts[ctx.sessionId]?.[0];
-  const entry = mount === undefined ? undefined : state.mountGitlabMr[mount.mountId];
+  const entry = mount === undefined ? undefined : gitlabMountOf({ state, mountId: mount.mountId });
   if (mount === undefined || entry === undefined) {
     return;
   }
   const mr = await readMergeRequest();
   const next = { ...entry, mr, mrs: [mr] };
   useAppStore.setState({
-    mountGitlabMr: { ...state.mountGitlabMr, [mount.mountId]: next },
-    sessionGitlabMr: {
-      ...state.sessionGitlabMr,
+    mountRequests: { ...state.mountRequests, [mount.mountId]: next },
+    sessionRequests: {
+      ...state.sessionRequests,
       [ctx.sessionId]: {
+        kind: 'gitlab',
         mr,
         approvals: entry.approvals ?? null,
         fetchedAt: entry.fetchedAt,
@@ -78,6 +80,7 @@ const becomeGitlabSession = async (ctx: Ctx): Promise<void> => {
   const approvals = await readApprovals();
   const stamp = '2026-09-04T10:00:00.000Z' as IsoDateTime;
   const entry = {
+    kind: 'gitlab',
     mountId: mount.mountId,
     projectId: mount.projectId,
     revision: mount.revision,
@@ -108,10 +111,17 @@ const becomeGitlabSession = async (ctx: Ctx): Promise<void> => {
         },
       ],
     },
-    mountGitlabMr: { ...state.mountGitlabMr, [mount.mountId]: entry },
-    sessionGitlabMr: {
-      ...state.sessionGitlabMr,
-      [ctx.sessionId]: { mr, approvals, fetchedAt: stamp, loading: false, error: null },
+    mountRequests: { ...state.mountRequests, [mount.mountId]: entry },
+    sessionRequests: {
+      ...state.sessionRequests,
+      [ctx.sessionId]: {
+        kind: 'gitlab',
+        mr,
+        approvals,
+        fetchedAt: stamp,
+        loading: false,
+        error: null,
+      },
     },
     refreshSessionMr: async () => rereadMergeRequest({ ctx }),
   });

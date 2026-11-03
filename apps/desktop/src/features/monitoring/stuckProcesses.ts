@@ -1,4 +1,4 @@
-import type { LedgerKind, MonitorSnapshot } from '@goodboy/core';
+import type { LedgerKind, MonitorSnapshot } from '@goodboy/core/monitoring';
 
 const STUCK_AFTER_MS = 2 * 60 * 60 * 1000;
 const STUCK_SNAPSHOTS = 3;

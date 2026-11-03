@@ -33,7 +33,7 @@ beforeEach(() => {
     terminalTabs: {},
     terminalSessions: {},
     sessionGithub: {},
-    sessionGitlabMr: {},
+    sessionRequests: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     getSessionViewPrefs: vi.fn(),

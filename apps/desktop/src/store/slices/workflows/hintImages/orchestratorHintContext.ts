@@ -1,4 +1,4 @@
-import type { OrchestratorInput } from '@goodboy/core';
+import type { OrchestratorInput } from '@goodboy/core/orchestrator';
 import type { OrchestratorHint, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { selectWritableMounts } from '../../project-mounts/selectors';
 import { buildProfileGuard } from '../../turn/profileGuard';

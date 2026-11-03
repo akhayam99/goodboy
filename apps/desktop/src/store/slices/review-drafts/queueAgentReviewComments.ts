@@ -1,4 +1,4 @@
-import type { ExtractedReviewComment } from '@goodboy/core';
+import type { ExtractedReviewComment } from '@goodboy/core/context';
 import { insertPrReviewDraft } from '@goodboy/db';
 import type {
   AgentId,

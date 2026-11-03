@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import {
-  AUTO_OWN_PROVIDERS,
   PROVIDER_CAPABILITIES,
   isModelHidden,
   resolveStoredModelSelection,
   roleModelSetPreference,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
+import { AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
 import type {
   AgentRole,
   ProviderId,

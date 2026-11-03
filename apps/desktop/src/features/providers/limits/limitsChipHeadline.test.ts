@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { LimitsChip } from '@goodboy/core';
+import type { LimitsChip } from '@goodboy/core/providers';
 import type { IsoDateTime } from '@goodboy/types';
 import { formatLimitReset, formatTimeUntil } from './formatLimitReset';
 import { limitsChipHeadline } from './limitsChipHeadline';

@@ -144,7 +144,20 @@ export type DrawerContent =
         readonly path: string | null;
         readonly whole?: FileDiffWhole;
       };
+    }
+  | {
+      readonly kind: 'identifier-peek';
+      readonly payload: {
+        readonly worktreePath: string;
+        readonly word: string;
+        readonly selected: IdentifierPeekSelection;
+      };
     };
+
+export type IdentifierPeekSelection = {
+  readonly path: string;
+  readonly line: number;
+};
 
 export type FileDiffWhole = {
   readonly file: FileDiff;

@@ -1,5 +1,5 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
+import { getDefaultBinary, runAuxOneShot } from '@goodboy/core/providers';
 import type { TaskModelPreference } from '@goodboy/types';
 import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedTitle';
 

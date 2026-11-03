@@ -1,4 +1,4 @@
-import { AUTO_STALE_DECIDE_MS, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core';
+import { AUTO_STALE_DECIDE_MS, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core/auto';
 import {
   autoTreePhaseStatement,
   getAutoTree,

@@ -17,8 +17,8 @@ const { invokeAgentUpdateStatusSpy, summarizeStepOutputSpy } = vi.hoisted(() => 
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/summarizer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/summarizer')>();
   return { ...actual, summarizeStepOutput: summarizeStepOutputSpy };
 });
 

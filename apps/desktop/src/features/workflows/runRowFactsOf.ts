@@ -1,5 +1,5 @@
 import type { Agent, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
-import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { DotState } from '@goodboy/ui';
 import { workflowRunOpenQuestions } from '../context/openQuestionsGate';
 import { isRunPaused } from './isRunPaused';

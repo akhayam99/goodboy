@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { IsoDateTime, PrReviewDraft, SessionId } from '@goodboy/types';
 import { computeStaleDrafts } from './computeStaleDrafts';
 import { FILE_LEVEL_LINE } from './fileLevel';

@@ -20,7 +20,7 @@ import type {
   WorkflowAutonomy,
   WorkflowRun,
 } from '@goodboy/types';
-import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflows';
 import { RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../workflows/runAutonomy';
 import { skipStepDescription, skipStepTitle } from '../../workflows/skipStepCopy';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';

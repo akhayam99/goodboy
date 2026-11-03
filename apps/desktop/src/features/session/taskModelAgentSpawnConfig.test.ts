@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { Resolution } from '@goodboy/core';
+import type { Resolution } from '@goodboy/core/providers';
 import { taskModelAgentSpawnConfig } from './taskModelAgentSpawnConfig';
 
 const resolution = (overrides: Partial<Resolution>): Resolution => ({

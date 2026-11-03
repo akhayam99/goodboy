@@ -13,18 +13,8 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
-vi.mock('@goodboy/core', () => ({
-  ROLE_REGISTRY: {
-    scout: { presentationKey: 'scout' },
-    investigator: { presentationKey: 'debugger' },
-    planner: { presentationKey: 'planner' },
-    implementer: { presentationKey: 'implementer' },
-    reviewer: { presentationKey: 'reviewer' },
-    tester: { presentationKey: 'tester' },
-    resolver: { presentationKey: 'resolver' },
-    docs: { presentationKey: 'docs' },
-    custom: { presentationKey: 'generic' },
-  },
+vi.mock('@goodboy/core/roles', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/roles')>()),
   SELECTABLE_AGENT_ROLES: [
     'scout',
     'investigator',
@@ -36,8 +26,8 @@ vi.mock('@goodboy/core', () => ({
     'docs',
     'custom',
   ],
-  runsForWorkflowRun: () => [],
 }));
+vi.mock('@goodboy/core/workflows', () => ({ runsForWorkflowRun: () => [] }));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));

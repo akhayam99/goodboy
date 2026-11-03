@@ -1,4 +1,5 @@
-import { WORKFLOW_LIBRARY, normalizeAgentRole } from '@goodboy/core';
+import { normalizeAgentRole } from '@goodboy/core/roles';
+import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type {
   AgentRole,

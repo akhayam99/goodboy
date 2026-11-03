@@ -1,4 +1,4 @@
-import type { SlotKey } from '@goodboy/core';
+import type { SlotKey } from '@goodboy/core/context';
 import { listSessionContextItemsForRole } from '@goodboy/db';
 import type { AgentRole, SessionContextItem, SessionId } from '@goodboy/types';
 import { ROLE_SLOTS } from '../../../features/context/slotRouting';

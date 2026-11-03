@@ -1,4 +1,4 @@
-import { autoTreeLimitOf, type AutoBudgetFacts } from '@goodboy/core';
+import { autoTreeLimitOf, type AutoBudgetFacts } from '@goodboy/core/auto';
 import { formatUsd } from '@goodboy/ui';
 import type { SettingWords } from '../../../../shared/components/SettingChip/settingWords';
 

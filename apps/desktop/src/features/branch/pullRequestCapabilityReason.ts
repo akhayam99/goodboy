@@ -4,7 +4,7 @@ import {
   REVIEW_SOURCE_LABEL,
   type PullRequestCapability,
   type ReviewSourceKind,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 
 type Params = {
   readonly kind: ReviewSourceKind;

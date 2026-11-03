@@ -52,7 +52,7 @@ vi.mock('@goodboy/db', async () =>
   }),
 );
 
-vi.mock('@goodboy/core', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
+vi.mock('@goodboy/core/workflows', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({
   validateGitRepo: h.validateGitRepo,

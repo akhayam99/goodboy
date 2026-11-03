@@ -5,7 +5,7 @@ import {
   resolveWorkflowRouting,
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingWireFields,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import type {
   AgentEffort,
   ProviderId,

@@ -1,4 +1,4 @@
-import type { PullRequestPort, PullRequestReviewerGroups } from '@goodboy/core';
+import type { PullRequestPort, PullRequestReviewerGroups } from '@goodboy/core/review-source';
 import type { MountId, PullRequestState, PullRequestView, SessionId } from '@goodboy/types';
 import { BotsProperty } from './BotsProperty';
 import { PROPERTY_ROW as ROW } from './propertyRow';

@@ -1,4 +1,4 @@
-import { stripControlMarkers } from '@goodboy/core';
+import { stripControlMarkers } from '@goodboy/core/context';
 
 type Params = {
   readonly sourceName: string;

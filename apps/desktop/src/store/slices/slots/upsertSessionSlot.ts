@@ -1,5 +1,5 @@
 import type { ContextSlot, ContextSlotHistoryEntry, SessionId } from '@goodboy/types';
-import { loadDecisionLedger, reconcileDecisionsText, type SlotKey } from '@goodboy/core';
+import { loadDecisionLedger, reconcileDecisionsText, type SlotKey } from '@goodboy/core/context';
 import {
   countContextSlotHistoryForSession,
   listContextSlotHistory,

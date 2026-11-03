@@ -1,5 +1,5 @@
 import { Chip } from '@goodboy/ui';
-import type { CostCoverage } from '@goodboy/core';
+import type { CostCoverage } from '@goodboy/core/providers';
 
 type Props = {
   readonly coverage: CostCoverage;

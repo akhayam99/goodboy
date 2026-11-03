@@ -14,7 +14,7 @@ vi.mock('@goodboy/db', async () =>
     markOpenQuestionDismissed: h.markOpenQuestionDismissed,
   }),
 );
-vi.mock('@goodboy/core', () => ({ removeQuestionsFromSlot: h.removeQuestionsFromSlot }));
+vi.mock('@goodboy/core/context', () => ({ removeQuestionsFromSlot: h.removeQuestionsFromSlot }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: h.invokeAgentList,

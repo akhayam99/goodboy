@@ -208,6 +208,7 @@ const renderDrawer = ({ drawer, isReading, closeDrawer, openDrawer }: RenderPara
     case 'check-analysis':
     case 'file-diff':
     case 'history-versions':
+    case 'identifier-peek':
     case 'plan-part':
     case 'terminal':
       return renderRegisteredDrawer({ drawer, closeDrawer, openDrawer });

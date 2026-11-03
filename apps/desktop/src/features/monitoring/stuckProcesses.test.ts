@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core/monitoring';
 import { isStuck, nextIdleCounts } from './stuckProcesses';
 
 const STUCK_AFTER_MS = 2 * 60 * 60 * 1000;

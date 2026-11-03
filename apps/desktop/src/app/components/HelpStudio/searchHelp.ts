@@ -7,6 +7,7 @@ import {
   type GuideHit,
 } from '../../../features/settings/components/GuideStudio/searchChapters';
 import type { HelpTab } from './helpTabs';
+import { rankGuideHits } from './rankGuideHits';
 import { searchShortcuts } from './searchShortcuts';
 
 export type HelpHit =
@@ -42,7 +43,7 @@ export const searchHelp = ({ chapters, releases, query }: Params): ReadonlyArray
     return [];
   }
   return [
-    ...searchChapters({ chapters, query }).map((hit): HelpHit => ({
+    ...rankGuideHits({ hits: searchChapters({ chapters, query }), query }).map((hit): HelpHit => ({
       kind: 'guide',
       key: `guide:${hit.key}`,
       hit,

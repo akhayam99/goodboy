@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AUTO_CHECK_TIMEOUT_MS, type MountSnapshot } from '@goodboy/core';
+import { AUTO_CHECK_TIMEOUT_MS, type MountSnapshot } from '@goodboy/core/auto';
 import { listAutoAttemptsOfDelegation, listAutoDelegations } from '@goodboy/db';
 import { brandId, type AutoDelegationId } from '@goodboy/types';
 import type { AutoCheckScript } from './ports';

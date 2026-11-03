@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { REPORT_KIT_GUIDE } from '@goodboy/core';
+import { REPORT_KIT_GUIDE } from '@goodboy/core/artifacts';
 import { Markdown } from '@goodboy/ui';
 import { AGENT_KIND_DEFAULTS } from '../session/agent-kind';
 

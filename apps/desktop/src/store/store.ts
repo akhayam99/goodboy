@@ -17,7 +17,8 @@ import { reviewSelectionInitialState } from './slices/review-selection/state';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { createReviewSourceSlice, reviewSourceInitialState } from './slices/review-source';
 import { resolveInitialState } from './slices/resolve/state';
-import { create } from 'zustand';
+import { createStore } from 'zustand/vanilla';
+import { createTrackedStore } from './createTrackedStore';
 import { createNotificationsSlice } from './slices/notifications';
 import { createTaskArrivalsSlice } from './slices/taskArrivals';
 import { createNudgesSlice } from './slices/nudges';
@@ -39,8 +40,8 @@ import { createSessionEventsSlice } from './slices/session-events';
 import { createDormantSpendSlice } from './slices/dormant-spend';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
-import { createGitlabMrSlice, gitlabMrInitialState } from './slices/gitlab-mr';
-import { createBitbucketPrSlice, bitbucketPrInitialState } from './slices/bitbucket-pr';
+import { mountRequestInitialState } from './slices/mount-request/state';
+import { createMountRequestSlice } from './slices/mount-request';
 import { createSlackThreadsSlice, slackThreadsInitialState } from './slices/slack-threads';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import { reviewDraftsInitialState } from './slices/review-drafts/state';
@@ -299,8 +300,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBudgetSlice> &
   ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
-  ReturnType<typeof createGitlabMrSlice> &
-  ReturnType<typeof createBitbucketPrSlice> &
+  ReturnType<typeof createMountRequestSlice> &
   ReturnType<typeof createSlackDraftsSlice> &
   ReturnType<typeof createSlackThreadsSlice> &
   ReturnType<typeof createIntegrationsSlice> &
@@ -376,8 +376,7 @@ const initialState: AppState = {
   ...trackerMovesInitialState,
   ...checkFixCommitsInitialState,
   ...githubInitialState,
-  ...gitlabMrInitialState,
-  ...bitbucketPrInitialState,
+  ...mountRequestInitialState,
   ...slackThreadsInitialState,
   ...reviewDraftsInitialState,
   ...permissionsInitialState,
@@ -413,7 +412,7 @@ const initialState: AppState = {
   ...repoDivergenceInitialState,
 };
 
-export const useAppStore = create<AppStore>((set, get) => ({
+const appStoreApi = createStore<AppStore>((set, get) => ({
   ...initialState,
   ...createUndoSlice({ set, get }),
   ...createNotificationsSlice({ set, get }),
@@ -433,8 +432,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDormantSpendSlice({ set, get }),
   ...createAttachmentsSlice({ set, get }),
   ...createGithubSlice({ set, get }),
-  ...createGitlabMrSlice({ set, get }),
-  ...createBitbucketPrSlice({ set, get }),
+  ...createMountRequestSlice({ set, get }),
   ...createSlackThreadsSlice({ set, get }),
   ...createReviewDraftsSlice({ set, get }),
   ...createIntegrationsSlice({ set, get }),
@@ -521,3 +519,5 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDrawerSlice({ set, get }),
   ...createNavigationSlice({ set, get }),
 }));
+
+export const useAppStore = createTrackedStore({ api: appStoreApi });

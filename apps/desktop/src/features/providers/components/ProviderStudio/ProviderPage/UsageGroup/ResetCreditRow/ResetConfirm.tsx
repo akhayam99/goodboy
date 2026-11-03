@@ -1,4 +1,4 @@
-import type { ResetAdvice } from '@goodboy/core';
+import type { ResetAdvice } from '@goodboy/core/providers';
 import { Button, Notice } from '@goodboy/ui';
 import { normalBody, nowSummary } from './resetCopy';
 import { ResetSummaryBox } from './ResetSummaryBox';

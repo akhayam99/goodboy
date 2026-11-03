@@ -1,4 +1,8 @@
-import { WORKFLOW_LIBRARY, findBuiltinWorkflow, type WorkflowLibraryEntry } from '@goodboy/core';
+import {
+  WORKFLOW_LIBRARY,
+  findBuiltinWorkflow,
+  type WorkflowLibraryEntry,
+} from '@goodboy/core/workflows';
 import type { Workflow } from '@goodboy/types';
 
 export type BuiltinWorkflowState = 'custom' | 'builtin' | 'edited';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_SUBSTEP_PARENT_SLACK_MS, AUTO_SUBSTEPS_PER_PARENT } from '@goodboy/core';
+import { AUTO_SUBSTEP_PARENT_SLACK_MS, AUTO_SUBSTEPS_PER_PARENT } from '@goodboy/core/auto';
 import {
   autoSubstepStatements,
   getAutoDelegation,

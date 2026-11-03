@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core';
+import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core/providers';
 import type {
   Agent,
   ProviderName,

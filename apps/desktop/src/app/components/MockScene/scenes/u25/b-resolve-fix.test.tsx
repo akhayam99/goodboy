@@ -94,7 +94,7 @@ describe('the resolve fix scenes', () => {
     if (first === undefined) {
       throw new Error('no question card');
     }
-    const button = within(first).getByRole('button', { name: 'Continue the fix run' });
+    const button = within(first).getByRole('button', { name: 'Answer' });
     expect(button.hasAttribute('disabled')).toBe(false);
 
     act(() => {

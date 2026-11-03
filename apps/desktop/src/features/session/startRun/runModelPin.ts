@@ -1,4 +1,4 @@
-import { modelIdForSelection, resolveStoredModelSelection } from '@goodboy/core';
+import { modelIdForSelection, resolveStoredModelSelection } from '@goodboy/core/providers';
 import type { EffortLevel, OrchestratorRouting, ProviderId } from '@goodboy/types';
 import type { AgentKindRouting } from '../agent-kind';
 

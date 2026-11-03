@@ -1,4 +1,4 @@
-import { providerFlags } from '@goodboy/core';
+import { providerFlags } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 
 type Params = {

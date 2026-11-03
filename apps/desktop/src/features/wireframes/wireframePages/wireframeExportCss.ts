@@ -3,7 +3,7 @@ import {
   WIREFRAME_VIEWPORTS,
   type WireframeTheme,
   type WireframeVariant,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import type { WireframeFidelity } from '../wireframeFidelity';
 import {
   SPACING_PX,

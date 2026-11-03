@@ -1,4 +1,4 @@
-import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
+import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import {
   BAND_ROW_CLASS,

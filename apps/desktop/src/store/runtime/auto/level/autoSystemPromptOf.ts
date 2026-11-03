@@ -1,4 +1,4 @@
-import { AUTO_GATES, buildAutoSystemPrompt } from '@goodboy/core';
+import { AUTO_GATES, buildAutoSystemPrompt } from '@goodboy/core/auto';
 import { getSessionById } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';

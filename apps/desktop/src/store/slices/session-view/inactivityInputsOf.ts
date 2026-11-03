@@ -12,8 +12,8 @@ export type InactivityInputsState = Pick<
   | 'agentQueue'
   | 'sessionGithub'
   | 'mountGithub'
-  | 'sessionGitlabMr'
-  | 'mountGitlabMr'
+  | 'sessionRequests'
+  | 'mountRequests'
 > & {
   readonly sessionProjectMounts: AppState['sessionProjectMounts'] | undefined;
 };

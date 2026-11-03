@@ -33,8 +33,7 @@ type StateParams = {
 const stateOf = ({ project, bindings = [] }: StateParams): MountHostState => ({
   projects: [project],
   workspaceIntegrations: { [WORKSPACE.id]: bindings },
-  mountGitlabMr: {},
-  mountBitbucketPr: {},
+  mountRequests: {},
 });
 
 const hostOf = ({

@@ -6,7 +6,8 @@ import {
   listWorkflows,
   upsertWorkflow,
 } from '@goodboy/db';
-import { WORKFLOW_LIBRARY, WorkflowRestoreError, normalizeAgentRole } from '@goodboy/core';
+import { normalizeAgentRole } from '@goodboy/core/roles';
+import { WORKFLOW_LIBRARY, WorkflowRestoreError } from '@goodboy/core/workflows';
 import { purgedAgentIds } from './slices/sessions/sessionMutators';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import type { AgentId, SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';

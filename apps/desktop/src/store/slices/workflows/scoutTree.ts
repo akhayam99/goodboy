@@ -7,14 +7,13 @@ import type {
   WorkflowRoutingProposal,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
+import { extractFanOut, type ExtractedFanOutArea } from '@goodboy/core/context';
 import {
   FAN_OUT_MAX_CHILDREN,
   SCOUT_DEPTH_CAP,
-  extractFanOut,
   fanOutCapabilityForRole,
   fanOutDepthCapForRole,
-  type ExtractedFanOutArea,
-} from '@goodboy/core';
+} from '@goodboy/core/roles';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,

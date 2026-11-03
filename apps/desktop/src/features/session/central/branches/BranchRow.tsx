@@ -28,13 +28,14 @@ export const BranchRow = ({ sessionId, entry, isProjectShown, isNarrow = false }
   const menu = useObjectMenuTrigger({ target, anchorKey: `central-branch:${fact.mountId}` });
   const request = fact.request === null ? '' : `${fact.request.noun}${fact.request.number}`;
   const stateCell = (
-    <span
-      key="state"
-      data-branch-state={story.state}
-      className={cn('min-w-0 truncate', tintClasses(story.tone).text)}
-    >
-      {story.word}
-    </span>
+    <OptionalTooltip key="state" content={story.word}>
+      <span
+        data-branch-state={story.state}
+        className={cn('min-w-0 truncate', tintClasses(story.tone).text)}
+      >
+        {story.word}
+      </span>
+    </OptionalTooltip>
   );
   const branchLine = (
     <span className="flex min-w-0 items-baseline gap-2">

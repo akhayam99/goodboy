@@ -1,4 +1,4 @@
-import { BUILTIN_STEPS } from '@goodboy/core';
+import { BUILTIN_STEPS } from '@goodboy/core/workflows';
 import type {
   AgentRole,
   EffortLevel,

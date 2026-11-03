@@ -9,7 +9,8 @@ import {
   ScrollText,
   Tag,
 } from 'lucide-react';
-import { AUTO_GATES, isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
+import { parseHiddenModels, visibleCatalog } from '@goodboy/core/providers';
+import { AUTO_GATES, isAdoptableKind } from '@goodboy/core/auto';
 import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';

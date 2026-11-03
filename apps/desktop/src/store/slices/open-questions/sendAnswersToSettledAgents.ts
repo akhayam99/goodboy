@@ -1,6 +1,6 @@
 import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswersDelivered } from '@goodboy/db';
-import { wrapOpenQuestionAnswers } from '@goodboy/core';
+import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn } from './types';
 

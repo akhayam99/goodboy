@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { restoreWorkflowLibrary } from '@goodboy/core';
+import { restoreWorkflowLibrary } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn } from './types';

@@ -1,4 +1,4 @@
-import { autoBudgetOf, autoTreeSpendOf, type OutcomeLine } from '@goodboy/core';
+import { autoBudgetOf, autoTreeSpendOf, type OutcomeLine } from '@goodboy/core/auto';
 import type {
   AutoArtifactLedgerRow,
   AutoDelegation,

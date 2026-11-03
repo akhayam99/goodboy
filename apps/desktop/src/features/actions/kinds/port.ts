@@ -8,7 +8,7 @@ import {
   SquarePen,
   Zap,
 } from 'lucide-react';
-import type { HiddenPortSource } from '@goodboy/core';
+import type { HiddenPortSource } from '@goodboy/core/monitoring';
 import { openUrl } from '../../../shared/lib/editor';
 import type { StopProgress } from '../../../store/slices/monitoring/types';
 import type { ActionEnv, ObjectKindDefinition, PortActionTarget } from '../types';

@@ -1,4 +1,4 @@
-import type { LimitsChipState } from '@goodboy/core';
+import type { LimitsChipState } from '@goodboy/core/providers';
 import type { ProviderLimitStatus, ProviderLimitWindow } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { WINDOW_TONE_FILL, windowTone } from '../../../../features/providers/limits/windowTone';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { listAutoAttemptsOfDelegation, listAutoDelegations } from '@goodboy/db';
-import type { RemoteRead } from '@goodboy/core';
+import type { RemoteRead } from '@goodboy/core/auto';
 import {
   autoAnswers,
   autoDelegates,

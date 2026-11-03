@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MonitorSnapshot } from '@goodboy/core';
+import type { MonitorSnapshot } from '@goodboy/core/monitoring';
 import {
   brandId,
   type MountId,

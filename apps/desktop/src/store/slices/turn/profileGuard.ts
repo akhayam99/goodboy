@@ -1,4 +1,4 @@
-import { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from '@goodboy/core';
+import { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from '@goodboy/core/profile';
 import type { WorkspaceProfile } from '@goodboy/types';
 
 type GuardParams = {

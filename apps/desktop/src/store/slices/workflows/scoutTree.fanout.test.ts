@@ -9,7 +9,7 @@ import type {
   WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
-import { resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import { resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core/providers';
 import {
   isWorkflowRoutingDecision,
   isWorkflowTaskProfile,
@@ -74,7 +74,7 @@ vi.mock('./summarizeWorkflowAgentOutput', () => ({
 }));
 
 import { nextAgentId } from '@goodboy/types/testing';
-import { FAN_OUT_MAX_CHILDREN } from '@goodboy/core';
+import { FAN_OUT_MAX_CHILDREN } from '@goodboy/core/roles';
 import { advanceScoutTree, fanOutAgents, joinFanOutParent } from './scoutTree';
 
 const SID = 'sess-1' as SessionId;

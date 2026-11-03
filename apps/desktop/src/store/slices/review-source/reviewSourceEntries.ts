@@ -1,8 +1,9 @@
 import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
+import { bitbucketMountOf, gitlabMountOf, gitlabSessionOf } from '../mount-request/requestOf';
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { AppState } from '../../types';
-import type { MountBitbucketPrState } from '../bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../mount-request/state';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { openReviewThreadIds } from '../resolve/openReviewThreadIds';
 import type { ReviewSourceEntry } from './types';
@@ -15,10 +16,9 @@ type State = Pick<
   | 'sessionMounts'
   | 'sessionActiveProject'
   | 'sessionGithub'
-  | 'sessionGitlabMr'
+  | 'sessionRequests'
   | 'mountGithub'
-  | 'mountGitlabMr'
-  | 'mountBitbucketPr'
+  | 'mountRequests'
   | 'reviewSourceThreads'
 >;
 
@@ -221,7 +221,7 @@ export const reviewSourceEntriesOf = ({
         );
       }
     }
-    const gitlab = state.mountGitlabMr?.[target.id];
+    const gitlab = gitlabMountOf({ state, mountId: target.id });
     if (gitlab?.mr != null && !ENDED_MR_STATES.has(gitlab.mr.state)) {
       entries.push(
         gitlabEntry({
@@ -233,7 +233,7 @@ export const reviewSourceEntriesOf = ({
         }),
       );
     }
-    const bitbucket = state.mountBitbucketPr?.[target.id];
+    const bitbucket = bitbucketMountOf({ state, mountId: target.id });
     if (bitbucket !== undefined) {
       for (const pr of openBitbucketPullRequestsOf({ bitbucket })) {
         entries.push(
@@ -265,7 +265,7 @@ export const reviewSourceEntriesOf = ({
       }),
     );
   }
-  const sessionGitlab = state.sessionGitlabMr?.[sessionId];
+  const sessionGitlab = gitlabSessionOf({ state, sessionId });
   if (
     !entries.some((entry) => entry.kind === 'gitlab') &&
     sessionGitlab?.mr != null &&

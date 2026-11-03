@@ -1,5 +1,5 @@
 import type { EffortLevel, ModelCostTier, ProviderId } from '@goodboy/types';
-import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
+import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core/providers';
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 

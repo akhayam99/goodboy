@@ -3,7 +3,7 @@ import {
   nextRoleModelChoice,
   planTurnFallback,
   resolveStoredModelSelection,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { formatError } from '@goodboy/ui';
 import { updateProviderRunStatus, updateSessionState } from '@goodboy/db';
 import type { TurnState } from '@goodboy/types';

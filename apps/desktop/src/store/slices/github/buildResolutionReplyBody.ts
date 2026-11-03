@@ -1,4 +1,4 @@
-import { commitLinkOf, type ReviewSourceKind } from '@goodboy/core';
+import { commitLinkOf, type ReviewSourceKind } from '@goodboy/core/review-source';
 import { renderReplyTemplate } from '../../../features/resolve/renderReplyTemplate';
 import {
   REPLY_SETTINGS_DEFAULT,

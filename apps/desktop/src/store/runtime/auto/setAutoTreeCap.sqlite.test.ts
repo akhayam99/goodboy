@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_BLOCK_TEXT, autoBudgetOf } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, autoBudgetOf } from '@goodboy/core/auto';
 import { getAutoTree, readAutoTreeSpend } from '@goodboy/db';
 import { setAutoTreeCap } from './setAutoTreeCap';
 import { makeRuntimeWorld, userSays, type RuntimeWorld } from './testing/runtimeWorld';

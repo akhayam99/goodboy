@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { WireframeDocument, WireframeScreen } from '@goodboy/core';
+import type { WireframeDocument, WireframeScreen } from '@goodboy/core/artifacts';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import {
   buildFlowLayout,

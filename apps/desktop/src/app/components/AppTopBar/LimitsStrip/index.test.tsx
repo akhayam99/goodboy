@@ -143,6 +143,7 @@ describe('LimitsStrip', () => {
     const overflow = screen.getAllByRole('button', { name: 'Provider usage' });
     expect(overflow.length).toBeGreaterThan(0);
     expect(overflow[0]?.textContent).toBe('Usage');
+    expect(overflow[0]?.querySelector('svg')).not.toBeNull();
   });
 
   it('shows the icon and one bar, the percent only above 70%, every window in the label', () => {

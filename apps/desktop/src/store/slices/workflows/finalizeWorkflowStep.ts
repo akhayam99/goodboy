@@ -1,6 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { extractStepDone, runsForWorkflowRun } from '@goodboy/core';
+import { extractStepDone } from '@goodboy/core/context';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';

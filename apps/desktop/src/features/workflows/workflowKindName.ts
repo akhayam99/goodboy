@@ -1,5 +1,5 @@
 import type { Workflow } from '@goodboy/types';
-import { WORKFLOW_LIBRARY } from '@goodboy/core';
+import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 
 type WorkflowKindNameParams = {
   readonly workflow: Workflow;

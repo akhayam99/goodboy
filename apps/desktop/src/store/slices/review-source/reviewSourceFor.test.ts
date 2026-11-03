@@ -132,12 +132,13 @@ const get: GetFn = () => ({
   ...useAppStore.getInitialState(),
   sessions: [aSession({ id: SESSION, workspaceId: WORKSPACE_ID })],
   sessionGithub: {},
-  sessionGitlabMr: {},
+  sessionRequests: {},
   reviewSourceKeys: {},
   reviewSourceThreads: {},
   mountGithub: {},
-  mountGitlabMr: {
+  mountRequests: {
     [MOUNT_ID]: {
+      kind: 'gitlab',
       mr: GITLAB_MR,
       fetchedAt: null,
       loading: false,
@@ -153,9 +154,9 @@ const get: GetFn = () => ({
       checks: null,
       reviewDecision: null,
     },
-  },
-  mountBitbucketPr: {
     [BITBUCKET_MOUNT_ID]: {
+      kind: 'bitbucket',
+      selected: null,
       pr: BITBUCKET_PR,
       fetchedAt: null,
       loading: false,

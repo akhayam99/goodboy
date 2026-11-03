@@ -1,4 +1,4 @@
-import type { IssueBrief } from '@goodboy/core';
+import type { IssueBrief } from '@goodboy/core/summarizer';
 import type { IssueBriefSource } from '../../../store/slices/issue-briefs/types';
 import { issueReferenceLine } from './issueReferenceLine';
 

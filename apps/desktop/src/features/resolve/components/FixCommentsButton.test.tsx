@@ -18,6 +18,7 @@ import {
   CTX_SESSION_ID,
 } from '../../../app/components/MockScene/scenes/brand/contextBase';
 import { seedNotesScene } from '../../../app/components/MockScene/scenes/u23/notesSeed';
+import { reviewTallyOfWords } from '../reviewTally';
 import { FixCommentsButton } from './FixCommentsButton';
 
 let useAppStore: StoryStore;
@@ -51,7 +52,10 @@ describe('FixCommentsButton', () => {
       <FixCommentsButton
         sessionId={CTX_SESSION_ID}
         mountId={CTX_PAYMENTS_MOUNT_ID}
-        fixingThreads={4}
+        liveRun={{
+          total: 4,
+          tally: reviewTallyOfWords({ words: ['working', 'working', 'working', 'working'] }),
+        }}
       />,
     );
 

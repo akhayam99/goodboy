@@ -5,7 +5,7 @@ import {
   type Workspace,
   type WorkspaceId,
 } from '@goodboy/types';
-import { seedWorkflowLibrary } from '@goodboy/core';
+import { seedWorkflowLibrary } from '@goodboy/core/workflows';
 import { insertWorkspace } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';

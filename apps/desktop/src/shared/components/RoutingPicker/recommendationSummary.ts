@@ -1,5 +1,5 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import { resolveStoredModelSelection } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core/providers';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { routingLabelParts, routingSummary, type RoutingTriggerLabel } from './routingSummary';
 

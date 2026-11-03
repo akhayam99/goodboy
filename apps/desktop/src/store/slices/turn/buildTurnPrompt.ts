@@ -1,12 +1,10 @@
+import { providerFlags } from '@goodboy/core/providers';
 import {
-  buildClaudeFlags,
-  resolveModeFor,
   composeHandoffBody,
-  providerFlags,
   renderCurrentPlan,
-  type ClaudeFlagSet,
   type HandoffBodyLayers,
-} from '@goodboy/core';
+} from '@goodboy/core/handoff';
+import { buildClaudeFlags, resolveModeFor, type ClaudeFlagSet } from '@goodboy/core/permissions';
 import type { PermissionRule } from '@goodboy/types';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';

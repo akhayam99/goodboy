@@ -20,7 +20,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { GitlabMergeRequest } from '../../../integrations/gitlab/client';
-import type { MountGitlabMrState } from '../../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../../store/slices/mount-request/state';
 import { applyMountGithub } from '../../../../store/slices/github/mountGithub';
 import { useBranchIdentity } from '.';
 
@@ -89,6 +89,7 @@ const MR: GitlabMergeRequest = {
 };
 
 const GITLAB: MountGitlabMrState = {
+  kind: 'gitlab',
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -119,7 +120,7 @@ beforeEach(async () => {
     sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
     diffMountPath: { [SESSION_ID]: WORKTREE },
     sessionGithub: {},
-    mountGitlabMr: {},
+    mountRequests: {},
   });
 });
 
@@ -200,7 +201,7 @@ describe('useBranchIdentity', () => {
   });
 
   it('gives the merge request of the mount for a GitLab session', () => {
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: GITLAB } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: GITLAB } });
 
     const result = identity();
 
@@ -217,7 +218,7 @@ describe('useBranchIdentity', () => {
   });
 
   it('keeps the same pull request object across renders of an unchanged merge request', () => {
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: GITLAB } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: GITLAB } });
     const view = renderHook(() => useBranchIdentity({ sessionId: SESSION_ID }));
     const first = view.result.current.pr;
 

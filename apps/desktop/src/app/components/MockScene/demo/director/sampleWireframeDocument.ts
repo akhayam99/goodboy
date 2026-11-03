@@ -1,4 +1,4 @@
-import type { WireframeDocument } from '@goodboy/core';
+import type { WireframeDocument } from '@goodboy/core/artifacts';
 
 export const SAMPLE_WIREFRAME_DOCUMENT: WireframeDocument = {
   version: 2,

@@ -13,7 +13,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import { createResolveSlice } from '../resolve';
 import { resolveInitialState } from '../resolve/state';
 import { REPLY_SETTINGS_DEFAULT } from '../../../features/resolve/replySettings';
@@ -30,8 +30,8 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/summarizer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/summarizer')>();
   return { ...actual, summarizeStepOutput: h.summarizeStepOutput };
 });
 

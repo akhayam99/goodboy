@@ -9,7 +9,7 @@ import {
   tintClasses,
   useDropdown,
 } from '@goodboy/ui';
-import { isFilePathTool, prefixRuleFor } from '@goodboy/core';
+import { isFilePathTool, prefixRuleFor } from '@goodboy/core/permissions';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';

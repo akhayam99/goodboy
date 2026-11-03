@@ -286,8 +286,7 @@ const seed = ({ state }: StateParams): void => {
     sessionWorktrees: { [SESSION_ID]: [WORKTREE] },
     sessionExternalTasks: { [SESSION_ID]: [LINKED_ISSUE] },
     mountGithub: {},
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    mountRequests: {},
     scribeWork: job === null ? {} : { [SCRIBE_BASE.key]: job },
     ...(state === 'creating'
       ? {

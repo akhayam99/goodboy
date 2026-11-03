@@ -1,4 +1,4 @@
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import { isChatProvider, isEffortLevel, type EffortLevel, type WorkspaceId } from '@goodboy/types';
 import { isProviderId } from '@goodboy/types/helpers';
 import type { ChatModelChoice } from '../conversation/defaultChatModel';

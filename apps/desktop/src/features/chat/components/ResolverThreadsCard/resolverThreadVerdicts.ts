@@ -3,7 +3,7 @@ import type {
   ExtractedCommentReply,
   ExtractedCommentResolution,
   ExtractedCommentWontfix,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 
 export type ResolverThreadVerdictKind = 'resolved' | 'wontfix' | 'analyzed' | 'open';
 

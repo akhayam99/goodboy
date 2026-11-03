@@ -9,7 +9,8 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { extractClusterDone, isAgentStatusSettled } from '@goodboy/core';
+import { extractClusterDone } from '@goodboy/core/context';
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
@@ -652,10 +653,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     });
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
-    const index = Math.max(
-      0,
-      childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId),
-    );
+    const found = childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId);
+    const index = Math.max(0, found);
 
     if (!opts?.force && !extractClusterDone(assistantText)) {
       if (await holdForUserQuestion({ set, get, sessionId, agent: child, assistantText })) {

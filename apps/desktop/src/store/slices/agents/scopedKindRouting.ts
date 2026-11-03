@@ -1,4 +1,4 @@
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { ResolvedSettings } from '@goodboy/types';
 import {
   kindRouting,

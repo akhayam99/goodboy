@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';

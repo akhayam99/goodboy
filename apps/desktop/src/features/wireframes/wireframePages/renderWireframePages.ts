@@ -1,4 +1,4 @@
-import type { WireframeDocument, WireframeScreen } from '@goodboy/core';
+import type { WireframeDocument, WireframeScreen } from '@goodboy/core/artifacts';
 import { screenLinks, screenNodeNotes } from '../wireframeNotes';
 import { escapeHtml } from './escapeHtml';
 import {

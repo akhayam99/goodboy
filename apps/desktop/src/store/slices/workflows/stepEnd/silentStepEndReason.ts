@@ -1,4 +1,4 @@
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { Agent, OpenQuestion, TurnState } from '@goodboy/types';
 
 type Params = {

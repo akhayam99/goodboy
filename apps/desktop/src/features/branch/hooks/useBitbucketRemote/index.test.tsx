@@ -35,7 +35,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import type { MountBitbucketPrState } from '../../../../store/slices/bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../../../../store/slices/mount-request/state';
 import { useBitbucketRemote } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -75,6 +75,8 @@ const VIEW: SessionMountView = {
 };
 
 const ENTRY: MountBitbucketPrState = {
+  kind: 'bitbucket',
+  selected: null,
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -117,7 +119,7 @@ beforeEach(async () => {
     sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     workspaceIntegrations: { [WORKSPACE_ID]: [BINDING] },
-    mountBitbucketPr: { [MOUNT_ID]: ENTRY },
+    mountRequests: { [MOUNT_ID]: ENTRY },
     refreshSessionBitbucketPr: refresh,
   });
 });
@@ -156,7 +158,7 @@ describe('useBitbucketRemote', () => {
   });
 
   it('still knows a Bitbucket remote without a connection, and never asks Bitbucket for it', async () => {
-    useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] }, mountBitbucketPr: {} });
+    useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] }, mountRequests: {} });
     worktree.remote.mockResolvedValue('git@bitbucket.org:harborline/payments-api.git');
 
     const { result } = remoteAt(`/repos/unconnected-${counter}`);
@@ -171,8 +173,14 @@ describe('useBitbucketRemote', () => {
 
   it('does not look again once the request was read', async () => {
     useAppStore.setState({
-      sessionBitbucketPr: {
-        [SESSION_ID]: { pr: null, fetchedAt: STAMP, loading: false, error: null },
+      sessionRequests: {
+        [SESSION_ID]: {
+          kind: 'bitbucket',
+          pr: null,
+          fetchedAt: STAMP,
+          loading: false,
+          error: null,
+        },
       },
     });
     worktree.remote.mockResolvedValue('https://bitbucket.org/harborline/payments-api.git');
@@ -191,7 +199,7 @@ describe('useBitbucketRemote', () => {
           { ...VIEW, id: OTHER_MOUNT_ID, mountName: 'notify-relay', branch: 'hl/relay-retry' },
         ],
       },
-      mountBitbucketPr: {
+      mountRequests: {
         [MOUNT_ID]: ENTRY,
         [OTHER_MOUNT_ID]: {
           ...ENTRY,

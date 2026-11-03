@@ -1,4 +1,4 @@
-import { legacyHiddenModels, withModelsVisible } from '@goodboy/core';
+import { legacyHiddenModels, withModelsVisible } from '@goodboy/core/providers';
 import { PROVIDER_IDS, type ProviderId, type RoleModelPreferences } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { SETTING_HIDDEN_MODELS } from '../../../../../features/settings/settings';

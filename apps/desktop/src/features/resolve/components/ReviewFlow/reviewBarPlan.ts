@@ -22,7 +22,7 @@ const SKIP = action('reviewComment.skip', 'ghost');
 
 const PLANS: Partial<Record<ResolveWord, ReadonlyArray<BarItem>>> = {
   open: [action('reviewComment.draft', 'primary'), action('reviewComment.reply', 'ghost'), SKIP],
-  question: [action('reviewComment.answer', 'primary'), SKIP],
+  question: [SKIP],
   push_failed: [{ kind: 'retryPush' }, SKIP],
   working: [{ kind: 'transcript' }, { kind: 'stop' }],
   ready: [action('reviewComment.undo', 'secondary'), { kind: 'pushOnly' }],

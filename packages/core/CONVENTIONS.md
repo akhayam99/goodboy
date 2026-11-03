@@ -2,7 +2,13 @@
 
 > **Read this when** you're writing code inside `@goodboy/core` and need to know what belongs here and how it is built. **Not for** process rules for the whole repo (`CONVENTIONS.md`) or TypeScript style (`docs/typescript/`).
 
-Pure TypeScript logic that the desktop webview imports directly. **No React. No Tauri APIs. No DOM.** The main entry (`src/index.ts`) must run in the webview, in Node, and in tests without changes. No `node:` imports in production code.
+Pure TypeScript logic that the desktop webview imports directly. **No React. No Tauri APIs. No DOM.** Every public entry (`@goodboy/core/<domain>`) must run in the webview, in Node, and in tests without changes. No `node:` imports in production code.
+
+## Public entries
+
+There is no root entry. Each domain has one subpath in `package.json` `exports`, named after its folder or file under `src/` (`@goodboy/core/providers` is `src/providers/index.ts`, `@goodboy/core/roles` is `src/roles.ts`). A caller imports the subpath of the domain it needs and nothing wider. A new domain adds its `exports` entry and its entry file in the same change; a symbol a caller needs is exported from the entry of its own domain. A subpath nobody imports is deleted.
+
+A `vi.mock` of a subpath replaces the module file, so core files that import that file directly get the mock too. For a domain whose entry is one file (`roles`, `secret-scan`, `dev-log`), spread `importOriginal` and override only the keys the test needs.
 
 ## Boundaries
 

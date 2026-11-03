@@ -6,8 +6,8 @@ const h = vi.hoisted(() => ({
   ghAssignedIssues: vi.fn(),
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/github', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/github')>();
   return { ...actual, detectRepoSlug: h.detectRepoSlug };
 });
 

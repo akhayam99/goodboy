@@ -1,4 +1,5 @@
-import { TASKS, isAgentRole } from '@goodboy/core';
+import { isAgentRole } from '@goodboy/core/roles';
+import { TASKS } from '@goodboy/core/settings';
 import {
   PROVIDER_IDS,
   isEffortLevel,

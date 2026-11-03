@@ -1,4 +1,4 @@
-import type { AutoModelChoice } from '@goodboy/core';
+import type { AutoModelChoice } from '@goodboy/core/providers';
 import type { AgentRole, ProviderId, SessionId } from '@goodboy/types';
 import type { ModelState } from './selectModelContext';
 import { selectResolution } from './selectResolution';

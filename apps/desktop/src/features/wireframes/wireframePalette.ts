@@ -1,4 +1,4 @@
-import type { WireframeSpacing, WireframeTheme, WireframeViewport } from '@goodboy/core';
+import type { WireframeSpacing, WireframeTheme, WireframeViewport } from '@goodboy/core/artifacts';
 import type { WireframeFidelity } from './wireframeFidelity';
 
 export type WireframePalette = Readonly<{

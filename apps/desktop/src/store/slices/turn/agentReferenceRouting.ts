@@ -11,7 +11,7 @@ import {
   PROVIDER_CAPABILITIES,
   getDefaultTurnModel,
   resolveModelIdForProvider,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 

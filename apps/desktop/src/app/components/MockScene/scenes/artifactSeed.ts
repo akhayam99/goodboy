@@ -26,7 +26,7 @@ import type {
   WireframeScreen,
   WireframeTheme,
   WireframeTransition,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
 import {

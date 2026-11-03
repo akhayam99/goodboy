@@ -20,7 +20,7 @@ import type {
   GitlabMergeRequest,
   GitlabMrApprovalState,
 } from '../../../features/integrations/gitlab/client';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
 import { sessionPullRequestHostOf, sessionPullRequestOf } from './sessionPullRequestOf';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -90,6 +90,7 @@ const entryOf = ({
   readonly mr: GitlabMergeRequest | null;
   readonly approvals?: GitlabMrApprovalState | null;
 }): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -120,7 +121,7 @@ beforeEach(async () => {
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
     sessionGithub: {},
-    mountGitlabMr: {},
+    mountRequests: {},
   });
 });
 
@@ -151,7 +152,7 @@ describe('sessionPullRequestOf', () => {
           detailError: null,
         },
       },
-      mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: MR }) },
+      mountRequests: { [MOUNT_ID]: entryOf({ mr: MR }) },
     });
 
     expect(read()).toBe(GITHUB_PR);
@@ -162,7 +163,7 @@ describe('sessionPullRequestOf', () => {
 
   it('gives the merge request of the active mount, mapped, when there is no pull request', () => {
     useAppStore.setState({
-      mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: MR, approvals: APPROVALS }) },
+      mountRequests: { [MOUNT_ID]: entryOf({ mr: MR, approvals: APPROVALS }) },
     });
 
     expect(read()).toMatchObject({
@@ -179,7 +180,7 @@ describe('sessionPullRequestOf', () => {
   it('gives the merge request of the mount it is asked for', () => {
     const other = 'mount-other' as MountId;
     useAppStore.setState({
-      mountGitlabMr: {
+      mountRequests: {
         [MOUNT_ID]: entryOf({ mr: MR }),
         [other]: { ...entryOf({ mr: { ...MR, iid: 77 } }), mountId: other },
       },
@@ -190,20 +191,20 @@ describe('sessionPullRequestOf', () => {
   });
 
   it('is nothing for a mount that has no merge request', () => {
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: null }) } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: entryOf({ mr: null }) } });
 
     expect(read()).toBeNull();
   });
 
   it('hands out the same object until the merge request or its approvals change', () => {
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: MR }) } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: entryOf({ mr: MR }) } });
     const first = read();
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: MR }) } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: entryOf({ mr: MR }) } });
 
     expect(read()).toBe(first);
 
     useAppStore.setState({
-      mountGitlabMr: { [MOUNT_ID]: entryOf({ mr: MR, approvals: APPROVALS }) },
+      mountRequests: { [MOUNT_ID]: entryOf({ mr: MR, approvals: APPROVALS }) },
     });
 
     expect(read()).not.toBe(first);

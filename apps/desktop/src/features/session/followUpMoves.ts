@@ -1,5 +1,5 @@
 import type { Agent } from '@goodboy/types';
-import { stripControlMarkers } from '@goodboy/core';
+import { stripControlMarkers } from '@goodboy/core/context';
 import { AGENT_KIND_META, type AgentKind } from './agent-kind';
 
 export type FollowUpKind = Exclude<

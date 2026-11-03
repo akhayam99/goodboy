@@ -1,4 +1,4 @@
-import type { HiddenPortSource } from '@goodboy/core';
+import type { HiddenPortSource } from '@goodboy/core/monitoring';
 
 export type { SetFn, GetFn } from '../../slice-types';
 

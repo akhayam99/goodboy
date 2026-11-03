@@ -1,5 +1,5 @@
 import { NAMES } from '../../shared/utils/names';
-import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { Tone } from '@goodboy/ui';
 import type {
   Agent,

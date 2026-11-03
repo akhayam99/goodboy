@@ -1,4 +1,4 @@
-import type { LedgerKind, LedgerRow, Leftover } from '@goodboy/core';
+import type { LedgerKind, LedgerRow, Leftover } from '@goodboy/core/monitoring';
 import type { Session } from '@goodboy/types';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 

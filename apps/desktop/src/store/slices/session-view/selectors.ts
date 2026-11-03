@@ -145,7 +145,7 @@ const useStageSources = ({
     [isFilterIgnored, sessions, projectMatched, exemptIds],
   );
   const sessionGithub = useAppStore((s) => s.sessionGithub);
-  const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
+  const sessionRequests = useAppStore((s) => s.sessionRequests);
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
   const agentTurnState = useAppStore(
@@ -183,8 +183,7 @@ const useStageSources = ({
   const sessionMounts = useAppStore((s) => s.sessionMounts);
   const sessionActiveMount = useAppStore((s) => s.sessionActiveMount);
   const mountGithub = useAppStore((s) => s.mountGithub);
-  const mountGitlabMr = useAppStore((s) => s.mountGitlabMr);
-  const mountBitbucketPr = useAppStore((s) => s.mountBitbucketPr);
+  const mountRequests = useAppStore((s) => s.mountRequests);
   const prSeries = useAppStore((s) => s.prSeries);
   const {
     phaseTemplates,
@@ -215,11 +214,10 @@ const useStageSources = ({
       sessionActiveMount,
       sessionActiveProject,
       mountGithub,
-      mountGitlabMr,
-      mountBitbucketPr,
+      mountRequests,
       prSeries,
       sessionGithub,
-      sessionGitlabMr,
+      sessionRequests,
       sessionOpenQuestions,
       sessionPhaseRuns,
       agentTurnState,
@@ -259,11 +257,10 @@ const useStageSources = ({
     sessionActiveMount,
     sessionActiveProject,
     mountGithub,
-    mountGitlabMr,
-    mountBitbucketPr,
+    mountRequests,
     prSeries,
     sessionGithub,
-    sessionGitlabMr,
+    sessionRequests,
     sessionOpenQuestions,
     sessionPhaseRuns,
     agentTurnState,
@@ -289,8 +286,8 @@ const useStageSources = ({
     infos: stages.infoMap,
     sessionGithub,
     mountGithub,
-    sessionGitlabMr,
-    mountGitlabMr,
+    sessionRequests,
+    mountRequests,
     sessionPhaseRuns,
     sessionProjectMounts,
     projects,
@@ -342,8 +339,8 @@ const useSessionListModel = (
     infos,
     sessionGithub,
     mountGithub,
-    sessionGitlabMr,
-    mountGitlabMr,
+    sessionRequests,
+    mountRequests,
     sessionPhaseRuns,
     sessionProjectMounts,
     projects,
@@ -358,8 +355,8 @@ const useSessionListModel = (
     sessionPhaseRuns,
     sessionGithub,
     mountGithub,
-    sessionGitlabMr,
-    mountGitlabMr,
+    sessionRequests,
+    mountRequests,
     sessionProjectMounts,
   });
   return useMemo(() => {

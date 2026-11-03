@@ -1,4 +1,4 @@
-import { diffWireframeDocuments, parseWireframeSource } from '@goodboy/core';
+import { diffWireframeDocuments, parseWireframeSource } from '@goodboy/core/artifacts';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactId, SessionId, WireframeArtifact } from '@goodboy/types';
 import {

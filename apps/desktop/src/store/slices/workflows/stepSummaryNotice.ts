@@ -1,4 +1,4 @@
-import type { BackgroundAttempt } from '@goodboy/core';
+import type { BackgroundAttempt } from '@goodboy/core/providers';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import type { GetFn } from './types';

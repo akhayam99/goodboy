@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { TriangleAlert, Play } from 'lucide-react';
 import { cn, ConfirmPopover, ICON_SIZE, tintClasses, Tooltip, FOCUS_RING } from '@goodboy/ui';
-import { classifyWorkflowChain } from '@goodboy/core';
+import { classifyWorkflowChain } from '@goodboy/core/workflows';
 import type {
   Agent,
   EffortLevel,

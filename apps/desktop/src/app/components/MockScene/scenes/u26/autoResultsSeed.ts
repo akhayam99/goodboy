@@ -1,4 +1,5 @@
-import { MODEL_CATALOGS, autoBudgetOf, autoTreeSpendOf } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
+import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core/auto';
 import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
 import {
   brandId,

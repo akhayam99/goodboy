@@ -1,4 +1,4 @@
-import type { BitbucketReviewTransport } from '@goodboy/core';
+import type { BitbucketReviewTransport } from '@goodboy/core/review-source';
 import { bitbucketPullRequestTransport } from './bitbucketPullRequestTransport';
 import {
   bitbucketGetPullRequest,

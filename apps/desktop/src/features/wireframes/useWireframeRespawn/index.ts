@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../store';

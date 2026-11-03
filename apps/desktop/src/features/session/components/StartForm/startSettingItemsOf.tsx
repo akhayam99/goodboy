@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import type {
   ClaudePermissionMode,
   SessionId,

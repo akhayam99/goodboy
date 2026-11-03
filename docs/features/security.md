@@ -80,7 +80,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds three tabs, **Guide**, **What's new** and **Shortcuts**, with one search over all three. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Shortcuts** is a read only sheet with a link to **Customize in Settings**. **Back to app** at the top left, or Esc, leaves Help. Open **Guide** from the Goodboy menu or the palette.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Help holds three tabs, **Guide**, **What's new** and **Shortcuts**, with one search over all three. Results lead with title matches, show a line of context, and list three **What's new** versions with a button for the rest. Press Enter to land on the point you need, and the links at the end of a chapter open its screen. **Shortcuts** is a read only sheet with a link to **Customize in Settings**. **Back to app** at the top left, or Esc, leaves Help. Open **Guide** from the Goodboy menu or the palette.
 
 **Also in this area**
 

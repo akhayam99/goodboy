@@ -1,4 +1,4 @@
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import type {
   Agent,
   AgentId,

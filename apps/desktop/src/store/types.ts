@@ -91,8 +91,7 @@ import type { StorageState } from './slices/storage/state';
 import type { ScriptsSliceState } from './slices/scripts/state';
 import type { TurnSliceState } from './slices/turn/state';
 import type { GithubState } from './slices/github/state';
-import type { GitlabMrSliceState } from './slices/gitlab-mr/state';
-import type { BitbucketPrSliceState } from './slices/bitbucket-pr/state';
+import type { MountRequestSliceState } from './slices/mount-request/state';
 import type { NotificationsState } from './slices/notifications/state';
 import type { TaskArrivalsState } from './slices/taskArrivals/state';
 import type { DiffCommentsState } from './slices/diff-comments/state';
@@ -210,8 +209,7 @@ type AppSliceState = ArtifactsState &
   StorageState &
   ScriptsSliceState &
   GithubState &
-  GitlabMrSliceState &
-  BitbucketPrSliceState &
+  MountRequestSliceState &
   NotificationsState &
   TaskArrivalsState &
   DiffCommentsState &

@@ -5,9 +5,8 @@ import type { BridgeCommand } from './commandExecutor';
 // Hermetic mocks, mirroring commandExecutor.test.ts. This file exercises the
 // command kinds the sibling suite leaves untested: queryProviders, advanceStep,
 // setContextSlot, the provider-override coercion, and the full spawnAgent option
-// mapping. The `@goodboy/core` stubs reproduce the *real* behaviour the guard
-// relies on — the genuine SLOT_KEYS set (so the editable allow-list is tested
-// against the same keys production uses) and a faithful runsForWorkflowRun.
+// mapping. The `@goodboy/core/providers` and `@goodboy/core/workflows` stubs
+// reproduce the *real* behaviour the guard relies on.
 const h = vi.hoisted(() => ({
   sendTurn: vi.fn(() => Promise.resolve()),
   spawnAgent: vi.fn(() => Promise.resolve()),
@@ -23,14 +22,6 @@ const h = vi.hoisted(() => ({
 }));
 
 const core = vi.hoisted(() => {
-  // Mirrors packages/core/src/context/slots.ts exactly.
-  const SLOT_KEY_SET = new Set([
-    'goal',
-    'files_touched',
-    'decisions',
-    'open_questions',
-    'last_output_summary',
-  ]);
   const PROVIDER_CAPABILITIES = {
     anthropic: {
       models: [
@@ -59,29 +50,6 @@ const core = vi.hoisted(() => {
     },
   } as Record<string, { models: Array<{ id: string; label: string; tier: string }> }>;
   return {
-    ROLE_REGISTRY: {
-      scout: { presentationKey: 'scout' },
-      investigator: { presentationKey: 'debugger' },
-      planner: { presentationKey: 'planner' },
-      implementer: { presentationKey: 'implementer' },
-      reviewer: { presentationKey: 'reviewer' },
-      tester: { presentationKey: 'tester' },
-      resolver: { presentationKey: 'resolver' },
-      docs: { presentationKey: 'docs' },
-      custom: { presentationKey: 'generic' },
-    },
-    SELECTABLE_AGENT_ROLES: [
-      'scout',
-      'investigator',
-      'planner',
-      'implementer',
-      'reviewer',
-      'tester',
-      'resolver',
-      'docs',
-      'custom',
-    ],
-    isSlotKey: (k: string) => SLOT_KEY_SET.has(k),
     PROVIDER_CAPABILITIES,
     getDefaultTurnModel: ({ id }: { id: string }) => {
       const caps = PROVIDER_CAPABILITIES[id]!;
@@ -94,10 +62,18 @@ const core = vi.hoisted(() => {
 });
 
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
-  return { ...core, isAgentStatusSettled: actual.isAgentStatusSettled };
+vi.mock('@goodboy/core/workflows', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/workflows')>();
+  return {
+    runsForWorkflowRun: core.runsForWorkflowRun,
+    isAgentStatusSettled: actual.isAgentStatusSettled,
+  };
 });
+vi.mock('@goodboy/core/providers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/providers')>()),
+  PROVIDER_CAPABILITIES: core.PROVIDER_CAPABILITIES,
+  getDefaultTurnModel: core.getDefaultTurnModel,
+}));
 vi.mock('../providers/providers', () => ({}));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));

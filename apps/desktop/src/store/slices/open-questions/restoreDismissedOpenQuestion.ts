@@ -1,6 +1,6 @@
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { restoreOpenQuestion } from '@goodboy/db';
-import { addQuestionsToSlot } from '@goodboy/core';
+import { addQuestionsToSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 

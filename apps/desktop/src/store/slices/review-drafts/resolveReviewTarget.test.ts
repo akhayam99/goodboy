@@ -149,8 +149,8 @@ const buildState = ({
       detailError: null,
     },
   },
-  sessionGitlabMr: {
-    [SESSION_ID]: { mr, fetchedAt: NOW, loading: false, error: null },
+  sessionRequests: {
+    [SESSION_ID]: { kind: 'gitlab', mr, fetchedAt: NOW, loading: false, error: null },
   },
 });
 

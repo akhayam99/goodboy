@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { PullRequestPortError, STALE_HEAD_MESSAGE, isPullRequestPortError } from '@goodboy/core';
+import {
+  PullRequestPortError,
+  STALE_HEAD_MESSAGE,
+  isPullRequestPortError,
+} from '@goodboy/core/review-source';
 import type { WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestTransport } from './bitbucketPullRequestTransport';
 

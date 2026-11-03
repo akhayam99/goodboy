@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';
 import type { PortLayer } from '../../../actions/kinds/port';
 import type { PortActionTarget } from '../../../actions/types';

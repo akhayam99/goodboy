@@ -1,4 +1,4 @@
-import { isApiProvider } from '@goodboy/core';
+import { isApiProvider } from '@goodboy/core/providers';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, EmptyState, PaneShell } from '@goodboy/ui';
 import type { ProviderDisplayInfo } from '../../../providers';

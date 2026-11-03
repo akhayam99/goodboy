@@ -1,4 +1,4 @@
-import { WORKFLOW_LIBRARY } from '@goodboy/core';
+import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { Workflow } from '@goodboy/types';
 
 export type RunWorkflowKind = 'preset' | 'custom' | 'orchestrator';

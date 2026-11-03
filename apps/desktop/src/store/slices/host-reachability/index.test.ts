@@ -20,7 +20,7 @@ import {
   type SessionId,
   type SessionMountView,
 } from '@goodboy/types';
-import type { MountGitlabMrState } from '../gitlab-mr/state';
+import type { MountGitlabMrState } from '../mount-request/state';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -81,6 +81,7 @@ const buildMountView = ({ id }: MountParams): SessionMountView => ({
 });
 
 const buildGitlabEntry = ({ id }: MountParams): MountGitlabMrState => ({
+  kind: 'gitlab',
   mountId: id,
   projectId: PROJECT_ID,
   revision: 1,
@@ -327,7 +328,7 @@ describe('Retry on a host', () => {
         [SESSION_ID]: [buildMountView({ id: MOUNT_ID })],
         'session-2': [buildMountView({ id: brandId<MountId>({ value: 'mount-2' }) })],
       },
-      mountGitlabMr: { [MOUNT_ID]: buildGitlabEntry({ id: MOUNT_ID }) },
+      mountRequests: { [MOUNT_ID]: buildGitlabEntry({ id: MOUNT_ID }) },
     });
 
     await useAppStore.getState().retryHost({ host: 'gitlab' });

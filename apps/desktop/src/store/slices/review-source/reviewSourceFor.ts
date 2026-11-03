@@ -4,7 +4,7 @@ import {
   gitlabReviewSource,
   localReviewSource,
   type ReviewSource,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 import type { ResolveThread, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';
@@ -12,6 +12,7 @@ import { gitlabPullRequestTransport } from '../../../features/integrations/gitla
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';
 import { sessionThreadGhOptions } from '../github/sessionThreadGhOptions';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
+import { bitbucketMountsOf, gitlabMountsOf } from '../mount-request/requestOf';
 import { threadSourceKindOf } from '../resolve/resolveThreadSource';
 import { activeReviewSourceOf } from './activeReviewSource';
 import { openBitbucketPullRequestsOf } from './reviewSourceEntries';
@@ -51,7 +52,7 @@ export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource =
   if (kind === 'gitlab') {
     const session = sessionById(state.sessions, sessionId);
     const mountIds = new Set(sessionMountTargets({ state, sessionId }).map((target) => target.id));
-    const entry = Object.values(state.mountGitlabMr ?? {}).find(
+    const entry = gitlabMountsOf({ state }).find(
       (candidate) =>
         (mountIds.size === 0 || mountIds.has(candidate.mountId)) &&
         candidate.mr !== null &&
@@ -78,7 +79,7 @@ export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource =
   }
   if (kind === 'bitbucket') {
     const mountIds = new Set(sessionMountTargets({ state, sessionId }).map((target) => target.id));
-    for (const bitbucket of Object.values(state.mountBitbucketPr ?? {})) {
+    for (const bitbucket of bitbucketMountsOf({ state })) {
       if (
         (mountIds.size > 0 && !mountIds.has(bitbucket.mountId)) ||
         bitbucket.repo === null ||

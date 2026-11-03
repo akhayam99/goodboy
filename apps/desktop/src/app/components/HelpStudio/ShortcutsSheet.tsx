@@ -15,7 +15,6 @@ export const ShortcutsSheet = ({ onCustomize }: Props) => (
   <PaneShell
     page="guideChapter"
     title="Shortcuts"
-    meta="Read only"
     actions={
       <Button variant="quiet" size="sm" onClick={onCustomize}>
         Customize in Settings

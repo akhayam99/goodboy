@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { STALE_HEAD_MESSAGE } from '@goodboy/core';
+import { STALE_HEAD_MESSAGE } from '@goodboy/core/review-source';
 import { CommandError } from './invokeCommand';
 import { staleHeadErrorOf } from './staleHeadErrorOf';
 

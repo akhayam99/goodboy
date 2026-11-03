@@ -1,4 +1,4 @@
-import { PullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core';
+import { PullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core/review-source';
 import { CommandError } from './invokeCommand';
 
 const STALE_HEAD_KIND = 'stale_head';

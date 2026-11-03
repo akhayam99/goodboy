@@ -1,4 +1,4 @@
-import { publishOfResult } from '@goodboy/core';
+import { publishOfResult } from '@goodboy/core/auto';
 import type { AutoDelegation } from '@goodboy/db';
 
 type Params = {

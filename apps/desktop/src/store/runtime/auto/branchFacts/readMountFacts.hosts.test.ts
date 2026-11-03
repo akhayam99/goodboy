@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { composeBranchFacts } from '@goodboy/core';
+import { composeBranchFacts } from '@goodboy/core/auto';
 import { brandId, type MountId, type WorkspaceId } from '@goodboy/types';
 import { aProject, TEST_NOW } from '@goodboy/types/testing';
 
@@ -35,8 +35,8 @@ import type {
   GitlabMrDiscussion,
   GitlabMrNote,
 } from '../../../../features/integrations/gitlab/client';
-import { gitlabMrFixture } from '../../../slices/gitlab-mr/testing/gitlabMrFixture';
-import type { MountBitbucketPrState } from '../../../slices/bitbucket-pr/state';
+import { gitlabMrFixture } from '../../../slices/mount-request/testing/gitlabMrFixture';
+import type { MountBitbucketPrState } from '../../../slices/mount-request/state';
 import { makeBranchFactsReaders } from '../makeBranchFactsReaders';
 import { readBranchFactsOf } from './readBranchFactsOf';
 
@@ -78,6 +78,8 @@ type BitbucketEntryParams = {
 };
 
 const bitbucketEntryOf = ({ pr, patch = {} }: BitbucketEntryParams): MountBitbucketPrState => ({
+  kind: 'bitbucket',
+  selected: null,
   mountId: ledgerMount,
   projectId: ledger.id,
   revision: 1,
@@ -231,8 +233,7 @@ const seed = ({ remoteUrl }: SeedParams) =>
     projects: [
       aProject({ id: ledger.id, workspaceId: ledger.workspaceId, name: 'ledger-core', remoteUrl }),
     ],
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    mountRequests: {},
     refreshSessionPr: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
     refreshSessionMr: vi.fn(async () => undefined),
@@ -251,7 +252,7 @@ describe('the branch facts of a GitLab mount', () => {
   beforeEach(() => {
     seed({ remoteUrl: 'git@gitlab.com:acme/ledger-core.git' });
     useAppStore.setState({
-      mountGitlabMr: {
+      mountRequests: {
         [ledgerMount]: mountState({
           mountId: ledgerMount,
           projectId: ledger.id,
@@ -290,7 +291,7 @@ describe('the branch facts of a GitLab mount', () => {
 
   it('says unknown when the mount has no entry, never none', async () => {
     gitlabHost({});
-    useAppStore.setState({ mountGitlabMr: {} });
+    useAppStore.setState({ mountRequests: {} });
     const brief = await briefOf();
     expect(brief).toContain('Pull request: Facts not available');
     expect(brief).not.toContain('none is open');
@@ -319,7 +320,7 @@ describe('the branch facts of a Bitbucket mount', () => {
   beforeEach(() => {
     seed({ remoteUrl: 'git@bitbucket.org:acme/ledger-core.git' });
     useAppStore.setState({
-      mountBitbucketPr: { [ledgerMount]: bitbucketEntryOf({ pr: bitbucketPrOf({ id: 12 }) }) },
+      mountRequests: { [ledgerMount]: bitbucketEntryOf({ pr: bitbucketPrOf({ id: 12 }) }) },
     });
   });
 
@@ -353,7 +354,7 @@ describe('the branch facts of a Bitbucket mount', () => {
 
   it('says unknown when the mount has no entry, never none', async () => {
     bitbucketHost({});
-    useAppStore.setState({ mountBitbucketPr: {} });
+    useAppStore.setState({ mountRequests: {} });
     const brief = await briefOf();
     expect(brief).toContain('Pull request: Facts not available');
     expect(brief).not.toContain('none is open');
@@ -362,7 +363,7 @@ describe('the branch facts of a Bitbucket mount', () => {
   it('says unknown when the host failed and nothing is known, never none', async () => {
     bitbucketHost({});
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [ledgerMount]: bitbucketEntryOf({
           pr: null,
           patch: { fetchedAt: null, error: 'the host answered 502' },

@@ -1,4 +1,4 @@
-import { AUTO_CHILD_IDLE_MINUTES } from '@goodboy/core';
+import { AUTO_CHILD_IDLE_MINUTES } from '@goodboy/core/auto';
 import {
   getAutoTree,
   hasAgentOpenToolCall,

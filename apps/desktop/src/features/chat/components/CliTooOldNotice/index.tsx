@@ -4,7 +4,7 @@ import {
   cleanCliVersion,
   cliSupportedSibling,
   isCliVersionBelow,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { Button, Notice } from '@goodboy/ui';
 import type { ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

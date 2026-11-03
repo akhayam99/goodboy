@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import {
   getAutoDelegation,
   readAutoArtifactLiveState,

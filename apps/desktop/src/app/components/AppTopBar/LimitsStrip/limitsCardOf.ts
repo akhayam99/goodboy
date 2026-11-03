@@ -1,4 +1,4 @@
-import { sortLimitWindows, type LimitsChip } from '@goodboy/core';
+import { sortLimitWindows, type LimitsChip } from '@goodboy/core/providers';
 import type { Fact, FactCardSpec, FactState } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { formatLimitReset } from '../../../../features/providers/limits/formatLimitReset';

@@ -20,7 +20,7 @@ import {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
   type ReviewSourceKind,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openUrl } from '../../../shared/lib/editor';

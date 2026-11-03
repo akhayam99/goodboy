@@ -5,7 +5,7 @@ import {
   extractAllCommentResolved,
   extractAllCommentWontfix,
   isReviewThreadId,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 import type { AgentId, PrComment, ResolveThread, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ICON_SIZE } from '@goodboy/ui';

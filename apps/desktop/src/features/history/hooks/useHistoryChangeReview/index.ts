@@ -1,4 +1,4 @@
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { FileDiff, MountId, SessionId } from '@goodboy/types';
 import { useEffect, useRef, useState } from 'react';
 import { useNow } from '../../../../shared/hooks/useNow';

@@ -1,4 +1,4 @@
-import type { StepPolishDeps } from '@goodboy/core';
+import type { StepPolishDeps } from '@goodboy/core/workflows';
 import type { StepDraft } from './engine';
 import type { Polish } from './hooks/usePolish';
 import { polishWorkflowExpectedOutput, polishWorkflowStep } from './workflows';

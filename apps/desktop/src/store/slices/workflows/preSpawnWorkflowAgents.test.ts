@@ -6,8 +6,8 @@ import {
   resolveModelArgs,
   resolveModelForProvider,
   resolveStoredModelSelection,
-} from '@goodboy/core';
-import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
+} from '@goodboy/core/providers';
+import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core/orchestrator';
 import { brandId } from '@goodboy/types';
 import type {
   Agent,

@@ -18,8 +18,7 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hois
     sessionGithub: {} as Record<string, unknown>,
     mountGithub: {} as Record<string, unknown>,
     scribeWork: {},
-    mountGitlabMr: {} as Record<string, unknown>,
-    mountBitbucketPr: {} as Record<string, unknown>,
+    mountRequests: {} as Record<string, unknown>,
     mountCleanupProposals: {} as Record<string, ReadonlyArray<unknown>>,
     prSeries: Object.fromEntries(Array.of<[string, ReadonlyArray<unknown>]>()),
     trackerMoves: Object.fromEntries(Array.of<[string, ReadonlyArray<unknown>]>()),
@@ -99,8 +98,7 @@ beforeEach(() => {
   };
   store.projects = [{ id: 'api', name: 'API', baseBranch: 'main', workspaceId: 'ws-1' }];
   store.mountGithub = {};
-  store.mountGitlabMr = {};
-  store.mountBitbucketPr = {};
+  store.mountRequests = {};
   worktreeStatus.mockReset();
   worktreeStatus.mockResolvedValue({
     branch: 'feat',

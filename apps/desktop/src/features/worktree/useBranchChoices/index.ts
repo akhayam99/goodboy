@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { OpenPrBranch } from '@goodboy/core';
+import type { OpenPrBranch } from '@goodboy/core/github';
 import { ghOpenPrBranches } from '../../integrations/github/github';
 import { mergeBranchChoices, type BranchChoice } from '../branchChoices';
 import {

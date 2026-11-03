@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PullRequestPortError, STALE_HEAD_MESSAGE, isPullRequestPortError } from '@goodboy/core';
+import {
+  PullRequestPortError,
+  STALE_HEAD_MESSAGE,
+  isPullRequestPortError,
+} from '@goodboy/core/review-source';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 

@@ -1,4 +1,4 @@
-import type { WireframeDocument } from '@goodboy/core';
+import type { WireframeDocument } from '@goodboy/core/artifacts';
 import type { WireframeIndex } from '../wireframeIndex';
 
 const BOX_WIDTH = 152;

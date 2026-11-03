@@ -1,4 +1,4 @@
-import { wrapOpenQuestionAnswers } from '@goodboy/core';
+import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
 import { useAppStore } from '../../../../../store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { STORY_QUESTION } from '../../scenes/story/storyContent';

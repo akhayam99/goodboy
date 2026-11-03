@@ -1,4 +1,4 @@
-import { AUTO_GATES, AUTO_OWN_PROVIDERS } from '@goodboy/core';
+import { AUTO_GATES, AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
 import type { AppStore } from '../../store/store';
 
 const OFF_REASON = 'Auto is not available in this build.';

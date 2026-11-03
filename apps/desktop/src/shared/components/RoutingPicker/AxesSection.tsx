@@ -1,4 +1,4 @@
-import type { CliGate } from '@goodboy/core';
+import type { CliGate } from '@goodboy/core/providers';
 import type { EffortLevel, ModelAxes, ModelKey } from '@goodboy/types';
 import { EFFORT_LABEL } from '../../../features/chat/utils/chat-constants';
 import { AxisRow } from './AxisRow';

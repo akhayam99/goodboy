@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildArtifactLedgerBlock, sha256Hex } from '@goodboy/core';
+import { buildArtifactLedgerBlock } from '@goodboy/core/auto';
+import { sha256Hex } from '@goodboy/core/slug';
 import { writeArtifactRevision } from '@goodboy/db';
 import { brandId, type ArtifactId } from '@goodboy/types';
 import { approveArtifact } from './approveArtifact';

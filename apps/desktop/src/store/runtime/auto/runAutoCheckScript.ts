@@ -1,4 +1,4 @@
-import type { CheckReport } from '@goodboy/core';
+import type { CheckReport } from '@goodboy/core/auto';
 import { scriptPinId } from '../../../features/scripts/scriptPinId';
 import { startRunnableScript } from '../../../features/scripts/startRunnableScript';
 import type { AppStore } from '../../store';

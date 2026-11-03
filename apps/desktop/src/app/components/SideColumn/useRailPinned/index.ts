@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { Session, WorkspaceId } from '@goodboy/types';
-import { useSessions, useSessionStages } from '../../../../store';
+import { useAppStore, useSessions } from '../../../../store';
+import { cachedStageInfoOf } from '../../../../store/slices/session-view/cachedStageInfoOf';
 import { usePinnedSessionIds } from '../../../../store/slices/session-pins/selectors';
+import { railRankOf, type RailRank } from '../railRankOf';
 
 const RAIL_PINNED_LIMIT = 7;
 
@@ -9,9 +12,14 @@ type Params = {
   readonly workspaceId: WorkspaceId | null;
 };
 
+type RankParams = {
+  readonly rank: RailRank;
+};
+
 export type RailPinned = {
   readonly all: ReadonlyArray<Session>;
   readonly shown: ReadonlyArray<Session>;
+  readonly rest: ReadonlyArray<Session>;
 };
 
 export const useRailPinned = ({ workspaceId }: Params): RailPinned => {
@@ -27,29 +35,34 @@ export const useRailPinned = ({ workspaceId }: Params): RailPinned => {
       ),
     [sessions, workspaceId],
   );
-  const stages = useSessionStages(active);
+  const ranks = useAppStore(
+    useShallow((state): Readonly<Record<string, RailRank>> =>
+      Object.fromEntries(
+        active.map((session) => [
+          session.id,
+          railRankOf({ info: cachedStageInfoOf({ state, session }) }),
+        ]),
+      ),
+    ),
+  );
   return useMemo(() => {
     const byId = new Map(active.map((session) => [session.id as string, session]));
-
-    const needs = active.filter((session) => stages[session.id] === 'attention');
-    const running = active.filter((session) => stages[session.id] === 'running');
-    const important = [...needs, ...running];
+    const ofRank = ({ rank }: RankParams) => active.filter((session) => ranks[session.id] === rank);
+    const news = [
+      ...ofRank({ rank: 'needs' }),
+      ...ofRank({ rank: 'running' }),
+      ...ofRank({ rank: 'unread' }),
+    ];
     const pins = pinnedIds.flatMap((id) => {
       const session = byId.get(id);
-      return session === undefined || !active.includes(session) ? [] : [session];
+      return session === undefined ? [] : [session];
     });
-    const visible = Array.from(
-      new Map([...important, ...pins].map((session) => [session.id, session])).values(),
-    );
-    const shown = visible.slice(0, RAIL_PINNED_LIMIT);
-    const ordered = [...visible, ...active];
+    const shown = news.slice(0, RAIL_PINNED_LIMIT);
     const all = Array.from(
-      new Map(
-        ordered
-          .filter((session) => active.includes(session))
-          .map((session) => [session.id, session]),
-      ).values(),
+      new Map([...news, ...pins, ...active].map((session) => [session.id, session])).values(),
     );
-    return { all, shown };
-  }, [pinnedIds, active, stages]);
+    const shownIds = new Set(shown.map((session) => session.id));
+    const rest = all.filter((session) => !shownIds.has(session.id));
+    return { all, shown, rest };
+  }, [pinnedIds, active, ranks]);
 };

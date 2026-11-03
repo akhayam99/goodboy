@@ -239,7 +239,7 @@ describe('the fix run summary', () => {
     expect(card.getAllByRole('radio')).toHaveLength(2);
     expect(card.getByText('Recommended')).toBeDefined();
 
-    fireEvent.click(card.getByRole('button', { name: 'Continue the fix run' }));
+    fireEvent.click(card.getByRole('button', { name: 'Answer' }));
 
     await waitFor(() => expect(answerQuestions).toHaveBeenCalledOnce());
     expect(answerQuestions.mock.calls[0]?.[0]).toMatchObject({

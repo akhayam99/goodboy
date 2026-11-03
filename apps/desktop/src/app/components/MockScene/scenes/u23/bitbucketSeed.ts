@@ -1,4 +1,8 @@
-import { bitbucketCheckRuns, bitbucketChecksOf, bitbucketReviewDecisionOf } from '@goodboy/core';
+import {
+  bitbucketCheckRuns,
+  bitbucketChecksOf,
+  bitbucketReviewDecisionOf,
+} from '@goodboy/core/review-source';
 import type {
   IntegrationBinding,
   IntegrationBindingId,
@@ -19,8 +23,8 @@ import type {
   BitbucketUser,
 } from '../../../../../features/integrations/bitbucket/client';
 import { useAppStore } from '../../../../../store';
-import { applyMountBitbucketPr } from '../../../../../store/slices/bitbucket-pr/mountBitbucketPr';
-import type { MountBitbucketPrState } from '../../../../../store/slices/bitbucket-pr/state';
+import { applyMountRequest } from '../../../../../store/slices/mount-request/applyMountRequest';
+import type { MountBitbucketPrState } from '../../../../../store/slices/mount-request/state';
 import { handlersFor } from '../brand/DiffStage';
 import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { CTX_STATUS } from '../brand/contextBranch';
@@ -333,6 +337,8 @@ const entryOf = ({
   readonly shape: Shape;
   readonly pr: BitbucketPullRequest | null;
 }): MountBitbucketPrState => ({
+  kind: 'bitbucket',
+  selected: null,
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -375,7 +381,7 @@ export const applyBitbucketPageSeed = ({
     throw new Error('the resolve seed has no pull request state');
   }
   const noop = async (): Promise<void> => undefined;
-  const projected = applyMountBitbucketPr({
+  const projected = applyMountRequest({
     state: {
       ...base,
       sessionMounts: { [SESSION_ID]: [MOUNT_VIEW] },
@@ -385,7 +391,7 @@ export const applyBitbucketPageSeed = ({
     },
     sessionId: SESSION_ID,
     mountId: MOUNT_ID,
-    bitbucket: entry,
+    request: entry,
   });
   useAppStore.setState({
     ...projected,

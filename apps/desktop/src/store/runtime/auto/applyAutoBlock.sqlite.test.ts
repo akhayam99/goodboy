@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isAutoGateBlock, storedDeliveryOf } from '@goodboy/core';
+import { isAutoGateBlock, storedDeliveryOf } from '@goodboy/core/auto';
 import {
   getAutoTree,
   listAutoAttemptsOfTree,

@@ -134,8 +134,7 @@ const makeState = (): MountRowState => ({
   },
   sessionProjectMounts: {},
   mountGithub: {},
-  mountGitlabMr: {},
-  mountBitbucketPr: {},
+  mountRequests: {},
   mountBranchObservations: {
     [SESSION_ID]: [
       {

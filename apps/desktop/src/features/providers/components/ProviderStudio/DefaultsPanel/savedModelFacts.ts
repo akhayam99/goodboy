@@ -1,4 +1,4 @@
-import { TASKS } from '@goodboy/core';
+import { TASKS } from '@goodboy/core/settings';
 import type { AuxTaskId, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import type { SavedProjectModels } from '../../../../../store/slices/saved-project-models/state';

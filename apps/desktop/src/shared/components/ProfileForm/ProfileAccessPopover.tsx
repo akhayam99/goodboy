@@ -1,4 +1,4 @@
-import { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from '@goodboy/core';
+import { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from '@goodboy/core/profile';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import { UNKNOWN_VALUE } from '../../utils/unknownValue';
 

@@ -5,7 +5,7 @@ import { cleanup, render, type RenderResult } from '@testing-library/react';
 import { ToastProvider } from '../../shared/components/Toast';
 import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
 import { insertWorkspace, saveWorkflow } from '@goodboy/db';
-import { ORCHESTRATOR_SYSTEM_PROMPT } from '@goodboy/core';
+import { ORCHESTRATOR_SYSTEM_PROMPT } from '@goodboy/core/orchestrator';
 import type {
   IsoDateTime,
   SessionId,

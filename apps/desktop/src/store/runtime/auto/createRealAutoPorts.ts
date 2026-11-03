@@ -1,4 +1,4 @@
-import { pathsOfPatch, type PickableMount } from '@goodboy/core';
+import { pathsOfPatch, type PickableMount } from '@goodboy/core/auto';
 import { readRunCostUsd, readRunLedgerOutcome, type Database } from '@goodboy/db';
 import {
   brandId,

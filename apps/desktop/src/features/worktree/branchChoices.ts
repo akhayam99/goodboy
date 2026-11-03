@@ -1,4 +1,4 @@
-import type { OpenPrBranch } from '@goodboy/core';
+import type { OpenPrBranch } from '@goodboy/core/github';
 import type { LocalBranchInfo, RemoteBranchInfo } from './worktree';
 
 export type BranchChoiceSource = 'local' | 'remote' | 'pr';

@@ -1,4 +1,4 @@
-import { readHeadroom, type HeadroomMap } from '@goodboy/core';
+import { readHeadroom, type HeadroomMap } from '@goodboy/core/providers';
 import type { SessionId, WorkflowRules } from '@goodboy/types';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';

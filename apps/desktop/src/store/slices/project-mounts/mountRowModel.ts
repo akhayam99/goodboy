@@ -14,15 +14,13 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
-import { bitbucketPrStateKind } from '@goodboy/core';
+import { bitbucketPrStateKind } from '@goodboy/core/review-source';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
+import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import { projectById } from '../projects/projectIndex';
 
-export type MountRequestState = Pick<
-  AppState,
-  'mountGithub' | 'mountGitlabMr' | 'mountBitbucketPr'
->;
+export type MountRequestState = Pick<AppState, 'mountGithub' | 'mountRequests'>;
 
 export type MountRowState = MountRequestState &
   Pick<
@@ -159,7 +157,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       headSha: githubPr.headSha ?? null,
     };
   }
-  const gitlab = (state.mountGitlabMr ?? {})[mountId];
+  const gitlab = gitlabMountOf({ state, mountId });
   const mapped = mapMrToPullRequestState({
     mr: gitlab?.mr ?? null,
     approvals: gitlab?.approvals ?? null,
@@ -190,7 +188,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       headSha: gitlab?.mr?.sha ?? null,
     };
   }
-  const bitbucket = (state.mountBitbucketPr ?? {})[mountId];
+  const bitbucket = bitbucketMountOf({ state, mountId });
   const bitbucketPr = bitbucket?.pr ?? null;
   if (bitbucketPr === null || bitbucketPr === undefined) {
     return null;

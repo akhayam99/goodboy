@@ -10,7 +10,7 @@ import {
   FOCUS_RING,
   cn,
 } from '@goodboy/ui';
-import type { DecisionOp } from '@goodboy/core';
+import type { DecisionOp } from '@goodboy/core/context';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 

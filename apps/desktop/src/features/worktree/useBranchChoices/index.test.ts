@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { OpenPrBranch } from '@goodboy/core';
+import type { OpenPrBranch } from '@goodboy/core/github';
 import type { LocalBranchInfo, RemoteBranchInfo } from '../worktree';
 
 const h = vi.hoisted(() => ({

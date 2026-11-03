@@ -1,4 +1,4 @@
-import { LIMITS_WARNING_FRACTION } from '@goodboy/core';
+import { LIMITS_WARNING_FRACTION } from '@goodboy/core/providers';
 import type { ProviderLimitWindow } from '@goodboy/types';
 
 export type WindowTone = 'danger' | 'warning' | 'neutral';

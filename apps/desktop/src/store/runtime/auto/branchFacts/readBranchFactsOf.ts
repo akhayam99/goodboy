@@ -4,7 +4,7 @@ import type {
   BranchFactsPart,
   BranchFactsRequest,
   BranchFactsThread,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import { formatError } from '@goodboy/ui';
 import type { BranchFactsParts, ReadBranchFactsParams } from '../ports';
 

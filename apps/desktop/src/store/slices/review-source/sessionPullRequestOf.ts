@@ -1,4 +1,5 @@
 import type { MountId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
+import { gitlabMountOf } from '../mount-request/requestOf';
 import type {
   GitlabMergeRequest,
   GitlabMrApprovalState,
@@ -6,17 +7,16 @@ import type {
 import { mapBitbucketPrToPullRequestState } from '../../../features/integrations/bitbucket/mapBitbucketPrToPullRequestState';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
-import { selectBitbucketRequest } from '../bitbucket-pr/selectBitbucketRequest';
+import { selectBitbucketRequest } from '../mount-request/selectBitbucketRequest';
 import { branchGithubOf } from '../github/branchGithubOf';
-import type { BitbucketRequest } from '../bitbucket-pr/selectBitbucketRequest';
+import type { BitbucketRequest } from '../mount-request/selectBitbucketRequest';
 import { selectActiveMountId } from '../project-mounts/selectors';
 
 export type RequestState = Pick<
   AppState,
   | 'sessionGithub'
   | 'mountGithub'
-  | 'mountGitlabMr'
-  | 'mountBitbucketPr'
+  | 'mountRequests'
   | 'sessions'
   | 'sessionProjectMounts'
   | 'sessionMounts'
@@ -100,7 +100,7 @@ const hostRequestOf = ({ state, sessionId, mountId, prNumber }: Params): HostReq
     return { host: 'github', pr: github };
   }
   const id = mountId ?? selectActiveMountId({ state, sessionId });
-  const gitlabEntry = id === null ? undefined : state.mountGitlabMr?.[id];
+  const gitlabEntry = id === null ? undefined : gitlabMountOf({ state, mountId: id });
   const gitlab = gitlabRequestStateOf({ mr: gitlabEntry?.mr, approvals: gitlabEntry?.approvals });
   if (gitlab !== null) {
     return { host: 'gitlab', pr: gitlab };

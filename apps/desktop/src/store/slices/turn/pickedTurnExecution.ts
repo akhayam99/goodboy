@@ -1,4 +1,4 @@
-import { canonicalModelId, modelIdForSelection } from '@goodboy/core';
+import { canonicalModelId, modelIdForSelection } from '@goodboy/core/providers';
 import type { TurnProviderOverride } from '@goodboy/types';
 
 export type PickedTurnExecution =

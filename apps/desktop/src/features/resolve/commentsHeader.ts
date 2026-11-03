@@ -1,5 +1,10 @@
 import { applyFixesLabel } from './commentProjection';
-import { commitCountText, threadCountText } from './reviewLaunchCopy';
+import {
+  commitCountText,
+  fixingCountText,
+  threadCountText,
+  type FixingCount,
+} from './reviewLaunchCopy';
 
 type HeaderPrimaryKind = 'fixing' | 'apply' | 'fix' | 'push' | 'request_review';
 
@@ -10,7 +15,7 @@ export type HeaderPrimary = {
 };
 
 type Params = {
-  readonly fixingThreads: number;
+  readonly fixing: FixingCount | null;
   readonly waitingFixes: number;
   readonly fixableThreads: number;
   readonly unpushedCommits: number;
@@ -18,16 +23,16 @@ type Params = {
 };
 
 export const headerPrimaryOf = ({
-  fixingThreads,
+  fixing,
   waitingFixes,
   fixableThreads,
   unpushedCommits,
   hasOpenThreads,
 }: Params): HeaderPrimary | null => {
-  if (fixingThreads > 0) {
+  if (fixing !== null && fixing.working > 0) {
     return {
       kind: 'fixing',
-      label: `Fixing ${threadCountText({ count: fixingThreads })}`,
+      label: fixingCountText(fixing),
       isDisabled: true,
     };
   }

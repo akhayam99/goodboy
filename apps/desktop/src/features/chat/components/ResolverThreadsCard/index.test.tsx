@@ -18,7 +18,7 @@ vi.mock('../../../review/openReviewThread', () => ({
   openReviewThread: h.openReviewThread,
 }));
 
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core/context', () => ({
   extractAllCommentAnalysis: h.analysis,
   extractAllCommentResolved: h.resolved,
   extractAllCommentWontfix: h.wontfix,

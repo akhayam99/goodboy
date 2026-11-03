@@ -1,4 +1,4 @@
-import { mergeProviderLimits } from '@goodboy/core';
+import { mergeProviderLimits } from '@goodboy/core/providers';
 import { upsertProviderLimits } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, RecordProviderLimitsParams, SetFn } from './types';

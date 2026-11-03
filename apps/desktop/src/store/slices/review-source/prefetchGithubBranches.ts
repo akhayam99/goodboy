@@ -1,4 +1,4 @@
-import { listPrsForBranches } from '@goodboy/core';
+import { listPrsForBranches } from '@goodboy/core/github';
 import type { MountId, ProjectId, PullRequestState, WorkspaceId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { runWithLimit } from '../../../shared/utils/runWithLimit';

@@ -8,14 +8,13 @@ type Params = {
 };
 
 type SessionsParams = {
-  readonly state: Pick<AppState, 'sessionMounts' | 'mountGitlabMr' | 'mountBitbucketPr'>;
+  readonly state: Pick<AppState, 'sessionMounts' | 'mountRequests'>;
   readonly host: ReachabilityHost;
 };
 
 const sessionsAskingOf = ({ state, host }: SessionsParams): ReadonlyArray<SessionId> => {
-  const known = host === 'gitlab' ? state.mountGitlabMr : state.mountBitbucketPr;
   return Object.entries(state.sessionMounts)
-    .filter(([, mounts]) => mounts.some((mount) => known[mount.id] !== undefined))
+    .filter(([, mounts]) => mounts.some((mount) => state.mountRequests?.[mount.id]?.kind === host))
     .map(([sessionId]) => brandId<SessionId>({ value: sessionId }));
 };
 

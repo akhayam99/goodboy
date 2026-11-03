@@ -1,4 +1,4 @@
-import { SegmentedTabs } from '@goodboy/ui';
+import { Button, SegmentedTabs } from '@goodboy/ui';
 import type { ReviewEntryCounts } from './useReviewEntries';
 
 export type CommentScope = 'branch' | 'notes' | 'comments';
@@ -14,6 +14,16 @@ type Props = {
   readonly resolvedCount: number;
   readonly hostLabel: string | null;
 };
+
+type StateOption = {
+  readonly value: CommentState;
+  readonly label: string;
+};
+
+const STATE_OPTIONS: ReadonlyArray<StateOption> = [
+  { value: 'open', label: 'Open' },
+  { value: 'resolved', label: 'Resolved' },
+];
 
 type BadgeParams = {
   readonly count: number;
@@ -56,16 +66,19 @@ export const ReviewScopeBar = ({
         />
       ) : null}
       {isStateSwitchShown ? (
-        <SegmentedTabs<CommentState>
-          ariaLabel="Comment state"
-          size="xs"
-          value={state}
-          onChange={onState}
-          options={[
-            { value: 'open', label: 'Open' },
-            { value: 'resolved', label: 'Resolved' },
-          ]}
-        />
+        <div role="group" aria-label="Comment state" className="flex items-center gap-1">
+          {STATE_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              variant={state === option.value ? 'ghost' : 'quiet'}
+              size="xs"
+              aria-pressed={state === option.value}
+              onClick={() => onState(option.value)}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
       ) : null}
     </div>
   );

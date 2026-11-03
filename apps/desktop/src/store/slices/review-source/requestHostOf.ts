@@ -1,4 +1,5 @@
 import type { MountId, PullRequestHost, SessionId } from '@goodboy/types';
+import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';
 import type { AppState } from '../../types';
 import { activeReviewSourceOf, type ReviewSourceSelectionState } from './activeReviewSource';
 import { sessionPullRequestHostOf, type RequestState } from './sessionPullRequestOf';
@@ -7,17 +8,17 @@ const mountHostOf = ({
   state,
   mountId,
 }: {
-  readonly state: Pick<AppState, 'mountGithub' | 'mountGitlabMr' | 'mountBitbucketPr'>;
+  readonly state: Pick<AppState, 'mountGithub' | 'mountRequests'>;
   readonly mountId: MountId;
 }): PullRequestHost | null => {
   const github = state.mountGithub?.[mountId];
   if (github != null && (github.pr !== null || (github.prs ?? []).length > 0)) {
     return 'github';
   }
-  if (state.mountGitlabMr?.[mountId]?.mr != null) {
+  if (gitlabMountOf({ state, mountId })?.mr != null) {
     return 'gitlab';
   }
-  const bitbucket = state.mountBitbucketPr?.[mountId];
+  const bitbucket = bitbucketMountOf({ state, mountId });
   if (
     bitbucket != null &&
     bitbucket.repo !== null &&

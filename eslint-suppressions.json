@@ -1345,11 +1345,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u23/sidebarNavSeed.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u23/topbar.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -6231,7 +6226,7 @@
   },
   "apps/desktop/src/features/suggestions/useSessionSuggestions/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
+      "count": 16
     }
   },
   "apps/desktop/src/features/suggestions/useSessionSuggestions/index.ts": {
@@ -6244,7 +6239,7 @@
   },
   "apps/desktop/src/features/suggestions/useSuggestionActions/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 32
+      "count": 31
     },
     "@typescript-eslint/no-floating-promises": {
       "count": 18
@@ -8185,45 +8180,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/bitbucket-pr/bitbucketPrLink.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/bitbucket-pr/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/bitbucket-pr/refreshMountBitbucketPr.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/bitbucket-pr/refreshMountBitbucketPr.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/store/slices/bitbucket-pr/selectBitbucketRequest.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
-  "apps/desktop/src/store/slices/bitbucket-pr/state.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/boot/auditRetryQueue.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -8691,40 +8647,6 @@
       "count": 7
     }
   },
-  "apps/desktop/src/store/slices/gitlab-mr/createMrForSession.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/gitlab-mr/mrLink.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/gitlab-mr/refreshMountMr.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 31
-    }
-  },
-  "apps/desktop/src/store/slices/gitlab-mr/refreshMountMr.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/store/slices/gitlab-mr/state.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/history/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
@@ -8816,6 +8738,74 @@
   "apps/desktop/src/store/slices/mount-cleanup/retainedPaths.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/bitbucketPrLink.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/createMrForSession.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    },
+    "@typescript-eslint/naming-convention": {
+      "count": 2
+    },
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/index.test.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 16
+    },
+    "@typescript-eslint/naming-convention": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/mrLink.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/refreshMountBitbucketPr.test.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 16
+    },
+    "@typescript-eslint/naming-convention": {
+      "count": 1
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/refreshMountBitbucketPr.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    },
+    "@typescript-eslint/naming-convention": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/refreshMountMr.test.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 31
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/refreshMountMr.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    },
+    "@typescript-eslint/naming-convention": {
+      "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/selectBitbucketRequest.test.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 6
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/state.ts": {
+    "@typescript-eslint/naming-convention": {
+      "count": 1
     }
   },
   "apps/desktop/src/store/slices/navigation/index.test.ts": {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ROLE_REGISTRY } from '@goodboy/core';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import { cn, ICON_SIZE, Listbox, type ListboxOption } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
 import { agentKindPalette, kindForRole, ROLE_LABEL, visibleWorkflowRoles } from '../../agent-kind';

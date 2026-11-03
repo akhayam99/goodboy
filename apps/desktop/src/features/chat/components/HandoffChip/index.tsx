@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight } from 'lucide-react';
 import { cn, ICON_SIZE, FOCUS_RING } from '@goodboy/ui';
 import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
-import { extractHandoff } from '@goodboy/core';
+import { extractHandoff } from '@goodboy/core/context';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,

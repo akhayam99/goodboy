@@ -1,4 +1,4 @@
-import { classifyWorkflowChain, runsForWorkflowRun } from '@goodboy/core';
+import { classifyWorkflowChain, runsForWorkflowRun } from '@goodboy/core/workflows';
 import type { Agent, PlanWithCount, Workflow, WorkflowRun } from '@goodboy/types';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 import { classifyStep, kindConsumesPlan } from '../session/agent-kind';

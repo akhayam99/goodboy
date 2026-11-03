@@ -1,5 +1,5 @@
 import type { ContextSlot, SessionId } from '@goodboy/types';
-import { rewriteWorkflowGoal } from '@goodboy/core';
+import { rewriteWorkflowGoal } from '@goodboy/core/summarizer';
 import { upsertContextSlot } from '@goodboy/db';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';

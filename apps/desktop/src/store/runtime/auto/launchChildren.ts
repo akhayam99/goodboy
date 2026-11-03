@@ -3,7 +3,7 @@ import {
   isAutoProviderResuming,
   isAutoWriterRole,
   type AutoDelegationRole,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   getAutoAttempt,
   getAutoTree,

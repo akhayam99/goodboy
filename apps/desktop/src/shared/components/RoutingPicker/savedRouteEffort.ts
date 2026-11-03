@@ -1,4 +1,4 @@
-import { clampEffortForModel } from '@goodboy/core';
+import { clampEffortForModel } from '@goodboy/core/providers';
 import type { EffortLevel } from '@goodboy/types';
 import type { PickedRoute } from './PickedRoute';
 

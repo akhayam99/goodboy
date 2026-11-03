@@ -1,5 +1,5 @@
 import { useContext, type ReactNode } from 'react';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { SessionId } from '@goodboy/types';
 import { TEXT_ROLE, cn } from '@goodboy/ui';
 import { countSlotText } from '../../../../shared/utils/countSlotText';

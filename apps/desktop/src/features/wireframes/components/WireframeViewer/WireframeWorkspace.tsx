@@ -4,7 +4,7 @@ import {
   parseWireframeSource,
   type WireframeAdjustment,
   type WireframeDocument,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { Button, Notice } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';

@@ -1,4 +1,4 @@
-import { isAgentStatusHalted } from '@goodboy/core';
+import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { WorkflowAdvanceState } from '../../../workflows/advanceGate';
 import {
   DONE_ROW_STATE,

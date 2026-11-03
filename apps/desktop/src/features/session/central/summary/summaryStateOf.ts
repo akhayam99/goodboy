@@ -1,4 +1,4 @@
-import { parseSummaryDocument } from '@goodboy/core';
+import { parseSummaryDocument } from '@goodboy/core/context';
 import { inlineMarkdownText } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { firstSentenceOf } from '../done/firstSentenceOf';

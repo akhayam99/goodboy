@@ -2,7 +2,7 @@ import {
   SUMMARY_SECTION_TITLES,
   type SummaryDocument,
   type SummarySectionKey,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 
 const SUMMARY_NOTES_TITLE = 'Notes';
 

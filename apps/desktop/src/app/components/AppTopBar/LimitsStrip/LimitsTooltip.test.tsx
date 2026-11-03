@@ -10,7 +10,7 @@ vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
-import { limitsChipOf } from '@goodboy/core';
+import { limitsChipOf } from '@goodboy/core/providers';
 import type { IsoDateTime, ProviderLimits } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,

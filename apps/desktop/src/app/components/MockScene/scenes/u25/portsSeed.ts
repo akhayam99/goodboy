@@ -4,7 +4,7 @@ import type {
   MonitorProcess,
   MonitorSnapshot,
   WatchedPort,
-} from '@goodboy/core';
+} from '@goodboy/core/monitoring';
 import { sceneClock } from '../../sceneClock';
 import { LEDGER, PROJECTS, SESSION_ID, SESSION_MOUNTS, SNAPSHOT } from '../u24/monitoringSeed';
 

@@ -1,4 +1,4 @@
-import type { WireframeIssue } from '@goodboy/core';
+import type { WireframeIssue } from '@goodboy/core/artifacts';
 import { Button } from '@goodboy/ui';
 
 type Props = {

@@ -50,6 +50,8 @@ export const drawerKey = (content: DrawerContent): string => {
           ? `${content.payload.source.repo}@${content.payload.source.sha}`
           : content.payload.source.worktreePath
       }:${content.payload.path ?? ''}${content.payload.whole === undefined ? '' : ':whole'}`;
+    case 'identifier-peek':
+      return `identifier-peek:${content.payload.worktreePath}:${content.payload.word}`;
     default: {
       const exhaustive: never = content;
       return String(exhaustive);

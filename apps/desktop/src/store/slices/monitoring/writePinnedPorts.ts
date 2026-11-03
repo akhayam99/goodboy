@@ -1,4 +1,4 @@
-import type { PinnedPort } from '@goodboy/core';
+import type { PinnedPort } from '@goodboy/core/monitoring';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';

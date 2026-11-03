@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { EMPTY_DURATION_HISTORY, type DurationHistory, type DurationSample } from '@goodboy/core';
+import {
+  EMPTY_DURATION_HISTORY,
+  type DurationHistory,
+  type DurationSample,
+} from '@goodboy/core/estimates';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import type { WorkTimeSource } from '../../workTreeModel/workTimeSource';
 import type { TimelineRunEntry } from './buildTimelineGroups';

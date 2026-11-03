@@ -341,8 +341,7 @@ export const seedCodeLayers = ({ layer, prState, worktreeState }: SeedParams): v
           },
         }
       : {},
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    mountRequests: {},
   });
   useAppStore
     .getState()

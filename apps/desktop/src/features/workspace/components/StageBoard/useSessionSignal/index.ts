@@ -1,4 +1,5 @@
 import type { Session } from '@goodboy/types';
+import { gitlabSessionOf } from '../../../../../store/slices/mount-request/requestOf';
 import {
   useAppStore,
   useSessionPrFetchState,
@@ -18,7 +19,7 @@ export const useSessionSignal = ({ session, isArchived }: Params): BoardSignal =
   const id = session.id;
   const info = useSessionStageInfo(session);
   const pullRequest = useAppStore((s) => s.sessionGithub[id]?.pr ?? null);
-  const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
+  const mergeRequest = useAppStore((s) => gitlabSessionOf({ state: s, sessionId: id })?.mr ?? null);
   const prFetchState = useSessionPrFetchState(id);
   const requestHost = useSessionRequestHost({ sessionId: id });
   const runningCount = useAppStore((s) => runningAgentCountOf({ state: s, sessionId: id }));

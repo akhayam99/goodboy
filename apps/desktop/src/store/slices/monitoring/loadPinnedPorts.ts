@@ -1,4 +1,4 @@
-import type { HiddenPort, PinnedPort } from '@goodboy/core';
+import type { HiddenPort, PinnedPort } from '@goodboy/core/monitoring';
 import { deleteSetting, getSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { parseHiddenPorts } from './parseHiddenPorts';

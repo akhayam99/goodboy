@@ -1,6 +1,6 @@
 import { nounFor } from '../../shared/utils/nounFor';
 import { countNoun } from '../../shared/utils/countNoun';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { ResolveCommitStyle, ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publication/publicationOutcome';
 import { NAMES } from '../../shared/utils/names';

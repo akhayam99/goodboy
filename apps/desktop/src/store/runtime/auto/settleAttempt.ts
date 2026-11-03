@@ -1,4 +1,4 @@
-import { AUTO_TREE_LIMITS } from '@goodboy/core';
+import { AUTO_TREE_LIMITS } from '@goodboy/core/auto';
 import {
   AUTO_OWNER_GUARD_SQL,
   autoOwnerGuardParams,

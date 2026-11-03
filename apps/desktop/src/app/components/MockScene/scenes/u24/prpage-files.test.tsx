@@ -154,7 +154,7 @@ describe('the u24 prpage files scenes', () => {
     expect(screen.getByRole('tab', { name: /^All/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^On GitHub/ })).toBeDefined();
-    expect(screen.queryByRole('tab', { name: 'Resolved' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Resolved' })).toBeNull();
     expect(screen.getByRole('button', { name: /^Fix \d+ threads?$/ })).toBeDefined();
   });
 });

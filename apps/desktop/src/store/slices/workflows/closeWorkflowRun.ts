@@ -1,6 +1,6 @@
 import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateSessionWorkflowTriggerMode } from '@goodboy/db';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';

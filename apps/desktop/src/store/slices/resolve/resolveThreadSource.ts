@@ -3,7 +3,7 @@ import {
   GITLAB_THREAD_PREFIX,
   bitbucketCommentId,
   gitlabDiscussionId,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 import type { ResolveSourceKind, ResolveThread } from '@goodboy/types';
 
 export const sourceKindOfThreadId = ({

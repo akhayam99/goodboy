@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProviderConnectionState } from '@goodboy/types';
 import type { WizardState } from '../../onboardingSettings';
+import { WIZARD_WINDOW_DECISION } from '../wizardWindowDecision';
 import { useOnboardingWizard } from './index';
 
 const OPEN_EVENT = 'goodboy:open-onboarding-wizard';
@@ -41,6 +42,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 const reset = () => {
+  WIZARD_WINDOW_DECISION.hasDecided = false;
   wizardState = 'open';
   savedStep = null;
   hydrated = true;
@@ -83,6 +85,16 @@ describe('useOnboardingWizard', () => {
       const { result } = renderWizard();
       expect(result.current.isOpen).toBe(true);
       expect(result.current.providersConnected).toBe(1);
+    });
+
+    it('keeps a second host closed after the first one closed, while the done write is still pending', () => {
+      const first = renderWizard();
+      expect(first.result.current.isOpen).toBe(true);
+      act(() => first.result.current.close());
+      workspaces.push({ id: 'w1' });
+      savedStep = 'agents';
+      const second = renderWizard();
+      expect(second.result.current.isOpen).toBe(false);
     });
 
     it('stays closed once setup is done', () => {

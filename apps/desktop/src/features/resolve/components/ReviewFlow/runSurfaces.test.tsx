@@ -84,7 +84,7 @@ describe('Fix run status line', () => {
     await mount({ threadId: null });
 
     const status = within(screen.getByTestId('resolve-run-status'));
-    expect(status.getByText('Fixing 4 threads')).toBeDefined();
+    expect(status.getByText('Fixing 1 of 4 threads')).toBeDefined();
     expect(status.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
     expect(status.queryByText('Sonnet 5 · Medium')).toBeNull();
     expect(status.getByRole('button', { name: 'View transcript' })).toBeDefined();
@@ -129,7 +129,8 @@ describe('Question from the fix run', () => {
     expect(options).toHaveLength(QUESTION_OPTIONS.length);
     expect(options[0]?.getAttribute('aria-checked')).toBe('true');
     expect(card.getByRole('textbox', { name: 'Or tell it something else' })).toBeDefined();
-    expect(within(comment()).queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    expect(card.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
   });
 
   it('continues the same fix run with the picked option', async () => {
@@ -139,7 +140,7 @@ describe('Question from the fix run', () => {
 
     const card = within(screen.getByTestId('resolver-question'));
     fireEvent.click(card.getAllByRole('radio')[1] as HTMLElement);
-    fireEvent.click(card.getByRole('button', { name: 'Continue the fix run' }));
+    fireEvent.click(card.getByRole('button', { name: 'Answer' }));
 
     await waitFor(() => expect(answerQuestions).toHaveBeenCalledOnce());
     expect(answerQuestions.mock.calls[0]?.[0]).toEqual({
@@ -177,7 +178,7 @@ describe('Question from the fix run', () => {
     });
 
     const card = within(screen.getByTestId('resolver-question'));
-    const button = card.getByRole('button', { name: 'Continue the fix run' });
+    const button = card.getByRole('button', { name: 'Answer' });
     expect(button.hasAttribute('disabled')).toBe(true);
     fireEvent.click(button);
     expect(answerQuestions).not.toHaveBeenCalled();
@@ -192,7 +193,7 @@ describe('Question from the fix run', () => {
     fireEvent.change(card.getByRole('textbox', { name: 'Or tell it something else' }), {
       target: { value: 'Fail hard but log the delivery id' },
     });
-    fireEvent.click(card.getByRole('button', { name: 'Continue the fix run' }));
+    fireEvent.click(card.getByRole('button', { name: 'Answer' }));
 
     await waitFor(() => expect(answerQuestions).toHaveBeenCalledOnce());
     expect(answerQuestions.mock.calls[0]?.[0].answers).toEqual([

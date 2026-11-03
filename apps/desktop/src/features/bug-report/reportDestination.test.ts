@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import type { GhRunner } from '@goodboy/core';
+import type { GhRunner } from '@goodboy/core/github';
 import { addReportComment, fileReportIssue, findSimilarIssue } from './reportDestination';
 
 const runner = (stdout: string, exitCode = 0, stderr = '') => {

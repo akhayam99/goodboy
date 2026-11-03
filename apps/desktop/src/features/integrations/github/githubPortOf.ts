@@ -1,4 +1,4 @@
-import { githubPullRequestPort, type PullRequestPort } from '@goodboy/core';
+import { githubPullRequestPort, type PullRequestPort } from '@goodboy/core/review-source';
 import type { MountId, PullRequestState, SessionId } from '@goodboy/types';
 import type { GetFn } from '../../../store/slice-types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';

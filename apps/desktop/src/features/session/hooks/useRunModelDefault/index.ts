@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { PROVIDER_CAPABILITIES, isAutoOwnProvider, type ResolveSlot } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, type ResolveSlot } from '@goodboy/core/providers';
+import { isAutoOwnProvider } from '@goodboy/core/auto';
 import type { EffortLevel, ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectModelContext } from '../../../../store/runtime/models/selectModelContext';

@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractScribeText } from '@goodboy/core';
+import { extractScribeText } from '@goodboy/core/context';
 import type { SessionId } from '@goodboy/types';
 import { reduceTranscript } from '../features/chat/utils/transcript-items';
 import { scribeProposalOf } from '../shared/utils/scribeProposal';

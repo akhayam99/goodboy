@@ -1,4 +1,4 @@
-import { SLOT_KEYS, type SlotKey } from '@goodboy/core';
+import { SLOT_KEYS, type SlotKey } from '@goodboy/core/context';
 import type { AgentRole } from '@goodboy/types';
 import { ROLE_SLOTS } from '../../../context/slotRouting';
 import { ROLE_LABEL } from '../../agent-kind';

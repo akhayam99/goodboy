@@ -1,4 +1,4 @@
-import type { HiddenPort } from '@goodboy/core';
+import type { HiddenPort } from '@goodboy/core/monitoring';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { commitAfterConfirm } from '../../runtime/state-writes/commitAfterConfirm';

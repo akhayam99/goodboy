@@ -1,4 +1,4 @@
-import { limitsChipOf, seedProviderPolicy, sortLimitWindows } from '@goodboy/core';
+import { limitsChipOf, seedProviderPolicy, sortLimitWindows } from '@goodboy/core/providers';
 import type {
   IsoDateTime,
   ProviderId,

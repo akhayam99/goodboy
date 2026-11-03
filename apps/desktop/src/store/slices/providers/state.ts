@@ -8,7 +8,7 @@ import type { ProviderLifecycleMap, ProviderConnectMap, ConnectionTestState } fr
 import { INITIAL_HEALTH_MAP, type ProviderHealthMap } from './providerHealth';
 import { INITIAL_LIFECYCLE_MAP, INITIAL_CONNECT_MAP } from './types';
 import type { ProviderId } from '@goodboy/types';
-import type { CliRequirement } from '@goodboy/core';
+import type { CliRequirement } from '@goodboy/core/providers';
 import type { ProviderCooldowns } from '../../../features/providers/routing';
 
 export type ProvidersState = {

@@ -1,4 +1,4 @@
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import { groupPortRows } from './groupPortRows';
 
 type Params = {

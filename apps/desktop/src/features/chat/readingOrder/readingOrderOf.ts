@@ -1,4 +1,4 @@
-import { stripControlMarkers } from '@goodboy/core';
+import { stripControlMarkers } from '@goodboy/core/context';
 import { estimateRenderedLines } from '@goodboy/ui';
 import type { ProviderRunId } from '@goodboy/types';
 import type { ConversationRow } from '../utils/conversationRows';

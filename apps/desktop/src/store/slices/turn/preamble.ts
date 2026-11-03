@@ -1,12 +1,12 @@
 import {
-  DECISION_FIRST_RULE,
   isSlotKey,
   PREAMBLE_SLOT_TOTAL_BUDGET,
   serializeSlotsBudgeted,
   SLOT_KEYS,
   SLOT_LABELS,
   type SlotKey,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
+import { DECISION_FIRST_RULE } from '@goodboy/core/decisionFirstRule';
 import type { ContextSlot, SessionContextItem, TurnEvent } from '@goodboy/types';
 import { contextWindowFor } from '../../../features/session/contextWindowFor';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';

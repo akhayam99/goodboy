@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import type { CatalogModel } from '@goodboy/types';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 

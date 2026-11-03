@@ -1,4 +1,4 @@
-import { SLOT_KEYS, type SlotKey } from '@goodboy/core';
+import { SLOT_KEYS, type SlotKey } from '@goodboy/core/context';
 import type { AgentRole } from '@goodboy/types';
 
 export const ROLE_SLOTS: Readonly<Record<AgentRole, ReadonlyArray<SlotKey>>> = {

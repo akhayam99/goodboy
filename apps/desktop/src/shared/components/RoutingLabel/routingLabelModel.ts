@@ -1,6 +1,6 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { Fact, FactCardSpec } from '@goodboy/ui';
-import { getModelProvider, modelCatalogKey } from '@goodboy/core';
+import { getModelProvider, modelCatalogKey } from '@goodboy/core/providers';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';
 import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';

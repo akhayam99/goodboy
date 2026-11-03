@@ -1,4 +1,4 @@
-import type { HiddenModels } from '@goodboy/core';
+import type { HiddenModels } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import type { ChatRouting } from '../conversation/chatRouting';
 import { defaultChatModel } from '../conversation/defaultChatModel';

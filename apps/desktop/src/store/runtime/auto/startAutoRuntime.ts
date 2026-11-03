@@ -1,4 +1,4 @@
-import { AUTO_GATES } from '@goodboy/core';
+import { AUTO_GATES } from '@goodboy/core/auto';
 import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { registerAutoDrivePort } from '../../../features/auto/autoDrivePort';

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { publishOfResult, type MountSnapshot, type ResultPublish } from '@goodboy/core';
+import { publishOfResult, type MountSnapshot, type ResultPublish } from '@goodboy/core/auto';
 import { listAutoAttemptsOfDelegation, listAutoDelegations } from '@goodboy/db';
 import { brandId, type AutoDelegationId } from '@goodboy/types';
 import type { AutoCheckScript } from './ports';

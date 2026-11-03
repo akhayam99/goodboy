@@ -1,8 +1,5 @@
-import {
-  isAutoChildProvider,
-  orchestratorModelPool,
-  type WorkflowRoutingResolution,
-} from '@goodboy/core';
+import { isAutoChildProvider } from '@goodboy/core/auto';
+import { orchestratorModelPool, type WorkflowRoutingResolution } from '@goodboy/core/orchestrator';
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
 import { autoChildPool } from '../../../features/auto/autoChildPool';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';

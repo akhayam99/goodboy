@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { FileDiff } from '@goodboy/types';
 import { orderLikeTree } from '../../../../diff/lib/changeTree';
 import { bitbucketPullRequestDiff, type BitbucketPullRequestTarget } from '../../client';

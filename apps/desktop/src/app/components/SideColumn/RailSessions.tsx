@@ -34,7 +34,7 @@ const focusFirstFlyoutRow = (): void => {
 
 export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) => {
   const sessions = useSessions();
-  const { all: pinned, shown } = useRailPinned({ workspaceId });
+  const { all: pinned, shown, rest } = useRailPinned({ workspaceId });
   const flyout = useRailFlyout();
   const isStudioOver = isStudioOverSession({ place });
   const hasOpenSession = place === null || isStudioOver;
@@ -43,10 +43,7 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
       ? null
       : (sessionById(sessions, currentSessionId) ?? null);
   const hasOpenTail = open !== null && !shown.some((session) => session.id === open.id);
-  const extra =
-    pinned.length -
-    shown.length -
-    (hasOpenTail && pinned.some((session) => session.id === open.id) ? 1 : 0);
+  const extra = rest.filter((session) => session.id !== open?.id).length;
   const sign: RailSessionSign = place === null ? 'current' : 'remembered';
   const { target, close } = flyout;
   const hover = useHoverCardTarget();

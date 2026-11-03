@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { parseHiddenModels, type HiddenModels } from '@goodboy/core';
+import { parseHiddenModels, type HiddenModels } from '@goodboy/core/providers';
 import { useAppStore } from '../../../../store';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 

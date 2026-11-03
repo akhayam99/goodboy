@@ -20,7 +20,7 @@ import {
   type KickoffArtifactInput,
   type KickoffRevise,
   type PickableMount,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   getAutoArtifact,
   getAutoDelegation,

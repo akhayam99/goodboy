@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderHeadroom } from '@goodboy/core';
+import type { ProviderHeadroom } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { canSpreadByHeadroom, nextStepPick, type RulesProviderRoom } from './rulesHeadroom';
 

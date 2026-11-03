@@ -4,10 +4,7 @@ import { projectById } from '../projects/projectIndex';
 import type { MountTarget } from '../project-mounts/mountRequests';
 import { requestHostOfRemote } from './requestHostOfRemote';
 
-export type MountHostState = Pick<
-  AppState,
-  'projects' | 'workspaceIntegrations' | 'mountGitlabMr' | 'mountBitbucketPr'
->;
+export type MountHostState = Pick<AppState, 'projects' | 'workspaceIntegrations' | 'mountRequests'>;
 
 type Params = {
   readonly state: MountHostState;
@@ -20,15 +17,8 @@ type EntryParams = {
   readonly mountId: MountId;
 };
 
-const entryHostOf = ({ state, mountId }: EntryParams): PullRequestHost | null => {
-  if (state.mountGitlabMr?.[mountId] !== undefined) {
-    return 'gitlab';
-  }
-  if (state.mountBitbucketPr?.[mountId] !== undefined) {
-    return 'bitbucket';
-  }
-  return null;
-};
+const entryHostOf = ({ state, mountId }: EntryParams): PullRequestHost | null =>
+  state.mountRequests?.[mountId]?.kind ?? null;
 
 export const mountRequestHostOf = ({ state, workspaceId, mount }: Params): PullRequestHost => {
   const gitlabHosts = (state.workspaceIntegrations?.[workspaceId] ?? []).flatMap((binding) =>

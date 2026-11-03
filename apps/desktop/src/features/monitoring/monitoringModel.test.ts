@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonitorSnapshot, PortRow } from '@goodboy/core';
+import type { MonitorSnapshot, PortRow } from '@goodboy/core/monitoring';
 import { filterPortRows } from './filterPortRows';
 import { formatMemory } from './formatMemory';
 import { portSummary } from './portSummary';

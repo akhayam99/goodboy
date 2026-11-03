@@ -1,4 +1,5 @@
 import type { ReviewablePrProvider, SessionExternalTask, SessionId } from '@goodboy/types';
+import { gitlabSessionOf } from '../mount-request/requestOf';
 import { PROVIDER_PRIORITY } from '../../../features/session/resolvePullRequestProvider';
 import { selectActiveProjectPrs } from '../github/activeProjectPrs';
 import type { AppState } from '../../types';
@@ -88,7 +89,7 @@ export type ReviewTargetState = Pick<
   AppState,
   | 'sessionExternalTasks'
   | 'sessionGithub'
-  | 'sessionGitlabMr'
+  | 'sessionRequests'
   | 'sessions'
   | 'projects'
   | 'sessionProjectMounts'
@@ -106,7 +107,7 @@ type Params = {
 const ownReviewTargets = ({ state, sessionId }: Params): ReadonlyArray<ReviewTarget> => {
   const pullRequest =
     state.sessionGithub[sessionId]?.pr ?? selectActiveProjectPrs({ state, sessionId })[0] ?? null;
-  const mergeRequest = state.sessionGitlabMr[sessionId]?.mr ?? null;
+  const mergeRequest = gitlabSessionOf({ state, sessionId })?.mr ?? null;
   const candidates = [
     pullRequest == null
       ? null

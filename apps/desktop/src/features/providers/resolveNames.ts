@@ -1,4 +1,4 @@
-import type { ResolveNames } from '@goodboy/core';
+import type { ResolveNames } from '@goodboy/core/providers';
 import {
   routingLabelParts,
   routingNameText,

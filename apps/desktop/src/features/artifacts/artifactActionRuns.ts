@@ -1,5 +1,5 @@
 import { save } from '@tauri-apps/plugin-dialog';
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import type {
   IsoDateTime,
   ReportArtifact,

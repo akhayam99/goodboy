@@ -1,4 +1,4 @@
-import { GENERIC_THEME_NAME } from '@goodboy/core';
+import { GENERIC_THEME_NAME } from '@goodboy/core/artifacts';
 
 type DesignProfileFileRef = Readonly<{
   path: string;

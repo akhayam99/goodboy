@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PullRequestPort } from '@goodboy/core';
+import type { PullRequestPort } from '@goodboy/core/review-source';
 import {
   brandId,
   type MountId,

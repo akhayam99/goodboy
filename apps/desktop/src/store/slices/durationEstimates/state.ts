@@ -1,4 +1,4 @@
-import type { DurationHistory } from '@goodboy/core';
+import type { DurationHistory } from '@goodboy/core/estimates';
 import type { MeasuredTurnSpan } from '@goodboy/types';
 
 export type DurationEstimatesState = {

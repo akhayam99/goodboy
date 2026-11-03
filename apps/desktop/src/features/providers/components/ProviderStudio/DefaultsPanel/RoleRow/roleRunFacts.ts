@@ -1,4 +1,5 @@
-import { ROLE_REGISTRY, roleSplitLimits, type Resolution } from '@goodboy/core';
+import { type Resolution } from '@goodboy/core/providers';
+import { ROLE_REGISTRY, roleSplitLimits } from '@goodboy/core/roles';
 import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types';
 import { ROLE_LABEL } from '../../../../../session/agent-kind';
 import { recommendationSummary } from '../../../../../../shared/components/RoutingPicker/recommendationSummary';

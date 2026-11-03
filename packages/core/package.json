@@ -4,13 +4,109 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+    "./artifacts": {
+      "types": "./src/artifacts/index.ts",
+      "default": "./src/artifacts/index.ts"
+    },
+    "./auto": {
+      "types": "./src/auto/index.ts",
+      "default": "./src/auto/index.ts"
+    },
+    "./budget": {
+      "types": "./src/budget/index.ts",
+      "default": "./src/budget/index.ts"
     },
     "./clusters": {
       "types": "./src/clusters/index.ts",
       "default": "./src/clusters/index.ts"
+    },
+    "./context": {
+      "types": "./src/context/index.ts",
+      "default": "./src/context/index.ts"
+    },
+    "./decisionFirstRule": {
+      "types": "./src/decisionFirstRule.ts",
+      "default": "./src/decisionFirstRule.ts"
+    },
+    "./dev-log": {
+      "types": "./src/dev-log.ts",
+      "default": "./src/dev-log.ts"
+    },
+    "./estimates": {
+      "types": "./src/estimates/index.ts",
+      "default": "./src/estimates/index.ts"
+    },
+    "./first-turn-classifier": {
+      "types": "./src/first-turn-classifier.ts",
+      "default": "./src/first-turn-classifier.ts"
+    },
+    "./github": {
+      "types": "./src/github/index.ts",
+      "default": "./src/github/index.ts"
+    },
+    "./handoff": {
+      "types": "./src/handoff/index.ts",
+      "default": "./src/handoff/index.ts"
+    },
+    "./language": {
+      "types": "./src/language/index.ts",
+      "default": "./src/language/index.ts"
+    },
+    "./monitoring": {
+      "types": "./src/monitoring/index.ts",
+      "default": "./src/monitoring/index.ts"
+    },
+    "./orchestrator": {
+      "types": "./src/orchestrator/index.ts",
+      "default": "./src/orchestrator/index.ts"
+    },
+    "./permissions": {
+      "types": "./src/permissions/index.ts",
+      "default": "./src/permissions/index.ts"
+    },
+    "./profile": {
+      "types": "./src/profile/index.ts",
+      "default": "./src/profile/index.ts"
+    },
+    "./providers": {
+      "types": "./src/providers/index.ts",
+      "default": "./src/providers/index.ts"
+    },
+    "./review-source": {
+      "types": "./src/review-source/index.ts",
+      "default": "./src/review-source/index.ts"
+    },
+    "./roles": {
+      "types": "./src/roles.ts",
+      "default": "./src/roles.ts"
+    },
+    "./secret-scan": {
+      "types": "./src/secret-scan.ts",
+      "default": "./src/secret-scan.ts"
+    },
+    "./settings": {
+      "types": "./src/settings/index.ts",
+      "default": "./src/settings/index.ts"
+    },
+    "./slug": {
+      "types": "./src/slug/index.ts",
+      "default": "./src/slug/index.ts"
+    },
+    "./summarizer": {
+      "types": "./src/summarizer/index.ts",
+      "default": "./src/summarizer/index.ts"
+    },
+    "./turn": {
+      "types": "./src/turn/index.ts",
+      "default": "./src/turn/index.ts"
+    },
+    "./untrustedBlock": {
+      "types": "./src/untrustedBlock.ts",
+      "default": "./src/untrustedBlock.ts"
+    },
+    "./workflows": {
+      "types": "./src/workflows/index.ts",
+      "default": "./src/workflows/index.ts"
     }
   },
   "scripts": {

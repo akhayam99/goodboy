@@ -3,7 +3,7 @@ import {
   notCheckedOf,
   type ChecksVerdict,
   type ChildClosing,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { AutoDelegation, AutoTree } from '@goodboy/db';
 import { delegationRoleOf } from './attemptEnvelope';
 import { runAutoChecks } from './runAutoChecks';

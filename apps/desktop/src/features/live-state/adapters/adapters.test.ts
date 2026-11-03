@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core/auto';
 import { brandId, type IsoDateTime, type ProviderRunId, type TurnState } from '@goodboy/types';
 import { aDelegation, aPlanRow, aView } from '../../auto/testing/autoViewFixtures';
 import { agentTurnLive } from './agentTurnLive';

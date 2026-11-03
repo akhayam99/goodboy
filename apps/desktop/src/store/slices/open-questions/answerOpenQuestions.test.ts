@@ -59,7 +59,7 @@ vi.mock('@goodboy/db', async () =>
     markOpenQuestionDismissed,
   }),
 );
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core/context', () => ({
   removeQuestionsFromSlot,
   wrapOpenQuestionAnswers: (body: string) => `<<oq-answers>>\n${body}\n<</oq-answers>>`,
 }));

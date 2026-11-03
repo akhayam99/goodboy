@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { AutoBudgetFacts } from '@goodboy/core';
+import type { AutoBudgetFacts } from '@goodboy/core/auto';
 import { getAutoTree } from '@goodboy/db';
 import { readAutoLevel } from '../../../../store/runtime/auto/level/readAutoLevel';
 import {

@@ -1,4 +1,4 @@
-import { AUTO_DELEGATION_DEADLINE_MINUTES } from '@goodboy/core';
+import { AUTO_DELEGATION_DEADLINE_MINUTES } from '@goodboy/core/auto';
 import type { AutoTree, Statement } from '@goodboy/db';
 
 export type PausedDeadlineStatementParams = Readonly<{

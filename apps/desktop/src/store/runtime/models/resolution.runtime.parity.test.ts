@@ -11,7 +11,8 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCapabilities, SELECTABLE_AGENT_ROLES, ROLE_REGISTRY } from '@goodboy/core';
+import { getCapabilities } from '@goodboy/core/providers';
+import { SELECTABLE_AGENT_ROLES, ROLE_REGISTRY } from '@goodboy/core/roles';
 import type {
   AgentRole,
   AuxTaskId,

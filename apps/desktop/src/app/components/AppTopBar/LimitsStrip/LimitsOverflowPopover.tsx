@@ -1,4 +1,4 @@
-import { worstLimitsChip, type LimitsChip } from '@goodboy/core';
+import { worstLimitsChip, type LimitsChip } from '@goodboy/core/providers';
 import {
   AnchoredPopover,
   cn,
@@ -11,6 +11,7 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { NAMES } from '../../../../shared/utils/names';
 import { nounFor } from '../../../../shared/utils/nounFor';
@@ -88,6 +89,7 @@ export const LimitsOverflowPopover = ({
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
+          {hasShownChips ? null : <CONCEPT_ICONS.providers size={ICON_SIZE.control} aria-hidden />}
           <span>{hasShownChips ? `+${hidden.length} ${noun}` : NAMES.usage}</span>
           {hasShownChips ? (
             <span data-limits-overflow-marks="" className="flex items-center gap-0.5">

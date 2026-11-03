@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { getModelProvider } from '@goodboy/core';
+import { getModelProvider } from '@goodboy/core/providers';
 import { RoleModelSet } from './RoleModelSet';
 
 type Choice = Parameters<Parameters<typeof RoleModelSet>[0]['onAdd']>[0];

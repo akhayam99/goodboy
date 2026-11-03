@@ -1,4 +1,8 @@
-import { locateArtifactSpans, scanArtifactBlocks, type ArtifactScanState } from '@goodboy/core';
+import {
+  locateArtifactSpans,
+  scanArtifactBlocks,
+  type ArtifactScanState,
+} from '@goodboy/core/artifacts';
 import type { ArtifactKind } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
 

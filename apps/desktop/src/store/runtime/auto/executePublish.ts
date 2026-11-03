@@ -1,4 +1,4 @@
-import type { ResultPublish } from '@goodboy/core';
+import type { ResultPublish } from '@goodboy/core/auto';
 import type { SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type { AutoPorts, PushBranchOutcome } from './ports';

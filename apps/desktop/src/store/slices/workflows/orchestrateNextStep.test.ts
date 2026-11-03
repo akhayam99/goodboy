@@ -66,8 +66,8 @@ const orchestratorTransport = vi.hoisted(() => ({
   requests: [] as Array<Record<string, unknown>>,
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/orchestrator', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@goodboy/core/orchestrator')>();
   return {
     ...original,
     OrchestratorClient: vi.fn(function (deps: OrchestratorClientDeps) {
@@ -116,8 +116,9 @@ import type {
   OrchestratorClientDeps,
   OrchestratorDecision,
   OrchestratorInput,
-} from '@goodboy/core';
-import { OrchestratorClient, OrchestratorClientSpawnError, AUTO_DEFAULTS } from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
+import { AUTO_DEFAULTS } from '@goodboy/core/providers';
+import { OrchestratorClient, OrchestratorClientSpawnError } from '@goodboy/core/orchestrator';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { requestDecisionRestart } from './decisionRestart';
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
@@ -549,12 +550,7 @@ describe('orchestrateNextStep', () => {
     const outcome = await addStepToWorkflowRun(
       set,
       get,
-    )({
-      sessionId: SESSION_ID,
-      workflowRunId: WORKFLOW_RUN_ID,
-      name: 'Review',
-      role: 'reviewer',
-    });
+    )({ sessionId: SESSION_ID, workflowRunId: WORKFLOW_RUN_ID, name: 'Review', role: 'reviewer' });
     const upsertsDuringDecision = invokeWorkflowUpsertSpy.mock.calls.length;
 
     if (gate.release == null) {

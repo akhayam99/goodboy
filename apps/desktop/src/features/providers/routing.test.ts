@@ -7,10 +7,8 @@ const { resolveProviderMock, checkProviderBudgetMock } = vi.hoisted(() => ({
   checkProviderBudgetMock: vi.fn(),
 }));
 
-vi.mock('@goodboy/core', () => ({
-  resolveProvider: resolveProviderMock,
-  getDefaultTurnModel: () => 'claude-opus-5',
-}));
+vi.mock('@goodboy/core/providers', () => ({ getDefaultTurnModel: () => 'claude-opus-5' }));
+vi.mock('@goodboy/core/budget', () => ({ resolveProvider: resolveProviderMock }));
 
 vi.mock('../budget/budget', () => ({
   invokeCheckProviderBudget: checkProviderBudgetMock,

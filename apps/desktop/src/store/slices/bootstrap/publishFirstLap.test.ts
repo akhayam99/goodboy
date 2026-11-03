@@ -12,8 +12,8 @@ const h = vi.hoisted(() => ({
   probeProjectRemote: vi.fn(),
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/github', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/github')>()),
   createGithubRepo: h.createGithubRepo,
 }));
 vi.mock('@goodboy/db', async () => (await import('../../../test/dbMock')).createDbMock({}));

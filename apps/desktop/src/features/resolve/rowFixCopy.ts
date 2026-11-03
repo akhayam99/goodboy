@@ -2,7 +2,7 @@ import { fixedInLine } from './commentOutcomeCopy';
 import type { RowFix } from './rowFix';
 
 export const ROW_FIX_COPY = {
-  fixing: 'Fixing in the fix run',
+  fixing: 'In the fix run',
   seeDiff: 'See diff',
   seeDiffOf: 'See diff of',
   review: 'Review the fix',

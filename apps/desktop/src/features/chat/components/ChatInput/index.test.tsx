@@ -237,14 +237,17 @@ vi.mock('../../../../shared/lib/readDroppedAttachment', () => ({
   readDroppedAttachment: () => readDroppedAttachmentMock(),
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
-  return {
-    ...actual,
-    buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }),
-    resolveProvider: resolveProviderMock,
-    assessTurnWeight: () => 'small',
-  };
+vi.mock('@goodboy/core/providers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/providers')>();
+  return { ...actual, assessTurnWeight: () => 'small' };
+});
+vi.mock('@goodboy/core/permissions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/permissions')>();
+  return { ...actual, buildClaudeFlags: () => ({ allowedTools: [], disallowedTools: [] }) };
+});
+vi.mock('@goodboy/core/budget', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/budget')>();
+  return { ...actual, resolveProvider: resolveProviderMock };
 });
 
 import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
@@ -346,10 +349,7 @@ describe('ChatInput, input wiring', () => {
             runId: 'run-1' as ProviderRunId,
             startedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
           },
-          providerPreference: {
-            defaultProvider: 'anthropic',
-            allowTurnOverride: true,
-          },
+          providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
         })}
       />,
     );

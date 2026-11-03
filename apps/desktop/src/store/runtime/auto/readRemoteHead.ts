@@ -1,4 +1,4 @@
-import type { RemoteRead } from '@goodboy/core';
+import type { RemoteRead } from '@goodboy/core/auto';
 import type { ReadRemoteHeadParams } from './ports';
 
 export type BranchOfParams = Readonly<{ worktreePath: string }>;

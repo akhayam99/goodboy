@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ExtractedScribeText } from '@goodboy/core';
+import type { ExtractedScribeText } from '@goodboy/core/context';
 import { brandId, type AgentId, type MountId, type SessionId } from '@goodboy/types';
 import type { ResumeScribePullRequestInput, ScribeWork } from '../../slices/scribe/types';
 import { publishScribePullRequest } from './publishScribePullRequest';

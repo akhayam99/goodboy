@@ -55,7 +55,7 @@ vi.mock('@goodboy/db', async () =>
     getAutoTreeByRootAgent: hoisted.getAutoTreeByRootAgent,
   }),
 );
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core/context', () => ({
   removeQuestionsFromSlot: hoisted.removeQuestionsFromSlot,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: hoisted.execute } }));

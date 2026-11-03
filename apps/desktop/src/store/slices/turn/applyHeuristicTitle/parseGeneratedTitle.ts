@@ -1,4 +1,4 @@
-import { extractAuxOutput } from '@goodboy/core';
+import { extractAuxOutput } from '@goodboy/core/providers';
 import { cleanWorkflowRunTitle } from '@goodboy/db';
 import type { ProviderId } from '@goodboy/types';
 

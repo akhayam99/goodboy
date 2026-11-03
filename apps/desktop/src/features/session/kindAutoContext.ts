@@ -1,4 +1,4 @@
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { ProviderId, ProviderPolicy } from '@goodboy/types';
 import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 

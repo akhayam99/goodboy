@@ -1,4 +1,4 @@
-import { bitbucketPrStateKind } from '@goodboy/core';
+import { bitbucketPrStateKind } from '@goodboy/core/review-source';
 import type {
   PullRequestChecks,
   PullRequestReviewDecision,

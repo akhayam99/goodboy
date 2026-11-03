@@ -1,4 +1,4 @@
-import { autoRefusalUserReason, parseAutoDelegationRole } from '@goodboy/core';
+import { autoRefusalUserReason, parseAutoDelegationRole } from '@goodboy/core/auto';
 import type { AutoPendingRefusal } from '../../../store/slices/auto-view/state';
 import { AGENT_KIND_META, kindForRole } from '../../session/agent-kind';
 import { joinNouns } from '../joinNouns';

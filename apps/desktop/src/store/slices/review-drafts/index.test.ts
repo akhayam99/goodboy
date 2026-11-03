@@ -54,8 +54,8 @@ vi.mock('@goodboy/db', () => ({
   markPrReviewDraftsPublished: markPublishedSpy,
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/github', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/github')>()),
   fetchPrNodeId: fetchPrNodeIdSpy,
   addPullRequestReview: addPullRequestReviewSpy,
 }));
@@ -155,7 +155,7 @@ const buildHarness = (initial: Record<string, unknown>): Harness => {
     sessionExternalTasks: { [SESSION_ID]: [githubTask] },
     sessionProjectPrs: {},
     sessionGithub: {},
-    sessionGitlabMr: {},
+    sessionRequests: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/repo/.goodboy/worktrees/review'] },
     sessionBranches: { [SESSION_ID]: 'review' },
     sessionProjectMounts: {

@@ -1,16 +1,8 @@
-import {
-  AUTO_SYSTEM_PROMPT,
-  classifyFirstTurn,
-  presentationKeyForRole,
-  PLAN_KIT_GUIDE,
-  AUTO_OWN_PROVIDERS,
-  REPORT_KIT_GUIDE,
-  ROLE_REGISTRY,
-  SELECTABLE_AGENT_ROLES,
-  resolveRoleRouting,
-  WIREFRAME_SCHEMA_BRIEF,
-  type AgentKindLabel,
-} from '@goodboy/core';
+import { resolveRoleRouting } from '@goodboy/core/providers';
+import { AUTO_SYSTEM_PROMPT, AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
+import { presentationKeyForRole, ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '@goodboy/core/roles';
+import { PLAN_KIT_GUIDE, REPORT_KIT_GUIDE, WIREFRAME_SCHEMA_BRIEF } from '@goodboy/core/artifacts';
+import { classifyFirstTurn, type AgentKindLabel } from '@goodboy/core/first-turn-classifier';
 import {
   BookOpen,
   Bot,

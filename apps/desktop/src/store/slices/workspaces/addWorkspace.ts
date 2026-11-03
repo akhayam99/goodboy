@@ -8,7 +8,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { seedWorkflowLibrary } from '@goodboy/core';
+import { seedWorkflowLibrary } from '@goodboy/core/workflows';
 import {
   findProjectByRootPath,
   getWorkspaceById,

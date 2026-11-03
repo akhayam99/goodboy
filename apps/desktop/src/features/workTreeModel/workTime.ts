@@ -1,4 +1,4 @@
-import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core';
+import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core/estimates';
 import { formatUsd, type Fact } from '@goodboy/ui';
 import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';

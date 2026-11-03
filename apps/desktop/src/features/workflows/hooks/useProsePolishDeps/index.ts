@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { StepPolishDeps } from '@goodboy/core';
+import type { StepPolishDeps } from '@goodboy/core/workflows';
 import type { WorkspaceId } from '@goodboy/types';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import { useResolution } from '../../../providers/hooks/useResolution';

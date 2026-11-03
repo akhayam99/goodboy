@@ -1,4 +1,4 @@
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { writeAutoLevel } from '../../runtime/auto/level/writeAutoLevel';

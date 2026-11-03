@@ -1,5 +1,5 @@
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
-import { isApiProvider } from '@goodboy/core';
+import { isApiProvider } from '@goodboy/core/providers';
 import {
   buildProviderList,
   type ProviderAuthResults,

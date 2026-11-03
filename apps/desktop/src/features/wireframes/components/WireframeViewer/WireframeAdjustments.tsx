@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { WireframeAdjustment, WireframeAdjustmentChange } from '@goodboy/core';
+import type { WireframeAdjustment, WireframeAdjustmentChange } from '@goodboy/core/artifacts';
 import { Collapsible } from '@goodboy/ui';
 
 type Props = {

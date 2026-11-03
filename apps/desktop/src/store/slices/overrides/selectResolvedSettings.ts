@@ -1,4 +1,5 @@
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, resolveSettings } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
+import { resolveSettings } from '@goodboy/core/settings';
 import type {
   ProjectId,
   ProviderId,

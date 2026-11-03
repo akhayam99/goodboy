@@ -3,7 +3,7 @@ import {
   fetchLinkedIssues,
   listPrsForBranch,
   toCachedPullRequest,
-} from '@goodboy/core';
+} from '@goodboy/core/github';
 import { listMountPullRequestLinks, upsertGithubPrCache } from '@goodboy/db';
 import type {
   IsoDateTime,

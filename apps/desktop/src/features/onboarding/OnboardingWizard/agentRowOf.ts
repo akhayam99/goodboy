@@ -1,4 +1,7 @@
-import { PROVIDER_CONNECT_CAPABILITIES, PROVIDER_LIFECYCLE_COMMANDS } from '@goodboy/core';
+import {
+  PROVIDER_CONNECT_CAPABILITIES,
+  PROVIDER_LIFECYCLE_COMMANDS,
+} from '@goodboy/core/providers';
 import type { ProviderDisplayInfo, ProviderStatus } from '../../providers/providers';
 import { PROVIDER_LABEL } from '../../providers/providerLabel';
 import type { AgentProviderId } from '../../../store/slices/providers/probeAgent';

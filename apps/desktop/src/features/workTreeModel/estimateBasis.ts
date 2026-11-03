@@ -1,4 +1,9 @@
-import type { DurationEstimate, DurationUnit, EstimateKey, EstimateProgress } from '@goodboy/core';
+import type {
+  DurationEstimate,
+  DurationUnit,
+  EstimateKey,
+  EstimateProgress,
+} from '@goodboy/core/estimates';
 import { PROVIDER_IDS, type StepSize } from '@goodboy/types';
 import { EFFORT_LABEL, modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';

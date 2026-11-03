@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type { LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core/monitoring';
 import { nextSessionId } from '@goodboy/types/testing';
 import {
   importStore,

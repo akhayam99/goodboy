@@ -1,4 +1,4 @@
-import { availableBranchName, slugify } from '@goodboy/core';
+import { availableBranchName, slugify } from '@goodboy/core/slug';
 import type { MountId, Project, ProjectId, SessionId } from '@goodboy/types';
 import { mountDirName } from '../project-mounts/mountDirName';
 import { branchNamingSettings } from './branchNamingSettings';

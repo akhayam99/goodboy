@@ -1,4 +1,4 @@
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { Agent, MountId, SessionId, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 import type { AppState } from '../../../types';
 import { sessionById } from '../../sessions/sessionIndex';

@@ -9,8 +9,8 @@ import {
   listIssueComments,
   listOpenPrBranches,
   updateIssueBody,
-} from '@goodboy/core';
-import type { GhRunner, GhResult, GhRunOptions, OpenPrBranch } from '@goodboy/core';
+} from '@goodboy/core/github';
+import type { GhRunner, GhResult, GhRunOptions, OpenPrBranch } from '@goodboy/core/github';
 import type {
   GhTokenStatus,
   GithubInboxPullRequest,

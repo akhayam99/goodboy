@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PortOwner, PortRow, WatchedSource } from '@goodboy/core';
+import type { PortOwner, PortRow, WatchedSource } from '@goodboy/core/monitoring';
 import { splitPortRows } from './splitPortRows';
 import { unmatchedStarted } from './unmatchedStarted';
 import { workspacePortSet } from './workspacePortSet';

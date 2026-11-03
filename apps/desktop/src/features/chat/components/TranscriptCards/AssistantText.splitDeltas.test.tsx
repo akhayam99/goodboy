@@ -2,7 +2,8 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { parseAutoBlock, parseOutcomeLine, parseStreamJsonLine } from '@goodboy/core';
+import { parseStreamJsonLine } from '@goodboy/core/providers';
+import { parseAutoBlock, parseOutcomeLine } from '@goodboy/core/auto';
 import type { ProviderRunId, TurnEvent } from '@goodboy/types';
 import { TEST_NOW, nextProviderRunId } from '@goodboy/types/testing';
 import {

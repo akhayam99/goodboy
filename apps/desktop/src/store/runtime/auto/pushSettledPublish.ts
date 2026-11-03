@@ -1,4 +1,4 @@
-import { publishOfResult, type ResultPublish } from '@goodboy/core';
+import { publishOfResult, type ResultPublish } from '@goodboy/core/auto';
 import {
   claimAutoAttemptPublishStatement,
   followAutoDelegationPublishStatement,

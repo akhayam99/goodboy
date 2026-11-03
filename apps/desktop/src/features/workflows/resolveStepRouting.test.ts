@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { getCheapModel } from '@goodboy/core';
+import { getCheapModel } from '@goodboy/core/providers';
 import type { Step, StepId, WorkflowId } from '@goodboy/types';
 import { resolveStepRouting } from './resolveStepRouting';
 

@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { detectRepoSlug } from '@goodboy/core';
+import { detectRepoSlug } from '@goodboy/core/github';
 import type {
   GithubIssue,
   IsoDateTime,
@@ -22,8 +22,8 @@ import {
 const WS_ONE = brandId<WorkspaceId>({ value: 'workspace-1' });
 const WS_TWO = brandId<WorkspaceId>({ value: 'workspace-2' });
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/github', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/github')>()),
   detectRepoSlug: vi.fn(),
 }));
 

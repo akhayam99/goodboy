@@ -112,8 +112,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       rebaseAllRuns: noRebaseAllRuns,
       sessionPhaseRuns: phaseRuns,
       mountGithub: {} as Record<string, unknown>,
-      mountGitlabMr: {} as Record<string, unknown>,
-      mountBitbucketPr: {} as Record<string, unknown>,
+      mountRequests: {} as Record<string, unknown>,
       projects: [] as ReadonlyArray<unknown>,
       ensureProjectMounted,
       recordSessionEvent,
@@ -236,8 +235,7 @@ beforeEach(() => {
   resetWorktreeStatusCache();
   storeState.sessionProjectMounts = {};
   storeState.mountGithub = {};
-  storeState.mountGitlabMr = {};
-  storeState.mountBitbucketPr = {};
+  storeState.mountRequests = {};
   storeState.projects = [];
   spies.worktreeStatuses.mockReturnValue(new Map());
   onSelectQuestions.mockReset();

@@ -6,7 +6,7 @@ import type {
   WireframeNode,
   WireframeScreenState,
   WireframeTransition,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { escapeHtml } from './escapeHtml';
 import { wireframeScreenFile } from './wireframeScreenFile';
 

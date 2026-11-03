@@ -41,6 +41,7 @@ export const openPaneOf = ({ state, sessionId }: Params): ClusterPane | null => 
     case 'file-diff':
     case 'fix-comments':
     case 'history-versions':
+    case 'identifier-peek':
     case 'new':
     case 'plan-part':
     case 'session-log':

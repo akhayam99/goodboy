@@ -31,7 +31,6 @@ export const RailWorktreeButton = ({ sessionId, row, status, isShown }: Props) =
     <RailButton
       id={`worktree-${row.mountId}`}
       icon={mark.icon}
-      mark={facts.number}
       iconSize={ICON_SIZE.row}
       iconClassName={mark.iconClass}
       label={[row.projectName, facts.number, facts.branch, facts.stateWord, state.reason]

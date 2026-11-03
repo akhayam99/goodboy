@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { ROLE_REGISTRY, SLOT_KEYS, type SlotKey } from '@goodboy/core';
+import { SLOT_KEYS, type SlotKey } from '@goodboy/core/context';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
 import type { AgentRole, ContextSlot } from '@goodboy/types';
 import { buildContextPreamble } from '../../store/slices/turn/preamble';
 import { ROLE_SLOTS, rolesReadingSlot } from './slotRouting';

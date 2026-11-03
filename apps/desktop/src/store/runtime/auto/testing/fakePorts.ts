@@ -1,4 +1,4 @@
-import type { CheckReport, MountSnapshot, PickableMount, RemoteRead } from '@goodboy/core';
+import type { CheckReport, MountSnapshot, PickableMount, RemoteRead } from '@goodboy/core/auto';
 import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import type {
   AgentGrant,

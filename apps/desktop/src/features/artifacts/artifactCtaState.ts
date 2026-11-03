@@ -1,4 +1,4 @@
-import { isAgentStatusHalted } from '@goodboy/core';
+import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { Agent } from '@goodboy/types';
 
 export type ArtifactCtaBlockReason = 'no-evidence' | 'run-active' | 'session-busy';

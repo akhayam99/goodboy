@@ -1,6 +1,6 @@
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionDismissed } from '@goodboy/db';
-import { removeQuestionsFromSlot } from '@goodboy/core';
+import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 

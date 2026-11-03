@@ -1,4 +1,4 @@
-import { PullRequestPortError, type GitlabPullRequestTransport } from '@goodboy/core';
+import { PullRequestPortError, type GitlabPullRequestTransport } from '@goodboy/core/review-source';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { staleHeadErrorOf } from '../../../shared/lib/staleHeadErrorOf';
 import { pullRequestFailureKindOf } from '../../../shared/lib/pullRequestFailureKindOf';

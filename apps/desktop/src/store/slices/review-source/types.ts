@@ -6,7 +6,7 @@ import type {
   ResolveSourceKind,
   SessionId,
 } from '@goodboy/types';
-import type { ReviewSourceCapabilities } from '@goodboy/core';
+import type { ReviewSourceCapabilities } from '@goodboy/core/review-source';
 
 export type { GetFn, SetFn } from '../../slice-types';
 

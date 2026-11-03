@@ -205,8 +205,8 @@ export const seedResolveGitlabScene = ({ selected }: Params): void => {
         ...NOTES.map((note) => noteRow({ note })),
       ],
     },
-    sessionGitlabMr: {
-      [SESSION_ID]: { mr: MR, fetchedAt, loading: false, error: null },
+    sessionRequests: {
+      [SESSION_ID]: { kind: 'gitlab', mr: MR, fetchedAt, loading: false, error: null },
     },
     reviewSourceThreads: {
       [SESSION_ID]: {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { getAutoTree } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type SessionId } from '@goodboy/types';

@@ -1,5 +1,5 @@
 import type { PlanId, SessionId, WorkflowRunId } from '@goodboy/types';
-import { isAgentStatusHalted, runsForWorkflowRun } from '@goodboy/core';
+import { isAgentStatusHalted, runsForWorkflowRun } from '@goodboy/core/workflows';
 import { classifyStep, kindConsumesPlan } from '../../../features/session/agent-kind';
 import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';

@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import type { AgentRole } from '@goodboy/types';
-import type { DurationHistory } from '@goodboy/core';
+import type { DurationHistory } from '@goodboy/core/estimates';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

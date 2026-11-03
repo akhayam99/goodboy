@@ -1,4 +1,4 @@
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { Agent, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 

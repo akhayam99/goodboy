@@ -814,7 +814,7 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/gitlab-mr/createMrForSession.ts": {
+  "apps/desktop/src/store/slices/mount-request/createMrForSession.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }

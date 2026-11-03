@@ -3,7 +3,7 @@ import {
   fetchPrNodeId,
   parseUnifiedDiff,
   type ReviewEvent,
-} from '@goodboy/core';
+} from '@goodboy/core/github';
 import { formatError } from '@goodboy/ui';
 import { markPrReviewDraftsPublished } from '@goodboy/db';
 import type { GitlabIntegrationBinding, PrReviewDraft, SessionId, Workspace } from '@goodboy/types';

@@ -1,4 +1,5 @@
-import { hasBlockingQuestion, type ArtifactCaptureResult } from '@goodboy/core';
+import { hasBlockingQuestion } from '@goodboy/core/context';
+import { type ArtifactCaptureResult } from '@goodboy/core/artifacts';
 import type { Agent, AgentId, ArtifactKind, SessionArtifact } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 

@@ -40,8 +40,7 @@ type Store = {
   focusedGithubIssueNumber: Record<string, number | null>;
   sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
   sessionGithub: Record<string, unknown>;
-  sessionGitlabMr: Record<string, unknown>;
-  sessionBitbucketPr: Record<string, unknown>;
+  sessionRequests: Record<string, unknown>;
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
   sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
@@ -88,8 +87,7 @@ const { store, hooks } = vi.hoisted(() => ({
     focusedGithubIssueNumber: {},
     sessionExternalTasks: {},
     sessionGithub: {},
-    sessionGitlabMr: {},
-    sessionBitbucketPr: {},
+    sessionRequests: {},
     agentTurnState: {},
     agentKindOverride: {},
     sessionLoading: {},
@@ -259,8 +257,7 @@ beforeEach(() => {
   store.focusedGithubIssueNumber = {};
   store.sessionExternalTasks = {};
   store.sessionGithub = {};
-  store.sessionGitlabMr = {};
-  store.sessionBitbucketPr = {};
+  store.sessionRequests = {};
   store.agentTurnState = {};
   store.agentKindOverride = {};
   store.sessionLoading = {};
@@ -417,7 +414,7 @@ describe('SessionWorkspace agent overlay', () => {
 
 describe('SessionWorkspace code host routing', () => {
   it('mounts the Branch page for a GitLab session', async () => {
-    store.sessionGitlabMr = { [SESSION_ID]: { mr: { iid: 7 } } };
+    store.sessionRequests = { [SESSION_ID]: { kind: 'gitlab', mr: { iid: 7 } } };
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
@@ -427,7 +424,7 @@ describe('SessionWorkspace code host routing', () => {
   });
 
   it('mounts the Branch page for a Bitbucket session', async () => {
-    store.sessionBitbucketPr = { [SESSION_ID]: { pr: { id: 42 } } };
+    store.sessionRequests = { [SESSION_ID]: { kind: 'bitbucket', pr: { id: 42 } } };
     store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 

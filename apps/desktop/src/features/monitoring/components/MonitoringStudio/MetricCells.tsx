@@ -1,4 +1,4 @@
-import type { MonitorProcess } from '@goodboy/core';
+import type { MonitorProcess } from '@goodboy/core/monitoring';
 import { formatCpu } from '../../formatCpu';
 import { formatMemory } from '../../formatMemory';
 import { formatUptime } from '../../formatUptime';

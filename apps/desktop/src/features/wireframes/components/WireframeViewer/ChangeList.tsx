@@ -1,5 +1,5 @@
 import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
-import type { WireframeNodeChange } from '@goodboy/core';
+import type { WireframeNodeChange } from '@goodboy/core/artifacts';
 import { CHANGE_GLYPH, CHANGE_WORD } from './changePresentation';
 
 type Props = {

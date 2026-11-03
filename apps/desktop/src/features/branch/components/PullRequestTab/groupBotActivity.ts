@@ -1,4 +1,4 @@
-import { isBotLogin } from '@goodboy/core';
+import { isBotLogin } from '@goodboy/core/review-source';
 import type { ActivityItem } from './activityOf';
 
 type Params = {

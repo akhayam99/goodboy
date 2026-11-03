@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { detectRepoSlug, learnReplyStyle, listMyReviewReplies } from '@goodboy/core';
+import { detectRepoSlug, learnReplyStyle, listMyReviewReplies } from '@goodboy/core/github';
 import type { TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import { tauriGhRunner } from '../integrations/github/github';
 

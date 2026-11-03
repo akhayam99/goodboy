@@ -1,4 +1,4 @@
-import { catalogModelForId, resolveRoleChoice, roleModelChoices } from '@goodboy/core';
+import { catalogModelForId, resolveRoleChoice, roleModelChoices } from '@goodboy/core/providers';
 import type { RoleModelChoice, RoleModelPreference } from '@goodboy/types';
 import { modelLabel } from '../chat/utils/chat-constants';
 

@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
+import type { LimitsChip as LimitsChipModel } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { LimitsChip } from './LimitsChip';
 import { LimitsOverflowPopover } from './LimitsOverflowPopover';

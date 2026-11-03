@@ -1,4 +1,4 @@
-import { fanOutCapabilityForRole } from '@goodboy/core';
+import { fanOutCapabilityForRole } from '@goodboy/core/roles';
 import type { Agent, AgentId } from '@goodboy/types';
 import { classifyAgent, KIND_TO_ROLE, type AgentKind } from '../../../features/session/agent-kind';
 

@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole } from '@goodboy/core';
+import { parseAutoDelegationRole } from '@goodboy/core/auto';
 import type { Database } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { KIND_TO_ROLE, ROLE_LABEL } from '../../../features/session/agent-kind';

@@ -1,5 +1,5 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { extractAuxOutput, getDefaultBinary, runAuxOneShot } from '@goodboy/core';
+import { extractAuxOutput, getDefaultBinary, runAuxOneShot } from '@goodboy/core/providers';
 import type { SummarizeForWorkParams } from './chatBackend';
 
 export const summarizeForWorkViaAux = async ({

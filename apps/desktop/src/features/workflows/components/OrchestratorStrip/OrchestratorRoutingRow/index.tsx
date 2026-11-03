@@ -4,7 +4,7 @@ import {
   resolveStoredModelSelection,
   clampEffortForModel,
   type ResolveSlot,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { savedRouteEffort } from '../../../../../shared/components/RoutingPicker/savedRouteEffort';

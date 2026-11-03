@@ -2,7 +2,7 @@ import {
   parseCodexAppServerLimits,
   parseCodexRateLimits,
   parseCodexResetCredits,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { CodexResetCredits, IsoDateTime } from '@goodboy/types';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { probeLock } from '../providers/probeLock';

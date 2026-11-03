@@ -1,4 +1,4 @@
-import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core';
+import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core/workflows';
 import type {
   Agent,
   OpenQuestion,

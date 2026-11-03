@@ -1,4 +1,4 @@
-import { cleanCliVersion } from '@goodboy/core';
+import { cleanCliVersion } from '@goodboy/core/providers';
 import type { ProviderStatus } from './providers';
 
 export type CliUpdateResult = {

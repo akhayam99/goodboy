@@ -6,7 +6,7 @@ import {
   modelHasEffortAxis,
   resolveModelArgs,
   resolveStoredModelSelection,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 
 export type Recommendation = {
   readonly provider?: ProviderId;

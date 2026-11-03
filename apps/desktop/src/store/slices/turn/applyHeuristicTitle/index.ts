@@ -1,7 +1,7 @@
 import { selectTaskModel } from '../../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../../providerLimits/runHelperTask';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
-import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
+import { getDefaultBinary, runAuxOneShot } from '@goodboy/core/providers';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
 import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristic';

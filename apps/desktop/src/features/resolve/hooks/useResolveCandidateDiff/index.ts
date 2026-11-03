@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import { formatError } from '@goodboy/ui';
 import type { FileDiff, ResolveCandidate } from '@goodboy/types';
 import { orderLikeTree } from '../../../diff/lib/changeTree';

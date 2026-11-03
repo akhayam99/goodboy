@@ -1,5 +1,5 @@
 import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
 

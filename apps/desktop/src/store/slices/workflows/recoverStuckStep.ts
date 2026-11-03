@@ -3,7 +3,7 @@ import {
   findReusableAgent,
   isAgentStatusHalted,
   runsForWorkflowRun,
-} from '@goodboy/core';
+} from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { composeStepBoundary } from '../turn/kickoff';

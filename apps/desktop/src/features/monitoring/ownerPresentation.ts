@@ -1,4 +1,4 @@
-import type { PortOwner } from '@goodboy/core';
+import type { PortOwner } from '@goodboy/core/monitoring';
 import type { Project, SessionMountView } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';

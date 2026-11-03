@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { resolveSlot, type ResolveContext } from '@goodboy/core';
+import { resolveSlot, type ResolveContext } from '@goodboy/core/providers';
 import type { RoleModelPreference } from '@goodboy/types';
 import { isPinUnrunnable, isResolutionNoted, resolutionNote } from './resolutionNote';
 

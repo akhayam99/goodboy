@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import type { PullRequestFailureKind } from '@goodboy/core';
+import type { PullRequestFailureKind } from '@goodboy/core/review-source';
 import type { MountId, PullRequestView, SessionId } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import { useAppStore } from '../../../../store';

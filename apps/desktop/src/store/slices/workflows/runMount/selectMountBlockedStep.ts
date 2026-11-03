@@ -1,4 +1,4 @@
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import type { AgentId, MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { AppState } from '../../../types';
 import { selectWritableMounts } from '../../project-mounts/selectors';

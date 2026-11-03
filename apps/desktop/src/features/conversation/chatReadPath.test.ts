@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { ParseContext } from '@goodboy/core';
+import type { ParseContext } from '@goodboy/core/providers';
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { parseProviderLine } from '../chat/parseProviderLine';
 import { chatReadPaths } from './chatReadPath';

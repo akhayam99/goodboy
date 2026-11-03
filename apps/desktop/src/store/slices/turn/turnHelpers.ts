@@ -3,7 +3,6 @@ import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import {
   assessPlanReadiness,
-  captureArtifactFromTurnText,
   extractHandoff,
   extractMaterializeRequests,
   extractScoutDomains,
@@ -11,11 +10,11 @@ import {
   isLedgerOverBudget,
   loadDecisionLedger,
   SLOT_BUDGETS,
-  Summarizer,
-  type ArtifactCaptureError,
   type ExtractedHandoff,
-  type ParsedArtifact,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
+import { Summarizer } from '@goodboy/core/summarizer';
+import { captureArtifactFromTurnText } from '@goodboy/core/artifacts';
+import type { ArtifactCaptureError, ParsedArtifact } from '@goodboy/core/artifacts';
 import {
   insertProviderRun,
   insertTelemetry,

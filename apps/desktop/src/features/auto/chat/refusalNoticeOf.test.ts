@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_REFUSAL_CODES, AUTO_REFUSAL_USER_REASON } from '@goodboy/core';
+import { AUTO_REFUSAL_CODES, AUTO_REFUSAL_USER_REASON } from '@goodboy/core/auto';
 import { aView } from '../testing/autoViewFixtures';
 import { refusalNoticeOf } from './refusalNoticeOf';
 import { waitingTextOf } from './waitingTextOf';

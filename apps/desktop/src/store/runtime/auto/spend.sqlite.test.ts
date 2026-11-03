@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoBudgetOf, autoBudgetLabel, autoBudgetPromptLine } from '@goodboy/core';
+import { autoBudgetOf, autoBudgetLabel, autoBudgetPromptLine } from '@goodboy/core/auto';
 import { getAutoTree, listAutoReservations, setAutoTreeCapIfUnchanged } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import {

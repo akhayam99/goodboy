@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { PANE_RHYTHM, SectionHeader, cn, formatError } from '@goodboy/ui';
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';

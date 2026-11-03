@@ -1,4 +1,4 @@
-import type { IssueBriefFailure } from '@goodboy/core';
+import type { IssueBriefFailure } from '@goodboy/core/summarizer';
 
 const FAILURE_TEXT = {
   provider_failed: 'The model did not answer.',

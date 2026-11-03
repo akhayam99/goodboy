@@ -4,7 +4,7 @@ import {
   type WireframeDocument,
   type WireframeNode,
   type WireframeNodeChange,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { wireframeNodeLabel } from './wireframeNodeLabel';
 import type { WireframeDiffMark, WireframeDiffMarks } from './wireframePages/renderWireframeNode';
 

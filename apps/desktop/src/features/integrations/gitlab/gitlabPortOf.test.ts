@@ -26,7 +26,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
-import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
+import type { MountGitlabMrState } from '../../../store/slices/mount-request/state';
 import { pullRequestPortFor } from '../../../store/slices/review-source/pullRequestPortFor';
 import type { GitlabMergeRequest } from './client';
 import { gitlabPortOf } from './gitlabPortOf';
@@ -71,6 +71,7 @@ const MR: GitlabMergeRequest = {
 };
 
 const ENTRY: MountGitlabMrState = {
+  kind: 'gitlab',
   mountId: MOUNT_ID,
   projectId: PROJECT_ID,
   revision: 1,
@@ -115,7 +116,7 @@ beforeEach(async () => {
     sessionGithub: {},
     mountGithub: {},
     workspaceIntegrations: { [WORKSPACE_ID]: [BINDING] },
-    mountGitlabMr: { [MOUNT_ID]: ENTRY },
+    mountRequests: { [MOUNT_ID]: ENTRY },
   });
 });
 
@@ -149,7 +150,7 @@ describe('gitlabPortOf', () => {
   it('keeps the port of a merge request that ended, so it can be reopened', async () => {
     const closed = { ...MR, state: 'closed' };
     useAppStore.setState({
-      mountGitlabMr: { [MOUNT_ID]: { ...ENTRY, mr: closed, mrs: [closed] } },
+      mountRequests: { [MOUNT_ID]: { ...ENTRY, mr: closed, mrs: [closed] } },
     });
 
     await pullRequestPortFor({ get: useAppStore.getState, sessionId: SESSION_ID })?.reopen();
@@ -172,7 +173,7 @@ describe('gitlabPortOf', () => {
       mr: { ...MR, iid: 77 },
       mrs: [{ ...MR, iid: 77 }],
     };
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: ENTRY, [OTHER_MOUNT_ID]: second } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: ENTRY, [OTHER_MOUNT_ID]: second } });
 
     expect(portOf({ mountId: OTHER_MOUNT_ID, prNumber: 77 })).not.toBeNull();
     expect(portOf({ mountId: MOUNT_ID, prNumber: 42 })).not.toBeNull();
@@ -183,7 +184,7 @@ describe('gitlabPortOf', () => {
       sessionProjectMounts: {
         [SESSION_ID]: [MOUNT, { ...MOUNT, mountId: OTHER_MOUNT_ID, mountName: 'ledger-core' }],
       },
-      mountGitlabMr: { [MOUNT_ID]: ENTRY },
+      mountRequests: { [MOUNT_ID]: ENTRY },
     });
 
     expect(portOf({ mountId: OTHER_MOUNT_ID, prNumber: 42 })).toBeNull();
@@ -196,13 +197,13 @@ describe('gitlabPortOf', () => {
   });
 
   it('has no port without a merge request on the mount', () => {
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: { ...ENTRY, mr: null, mrs: [] } } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: { ...ENTRY, mr: null, mrs: [] } } });
 
     expect(portOf()).toBeNull();
   });
 
   it('has no port before the project of the remote is known', () => {
-    useAppStore.setState({ mountGitlabMr: { [MOUNT_ID]: { ...ENTRY, projectPath: null } } });
+    useAppStore.setState({ mountRequests: { [MOUNT_ID]: { ...ENTRY, projectPath: null } } });
 
     expect(portOf()).toBeNull();
   });

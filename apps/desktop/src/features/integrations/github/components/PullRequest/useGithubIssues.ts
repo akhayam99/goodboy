@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { detectRepoSlug } from '@goodboy/core';
+import { detectRepoSlug } from '@goodboy/core/github';
 import { formatError } from '@goodboy/ui';
 import type {
   GithubIssue,

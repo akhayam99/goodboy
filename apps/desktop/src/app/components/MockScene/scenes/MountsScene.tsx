@@ -834,8 +834,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
           pr: RELAY_PR,
         }),
       },
-      mountGitlabMr: {},
-      mountBitbucketPr: {},
+      mountRequests: {},
       sessionSlots: {
         [SESSION_ID]:
           variant === 'blank' ? CONTEXT_SLOTS.filter((slot) => slot.key !== 'goal') : CONTEXT_SLOTS,

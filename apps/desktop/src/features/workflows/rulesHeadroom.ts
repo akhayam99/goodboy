@@ -3,7 +3,7 @@ import {
   providersByHeadroom,
   type HeadroomMap,
   type ProviderHeadroom,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { ProviderId, ProviderLimits } from '@goodboy/types';
 import type { PolicyRow } from '../providers/policy/policyRows';
 import { PROVIDER_LABEL } from '../providers/providerLabel';

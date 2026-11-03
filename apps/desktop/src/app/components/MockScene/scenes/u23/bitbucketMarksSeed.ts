@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import type { BitbucketPullRequest } from '../../../../../features/integrations/bitbucket/client';
 import { useAppStore } from '../../../../../store';
-import type { MountBitbucketPrState } from '../../../../../store/slices/bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../../../../../store/slices/mount-request/state';
 import { sceneClock } from '../../sceneClock';
 import { seedWorkspaceChrome } from '../audit/workspaceChrome';
 import { seedLoadedSession } from '../u21/seedLoadedSession';
@@ -134,6 +134,8 @@ const entryOf = ({ seed }: { readonly seed: Seed }): MountBitbucketPrState | nul
   }
   const pr = pullRequestOf({ seed, number: seed.number });
   return {
+    kind: 'bitbucket',
+    selected: null,
     mountId: mountIdOf(seed.slug),
     projectId: PROJECT_ID,
     revision: 1,
@@ -167,7 +169,7 @@ export const seedBitbucketMarks = (): Session => {
       ...state.sessionMounts,
       ...Object.fromEntries(SEEDS.map((seed) => [idOf(seed.slug), [mountOf(seed)]])),
     },
-    mountBitbucketPr: Object.fromEntries(
+    mountRequests: Object.fromEntries(
       SEEDS.flatMap((seed) => {
         const entry = entryOf({ seed });
         return entry === null ? [] : [[mountIdOf(seed.slug), entry] as const];

@@ -1,4 +1,4 @@
-import type { PinnedPort } from '@goodboy/core';
+import type { PinnedPort } from '@goodboy/core/monitoring';
 import { isValidPort } from './isValidPort';
 import { normalizeDescription } from './pinDescription';
 import { portRecordsOf } from './portRecordsOf';

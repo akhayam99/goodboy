@@ -1,4 +1,4 @@
-import { parseClaudeUsageProbeOutput } from '@goodboy/core';
+import { parseClaudeUsageProbeOutput } from '@goodboy/core/providers';
 import type { IsoDateTime } from '@goodboy/types';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { probeLock } from '../providers/probeLock';

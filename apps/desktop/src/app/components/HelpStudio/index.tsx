@@ -16,6 +16,7 @@ import {
 } from '../../../features/settings/components/GuideStudio/GuideTab';
 import { HelpRailHeader } from './HelpRailHeader';
 import { HelpResults } from './HelpResults';
+import { capReleaseHits } from './capReleaseHits';
 import { HELP_HIT_TAB, searchHelp, type HelpHit } from './searchHelp';
 import type { HelpTab } from './helpTabs';
 import { ShortcutsTab } from './ShortcutsTab';
@@ -49,10 +50,15 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
   const [activeHit, setActiveHit] = useState(0);
   const [guideFocus, setGuideFocus] = useState<GuideFocus | null>(null);
   const [releaseRequest, setReleaseRequest] = useState<ReleaseRequest | null>(null);
-  const hits = useMemo(
+  const [isAllReleasesShown, setIsAllReleasesShown] = useState(false);
+  const found = useMemo(
     () => searchHelp({ chapters: GUIDE_CHAPTERS, releases, query }),
     [releases, query],
   );
+  const { shown: hits, hiddenCount } = capReleaseHits({
+    hits: found,
+    isAllShown: isAllReleasesShown,
+  });
   const isSearching = query.trim() !== '';
 
   useEffect(
@@ -69,6 +75,7 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
   const changeQuery = ({ next }: ChangeQueryParams) => {
     setQuery(next);
     setActiveHit(0);
+    setIsAllReleasesShown(false);
   };
 
   const step = ({ direction }: StepParams) => {
@@ -112,8 +119,10 @@ export const HelpStudio = ({ initialTab, onClose, onOpenScreen }: Props) => {
     <HelpResults
       query={query}
       hits={hits}
+      hiddenReleaseCount={hiddenCount}
       activeHit={activeHit}
       onOpenHit={(hit) => openHit({ hit })}
+      onShowAllReleases={() => setIsAllReleasesShown(true)}
     />
   ) : null;
 

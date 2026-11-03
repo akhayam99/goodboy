@@ -15,7 +15,7 @@ export const useMountRows = ({ sessionId }: Params): ReadonlyArray<MountProjectG
   const projects = useAppStore((state) => state.projects);
   const views = useAppStore((state) => state.sessionMounts[sessionId]);
   const projectMounts = useAppStore((state) => state.sessionProjectMounts[sessionId]);
-  const { mountGithub, mountGitlabMr, mountBitbucketPr } = useSessionMountHosts({ sessionId });
+  const { mountGithub, mountRequests } = useSessionMountHosts({ sessionId });
   const observations = useAppStore((state) => state.mountBranchObservations[sessionId]);
   const prSeries = useAppStore((state) => state.prSeries[sessionId]);
 
@@ -28,22 +28,11 @@ export const useMountRows = ({ sessionId }: Params): ReadonlyArray<MountProjectG
           sessionMounts: views === undefined ? {} : { [sessionId]: views },
           sessionProjectMounts: projectMounts === undefined ? {} : { [sessionId]: projectMounts },
           mountGithub,
-          mountGitlabMr,
-          mountBitbucketPr,
+          mountRequests,
           mountBranchObservations: observations === undefined ? {} : { [sessionId]: observations },
           prSeries: prSeries === undefined ? {} : { [sessionId]: prSeries },
         },
       }),
-    [
-      mountBitbucketPr,
-      mountGithub,
-      mountGitlabMr,
-      observations,
-      prSeries,
-      projectMounts,
-      projects,
-      sessionId,
-      views,
-    ],
+    [mountGithub, mountRequests, observations, prSeries, projectMounts, projects, sessionId, views],
   );
 };

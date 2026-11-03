@@ -1,12 +1,12 @@
 import {
-  captureArtifactFromTurnText,
   extractFanOut,
   extractReviewComments,
   extractStepDone,
-  fanOutCapabilityForRole,
-  fallbackStepOutputSummary,
   hasBlockingQuestion,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
+import { fanOutCapabilityForRole } from '@goodboy/core/roles';
+import { fallbackStepOutputSummary } from '@goodboy/core/summarizer';
+import { captureArtifactFromTurnText } from '@goodboy/core/artifacts';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isFanOutRejected } from '../../runtime/auto/isFanOutRejected';

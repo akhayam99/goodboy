@@ -1,4 +1,4 @@
-import { computeProviderCostUsd } from '@goodboy/core';
+import { computeProviderCostUsd } from '@goodboy/core/providers';
 import {
   insertTelemetry,
   summarizeSessionTelemetry,

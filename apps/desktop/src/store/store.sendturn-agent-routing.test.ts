@@ -23,12 +23,12 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { resolveStoredModelSelection } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core/providers';
 
 const resolveModelArgsSpy = vi.hoisted(() => vi.fn());
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/providers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/providers')>();
   return {
     ...actual,
     resolveModelArgs: (params: Parameters<typeof actual.resolveModelArgs>[0]) => {

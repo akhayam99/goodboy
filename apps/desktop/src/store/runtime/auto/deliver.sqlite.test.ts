@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getAutoOutbox, getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
-import { AUTO_TURN_CEILING_USD, EMPTY_USER_FACTS } from '@goodboy/core';
+import { AUTO_TURN_CEILING_USD, EMPTY_USER_FACTS } from '@goodboy/core/auto';
 import { brandId, type AutoOutboxId, type SessionId } from '@goodboy/types';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';
 import { deliverNext } from './deliver';

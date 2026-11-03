@@ -1,4 +1,4 @@
-import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type {
   PullRequestHost,
   SessionAttentionReason,

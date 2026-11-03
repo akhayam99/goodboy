@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { buildOrchestratorUserPrompt } from '@goodboy/core';
+import { buildOrchestratorUserPrompt } from '@goodboy/core/orchestrator';
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import {
   orchestratorProcessText,

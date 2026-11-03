@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { SectionLabel } from '@goodboy/ui';
-import { parseRunSummaryText } from '@goodboy/core';
+import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';

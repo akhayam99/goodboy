@@ -1,4 +1,4 @@
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { AgentId, EffortLevel, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import type { RowPhase } from '../../workTreeModel/rowState';
 import { workTime, type WorkEstimate, type WorkTime } from '../../workTreeModel/workTime';

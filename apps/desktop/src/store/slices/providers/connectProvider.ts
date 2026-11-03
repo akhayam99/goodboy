@@ -1,4 +1,4 @@
-import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core/providers';
 import {
   type ProviderConnectCapability,
   type ProviderId,

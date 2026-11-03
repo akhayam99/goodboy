@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_STALE_DECIDE_MS } from '@goodboy/core';
+import { AUTO_STALE_DECIDE_MS } from '@goodboy/core/auto';
 import { getAutoTree, listAutoDelegations, listAutoOutbox } from '@goodboy/db';
 import { settleAutoTurn } from './settleAutoTurn';
 import { endedTurn } from './testing/deliveryWorld';

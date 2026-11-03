@@ -4,7 +4,7 @@ import type {
   MonitorProcess,
   MonitorSnapshot,
   WatchedPort,
-} from '@goodboy/core';
+} from '@goodboy/core/monitoring';
 import type {
   MountId,
   Project,

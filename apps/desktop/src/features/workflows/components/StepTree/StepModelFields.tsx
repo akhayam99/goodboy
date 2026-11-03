@@ -1,4 +1,4 @@
-import { isSizeMovingRung } from '@goodboy/core';
+import { isSizeMovingRung } from '@goodboy/core/providers';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../engine';

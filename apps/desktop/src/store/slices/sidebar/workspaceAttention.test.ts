@@ -60,8 +60,11 @@ vi.mock('../../../features/integrations/linear/client', async () =>
 vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
-vi.mock('@goodboy/core', async (importOriginal) =>
-  (await import('../../storyHarness')).coreModuleMock(importOriginal),
+vi.mock('@goodboy/core/workflows', async (importOriginal) =>
+  (await import('../../storyHarness')).coreWorkflowsModuleMock({ importOriginal }),
+);
+vi.mock('@goodboy/core/github', async (importOriginal) =>
+  (await import('../../storyHarness')).coreGithubModuleMock({ importOriginal }),
 );
 vi.mock('../../../features/scripts/scripts', async () =>
   (await import('../../storyHarness')).scriptsModuleMock(),

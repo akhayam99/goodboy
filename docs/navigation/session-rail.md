@@ -479,9 +479,11 @@ by its number alone (`#9998`, `MR !42`), so the label is never cut; the row abov
 names the branch.
 
 **Folded sessions have names and state.** Under the doors, the workspace rail
-shows sessions that need you, then running sessions, followed by pins, up to
-seven (`RAIL_PINNED_LIMIT`). Each button carries two title initials in its
-state colour and a tooltip with the full title, state and unread reason.
+shows only sessions with something to say: those that need you, then running
+sessions, then unread ones (`railRankOf`), up to seven (`RAIL_PINNED_LIMIT`).
+Idle and pinned sessions with nothing new fold into `+N`. Each button carries the same state node as the
+session row (`StateNode`, with its unread dot) and a tooltip with the full title, state and
+unread reason.
 The open session keeps its slot when shown; otherwise it gets one extra
 button before `+N`. The count covers the remaining sessions and opens the
 session flyout. A studio leaves the current button remembered. Hover or focus
@@ -636,9 +638,10 @@ activity yet show the plain overview with its actions.
 One 44px column at the right edge of the session content holds Explore,
 Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
 Context form the reading group; one separator leads to the other tools.
-Each tool keeps its pane id and shortcut. `SessionToolButton` shows the active
-tool's name below its icon, in a quiet regular weight. Every icon's tooltip gives its name, shortcut and
-any signal reason. Ask uses its own question glyph, distinct from Chat.
+Each tool keeps its pane id and shortcut. `SessionToolButton` names every
+tool below its icon in the 9px `text-rail` role: faint when closed, muted when
+open. On a window under 480px tall all captions hide together and the tooltips
+stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
 The column is a vertical toolbar with one tab stop. Up, Down, Home and End
 move it (`toolbarIndexAfter`). Its signal dots keep their reason in the
@@ -923,14 +926,27 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   Alt click does the same. The anchored popover shows project constants,
   functions, methods and types; a word without a project definition reads
   "Not defined in this project" and lists no uses. It shows the symbol kind and
-  definition, use and change counts. Defined in comes first, then In this change
-  with changed lines first and tagged, then Elsewhere with five references and
-  Show more. Directory paths truncate in the middle and keep their separator
-  before the filename. It says when it shows only the first 300. This contract
-  lives in `features/diff/components/IdentifierPeek`. A result in this diff scrolls to its
-  line and flashes it, expanding the hidden range first when the line sits in
-  one; any other result opens the Explore file drawer on that line. The commit
-  view has no peek, because its lines are not the working tree's.
+  definition, use and change counts. Defined in comes first, then Changed on
+  this branch with changed lines first and tagged, then Unchanged files with
+  five references and Show more. A file appears under one group only: the
+  file that holds the definition lists all its uses under Defined in, so
+  Changed on this branch holds the other changed files. A long directory drops
+  its leading segments behind a `…/` and keeps the segments next to the file
+  whole, dimmed and joined to the filename with no gap; the file name is never
+  truncated, the directory shrinks first, and the full path is the row's
+  title. It says when it shows only the first 300. This contract lives in `features/diff/components/IdentifierPeek`.
+  Every result opens the right drawer (`identifier-peek`, in
+  `features/diff/components/IdentifierPeekDrawer`) and never moves the page: its
+  scroll and selection stay. The drawer lists the same files in the same three
+  groups, one row per file with one row selected; a definition file the branch
+  changed carries a Changed tag. The list scrolls and shows five to six rows. A
+  file changed on this branch shows its whole-file diff scrolled to the match;
+  an unchanged file shows its source around the match under its full path and a
+  one-line note, with an info icon, that it has no changes here. Choosing another file swaps the view and keeps
+  the drawer open. A failed search or diff load has a Retry in the drawer. The
+  drawer is keyed by worktree and word, so a late answer for an old word is
+  dropped. The commit view has no peek, because its lines are not the working
+  tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **Settings draws no band in the column.** On Home, where it covers the

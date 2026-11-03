@@ -1,5 +1,5 @@
 import { recordSecurityFindings } from '@goodboy/db';
-import { scanTextForSecrets } from '@goodboy/core';
+import { scanTextForSecrets } from '@goodboy/core/secret-scan';
 import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, RecordScanFindingsParams } from './types';

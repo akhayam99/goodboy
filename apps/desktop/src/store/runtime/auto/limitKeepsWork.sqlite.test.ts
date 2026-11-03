@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import {
   getAutoTree,
   listAutoAttemptsOfTree,

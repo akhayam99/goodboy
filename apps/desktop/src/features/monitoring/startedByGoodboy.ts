@@ -1,4 +1,9 @@
-import type { LedgerKind, LedgerRow, MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type {
+  LedgerKind,
+  LedgerRow,
+  MonitorProcess,
+  MonitorSnapshot,
+} from '@goodboy/core/monitoring';
 import type { Project, SessionMountView } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';

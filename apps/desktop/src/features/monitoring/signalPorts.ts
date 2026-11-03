@@ -1,4 +1,4 @@
-import type { LearnedPorts, PinnedPort } from '@goodboy/core';
+import type { LearnedPorts, PinnedPort } from '@goodboy/core/monitoring';
 import type { SplitPortRows } from './splitPortRows';
 
 type Params = {

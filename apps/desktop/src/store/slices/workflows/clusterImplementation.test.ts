@@ -15,7 +15,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import { resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core/providers';
 import {
   isWorkflowRoutingDecision,
   isWorkflowTaskProfile,

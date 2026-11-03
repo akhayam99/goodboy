@@ -1,4 +1,4 @@
-import { getDefaultTurnModel, resolveSlot, type Resolution } from '@goodboy/core';
+import { getDefaultTurnModel, resolveSlot, type Resolution } from '@goodboy/core/providers';
 import type { AgentRole, ProviderId, RoleModelPreferences, StepSize } from '@goodboy/types';
 
 type RoleParams = {

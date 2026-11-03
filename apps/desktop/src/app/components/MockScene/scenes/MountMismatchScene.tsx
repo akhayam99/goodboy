@@ -219,8 +219,7 @@ export const MountMismatchScene = () => {
       mountCleanupProposals: { [SESSION_ID]: [] },
       prSeries: { [SESSION_ID]: [] },
       mountGithub: {},
-      mountGitlabMr: {},
-      mountBitbucketPr: {},
+      mountRequests: {},
       sessionWorktrees: { [SESSION_ID]: MOUNT_SEEDS.map((seed) => seed.worktreePath) },
       sessionWorktreeRecords: {
         [SESSION_ID]: MOUNT_SEEDS.map((seed, index) => ({

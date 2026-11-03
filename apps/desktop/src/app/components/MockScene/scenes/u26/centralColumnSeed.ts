@@ -854,26 +854,28 @@ export const seedCentralColumn = ({ kind }: SeedParams): void => {
               links: [],
             },
           },
-    mountGitlabMr: hasLedger
-      ? {
-          [LEDGER_MOUNT_ID]: {
-            mountId: LEDGER_MOUNT_ID,
-            projectId: LEDGER_PROJECT_ID,
-            revision: 0,
-            host: 'https://gitlab.com',
-            projectPath: 'harborline/ledger-core',
-            branch: LEDGER_BRANCH,
-            mrs: [LEDGER_MR],
-            links: [],
-            mr: LEDGER_MR,
-            approvals: null,
-            fetchedAt: isoNow(),
-            loading: false,
-            error: null,
-          },
-        }
-      : {},
-    mountBitbucketPr: {},
+    mountRequests: {
+      ...(hasLedger
+        ? {
+            [LEDGER_MOUNT_ID]: {
+              kind: 'gitlab',
+              mountId: LEDGER_MOUNT_ID,
+              projectId: LEDGER_PROJECT_ID,
+              revision: 0,
+              host: 'https://gitlab.com',
+              projectPath: 'harborline/ledger-core',
+              branch: LEDGER_BRANCH,
+              mrs: [LEDGER_MR],
+              links: [],
+              mr: LEDGER_MR,
+              approvals: null,
+              fetchedAt: isoNow(),
+              loading: false,
+              error: null,
+            },
+          }
+        : {}),
+    },
     sessionProjectPrs: {},
     autoTreeViews: { [SESSION_ID]: parts.views },
     loadAutoTrees: async () => undefined,

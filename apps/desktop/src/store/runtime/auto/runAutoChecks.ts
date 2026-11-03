@@ -6,7 +6,7 @@ import {
   type CheckReport,
   type ChecksVerdict,
   type MountSnapshot,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { SessionId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { AutoCheckList, AutoCheckScript, AutoPorts } from './ports';

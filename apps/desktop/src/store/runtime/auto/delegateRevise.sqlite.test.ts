@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_USER_FACTS } from '@goodboy/core';
+import { EMPTY_USER_FACTS } from '@goodboy/core/auto';
 import { getAutoArtifact, getAutoDelegation, insertAutoOutbox } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoDelegationId, type AutoOutboxId } from '@goodboy/types';
 import { runAutoCommand } from './runAutoCommand';

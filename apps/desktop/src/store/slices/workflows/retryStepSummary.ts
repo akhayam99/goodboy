@@ -1,4 +1,4 @@
-import { fallbackStepOutputSummary } from '@goodboy/core';
+import { fallbackStepOutputSummary } from '@goodboy/core/summarizer';
 import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';

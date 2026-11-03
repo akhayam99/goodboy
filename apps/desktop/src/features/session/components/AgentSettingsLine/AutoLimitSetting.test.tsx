@@ -13,7 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { AutoBudgetFacts } from '@goodboy/core';
+import type { AutoBudgetFacts } from '@goodboy/core/auto';
 import { getAutoTree } from '@goodboy/db';
 import {
   AUTO_SEED_SESSION,

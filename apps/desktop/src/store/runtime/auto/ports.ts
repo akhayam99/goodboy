@@ -5,8 +5,8 @@ import type {
   MountSnapshot,
   PickableMount,
   RemoteRead,
-  WorkflowRoutingWireFields,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
+import type { WorkflowRoutingWireFields } from '@goodboy/core/orchestrator';
 import type { AutoDelegation } from '@goodboy/db';
 import type {
   AgentId,

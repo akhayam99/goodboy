@@ -1,4 +1,4 @@
-import type { PullRequestPort } from '@goodboy/core';
+import type { PullRequestPort } from '@goodboy/core/review-source';
 import type { MountId, PullRequestHost, SessionId } from '@goodboy/types';
 import { bitbucketPortOf } from '../../../features/integrations/bitbucket/bitbucketPortOf';
 import { githubPortOf } from '../../../features/integrations/github/githubPortOf';

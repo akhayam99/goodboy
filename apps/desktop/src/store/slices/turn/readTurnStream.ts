@@ -1,4 +1,5 @@
-import { resolveStoredModelSelection, turnReducer } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core/providers';
+import { turnReducer } from '@goodboy/core/turn';
 import { updateSessionState } from '@goodboy/db';
 import type { TurnEvent } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';

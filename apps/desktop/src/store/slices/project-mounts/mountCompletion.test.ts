@@ -59,8 +59,7 @@ const makeState = ({ mounts, github = {}, series = [] }: StateParams): MountWork
   ({
     sessionMounts: { [SESSION_ID]: mounts },
     mountGithub: github,
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
+    mountRequests: {},
     prSeries: { [SESSION_ID]: series },
   }) as unknown as MountWorkState;
 

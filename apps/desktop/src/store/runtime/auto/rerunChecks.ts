@@ -3,7 +3,7 @@ import {
   checksRunOfResult,
   isAutoWriterRole,
   type ChecksNotRunReason,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   getAutoDelegation,
   getAutoTree,

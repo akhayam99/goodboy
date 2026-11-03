@@ -1,4 +1,4 @@
-import { oncePatternText } from '@goodboy/core';
+import { oncePatternText } from '@goodboy/core/permissions';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 

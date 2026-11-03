@@ -1,6 +1,6 @@
 import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { costCoverage, type CostCoverage } from '@goodboy/core';
+import { costCoverage, type CostCoverage } from '@goodboy/core/providers';
 
 export type SortKey = 'recent' | 'expensive';
 

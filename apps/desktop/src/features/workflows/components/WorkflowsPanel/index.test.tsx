@@ -50,8 +50,8 @@ vi.mock('../../hooks/useRemovedBuiltins', () => ({
   useRemovedBuiltins: () => removed.ids,
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/workflows', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/workflows')>();
   return { ...actual, formatWorkflowFromNL: vi.fn(async () => null) };
 });
 

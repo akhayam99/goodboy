@@ -1,4 +1,4 @@
-import type { HiddenPort, HiddenPortSource } from '@goodboy/core';
+import type { HiddenPort, HiddenPortSource } from '@goodboy/core/monitoring';
 import { isValidPort } from './isValidPort';
 import { portRecordsOf } from './portRecordsOf';
 

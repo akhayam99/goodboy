@@ -1,4 +1,5 @@
-import { stepSizeForDifficulty, type HeadroomMap, type Resolution } from '@goodboy/core';
+import { type HeadroomMap, type Resolution } from '@goodboy/core/providers';
+import { stepSizeForDifficulty } from '@goodboy/core/orchestrator';
 import type {
   AgentRole,
   ProviderId,

@@ -1,4 +1,4 @@
-import type { WireframeScreen } from '@goodboy/core';
+import type { WireframeScreen } from '@goodboy/core/artifacts';
 import { Eyebrow, WorkNode } from '@goodboy/ui';
 import { frameUrl } from '../../frame/frameUrl';
 import { screenPagePath } from '../../wireframePagePath';

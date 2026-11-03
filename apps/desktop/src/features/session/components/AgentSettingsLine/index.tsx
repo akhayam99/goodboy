@@ -1,5 +1,5 @@
 import type { ReactNode, RefCallback } from 'react';
-import type { AutoBudgetFacts } from '@goodboy/core';
+import type { AutoBudgetFacts } from '@goodboy/core/auto';
 import type { AutoTreeId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { AutoLevelSetting } from '../../../auto/level/AutoLevelSetting';

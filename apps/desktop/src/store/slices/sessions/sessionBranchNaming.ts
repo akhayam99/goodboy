@@ -1,4 +1,9 @@
-import { NO_TASK_BRANCH_TEMPLATE, slugify, trimSlugAtWord, type BranchValues } from '@goodboy/core';
+import {
+  NO_TASK_BRANCH_TEMPLATE,
+  slugify,
+  trimSlugAtWord,
+  type BranchValues,
+} from '@goodboy/core/slug';
 import { UNTITLED_BASE } from '../../../shared/utils/sessionTitle';
 
 const SLUG_MAX_LENGTH = 40;

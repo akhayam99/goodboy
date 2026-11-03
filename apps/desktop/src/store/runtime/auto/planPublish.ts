@@ -5,7 +5,7 @@ import {
   type RemoteRead,
   type ResultChecksRun,
   type ResultPublish,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import { formatError } from '@goodboy/ui';
 import { snapshotOf } from './attemptBaseline';
 import type { AutoPorts } from './ports';

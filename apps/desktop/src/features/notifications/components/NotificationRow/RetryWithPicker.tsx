@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { NotificationAction } from '@goodboy/db';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import { autoModelOn } from '../../../providers/autoModelOn';
 import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';

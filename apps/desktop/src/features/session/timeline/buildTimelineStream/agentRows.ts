@@ -1,5 +1,5 @@
 import type { Agent, OpenQuestion, TurnState } from '@goodboy/types';
-import { isAgentSettled } from '@goodboy/core';
+import { isAgentSettled } from '@goodboy/core/workflows';
 import type { WorkflowAdvanceState } from '../../../workflows/advanceGate';
 import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { isQuestionDelegate } from '../../../context/questionDelegate';

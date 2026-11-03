@@ -1,4 +1,4 @@
-import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { MountPullRequestProvider, PrCheckRun } from '@goodboy/types';
 import type { MountRequestView } from '../../store/slices/project-mounts/mountRowModel';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';

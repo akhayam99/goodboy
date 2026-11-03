@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { autoRefusalUserReason, autoRefusedBlockText } from '@goodboy/core';
+import { autoRefusalUserReason, autoRefusedBlockText } from '@goodboy/core/auto';
 import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';

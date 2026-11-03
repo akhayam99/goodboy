@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@goodboy/ui';
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { portAnchorKey } from '../../../actions/portAnchorKey';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';

@@ -1,4 +1,5 @@
-import { findReusableAgent, runsForWorkflowRun, turnReducer } from '@goodboy/core';
+import { turnReducer } from '@goodboy/core/turn';
+import { findReusableAgent, runsForWorkflowRun } from '@goodboy/core/workflows';
 import {
   insertMessage,
   insertProviderRun,

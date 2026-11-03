@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import type { MountId, PrComment, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mountReviewGithub } from '../../../review/mountReviewGithub';

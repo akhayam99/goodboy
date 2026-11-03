@@ -5,10 +5,10 @@ import {
   buildAdoptedResult,
   composeAdoptionKickoff,
   diagnoseAdoption,
-  sha256Hex,
   type AdoptionRefusalCode,
   type ResultArtifact,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
+import { sha256Hex } from '@goodboy/core/slug';
 import {
   AUTO_ADOPT_ABORT,
   adoptAgentStatements,

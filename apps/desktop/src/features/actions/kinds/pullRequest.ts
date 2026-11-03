@@ -11,7 +11,11 @@ import {
   UserPlus,
   CircleX,
 } from 'lucide-react';
-import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import {
+  PULL_REQUEST_NOUNS,
+  REVIEW_SOURCE_CAPABILITIES,
+  REVIEW_SOURCE_LABEL,
+} from '@goodboy/core/review-source';
 import type { PrMergeMethod, PullRequestState, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';

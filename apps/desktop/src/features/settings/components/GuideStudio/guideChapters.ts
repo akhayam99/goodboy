@@ -260,7 +260,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, whatever the sort, and Move up and Move down reorder it.",
+        desc: "Pin session, in a row's right click menu, keeps it in a Pinned group on top, whatever the sort, and Move up and Move down reorder it. Folded, the sidebar shows only sessions that need you, run or have news, and counts the rest.",
       },
       {
         term: 'Session rail',
@@ -276,7 +276,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, in two groups, with the active tool named below its icon, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
+        desc: `The icon column at the right of the session page holds Explore, Context, Ask, Agents, Scripts and Terminal, each named below its icon, each a pane that ${shortcutGlyphs('overlay.close')} closes. Fold session rail, or ${shortcutGlyphs('innerColumn.toggle')}, shrinks it.`,
       },
     ],
     links: [],

@@ -1,5 +1,5 @@
 import type { ProjectId } from '@goodboy/types';
-import { createGithubRepo, type GithubRepoVisibility } from '@goodboy/core';
+import { createGithubRepo, type GithubRepoVisibility } from '@goodboy/core/github';
 import { formatError } from '@goodboy/ui';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import type { GetFn, SetFn } from '../../slice-types';

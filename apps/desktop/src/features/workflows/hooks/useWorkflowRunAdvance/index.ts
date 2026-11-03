@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Agent, OpenQuestion, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
 import { workflowRunOpenQuestions } from '../../../context/openQuestionsGate';
 import { resolveWorkflowAdvance, type WorkflowAdvanceState } from '../../advanceGate';

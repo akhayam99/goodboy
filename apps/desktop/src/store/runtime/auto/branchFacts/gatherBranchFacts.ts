@@ -3,7 +3,7 @@ import {
   type BranchFacts,
   type BranchFactsPart,
   type PickableMount,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { SessionId } from '@goodboy/types';
 import type { AutoPorts, BranchFactsParts } from '../ports';
 

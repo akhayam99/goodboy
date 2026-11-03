@@ -4,7 +4,7 @@ import {
   updateSessionWorktreeRepoSlug,
   type SessionWorktree,
 } from '@goodboy/db';
-import { detectRepoSlug } from '@goodboy/core';
+import { detectRepoSlug } from '@goodboy/core/github';
 import { formatError } from '@goodboy/ui';
 import type { MountId, Project, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';

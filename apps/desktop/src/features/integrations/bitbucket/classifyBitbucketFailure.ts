@@ -1,4 +1,4 @@
-import { PullRequestPortError } from '@goodboy/core';
+import { PullRequestPortError } from '@goodboy/core/review-source';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import type { HostFailureKind } from '../../../shared/lib/hostFailure';
 import { pullRequestFailureKindOf } from '../../../shared/lib/pullRequestFailureKindOf';

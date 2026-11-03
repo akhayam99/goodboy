@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
 import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TASKS } from '@goodboy/core';
+import { TASKS } from '@goodboy/core/settings';
 import { formatError } from '@goodboy/ui';
 import type {
   AgentRole,

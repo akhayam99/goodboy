@@ -41,8 +41,8 @@ const summarizeSpy = vi.fn();
 
 const summarizerRoutes: Array<{ providerId: string; model: string }> = [];
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/summarizer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/summarizer')>();
   return {
     ...actual,
     Summarizer: class {
@@ -181,7 +181,7 @@ describe('summarizer notifications', () => {
   });
 
   it('failure notification says what failed in plain words and carries a retry action', async () => {
-    const { SummarizerSpawnError } = await import('@goodboy/core');
+    const { SummarizerSpawnError } = await import('@goodboy/core/summarizer');
     summarizeSpy.mockRejectedValue(new SummarizerSpawnError(1, '', 'b: [internal] stream closed'));
     const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
 
@@ -259,7 +259,7 @@ describe('summarizer notifications', () => {
   });
 
   it('retries a parse failure exactly once before surfacing it', async () => {
-    const { SummarizerParseError } = await import('@goodboy/core');
+    const { SummarizerParseError } = await import('@goodboy/core/summarizer');
     summarizeSpy.mockRejectedValue(new SummarizerParseError('not valid JSON', 'Sistema bloccato'));
     const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
 
@@ -335,7 +335,7 @@ type SeedParams = {
 };
 
 const seedSummarizerState = async ({ connected, cooldowns }: SeedParams) => {
-  const { PROVIDER_CAPABILITIES } = await import('@goodboy/core');
+  const { PROVIDER_CAPABILITIES } = await import('@goodboy/core/providers');
   useAppStore.setState({
     sessions: [
       {
@@ -443,7 +443,7 @@ describe('summarizer provider fallback', () => {
   });
 
   it('retries a generic cli exit on another provider without telling the owner', async () => {
-    const { SummarizerSpawnError } = await import('@goodboy/core');
+    const { SummarizerSpawnError } = await import('@goodboy/core/summarizer');
     summarizeSpy
       .mockRejectedValueOnce(new SummarizerSpawnError(1, '', 'b: [internal] stream closed'))
       .mockRejectedValueOnce(new SummarizerSpawnError(1, '', 'b: [internal] stream closed'))
@@ -645,7 +645,7 @@ describe('summarizer provider fallback', () => {
     expect(keys[0]).toContain(`summarizer-cooling:${SESSION_ID}:`);
   });
   it('falls back from a cursor exit whose stderr names a usage limit', async () => {
-    const { SummarizerSpawnError } = await import('@goodboy/core');
+    const { SummarizerSpawnError } = await import('@goodboy/core/summarizer');
     summarizeSpy
       .mockRejectedValueOnce(
         new SummarizerSpawnError(1, '', 'b: [resource_exhausted] You hit your usage limit'),
@@ -675,7 +675,7 @@ describe('summarizer provider fallback', () => {
   });
 
   it('never falls back to a hidden model and says the provider hit its limit', async () => {
-    const { PROVIDER_CAPABILITIES } = await import('@goodboy/core');
+    const { PROVIDER_CAPABILITIES } = await import('@goodboy/core/providers');
     summarizeSpy.mockRejectedValue(new Error('Claude usage limit reached'));
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });

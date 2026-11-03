@@ -1,4 +1,4 @@
-import type { LedgerKind } from '@goodboy/core';
+import type { LedgerKind } from '@goodboy/core/monitoring';
 
 const LEDGER_KIND_WORD: Readonly<Record<LedgerKind, string>> = {
   script: 'Script',

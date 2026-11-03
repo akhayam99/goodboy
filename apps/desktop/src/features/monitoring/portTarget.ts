@@ -1,4 +1,4 @@
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import type { PortHolder, PortLayer } from '../actions/kinds/port';
 import type { PortActionTarget } from '../actions/types';
 import type { StartedRow } from './startedByGoodboy';

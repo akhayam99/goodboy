@@ -1,4 +1,8 @@
-import { countDecisionChanges, hasVisibleDecisionChange, type DecisionChange } from '@goodboy/core';
+import {
+  countDecisionChanges,
+  hasVisibleDecisionChange,
+  type DecisionChange,
+} from '@goodboy/core/context';
 import type { AgentId, SessionEventPayload } from '@goodboy/types';
 
 type Params = {

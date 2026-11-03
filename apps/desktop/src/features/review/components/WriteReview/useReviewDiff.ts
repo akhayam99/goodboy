@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { FileDiff, GitlabIntegrationBinding, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {

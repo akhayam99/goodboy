@@ -9,7 +9,7 @@ import {
   setResolveAttemptPhase,
 } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
-import { extractMarkers } from '@goodboy/core';
+import { extractMarkers } from '@goodboy/core/context';
 import { formatError } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';

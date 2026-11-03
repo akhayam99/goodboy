@@ -1,4 +1,4 @@
-import type { ExtractedScribeText } from '@goodboy/core';
+import type { ExtractedScribeText } from '@goodboy/core/context';
 
 type Params = {
   readonly previous: ExtractedScribeText | null;

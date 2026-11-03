@@ -1,4 +1,4 @@
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { PinnedRow } from './PinnedRow';
 import { PortListSection } from './PortListSection';
 

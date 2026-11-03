@@ -1,4 +1,4 @@
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { waitTurnSettled } from '../turn/turnSettled';

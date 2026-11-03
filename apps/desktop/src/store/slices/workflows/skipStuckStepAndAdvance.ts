@@ -6,7 +6,7 @@ import {
   findReusableAgent,
   isAgentStatusSettled,
   runsForWorkflowRun,
-} from '@goodboy/core';
+} from '@goodboy/core/workflows';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { isRunPaused } from '../../../features/workflows/isRunPaused';
 import { findWorkflowRun } from './findWorkflowRun';

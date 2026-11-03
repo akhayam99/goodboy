@@ -72,13 +72,13 @@ const rowsOf = (): ReadonlyArray<string> =>
 
 const rowsAcrossStates = (): ReadonlyArray<string> => {
   const open = rowsOf();
-  const resolvedTab = screen.queryByRole('tab', { name: 'Resolved' });
+  const resolvedTab = screen.queryByRole('button', { name: 'Resolved' });
   if (resolvedTab === null) {
     return open;
   }
   fireEvent.click(resolvedTab);
   const resolved = rowsOf();
-  fireEvent.click(screen.getByRole('tab', { name: 'Open' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open', pressed: false }));
   return [...open, ...resolved];
 };
 

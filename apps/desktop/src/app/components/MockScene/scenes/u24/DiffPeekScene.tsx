@@ -48,6 +48,32 @@ const FILE: FileDiff = {
   ],
 };
 
+const TEST_FILE: FileDiff = {
+  path: 'src/ledger-core.test.ts',
+  status: 'modified',
+  additions: 1,
+  deletions: 0,
+  binary: false,
+  hunks: [
+    {
+      header: '',
+      oldStart: 12,
+      newStart: 12,
+      oldLines: 1,
+      newLines: 2,
+      lines: [
+        {
+          kind: 'add',
+          oldLine: null,
+          newLine: 12,
+          text: "  expect(creditKey({ account: 'acme' })).toBe('acme:EUR');",
+        },
+        { kind: 'context', oldLine: 12, newLine: 13, text: '});' },
+      ],
+    },
+  ],
+};
+
 const MATCHES: ReadonlyArray<GrepMatch> = [
   {
     path: 'src/ledger-core.ts',
@@ -102,6 +128,20 @@ const MORE_HANDLERS = {
     truncated: false,
   }),
 };
+const ORDER_HANDLERS = {
+  worktree_grep_word: () => ({
+    matches: [
+      ...MATCHES,
+      {
+        path: 'apps/payments-api/src/ledger-core/components/notify-relay.tsx',
+        line: 30,
+        column: 8,
+        text: 'return creditKey(posting);',
+      },
+    ],
+    truncated: false,
+  }),
+};
 const LIBRARY_HANDLERS = {
   worktree_grep_word: () => ({
     matches: [
@@ -126,7 +166,7 @@ const LIBRARY_FILE: FileDiff = {
   })),
 };
 
-type Props = { readonly state: 'open' | 'empty' | 'more' | 'library' };
+type Props = { readonly state: 'open' | 'empty' | 'more' | 'library' | 'order' };
 
 export const DiffPeekScene = ({ state }: Props) => {
   const word = state === 'library' ? 'maxWidth' : 'creditKey';
@@ -135,9 +175,11 @@ export const DiffPeekScene = ({ state }: Props) => {
       ? LIBRARY_HANDLERS
       : state === 'more'
         ? MORE_HANDLERS
-        : state === 'open'
-          ? OPEN_HANDLERS
-          : EMPTY_HANDLERS;
+        : state === 'order'
+          ? ORDER_HANDLERS
+          : state === 'open'
+            ? OPEN_HANDLERS
+            : EMPTY_HANDLERS;
   useFakeTauri({ handlers, holdMs: 60_000 });
   const rootRef = useRef<HTMLElement | null>(null);
 
@@ -169,11 +211,11 @@ export const DiffPeekScene = ({ state }: Props) => {
     >
       <h1 className="text-title">Payments API changes</h1>
       <DiffView
-        files={[state === 'library' ? LIBRARY_FILE : FILE]}
+        files={state === 'library' ? [LIBRARY_FILE] : [FILE, TEST_FILE]}
         presentation="inline"
         identifierPeek={{
           worktreePath: '/mock/payments-api',
-          onOpenElsewhere: () => undefined,
+          onOpen: () => undefined,
         }}
       />
     </main>

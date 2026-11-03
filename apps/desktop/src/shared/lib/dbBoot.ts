@@ -1,4 +1,5 @@
-import { removeSessionQuestionsFromSlots, seedMissingBuiltinWorkflows } from '@goodboy/core';
+import { removeSessionQuestionsFromSlots } from '@goodboy/core/context';
+import { seedMissingBuiltinWorkflows } from '@goodboy/core/workflows';
 import {
   DatabaseFromNewerBuildError,
   pickRestorableSnapshot,

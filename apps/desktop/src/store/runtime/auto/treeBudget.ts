@@ -4,7 +4,7 @@ import {
   autoBudgetPromptLine,
   autoTreeSpendOf,
   type AutoBudgetFacts,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { Database } from '@goodboy/db';
 import type { AutoTreeId } from '@goodboy/types';
 import { treeSpend } from './spend';

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import * as core from '@goodboy/core';
+import * as core from '@goodboy/core/workflows';
 import * as phases from './index';
 
 describe('phases barrel exports', () => {
-  it('exposes browser-safe sequencer and propagator from @goodboy/core root', () => {
+  it('exposes browser-safe sequencer and propagator from @goodboy/core/workflows', () => {
     expect(core.classifyWorkflowChain).toBeTypeOf('function');
     expect(core.buildChainCarryForward).toBeTypeOf('function');
     expect(core.buildParallelCarryForward).toBeTypeOf('function');

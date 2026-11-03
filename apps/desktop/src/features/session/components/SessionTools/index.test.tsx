@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 // @vitest-environment happy-dom
 
@@ -25,6 +27,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/activityRunSeed';
 import { SessionTools } from '.';
 import { SESSION_TOOLS } from './sessionTools';
+import { SESSION_TOOL_RAIL_WIDTH } from './sessionToolRailWidth';
 
 let useAppStore: StoryStore;
 
@@ -138,6 +141,59 @@ describe('SessionTools', () => {
     }
   });
 
+  it('names every tool under its icon, faint when closed and muted when open', () => {
+    renderCluster();
+    const captions = SESSION_TOOLS.map((tool) =>
+      screen
+        .getByTestId(`pane-toggle-${tool.pane}`)
+        .closest('[data-slot="session-tool"]')
+        ?.querySelector('[data-slot="tool-caption"]'),
+    );
+    expect(captions.map((caption) => caption?.textContent)).toEqual(
+      SESSION_TOOLS.map((tool) => tool.label),
+    );
+    expect(captions.every((caption) => caption?.getAttribute('data-tone') === 'closed')).toBe(true);
+    fireEvent.click(toggle('scripts'));
+    const open = toggle('scripts')
+      .closest('[data-slot="session-tool"]')
+      ?.querySelector('[data-slot="tool-caption"]');
+    expect(open?.getAttribute('data-tone')).toBe('open');
+    expect(
+      captions.filter((caption) => caption?.getAttribute('data-tone') === 'closed'),
+    ).toHaveLength(5);
+  });
+
+  it('keeps every label inside the 44px rail at the 9px caption size', () => {
+    const contentWidth = SESSION_TOOL_RAIL_WIDTH - 2 * 2;
+    const widestGlyphEm = 0.55;
+    const captionPx = 9;
+    for (const tool of SESSION_TOOLS) {
+      expect(tool.label.length * widestGlyphEm * captionPx).toBeLessThanOrEqual(contentWidth);
+    }
+  });
+
+  it('hides all captions together on a short window and fits the rail at 600px', () => {
+    renderCluster();
+    const source = readFileSync(join(__dirname, 'SessionToolButton.tsx'), 'utf8');
+    expect(source).toContain('[@media(max-height:480px)]:hidden');
+    expect(document.querySelectorAll('[data-slot="tool-caption"]')).toHaveLength(
+      SESSION_TOOLS.length,
+    );
+    const button = 32;
+    const caption = 12;
+    const captionGap = 2;
+    const railGap = 8;
+    const headerInset = 12;
+    const groups = new Set(SESSION_TOOLS.map((tool) => tool.group)).size;
+    const children = SESSION_TOOLS.length + groups - 1;
+    const needed =
+      headerInset +
+      SESSION_TOOLS.length * (button + captionGap + caption) +
+      (children - 1) * railGap +
+      (groups - 1);
+    expect(needed).toBeLessThan(600 - 120);
+  });
+
   it('draws the Context dot on the icon as a badge, not after a word', () => {
     renderCluster();
     act(() => {
@@ -186,7 +242,7 @@ describe('SessionTools', () => {
     await settle();
     expect(drawerKind()).toBe('scripts');
     expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('toolbar', { name: 'Session tools' }).textContent).toBe('Scripts');
+    expect(toggle('scripts').closest('[data-slot="session-tool"]')?.textContent).toBe('Scripts');
     expect(toggle('scripts').getAttribute('data-icon-tone')).toBe('info');
     expect(toggle('ask').getAttribute('aria-pressed')).toBe('false');
     expect(toggle('ask').hasAttribute('data-icon-tone')).toBe(false);

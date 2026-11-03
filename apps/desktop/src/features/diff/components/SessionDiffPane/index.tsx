@@ -26,7 +26,8 @@ import { nextUnviewedPath } from '../../lib/fileOrder';
 import { ChangeTree } from '../ChangeTree';
 import { FileRail } from '../FileRail';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
-import { worktreeFileSides, type GrepMatch } from '../../../worktree/worktree';
+import { worktreeFileSides } from '../../../worktree/worktree';
+import type { PeekOpenParams } from '../IdentifierPeek/PeekHost';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
 
@@ -118,20 +119,14 @@ export const SessionDiffPane = ({
         ? null
         : {
             worktreePath,
-            onOpenElsewhere: (match: GrepMatch) =>
+            onOpen: ({ word, match }: PeekOpenParams) =>
               openDrawer({
-                kind: 'explore-file',
+                kind: 'identifier-peek',
                 sessionId,
                 payload: {
-                  sessionDir: worktreePath,
-                  entry: {
-                    name: match.path.slice(match.path.lastIndexOf('/') + 1),
-                    relPath: match.path,
-                    isDir: false,
-                    sizeBytes: 0,
-                    modifiedAt: null,
-                  },
-                  line: match.line,
+                  worktreePath,
+                  word,
+                  selected: { path: match.path, line: match.line },
                 },
               }),
           },

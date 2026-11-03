@@ -1,4 +1,4 @@
-import { untrustedBlock } from '@goodboy/core';
+import { untrustedBlock } from '@goodboy/core/untrustedBlock';
 import type { PrCheckRun, PullRequestState, PullRequestView } from '@goodboy/types';
 import { withOperatorNotes } from '../../chat/utils/withOperatorNotes';
 import { failedLogTail } from './failedLogTail';

@@ -1,4 +1,4 @@
-import { parseHiddenModels, type HiddenModels } from '@goodboy/core';
+import { parseHiddenModels, type HiddenModels } from '@goodboy/core/providers';
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import type { AppStore } from '../../store';
 

@@ -1,4 +1,4 @@
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { Agent, EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { estimateKeyOf, workEstimateFor } from '../../workTreeModel/agentWorkTime';
 import type { WorkEstimate } from '../../workTreeModel/workTime';

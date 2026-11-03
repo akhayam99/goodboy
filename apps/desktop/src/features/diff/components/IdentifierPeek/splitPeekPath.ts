@@ -1,20 +1,27 @@
 type Params = { readonly path: string };
 
-const DIRECTORY_LIMIT = 30;
-const DIRECTORY_EDGE = 14;
+const DIRECTORY_LIMIT = 26;
+const ELLIPSIS = '…/';
 
 export const splitPeekPath = ({ path }: Params) => {
   const cut = path.lastIndexOf('/');
   if (cut < 0) {
-    return { directory: '', separator: '', name: path };
+    return { directory: '', separator: '', name: path, isCut: false };
   }
-  const directory = path.slice(0, cut);
+  const segments = path.slice(0, cut).split('/');
+  let kept: ReadonlyArray<string> = [];
+  for (let index = segments.length - 1; index >= 0; index -= 1) {
+    const next = [segments[index] ?? '', ...kept];
+    if (kept.length > 0 && next.join('/').length > DIRECTORY_LIMIT) {
+      break;
+    }
+    kept = next;
+  }
+  const isCut = kept.length < segments.length;
   return {
-    directory:
-      directory.length > DIRECTORY_LIMIT
-        ? `${directory.slice(0, DIRECTORY_EDGE)}…${directory.slice(-DIRECTORY_EDGE)}`
-        : directory,
+    directory: `${isCut ? ELLIPSIS : ''}${kept.join('/')}`,
     separator: '/',
     name: path.slice(cut + 1),
+    isCut,
   };
 };

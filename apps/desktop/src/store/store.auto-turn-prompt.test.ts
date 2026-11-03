@@ -24,8 +24,8 @@ import {
 
 const { gates } = vi.hoisted(() => ({ gates: { isDelegationEnabled: true } }));
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/auto', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/auto')>()),
   AUTO_GATES: gates,
 }));
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { PROFILE_ACCESS } from '@goodboy/core';
+import { PROFILE_ACCESS } from '@goodboy/core/profile';
 import type { AgentRole } from '@goodboy/types';
 import { ROLE_LABEL } from '../../../session/agent-kind';
 import { AlsoSentLine } from './AlsoSentLine';

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { getAutoTree, listAutoDelegations, listAutoOutbox } from '@goodboy/db';
 import { brandId, type SessionId } from '@goodboy/types';
 import { readAutoTreeViews } from '../../slices/auto-view/readAutoTreeViews';

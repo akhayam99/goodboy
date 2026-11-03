@@ -11,8 +11,8 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getCapabilities } from '@goodboy/core/providers';
 import {
-  getCapabilities,
   hintedRoutingOutcome,
   keepProposalInRoleSet,
   orchestratorModelPool,
@@ -20,7 +20,7 @@ import {
   resolveWorkflowRouting,
   roleModelSetMenu,
   type WorkflowRoutingWireFields,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import type { AgentRole, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../features/providers/providers';

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
+import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { OverrideSettings, Project, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import { aProject } from '@goodboy/types/testing';

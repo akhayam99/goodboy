@@ -3,7 +3,7 @@ import {
   PULL_REQUEST_NOUNS,
   REVIEW_SOURCE_LABEL,
   type PullRequestFailureKind,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 import { SkeletonSwap } from '@goodboy/ui';
 import type {
   BranchCommit,

@@ -1,0 +1,61 @@
+import type { MountId, SessionId } from '@goodboy/types';
+import type { BitbucketRepo } from '../../../features/integrations/bitbucket/client';
+import { staleHeadErrorOf } from '../../../shared/lib/staleHeadErrorOf';
+import { bitbucketRequestIdentity } from './bitbucketPrLink';
+import { blankBitbucketEntry } from './blankBitbucketEntry';
+import { applyBitbucketSelection } from './applyBitbucketSelection';
+import { resolveSessionBitbucketTarget } from './resolveBitbucketPrContext';
+import type { GetFn, SetFn } from './types';
+
+type Params = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly mountId?: MountId;
+  readonly repo: BitbucketRepo;
+  readonly pullRequestId: number;
+  readonly write: () => Promise<void>;
+};
+
+export const runBitbucketPrWrite = async ({
+  set,
+  get,
+  sessionId,
+  mountId,
+  repo,
+  pullRequestId,
+  write,
+}: Params): Promise<void> => {
+  const target = resolveSessionBitbucketTarget({
+    get,
+    sessionId,
+    ...(mountId === undefined ? {} : { mountId }),
+  });
+  const rereadRequest = async (): Promise<void> => {
+    if (target === null) {
+      return;
+    }
+    const targetMountId = target.mount.id;
+    set((state) =>
+      applyBitbucketSelection({
+        state,
+        sessionId,
+        mountId: targetMountId,
+        selected: bitbucketRequestIdentity({ repo, pullRequestId }),
+        fallback: blankBitbucketEntry({ target, repo }),
+      }),
+    );
+    await get().refreshSessionBitbucketPr(sessionId, { force: true, mountId: targetMountId });
+  };
+  try {
+    await write();
+  } catch (error) {
+    const stale = staleHeadErrorOf({ error });
+    if (stale === null) {
+      throw error;
+    }
+    await rereadRequest();
+    throw stale;
+  }
+  await rereadRequest();
+};

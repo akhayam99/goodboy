@@ -1,4 +1,4 @@
-import { describeAutoRefusal, type AutoRefusalCode, type RefusalChild } from '@goodboy/core';
+import { describeAutoRefusal, type AutoRefusalCode, type RefusalChild } from '@goodboy/core/auto';
 import type { BridgeOutcome } from './ports';
 
 type RefuseParams = {

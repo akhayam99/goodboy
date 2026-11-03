@@ -1,4 +1,5 @@
-import { AUTO_REVISE_ASK_CHARS, sha256Hex } from '@goodboy/core';
+import { AUTO_REVISE_ASK_CHARS } from '@goodboy/core/auto';
+import { sha256Hex } from '@goodboy/core/slug';
 import {
   AUTO_OWNER_GUARD_SQL,
   ARTIFACT_REVISION_CONFLICT,

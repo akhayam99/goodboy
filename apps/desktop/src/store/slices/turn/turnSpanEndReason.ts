@@ -1,4 +1,4 @@
-import { hasBlockingQuestion } from '@goodboy/core';
+import { hasBlockingQuestion } from '@goodboy/core/context';
 import type { AgentTurnSpanEndReason } from '@goodboy/types';
 
 type Params = {

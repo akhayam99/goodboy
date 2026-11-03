@@ -12,6 +12,60 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.1
+
+An identifier peek in the right drawer, a folded sidebar that shows only sessions with news, named session tools and a smoother stream.
+
+### New
+
+#### Identifier peek in the right drawer
+<!-- gb area=review image=peek-drawer -->
+
+Choosing any result in the identifier popover opens the right drawer and never moves the page. A changed file shows its diff scrolled to the match, and an unchanged file shows its source with a quiet one-line note.
+
+The popover lists the definition first, then changed files, then unchanged ones. A file shows once, under Defined in, with a Changed tag. A long folder path ends in an ellipsis at the start, so the folders next to the file stay whole and the file name is never cut.
+
+#### Folded sidebar shows sessions with news
+<!-- gb area=sessions -->
+
+The folded sidebar draws only sessions that need you, are running or have unread news, in that order, up to seven. Quiet sessions fold into the +N count and stay in its flyout.
+
+In the folded session rail, a pull request is drawn as its state icon. Its number, branch and state are in the tooltip.
+
+#### Every session tool is named
+<!-- gb area=sessions image=tool-rail -->
+
+Each tool in the session rail carries its name under its icon, in a slightly smaller caption. The captions hide together when the window is under 480px tall, and the tooltips stay.
+
+### Improved
+
+#### Smoother streaming in busy workspaces
+<!-- gb area=app -->
+
+Streaming output no longer re-checks every sidebar, board and top bar value on each chunk, so busy workspaces stay smooth while agents write.
+
+#### Comments say what they count
+<!-- gb area=review -->
+
+The fix button and the run line read Fixing 1 of 4 threads: the threads still being fixed out of the run. The comment drawer counts comments.
+
+A covered comment row reads In the fix run instead of repeating Fixing, and the Open and Resolved switch is quieter and reads as a filter.
+
+#### Help search ranks title matches first
+<!-- gb area=app -->
+
+Title matches lead the results, and each guide result shows a line of context with the match marked. What's new shows three rows, with a button for the rest.
+
+### Fixed
+
+- Setup no longer reopens at the Agents step right after your first session starts. <!-- gb area=app -->
+- Branch rows keep the width of the status word, with the word in a tooltip when it is cut. <!-- gb area=review -->
+- A fix run question has one Answer button on its card. <!-- gb area=review -->
+- Next in the file list is drawn as a button. <!-- gb area=review -->
+- Settings names the default editor, such as VS Code, before detection finishes. <!-- gb area=settings -->
+- The top bar usage chip with no figures shows a glyph. <!-- gb area=app -->
+- Shortcuts no longer shows a Read only subtitle under its title. <!-- gb area=settings -->
+
 ## Goodboy v0.31.0
 
 One Needs you card, a Sessions page that is the Board, tabs on the branch page, a shorter setup and a quicker app, and Skills are removed.

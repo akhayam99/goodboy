@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import type { LedgerRow, MonitorSnapshot, PinnedPort } from '@goodboy/core';
+import type { LedgerRow, MonitorSnapshot, PinnedPort } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../../store';
 import type { TerminalTab, TerminalTabId } from '../../../../../shared/types/terminal';
 import { brandedId } from '../../../../../features/history/testing/brandedId';

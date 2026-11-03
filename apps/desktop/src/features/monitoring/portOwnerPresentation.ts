@@ -1,4 +1,4 @@
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import type { Project, SessionMountView } from '@goodboy/types';
 import { ownerPresentation, type OwnerPresentation } from './ownerPresentation';
 

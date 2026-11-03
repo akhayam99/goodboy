@@ -1,4 +1,4 @@
-import { PULL_REQUEST_NOUNS } from '@goodboy/core';
+import { PULL_REQUEST_NOUNS } from '@goodboy/core/review-source';
 import type { PullRequestHost } from '@goodboy/types';
 
 type Params = {

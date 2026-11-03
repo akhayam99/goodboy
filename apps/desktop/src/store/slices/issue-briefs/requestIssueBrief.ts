@@ -1,4 +1,4 @@
-import { generateIssueBrief } from '@goodboy/core';
+import { generateIssueBrief } from '@goodboy/core/summarizer';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';

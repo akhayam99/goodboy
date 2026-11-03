@@ -6,6 +6,7 @@ export type GuideHit = {
   readonly chapterId: string;
   readonly chapterTitle: string;
   readonly term: string | null;
+  readonly excerpt: string;
 };
 
 type MatchParams = {
@@ -32,7 +33,15 @@ const hitsOf = ({ chapter, words }: ChapterParams): ReadonlyArray<GuideHit> => {
     ...chapter.links.map((link) => link.label),
   ];
   const own: ReadonlyArray<GuideHit> = matchesAll({ parts: chapterParts, words })
-    ? [{ key: chapter.id, chapterId: chapter.id, chapterTitle: chapter.title, term: null }]
+    ? [
+        {
+          key: chapter.id,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
+          term: null,
+          excerpt: chapter.lead,
+        },
+      ]
     : [];
   const points = chapter.points.flatMap((point) =>
     matchesAll({ parts: [point.term, point.desc], words })
@@ -42,6 +51,7 @@ const hitsOf = ({ chapter, words }: ChapterParams): ReadonlyArray<GuideHit> => {
             chapterId: chapter.id,
             chapterTitle: chapter.title,
             term: point.term,
+            excerpt: point.desc,
           },
         ]
       : [],

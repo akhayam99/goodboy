@@ -1,4 +1,5 @@
 import { ArrowRight, Folder } from 'lucide-react';
+import { gitlabSessionOf } from '../../../../store/slices/mount-request/requestOf';
 import {
   Chip,
   FactCardFootnote,
@@ -47,7 +48,7 @@ export const SessionHoverCardBody = ({
   const sessionId = session.id as SessionId;
   const { summary, node, keys, title } = useSessionRowFacts({ session, isArchived });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
-  const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
+  const mergeRequest = useAppStore((state) => gitlabSessionOf({ state, sessionId })?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
   const isPinned = useAppStore((state) =>
     (state.sessionPins?.[session.workspaceId] ?? EMPTY_ARRAY).some((pin) => pin.id === sessionId),

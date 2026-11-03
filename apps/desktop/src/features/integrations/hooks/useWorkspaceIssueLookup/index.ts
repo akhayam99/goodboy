@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { detectRepoSlug } from '@goodboy/core';
+import { detectRepoSlug } from '@goodboy/core/github';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../github/github';

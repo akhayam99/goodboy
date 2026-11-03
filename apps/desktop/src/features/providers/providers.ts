@@ -1,4 +1,4 @@
-import { isApiProvider, providerFlags } from '@goodboy/core';
+import { isApiProvider, providerFlags } from '@goodboy/core/providers';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { PROVIDER_LABEL } from './providerLabel';
 import type {

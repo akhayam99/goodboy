@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import { groupPortRows } from './groupPortRows';
 import { portListText } from './portListText';
 

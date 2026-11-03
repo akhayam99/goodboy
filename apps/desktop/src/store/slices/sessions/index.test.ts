@@ -77,8 +77,11 @@ vi.mock('../../../features/integrations/linear/client', async () =>
 vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
-vi.mock('@goodboy/core', async (importOriginal) =>
-  (await import('../../storyHarness')).coreModuleMock(importOriginal),
+vi.mock('@goodboy/core/workflows', async (importOriginal) =>
+  (await import('../../storyHarness')).coreWorkflowsModuleMock({ importOriginal }),
+);
+vi.mock('@goodboy/core/github', async (importOriginal) =>
+  (await import('../../storyHarness')).coreGithubModuleMock({ importOriginal }),
 );
 vi.mock('../../../features/scripts/scripts', async () =>
   (await import('../../storyHarness')).scriptsModuleMock(),
@@ -162,13 +165,7 @@ function buildSession(overrides: Partial<Session> = {}): Session {
 }
 
 function buildAgent(overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent {
-  return {
-    sessionId: SESSION_ID,
-    ordinal: 0,
-    name: 'agent 1',
-    status: 'pending',
-    ...overrides,
-  };
+  return { sessionId: SESSION_ID, ordinal: 0, name: 'agent 1', status: 'pending', ...overrides };
 }
 
 function buildPlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
@@ -1747,7 +1744,7 @@ describe('store contract', () => {
     it('stamps the detected repo slug on the materialized worktree row', async () => {
       const { store, session } = await seedMultiProjectSession();
       const db = await import('@goodboy/db');
-      const core = await import('@goodboy/core');
+      const core = await import('@goodboy/core/github');
       vi.mocked(core.detectRepoSlug).mockResolvedValueOnce('acme/goodboy');
       storySpies.createWorktree.mockResolvedValueOnce({
         worktreePath: '/tmp/api/.goodboy/worktrees/slug',

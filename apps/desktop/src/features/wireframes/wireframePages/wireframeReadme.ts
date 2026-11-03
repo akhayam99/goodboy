@@ -1,4 +1,4 @@
-import type { WireframeDocument } from '@goodboy/core';
+import type { WireframeDocument } from '@goodboy/core/artifacts';
 import { screenStateFiles } from './renderWireframePages';
 import { WIREFRAME_SCREENS_DIR } from './wireframeScreenFile';
 

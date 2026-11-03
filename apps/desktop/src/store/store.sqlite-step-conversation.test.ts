@@ -8,7 +8,7 @@ import {
   listTurnEventsForAgent,
   recordAgentStatus,
 } from '@goodboy/db';
-import { wrapOpenQuestionAnswers } from '@goodboy/core';
+import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
 import type {
   AgentId,
   IsoDateTime,

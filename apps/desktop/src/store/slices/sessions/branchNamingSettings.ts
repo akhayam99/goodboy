@@ -1,4 +1,4 @@
-import { DEFAULT_BRANCH_TEMPLATE } from '@goodboy/core';
+import { DEFAULT_BRANCH_TEMPLATE } from '@goodboy/core/slug';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import type { AppStore } from '../../store';

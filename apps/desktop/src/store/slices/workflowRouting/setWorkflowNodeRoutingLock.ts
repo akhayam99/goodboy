@@ -1,5 +1,5 @@
 import type { WorkflowRoutingLock } from '@goodboy/types';
-import { resolveWorkflowRouting } from '@goodboy/core';
+import { resolveWorkflowRouting } from '@goodboy/core/orchestrator';
 import { WORKFLOW_ROUTING_COPY } from '../../../features/workflows/workflowRoutingCopy';
 import { applyWorkflowNodeRouting, setWorkflowNodeRoutingError } from './applyWorkflowNodeRouting';
 import { workflowNodeRoutingContext } from './nodeRoutingContext';

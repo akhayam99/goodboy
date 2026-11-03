@@ -5,7 +5,7 @@ import {
   extractAllCommentResolved,
   extractAllCommentWontfix,
   isReviewThreadId,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import {
   buildCommentAgentTitle,

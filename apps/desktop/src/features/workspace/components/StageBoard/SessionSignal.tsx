@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import { CloudOff } from 'lucide-react';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { cn, ICON_SIZE, StateDot, Tooltip, FOCUS_RING, tintClasses } from '@goodboy/ui';
 import { PullRequestChip } from '../../../integrations/github/components/PullRequestChip';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';

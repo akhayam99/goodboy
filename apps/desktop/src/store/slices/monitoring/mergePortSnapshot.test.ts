@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core/monitoring';
 import { mergePortSnapshot } from './mergePortSnapshot';
 
 type ProcessOfParams = {

@@ -1,4 +1,4 @@
-import { isPullRequestPortError } from '@goodboy/core';
+import { isPullRequestPortError } from '@goodboy/core/review-source';
 import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { refreshActiveRequest } from '../review-source/refreshActiveRequest';

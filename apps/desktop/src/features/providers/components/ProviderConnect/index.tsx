@@ -1,4 +1,4 @@
-import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core/providers';
 import { useEffect, useRef } from 'react';
 import { Button, cn, Collapsible, ICON_SIZE } from '@goodboy/ui';
 import { CircleCheck } from 'lucide-react';

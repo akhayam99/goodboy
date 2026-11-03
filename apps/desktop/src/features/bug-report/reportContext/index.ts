@@ -1,5 +1,5 @@
 import { getVersion } from '@tauri-apps/api/app';
-import { cleanCliVersion } from '@goodboy/core';
+import { cleanCliVersion } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { redactReport } from '../../../shared/utils/redactReport';
 import { captureLocation } from '../../../store/slices/navigation/captureLocation';

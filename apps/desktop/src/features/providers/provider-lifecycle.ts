@@ -1,4 +1,4 @@
-import { PROVIDER_LIFECYCLE_COMMANDS } from '@goodboy/core';
+import { PROVIDER_LIFECYCLE_COMMANDS } from '@goodboy/core/providers';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import {

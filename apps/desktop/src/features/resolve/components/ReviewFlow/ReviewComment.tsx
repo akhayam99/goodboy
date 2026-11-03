@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
-import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { Chip, ICON_SIZE, Markdown, SectionHeader, Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import { useThreadQuestion } from '../../hooks/useThreadQuestion';
 import { CommentComposer } from '../../../../shared/components/CommentComposer';

@@ -1,4 +1,4 @@
-import { AUTO_BLOCK_TEXT, autoRemainingForGates, turnGate } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, autoRemainingForGates, turnGate } from '@goodboy/core/auto';
 import {
   autoTreePhaseStatement,
   getAutoTree,

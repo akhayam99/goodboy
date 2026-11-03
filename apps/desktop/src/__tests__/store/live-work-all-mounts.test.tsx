@@ -26,7 +26,7 @@ import {
 } from '../../store/slices/session-view/selectors';
 import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
 import type { MountGithubState } from '../../store/types';
-import type { MountBitbucketPrState } from '../../store/slices/bitbucket-pr/state';
+import type { MountBitbucketPrState } from '../../store/slices/mount-request/state';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),
@@ -176,6 +176,8 @@ const bitbucketMount = ({
   readonly checks?: MountBitbucketPrState['checks'];
   readonly reviewDecision?: MountBitbucketPrState['reviewDecision'];
 }): MountBitbucketPrState => ({
+  kind: 'bitbucket',
+  selected: null,
   mountId,
   projectId,
   revision: 0,
@@ -287,7 +289,7 @@ describe('live work across every mount of a session', () => {
 
   it('reads a Bitbucket-only session from its request instead of leaving it on no PR yet', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [MOUNT_TWO]: bitbucketMount({ mountId: MOUNT_TWO, projectId: PROJECT_TWO }),
       },
     });
@@ -300,7 +302,7 @@ describe('live work across every mount of a session', () => {
 
   it('marks a Bitbucket session red on the board, the chip and the stage when a status failed', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [MOUNT_TWO]: bitbucketMount({
           mountId: MOUNT_TWO,
           projectId: PROJECT_TWO,
@@ -318,7 +320,7 @@ describe('live work across every mount of a session', () => {
 
   it('asks for the changes a Bitbucket reviewer requested', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [MOUNT_TWO]: bitbucketMount({
           mountId: MOUNT_TWO,
           projectId: PROJECT_TWO,
@@ -338,7 +340,7 @@ describe('live work across every mount of a session', () => {
 
   it('calls a Bitbucket request approved once a reviewer approved and the statuses are green', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [MOUNT_TWO]: bitbucketMount({
           mountId: MOUNT_TWO,
           projectId: PROJECT_TWO,
@@ -354,7 +356,7 @@ describe('live work across every mount of a session', () => {
 
   it('never lets a Bitbucket approval win over a failed status', () => {
     useAppStore.setState({
-      mountBitbucketPr: {
+      mountRequests: {
         [MOUNT_TWO]: bitbucketMount({
           mountId: MOUNT_TWO,
           projectId: PROJECT_TWO,

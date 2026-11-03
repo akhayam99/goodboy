@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
+import { stripControlMarkers } from '@goodboy/core/context';
+import { fallbackStepOutputSummary } from '@goodboy/core/summarizer';
 import type { Agent } from '@goodboy/types';
 import { useTranscript } from '../../../store/slices/transcripts/selectors';
 import { reduceTranscript } from '../../../features/chat/utils/transcript-items';

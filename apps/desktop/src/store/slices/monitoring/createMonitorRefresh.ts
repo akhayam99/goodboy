@@ -1,4 +1,8 @@
-import { collectLearnedPorts, type LedgerRow, type MonitorSnapshot } from '@goodboy/core';
+import {
+  collectLearnedPorts,
+  type LedgerRow,
+  type MonitorSnapshot,
+} from '@goodboy/core/monitoring';
 import { setSetting } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';

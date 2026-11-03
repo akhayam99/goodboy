@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getCapabilities, orchestratorModelPool, visibleCatalog } from '@goodboy/core';
+import { getCapabilities, visibleCatalog } from '@goodboy/core/providers';
+import { orchestratorModelPool } from '@goodboy/core/orchestrator';
 import { brandId } from '@goodboy/types';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession } from '@goodboy/types/testing';

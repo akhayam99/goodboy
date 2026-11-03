@@ -1,4 +1,4 @@
-import { modeSupportFor } from '@goodboy/core';
+import { modeSupportFor } from '@goodboy/core/permissions';
 import type { ClaudePermissionMode, PermissionRule, ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { modeCopyOf } from '../modeCopy';

@@ -10,7 +10,7 @@ import {
   publishTextOf,
   type OutcomeLine,
   type PublishState,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { AutoOutcome } from '@goodboy/db';
 import { delegationReasonTextOf } from '../delegationReasonTextOf';
 import { isJsonRecord, listField, numberField, recordField, textField } from './readJson';

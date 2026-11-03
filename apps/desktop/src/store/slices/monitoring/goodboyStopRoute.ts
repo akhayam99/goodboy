@@ -1,4 +1,4 @@
-import type { LedgerRow } from '@goodboy/core';
+import type { LedgerRow } from '@goodboy/core/monitoring';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TerminalOwner, TerminalTabId } from '../../../shared/types/terminal';
 import type { AppState } from '../../types';

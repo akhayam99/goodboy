@@ -1,4 +1,4 @@
-import { viewPullRequest } from '@goodboy/core';
+import { viewPullRequest } from '@goodboy/core/github';
 import {
   insertSessionEvent,
   listDormantOpenPullRequests,

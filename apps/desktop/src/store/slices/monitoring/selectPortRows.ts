@@ -3,7 +3,7 @@ import {
   type AttributionProject,
   type AttributionSession,
   type PortRow,
-} from '@goodboy/core';
+} from '@goodboy/core/monitoring';
 import type { Project, SessionMountView } from '@goodboy/types';
 import type { AppStore } from '../../store';
 

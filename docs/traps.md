@@ -189,7 +189,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only). Wording
   follows the same capabilities: where `canResolve` is false the comment has no
   "Resolve" and the push confirm says the thread stays open.
-  Read `sessionGitlabMr` and `reviewSourceThreads` through the selectors, not
+  Read `sessionRequests` (through `gitlabSessionOf` or `bitbucketSessionOf`) and `reviewSourceThreads` through the selectors, not
   by hand: picking a source in another project calls `setSessionActiveMount`.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing
@@ -959,3 +959,7 @@ A card that offers **Let an agent fix the push** can be left, remounted or reloa
 ## A bundled dependency must not assign to an Object.prototype name
 
 `tauri.conf.json` sets `freezePrototype`, so `Object.prototype` is frozen before any page script runs. A statement like `namespace.toString = fn` on a plain object then throws "Attempted to assign to readonly property" in strict mode, because the inherited `toString` is read only. `@xterm/xterm` and `@xterm/addon-webgl` ship exactly that for their key code namespace, so the lazy terminal chunk threw while it evaluated and the panel never rendered, in the installed app only (the test environments leave the prototype alone). `vite/xtermFrozenPrototype.ts` rewrites the assignment to `Object.defineProperty` while the build reads those two packages, and `vite/xtermFrozenPrototype.test.ts` runs the shipped namespace under a frozen prototype. The same plugin keeps every `@xterm/*` package out of `optimizeDeps`, because the dev server pre-bundles a dependency into `node_modules/.vite/deps` where the rewrite never runs; the packages ship one ES module each, so serving them as they are costs no start time. A new `@xterm/*` dependency must be listed there, and the test fails until it is. After an xterm upgrade, build and grep the `GenericTerminalPanel` chunk for `.toString=`; the test also fails when a shipped file loses the pattern, so remove the plugin then.
+
+## The setup wizard decides once per window
+
+The wizard has more than one host in a window (`AppOverlayRouter` mounts it in two layouts), and the first session swaps the layout right after Start. A host that mounts then reads the saved wizard state before the `done` write lands, so it could reopen setup on a stale step. `useOnboardingWizard` records the first open or close in `WIZARD_WINDOW_DECISION` (`OnboardingWizard/wizardWindowDecision.ts`), and a later host never opens the wizard on its own once that is set; only an explicit open event does. The hook test "keeps a second host closed" pins it.

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';

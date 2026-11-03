@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { PullRequestPortError } from '@goodboy/core';
+import { PullRequestPortError } from '@goodboy/core/review-source';
 import type { HostFailureKind } from '../../../shared/lib/hostFailure';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import { bitbucketFailureOf } from './classifyBitbucketFailure';

@@ -93,8 +93,7 @@ const stateOf = (seeds: ReadonlyArray<Seed>) => ({
   mountGithub: Object.fromEntries(
     seeds.map((seed) => [mountIdOf(seed.slug), githubOf(seed)] as const),
   ),
-  mountGitlabMr: {},
-  mountBitbucketPr: {},
+  mountRequests: {},
 });
 
 const QUEUED: Seed = {

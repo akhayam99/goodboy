@@ -1,4 +1,4 @@
-import { AUTO_TREE_LIMITS, autoTreeCapUsd, isUsableMount } from '@goodboy/core';
+import { AUTO_TREE_LIMITS, autoTreeCapUsd, isUsableMount } from '@goodboy/core/auto';
 import {
   listAutoAgentsWithoutTree,
   type AutoAgentWithoutTree,

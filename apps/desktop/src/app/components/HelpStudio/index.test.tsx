@@ -67,6 +67,7 @@ describe('HelpStudio', () => {
     expect(screen.getAllByRole('heading', { level: 1, name: 'What is Goodboy' })).toHaveLength(1);
     fireEvent.click(tab('Shortcuts'));
     expect(screen.getAllByRole('heading', { level: 1, name: 'Shortcuts' })).toHaveLength(1);
+    expect(screen.queryByText('Read only')).toBeNull();
     fireEvent.click(tab('Guide'));
     expect(screen.getAllByRole('heading', { level: 1, name: 'What is Goodboy' })).toHaveLength(1);
     expect(screen.getAllByRole('searchbox')).toHaveLength(1);

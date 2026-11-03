@@ -1,4 +1,4 @@
-import { detectRepoSlug, fetchPrDetail } from '@goodboy/core';
+import { detectRepoSlug, fetchPrDetail } from '@goodboy/core/github';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/integrations/github/github';

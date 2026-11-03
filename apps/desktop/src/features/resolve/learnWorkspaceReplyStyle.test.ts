@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('../integrations/github/github', () => ({ tauriGhRunner: { run: vi.fn() } }));
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core/github', () => ({
   detectRepoSlug: h.detectRepoSlug,
   listMyReviewReplies: h.listMyReviewReplies,
   learnReplyStyle: h.learnReplyStyle,

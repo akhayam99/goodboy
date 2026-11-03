@@ -21,10 +21,7 @@ vi.mock('@goodboy/db', async () =>
     restoreOpenQuestion,
   }),
 );
-vi.mock('@goodboy/core', () => ({
-  addQuestionsToSlot,
-  removeQuestionsFromSlot,
-}));
+vi.mock('@goodboy/core/context', () => ({ addQuestionsToSlot, removeQuestionsFromSlot }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { BLOCKING_DISMISSAL_REFUSAL, dismissOpenQuestion } from './dismissOpenQuestion';

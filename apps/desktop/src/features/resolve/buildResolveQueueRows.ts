@@ -1,4 +1,4 @@
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type {
   DiffComment,
   PrComment,

@@ -1,4 +1,4 @@
-import type { AutoDelegationRole } from '@goodboy/core';
+import type { AutoDelegationRole } from '@goodboy/core/auto';
 import type { AgentKind } from '../../../features/session/agent-kind';
 
 const AGENT_KIND_OF_ROLE = {

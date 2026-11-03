@@ -1,7 +1,10 @@
 // @vitest-environment node
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { PROVIDER_LIFECYCLE_COMMANDS, PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
+import {
+  PROVIDER_LIFECYCLE_COMMANDS,
+  PROVIDER_CONNECT_CAPABILITIES,
+} from '@goodboy/core/providers';
 import { describe, expect, it } from 'vitest';
 
 const RUST_TABLE = readFileSync(

@@ -1,4 +1,5 @@
-import { normalizeWorkflowRole, type OrchestratorStep } from '@goodboy/core';
+import { normalizeWorkflowRole } from '@goodboy/core/roles';
+import { type OrchestratorStep } from '@goodboy/core/orchestrator';
 import type { RunPreset, WorkflowRoutingLock } from '@goodboy/types';
 
 type Params = {

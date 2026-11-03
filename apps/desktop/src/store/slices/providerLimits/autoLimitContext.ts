@@ -1,4 +1,4 @@
-import { parseHiddenModels, providersAtLimit, type HiddenModels } from '@goodboy/core';
+import { parseHiddenModels, providersAtLimit, type HiddenModels } from '@goodboy/core/providers';
 import type { ProviderId, ProviderPolicy } from '@goodboy/types';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
