@@ -27,7 +27,7 @@
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestStatusStrip.tsx": 1,
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestTitle.tsx": 1,
   "apps/desktop/src/features/branch/components/PullRequestTab/ResolvesProperty.tsx": 1,
-  "apps/desktop/src/features/branch/components/ThreadHunk.tsx": 1,
+  "apps/desktop/src/features/branch/components/ThreadHunk/index.tsx": 1,
   "apps/desktop/src/features/budget/components/spend/CostGuideLink.tsx": 1,
   "apps/desktop/src/features/budget/components/spend/SpendBar.tsx": 1,
   "apps/desktop/src/features/changelog/components/ChangelogStudio/ReleaseList.tsx": 1,

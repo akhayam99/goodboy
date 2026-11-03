@@ -1,10 +1,12 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type CSSProperties } from 'react';
 import { cn, FOCUS_RING } from '@goodboy/ui';
-import { LINE_FILL, SIGN_TEXT } from '../../diff/lib/lineTone';
-import { threadLocationOf } from '../../resolve/threadLocationOf';
-import type { ResolveQueueRow } from '../../resolve/buildResolveQueueRows';
-import { useBranchDiff } from '../branchDiffContext';
-import { fileForPath, hunkAround } from '../hunkAround';
+import { LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
+import { threadLocationOf } from '../../../resolve/threadLocationOf';
+import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
+import { useBranchDiff } from '../../branchDiffContext';
+import { fileForPath, hunkAround } from '../../hunkAround';
+
+const HANGING_INDENT: CSSProperties = { paddingInlineStart: '2ch', textIndent: '-2ch' };
 
 type Props = {
   readonly row: ResolveQueueRow;
@@ -70,7 +72,10 @@ export const ThreadHunk = ({ row, onOpenInDiff }: Props) => {
           <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[line.kind])}>
             {SIGN[line.kind]}
           </span>
-          <span className="min-w-0 whitespace-pre-wrap break-words text-foreground">
+          <span
+            style={HANGING_INDENT}
+            className="min-w-0 whitespace-pre-wrap break-words text-foreground"
+          >
             {line.text}
           </span>
         </p>
