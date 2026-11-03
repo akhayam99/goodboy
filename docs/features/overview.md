@@ -93,7 +93,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - An agent shows its role with its icon and the provider mark, never the bare word "Agent".
 - The title is the first sentence of what the agent said, cut to one short line. A leading tag like "cluster 1/2:" and commit hashes go. A list like "lint/knip/vitest" reads "lint, knip and vitest". A long path keeps its file name.
 - A click opens the agent or run.
-- The header counts the unread ones, as in "Done 5, 1 unread".
+- The header counts what finished and never the unread ones: the New since card owns that number. The dot column only shows while a row is unread.
 - An archived session keeps this card with its list.
 
 **New since you last looked**
