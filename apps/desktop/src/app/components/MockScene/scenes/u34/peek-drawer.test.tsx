@@ -99,6 +99,11 @@ describe('identifier peek drawer scenes', () => {
     }
     for (const directory of dialog.querySelectorAll('[data-peek-directory]')) {
       expect(directory.hasAttribute('data-truncates')).toBe(true);
+      expect(directory.textContent).toMatch(/\/$/);
+      expect(directory.nextElementSibling?.hasAttribute('data-peek-name')).toBe(true);
+    }
+    for (const path of dialog.querySelectorAll('[data-peek-path]')) {
+      expect(path.textContent).not.toMatch(/\/\s/);
     }
   });
 });

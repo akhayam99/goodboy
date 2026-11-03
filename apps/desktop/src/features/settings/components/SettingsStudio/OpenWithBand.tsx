@@ -23,6 +23,17 @@ const BROWSER_LABELS: Readonly<Record<string, string>> = {
   brave: 'Brave',
 };
 
+const EDITOR_LABELS: Readonly<Record<string, string>> = {
+  code: 'VS Code',
+  cursor: 'Cursor',
+  webstorm: 'WebStorm',
+  idea: 'IntelliJ IDEA',
+  zed: 'Zed',
+  subl: 'Sublime Text',
+  vim: 'Vim',
+  nvim: 'Neovim',
+};
+
 type TerminalChoiceParams = {
   readonly id: string;
 };
@@ -111,7 +122,10 @@ export const OpenWithBand = () => {
 
   const editors = detectedEditors.some((ed) => ed.binary === editorBinary)
     ? detectedEditors
-    : [...detectedEditors, { binary: editorBinary, label: editorBinary }];
+    : [
+        ...detectedEditors,
+        { binary: editorBinary, label: EDITOR_LABELS[editorBinary] ?? editorBinary },
+      ];
   const editorChoices: ReadonlyArray<ToolChoice> = editors.map((editor) => ({
     value: editor.binary,
     label: editor.label,

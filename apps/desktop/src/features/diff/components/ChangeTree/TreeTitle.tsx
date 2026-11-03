@@ -18,7 +18,7 @@ export const TreeTitle = ({ viewedCount, total, onNext, onFold }: Props) => (
       <Tooltip content="Go to the next file you haven't viewed">
         <Button
           size="xs"
-          variant="quiet"
+          variant="secondary"
           aria-label="Next unviewed file"
           disabled={viewedCount === total}
           onClick={onNext}

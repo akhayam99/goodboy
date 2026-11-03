@@ -104,4 +104,15 @@ describe('the Branches block at a narrow centre pane', () => {
     expect(list.querySelectorAll('[data-list-grid-cell="track"]')).toHaveLength(1);
     expect(list.querySelectorAll('[data-list-grid-cell="request"]')).toHaveLength(1);
   });
+
+  it('gives the state column a fixed width so the status word is not clipped', () => {
+    const observers = installFakeResizeObserver();
+    stubWidth({ width: 900 });
+    render(<BranchList sessionId={SESSION_ID} entries={entriesOf()} />);
+
+    act(() => observers.resizeAll());
+
+    const list = screen.getByRole('list', { name: 'Branches' });
+    expect(list.style.gridTemplateColumns).toContain(' 136px ');
+  });
 });

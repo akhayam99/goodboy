@@ -149,7 +149,7 @@ export const FIX_RUN_QUESTION_COPY = {
   title: 'Question from the fix run',
   options: 'Answer',
   other: 'Or tell it something else',
-  continue: 'Continue the fix run',
+  continue: 'Answer',
   answered: 'You answered:',
   isWorking: 'The run is still working. Continue once it stops.',
 } as const;

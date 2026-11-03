@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { NAMES } from '../../../../../shared/utils/names';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -92,5 +93,10 @@ describe('the Help scenes', () => {
       .map((button) => button.getAttribute('aria-label') ?? '');
     expect(labels.some((label) => label.endsWith(', Guide'))).toBe(true);
     expect(labels.some((label) => label.endsWith(', Shortcuts'))).toBe(true);
+    expect(
+      labels.filter((label) => label.endsWith(`, ${NAMES.whatsNew}`)).length,
+    ).toBeLessThanOrEqual(3);
+    const guideList = screen.getByRole('list', { name: 'Help results' });
+    expect(guideList.textContent).toContain(' · ');
   });
 });

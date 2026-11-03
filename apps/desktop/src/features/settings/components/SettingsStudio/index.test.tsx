@@ -254,6 +254,13 @@ describe('SettingsStudio', () => {
     expect(screen.queryByRole('region', { name: 'Version' })).toBeNull();
   });
 
+  it('names the default editor before the detected list arrives', () => {
+    renderApp({ section: 'general' });
+
+    expect(screen.queryByText('code')).toBeNull();
+    expect(screen.getAllByText('VS Code').length).toBeGreaterThan(0);
+  });
+
   it('gives Updates its own page with the installed version as its meta', () => {
     renderApp({ section: 'updates' });
 

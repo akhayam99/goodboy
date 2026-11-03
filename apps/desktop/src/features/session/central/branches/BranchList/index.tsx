@@ -32,7 +32,7 @@ const PROJECT_COLUMN: ListGridColumn = { key: 'project', width: 112, isShrinkabl
 const ROW_COLUMNS: ReadonlyArray<ListGridColumn> = [
   { key: 'request', width: 48, isNumeric: true, tone: 'hint' },
   { key: 'track', width: 80 },
-  { key: 'state', width: 124, isShrinkable: true },
+  { key: 'state', width: 136 },
   { key: 'detail', width: 'fill' },
   { key: 'open', width: 16, align: 'end' },
 ];

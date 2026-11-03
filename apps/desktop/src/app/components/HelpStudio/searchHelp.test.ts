@@ -39,6 +39,28 @@ describe('searchHelp', () => {
     expect(kinds.lastIndexOf('release')).toBeLessThan(kinds.indexOf('shortcut'));
   });
 
+  it('ranks a guide hit whose title matches before one that only mentions the word', () => {
+    const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'palette' });
+    const guide = hits.flatMap((hit) => (hit.kind === 'guide' ? [hit.hit] : []));
+    const firstTitleMatch = guide.findIndex((hit) =>
+      (hit.term ?? hit.chapterTitle).toLowerCase().includes('palette'),
+    );
+    const firstBodyOnly = guide.findIndex(
+      (hit) => !(hit.term ?? hit.chapterTitle).toLowerCase().includes('palette'),
+    );
+
+    expect(firstTitleMatch).toBe(0);
+    expect(firstBodyOnly === -1 || firstBodyOnly > firstTitleMatch).toBe(true);
+  });
+
+  it('carries a one line excerpt on every guide hit', () => {
+    const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'palette' });
+    const guide = hits.flatMap((hit) => (hit.kind === 'guide' ? [hit.hit] : []));
+
+    expect(guide.length).toBeGreaterThan(0);
+    expect(guide.every((hit) => hit.excerpt !== '')).toBe(true);
+  });
+
   it('gives every hit its own key', () => {
     const hits = searchHelp({ chapters: GUIDE_CHAPTERS, releases: [], query: 'session' });
 
