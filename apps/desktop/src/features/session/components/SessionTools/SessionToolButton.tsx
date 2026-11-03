@@ -19,7 +19,7 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
   const label = signal === null ? name : `${name}, ${signal.note}`;
   const tone = navEntryToneOf({ icon: tool.icon });
   return (
-    <span className="relative flex min-w-0 flex-col items-center gap-0.5">
+    <span data-slot="session-tool" className="relative flex min-w-0 flex-col items-center gap-0.5">
       <IconButton
         icon={tool.icon}
         label={label}
@@ -35,11 +35,17 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         onFocus={onFocus}
         onClick={onToggle}
       />
-      {isOpen ? (
-        <span aria-hidden className="whitespace-nowrap text-rail text-muted-foreground">
-          {tool.label}
-        </span>
-      ) : null}
+      <span
+        aria-hidden
+        data-slot="tool-caption"
+        data-tone={isOpen ? 'open' : 'closed'}
+        className={cn(
+          'whitespace-nowrap text-rail [@media(max-height:480px)]:hidden',
+          isOpen ? 'text-muted-foreground' : 'text-faint-foreground',
+        )}
+      >
+        {tool.label}
+      </span>
       {signal === null ? null : <ToolSignalDot signal={signal} />}
     </span>
   );

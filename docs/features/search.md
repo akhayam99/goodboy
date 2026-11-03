@@ -26,7 +26,7 @@ At the right of the page, the session tools are a column of icons, each named wi
 
 A branch, a run or **Auto** steps the rail one level in. **‹** steps back out.
 
-**⌘B** folds the sidebar into a slim bar of icons. **⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings. Opening a drawer folds the rail when needed; closing it restores your fold. Folded sessions show their state node. Branches show the request state icon. Each tooltip names the state.
+**⌘B** folds the sidebar into a slim bar of icons. **⌥⌘B** or the rail's own button folds the rail. It is the same key that folds the list beside Chat, Terminal, the Guide and Settings. Opening a drawer folds the rail when needed; closing it restores your fold. Folded, the sidebar draws only sessions that need you, run or have unread news, each as its state node; the rest wait behind a `+N` button. Branches show the request state icon. Each tooltip names the state.
 
 An amber dot on **Sessions** says sessions need you. A dot on **Monitoring** names the pinned port that is down.
 

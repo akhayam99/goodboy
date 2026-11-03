@@ -1345,11 +1345,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/u23/sidebarNavSeed.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/u23/topbar.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2

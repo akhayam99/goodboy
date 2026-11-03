@@ -51,11 +51,13 @@ describe('the sidebar navigation scenes', () => {
     expect(within(card).getByText('Sessions')).toBeDefined();
   });
 
-  it('shows eight session buttons then +7', async () => {
+  it('shows only sessions with news and the open one, then +N for the rest', async () => {
     show('rail-pinned');
-    const more = await screen.findByLabelText('7 more sessions', {}, { timeout: 4_000 });
-    expect(more.textContent).toBe('+7');
-    expect(document.querySelectorAll('[data-rail-session]')).toHaveLength(8);
+    const more = await screen.findByLabelText(/more sessions$/, {}, { timeout: 4_000 });
+    const drawn = document.querySelectorAll('[data-rail-session]').length;
+    expect(drawn).toBe(6);
+    expect(more.textContent).toBe('+9');
+    expect(drawn + Number(more.textContent?.slice(1))).toBe(15);
   });
 
   it('marks New with the draft dot', async () => {

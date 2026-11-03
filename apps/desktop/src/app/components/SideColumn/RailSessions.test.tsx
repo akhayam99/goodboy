@@ -20,9 +20,13 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
+import { anAgent } from '@goodboy/types/testing';
 import { EMPTY_SESSION_DRAFT } from '../../../store/slices/sessionDraft/state';
 import {
+  at,
   harborline,
+  openQuestionFor,
+  runningState,
   seedColumn,
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
@@ -71,10 +75,11 @@ const idOf = (session: Session) => session.id as SessionId;
 const pinnedId = (pinned: ReadonlyArray<Session>, index: number): SessionId =>
   idOf(pinned[index] ?? open);
 
-const pinnedSessions = (count: number): ReadonlyArray<Session> =>
+const pinnedSessions = (count: number, state?: Session['state']): ReadonlyArray<Session> =>
   Array.from({ length: count }, (_, index) =>
     sessionOf({
       goal: `Pinned work ${index + 1}`,
+      state,
       lastOpenedAt: `2026-09-${String(10 + index).padStart(2, '0')}T09:00:00.000Z`,
     }),
   );
@@ -307,8 +312,41 @@ describe('the open session on the rail', () => {
 });
 
 describe('the pinned sessions on the rail', () => {
-  it('draws the pins in pin order and an unpinned open session as one extra node after them', () => {
-    const pinned = pinnedSessions(3);
+  it('folds idle pinned sessions into +N and draws only the open session', () => {
+    mountRail({ pinned: pinnedSessions(3) });
+    expect(railOrder()).toEqual([open.id]);
+    expect(document.querySelector<HTMLElement>('[data-rail-more]')?.textContent).toBe('+3');
+  });
+
+  it('orders needs you, then running, then unread, and counts what stays hidden', () => {
+    const idle = pinnedSessions(3);
+    const unread = sessionOf({ goal: 'Unread reply' });
+    const running = sessionOf({ goal: 'Running work', state: runningState() });
+    const needs = sessionOf({ goal: 'Needs an answer' });
+    seedColumn({
+      store: useAppStore,
+      sessions: [open, unread, running, needs, ...idle],
+      currentSessionId: idOf(open),
+    });
+    useAppStore.setState({
+      sessionOpenQuestions: { [needs.id]: [openQuestionFor({ sessionId: idOf(needs) })] },
+      sessionPhaseRuns: {
+        [unread.id]: [
+          anAgent({
+            sessionId: idOf(unread),
+            status: 'completed',
+            lastFinishedAt: at('2026-10-06T09:00:00.000Z'),
+          }),
+        ],
+      },
+    });
+    render(railOf());
+    expect(railOrder()).toEqual([needs.id, running.id, unread.id, open.id]);
+    expect(document.querySelector<HTMLElement>('[data-rail-more]')?.textContent).toBe('+3');
+  });
+
+  it('draws running sessions in order and an idle open session as one extra node after them', () => {
+    const pinned = pinnedSessions(3, runningState());
     mountRail({ pinned });
     const buttons = Array.from(document.querySelectorAll<HTMLElement>('[data-rail-session]'));
     expect(railOrder()).toEqual([...pinned.map((session) => session.id), open.id]);
@@ -320,7 +358,7 @@ describe('the pinned sessions on the rail', () => {
   });
 
   it('keeps the pin order whatever is open and moves only the marker', () => {
-    const pinned = pinnedSessions(5);
+    const pinned = pinnedSessions(5, runningState());
     const { rerender } = mountRail({ pinned, currentSessionId: pinnedId(pinned, 0) });
     const order = pinned.map((session) => session.id);
     expect(railOrder()).toEqual(order);
@@ -335,7 +373,7 @@ describe('the pinned sessions on the rail', () => {
   });
 
   it('adds the open session as a tail node when it is pinned beyond the limit', () => {
-    const pinned = pinnedSessions(9);
+    const pinned = pinnedSessions(9, runningState());
     mountRail({ pinned, currentSessionId: pinnedId(pinned, 8) });
     const tail = document.querySelector('[data-slot="rail-open-tail"]');
     expect(tail?.getAttribute('data-rail-session')).toBe(pinned[8]?.id);
@@ -344,7 +382,7 @@ describe('the pinned sessions on the rail', () => {
   });
 
   it('opens the session hover card on a rested pin and closes it on leave', () => {
-    const pinned = pinnedSessions(3);
+    const pinned = pinnedSessions(3, runningState());
     mountRail({ pinned, currentSessionId: pinnedId(pinned, 2) });
     const other = screen.getByRole('button', { name: /Pinned work 1/ });
 
@@ -361,7 +399,7 @@ describe('the pinned sessions on the rail', () => {
   });
 
   it('opens the flyout from the current node and leaves the others to their hover card', () => {
-    const pinned = pinnedSessions(5);
+    const pinned = pinnedSessions(5, runningState());
     mountRail({ pinned, currentSessionId: pinnedId(pinned, 3) });
     const other = document.querySelector(`[data-rail-session="${pinned[0]?.id}"]`) as HTMLElement;
     fireEvent.mouseEnter(other);
@@ -376,7 +414,7 @@ describe('the pinned sessions on the rail', () => {
   });
 
   it('shows seven pins and then +N for the rest, which opens every pin in a flyout', () => {
-    const pinned = pinnedSessions(9);
+    const pinned = pinnedSessions(9, runningState());
     mountRail({ pinned });
     expect(document.querySelectorAll('[data-rail-session]')).toHaveLength(8);
     const more = document.querySelector<HTMLElement>('[data-rail-more]') as HTMLElement;
@@ -402,13 +440,13 @@ describe('the pinned sessions on the rail', () => {
   });
 
   it('shows no +N for seven pins or fewer', () => {
-    mountRail({ pinned: pinnedSessions(7) });
+    mountRail({ pinned: pinnedSessions(7, runningState()) });
     expect(document.querySelector('[data-rail-more]')).toBeNull();
     expect(document.querySelectorAll('[data-rail-session]')).toHaveLength(8);
   });
 
   it('opens a pinned session from its button', () => {
-    const pinned = pinnedSessions(2);
+    const pinned = pinnedSessions(2, runningState());
     mountRail({ pinned });
     const navigate = vi.fn();
     useAppStore.setState({ navigate });

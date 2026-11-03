@@ -1,13 +1,15 @@
-import type {
-  IsoDateTime,
-  MountId,
-  OpenQuestion,
-  OpenQuestionId,
-  ProjectId,
-  Session,
-  SessionId,
-  SessionProjectMount,
-  WorkspaceId,
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type ProjectId,
+  type ProviderRunId,
+  type Session,
+  type SessionId,
+  type SessionProjectMount,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
@@ -20,7 +22,7 @@ const clock = sceneClock({ anchor: '2026-10-07T10:00:00.000Z' });
 
 const at = (iso: string): IsoDateTime => clock.iso({ at: iso });
 
-const SESSION_ID = 'mock-sidebar-session-webhooks' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'mock-sidebar-session-webhooks' });
 
 const PINNED_GOALS = [
   'Paginate the payments list',
@@ -39,6 +41,7 @@ export type SidebarNavConfig = {
   readonly branches: number;
   readonly hasPullRequest: boolean;
   readonly pinCount: number;
+  readonly runningCount: number;
   readonly hasDraft: boolean;
   readonly hasQuestion: boolean;
   readonly hasDiff: boolean;
@@ -49,6 +52,7 @@ export const SIDEBAR_NAV_DEFAULTS: SidebarNavConfig = {
   branches: 1,
   hasPullRequest: false,
   pinCount: 0,
+  runningCount: 0,
   hasDraft: false,
   hasQuestion: false,
   hasDiff: false,
@@ -79,11 +83,23 @@ const sessionOf = (): Session => ({
   lastOpenedAt: at('2026-10-07T09:58:00.000Z'),
 });
 
-const pinnedSessionOf = ({ goal, index }: { readonly goal: string; readonly index: number }) => ({
+type PinnedParams = {
+  readonly goal: string;
+  readonly index: number;
+  readonly isRunning: boolean;
+};
+
+const pinnedSessionOf = ({ goal, index, isRunning }: PinnedParams): Session => ({
   ...SESSION,
-  id: `mock-sidebar-pinned-${index}` as SessionId,
+  id: brandId<SessionId>({ value: `mock-sidebar-pinned-${index}` }),
   goal,
-  state: { kind: 'idle', lastActivityAt: at('2026-10-07T08:00:00.000Z') } as const,
+  state: isRunning
+    ? {
+        kind: 'running',
+        runId: brandId<ProviderRunId>({ value: `mock-sidebar-run-${index}` }),
+        startedAt: at('2026-10-07T09:50:00.000Z'),
+      }
+    : { kind: 'idle', lastActivityAt: at('2026-10-07T08:00:00.000Z') },
   contextSlots: [],
   workflowRuns: [],
   autoRun: false,
@@ -96,9 +112,9 @@ const pinnedSessionOf = ({ goal, index }: { readonly goal: string; readonly inde
 const mountOf = ({ index }: { readonly index: number }): SessionProjectMount => {
   const repo = REPOS[index % REPOS.length] ?? 'payments-api';
   return {
-    mountId: `mock-sidebar-mount-${index}` as MountId,
+    mountId: brandId<MountId>({ value: `mock-sidebar-mount-${index}` }),
     sessionId: SESSION_ID,
-    projectId: `mock-sidebar-project-${repo}-${index}` as ProjectId,
+    projectId: brandId<ProjectId>({ value: `mock-sidebar-project-${repo}-${index}` }),
     mountName: repo,
     worktreePath: `/mock/harborline/${repo}/worktrees/${index}`,
     lastWorktreePath: null,
@@ -113,7 +129,7 @@ const mountOf = ({ index }: { readonly index: number }): SessionProjectMount => 
 };
 
 const questionOf = (): OpenQuestion => ({
-  id: 'mock-sidebar-question-window' as OpenQuestionId,
+  id: brandId<OpenQuestionId>({ value: 'mock-sidebar-question-window' }),
   sessionId: SESSION_ID,
   text: 'Which retry window should the webhook use?',
   suggestedAnswers: ['Five minutes', 'One hour'],
@@ -167,7 +183,7 @@ export const seedSidebarNav = (config: SidebarNavConfig): SidebarNavSeed => {
   seedWorkflowScene();
   const session = sessionOf();
   const pinned = PINNED_GOALS.slice(0, config.pinCount).map((goal, index) =>
-    pinnedSessionOf({ goal, index }),
+    pinnedSessionOf({ goal, index, isRunning: index < config.runningCount }),
   );
   seedWorkspaceChrome({ session, siblings: [...WORKSPACE_SIBLINGS, ...pinned] });
   seedLoadedSession({ session });
@@ -205,7 +221,7 @@ export const seedSidebarNav = (config: SidebarNavConfig): SidebarNavSeed => {
       : state.sessionWorktreeRecords,
     sessionPins: {
       [session.workspaceId]: pinned.map((entry, index) => ({
-        id: entry.id as SessionId,
+        id: entry.id,
         at: index + 1,
       })),
     },

@@ -479,8 +479,9 @@ by its number alone (`#9998`, `MR !42`), so the label is never cut; the row abov
 names the branch.
 
 **Folded sessions have names and state.** Under the doors, the workspace rail
-shows sessions that need you, then running sessions, followed by pins, up to
-seven (`RAIL_PINNED_LIMIT`). Each button carries the same state node as the
+shows only sessions with something to say: those that need you, then running
+sessions, then unread ones (`railRankOf`), up to seven (`RAIL_PINNED_LIMIT`).
+Idle and pinned sessions with nothing new fold into `+N`. Each button carries the same state node as the
 session row (`StateNode`, with its unread dot) and a tooltip with the full title, state and
 unread reason.
 The open session keeps its slot when shown; otherwise it gets one extra
@@ -637,9 +638,10 @@ activity yet show the plain overview with its actions.
 One 44px column at the right edge of the session content holds Explore,
 Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
 Context form the reading group; one separator leads to the other tools.
-Each tool keeps its pane id and shortcut. `SessionToolButton` shows the active
-tool's name below its icon, in a quiet regular weight. Every icon's tooltip gives its name, shortcut and
-any signal reason. Ask uses its own question glyph, distinct from Chat.
+Each tool keeps its pane id and shortcut. `SessionToolButton` names every
+tool below its icon in the 9px `text-rail` role: faint when closed, muted when
+open. On a window under 480px tall all captions hide together and the tooltips
+stay. Every icon's tooltip gives its name, shortcut and any signal reason. Ask uses its own question glyph, distinct from Chat.
 
 The column is a vertical toolbar with one tab stop. Up, Down, Home and End
 move it (`toolbarIndexAfter`). Its signal dots keep their reason in the

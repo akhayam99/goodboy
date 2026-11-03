@@ -118,7 +118,7 @@
     "apps/desktop/src/app/components/MockScene/scenes/u23/overview.tsx": 3,
     "apps/desktop/src/app/components/MockScene/scenes/u23/PrPageScene.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/u23/prPageSeed.ts": 9,
-    "apps/desktop/src/app/components/MockScene/scenes/u23/sidebarNavSeed.ts": 5,
+    "apps/desktop/src/app/components/MockScene/scenes/u23/sidebarNavSeed.ts": 4,
     "apps/desktop/src/app/components/MockScene/scenes/u23/StartInboxScene.tsx": 3,
     "apps/desktop/src/app/components/MockScene/scenes/u23/step-rows.tsx": 2,
     "apps/desktop/src/app/components/MockScene/scenes/u23/topbar/topbarSeed.ts": 1,

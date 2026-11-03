@@ -29,7 +29,11 @@ export const RailOrderScene = () => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
   const currentSessionId = useAppStore((state) => state.currentSessionId);
   useEffect(() => {
-    const next = seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, pinCount: PIN_COUNT });
+    const next = seedSidebarNav({
+      ...SIDEBAR_NAV_DEFAULTS,
+      pinCount: PIN_COUNT,
+      runningCount: PIN_COUNT,
+    });
     const first = next.pinned[1];
     useAppStore.setState({
       currentSessionId: first === undefined ? next.session.id : (first.id as SessionId),
