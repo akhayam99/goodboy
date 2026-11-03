@@ -36,7 +36,7 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         onClick={onToggle}
       />
       {isOpen ? (
-        <span aria-hidden className="whitespace-nowrap text-chip font-normal text-muted-foreground">
+        <span aria-hidden className="whitespace-nowrap text-rail text-muted-foreground">
           {tool.label}
         </span>
       ) : null}

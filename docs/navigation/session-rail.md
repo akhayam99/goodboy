@@ -480,8 +480,9 @@ names the branch.
 
 **Folded sessions have names and state.** Under the doors, the workspace rail
 shows sessions that need you, then running sessions, followed by pins, up to
-seven (`RAIL_PINNED_LIMIT`). Each button carries two title initials in its
-state colour and a tooltip with the full title, state and unread reason.
+seven (`RAIL_PINNED_LIMIT`). Each button carries the same state node as the
+session row (`StateNode`, with its unread dot) and a tooltip with the full title, state and
+unread reason.
 The open session keeps its slot when shown; otherwise it gets one extra
 button before `+N`. The count covers the remaining sessions and opens the
 session flyout. A studio leaves the current button remembered. Hover or focus

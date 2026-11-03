@@ -1,8 +1,8 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
-import { cn, Tooltip, tintClasses } from '@goodboy/ui';
+import { cn, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionRowFacts } from '../../../features/workspace/hooks/useSessionRowFacts';
-import { railInitialsOf } from '../../../shared/utils/railInitialsOf';
+import { StateNode } from '../../../shared/components/StateNode';
 import { useObjectMenuTrigger } from '../../../features/actions/useObjectMenuTrigger';
 import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT } from './RailButton';
 
@@ -68,16 +68,7 @@ export const RailSessionButton = ({
           sign === 'remembered' && 'text-foreground',
         )}
       >
-        <span
-          aria-hidden
-          className={cn(
-            'flex size-6 items-center justify-center rounded-full text-chip ring-1 ring-inset',
-            tintClasses(node.tone).text,
-            tintClasses(node.tone).ring,
-          )}
-        >
-          {railInitialsOf({ title: text })}
-        </span>
+        <StateNode node={node} isUnreadDot />
       </button>
     </Tooltip>
   );
