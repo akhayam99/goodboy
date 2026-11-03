@@ -44,19 +44,26 @@ const titleOf = ({ subjects, issue }: TitleParams): string => {
   return `${issue.identifier}: ${first ?? issue.title}`;
 };
 
+const AUTOSQUASH_PREFIX = /^(fixup|squash|amend)! /;
+
 export const pullRequestPrefillOf = ({ commits, tasks, branch }: Params): PullRequestPrefill => {
   const subjects = [...commits]
     .sort((left, right) => left.timestamp - right.timestamp)
     .map((commit) => commit.subject.trim())
-    .filter((subject) => subject.length > 0);
+    .filter((subject) => subject.length > 0 && !AUTOSQUASH_PREFIX.test(subject))
+    .filter((subject, index, all) => all.indexOf(subject) === index);
   const issues = tasks.filter((task) => isClosedByBranch({ task, branch }));
-  const listed = subjects.length > 1 ? subjects.map((subject) => `- ${subject}`) : [];
+  const title = titleOf({ subjects, issue: issues[0] ?? null });
+  const listed =
+    subjects.length > 1
+      ? subjects.filter((subject) => subject !== title).map((subject) => `- ${subject}`)
+      : [];
   const closes = issues
     .filter((task) => task.provider === 'linear')
     .map((task) => `Closes ${task.identifier}`);
   const blocks = [listed, closes].filter((lines) => lines.length > 0);
   return {
-    title: titleOf({ subjects, issue: issues[0] ?? null }),
+    title,
     body: blocks.map((lines) => lines.join('\n')).join('\n\n'),
   };
 };
