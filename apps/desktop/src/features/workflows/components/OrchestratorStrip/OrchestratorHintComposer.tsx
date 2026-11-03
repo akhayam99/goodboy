@@ -15,11 +15,17 @@ type Props = {
   readonly placeholder?: string;
   readonly readNowLabel?: string;
   readonly footerStart?: ReactNode;
+  readonly draft?: string;
+  readonly onDraftChange?: (text: string) => void;
   readonly onSubmit: (draft: OrchestratorHintDraft) => Promise<boolean>;
 };
 
 type SendParams = {
   readonly delivery: OrchestratorHintDelivery;
+};
+
+type SetTextParams = {
+  readonly next: string;
 };
 
 type ReadNowParams = {
@@ -55,9 +61,19 @@ export const OrchestratorHintComposer = ({
   placeholder = 'Tell the orchestrator something',
   readNowLabel,
   footerStart,
+  draft,
+  onDraftChange,
   onSubmit,
 }: Props) => {
-  const [text, setText] = useState('');
+  const [localText, setLocalText] = useState('');
+  const text = draft ?? localText;
+  const textRef = useRef(text);
+  textRef.current = text;
+  const setText = ({ next }: SetTextParams) => {
+    textRef.current = next;
+    setLocalText(next);
+    onDraftChange?.(next);
+  };
   const [isFocused, setIsFocused] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
   const files = usePromptFiles({ note: 'Files go to the next agent' });
@@ -72,24 +88,26 @@ export const OrchestratorHintComposer = ({
   };
 
   const send = async ({ delivery }: SendParams) => {
-    const draft = text;
+    const sent = text;
     const staged = files.attachments;
-    if (draft.trim() === '' && staged.length === 0) {
+    if (sent.trim() === '' && staged.length === 0) {
       return;
     }
-    setText('');
+    setText({ next: '' });
     files.clear();
     fieldRef.current?.querySelector('textarea')?.focus();
     const attachments = staged.length === 0 ? [] : await toAttachmentInputs(staged);
     const isSaved = await onSubmit({
-      text: draft,
+      text: sent,
       delivery,
       ...(attachments.length > 0 && { attachments }),
     });
     if (isSaved) {
       return;
     }
-    setText((current) => (current === '' ? draft : current));
+    if (textRef.current === '') {
+      setText({ next: sent });
+    }
     files.setAttachments((current) => (current.length === 0 ? staged : current));
   };
 
@@ -111,7 +129,7 @@ export const OrchestratorHintComposer = ({
         placeholder={placeholder}
         footerStart={footerStart}
         value={text}
-        onChange={setText}
+        onChange={(next) => setText({ next })}
         onSubmit={(mode) => void send({ delivery: DELIVERY[mode] })}
         canSendNow
         hasPreview={isOpen}
