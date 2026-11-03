@@ -2,7 +2,7 @@ import type { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { openSettings } from '../../../../../features/settings/openSettings';
 import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';
 import { useAppStore } from '../../../../../store';
-import { installIphoneIpc } from '../u26s/settingsTree/installIphoneIpc';
+import { installIphoneIpc } from '../surfaces/settings-tree/settingsTree/installIphoneIpc';
 
 type Openers = ReturnType<typeof useAppOverlays>;
 
