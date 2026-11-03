@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
-import { MODEL_CATALOGS, modelAxes } from '@goodboy/core';
+import { MODEL_CATALOGS, modelAxes } from '@goodboy/core/providers';
 import { resolveRouting } from './resolveRouting';
 
 const routingFor = ({ provider, model }: { provider: ProviderId; model: string }) =>

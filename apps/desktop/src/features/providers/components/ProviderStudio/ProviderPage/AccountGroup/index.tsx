@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PROVIDER_API_KEY_ENV, isApiProvider } from '@goodboy/core';
+import { PROVIDER_API_KEY_ENV, isApiProvider } from '@goodboy/core/providers';
 import { Band, BAND_ROW_CLASS, cn, ICON_SIZE } from '@goodboy/ui';
 import { ChevronRight } from 'lucide-react';
 import { useAppStore } from '../../../../../../store';

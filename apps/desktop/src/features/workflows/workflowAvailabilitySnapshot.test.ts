@@ -8,7 +8,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../providers/providers';
-import { orchestratorModelPool } from '@goodboy/core';
+import { orchestratorModelPool } from '@goodboy/core/orchestrator';
 import { workflowAvailabilitySnapshot } from './workflowAvailabilitySnapshot';
 
 const SESSION_ID = 'session-1' as SessionId;

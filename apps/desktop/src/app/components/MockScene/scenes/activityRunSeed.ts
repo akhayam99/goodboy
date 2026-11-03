@@ -1,4 +1,4 @@
-import type { DurationHistory, DurationSample } from '@goodboy/core';
+import type { DurationHistory, DurationSample } from '@goodboy/core/estimates';
 import type {
   Agent,
   AgentId,

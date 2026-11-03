@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { WireframeDocument, WireframeNode, WireframeScreen } from '@goodboy/core';
+import type { WireframeDocument, WireframeNode, WireframeScreen } from '@goodboy/core/artifacts';
 import type { AgentId, ArtifactId, Session, WireframeArtifact } from '@goodboy/types';
 import type { WireframeVersion } from '../../../../../features/wireframes/wireframeVersion';
 import { ShellFrame } from '../shellChrome';

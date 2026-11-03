@@ -1,4 +1,4 @@
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import type { SetFn } from './types';

@@ -1,4 +1,9 @@
-import { isModelHidden, latestInGroup, type HiddenModels, type ModelLine } from '@goodboy/core';
+import {
+  isModelHidden,
+  latestInGroup,
+  type HiddenModels,
+  type ModelLine,
+} from '@goodboy/core/providers';
 import {
   isChatProvider,
   type ChatProviderId,

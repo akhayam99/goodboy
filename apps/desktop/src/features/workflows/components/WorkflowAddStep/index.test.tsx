@@ -14,7 +14,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aWorkflowRun } from '@goodboy/types/testing';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type {
   AgentId,
   ProviderId,

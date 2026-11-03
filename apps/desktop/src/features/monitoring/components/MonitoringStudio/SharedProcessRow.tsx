@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_HOVER, cn } from '@goodboy/ui';
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { portListText } from '../../portListText';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { MetricCells } from './MetricCells';

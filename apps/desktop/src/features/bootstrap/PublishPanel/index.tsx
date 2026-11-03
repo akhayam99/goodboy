@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Button, FormActions, Input, Notice, SegmentedTabs } from '@goodboy/ui';
-import { validateGithubRepoName, type GithubRepoVisibility } from '@goodboy/core';
+import { validateGithubRepoName, type GithubRepoVisibility } from '@goodboy/core/github';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type {

@@ -1,5 +1,5 @@
 import type { Agent, AgentId, ImplementationCluster } from '@goodboy/types';
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusSettled } from '@goodboy/core/workflows';
 import { planClusterWaves, readyClusterIndexes } from '@goodboy/core/clusters';
 import { clusterLaunching } from './clusterLaunching';
 

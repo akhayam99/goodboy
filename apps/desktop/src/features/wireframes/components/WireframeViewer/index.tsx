@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { asWireframeFidelity, type WireframeFidelity } from '../../wireframeFidelity';
 import { useWireframeRespawn } from '../../useWireframeRespawn';

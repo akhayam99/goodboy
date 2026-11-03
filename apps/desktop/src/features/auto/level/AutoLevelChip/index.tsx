@@ -1,4 +1,4 @@
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import { AsksYouChip } from '../../../workflows/AsksYouChip';
 import { asksWordsOf } from '../../../workflows/asksWordsOf';
 import { runAutonomyOf } from '../../../workflows/runAutonomy';

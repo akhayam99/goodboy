@@ -1,4 +1,4 @@
-import { extractClusterDone, extractStepDone, hasBlockingQuestion } from '@goodboy/core';
+import { extractClusterDone, extractStepDone, hasBlockingQuestion } from '@goodboy/core/context';
 import type { AgentId, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { isTurnActivity } from './isTurnActivity';
 import { lingeringTurns } from './lingeringTurns';

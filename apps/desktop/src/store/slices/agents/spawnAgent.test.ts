@@ -15,7 +15,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import { PROVIDER_IDS } from '@goodboy/types';
 import { buildResolverAgentArgs } from '../../../features/chat/spawn-from-comment';
 import {

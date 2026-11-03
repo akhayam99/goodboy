@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';

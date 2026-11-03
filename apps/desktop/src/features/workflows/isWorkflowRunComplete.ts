@@ -1,5 +1,5 @@
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
-import { isAgentStatusSettled, isWorkflowComplete } from '@goodboy/core';
+import { isAgentStatusSettled, isWorkflowComplete } from '@goodboy/core/workflows';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 
 type Params = {

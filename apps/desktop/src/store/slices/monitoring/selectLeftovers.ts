@@ -1,4 +1,4 @@
-import { findLeftovers, type Leftover } from '@goodboy/core';
+import { findLeftovers, type Leftover } from '@goodboy/core/monitoring';
 import type { AppStore } from '../../store';
 
 type Input = Pick<AppStore, 'monitorSnapshot' | 'monitorLedger'>;

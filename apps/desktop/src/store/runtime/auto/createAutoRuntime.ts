@@ -1,4 +1,4 @@
-import { isAutoGateBlock } from '@goodboy/core';
+import { isAutoGateBlock } from '@goodboy/core/auto';
 import { getAutoTree, listAutoTreesToRecover, type AutoTree } from '@goodboy/db';
 import type { AutoDelegationId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';

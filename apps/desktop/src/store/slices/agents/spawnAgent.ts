@@ -14,7 +14,7 @@ import {
   type StepId,
   type WorkflowRunId,
 } from '@goodboy/types';
-import { isAutoOwnProvider } from '@goodboy/core';
+import { isAutoOwnProvider } from '@goodboy/core/auto';
 import { updateAgentConfig } from '@goodboy/db';
 import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';

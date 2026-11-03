@@ -13,7 +13,7 @@ import { bitbucketMountsOf } from '../../../store/slices/mount-request/requestOf
 import { invoke } from '@tauri-apps/api/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import { brandId } from '@goodboy/types';
 import type {
   AgentId,

@@ -244,7 +244,16 @@ export const githubModuleMock = () => ({
   createTauriPrCacheStore: () => ({ get: vi.fn(), upsert: vi.fn(), delete: vi.fn() }),
 });
 
-export const coreModuleMock = async (importOriginal: () => Promise<Record<string, unknown>>) => ({
+type CoreDomainMockParams = {
+  importOriginal: () => Promise<Record<string, unknown>>;
+};
+
+export const coreWorkflowsModuleMock = async ({ importOriginal }: CoreDomainMockParams) => ({
+  ...(await importOriginal()),
+  seedWorkflowLibrary: vi.fn(async () => undefined),
+});
+
+export const coreGithubModuleMock = async ({ importOriginal }: CoreDomainMockParams) => ({
   ...(await importOriginal()),
   detectRepoSlug: storySpies.detectRepoSlug,
   listPrsForBranch: storySpies.listPrsForBranch,
@@ -255,7 +264,6 @@ export const coreModuleMock = async (importOriginal: () => Promise<Record<string
   resolveReviewThread: storySpies.resolveReviewThread,
   addReviewThreadReply: storySpies.addReviewThreadReply,
   updateReviewComment: storySpies.updateReviewComment,
-  seedWorkflowLibrary: vi.fn(async () => undefined),
 });
 
 export const scriptsModuleMock = () => ({

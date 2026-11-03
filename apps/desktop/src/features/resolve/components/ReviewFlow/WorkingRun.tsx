@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { stripControlMarkers } from '@goodboy/core';
+import { stripControlMarkers } from '@goodboy/core/context';
 import { WorkNode } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';

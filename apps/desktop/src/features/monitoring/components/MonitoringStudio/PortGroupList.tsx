@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import type { GroupedPortRows } from '../../groupPortRows';
 import { SharedProcessRow } from './SharedProcessRow';

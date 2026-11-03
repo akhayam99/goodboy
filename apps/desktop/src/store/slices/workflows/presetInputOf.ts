@@ -1,4 +1,4 @@
-import type { OrchestratorInput } from '@goodboy/core';
+import type { OrchestratorInput } from '@goodboy/core/orchestrator';
 import type { WorkflowRules } from '@goodboy/types';
 
 type Params = {

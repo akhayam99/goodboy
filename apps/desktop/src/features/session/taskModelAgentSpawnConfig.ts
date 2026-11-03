@@ -1,4 +1,4 @@
-import { clampEffortForModel, type Resolution } from '@goodboy/core';
+import { clampEffortForModel, type Resolution } from '@goodboy/core/providers';
 import type { AgentEffort } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from './agentSpawnConfigValue';
 

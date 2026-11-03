@@ -17,12 +17,12 @@ const { summarizeStepOutputSpy } = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/summarizer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/summarizer')>();
   return { ...actual, summarizeStepOutput: summarizeStepOutputSpy };
 });
 
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 
 const SESSION_ID = 'session-step-summary' as SessionId;

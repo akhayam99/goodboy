@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowUp, SquareArrowOutUpRight } from 'lucide-react';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import { Button, FormActions, ICON_SIZE, KeyHint, Tooltip } from '@goodboy/ui';
 
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';

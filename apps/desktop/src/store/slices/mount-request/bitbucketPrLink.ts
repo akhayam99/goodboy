@@ -8,7 +8,7 @@ import type {
   BitbucketPullRequest,
   BitbucketRepo,
 } from '../../../features/integrations/bitbucket/client';
-import { bitbucketPrStateKind } from '@goodboy/core';
+import { bitbucketPrStateKind } from '@goodboy/core/review-source';
 import { buildMountRequestLink, requestHost } from '../project-mounts/mountRequests';
 
 const BITBUCKET_HOST = 'bitbucket.org';

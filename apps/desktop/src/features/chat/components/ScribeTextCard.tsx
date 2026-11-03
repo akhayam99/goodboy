@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { extractScribeText } from '@goodboy/core';
+import { extractScribeText } from '@goodboy/core/context';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../store';

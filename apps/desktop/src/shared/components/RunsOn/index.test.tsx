@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
 import { useAppStore } from '../../../store';

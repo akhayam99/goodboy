@@ -4,7 +4,7 @@ import {
   providersAtLimit,
   type ResolveContext,
   type ResolveLayers,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { PROVIDER_IDS, type ProviderId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';

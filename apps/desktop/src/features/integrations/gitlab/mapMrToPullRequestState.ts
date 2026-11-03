@@ -1,4 +1,8 @@
-import { gitlabMergeableOf, gitlabReviewDecisionOf, stripGitlabDraftPrefix } from '@goodboy/core';
+import {
+  gitlabMergeableOf,
+  gitlabReviewDecisionOf,
+  stripGitlabDraftPrefix,
+} from '@goodboy/core/review-source';
 import type { PullRequestChecks, PullRequestState } from '@goodboy/types';
 import type { GitlabMergeRequest, GitlabMrApprovalState } from './client';
 import { gitlabMrStateKind } from './gitlabMrStateKind';

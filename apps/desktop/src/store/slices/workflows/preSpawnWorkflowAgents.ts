@@ -10,11 +10,8 @@ import type {
   VerbosityLevel,
   WorkflowRunId,
 } from '@goodboy/types';
-import {
-  resolveModelIdForProvider,
-  type AutoContext,
-  type WorkflowRoutingAvailabilitySnapshot,
-} from '@goodboy/core';
+import { resolveModelIdForProvider, type AutoContext } from '@goodboy/core/providers';
+import { type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core/orchestrator';
 import { classifyStep } from '../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../../features/workflows/resolveStepRouting';
 import { revalidateStepRouting } from '../../../features/workflows/revalidateStepRouting';

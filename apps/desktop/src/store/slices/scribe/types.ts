@@ -1,4 +1,4 @@
-import type { ExtractedScribeText } from '@goodboy/core';
+import type { ExtractedScribeText } from '@goodboy/core/context';
 import type { AgentId, MountId, ProviderId, SessionId } from '@goodboy/types';
 
 export type { SetFn, GetFn } from '../../slice-types';

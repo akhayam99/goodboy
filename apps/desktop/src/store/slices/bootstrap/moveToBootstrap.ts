@@ -5,7 +5,7 @@ import type {
   ProjectId,
   Session,
 } from '@goodboy/types';
-import { buildBranchName } from '@goodboy/core';
+import { buildBranchName } from '@goodboy/core/slug';
 import { formatError } from '@goodboy/ui';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';

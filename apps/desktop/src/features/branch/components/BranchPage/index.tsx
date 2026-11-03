@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import { PageColumn, PaneShell } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';

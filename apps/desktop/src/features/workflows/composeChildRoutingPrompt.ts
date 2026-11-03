@@ -1,9 +1,9 @@
+import { type HiddenModels } from '@goodboy/core/providers';
 import {
   formatWorkflowModelMenu,
   orchestratorModelPool,
-  type HiddenModels,
   type WorkflowRoutingAvailabilitySnapshot,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import type { AgentRole } from '@goodboy/types';
 
 const CHILD_MARKER_FOR_ROLE: Readonly<Partial<Record<AgentRole, string>>> = {

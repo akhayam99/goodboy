@@ -3,7 +3,7 @@ import {
   detachWorkflowFromSession as detachWorkflowFromSessionInDb,
   updateSessionState,
 } from '@goodboy/db';
-import { removeQuestionsFromSlot } from '@goodboy/core';
+import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';

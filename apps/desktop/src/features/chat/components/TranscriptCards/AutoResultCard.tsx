@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole, stripOutcomeLine } from '@goodboy/core';
+import { parseAutoDelegationRole, stripOutcomeLine } from '@goodboy/core/auto';
 import type { AgentId } from '@goodboy/types';
 import { Button, ClampedProse, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';

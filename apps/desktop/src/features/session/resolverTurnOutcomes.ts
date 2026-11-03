@@ -4,7 +4,7 @@ import {
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 
 export type ResolverThreadOutcome =
   | { readonly kind: 'resolved'; readonly commitSha: string; readonly reply?: string }

@@ -2,7 +2,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { MonitorSnapshot } from '@goodboy/core';
+import type { MonitorSnapshot } from '@goodboy/core/monitoring';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

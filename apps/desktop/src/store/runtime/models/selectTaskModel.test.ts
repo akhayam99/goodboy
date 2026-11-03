@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getCapabilities } from '@goodboy/core';
+import { getCapabilities } from '@goodboy/core/providers';
 import type { ProviderId, ProviderLimits, ProviderPolicy } from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../features/providers/providers';

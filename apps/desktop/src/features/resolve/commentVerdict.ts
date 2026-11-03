@@ -1,4 +1,4 @@
-import { extractCommentVerdict, type CommentVerdictKind } from '@goodboy/core';
+import { extractCommentVerdict, type CommentVerdictKind } from '@goodboy/core/context';
 import type { ResolveVerdict, ResolveVerdictKind } from '@goodboy/types';
 
 const KIND_OF: Record<CommentVerdictKind, ResolveVerdictKind> = {

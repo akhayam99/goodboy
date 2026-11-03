@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole, type AutoDelegationRole } from '@goodboy/core';
+import { parseAutoDelegationRole, type AutoDelegationRole } from '@goodboy/core/auto';
 import type { AutoDelegation } from '@goodboy/db';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { DelegationCardModel } from './delegationCardOf';

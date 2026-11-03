@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
 import { Band, ICON_SIZE, IconButton } from '@goodboy/ui';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { Agent, ProviderId, SessionId, Step, WorkflowRunId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { useAppStore } from '../../../../store/store';

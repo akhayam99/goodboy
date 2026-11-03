@@ -1,4 +1,4 @@
-import type { BranchFactsRequest, BranchFactsThread } from '@goodboy/core';
+import type { BranchFactsRequest, BranchFactsThread } from '@goodboy/core/auto';
 import { brandId, type MountId, type PrComment } from '@goodboy/types';
 import type { AppStore } from '../../../store';
 import type { ReadBranchFactsParams } from '../ports';

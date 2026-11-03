@@ -53,9 +53,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
   abandonWorktreeWriter: abandonWriterSpy,
 }));
 
-vi.mock('@goodboy/core', () => ({
-  removeQuestionsFromSlot: removeQuestionsFromSlotSpy,
-}));
+vi.mock('@goodboy/core/context', () => ({ removeQuestionsFromSlot: removeQuestionsFromSlotSpy }));
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: {},

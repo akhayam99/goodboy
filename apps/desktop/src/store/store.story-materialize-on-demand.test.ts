@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
-import { stripControlMarkers } from '@goodboy/core';
+import { stripControlMarkers } from '@goodboy/core/context';
 import {
   assistantTurnStream,
   buildStoryAgent,

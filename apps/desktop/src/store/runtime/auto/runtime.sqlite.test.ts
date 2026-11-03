@@ -16,7 +16,7 @@ import {
   type RuntimeWorld,
 } from './testing/runtimeWorld';
 import { addOutboxRow } from './testing/deliveryWorld';
-import { EMPTY_USER_FACTS } from '@goodboy/core';
+import { EMPTY_USER_FACTS } from '@goodboy/core/auto';
 
 const TWO_WRITERS = {
   children: [

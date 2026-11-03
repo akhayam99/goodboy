@@ -4,7 +4,7 @@ import {
   type DurationHistory,
   type DurationUnit,
   type TimeInterval,
-} from '@goodboy/core';
+} from '@goodboy/core/estimates';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 
 export type WorkTimeSource = {

@@ -6,7 +6,7 @@ import {
   parseOpenCodeJsonLine,
   parseStreamJsonLine,
   type ParseContext,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { ProviderId, TurnEvent } from '@goodboy/types';
 
 type Params = {

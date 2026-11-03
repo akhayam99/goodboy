@@ -16,7 +16,7 @@ import {
   type SessionId,
   type TurnEvent,
 } from '@goodboy/types';
-import { storedDeliveryOf } from '@goodboy/core';
+import { storedDeliveryOf } from '@goodboy/core/auto';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import type { AutoRuntime } from './runtime/auto/createAutoRuntime';
 import {
@@ -34,8 +34,8 @@ import {
   type StoryStore,
 } from './storyHarness';
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/auto', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/auto')>()),
   AUTO_GATES: { isDelegationEnabled: true },
 }));
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());

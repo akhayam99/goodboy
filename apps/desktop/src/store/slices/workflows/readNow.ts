@@ -1,4 +1,4 @@
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { cancelRunningSteps } from './cancelRunningSteps';
 import { requestDecisionRestart } from './decisionRestart';

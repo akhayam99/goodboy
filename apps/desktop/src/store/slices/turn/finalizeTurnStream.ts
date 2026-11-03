@@ -1,4 +1,4 @@
-import { autoPopulateContext } from '@goodboy/core';
+import { autoPopulateContext } from '@goodboy/core/context';
 import {
   countUserTextEvents,
   listContextSlotsForSession,

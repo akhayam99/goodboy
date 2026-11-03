@@ -1,4 +1,4 @@
-import { PROVIDER_API_KEY_ENV } from '@goodboy/core';
+import { PROVIDER_API_KEY_ENV } from '@goodboy/core/providers';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Button,

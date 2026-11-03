@@ -1,4 +1,4 @@
-import { isAgentStatusHalted } from '@goodboy/core';
+import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { Agent, AgentId } from '@goodboy/types';
 import type { MountBlockedStep } from '../../store/slices/workflows/runMount/selectMountBlockedStep';
 import type { TailState } from '../live-state/tailFacts';

@@ -11,7 +11,7 @@ import {
   tintClasses,
   WorkNode,
 } from '@goodboy/ui';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core/review-source';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {

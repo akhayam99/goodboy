@@ -1,4 +1,4 @@
-import { resolveModelArgs } from '@goodboy/core';
+import { resolveModelArgs } from '@goodboy/core/providers';
 import type { EffortLevel, ModelSelection, ProviderId } from '@goodboy/types';
 
 type Params = {

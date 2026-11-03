@@ -4,7 +4,7 @@ import {
   gitlabReviewSource,
   localReviewSource,
   type ReviewSource,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 import type { ResolveThread, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';

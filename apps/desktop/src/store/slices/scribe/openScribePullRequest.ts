@@ -1,4 +1,4 @@
-import type { ExtractedScribeText } from '@goodboy/core';
+import type { ExtractedScribeText } from '@goodboy/core/context';
 import type { PullRequestState } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { patchScribeWork } from './requestScribe';

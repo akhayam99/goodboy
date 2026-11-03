@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole } from '@goodboy/core';
+import { parseAutoDelegationRole } from '@goodboy/core/auto';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { textOf } from '@goodboy/types/helpers';

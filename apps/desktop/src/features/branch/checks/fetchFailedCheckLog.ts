@@ -1,4 +1,4 @@
-import type { GhRunner } from '@goodboy/core';
+import type { GhRunner } from '@goodboy/core/github';
 import type { PrCheckRun, ProjectId, WorkspaceId } from '@goodboy/types';
 import { tauriGhRunner } from '../../integrations/github/github';
 import { failedLogTail } from './failedLogTail';

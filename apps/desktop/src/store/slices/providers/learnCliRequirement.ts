@@ -1,4 +1,4 @@
-import { catalogModelForId, type CliRequirement } from '@goodboy/core';
+import { catalogModelForId, type CliRequirement } from '@goodboy/core/providers';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { CLI_LABEL } from '../../../features/providers/cliLabel';

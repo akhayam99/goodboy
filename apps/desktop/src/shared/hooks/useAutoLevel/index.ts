@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DEFAULT_AUTO_LEVEL, type AutoLevel } from '@goodboy/core';
+import { DEFAULT_AUTO_LEVEL, type AutoLevel } from '@goodboy/core/auto';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';

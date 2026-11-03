@@ -1,4 +1,4 @@
-import { storedDeliveryOf } from '@goodboy/core';
+import { storedDeliveryOf } from '@goodboy/core/auto';
 import {
   acceptAutoOutboxStatement,
   getAutoDelegation,

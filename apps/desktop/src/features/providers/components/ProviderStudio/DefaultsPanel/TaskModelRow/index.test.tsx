@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { getModelProvider } from '@goodboy/core';
+import { getModelProvider } from '@goodboy/core/providers';
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { nextWorkspaceId } from '@goodboy/types/testing';
 import { TaskModelRow } from './index';

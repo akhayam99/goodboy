@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Resolution, ResolvePins, ResolveSlot } from '@goodboy/core';
+import type { Resolution, ResolvePins, ResolveSlot } from '@goodboy/core/providers';
 import type { AgentRole, AuxTaskId, ProviderId, StepSize } from '@goodboy/types';
 import { resolutionOf } from '../../../../store/runtime/models/selectResolution';
 import { useModelScope, type ScopeProps } from '../useModelScope';

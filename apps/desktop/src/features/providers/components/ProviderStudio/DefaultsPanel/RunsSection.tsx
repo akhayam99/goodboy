@@ -1,5 +1,7 @@
 import type { Ref } from 'react';
-import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS, isAutoOwnProvider } from '@goodboy/core';
+import { isAutoOwnProvider } from '@goodboy/core/auto';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
+import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import { Band, BandStack, Eyebrow } from '@goodboy/ui';
 import type {
   AgentRole,

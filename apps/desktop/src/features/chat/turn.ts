@@ -1,6 +1,6 @@
 import { isNullableString } from '../../shared/utils/isNullableString';
 import { invokeCommand } from '../../shared/lib/invokeCommand';
-import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
+import { createJsonLineAssembler, type ParseContext } from '@goodboy/core/providers';
 import {
   PROVIDER_IDS,
   type IsoDateTime,

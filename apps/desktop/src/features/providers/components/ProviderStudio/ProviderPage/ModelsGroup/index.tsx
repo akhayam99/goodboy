@@ -5,7 +5,7 @@ import {
   visibleModelCount,
   withModelsVisible,
   type HiddenModels,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { CatalogModel, ProviderId, WorkspaceId } from '@goodboy/types';
 import { BAND_ROW_CLASS, Band, Button, OptionalTooltip, Switch, cn } from '@goodboy/ui';
 import { PickerChip } from '../../../../../../shared/components/RoutingPicker/PickerChip';

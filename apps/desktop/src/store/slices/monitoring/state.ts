@@ -5,7 +5,7 @@ import type {
   MonitorSnapshot,
   PinnedPort,
   WatchedPort,
-} from '@goodboy/core';
+} from '@goodboy/core/monitoring';
 import type { StopProgress } from './types';
 
 export type MonitoringSliceState = {

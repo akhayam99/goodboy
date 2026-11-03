@@ -1,4 +1,4 @@
-import type { MountSnapshot } from '@goodboy/core';
+import type { MountSnapshot } from '@goodboy/core/auto';
 import type { AutoPorts } from './ports';
 
 export type ReadSnapshotParams = Readonly<{

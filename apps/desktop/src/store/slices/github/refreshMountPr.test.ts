@@ -24,7 +24,7 @@ const h = vi.hoisted(() => ({
   links: [] as Array<MountPullRequestLink>,
 }));
 
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core/github', () => ({
   detectRepoSlug: h.detectRepoSlug,
   listPrsForBranch: h.listPrsForBranch,
   fetchLinkedIssues: h.fetchLinkedIssues,

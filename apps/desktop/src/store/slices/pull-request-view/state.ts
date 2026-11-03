@@ -1,4 +1,4 @@
-import type { PullRequestFailureKind } from '@goodboy/core';
+import type { PullRequestFailureKind } from '@goodboy/core/review-source';
 import type { IsoDateTime, MountId, PullRequestView, SessionId } from '@goodboy/types';
 
 export type PullRequestEdit = Readonly<{

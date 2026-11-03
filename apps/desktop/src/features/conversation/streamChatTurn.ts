@@ -1,4 +1,4 @@
-import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
+import { createJsonLineAssembler, type ParseContext } from '@goodboy/core/providers';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, ProviderId, ProviderRunId, ProviderUsage } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';

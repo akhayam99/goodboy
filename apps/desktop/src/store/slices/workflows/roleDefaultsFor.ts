@@ -1,11 +1,10 @@
+import { skippedPinNote } from '@goodboy/core/providers';
+import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '@goodboy/core/roles';
 import {
-  ROLE_REGISTRY,
-  SELECTABLE_AGENT_ROLES,
   roleModelSetMenu,
-  skippedPinNote,
   type OrchestratorModelOption,
   type OrchestratorRoleDefault,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import type { RoleModelPreferences, SessionId } from '@goodboy/types';
 import { RESOLVE_NAMES } from '../../../features/providers/resolveNames';
 import { rolePicks } from '../workflowRouting/rolePicks';

@@ -1,4 +1,4 @@
-import { NOTE_THREAD_PREFIX } from '@goodboy/core';
+import { NOTE_THREAD_PREFIX } from '@goodboy/core/review-source';
 import type { DiffComment } from '@goodboy/types';
 import type { CommentThread } from '../../integrations/github/comment-threads';
 

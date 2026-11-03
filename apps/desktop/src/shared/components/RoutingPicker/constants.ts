@@ -1,4 +1,4 @@
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 
 type RoutingPickerConstants = {

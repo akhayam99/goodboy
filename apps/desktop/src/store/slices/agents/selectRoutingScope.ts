@@ -1,4 +1,4 @@
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';

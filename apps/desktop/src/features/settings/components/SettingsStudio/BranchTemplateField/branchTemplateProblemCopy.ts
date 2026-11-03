@@ -1,4 +1,4 @@
-import { unknownBranchPlaceholders, type BranchTemplateProblem } from '@goodboy/core';
+import { unknownBranchPlaceholders, type BranchTemplateProblem } from '@goodboy/core/slug';
 
 const FIXED_COPY: Readonly<Record<Exclude<BranchTemplateProblem, 'unknown-placeholder'>, string>> =
   {

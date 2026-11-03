@@ -1,4 +1,4 @@
-import { isAgentSettled } from '@goodboy/core';
+import { isAgentSettled } from '@goodboy/core/workflows';
 import type {
   TimelineAgentEntry,
   TimelineRunEntry,

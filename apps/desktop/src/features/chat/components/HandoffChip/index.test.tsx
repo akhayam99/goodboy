@@ -40,8 +40,8 @@ const { extractHandoffMock, showToast, state } = vi.hoisted(() => {
   };
 });
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/context', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/context')>();
   return { ...actual, extractHandoff: extractHandoffMock };
 });
 vi.mock('../../../../store', async () => ({

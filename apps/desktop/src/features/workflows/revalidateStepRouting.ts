@@ -2,7 +2,7 @@ import {
   resolveWorkflowRouting,
   workflowRoutingAvailability,
   type WorkflowRoutingAvailabilitySnapshot,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import type { Step, WorkflowRoutingDecision, WorkflowTaskProfile } from '@goodboy/types';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {

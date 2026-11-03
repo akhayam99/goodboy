@@ -1,4 +1,4 @@
-import { extractHistoryReport } from '@goodboy/core';
+import { extractHistoryReport } from '@goodboy/core/context';
 import { formatError } from '@goodboy/ui';
 import { collectHistoryRewrite } from '../../../features/history/historyEngine';
 import { historyTargetOf } from './historyTargetOf';

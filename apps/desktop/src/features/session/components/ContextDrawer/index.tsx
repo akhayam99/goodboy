@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BandStack, CopyButton, DrawerFrame, ICON_SIZE, ScrollFade } from '@goodboy/ui';
-import { activeDecisionsNewestFirst } from '@goodboy/core';
+import { activeDecisionsNewestFirst } from '@goodboy/core/context';
 import type { SessionContextItem, SessionDecision, SessionId } from '@goodboy/types';
 import {
   useAppStore,

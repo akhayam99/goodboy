@@ -1,4 +1,4 @@
-import type { TurnFailureKind, TurnFallbackPlan } from '@goodboy/core';
+import type { TurnFailureKind, TurnFallbackPlan } from '@goodboy/core/providers';
 import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import type { ProviderId } from '@goodboy/types';
 

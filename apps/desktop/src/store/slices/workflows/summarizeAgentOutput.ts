@@ -1,9 +1,6 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import {
-  fallbackStepOutputSummary,
-  summarizeStepOutput,
-  type BackgroundAttempt,
-} from '@goodboy/core';
+import { type BackgroundAttempt } from '@goodboy/core/providers';
+import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core/summarizer';
 import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import type { GetFn, SetFn } from '../../slice-types';

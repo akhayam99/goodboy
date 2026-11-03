@@ -1,4 +1,4 @@
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import type { WireframeArtifact } from '@goodboy/types';
 import type { ArtifactFolderFile } from '../../artifacts/artifactFile';
 import { asWireframeFidelity } from '../wireframeFidelity';

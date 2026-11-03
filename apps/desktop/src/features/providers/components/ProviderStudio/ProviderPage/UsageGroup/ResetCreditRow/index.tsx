@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { resetAdvice } from '@goodboy/core';
+import { resetAdvice } from '@goodboy/core/providers';
 import { BAND_ROW_CLASS, Button, cn, ICON_SIZE } from '@goodboy/ui';
 import { Gift } from 'lucide-react';
 import { useAppStore } from '../../../../../../../store';

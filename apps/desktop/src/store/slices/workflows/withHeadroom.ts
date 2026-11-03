@@ -1,4 +1,4 @@
-import type { AutoContext, HeadroomMap } from '@goodboy/core';
+import type { AutoContext, HeadroomMap } from '@goodboy/core/providers';
 
 type Params = {
   readonly scope: AutoContext | null;

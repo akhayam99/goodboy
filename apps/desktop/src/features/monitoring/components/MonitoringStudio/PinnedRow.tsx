@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Input, useEscapeLayer } from '@goodboy/ui';
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';
 import { PIN_DESCRIPTION_MAX } from '../../../../store/slices/monitoring/pinDescription';
 import { PORT_EDIT_EVENT, type PortEditRequest } from '../../../actions/kinds/port';

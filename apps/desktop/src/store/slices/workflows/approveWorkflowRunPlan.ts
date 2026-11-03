@@ -1,5 +1,5 @@
 import { updateWorkflowRunOrchestrationStop, updateWorkflowRunRulesSnapshot } from '@goodboy/db';
-import { classifyWorkflowChain, runsForWorkflowRun } from '@goodboy/core';
+import { classifyWorkflowChain, runsForWorkflowRun } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRules, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 import { PLAN_REVISING_REASON, planRevisingOf } from '../../../features/plans/planRevising';

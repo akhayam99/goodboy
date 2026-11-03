@@ -4,7 +4,7 @@ import {
   parseWireframeSource,
   type WireframeDocument,
   type WireframeNodeChange,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { Button } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame } from '../../frame/frameMessage';

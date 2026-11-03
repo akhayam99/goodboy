@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import { UnderTrailContext } from '@goodboy/ui';
 import type { DiffComment } from '@goodboy/types';
 import { fileSignature, writeReviewedMap } from '../../../../../features/diff/lib/reviewedFiles';

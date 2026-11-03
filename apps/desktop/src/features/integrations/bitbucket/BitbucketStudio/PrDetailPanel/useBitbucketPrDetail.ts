@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { bitbucketCheckRuns } from '@goodboy/core';
+import { bitbucketCheckRuns } from '@goodboy/core/review-source';
 import { formatError } from '@goodboy/ui';
 import type { PrCheckRun } from '@goodboy/types';
 import {

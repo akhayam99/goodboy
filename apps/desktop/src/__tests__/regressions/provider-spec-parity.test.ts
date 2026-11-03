@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { providerFlags } from '@goodboy/core';
+import { providerFlags } from '@goodboy/core/providers';
 import { PROVIDER_IDS } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 

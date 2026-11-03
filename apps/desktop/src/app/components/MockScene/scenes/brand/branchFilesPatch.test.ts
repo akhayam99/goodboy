@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import { BRANCH_FILES_PATCH, RENAMED_PATH } from './contextDiffPatch';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
 

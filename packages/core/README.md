@@ -6,6 +6,10 @@ The business logic of Goodboy: stream-json parsers for each provider CLI, model 
 
 It is pure TypeScript, with no React, no Tauri, and no DOM. Agent turns are started in Rust, and core parses their output.
 
+## Public API
+
+One subpath per domain, for example `@goodboy/core/providers` or `@goodboy/core/auto`. The list is the `exports` field of `package.json`. There is no root entry.
+
 ## Conventions
 
 See [CONVENTIONS.md](./CONVENTIONS.md).

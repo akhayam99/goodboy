@@ -1,4 +1,4 @@
-import { DEFAULT_BRANCH_TEMPLATE } from '@goodboy/core';
+import { DEFAULT_BRANCH_TEMPLATE } from '@goodboy/core/slug';
 import {
   AFTER_MERGE_RULES,
   DEFAULT_WORKFLOW_RULES,

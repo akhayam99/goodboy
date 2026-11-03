@@ -1,4 +1,4 @@
-import { limitsChipOf, providerStanding, type ProviderStanding } from '@goodboy/core';
+import { limitsChipOf, providerStanding, type ProviderStanding } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';

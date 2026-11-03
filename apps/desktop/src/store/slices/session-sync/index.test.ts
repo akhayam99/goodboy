@@ -34,7 +34,7 @@ const h = vi.hoisted(() => ({
   worktreeSyncBranchRef: vi.fn(async (): Promise<BranchRefSync> => ({ kind: 'unchanged' })),
 }));
 
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core/github', () => ({
   detectRepoSlug: vi.fn(async () => 'acme/web'),
   listPrsForBranch: h.listPrsForBranch,
   fetchLinkedIssues: vi.fn(async () => []),

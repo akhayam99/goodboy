@@ -4,7 +4,7 @@ import {
   type WireframeDocument,
   type WireframeNode,
   type WireframeScreen,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { wireframeNodeLabel } from './wireframeNodeLabel';
 
 export type WireframeNodeNote = Readonly<{

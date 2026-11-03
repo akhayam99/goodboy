@@ -4,7 +4,7 @@ import {
   branchTemplateProblem,
   DEFAULT_BRANCH_TEMPLATE,
   NO_TASK_BRANCH_TEMPLATE,
-} from '@goodboy/core';
+} from '@goodboy/core/slug';
 import type { WorkspaceId } from '@goodboy/types';
 import { Chip, Input } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';

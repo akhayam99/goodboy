@@ -21,7 +21,7 @@ import {
   type SessionId,
   type TurnEvent,
 } from '@goodboy/types';
-import { storedDeliveryOf } from '@goodboy/core';
+import { storedDeliveryOf } from '@goodboy/core/auto';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import type { AutoRuntime } from './runtime/auto/createAutoRuntime';
 import { deliverNext } from './runtime/auto/deliver';

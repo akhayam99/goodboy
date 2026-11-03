@@ -7,7 +7,7 @@ import {
   remapModelSelection,
   resolveStoredModelSelection,
   visibleCatalog,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { Button, cn, Divider, FormActions, tintClasses } from '@goodboy/ui';
 import type {
   CatalogModel,

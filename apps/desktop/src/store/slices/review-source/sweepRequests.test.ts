@@ -100,8 +100,11 @@ vi.mock('../../../features/integrations/linear/client', async () =>
 vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
-vi.mock('@goodboy/core', async (importOriginal) =>
-  (await import('../../storyHarness')).coreModuleMock(importOriginal),
+vi.mock('@goodboy/core/workflows', async (importOriginal) =>
+  (await import('../../storyHarness')).coreWorkflowsModuleMock({ importOriginal }),
+);
+vi.mock('@goodboy/core/github', async (importOriginal) =>
+  (await import('../../storyHarness')).coreGithubModuleMock({ importOriginal }),
 );
 vi.mock('../../../features/scripts/scripts', async () =>
   (await import('../../storyHarness')).scriptsModuleMock(),
@@ -486,9 +489,7 @@ describe('sweepRequests', () => {
     });
 
     it('keeps polling a sibling mount after one of them merged', () => {
-      store.setState({
-        mountGithub: { [LEDGER_MOUNT]: githubEntry({ pr: mergedPr }) },
-      });
+      store.setState({ mountGithub: { [LEDGER_MOUNT]: githubEntry({ pr: mergedPr }) } });
 
       void store.getState().sweepRequests();
 
@@ -669,12 +670,7 @@ describe('sweepRequests', () => {
       store.setState({
         reviewSourceThreads: {
           [SESSION.id]: {
-            [gitlabKey]: {
-              comments: [],
-              fetchedAt: isoNow(),
-              loading: false,
-              error: null,
-            },
+            [gitlabKey]: { comments: [], fetchedAt: isoNow(), loading: false, error: null },
           },
         },
       });

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { parseSummaryDocument } from '@goodboy/core';
+import { parseSummaryDocument } from '@goodboy/core/context';
 import { summaryDisplayBlocks } from './summaryDisplayBlocks';
 
 const titlesOf = (text: string): ReadonlyArray<string> =>

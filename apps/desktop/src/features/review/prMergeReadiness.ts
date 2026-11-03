@@ -1,5 +1,5 @@
 import { countNoun } from '../../shared/utils/countNoun';
-import type { ReviewSourceKind } from '@goodboy/core';
+import type { ReviewSourceKind } from '@goodboy/core/review-source';
 import type { PullRequestState } from '@goodboy/types';
 
 type PrMergeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';

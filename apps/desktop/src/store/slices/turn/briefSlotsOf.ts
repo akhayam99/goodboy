@@ -1,4 +1,5 @@
-import { AUTO_BRIEF_VERSION, type SlotKey } from '@goodboy/core';
+import { AUTO_BRIEF_VERSION } from '@goodboy/core/auto';
+import { type SlotKey } from '@goodboy/core/context';
 import { isAutoChildTurn } from './isAutoChildTurn';
 import type { SendTurnInput } from './types';
 

@@ -18,7 +18,7 @@ import {
   type WorkflowRoutingProposalParseOutcome,
   type WorkflowRoutingResolution,
   type WorkflowRoutingWireFields,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import { rolePicks, type RolePicks } from '../workflowRouting/rolePicks';
 import type { AppStore } from '../../store';
 

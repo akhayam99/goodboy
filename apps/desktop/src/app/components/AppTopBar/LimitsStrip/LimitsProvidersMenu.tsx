@@ -1,4 +1,4 @@
-import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
+import type { LimitsChip as LimitsChipModel } from '@goodboy/core/providers';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   AnchoredPopover,

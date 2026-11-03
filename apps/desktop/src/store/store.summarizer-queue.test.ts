@@ -6,7 +6,7 @@ import {
   type StoryStore,
   type StoryStoreModule,
 } from './storyHarness';
-import type { SlotKey } from '@goodboy/core';
+import type { SlotKey } from '@goodboy/core/context';
 import type {
   AgentId,
   ContextSlot,
@@ -50,8 +50,8 @@ const summarizeSpy = vi.fn(
     }),
 );
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/summarizer', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@goodboy/core/summarizer')>();
   return {
     ...original,
     Summarizer: class {

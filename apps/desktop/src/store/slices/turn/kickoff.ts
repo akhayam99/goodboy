@@ -1,4 +1,4 @@
-import { DECISION_FIRST_RULE } from '@goodboy/core';
+import { DECISION_FIRST_RULE } from '@goodboy/core/decisionFirstRule';
 import type { Agent, AgentId, PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
 

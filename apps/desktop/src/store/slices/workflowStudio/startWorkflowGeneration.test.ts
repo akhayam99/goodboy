@@ -14,8 +14,8 @@ const { formatWorkflowFromNLMock, generationTransport } = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/workflows', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core/workflows')>();
   return {
     ...actual,
     formatWorkflowFromNL: (params: Parameters<typeof actual.formatWorkflowFromNL>[0]) => {

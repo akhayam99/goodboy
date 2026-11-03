@@ -1,4 +1,4 @@
-import type { WatchedPort } from '@goodboy/core';
+import type { WatchedPort } from '@goodboy/core/monitoring';
 import { getSetting } from '@goodboy/db';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';

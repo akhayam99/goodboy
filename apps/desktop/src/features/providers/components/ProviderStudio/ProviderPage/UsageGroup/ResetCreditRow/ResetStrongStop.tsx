@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ResetAdvice } from '@goodboy/core';
+import type { ResetAdvice } from '@goodboy/core/providers';
 import { Button, Checkbox, Notice } from '@goodboy/ui';
 import { strongBody, strongConsent, strongTitle } from './resetCopy';
 import { ResetSummaryBox } from './ResetSummaryBox';

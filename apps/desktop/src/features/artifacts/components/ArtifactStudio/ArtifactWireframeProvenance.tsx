@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import type { WireframeArtifact } from '@goodboy/types';
 import { WireframeProvenanceRow } from '../../../wireframes/components/WireframeViewer/WireframeProvenanceRow';
 import { asWireframeFidelity } from '../../../wireframes/wireframeFidelity';

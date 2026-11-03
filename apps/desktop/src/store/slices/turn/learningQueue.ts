@@ -1,4 +1,4 @@
-import { LearningExtractor } from '@goodboy/core';
+import { LearningExtractor } from '@goodboy/core/summarizer';
 import {
   insertProviderRun,
   insertSessionContextItems,

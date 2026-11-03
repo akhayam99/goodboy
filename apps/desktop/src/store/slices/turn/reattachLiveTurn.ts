@@ -1,4 +1,4 @@
-import { turnReducer } from '@goodboy/core';
+import { turnReducer } from '@goodboy/core/turn';
 import { formatError } from '@goodboy/ui';
 import { insertMessage, updateProviderRunStatus, updateSessionState } from '@goodboy/db';
 import type {

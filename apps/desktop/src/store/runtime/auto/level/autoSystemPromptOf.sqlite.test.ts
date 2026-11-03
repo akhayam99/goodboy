@@ -11,7 +11,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import {
   AUTO_SEED_ROOT,
   AUTO_SEED_SESSION,

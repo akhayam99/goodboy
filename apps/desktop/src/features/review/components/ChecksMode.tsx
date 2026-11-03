@@ -1,4 +1,4 @@
-import type { ReviewSourceKind } from '@goodboy/core';
+import type { ReviewSourceKind } from '@goodboy/core/review-source';
 import type { PrCheckRun } from '@goodboy/types';
 import {
   PrChecks,

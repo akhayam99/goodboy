@@ -3,7 +3,7 @@ import {
   recommendedModelForRole,
   resolveRoleRouting,
   type AutoContext,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { KIND_TO_ROLE, type AgentKind } from '../session/agent-kind';
 

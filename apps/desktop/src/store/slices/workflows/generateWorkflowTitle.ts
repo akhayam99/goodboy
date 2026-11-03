@@ -1,6 +1,6 @@
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../providerLimits/runHelperTask';
-import { devWarn } from '@goodboy/core';
+import { devWarn } from '@goodboy/core/dev-log';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { generateTitleText } from './generateTitleText';

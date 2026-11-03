@@ -6,7 +6,7 @@ import {
   parseSummaryDocument,
   replaceSummarySectionBody,
   type SummarySectionKey,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { RawDocumentEditor } from './RawDocumentEditor';
 import { ContextBlock } from './ContextBlock';

@@ -1,5 +1,5 @@
 import type { IsoDateTime, OpenQuestion } from '@goodboy/types';
-import { wrapOpenQuestionAnswers } from '@goodboy/core';
+import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
 import type { AppStore } from '../../../../../store/store';
 import type { DirectorStore } from './directorTypes';
 

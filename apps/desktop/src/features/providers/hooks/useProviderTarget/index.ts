@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { PROVIDER_CONNECT_CAPABILITIES, canLogout, isApiProvider } from '@goodboy/core';
+import { PROVIDER_CONNECT_CAPABILITIES, canLogout, isApiProvider } from '@goodboy/core/providers';
 import { useAppStore } from '../../../../store';
 import type { ProviderActionTarget } from '../../../actions/types';
 import { canTestConnection } from '../../components/ProviderStudio/ProviderPage/AccountGroup/ConnectionTest/canTestConnection';

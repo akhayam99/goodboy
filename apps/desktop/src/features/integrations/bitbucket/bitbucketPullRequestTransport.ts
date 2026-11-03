@@ -1,4 +1,4 @@
-import type { BitbucketPullRequestTransport } from '@goodboy/core';
+import type { BitbucketPullRequestTransport } from '@goodboy/core/review-source';
 import { bitbucketFailureOf } from './classifyBitbucketFailure';
 import {
   bitbucketDeclinePullRequest,

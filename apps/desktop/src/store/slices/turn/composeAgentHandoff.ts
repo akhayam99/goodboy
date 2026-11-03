@@ -5,7 +5,7 @@ import {
   type HandoffFile,
   type HandoffThread,
   type RenderedHandoff,
-} from '@goodboy/core';
+} from '@goodboy/core/handoff';
 import type {
   Agent,
   AgentHandoff,

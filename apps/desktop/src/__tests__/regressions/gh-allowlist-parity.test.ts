@@ -16,7 +16,7 @@ import {
   updateReviewComment,
   viewPullRequest,
   type GhRunner,
-} from '@goodboy/core';
+} from '@goodboy/core/github';
 import { describe, expect, it } from 'vitest';
 
 type Flag = {

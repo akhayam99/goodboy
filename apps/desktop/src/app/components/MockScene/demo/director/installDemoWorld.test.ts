@@ -16,7 +16,7 @@ import {
   type IsoDateTime,
 } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
-import { validateWireframeDocument } from '@goodboy/core';
+import { validateWireframeDocument } from '@goodboy/core/artifacts';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,

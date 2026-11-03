@@ -1,4 +1,4 @@
-import { planTaskModelFallback, type HiddenModels } from '@goodboy/core';
+import { planTaskModelFallback, type HiddenModels } from '@goodboy/core/providers';
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import type { ProviderErrorClassification } from '../chat/classifyProviderError';
 import type { ProviderCooldowns } from './routing';

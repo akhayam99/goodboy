@@ -13,12 +13,12 @@ vi.mock('../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import {
   EMPTY_DURATION_HISTORY,
-  PROVIDER_CAPABILITIES,
   type DurationHistory,
   type DurationSample,
-} from '@goodboy/core';
+} from '@goodboy/core/estimates';
 import type {
   Agent,
   ProviderId,

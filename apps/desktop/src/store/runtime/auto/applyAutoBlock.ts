@@ -6,7 +6,7 @@ import {
   type AutoBlock,
   type AutoRefusalCode,
   type RefusalPayload,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import { getAutoTree, insertAutoOutbox, type AutoTree } from '@goodboy/db';
 import { brandId, type AutoOutboxId, type AutoRequestId } from '@goodboy/types';
 import { replayAdmission } from './admit';

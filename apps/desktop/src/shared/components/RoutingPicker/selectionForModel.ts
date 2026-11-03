@@ -1,4 +1,4 @@
-import { modelHasEffortAxis } from '@goodboy/core';
+import { modelHasEffortAxis } from '@goodboy/core/providers';
 import type { CatalogModel, EffortLevel, ModelSelection } from '@goodboy/types';
 
 type Params = {

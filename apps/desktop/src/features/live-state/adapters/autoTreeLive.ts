@@ -1,5 +1,5 @@
 import type { Agent, TurnState } from '@goodboy/types';
-import { AUTO_BLOCK_TEXT } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { refusalNoticeOf } from '../../auto/chat/refusalNoticeOf';

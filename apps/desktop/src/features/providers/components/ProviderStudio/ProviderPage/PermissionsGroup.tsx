@@ -1,4 +1,4 @@
-import { modeSupportFor } from '@goodboy/core';
+import { modeSupportFor } from '@goodboy/core/permissions';
 import type { ClaudePermissionMode, ProviderId } from '@goodboy/types';
 import { Band, BAND_ROW_CLASS, cn, ICON_SIZE, tintClasses, type Tone } from '@goodboy/ui';
 import { Check, EqualApproximately, X, type LucideIcon } from 'lucide-react';

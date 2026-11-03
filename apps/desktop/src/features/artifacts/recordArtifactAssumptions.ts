@@ -1,4 +1,4 @@
-import { extractMarkers } from '@goodboy/core';
+import { extractMarkers } from '@goodboy/core/context';
 import type { AgentId } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import { appendArtifactProvenanceOmission, loadArtifactProvenance } from './artifactProvenance';

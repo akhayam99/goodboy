@@ -1,4 +1,4 @@
-import type { WireframeNode } from '@goodboy/core';
+import type { WireframeNode } from '@goodboy/core/artifacts';
 
 const MAX_LABEL = 48;
 

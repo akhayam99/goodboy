@@ -1,5 +1,5 @@
 import type { Project, Session } from '@goodboy/types';
-import { availableBranchName, nextFreeBranchName } from '@goodboy/core';
+import { availableBranchName, nextFreeBranchName } from '@goodboy/core/slug';
 import { branchNamingSettings } from '../sessions/branchNamingSettings';
 import { sessionBranchNaming } from '../sessions/sessionBranchNaming';
 import type { GetFn } from './types';

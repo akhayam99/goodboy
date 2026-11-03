@@ -1,4 +1,5 @@
-import { artifactOutline, effectiveApproval, sha256Hex, type AutoLedgerEntry } from '@goodboy/core';
+import { artifactOutline, effectiveApproval, type AutoLedgerEntry } from '@goodboy/core/auto';
+import { sha256Hex } from '@goodboy/core/slug';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,

@@ -1,6 +1,10 @@
 import type { AgentId, IsoDateTime, OpenQuestionId, SessionId } from '@goodboy/types';
 import { getOpenQuestionById, markOpenQuestionAnswered } from '@goodboy/db';
-import { extractMarkers, extractOpenQuestionAnswer, removeQuestionsFromSlot } from '@goodboy/core';
+import {
+  extractMarkers,
+  extractOpenQuestionAnswer,
+  removeQuestionsFromSlot,
+} from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { DELEGATE_NUDGE } from '../../../features/context/questionDelegate';

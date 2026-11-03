@@ -16,7 +16,7 @@ import {
   resolveStoredModelSelection,
   resolvedStoredModelId,
   clampEffortForModel,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { useAppStore } from '../../../../../store';
 import type { PickedRoute } from '../../../../../shared/components/RoutingPicker/PickedRoute';
 import { agentPinApplies } from '../../../../../store/slices/turn/agentPinApplies';

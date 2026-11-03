@@ -7,7 +7,7 @@ import type { SuggestionActions } from '../../useSuggestionActions';
 import type { AgentKindRouting } from '../../../session/agent-kind';
 import { NextStepRow } from './NextStepRow';
 import { useAppStore } from '../../../../store';
-import { getCapabilities } from '@goodboy/core';
+import { getCapabilities } from '@goodboy/core/providers';
 import { brandId, type MountId, type ProjectId, type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 

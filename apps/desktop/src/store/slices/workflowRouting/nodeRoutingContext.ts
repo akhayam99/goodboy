@@ -12,7 +12,7 @@ import type {
 import {
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import { KIND_TO_ROLE, classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';

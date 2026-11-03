@@ -11,7 +11,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { getCheapModel, resolveModelForProvider } from '@goodboy/core';
+import { getCheapModel, resolveModelForProvider } from '@goodboy/core/providers';
 import { agentReferenceRouting } from './agentReferenceRouting';
 
 const NOW = '2026-08-01T00:00:00.000Z' as IsoDateTime;

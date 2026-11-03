@@ -1,4 +1,4 @@
-import { extractScribeText, type ExtractedScribeText } from '@goodboy/core';
+import { extractScribeText, type ExtractedScribeText } from '@goodboy/core/context';
 import { formatError } from '@goodboy/ui';
 import { hasScribeText, mergeScribeOutput } from './mergeScribeOutput';
 import { patchScribeWork } from './requestScribe';

@@ -14,7 +14,7 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
-import { bitbucketPrStateKind } from '@goodboy/core';
+import { bitbucketPrStateKind } from '@goodboy/core/review-source';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
 import { bitbucketMountOf, gitlabMountOf } from '../mount-request/requestOf';

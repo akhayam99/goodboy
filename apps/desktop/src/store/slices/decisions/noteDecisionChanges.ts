@@ -1,4 +1,4 @@
-import type { DecisionChange } from '@goodboy/core';
+import type { DecisionChange } from '@goodboy/core/context';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';

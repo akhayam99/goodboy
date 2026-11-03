@@ -1,4 +1,4 @@
-import type { WatchedByProject } from '@goodboy/core';
+import type { WatchedByProject } from '@goodboy/core/monitoring';
 
 type Params = {
   readonly scanned: WatchedByProject;

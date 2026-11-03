@@ -8,13 +8,13 @@ import { SESSION_ID, seedArtifactScene } from '../artifactSeed';
 const WORKTREE = '/mock/payments-api';
 const WORD = 'creditKey';
 const DRAWER_WIDTH_PX = 720;
-const STAGE_HEIGHT_PX = 620;
+const STAGE_HEIGHT_PX = 500;
 
 const PATCH = [
   'diff --git a/src/ledger-core.ts b/src/ledger-core.ts',
   '--- a/src/ledger-core.ts',
   '+++ b/src/ledger-core.ts',
-  '@@ -18,3 +18,4 @@',
+  '@@ -1,3 +1,4 @@',
   ' export const settle = ({ posting }: Params) => {',
   '-  const key = posting.account;',
   '+  const creditKey = `${posting.account}:${posting.currency}`;',
@@ -47,13 +47,13 @@ const NOTIFY_RELAY_SOURCE = [
 const MATCHES: ReadonlyArray<GrepMatch> = [
   {
     path: 'src/ledger-core.ts',
-    line: 19,
+    line: 2,
     column: 9,
     text: 'const creditKey = `${posting.account}:${posting.currency}`;',
   },
   {
     path: 'src/ledger-core.ts',
-    line: 20,
+    line: 3,
     column: 33,
     text: 'return ledger.credit({ key: creditKey, amount: posting.amount });',
   },
@@ -74,7 +74,7 @@ const MATCHES: ReadonlyArray<GrepMatch> = [
 type Variant = 'changed' | 'unchanged';
 
 const SELECTED = {
-  changed: { path: 'src/ledger-core.ts', line: 20 },
+  changed: { path: 'src/ledger-core.ts', line: 3 },
   unchanged: { path: 'apps/notify-relay/src/credits.ts', line: 4 },
 } as const;
 

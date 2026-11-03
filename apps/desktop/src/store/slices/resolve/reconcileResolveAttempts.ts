@@ -4,7 +4,7 @@ import {
   listResolveThreads,
   setResolveAttemptPhase,
 } from '@goodboy/db';
-import { extractMarkers } from '@goodboy/core';
+import { extractMarkers } from '@goodboy/core/context';
 import { saveResolveThread } from './saveResolveThread';
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { listLiveRunIds } from '../../../features/chat/turn';

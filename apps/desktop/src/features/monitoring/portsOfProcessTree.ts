@@ -1,4 +1,4 @@
-import type { MonitorSnapshot } from '@goodboy/core';
+import type { MonitorSnapshot } from '@goodboy/core/monitoring';
 
 type Params = {
   readonly snapshot: MonitorSnapshot | null;

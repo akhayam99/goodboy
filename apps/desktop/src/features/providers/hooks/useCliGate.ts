@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { catalogModelForId, cliGate, type CliGate } from '@goodboy/core';
+import { catalogModelForId, cliGate, type CliGate } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 

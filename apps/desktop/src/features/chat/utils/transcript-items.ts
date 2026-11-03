@@ -12,7 +12,8 @@ import type {
   TurnEvent,
   UserTurnSentVia,
 } from '@goodboy/types';
-import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
+import { isOpenQuestionAnswerText } from '@goodboy/core/context';
+import { type ArtifactScanState } from '@goodboy/core/artifacts';
 import { permissionSubjectOf } from '../../permissions/permissionSubjectOf';
 import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
 import { failedToolUseIdOf } from './failedToolUseIdOf';

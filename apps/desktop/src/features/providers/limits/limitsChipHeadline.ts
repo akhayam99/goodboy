@@ -1,4 +1,4 @@
-import type { LimitsChip } from '@goodboy/core';
+import type { LimitsChip } from '@goodboy/core/providers';
 import type { ProviderLimitWindow } from '@goodboy/types';
 import { formatAge } from '../../../shared/utils/time/formatAge';
 import { PROVIDER_LABEL } from '../providerLabel';

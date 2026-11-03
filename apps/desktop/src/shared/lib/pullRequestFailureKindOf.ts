@@ -1,4 +1,4 @@
-import type { PullRequestFailureKind } from '@goodboy/core';
+import type { PullRequestFailureKind } from '@goodboy/core/review-source';
 import type { HostFailureKind } from './hostFailure';
 
 const PORT_KIND = {

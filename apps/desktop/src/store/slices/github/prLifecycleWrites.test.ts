@@ -20,7 +20,7 @@ import { mergePr } from './mergePr';
 import { reopenPr } from './reopenPr';
 import { requestReview } from './requestReview';
 import { isReportedError } from '../notifications/reportedError';
-import { STALE_HEAD_MESSAGE } from '@goodboy/core';
+import { STALE_HEAD_MESSAGE } from '@goodboy/core/review-source';
 
 const SESSION_ID = 'session-1' as SessionId;
 const LEDGER_ID = 'project-ledger' as ProjectId;

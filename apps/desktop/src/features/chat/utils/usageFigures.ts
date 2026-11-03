@@ -1,4 +1,4 @@
-import { inputTokensForUsage } from '@goodboy/core';
+import { inputTokensForUsage } from '@goodboy/core/providers';
 import { contextWindowFor } from '../../session/contextWindowFor';
 import type { TurnFooterData } from '../components/TurnFooter/useTurnFooter';
 

@@ -1,4 +1,4 @@
-import { gitlabReviewSource } from '@goodboy/core';
+import { gitlabReviewSource } from '@goodboy/core/review-source';
 import { gitlabMountOf } from '../mount-request/requestOf';
 import type { MountId, SessionId } from '@goodboy/types';
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';

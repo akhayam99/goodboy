@@ -15,7 +15,7 @@
     "apps/desktop/src/__tests__/regressions/test-casts.test.ts": 3,
     "apps/desktop/src/__tests__/regressions/time-formatting-goes-through-the-module.test.ts": 3,
     "apps/desktop/src/__tests__/regressions/token-contrast-floor.test.ts": 1,
-    "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 82,
+    "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 80,
     "apps/desktop/src/features/companion/commandExecutor.test.ts": 4,
     "apps/desktop/src/features/companion/mobileConfinement.test.ts": 35,
     "apps/desktop/src/store/store.story-autorun-turn.test.ts": 1,
@@ -26,7 +26,7 @@
   },
   "config-comment": {},
   "em-dash": {
-    "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 11,
+    "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 10,
     "apps/desktop/src/features/companion/mobileConfinement.test.ts": 4,
     "apps/desktop/src/styles.css": 1
   },

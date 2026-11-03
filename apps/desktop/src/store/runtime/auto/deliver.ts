@@ -9,7 +9,7 @@ import {
   storedDeliveryOf,
   turnGate,
   type AutoBlockReason,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   acceptAutoOutboxStatement,
   autoBudgetCoversSql,

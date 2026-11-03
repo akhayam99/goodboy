@@ -4,7 +4,7 @@ import {
   listResolvePublicationsForSession,
   upsertResolvePublicationThread,
 } from '@goodboy/db';
-import { updateReviewComment } from '@goodboy/core';
+import { updateReviewComment } from '@goodboy/core/github';
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import {

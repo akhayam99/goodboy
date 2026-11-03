@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core/monitoring';
 import { scriptLiveFacts } from './scriptLiveFacts';
 
 const processOf = (

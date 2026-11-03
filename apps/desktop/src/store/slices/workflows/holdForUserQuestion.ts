@@ -1,5 +1,5 @@
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId, WorkflowId } from '@goodboy/types';
-import { extractMarkers, extractProseQuestion } from '@goodboy/core';
+import { extractMarkers, extractProseQuestion } from '@goodboy/core/context';
 import { insertOpenQuestion } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { resetContinueAttempts } from './autoContinue';

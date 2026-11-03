@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { parseHiddenModels } from '@goodboy/core';
+import { parseHiddenModels } from '@goodboy/core/providers';
 import { useShallow } from 'zustand/react/shallow';
 import { DrawerColumn, PageColumn } from '@goodboy/ui';
 import type {

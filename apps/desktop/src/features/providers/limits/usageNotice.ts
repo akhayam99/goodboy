@@ -1,4 +1,4 @@
-import type { LimitsChip } from '@goodboy/core';
+import type { LimitsChip } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import type { NoticeTone } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../providerLabel';

@@ -1,4 +1,4 @@
-import { isApiProvider } from '@goodboy/core';
+import { isApiProvider } from '@goodboy/core/providers';
 import type { ProviderConnectionState, ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { PROVIDER_ORDER } from '../../../features/providers/components/ProviderStudio/providerOrder';

@@ -4,7 +4,7 @@ import type {
   PinnedPort,
   PortRow,
   WatchedSource,
-} from '@goodboy/core';
+} from '@goodboy/core/monitoring';
 
 type Params = {
   readonly rows: ReadonlyArray<PortRow>;

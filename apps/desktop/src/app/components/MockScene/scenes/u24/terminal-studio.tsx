@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { MonitorSnapshot } from '@goodboy/core';
+import type { MonitorSnapshot } from '@goodboy/core/monitoring';
 import type {
   MountId,
   Project,

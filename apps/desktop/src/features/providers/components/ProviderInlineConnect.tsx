@@ -1,4 +1,4 @@
-import { isApiProvider } from '@goodboy/core';
+import { isApiProvider } from '@goodboy/core/providers';
 import { useEffect } from 'react';
 import { Button, ScrollFade } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';

@@ -1,4 +1,4 @@
-import { stripOutcomeLine } from '@goodboy/core';
+import { stripOutcomeLine } from '@goodboy/core/auto';
 import type { NotesRole } from '../../chat/readingOrder/readingOrderOf';
 import { summaryProseOf } from './summaryProseOf';
 

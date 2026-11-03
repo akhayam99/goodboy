@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { REVIEW_REPLY_SAMPLE_SIZE } from '@goodboy/core';
+import { REVIEW_REPLY_SAMPLE_SIZE } from '@goodboy/core/github';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, formatError, ICON_SIZE, Textarea } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

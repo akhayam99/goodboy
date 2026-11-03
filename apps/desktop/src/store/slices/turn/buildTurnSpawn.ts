@@ -1,4 +1,4 @@
-import { renderHandoff } from '@goodboy/core';
+import { renderHandoff } from '@goodboy/core/handoff';
 import { formatError } from '@goodboy/ui';
 import type { AgentTurnSpan } from '@goodboy/types';
 import { AGENT_KIND_DEFAULTS, kindWritesFiles } from '../../../features/session/agent-kind';

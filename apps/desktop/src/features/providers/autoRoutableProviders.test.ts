@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { resolveProvider } from '@goodboy/core';
+import { resolveProvider } from '@goodboy/core/budget';
 import type { ProviderId, SessionProviderPreference, TurnProviderOverride } from '@goodboy/types';
 import { autoRoutableProviders } from './autoRoutableProviders';
 import type { ProviderDisplayInfo } from './providers';

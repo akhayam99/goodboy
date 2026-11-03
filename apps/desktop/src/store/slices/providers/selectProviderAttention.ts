@@ -1,4 +1,4 @@
-import { limitsChipOf, outdatedCliModels } from '@goodboy/core';
+import { limitsChipOf, outdatedCliModels } from '@goodboy/core/providers';
 import { CLI_LABEL } from '../../../features/providers/cliLabel';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import type { AppStore } from '../../store';

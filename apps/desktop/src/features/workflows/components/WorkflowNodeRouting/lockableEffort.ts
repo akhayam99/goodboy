@@ -1,4 +1,4 @@
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 
 type Params = {

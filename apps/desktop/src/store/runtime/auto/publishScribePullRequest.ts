@@ -1,4 +1,4 @@
-import { extractScribeText } from '@goodboy/core';
+import { extractScribeText } from '@goodboy/core/context';
 import { brandId, type MountId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import { scribeKeyOf } from '../../slices/scribe/scribeKeyOf';

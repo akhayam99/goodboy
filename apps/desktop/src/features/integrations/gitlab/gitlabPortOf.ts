@@ -1,4 +1,4 @@
-import { gitlabPullRequestPort, type PullRequestPort } from '@goodboy/core';
+import { gitlabPullRequestPort, type PullRequestPort } from '@goodboy/core/review-source';
 import { gitlabMountOf } from '../../../store/slices/mount-request/requestOf';
 import type { GitlabIntegrationBinding, MountId, SessionId } from '@goodboy/types';
 import type { GetFn } from '../../../store/slice-types';

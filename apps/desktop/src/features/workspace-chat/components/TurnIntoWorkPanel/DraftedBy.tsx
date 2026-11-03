@@ -1,4 +1,4 @@
-import { resolveStoredModelSelection } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { savedRouteEffort } from '../../../../shared/components/RoutingPicker/savedRouteEffort';

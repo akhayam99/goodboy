@@ -3,7 +3,7 @@ import {
   providerFlags,
   providersOnSameBinary,
   type ProviderStatusSlot,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { cliUpdateResultOf } from '../../../features/providers/cliUpdateResult';

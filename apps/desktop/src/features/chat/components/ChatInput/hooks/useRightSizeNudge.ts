@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { assessTurnWeight } from '@goodboy/core';
+import { assessTurnWeight } from '@goodboy/core/providers';
 import type { NudgeOutcome } from '@goodboy/db';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';

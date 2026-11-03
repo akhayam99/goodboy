@@ -1,4 +1,4 @@
-import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core';
+import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core/providers';
 import { useMemo } from 'react';
 import { Band, BAND_ROW_CLASS, cn, ICON_SIZE, Listbox } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';

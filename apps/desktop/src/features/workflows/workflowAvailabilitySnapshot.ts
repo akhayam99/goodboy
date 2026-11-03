@@ -1,11 +1,11 @@
 import {
-  PROVIDER_ID_TO_NAME,
   type HiddenModels,
   providersByHeadroom,
   workingProviders,
   type HeadroomMap,
-  type WorkflowRoutingAvailabilitySnapshot,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
+import { type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core/orchestrator';
+import { PROVIDER_ID_TO_NAME } from '@goodboy/core/budget';
 import {
   PROVIDER_IDS,
   type BudgetAlert,

@@ -1,4 +1,4 @@
-import { extractSpawnModel, PROVIDER_ARG_FLAGS, resolveModelArgs } from '@goodboy/core';
+import { extractSpawnModel, PROVIDER_ARG_FLAGS, resolveModelArgs } from '@goodboy/core/providers';
 import type { ModelKey, ProviderId } from '@goodboy/types';
 
 type Params = {

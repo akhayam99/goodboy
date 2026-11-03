@@ -1,12 +1,11 @@
 import { selectResolution } from '../../runtime/models/selectResolution';
 import { resolutionAsTask } from '../../../features/providers/resolutionAsTask';
 import {
-  formatWorkflowFromNL,
   orchestratorModelPool,
-  type FormattedWorkflowStep,
   type OrchestratorModelOption,
   type WorkflowRoutingAvailabilitySnapshot,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
+import { formatWorkflowFromNL, type FormattedWorkflowStep } from '@goodboy/core/workflows';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type {
   WorkflowStepUpsertArgs,

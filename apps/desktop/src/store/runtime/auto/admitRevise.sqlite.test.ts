@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sha256Hex } from '@goodboy/core';
+import { sha256Hex } from '@goodboy/core/slug';
 import {
   getArtifact,
   getAutoArtifact,

@@ -1,4 +1,4 @@
-import { resolveSlot, type Resolution, type ResolveSlot } from '@goodboy/core';
+import { resolveSlot, type Resolution, type ResolveSlot } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 
 type Params = {

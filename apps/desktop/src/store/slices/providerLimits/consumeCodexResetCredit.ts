@@ -1,4 +1,4 @@
-import { parseResetOutcome } from '@goodboy/core';
+import { parseResetOutcome } from '@goodboy/core/providers';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { CodexResetResult, GetFn, SetFn } from './types';
 

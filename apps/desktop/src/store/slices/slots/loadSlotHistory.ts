@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import type { SlotKey } from '@goodboy/core';
+import type { SlotKey } from '@goodboy/core/context';
 import { listContextSlotHistory } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';

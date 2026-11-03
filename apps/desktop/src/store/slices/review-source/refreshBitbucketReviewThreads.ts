@@ -1,4 +1,4 @@
-import { bitbucketReviewSource } from '@goodboy/core';
+import { bitbucketReviewSource } from '@goodboy/core/review-source';
 import { bitbucketMountOf } from '../mount-request/requestOf';
 import type { MountId, SessionId } from '@goodboy/types';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';

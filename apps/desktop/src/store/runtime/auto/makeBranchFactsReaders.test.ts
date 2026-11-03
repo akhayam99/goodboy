@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import type { BranchFactsRequest } from '@goodboy/core';
+import type { BranchFactsRequest } from '@goodboy/core/auto';
 import {
   brandId,
   type MountId,

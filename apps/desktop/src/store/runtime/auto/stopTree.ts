@@ -1,4 +1,4 @@
-import { substepLinkOf } from '@goodboy/core';
+import { substepLinkOf } from '@goodboy/core/auto';
 import {
   AUTO_OWNER_GUARD_SQL,
   autoOwnerGuardParams,

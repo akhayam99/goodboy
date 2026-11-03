@@ -1,4 +1,4 @@
-import type { WatchedPort } from '@goodboy/core';
+import type { WatchedPort } from '@goodboy/core/monitoring';
 
 type Params = {
   readonly scanned: ReadonlyArray<WatchedPort> | undefined;

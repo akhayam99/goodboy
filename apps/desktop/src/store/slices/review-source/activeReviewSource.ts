@@ -5,7 +5,7 @@ import {
   gitlabMountOf,
   gitlabSessionOf,
 } from '../mount-request/requestOf';
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import type { AppState } from '../../types';
 import { branchGithubOf } from '../github/branchGithubOf';
 import { selectActiveMountId } from '../project-mounts/selectors';

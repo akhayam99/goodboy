@@ -1,4 +1,4 @@
-import { firstOnProvider } from '@goodboy/core';
+import { firstOnProvider } from '@goodboy/core/providers';
 import type { ProviderPolicy, WorkspaceId } from '@goodboy/types';
 import type { GetFn } from './types';
 

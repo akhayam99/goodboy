@@ -1,4 +1,4 @@
-import { isAgentStatusHalted } from '@goodboy/core';
+import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { Agent, TurnState } from '@goodboy/types';
 
 type AgentParams = {

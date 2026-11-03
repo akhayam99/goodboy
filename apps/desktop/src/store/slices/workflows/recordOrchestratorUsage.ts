@@ -1,4 +1,5 @@
-import { runsForWorkflowRun, type OrchestratorUsage } from '@goodboy/core';
+import { type OrchestratorUsage } from '@goodboy/core/orchestrator';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import {
   insertProviderRun,
   insertTelemetry,

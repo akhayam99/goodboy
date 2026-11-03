@@ -24,3 +24,4 @@ export type {
   BranchTemplateProblem,
   BranchValues,
 } from './branchName';
+export { sha256Hex } from './sha256';

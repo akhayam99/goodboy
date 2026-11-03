@@ -1,4 +1,4 @@
-import { autoBudgetOf, isRefusalPayload } from '@goodboy/core';
+import { autoBudgetOf, isRefusalPayload } from '@goodboy/core/auto';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,

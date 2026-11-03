@@ -6,7 +6,7 @@ import {
   type BitbucketRepo,
 } from '../../client';
 import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
-import { bitbucketPrStateKind } from '@goodboy/core';
+import { bitbucketPrStateKind } from '@goodboy/core/review-source';
 
 export type BitbucketPrGroup = Readonly<{
   key: string;

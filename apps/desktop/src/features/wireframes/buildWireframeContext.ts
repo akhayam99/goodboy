@@ -1,4 +1,4 @@
-import { WIREFRAME_SCHEMA_BRIEF } from '@goodboy/core';
+import { WIREFRAME_SCHEMA_BRIEF } from '@goodboy/core/artifacts';
 import type { Agent, IsoDateTime, Session, SessionArtifact, TurnEvent } from '@goodboy/types';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import {

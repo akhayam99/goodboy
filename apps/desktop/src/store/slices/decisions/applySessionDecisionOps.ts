@@ -3,7 +3,7 @@ import {
   type AppliedDecisionOps,
   type DecisionActor,
   type DecisionOp,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 import { listContextSlotsForSession } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';

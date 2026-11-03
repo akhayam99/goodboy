@@ -12,7 +12,7 @@ import {
   type DeliveryArtifactBody,
   type DigestDelegation,
   type PickableMount,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   listAutoArtifactLedger,
   listAutoAttemptsOfDelegation,

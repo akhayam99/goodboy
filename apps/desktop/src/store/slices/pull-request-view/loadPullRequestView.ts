@@ -1,4 +1,4 @@
-import { isPullRequestPortError } from '@goodboy/core';
+import { isPullRequestPortError } from '@goodboy/core/review-source';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { selectBitbucketRequest } from '../mount-request/selectBitbucketRequest';

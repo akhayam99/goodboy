@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
+import type { WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core/orchestrator';
 import type { Step, StepId, WorkflowId } from '@goodboy/types';
 import { revalidateStepRouting } from './revalidateStepRouting';
 

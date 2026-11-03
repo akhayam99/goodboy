@@ -1,4 +1,4 @@
-import { gitlabDraftTitle, stripGitlabDraftPrefix } from '@goodboy/core';
+import { gitlabDraftTitle, stripGitlabDraftPrefix } from '@goodboy/core/review-source';
 
 type StripParams = {
   readonly title: string;

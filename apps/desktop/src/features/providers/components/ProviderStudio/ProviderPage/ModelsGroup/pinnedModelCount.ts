@@ -1,4 +1,4 @@
-import { roleModelChoices } from '@goodboy/core';
+import { roleModelChoices } from '@goodboy/core/providers';
 import type { OverrideSettings, ProviderId } from '@goodboy/types';
 
 type Params = {

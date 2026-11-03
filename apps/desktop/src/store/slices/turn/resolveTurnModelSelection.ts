@@ -2,7 +2,7 @@ import {
   resolveModelForProvider,
   resolveStoredModelSelection,
   type AutoModelChoice,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type {
   EffortLevel,
   ModelSelection,

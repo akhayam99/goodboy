@@ -1,5 +1,5 @@
 import { Tooltip, TruncatedText, cn, FOCUS_RING } from '@goodboy/ui';
-import type { PortRow } from '@goodboy/core';
+import type { PortRow } from '@goodboy/core/monitoring';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { portOwnerPresentation } from '../../portOwnerPresentation';

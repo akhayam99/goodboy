@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, readHeadroom } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, readHeadroom } from '@goodboy/core/providers';
 import { DEFAULT_WORKFLOW_RULES, type WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';

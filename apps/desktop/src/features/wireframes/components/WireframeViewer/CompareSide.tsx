@@ -1,5 +1,5 @@
 import { useMemo, type RefObject } from 'react';
-import type { WireframeDocument } from '@goodboy/core';
+import type { WireframeDocument } from '@goodboy/core/artifacts';
 import type { WireframeArtifact } from '@goodboy/types';
 import { useFrameStage } from '../../hooks/useFrameStage';
 import { screenPagePath } from '../../wireframePagePath';

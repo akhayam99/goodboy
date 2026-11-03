@@ -1,4 +1,4 @@
-import { normalizeWorkflowRole } from '@goodboy/core';
+import { normalizeWorkflowRole } from '@goodboy/core/roles';
 import type { Workflow, WorkflowId, WorkspaceId, EffortLevel } from '@goodboy/types';
 import type { WorkflowUpsertArgs } from '../workflows';
 import type { StepDraft, WorkflowDraft, WorkflowDraftErrors } from './types';

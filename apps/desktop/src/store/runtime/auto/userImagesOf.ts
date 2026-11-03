@@ -1,4 +1,4 @@
-import { isUserPayload } from '@goodboy/core';
+import { isUserPayload } from '@goodboy/core/auto';
 import type { AutoOutboxRow } from '@goodboy/db';
 import type { MessageAttachment } from '@goodboy/types';
 

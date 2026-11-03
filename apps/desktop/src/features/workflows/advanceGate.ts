@@ -1,4 +1,4 @@
-import { classifyWorkflowChain, findReusableAgent } from '@goodboy/core';
+import { classifyWorkflowChain, findReusableAgent } from '@goodboy/core/workflows';
 import type { Agent, Step, Workflow } from '@goodboy/types';
 
 export type WorkflowBlockReason =

@@ -1,4 +1,4 @@
-import { MAX_SLUG_LENGTH, slugify } from '@goodboy/core';
+import { MAX_SLUG_LENGTH, slugify } from '@goodboy/core/slug';
 
 type SlugParams = {
   readonly prefix: string;

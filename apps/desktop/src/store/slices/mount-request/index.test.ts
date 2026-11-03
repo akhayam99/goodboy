@@ -10,7 +10,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { isPullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core';
+import { isPullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core/review-source';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import type { AppStore } from '../../store';
 import { overridesWithAttribution } from '../../../__tests__/helpers/attributionOverrides';

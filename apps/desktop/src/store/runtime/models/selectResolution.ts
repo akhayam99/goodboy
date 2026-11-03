@@ -7,7 +7,7 @@ import {
   type ResolveLayers,
   type ResolvePins,
   type ResolveSlot,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { ProviderId, SessionId, StepSize, WorkspaceId } from '@goodboy/types';
 import { selectModelContext, type ModelScope, type ModelState } from './selectModelContext';
 

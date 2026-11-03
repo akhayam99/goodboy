@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { WORKFLOW_LIBRARY } from '@goodboy/core';
+import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type {
   IsoDateTime,
   Workflow,

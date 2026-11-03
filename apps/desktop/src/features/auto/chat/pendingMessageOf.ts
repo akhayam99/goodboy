@@ -1,4 +1,4 @@
-import { AUTO_BLOCK_TEXT, parseAutoDelegationRole } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, parseAutoDelegationRole } from '@goodboy/core/auto';
 import { AGENT_KIND_META, kindForRole } from '../../session/agent-kind';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { taskTitleOf } from '../taskTitleOf';

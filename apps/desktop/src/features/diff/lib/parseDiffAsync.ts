@@ -1,4 +1,4 @@
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { FileDiff } from '@goodboy/types';
 import type { ParseDiffRequest, ParseDiffResponse } from './parseDiffProtocol';
 

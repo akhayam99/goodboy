@@ -3,7 +3,7 @@ import {
   clampEffortForModel,
   isModelHidden,
   resolveStoredModelSelection,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { Chip } from '@goodboy/ui';
 import type {
   AuxTaskId,

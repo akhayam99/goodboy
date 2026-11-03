@@ -1,4 +1,4 @@
-import { AUTO_GATES, autoTreeCapUsd, isUsableMount, type PickableMount } from '@goodboy/core';
+import { AUTO_GATES, autoTreeCapUsd, isUsableMount, type PickableMount } from '@goodboy/core/auto';
 import type { Database } from '@goodboy/db';
 import {
   brandId,

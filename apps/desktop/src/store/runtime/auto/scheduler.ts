@@ -1,4 +1,4 @@
-import { AUTO_OWNER_LEASE_MS } from '@goodboy/core';
+import { AUTO_OWNER_LEASE_MS } from '@goodboy/core/auto';
 import {
   casAutoTreePhase,
   claimAutoTree,

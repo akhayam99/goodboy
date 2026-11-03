@@ -1,4 +1,4 @@
-import { DELEGATE_TITLE_WORDS } from '@goodboy/core';
+import { DELEGATE_TITLE_WORDS } from '@goodboy/core/auto';
 
 type Params = {
   readonly request: Readonly<Record<string, unknown>>;

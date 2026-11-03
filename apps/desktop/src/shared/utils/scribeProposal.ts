@@ -1,4 +1,4 @@
-import { extractScribeText, type ExtractedScribeText } from '@goodboy/core';
+import { extractScribeText, type ExtractedScribeText } from '@goodboy/core/context';
 import { mergeScribeOutput } from '../../store/slices/scribe/mergeScribeOutput';
 import type { TranscriptItem } from '../../features/chat/utils/transcript-items';
 

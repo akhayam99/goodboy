@@ -1,15 +1,9 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import {
-  PROVIDER_CAPABILITIES,
-  ROLE_REGISTRY,
-  SELECTABLE_AGENT_ROLES,
-  getDefaultTurnModel,
-  isAgentStatusSettled,
-  isSlotKey,
-  runsForWorkflowRun,
-  type SlotKey,
-} from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from '@goodboy/core/providers';
+import { isSlotKey, type SlotKey } from '@goodboy/core/context';
+import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '@goodboy/core/roles';
+import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core/workflows';
 import type {
   AgentId,
   AgentSourceKind,

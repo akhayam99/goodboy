@@ -1,4 +1,4 @@
-import type { AutoRefusalCode } from '@goodboy/core';
+import type { AutoRefusalCode } from '@goodboy/core/auto';
 import { getAutoArtifact, type Database } from '@goodboy/db';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { approveArtifact } from '../../../store/runtime/auto/approveArtifact';

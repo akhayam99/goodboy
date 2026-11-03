@@ -1,5 +1,5 @@
 import type { Session, Workflow, WorkflowRunId } from '@goodboy/types';
-import { sessionLanguageTurnRule } from '@goodboy/core';
+import { sessionLanguageTurnRule } from '@goodboy/core/language';
 
 type SourceParams = {
   readonly session: Session;

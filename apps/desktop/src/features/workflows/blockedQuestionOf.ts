@@ -1,4 +1,4 @@
-import { extractProseQuestion, stripControlMarkers } from '@goodboy/core';
+import { extractProseQuestion, stripControlMarkers } from '@goodboy/core/context';
 import type { TurnEvent } from '@goodboy/types';
 import { lastAssistantMessage } from '../../shared/utils/lastAssistantMessage';
 

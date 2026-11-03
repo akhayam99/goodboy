@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
-import { parseWireframeSource } from '@goodboy/core';
+import { parseWireframeSource } from '@goodboy/core/artifacts';
 import { formatError } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { exportArtifactFolder } from '../../artifacts/artifactFile';

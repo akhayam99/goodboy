@@ -1,4 +1,4 @@
-import { providersAtLimit } from '@goodboy/core';
+import { providersAtLimit } from '@goodboy/core/providers';
 import type { ProviderId, ProviderPolicy, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import { sessionById } from '../sessions/sessionIndex';

@@ -24,12 +24,12 @@ describe('one resolver answers what runs, so no file asks the old entry points',
   it('counts every old entry point a file imports, with type and alias forms', () => {
     expect(
       countOldEntryPointImports({
-        text: "import { resolveRoleRouting } from '@goodboy/core';",
+        text: "import { resolveRoleRouting } from '@goodboy/core/providers';",
       }),
     ).toBe(1);
     expect(
       countOldEntryPointImports({
-        text: "import {\n  resolveTaskModel as taskModel,\n  resolveAuto,\n  type AutoContext,\n} from '@goodboy/core';",
+        text: "import {\n  resolveTaskModel as taskModel,\n  resolveAuto,\n  type AutoContext,\n} from '@goodboy/core/providers';",
       }),
     ).toBe(2);
     expect(
@@ -47,7 +47,7 @@ describe('one resolver answers what runs, so no file asks the old entry points',
   it('leaves the resolver and its siblings alone', () => {
     expect(
       countOldEntryPointImports({
-        text: "import { resolveSlot, explainResolution, type Resolution } from '@goodboy/core';",
+        text: "import { resolveSlot, explainResolution, type Resolution } from '@goodboy/core/providers';",
       }),
     ).toBe(0);
     expect(
@@ -59,7 +59,7 @@ describe('one resolver answers what runs, so no file asks the old entry points',
     const grown = grownEntries({
       current: {
         'apps/desktop/src/features/x/fixture.ts': countOldEntryPointImports({
-          text: "import { resolveRoleRouting } from '@goodboy/core';",
+          text: "import { resolveRoleRouting } from '@goodboy/core/providers';",
         }),
       },
       baseline: {},

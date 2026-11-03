@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core/providers';
 import { describe, expect, it } from 'vitest';
 import type {
   IsoDateTime,

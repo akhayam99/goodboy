@@ -25,7 +25,7 @@ vi.mock('../../../features/providers/provider-lifecycle', async (importOriginal)
 });
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { providerFlags, providersOnSameBinary } from '@goodboy/core';
+import { providerFlags, providersOnSameBinary } from '@goodboy/core/providers';
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,

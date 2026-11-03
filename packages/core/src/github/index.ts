@@ -3,6 +3,7 @@ export {
   GhJsonParseError,
   GhJsonShapeError,
   runJson,
+  runJson as ghRunJson,
   type GhResult,
   type GhRunOptions,
   type GhRunner,

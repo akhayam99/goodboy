@@ -1,4 +1,4 @@
-import { gitlabStateKindOf } from '@goodboy/core';
+import { gitlabStateKindOf } from '@goodboy/core/review-source';
 import type { PullRequestStateKind } from '@goodboy/types';
 import type { GitlabMergeRequest } from './client';
 

@@ -4,7 +4,7 @@ import {
   type WireframeAdjustment,
   type WireframeDevice,
   type WireframeIssue,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import type { WireframeFidelity } from './wireframeFidelity';
 
 export type WireframeImport =

@@ -13,14 +13,14 @@ import {
   type WorkflowMissingProposalPolicy,
   type WorkflowRoutingProposalParseOutcome,
   type WorkflowRoutingResolution,
-} from '@goodboy/core';
+} from '@goodboy/core/orchestrator';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import type { AppStore } from '../../store';
 
 import { rolePicks } from './rolePicks';
-import { readHeadroom, type HeadroomMap } from '@goodboy/core';
+import { readHeadroom, type HeadroomMap } from '@goodboy/core/providers';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {

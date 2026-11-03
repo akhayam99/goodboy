@@ -10,7 +10,7 @@ import {
   type Workspace,
   type WorkspaceId,
 } from '@goodboy/types';
-import { seedWorkflowLibrary } from '@goodboy/core';
+import { seedWorkflowLibrary } from '@goodboy/core/workflows';
 import {
   describeProjectAdoption,
   findProjectByRootPath,

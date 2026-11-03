@@ -1,4 +1,8 @@
-import { bitbucketCheckRuns, bitbucketChecksOf, bitbucketReviewDecisionOf } from '@goodboy/core';
+import {
+  bitbucketCheckRuns,
+  bitbucketChecksOf,
+  bitbucketReviewDecisionOf,
+} from '@goodboy/core/review-source';
 import type {
   IntegrationBinding,
   IntegrationBindingId,

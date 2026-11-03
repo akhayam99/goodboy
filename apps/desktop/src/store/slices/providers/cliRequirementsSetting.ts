@@ -1,4 +1,4 @@
-import type { CliRequirement } from '@goodboy/core';
+import type { CliRequirement } from '@goodboy/core/providers';
 import { isProviderId } from '@goodboy/types/helpers';
 
 export const SETTING_CLI_REQUIREMENTS = 'provider.cliRequirements';

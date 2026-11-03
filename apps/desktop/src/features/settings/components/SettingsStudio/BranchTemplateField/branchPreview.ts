@@ -1,4 +1,4 @@
-import { buildBranchName } from '@goodboy/core';
+import { buildBranchName } from '@goodboy/core/slug';
 import { sessionBranchNaming } from '../../../../../store/slices/sessions/sessionBranchNaming';
 
 type Params = {

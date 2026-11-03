@@ -1,4 +1,4 @@
-import type { MountSnapshot, RemoteRead } from '@goodboy/core';
+import type { MountSnapshot, RemoteRead } from '@goodboy/core/auto';
 import type { AutoJsonObject } from '@goodboy/db';
 import { isRecord } from '@goodboy/types/helpers';
 

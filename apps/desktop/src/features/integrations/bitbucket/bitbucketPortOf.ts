@@ -1,4 +1,4 @@
-import { bitbucketPullRequestPort, type PullRequestPort } from '@goodboy/core';
+import { bitbucketPullRequestPort, type PullRequestPort } from '@goodboy/core/review-source';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { GetFn } from '../../../store/slice-types';
 import { selectBitbucketRequest } from '../../../store/slices/mount-request/selectBitbucketRequest';

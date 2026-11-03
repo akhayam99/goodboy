@@ -1,4 +1,4 @@
-import { catalogModelForId } from '@goodboy/core';
+import { catalogModelForId } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { encodeAuthRequiredMessage, encodeCliTooOldMessage } from '../../../features/chat/turn';

@@ -1,4 +1,4 @@
-import { catalogModelForId, modelIdForSelection } from '@goodboy/core';
+import { catalogModelForId, modelIdForSelection } from '@goodboy/core/providers';
 import { isEffortLevel, type EffortLevel, type ModelKey, type ProviderId } from '@goodboy/types';
 import type { ChatModelChoice } from './defaultChatModel';
 import { resolveChatModel } from './resolveChatModel';

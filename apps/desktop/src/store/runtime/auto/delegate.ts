@@ -1,4 +1,4 @@
-import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core';
+import { parseDelegateSpec, parseProposeSpec } from '@goodboy/core/auto';
 import { getAutoTree, recordAutoRefusal } from '@goodboy/db';
 import { brandId, type AutoBatchId, type AutoRequestId } from '@goodboy/types';
 import { textOf } from '@goodboy/types/helpers';

@@ -1,4 +1,4 @@
-import { computeProviderCostUsd } from '@goodboy/core';
+import { computeProviderCostUsd } from '@goodboy/core/providers';
 import { insertProviderRun, updateProviderRunStatus } from '@goodboy/db';
 import type {
   ChatMessageId,

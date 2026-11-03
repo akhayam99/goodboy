@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { parseWireframeSource, WIREFRAME_NODE_KINDS, type WireframeDocument } from '@goodboy/core';
+import {
+  parseWireframeSource,
+  WIREFRAME_NODE_KINDS,
+  type WireframeDocument,
+} from '@goodboy/core/artifacts';
 import type { WireframeArtifact } from '@goodboy/types';
 import { buildWireframeExport } from './buildWireframeExport';
 

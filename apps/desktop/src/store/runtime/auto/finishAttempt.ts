@@ -1,12 +1,10 @@
 import {
   attributeChanges,
-  captureArtifactFromTurnText,
   isAutoWriterRole,
   parseChildClosing,
   parseRevisionFromTurn,
   publishOfRequest,
   remoteVerdictOf,
-  sha256Hex,
   AUTO_TREE_LIMITS,
   type ChecksVerdict,
   type ChildClosing,
@@ -15,7 +13,9 @@ import {
   type ResultChangedFile,
   type ResultPublish,
   type ResultRemote,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
+import { captureArtifactFromTurnText } from '@goodboy/core/artifacts';
+import { sha256Hex } from '@goodboy/core/slug';
 import {
   getArtifact,
   getAutoAttempt,

@@ -5,14 +5,14 @@ import {
   AUTO_TREE_LIMITS,
   diagnoseAdmission,
   isAutoWriterRole,
-  sha256Hex,
   type AdmissionChild,
   type AdmissionChildRefusal,
   type AdmissionSnapshot,
   type AdmissionSubstep,
   type AutoDelegationRole,
   type AutoRefusalCode,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
+import { sha256Hex } from '@goodboy/core/slug';
 import {
   AUTO_ADMISSION_TREE_ABORT,
   autoAdmissionArtifactAbort,

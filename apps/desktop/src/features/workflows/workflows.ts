@@ -1,7 +1,7 @@
 import { CommandError, invokeCommand, toCommandError } from '../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../shared/lib/db';
+import { normalizeWorkflowRole } from '@goodboy/core/roles';
 import {
-  normalizeWorkflowRole,
   polishStepExpectedOutput,
   polishStepInstruction,
   polishWorkflowGoal,
@@ -10,7 +10,7 @@ import {
   type GoalPolishDeps,
   type StepPolishDeps,
   type StepPolishInput,
-} from '@goodboy/core';
+} from '@goodboy/core/workflows';
 import {
   InvalidWorkflowNodeError,
   NodeNotMutableError,

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { composeBranchFacts } from '@goodboy/core';
+import { composeBranchFacts } from '@goodboy/core/auto';
 import {
   brandId,
   type IsoDateTime,

@@ -1,4 +1,5 @@
-import { getDefaultTurnModel, resolveProvider } from '@goodboy/core';
+import { getDefaultTurnModel } from '@goodboy/core/providers';
+import { resolveProvider } from '@goodboy/core/budget';
 import type {
   ProviderId,
   RoutingDecision,

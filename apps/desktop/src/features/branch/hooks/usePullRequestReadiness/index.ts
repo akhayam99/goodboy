@@ -3,7 +3,7 @@ import {
   pullRequestReviewerGroupsOf,
   pullRequestReviewersOf,
   type PullRequestReviewerGroups,
-} from '@goodboy/core';
+} from '@goodboy/core/review-source';
 import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { pullRequestViewOf } from '../../../../store/slices/pull-request-view/pullRequestViewOf';

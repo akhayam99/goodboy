@@ -1,4 +1,4 @@
-import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core';
+import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core/auto';
 import type { AutoDelegation, AutoPhase } from '@goodboy/db';
 import {
   DEFAULT_WORKFLOW_RULES,

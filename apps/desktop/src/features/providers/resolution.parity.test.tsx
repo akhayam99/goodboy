@@ -13,7 +13,7 @@ vi.mock('../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { DEFAULT_GROUPS, TASKS } from '@goodboy/core';
+import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import type {
   AuxTaskId,
   OverrideSettings,

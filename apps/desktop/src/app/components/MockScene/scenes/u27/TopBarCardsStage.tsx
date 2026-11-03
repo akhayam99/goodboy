@@ -1,4 +1,4 @@
-import { limitsChipOf } from '@goodboy/core';
+import { limitsChipOf } from '@goodboy/core/providers';
 import { FactCard } from '@goodboy/ui';
 import type { BaseDivergence, IsoDateTime, ProviderLimits } from '@goodboy/types';
 import { usageCardOf } from '../../../../../features/chat/components/ProviderUsagePill/usageCardOf';

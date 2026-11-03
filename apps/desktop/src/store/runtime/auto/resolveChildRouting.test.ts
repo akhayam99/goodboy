@@ -11,7 +11,8 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCapabilities, isAutoChildProvider } from '@goodboy/core';
+import { getCapabilities } from '@goodboy/core/providers';
+import { isAutoChildProvider } from '@goodboy/core/auto';
 import type { ProviderId } from '@goodboy/types';
 import { EMPTY_OVERRIDES, aSession, aWorkspace } from '@goodboy/types/testing';
 import type { ProviderDisplayInfo } from '../../../features/providers/providers';

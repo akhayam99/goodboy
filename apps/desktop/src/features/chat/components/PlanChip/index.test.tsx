@@ -12,7 +12,7 @@ const { extractPlanMock, state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@goodboy/core', () => ({ extractPlanFromMarker: extractPlanMock }));
+vi.mock('@goodboy/core/context', () => ({ extractPlanFromMarker: extractPlanMock }));
 vi.mock('../../../../store', () => ({
   useSessionPlans: (sid: string) => state.sessionPlans[sid] ?? [],
 }));

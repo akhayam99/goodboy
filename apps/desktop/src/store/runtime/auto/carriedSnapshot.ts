@@ -1,4 +1,4 @@
-import type { MountSnapshot } from '@goodboy/core';
+import type { MountSnapshot } from '@goodboy/core/auto';
 import { getAutoDelegation, listAutoAttemptsOfDelegation, type AutoDelegation } from '@goodboy/db';
 import { snapshotOf } from './attemptBaseline';
 import type { AgentVerbContext } from './verbContext';

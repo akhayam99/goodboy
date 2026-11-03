@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn, Eyebrow, Tooltip } from '@goodboy/ui';
-import type { WireframeTheme } from '@goodboy/core';
+import type { WireframeTheme } from '@goodboy/core/artifacts';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 
 type Props = {

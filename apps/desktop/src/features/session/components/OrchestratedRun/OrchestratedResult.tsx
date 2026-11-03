@@ -1,6 +1,6 @@
 import { Check, CircleDashed } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
-import { parseRunSummaryText } from '@goodboy/core';
+import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { Session } from '@goodboy/types';
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { RunFinishedActions } from '../AgentTree/RunFinishedActions';

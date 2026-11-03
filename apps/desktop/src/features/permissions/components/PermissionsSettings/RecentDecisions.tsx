@@ -1,6 +1,6 @@
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShallow } from 'zustand/react/shallow';
-import { commandPrefix } from '@goodboy/core';
+import { commandPrefix } from '@goodboy/core/permissions';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { EmptyState, STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';

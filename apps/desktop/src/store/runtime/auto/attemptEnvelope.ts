@@ -12,7 +12,7 @@ import {
   type ResultChangedFile,
   type ResultQuestion,
   type ResultRemote,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { AutoAttempt, AutoDelegation } from '@goodboy/db';
 
 export type AttemptEnvelopeParams = Readonly<{

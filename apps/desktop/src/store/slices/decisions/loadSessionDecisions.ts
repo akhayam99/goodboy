@@ -1,4 +1,4 @@
-import { loadDecisionLedger, seedDecisionLedger } from '@goodboy/core';
+import { loadDecisionLedger, seedDecisionLedger } from '@goodboy/core/context';
 import { listContextSlotsForSession } from '@goodboy/db';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';

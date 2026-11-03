@@ -1,4 +1,4 @@
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, firstOnProvider } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, firstOnProvider } from '@goodboy/core/providers';
 import { FAIL_CLOSED_PERMISSION_MODE } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type {

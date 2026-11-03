@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import type { BranchCommit, DiffView, FileDiff, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus, type DiffFocus } from '../../../../store';
 import {

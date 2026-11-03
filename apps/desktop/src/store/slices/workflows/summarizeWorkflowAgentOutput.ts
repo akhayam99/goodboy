@@ -1,4 +1,4 @@
-import { fallbackStepOutputSummary } from '@goodboy/core';
+import { fallbackStepOutputSummary } from '@goodboy/core/summarizer';
 import type { Agent, AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';

@@ -1,4 +1,5 @@
-import { isAgentStatusSettled, parseRunSummaryText, runsForWorkflowRun } from '@goodboy/core';
+import { parseRunSummaryText } from '@goodboy/core/orchestrator';
+import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core/workflows';
 import {
   parseWorkflowRules,
   type AgentId,

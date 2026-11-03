@@ -1,7 +1,7 @@
 import type { MountId, PrMergeMethod, SessionId } from '@goodboy/types';
 import { gitlabMountOf } from './requestOf';
 import { formatError } from '@goodboy/ui';
-import { isPullRequestPortError } from '@goodboy/core';
+import { isPullRequestPortError } from '@goodboy/core/review-source';
 import { mergeGitlabMr } from '../../../features/integrations/gitlab/mergeGitlabMr';
 import { resolveMrContext, resolveSessionMrTarget } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';

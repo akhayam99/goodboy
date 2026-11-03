@@ -1,4 +1,4 @@
-import { parseRunSummaryText } from '@goodboy/core';
+import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 
 type Params = {
   readonly text: string | null | undefined;

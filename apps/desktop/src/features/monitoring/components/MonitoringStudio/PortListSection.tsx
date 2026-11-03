@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { SectionHeader } from '@goodboy/ui';
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { groupPortRows } from '../../groupPortRows';
 import { PortGroupList } from './PortGroupList';

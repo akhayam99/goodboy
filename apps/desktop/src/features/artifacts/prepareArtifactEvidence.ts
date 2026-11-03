@@ -1,4 +1,4 @@
-import { runsForWorkflowRun } from '@goodboy/core';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import type { AgentId, IsoDateTime, MountId, Session, WorkflowRunId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { buildReportContext, type ReportScoutEvidence } from '../reports/buildReportContext';

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { clampEffortForModel } from '@goodboy/core';
+import { clampEffortForModel } from '@goodboy/core/providers';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import type { Agent, OpenQuestion, ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';

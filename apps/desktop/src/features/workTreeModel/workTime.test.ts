@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { EMPTY_DURATION_HISTORY, type DurationHistory } from '@goodboy/core';
+import { EMPTY_DURATION_HISTORY, type DurationHistory } from '@goodboy/core/estimates';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import { agentWorkTime, estimateKeyOf } from './agentWorkTime';
 import { estimateBasis } from './estimateBasis';

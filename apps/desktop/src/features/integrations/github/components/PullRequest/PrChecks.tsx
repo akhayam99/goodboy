@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import type { PrCheckRun } from '@goodboy/types';
 import { Button, cn, EmptyState, ICON_SIZE, Skeleton, TEXT_ROLE } from '@goodboy/ui';
-import { REVIEW_SOURCE_LABEL, type ReviewSourceKind } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL, type ReviewSourceKind } from '@goodboy/core/review-source';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../../../shared/components/hostIconOf';
 import { CheckRunRow, type CheckRunRowParts } from './CheckRunRow';

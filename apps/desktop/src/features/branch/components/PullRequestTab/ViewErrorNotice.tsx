@@ -1,4 +1,4 @@
-import { REVIEW_SOURCE_LABEL, type PullRequestFailureKind } from '@goodboy/core';
+import { REVIEW_SOURCE_LABEL, type PullRequestFailureKind } from '@goodboy/core/review-source';
 import { Button, Notice } from '@goodboy/ui';
 import type { PullRequestHost } from '@goodboy/types';
 import { openToolSettings } from '../../../integrations/openToolSettings';

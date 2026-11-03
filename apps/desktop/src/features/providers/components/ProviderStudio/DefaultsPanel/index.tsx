@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
-import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
+import { DEFAULT_GROUPS, TASKS } from '@goodboy/core/settings';
 import {
   Band,
   BandStack,

@@ -54,8 +54,8 @@ vi.mock('@goodboy/db', () => ({
   markPrReviewDraftsPublished: markPublishedSpy,
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/github', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/github')>()),
   fetchPrNodeId: fetchPrNodeIdSpy,
   addPullRequestReview: addPullRequestReviewSpy,
 }));

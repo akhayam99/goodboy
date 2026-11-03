@@ -2,7 +2,7 @@ import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   enabledProvidersOf,
   mergeLayers,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import { selectModelContext, type ModelState } from './selectModelContext';
 

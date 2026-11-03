@@ -1,4 +1,4 @@
-import type { WireframeNodeChangeKind, WireframeScreenChangeKind } from '@goodboy/core';
+import type { WireframeNodeChangeKind, WireframeScreenChangeKind } from '@goodboy/core/artifacts';
 
 export const CHANGE_GLYPH = {
   added: '+',

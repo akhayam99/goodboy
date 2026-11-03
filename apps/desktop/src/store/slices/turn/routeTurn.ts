@@ -5,7 +5,7 @@ import {
   CLI_CREDENTIAL,
   PROVIDER_API_KEY_ENV,
   isApiProvider,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId, ProviderRunId, TurnProviderOverride } from '@goodboy/types';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { encodeAuthRequiredMessage } from '../../../features/chat/turn';

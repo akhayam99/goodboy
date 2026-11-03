@@ -1,4 +1,4 @@
-import { EMPTY_USER_FACTS, isResultsPayload, type UserFacts } from '@goodboy/core';
+import { EMPTY_USER_FACTS, isResultsPayload, type UserFacts } from '@goodboy/core/auto';
 import { getAutoTree, insertAutoOutboxStatement, listAutoOutbox, type AutoTree } from '@goodboy/db';
 import { brandId, type AutoOutboxId, type MessageAttachment } from '@goodboy/types';
 import { treeArtifacts } from './treeArtifacts';

@@ -1,4 +1,7 @@
-import { gitlabPullRequestPort, type GitlabPullRequestTransport } from '@goodboy/core';
+import {
+  gitlabPullRequestPort,
+  type GitlabPullRequestTransport,
+} from '@goodboy/core/review-source';
 import type {
   IntegrationBindingId,
   IntegrationCredentialId,

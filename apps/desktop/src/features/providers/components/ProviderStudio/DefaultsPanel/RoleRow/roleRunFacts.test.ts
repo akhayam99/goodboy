@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_GROUPS, ROLE_REGISTRY, resolveRoleRouting, resolveSlot } from '@goodboy/core';
+import { resolveRoleRouting, resolveSlot } from '@goodboy/core/providers';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
+import { DEFAULT_GROUPS } from '@goodboy/core/settings';
 import type { AgentRole } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 import { roleRunFacts } from './roleRunFacts';

@@ -1,4 +1,4 @@
-import { explainResolution, type Resolution } from '@goodboy/core';
+import { explainResolution, type Resolution } from '@goodboy/core/providers';
 import { RESOLVE_NAMES } from '../../../resolveNames';
 
 type Params = {

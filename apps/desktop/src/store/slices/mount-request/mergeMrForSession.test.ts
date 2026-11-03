@@ -23,7 +23,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
-import { isPullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core';
+import { isPullRequestPortError, STALE_HEAD_MESSAGE } from '@goodboy/core/review-source';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import { gitlabMrFixture } from './testing/gitlabMrFixture';
 

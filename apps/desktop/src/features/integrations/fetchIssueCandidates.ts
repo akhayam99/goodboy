@@ -1,4 +1,4 @@
-import { detectRepoSlug } from '@goodboy/core';
+import { detectRepoSlug } from '@goodboy/core/github';
 import type {
   JiraIntegrationConfig,
   SessionExternalTaskProvider,

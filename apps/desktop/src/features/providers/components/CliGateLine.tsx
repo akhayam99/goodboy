@@ -1,5 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
-import type { CliGate } from '@goodboy/core';
+import type { CliGate } from '@goodboy/core/providers';
 import { cn, FOCUS_RING, ICON_SIZE, tintClasses } from '@goodboy/ui';
 
 import { CLI_LABEL } from '../cliLabel';

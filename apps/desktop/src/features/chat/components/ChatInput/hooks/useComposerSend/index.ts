@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { AgentId, Session, TurnProviderOverride } from '@goodboy/types';
-import { resolveStoredModelSelection } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core/providers';
 import { useAppStore } from '../../../../../../store';
 import { restoreDraftOnFailedSend } from '../../../../../../shared/utils/restoreDraftOnFailedSend';
 import {

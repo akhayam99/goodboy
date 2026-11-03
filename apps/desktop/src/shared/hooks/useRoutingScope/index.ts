@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectResolvedSettings } from '../../../store/slices/overrides/selectResolvedSettings';

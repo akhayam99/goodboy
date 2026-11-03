@@ -23,8 +23,9 @@ const h = vi.hoisted(() => ({
   gitlabMrDiff: vi.fn(async () => ''),
 }));
 
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  parseUnifiedDiff: (await importOriginal<typeof import('@goodboy/core')>()).parseUnifiedDiff,
+vi.mock('@goodboy/core/github', async (importOriginal) => ({
+  parseUnifiedDiff: (await importOriginal<typeof import('@goodboy/core/github')>())
+    .parseUnifiedDiff,
 }));
 vi.mock('../../../integrations/github/github', () => ({ ghPrDiff: h.ghPrDiff }));
 vi.mock('../../../integrations/gitlab/client', () => ({ gitlabMrDiff: h.gitlabMrDiff }));
@@ -151,7 +152,7 @@ const BASE_STATE: MockStore = {
 
 let state: MockStore = BASE_STATE;
 
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import { orderLikeTree } from '../../../diff/lib/changeTree';
 import { useReviewDiff } from './useReviewDiff';
 

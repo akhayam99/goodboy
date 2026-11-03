@@ -1,4 +1,4 @@
-import { buildHandoff } from '@goodboy/core';
+import { buildHandoff } from '@goodboy/core/handoff';
 import type {
   Agent,
   AgentHandoff,

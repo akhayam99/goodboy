@@ -1,4 +1,4 @@
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import type { SessionId } from '@goodboy/types';
 import type { SeriesStrip } from '../../store/slices/pr-series/seriesStripsOf';
 import type { SessionSuggestion } from './types';

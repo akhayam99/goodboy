@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import type { WireframeViewport } from '@goodboy/core';
+import type { WireframeViewport } from '@goodboy/core/artifacts';
 import { cn, ScrollFade } from '@goodboy/ui';
 import { frameUrl } from '../../frame/frameUrl';
 import { VIEWPORT_MIN_HEIGHT, VIEWPORT_WIDTH } from '../../wireframePalette';

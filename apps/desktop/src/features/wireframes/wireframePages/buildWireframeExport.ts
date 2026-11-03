@@ -1,4 +1,4 @@
-import { buildWireframeJsonSchema, type WireframeDocument } from '@goodboy/core';
+import { buildWireframeJsonSchema, type WireframeDocument } from '@goodboy/core/artifacts';
 import type { WireframeArtifact } from '@goodboy/types';
 import { artifactFolderName } from '../../artifacts/artifactFolderName';
 import { asWireframeFidelity } from '../wireframeFidelity';

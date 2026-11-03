@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { CopyButton } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { parseOutcomeLine } from '@goodboy/core/auto';
 import {
   extractAllCommentResolved,
   isReviewThreadId,
-  parseOutcomeLine,
   stripControlMarkers,
-} from '@goodboy/core';
+} from '@goodboy/core/context';
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';

@@ -1,5 +1,5 @@
 import { ChoiceCards, POPOVER_WIDTH_CLASS, POPOVER_WIDTH_PX, useDropdown } from '@goodboy/ui';
-import { modeSupportFor } from '@goodboy/core';
+import { modeSupportFor } from '@goodboy/core/permissions';
 import type { ProviderId } from '@goodboy/types';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 import { openPermissionSettings } from '../../../permissions/openPermissionSettings';

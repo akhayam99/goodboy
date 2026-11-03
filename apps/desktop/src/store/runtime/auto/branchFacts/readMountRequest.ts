@@ -1,4 +1,4 @@
-import type { BranchFactsCheck, BranchFactsPart, BranchFactsRequest } from '@goodboy/core';
+import type { BranchFactsCheck, BranchFactsPart, BranchFactsRequest } from '@goodboy/core/auto';
 import { brandId, type MountId, type PullRequestView } from '@goodboy/types';
 import type { AppStore } from '../../../store';
 import { mountRequestEntryOf } from '../../../slices/review-source/mountRequestEntryOf';

@@ -13,7 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { MODEL_CATALOGS, PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { MODEL_CATALOGS, PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { aWorkspace } from '@goodboy/types/testing';
 import type { AppStore } from '../../../../store/store';

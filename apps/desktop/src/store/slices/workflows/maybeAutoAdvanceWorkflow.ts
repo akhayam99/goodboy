@@ -5,7 +5,7 @@ import {
   findReusableAgent,
   isAgentStatusSettled,
   runsForWorkflowRun,
-} from '@goodboy/core';
+} from '@goodboy/core/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import {

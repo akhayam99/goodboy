@@ -4,7 +4,7 @@ import {
   AUTO_MAX_OPEN_CHILDREN,
   diagnoseResume,
   isAutoWriterRole,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   AUTO_RESUME_TREE_ABORT,
   autoResumeTreeStatement,

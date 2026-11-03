@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { WORKFLOW_LIBRARY } from '@goodboy/core';
+import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import {
   brandId,

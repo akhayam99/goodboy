@@ -1,4 +1,4 @@
-import { isResultsPayload } from '@goodboy/core';
+import { isResultsPayload } from '@goodboy/core/auto';
 import { AUTO_OUTCOMES, type AutoOutboxRow } from '@goodboy/db';
 import { brandId, type AgentId, type ProviderRunId } from '@goodboy/types';
 import type { AutoDeliveredArtifact, AutoDeliveredResult } from './state';

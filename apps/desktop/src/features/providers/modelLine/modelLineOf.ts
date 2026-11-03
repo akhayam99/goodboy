@@ -1,5 +1,9 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import { getModelDescriptor, getModelProvider, resolveStoredModelSelection } from '@goodboy/core';
+import {
+  getModelDescriptor,
+  getModelProvider,
+  resolveStoredModelSelection,
+} from '@goodboy/core/providers';
 import { EFFORT_LABEL, EFFORT_LEVELS } from '../../chat/utils/chat-constants';
 import {
   routingLabelParts,

@@ -4,7 +4,7 @@ import {
   type BackgroundAttempt,
   type BackgroundPool,
   type BackgroundResult,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import type { ProviderId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';

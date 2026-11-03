@@ -11,7 +11,7 @@ import {
   clampEffortForModel,
   modelHasEffortAxis,
   resolveStoredModelSelection,
-} from '@goodboy/core';
+} from '@goodboy/core/providers';
 import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { VERBOSITY_LABEL } from '../../../features/settings/verbosity';

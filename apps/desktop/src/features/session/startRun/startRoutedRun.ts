@@ -1,4 +1,4 @@
-import type { AutoLevel } from '@goodboy/core';
+import type { AutoLevel } from '@goodboy/core/auto';
 import {
   DEFAULT_WORKFLOW_RULES,
   brandId,

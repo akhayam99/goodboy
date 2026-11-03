@@ -1,4 +1,4 @@
-import { worstLimitsChip, type LimitsChip } from '@goodboy/core';
+import { worstLimitsChip, type LimitsChip } from '@goodboy/core/providers';
 import {
   AnchoredPopover,
   cn,

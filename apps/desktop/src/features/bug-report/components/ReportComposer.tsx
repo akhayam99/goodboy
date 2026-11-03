@@ -8,7 +8,7 @@ import {
   Terminal,
   BellRing,
 } from 'lucide-react';
-import type { GhRunner } from '@goodboy/core';
+import type { GhRunner } from '@goodboy/core/github';
 import type { GhTokenStatus } from '@goodboy/types';
 import {
   copyToClipboard,

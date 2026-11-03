@@ -10,7 +10,7 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
-import { modeSupportFor } from '@goodboy/core';
+import { modeSupportFor } from '@goodboy/core/permissions';
 import { useAppStore } from '../../../../store';
 
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';

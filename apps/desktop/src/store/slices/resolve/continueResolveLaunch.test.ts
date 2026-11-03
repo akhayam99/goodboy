@@ -37,8 +37,8 @@ vi.mock('@goodboy/db', async (importOriginal) => ({
   markOpenQuestionAnswered: h.answered,
   markOpenQuestionAnswersDelivered: h.delivered,
 }));
-vi.mock('@goodboy/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/core')>()),
+vi.mock('@goodboy/core/context', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core/context')>()),
   removeQuestionsFromSlot: h.removeFromSlot,
 }));
 vi.mock('../../../features/resolve/reviewRows', () => ({ launchRowsOf: () => h.rows }));

@@ -1,4 +1,4 @@
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import { modelLabel } from '../chat/utils/chat-constants';
 import type { ModelKey, ProviderId } from '@goodboy/types';
 

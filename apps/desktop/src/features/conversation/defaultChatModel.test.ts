@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { latestInGroup } from '@goodboy/core';
+import { latestInGroup } from '@goodboy/core/providers';
 import { chatModelLabel } from '../workspace-chat/chatModelLabel';
 import { defaultChatModel } from './defaultChatModel';
 

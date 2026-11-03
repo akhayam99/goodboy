@@ -1,4 +1,4 @@
-import { PermissionEngine } from '@goodboy/core';
+import { PermissionEngine } from '@goodboy/core/permissions';
 import type {
   PermissionDecision,
   PermissionRequest,

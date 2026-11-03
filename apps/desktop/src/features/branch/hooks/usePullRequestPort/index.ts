@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PullRequestPort } from '@goodboy/core';
+import type { PullRequestPort } from '@goodboy/core/review-source';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';

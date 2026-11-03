@@ -1,4 +1,4 @@
-import { isBuiltinStepId } from '@goodboy/core';
+import { isBuiltinStepId } from '@goodboy/core/workflows';
 import type { StepDefId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { isImportableWorkflow } from '../../../features/workflows/isImportableWorkflow';
 import { invokeWorkflowList, invokeWorkflowUpsert } from '../../../features/workflows/workflows';

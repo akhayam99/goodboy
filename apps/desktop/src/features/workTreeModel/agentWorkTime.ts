@@ -1,11 +1,11 @@
+import { clampEffortForModel } from '@goodboy/core/providers';
 import {
-  clampEffortForModel,
   estimateDuration,
   estimateProgress,
   type DurationHistory,
   type DurationUnit,
   type EstimateKey,
-} from '@goodboy/core';
+} from '@goodboy/core/estimates';
 import type { AgentId, AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { providerIdOf } from '../../shared/utils/providerIdOf';
 import { estimateBasis, unknownEstimateBasis } from './estimateBasis';

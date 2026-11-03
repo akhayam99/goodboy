@@ -1,9 +1,5 @@
-import {
-  AUTO_STALE_DECIDE_TEXT,
-  MODEL_CATALOGS,
-  autoBudgetOf,
-  autoTreeSpendOf,
-} from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
+import { AUTO_STALE_DECIDE_TEXT, autoBudgetOf, autoTreeSpendOf } from '@goodboy/core/auto';
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoPhase } from '@goodboy/db';
 import {
   brandId,

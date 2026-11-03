@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getSetting, insertWorkspace } from '@goodboy/db';
-import type { LedgerRow, MonitorSnapshot } from '@goodboy/core';
+import type { LedgerRow, MonitorSnapshot } from '@goodboy/core/monitoring';
 import { nextProjectId, nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
 import {
   buildStoryProject,

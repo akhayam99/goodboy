@@ -22,7 +22,7 @@ vi.mock('@goodboy/db', async () =>
     flagSecurityFindingAgain: h.flagSecurityFindingAgain,
   }),
 );
-vi.mock('@goodboy/core', () => ({ scanTextForSecrets: h.scanTextForSecrets }));
+vi.mock('@goodboy/core/secret-scan', () => ({ scanTextForSecrets: h.scanTextForSecrets }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { dismissSecurityFinding } from './dismissSecurityFinding';

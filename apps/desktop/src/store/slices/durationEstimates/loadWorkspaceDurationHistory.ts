@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { ESTIMATE_WINDOW_MS, buildDurationHistory } from '@goodboy/core';
+import { ESTIMATE_WINDOW_MS, buildDurationHistory } from '@goodboy/core/estimates';
 import { listTurnSpans, listWorkspaceTurnSpans } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { LoadWorkspaceDurationHistoryParams, SetFn } from './types';

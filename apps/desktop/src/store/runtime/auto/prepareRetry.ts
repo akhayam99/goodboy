@@ -1,4 +1,8 @@
-import { parseAutoDelegationRole, publishOfRequest, type DelegateChildSpec } from '@goodboy/core';
+import {
+  parseAutoDelegationRole,
+  publishOfRequest,
+  type DelegateChildSpec,
+} from '@goodboy/core/auto';
 import {
   getAutoArtifactVersionOfAttempt,
   getAutoDelegation,

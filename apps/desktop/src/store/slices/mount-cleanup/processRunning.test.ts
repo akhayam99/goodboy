@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core';
+import type { MonitorProcess, MonitorSnapshot } from '@goodboy/core/monitoring';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import type { MountId, SessionId } from '@goodboy/types';
 import { mountCleanupBlockers, processesInWorktree } from './cleanupPolicy';

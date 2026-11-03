@@ -1,4 +1,4 @@
-import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core';
+import { autoBudgetOf, autoTreeSpendOf } from '@goodboy/core/auto';
 import {
   brandId,
   type Agent,

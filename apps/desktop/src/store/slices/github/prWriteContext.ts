@@ -1,4 +1,4 @@
-import { PULL_REQUEST_NOUNS, type PullRequestPort } from '@goodboy/core';
+import { PULL_REQUEST_NOUNS, type PullRequestPort } from '@goodboy/core/review-source';
 import type { MountId, Session, SessionId } from '@goodboy/types';
 import { ReportedError } from '../notifications/reportedError';
 import type { SessionRepo } from '../worktrees/resolveSessionRepo';

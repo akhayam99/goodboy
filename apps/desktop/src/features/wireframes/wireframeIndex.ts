@@ -3,7 +3,7 @@ import {
   type WireframeAction,
   type WireframeDocument,
   type WireframeNode,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 
 export type WireframeIndex = Readonly<{
   screenByNodeId: ReadonlyMap<string, string>;

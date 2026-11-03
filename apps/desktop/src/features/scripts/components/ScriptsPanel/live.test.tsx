@@ -13,7 +13,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { insertProject, insertWorkspace } from '@goodboy/db';
-import type { MonitorSnapshot } from '@goodboy/core';
+import type { MonitorSnapshot } from '@goodboy/core/monitoring';
 import type {
   MountId,
   Project,

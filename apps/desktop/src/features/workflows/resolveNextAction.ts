@@ -1,4 +1,4 @@
-import { findReusableAgent, isAgentStatusHalted } from '@goodboy/core';
+import { findReusableAgent, isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { Agent, AgentId, OpenQuestion, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from './advanceGate';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';

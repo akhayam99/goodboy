@@ -1,4 +1,4 @@
-import { resolveSlot } from '@goodboy/core';
+import { resolveSlot } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useAutoLimitContext } from './useAutoLimitContext';

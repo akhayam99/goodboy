@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { extractPlanFromMarker } from '@goodboy/core';
+import { extractPlanFromMarker } from '@goodboy/core/context';
 import { useSessionPlans } from '../../../../store';
 import { TranscriptShell } from '../TranscriptShell';
 import { ICON_SIZE, tintClasses } from '@goodboy/ui';

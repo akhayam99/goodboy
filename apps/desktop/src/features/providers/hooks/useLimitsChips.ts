@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { selectLimitsChips, type LimitsChip } from '@goodboy/core';
+import { selectLimitsChips, type LimitsChip } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useNow } from '../../../shared/hooks/useNow';

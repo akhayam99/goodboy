@@ -1,4 +1,4 @@
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import {
   CHAT_PROVIDER_IDS,
   isEffortLevel,

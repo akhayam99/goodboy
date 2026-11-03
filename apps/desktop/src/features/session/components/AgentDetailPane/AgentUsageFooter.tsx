@@ -1,5 +1,5 @@
 import { AnchoredPopover, useDropdown } from '@goodboy/ui';
-import { contextTokensForUsage } from '@goodboy/core';
+import { contextTokensForUsage } from '@goodboy/core/providers';
 import { usageFigures } from '../../../chat/utils/usageFigures';
 import { USAGE_CARD_MAX_WIDTH } from '../../../chat/utils/usageCardMaxWidth';
 import { TurnFooterDetail } from '../../../chat/components/TurnFooter/TurnFooterDetail';

@@ -1,12 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import {
-  PROVIDER_CAPABILITIES,
-  AUTO_DEFAULTS,
-  AUTO_OWN_PROVIDERS,
-  PLAN_KIT_GUIDE,
-  ROLE_REGISTRY,
-} from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS } from '@goodboy/core/providers';
+import { AUTO_OWN_PROVIDERS } from '@goodboy/core/auto';
+import { ROLE_REGISTRY } from '@goodboy/core/roles';
+import { PLAN_KIT_GUIDE } from '@goodboy/core/artifacts';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {

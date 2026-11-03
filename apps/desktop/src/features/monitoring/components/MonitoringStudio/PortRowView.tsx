@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ROW_HOVER, StatusDot, cn } from '@goodboy/ui';
-import type { MonitorProcess, PortRow } from '@goodboy/core';
+import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { portAnchorKey } from '../../../actions/portAnchorKey';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';

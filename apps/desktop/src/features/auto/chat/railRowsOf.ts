@@ -1,4 +1,4 @@
-import { substepLinkOf } from '@goodboy/core';
+import { substepLinkOf } from '@goodboy/core/auto';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { Agent, AgentId, TurnState } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';

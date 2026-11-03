@@ -1,5 +1,9 @@
 import type { Session, SessionId } from '@goodboy/types';
-import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
+import {
+  classifyWorkflowChain,
+  findReusableAgent,
+  runsForWorkflowRun,
+} from '@goodboy/core/workflows';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { resolveRootAgent } from '../../../../session/agent-kind';
 import { useSelectedWorkflowRun } from '../../../../session/hooks/useSelectedWorkflowRun';

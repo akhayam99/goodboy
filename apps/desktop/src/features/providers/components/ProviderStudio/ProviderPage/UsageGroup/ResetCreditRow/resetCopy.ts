@@ -1,4 +1,4 @@
-import type { ResetAdvice } from '@goodboy/core';
+import type { ResetAdvice } from '@goodboy/core/providers';
 import { formatDateTime } from '../../../../../../../shared/utils/time/formatDateTime';
 import { formatDayMonth } from '../../../../../../../shared/utils/time/formatDayMonth';
 import { formatLimitReset, formatTimeUntil } from '../../../../../limits/formatLimitReset';

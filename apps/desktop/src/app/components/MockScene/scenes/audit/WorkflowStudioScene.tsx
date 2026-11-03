@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { WORKFLOW_LIBRARY, normalizeAgentRole } from '@goodboy/core';
+import { normalizeAgentRole } from '@goodboy/core/roles';
+import { WORKFLOW_LIBRARY } from '@goodboy/core/workflows';
 import type { StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { WorkflowStudio } from '../../../../../features/workflows/components/WorkflowStudio';
 import { useAppStore } from '../../../../../store';

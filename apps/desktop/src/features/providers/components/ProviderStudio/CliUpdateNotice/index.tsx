@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { cleanCliVersion, newestCliVersion } from '@goodboy/core';
+import { cleanCliVersion, newestCliVersion } from '@goodboy/core/providers';
 import { Button, Notice } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';

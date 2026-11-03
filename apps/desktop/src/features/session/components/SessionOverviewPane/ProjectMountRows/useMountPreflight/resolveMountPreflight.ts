@@ -1,4 +1,4 @@
-import { availableBranchName, slugify } from '@goodboy/core';
+import { availableBranchName, slugify } from '@goodboy/core/slug';
 import type { MountId } from '@goodboy/types';
 import { branchLeaf } from '../../../../../../store/slices/sessions/branchLeaf';
 import type { MountPlan } from '../../../../../../store/slices/sessions/mountPlan';

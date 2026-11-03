@@ -1,4 +1,4 @@
-import { gitlabDefaultMergeMethodOf, isPullRequestPortError } from '@goodboy/core';
+import { gitlabDefaultMergeMethodOf, isPullRequestPortError } from '@goodboy/core/review-source';
 import type { PrMergeMethod, ProjectId, WorkspaceId } from '@goodboy/types';
 import { gitlabPullRequestTransport } from './gitlabPullRequestTransport';
 

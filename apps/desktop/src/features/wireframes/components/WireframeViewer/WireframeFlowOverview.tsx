@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { cn } from '@goodboy/ui';
-import type { WireframeDocument } from '@goodboy/core';
+import type { WireframeDocument } from '@goodboy/core/artifacts';
 import type { WireframeIndex } from '../../wireframeIndex';
 import {
   EDGE_PAINT,

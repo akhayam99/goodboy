@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoTreeCapUsd, type AutoBudgetFacts } from '@goodboy/core';
+import { autoTreeCapUsd, type AutoBudgetFacts } from '@goodboy/core/auto';
 import { autoLimitWordsOf } from './autoLimitWordsOf';
 
 type FactsParams = {

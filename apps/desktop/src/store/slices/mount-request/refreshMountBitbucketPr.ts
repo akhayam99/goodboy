@@ -1,4 +1,4 @@
-import { bitbucketChecksOf, bitbucketReviewDecisionOf } from '@goodboy/core';
+import { bitbucketChecksOf, bitbucketReviewDecisionOf } from '@goodboy/core/review-source';
 import { listMountPullRequestLinks } from '@goodboy/db';
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import {

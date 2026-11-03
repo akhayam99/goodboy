@@ -7,7 +7,7 @@ import {
   recordAgentStatus,
   saveWorkflow,
 } from '@goodboy/db';
-import { ORCHESTRATOR_SYSTEM_PROMPT } from '@goodboy/core';
+import { ORCHESTRATOR_SYSTEM_PROMPT } from '@goodboy/core/orchestrator';
 import type {
   AgentId,
   IsoDateTime,

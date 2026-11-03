@@ -1,4 +1,4 @@
-import { DEFAULT_AUTO_LEVEL, type AutoLevel } from '@goodboy/core';
+import { DEFAULT_AUTO_LEVEL, type AutoLevel } from '@goodboy/core/auto';
 import type { Database } from '@goodboy/db';
 import { autoLevelSetting, type AutoLevelTarget } from './autoLevelSetting';
 

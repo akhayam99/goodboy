@@ -1,4 +1,4 @@
-import { resolveSlot } from '@goodboy/core';
+import { resolveSlot } from '@goodboy/core/providers';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import { selectModelContext } from '../../../store/runtime/models/selectModelContext';

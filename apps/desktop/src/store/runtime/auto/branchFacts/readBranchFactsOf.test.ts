@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { BranchFactsRequest } from '@goodboy/core';
+import type { BranchFactsRequest } from '@goodboy/core/auto';
 import { brandId, type SessionId } from '@goodboy/types';
 import type { ReadBranchFactsParams } from '../ports';
 import { readBranchFactsOf, type BranchFactsReaders } from './readBranchFactsOf';

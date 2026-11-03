@@ -1,4 +1,4 @@
-import type { LimitsChip } from '@goodboy/core';
+import type { LimitsChip } from '@goodboy/core/providers';
 import { FactCard } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { limitsCardOf } from './limitsCardOf';

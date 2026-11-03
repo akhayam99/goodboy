@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import type { DurationUnit } from '@goodboy/core';
+import type { DurationUnit } from '@goodboy/core/estimates';
 import type { AgentId, AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { agentWorkTime, estimateKeyOf } from '../agentWorkTime';
 import type { RowPhase } from '../rowState';

@@ -84,8 +84,8 @@ vi.mock('../../../features/integrations/linear/client', async () =>
 vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
-vi.mock('@goodboy/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@goodboy/core')>();
+vi.mock('@goodboy/core/orchestrator', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@goodboy/core/orchestrator')>();
   return {
     ...original,
     OrchestratorClient: vi.fn(function () {

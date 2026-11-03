@@ -1,4 +1,4 @@
-import type { GitlabReviewTransport } from '@goodboy/core';
+import type { GitlabReviewTransport } from '@goodboy/core/review-source';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import {
   gitlabListMrDiscussions,

@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole } from '@goodboy/core';
+import { parseAutoDelegationRole } from '@goodboy/core/auto';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { AGENT_KIND_META, kindForRole } from '../../session/agent-kind';
 

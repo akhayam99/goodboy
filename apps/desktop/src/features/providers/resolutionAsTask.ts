@@ -1,4 +1,4 @@
-import type { Resolution } from '@goodboy/core';
+import type { Resolution } from '@goodboy/core/providers';
 import type { TaskModelPreference } from '@goodboy/types';
 
 type Params = {

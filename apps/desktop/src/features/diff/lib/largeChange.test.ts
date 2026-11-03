@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { parseUnifiedDiff } from '@goodboy/core';
+import { parseUnifiedDiff } from '@goodboy/core/github';
 import { LARGE_PATCH } from '../../../app/components/MockScene/scenes/brand/largeDiffPatch';
 import { buildChangeTree } from './changeTree';
 

@@ -1,4 +1,4 @@
-import { isApiProvider, limitsChipOf, outdatedCliModels } from '@goodboy/core';
+import { isApiProvider, limitsChipOf, outdatedCliModels } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { AppStore } from '../../store/store';

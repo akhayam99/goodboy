@@ -1,4 +1,4 @@
-import { EMPTY_USER_FACTS } from '@goodboy/core';
+import { EMPTY_USER_FACTS } from '@goodboy/core/auto';
 import { insertAutoOutbox, type AutoOutboxKind } from '@goodboy/db';
 import { brandId, type AutoOutboxId } from '@goodboy/types';
 import type { AutoTurnEnded } from '../ports';

@@ -1,4 +1,4 @@
-import { isAgentSettled } from '@goodboy/core';
+import { isAgentSettled } from '@goodboy/core/workflows';
 import type { AgentId } from '@goodboy/types';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { AGENT_KIND_META, type AgentKind } from '../../../session/agent-kind';

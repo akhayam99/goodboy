@@ -1,4 +1,4 @@
-import type { WireframeDocument } from '@goodboy/core';
+import type { WireframeDocument } from '@goodboy/core/artifacts';
 import type { ArtifactFolderFile } from '../../artifacts/artifactFile';
 import type { WireframeFidelity } from '../wireframeFidelity';
 import {

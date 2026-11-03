@@ -1,4 +1,4 @@
-import type { AutoContext } from '@goodboy/core';
+import type { AutoContext } from '@goodboy/core/providers';
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import type { ExecutedAgentRouting } from '../../../store/slices/turn/executedAgentRouting';
 import { EFFORT_LEVELS } from '../../chat/utils/chat-constants';

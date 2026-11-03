@@ -1,4 +1,4 @@
-import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
+import type { LimitsChip as LimitsChipModel } from '@goodboy/core/providers';
 import { cn, FOCUS_RING, ICON_SIZE, TOP_BAR_CONTROL } from '@goodboy/ui';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';

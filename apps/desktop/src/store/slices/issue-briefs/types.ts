@@ -1,4 +1,4 @@
-import type { IssueBrief, IssueBriefFailure } from '@goodboy/core';
+import type { IssueBrief, IssueBriefFailure } from '@goodboy/core/summarizer';
 import type {
   ProviderId,
   SessionExternalTaskProvider,

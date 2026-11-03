@@ -6,7 +6,7 @@ import {
   type AdmissionChild,
   type AdmissionParentFacts,
   type AdmissionSnapshot,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   getAutoArtifact,
   getAutoTree,

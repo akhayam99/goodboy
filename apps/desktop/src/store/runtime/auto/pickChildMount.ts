@@ -4,7 +4,7 @@ import {
   type AutoDelegationRole,
   type MountPickOutcome,
   type PickableMount,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import type { SessionId } from '@goodboy/types';
 import type { AutoPorts } from './ports';
 

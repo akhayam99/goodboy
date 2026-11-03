@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { resolveModelArgs } from '@goodboy/core';
+import { resolveModelArgs } from '@goodboy/core/providers';
 import type { RoutingDecision } from '@goodboy/types';
 import { agentPinApplies } from './agentPinApplies';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';

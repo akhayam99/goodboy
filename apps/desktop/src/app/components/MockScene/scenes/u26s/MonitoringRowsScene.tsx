@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { LedgerRow, MonitorSnapshot, WatchedPort } from '@goodboy/core';
+import type { LedgerRow, MonitorSnapshot, WatchedPort } from '@goodboy/core/monitoring';
 import { MonitoringStudio } from '../../../../../features/monitoring/components/MonitoringStudio';
 import { useAppStore } from '../../../../../store';
 import { useSceneClicks } from '../audit/useSceneClicks';

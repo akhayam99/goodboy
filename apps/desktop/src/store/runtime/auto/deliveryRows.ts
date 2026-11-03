@@ -1,4 +1,4 @@
-import { storedDeliveryOf } from '@goodboy/core';
+import { storedDeliveryOf } from '@goodboy/core/auto';
 import type { AutoOutboxKind, AutoOutboxRow, AutoPhase } from '@goodboy/db';
 
 const KIND_RANK: Readonly<Record<AutoOutboxKind, number>> = {

@@ -6,7 +6,7 @@ import {
   publishOfResult,
   type RemoteRead,
   type ResultPublish,
-} from '@goodboy/core';
+} from '@goodboy/core/auto';
 import {
   getAutoDelegation,
   listAutoAttemptsOfDelegation,

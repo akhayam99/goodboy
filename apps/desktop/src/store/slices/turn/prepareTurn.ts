@@ -1,10 +1,10 @@
+import { isFallbackStepOutputSummary } from '@goodboy/core/summarizer';
+import { type HandoffEarlierStep } from '@goodboy/core/handoff';
 import {
   buildChainCarryForward,
   buildStepPrompt,
-  isFallbackStepOutputSummary,
   runsForWorkflowRun,
-  type HandoffEarlierStep,
-} from '@goodboy/core';
+} from '@goodboy/core/workflows';
 import type { IsoDateTime, ProviderRunId, Step, TurnEvent, WorkflowRunId } from '@goodboy/types';
 import { blockRunStepOnGoneMount } from '../workflows/runMount/blockRunStepOnGoneMount';
 import { pinnedMountIdOf } from '../workflows/runMount/pinnedMountIdOf';

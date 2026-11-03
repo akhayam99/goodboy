@@ -26,7 +26,7 @@ vi.mock('../../../auto/useAutoTreeLimit', () => ({
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { brandedId } from '../../../history/testing/brandedId';
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core/providers';
 import type {
   AgentId,
   IsoDateTime,

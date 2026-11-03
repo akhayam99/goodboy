@@ -5,7 +5,7 @@ import {
   type WireframeDocument,
   type WireframeNode,
   type WireframeScreen,
-} from '@goodboy/core';
+} from '@goodboy/core/artifacts';
 import { Button, cn, Eyebrow, Notice, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';

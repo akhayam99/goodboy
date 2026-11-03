@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { MODEL_CATALOGS } from '@goodboy/core';
+import { MODEL_CATALOGS } from '@goodboy/core/providers';
 import { SETTING_HIDDEN_MODELS } from '../../../../../settings/settings';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import { ModelsGroup } from './index';
