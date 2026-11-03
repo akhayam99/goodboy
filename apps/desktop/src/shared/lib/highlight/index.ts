@@ -25,10 +25,13 @@ const createWorkerTransport = (): Transport | null => {
   let nextId = 0;
   let isBroken = false;
   const pending = new Map<number, { resolve: (lines: SyntaxLines | null) => void }>();
-  worker.onmessage = (event: MessageEvent<HighlightResponse>) => {
+  worker.onmessage = (event: MessageEvent<HighlightResponse | null>) => {
+    if (event.data == null) {
+      return;
+    }
     const entry = pending.get(event.data.id);
     pending.delete(event.data.id);
-    entry?.resolve(event.data.lines);
+    entry?.resolve(event.data.lines ?? null);
   };
   worker.onerror = () => {
     isBroken = true;
