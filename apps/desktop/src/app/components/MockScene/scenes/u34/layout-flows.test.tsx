@@ -46,7 +46,9 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
       <Scene />
     </ToastProvider>,
   );
-  expect(await screen.findByRole('heading', { level: 1 })).toBeDefined();
+  const title = await screen.findByRole('heading', { level: 1 });
+  expect(title.textContent).toMatch(/limit check/);
+  expect(title.textContent).not.toMatch(/webhooks/);
   expect(container.querySelector('[data-running-rows]')).not.toBeNull();
   if (id === 'u34-u30-active-tool') {
     const rail = screen.getByRole('toolbar', { name: 'Session tools' });

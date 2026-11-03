@@ -152,7 +152,7 @@ describe('the Done card lists what finished last', () => {
     expect(doneCard().querySelector('[data-done-line]')).toBeNull();
   });
 
-  it('marks an unread reply with a dot and counts it in the header: Done 5, 2 unread', async () => {
+  it('marks an unread reply with a dot and leaves the unread count to the New since card', async () => {
     seedCentralColumn({ kind: 'finished' });
     markUnread({ agentIds: [CI_FIX, LAST_STEP] });
     render(
@@ -163,7 +163,7 @@ describe('the Done card lists what finished last', () => {
     await settle();
 
     expect(doneCard().querySelector('[data-overview-count]')?.textContent).toBe('5');
-    expect(noteOf()).toBe(', 2 unread');
+    expect(noteOf()).toBeNull();
     expect(latestRows().map((row) => row.hasAttribute('data-unread'))).toEqual([true, true, false]);
     expect(within(doneCard()).getAllByRole('img', { name: 'Unread reply' })).toHaveLength(2);
     expect(within(doneCard()).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
@@ -217,6 +217,7 @@ describe('the Done card lists what finished last', () => {
     expect(noteOf()).toBeNull();
     expect(within(doneCard()).queryByRole('img', { name: 'Unread reply' })).toBeNull();
     expect(within(doneCard()).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    expect(doneCard().querySelector('[data-done-latest] .size-4')).toBeNull();
   });
 
   it('clears the dots and the note from Mark all seen', async () => {
@@ -228,7 +229,7 @@ describe('the Done card lists what finished last', () => {
       </ToastProvider>,
     );
     await settle();
-    expect(noteOf()).toBe(', 1 unread');
+    expect(within(doneCard()).getAllByRole('img', { name: 'Unread reply' })).toHaveLength(1);
 
     await act(async () => {
       fireEvent.click(within(newSinceCard()).getByRole('button', { name: 'Mark all seen' }));

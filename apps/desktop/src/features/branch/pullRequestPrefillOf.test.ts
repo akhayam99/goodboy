@@ -80,6 +80,21 @@ describe('pullRequestPrefillOf', () => {
     expect(prefill.body).not.toContain('Closes');
   });
 
+  it('leaves fixup commits out and does not repeat the title in the body', () => {
+    const prefill = pullRequestPrefillOf({
+      commits: [
+        commit({ subject: 'Keep the processor event id on every credit row', timestamp: 100 }),
+        commit({ subject: 'Reject a second posting for the same event id', timestamp: 200 }),
+        commit({ subject: 'fixup! Reject a second posting for the same event id', timestamp: 300 }),
+      ],
+      tasks: [],
+      branch: BRANCH,
+    });
+
+    expect(prefill.title).toBe('Keep the processor event id on every credit row');
+    expect(prefill.body).toBe('- Reject a second posting for the same event id');
+  });
+
   it('falls back to the issue title when the branch has no commit yet', () => {
     expect(pullRequestPrefillOf({ commits: [], tasks: [LINEAR], branch: BRANCH })).toEqual({
       title: 'HL-1372: Member nav labels overflow',
