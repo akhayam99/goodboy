@@ -121,4 +121,61 @@ describe('parseDiffAsync', () => {
     expect(after.map((file) => file.path)).toEqual(['ledger.ts']);
     expect(handles[0]?.posted).toHaveLength(2);
   });
+
+  it('rejects a missing text and never posts it to the worker', async () => {
+    const handles: FakeWorkerHandle[] = [];
+    vi.stubGlobal(
+      'Worker',
+      class {
+        onmessage: FakeWorkerHandle['onmessage'] = null;
+        onerror: FakeWorkerHandle['onerror'] = null;
+        readonly posted: ParseDiffRequest[] = [];
+        constructor() {
+          handles.push(this);
+        }
+        postMessage(request: ParseDiffRequest) {
+          this.posted.push(request);
+        }
+        terminate() {}
+      },
+    );
+    const parseDiffAsync = await loadFresh();
+    const missing: unknown = JSON.parse('null');
+    const raw = typeof missing === 'string' ? missing : Reflect.get({}, 'raw');
+
+    await expect(parseDiffAsync({ raw })).rejects.toThrow('The diff text is missing');
+    expect(handles).toHaveLength(0);
+  });
+
+  it('ignores a null reply from the worker without throwing', async () => {
+    const handles: FakeWorkerHandle[] = [];
+    vi.stubGlobal(
+      'Worker',
+      class {
+        onmessage: FakeWorkerHandle['onmessage'] = null;
+        onerror: FakeWorkerHandle['onerror'] = null;
+        readonly posted: ParseDiffRequest[] = [];
+        constructor() {
+          handles.push(this);
+        }
+        postMessage(request: ParseDiffRequest) {
+          this.posted.push(request);
+        }
+        terminate() {}
+      },
+    );
+    const parseDiffAsync = await loadFresh();
+
+    const pending = parseDiffAsync({ raw: PATCH });
+    const handler = handles[0]?.onmessage;
+
+    const nothing = new MessageEvent<ParseDiffResponse>('message', {
+      data: Reflect.get({}, 'reply'),
+    });
+
+    expect(() => handler?.(nothing)).not.toThrow();
+    handler?.(new MessageEvent<ParseDiffResponse>('message', { data: { id: 0, files: null } }));
+
+    expect((await pending).map((file) => file.path)).toEqual(['ledger.ts']);
+  });
 });
