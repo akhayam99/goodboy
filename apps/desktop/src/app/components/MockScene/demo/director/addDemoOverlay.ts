@@ -12,7 +12,8 @@ export const addDemoOverlay = ({ answers }: Params): void => {
     return;
   }
   const previous = Reflect.get(internals, 'invoke');
-  const fallback: Invoke | null = typeof previous === 'function' ? previous : null;
+  const isDispatcher = Reflect.get(internals, 'isGoodboyDemo') === true;
+  const fallback: Invoke | null = typeof previous === 'function' && !isDispatcher ? previous : null;
   Reflect.set(internals, 'invoke', async (command: string, ...rest: ReadonlyArray<unknown>) => {
     if (command in answers) {
       return answers[command];

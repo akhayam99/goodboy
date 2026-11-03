@@ -20,7 +20,8 @@ export const OrchestratedContinue = ({
   label = ORCHESTRATED_COPY.continueLabel,
 }: Props) => {
   const continueWithHint = useAppStore((state) => state.continueWithHint);
-  const [text, setText] = useState('');
+  const text = useAppStore((state) => state.orchestratorHintDrafts[runId] ?? '');
+  const setOrchestratorHintDraft = useAppStore((state) => state.setOrchestratorHintDraft);
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const files = usePromptFiles({ note: 'Files go to the next agent' });
@@ -39,7 +40,7 @@ export const OrchestratedContinue = ({
         text,
         ...(attachments.length > 0 && { attachments }),
       });
-      setText('');
+      setOrchestratorHintDraft({ workflowRunId: runId, text: '' });
       files.clear();
     } catch (cause) {
       setError(formatError(cause));
@@ -77,7 +78,7 @@ export const OrchestratedContinue = ({
         label={label}
         placeholder={label}
         value={text}
-        onChange={setText}
+        onChange={(next) => setOrchestratorHintDraft({ workflowRunId: runId, text: next })}
         onSubmit={() => void send()}
         isSubmitBlocked={!canSend}
         disabled={isSending}
