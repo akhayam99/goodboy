@@ -65,7 +65,9 @@ describe('the u21 files rail scene', () => {
     expect(fileRail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();
     expect(fileRail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
     expect(within(toolbar()).queryByRole('button', { name: /^Files/ })).toBeNull();
-    expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
+    const title = screen.getByRole('heading', { level: 1 });
+    expect(title.textContent).toMatch(/fix-duplicate-credit/);
+    expect(title.textContent).not.toBe('Files');
     expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
   });
 });

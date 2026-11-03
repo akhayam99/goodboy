@@ -460,11 +460,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               sessionId={sessionId}
               host={host}
               pr={pr}
-              fallbackTitle={
-                tab === 'pr'
-                  ? identity.label
-                  : (tabs.find((entry) => entry.id === tab)?.label ?? identity.label)
-              }
+              fallbackTitle={identity.label}
               line={
                 startLine ??
                 (pr === null ? null : (
