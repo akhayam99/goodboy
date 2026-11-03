@@ -1,12 +1,10 @@
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo } from 'react';
 import { cn, FOCUS_RING } from '@goodboy/ui';
-import { LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
+import { HANGING_INDENT, LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
 import { useBranchDiff } from '../../branchDiffContext';
 import { fileForPath, hunkAround } from '../../hunkAround';
-
-const HANGING_INDENT: CSSProperties = { paddingInlineStart: '2ch', textIndent: '-2ch' };
 
 type Props = {
   readonly row: ResolveQueueRow;

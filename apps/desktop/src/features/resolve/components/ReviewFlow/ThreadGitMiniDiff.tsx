@@ -1,6 +1,6 @@
 import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
+import { HANGING_INDENT, LINE_FILL, SIGN_TEXT } from '../../../diff/lib/lineTone';
 import { useOriginCommitDiff } from '../../hooks/useOriginCommitDiff';
 import { inlineChangePlan } from '../../inlineChangePlan';
 import type { ReviewEntry } from './useReviewEntries';
@@ -39,7 +39,10 @@ export const ThreadGitMiniDiff = ({ sessionId, entry }: Props) => {
           <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[line.kind])}>
             {SIGN[line.kind]}
           </span>
-          <span className="min-w-0 whitespace-pre-wrap break-words text-foreground">
+          <span
+            style={HANGING_INDENT}
+            className="min-w-0 whitespace-pre-wrap break-words text-foreground"
+          >
             {line.text}
           </span>
         </p>

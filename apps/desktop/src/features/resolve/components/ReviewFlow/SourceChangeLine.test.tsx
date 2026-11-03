@@ -20,4 +20,12 @@ describe('SourceChangeLine', () => {
 
     expect(container.textContent).toContain('After: retry forever');
   });
+
+  it('hangs wrapped text under the text, not under the sign', () => {
+    const { container } = render(<SourceChangeLine kind="add" segments={SEGMENTS} />);
+
+    const text = container.querySelector<HTMLElement>('p > span:last-child');
+    expect(text?.style.textIndent).toBe('-2ch');
+    expect(text?.style.paddingInlineStart).toBe('2ch');
+  });
 });
