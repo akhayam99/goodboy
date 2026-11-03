@@ -47,8 +47,8 @@ describe('the reviewer comment block', () => {
     render(<ReviewerCommentBlock commentThread={THREAD} />);
 
     const paragraph = screen.getByText('This retries forever on a 500.');
-    const root = paragraph.closest('[class*="[&_p]:text-body"]') as HTMLElement;
-    expect(root.className.split(' ')).toContain('text-body');
+    const root = paragraph.closest<HTMLElement>('[class*="[&_p]:text-body"]');
+    expect(root?.className.split(' ')).toContain('text-body');
   });
 
   it('says the comment is gone instead of rendering an empty block', () => {

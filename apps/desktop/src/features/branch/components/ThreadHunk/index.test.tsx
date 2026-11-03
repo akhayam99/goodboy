@@ -50,12 +50,13 @@ afterEach(cleanup);
 
 describe('the thread hunk', () => {
   it('hangs wrapped code lines under the code, not under the gutter', () => {
-    render(<ThreadHunk row={{} as ResolveQueueRow} onOpenInDiff={null} />);
+    const row: ResolveQueueRow = Object.create(null);
+    render(<ThreadHunk row={row} onOpenInDiff={null} />);
 
     const figure = screen.getByRole('figure', { name: 'Code around the comment' });
-    const code = figure.querySelector('p:nth-of-type(2) > span:last-child') as HTMLElement;
-    expect(code.textContent).toBe("  metrics.increment('retry_backoff_exhausted');");
-    expect(code.style.textIndent).toBe('-2ch');
-    expect(code.style.paddingInlineStart).toBe('2ch');
+    const code = figure.querySelector<HTMLElement>('p:nth-of-type(2) > span:last-child');
+    expect(code?.textContent).toBe("  metrics.increment('retry_backoff_exhausted');");
+    expect(code?.style.textIndent).toBe('-2ch');
+    expect(code?.style.paddingInlineStart).toBe('2ch');
   });
 });
