@@ -49,7 +49,10 @@ it.each(Object.entries(U34_LAYOUT_FLOW_SCENES))('mounts %s', async (id, Scene) =
   expect(await screen.findByRole('heading', { level: 1 })).toBeDefined();
   expect(container.querySelector('[data-running-rows]')).not.toBeNull();
   if (id === 'u34-u30-active-tool') {
-    expect(screen.getByRole('toolbar', { name: 'Session tools' }).textContent).toBe('Agents');
+    const rail = screen.getByRole('toolbar', { name: 'Session tools' });
+    expect(rail.querySelector('[data-slot="tool-caption"][data-tone="open"]')?.textContent).toBe(
+      'Agents',
+    );
   }
 });
 
