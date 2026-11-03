@@ -140,6 +140,8 @@ import { updaterInitialState } from './slices/updater/state';
 import { createChangelogSlice } from './slices/changelog';
 import { changelogInitialState } from './slices/changelog/state';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
+import { createOrchestratorHintDraftsSlice } from './slices/orchestratorHintDrafts';
+import { orchestratorHintDraftsInitialState } from './slices/orchestratorHintDrafts/state';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { contextDrawerInitialState } from './slices/contextDrawer/state';
@@ -239,6 +241,7 @@ export type AppStore = AppState &
   ReturnType<typeof createUpdaterSlice> &
   ReturnType<typeof createChangelogSlice> &
   ReturnType<typeof createBugReportDraftSlice> &
+  ReturnType<typeof createOrchestratorHintDraftsSlice> &
   ReturnType<typeof createSessionDraftSlice> &
   ReturnType<typeof createContextDrawerSlice> &
   ReturnType<typeof createContextItemsSlice> &
@@ -315,6 +318,7 @@ const initialState: AppState = {
   ...updaterInitialState,
   ...changelogInitialState,
   ...bugReportDraftInitialState,
+  ...orchestratorHintDraftsInitialState,
   ...sessionDraftInitialState,
   ...contextDrawerInitialState,
   ...contextItemsInitialState,
@@ -512,6 +516,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createUpdaterSlice({ set, get }),
   ...createChangelogSlice({ set, get }),
   ...createBugReportDraftSlice({ set, get }),
+  ...createOrchestratorHintDraftsSlice({ set, get }),
   ...createSessionDraftSlice({ set, get }),
   ...createContextDrawerSlice({ set, get }),
   ...createContextItemsSlice({ set, get }),
