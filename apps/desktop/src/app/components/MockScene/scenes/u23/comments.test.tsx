@@ -85,7 +85,7 @@ describe('the u23 comments scenes', () => {
       Done: 1,
       'Left open on GitHub': 1,
     });
-    fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolved' }));
     expect(regionTitles()).toEqual(['Done']);
     expect(
       within(within(list()).getByRole('region', { name: 'Done' })).getAllByRole('listitem'),

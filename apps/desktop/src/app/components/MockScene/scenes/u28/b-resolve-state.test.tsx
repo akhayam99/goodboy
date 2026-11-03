@@ -141,7 +141,7 @@ describe('resolve-state scenes', () => {
     show({ name: 'resolve-state-working' });
     const comments = await list();
 
-    expect(rowLines(comments)).toEqual(Array(4).fill('Fixing in the fix run'));
+    expect(rowLines(comments)).toEqual(Array(4).fill('In the fix run'));
     expect(within(comments).queryAllByRole('checkbox')).toHaveLength(0);
     expect(screen.queryByTestId('fix-run-ready')).toBeNull();
     expect(screen.queryByText(/Checks were skipped/)).toBeNull();

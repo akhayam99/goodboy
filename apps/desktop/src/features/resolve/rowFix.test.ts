@@ -52,7 +52,7 @@ describe('rowFixOf', () => {
   });
 
   it('reads each state as one line', () => {
-    expect(rowFixLineOf({ fix: { kind: 'fixing' } })).toBe('Fixing in the fix run');
+    expect(rowFixLineOf({ fix: { kind: 'fixing' } })).toBe('In the fix run');
     expect(
       rowFixLineOf({ fix: { kind: 'fixed', sha: '90b1d57', commit: SHA, isReview: true } }),
     ).toBe('Fixed in 90b1d57 · Review the fix');
