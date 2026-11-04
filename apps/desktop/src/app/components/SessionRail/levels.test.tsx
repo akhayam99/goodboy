@@ -867,7 +867,7 @@ describe('the folded session rail', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '3 more branches' }));
     });
-    expect(screen.getByRole('dialog', { name: 'Branches' })).toBeDefined();
+    screen.getByRole('dialog', { name: 'Branches' });
 
     await act(async () => {
       useAppStore.setState({
@@ -880,7 +880,7 @@ describe('the folded session rail', () => {
       useAppStore.setState({ sessionProjectMounts: { [openId]: mounts } });
     });
 
-    expect(screen.getByRole('button', { name: '3 more branches' })).toBeDefined();
+    screen.getByRole('button', { name: '3 more branches' });
     expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
   });
 
