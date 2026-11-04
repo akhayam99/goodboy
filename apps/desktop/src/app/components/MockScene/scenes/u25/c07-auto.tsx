@@ -22,6 +22,7 @@ const IMAGES: C07Seed = { state: 'working', place: 'auto', pane: 'implementer', 
 
 export const U25_C07_AUTO_SCENES = {
   'c07-auto-working': () => <C07AutoFrame seed={WORKING} />,
+  'u34-p20-auto-narrow': () => <C07AutoFrame seed={WORKING} widthPx={1100} />,
   'c07-auto-idle': () => <C07AutoFrame seed={IDLE} />,
   'c07-auto-plan': () => <C07AutoFrame seed={PLAN} />,
   'c07-auto-answering': () => <C07AutoFrame seed={ANSWERING} />,

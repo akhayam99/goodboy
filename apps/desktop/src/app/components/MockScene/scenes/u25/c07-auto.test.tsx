@@ -180,6 +180,18 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('u34-p20-auto-narrow keeps the title in its own wrapping lead with the settings and no provider mark', async () => {
+    mount({ id: 'u34-p20-auto-narrow' });
+
+    const row = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    const lead = within(row).getByTestId('agent-header-lead');
+    within(lead).getByRole('heading', { level: 1 });
+    expect(within(lead).getByTestId('agent-header-settings')).toBeDefined();
+    expect(within(lead).queryByRole('button', { name: 'More agent actions' })).toBeNull();
+    expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
+    expect(within(row).queryByTestId('agent-header-provider')).toBeNull();
+  });
+
   it('c07-auto-working keeps the center lean: no role chip, live cards for running children, one tail', async () => {
     mount({ id: 'c07-auto-working' });
 

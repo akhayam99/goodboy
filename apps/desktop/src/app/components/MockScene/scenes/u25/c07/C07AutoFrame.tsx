@@ -8,11 +8,12 @@ type Props = {
   readonly seed: C07Seed;
   readonly isFolded?: boolean;
   readonly clicks?: ReadonlyArray<string>;
+  readonly widthPx?: number;
 };
 
 const NO_CLICKS: ReadonlyArray<string> = [];
 
-export const C07AutoFrame = ({ seed, isFolded = false, clicks = NO_CLICKS }: Props) => {
+export const C07AutoFrame = ({ seed, isFolded = false, clicks = NO_CLICKS, widthPx }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useSceneRailFold({ isFolded });
   useSceneClicks({ isReady, labels: clicks, selector: 'button', match: 'prefix', intervalMs: 400 });
@@ -23,5 +24,13 @@ export const C07AutoFrame = ({ seed, isFolded = false, clicks = NO_CLICKS }: Pro
   if (!isReady) {
     return null;
   }
-  return <AppFrame view="session" isRailCollapsed={false} hasPane />;
+  const frame = <AppFrame view="session" isRailCollapsed={false} hasPane />;
+  if (widthPx === undefined) {
+    return frame;
+  }
+  return (
+    <div className="h-full shrink-0 overflow-hidden" style={{ width: widthPx }}>
+      {frame}
+    </div>
+  );
 };
