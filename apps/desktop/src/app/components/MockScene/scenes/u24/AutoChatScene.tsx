@@ -67,6 +67,16 @@ export const AutoChatScene = ({
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
       drawer: null,
+      ...(state === 'mount-ask'
+        ? {
+            sessionProjectMounts: {
+              ...useAppStore.getState().sessionProjectMounts,
+              [AUTO_SESSION.id]: (
+                useAppStore.getState().sessionProjectMounts[AUTO_SESSION.id] ?? []
+              ).filter((mount) => mount.mountName !== 'notify-relay'),
+            },
+          }
+        : {}),
       ...(mountAct === undefined
         ? {}
         : {

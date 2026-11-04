@@ -134,7 +134,9 @@ beforeEach(async () => {
     const repoPath = Reflect.get(Object(args), 'repoPath');
     const branchName = Reflect.get(Object(args), 'branchName');
     return {
-      worktreePath: `${String(repoPath)}/.goodboy/worktrees/export`,
+      worktreePath: `${String(repoPath)}/.goodboy/worktrees/${
+        typeof branchName === 'string' ? branchName.replaceAll('/', '-') : 'export'
+      }`,
       branchName: typeof branchName === 'string' ? branchName : 'goodboy/export',
       slug: 'export',
       reused: false,
@@ -219,6 +221,81 @@ describe('mountAutoProject on the real store', () => {
     expect(await mountedProjects(sessionId)).toEqual([
       { projectId: ledger.id, branch: 'ak/old-branch' },
     ]);
+  });
+
+  it('picks the project of the session workspace when another workspace holds the same name', async () => {
+    const sessionId = await bootSession();
+    useAppStore.setState({ projects: [otherRelay, relay] });
+
+    const outcome = await call({ sessionId, name: 'notify-relay', mode: 'mount' });
+
+    expect(outcome).toEqual({ kind: 'mounted', name: 'notify-relay', branch: BRANCH });
+    expect(await mountedProjects(sessionId)).toEqual([{ projectId: relay.id, branch: BRANCH }]);
+  });
+
+  it('finds the mount on the requested branch among several mounts of one project', async () => {
+    const sessionId = await bootSession();
+    await call({ sessionId, name: 'ledger-core', mode: 'mount', branch: 'ak/branch-a' });
+    const forked = await useAppStore.getState().forkMount({
+      sessionId,
+      projectId: ledger.id,
+      branch: 'ak/branch-b',
+    });
+
+    const outcome = await call({
+      sessionId,
+      name: 'ledger-core',
+      mode: 'mount',
+      branch: forked.branch,
+    });
+
+    expect(outcome).toEqual({ kind: 'mounted', name: 'ledger-core', branch: forked.branch });
+    expect(forked.branch).not.toBe('ak/branch-a');
+  });
+
+  it('still says elsewhere when no mount of the project is on the requested branch', async () => {
+    const sessionId = await bootSession();
+    await call({ sessionId, name: 'ledger-core', mode: 'mount', branch: 'ak/branch-a' });
+    await useAppStore.getState().forkMount({
+      sessionId,
+      projectId: ledger.id,
+      branch: 'ak/branch-b',
+    });
+
+    const outcome = await call({
+      sessionId,
+      name: 'ledger-core',
+      mode: 'mount',
+      branch: 'ak/branch-c',
+    });
+
+    expect(outcome).toMatchObject({ kind: 'elsewhere', requested: 'ak/branch-c' });
+  });
+
+  it('says elsewhere when the request finishes on another branch, and keeps the session read by id', async () => {
+    const sessionId = await bootSession();
+    const realEnsure = useAppStore.getState().ensureProjectMounted;
+    const otherSession = await bootSession();
+    useAppStore.setState({
+      ensureProjectMounted: async (input) => {
+        const result = await realEnsure({ ...input, branch: 'ak/late-branch' });
+        useAppStore.setState({ currentWorkspaceId: elsewhere.id });
+        return result;
+      },
+    });
+
+    const outcome = await call({ sessionId, name: 'ledger-core', mode: 'mount' });
+
+    expect(outcome).toEqual({
+      kind: 'elsewhere',
+      name: 'ledger-core',
+      branch: 'ak/late-branch',
+      requested: BRANCH,
+    });
+    expect(await mountedProjects(sessionId)).toEqual([
+      { projectId: ledger.id, branch: 'ak/late-branch' },
+    ]);
+    expect(await mountedProjects(otherSession)).toEqual([]);
   });
 
   it('reports a project already on the named branch, or with no branch named, as mounted', async () => {

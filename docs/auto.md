@@ -684,7 +684,14 @@ It decides by ending its final reply with at most one block:
   DONE BY GOODBOY. A project already added on another branch than the one named is not claimed
   as done: the row has the code `mount_elsewhere`, it says which branch the project is on and
   that the user decides about moving it, and the tail reads "Not added: that project is already
-  added on another branch".
+  added on another branch". `mountOnBranchOf` is the one owner of that check: it looks for the
+  mount of the project on the named branch among every mount the session holds (a forked mount
+  counts), and `mountAutoProject` runs it before the call and again after it, because
+  `ensureProjectMounted` can adopt persisted mounts or share an in-flight request that ends on
+  another branch. The project is looked up in the workspace of the owning session only, in the
+  store and in the card (`knownMountOf`), so a same-named repository of another workspace is never
+  picked. The card runs `mountOnBranchOf` after its Add as well and keeps itself with the conflict
+  when another window added the project on a different branch.
 - No block is a plain answer to the user.
 
 The prompt takes an Asks you level, using the same three values as workflows
