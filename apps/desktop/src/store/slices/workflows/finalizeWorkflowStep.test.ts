@@ -139,6 +139,7 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
     workflowContinueAttempts: {},
     stepSummaryDegraded: {},
     degradedStepOutputs: {},
+    skipStuckStepAndAdvance: vi.fn(async () => undefined),
   };
   const set = vi.fn((update: unknown) => {
     const patch = typeof update === 'function' ? update(state) : update;
@@ -398,7 +399,7 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
   });
 
-  it('blocks the live step with a notification once the single continue is spent', async () => {
+  it('skips the live step as not finished once the single continue is spent', async () => {
     const finalize = buildHarness();
 
     await finalize(SESSION_ID, AGENT_ID, 'stopped early', false);
@@ -410,23 +411,110 @@ describe('finalizeWorkflowStep output summary', () => {
       readonly content: string;
     };
     expect(rekick.content).toContain('**Questions** a question in plain prose never reaches');
-    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
-      AGENT_ID,
-      expect.objectContaining({ status: 'blocked' }),
-    );
-    expect(finalize.state.emitNotification).toHaveBeenCalledWith(
+    expect(rekick.content).toContain('<<step-stuck id="agent-1"');
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(finalize.state.skipStuckStepAndAdvance).toHaveBeenCalledWith(
+      SESSION_ID,
+      WORKFLOW_RUN_ID,
       expect.objectContaining({
-        kind: 'error',
-        severity: 'warning',
-        title: 'Step blocked on Implement',
-        body: expect.stringContaining('without asking you anything'),
-        sessionId: SESSION_ID,
+        agentId: AGENT_ID,
+        reason: 'The agent stopped without finishing and without saying why.',
       }),
     );
     expect(finalize.state.workflowContinueAttempts).toEqual({});
   });
 
-  it('blocks a legacy Resolve step that stops mid-sentence instead of hanging on it', async () => {
+  it('skips a hands-free step at once with the reason from its stuck marker', async () => {
+    const finalize = buildHarness();
+
+    await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      'no access <<step-stuck id="agent-1" reason="the ledger-core token is missing">>',
+      false,
+    );
+
+    expect(finalize.state.sendTurn).not.toHaveBeenCalled();
+    expect(finalize.state.skipStuckStepAndAdvance).toHaveBeenCalledWith(
+      SESSION_ID,
+      WORKFLOW_RUN_ID,
+      expect.objectContaining({ agentId: AGENT_ID, reason: 'the ledger-core token is missing' }),
+    );
+    const notices = finalize.state.emitNotification.mock.calls.map((call) => JSON.stringify(call));
+    expect(notices.join('')).not.toContain('ledger-core token');
+  });
+
+  it('drops a late result for a step that was already skipped', async () => {
+    const skipped: Agent = { ...agent, status: 'skipped' };
+    const finalize = buildHarness({ agents: [skipped] });
+
+    const result = await finalize(SESSION_ID, AGENT_ID, 'late text', false);
+
+    expect(result).toEqual({ shouldAutoAdvance: false });
+    expect(finalize.state.sendTurn).not.toHaveBeenCalled();
+    expect(finalize.state.skipStuckStepAndAdvance).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+  });
+
+  it('blocks a stuck step when the run asks every step', async () => {
+    const manual: Session = {
+      ...session,
+      autoRun: false,
+      workflowRuns: session.workflowRuns.map((run) => ({ ...run, autoRun: false })),
+    };
+    const finalize = buildHarness({ sessions: [manual] });
+
+    await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      '<<step-stuck id="agent-1" reason="the ledger-core token is missing">>',
+      false,
+    );
+
+    expect(finalize.state.skipStuckStepAndAdvance).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'blocked' }),
+    );
+  });
+
+  it('keeps a dead agent failed, not stuck', async () => {
+    const finalize = buildHarness();
+
+    await finalize(SESSION_ID, AGENT_ID, '', false, { didAgentDie: true });
+    await finalize(SESSION_ID, AGENT_ID, '', false, { didAgentDie: true });
+
+    expect(finalize.state.skipStuckStepAndAdvance).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('stops the run on a second stuck step in a row', async () => {
+    const earlier: Agent = {
+      ...agent,
+      id: JSON.parse('"agent-0"'),
+      ordinal: -1,
+      name: 'Plan',
+      status: 'skipped',
+      outputSummary: 'the plan tool was missing',
+    };
+    const finalize = buildHarness({ agents: [earlier, agent] });
+
+    await finalize(SESSION_ID, AGENT_ID, '<<step-stuck id="agent-1" reason="no repo">>', false);
+
+    expect(finalize.state.skipStuckStepAndAdvance).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'blocked' }),
+    );
+    expect(finalize.state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Run stopped on Implement' }),
+    );
+  });
+
+  it('skips a legacy Resolve step that stops mid-sentence instead of hanging on it', async () => {
     const resolverStep: Agent = {
       ...agent,
       name: 'Fix findings from the review (payments-api questionnaire)',
@@ -440,15 +528,10 @@ describe('finalizeWorkflowStep output summary', () => {
     const result = await finalize(SESSION_ID, AGENT_ID, stoppedMidSentence, false);
 
     expect(result).toEqual({ shouldAutoAdvance: false });
-    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
-      AGENT_ID,
-      expect.objectContaining({ status: 'blocked' }),
-    );
-    expect(finalize.state.emitNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: expect.stringContaining('Step blocked'),
-        sessionId: SESSION_ID,
-      }),
+    expect(finalize.state.skipStuckStepAndAdvance).toHaveBeenCalledWith(
+      SESSION_ID,
+      WORKFLOW_RUN_ID,
+      expect.objectContaining({ agentId: AGENT_ID }),
     );
   });
 

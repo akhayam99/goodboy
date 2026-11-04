@@ -6,6 +6,7 @@ import { RunGoal } from '../AgentTree/RunGoal';
 import { RunWriteDestination } from '../AgentTree/RunWriteDestination';
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedFacts } from '../OrchestratedRun/OrchestratedFacts';
+import { RunNotFinishedLinks } from '../RunNotFinishedLinks';
 import { RunPageActions } from './RunPageActions';
 import { RunTail } from './RunTail';
 
@@ -34,6 +35,7 @@ export const RunOverviewPage = ({ session, view }: Props) => {
         <OrchestratedFacts session={session} view={view} />
         {isDiscarded ? null : <RunWriteDestination sessionId={sessionId} workflowRunId={run.id} />}
         {isCompleted ? <RunFinishedActions sessionId={sessionId} workflowRunId={run.id} /> : null}
+        <RunNotFinishedLinks session={session} view={view} isPhraseShown={false} />
         {isDiscarded ? null : (
           <RunAddStep
             sessionId={sessionId}

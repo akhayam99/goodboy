@@ -1876,7 +1876,7 @@
     "apps/desktop/src/store/slices/workflows/budgetBlock.ts": 2,
     "apps/desktop/src/store/slices/workflows/clearOrchestrationOutcome.ts": 1,
     "apps/desktop/src/store/slices/workflows/closeWorkflowRun.ts": 1,
-    "apps/desktop/src/store/slices/workflows/clusterImplementation.ts": 18,
+    "apps/desktop/src/store/slices/workflows/clusterImplementation.ts": 14,
     "apps/desktop/src/store/slices/workflows/continueWithHint.ts": 1,
     "apps/desktop/src/store/slices/workflows/continueWorkflowRun.ts": 1,
     "apps/desktop/src/store/slices/workflows/deleteStepDef.ts": 1,

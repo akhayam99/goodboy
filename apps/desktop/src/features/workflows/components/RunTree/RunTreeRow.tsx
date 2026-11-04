@@ -20,11 +20,13 @@ import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
-import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
+import { answerOf } from './answerOf';
+import { isNotFinishedNote } from './isNotFinishedNote';
+import { stuckActionOf } from './stuckActionOf';
 import { RunTreeChecklistCells } from './RunTreeChecklistCells';
 import { RunTreeContextNote } from './RunTreeContextNote';
 import { rowSlotWidth } from './rowSlotWidth';
@@ -57,30 +59,6 @@ type Props = {
   readonly onHighlight?: (isOn: boolean) => void;
   readonly onSelect: () => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
-};
-
-type AskParams = {
-  readonly ask: RowAsk | null;
-};
-
-const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
-  if (ask == null) {
-    return null;
-  }
-  switch (ask.kind) {
-    case 'answer':
-      return { question: ask.question };
-    case 'restartStep':
-    case 'runStep':
-    case 'continue':
-    case 'reviewComment':
-    case 'groupChild':
-      return null;
-    default: {
-      const exhaustive: never = ask;
-      return exhaustive;
-    }
-  }
 };
 
 export const RunTreeRow = ({
@@ -126,6 +104,7 @@ export const RunTreeRow = ({
   const slot = rowSlotWidth({ rail, railWidth, isNested, isFixed });
   const markerColumn = isFixed ? Math.min(rail.markerColumn, 1) : rail.markerColumn;
   const isSkipShown = answer === null && skip !== null && !isNested && agent.status === 'running';
+  const stuckAction = isNested ? null : stuckActionOf({ agent, state: item.rowState });
   const planAction = isNested || answer !== null || isSkipShown ? null : plan;
   const isPlanHeld =
     planAction !== null && planAction.status === 'active' && isRunHeldForPlan({ run: routing.run });
@@ -193,6 +172,8 @@ export const RunTreeRow = ({
                     glyph={glyph}
                     duration={time}
                     phase={item.rowState.phase}
+                    state={isNotFinishedNote({ state: item.rowState }) ? state : null}
+                    action={stuckAction}
                     isNested={isNested}
                     change={
                       isNested
@@ -228,6 +209,7 @@ export const RunTreeRow = ({
                       <RunTreeContextNote answersFor={answersFor} waveLabel={waveNote} />
                     </span>
                     {state}
+                    {isPage ? stuckAction : null}
                     {isPage ? meta : null}
                     {hasActionColumn ? (
                       <span data-meta-column="action" className={WORK_META_COLUMN.action}>

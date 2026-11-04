@@ -36,6 +36,7 @@ export {
   extractScoutDomains,
   extractScoutSplit,
   extractStepDone,
+  extractStuckMarker,
   hasBlockingQuestion,
   isOpenQuestionAnswerText,
   isReviewThreadId,

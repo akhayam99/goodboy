@@ -4,6 +4,7 @@ import { clearAgentDone } from './clearAgentDone';
 import { clearAgentDraft } from './clearAgentDraft';
 import { deleteAgent } from './deleteAgent';
 import { forceCloseResolver } from './forceCloseResolver';
+import { keepWorkingOnStep } from './keepWorkingOnStep';
 import { markAgentSeen } from './markAgentSeen';
 import { markAgentUnviewed } from './markAgentUnviewed';
 import { markAgentViewed } from './markAgentViewed';
@@ -43,5 +44,6 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     deleteAgent: deleteAgent(set, get),
     forceCloseResolver: forceCloseResolver(set, get),
     answerBlockedStep: answerBlockedStep({ get }),
+    keepWorkingOnStep: keepWorkingOnStep({ get }),
   };
 };

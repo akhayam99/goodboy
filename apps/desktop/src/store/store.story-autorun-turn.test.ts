@@ -330,17 +330,24 @@ describe('story: an autorun step turn and what follows it', () => {
     await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(2));
   });
 
-  it('continues a step without its marker exactly once, then blocks it with a notification', async () => {
+  it('continues a step without its marker exactly once, then skips it as not finished', async () => {
     storySpies.runTurn.mockImplementation(streamOf({ text: 'stopped before the end' }));
 
     await sendStepTurn({ content: 'implement the export' });
     await vi.waitFor(() =>
       expect(statusWrites({ agentId: IMPLEMENT_AGENT })).toContainEqual(
-        expect.objectContaining({ status: 'blocked' }),
+        expect.objectContaining({
+          status: 'skipped',
+          outputSummary: 'The agent stopped without finishing and without saying why.',
+        }),
       ),
     );
 
-    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() =>
+      expect(statusWrites({ agentId: REVIEW_AGENT })).toContainEqual(
+        expect.objectContaining({ status: 'running' }),
+      ),
+    );
     const continuePrompt = String(
       (storySpies.runTurn.mock.calls[1]?.[0] as { readonly prompt?: unknown } | undefined)
         ?.prompt ?? '',
@@ -350,8 +357,7 @@ describe('story: an autorun step turn and what follows it', () => {
     expect(statusWrites({ agentId: IMPLEMENT_AGENT })).not.toContainEqual(
       expect.objectContaining({ status: 'failed' }),
     );
-    expect(notificationTitles()).toContain('Step blocked on Implement');
-    expect(statusWrites({ agentId: REVIEW_AGENT })).toEqual([]);
+    expect(notificationTitles()).toContain('Implement did not finish');
     expect(useAppStore.getState().workflowContinueAttempts).toEqual({});
   });
 

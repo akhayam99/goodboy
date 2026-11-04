@@ -1,5 +1,6 @@
 const MARKER_NAMES = [
   'step-done',
+  'step-stuck',
   'handoff',
   'ctx-question',
   'ctx-decision',
@@ -9,6 +10,7 @@ const MARKER_NAMES = [
   'scout-split',
   'clusters',
   'cluster-done',
+  'cluster-stuck',
   'oq-answer',
 ] as const;
 
@@ -17,7 +19,7 @@ const NEEDS_WORK_RE = new RegExp(
   String.raw`\\[<>]|&(?:lt|gt|quot|apos|#39);|<<\s|<<\/?[A-Z]|=\s*[“”]|<<\/?(?:${NAMES_ALT})[^<>\n]*>(?!>)`,
 );
 const OPEN_RE = new RegExp(String.raw`(?:\\?<|&lt;){2}[ \t]*(\/?)(${NAMES_ALT})(?![\w-])`, 'gi');
-const SINGLE_CLOSE_NAMES: ReadonlySet<string> = new Set(['step-done', 'handoff']);
+const SINGLE_CLOSE_NAMES: ReadonlySet<string> = new Set(['step-done', 'step-stuck', 'handoff']);
 const MAX_TAG_CHARS = 600;
 const QUOTE_RE = /^(?:\\?"|&quot;|[“”])/;
 const CLOSE_RE = /^(?:\\?>|&gt;)/;

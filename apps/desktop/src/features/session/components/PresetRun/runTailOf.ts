@@ -4,6 +4,8 @@ import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
 import type { RunPrimary } from '../../../workflows/runPrimaryOf';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
+import { finishedWithGapsPhrase } from '../../../workflows/finishedWithGapsPhrase';
+import { notFinishedStepsOf } from '../../../workflows/notFinishedStepsOf';
 import { stepNumberOf } from './stepNumberOf';
 import { stoppedQuestionTailOf } from './stoppedQuestionTailOf';
 
@@ -145,7 +147,16 @@ export const runTailOf = ({
     return { state: 'stopped', phrase: 'Stopped by you', stepAgentId: null, verb: null };
   }
   if (isCompleted) {
-    return { state: 'idle', phrase: 'Run finished', stepAgentId: null, verb: null };
+    const notFinished = notFinishedStepsOf({ agents });
+    return {
+      state: 'idle',
+      phrase:
+        notFinished.length === 0
+          ? 'Run finished'
+          : finishedWithGapsPhrase({ count: notFinished.length }),
+      stepAgentId: null,
+      verb: null,
+    };
   }
   const steps = agents.filter((agent) => agent.parentAgentId == null);
   if (quiet !== null) {

@@ -7,6 +7,7 @@ export {
   type WorkflowChainState,
 } from './sequencer';
 export { isAgentSettled, isAgentStatusHalted, isAgentStatusSettled } from './settled';
+export { DID_NOT_START_PREFIX, notFinishedKindOf, type NotFinishedKind } from './notFinishedKindOf';
 export {
   buildChainCarryForward,
   buildParallelCarryForward,

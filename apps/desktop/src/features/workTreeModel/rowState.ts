@@ -1,4 +1,5 @@
 import type { Agent, AgentStoppedBy, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
+import { notFinishedKindOf } from '@goodboy/core/workflows';
 import type { ReviewCommentState } from '../resolve/reviewCommentState';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
 import { isAgentClosedByUser } from '../session/agent-lifecycle';
@@ -27,6 +28,9 @@ export type RowStateReason =
   | { readonly kind: 'chatTurn' }
   | { readonly kind: 'closed' }
   | { readonly kind: 'skipped' }
+  | { readonly kind: 'notFinished' }
+  | { readonly kind: 'didNotStart' }
+  | { readonly kind: 'without'; readonly steps: string }
   | { readonly kind: 'paused' }
   | { readonly kind: 'planReady' }
   | { readonly kind: 'chained'; readonly afterTitle: string }
@@ -113,8 +117,17 @@ export const resolveAgentRowState = ({
         : { phase: 'queued', reason: null, ask: null };
     case 'completed':
       return DONE_ROW_STATE;
-    case 'skipped':
-      return { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
+    case 'skipped': {
+      const notFinished = notFinishedKindOf({ agent });
+      if (notFinished === null) {
+        return { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
+      }
+      return {
+        phase: 'skipped',
+        reason: { kind: notFinished === 'stuck' ? 'notFinished' : 'didNotStart' },
+        ask: null,
+      };
+    }
     case 'blocked':
       return {
         phase: 'waiting',

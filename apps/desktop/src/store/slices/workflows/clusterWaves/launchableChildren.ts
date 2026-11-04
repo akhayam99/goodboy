@@ -1,5 +1,5 @@
 import type { Agent, AgentId, ImplementationCluster } from '@goodboy/types';
-import { isAgentStatusSettled } from '@goodboy/core/workflows';
+import { isAgentStatusSettled, notFinishedKindOf } from '@goodboy/core/workflows';
 import { planClusterWaves, readyClusterIndexes } from '@goodboy/core/clusters';
 import { clusterLaunching } from './clusterLaunching';
 
@@ -35,7 +35,7 @@ export const launchableChildren = ({
   const doneIndexes = new Set<number>();
   const startedIndexes = new Set<number>();
   children.forEach((child, index) => {
-    if (isChildSettled({ child })) {
+    if (isChildSettled({ child }) && notFinishedKindOf({ agent: child }) === null) {
       doneIndexes.add(index);
     }
     if (child.status !== 'pending' || clusterLaunching.has({ childId: child.id })) {

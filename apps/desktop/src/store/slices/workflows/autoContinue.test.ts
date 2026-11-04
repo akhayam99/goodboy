@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type SessionId,
+  type WorkflowRunId,
+} from '@goodboy/types';
 
 const hoisted = vi.hoisted(() => ({
   invokeAgentList: vi.fn(async () => []),
@@ -25,12 +31,12 @@ const agent: Agent = {
   status: 'running',
 };
 
-type HarnessParams = { readonly autoRun: boolean };
+type HarnessParams = { readonly autoRun: boolean; readonly runs?: ReadonlyArray<Agent> };
 
-const buildHarness = ({ autoRun }: HarnessParams) => {
+const buildHarness = ({ autoRun, runs = [] }: HarnessParams) => {
   const state = {
     sessions: [{ id: SESSION_ID, autoRun, workflowRuns: [{ id: RUN_ID, autoRun }] }],
-    sessionPhaseRuns: {},
+    sessionPhaseRuns: { [SESSION_ID]: runs },
     workflowContinueAttempts: {},
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
@@ -59,30 +65,91 @@ describe('continueOrPause', () => {
       workflowRunId: RUN_ID,
       restart,
       didAgentDie: false,
+      hasStuckMarker: false,
     };
 
     await expect(continueOrPause({ ...params, unit: 'cluster' })).resolves.toBe('continued');
-    await expect(continueOrPause({ ...params, unit: 'cluster' })).resolves.toBe('blocked');
+    await expect(continueOrPause({ ...params, unit: 'cluster' })).resolves.toBe('stuck');
 
     expect(restart).toHaveBeenCalledTimes(1);
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(state.emitNotification).not.toHaveBeenCalled();
+    expect(state.workflowContinueAttempts).toEqual({});
+  });
+
+  it('calls a hands-free step stuck at once when it says so, with no retry', async () => {
+    const { set, get } = buildHarness({ autoRun: true });
+    const restart = vi.fn();
+
+    const outcome = await continueOrPause({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agent,
+      workflowRunId: RUN_ID,
+      unit: 'step',
+      didAgentDie: false,
+      hasStuckMarker: true,
+      restart,
+    });
+
+    expect(outcome).toBe('stuck');
+    expect(restart).not.toHaveBeenCalled();
+  });
+
+  it('blocks a stuck step when the one before it was stuck too', async () => {
+    const { state, set, get } = buildHarness({
+      autoRun: true,
+      runs: [
+        {
+          ...agent,
+          id: brandId<AgentId>({ value: 'earlier' }),
+          ordinal: 0,
+          status: 'skipped',
+          outputSummary: 'a',
+        },
+        agent,
+      ],
+    });
+
+    const outcome = await continueOrPause({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agent,
+      workflowRunId: RUN_ID,
+      unit: 'step',
+      didAgentDie: false,
+      hasStuckMarker: true,
+      restart: vi.fn(),
+    });
+
+    expect(outcome).toBe('blocked');
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       'child-1',
       expect.objectContaining({ status: 'blocked' }),
     );
-    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
-      'child-1',
-      expect.objectContaining({ status: 'failed' }),
-    );
     expect(state.emitNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'error',
-        severity: 'warning',
-        title: 'Subagent blocked on cluster 1',
-        body: expect.stringContaining('without asking you anything'),
-        sessionId: SESSION_ID,
-      }),
+      expect.objectContaining({ title: 'Run stopped on cluster 1' }),
     );
-    expect(state.workflowContinueAttempts).toEqual({});
+  });
+
+  it('blocks a stuck step at once when the run asks every step', async () => {
+    const { set, get } = buildHarness({ autoRun: false });
+
+    const outcome = await continueOrPause({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agent,
+      workflowRunId: RUN_ID,
+      unit: 'step',
+      didAgentDie: false,
+      hasStuckMarker: true,
+      restart: vi.fn(),
+    });
+
+    expect(outcome).toBe('blocked');
   });
 
   it('marks the agent failed only when its last turn died', async () => {
@@ -97,6 +164,7 @@ describe('continueOrPause', () => {
       unit: 'step' as const,
       restart,
       didAgentDie: true,
+      hasStuckMarker: false,
     };
 
     await expect(continueOrPause(params)).resolves.toBe('continued');
@@ -126,6 +194,7 @@ describe('continueOrPause', () => {
       workflowRunId: RUN_ID,
       unit: 'step',
       didAgentDie: false,
+      hasStuckMarker: false,
       restart,
     });
 
@@ -153,6 +222,7 @@ describe('continueOrPause', () => {
       workflowRunId: RUN_ID,
       unit: 'step' as const,
       didAgentDie: false,
+      hasStuckMarker: false,
       restart,
     };
 
