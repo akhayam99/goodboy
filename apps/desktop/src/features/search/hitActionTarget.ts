@@ -1,5 +1,5 @@
 import type { ArtifactId, SearchHit } from '@goodboy/types';
-import type { AppState } from '../../store/types';
+import type { AppStore } from '../../store/store';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { askingAgentIdsOf } from '../plans/askingAgentIdsOf';
 import { buildArtifactListRows } from '../artifacts/artifactListRows';
@@ -7,7 +7,7 @@ import type { ObjectTarget } from '../actions/types';
 
 type Params = {
   readonly hit: SearchHit;
-  readonly state: AppState;
+  readonly state: AppStore;
 };
 
 export const hitPlanRunning = ({ hit, state }: Params): boolean => {
@@ -25,6 +25,7 @@ export const hitPlanRunning = ({ hit, state }: Params): boolean => {
     openQuestionCount: (state.sessionOpenQuestions[hit.sessionId] ?? []).length,
     now: Date.now(),
     revising: new Map(),
+    autoViews: state.autoTreeViews[hit.sessionId] ?? [],
     askingAgentIds: askingAgentIdsOf({
       questions: state.sessionOpenQuestions[hit.sessionId] ?? [],
     }),

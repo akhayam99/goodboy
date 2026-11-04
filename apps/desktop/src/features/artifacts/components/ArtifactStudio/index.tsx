@@ -36,6 +36,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
+  const autoViews = useAppStore((s) => s.autoTreeViews[sessionId] ?? EMPTY_ARRAY);
   const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
   const runs = session?.workflowRuns ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowRun>);
   const templates = useAppStore(
@@ -178,6 +179,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
         openQuestionCount: openQuestions.length,
         askingAgentIds,
         revising,
+        autoViews,
         now,
       }),
     });
@@ -193,6 +195,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     openQuestions.length,
     askingAgentIds,
     revising,
+    autoViews,
     now,
   ]);
   const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
