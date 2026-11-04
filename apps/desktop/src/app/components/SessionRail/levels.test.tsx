@@ -840,6 +840,21 @@ describe('the folded session rail', () => {
     expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
   });
 
+  it('titles a flyout row by its branch, with the project below', async () => {
+    seedBranches({ isPaymentsFailing: true });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
+    });
+
+    const row = within(screen.getByRole('dialog', { name: 'Branches' })).getByRole('button', {
+      name: /ledger-rounding/,
+    });
+    const lines = Array.from(row.querySelectorAll('span > span'), (line) => line.textContent);
+    expect(lines[0]).toBe('goodboy/ledger-rounding');
+    expect(lines[1]?.startsWith('ledger-core')).toBe(true);
+  });
+
   it('closes the flyout on Escape', async () => {
     seedBranches({ isPaymentsFailing: true });
     await act(async () => {

@@ -15,7 +15,10 @@ export const RailBranchRow = ({ sessionId, entry }: Props) => {
   const facts = railBranchFactsOf({ row });
   const path = facts.path;
   const Icon = facts.mark.icon;
-  const detail = [facts.stateWord, state.reason].filter(
+  const pullRequest = [facts.number, facts.stateWord]
+    .filter((part): part is string => part !== null && part !== '')
+    .join(' ');
+  const detail = [row.projectName, pullRequest, state.reason].filter(
     (part): part is string => part !== null && part !== '',
   );
   return (
@@ -39,9 +42,9 @@ export const RailBranchRow = ({ sessionId, entry }: Props) => {
     >
       <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', facts.mark.iconClass)} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-row text-foreground">{`${row.projectName}, ${row.branch}`}</span>
+        <span className="truncate text-row text-foreground">{row.branch}</span>
         {detail.length === 0 ? null : (
-          <span className="truncate text-faint-foreground">{detail.join(', ')}</span>
+          <span className="truncate text-faint-foreground">{detail.join(' · ')}</span>
         )}
       </span>
       {state.tone === null ? null : <StatusDot tone={state.tone} size="sm" />}

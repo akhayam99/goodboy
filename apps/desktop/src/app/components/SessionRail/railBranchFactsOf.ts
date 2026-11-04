@@ -11,6 +11,7 @@ type Params = {
 
 export type RailBranchFacts = {
   readonly stateWord: string | null;
+  readonly number: string | null;
   readonly mark: PullRequestStateTone;
   readonly parts: ReadonlyArray<string>;
   readonly path: string | null;
@@ -27,6 +28,7 @@ export const railBranchFactsOf = ({ row }: Params): RailBranchFacts => {
   });
   return {
     stateWord: facts.stateWord,
+    number: facts.number,
     mark: pullRequestStateToneOf({ state: facts.state }),
     parts: [row.projectName, facts.number, facts.branch, facts.stateWord].filter(
       (part): part is string => part !== null && part !== '',
