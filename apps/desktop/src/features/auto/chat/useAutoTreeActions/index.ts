@@ -6,6 +6,7 @@ import { formatError } from '@goodboy/ui';
 import { currentSendNowPort } from '../../sendNowPort';
 import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
+import { currentWithdrawPort } from '../../withdrawPort';
 import { focusAgentComposer } from '../focusAgentComposer';
 import type { RailRow } from '../railRowsOf';
 
@@ -22,6 +23,8 @@ type SendNowParams = {
   readonly rowId: string;
 };
 
+export type WithdrawOutcome = 'withdrawn' | 'delivered' | 'failed';
+
 type AutoTreeActionFailure = Readonly<{
   title: string;
   message: string;
@@ -33,6 +36,7 @@ export type AutoTreeActions = Readonly<{
   stop: (params: ViewParams) => Promise<void>;
   retry: (params: ViewParams) => Promise<void>;
   sendNow: (params: SendNowParams) => Promise<void>;
+  withdraw: (params: SendNowParams) => Promise<WithdrawOutcome>;
   changeApproach: (params: ViewParams) => Promise<void>;
   openAgent: (agentId: AgentId) => void;
   openChild: (agentId: AgentId) => void;
@@ -44,6 +48,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   const navigate = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const loadAutoTrees = useAppStore((state) => state.loadAutoTrees);
   const [isStopping, setIsStopping] = useState(false);
   const [failure, setFailure] = useState<AutoTreeActionFailure | null>(null);
 
@@ -101,6 +106,28 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     }
   }, []);
 
+  const withdraw = useCallback(
+    async ({ view, rowId }: SendNowParams): Promise<WithdrawOutcome> => {
+      setFailure(null);
+      try {
+        const port = currentWithdrawPort();
+        if (port === null) {
+          throw new Error("Auto isn't running yet. Try again in a moment.");
+        }
+        const result = await port({ treeId: view.tree.id, rowId });
+        if (result.kind === 'refused') {
+          throw new Error(result.message);
+        }
+        await loadAutoTrees({ sessionId });
+        return result.kind;
+      } catch (error) {
+        setFailure({ title: "Couldn't take the message back", message: formatError(error) });
+        return 'failed';
+      }
+    },
+    [loadAutoTrees, sessionId],
+  );
+
   const changeApproach = useCallback(
     async ({ view }: ViewParams): Promise<void> => {
       await stop({ view });
@@ -149,6 +176,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     stop,
     retry,
     sendNow,
+    withdraw,
     changeApproach,
     openAgent,
     openChild,

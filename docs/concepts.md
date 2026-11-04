@@ -720,6 +720,8 @@ orchestrator hints use. **Queue** (Enter) waits for the turn to end. **Send
 now** (⌘Enter) stops the turn, keeps what it wrote, and continues with your
 message. Queued messages sit above the composer, reading **Waits for this
 turn** or **Sending now**, and each one can be edited, removed or sent now.
+An Auto agent shows the messages Auto has not read in the same list (see
+[auto.md](./auto.md) **One queue**).
 They are saved in the database (`agent_queued_messages`), so they survive a
 restart, and they go out one per turn in order. An agent you stopped keeps its
 queue until you continue it or send one now. A message leaves the queue, and

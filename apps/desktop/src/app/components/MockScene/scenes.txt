@@ -1151,6 +1151,8 @@ u34-p25-finished
 u34-p25-not-finished
 u34-p26-add-project
 u34-p27-auto-done
+u34-p28-both-queues
+u34-p28-not-delivered
 u34-peek-drawer-changed
 u34-peek-drawer-unchanged
 u34-peek-popover-order

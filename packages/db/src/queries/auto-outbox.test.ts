@@ -14,6 +14,7 @@ import {
   releaseAutoOutboxClaim,
   releaseAutoOutboxClaimsStatement,
   storeAutoOutboxDeliveryStatement,
+  withdrawAutoOutboxStatement,
 } from './auto-outbox';
 
 const treeId = brandId<AutoTreeId>({ value: 'tree-1' });
@@ -233,5 +234,76 @@ describe('auto outbox', () => {
     expect(
       (await listAutoOutbox({ db, treeId, states: ['pending'] })).map((item) => item.id),
     ).toEqual(['outbox-new']);
+  });
+
+  it('withdraws a pending user row once, never one a worker claimed, never a results row', async () => {
+    const db = await world();
+    await insertAutoOutbox({
+      db,
+      outbox: row({ id: 'outbox-u1', joinKey: 'user:u1', kind: 'user' }),
+    });
+    await insertAutoOutbox({
+      db,
+      outbox: row({ id: 'outbox-u2', joinKey: 'user:u2', kind: 'user' }),
+    });
+    await insertAutoOutbox({ db, outbox: row({ id: 'outbox-r1', joinKey: 'results:r1' }) });
+    await claimAutoOutbox({
+      db,
+      outboxId: brandId<AutoOutboxId>({ value: 'outbox-u2' }),
+      generation: 1,
+      claimedBy: 'owner-a',
+      nowMs: AUTO_SEED_NOW,
+      claimMs: 60_000,
+    });
+    const withdraw = (id: string) =>
+      db.transaction({
+        statements: [
+          withdrawAutoOutboxStatement({
+            outboxId: brandId<AutoOutboxId>({ value: id }),
+            generation: 1,
+            reason: 'withdrawn',
+            abortCode: 'withdraw_row',
+          }),
+        ],
+      });
+
+    expect((await withdraw('outbox-u1')).status).toBe('committed');
+    expect((await withdraw('outbox-u1')).status).toBe('aborted');
+    expect((await withdraw('outbox-u2')).status).toBe('aborted');
+    expect((await withdraw('outbox-r1')).status).toBe('aborted');
+    const rows = await listAutoOutbox({ db, treeId });
+    expect(rows.map((item) => [item.id, item.state, item.droppedReason])).toEqual([
+      ['outbox-u1', 'dropped', 'withdrawn'],
+      ['outbox-u2', 'claimed', null],
+      ['outbox-r1', 'pending', null],
+    ]);
+  });
+
+  it('withdraws a user row the stop dropped, so Remove works on a message never delivered', async () => {
+    const db = await world();
+    await insertAutoOutbox({
+      db,
+      outbox: row({ id: 'outbox-u1', joinKey: 'user:u1', kind: 'user' }),
+    });
+    const drop = dropAutoOutboxStatement({ treeId, reason: 'stopped', fromStates: ['pending'] });
+    await db.execute(drop.sql, drop.params);
+
+    const outcome = await db.transaction({
+      statements: [
+        withdrawAutoOutboxStatement({
+          outboxId: brandId<AutoOutboxId>({ value: 'outbox-u1' }),
+          generation: 1,
+          reason: 'withdrawn',
+          abortCode: 'withdraw_row',
+        }),
+      ],
+    });
+
+    const stored = await getAutoOutbox({
+      db,
+      outboxId: brandId<AutoOutboxId>({ value: 'outbox-u1' }),
+    });
+    expect(outcome.status).toBe('committed');
+    expect(stored?.droppedReason).toBe('withdrawn');
   });
 });

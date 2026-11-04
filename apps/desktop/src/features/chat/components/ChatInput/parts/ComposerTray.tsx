@@ -1,32 +1,25 @@
 import type { ReactNode } from 'react';
-import type { AgentQueuedTurn } from '../../../../../store/slices/agentQueue/types';
+import type { QueuedRows } from '../hooks/useQueuedRows';
 import { QueuedMessages } from './QueuedMessages';
 import { SuggestionStack } from './SuggestionStack';
 
 type Props = {
-  readonly queue: ReadonlyArray<AgentQueuedTurn>;
+  readonly queued: QueuedRows;
   readonly suggestions: ReadonlyArray<{ readonly key: string; readonly node: ReactNode }>;
   readonly canEdit: boolean;
-  readonly onEdit: (id: string) => void;
-  readonly onRemove: (id: string) => void;
-  readonly onSendNow: (id: string) => void;
 };
 
-export const ComposerTray = ({
-  queue,
-  suggestions,
-  canEdit,
-  onEdit,
-  onRemove,
-  onSendNow,
-}: Props) => (
+export const ComposerTray = ({ queued, suggestions, canEdit }: Props) => (
   <div className="flex flex-col gap-2 rounded-t-lg bg-muted px-2 pb-2 pt-2">
     <QueuedMessages
-      items={queue}
+      items={queued.rows}
       canEdit={canEdit}
-      onEdit={onEdit}
-      onRemove={onRemove}
-      onSendNow={onSendNow}
+      failure={queued.failure}
+      onEdit={queued.onEdit}
+      onRemove={queued.onRemove}
+      onSendNow={queued.onSendNow}
+      onRetry={queued.onRetry}
+      onRaiseLimit={queued.onRaiseLimit}
     />
     <SuggestionStack items={suggestions} />
   </div>

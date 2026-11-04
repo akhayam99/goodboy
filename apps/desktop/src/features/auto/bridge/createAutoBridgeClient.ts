@@ -4,6 +4,7 @@ import type { DelegationDecisionResult } from '../delegationDecisionPort';
 import type { PublishResult } from '../publishPort';
 import type { TreeRetryResult } from '../treeRetryPort';
 import type { TreeStopResult } from '../treeStopPort';
+import type { WithdrawParams, WithdrawResult } from '../withdrawPort';
 import {
   AUTO_BRIDGE_EVENT,
   type AutoBridgeBus,
@@ -34,10 +35,20 @@ const isTurnResult = (value: unknown): value is AutoUserTurnResult =>
 const isDecisionResult = (value: unknown): value is DelegationDecisionResult =>
   DECISION_RESULTS.some((result) => result === value);
 
-const isRetryResult = (value: unknown): value is TreeRetryResult =>
-  isRecord(value) &&
-  (value['kind'] === 'retried' ||
-    (value['kind'] === 'refused' && typeof value['message'] === 'string'));
+type ResultKindsParams = {
+  readonly kinds: ReadonlyArray<string>;
+};
+
+const resultOfKinds =
+  <Result>({ kinds }: ResultKindsParams) =>
+  (value: unknown): value is Result =>
+    isRecord(value) &&
+    (kinds.some((kind) => kind === value['kind']) ||
+      (value['kind'] === 'refused' && typeof value['message'] === 'string'));
+
+const isRetryResult = resultOfKinds<TreeRetryResult>({ kinds: ['retried'] });
+
+const isWithdrawResult = resultOfKinds<WithdrawResult>({ kinds: ['withdrawn', 'delivered'] });
 
 const isRerunResult = (value: unknown): value is ChecksRerunResult =>
   isRecord(value) &&
@@ -169,6 +180,8 @@ export const createAutoBridgeClient = async ({
     retry: ({ treeId }) => ask({ call: { kind: 'retry', treeId }, isResult: isRetryResult }),
     sendNow: ({ treeId, rowId }) =>
       ask({ call: { kind: 'sendNow', treeId, rowId }, isResult: isRetryResult }),
+    withdraw: ({ treeId, rowId }: WithdrawParams) =>
+      ask({ call: { kind: 'withdraw', treeId, rowId }, isResult: isWithdrawResult }),
     rerunChecks: ({ delegationId }) =>
       ask({
         call: { kind: 'rerunChecks', delegationId },

@@ -98,9 +98,10 @@ export const ChatInput = ({
   const routing = useTurnRouting({ session, agentId: selectedAgentId });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
 
-  const { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued } = useComposerQueue({
+  const { enqueue, sendNow, queued } = useComposerQueue({
     sessionId: session.id,
     agentId: selectedAgentId,
+    views: autoViews,
     setValue,
     setAttachments,
     routing,
@@ -197,7 +198,7 @@ export const ChatInput = ({
   });
   const onKeyDown = composerKeyDown({ popoverOpen, onEscape: escapeStop.onEscape });
 
-  const hasTray = queue.length > 0 || suggestions.length > 0;
+  const hasTray = queued.rows.length > 0 || suggestions.length > 0;
   const insertPrefix = (symbol: string) => {
     onValueChange(symbol);
     focusComposerTextarea(wrapperRef);
@@ -214,16 +215,7 @@ export const ChatInput = ({
         />
       )}
       <div className="flex flex-col">
-        {hasTray && (
-          <ComposerTray
-            queue={queue}
-            suggestions={suggestions}
-            canEdit={isEmpty}
-            onEdit={editQueued}
-            onRemove={removeQueued}
-            onSendNow={sendQueued}
-          />
-        )}
+        {hasTray && <ComposerTray queued={queued} suggestions={suggestions} canEdit={isEmpty} />}
         <div
           ref={composerRef}
           data-drop-composer

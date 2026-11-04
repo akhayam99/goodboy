@@ -10,6 +10,7 @@ import {
   type AutoDelegationId,
   type AutoTreeId,
   type IsoDateTime,
+  type MessageAttachment,
   type PlanWithCount,
   type ProviderRunId,
   type SessionArtifact,
@@ -71,6 +72,8 @@ export type AutoSceneState =
   | 'nocap'
   | 'blocked'
   | 'queued'
+  | 'bothQueues'
+  | 'notDelivered'
   | 'waitingTwo'
   | 'deliveredTwo';
 
@@ -380,12 +383,38 @@ const userText = ({ time, text, run }: TextParams): TurnEvent => ({
   at: at({ time }),
 });
 
-const operatorText = ({ time, text, run }: TextParams): TurnEvent => ({
+type OperatorTextParams = TextParams & {
+  readonly outboxId?: string;
+};
+
+const operatorText = ({ time, text, run, outboxId }: OperatorTextParams): TurnEvent => ({
   kind: 'operator_text',
   runId: run,
   text,
+  ...(outboxId !== undefined && { outboxId }),
   at: at({ time }),
 });
+
+const QUEUE_IMAGES: ReadonlyArray<MessageAttachment> = [
+  {
+    id: 'mock-queue-image-1',
+    kind: 'image',
+    fileName: 'retry-timeline.png',
+    mimeType: 'image/png',
+    relPath: '.goodboy/attachments/mock-queue-image-1/retry-timeline.png',
+    dir: '/scratch/session-harborline',
+  },
+  {
+    id: 'mock-queue-image-2',
+    kind: 'image',
+    fileName: 'ledger-diff.png',
+    mimeType: 'image/png',
+    relPath: '.goodboy/attachments/mock-queue-image-2/ledger-diff.png',
+    dir: '/scratch/session-harborline',
+  },
+];
+
+const BOTH_QUEUES_TEXT = 'Also keep the retry window at 30 seconds, see the timeline.';
 
 const QUEUED_PAIR = [
   {
@@ -850,6 +879,58 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         },
       };
     }
+    case 'bothQueues': {
+      const working = autoSceneOf({ state: 'working' });
+      return {
+        ...working,
+        view: {
+          ...working.view,
+          pendingMessages: [
+            {
+              rowId: 'mock-auto-outbox-user-2',
+              createdAt: Date.parse(at({ time: '12:10:00' })),
+              text: BOTH_QUEUES_TEXT,
+              images: QUEUE_IMAGES,
+            },
+          ],
+        },
+        events: [
+          ...working.events,
+          operatorText({
+            time: '12:10:00',
+            text: BOTH_QUEUES_TEXT,
+            run: RUN_THREE,
+            outboxId: 'mock-auto-outbox-user-2',
+          }),
+        ],
+      };
+    }
+    case 'notDelivered': {
+      const blocked = autoSceneOf({ state: 'blocked' });
+      return {
+        ...blocked,
+        view: {
+          ...blocked.view,
+          pendingMessages: [
+            {
+              rowId: 'mock-auto-outbox-user-2',
+              createdAt: Date.parse(at({ time: '12:10:00' })),
+              text: 'Also keep the retry window at 30 seconds.',
+              images: [],
+            },
+          ],
+        },
+        events: [
+          ...blocked.events,
+          operatorText({
+            time: '12:10:00',
+            text: 'Also keep the retry window at 30 seconds.',
+            run: RUN_THREE,
+            outboxId: 'mock-auto-outbox-user-2',
+          }),
+        ],
+      };
+    }
     case 'queued': {
       const working = autoSceneOf({ state: 'working' });
       return {
@@ -861,6 +942,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
               rowId: 'mock-auto-outbox-user-2',
               createdAt: Date.parse(at({ time: '12:10:00' })),
               text: 'Also keep the retry window at 30 seconds.',
+              images: [],
             },
           ],
         },
@@ -870,6 +952,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
             time: '12:10:00',
             text: 'Also keep the retry window at 30 seconds.',
             run: RUN_THREE,
+            outboxId: 'mock-auto-outbox-user-2',
           }),
         ],
       };
@@ -878,7 +961,12 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
     case 'deliveredTwo': {
       const working = autoSceneOf({ state: 'working' });
       const echoes = QUEUED_PAIR.map((message) =>
-        operatorText({ time: message.time, text: message.text, run: RUN_THREE }),
+        operatorText({
+          time: message.time,
+          text: message.text,
+          run: RUN_THREE,
+          outboxId: message.rowId,
+        }),
       );
       return {
         ...working,
@@ -890,6 +978,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
                   rowId: message.rowId,
                   createdAt: Date.parse(at({ time: message.time })),
                   text: message.text,
+                  images: [],
                 }))
               : [],
         },
@@ -905,6 +994,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
                     (message, index) => `${index + 1}. The user wrote:\n${message.text}`,
                   ).join('\n')}`,
                   deliveredBy: 'auto' as const,
+                  outboxIds: QUEUED_PAIR.map((message) => message.rowId),
                   at: at({ time: '12:12:00' }),
                 },
               ]

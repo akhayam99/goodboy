@@ -769,10 +769,10 @@ export {
   releaseAutoOutboxClaim,
   releaseAutoOutboxClaimsStatement,
   storeAutoOutboxDeliveryStatement,
+  withdrawAutoOutboxStatement,
   type AutoOutboxKind,
   type AutoOutboxRow,
   type AutoOutboxState,
-  type InsertAutoOutboxOutcome,
   type NewAutoOutbox,
 } from './queries/auto-outbox';
 export {

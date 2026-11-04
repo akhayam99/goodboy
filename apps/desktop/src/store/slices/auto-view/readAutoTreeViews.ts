@@ -12,6 +12,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
+import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
@@ -70,6 +71,7 @@ const pendingMessagesOf = ({
       rowId: String(row.id),
       createdAt: row.createdAt,
       text: isUserPayload(row.payload) ? row.payload.text : '',
+      images: userImagesOf({ rows: [row] }),
     }));
 
 export const readAutoTreeViews = async ({

@@ -8,6 +8,7 @@ export type PendingMessageAction = 'sendNow' | 'raiseLimit' | 'retry';
 export type PendingMessageLine = Readonly<{
   tone: 'waits' | 'notDelivered';
   text: string;
+  reason: string | null;
   action: PendingMessageAction | null;
 }>;
 
@@ -16,6 +17,10 @@ type Params = {
 };
 
 const STOPPED_REASON = 'Auto was stopped.';
+
+const NOT_DELIVERED = 'Not delivered';
+
+const WAITS_FOR_TURN = 'Waits for this turn';
 
 const waitingForOf = ({ view }: Params): string => {
   const open = view.delegations.filter(
@@ -33,28 +38,29 @@ const waitingForOf = ({ view }: Params): string => {
 const hasOpenChild = ({ view }: Params): boolean =>
   view.delegations.some((delegation) => delegation.state !== 'settled' && !delegation.isAdopted);
 
-export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine | null => {
+export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
   const { phase, blockedReason } = view.tree;
-  if (phase === 'waiting') {
-    if (!hasOpenChild({ view })) {
-      return null;
-    }
-    return { tone: 'waits', text: `Waits for ${waitingForOf({ view })}`, action: 'sendNow' };
+  if (phase === 'waiting' && hasOpenChild({ view })) {
+    return {
+      tone: 'waits',
+      text: `Waits for ${waitingForOf({ view })}`,
+      reason: null,
+      action: 'sendNow',
+    };
   }
   if (phase === 'stopping' || phase === 'stopped') {
-    return { tone: 'notDelivered', text: `Not delivered: ${STOPPED_REASON}`, action: null };
+    return { tone: 'notDelivered', text: NOT_DELIVERED, reason: STOPPED_REASON, action: null };
   }
   if (phase !== 'blocked') {
-    return null;
+    return { tone: 'waits', text: WAITS_FOR_TURN, reason: null, action: null };
   }
   const reason =
     blockedReason === null || blockedReason === '' ? 'Auto is blocked.' : blockedReason;
-  const text = `Not delivered: ${reason}`;
   if (blockedReason === AUTO_BLOCK_TEXT.budget) {
-    return { tone: 'notDelivered', text, action: 'raiseLimit' };
+    return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'raiseLimit' };
   }
   if (blockedReason === AUTO_BLOCK_TEXT.limit_wall_clock) {
-    return { tone: 'notDelivered', text, action: null };
+    return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: null };
   }
-  return { tone: 'notDelivered', text, action: 'retry' };
+  return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'retry' };
 };

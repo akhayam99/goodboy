@@ -7,6 +7,7 @@ import type { PublishPort } from '../publishPort';
 import { isAutoBridgeRequest } from './isAutoBridgeRequest';
 import type { DelegationDecisionPort } from '../delegationDecisionPort';
 import type { SendNowPort } from '../sendNowPort';
+import type { WithdrawPort } from '../withdrawPort';
 import type { TreeRetryPort } from '../treeRetryPort';
 import type { TreeStopPort } from '../treeStopPort';
 import { AUTO_BRIDGE_EVENT, type AutoBridgeBus, type AutoBridgePorts } from './autoBridgeProtocol';
@@ -75,8 +76,18 @@ const mainPorts = () => {
     })),
   }));
   const sendNow = vi.fn<SendNowPort>(async () => ({ kind: 'retried' }));
-  const ports: AutoBridgePorts = { stop, retry, sendNow, userTurn, decision, rerunChecks, publish };
-  return { ports, stop, retry, sendNow, userTurn, decision, rerunChecks, publish };
+  const withdraw = vi.fn<WithdrawPort>(async () => ({ kind: 'withdrawn' }));
+  const ports: AutoBridgePorts = {
+    stop,
+    retry,
+    sendNow,
+    withdraw,
+    userTurn,
+    decision,
+    rerunChecks,
+    publish,
+  };
+  return { ports, stop, retry, sendNow, withdraw, userTurn, decision, rerunChecks, publish };
 };
 
 const cleanups: Array<() => void> = [];
@@ -141,6 +152,16 @@ describe('Auto in a window without the runtime', () => {
       kind: 'retried',
     });
     expect(main.sendNow).toHaveBeenCalledWith({ treeId: 'tree-harborline', rowId: 'outbox-1' });
+  });
+
+  it('withdraws a waiting message in the main window and carries the answer back', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.withdraw({ treeId: 'tree-harborline', rowId: 'outbox-1' })).toEqual({
+      kind: 'withdrawn',
+    });
+    expect(main.withdraw).toHaveBeenCalledWith({ treeId: 'tree-harborline', rowId: 'outbox-1' });
   });
 
   it('reruns the checks of one agent in the main window and carries the verdict back', async () => {
