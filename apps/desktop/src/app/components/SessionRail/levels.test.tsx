@@ -20,6 +20,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
@@ -787,7 +788,6 @@ describe('the folded session rail', () => {
               : { ...github.pr, checks: 'failure' },
         },
       },
-      setSessionActiveMount: vi.fn(async () => undefined),
     });
     stubStoryInvoke({
       worktree_status: () => worktreeStatusOf({}),
@@ -835,6 +835,12 @@ describe('the folded session rail', () => {
       fireEvent.click(flyout.getByRole('button', { name: /ledger-rounding/ }));
     });
 
+    expect(storySpies.updateSessionWriteDestination).toHaveBeenCalledWith({
+      db: expect.anything(),
+      sessionId: openId,
+      mountId: `${ledger.mountId}-second`,
+    });
+    expect(useAppStore.getState().sessionActiveMount[openId]).toBe(`${ledger.mountId}-second`);
     expect(useAppStore.getState().activeLens[openId]).toBe('branch');
     expect(useAppStore.getState().diffMountPath[openId]).toBe(`${ledger.worktreePath}-second`);
     expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
