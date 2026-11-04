@@ -442,9 +442,11 @@ read top to bottom at the conversation measure:
 - **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
   orchestrator". A queued hint is a dashed node with its first line, and
   **Show more** when that line is cut or the hint has a second line.
-  Waiting hints sit above it under one line, **Waits for the next decision**,
-  each row with **Remove**; a row being read says **Reading now** with
-  **Remove** disabled. Enter queues,
+  Waiting hints sit on the run's line under the steps, under one heading,
+  **Queued hints 3, read at the next decision**, each row with **Remove**;
+  a row being read says **Reading now** with **Remove** disabled. The
+  composer keeps one fixed line, **3 hints queued** with **View**, over the
+  input. Enter queues,
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).

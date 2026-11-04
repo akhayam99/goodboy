@@ -58,6 +58,28 @@ describe('splitStripImages', () => {
     });
   });
 
+  it('packs 24 px thumbnails four pixels apart and folds the rest into +N', () => {
+    expect(splitStripImages({ count: 2, width: 56, canFold: true, size: 'compact' })).toMatchObject(
+      {
+        shown: 2,
+        hidden: 0,
+      },
+    );
+    expect(splitStripImages({ count: 3, width: 56, canFold: true, size: 'compact' })).toMatchObject(
+      {
+        shown: 1,
+        hidden: 2,
+      },
+    );
+    expect(
+      splitStripImages({ count: 3, width: null, canFold: true, size: 'compact' }),
+    ).toMatchObject({
+      shown: 1,
+      hidden: 2,
+      desiredWidth: 52,
+    });
+  });
+
   it('asks for the width of at most six tiles so the bubble around it stays as before', () => {
     expect(splitStripImages({ count: 3, width: null, canFold: true }).desiredWidth).toBe(160);
     expect(splitStripImages({ count: 20, width: null, canFold: true }).desiredWidth).toBe(328);

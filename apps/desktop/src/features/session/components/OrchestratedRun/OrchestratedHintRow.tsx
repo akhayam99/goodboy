@@ -178,6 +178,19 @@ export const OrchestratedHintRow = ({
               {isExpanded ? ORCHESTRATED_COPY.hintLess : ORCHESTRATED_COPY.hintMore}
             </Button>
           ) : null}
+          <span data-hint-images="" className="flex w-14 shrink-0 justify-end">
+            {images.length > 0 ? (
+              <AttachmentStrip
+                items={images}
+                railLabel={ORCHESTRATED_COPY.hintImages}
+                size="compact"
+                viewer={{
+                  openId: openImageId,
+                  onOpenChange: setOpenImageId,
+                }}
+              />
+            ) : null}
+          </span>
           {step}
           {isReading ? (
             <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
@@ -200,21 +213,6 @@ export const OrchestratedHintRow = ({
           {isExpanded ? <Markdown text={hint.text} className="text-ui text-foreground" /> : null}
         </div>
       </div>
-      {images.length > 0 ? (
-        <div className="flex min-w-0">
-          <span aria-hidden className="shrink-0" style={{ width: slotWidth }} />
-          <div data-hint-images="" className="min-w-0 flex-1 px-2">
-            <AttachmentStrip
-              items={images}
-              railLabel={ORCHESTRATED_COPY.hintImages}
-              viewer={{
-                openId: openImageId,
-                onOpenChange: setOpenImageId,
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
       {hasFailed ? (
         <div className="flex min-w-0">
           <span aria-hidden className="shrink-0" style={{ width: slotWidth }} />

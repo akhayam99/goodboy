@@ -8,7 +8,7 @@ import { AttachmentChip, type AttachmentThumbnail } from '../components/Attachme
 import { useAttachmentThumbnails, type ThumbnailSource } from '../hooks/useAttachmentThumbnails';
 import { AttachmentMoreTile } from './AttachmentMoreTile';
 import { AttachmentThumb } from './AttachmentThumb';
-import { splitStripImages } from './stripLayout';
+import { splitStripImages, type StripSize } from './stripLayout';
 
 export type AttachmentStripItem = {
   readonly id: string;
@@ -33,6 +33,7 @@ type Props = {
   readonly items: ReadonlyArray<AttachmentStripItem>;
   readonly railLabel: string;
   readonly isEnd?: boolean;
+  readonly size?: StripSize;
   readonly viewer?: AttachmentViewerControl;
 };
 
@@ -48,7 +49,14 @@ const LOADING: AttachmentThumbnail = { status: 'loading' };
 
 const MORE_CONTROL = 'more';
 
-export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Props) => {
+export const AttachmentStrip = ({
+  items,
+  railLabel,
+  isEnd = false,
+  size = 'default',
+  viewer,
+}: Props) => {
+  const isCompact = size === 'compact';
   const [localOpenId, setLocalOpenId] = useState<string | null>(null);
   const openId = viewer === undefined ? localOpenId : viewer.openId;
   const onOpenChange = viewer?.onOpenChange;
@@ -79,6 +87,7 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
     count: images.length,
     width,
     canFold,
+    size,
   });
   const isOpenGone = openId !== null && !images.some((item) => item.id === openId);
   const loaded: ReadonlyArray<AttachmentStripItem> =
@@ -128,7 +137,14 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
       {images.length > 0 && (
         <div className={cn('flex min-w-0 flex-col', isEnd && 'items-end')}>
           <span aria-hidden className="h-0 max-w-full" style={{ width: desiredWidth }} />
-          <div className={cn('flex gap-2', !canFold && 'flex-wrap', isEnd && 'justify-end')}>
+          <div
+            className={cn(
+              'flex',
+              isCompact ? 'gap-1' : 'gap-2',
+              !canFold && 'flex-wrap',
+              isEnd && 'justify-end',
+            )}
+          >
             {images.slice(0, shown).map((item) => (
               <AttachmentThumb
                 key={item.id}
@@ -136,6 +152,7 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
                 fileName={item.fileName}
                 thumbnail={thumbnailOf({ id: item.id })}
                 title={item.title ?? item.fileName}
+                size={size}
                 onOpen={openAt({ id: item.id, control: item.id })}
                 {...(item.onRemove === undefined ? {} : { onRemove: item.onRemove })}
               />
@@ -144,6 +161,7 @@ export const AttachmentStrip = ({ items, railLabel, isEnd = false, viewer }: Pro
               <AttachmentMoreTile
                 id={MORE_CONTROL}
                 hidden={hidden}
+                size={size}
                 onOpen={openAt({ id: firstHidden.id, control: MORE_CONTROL })}
               />
             )}
