@@ -11,6 +11,7 @@ import type { LiveAutoGroup } from './liveGroupsOf';
 import { LiveRow } from './LiveRow';
 import { LiveSpine } from './LiveSpine';
 import { LiveStateWord } from './LiveStateWord';
+import { liveOwnStateOf } from './liveOwnStateOf';
 import { liveStatusOf } from './liveStatusOf';
 import { LIVE_TONE } from './liveTone';
 
@@ -40,6 +41,7 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
   const tone = group.state === 'stuck' ? 'danger' : LIVE_TONE.state[group.state].tone;
   const palette = agentKindPalette({ kind: 'auto' });
   const status = liveStatusOf({ word: auto.word, detail: null });
+  const isOwn = liveOwnStateOf({ group, word: status.word });
   return (
     <section
       aria-label={`${NAMES.runKind.autoAgent}: ${title}`}
@@ -60,6 +62,7 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
             tone={tone}
             word={status.word}
             autoWord={auto.isStuck ? 'stuck' : auto.phase}
+            isSectionState={isOwn}
           />
         }
         time={<DelegationClock agentId={auto.rootAgentId} isLive={auto.phase === 'running'} />}
@@ -76,6 +79,7 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
               title: child.asked ?? '',
               word: copy.word,
               tone: childToneOf({ child }),
+              isSectionState: group.state === 'working' && child.state === 'running',
               time: <DelegationClock agentId={child.agentId} isLive={copy.isLive} />,
               openLabel: `${child.label}, ${copy.word.toLowerCase()}`,
               onOpen: () =>

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const REST_MS = 150;
 const LEAVE_MS = 180;
 
-export type RailFlyoutKey = 'session' | 'more';
+export type RailFlyoutKey = 'session' | 'more' | 'branches';
 
 export type RailFlyoutTarget = {
   readonly key: RailFlyoutKey;

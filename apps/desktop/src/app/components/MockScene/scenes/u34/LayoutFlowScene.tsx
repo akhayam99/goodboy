@@ -8,9 +8,29 @@ import { shellArrangement } from '../../../../shellArrangement';
 import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
 import { DrawerHost } from '../../../DrawerHost';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
-import { RailSessionButton } from '../../../SideColumn/RailSessionButton';
+import type { ColumnActions } from '../../../SideColumn/columnDoors';
+import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SESSION } from '../activityRunSeed';
 import { seedRunningList } from '../u28/runningList/runningListSeed';
+import { seedFourBranches } from './seedFourBranches';
+
+const noop = () => undefined;
+
+const ACTIONS: ColumnActions = {
+  openBoard: noop,
+  openInbox: noop,
+  openChat: noop,
+  openWorkflows: noop,
+  openTerminalStudio: noop,
+  openNewChat: noop,
+  openNewTerminal: noop,
+  openMonitoring: noop,
+  openImpact: noop,
+  openSettings: noop,
+  openChangelog: noop,
+  openGuide: noop,
+  openShortcuts: noop,
+};
 
 const LIMITS_GOAL = 'Add the tenant limit check to payout creation';
 
@@ -20,12 +40,14 @@ type Props = {
   readonly isDrawerOpen?: boolean;
   readonly isFolded?: boolean;
   readonly isNarrowRow?: boolean;
+  readonly isFourBranches?: boolean;
 };
 
 export const LayoutFlowScene = ({
   isDrawerOpen = true,
   isFolded = false,
   isNarrowRow = false,
+  isFourBranches = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const drawer = useAppStore((state) => state.drawer);
@@ -33,6 +55,9 @@ export const LayoutFlowScene = ({
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, isFolded ? '1' : '0');
     seedRunningList();
+    if (isFourBranches) {
+      seedFourBranches();
+    }
     useAppStore.setState((state) => ({
       sessions: state.sessions.map((session) =>
         session.id === SESSION.id ? { ...session, goal: LIMITS_GOAL } : session,
@@ -42,7 +67,7 @@ export const LayoutFlowScene = ({
       useAppStore.getState().openDrawer({ kind: 'spawned', sessionId: SESSION.id, payload: null });
     }
     setIsReady(true);
-  }, [isDrawerOpen, isFolded]);
+  }, [isDrawerOpen, isFolded, isFourBranches]);
   if (!isReady) {
     return null;
   }
@@ -67,14 +92,14 @@ export const LayoutFlowScene = ({
         <AppShell
           leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
           leftSidebar={
-            <div className="flex flex-col items-center gap-2 p-2">
-              <RailSessionButton
-                session={LIMITS_SESSION}
-                sign="current"
-                hasFlyout={false}
-                onSelect={() => undefined}
-              />
-            </div>
+            <ShellLeft
+              arrangement={arrangement}
+              workspaceId={SESSION.workspaceId}
+              currentSessionId={SESSION.id}
+              isDraftShown={false}
+              actions={ACTIONS}
+              placeOverride={null}
+            />
           }
           main={<SessionFrame session={LIMITS_SESSION}>{overview}</SessionFrame>}
           drawer={drawer === null ? null : <DrawerHost />}

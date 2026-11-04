@@ -16,21 +16,16 @@ export const useWhereOf = ({ sessionId }: Params): WhereOf => {
   const groups = useMountRows({ sessionId });
   return useMemo(() => {
     const rows = groups.flatMap((group) => group.rows);
+    if (rows.length < 2) {
+      return () => null;
+    }
     const isProjectShown = new Set(rows.map((row) => row.projectName)).size >= 2;
-    const [onlyRow] = rows;
     const whereByMountId = new Map<string, string>(
       rows.map((row) => [
         row.mountId,
         isProjectShown ? `${row.projectName} · ${row.branch}` : row.branch,
       ]),
     );
-    return ({ mountId }) => {
-      if (mountId !== null) {
-        return whereByMountId.get(mountId) ?? null;
-      }
-      return rows.length === 1 && onlyRow !== undefined
-        ? (whereByMountId.get(onlyRow.mountId) ?? null)
-        : null;
-    };
+    return ({ mountId }) => (mountId === null ? null : (whereByMountId.get(mountId) ?? null));
   }, [groups]);
 };

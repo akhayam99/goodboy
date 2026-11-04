@@ -1,12 +1,20 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
 import { useMountRows } from '../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { useWorktreeStatusSnapshot } from '../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../features/session/hooks/useWorktreeStatuses/targets';
+import { RailFlyout } from '../SideColumn/RailFlyout';
+import { focusFirstFlyoutRow } from '../SideColumn/focusFirstFlyoutRow';
+import { isKeyboardFocus } from '../SideColumn/isKeyboardFocus';
+import { useRailFlyout } from '../SideColumn/useRailFlyout';
 import { BRANCH_LENSES } from './branchLenses';
+import { RailBranchRow } from './RailBranchRow';
+import { RailBranchesButton } from './RailBranchesButton';
 import { RailWorktreeButton } from './RailWorktreeButton';
+import { railBranchesSplitOf } from './railBranchesSplitOf';
+import { useRailBranchEntries } from './useRailBranchEntries';
 
 type Props = {
   readonly session: Session;
@@ -19,6 +27,7 @@ export const RailWorktrees = ({ session }: Props) => {
   const branch = useBranchIdentity({ sessionId });
   const isBranchShown = useAppStore((s) => BRANCH_LENSES.has(s.activeLens[sessionId] ?? null));
   const shownPath = isBranchShown ? branch.mountPath : null;
+  const flyout = useRailFlyout();
   const rows = useMemo(
     () => groups.flatMap((group) => [...group.rows, ...group.finishedRows]),
     [groups],
@@ -28,22 +37,70 @@ export const RailWorktrees = ({ session }: Props) => {
     [rows, projects],
   );
   const snapshot = useWorktreeStatusSnapshot({ targets });
+  const entries = useRailBranchEntries({
+    sessionId,
+    rows,
+    statuses: snapshot.statuses,
+    shownPath,
+  });
+  const { own, folded } = useMemo(() => railBranchesSplitOf({ entries }), [entries]);
+  const isBranchesTarget = flyout.target?.key === 'branches';
+  const closeFlyout = flyout.close;
+  useEffect(() => {
+    if (folded.length === 0 && isBranchesTarget) {
+      closeFlyout();
+    }
+  }, [folded.length, isBranchesTarget, closeFlyout]);
   if (rows.length === 0) {
     return null;
   }
+
   return (
     <div data-rail-worktrees="" className="flex flex-col">
-      {rows.map((row) => (
-        <RailWorktreeButton
-          key={row.mountId}
-          sessionId={sessionId}
-          row={row}
-          status={
-            row.worktreePath === null ? null : (snapshot.statuses.get(row.worktreePath) ?? null)
-          }
-          isShown={row.worktreePath !== null && row.worktreePath === shownPath}
-        />
+      {own.map((entry) => (
+        <RailWorktreeButton key={entry.row.mountId} sessionId={sessionId} entry={entry} />
       ))}
+      {folded.length === 0 ? null : (
+        <>
+          <RailBranchesButton
+            count={folded.length}
+            onEnter={(event) =>
+              flyout.enter({
+                key: 'branches',
+                anchor: event.currentTarget,
+                isImmediate:
+                  event.type === 'click' ||
+                  (event.type === 'focus' && isKeyboardFocus({ element: event.currentTarget })),
+              })
+            }
+            onLeave={flyout.leave}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowRight' && event.key !== 'ArrowDown') {
+                return;
+              }
+              event.preventDefault();
+              if (flyout.target?.key === 'branches') {
+                focusFirstFlyoutRow({ flyoutKey: 'branches' });
+                return;
+              }
+              flyout.enter({ key: 'branches', anchor: event.currentTarget, isImmediate: true });
+              window.requestAnimationFrame(() => focusFirstFlyoutRow({ flyoutKey: 'branches' }));
+            }}
+          />
+          <RailFlyout
+            target={flyout.target}
+            label="Branches"
+            onKeep={flyout.keep}
+            onLeave={flyout.leave}
+            onClose={flyout.close}
+            onDismiss={flyout.dismiss}
+          >
+            {entries.map((entry) => (
+              <RailBranchRow key={entry.row.mountId} sessionId={sessionId} entry={entry} />
+            ))}
+          </RailFlyout>
+        </>
+      )}
     </div>
   );
 };
