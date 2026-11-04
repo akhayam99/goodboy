@@ -3,7 +3,7 @@ import { isoNow } from '@goodboy/types/helpers';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { NAMES } from '../../../shared/utils/names';
 import { isHandsFree } from './handsFree';
-import { isAfterStuckAgent } from './isAfterStuckAgent';
+import { isAfterStuckAgent } from './stuckStep/isAfterStuckAgent';
 import type { GetFn, SetFn } from './types';
 
 const MAX_CONTINUE = 1;

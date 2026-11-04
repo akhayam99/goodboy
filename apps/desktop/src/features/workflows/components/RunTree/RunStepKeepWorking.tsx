@@ -34,7 +34,7 @@ export const RunStepKeepWorking = ({ agent }: Props) => {
     <Button
       variant="ghost"
       size="sm"
-      className="h-6 shrink-0"
+      className="shrink-0"
       disabled={isBusy}
       aria-label={`${STUCK_ACTION_LABEL.keepWorking} on ${agent.name}`}
       onClick={() => void keepWorking()}

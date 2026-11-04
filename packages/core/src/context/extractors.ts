@@ -6,7 +6,6 @@ export {
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
-  extractClusterStuck,
   extractClustersFromMarker,
   extractCommentAnalysis,
   extractCommentResolved,
@@ -25,7 +24,6 @@ export {
   extractScoutDomains,
   extractScoutSplit,
   extractStepDone,
-  extractStepStuck,
   hasBlockingQuestion,
   isReviewThreadId,
   stripControlMarkers,
@@ -49,3 +47,4 @@ export {
 } from './marker-parsing';
 export { isOpenQuestionAnswerText, wrapOpenQuestionAnswers } from './open-question-helpers';
 export { mergeIntoSlot, removeFromSlot } from './slot-mutations';
+export { extractStuckMarker, type ExtractedStuck } from './extractStuckMarker';

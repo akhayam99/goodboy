@@ -20,11 +20,11 @@ import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
-import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
+import { answerOf } from './answerOf';
 import { isNotFinishedNote } from './isNotFinishedNote';
 import { stuckActionOf } from './stuckActionOf';
 import { RunTreeChecklistCells } from './RunTreeChecklistCells';
@@ -59,30 +59,6 @@ type Props = {
   readonly onHighlight?: (isOn: boolean) => void;
   readonly onSelect: () => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
-};
-
-type AskParams = {
-  readonly ask: RowAsk | null;
-};
-
-const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
-  if (ask == null) {
-    return null;
-  }
-  switch (ask.kind) {
-    case 'answer':
-      return { question: ask.question };
-    case 'restartStep':
-    case 'runStep':
-    case 'continue':
-    case 'reviewComment':
-    case 'groupChild':
-      return null;
-    default: {
-      const exhaustive: never = ask;
-      return exhaustive;
-    }
-  }
 };
 
 export const RunTreeRow = ({

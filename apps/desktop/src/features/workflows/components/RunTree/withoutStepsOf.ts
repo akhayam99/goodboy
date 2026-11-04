@@ -8,7 +8,7 @@ type JoinParams = {
   readonly labels: ReadonlyArray<string>;
 };
 
-const joinLabels = ({ labels }: JoinParams): string => {
+const stepsPhraseOf = ({ labels }: JoinParams): string => {
   if (labels.length === 1) {
     return `step ${labels[0]}`;
   }
@@ -32,7 +32,7 @@ export const withoutStepsOf = ({ items }: Params): ReadonlyMap<string, string> =
       continue;
     }
     if (item.rowState.phase === 'done' && labels.length > 0) {
-      without.set(item.entry.agent.id, joinLabels({ labels }));
+      without.set(item.entry.agent.id, stepsPhraseOf({ labels }));
     }
   }
   return without;

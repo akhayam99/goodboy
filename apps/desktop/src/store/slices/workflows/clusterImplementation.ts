@@ -1,4 +1,3 @@
-import { formatError } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -9,7 +8,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { extractClusterDone, extractClusterStuck } from '@goodboy/core/context';
+import { extractClusterDone, extractStuckMarker } from '@goodboy/core/context';
 import { isAgentStatusSettled, notFinishedKindOf } from '@goodboy/core/workflows';
 import {
   invokeAgentInsertBatch,
@@ -23,39 +22,15 @@ import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch'
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { SILENT_STUCK_REASON, continueOrPause, resetContinueAttempts } from './autoContinue';
 import { skipDependentsOfStuck } from './clusterWaves/skipDependentsOfStuck';
+import { startChild } from './clusterWaves/startChild';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
-import { sessionById } from '../sessions/sessionIndex';
 import { blockUnreadablePart } from './clusterWaves/blockUnreadablePart';
 import { clusterLaunching } from './clusterWaves/clusterLaunching';
 import { clusterOrderBlocks } from './clusterWaves/clusterOrderBlocks';
 import { launchableChildren } from './clusterWaves/launchableChildren';
 import { composeClusterChecks } from './clusterWaves/composeClusterChecks';
-
-const MAX_START_ATTEMPTS = 3;
-
-const MAX_STEP_START_ATTEMPTS = 6;
-
-const START_BACKOFF_MS: ReadonlyArray<number> = [2_000, 8_000];
-
-const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
-  /session not found/i,
-  /no agent selected/i,
-  /session directory not found/i,
-  /resolved model args omit/i,
-  /agent not found/i,
-];
-
-const isTransientStartFailure = (error: unknown): boolean => {
-  const message = formatError(error);
-  return !DETERMINISTIC_START_FAILURES.some((pattern) => pattern.test(message));
-};
-
-const producedWork = (get: GetFn, childId: AgentId): boolean =>
-  (get().transcripts[childId] ?? []).some(
-    (event) => event.kind === 'assistant_text' || event.kind === 'tool_call_start',
-  );
 
 function childrenOf(runs: ReadonlyArray<Agent>, containerId: AgentId): ReadonlyArray<Agent> {
   return runs.filter((r) => r.parentAgentId === containerId).sort((a, b) => a.ordinal - b.ordinal);
@@ -127,159 +102,6 @@ function composeContinuePrompt(
     `**Resume**${cluster ? ` ${cluster.title}` : ''}: finish the remaining items now.`,
     composeClusterBoundary(childId),
   );
-}
-
-type StartChildParams = {
-  readonly set: SetFn;
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly containerId: AgentId;
-  readonly childId: AgentId;
-  readonly content: string;
-  readonly handoff?: HandoffDraft;
-  readonly attempt?: number;
-};
-
-const failChildStart = async ({
-  set,
-  get,
-  sessionId,
-  childId,
-  reason,
-}: {
-  readonly set: SetFn;
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly childId: AgentId;
-  readonly reason: string;
-}): Promise<void> => {
-  const name =
-    (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId)?.name ?? 'cluster';
-  clusterLaunching.release({ childId });
-  await invokeAgentUpdateStatus(childId, { status: 'failed', completedAt: isoNow() }).catch(
-    () => undefined,
-  );
-  const refreshed = await invokeAgentList(sessionId).catch(() => null);
-  if (refreshed != null) {
-    set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
-  }
-  void get().refreshUnreadWorkspaces();
-  void get().emitNotification({
-    kind: 'error',
-    severity: 'warning',
-    title: `Subagent ${name} couldn't start`,
-    body: `${reason} open the agent and continue it manually. the step stays open until this subagent finishes.`,
-    sessionId,
-  });
-};
-
-const handleChildStartFailure = async ({
-  set,
-  get,
-  sessionId,
-  containerId,
-  childId,
-  content,
-  handoff,
-  error,
-}: StartChildParams & { readonly error: unknown }): Promise<void> => {
-  const message = formatError(error);
-  const failures = get().clusterStartAttempts[childId] ?? 1;
-  const stepFailures = (get().clusterStepStartAttempts[containerId] ?? 0) + 1;
-  set((s) => ({
-    clusterStepStartAttempts: { ...s.clusterStepStartAttempts, [containerId]: stepFailures },
-  }));
-
-  if (producedWork(get, childId) || !isTransientStartFailure(error)) {
-    await failChildStart({ set, get, sessionId, childId, reason: `${message}.` });
-    return;
-  }
-  if (failures >= MAX_START_ATTEMPTS || stepFailures >= MAX_STEP_START_ATTEMPTS) {
-    await failChildStart({
-      set,
-      get,
-      sessionId,
-      childId,
-      reason: `${message}. it failed to start ${failures} ${failures === 1 ? 'time' : 'times'}.`,
-    });
-    return;
-  }
-
-  const delayMs = START_BACKOFF_MS[failures - 1] ?? START_BACKOFF_MS[START_BACKOFF_MS.length - 1]!;
-  setTimeout(() => {
-    const phaseRuns = get().sessionPhaseRuns[sessionId] ?? [];
-    const child = phaseRuns.find((r) => r.id === childId);
-    if (child === undefined) {
-      return;
-    }
-    if (isAgentStatusSettled({ status: child.status })) {
-      return;
-    }
-    const session = sessionById(get().sessions, sessionId);
-    if (session === undefined) {
-      return;
-    }
-    const workflowRunId =
-      child.workflowRunId ?? phaseRuns.find((r) => r.id === containerId)?.workflowRunId;
-    const run = session.workflowRuns.find((r) => r.id === workflowRunId);
-    if (run?.discardedAt != null) {
-      return;
-    }
-    const turn = get().agentTurnState[childId];
-    if (turn?.kind === 'running' || turn?.kind === 'starting') {
-      return;
-    }
-    startChild({
-      set,
-      get,
-      sessionId,
-      containerId,
-      childId,
-      content,
-      ...(handoff !== undefined && { handoff }),
-      attempt: failures + 1,
-    });
-  }, delayMs);
-};
-
-function startChild({
-  set,
-  get,
-  sessionId,
-  containerId,
-  childId,
-  content,
-  handoff,
-  attempt = get().clusterStartAttempts[childId] ?? 1,
-}: StartChildParams): void {
-  set((s) => ({
-    agentTurnState: {
-      ...s.agentTurnState,
-      [childId]: { kind: 'idle' as const, lastActivityAt: isoNow() },
-    },
-    clusterStartAttempts: { ...s.clusterStartAttempts, [childId]: attempt },
-  }));
-  void get()
-    .sendTurn({
-      sessionId,
-      agentId: childId,
-      content,
-      origin: 'workflow',
-      ...(handoff !== undefined && { handoff }),
-    })
-    .then(() => clusterLaunching.release({ childId }))
-    .catch((error: unknown) => {
-      void handleChildStartFailure({
-        set,
-        get,
-        sessionId,
-        containerId,
-        childId,
-        content,
-        ...(handoff !== undefined && { handoff }),
-        error,
-      });
-    });
 }
 
 type ClusterContainerParams = {
@@ -669,7 +491,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       if (await holdForUserQuestion({ set, get, sessionId, agent: child, assistantText })) {
         return;
       }
-      const stuck = extractClusterStuck({ text: assistantText });
+      const stuck = extractStuckMarker({ text: assistantText, kind: 'cluster' });
       const stuckReason = stuck !== null && stuck.id === childAgentId ? stuck.reason : null;
       const outcome = await continueOrPause({
         set,

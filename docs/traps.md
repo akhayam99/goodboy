@@ -676,6 +676,10 @@ fails silently at runtime.
   unlinks, and `forget_folder` returns `FolderBusy` under the folder lock, so a
   turn started in another window keeps its staging.
 
+## Not finished is a skip that carries a summary
+
+A step that did not finish is `skipped` with a reason in `outputSummary`; there is no `not_finished` status, because adding one needs a migration. The row word, the "without step N" notes, the end line and the two-in-a-row stop all read `notFinishedKindOf`. Never write an `outputSummary` on a step the user skips, and never read plain `skipped` as "did not finish". A step stopped by "Every step" or by the two-in-a-row rule is `blocked` and keeps no reason; the agent page holds it in the transcript.
+
 ## Traps in the toolchain
 
 - A new worktree needs `pnpm install`. In this checkout that install exits 1

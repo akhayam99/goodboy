@@ -13,7 +13,7 @@ import {
   classifyAgent,
   kindConsumesPlan,
 } from '../../../features/session/agent-kind';
-import { composeMissingStepsSection } from './composeMissingStepsSection';
+import { composeMissingStepsSection } from './stuckStep/composeMissingStepsSection';
 import { standingGuidanceSection } from './standingGuidance';
 import {
   buildGoalKickoffSection,

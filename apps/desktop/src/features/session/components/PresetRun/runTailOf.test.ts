@@ -204,6 +204,33 @@ describe('runTailOf', () => {
     ).toMatchObject({ phrase: 'Stopped by you', verb: null });
   });
 
+  it('ends a finished run with a step not finished as finished with a gap, never plain done', () => {
+    const agents: ReadonlyArray<Agent> = [
+      anAgent({
+        id: SCOUT,
+        stepId: STEP_ONE,
+        status: 'skipped',
+        ordinal: 0,
+        outputSummary: 'the notify-relay token is missing',
+      }),
+      anAgent({ id: IMPLEMENTER, stepId: STEP_TWO, status: 'completed', ordinal: 1 }),
+    ];
+
+    const tail = tailOf({ isCompleted: true, agents });
+
+    expect(tail).toMatchObject({ phrase: 'Finished, 1 step not finished', verb: null });
+    expect(JSON.stringify(tail)).not.toContain('notify-relay token');
+  });
+
+  it('keeps Run finished when the user skipped the step', () => {
+    expect(
+      tailOf({
+        isCompleted: true,
+        agents: agentsOf({ scout: 'skipped', implementer: 'completed' }),
+      }),
+    ).toMatchObject({ phrase: 'Run finished' });
+  });
+
   it('draws no tail on an archived run, whose Restore is in the header', () => {
     expect(
       tailOf({ run: aWorkflowRun({ discardedAt: JSON.parse('"2026-10-16T10:00:00.000Z"') }) }),

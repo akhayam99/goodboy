@@ -26,7 +26,7 @@ export const RunStepSkipAndGoOn = ({ agent, workflowRunId }: Props) => {
     <Button
       variant="secondary"
       size="sm"
-      className="h-6 shrink-0"
+      className="shrink-0"
       disabled={isBusy}
       aria-label={`${STUCK_ACTION_LABEL.skipAndGoOn} after ${agent.name}`}
       onClick={() => void skip()}

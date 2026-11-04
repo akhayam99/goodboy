@@ -1,6 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { extractStepDone, extractStepStuck } from '@goodboy/core/context';
+import { extractStepDone, extractStuckMarker } from '@goodboy/core/context';
 import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -82,7 +82,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       if (await holdForUserQuestion({ set, get, sessionId, agent, assistantText })) {
         return { shouldAutoAdvance: false };
       }
-      const stuck = extractStepStuck({ text: assistantText });
+      const stuck = extractStuckMarker({ text: assistantText, kind: 'step' });
       const stuckReason = stuck !== null && stuck.id === agentId ? stuck.reason : null;
       const outcome = await continueOrPause({
         set,

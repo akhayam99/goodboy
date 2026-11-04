@@ -1482,9 +1482,17 @@ When a step or a sub-agent ends a turn without its `step-done` or
   the end of the turn. A question the heuristic gets wrong still closes: write
   what you mean and choose **Send as message** on the card.
 
-Otherwise `continueOrPause` decides. A hands-free step or sub-agent is
-re-kicked once. After that, or at once when autorun is off, the agent stops in
-one of two states:
+Otherwise `continueOrPause` decides. Every turn must end in `step-done`,
+`step-stuck` (or the `cluster-` pair) or one question; `composeUnitBoundary`
+says so. The app decides, the marker only adds the reason: no done marker after
+the retry is stuck as well. A hands-free step or sub-agent (autorun on) is
+re-kicked once, except when it sent a stuck marker. Then it is not finished:
+status `skipped` with the reason in `outputSummary`, and the run goes on through
+`skipStuckStepAndAdvance` (a paused run or a plan held for approval starts
+nothing). A sub-agent that comes after it does not start (`Did not start:`, see
+`skipDependentsOfStuck`). The second not finished agent in a row blocks instead
+(`isAfterStuckAgent`). With autorun off, or at once, the agent stops in one of
+two states:
 
 - `failed`: the agent died. Its last turn ended with a stream error or with no
   output at all. A crash, a non-zero exit, a spawn error, an auth or quota

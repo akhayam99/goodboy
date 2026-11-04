@@ -8,8 +8,6 @@ import {
   extractAllCommentResolved,
   extractAllCommentWontfix,
   extractClusterDone,
-  extractClusterStuck,
-  extractStepStuck,
   extractClustersFromMarker,
   extractCommentAnalysis,
   extractCommentResolved,
@@ -1605,42 +1603,5 @@ describe('extractCommentVerdict', () => {
     const text =
       '<<comment-verdict threadId="t" verdict="still-needed" evidence="first">> then <<comment-verdict threadId="t" verdict="fixed-here" sha="abcdef1" evidence="second">>';
     expect(extractCommentVerdict(text)?.evidence).toBe('second');
-  });
-});
-
-describe('extractStepStuck and extractClusterStuck', () => {
-  it('reads the id and the reason of a step-stuck marker', () => {
-    const text = 'no access\n<<step-stuck id="agent-1" reason="the ledger-core token is missing">>';
-    expect(extractStepStuck({ text })).toEqual({
-      id: 'agent-1',
-      reason: 'the ledger-core token is missing',
-    });
-  });
-
-  it('reads a marker with no reason as an empty reason', () => {
-    expect(extractStepStuck({ text: '<<step-stuck id="agent-1">>' })).toEqual({
-      id: 'agent-1',
-      reason: '',
-    });
-  });
-
-  it('keeps the last marker and ignores one without an id', () => {
-    const text =
-      '<<step-stuck reason="x">> <<step-stuck id="a" reason="one">> <<step-stuck id="b" reason="two">>';
-    expect(extractStepStuck({ text })).toEqual({ id: 'b', reason: 'two' });
-  });
-
-  it('returns null when there is no stuck marker', () => {
-    expect(extractStepStuck({ text: 'done <<step-done id="agent-1">>' })).toBeNull();
-    expect(extractClusterStuck({ text: 'nothing here' })).toBeNull();
-  });
-
-  it('reads a cluster-stuck marker and not a step-stuck one', () => {
-    const text = '<<cluster-stuck id="child-1" reason="payments-api is down">>';
-    expect(extractClusterStuck({ text })).toEqual({
-      id: 'child-1',
-      reason: 'payments-api is down',
-    });
-    expect(extractStepStuck({ text })).toBeNull();
   });
 });
