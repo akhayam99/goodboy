@@ -27,6 +27,8 @@ type Props = {
   readonly phase: RowPhase;
   readonly isNested: boolean;
   readonly change?: PlanChange | null;
+  readonly state?: ReactNode;
+  readonly action?: ReactNode;
 };
 
 export const RunTreeChecklistCells = ({
@@ -36,6 +38,8 @@ export const RunTreeChecklistCells = ({
   phase,
   isNested,
   change = null,
+  state = null,
+  action = null,
 }: Props) => {
   const step =
     entry.stepLabel == null ? '' : isNested ? entry.stepLabel : `Step ${entry.stepLabel}`;
@@ -61,6 +65,8 @@ export const RunTreeChecklistCells = ({
           {PRESET_CHANGE_COPY.tag[change.kind]}
         </span>
       )}
+      {state}
+      {action}
       <span data-checklist-cell="duration" className="flex shrink-0 justify-end">
         {duration}
       </span>
