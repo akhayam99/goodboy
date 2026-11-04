@@ -20,6 +20,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { AUTO_SESSION } from '../u24/autoSceneSeed';
 import { U34_AUTO_MOUNT_SCENES } from './auto-mount';
 
 const WAIT = { timeout: 15_000 };
@@ -115,6 +116,64 @@ describe('the mount card scenes', () => {
     expect(sent).toMatchObject([
       { content: 'Added notify-relay on ak/feat-new-explore. Go on with my request.' },
     ]);
+  });
+
+  it('keeps the card with a conflict when another window added the project on a different branch', async () => {
+    mount({ id: 'u34-p21-mount-ask' });
+    await screen.findByText('To do this, add notify-relay', undefined, WAIT);
+    const sent: Array<unknown> = [];
+    const project = store
+      .getState()
+      .projects.find((candidate) => candidate.name === 'notify-relay');
+    if (project === undefined) {
+      throw new Error('the scene has no notify-relay');
+    }
+    await act(async () => {
+      store.setState({
+        ensureProjectMounted: async () => {
+          const mountId = brandId<MountId>({ value: 'mount-other-window' });
+          store.setState((state) => ({
+            sessionProjectMounts: {
+              ...state.sessionProjectMounts,
+              [AUTO_SESSION.id]: [
+                {
+                  mountId,
+                  sessionId: AUTO_SESSION.id,
+                  projectId: project.id,
+                  mountName: 'notify-relay',
+                  worktreePath: '/work/harborline/notify-relay/.goodboy/worktrees/other',
+                  lastWorktreePath: '/work/harborline/notify-relay/.goodboy/worktrees/other',
+                  repoRoot: project.rootPath,
+                  branch: 'ak/other-window',
+                  baseBranch: null,
+                  parallelIndex: 1,
+                  isAttached: true,
+                  diskState: 'present',
+                  revision: 0,
+                },
+              ],
+            },
+          }));
+          return { status: 'already-mounted', mountIds: [mountId] };
+        },
+        sendTurn: async (input) => {
+          sent.push(input);
+          return { blockedOverBudget: false };
+        },
+      });
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Add notify-relay' }));
+
+    expect(
+      await screen.findByText(
+        'notify-relay is already added on branch ak/other-window, not on ak/feat-new-explore.',
+        undefined,
+        WAIT,
+      ),
+    ).toBeDefined();
+    expect(sent).toEqual([]);
+    expect(screen.queryByText('Added notify-relay on ak/feat-new-explore')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Add notify-relay' })).toBeDefined();
   });
 
   it('u34-p21-mount-mounting says what is happening on the button', async () => {

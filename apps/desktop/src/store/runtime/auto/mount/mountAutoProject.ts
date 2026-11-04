@@ -1,5 +1,6 @@
 import { formatError } from '@goodboy/ui';
 import { materializationGate } from '../../../slices/project-mounts/materializationGate';
+import { mountOnBranchOf } from './mountOnBranchOf';
 import { sessionById } from '../../../slices/sessions/sessionIndex';
 import type { GetFn } from '../../../slice-types';
 import type { MountProjectOutcome, MountProjectParams } from '../ports';
@@ -30,14 +31,21 @@ export const mountAutoProject = async ({ get, params }: Params): Promise<MountPr
   if (matches.length > 1) {
     return { kind: 'ambiguous' };
   }
-  const existing = (state.sessionProjectMounts[sessionId] ?? []).find(
-    (mount) => mount.projectId === project.id,
-  );
-  if (existing !== undefined && branch !== null && existing.branch !== branch) {
-    return { kind: 'elsewhere', name: project.name, branch: existing.branch, requested: branch };
+  const existing = mountOnBranchOf({
+    mounts: state.sessionProjectMounts[sessionId] ?? [],
+    projectId: project.id,
+    branch,
+  });
+  if (existing.kind === 'elsewhere' && branch !== null) {
+    return {
+      kind: 'elsewhere',
+      name: project.name,
+      branch: existing.mount.branch,
+      requested: branch,
+    };
   }
-  if (existing !== undefined) {
-    return { kind: 'mounted', name: project.name, branch: existing.branch };
+  if (existing.kind === 'match') {
+    return { kind: 'mounted', name: project.name, branch: existing.mount.branch };
   }
   if (mode === 'ask') {
     return { kind: 'ask', name: project.name };
@@ -63,8 +71,21 @@ export const mountAutoProject = async ({ get, params }: Params): Promise<MountPr
   } catch (error) {
     return { kind: 'failed', name: project.name, error: formatError(error) };
   }
-  const created = (get().sessionProjectMounts[sessionId] ?? []).find(
-    (mount) => mount.projectId === project.id,
-  );
-  return { kind: 'mounted', name: project.name, branch: created?.branch ?? branch ?? '' };
+  const created = mountOnBranchOf({
+    mounts: get().sessionProjectMounts[sessionId] ?? [],
+    projectId: project.id,
+    branch,
+  });
+  if (created.kind === 'elsewhere' && branch !== null) {
+    return {
+      kind: 'elsewhere',
+      name: project.name,
+      branch: created.mount.branch,
+      requested: branch,
+    };
+  }
+  if (created.kind === 'match') {
+    return { kind: 'mounted', name: project.name, branch: created.mount.branch };
+  }
+  return { kind: 'mounted', name: project.name, branch: branch ?? '' };
 };

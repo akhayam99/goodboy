@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button, Checkbox, FormActions, Input, Notice, formatError } from '@goodboy/ui';
-import type { AgentId, ProjectId, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../store';
+import { mountOnBranchOf } from '../../../store/runtime/auto/mount/mountOnBranchOf';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
-import { projectById } from '../../../store/slices/projects/projectIndex';
-import { projectAnswerOf, type ProjectPick } from './projectAnswerOf';
+import { projectAnswerOf } from './projectAnswerOf';
 import { knownMountOf } from './knownMountOf';
 import type { ProjectAsk } from './projectAskOf';
+import type { ProjectCandidate } from './projectCandidate';
+import { useProjectCandidates } from './hooks/useProjectCandidates';
 import { ObjectActionVerb } from '../../actions/ObjectActionVerb';
 
 type Props = {
@@ -15,19 +17,10 @@ type Props = {
   readonly ask: ProjectAsk;
 };
 
-type Candidate = ProjectPick &
-  Readonly<{
-    projectId: ProjectId;
-    line: string;
-    isMounted: boolean;
-  }>;
-
 type Answered = Readonly<{
   key: string;
   word: string;
 }>;
-
-const ANOTHER_LINE = 'Not in this session. A worktree is created from main.';
 
 const JUST_ANSWER = 'No folder, just answer';
 
@@ -42,7 +35,6 @@ type RunParams = {
 };
 
 export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
-  const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY);
   const projects = useAppStore((state) => state.projects);
   const sendTurn = useAppStore((state) => state.sendTurn);
   const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
@@ -53,38 +45,16 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [answered, setAnswered] = useState<Answered | null>(null);
 
-  const inSession = useMemo(
-    (): ReadonlyArray<Candidate> =>
-      mounts.map((mount) => ({
-        key: mount.mountId,
-        name: projectById(projects, mount.projectId)?.name ?? mount.mountName,
-        projectId: mount.projectId,
-        line: mount.branch,
-        isMounted: true,
-      })),
-    [mounts, projects],
-  );
-  const others = useMemo((): ReadonlyArray<Candidate> => {
-    const mounted = new Set(mounts.map((mount) => mount.projectId));
-    const needle = query.trim().toLowerCase();
-    return projects
-      .filter((project) => !mounted.has(project.id) && project.kind === 'repo')
-      .filter((project) => needle === '' || project.name.toLowerCase().includes(needle))
-      .map((project) => ({
-        key: project.id,
-        name: project.name,
-        projectId: project.id,
-        line: ANOTHER_LINE,
-        isMounted: false,
-      }));
-  }, [mounts, projects, query]);
+  const { inSession, others, workspaceId } = useProjectCandidates({ sessionId, query });
 
   if (answered !== null && answered.key === ask.key) {
     return <p className="text-ui text-muted-foreground">{answered.word}</p>;
   }
 
   const mountAsk = ask.mount;
-  const known = isAnotherOpen ? null : knownMountOf({ candidates: projects, mount: mountAsk });
+  const known = isAnotherOpen
+    ? null
+    : knownMountOf({ candidates: projects, workspaceId, mount: mountAsk });
   const card = known === null ? null : known.card;
 
   const all = [...inSession, ...others];
@@ -92,7 +62,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
   const answer = projectAnswerOf({ picks, roleNoun: ask.roleNoun });
   const isBusy = busy !== null;
 
-  const toggle = ({ key }: Pick<Candidate, 'key'>) =>
+  const toggle = ({ key }: Pick<ProjectCandidate, 'key'>) =>
     setPicked((current) =>
       current.includes(key) ? current.filter((value) => value !== key) : [...current, key],
     );
@@ -155,6 +125,16 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           reason: mountAsk.reason,
           ...(mountAsk.branch === null ? {} : { branch: mountAsk.branch }),
         });
+        const landed = mountOnBranchOf({
+          mounts: useAppStore.getState().sessionProjectMounts[sessionId] ?? [],
+          projectId: known.project.id,
+          branch: mountAsk.branch,
+        });
+        if (landed.kind === 'elsewhere') {
+          throw new Error(
+            `${known.project.name} is already added on branch ${landed.mount.branch}, not on ${mountAsk.branch ?? ''}.`,
+          );
+        }
         await reply({ content: card.message, word: card.doneLine });
       },
     });
