@@ -91,6 +91,23 @@ describe('echo rows of messages Auto has not read', () => {
     expect(keysOf(placed)).toEqual(['planner', 'u1', 'd1']);
   });
 
+  it('keeps send order when the second echo already sits next to the delivery', () => {
+    const second = 'Add a test for the second retry.';
+    const rows = [
+      echo({ key: 'u1', text: TEXT, offsetMs: 500 }),
+      reply('planner'),
+      echo({ key: 'u2', text: second, offsetMs: 900 }),
+      delivery({ key: 'd1', text: `${TEXT}\n${second}` }),
+    ];
+
+    expect(keysOf(rowsByDeliveryOf({ rows, insertions: [] }))).toEqual([
+      'planner',
+      'u1',
+      'u2',
+      'd1',
+    ]);
+  });
+
   it('leaves an echo that already sits next to its delivery', () => {
     const rows = [
       echo({ key: 'u1', text: TEXT, offsetMs: 500 }),

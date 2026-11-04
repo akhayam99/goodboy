@@ -49,7 +49,7 @@ export const rowsByDeliveryOf = ({ rows, insertions }: Params): ReadonlyArray<Co
       const deliveryText = deliveryTextOf({ row: later });
       return deliveryText !== null && deliveryText.includes(text);
     });
-    if (delivery === undefined || kept[index + 1] === delivery) {
+    if (delivery === undefined) {
       return;
     }
     movedKeys.add(row.key);
