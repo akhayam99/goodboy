@@ -10,10 +10,9 @@ export const sessionIdOfOwner = ({ get, owner }: Params): SessionId | null => {
   if (owner.type === 'session') {
     return brandId<SessionId>({ value: owner.id });
   }
-  for (const session of get().sessions) {
-    if (session.workflowRuns.some((run) => run.id === owner.id)) {
-      return session.id;
-    }
-  }
-  return null;
+  const { sessions, archivedSessions } = get();
+  const owning = [...sessions, ...Object.values(archivedSessions).flat()].find((session) =>
+    session.workflowRuns.some((run) => run.id === owner.id),
+  );
+  return owning?.id ?? null;
 };

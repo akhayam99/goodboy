@@ -234,7 +234,7 @@ export const startAutoRuntime = async ({
   };
   registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
   registerAutoUserTurnPort({
-    port: async ({ agentId, sessionId, workspaceId, text, images }) => {
+    port: async ({ agentId, sessionId, workspaceId, text, images, onQueued }) => {
       const started = await startAutoTree({
         ctx: runtime.ctx,
         agent: { agentId, sessionId, workspaceId },
@@ -245,7 +245,11 @@ export const startAutoRuntime = async ({
         text,
         ...(images !== undefined && { images }),
       });
-      return outcome.kind === 'queued' ? 'queued' : 'lost';
+      if (outcome.kind !== 'queued') {
+        return 'lost';
+      }
+      onQueued?.({ rowId: outcome.rowId });
+      return 'queued';
     },
   });
   const recovered = new Set<string>();

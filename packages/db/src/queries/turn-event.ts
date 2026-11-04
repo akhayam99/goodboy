@@ -47,6 +47,7 @@ const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
         ...(event.sentVia !== undefined ? { sentVia: event.sentVia } : {}),
         ...(event.deliveryId !== undefined ? { deliveryId: event.deliveryId } : {}),
         ...(event.deliveredBy !== undefined ? { deliveredBy: event.deliveredBy } : {}),
+        ...(event.outboxIds !== undefined ? { outboxIds: event.outboxIds } : {}),
         at: event.at,
       };
     case 'operator_text':

@@ -198,9 +198,13 @@ reaches Auto only when the child ends. The chat draws each waiting message as a 
 send order, with its own quiet line under it, "Waits for <task of the child>" or "Waits for 2
 agents", and **Send now** (`AutoPendingMessages`, from `pendingMessages` of the tree view, which
 carries the message text). The same insertion lists the operator echoes it takes over
-(`takesOver`), and `TranscriptRows` drops those echo rows so the bubble never shows twice. Once
-the message is delivered, `rowsByDeliveryOf` seats its echo right before the delivery row that
-carries its text, so it never jumps above rows that happened before Auto read it. **Send now**
+(`takesOver`), and `TranscriptRows` drops those echo rows so the bubble never shows twice; the
+bubble is drawn from the taken echo row, so its images stay. The outbox row id is the key: the
+`operator_text` event stores it as `outboxId`, and the delivery event lists the rows it carries as
+`outboxIds`. Once the message is delivered, `rowsByDeliveryOf` seats its echo right before the
+delivery row that lists its id, so it never jumps above rows that happened before Auto read it.
+Events written before the ids existed match by text instead: an echo is taken only when no later
+delivery already holds its text, and a delivery without ids is matched by its text. **Send now**
 (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that one row at
 once as its own Auto turn, like a child's question, and leaves the children running; the line goes
 away when the row is claimed. The send runs in the tree's queue and claims the row with the tree's

@@ -97,7 +97,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionSlackDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionNudges', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionAttachments', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'sessionScratchDirs', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionScratchDirs', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionOverrides', keyedBy: 'session', evictOn: 'archive' },
   { key: 'scriptRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'scriptRunsSeen', keyedBy: 'session', evictOn: 'archive' },

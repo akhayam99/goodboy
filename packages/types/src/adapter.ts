@@ -44,6 +44,7 @@ export type TurnEvent =
       sentVia?: UserTurnSentVia;
       deliveryId?: string;
       deliveredBy?: 'auto';
+      outboxIds?: ReadonlyArray<string>;
       at: IsoDateTime;
     }
   | {
@@ -51,6 +52,7 @@ export type TurnEvent =
       runId: ProviderRunId;
       text: string;
       attachments?: ReadonlyArray<MessageAttachment>;
+      outboxId?: string;
       at: IsoDateTime;
     }
   | {

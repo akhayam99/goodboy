@@ -31,6 +31,7 @@ export type TranscriptItem =
       model?: string;
       sentVia?: UserTurnSentVia;
       isOperatorEcho?: boolean;
+      outboxId?: string;
       at: IsoDateTime;
     }
   | {
@@ -48,6 +49,7 @@ export type TranscriptItem =
       key: string;
       runId: ProviderRunId;
       text: string;
+      outboxIds?: ReadonlyArray<string>;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; key: string; text: string; runId?: ProviderRunId | null }
@@ -337,6 +339,7 @@ export const reduceTranscript = (
           ...(event.attachments !== undefined &&
             event.attachments.length > 0 && { attachments: event.attachments }),
           isOperatorEcho: true,
+          ...(event.outboxId !== undefined && { outboxId: event.outboxId }),
           at: event.at,
         });
         break;
@@ -347,6 +350,7 @@ export const reduceTranscript = (
             key: `auto-delivery-${i}`,
             runId: event.runId,
             text: event.text,
+            ...(event.outboxIds !== undefined && { outboxIds: event.outboxIds }),
             at: event.at,
           });
           break;

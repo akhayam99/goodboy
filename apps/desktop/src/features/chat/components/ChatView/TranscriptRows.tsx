@@ -39,6 +39,8 @@ import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { InsertionRow } from './InsertionRow';
 import { rowsByDeliveryOf } from './rowsByDeliveryOf';
+import { dueInsertionsOf } from './dueInsertionsOf';
+import { takenEchoesOf } from './takenEchoesOf';
 import { isTurnStartRow } from './isTurnStartRow';
 
 type Props = {
@@ -116,6 +118,7 @@ export const TranscriptRows = ({
   newFromKey = null,
 }: Props) => {
   const rows = rowsByDeliveryOf({ rows: givenRows, insertions });
+  const taken = takenEchoesOf({ rows: givenRows, insertions });
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
@@ -138,14 +141,11 @@ export const TranscriptRows = ({
   };
   const placedInsertions = new Set<string>();
   const flushInsertions = ({ beforeMs }: FlushParams) => {
-    for (const insertion of insertions) {
-      const isDue =
-        beforeMs === null || (insertion.beforeMs !== null && insertion.beforeMs <= beforeMs);
-      if (placedInsertions.has(insertion.key) || !isDue) {
-        continue;
-      }
+    for (const insertion of dueInsertionsOf({ insertions, placed: placedInsertions, beforeMs })) {
       placedInsertions.add(insertion.key);
-      out.push(<InsertionRow key={`insertion-${insertion.key}`} insertion={insertion} />);
+      out.push(
+        <InsertionRow key={`insertion-${insertion.key}`} insertion={insertion} taken={taken} />,
+      );
     }
   };
   const todayKey = dayKey(new Date().toISOString());

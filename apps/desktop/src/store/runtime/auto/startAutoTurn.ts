@@ -18,6 +18,7 @@ export const makeStartAutoTurn =
         content: params.text,
         ...(params.images !== undefined &&
           params.images.length > 0 && { storedAttachments: params.images }),
+        ...(params.rowIds !== undefined && { outboxIds: params.rowIds }),
         origin: 'delegation',
         confinedRole: AUTO_CONFINED_ROLE,
       },

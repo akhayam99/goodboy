@@ -1,54 +1,49 @@
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import type { ConversationRow } from '../../utils/conversationRows';
+import { takenEchoesOf } from './takenEchoesOf';
 
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
   readonly insertions: ReadonlyArray<TranscriptInsertion>;
 };
 
-type EchoParams = {
+type RowParams = {
   readonly row: ConversationRow;
 };
 
-const SENT_CLOCK_SLACK_MS = 2_000;
+type IsDeliveryOfParams = {
+  readonly echo: ConversationRow;
+  readonly delivery: ConversationRow;
+};
 
-const echoTextOf = ({ row }: EchoParams): string | null =>
+const echoOf = ({ row }: RowParams) =>
   row.kind === 'item' && row.item.kind === 'user_text' && row.item.isOperatorEcho === true
-    ? row.item.text
+    ? row.item
     : null;
 
-const deliveryTextOf = ({ row }: EchoParams): string | null =>
-  row.kind === 'item' && row.item.kind === 'auto_delivery' ? row.item.text : null;
-
-const atMsOf = ({ row }: EchoParams): number =>
-  row.kind === 'item' && row.item.kind === 'user_text' ? Date.parse(row.item.at) : 0;
+const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
+  const sent = echoOf({ row: echo });
+  if (sent === null || sent.text === '') {
+    return false;
+  }
+  if (delivery.kind !== 'item' || delivery.item.kind !== 'auto_delivery') {
+    return false;
+  }
+  if (sent.outboxId !== undefined) {
+    return delivery.item.outboxIds?.includes(sent.outboxId) === true;
+  }
+  return delivery.item.outboxIds === undefined && delivery.item.text.includes(sent.text);
+};
 
 export const rowsByDeliveryOf = ({ rows, insertions }: Params): ReadonlyArray<ConversationRow> => {
-  const taken = insertions.flatMap((insertion) => insertion.takesOver ?? []);
-  const takenKeys = new Set<string>();
-  for (const echo of taken) {
-    const match = rows.find(
-      (row) =>
-        !takenKeys.has(row.key) &&
-        echoTextOf({ row }) === echo.text &&
-        atMsOf({ row }) >= echo.sentAtMs - SENT_CLOCK_SLACK_MS,
-    );
-    if (match !== undefined) {
-      takenKeys.add(match.key);
-    }
-  }
+  const takenKeys = new Set([...takenEchoesOf({ rows, insertions }).values()].map((t) => t.key));
   const kept = rows.filter((row) => !takenKeys.has(row.key));
   const movedBefore = new Map<string, ConversationRow[]>();
   const movedKeys = new Set<string>();
   kept.forEach((row, index) => {
-    const text = echoTextOf({ row });
-    if (text === null || text === '') {
-      return;
-    }
-    const delivery = kept.slice(index + 1).find((later) => {
-      const deliveryText = deliveryTextOf({ row: later });
-      return deliveryText !== null && deliveryText.includes(text);
-    });
+    const delivery = kept
+      .slice(index + 1)
+      .find((later) => isDeliveryOf({ echo: row, delivery: later }));
     if (delivery === undefined) {
       return;
     }

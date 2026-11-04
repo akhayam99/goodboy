@@ -101,6 +101,8 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       ...(sentVia !== undefined && { sentVia }),
       ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
       ...(ctx.input.origin === 'delegation' && { deliveredBy: 'auto' as const }),
+      ...(ctx.input.outboxIds !== undefined &&
+        ctx.input.outboxIds.length > 0 && { outboxIds: ctx.input.outboxIds }),
       at: userMessage.createdAt,
     });
   }

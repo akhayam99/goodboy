@@ -861,7 +861,7 @@ A session gets its worktree at the first write, so a run that only reads has non
 - `attachmentDirOf` is the one function that says which dir holds a row; `attachmentAbsolutePathOf` builds the full path. Every reader goes through it (thumbnails, `removeGoalAttachment`, `hintImagePaths`, the kickoff block). Never join `sessionWorktrees[id][0]` and a `relPath` by hand: a file saved before the worktree existed stays in scratch after one is created.
 - `sessionScratchDirs` caches the scratch path. `loadGoalAttachments` fills it when a row is a scratch row; a reader gets `null` until then.
 - The orchestrator runs with the dir of its images as cwd. When the images sit in both dirs, the worktree is the cwd and the scratch dir goes as `readDirs`, which the planner turns into `--add-dir` on Claude and Copilot. The other providers read the cwd only, so a mixed hint can lose its scratch images there.
-- The scratch dir is under the Goodboy root, so it survives a restart and an archive. `deleteTask` removes it with the session.
+- The scratch dir is under the Goodboy root, so it survives a restart and an archive. `deleteTask` removes it with the session. The `sessionScratchDirs` cache lives as long as `workflowRunAttachments`, until delete: an archive then restore keeps both, so cached rows still resolve their files. `sessionIdOfOwner` looks in archived sessions too, so a run of an archived session finds its dir.
 - The artifact creation pane still needs a worktree: its attachment paths go in the scout pack relative to the scout's cwd, which is a mount worktree.
 
 ## Hints when a fix starts

@@ -112,12 +112,16 @@ export const routeAutoUserTurn = async ({
     return refuse({ get, input, message: AUTO_ATTACHMENTS_MESSAGE });
   }
   const images = await keptImages({ get, input, storeImages });
+  const queued: { outboxId: string | null } = { outboxId: null };
   const result = await port({
     agentId,
     sessionId: input.sessionId,
     workspaceId: session.workspaceId,
     text: input.content,
     ...(images.length > 0 && { images }),
+    onQueued: ({ rowId }) => {
+      queued.outboxId = rowId;
+    },
   });
   if (result === 'lost') {
     return refuse({ get, input, message: AUTO_MESSAGE_LOST_MESSAGE });
@@ -127,6 +131,7 @@ export const routeAutoUserTurn = async ({
     runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),
     text: input.content,
     ...(images.length > 0 && { attachments: images }),
+    ...(queued.outboxId !== null && { outboxId: queued.outboxId }),
     at: brandId<IsoDateTime>({ value: new Date().toISOString() }),
   });
   input.onStarted?.();
