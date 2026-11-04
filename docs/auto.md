@@ -194,9 +194,13 @@ message" and the composer keeps its text.
 **When a message waits.** A `user` row is delivered in every phase that takes a turn
 (`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
 stays `pending` and goes with the next results, so a message typed during a long child run
-reaches Auto only when the child ends. The chat says so under the bubble in one quiet line,
-"Waits for <task of the child>" or "Waits for 2 agents", with **Send now**
-(`AutoPendingMessages`, from `pendingMessages` of the tree view). **Send now**
+reaches Auto only when the child ends. The chat draws each waiting message as a bubble after the running child row and any live rows, in
+send order, with its own quiet line under it, "Waits for <task of the child>" or "Waits for 2
+agents", and **Send now** (`AutoPendingMessages`, from `pendingMessages` of the tree view, which
+carries the message text). The same insertion lists the operator echoes it takes over
+(`takesOver`), and `TranscriptRows` drops those echo rows so the bubble never shows twice. Once
+the message is delivered, `rowsByDeliveryOf` seats its echo right before the delivery row that
+carries its text, so it never jumps above rows that happened before Auto read it. **Send now**
 (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that one row at
 once as its own Auto turn, like a child's question, and leaves the children running; the line goes
 away when the row is claimed. The send runs in the tree's queue and claims the row with the tree's

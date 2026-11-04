@@ -44,6 +44,7 @@ export type AutoPendingRefusal = Readonly<{
 export type AutoPendingMessage = Readonly<{
   rowId: string;
   createdAt: number;
+  text: string;
 }>;
 
 export type AutoViewState = {

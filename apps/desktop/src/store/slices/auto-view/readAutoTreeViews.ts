@@ -1,4 +1,4 @@
-import { autoBudgetOf, isRefusalPayload, mountNoteOf } from '@goodboy/core/auto';
+import { autoBudgetOf, isRefusalPayload, isUserPayload, mountNoteOf } from '@goodboy/core/auto';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
@@ -66,7 +66,11 @@ const pendingMessagesOf = ({
 }: PendingRefusalParams): ReadonlyArray<AutoPendingMessage> =>
   pending
     .filter((row) => row.kind === 'user' && isShownMessage({ tree, row }))
-    .map((row) => ({ rowId: String(row.id), createdAt: row.createdAt }));
+    .map((row) => ({
+      rowId: String(row.id),
+      createdAt: row.createdAt,
+      text: isUserPayload(row.payload) ? row.payload.text : '',
+    }));
 
 export const readAutoTreeViews = async ({
   db,

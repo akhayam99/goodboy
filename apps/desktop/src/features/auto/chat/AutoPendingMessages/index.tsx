@@ -9,20 +9,20 @@ import { useAutoTreeActions } from '../useAutoTreeActions';
 type Props = {
   readonly sessionId: SessionId;
   readonly view: AutoTreeView;
+  readonly rowId: string;
 };
 
 type ActParams = {
   readonly action: PendingMessageAction;
-  readonly rowId: string;
 };
 
-export const AutoPendingMessages = ({ sessionId, view }: Props) => {
+export const AutoPendingMessages = ({ sessionId, view, rowId }: Props) => {
   const actions = useAutoTreeActions({ sessionId });
   const line = pendingMessageLineOf({ view });
-  if (line === null || view.pendingMessages.length === 0) {
+  if (line === null || view.pendingMessages.every((message) => message.rowId !== rowId)) {
     return null;
   }
-  const act = ({ action, rowId }: ActParams) => {
+  const act = ({ action }: ActParams) => {
     if (action === 'sendNow') {
       void actions.sendNow({ view, rowId });
       return;
@@ -35,13 +35,7 @@ export const AutoPendingMessages = ({ sessionId, view }: Props) => {
   };
   return (
     <div data-auto-pending-messages="" className="flex flex-col gap-1">
-      {view.pendingMessages.map((message) => (
-        <AutoPendingMessageLine
-          key={message.rowId}
-          line={line}
-          onAction={(action) => act({ action, rowId: message.rowId })}
-        />
-      ))}
+      <AutoPendingMessageLine line={line} onAction={(action) => act({ action })} />
       {actions.failure === null ? null : (
         <Notice
           tone="danger"

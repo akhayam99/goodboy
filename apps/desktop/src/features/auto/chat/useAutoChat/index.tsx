@@ -14,6 +14,7 @@ import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { mergedBatchesOf } from '../mergedBatchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
+import { pendingMessageLineOf } from '../pendingMessageOf';
 import { useAutoTreeActions } from '../useAutoTreeActions';
 
 type Params = {
@@ -72,7 +73,18 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     const pending: TranscriptInsertion = {
       key: `auto-pending-${view.tree.id}`,
       beforeMs: null,
-      node: <AutoPendingMessages sessionId={session.id} view={view} />,
+      node: null,
+      takesOver:
+        pendingMessageLineOf({ view }) === null
+          ? []
+          : view.pendingMessages.map((message) => ({
+              key: message.rowId,
+              text: message.text,
+              sentAtMs: message.createdAt,
+              line: (
+                <AutoPendingMessages sessionId={session.id} view={view} rowId={message.rowId} />
+              ),
+            })),
     };
     const mounted = mountedLineOf({ view });
     const mountedLine: ReadonlyArray<TranscriptInsertion> =
