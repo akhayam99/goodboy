@@ -51,16 +51,14 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
         sessionId={sessionId}
         agentId={agentId}
         fallback={
-          <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
-            <span className="text-meta text-faint-foreground">
-              {ORCHESTRATED_COPY.blockedAsks({ isQuestion: question?.isQuestion ?? false })}
-            </span>
-            {question === null ? (
-              <p className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.blockedNoReason}</p>
-            ) : (
+          question?.isQuestion === true ? (
+            <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
+              <span className="text-meta text-faint-foreground">
+                {ORCHESTRATED_COPY.blockedAsked}
+              </span>
               <Markdown text={question.text} className="text-prose text-foreground" />
-            )}
-          </div>
+            </div>
+          ) : null
         }
       />
       {error === null ? null : (

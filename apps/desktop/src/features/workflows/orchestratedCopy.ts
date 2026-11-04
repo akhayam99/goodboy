@@ -25,10 +25,6 @@ type HintParams = {
   readonly hint: string;
 };
 
-type AsksParams = {
-  readonly isQuestion: boolean;
-};
-
 export const ORCHESTRATED_COPY = {
   emptyTitle: 'No orchestrated runs yet',
   showGuidance: 'Show guidance',
@@ -72,9 +68,7 @@ export const ORCHESTRATED_COPY = {
   blockedAnswerFailed: "Couldn't send the answer",
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",
-  blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',
-  blockedAsks: ({ isQuestion }: AsksParams): string =>
-    isQuestion ? 'The step asked' : 'The step stopped after saying',
+  blockedAsked: 'The step asked',
   openAgentChat: 'Open agent chat',
   continueFailed: "Couldn't continue the run",
   leftOpen: ({ count }: CountParams): string => `Left open (${count})`,

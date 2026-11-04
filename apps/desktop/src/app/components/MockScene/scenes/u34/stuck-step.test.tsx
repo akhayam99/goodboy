@@ -69,6 +69,7 @@ describe('u34 stuck step scenes', () => {
     const keepWorking = screen.getAllByRole('button', { name: 'Keep working' })[0];
     expect(keepWorking).toBeDefined();
     expect(keepWorking?.hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByText(/stopped after saying|stopped without saying/)).toBeNull();
   });
 
   it('ends a finished run as finished with a step not finished, with a link to the step', async () => {
