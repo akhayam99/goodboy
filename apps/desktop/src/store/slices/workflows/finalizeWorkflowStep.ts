@@ -1,6 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { extractStepDone } from '@goodboy/core/context';
+import { extractStepDone, extractStepStuck } from '@goodboy/core/context';
 import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -8,7 +8,7 @@ import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRun
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../turn/kickoff';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
-import { continueOrPause, resetContinueAttempts } from './autoContinue';
+import { SILENT_STUCK_REASON, continueOrPause, resetContinueAttempts } from './autoContinue';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
@@ -51,6 +51,9 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     if (!agent || !agent.stepId || !agent.workflowRunId) {
       return { shouldAutoAdvance: false };
     }
+    if (agent.status === 'skipped' && opts?.force !== true) {
+      return { shouldAutoAdvance: false };
+    }
     if (pendingMountContinuations({ sessionId }).length > 0) {
       return { shouldAutoAdvance: false };
     }
@@ -79,7 +82,9 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       if (await holdForUserQuestion({ set, get, sessionId, agent, assistantText })) {
         return { shouldAutoAdvance: false };
       }
-      await continueOrPause({
+      const stuck = extractStepStuck({ text: assistantText });
+      const stuckReason = stuck !== null && stuck.id === agentId ? stuck.reason : null;
+      const outcome = await continueOrPause({
         set,
         get,
         sessionId,
@@ -87,8 +92,23 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         workflowRunId: agent.workflowRunId,
         unit: 'step',
         didAgentDie: opts?.didAgentDie === true,
+        hasStuckMarker: stuckReason !== null,
         restart: () => startStep(set, get, sessionId, agentId, composeStepContinue(agentId)),
       });
+      if (outcome === 'stuck') {
+        await get().skipStuckStepAndAdvance(sessionId, agent.workflowRunId, {
+          agentId,
+          force: true,
+          reason: stuckReason === null || stuckReason === '' ? SILENT_STUCK_REASON : stuckReason,
+        });
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: `${agent.name} did not finish`,
+          body: 'It was skipped so the run goes on. Open the agent to see why.',
+          sessionId,
+        });
+      }
       return { shouldAutoAdvance: false };
     }
 

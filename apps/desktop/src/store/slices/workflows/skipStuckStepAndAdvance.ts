@@ -13,12 +13,14 @@ import { findWorkflowRun } from './findWorkflowRun';
 import { notifyWorkflowGateBlock } from './notifyWorkflowGateBlock';
 import { WorkflowGateError } from './workflowActivationGate';
 import type { GetFn, SetFn } from './types';
+import { isRunHeldForPlan } from './workflowPlanApproval';
 import { sessionById } from '../sessions/sessionIndex';
 
 export type SkipStepOptions = {
   readonly onlyWhenBlocked?: boolean;
   readonly force?: boolean;
   readonly agentId?: AgentId;
+  readonly reason?: string;
 };
 
 type SkipParams = {
@@ -108,13 +110,22 @@ const runSkipAndAdvance = async (params: SkipParams): Promise<void> => {
   if (isLive) {
     await get().cancelCurrentTurn(sessionId, agent.id);
   }
-  await invokeAgentUpdateStatus(agent.id, { status: 'skipped', completedAt: isoNow() });
+  await invokeAgentUpdateStatus(agent.id, {
+    status: 'skipped',
+    completedAt: isoNow(),
+    ...(options.reason !== undefined && { outputSummary: options.reason }),
+  });
   const refreshed = await invokeAgentList(sessionId);
   set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   void get().refreshUnreadWorkspaces();
 
   const current = findWorkflowRun({ get, sessionId, workflowRunId });
-  if (current == null || current.autoRun !== true || isRunPaused({ run: current })) {
+  if (
+    current == null ||
+    current.autoRun !== true ||
+    isRunPaused({ run: current }) ||
+    isRunHeldForPlan({ run: current })
+  ) {
     return;
   }
   const refreshedRunAgents = runsForWorkflowRun(refreshed, workflowRunId);

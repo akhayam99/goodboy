@@ -3,13 +3,27 @@ import { isoNow } from '@goodboy/types/helpers';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { NAMES } from '../../../shared/utils/names';
 import { isHandsFree } from './handsFree';
+import { isAfterStuckAgent } from './isAfterStuckAgent';
 import type { GetFn, SetFn } from './types';
 
 const MAX_CONTINUE = 1;
 
 type ContinueUnit = 'step' | 'cluster';
 
-export type ContinueOutcome = 'continued' | 'blocked' | 'failed';
+export type ContinueOutcome = 'continued' | 'blocked' | 'failed' | 'stuck';
+
+export const SILENT_STUCK_REASON = 'The agent stopped without finishing and without saying why.';
+
+const TWO_IN_A_ROW_COPY = {
+  step: {
+    title: 'Run stopped',
+    body: 'Two steps in a row did not finish, so the run stopped. Open the agent, then keep it working or skip it.',
+  },
+  cluster: {
+    title: 'Run stopped',
+    body: 'Two subagents in a row did not finish, so the run stopped. Open the agent, then keep it working or skip it.',
+  },
+} as const satisfies Record<ContinueUnit, { readonly title: string; readonly body: string }>;
 
 type HaltCopy = {
   readonly title: string;
@@ -81,6 +95,7 @@ type Params = {
   readonly workflowRunId: WorkflowRunId | null | undefined;
   readonly unit: ContinueUnit;
   readonly didAgentDie: boolean;
+  readonly hasStuckMarker: boolean;
   readonly restart: () => void;
 };
 
@@ -92,11 +107,12 @@ export const continueOrPause = async ({
   workflowRunId,
   unit,
   didAgentDie,
+  hasStuckMarker,
   restart,
 }: Params): Promise<ContinueOutcome> => {
   const handsFree = isHandsFree(get, sessionId, workflowRunId);
   const attempts = get().workflowContinueAttempts[agent.id] ?? 0;
-  if (handsFree && attempts < MAX_CONTINUE) {
+  if (!hasStuckMarker && handsFree && attempts < MAX_CONTINUE) {
     set((state) => ({
       workflowContinueAttempts: { ...state.workflowContinueAttempts, [agent.id]: attempts + 1 },
     }));
@@ -104,12 +120,19 @@ export const continueOrPause = async ({
     return 'continued';
   }
   resetContinueAttempts({ set, get, agentId: agent.id });
+  const isAfterStuck = isAfterStuckAgent({ runs: get().sessionPhaseRuns[sessionId] ?? [], agent });
+  if (!didAgentDie && handsFree && !isAfterStuck) {
+    return 'stuck';
+  }
   const status = didAgentDie ? 'failed' : 'blocked';
   await invokeAgentUpdateStatus(agent.id, { status, completedAt: isoNow() });
   const stalled = await invokeAgentList(sessionId);
   set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: stalled } }));
   void get().refreshUnreadWorkspaces();
-  const notice = haltNotice({ unit, didAgentDie, handsFree });
+  const notice =
+    isAfterStuck && handsFree && !didAgentDie
+      ? TWO_IN_A_ROW_COPY[unit]
+      : haltNotice({ unit, didAgentDie, handsFree });
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',

@@ -55,6 +55,7 @@ const HISTORY_STUCK_OPEN = '<<history-stuck';
 const COMMENT_REPLY_OPEN_RE = /<<comment-reply((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const COMMENT_REPLY_CLOSE = '<</comment-reply>>';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
+const CLUSTER_STUCK_OPEN = '<<cluster-stuck';
 const SCOUT_DOMAINS_OPEN = '<<scout-domains';
 const REVIEW_COMMENT_OPEN = '<<review-comment';
 const MATERIALIZE_OPEN = '<<materialize:';
@@ -897,6 +898,7 @@ export const extractReviewComments = (
 };
 
 const STEP_DONE_RE = /<<step-done\s([^<>]*)>>/g;
+const STEP_STUCK_RE = /<<step-stuck\s([^<>]*)>>/g;
 
 export type ExtractedCluster = {
   readonly title: string;
@@ -1007,6 +1009,28 @@ export const extractClusterDone = (assistantText: string): { readonly id: string
   return last;
 };
 
+export type ExtractedStuck = {
+  readonly id: string;
+  readonly reason: string;
+};
+
+type StuckParams = {
+  readonly text: string;
+};
+
+export const extractClusterStuck = ({ text }: StuckParams): ExtractedStuck | null => {
+  let last: ExtractedStuck | null = null;
+  for (const inner of extractSelfClosingInner(canonicalizeMarkers({ text }), CLUSTER_STUCK_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const id = (attrs.id ?? '').trim();
+    if (id.length === 0) {
+      continue;
+    }
+    last = { id, reason: (attrs.reason ?? '').trim() };
+  }
+  return last;
+};
+
 export type ExtractedMaterializeRequest = {
   readonly projectName: string;
   readonly reason: string;
@@ -1060,6 +1084,22 @@ export const extractStepDone = (rawText: string): { readonly id: string } | null
       continue;
     }
     last = { id };
+  }
+  return last;
+};
+
+export const extractStepStuck = ({ text }: StuckParams): ExtractedStuck | null => {
+  const assistantText = canonicalizeMarkers({ text });
+  STEP_STUCK_RE.lastIndex = 0;
+  let last: ExtractedStuck | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = STEP_STUCK_RE.exec(assistantText)) !== null) {
+    const attrs = parseHandoffAttrs(m[1] ?? '');
+    const id = (attrs.id ?? '').trim();
+    if (id.length === 0) {
+      continue;
+    }
+    last = { id, reason: (attrs.reason ?? '').trim() };
   }
   return last;
 };
@@ -1238,7 +1278,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 const BLOCK_MARKER_ALT =
   'auto|plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|needs-input|oq-answer|pr-title|pr-body|commit-message|changelog-entry|outcome';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|cluster-stuck|step-done|step-stuck|scout-domains|history-step|history-done|history-stuck|materialize:';
 
 const MARKER_ATTRS = '(?:\\s(?:"[^"]{0,2000}"|[^>"]){0,4000})?';
 const MARKER_OPEN = `<<(?:(?:${BLOCK_MARKER_ALT})${MARKER_ATTRS}>>|ctx-question${MARKER_ATTRS}>>?)`;

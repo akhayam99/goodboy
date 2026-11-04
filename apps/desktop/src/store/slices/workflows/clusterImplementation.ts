@@ -9,8 +9,8 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
-import { extractClusterDone } from '@goodboy/core/context';
-import { isAgentStatusSettled } from '@goodboy/core/workflows';
+import { extractClusterDone, extractClusterStuck } from '@goodboy/core/context';
+import { isAgentStatusSettled, notFinishedKindOf } from '@goodboy/core/workflows';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
@@ -21,7 +21,8 @@ import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../
 import { composeKickoff, composeUnitBoundary } from '../turn/kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
-import { continueOrPause, resetContinueAttempts } from './autoContinue';
+import { SILENT_STUCK_REASON, continueOrPause, resetContinueAttempts } from './autoContinue';
+import { skipDependentsOfStuck } from './clusterWaves/skipDependentsOfStuck';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
@@ -64,7 +65,11 @@ export const clusterBoundaryMarker = (childId: AgentId): string =>
   `<<cluster-done id="${childId}">>`;
 
 export const composeClusterBoundary = (childId: AgentId): string =>
-  composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
+  composeUnitBoundary({
+    unit: 'cluster',
+    marker: clusterBoundaryMarker(childId),
+    stuckMarker: `<<cluster-stuck id="${childId}" reason="why it cannot finish">>`,
+  });
 
 function composeClusterKickoff(
   childId: AgentId,
@@ -656,11 +661,17 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const found = childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId);
     const index = Math.max(0, found);
 
+    let justDoneId: AgentId | undefined = childAgentId;
+    if (child.status === 'skipped' && opts?.force !== true) {
+      return;
+    }
     if (!opts?.force && !extractClusterDone(assistantText)) {
       if (await holdForUserQuestion({ set, get, sessionId, agent: child, assistantText })) {
         return;
       }
-      await continueOrPause({
+      const stuck = extractClusterStuck({ text: assistantText });
+      const stuckReason = stuck !== null && stuck.id === childAgentId ? stuck.reason : null;
+      const outcome = await continueOrPause({
         set,
         get,
         sessionId,
@@ -668,6 +679,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         workflowRunId: child.workflowRunId,
         unit: 'cluster',
         didAgentDie: opts?.didAgentDie === true,
+        hasStuckMarker: stuckReason !== null,
         restart: () =>
           startChild({
             set,
@@ -678,25 +690,44 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
             content: composeContinuePrompt(childAgentId, clusters[index]),
           }),
       });
-      return;
+      if (outcome !== 'stuck') {
+        return;
+      }
+      const siblings = childrenOf(runs, containerId);
+      await invokeAgentUpdateStatus(childAgentId, {
+        status: 'skipped',
+        completedAt: isoNow(),
+        outputSummary:
+          stuckReason === null || stuckReason === '' ? SILENT_STUCK_REASON : stuckReason,
+      });
+      await skipDependentsOfStuck({ children: siblings, clusters, stuckIndex: index });
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `${child.name} did not finish`,
+        body: 'It was skipped so the run goes on. Open the agent to see why.',
+        sessionId,
+      });
+      justDoneId = undefined;
     }
-
-    resetContinueAttempts({ set, get, agentId: childAgentId });
-    const outputSummary =
-      assistantText.length > 0
-        ? await summarizeWorkflowAgentOutput({
-            set,
-            get,
-            sessionId,
-            agent: child,
-            output: assistantText,
-          })
-        : 'advanced to next cluster manually';
-    await invokeAgentUpdateStatus(childAgentId, {
-      status: 'completed',
-      outputSummary,
-      completedAt: isoNow(),
-    });
+    if (justDoneId !== undefined) {
+      resetContinueAttempts({ set, get, agentId: childAgentId });
+      const outputSummary =
+        assistantText.length > 0
+          ? await summarizeWorkflowAgentOutput({
+              set,
+              get,
+              sessionId,
+              agent: child,
+              output: assistantText,
+            })
+          : 'advanced to next cluster manually';
+      await invokeAgentUpdateStatus(childAgentId, {
+        status: 'completed',
+        outputSummary,
+        completedAt: isoNow(),
+      });
+    }
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
@@ -704,6 +735,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const isDone = (c: Agent): boolean =>
       c.id === childAgentId || isAgentStatusSettled({ status: c.status });
     const settledCount = children.filter(isDone).length;
+    const unfinishedCount = children.filter((c) => notFinishedKindOf({ agent: c }) !== null).length;
     const total = clusters.length > 0 ? clusters.length : children.length;
 
     if (settledCount >= total) {
@@ -711,7 +743,10 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       if (container != null && !isAgentStatusSettled({ status: container.status })) {
         await invokeAgentUpdateStatus(containerId, {
           status: 'completed',
-          outputSummary: `completed ${settledCount} clusters`,
+          outputSummary:
+            unfinishedCount === 0
+              ? `completed ${settledCount} clusters`
+              : `completed ${settledCount - unfinishedCount} of ${settledCount} clusters`,
           completedAt: isoNow(),
         });
         refreshed = await invokeAgentList(sessionId);
@@ -722,7 +757,11 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const ready = launchableChildren({ children, clusters, justDoneId: childAgentId });
+    const ready = launchableChildren({
+      children,
+      clusters,
+      ...(justDoneId !== undefined && { justDoneId }),
+    });
     const isWaiting = children.some((c) => !isDone(c));
     if (ready.length === 0 && isWaiting) {
       return;
