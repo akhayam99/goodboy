@@ -22,12 +22,12 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
   );
   const worktreeDir = useAppStore((s) => {
     const sessionId = owner.type === 'session' ? (owner.id as SessionId) : s.currentSessionId;
-    return sessionId ? ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null) : null;
+    return sessionId === null ? null : ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null);
   });
   const scratchDir = useAppStore((s) => {
     const sessionId =
       owner.type === 'session' ? brandId<SessionId>({ value: owner.id }) : s.currentSessionId;
-    return sessionId ? (s.sessionScratchDirs[sessionId] ?? null) : null;
+    return sessionId === null ? null : (s.sessionScratchDirs[sessionId] ?? null);
   });
 
   const ownerType = owner.type;

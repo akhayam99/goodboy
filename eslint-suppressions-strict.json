@@ -244,11 +244,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/context/components/QuestionsTab/useOpenQuestions.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
