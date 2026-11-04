@@ -1,8 +1,8 @@
 import { formatError } from '@goodboy/ui';
-import { materializationGate } from '../../slices/project-mounts/materializationGate';
-import { sessionById } from '../../slices/sessions/sessionIndex';
-import type { GetFn } from '../../slice-types';
-import type { MountProjectOutcome, MountProjectParams } from './ports';
+import { materializationGate } from '../../../slices/project-mounts/materializationGate';
+import { sessionById } from '../../../slices/sessions/sessionIndex';
+import type { GetFn } from '../../../slice-types';
+import type { MountProjectOutcome, MountProjectParams } from '../ports';
 
 type Params = {
   readonly get: GetFn;

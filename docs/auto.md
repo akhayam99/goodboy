@@ -1106,13 +1106,14 @@ refused children; while it is pending for the current generation, `readAutoTreeV
 folder fits and it did not say which. Auto is choosing again." A refusal about the project
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`). When
 the refusal comes from a `mount` block and the project is known, the ask is one inline step:
-"To do this, mount payments-api", one line ("A worktree on ak/feat-new-explore is created from
-main."), the primary **Mount payments-api** (the button reads "Mounting payments-api" while it
+"To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
+main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
 runs, a failure keeps the card with the reason), then **Another folder...**, **No folder, just
-answer** and **Discard request**. The click mounts on the named branch and sends Auto "Mounted
-payments-api on ak/feat-new-explore. Go on with my request.", so nothing is retyped. A mount done
-at once (Never, or After the plan inside the allowance) draws one line, "Mounted payments-api on
-ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
+answer** and **Discard request**. The screens say "add", never "mount" (the `jargon-copy` guard
+bans it); the block, the port and the code keep `mount`. The click mounts on the named branch and
+sends Auto "Added payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
+retyped. A mount done at once (Never, or After the plan inside the allowance) draws one line,
+"Added payments-api on ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
 "Where should the Implementer work?" lists the session's projects with their branch, **Another
 folder...** opens a filter over the workspace's other projects ("Not in this session. A worktree
 is created from main."), and the primary follows the choice (**Choose a folder** disabled, **Use

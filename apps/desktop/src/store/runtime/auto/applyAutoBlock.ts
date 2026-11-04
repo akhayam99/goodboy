@@ -9,11 +9,11 @@ import {
 import { getAutoTree, type AutoTree } from '@goodboy/db';
 import { brandId, type AutoRequestId } from '@goodboy/types';
 import { replayAdmission } from './admit';
-import { applyMountBlock } from './applyMountBlock';
+import { applyMountBlock } from './mount/applyMountBlock';
 import type { AgentCommand, AutoTurnEnded } from './ports';
 import { runAutoCommand } from './runAutoCommand';
 import type { AgentVerbContext } from './verbContext';
-import { writeRefusal } from './writeRefusal';
+import { writeRefusal } from './mount/writeRefusal';
 
 export type ApplyAutoBlockParams = Readonly<{
   ctx: AgentVerbContext;

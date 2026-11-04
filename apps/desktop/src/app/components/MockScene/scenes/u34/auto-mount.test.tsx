@@ -1,30 +1,44 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { brandId, type MountId } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U34_AUTO_MOUNT_SCENES } from './auto-mount';
 
 const WAIT = { timeout: 15_000 };
 
+let store: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   await resetStoryStore();
+  clearSceneInvoke();
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (typeof command !== 'string') {
+      throw new Error('The scene command must be a string.');
+    }
+    return sceneInvoke({ command, args });
+  });
 });
 
 afterEach(() => {
@@ -60,54 +74,53 @@ describe('the mount card scenes', () => {
   it('u34-p21-mount-ask names the need, the branch and one primary button', async () => {
     mount({ id: 'u34-p21-mount-ask' });
 
+    expect(await screen.findByText('To do this, add notify-relay', undefined, WAIT)).toBeDefined();
     expect(
-      await screen.findByText('To do this, mount notify-relay', undefined, WAIT),
+      await screen.findByText('A worktree on ak/feat-new-explore is created from main.'),
     ).toBeDefined();
-    expect(
-      screen.getByText('A worktree on ak/feat-new-explore is created from main.'),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Mount notify-relay' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Another folder…' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'No folder, just answer' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Add notify-relay' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Another folder…' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'No folder, just answer' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Projects' })).toBeNull();
   });
 
-  it('mounts the named project on the named branch, then answers Auto so it goes on', async () => {
-    const { useAppStore } = await import('../../../../../store');
+  it('adds the named project on the named branch, then answers Auto so it goes on', async () => {
     mount({ id: 'u34-p21-mount-ask' });
-    await screen.findByText('To do this, mount notify-relay', undefined, WAIT);
+    await screen.findByText('To do this, add notify-relay', undefined, WAIT);
     const ensured: Array<unknown> = [];
     const sent: Array<unknown> = [];
-    useAppStore.setState({
-      ensureProjectMounted: async (input) => {
-        ensured.push(input);
-        const mountId = brandId<MountId>({ value: 'mount-new' });
-        return { status: 'created', createdMountId: mountId, mountIds: [mountId] };
-      },
-      sendTurn: async (input) => {
-        sent.push(input);
-        return { blockedOverBudget: false };
-      },
+    await screen.findByText('The worktree needs notify-relay added first.', undefined, WAIT);
+    await act(async () => {
+      store.setState({
+        ensureProjectMounted: async (input) => {
+          ensured.push(input);
+          const mountId = brandId<MountId>({ value: 'mount-new' });
+          return { status: 'created', createdMountId: mountId, mountIds: [mountId] };
+        },
+        sendTurn: async (input) => {
+          sent.push(input);
+          return { blockedOverBudget: false };
+        },
+      });
     });
-
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    fireEvent.click(screen.getByRole('button', { name: 'Mount notify-relay' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Add notify-relay' }));
+    await waitFor(() => expect(ensured).toHaveLength(1), WAIT);
 
     expect(
-      await screen.findByText('Mounted notify-relay on ak/feat-new-explore', undefined, WAIT),
+      await screen.findByText('Added notify-relay on ak/feat-new-explore', undefined, WAIT),
     ).toBeDefined();
     expect(ensured).toMatchObject([
       { branch: 'ak/feat-new-explore', reason: 'The user asked for a worktree on this branch.' },
     ]);
     expect(sent).toMatchObject([
-      { content: 'Mounted notify-relay on ak/feat-new-explore. Go on with my request.' },
+      { content: 'Added notify-relay on ak/feat-new-explore. Go on with my request.' },
     ]);
   });
 
   it('u34-p21-mount-mounting says what is happening on the button', async () => {
     mount({ id: 'u34-p21-mount-mounting' });
 
-    expect(await screen.findByText('Mounting notify-relay', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByText('Adding notify-relay', undefined, WAIT)).toBeDefined();
   });
 
   it('u34-p21-mount-failed keeps the card with the reason', async () => {
@@ -116,17 +129,17 @@ describe('the mount card scenes', () => {
     expect(
       await screen.findByText(/already used by another worktree/, undefined, WAIT),
     ).toBeDefined();
-    expect(screen.getByText('To do this, mount notify-relay')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Mount notify-relay' })).toBeDefined();
+    expect(await screen.findByText('To do this, add notify-relay')).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Add notify-relay' })).toBeDefined();
   });
 
   it('u34-p21-mount-done shows one line and no card', async () => {
     mount({ id: 'u34-p21-mount-done' });
 
     expect(
-      await screen.findByText('Mounted notify-relay on ak/feat-new-explore', undefined, WAIT),
+      await screen.findByText('Added notify-relay on ak/feat-new-explore', undefined, WAIT),
     ).toBeDefined();
-    expect(screen.queryByText('To do this, mount notify-relay')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Mount notify-relay' })).toBeNull();
+    expect(screen.queryByText('To do this, add notify-relay')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add notify-relay' })).toBeNull();
   });
 });

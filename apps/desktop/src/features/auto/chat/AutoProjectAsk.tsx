@@ -5,7 +5,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { projectAnswerOf, type ProjectPick } from './projectAnswerOf';
-import { mountCardOf } from './mountCardOf';
+import { knownMountOf } from './knownMountOf';
 import type { ProjectAsk } from './projectAskOf';
 import { ObjectActionVerb } from '../../actions/ObjectActionVerb';
 
@@ -84,22 +84,8 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
   }
 
   const mountAsk = ask.mount;
-  const known =
-    mountAsk === null
-      ? undefined
-      : projects.find(
-          (project) =>
-            project.kind === 'repo' &&
-            project.name.toLowerCase() === mountAsk.project.toLowerCase(),
-        );
-  const card =
-    mountAsk === null || known === undefined || isAnotherOpen
-      ? null
-      : mountCardOf({
-          project: known.name,
-          branch: mountAsk.branch,
-          baseBranch: known.baseBranch ?? null,
-        });
+  const known = isAnotherOpen ? null : knownMountOf({ candidates: projects, mount: mountAsk });
+  const card = known === null ? null : known.card;
 
   const all = [...inSession, ...others];
   const picks = all.filter((candidate) => picked.includes(candidate.key));
@@ -158,14 +144,14 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
 
   const mountKnown = () =>
     run({
-      label: card?.busyLabel ?? 'Mounting',
+      label: card?.busyLabel ?? 'Adding',
       work: async () => {
-        if (card === null || mountAsk === null || known === undefined) {
+        if (card === null || mountAsk === null || known === null) {
           return;
         }
         await ensureProjectMounted({
           sessionId,
-          projectId: known.id,
+          projectId: known.project.id,
           reason: mountAsk.reason,
           ...(mountAsk.branch === null ? {} : { branch: mountAsk.branch }),
         });

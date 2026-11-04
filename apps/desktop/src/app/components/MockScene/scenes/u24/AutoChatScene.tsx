@@ -80,7 +80,7 @@ export const AutoChatScene = ({
     if (mountAct !== undefined) {
       const clicker = window.setTimeout(() => {
         const buttons = Array.from(document.querySelectorAll('button'));
-        buttons.find((button) => (button.textContent ?? '').startsWith('Mount '))?.click();
+        buttons.find((button) => (button.textContent ?? '').startsWith('Add '))?.click();
       }, MOUNT_CLICK_DELAY_MS);
       return () => window.clearTimeout(clicker);
     }

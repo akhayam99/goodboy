@@ -17,14 +17,14 @@ export const mountCardOf = ({ project, branch, baseBranch }: Params): MountCard 
   const base = baseBranch ?? 'main';
   const onBranch = branch === null ? '' : ` on ${branch}`;
   return {
-    title: `To do this, mount ${project}`,
+    title: `To do this, add ${project}`,
     line:
       branch === null
         ? `A worktree is created from ${base}.`
         : `A worktree on ${branch} is created from ${base}.`,
-    label: `Mount ${project}`,
-    busyLabel: `Mounting ${project}`,
-    message: `Mounted ${project}${onBranch}. Go on with my request.`,
-    doneLine: `Mounted ${project}${onBranch}`,
+    label: `Add ${project}`,
+    busyLabel: `Adding ${project}`,
+    message: `Added ${project}${onBranch}. Go on with my request.`,
+    doneLine: `Added ${project}${onBranch}`,
   };
 };

@@ -1,8 +1,8 @@
 import type { AutoBlock, AutoLevel, MountNote } from '@goodboy/core/auto';
 import type { AutoTree } from '@goodboy/db';
-import { readAutoLevel } from './level/readAutoLevel';
-import type { AutoTurnEnded, MountProjectOutcome, MountProjectParams } from './ports';
-import type { AgentVerbContext } from './verbContext';
+import { readAutoLevel } from '../level/readAutoLevel';
+import type { AutoTurnEnded, MountProjectOutcome, MountProjectParams } from '../ports';
+import type { AgentVerbContext } from '../verbContext';
 import { writeRefusal } from './writeRefusal';
 
 const MODE_OF_LEVEL = {
@@ -36,7 +36,7 @@ type NoteParams = {
   readonly state: MountNote['state'];
 };
 
-const noteOf = ({ block, state }: NoteParams): MountNote => ({
+const mountNoteOfBlock = ({ block, state }: NoteParams): MountNote => ({
   project: block.project,
   branch: block.branch,
   reason: block.reason,
@@ -48,7 +48,7 @@ const writtenOf = ({ block, outcome }: OutcomeParams): Written => {
     return {
       code: 'mount_missing',
       text: `Asked the user to mount ${block.project}. Wait for the answer, then go on with the request.`,
-      mount: noteOf({ block, state: 'ask' }),
+      mount: mountNoteOfBlock({ block, state: 'ask' }),
     };
   }
   if (outcome.kind === 'mounted') {
@@ -56,14 +56,14 @@ const writtenOf = ({ block, outcome }: OutcomeParams): Written => {
     return {
       code: 'mounted',
       text: `Mounted ${outcome.name}${branch}. The folder is ready.`,
-      mount: noteOf({ block, state: 'done' }),
+      mount: mountNoteOfBlock({ block, state: 'done' }),
     };
   }
   if (outcome.kind === 'failed') {
     return {
       code: 'mount_missing',
       text: `Could not mount ${outcome.name}: ${outcome.error}. Asked the user to confirm the mount.`,
-      mount: noteOf({ block, state: 'ask' }),
+      mount: mountNoteOfBlock({ block, state: 'ask' }),
     };
   }
   if (outcome.kind === 'ambiguous') {

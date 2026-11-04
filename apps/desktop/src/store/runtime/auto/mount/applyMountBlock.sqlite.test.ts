@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { isRefusalPayload, mountNoteOf } from '@goodboy/core/auto';
 import { listAutoOutbox } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
-import { writeAutoLevel } from './level/writeAutoLevel';
-import type { MountProjectOutcome } from './ports';
+import { writeAutoLevel } from '../level/writeAutoLevel';
+import type { MountProjectOutcome } from '../ports';
 import {
   autoTurnEndsWithBlock,
   makeRuntimeWorld,
   userSays,
   type RuntimeWorld,
-} from './testing/runtimeWorld';
+} from '../testing/runtimeWorld';
 
 const MOUNT = {
   action: 'mount',

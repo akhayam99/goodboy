@@ -7,12 +7,12 @@ describe('mountCardOf', () => {
     expect(
       mountCardOf({ project: 'payments-api', branch: 'ak/feat-new-explore', baseBranch: null }),
     ).toEqual({
-      title: 'To do this, mount payments-api',
+      title: 'To do this, add payments-api',
       line: 'A worktree on ak/feat-new-explore is created from main.',
-      label: 'Mount payments-api',
-      busyLabel: 'Mounting payments-api',
-      message: 'Mounted payments-api on ak/feat-new-explore. Go on with my request.',
-      doneLine: 'Mounted payments-api on ak/feat-new-explore',
+      label: 'Add payments-api',
+      busyLabel: 'Adding payments-api',
+      message: 'Added payments-api on ak/feat-new-explore. Go on with my request.',
+      doneLine: 'Added payments-api on ak/feat-new-explore',
     });
   });
 
@@ -20,6 +20,6 @@ describe('mountCardOf', () => {
     const card = mountCardOf({ project: 'ledger-core', branch: null, baseBranch: 'develop' });
 
     expect(card.line).toBe('A worktree is created from develop.');
-    expect(card.message).toBe('Mounted ledger-core. Go on with my request.');
+    expect(card.message).toBe('Added ledger-core. Go on with my request.');
   });
 });

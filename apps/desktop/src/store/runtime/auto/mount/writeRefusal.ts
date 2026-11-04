@@ -1,7 +1,7 @@
 import type { MountNote, RefusalPayload } from '@goodboy/core/auto';
 import { insertAutoOutbox, type AutoTree } from '@goodboy/db';
 import { brandId, type AutoOutboxId } from '@goodboy/types';
-import type { AgentVerbContext } from './verbContext';
+import type { AgentVerbContext } from '../verbContext';
 
 type Params = {
   readonly ctx: AgentVerbContext;

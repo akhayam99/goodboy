@@ -393,7 +393,7 @@ const FINAL_REPLY =
   'Fixed. The retry loop built a new idempotency key on every attempt, so a credit that timed out after the ledger wrote it could post twice. The key is now built once per credit, before the loop, and applyCredit returns the first result for a key it has seen.';
 const MOUNT_REQUEST = 'Create a worktree on notify-relay with the branch ak/feat-new-explore.';
 const MOUNT_REASON = 'The user asked for a worktree on this branch.';
-const MOUNT_ASK_REPLY = 'The worktree needs notify-relay mounted first.';
+const MOUNT_ASK_REPLY = 'The worktree needs notify-relay added first.';
 const MOUNT_DONE_REPLY = 'The worktree on ak/feat-new-explore is ready in notify-relay.';
 const REFUSED_REPLY = 'I asked an implementer to commit the fix and open a draft PR.';
 const ANSWER_REPLY =

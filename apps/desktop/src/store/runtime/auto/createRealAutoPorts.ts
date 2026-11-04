@@ -23,7 +23,7 @@ import type {
   StartChildTurnParams,
 } from './ports';
 import { listAutoChecks } from './listAutoChecks';
-import { mountAutoProject } from './mountAutoProject';
+import { mountAutoProject } from './mount/mountAutoProject';
 import { mountAutoTaskFolders } from './mountAutoTaskFolders';
 import {
   makeBranchFactsReaders,

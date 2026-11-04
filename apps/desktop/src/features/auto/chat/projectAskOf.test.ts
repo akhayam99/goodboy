@@ -47,6 +47,6 @@ describe('the project ask of a mount', () => {
     });
 
     expect(projectAskOf({ view })).toBeNull();
-    expect(mountedLineOf({ view })).toBe('Mounted payments-api on ak/feat-new-explore');
+    expect(mountedLineOf({ view })).toBe('Added payments-api on ak/feat-new-explore');
   });
 });
