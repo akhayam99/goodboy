@@ -166,7 +166,7 @@
     "apps/desktop/src/app/components/SideColumn/columnPlace.ts": 1,
     "apps/desktop/src/app/components/SideColumn/index.tsx": 1,
     "apps/desktop/src/app/components/SideColumn/RailFlyout.tsx": 1,
-    "apps/desktop/src/app/components/SideColumn/RailSessions.tsx": 6,
+    "apps/desktop/src/app/components/SideColumn/RailSessions.tsx": 5,
     "apps/desktop/src/app/components/SpawnedPanel/SpawnedFoldRow.tsx": 1,
     "apps/desktop/src/app/components/SpawnedPanel/SpawnedTree.tsx": 1,
     "apps/desktop/src/app/components/SpawnedPanel/SpawnedTreeRow.tsx": 2,

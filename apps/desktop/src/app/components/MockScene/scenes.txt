@@ -1135,6 +1135,8 @@ u34-help-search
 u34-help-shortcuts
 u34-needs-you-question
 u34-needs-you-run-question
+u34-p18-folded-branches-4
+u34-p18-running-4-branches
 u34-peek-drawer-changed
 u34-peek-drawer-unchanged
 u34-peek-popover-order

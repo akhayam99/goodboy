@@ -4,6 +4,8 @@ import { sessionPlace, useAppStore, useSessions } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { SessionHoverCard } from '../../../features/workspace/components/SessionHoverCard';
 import { useHoverCardTarget } from '../../../features/workspace/components/SessionHoverCard/useHoverCardTarget';
+import { focusFirstFlyoutRow } from './focusFirstFlyoutRow';
+import { isKeyboardFocus } from './isKeyboardFocus';
 import { RailFlyout } from './RailFlyout';
 import { RailFlyoutBody } from './RailFlyoutBody';
 import { RailMoreButton } from './RailMoreButton';
@@ -19,18 +21,6 @@ type Props = {
 };
 
 type FlyoutEvent = MouseEvent<HTMLButtonElement> | FocusEvent<HTMLButtonElement>;
-
-const isKeyboardFocus = (element: HTMLElement): boolean => {
-  try {
-    return element.matches(':focus-visible');
-  } catch {
-    return false;
-  }
-};
-
-const focusFirstFlyoutRow = (): void => {
-  document.querySelector<HTMLElement>('[data-rail-flyout] button')?.focus();
-};
 
 export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) => {
   const sessions = useSessions();
@@ -61,7 +51,8 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
       key,
       anchor: event.currentTarget,
       isImmediate:
-        event.type === 'click' || (event.type === 'focus' && isKeyboardFocus(event.currentTarget)),
+        event.type === 'click' ||
+        (event.type === 'focus' && isKeyboardFocus({ element: event.currentTarget })),
     });
 
   const keysWith = (key: RailFlyoutKey) => (event: KeyboardEvent<HTMLButtonElement>) => {
