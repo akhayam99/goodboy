@@ -25,5 +25,8 @@ export const notFinishedStepsOf = ({ agents }: Params): ReadonlyArray<NotFinishe
   return agents
     .filter((agent) => notFinishedKindOf({ agent }) === 'stuck')
     .map((agent) => ({ agent, number: numberOf({ agent }) }))
-    .sort((left, right) => left.number - right.number || left.agent.ordinal - right.agent.ordinal);
+    .sort((left, right) => {
+      const byNumber = left.number - right.number;
+      return byNumber === 0 ? left.agent.ordinal - right.agent.ordinal : byNumber;
+    });
 };
