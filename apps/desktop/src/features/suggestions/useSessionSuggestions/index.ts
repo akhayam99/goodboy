@@ -37,6 +37,7 @@ import {
 } from '../../../shared/hooks/useCheckFixCommitSync';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { planOwnerOf } from '../../plans/planOwnerOf';
+import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
 import { splitWorkflowRuns, type AttachedRun } from '../../workflows/activeWorkflowRuns';
 import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
@@ -399,7 +400,7 @@ export const useSessionSuggestionsFrom = ({
               agents: effectiveAgents,
               runs: session.workflowRuns,
               templates,
-            }) !== null,
+            }) !== null || isPlanHeldByAuto({ views: autoTreeViews, planId: plan.id }),
           creatorHasOpenQuestions:
             workflow == null
               ? openQuestions.some((question) => question.status === 'open')
@@ -465,7 +466,11 @@ export const useSessionSuggestionsFrom = ({
           pendingSignal: pendingAgentSignal({
             events: blockedTranscripts[agent.id] ?? EMPTY_ARRAY,
           }),
-          isStoppedByRestart: isStoppedByRestart({ agent, runs: effectiveAgents }),
+          isStoppedByRestart: isStoppedByRestart({
+            agent,
+            runs: effectiveAgents,
+            views: autoTreeViews,
+          }),
         };
       }) satisfies ReadonlyArray<SuggestionAgent>,
       mounts: withRebase

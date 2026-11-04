@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
 import { TailLine } from '../../../live-state/TailLine';
 import { askingAgentBatch } from '../../../context/askingAgentBatch';
@@ -25,10 +26,13 @@ type Props = {
 
 const MINUTE_MS = 60_000;
 
+const NO_VIEWS: ReadonlyArray<AutoTreeView> = [];
+
 const HEADER_VERBS: ReadonlySet<string> = new Set(['primary', 'raiseCap', 'answer']);
 
 export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   const { run, workflow, advance } = view;
+  const autoTreeViews = useAppStore((state) => state.autoTreeViews[session.id] ?? NO_VIEWS);
   const quiet = useQuietStep({ agents: advance.runAgents });
   const mountBlock = useMountBlockedStep({ sessionId: session.id, workflowRunId: run.id });
   const kindOverride = useAppStore((state) => state.agentKindOverride);
@@ -71,7 +75,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     roleById,
     question: advance.questions[0] ?? null,
     restartStoppedCount: advance.runAgents.filter((agent) =>
-      isStoppedByRestart({ agent, runs: advance.runAgents }),
+      isStoppedByRestart({ agent, runs: advance.runAgents, views: autoTreeViews }),
     ).length,
   });
   if (tail === null) {

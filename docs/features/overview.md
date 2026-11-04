@@ -174,6 +174,7 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 An item is in **Next** only while you are the next one to act.
 
 - An agent Auto started that you stopped or declined leaves Next. It shows in the full log as "You stopped the reviewer". One a later agent replaced on the same branch leaves too.
+- Once an Auto run is done, nothing it left behind waits on you. A reviewer report never asks for an OK, only a plan does. A plan Auto holds is not offered to implement again. An agent the app stopped that Auto already replaced is not offered to continue.
 - A stopped rebase of a branch that is still behind is not a card of its own. The "branches behind" card says how many rebases stopped and lists each one in its **⋯** menu.
 
 **One row per kind of work**

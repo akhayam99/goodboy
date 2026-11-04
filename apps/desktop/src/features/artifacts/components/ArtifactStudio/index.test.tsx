@@ -19,6 +19,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       drawer: null as unknown,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
       phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+      autoTreeViews: {},
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       wireframeDrafts: {} as Record<string, unknown>,
       artifactComments: {} as Record<string, ReadonlyArray<unknown>>,

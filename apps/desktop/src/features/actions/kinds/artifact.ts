@@ -12,19 +12,16 @@ import {
   Trash2,
 } from 'lucide-react';
 import type {
-  Agent,
   AgentId,
   ArtifactComment,
   ArtifactKind,
   ArtifactStatus,
   ArtifactId,
-  OpenQuestion,
   PlanWithCount,
   ReportArtifact,
   SessionArtifact,
   WireframeArtifact,
   SessionId,
-  Workflow,
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -32,12 +29,11 @@ import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planEditBlockOf } from '../../plans/planEditBlock';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
-import { plannerQuestionsOf } from '../../plans/plannerQuestions';
 import { unsentCommentsQuestion } from '../../plans/unsentCommentsQuestion';
-import { planOwnerOf } from '../../plans/planOwnerOf';
 import { planRunToast } from '../../plans/planRunToast';
 import { openPlanDrawer } from '../../plans/openPlanDrawer';
-import { NOT_REVISING, planRevisingOf, type PlanRevising } from '../../plans/planRevising';
+import { NOT_REVISING, type PlanRevising } from '../../plans/planRevising';
+import { artifactPlanFactsOf } from './artifactPlanFactsOf';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
@@ -87,6 +83,7 @@ export type ArtifactFacts = {
   readonly planRun: WorkflowRun | null;
   readonly planDrafts: ReadonlyArray<ArtifactComment>;
   readonly plannerQuestionCount: number;
+  readonly isPlanHeldByAuto: boolean;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
@@ -95,12 +92,6 @@ export type ArtifactFacts = {
 const NO_PORTS: ArtifactPorts = {};
 
 const NO_DRAFTS: ReadonlyArray<ArtifactComment> = [];
-
-const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
-
-const NO_AGENTS: ReadonlyArray<Agent> = [];
-
-const NO_TEMPLATES: ReadonlyArray<Workflow> = [];
 
 type FactsOnly = { readonly facts: ArtifactFacts };
 
@@ -169,6 +160,7 @@ const primaryOf = ({ facts }: FactsOnly): PlanPrimary =>
     revising: facts.planRevising,
     isRunning: facts.isPlanRunning,
     plannerQuestionCount: facts.plannerQuestionCount,
+    isHeldByAuto: facts.isPlanHeldByAuto,
   });
 
 const editBlockOf = ({ facts }: FactsOnly): string | null =>
@@ -719,6 +711,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         planRun: null,
         planDrafts: NO_DRAFTS,
         plannerQuestionCount: 0,
+        isPlanHeldByAuto: false,
         generation,
         kickoff: null,
         ports,
@@ -747,32 +740,15 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
       planStatus: plan?.status ?? (stored?.kind === 'plan' ? stored.status : null),
       status: plan?.status ?? stored?.status ?? null,
       isPlanRunning,
-      planRevising:
-        stored === null || stored.kind !== 'plan'
-          ? NOT_REVISING
-          : planRevisingOf({ artifact: stored, turn: state.agentTurnState[stored.agentId] }),
-      planRun:
-        plan === null || session === null
-          ? null
-          : planOwnerOf({
-              plan,
-              agents: state.sessionPhaseRuns[target.sessionId] ?? NO_AGENTS,
-              runs: session.workflowRuns,
-              templates: state.phaseTemplates[session.workspaceId] ?? NO_TEMPLATES,
-            }),
-      planDrafts:
-        kind === 'plan'
-          ? (state.artifactComments[target.sessionId] ?? NO_DRAFTS).filter(
-              (comment) => comment.artifactId === artifactId && comment.status === 'draft',
-            )
-          : NO_DRAFTS,
-      plannerQuestionCount:
-        plan === null
-          ? 0
-          : plannerQuestionsOf({
-              questions: state.sessionOpenQuestions[target.sessionId] ?? NO_QUESTIONS,
-              plan,
-            }).length,
+      ...artifactPlanFactsOf({
+        state,
+        sessionId: target.sessionId,
+        session,
+        artifact: stored,
+        artifactId,
+        plan,
+        isPlan: kind === 'plan',
+      }),
       generation: null,
       kickoff:
         stored?.kind === 'report'

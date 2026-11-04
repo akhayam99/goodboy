@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Disclosure, Markdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
@@ -24,6 +25,8 @@ type Props = {
 
 const NO_READING: ReadonlyArray<string> = [];
 
+const NO_VIEWS: ReadonlyArray<AutoTreeView> = [];
+
 const MINUTE_MS = 60_000;
 
 export const OrchestratedTail = ({ session, view }: Props) => {
@@ -32,6 +35,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
   const queuedCount = (run.orchestratorHints ?? []).filter(
     (hint) => hint.consumedAt == null && !readingIds.includes(hint.id),
   ).length;
+  const autoTreeViews = useAppStore((state) => state.autoTreeViews[session.id] ?? NO_VIEWS);
   const quiet = useQuietStep({ agents });
   const mountBlock = useMountBlockedStep({ sessionId: session.id, workflowRunId: run.id });
   const [isWhyOpen, setIsWhyOpen] = useState(false);
@@ -45,8 +49,9 @@ export const OrchestratedTail = ({ session, view }: Props) => {
       quiet === null
         ? null
         : { agentId: quiet.agent.id, minutes: Math.floor(quiet.quietMs / MINUTE_MS) },
-    restartStoppedCount: agents.filter((agent) => isStoppedByRestart({ agent, runs: agents }))
-      .length,
+    restartStoppedCount: agents.filter((agent) =>
+      isStoppedByRestart({ agent, runs: agents, views: autoTreeViews }),
+    ).length,
     mountBlock,
   });
   if (tail === null) {
