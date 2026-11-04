@@ -61,7 +61,6 @@ type Props = {
   turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
-  droppedEchoIds?: ReadonlyArray<string>;
   onOpenTranscript?: OpenTranscriptAt;
   onStop?: () => void;
   isStepsOnly?: boolean;
@@ -108,7 +107,6 @@ export const TranscriptRows = ({
   turnFooters,
   briefLabel,
   insertions = [],
-  droppedEchoIds = [],
   onOpenTranscript,
   onStop,
   isStepsOnly = false,
@@ -118,7 +116,7 @@ export const TranscriptRows = ({
   clockStepAgentId,
   newFromKey = null,
 }: Props) => {
-  const rows = rowsByDeliveryOf({ rows: givenRows, droppedEchoIds });
+  const rows = rowsByDeliveryOf({ rows: givenRows, insertions });
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });

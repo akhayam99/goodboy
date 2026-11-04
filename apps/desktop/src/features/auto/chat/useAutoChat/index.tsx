@@ -23,7 +23,6 @@ type Params = {
 export type AutoChat = Readonly<{
   tree: AutoTreeOfAgent | null;
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
-  droppedEchoIds: ReadonlyArray<string> | undefined;
   composerPlaceholder: string | undefined;
 }>;
 
@@ -60,6 +59,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     const tail: TranscriptInsertion = {
       key: `auto-tail-${view.tree.id}`,
       beforeMs: null,
+      keptEchoIds: view.droppedMessageIds,
       node:
         ask === null ? (
           <AutoWorkTime session={session}>
@@ -90,7 +90,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   return {
     tree,
     insertions,
-    droppedEchoIds: view === null ? undefined : view.droppedMessageIds,
     composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
   };
 };

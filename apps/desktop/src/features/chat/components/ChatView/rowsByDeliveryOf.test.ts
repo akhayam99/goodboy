@@ -76,7 +76,7 @@ describe('echo rows of messages Auto has not read', () => {
       echo({ key: 'waiting', text: 'And refunds', offsetMs: 1_000, outboxId: 'row-2' }),
     ];
 
-    const shown = rowsByDeliveryOf({ rows, droppedEchoIds: ['row-1'] });
+    const shown = rowsByDeliveryOf({ rows, insertions: [{ keptEchoIds: ['row-1'] }] });
 
     expect(shown.map((row) => row.key)).toEqual(['dropped']);
   });

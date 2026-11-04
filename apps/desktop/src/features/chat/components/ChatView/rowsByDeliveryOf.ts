@@ -1,8 +1,9 @@
+import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import type { ConversationRow } from '../../utils/conversationRows';
 
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
-  readonly droppedEchoIds?: ReadonlyArray<string>;
+  readonly insertions?: ReadonlyArray<Pick<TranscriptInsertion, 'keptEchoIds'>>;
 };
 
 type RowParams = {
@@ -35,8 +36,9 @@ const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
 
 export const rowsByDeliveryOf = ({
   rows,
-  droppedEchoIds = [],
+  insertions = [],
 }: Params): ReadonlyArray<ConversationRow> => {
+  const keptEchoIds = insertions.flatMap((insertion) => insertion.keptEchoIds ?? []);
   const movedBefore = new Map<string, ConversationRow[]>();
   const movedKeys = new Set<string>();
   const unreadKeys = new Set<string>();
@@ -50,7 +52,7 @@ export const rowsByDeliveryOf = ({
       return;
     }
     const outboxId = echoOf({ row })?.outboxId;
-    if (outboxId !== undefined && !droppedEchoIds.includes(outboxId)) {
+    if (outboxId !== undefined && !keptEchoIds.includes(outboxId)) {
       unreadKeys.add(row.key);
     }
   });

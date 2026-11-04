@@ -76,7 +76,6 @@ type Props = {
   readonly composerNotice?: ReactNode;
   readonly briefLabel?: string;
   readonly insertions?: ReadonlyArray<TranscriptInsertion>;
-  readonly droppedEchoIds?: ReadonlyArray<string>;
   readonly composerLead?: ReactNode;
   readonly controlSlots?: ComposerControlSlots;
   readonly mode?: ChatViewMode;
@@ -100,7 +99,6 @@ export const ChatView = ({
   composerNotice,
   briefLabel,
   insertions,
-  droppedEchoIds,
   composerLead,
   controlSlots,
   mode = 'record',
@@ -579,7 +577,6 @@ export const ChatView = ({
                       turnFooters={turnFooters}
                       briefLabel={briefLabel}
                       {...(insertions !== undefined && { insertions })}
-                      {...(droppedEchoIds !== undefined && { droppedEchoIds })}
                       {...(onOpenTranscript !== undefined && { onOpenTranscript })}
                       isStepsOnly={mode === 'steps'}
                       waitingFor={waitingFor}
