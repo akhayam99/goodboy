@@ -20,6 +20,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
@@ -787,7 +788,6 @@ describe('the folded session rail', () => {
               : { ...github.pr, checks: 'failure' },
         },
       },
-      setSessionActiveMount: vi.fn(async () => undefined),
     });
     stubStoryInvoke({
       worktree_status: () => worktreeStatusOf({}),
@@ -835,6 +835,12 @@ describe('the folded session rail', () => {
       fireEvent.click(flyout.getByRole('button', { name: /ledger-rounding/ }));
     });
 
+    expect(storySpies.updateSessionWriteDestination).toHaveBeenCalledWith({
+      db: expect.anything(),
+      sessionId: openId,
+      mountId: `${ledger.mountId}-second`,
+    });
+    expect(useAppStore.getState().sessionActiveMount[openId]).toBe(`${ledger.mountId}-second`);
     expect(useAppStore.getState().activeLens[openId]).toBe('branch');
     expect(useAppStore.getState().diffMountPath[openId]).toBe(`${ledger.worktreePath}-second`);
     expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
@@ -853,6 +859,29 @@ describe('the folded session rail', () => {
     const lines = Array.from(row.querySelectorAll('span > span'), (line) => line.textContent);
     expect(lines[0]).toBe('goodboy/ledger-rounding');
     expect(lines[1]?.startsWith('ledger-core')).toBe(true);
+  });
+
+  it('does not reopen the flyout when branches fold again after it closed under it', async () => {
+    seedBranches({ isPaymentsFailing: false });
+    const mounts = useAppStore.getState().sessionProjectMounts[openId] ?? [];
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '3 more branches' }));
+    });
+    screen.getByRole('dialog', { name: 'Branches' });
+
+    await act(async () => {
+      useAppStore.setState({
+        sessionProjectMounts: { [openId]: mounts.slice(0, 1) },
+      });
+    });
+    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
+
+    await act(async () => {
+      useAppStore.setState({ sessionProjectMounts: { [openId]: mounts } });
+    });
+
+    screen.getByRole('button', { name: '3 more branches' });
+    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
   });
 
   it('closes the flyout on Escape', async () => {
