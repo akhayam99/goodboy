@@ -204,7 +204,7 @@ describe('the central column, kind by kind', () => {
     expect(card.querySelector('[data-overview-count]')?.textContent).toBe(String(rows));
   });
 
-  it('gives every running row one Where cell, with the project only across two projects', async () => {
+  it('shows no Where cell with one branch, and one per running row with the project across two projects', async () => {
     const { unmount } = await showColumn({ kind: 'mid' });
     const wheres = () =>
       [
@@ -214,12 +214,8 @@ describe('the central column, kind by kind', () => {
       ].map((row) =>
         [...row.querySelectorAll('[data-live-where]')].map((cell) => cell.textContent),
       );
-    expect(wheres().every((cells) => cells.length === 1)).toBe(true);
-    expect(
-      wheres()
-        .flat()
-        .some((where) => (where ?? '').includes(' · ')),
-    ).toBe(false);
+    expect(wheres().length).toBeGreaterThan(0);
+    expect(wheres().every((cells) => cells.length === 0)).toBe(true);
     expect(
       document.querySelector('[data-overview-card="running"] [data-testid="branch-chip"]'),
     ).toBeNull();
@@ -227,6 +223,25 @@ describe('the central column, kind by kind', () => {
 
     await showColumn({ kind: 'branches' });
     expect(wheres().flat()).toContain('ledger-core · ak/eng-1190-ledger-limits');
+  });
+
+  it('says no Working word on a row of the Running section, and keeps the words that differ', async () => {
+    await showColumn({ kind: 'mid' });
+
+    const section = document.querySelector<HTMLElement>(
+      '[data-overview-card="running"] [data-live-section="running"]',
+    );
+    if (section === null) {
+      throw new Error('no Running section');
+    }
+    expect(
+      section.querySelectorAll('[data-live-group][data-state="working"]').length,
+    ).toBeGreaterThan(0);
+    expect(within(section).queryByText('Working')).toBeNull();
+    const others = [...section.querySelectorAll('[data-live-group]:not([data-state="working"])')];
+    expect(
+      others.every((row) => /Stuck|Needs you|Deciding|Failed/.test(row.textContent ?? '')),
+    ).toBe(true);
   });
 
   it('keeps only the Done card on an archived session', async () => {

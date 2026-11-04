@@ -1,41 +1,27 @@
 import { ICON_SIZE, StatusDot } from '@goodboy/ui';
-import type { SessionId, WorktreeStatus } from '@goodboy/types';
-import type { MountRowView } from '../../../store/slices/project-mounts/mountRowModel';
-
-import { branchRowFactsOf } from '../../../features/branch/branchRowFactsOf';
-import { pullRequestStateToneOf } from '../../../features/branch/pullRequestStateToneOf';
+import type { SessionId } from '@goodboy/types';
 import { switchBranchMount } from '../../../features/branch/switchBranchMount';
 import { RailButton } from '../SideColumn/RailButton';
-import { useWorktreeRowState } from './SessionLevel/useWorktreeRowState';
+import { railBranchFactsOf } from './railBranchFactsOf';
+import { railBranchLabelOf } from './railBranchLabelOf';
+import type { RailBranchEntry } from './railBranchesSplitOf';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly row: MountRowView;
-  readonly status: WorktreeStatus | null;
-  readonly isShown: boolean;
+  readonly entry: RailBranchEntry;
 };
 
-export const RailWorktreeButton = ({ sessionId, row, status, isShown }: Props) => {
-  const state = useWorktreeRowState({ sessionId, row, status });
-  const facts = branchRowFactsOf({
-    branch: row.branch,
-    mountName: row.mountName,
-    request: row.request,
-    checks: null,
-    behind: null,
-    conflicts: null,
-  });
-  const path = row.worktreePath ?? row.lastWorktreePath;
-  const mark = pullRequestStateToneOf({ state: facts.state });
+export const RailWorktreeButton = ({ sessionId, entry }: Props) => {
+  const { row, state, isShown } = entry;
+  const facts = railBranchFactsOf({ row });
+  const path = facts.path;
   return (
     <RailButton
       id={`worktree-${row.mountId}`}
-      icon={mark.icon}
+      icon={facts.mark.icon}
       iconSize={ICON_SIZE.row}
-      iconClassName={mark.iconClass}
-      label={[row.projectName, facts.number, facts.branch, facts.stateWord, state.reason]
-        .filter((part): part is string => part !== null && part !== '')
-        .join(', ')}
+      iconClassName={facts.mark.iconClass}
+      label={railBranchLabelOf({ facts, reason: state.reason })}
       isCurrent={isShown}
       isPage
       {...(state.tone !== null && {

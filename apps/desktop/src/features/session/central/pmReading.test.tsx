@@ -207,10 +207,10 @@ const ACCEPTANCE: ReadonlyArray<Acceptance> = [
   {
     title: 'Where each branch stands',
     walk: async () => {
-      await show({ kind: 'mid' });
+      await show({ kind: 'branches' });
 
       const branches = document.body;
-      expect(branches.textContent).toContain('ak/eng-1190-tenant-limits');
+      expect(branches.textContent).toContain('ak/eng-1190-ledger-limits');
     },
   },
   {

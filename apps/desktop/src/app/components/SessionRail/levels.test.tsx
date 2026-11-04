@@ -15,7 +15,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { aProject, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { innerColumnStore } from '@goodboy/ui';
-import type { IsoDateTime, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
+import type { IsoDateTime, MountId, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -762,6 +762,110 @@ describe('the folded session rail', () => {
     expect(icons.map((icon) => icon.getAttribute('aria-label'))).toEqual([
       `payments-api, #418, goodboy/${openId}, Open, A check failed`,
     ]);
+  });
+
+  const seedBranches = ({ isPaymentsFailing }: { readonly isPaymentsFailing: boolean }) => {
+    seed();
+    const payments = mountOf({ session: open, project: paymentsApi });
+    const ledger = mountOf({ session: open, project: ledgerCore });
+    const ledgerSecond = {
+      ...ledger,
+      mountId: brandedId<MountId>({ value: `${ledger.mountId}-second` }),
+      branch: 'goodboy/ledger-rounding',
+      worktreePath: `${ledger.worktreePath}-second`,
+      parallelIndex: 1,
+    };
+    const github = mountGithubOf({ mount: payments, number: 418 });
+    useAppStore.setState({
+      sessionProjectMounts: { [openId]: [payments, ledger, ledgerSecond] },
+      mountGithub: {
+        [payments.mountId]: {
+          ...github,
+          pr:
+            github.pr === null || !isPaymentsFailing
+              ? github.pr
+              : { ...github.pr, checks: 'failure' },
+        },
+      },
+      setSessionActiveMount: vi.fn(async () => undefined),
+    });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
+    });
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    mountColumn();
+    return { ledger };
+  };
+
+  it('keeps a glyph for a branch that needs you and folds the quiet ones into one counted button', () => {
+    seedBranches({ isPaymentsFailing: true });
+
+    const worktrees = within(elementOf('[data-rail-worktrees]', rail()));
+    const labels = worktrees.getAllByRole('button').map((icon) => icon.getAttribute('aria-label'));
+    expect(labels).toEqual([
+      `payments-api, #418, goodboy/${openId}, Open, A check failed`,
+      '2 more branches',
+    ]);
+    expect(elementOf('[data-rail-branches-count]').textContent).toBe('2');
+  });
+
+  it('folds every branch into the button when none needs you', () => {
+    seedBranches({ isPaymentsFailing: false });
+
+    const worktrees = within(elementOf('[data-rail-worktrees]', rail()));
+    expect(worktrees.getAllByRole('button').map((icon) => icon.getAttribute('aria-label'))).toEqual(
+      ['3 more branches'],
+    );
+  });
+
+  it('opens a flyout of every branch from the button and opens the picked branch', async () => {
+    const { ledger } = seedBranches({ isPaymentsFailing: true });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
+    });
+
+    const flyout = within(screen.getByRole('dialog', { name: 'Branches' }));
+    expect(flyout.getAllByRole('button')).toHaveLength(3);
+    flyout.getByRole('button', { name: /A check failed/ });
+
+    await act(async () => {
+      fireEvent.click(flyout.getByRole('button', { name: /ledger-rounding/ }));
+    });
+
+    expect(useAppStore.getState().activeLens[openId]).toBe('branch');
+    expect(useAppStore.getState().diffMountPath[openId]).toBe(`${ledger.worktreePath}-second`);
+    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
+  });
+
+  it('titles a flyout row by its branch, with the project below', async () => {
+    seedBranches({ isPaymentsFailing: true });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
+    });
+
+    const row = within(screen.getByRole('dialog', { name: 'Branches' })).getByRole('button', {
+      name: /ledger-rounding/,
+    });
+    const lines = Array.from(row.querySelectorAll('span > span'), (line) => line.textContent);
+    expect(lines[0]).toBe('goodboy/ledger-rounding');
+    expect(lines[1]?.startsWith('ledger-core')).toBe(true);
+  });
+
+  it('closes the flyout on Escape', async () => {
+    seedBranches({ isPaymentsFailing: true });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '2 more branches' }));
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(document, { key: 'Escape' });
+    });
+
+    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
   });
 
   it('folds to the page icons and back, and remembers the choice', () => {

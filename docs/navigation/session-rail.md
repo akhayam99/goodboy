@@ -183,9 +183,15 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   pushes the Branch page into the center); a click on the current row folds or
   opens its pages. Only the current branch shows pages, so the card does not grow
   when you are busy. Folded, the
-  rail draws one pull request state icon per worktree under the page icons
-  (`RailWorktrees`), its tooltip "project, branch, state word, worst state" and the worst
-  state dot on its corner (`useWorktreeRowState`); the
+  rail draws a pull request state icon under the page icons only for a worktree
+  that needs you (a dot) or is shown now (`RailWorktrees`), with its tooltip
+  "project, branch, state word, worst state" and the worst state dot on its corner
+  (`railBranchesSplitOf` over `useRailBranchEntries`). Every other worktree folds into
+  one branches button: the branch glyph with a neutral count badge and the label
+  "3 more branches" (`RailBranchesButton`). Its flyout (`RailFlyout`, key `branches`)
+  lists every worktree of the session with project, branch, pull request state,
+  reason and dot (`RailBranchRow`), and a row opens the branch like its icon does. One
+  quiet worktree keeps its own icon, so the button never counts one. The
   folded rail never draws the session node, and a worktree icon there drills
   the folded rail into the worktree's page icons (`RailWorktreeLevel`), since
   the folded rail has no tree. **Rebase all**

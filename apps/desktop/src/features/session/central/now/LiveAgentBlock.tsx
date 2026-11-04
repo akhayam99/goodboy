@@ -8,6 +8,7 @@ import { LiveGlyph } from './LiveGlyph';
 import type { LiveAgentGroup } from './liveGroupsOf';
 import { LiveRow } from './LiveRow';
 import { LiveStateWord } from './LiveStateWord';
+import { liveOwnStateOf } from './liveOwnStateOf';
 import { liveStatusOf } from './liveStatusOf';
 import { LIVE_TONE } from './liveTone';
 
@@ -27,6 +28,7 @@ export const LiveAgentBlock = ({ sessionId, group, where }: Props) => {
     word: rowStateShortSentence({ state: group.rowState }) ?? stateSpec.word,
     detail: group.state === 'working' ? null : rowStateSentence({ state: group.rowState }),
   });
+  const isOwn = liveOwnStateOf({ group, word: status.word });
   return (
     <section
       aria-label={`${noun}: ${group.title}`}
@@ -42,10 +44,15 @@ export const LiveAgentBlock = ({ sessionId, group, where }: Props) => {
         openLabel={`Open ${group.title}`}
         onOpen={() => navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })}
         where={where}
-        end={<LiveStateWord tone={stateSpec.tone} word={status.word} />}
+        end={<LiveStateWord tone={stateSpec.tone} word={status.word} isSectionState={isOwn} />}
         time={<DelegationClock agentId={agent.id} isLive={group.rowState.phase === 'running'} />}
       />
-      <LiveChildren sessionId={sessionId} parentTitle={group.title} items={group.children} />
+      <LiveChildren
+        sessionId={sessionId}
+        parentTitle={group.title}
+        items={group.children}
+        isParentOwn={group.state === 'working'}
+      />
     </section>
   );
 };
