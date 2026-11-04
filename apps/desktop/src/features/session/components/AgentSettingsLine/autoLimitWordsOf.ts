@@ -59,9 +59,11 @@ export const autoLimitWordsOf = ({
     };
   }
   const first = Math.min(...limits);
+  const source = sourceOf({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName });
   return {
     value: `${formatUsd(facts.spentUsd)} of ${formatUsd(first)}`,
-    source: sourceOf({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName }),
+    source,
+    ...(source === `from ${workspaceName}` && { isFromWorkspace: true }),
     chain: `${chain} ${formatUsd(first)} comes first.`,
   };
 };

@@ -6,6 +6,7 @@ import { undoable } from '../../../../shared/utils/undoable';
 import { useAppStore } from '../../../../store';
 import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
 import { useAutoTreeCap } from '../../../auto/chat/useAutoTreeCap';
+import { openRunDefaults } from '../../../settings/openRunDefaults';
 import type { SettingWords } from '../../../../shared/components/SettingChip/settingWords';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 import { LimitAmountForm } from '../../../../shared/components/SettingChip/LimitAmountForm';
@@ -82,6 +83,7 @@ export const AutoLimitSetting = ({ sessionId, treeId, facts, sessionCapUsd, word
       words={words}
       help={HELP}
       error={draft.error}
+      onOpenSource={openRunDefaults}
     >
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-meta tabular-nums">
         <dt className="text-muted-foreground">Spent</dt>

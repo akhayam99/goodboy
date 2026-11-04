@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { StepProjectAdd } from '../../../auto/chat/StepProjectAdd';
 import type { MountBlockedStep } from '../../../../store/slices/workflows/runMount/selectMountBlockedStep';
 import type { MountBlockChoice } from '../../../../store/slices/workflows/runMount/resolveMountBlockedStep';
 import { RUN_STEP_PIN_COPY } from '../../../workflows/runStepPinCopy';
@@ -75,6 +76,9 @@ export const OrchestratedMountBlock = ({ sessionId, block }: Props) => {
             >
               {RUN_STEP_PIN_COPY.use({ branch: suggested.branch })}
             </Button>
+          )}
+          {block.isReattachable || block.choices.length > 0 ? null : (
+            <StepProjectAdd sessionId={sessionId} agentId={block.agentId} />
           )}
           {block.choices.length < 2 ? null : (
             <MountBlockPicker
