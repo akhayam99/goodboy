@@ -37,6 +37,7 @@ export const PLANNER_ID = brandId<AgentId>({ value: 'mock-auto-planner' });
 export const IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-auto-implementer' });
 export const TESTER_ID = brandId<AgentId>({ value: 'mock-auto-tester' });
 const REVIEWER_ID = brandId<AgentId>({ value: 'mock-auto-reviewer' });
+const FIRST_IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-auto-implementer-first' });
 export const AUTO_PLAN_ID = brandId<ArtifactId>({ value: 'mock-auto-plan-retries' });
 
 const RUN_ONE = brandId<ProviderRunId>({ value: 'mock-auto-run-1' });
@@ -66,6 +67,7 @@ export type AutoSceneState =
   | 'mount-done'
   | 'done'
   | 'finished'
+  | 'doneRestarted'
   | 'nocap'
   | 'blocked'
   | 'queued'
@@ -761,6 +763,66 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
       return {
         ...resting,
         view: { ...resting.view, tree: { ...resting.view.tree, phase: 'finished' } },
+      };
+    }
+    case 'doneRestarted': {
+      const resting = autoSceneOf({ state: 'done' });
+      const firstTry = {
+        ...delegationOf({
+          key: 'implementer-first',
+          task: 'Post one credit per retry in postCredit and applyCredit.',
+          childId: FIRST_IMPLEMENTER_ID,
+          role: 'implementer',
+          state: 'settled',
+          outcome: 'stopped',
+          batch: 'mock-auto-batch-2',
+          reason: IMPLEMENTER_REASON,
+          model: SONNET,
+          effort: 'medium',
+          createdTime: '12:09:10',
+          settledTime: '12:10:20',
+        }),
+        retryOf: null,
+      };
+      const retried = resting.view.delegations.map((delegation) =>
+        delegation.role === 'implementer' ? { ...delegation, retryOf: firstTry.id } : delegation,
+      );
+      const stoppedFirst = {
+        ...agentOf({
+          id: FIRST_IMPLEMENTER_ID,
+          name: 'Implementer',
+          kind: 'implementer',
+          status: 'stopped',
+          startTime: '12:09:16',
+          parent: AUTO_ROOT_ID,
+        }),
+        stoppedBy: 'app' as const,
+      };
+      const reports = ['payments-api', 'ledger-core'].map((mount) => {
+        const row = planRowOf({
+          approvalState: 'needs_approval',
+          revision: 1,
+          approvedRevision: null,
+          openRevise: null,
+        });
+        return {
+          ...row,
+          artifact: {
+            ...row.artifact,
+            artifactId: brandId<ArtifactId>({ value: `mock-auto-report-${mount}` }),
+            kind: 'report' as const,
+          },
+          title: `Review of ${mount}`,
+        };
+      });
+      return {
+        ...resting,
+        view: {
+          ...resting.view,
+          delegations: [firstTry, ...retried],
+          artifacts: [...resting.view.artifacts, ...reports],
+        },
+        agents: [...resting.agents, stoppedFirst],
       };
     }
     case 'blocked': {

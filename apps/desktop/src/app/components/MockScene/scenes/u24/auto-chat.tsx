@@ -17,5 +17,6 @@ export const U24_AUTO_CHAT_SCENES: Readonly<Record<string, ComponentType>> = {
   'auto-chat-child': () => <AutoChatScene state="working" selected="planner" />,
   'u34-p22-waiting': () => <AutoChatScene state="waitingTwo" />,
   'u34-p22-delivered': () => <AutoChatScene state="deliveredTwo" />,
+  'u34-p27-auto-done': () => <AutoOverviewScene state="doneRestarted" />,
   'auto-overview-row': () => <AutoOverviewScene state="working" />,
 };

@@ -70,6 +70,7 @@ describe('the Auto chat scenes', () => {
       'auto-overview-row',
       'u34-p22-delivered',
       'u34-p22-waiting',
+      'u34-p27-auto-done',
     ]);
     for (const [id, Scene] of Object.entries(U24_AUTO_CHAT_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -283,5 +284,14 @@ describe('the Auto chat scenes', () => {
     expect(running.textContent).toContain(
       'Post one credit per retry in postCredit and applyCredit',
     );
+  });
+
+  it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {
+    mount({ id: 'u34-p27-auto-done' });
+
+    await screen.findByText('Nothing needs you', undefined, WAIT);
+    expect(screen.queryByText(/Auto waits on your OK/)).toBeNull();
+    expect(screen.queryByText('Ready to implement')).toBeNull();
+    expect(screen.queryByText(/Stopped when Goodboy closed/)).toBeNull();
   });
 });

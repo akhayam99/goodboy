@@ -11,6 +11,8 @@ import { useAppStore, useSessionOpenQuestions } from '../../../store';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 import { useFollowToast } from '../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../shared/lib/userStarts';
+import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
 import { planApprovedFollowOf } from '../planApprovedFollow';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
@@ -20,6 +22,7 @@ import { usePlanRun, usePlanRunToast } from '../usePlanRun';
 
 const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
 const NO_AGENTS: ReadonlyArray<Agent> = [];
+const NO_VIEWS: ReadonlyArray<AutoTreeView> = [];
 
 const NEXT_STEP_NAME = 'The next step';
 
@@ -93,9 +96,21 @@ export const usePlanPrimaryAction = ({
     [comments, plan.id],
   );
   const run = usePlanOwner({ sessionId, plan });
+  const isHeldByAuto = useAppStore((state) =>
+    isPlanHeldByAuto({ views: state.autoTreeViews[sessionId] ?? NO_VIEWS, planId: plan.id }),
+  );
   const primary = useMemo(
-    () => planPrimaryOf({ plan, run, drafts, revising, isRunning, plannerQuestionCount }),
-    [plan, run, drafts, revising, isRunning, plannerQuestionCount],
+    () =>
+      planPrimaryOf({
+        plan,
+        run,
+        drafts,
+        revising,
+        isRunning,
+        plannerQuestionCount,
+        isHeldByAuto,
+      }),
+    [plan, run, drafts, revising, isRunning, plannerQuestionCount, isHeldByAuto],
   );
 
   const settleApproved = useCallback(

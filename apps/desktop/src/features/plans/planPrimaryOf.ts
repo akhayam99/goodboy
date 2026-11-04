@@ -22,6 +22,7 @@ type Params = Readonly<{
   revising?: PlanRevising;
   isRunning?: boolean;
   plannerQuestionCount?: number;
+  isHeldByAuto?: boolean;
 }>;
 
 const NONE: PlanPrimary = { kind: 'none', label: null, reason: null, isSecondary: false };
@@ -33,7 +34,11 @@ export const planPrimaryOf = ({
   revising = NOT_REVISING,
   isRunning = false,
   plannerQuestionCount = 0,
+  isHeldByAuto = false,
 }: Params): PlanPrimary => {
+  if (isHeldByAuto) {
+    return NONE;
+  }
   const feedsRun = run !== null && run.discardedAt == null;
   if (revising.kind === 'revising') {
     return {

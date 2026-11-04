@@ -4,7 +4,13 @@ import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseCont
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../../store';
 import { seedActivityRunScene } from '../activityRunSeed';
-import { AUTO_ROOT_ID, AUTO_SESSION, autoSceneOf, type AutoSceneState } from './autoSceneSeed';
+import {
+  AUTO_PLAN,
+  AUTO_ROOT_ID,
+  AUTO_SESSION,
+  autoSceneOf,
+  type AutoSceneState,
+} from './autoSceneSeed';
 
 type Props = {
   readonly state: AutoSceneState;
@@ -27,7 +33,7 @@ export const AutoOverviewScene = ({ state }: Props) => {
       sessionOpenQuestions: { [AUTO_SESSION.id]: [] },
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionArtifacts: { [AUTO_SESSION.id]: [] },
-      sessionPlans: { [AUTO_SESSION.id]: [] },
+      sessionPlans: { [AUTO_SESSION.id]: state === 'doneRestarted' ? [AUTO_PLAN] : [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
     });
     setIsReady(true);
