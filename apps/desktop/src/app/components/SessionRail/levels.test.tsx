@@ -861,6 +861,29 @@ describe('the folded session rail', () => {
     expect(lines[1]?.startsWith('ledger-core')).toBe(true);
   });
 
+  it('does not reopen the flyout when branches fold again after it closed under it', async () => {
+    seedBranches({ isPaymentsFailing: false });
+    const mounts = useAppStore.getState().sessionProjectMounts[openId] ?? [];
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '3 more branches' }));
+    });
+    expect(screen.getByRole('dialog', { name: 'Branches' })).toBeDefined();
+
+    await act(async () => {
+      useAppStore.setState({
+        sessionProjectMounts: { [openId]: mounts.slice(0, 1) },
+      });
+    });
+    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
+
+    await act(async () => {
+      useAppStore.setState({ sessionProjectMounts: { [openId]: mounts } });
+    });
+
+    expect(screen.getByRole('button', { name: '3 more branches' })).toBeDefined();
+    expect(screen.queryByRole('dialog', { name: 'Branches' })).toBeNull();
+  });
+
   it('closes the flyout on Escape', async () => {
     seedBranches({ isPaymentsFailing: true });
     await act(async () => {

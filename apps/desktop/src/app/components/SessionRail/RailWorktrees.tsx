@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
@@ -44,6 +44,13 @@ export const RailWorktrees = ({ session }: Props) => {
     shownPath,
   });
   const { own, folded } = useMemo(() => railBranchesSplitOf({ entries }), [entries]);
+  const isBranchesTarget = flyout.target?.key === 'branches';
+  const closeFlyout = flyout.close;
+  useEffect(() => {
+    if (folded.length === 0 && isBranchesTarget) {
+      closeFlyout();
+    }
+  }, [folded.length, isBranchesTarget, closeFlyout]);
   if (rows.length === 0) {
     return null;
   }
@@ -73,11 +80,11 @@ export const RailWorktrees = ({ session }: Props) => {
               }
               event.preventDefault();
               if (flyout.target?.key === 'branches') {
-                focusFirstFlyoutRow();
+                focusFirstFlyoutRow({ flyoutKey: 'branches' });
                 return;
               }
               flyout.enter({ key: 'branches', anchor: event.currentTarget, isImmediate: true });
-              window.requestAnimationFrame(focusFirstFlyoutRow);
+              window.requestAnimationFrame(() => focusFirstFlyoutRow({ flyoutKey: 'branches' }));
             }}
           />
           <RailFlyout

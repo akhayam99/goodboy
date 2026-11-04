@@ -61,11 +61,11 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
     }
     event.preventDefault();
     if (target?.key === key) {
-      focusFirstFlyoutRow();
+      focusFirstFlyoutRow({ flyoutKey: key });
       return;
     }
     flyout.enter({ key, anchor: event.currentTarget, isImmediate: true });
-    window.requestAnimationFrame(focusFirstFlyoutRow);
+    window.requestAnimationFrame(() => focusFirstFlyoutRow({ flyoutKey: key }));
   };
 
   const openNodeOf = (session: Session) => (
