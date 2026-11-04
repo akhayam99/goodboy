@@ -23,9 +23,6 @@ export type OrchestratorHintDraft = {
 
 const IMAGE_ONLY_HINT_TEXT = 'See the attached image.';
 
-const NO_WORKTREE_FOR_HINT_FILES =
-  'This session has no worktree yet, so the hint cannot keep files.';
-
 type SaveFilesParams = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -44,13 +41,10 @@ const saveHintFiles = async ({
   if (inputs.length === 0) {
     return [];
   }
-  const worktreeDir = get().sessionWorktrees[sessionId]?.[0];
-  if (worktreeDir === undefined) {
-    throw new Error(NO_WORKTREE_FOR_HINT_FILES);
-  }
   return saveGoalAttachments({
     set,
-    worktreeDir,
+    get,
+    sessionId,
     owner: { type: 'workflow_run', id: workflowRunId },
     inputs,
   });

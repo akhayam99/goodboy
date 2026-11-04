@@ -8147,11 +8147,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/attachments/addGoalAttachments.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/attachments/loadGoalAttachments.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -8159,10 +8154,7 @@
   },
   "apps/desktop/src/store/slices/attachments/removeGoalAttachment.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
+      "count": 4
     }
   },
   "apps/desktop/src/store/slices/attachments/saveGoalAttachments.ts": {

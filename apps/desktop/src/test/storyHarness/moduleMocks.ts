@@ -47,7 +47,7 @@ export const turnModuleMock = () => ({
   lookupDeliveryRun: vi.fn(async () => null),
   encodeAuthRequiredMessage: () => '',
   isAuthErrorMessage: () => false,
-  writeAttachment: () => storySpies.writeAttachment(),
+  writeAttachment: storySpies.writeAttachment,
   deleteAttachment: () => storySpies.deleteAttachment(),
 });
 

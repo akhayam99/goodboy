@@ -54,7 +54,7 @@ vi.mock('@goodboy/db', async () =>
 const MICROTASK_TURNS = 30;
 
 const RUN = aWorkflowRun();
-const SESSION = aSession();
+const SESSION = aSession({ workflowRuns: [RUN] });
 const OWNER = { type: 'workflow_run', id: RUN.id } as const;
 const AT: IsoDateTime = JSON.parse('"2026-10-30T10:00:00.000Z"');
 
@@ -122,7 +122,7 @@ describe('loadGoalAttachments', () => {
   it('keeps the newer rows of an add when the older load answers late', async () => {
     const { loadGoalAttachments, addGoalAttachments } = useAppStore.getState();
     useAppStore.setState({
-      currentSessionId: SESSION.id,
+      sessions: [SESSION],
       sessionWorktrees: { [SESSION.id]: ['/worktrees/payments-api'] },
     });
     const load = loadGoalAttachments(OWNER);
@@ -156,7 +156,7 @@ describe('loadGoalAttachments', () => {
   it('keeps an add that committed when a remove of another row starts during its refresh', async () => {
     const { addGoalAttachments, removeGoalAttachment } = useAppStore.getState();
     useAppStore.setState({
-      currentSessionId: SESSION.id,
+      sessions: [SESSION],
       sessionWorktrees: { [SESSION.id]: ['/worktrees/payments-api'] },
       workflowRunAttachments: { [RUN.id]: [rowOf({ id: 'a' })] },
     });

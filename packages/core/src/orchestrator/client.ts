@@ -30,6 +30,7 @@ export type OrchestratorClientDeps = {
   readonly effort?: EffortLevel;
   readonly binary?: string;
   readonly workingDir?: string;
+  readonly readDirs?: ReadonlyArray<string>;
   readonly timeoutMs?: number;
   readonly invokeFn: InvokeFn;
 };
@@ -66,6 +67,7 @@ export class OrchestratorClient {
   private readonly model: string;
   private readonly effort: EffortLevel | undefined;
   private readonly workingDir: string | undefined;
+  private readonly readDirs: ReadonlyArray<string>;
   private readonly timeoutMs: number;
   private readonly invokeFn: InvokeFn;
 
@@ -75,6 +77,7 @@ export class OrchestratorClient {
     this.model = cliModelId({ provider: deps.providerId, model: deps.model });
     this.effort = deps.effort;
     this.workingDir = deps.workingDir;
+    this.readDirs = deps.readDirs ?? [];
     this.timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.invokeFn = deps.invokeFn;
   }
@@ -103,6 +106,7 @@ export class OrchestratorClient {
             runId,
             ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),
+            ...(this.readDirs.length > 0 && { readDirs: this.readDirs }),
           },
         }),
         timeout,

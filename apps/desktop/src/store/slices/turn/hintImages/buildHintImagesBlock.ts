@@ -5,6 +5,7 @@ type Params = {
   readonly hints: ReadonlyArray<OrchestratorHint>;
   readonly attachments: ReadonlyArray<GoalAttachment>;
   readonly worktreeDir: string | null;
+  readonly scratchDir: string | null;
   readonly stepNumber: number;
 };
 
@@ -19,10 +20,11 @@ export const buildHintImagesBlock = ({
   hints,
   attachments,
   worktreeDir,
+  scratchDir,
   stepNumber,
 }: Params): HintImagesBlock => {
   const acted = hints.filter((hint) => hint.consumedAtStep === stepNumber);
-  const pathsByHint = hintImagePaths({ hints: acted, attachments, worktreeDir });
+  const pathsByHint = hintImagePaths({ hints: acted, attachments, worktreeDir, scratchDir });
   const withImages = acted.filter((hint) => pathsByHint[hint.id] !== undefined);
   if (withImages.length === 0) {
     return EMPTY;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { attachmentDirOf } from '../../../../../store/slices/attachments/attachmentDirOf';
 import type { AttachmentStripItem } from '../../../../attachments/AttachmentStrip';
 import { ORCHESTRATED_COPY } from '../../../../workflows/orchestratedCopy';
 
@@ -21,7 +22,8 @@ export const useHintImageItems = ({ sessionId, runId, hint }: Params): HintImage
   const reportError = useAppStore((state) => state.reportError);
   const attachments = useAppStore((state) => state.workflowRunAttachments[runId] ?? EMPTY_ARRAY);
   const hasLoaded = useAppStore((state) => state.workflowRunAttachments[runId] !== undefined);
-  const workingDir = useAppStore((state) => state.sessionWorktrees[sessionId]?.[0] ?? null);
+  const worktreeDir = useAppStore((state) => state.sessionWorktrees[sessionId]?.[0] ?? null);
+  const scratchDir = useAppStore((state) => state.sessionScratchDirs[sessionId] ?? null);
   const [attempt, setAttempt] = useState(0);
   const [failedAttempt, setFailedAttempt] = useState<number | null>(null);
   const ids = hint.attachmentIds ?? EMPTY_ARRAY;
@@ -57,7 +59,7 @@ export const useHintImageItems = ({ sessionId, runId, hint }: Params): HintImage
       mimeType: attachment.mimeType,
       kind: attachment.kind,
       relPath: attachment.relPath,
-      workingDir,
+      workingDir: attachmentDirOf({ relPath: attachment.relPath, worktreeDir, scratchDir }),
     }));
 
   return {

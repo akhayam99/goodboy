@@ -853,6 +853,17 @@ A rebase stop in Goodboy never leaves the worktree mid-rebase: `rebaseBranch` re
 
 The rail dot, the folded Integrations dot, the page chip and the key-missing notice of an integration all read `toolHealthOf` (`features/integrations/toolHealthOf.ts`); a dot and a chip written separately drift. The keychain answer reaches it through `useToolSecrets` for the rail (keyed by binding id, so a late answer for a replaced binding is dropped) and `useCredentialSecret` for the page; **Check again** asks both to read again through `requestCredentialRecheck`. The Disconnect of a settings page is the header menu verb, so `IntegrationConnectedRow` takes `hasHeaderDisconnect` there and keeps its own Disconnect icon only where no page menu exists (the onboarding step, GitHub's account rows). A provider page does the same with `providerAccountChip`: it reads `providerRailStatus` with the usage window ignored, so the chip stays `Working` while the dot warns that a window is nearly used up.
 
+## Attachments never need a worktree
+
+A session gets its worktree at the first write, so a run that only reads has none. A goal or hint file must still be savable, and the orchestrator must still read it.
+
+- `saveGoalAttachments` writes into the worktree when the session has one and into the session scratch dir (`scratchDirPrepare`, the dir a chat turn and an Auto run already use) when it has none. A scratch file is named `scratch-<id>-<name>`, so its `relPath` tells where it lives and no column or migration is needed.
+- `attachmentDirOf` is the one function that says which dir holds a row; `attachmentAbsolutePathOf` builds the full path. Every reader goes through it (thumbnails, `removeGoalAttachment`, `hintImagePaths`, the kickoff block). Never join `sessionWorktrees[id][0]` and a `relPath` by hand: a file saved before the worktree existed stays in scratch after one is created.
+- `sessionScratchDirs` caches the scratch path. `loadGoalAttachments` fills it when a row is a scratch row; a reader gets `null` until then.
+- The orchestrator runs with the dir of its images as cwd. When the images sit in both dirs, the worktree is the cwd and the scratch dir goes as `readDirs`, which the planner turns into `--add-dir` on Claude and Copilot. The other providers read the cwd only, so a mixed hint can lose its scratch images there.
+- The scratch dir is under the Goodboy root, so it survives a restart and an archive. `deleteTask` removes it with the session.
+- The artifact creation pane still needs a worktree: its attachment paths go in the scout pack relative to the scout's cwd, which is a mount worktree.
+
 ## Hints when a fix starts
 
 The hint a person types before a fix is plain text carried as a field, never re-parsed out of a prompt to rebuild it. Four rules keep it safe.

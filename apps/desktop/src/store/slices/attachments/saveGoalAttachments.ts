@@ -14,26 +14,33 @@ import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { attachmentReadKey } from './attachmentReadKey';
 import { attachmentReads } from './attachmentReads';
-import type { SetFn } from './types';
+import { ensureScratchDir } from './ensureScratchDir';
+import { SCRATCH_ATTACHMENT_PREFIX } from './scratchAttachmentPrefix';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly set: SetFn;
-  readonly worktreeDir: string;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
   readonly owner: GoalAttachmentOwner;
   readonly inputs: ReadonlyArray<AttachmentInput>;
 };
 
 export const saveGoalAttachments = async ({
   set,
-  worktreeDir,
+  get,
+  sessionId,
   owner,
   inputs,
 }: Params): Promise<ReadonlyArray<string>> => {
+  const worktreeDir = get().sessionWorktrees[sessionId]?.[0];
+  const isScratch = worktreeDir === undefined;
+  const dir = isScratch ? await ensureScratchDir({ set, get, sessionId }) : worktreeDir;
   const saved: string[] = [];
   for (const input of inputs) {
     const relPath = await writeAttachment({
-      worktreeDir,
-      attachmentId: input.id,
+      worktreeDir: dir,
+      attachmentId: isScratch ? `${SCRATCH_ATTACHMENT_PREFIX}${input.id}` : input.id,
       fileName: input.fileName,
       dataBase64: input.dataBase64,
     });

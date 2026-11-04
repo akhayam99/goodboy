@@ -27,6 +27,7 @@ export const hintImagesForStep = ({
     hints: run.orchestratorHints ?? [],
     attachments,
     worktreeDir: get().sessionWorktrees[session.id]?.[0] ?? null,
+    scratchDir: get().sessionScratchDirs[session.id] ?? null,
     stepNumber: stepIndex + 1,
   });
 };
