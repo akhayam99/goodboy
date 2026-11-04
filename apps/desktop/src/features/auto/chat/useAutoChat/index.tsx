@@ -9,6 +9,7 @@ import { AutoPendingMessages } from '../AutoPendingMessages';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
 import { AutoWorkTime } from '../AutoWorkTime';
+import { mountedLineOf } from '../mountedLineOf';
 import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { mergedBatchesOf } from '../mergedBatchesOf';
@@ -73,7 +74,22 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
       beforeMs: null,
       node: <AutoPendingMessages sessionId={session.id} view={view} />,
     };
-    return [...lines, pending, tail];
+    const mounted = mountedLineOf({ view });
+    const mountedLine: ReadonlyArray<TranscriptInsertion> =
+      mounted === null
+        ? []
+        : [
+            {
+              key: `auto-mounted-${view.tree.id}`,
+              beforeMs: null,
+              node: (
+                <p data-auto-mounted className="text-ui text-muted-foreground">
+                  {mounted}
+                </p>
+              ),
+            },
+          ];
+    return [...lines, ...mountedLine, pending, tail];
   }, [view, agents, agent, openChild, openArtifact, session]);
 
   return {

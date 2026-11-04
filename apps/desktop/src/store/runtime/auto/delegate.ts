@@ -194,6 +194,7 @@ export const delegate = async ({
   }
   const firstRefusal = refusals[0];
   if (firstRefusal !== undefined) {
+    const mount = refusals.find((refusal) => refusal.mount !== undefined)?.mount;
     return countedRefusal({
       ctx,
       command,
@@ -201,6 +202,7 @@ export const delegate = async ({
         code: firstRefusal.code,
         message: firstRefusal.message,
         perChild: refusals,
+        ...(mount === undefined ? {} : { mount }),
       }),
     });
   }

@@ -44,7 +44,7 @@ type DescribeParams = {
 
 export const describeMounts = ({ mounts }: DescribeParams): string =>
   mounts.length === 0
-    ? 'This conversation has no mount you can use.'
+    ? 'No folder is attached to this conversation yet. Goodboy attaches the project the task names or asks the user, so delegate again naming the project, or send a mount block.'
     : `Mounts you can name: ${mounts
         .map((mount) => `${mount.id} (${mount.mountName ?? 'unnamed'}, branch ${mount.branch})`)
         .join('; ')}.`;
@@ -126,7 +126,7 @@ export const pickAutoMount = ({
     }
     return refuse({
       code: 'mount_missing',
-      message: `A ${role} changes files and this conversation has no mount it can work in.`,
+      message: `A ${role} changes files and no folder is attached yet. Goodboy attaches the project the task names or asks the user.`,
       mounts,
     });
   }
@@ -134,7 +134,8 @@ export const pickAutoMount = ({
   if (primary === undefined || !isUsableMount({ mount: primary })) {
     return refuse({
       code: 'mount_missing',
-      message: 'This conversation has no main mount to read in. Name one.',
+      message:
+        'No folder is attached yet for this read. Name a mount, or send a mount block to attach a project.',
       mounts,
     });
   }

@@ -10,6 +10,8 @@ import type {
   DeliveryRun,
   EnsureChildAgentParams,
   BranchFactsParts,
+  MountProjectOutcome,
+  MountProjectParams,
   ListChecksParams,
   PublishScribeParams,
   PushBranchOutcome,
@@ -126,6 +128,8 @@ export type FakePorts = AutoPorts &
     childTurns: Array<StartChildTurnParams>;
     ensuredChildren: Array<EnsureChildAgentParams>;
     refreshes: Array<RefreshSessionArtifactsParams>;
+    mountProjectCalls: Array<MountProjectParams>;
+    setMountProjectOutcome: (outcome: MountProjectOutcome) => void;
     cancels: Array<CancelRunParams>;
     liveRuns: Set<string>;
     runOutcomes: Map<string, RunOutcome>;
@@ -190,6 +194,8 @@ export const makeFakePorts = ({
   let failure: Error | null = null;
   let hangMode: 'none' | 'before_register' | 'after_register' = 'none';
   let ensureFailure: Error | null = null;
+  let mountProjectOutcome: MountProjectOutcome = { kind: 'unknown' };
+  const mountProjectCalls: Array<MountProjectParams> = [];
   let cancelOutcome: CancelRunOutcome = { outcome: 'exited' };
   const cancelOutcomes = new Map<string, CancelRunOutcome>();
   const snapshots = new Map<string, Array<MountSnapshot | null>>();
@@ -223,6 +229,7 @@ export const makeFakePorts = ({
     childTurns,
     ensuredChildren,
     refreshes,
+    mountProjectCalls,
     cancels,
     liveRuns,
     runOutcomes,
@@ -296,6 +303,13 @@ export const makeFakePorts = ({
     },
     loadMounts: async () => mounts,
     mountTaskFolders: async () => ({ mounted: [], asked: [], failed: [] }),
+    mountProject: async (params) => {
+      mountProjectCalls.push(params);
+      return mountProjectOutcome;
+    },
+    setMountProjectOutcome: (next) => {
+      mountProjectOutcome = next;
+    },
     resolveRouting: async () => routing,
     isPlanApprovalRequired: () => isApprovalRequired,
     startAutoTurn: async (params) => {

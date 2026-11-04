@@ -2,6 +2,7 @@ import type {
   AutoDelegationRole,
   BranchFacts,
   CheckReport,
+  MountNote,
   MountSnapshot,
   PickableMount,
   RemoteRead,
@@ -37,6 +38,7 @@ export type BridgeOutcome = Readonly<{
   error?: string;
   code?: string;
   data?: unknown;
+  mount?: MountNote;
 }>;
 
 export type RoutingRequest = Readonly<{
@@ -285,11 +287,28 @@ export type TaskFoldersAdded = Readonly<{
   failed: ReadonlyArray<string>;
 }>;
 
+export type MountProjectParams = Readonly<{
+  sessionId: SessionId;
+  name: string;
+  branch: string | null;
+  reason: string;
+  mode: 'mount' | 'allowance' | 'ask';
+}>;
+
+export type MountProjectOutcome =
+  | Readonly<{ kind: 'mounted'; name: string; branch: string }>
+  | Readonly<{ kind: 'elsewhere'; name: string; branch: string; requested: string }>
+  | Readonly<{ kind: 'ask'; name: string }>
+  | Readonly<{ kind: 'failed'; name: string; error: string }>
+  | Readonly<{ kind: 'unknown' }>
+  | Readonly<{ kind: 'ambiguous' }>;
+
 export type AutoPorts = Readonly<{
   newId: () => string;
   refreshSessionArtifacts: (params: RefreshSessionArtifactsParams) => Promise<void>;
   loadMounts: (params: LoadMountsParams) => Promise<ReadonlyArray<PickableMount>>;
   mountTaskFolders: (params: MountTaskFoldersParams) => Promise<TaskFoldersAdded>;
+  mountProject: (params: MountProjectParams) => Promise<MountProjectOutcome>;
   resolveRouting: (params: RoutingRequest) => Promise<RoutingOutcome>;
   isPlanApprovalRequired: () => boolean;
   startAutoTurn: (params: StartAutoTurnParams) => Promise<TurnStartOutcome>;

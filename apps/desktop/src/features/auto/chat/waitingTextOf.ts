@@ -3,6 +3,7 @@ import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
 import { refusalNoticeOf } from './refusalNoticeOf';
+import { shownRefusalOf } from './shownRefusalOf';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -18,8 +19,9 @@ export const waitingTextOf = ({ view }: Params): string | null => {
   if (phase !== 'delegating' && phase !== 'waiting' && phase !== 'merging') {
     return null;
   }
-  if (view.pendingRefusal !== null) {
-    return refusalNoticeOf({ refusal: view.pendingRefusal });
+  const refusal = shownRefusalOf({ view });
+  if (refusal !== null) {
+    return refusalNoticeOf({ refusal });
   }
   if (isAutoPlanAwaitingApproval({ view })) {
     return null;

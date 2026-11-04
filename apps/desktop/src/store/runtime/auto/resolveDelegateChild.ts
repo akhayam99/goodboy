@@ -19,6 +19,7 @@ import {
   type DelegateChildSpec,
   type KickoffArtifactInput,
   type KickoffRevise,
+  type MountNote,
   type PickableMount,
 } from '@goodboy/core/auto';
 import {
@@ -44,6 +45,7 @@ import {
 import { readRunGuidance } from '../runGuidance/readRunGuidance';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './branchFacts/gatherBranchFacts';
+import { refusalMountNote } from './mount/refusalMountNote';
 import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import { textFieldOf } from '../../../shared/utils/textFieldOf';
@@ -54,6 +56,7 @@ export type ChildRefusal = Readonly<{
   code: AutoRefusalCode;
   message: string;
   latestRevision?: number | null;
+  mount?: MountNote;
 }>;
 
 export type ResolvedDelegateChild =
@@ -75,11 +78,24 @@ type RefuseParams = {
   readonly code: AutoRefusalCode;
   readonly message: string;
   readonly latestRevision?: number | null;
+  readonly mount?: MountNote | null;
 };
 
-const refuse = ({ slot, code, message, latestRevision }: RefuseParams): ResolvedDelegateChild => ({
+const refuse = ({
+  slot,
+  code,
+  message,
+  latestRevision,
+  mount,
+}: RefuseParams): ResolvedDelegateChild => ({
   kind: 'refused',
-  refusal: { slot, code, message, ...(latestRevision === undefined ? {} : { latestRevision }) },
+  refusal: {
+    slot,
+    code,
+    message,
+    ...(latestRevision === undefined ? {} : { latestRevision }),
+    ...(mount === undefined || mount === null ? {} : { mount }),
+  },
 });
 
 type UserWordsParams = {
@@ -381,7 +397,16 @@ export const resolveDelegateChild = async ({
     task: child.task,
   });
   if (picked.kind === 'refused') {
-    return refuse({ slot, code: picked.code, message: picked.message });
+    const mount =
+      picked.code === 'mount_missing'
+        ? await refusalMountNote({
+            ports: ctx.ports,
+            sessionId: grant.sessionId,
+            requested: child.mount,
+            reason: child.reason,
+          })
+        : null;
+    return refuse({ slot, code: picked.code, message: picked.message, mount });
   }
   const capturedPath =
     retry === null ? null : textFieldOf({ source: retry.target, key: 'worktreePath' });

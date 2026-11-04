@@ -42,6 +42,13 @@ export type UserPayload = Readonly<{
   images?: ReadonlyArray<MessageAttachment>;
 }>;
 
+export type MountNote = Readonly<{
+  project: string;
+  branch: string | null;
+  reason: string;
+  state: 'ask' | 'done';
+}>;
+
 export type RefusalPayload = Readonly<{
   kind: 'refusal';
   runId: string;
@@ -49,7 +56,28 @@ export type RefusalPayload = Readonly<{
   code: string;
   text: string;
   roles?: ReadonlyArray<string>;
+  mount?: MountNote;
 }>;
+
+type MountNoteParams = {
+  readonly value: unknown;
+};
+
+export const mountNoteOf = ({ value }: MountNoteParams): MountNote | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const { project, branch, reason, state } = value;
+  if (
+    typeof project !== 'string' ||
+    typeof reason !== 'string' ||
+    (state !== 'ask' && state !== 'done') ||
+    (branch !== null && typeof branch !== 'string')
+  ) {
+    return null;
+  }
+  return { project, branch, reason, state };
+};
 
 export type StoredDelivery = Readonly<{
   text: string;

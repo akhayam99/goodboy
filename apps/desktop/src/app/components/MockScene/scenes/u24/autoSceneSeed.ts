@@ -62,6 +62,8 @@ export type AutoSceneState =
   | 'revising'
   | 'confirm'
   | 'refused'
+  | 'mount-ask'
+  | 'mount-done'
   | 'done'
   | 'finished'
   | 'nocap'
@@ -389,6 +391,10 @@ const THIRD_REPLY =
   'Plan approved. The Implementer starts now on Sonnet 5.5, since the plan is mechanical. The Tester is queued behind it: only one agent writes to payments-api at a time.';
 const FINAL_REPLY =
   'Fixed. The retry loop built a new idempotency key on every attempt, so a credit that timed out after the ledger wrote it could post twice. The key is now built once per credit, before the loop, and applyCredit returns the first result for a key it has seen.';
+const MOUNT_REQUEST = 'Create a worktree on notify-relay with the branch ak/feat-new-explore.';
+const MOUNT_REASON = 'The user asked for a worktree on this branch.';
+const MOUNT_ASK_REPLY = 'The worktree needs notify-relay added first.';
+const MOUNT_DONE_REPLY = 'The worktree on ak/feat-new-explore is ready in notify-relay.';
 const REFUSED_REPLY = 'I asked an implementer to commit the fix and open a draft PR.';
 const ANSWER_REPLY =
   'Retries are posted by postCredit, which builds the idempotency key inside the retry loop. A new key on every attempt is why a credit that timed out after the ledger wrote it can post twice. Say the word and I fix it.';
@@ -640,6 +646,41 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         rootTurn: IDLE,
         hasPlanArtifact: false,
       };
+    case 'mount-ask':
+    case 'mount-done': {
+      const isAsk = state === 'mount-ask';
+      return {
+        view: viewOf({
+          phase: 'merging',
+          delegations: [],
+          artifacts: [],
+          spentUsd: 0.06,
+          reservedUsd: 0,
+          pendingRefusal: {
+            action: 'mount',
+            code: isAsk ? 'mount_missing' : 'mounted',
+            roles: [],
+            mount: {
+              project: 'notify-relay',
+              branch: 'ak/feat-new-explore',
+              reason: MOUNT_REASON,
+              state: isAsk ? 'ask' : 'done',
+            },
+          },
+        }),
+        agents: [root('completed', '12:04:30')],
+        events: [
+          userText({ time: '12:04:00', text: MOUNT_REQUEST, run: RUN_ONE }),
+          reply({
+            time: '12:04:20',
+            text: isAsk ? MOUNT_ASK_REPLY : MOUNT_DONE_REPLY,
+            run: RUN_ONE,
+          }),
+        ],
+        rootTurn: IDLE,
+        hasPlanArtifact: false,
+      };
+    }
     case 'done':
       return {
         view: viewOf({
