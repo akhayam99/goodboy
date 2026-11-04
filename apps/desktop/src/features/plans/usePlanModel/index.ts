@@ -5,9 +5,9 @@ import { artifactStateOf, type ArtifactState } from '../../artifacts/artifactSta
 import type { PlanPartRow } from '../components/PlanParts/planPartRows';
 import { usePlanPartRows } from '../components/PlanParts/usePlanPartRows';
 import type { PlanRevising } from '../planRevising';
-import { planHandoffOf } from '../planHandoffOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
 import { planStateInputsOf } from '../planStateInputs';
+import { planHandoffOf } from '../planHandoffOf';
 import { usePlanOwner } from '../usePlanOwner';
 import { usePlanRevising } from '../useRevisingPlans';
 
@@ -41,6 +41,11 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
   const stored = artifacts.find((candidate) => candidate.id === planId) ?? null;
   const rows = usePlanPartRows({ sessionId, plan, agents });
   const owner = usePlanOwner({ sessionId, plan });
+  const handoff = useAppStore((s) =>
+    plan === null
+      ? 'none'
+      : planHandoffOf({ plan, run: owner, views: s.autoTreeViews[sessionId] ?? EMPTY_ARRAY }),
+  );
   const openQuestionCount = openQuestions.length;
   const plannerQuestionCount =
     plan === null ? 0 : plannerQuestionsOf({ questions: openQuestions, plan }).length;
@@ -64,12 +69,12 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
           rows,
           revising,
           plannerQuestionCount,
-          handoff: planHandoffOf({ plan, run: owner }),
+          handoff,
         }),
       }),
       rows,
       agents,
       hasRun: plan.consumptionCount > 0,
     };
-  }, [plan, stored, revising, openQuestionCount, plannerQuestionCount, rows, agents, owner]);
+  }, [plan, stored, revising, openQuestionCount, plannerQuestionCount, rows, agents, handoff]);
 };

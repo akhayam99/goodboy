@@ -40,6 +40,7 @@ import { insertArtifact, insertSession, insertWorkspace, markArtifactOpened } fr
 import type { AgentId, ArtifactId, ArtifactKind, SessionId, WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { aPlanRow, aView } from '../../../auto/testing/autoViewFixtures';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -198,6 +199,27 @@ describe('artifact list rows', () => {
     expect(screen.queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Consumed\b/ })).toBeNull();
     expect(rowOf(RAN_PLAN)).not.toBeNull();
+  });
+
+  it('files a plan Auto approved under Consumed as Approved, not Ready to run', async () => {
+    const approved = aPlanRow({ approvalState: 'approved', approvedRevision: 1 });
+    useAppStore.setState({
+      autoTreeViews: {
+        [SESSION_ID]: [
+          aView({
+            artifacts: [
+              { ...approved, artifact: { ...approved.artifact, artifactId: READY_PLAN } },
+            ],
+          }),
+        ],
+      },
+    });
+    mountList();
+    await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
+    const row = present({ node: rowOf(READY_PLAN) });
+    expect(row.closest('[data-testid="artifact-group-consumed"]')).not.toBeNull();
+    expect(row.closest('[data-testid="artifact-group-ready"]')).toBeNull();
+    expect(row.getAttribute('aria-label') ?? row.textContent).toContain('Approved');
   });
 
   it('shows a state only where the group does not say it, with New on a fresh unopened wireframe', async () => {

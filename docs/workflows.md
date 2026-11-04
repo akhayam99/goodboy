@@ -1133,6 +1133,11 @@ own **Open in Artifacts**.
   tone) with "The run is choosing the next step", the drawer line says the same
   and there is no primary; when the step that consumes the plan starts the chip
   reads **Running**.
+- **A plan Auto holds.** `planHandoffOf` reads `auto-approved` when the
+  plan's `auto_artifacts` row is `approved` and no step consumed it. The chip
+  reads **Approved** with "Auto works from this plan", the Artifacts list files
+  it under Consumed, and there is no Run plan. A held plan still waiting on
+  approval keeps its state.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not
   held starts the step through `runPlan`). The button reads **Approving** and

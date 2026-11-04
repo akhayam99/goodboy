@@ -3,7 +3,7 @@
   "apps/desktop/src/features/actions/kinds/artifact.ts": 722,
   "apps/desktop/src/features/actions/kinds/reviewComment.ts": 669,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.tsx": 330,
-  "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx": 300,
+  "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx": 299,
   "apps/desktop/src/features/bootstrap/PublishPanel/index.tsx": 251,
   "apps/desktop/src/features/branch/components/BranchPage/index.tsx": 500,
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestActivity.tsx": 252,

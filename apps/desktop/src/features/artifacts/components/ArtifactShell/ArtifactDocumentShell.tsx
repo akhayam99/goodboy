@@ -2,8 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button, HeaderActions, Textarea, formatError, PaneShell } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
-import { planHandoffOf } from '../../../plans/planHandoffOf';
-import { usePlanOwner } from '../../../plans/usePlanOwner';
+import { usePlanHandoff } from '../../hooks/usePlanHandoff';
 import { usePlanRevising } from '../../../plans/useRevisingPlans';
 import { usePlanRun } from '../../../plans/usePlanRun';
 import { artifactStateOf } from '../../artifactStateOf';
@@ -61,7 +60,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const [error, setError] = useState<string | null>(null);
   const [wireframeScreenId, setWireframeScreenId] = useState<string | null>(null);
   const partRows = usePlanPartRows({ sessionId, plan, agents });
-  const owner = usePlanOwner({ sessionId, plan });
+  const handoff = usePlanHandoff({ sessionId, plan });
   const hasRun = plan !== null && plan.consumptionCount > 0;
   const progress = planPartsProgress({ rows: partRows, hasRun });
   const isPlanRunning = progress.kind === 'running' || progress.kind === 'question';
@@ -220,7 +219,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           plan,
           rows: partRows,
           revising,
-          handoff: planHandoffOf({ plan, run: owner }),
+          handoff,
         })),
   });
   const chip =

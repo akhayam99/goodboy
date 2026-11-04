@@ -23,6 +23,7 @@ type ArtifactStateKey =
   | 'needs'
   | 'ready'
   | 'approved'
+  | 'autoApproved'
   | 'available'
   | 'running'
   | 'revising'
@@ -67,6 +68,14 @@ const ARTIFACT_STATE_PRESENTATION = {
     tone: 'success',
     icon: CircleCheck,
     group: 'running',
+  },
+  autoApproved: {
+    key: 'autoApproved',
+    label: 'Approved',
+    reason: 'Auto works from this plan',
+    tone: 'success',
+    icon: CircleCheck,
+    group: 'consumed',
   },
   running: {
     key: 'running',
@@ -215,6 +224,9 @@ const planState = (params: StoredParams): ArtifactState => {
       key: 'needs',
       detail: countNoun({ count: params.openQuestionCount, one: 'question' }),
     });
+  }
+  if (params.handoff === 'auto-approved') {
+    return withDetail({ key: 'autoApproved', detail: partsDetail({ count: params.partCount }) });
   }
   if (params.handoff === 'approved-waiting') {
     return withDetail({ key: 'approved', detail: partsDetail({ count: params.partCount }) });

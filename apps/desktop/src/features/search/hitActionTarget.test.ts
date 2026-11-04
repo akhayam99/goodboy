@@ -8,7 +8,7 @@ import type {
   SearchHit,
   SessionId,
 } from '@goodboy/types';
-import type { AppState } from '../../store/types';
+import type { AppStore } from '../../store/store';
 import { hitActionTarget, hitPlanRunning } from './hitActionTarget';
 
 const SESSION = 's-payout' as SessionId;
@@ -55,13 +55,14 @@ type StateParams = {
   readonly openQuestions: number;
 };
 
-const stateOf = ({ plans, openQuestions }: StateParams): AppState =>
+const stateOf = ({ plans, openQuestions }: StateParams): AppStore =>
   ({
     sessionPlans: { [SESSION]: plans },
     sessionArtifacts: { [SESSION]: [] },
     sessionPhaseRuns: { [SESSION]: [] },
+    autoTreeViews: {},
     sessionOpenQuestions: { [SESSION]: Array.from({ length: openQuestions }, () => ({})) },
-  }) as unknown as AppState;
+  }) as unknown as AppStore;
 
 describe('search hit action target', () => {
   it('gives plans, reports and wireframes the artifact kind of the registry', () => {
