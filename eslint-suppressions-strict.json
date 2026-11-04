@@ -774,11 +774,6 @@
       "count": 13
     }
   },
-  "apps/desktop/src/store/slices/attachments/removeGoalAttachment.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/store/slices/boot/hydrate.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 12
