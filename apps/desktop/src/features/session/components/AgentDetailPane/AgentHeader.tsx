@@ -25,12 +25,24 @@ export const AgentHeader = ({
           data-slot="pane-title-row"
           className="flex min-h-8 min-w-0 items-center justify-between gap-4"
         >
-          <h1 className="flex min-w-0 flex-1 text-title text-foreground">{title}</h1>
-          {settings === null ? null : (
-            <div className="flex min-w-0 shrink items-center">{settings}</div>
-          )}
+          <div
+            data-testid="agent-header-lead"
+            className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-1"
+          >
+            <h1 className="flex min-h-8 min-w-48 flex-1 items-center text-title text-foreground">
+              {title}
+            </h1>
+            {settings === null ? null : (
+              <div
+                data-testid="agent-header-settings"
+                className="flex min-w-0 max-w-full shrink items-center"
+              >
+                {settings}
+              </div>
+            )}
+          </div>
           {actions != null ? (
-            <div className="flex shrink-0 items-center gap-2">{actions}</div>
+            <div className="flex min-h-8 shrink-0 items-center gap-2 self-start">{actions}</div>
           ) : null}
         </div>
         {meta === null ? null : (

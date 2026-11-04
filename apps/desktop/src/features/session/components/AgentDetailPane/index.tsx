@@ -229,7 +229,7 @@ export const AgentDetailPane = ({
               ) : (
                 runStep.heading
               )}
-              <AgentProviderMark provider={shownRouting.provider} />
+              {isAutoRoot ? null : <AgentProviderMark provider={shownRouting.provider} />}
             </span>
           }
           actions={
