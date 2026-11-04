@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type SessionId,
+  type WorkflowRunId,
+} from '@goodboy/types';
 
 const hoisted = vi.hoisted(() => ({
   invokeAgentList: vi.fn(async () => []),
@@ -95,7 +101,13 @@ describe('continueOrPause', () => {
     const { state, set, get } = buildHarness({
       autoRun: true,
       runs: [
-        { ...agent, id: 'earlier' as AgentId, ordinal: 0, status: 'skipped', outputSummary: 'a' },
+        {
+          ...agent,
+          id: brandId<AgentId>({ value: 'earlier' }),
+          ordinal: 0,
+          status: 'skipped',
+          outputSummary: 'a',
+        },
         agent,
       ],
     });

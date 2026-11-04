@@ -147,15 +147,17 @@ type FinalizeParams = {
   readonly session: { readonly id: Agent['sessionId'] };
   readonly id: AgentId;
   readonly text: string;
-  readonly didAgentDie?: boolean;
+  readonly isDead?: boolean;
 };
 
-const finalize = async ({ session, id, text, didAgentDie = false }: FinalizeParams) => {
+const finalize = async ({ session, id, text, isDead = false }: FinalizeParams) => {
   const current = useAppStore.getState();
   useAppStore.setState({
     sessionPhaseRuns: { ...current.sessionPhaseRuns, [session.id]: rows },
   });
-  return useAppStore.getState().finalizeWorkflowStep(session.id, id, text, false, { didAgentDie });
+  return useAppStore
+    .getState()
+    .finalizeWorkflowStep(session.id, id, text, false, { didAgentDie: isDead });
 };
 
 const noticeText = (): string =>
@@ -244,8 +246,8 @@ describe('a stuck step in a run that goes on alone', () => {
       agents: [{ id: SCOUT, status: 'running' }, { id: BUILD }],
     });
 
-    await finalize({ session, id: SCOUT, text: '', didAgentDie: true });
-    await finalize({ session, id: SCOUT, text: '', didAgentDie: true });
+    await finalize({ session, id: SCOUT, text: '', isDead: true });
+    await finalize({ session, id: SCOUT, text: '', isDead: true });
 
     expect(statusOf({ id: SCOUT })).toBe('failed');
     expect(activateWorkflowAgent).not.toHaveBeenCalled();

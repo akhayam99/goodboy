@@ -494,7 +494,7 @@ describe('finalizeWorkflowStep output summary', () => {
   it('stops the run on a second stuck step in a row', async () => {
     const earlier: Agent = {
       ...agent,
-      id: 'agent-0' as AgentId,
+      id: JSON.parse('"agent-0"'),
       ordinal: -1,
       name: 'Plan',
       status: 'skipped',

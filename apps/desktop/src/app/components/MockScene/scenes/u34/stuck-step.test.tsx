@@ -67,7 +67,7 @@ describe('u34 stuck step scenes', () => {
     await screen.findByRole('button', { name: /Skip and go on after/ }, WAIT);
     const keepWorking = screen.getAllByRole('button', { name: 'Keep working' })[0];
     expect(keepWorking).toBeDefined();
-    expect((keepWorking as HTMLButtonElement).disabled).toBe(true);
+    expect(keepWorking?.hasAttribute('disabled')).toBe(true);
   });
 
   it('ends a finished run as finished with a step not finished, with a link to the step', async () => {
