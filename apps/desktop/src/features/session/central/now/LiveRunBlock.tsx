@@ -13,6 +13,7 @@ import type { LiveGroupState, LiveRunGroup } from './liveGroupsOf';
 import { LiveRow } from './LiveRow';
 import { LiveRunEnd } from './LiveRunEnd';
 import { LiveStateWord } from './LiveStateWord';
+import { liveOwnStateOf } from './liveOwnStateOf';
 import { liveStatusOf } from './liveStatusOf';
 import { LIVE_TONE } from './liveTone';
 import { runStepCardOf } from './runStepCardOf';
@@ -100,7 +101,10 @@ export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props
   };
   const stateSpec = LIVE_TONE.state[group.state];
   const status = liveStatusOf({ word: stateSpec.word, detail: runStatusDetailOf({ group }) });
-  const stateWord = <LiveStateWord tone={stateSpec.tone} word={status.word} />;
+  const isOwn = liveOwnStateOf({ group, word: status.word });
+  const stateWord = (
+    <LiveStateWord tone={stateSpec.tone} word={status.word} isSectionState={isOwn} />
+  );
   return (
     <section
       aria-label={`${NAMES.runKind.workflow}: ${group.title}`}
@@ -140,7 +144,12 @@ export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props
           )
         }
       />
-      <LiveChildren sessionId={sessionId} parentTitle={group.title} items={group.children} />
+      <LiveChildren
+        sessionId={sessionId}
+        parentTitle={group.title}
+        items={group.children}
+        isParentOwn={group.state === 'working'}
+      />
       {group.isDeciding ? (
         <div className="flex min-w-0 gap-1">
           <span aria-hidden className="w-6 shrink-0" />

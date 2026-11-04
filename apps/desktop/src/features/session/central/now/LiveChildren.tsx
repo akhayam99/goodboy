@@ -10,9 +10,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly parentTitle: string;
   readonly items: ReadonlyArray<LiveChild>;
+  readonly isParentOwn: boolean;
 };
 
-export const LiveChildren = ({ sessionId, parentTitle, items }: Props) => {
+export const LiveChildren = ({ sessionId, parentTitle, items, isParentOwn }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   if (items.length === 0) {
     return null;
@@ -27,6 +28,7 @@ export const LiveChildren = ({ sessionId, parentTitle, items }: Props) => {
         title: child.title,
         word: LIVE_TONE.phase[child.phase].word,
         tone: LIVE_TONE.phase[child.phase].tone,
+        isSectionState: isParentOwn && child.phase === 'running',
         time: <DelegationClock agentId={child.agentId} isLive={child.phase === 'running'} />,
         openLabel: `Open ${child.title}`,
         onOpen: () => navigate({ to: agentPlace({ sessionId, agentId: child.agentId }) }),

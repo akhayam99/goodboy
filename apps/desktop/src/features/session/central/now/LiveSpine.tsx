@@ -12,6 +12,7 @@ type LiveSpineItem = Readonly<{
   title: string;
   word: string;
   tone: Tone;
+  isSectionState: boolean;
   time: ReactNode;
   openLabel: string;
   onOpen: () => void;
@@ -59,7 +60,13 @@ export const LiveSpine = ({ label, items }: Props) => (
             openLabel={item.openLabel}
             onOpen={item.onOpen}
             where={null}
-            end={<LiveStateWord tone={item.tone} word={item.word} />}
+            end={
+              <LiveStateWord
+                tone={item.tone}
+                word={item.word}
+                isSectionState={item.isSectionState}
+              />
+            }
             time={item.time}
           />
         </li>
