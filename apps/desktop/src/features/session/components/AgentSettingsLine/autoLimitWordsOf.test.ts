@@ -34,6 +34,7 @@ describe('where the Auto limit comes from', () => {
     expect(wordsOf({ sessionCapUsd: 8, capUsd })).toEqual({
       value: '$0.85 of $5.00',
       source: 'from Harborline',
+      isFromWorkspace: true,
       chain: 'This Auto $5.00, then session $8.00, then Harborline $5.00. $5.00 comes first.',
     });
   });

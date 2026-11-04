@@ -20,6 +20,7 @@ type Props = {
   readonly title?: string;
   readonly tooltip?: string;
   readonly onChangeDefault?: () => void;
+  readonly onOpenSource?: () => void;
   readonly children: ReactNode;
 };
 
@@ -32,6 +33,7 @@ export const SettingChip = ({
   title = label,
   tooltip,
   onChangeDefault,
+  onOpenSource,
   children,
 }: Props) => {
   const chip = (
@@ -87,7 +89,12 @@ export const SettingChip = ({
       <div className="flex min-w-0 items-baseline justify-between gap-2">
         <span className="text-row text-foreground">{title}</span>
         <span className="flex shrink-0 items-baseline gap-2">
-          {words.source === '' ? null : (
+          {words.source === '' ? null : words.isFromWorkspace === true &&
+            onOpenSource !== undefined ? (
+            <Button variant="quiet" size="xs" onClick={onOpenSource}>
+              {words.source}
+            </Button>
+          ) : (
             <span className="text-meta text-faint-foreground">{words.source}</span>
           )}
           {onChangeDefault === undefined ? null : (

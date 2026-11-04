@@ -4,4 +4,5 @@ export type SettingWords = Readonly<{
   chain: string;
   spentText?: string;
   isChanged?: boolean;
+  isFromWorkspace?: boolean;
 }>;

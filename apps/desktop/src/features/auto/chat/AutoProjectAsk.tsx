@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Checkbox, FormActions, Input, Notice, formatError } from '@goodboy/ui';
+import { Button, FormActions, Notice, formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { mountOnBranchOf } from '../../../store/runtime/auto/mount/mountOnBranchOf';
@@ -9,6 +9,7 @@ import { knownMountOf } from './knownMountOf';
 import type { ProjectAsk } from './projectAskOf';
 import type { ProjectCandidate } from './projectCandidate';
 import { useProjectCandidates } from './hooks/useProjectCandidates';
+import { ProjectPickList } from './ProjectPickList';
 import { ObjectActionVerb } from '../../actions/ObjectActionVerb';
 
 type Props = {
@@ -148,38 +149,16 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
         card !== null ? (
           <p className="text-ui text-muted-foreground">{card.line}</p>
         ) : (
-          <div className="flex min-w-0 flex-col gap-1">
-            {inSession.length === 0 ? null : (
-              <p className="text-eyebrow text-muted-foreground">In this session</p>
-            )}
-            <ul aria-label="Projects" className="flex min-w-0 flex-col">
-              {(isAnotherOpen ? all : inSession).map((candidate) => (
-                <li key={candidate.key} className="flex h-7 min-w-0 items-center gap-2">
-                  <Checkbox
-                    checked={picked.includes(candidate.key)}
-                    disabled={isBusy}
-                    ariaLabel={candidate.name}
-                    onChange={() => toggle(candidate)}
-                    label={
-                      <span className="flex min-w-0 items-center gap-2 text-ui">
-                        <span className="text-foreground">{candidate.name}</span>
-                        <span className="truncate text-faint-foreground">{candidate.line}</span>
-                      </span>
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-            {isAnotherOpen ? (
-              <Input
-                aria-label="Type a folder name"
-                placeholder="Type a folder name"
-                value={query}
-                disabled={isBusy}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            ) : null}
-          </div>
+          <ProjectPickList
+            shown={isAnotherOpen ? all : inSession}
+            picked={picked}
+            isDisabled={isBusy}
+            hasInSession={inSession.length > 0}
+            isSearchOpen={isAnotherOpen}
+            query={query}
+            onToggle={toggle}
+            onQuery={setQuery}
+          />
         )
       }
     >
