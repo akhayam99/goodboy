@@ -346,6 +346,7 @@ export const deliverNext = async ({
       generation: tree.generation,
       runId,
       deliveryId: primary.id,
+      rowIds: rows.map((row) => String(row.id)),
       text,
       images: userImagesOf({ rows }),
       onEnded,

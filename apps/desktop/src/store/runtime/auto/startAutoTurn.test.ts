@@ -167,6 +167,17 @@ describe('starting the turn of Auto through the store', () => {
     expect(state.ended).toHaveLength(0);
   });
 
+  it('hands the outbox rows it delivers to the turn, so the transcript can place each message', async () => {
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      send: async () => NOT_BLOCKED,
+    });
+
+    await state.start({ ...state.params, rowIds: ['outbox-1', 'outbox-2'] });
+
+    expect(state.inputs[0]).toMatchObject({ outboxIds: ['outbox-1', 'outbox-2'] });
+  });
+
   it('gives up when the turn never shows up in the registry', async () => {
     const state = harness({ lookups: [null], send: () => new Promise(() => undefined) });
 

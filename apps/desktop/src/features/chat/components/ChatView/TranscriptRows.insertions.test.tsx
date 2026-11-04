@@ -173,6 +173,40 @@ describe('transcript insertions', () => {
     expect(texts.join('|')).toMatch(/batch-open\|.*first.*line of first.*second/);
   });
 
+  it('keeps the images of a waiting message, also when it has no text', () => {
+    const { container } = renderRows({
+      rows: [
+        user({ key: 'u1', text: 'goal', at: T0 }),
+        itemRow({
+          kind: 'user_text',
+          key: 'e1',
+          text: '',
+          isOperatorEcho: true,
+          outboxId: 'row-1',
+          attachments: [
+            {
+              id: 'img-1',
+              fileName: 'sketch.png',
+              mimeType: 'image/png',
+              kind: 'image',
+              relPath: '.goodboy/attachments/sketch.png',
+            },
+          ],
+          at: brandId<IsoDateTime>({ value: T1.toISOString() }),
+        }),
+      ],
+      insertions: [
+        {
+          ...insertion('auto-pending', null),
+          takesOver: [{ key: 'row-1', text: '', sentAtMs: T1.getTime(), line: null }],
+        },
+      ],
+    });
+
+    const taken = container.querySelector('[data-taken-echo]');
+    expect(taken?.querySelector('[data-attachment-control="img-1"]')).not.toBeNull();
+  });
+
   it('renders nothing extra without insertions', () => {
     const { container } = renderRows({
       rows: [user({ key: 'u1', text: 'goal', at: T0 })],
