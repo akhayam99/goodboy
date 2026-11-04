@@ -53,7 +53,7 @@ Choose how often a run stops for you: **Every step**, **After the plan** to appr
 
 An agent that cannot finish a step says so. Goodboy also decides it for an agent that forgot to: a step that stops twice without saying it is done is not finished. With **Never** or **After the plan** the step ends as **Not finished** in amber, the run goes on, and the next steps are told what is missing. The rows after it say "without step 2", and a part that depends on it does not start. The run ends as "Finished, 1 step not finished", never plain Done, with a link to the step. **Keep working** on the row sends the same agent back to the step. **Skipped** stays the word for a step you skipped yourself.
 
-With **Every step** the step stops as blocked: **Skip and go on** sits on its row, and the input at the bottom, whose button reads **Keep working**, is the only place to type. Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
+With **Every step** the step stops as blocked and **Skip and go on** sits on its row. The input at the bottom, whose button reads **Keep working**, is the only place to type. Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
 
 ### Run defaults
 
