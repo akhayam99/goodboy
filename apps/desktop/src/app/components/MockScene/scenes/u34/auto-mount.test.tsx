@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { brandId, type MountId } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -80,7 +81,8 @@ describe('the mount card scenes', () => {
     useAppStore.setState({
       ensureProjectMounted: async (input) => {
         ensured.push(input);
-        return { status: 'created', createdMountId: 'mount-new' as never, mountIds: [] };
+        const mountId = brandId<MountId>({ value: 'mount-new' });
+        return { status: 'created', createdMountId: mountId, mountIds: [mountId] };
       },
       sendTurn: async (input) => {
         sent.push(input);
