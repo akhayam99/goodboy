@@ -139,6 +139,19 @@ describe('the Auto chat scenes', () => {
     expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
   });
 
+  type RowAtParams = {
+    readonly rows: ReadonlyArray<HTMLElement | undefined>;
+    readonly index: number;
+  };
+
+  const rowAt = ({ rows, index }: RowAtParams): HTMLElement => {
+    const row = rows[index];
+    if (row === undefined) {
+      throw new Error(`no queued row at ${index}`);
+    }
+    return row;
+  };
+
   const queueRows = () => within(screen.getByRole('list', { name: 'Queued messages' }));
 
   it('auto-chat-queued lists the message above the composer and draws no bubble in the chat', async () => {
@@ -149,7 +162,7 @@ describe('the Auto chat scenes', () => {
     expect(rows[0]?.getAttribute('data-source')).toBe('auto');
     expect(rows[0]?.textContent).toContain('Also keep the retry window at 30 seconds.');
     expect(rows[0]?.textContent).toMatch(/Waits for /);
-    within(rows[0] as HTMLElement).getByRole('button', { name: 'Send now' });
+    within(rowAt({ rows, index: 0 })).getByRole('button', { name: 'Send now' });
     expect(screen.getAllByText('Also keep the retry window at 30 seconds.')).toHaveLength(1);
     expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(0);
   });
@@ -174,8 +187,8 @@ describe('the Auto chat scenes', () => {
 
     const [row] = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
     expect(row?.getAttribute('data-status')).toBe('notDelivered');
-    within(row as HTMLElement).getByText('Not delivered');
-    within(row as HTMLElement).getByRole('button', { name: 'Retry' });
+    within(rowAt({ rows: [row], index: 0 })).getByText('Not delivered');
+    within(rowAt({ rows: [row], index: 0 })).getByRole('button', { name: 'Retry' });
     expect(row?.textContent).not.toMatch(/Not delivered:/);
   });
 
