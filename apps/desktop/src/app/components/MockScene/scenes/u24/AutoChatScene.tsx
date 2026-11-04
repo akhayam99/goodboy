@@ -24,11 +24,19 @@ type Props = {
   readonly state: AutoSceneState;
   readonly isPlanOpen?: boolean;
   readonly selected?: 'root' | 'planner';
+  readonly mountAct?: 'pending' | 'failing';
 };
 
 const PLAN_OPEN_DELAY_MS = 400;
+const MOUNT_CLICK_DELAY_MS = 600;
+const MOUNT_FAILURE = 'The branch ak/feat-new-explore is already used by another worktree.';
 
-export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: Props) => {
+export const AutoChatScene = ({
+  state,
+  isPlanOpen = false,
+  selected = 'root',
+  mountAct,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
   const isDrawerOpen = useAppStore((current) => current.drawer !== null);
@@ -59,8 +67,23 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
       sessionAnsweredQuestions: { [AUTO_SESSION.id]: [] },
       sessionEvents: { [AUTO_SESSION.id]: [] },
       drawer: null,
+      ...(mountAct === undefined
+        ? {}
+        : {
+            ensureProjectMounted:
+              mountAct === 'pending'
+                ? () => new Promise<never>(() => undefined)
+                : () => Promise.reject(new Error(MOUNT_FAILURE)),
+          }),
     });
     setIsReady(true);
+    if (mountAct !== undefined) {
+      const clicker = window.setTimeout(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        buttons.find((button) => (button.textContent ?? '').startsWith('Mount '))?.click();
+      }, MOUNT_CLICK_DELAY_MS);
+      return () => window.clearTimeout(clicker);
+    }
     if (!isPlanOpen) {
       return;
     }
@@ -74,7 +97,7 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
       });
     }, PLAN_OPEN_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [state, isPlanOpen, selectedId]);
+  }, [state, isPlanOpen, selectedId, mountAct]);
 
   if (!isReady || agent === null) {
     return null;

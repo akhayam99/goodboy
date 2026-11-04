@@ -1137,6 +1137,10 @@ u34-needs-you-question
 u34-needs-you-run-question
 u34-p18-folded-branches-4
 u34-p18-running-4-branches
+u34-p21-mount-ask
+u34-p21-mount-done
+u34-p21-mount-failed
+u34-p21-mount-mounting
 u34-peek-drawer-changed
 u34-peek-drawer-unchanged
 u34-peek-popover-order

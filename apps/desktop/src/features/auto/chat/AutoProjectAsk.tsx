@@ -5,6 +5,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { isReportedError } from '../../../store/slices/notifications/reportedError';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 import { projectAnswerOf, type ProjectPick } from './projectAnswerOf';
+import { mountCardOf } from './mountCardOf';
 import type { ProjectAsk } from './projectAskOf';
 import { ObjectActionVerb } from '../../actions/ObjectActionVerb';
 
@@ -82,6 +83,24 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
     return <p className="text-ui text-muted-foreground">{answered.word}</p>;
   }
 
+  const mountAsk = ask.mount;
+  const known =
+    mountAsk === null
+      ? undefined
+      : projects.find(
+          (project) =>
+            project.kind === 'repo' &&
+            project.name.toLowerCase() === mountAsk.project.toLowerCase(),
+        );
+  const card =
+    mountAsk === null || known === undefined || isAnotherOpen
+      ? null
+      : mountCardOf({
+          project: known.name,
+          branch: mountAsk.branch,
+          baseBranch: known.baseBranch ?? null,
+        });
+
   const all = [...inSession, ...others];
   const picks = all.filter((candidate) => picked.includes(candidate.key));
   const answer = projectAnswerOf({ picks, roleNoun: ask.roleNoun });
@@ -137,44 +156,65 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
       },
     });
 
+  const mountKnown = () =>
+    run({
+      label: card?.busyLabel ?? 'Mounting',
+      work: async () => {
+        if (card === null || mountAsk === null || known === undefined) {
+          return;
+        }
+        await ensureProjectMounted({
+          sessionId,
+          projectId: known.id,
+          reason: mountAsk.reason,
+          ...(mountAsk.branch === null ? {} : { branch: mountAsk.branch }),
+        });
+        await reply({ content: card.message, word: card.doneLine });
+      },
+    });
+
   return (
     <Notice
       tone="warning"
       placement="transcript"
-      title={`Where should the ${ask.roleNoun} work?`}
+      title={card === null ? `Where should the ${ask.roleNoun} work?` : card.title}
       body={
-        <div className="flex min-w-0 flex-col gap-1">
-          {inSession.length === 0 ? null : (
-            <p className="text-eyebrow text-muted-foreground">In this session</p>
-          )}
-          <ul aria-label="Projects" className="flex min-w-0 flex-col">
-            {(isAnotherOpen ? all : inSession).map((candidate) => (
-              <li key={candidate.key} className="flex h-7 min-w-0 items-center gap-2">
-                <Checkbox
-                  checked={picked.includes(candidate.key)}
-                  disabled={isBusy}
-                  ariaLabel={candidate.name}
-                  onChange={() => toggle(candidate)}
-                  label={
-                    <span className="flex min-w-0 items-center gap-2 text-ui">
-                      <span className="text-foreground">{candidate.name}</span>
-                      <span className="truncate text-faint-foreground">{candidate.line}</span>
-                    </span>
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-          {isAnotherOpen ? (
-            <Input
-              aria-label="Type a folder name"
-              placeholder="Type a folder name"
-              value={query}
-              disabled={isBusy}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          ) : null}
-        </div>
+        card !== null ? (
+          <p className="text-ui text-muted-foreground">{card.line}</p>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-1">
+            {inSession.length === 0 ? null : (
+              <p className="text-eyebrow text-muted-foreground">In this session</p>
+            )}
+            <ul aria-label="Projects" className="flex min-w-0 flex-col">
+              {(isAnotherOpen ? all : inSession).map((candidate) => (
+                <li key={candidate.key} className="flex h-7 min-w-0 items-center gap-2">
+                  <Checkbox
+                    checked={picked.includes(candidate.key)}
+                    disabled={isBusy}
+                    ariaLabel={candidate.name}
+                    onChange={() => toggle(candidate)}
+                    label={
+                      <span className="flex min-w-0 items-center gap-2 text-ui">
+                        <span className="text-foreground">{candidate.name}</span>
+                        <span className="truncate text-faint-foreground">{candidate.line}</span>
+                      </span>
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+            {isAnotherOpen ? (
+              <Input
+                aria-label="Type a folder name"
+                placeholder="Type a folder name"
+                value={query}
+                disabled={isBusy}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            ) : null}
+          </div>
+        )
       }
     >
       <FormActions
@@ -226,12 +266,12 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
         </Button>
         <Button
           size="sm"
-          disabled={answer.message === null || isBusy}
+          disabled={card === null ? answer.message === null || isBusy : isBusy}
           isBusy={isBusy}
-          busyLabel={busy ?? answer.label}
-          onClick={() => void use()}
+          busyLabel={busy ?? (card === null ? answer.label : card.busyLabel)}
+          onClick={() => void (card === null ? use() : mountKnown())}
         >
-          {answer.label}
+          {card === null ? answer.label : card.label}
         </Button>
       </FormActions>
     </Notice>
