@@ -1,11 +1,12 @@
 import { escapeControlCharsInStrings } from '../providers/shared/escapeControlCharsInStrings';
+import { parseMountSpec } from './mountSpec';
 import { parseProposeSpec } from './proposeSpec';
 import { clippedTextOf, isRecord } from '@goodboy/types/helpers';
 
 export const AUTO_BLOCK_OPEN = '<<auto>>';
 export const AUTO_BLOCK_CLOSE = '<</auto>>';
 
-export const AUTO_BLOCK_ACTIONS = ['delegate', 'propose', 'answer', 'finish'] as const;
+export const AUTO_BLOCK_ACTIONS = ['delegate', 'propose', 'mount', 'answer', 'finish'] as const;
 
 const FIELD_CHARS = 1_000;
 const ANSWER_CHARS = 8_000;
@@ -14,6 +15,7 @@ const SUMMARY_CHARS = 4_000;
 export type AutoBlock =
   | Readonly<{ action: 'delegate'; requestId: string | null; spec: string }>
   | Readonly<{ action: 'propose'; requestId: string | null; spec: string }>
+  | Readonly<{ action: 'mount'; project: string; branch: string | null; reason: string }>
   | Readonly<{
       action: 'answer';
       delegation: string;
@@ -149,6 +151,14 @@ const proposeOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   };
 };
 
+const mountOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
+  const parsed = parseMountSpec({ fields });
+  if (parsed.kind === 'invalid') {
+    return invalid({ reason: parsed.reason });
+  }
+  return { kind: 'block', block: { action: 'mount', ...parsed.spec } };
+};
+
 const answerOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   const delegation = clippedTextOf({ value: fields['delegation'], max: FIELD_CHARS });
   const question = clippedTextOf({ value: fields['question'], max: FIELD_CHARS });
@@ -184,6 +194,8 @@ export const parseAutoBlock = ({ text }: ParseAutoBlockParams): AutoBlockOutcome
       return delegateOf({ fields: parsed });
     case 'propose':
       return proposeOf({ fields: parsed });
+    case 'mount':
+      return mountOf({ fields: parsed });
     case 'answer':
       return answerOf({ fields: parsed });
     case 'finish':

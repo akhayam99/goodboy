@@ -48,5 +48,8 @@ export const refusalNoticeOf = ({ refusal }: Params): string => {
   if (refusal.action === 'finish') {
     return `Auto tried to finish. Not finished: ${reason}. Auto is choosing again.`;
   }
+  if (refusal.action === 'mount') {
+    return `Auto tried to add a project. Not added: ${reason}. Auto is choosing again.`;
+  }
   return `Auto tried to start ${whatOf({ roles: refusal.roles })}. Not started: ${reason}. Auto is choosing again.`;
 };

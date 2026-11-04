@@ -68,6 +68,8 @@ describe('the Auto chat scenes', () => {
       'auto-chat-revising',
       'auto-chat-working',
       'auto-overview-row',
+      'u34-p22-delivered',
+      'u34-p22-waiting',
     ]);
     for (const [id, Scene] of Object.entries(U24_AUTO_CHAT_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -149,6 +151,33 @@ describe('the Auto chat scenes', () => {
     expect(within(line).getAllByRole('button')).toHaveLength(1);
     expect(within(line).getAllByRole('button')[0]?.textContent).toBe('Send now');
     expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(1);
+  });
+
+  it('u34-p22-waiting puts both messages after the running row, each with its own line', async () => {
+    mount({ id: 'u34-p22-waiting' });
+
+    const [list] = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const groups = [...document.querySelectorAll('[data-taken-echo]')];
+    expect(groups).toHaveLength(2);
+    expect(list?.compareDocumentPosition(groups[0] ?? document)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(groups[0]?.textContent).toContain('Keep the retry window at 30 seconds.');
+    expect(groups[1]?.textContent).toContain('Add a test for the second retry.');
+    for (const group of groups) {
+      expect(group.querySelectorAll('[data-auto-pending-message]')).toHaveLength(1);
+    }
+    expect(screen.getAllByText('Keep the retry window at 30 seconds.')).toHaveLength(1);
+  });
+
+  it('u34-p22-delivered shows the messages once, after the running row, with no line', async () => {
+    mount({ id: 'u34-p22-delivered' });
+
+    const [list] = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const bubble = await screen.findByText('Keep the retry window at 30 seconds.', undefined, WAIT);
+    expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(0);
+    expect(screen.getAllByText('Keep the retry window at 30 seconds.')).toHaveLength(1);
+    expect(list?.compareDocumentPosition(bubble)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('auto-chat-working opens the limit popover from the chip line', async () => {

@@ -7,6 +7,7 @@ import type {
 } from '../../features/worktree/worktree';
 import { createInvokeMock, createInvokeRouter } from '../invokeMock';
 import type { InvokeHandlers } from '../invokeMock';
+import type { writeAttachment } from '../../features/chat/turn';
 import type { worktreeBranchHolder } from '../../features/worktree/worktree';
 import { createResolveQueryMocks } from '../../store/slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from '../../store/slices/turn/workflowTurnBreaker';
@@ -456,7 +457,7 @@ export const storySpies = {
   invokeAuditRetryDelete: vi.fn<PermissionsModule['invokeAuditRetryDelete']>(async () => undefined),
   runTurn: vi.fn(),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
-  writeAttachment: vi.fn(async () => '.goodboy/attachments/spec.pdf'),
+  writeAttachment: vi.fn<typeof writeAttachment>(async () => '.goodboy/attachments/spec.pdf'),
   deleteAttachment: vi.fn(async () => undefined),
   tauriInvoke: createInvokeMock({ handlers: storyInvokeHandlers, unknownResult: null }),
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),

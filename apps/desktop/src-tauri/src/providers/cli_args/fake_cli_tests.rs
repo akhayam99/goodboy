@@ -59,6 +59,7 @@ fn run_side_job_with_stdin(
                     user_message: USER.to_string(),
                     system_prompt: SYSTEM.to_string(),
                     working_dir: Some(work_dir),
+                    read_dirs: Vec::new(),
                     tools_disabled: false,
                     effort: effort.map(str::to_string),
                     run_id: None,

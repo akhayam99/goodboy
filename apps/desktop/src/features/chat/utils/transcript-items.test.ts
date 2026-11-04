@@ -777,6 +777,29 @@ describe('reduceTranscript handoff', () => {
     });
   });
 
+  it('carries the outbox ids of the echo and of the delivery into the rows', () => {
+    const items = reduceTranscript([
+      {
+        kind: 'operator_text',
+        runId: RUN,
+        text: 'Keep the retry window at 30 seconds.',
+        outboxId: 'row-a',
+        at: AT,
+      },
+      {
+        kind: 'user_text',
+        runId: RUN,
+        text: 'MESSAGES FROM THE USER, OLDEST FIRST',
+        deliveredBy: 'auto',
+        outboxIds: ['row-a'],
+        at: AT,
+      },
+    ]);
+
+    expect(items[0]).toMatchObject({ isOperatorEcho: true, outboxId: 'row-a' });
+    expect(items[1]).toMatchObject({ kind: 'auto_delivery', outboxIds: ['row-a'] });
+  });
+
   it('keeps the bubble of an older transcript that holds delivery text with no stored origin', () => {
     const items = reduceTranscript([
       userText({ text: 'STATE OF THIS CONVERSATION\nSpent 1.00 USD.' }),

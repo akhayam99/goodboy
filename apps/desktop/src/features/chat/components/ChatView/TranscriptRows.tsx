@@ -37,6 +37,10 @@ import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import { InsertionRow } from './InsertionRow';
+import { rowsByDeliveryOf } from './rowsByDeliveryOf';
+import { dueInsertionsOf } from './dueInsertionsOf';
+import { takenEchoesOf } from './takenEchoesOf';
 import { isTurnStartRow } from './isTurnStartRow';
 
 type Props = {
@@ -86,7 +90,7 @@ type FlushParams = {
 };
 
 export const TranscriptRows = ({
-  rows,
+  rows: givenRows,
   oqByTurnOrdinal,
   slackDrafts = [],
   sessionId,
@@ -113,6 +117,8 @@ export const TranscriptRows = ({
   clockStepAgentId,
   newFromKey = null,
 }: Props) => {
+  const rows = rowsByDeliveryOf({ rows: givenRows, insertions });
+  const taken = takenEchoesOf({ rows: givenRows, insertions });
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
@@ -135,14 +141,11 @@ export const TranscriptRows = ({
   };
   const placedInsertions = new Set<string>();
   const flushInsertions = ({ beforeMs }: FlushParams) => {
-    for (const insertion of insertions) {
-      const isDue =
-        beforeMs === null || (insertion.beforeMs !== null && insertion.beforeMs <= beforeMs);
-      if (placedInsertions.has(insertion.key) || !isDue) {
-        continue;
-      }
+    for (const insertion of dueInsertionsOf({ insertions, placed: placedInsertions, beforeMs })) {
       placedInsertions.add(insertion.key);
-      out.push(<li key={`insertion-${insertion.key}`}>{insertion.node}</li>);
+      out.push(
+        <InsertionRow key={`insertion-${insertion.key}`} insertion={insertion} taken={taken} />,
+      );
     }
   };
   const todayKey = dayKey(new Date().toISOString());
@@ -156,9 +159,6 @@ export const TranscriptRows = ({
   let railGroupKey: string | null = null;
   let lastFooterRunId: ProviderRunId | null = null;
   const turnStarts = new Set<number>();
-  const markTurnStart = () => {
-    turnStarts.add(out.length);
-  };
 
   const flushRailGroup = () => {
     if (railGroup.length === 0 || railGroupKey === null) {
@@ -226,7 +226,7 @@ export const TranscriptRows = ({
       const at = row.item.at;
       flushInsertions({ beforeMs: Date.parse(at) });
       if (isTurnStart) {
-        markTurnStart();
+        turnStarts.add(out.length);
         if (isNewDivider) {
           out.push(<NewRowsDivider key={`new-${row.key}`} />);
         }

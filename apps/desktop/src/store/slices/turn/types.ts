@@ -40,6 +40,7 @@ export type SendTurnInput = Readonly<{
   confinedRole?: string;
   runId?: ProviderRunId;
   deliveryId?: string;
+  outboxIds?: ReadonlyArray<string>;
   onSettled?: (settled: TurnSettledInfo) => void;
   captureMode?: 'new' | 'revise';
   briefVersion?: number;

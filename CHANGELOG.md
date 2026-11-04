@@ -12,6 +12,17 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.6
+
+Auto no longer stops when a project is missing, and files attach to a run before it has a worktree.
+
+### Fixed
+
+- Auto no longer says it cannot work without a folder: it adds the project, or asks in one step, on the branch you named. <!-- gb area=agents -->
+- Attaching files to a hint or a goal on a run with no worktree yet works, and the orchestrator reads them. <!-- gb area=agents -->
+- Messages waiting for an Auto agent show after the running row, each with its own Waits for line, and keep their place once delivered. <!-- gb area=agents -->
+- The agent header keeps its title readable on Auto: settings move under it when narrow, and the stray provider icon is gone. <!-- gb area=sessions -->
+
 ## Goodboy v0.31.5
 
 The folded session rail tells branches apart, and the Running card says only what differs.

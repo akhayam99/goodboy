@@ -5,6 +5,7 @@ import {
   autoRefusalUserReason,
   autoRefusedBlockText,
   autoRemainingForGates,
+  isAutoMountedCode,
   isRefusalPayload,
   storedDeliveryOf,
   turnGate,
@@ -86,7 +87,11 @@ type BlockReasonParams = {
 };
 
 const blockReasonOf = ({ gate, primary }: BlockReasonParams): string => {
-  if (gate !== 'limit_no_progress' || !isRefusalPayload(primary.payload)) {
+  if (
+    gate !== 'limit_no_progress' ||
+    !isRefusalPayload(primary.payload) ||
+    isAutoMountedCode({ code: primary.payload.code })
+  ) {
     return AUTO_BLOCK_TEXT[gate];
   }
   return autoRefusedBlockText({
@@ -341,6 +346,7 @@ export const deliverNext = async ({
       generation: tree.generation,
       runId,
       deliveryId: primary.id,
+      rowIds: rows.map((row) => String(row.id)),
       text,
       images: userImagesOf({ rows }),
       onEnded,

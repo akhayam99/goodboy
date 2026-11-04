@@ -22,6 +22,7 @@ import {
 } from './preamble';
 import { handoffNoticeMessage } from './handoffNoticeMessage';
 import { movedProviderOf } from './movedProviderOf';
+import { attachmentAbsolutePathOf } from '../attachments/attachmentAbsolutePathOf';
 import { buildGoalAttachmentsBlock } from './turnHelpers';
 import { hintImagesForStep } from './hintImages/hintImagesForStep';
 import { resolveTurnAudience } from './turnAudience';
@@ -155,7 +156,17 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     : null;
   const generalAttachmentsBlock = buildGoalAttachmentsBlock(
     earlyAgentKind,
-    goalAttachments.filter((att) => hintImages?.attachmentIds.has(att.id) !== true),
+    goalAttachments
+      .filter((att) => hintImages?.attachmentIds.has(att.id) !== true)
+      .map((att) => ({
+        ...att,
+        relPath:
+          attachmentAbsolutePathOf({
+            relPath: att.relPath,
+            worktreeDir: null,
+            scratchDir: get().sessionScratchDirs[sessionId] ?? null,
+          }) ?? att.relPath,
+      })),
     { isKickoff },
   );
   const goalAttachmentsBlock = [hintImages?.text ?? '', generalAttachmentsBlock]

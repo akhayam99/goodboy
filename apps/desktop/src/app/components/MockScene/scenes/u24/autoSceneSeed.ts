@@ -62,11 +62,15 @@ export type AutoSceneState =
   | 'revising'
   | 'confirm'
   | 'refused'
+  | 'mount-ask'
+  | 'mount-done'
   | 'done'
   | 'finished'
   | 'nocap'
   | 'blocked'
-  | 'queued';
+  | 'queued'
+  | 'waitingTwo'
+  | 'deliveredTwo';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -374,6 +378,26 @@ const userText = ({ time, text, run }: TextParams): TurnEvent => ({
   at: at({ time }),
 });
 
+const operatorText = ({ time, text, run }: TextParams): TurnEvent => ({
+  kind: 'operator_text',
+  runId: run,
+  text,
+  at: at({ time }),
+});
+
+const QUEUED_PAIR = [
+  {
+    rowId: 'mock-auto-outbox-user-2',
+    time: '12:10:00',
+    text: 'Keep the retry window at 30 seconds.',
+  },
+  {
+    rowId: 'mock-auto-outbox-user-3',
+    time: '12:10:30',
+    text: 'Add a test for the second retry.',
+  },
+] as const;
+
 const reply = ({ time, text, run }: TextParams): TurnEvent => ({
   kind: 'assistant_text',
   runId: run,
@@ -389,6 +413,10 @@ const THIRD_REPLY =
   'Plan approved. The Implementer starts now on Sonnet 5.5, since the plan is mechanical. The Tester is queued behind it: only one agent writes to payments-api at a time.';
 const FINAL_REPLY =
   'Fixed. The retry loop built a new idempotency key on every attempt, so a credit that timed out after the ledger wrote it could post twice. The key is now built once per credit, before the loop, and applyCredit returns the first result for a key it has seen.';
+const MOUNT_REQUEST = 'Create a worktree on notify-relay with the branch ak/feat-new-explore.';
+const MOUNT_REASON = 'The user asked for a worktree on this branch.';
+const MOUNT_ASK_REPLY = 'The worktree needs notify-relay added first.';
+const MOUNT_DONE_REPLY = 'The worktree on ak/feat-new-explore is ready in notify-relay.';
 const REFUSED_REPLY = 'I asked an implementer to commit the fix and open a draft PR.';
 const ANSWER_REPLY =
   'Retries are posted by postCredit, which builds the idempotency key inside the retry loop. A new key on every attempt is why a credit that timed out after the ledger wrote it can post twice. Say the word and I fix it.';
@@ -640,6 +668,41 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         rootTurn: IDLE,
         hasPlanArtifact: false,
       };
+    case 'mount-ask':
+    case 'mount-done': {
+      const isAsk = state === 'mount-ask';
+      return {
+        view: viewOf({
+          phase: 'merging',
+          delegations: [],
+          artifacts: [],
+          spentUsd: 0.06,
+          reservedUsd: 0,
+          pendingRefusal: {
+            action: 'mount',
+            code: isAsk ? 'mount_missing' : 'mounted',
+            roles: [],
+            mount: {
+              project: 'notify-relay',
+              branch: 'ak/feat-new-explore',
+              reason: MOUNT_REASON,
+              state: isAsk ? 'ask' : 'done',
+            },
+          },
+        }),
+        agents: [root('completed', '12:04:30')],
+        events: [
+          userText({ time: '12:04:00', text: MOUNT_REQUEST, run: RUN_ONE }),
+          reply({
+            time: '12:04:20',
+            text: isAsk ? MOUNT_ASK_REPLY : MOUNT_DONE_REPLY,
+            run: RUN_ONE,
+          }),
+        ],
+        rootTurn: IDLE,
+        hasPlanArtifact: false,
+      };
+    }
     case 'done':
       return {
         view: viewOf({
@@ -732,16 +795,58 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         view: {
           ...working.view,
           pendingMessages: [
-            { rowId: 'mock-auto-outbox-user-2', createdAt: Date.parse(at({ time: '12:10:00' })) },
+            {
+              rowId: 'mock-auto-outbox-user-2',
+              createdAt: Date.parse(at({ time: '12:10:00' })),
+              text: 'Also keep the retry window at 30 seconds.',
+            },
           ],
         },
         events: [
           ...working.events,
-          userText({
+          operatorText({
             time: '12:10:00',
             text: 'Also keep the retry window at 30 seconds.',
             run: RUN_THREE,
           }),
+        ],
+      };
+    }
+    case 'waitingTwo':
+    case 'deliveredTwo': {
+      const working = autoSceneOf({ state: 'working' });
+      const echoes = QUEUED_PAIR.map((message) =>
+        operatorText({ time: message.time, text: message.text, run: RUN_THREE }),
+      );
+      return {
+        ...working,
+        view: {
+          ...working.view,
+          pendingMessages:
+            state === 'waitingTwo'
+              ? QUEUED_PAIR.map((message) => ({
+                  rowId: message.rowId,
+                  createdAt: Date.parse(at({ time: message.time })),
+                  text: message.text,
+                }))
+              : [],
+        },
+        events: [
+          ...working.events,
+          ...echoes,
+          ...(state === 'deliveredTwo'
+            ? [
+                {
+                  kind: 'user_text' as const,
+                  runId: RUN_THREE,
+                  text: `MESSAGES FROM THE USER, OLDEST FIRST\n${QUEUED_PAIR.map(
+                    (message, index) => `${index + 1}. The user wrote:\n${message.text}`,
+                  ).join('\n')}`,
+                  deliveredBy: 'auto' as const,
+                  at: at({ time: '12:12:00' }),
+                },
+              ]
+            : []),
         ],
       };
     }

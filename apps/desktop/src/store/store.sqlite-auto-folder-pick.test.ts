@@ -16,7 +16,7 @@ import {
   type SessionId,
   type TurnEvent,
 } from '@goodboy/types';
-import { storedDeliveryOf } from '@goodboy/core/auto';
+import { isRefusalPayload, mountNoteOf, storedDeliveryOf } from '@goodboy/core/auto';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import type { AutoRuntime } from './runtime/auto/createAutoRuntime';
 import {
@@ -85,6 +85,21 @@ const relay = buildStoryProject({
   name: 'notify-relay',
   kind: 'repo',
   rootPath: '/work/harborline/notify-relay',
+});
+
+const payments = buildStoryProject({
+  id: brandId<ProjectId>({ value: 'project-payments-api' }),
+  workspaceId: workspace.id,
+  name: 'payments-api',
+  kind: 'repo',
+  rootPath: '/work/harborline/payments-api',
+});
+const portal = buildStoryProject({
+  id: brandId<ProjectId>({ value: 'project-acme-portal' }),
+  workspaceId: workspace.id,
+  name: 'acme-portal',
+  kind: 'repo',
+  rootPath: '/work/harborline/acme-portal',
 });
 
 let useAppStore: StoryStore;
@@ -396,6 +411,34 @@ describe('an Auto writer with no folder, on the real store', () => {
     );
     expect(await mountedProjects(booted.sessionId)).toEqual([RELAY_ID]);
     expect(await refusalTexts(booted)).toEqual([]);
+  });
+
+  it('carries the project a refused delegate names to the one step card', async () => {
+    const booted = await boot({ projects: [ledger, relay, payments, portal] });
+    for (const project of [ledger, relay, payments]) {
+      await useAppStore.getState().ensureProjectMounted({
+        sessionId: booted.sessionId,
+        projectId: project.id,
+        reason: 'The user asked for it.',
+      });
+    }
+
+    await delegateImplementer({ booted, task: 'Fix the retry', mount: 'acme-portal' });
+
+    await vi.waitFor(async () => expect(await refusalTexts(booted)).toHaveLength(1));
+    const [row] = (await listAutoOutbox({ db: booted.db, treeId: booted.treeId })).filter(
+      (entry) => entry.kind === 'refusal',
+    );
+    const payload = row?.payload;
+    if (!isRefusalPayload(payload)) {
+      throw new Error('expected a refusal row');
+    }
+    expect(payload.code).toBe('mount_missing');
+    expect(mountNoteOf({ value: payload.mount })).toMatchObject({
+      project: 'acme-portal',
+      state: 'ask',
+    });
+    expect(await mountedProjects(booted.sessionId)).toHaveLength(3);
   });
 
   it('still asks where to work when the task names no repo of the workspace', async () => {

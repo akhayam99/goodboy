@@ -52,6 +52,35 @@ describe('the notice of a refused hand over', () => {
     ).toContain('Not started: Goodboy refused the request.');
   });
 
+  it('never reads a mounted row as a refusal in the wait strip', () => {
+    const mounted = {
+      action: 'mount',
+      code: 'mounted',
+      roles: [],
+      mount: {
+        project: 'notify-relay',
+        branch: 'ak/feat-new-explore',
+        reason: 'The user asked for it.',
+        state: 'done' as const,
+      },
+    };
+
+    expect(waitingTextOf({ view: aView({ phase: 'merging', pendingRefusal: mounted }) })).toBe(
+      'Auto is reading the results',
+    );
+    expect(
+      waitingTextOf({ view: aView({ phase: 'waiting', pendingRefusal: mounted }) }),
+    ).not.toMatch(/refused|Not started|Not added/);
+  });
+
+  it('says a project on another branch as a project, never as an agent', () => {
+    expect(
+      refusalNoticeOf({ refusal: { action: 'mount', code: 'mount_elsewhere', roles: [] } }),
+    ).toBe(
+      'Auto tried to add a project. Not added: that project is already added on another branch. Auto is choosing again.',
+    );
+  });
+
   it('takes the wait strip while the refusal waits for Auto, over the reading line', () => {
     const refusal = { action: 'delegate', code: 'mount_missing', roles: ['docs'] };
 

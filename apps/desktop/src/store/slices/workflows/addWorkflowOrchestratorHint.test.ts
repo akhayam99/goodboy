@@ -27,6 +27,9 @@ vi.mock('../../../shared/lib/db', async () =>
 vi.mock('../../../features/chat/turn', async () =>
   (await import('../../storyHarness')).turnModuleMock(),
 );
+vi.mock('../../../features/worktree/worktree', async () =>
+  (await import('../../storyHarness')).worktreeModuleMock(),
+);
 vi.mock('@goodboy/db', async () =>
   (await import('../../storyHarness')).dbModuleMock({
     insertGoalAttachment: async (
@@ -123,8 +126,34 @@ describe('addWorkflowOrchestratorHint', () => {
     expect(hintsNow().map((hint) => hint.text)).toEqual(['See the attached image.']);
   });
 
-  it('refuses files when the session has no worktree, and saves no hint', async () => {
+  it('keeps the image in the scratch dir when the session has no worktree', async () => {
     useAppStore.setState({ sessionWorktrees: {} });
+    storySpies.writeAttachment.mockImplementationOnce(
+      async (args) => `.goodboy/attachments/${args.attachmentId}-checkout-trace.png`,
+    );
+
+    await useAppStore.getState().addWorkflowOrchestratorHint(session.id, run.id, {
+      text: 'look at the trace',
+      delivery: 'queue',
+      attachments: [IMAGE],
+    });
+
+    expect(storySpies.scratchDirPrepare).toHaveBeenCalledWith({ sessionId: session.id });
+    expect(storySpies.writeAttachment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        worktreeDir: '/tmp/goodboy-root/scratch/session-story',
+        attachmentId: 'scratch-att-trace',
+      }),
+    );
+    expect(savedRows.map((row) => row.relPath)).toEqual([
+      '.goodboy/attachments/scratch-att-trace-checkout-trace.png',
+    ]);
+    expect(hintsNow().map((hint) => hint.attachmentIds)).toEqual([['att-trace']]);
+  });
+
+  it('saves no hint and keeps nothing when the scratch dir cannot be prepared', async () => {
+    useAppStore.setState({ sessionWorktrees: {} });
+    storySpies.scratchDirPrepare.mockRejectedValueOnce(new Error('disk full'));
 
     await expect(
       useAppStore.getState().addWorkflowOrchestratorHint(session.id, run.id, {
@@ -132,7 +161,7 @@ describe('addWorkflowOrchestratorHint', () => {
         delivery: 'queue',
         attachments: [IMAGE],
       }),
-    ).rejects.toThrow('This session has no worktree yet, so the hint cannot keep files.');
+    ).rejects.toThrow('disk full');
     expect(hintsNow()).toEqual([]);
     expect(savedRows).toEqual([]);
   });

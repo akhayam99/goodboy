@@ -1,8 +1,14 @@
 import { useEffect } from 'react';
 import { Paperclip } from 'lucide-react';
 import { Eyebrow, ICON_SIZE } from '@goodboy/ui';
-import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
+import {
+  brandId,
+  type GoalAttachmentOwner,
+  type SessionId,
+  type WorkflowRunId,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { attachmentDirOf } from '../../../../../store/slices/attachments/attachmentDirOf';
 import { AttachmentStrip, type AttachmentStripItem } from '../../../../attachments/AttachmentStrip';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
 
@@ -14,9 +20,14 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
       ? (s.sessionAttachments[owner.id as SessionId] ?? EMPTY_ARRAY)
       : (s.workflowRunAttachments[owner.id as WorkflowRunId] ?? EMPTY_ARRAY),
   );
-  const workingDir = useAppStore((s) => {
+  const worktreeDir = useAppStore((s) => {
     const sessionId = owner.type === 'session' ? (owner.id as SessionId) : s.currentSessionId;
-    return sessionId ? ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null) : null;
+    return sessionId === null ? null : ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null);
+  });
+  const scratchDir = useAppStore((s) => {
+    const sessionId =
+      owner.type === 'session' ? brandId<SessionId>({ value: owner.id }) : s.currentSessionId;
+    return sessionId === null ? null : (s.sessionScratchDirs[sessionId] ?? null);
   });
 
   const ownerType = owner.type;
@@ -36,7 +47,7 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
     mimeType: att.mimeType,
     kind: att.kind,
     relPath: att.relPath,
-    workingDir,
+    workingDir: attachmentDirOf({ relPath: att.relPath, worktreeDir, scratchDir }),
     title: `${att.fileName}\nread by: ${ATTACHMENT_KIND_ROUTING[att.kind].join(', ')}`,
     ...(isReadOnly ? {} : { onRemove: () => void removeGoalAttachment(owner, att.id) }),
   }));

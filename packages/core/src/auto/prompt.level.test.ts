@@ -83,6 +83,40 @@ describe('Auto prompt levels', () => {
     });
   }
 
+  const NEVER_STOP = 'Never end a turn saying you cannot because of mounts, tools or permissions';
+
+  it('delegates by the Never temperature instead of saying it cannot', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, level: 'run' });
+
+    expect(prompt).toContain(NEVER_STOP);
+    expect(prompt).toContain('At Never, delegate at once, with no proposal and no question');
+  });
+
+  it('follows the plan gate as a step forward at After the plan', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, level: 'plan' });
+
+    expect(prompt).toContain(NEVER_STOP);
+    expect(prompt).toContain('A refusal or a plan gate is a step forward, never a dead end');
+    expect(prompt).toContain('At After the plan, follow the plan gate above');
+  });
+
+  it('proposes the missing role as a card at Every step', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, level: 'step' });
+
+    expect(prompt).toContain(NEVER_STOP);
+    expect(prompt).toContain('At Every step, hand that work over as a propose block');
+  });
+
+  it('teaches the mount block and the named branch at every level', () => {
+    for (const level of WORKFLOW_AUTONOMY_VALUES) {
+      const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, level });
+
+      expect(prompt).toContain('"action":"mount"');
+      expect(prompt).toContain('Never start an implementer only to run git worktree add');
+      expect(prompt).toContain('Never invent a branch name when the user gave one');
+    }
+  });
+
   it('uses the supplied level again on each call', () => {
     for (const level of ['step', 'run', 'plan', 'step'] as const) {
       const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true, level });

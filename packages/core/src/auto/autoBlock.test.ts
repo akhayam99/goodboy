@@ -136,6 +136,37 @@ describe('parseAutoBlock', () => {
     });
   });
 
+  it('reads a mount block with the branch exactly as the user wrote it', () => {
+    const outcome = parseAutoBlock({
+      text: block({
+        action: 'mount',
+        project: 'ledger-core',
+        branch: 'ak/feat-new-explore',
+        reason: 'Worktree asked by the user.',
+      }),
+    });
+
+    expect(outcome).toEqual({
+      kind: 'block',
+      block: {
+        action: 'mount',
+        project: 'ledger-core',
+        branch: 'ak/feat-new-explore',
+        reason: 'Worktree asked by the user.',
+      },
+    });
+  });
+
+  it('refuses a mount block without a reason or with an unsafe branch', () => {
+    const noReason = parseAutoBlock({ text: block({ action: 'mount', project: 'ledger-core' }) });
+    const badBranch = parseAutoBlock({
+      text: block({ action: 'mount', project: 'ledger-core', branch: '--force', reason: 'x' }),
+    });
+
+    expect(noReason.kind).toBe('invalid');
+    expect(badBranch.kind).toBe('invalid');
+  });
+
   it('falls back to the last brace when the close marker is missing', () => {
     const text = `<<auto>>${JSON.stringify({ action: 'finish', summary: 'ok' })}\nbye`;
 

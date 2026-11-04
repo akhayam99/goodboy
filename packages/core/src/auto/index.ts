@@ -72,8 +72,10 @@ export {
 
 export {
   AUTO_LIMIT_REFUSAL_CODES,
+  AUTO_MOUNTED_CODE,
   AUTO_REFUSAL_CODES,
   isAutoLimitRefusal,
+  isAutoMountedCode,
   type AutoRefusalCode,
 } from './refusals';
 
@@ -230,7 +232,9 @@ export {
   isResultsPayload,
   isRefusalPayload,
   isUserPayload,
+  mountNoteOf,
   storedDeliveryOf,
+  type MountNote,
   type QuestionPayload,
   type ResultsPayload,
   type StoredDelivery,
@@ -273,6 +277,7 @@ export {
 } from './mountPick';
 
 export { buildMountsLine } from './mountsLine';
+export { parseMountSpec, type MountSpec } from './mountSpec';
 
 export {
   ADOPTION_DEFAULT_INSTRUCTION,

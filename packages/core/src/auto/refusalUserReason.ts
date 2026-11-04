@@ -30,6 +30,7 @@ export const AUTO_REFUSAL_USER_REASON = {
   provider_unproven: 'the model for that role cannot be confined yet',
   mount_missing: 'it did not say which folder, or that folder is not usable',
   mount_ambiguous: 'more than one folder fits and it did not say which',
+  mount_elsewhere: 'that project is already added on another branch',
   delegation_unknown: 'it named an agent that is not in this conversation',
   question_unknown: 'it answered a question nobody asked',
   not_paused: 'that agent is not waiting for an answer',

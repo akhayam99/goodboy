@@ -1,7 +1,8 @@
-import type { AttachmentInput, GoalAttachmentOwner, SessionId } from '@goodboy/types';
+import type { AttachmentInput, GoalAttachmentOwner } from '@goodboy/types';
 import { attachmentReadKey } from './attachmentReadKey';
 import { attachmentWrites } from './attachmentWrites';
 import { saveGoalAttachments } from './saveGoalAttachments';
+import { sessionIdOfOwner } from './sessionIdOfOwner';
 import type { GetFn, SetFn } from './types';
 
 export const addGoalAttachments = (set: SetFn, get: GetFn) => {
@@ -12,17 +13,13 @@ export const addGoalAttachments = (set: SetFn, get: GetFn) => {
     if (inputs.length === 0) {
       return;
     }
-    const sessionId = owner.type === 'session' ? (owner.id as SessionId) : get().currentSessionId;
-    if (sessionId == null) {
-      throw new Error('cannot add goal attachments: session worktree not available');
-    }
-    const worktreeDir = (get().sessionWorktrees[sessionId] ?? [])[0];
-    if (worktreeDir === undefined) {
-      throw new Error('cannot add goal attachments: session worktree not available');
+    const sessionId = sessionIdOfOwner({ get, owner });
+    if (sessionId === null) {
+      throw new Error('cannot add goal attachments: session not found');
     }
     await attachmentWrites.run({
       key: attachmentReadKey({ owner }),
-      task: () => saveGoalAttachments({ set, worktreeDir, owner, inputs }),
+      task: () => saveGoalAttachments({ set, get, sessionId, owner, inputs }),
     });
   };
 };

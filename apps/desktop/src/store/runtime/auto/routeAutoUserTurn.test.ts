@@ -89,8 +89,27 @@ describe('a message typed to an Auto agent', () => {
       sessionId: SESSION,
       workspaceId: WORKSPACE,
       text: 'Also cover the notify-relay retries',
+      onQueued: expect.any(Function),
     });
     expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes its echo with the id of the outbox row Auto queued', async () => {
+    registerAutoUserTurnPort({
+      port: vi.fn<AutoUserTurnPort>(async ({ onQueued }) => {
+        onQueued?.({ rowId: 'outbox-row-7' });
+        return 'queued';
+      }),
+    });
+    const { get, appendTurnEvent } = harness({ agents: [autoRow] });
+
+    await routeAutoUserTurn({ get, input: inputOf() });
+
+    expect(appendTurnEvent).toHaveBeenCalledWith(
+      AUTO_AGENT,
+      SESSION,
+      expect.objectContaining({ kind: 'operator_text', outboxId: 'outbox-row-7' }),
+    );
   });
 
   it('follows the selected agent when the send names none', async () => {

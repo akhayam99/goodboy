@@ -35,10 +35,16 @@ describe('the mounts line of a delivery', () => {
     );
   });
 
-  it('says plainly when no mount can be used', () => {
-    expect(buildMountsLine({ mounts: [] })).toContain('MOUNTS: none.');
-    expect(
+  it('states the fact and the way forward when no mount can be used, never a prohibition', () => {
+    const lines = [
+      buildMountsLine({ mounts: [] }),
       buildMountsLine({ mounts: [mount({ id: 'mount-gone', worktreePath: null })] }),
-    ).toContain('MOUNTS: none.');
+    ];
+
+    for (const line of lines) {
+      expect(line).toContain('MOUNTS: none attached yet.');
+      expect(line).toContain('delegate a role that changes files as usual');
+      expect(line).not.toMatch(/cannot|can not|no agent/i);
+    }
   });
 });

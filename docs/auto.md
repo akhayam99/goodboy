@@ -60,7 +60,10 @@ Auto is always available and has no start of its own since ux27 one flow unit
 ⌘K, the Runs page and the New session page all open it). Every Auto
 conversation is a row of the session's **Runs** page (`sessionRunsOf`), which
 opens it in the Auto chat. There is no role list, no project field and no
-guidance: Auto picks the mount and asks when it is ambiguous. A role is named
+guidance: Auto picks the mount and asks when it is ambiguous. A conversation
+with no folder attached still delegates a writer: the delivery says "MOUNTS:
+none attached yet" with the way forward, never that nothing can start, and the
+app attaches the project the task names or asks (see Mounts below). A role is named
 with `@` in the field, which starts that role at once with no Auto turn first.
 
 - The **Start a run** field (`StartRun`) starts Auto when its router picks one
@@ -191,9 +194,17 @@ message" and the composer keeps its text.
 **When a message waits.** A `user` row is delivered in every phase that takes a turn
 (`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
 stays `pending` and goes with the next results, so a message typed during a long child run
-reaches Auto only when the child ends. The chat says so under the bubble in one quiet line,
-"Waits for <task of the child>" or "Waits for 2 agents", with **Send now**
-(`AutoPendingMessages`, from `pendingMessages` of the tree view). **Send now**
+reaches Auto only when the child ends. The chat draws each waiting message as a bubble after the running child row and any live rows, in
+send order, with its own quiet line under it, "Waits for <task of the child>" or "Waits for 2
+agents", and **Send now** (`AutoPendingMessages`, from `pendingMessages` of the tree view, which
+carries the message text). The same insertion lists the operator echoes it takes over
+(`takesOver`), and `TranscriptRows` drops those echo rows so the bubble never shows twice; the
+bubble is drawn from the taken echo row, so its images stay. The outbox row id is the key: the
+`operator_text` event stores it as `outboxId`, and the delivery event lists the rows it carries as
+`outboxIds`. Once the message is delivered, `rowsByDeliveryOf` seats its echo right before the
+delivery row that lists its id, so it never jumps above rows that happened before Auto read it.
+Events written before the ids existed match by text instead: an echo is taken only when no later
+delivery already holds its text, and a delivery without ids is matched by its text. **Send now**
 (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that one row at
 once as its own Auto turn, like a child's question, and leaves the children running; the line goes
 away when the row is claimed. The send runs in the tree's queue and claims the row with the tree's
@@ -662,6 +673,29 @@ It decides by ending its final reply with at most one block:
   waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
   prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
   close.
+- `mount` attaches a project of the workspace, on the branch the user named
+  (`project`, optional `branch`, `reason`; `parseMountSpec`). It is how "create a worktree on
+  app-web with branch X" is done: the worktree is the deliverable, so no implementer starts to
+  run `git worktree add`. `applyMountBlock` follows the Asks you level through the `mountProject`
+  port (`mountAutoProject`, which calls `ensureProjectMounted` with the branch as written):
+  **Never** mounts at once, **After the plan** mounts only when the materialization gate
+  allows it (the same allowance as `mountTaskFolders`) and otherwise asks, **Every step** always
+  asks. The result is a `refusal` row with a `mount` note (`state` `ask` or `done`), so replay,
+  recovery and the one row per turn work as for a refused delegate. A project that is unknown
+  or ambiguous falls back to the folder list. A done mount is written with the code `mounted`
+  (`AUTO_MOUNTED_CODE`): it is never a refusal, so it adds no refusal to the count, no strike to
+  the no-progress streak, no refusal line in the tail or the rail, and the delivery lists it under
+  DONE BY GOODBOY. A project already added on another branch than the one named is not claimed
+  as done: the row has the code `mount_elsewhere`, it says which branch the project is on and
+  that the user decides about moving it, and the tail reads "Not added: that project is already
+  added on another branch". `mountOnBranchOf` is the one owner of that check: it looks for the
+  mount of the project on the named branch among every mount the session holds (a forked mount
+  counts), and `mountAutoProject` runs it before the call and again after it, because
+  `ensureProjectMounted` can adopt persisted mounts or share an in-flight request that ends on
+  another branch. The project is looked up in the workspace of the owning session only, in the
+  store and in the card (`knownMountOf`), so a same-named repository of another workspace is never
+  picked. The card runs `mountOnBranchOf` after its Add as well and keeps itself with the conflict
+  when another window added the project on a different branch.
 - No block is a plain answer to the user.
 
 The prompt takes an Asks you level, using the same three values as workflows
@@ -676,6 +710,13 @@ plan optional and tells Auto to choose and delegate without proposing a next
 step. Force pushes still require confirmation and a backup at every level.
 Auto must never end a turn with a prose yes or no question: a choice belongs
 in a next step proposal for the app to show as a card.
+
+At every level Auto never ends a turn saying it cannot because of mounts, tools
+or permissions (`AUTO_NEVER_REFUSE_RULE` in `prompt.ts`): a request that needs a
+role it lacks goes to that role. **Never** delegates at once, **After the plan**
+follows its plan gate (a gate is a step forward, never a dead end) and **Every
+step** sends a propose block so the user answers with a button. A writer that
+cannot start for a real reason still ends in a card or a named next step.
 
 `parseProposeSpec` validates the primary with the delegate rules and forces
 confirmation. Alternatives live in the primary's request data, and the replay
@@ -1084,8 +1125,18 @@ refused children; while it is pending for the current generation, `readAutoTreeV
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
 folder fits and it did not say which. Auto is choosing again." A refusal about the project
-(`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`): "Where
-should the Implementer work?" lists the session's projects with their branch, **Another
+(`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`). When
+the refusal comes from a `mount` block, or from a writer delegate whose `mount` names a project
+of the workspace that is not added yet (`refusalMountNote`), and the project is known, the ask is one inline step:
+"To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
+main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
+runs, a failure keeps the card with the reason), then **Another folder...**, **No folder, just
+answer** and **Discard request**. The screens say "add", never "mount" (the `jargon-copy` guard
+bans it); the block, the port and the code keep `mount`. The click mounts on the named branch and
+sends Auto "Added payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
+retyped. A mount done at once (Never, or After the plan inside the allowance) draws one line,
+"Added payments-api on ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
+"Where should the Implementer work?" lists the session's projects with their branch, **Another
 folder...** opens a filter over the workspace's other projects ("Not in this session. A worktree
 is created from main."), and the primary follows the choice (**Choose a folder** disabled, **Use
 payments-api**, **Use both**, **Use 3 folders**) next to **No folder, just answer**, one
@@ -1113,7 +1164,8 @@ tells Auto never to repeat or paste what an agent said, to name the agent that w
 only what it adds (what the results mean together, where they disagree, the next step, the ask).
 Every delivery starts with a digest of the tree (open agents
 with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
-mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
+mount as `id (project, branch)` from `buildMountsLine`; with none it says none is attached yet
+and that a writer is still delegated, never that nothing can start) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
 `<<auto>>` block is hidden in the transcript like the other markers; the delegation lines show
 what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use itself and

@@ -1,4 +1,4 @@
-import type { OrchestratorInput } from '@goodboy/core/orchestrator';
+import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core/orchestrator';
 import type { OrchestratorHint, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { selectWritableMounts } from '../../project-mounts/selectors';
 import { buildProfileGuard } from '../../turn/profileGuard';
@@ -17,7 +17,7 @@ type Params = {
 };
 
 type Result = {
-  readonly worktreePath: string | null;
+  readonly clientDeps: Pick<OrchestratorClientDeps, 'workingDir' | 'readDirs'>;
   readonly hintInput: Pick<
     OrchestratorInput,
     'operatorHints' | 'canReadFiles' | 'decisions' | 'mounts'
@@ -40,12 +40,23 @@ export const orchestratorHintContext = async ({
     projects: get().projects.filter((project) => project.workspaceId === workspaceId),
   });
   const hintsWorktreeDir = (get().sessionWorktrees ?? {})[sessionId]?.[0] ?? null;
+  const scratchDir = (get().sessionScratchDirs ?? {})[sessionId] ?? null;
   const imagePaths = hintImagePaths({
     hints,
     attachments: (get().workflowRunAttachments ?? {})[workflowRunId] ?? [],
     worktreeDir: hintsWorktreeDir,
+    scratchDir,
   });
   const canReadFiles = Object.keys(imagePaths).length > 0;
+  const imageFiles = Object.values(imagePaths).flat();
+  const hasScratchImages = imageFiles.some(
+    (path) => scratchDir !== null && path.startsWith(scratchDir),
+  );
+  const hasWorktreeImages = imageFiles.some(
+    (path) => scratchDir === null || !path.startsWith(scratchDir),
+  );
+  const imageCwd = hasWorktreeImages ? hintsWorktreeDir : scratchDir;
+  const readDirs = hasWorktreeImages && hasScratchImages && scratchDir !== null ? [scratchDir] : [];
   const operatorHints = [
     profileBlock,
     projectsBlock,
@@ -55,13 +66,16 @@ export const orchestratorHintContext = async ({
     .filter((entry) => entry !== '')
     .join('\n');
   const worktreePath = canReadFiles
-    ? hintsWorktreeDir
+    ? imageCwd
     : (getSessionRepo({ get, sessionId })?.worktreePath ?? null);
   const decisionsSlot = ((get().sessionSlots ?? {})[sessionId] ?? []).find(
     (slot) => slot.key === 'decisions' && slot.enabled,
   );
   return {
-    worktreePath,
+    clientDeps: {
+      ...(worktreePath != null && { workingDir: worktreePath }),
+      ...(readDirs.length > 0 && { readDirs }),
+    },
     hintInput: {
       ...(operatorHints !== '' && { operatorHints }),
       ...(canReadFiles && { canReadFiles: true }),

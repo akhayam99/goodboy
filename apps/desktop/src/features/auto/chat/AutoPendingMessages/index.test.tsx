@@ -18,7 +18,9 @@ afterEach(() => {
   registerTreeRetryPort({ port: null });
 });
 
-const MESSAGES = [{ rowId: 'outbox-user-2', createdAt: 1_000 }];
+const MESSAGES = [
+  { rowId: 'outbox-user-2', createdAt: 1_000, text: 'Keep the retry window at 30 seconds.' },
+];
 
 const RUNNING = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
 
@@ -27,7 +29,7 @@ type RenderParams = {
 };
 
 const renderPending = ({ view }: RenderParams) =>
-  render(<AutoPendingMessages sessionId={FIXTURE_SESSION} view={view} />);
+  render(<AutoPendingMessages sessionId={FIXTURE_SESSION} view={view} rowId="outbox-user-2" />);
 
 describe('the line under a message that waits', () => {
   it('says what it waits for, with Send now, in one quiet line', () => {
@@ -124,19 +126,21 @@ describe('the line under a message that was not delivered', () => {
 
   it('says the time limit with no action, since nothing can lift it', () => {
     const view = aView({ phase: 'blocked', pendingMessages: MESSAGES });
-    renderPending({
+    const { container } = renderPending({
       view: { ...view, tree: { ...view.tree, blockedReason: AUTO_BLOCK_TEXT.limit_wall_clock } },
     });
 
     screen.getByText(`Not delivered: ${AUTO_BLOCK_TEXT.limit_wall_clock}`);
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.querySelector('[data-auto-pending-message] button')).toBeNull();
   });
 
   it('says a stopped tree did not take it', () => {
-    renderPending({ view: aView({ phase: 'stopped', pendingMessages: MESSAGES }) });
+    const { container } = renderPending({
+      view: aView({ phase: 'stopped', pendingMessages: MESSAGES }),
+    });
 
     screen.getByText('Not delivered: Auto was stopped.');
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.querySelector('[data-auto-pending-message] button')).toBeNull();
   });
 });
 
@@ -157,5 +161,25 @@ describe('pendingMessageLineOf', () => {
 
   it('has no line for a waiting tree with no open child', () => {
     expect(pendingMessageLineOf({ view: aView({ phase: 'waiting' }) })).toBeNull();
+  });
+});
+
+describe('the line of one message among two', () => {
+  const TWO = [
+    ...MESSAGES,
+    { rowId: 'outbox-user-3', createdAt: 2_000, text: 'Add a test for the second retry.' },
+  ];
+
+  it('draws one line for the message it is given, whatever else waits', () => {
+    const view = aView({ phase: 'waiting', delegations: [RUNNING], pendingMessages: TWO });
+    const { container } = render(
+      <>
+        <AutoPendingMessages sessionId={FIXTURE_SESSION} view={view} rowId="outbox-user-2" />
+        <AutoPendingMessages sessionId={FIXTURE_SESSION} view={view} rowId="outbox-user-3" />
+        <AutoPendingMessages sessionId={FIXTURE_SESSION} view={view} rowId="outbox-user-9" />
+      </>,
+    );
+
+    expect(container.querySelectorAll('[data-auto-pending-message]')).toHaveLength(2);
   });
 });

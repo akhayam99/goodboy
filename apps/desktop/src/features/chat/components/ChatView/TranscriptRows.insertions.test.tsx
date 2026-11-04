@@ -133,6 +133,80 @@ describe('transcript insertions', () => {
     rerender(<ul />);
   });
 
+  it('seats waiting messages after the open row, each bubble above its own line', () => {
+    const echo = ({ key, text, at }: UserParams): TranscriptRow =>
+      itemRow({
+        kind: 'user_text',
+        key,
+        text,
+        isOperatorEcho: true,
+        at: brandId<IsoDateTime>({ value: at.toISOString() }),
+      });
+    const waiting = (text: string, at: Date) => ({
+      key: text,
+      text,
+      sentAtMs: at.getTime(),
+      line: <div data-testid="line">line of {text}</div>,
+    });
+    const { container } = renderRows({
+      rows: [
+        user({ key: 'u1', text: 'goal', at: T0 }),
+        echo({ key: 'e1', text: 'first', at: T1 }),
+        echo({ key: 'e2', text: 'second', at: T2 }),
+      ],
+      insertions: [
+        insertion('batch-open', null),
+        {
+          ...insertion('auto-pending', null),
+          takesOver: [waiting('first', T1), waiting('second', T2)],
+        },
+      ],
+    });
+
+    const texts = textsOf(container).filter((text) => text !== '' && !text.startsWith('Oct'));
+    expect(texts.slice(0, 2)).toEqual(['goal', 'batch-open']);
+    const groups = [...container.querySelectorAll('[data-taken-echo]')];
+    expect(groups.map((group) => group.textContent)).toEqual([
+      expect.stringMatching(/first.*line of first$/),
+      expect.stringMatching(/second.*line of second$/),
+    ]);
+    expect(texts.join('|')).toMatch(/batch-open\|.*first.*line of first.*second/);
+  });
+
+  it('keeps the images of a waiting message, also when it has no text', () => {
+    const { container } = renderRows({
+      rows: [
+        user({ key: 'u1', text: 'goal', at: T0 }),
+        itemRow({
+          kind: 'user_text',
+          key: 'e1',
+          text: '',
+          isOperatorEcho: true,
+          outboxId: 'row-1',
+          attachments: [
+            {
+              id: 'img-1',
+              fileName: 'sketch.png',
+              mimeType: 'image/png',
+              kind: 'image',
+              relPath: '.goodboy/attachments/sketch.png',
+            },
+          ],
+          at: brandId<IsoDateTime>({ value: T1.toISOString() }),
+        }),
+      ],
+      insertions: [
+        {
+          ...insertion('auto-pending', null),
+          takesOver: [{ key: 'row-1', text: '', sentAtMs: T1.getTime(), line: null }],
+        },
+      ],
+    });
+
+    const taken = container.querySelector('[data-taken-echo]');
+    expect(taken?.querySelector('[data-attachment-control="img-1"]')).not.toBeNull();
+  });
+
   it('renders nothing extra without insertions', () => {
     const { container } = renderRows({
       rows: [user({ key: 'u1', text: 'goal', at: T0 })],

@@ -28,6 +28,7 @@ export const AUTO_REFUSAL_CODES = [
   'provider_unproven',
   'mount_missing',
   'mount_ambiguous',
+  'mount_elsewhere',
   'delegation_unknown',
   'question_unknown',
   'not_paused',
@@ -43,6 +44,15 @@ export const AUTO_LIMIT_REFUSAL_CODES = [
   'limit_refusals',
   'limit_wall_clock',
 ] as const satisfies ReadonlyArray<AutoRefusalCode>;
+
+export const AUTO_MOUNTED_CODE = 'mounted';
+
+type MountedCodeParams = {
+  readonly code: string;
+};
+
+export const isAutoMountedCode = ({ code }: MountedCodeParams): boolean =>
+  code === AUTO_MOUNTED_CODE;
 
 type RefusalCodeParams = {
   readonly code: AutoRefusalCode;

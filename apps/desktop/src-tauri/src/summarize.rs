@@ -139,6 +139,7 @@ fn side_job_of(args: &SummarizeArgs) -> SideJob<'_> {
         system_prompt: &args.system_prompt,
         user_message: &args.user_message,
         working_dir: args.working_dir.as_deref(),
+        read_dirs: &[],
         tools_disabled: true,
         effort: args.effort.as_deref(),
     }

@@ -1,4 +1,4 @@
-import { autoBudgetOf, isRefusalPayload } from '@goodboy/core/auto';
+import { autoBudgetOf, isRefusalPayload, isUserPayload, mountNoteOf } from '@goodboy/core/auto';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
@@ -38,10 +38,12 @@ const pendingRefusalOf = ({ tree, pending }: PendingRefusalParams): AutoPendingR
     return null;
   }
   const roles = latest.payload.roles ?? [];
+  const mount = mountNoteOf({ value: latest.payload.mount });
   return {
     action: latest.payload.action,
     code: latest.payload.code,
     roles: roles.filter((role) => typeof role === 'string'),
+    ...(mount === null ? {} : { mount }),
   };
 };
 
@@ -64,7 +66,11 @@ const pendingMessagesOf = ({
 }: PendingRefusalParams): ReadonlyArray<AutoPendingMessage> =>
   pending
     .filter((row) => row.kind === 'user' && isShownMessage({ tree, row }))
-    .map((row) => ({ rowId: String(row.id), createdAt: row.createdAt }));
+    .map((row) => ({
+      rowId: String(row.id),
+      createdAt: row.createdAt,
+      text: isUserPayload(row.payload) ? row.payload.text : '',
+    }));
 
 export const readAutoTreeViews = async ({
   db,

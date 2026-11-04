@@ -2,9 +2,11 @@ import { deleteGoalAttachment } from '@goodboy/db';
 import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/types';
 import { deleteAttachment } from '../../../features/chat/turn';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { attachmentDirOf } from './attachmentDirOf';
 import { attachmentReadKey } from './attachmentReadKey';
 import { attachmentReads } from './attachmentReads';
 import { attachmentWrites } from './attachmentWrites';
+import { sessionIdOfOwner } from './sessionIdOfOwner';
 import type { GetFn, SetFn } from './types';
 
 type RemoveParams = {
@@ -21,10 +23,16 @@ export const removeGoalAttachment = (set: SetFn, get: GetFn) => {
         : state.workflowRunAttachments[owner.id as WorkflowRunId];
     const target = list?.find((a) => a.id === id);
 
-    const sessionId = owner.type === 'session' ? (owner.id as SessionId) : state.currentSessionId;
-    const worktreeDir = sessionId ? (state.sessionWorktrees[sessionId] ?? [])[0] : undefined;
-    if (target && worktreeDir) {
-      await deleteAttachment(worktreeDir, target.relPath).catch(() => {});
+    const sessionId = sessionIdOfOwner({ get, owner });
+    if (target !== undefined && sessionId !== null) {
+      const dir = attachmentDirOf({
+        relPath: target.relPath,
+        worktreeDir: state.sessionWorktrees[sessionId]?.[0] ?? null,
+        scratchDir: state.sessionScratchDirs[sessionId] ?? null,
+      });
+      if (dir !== null) {
+        await deleteAttachment(dir, target.relPath).catch(() => {});
+      }
     }
     await deleteGoalAttachment(tauriDatabase, id);
     attachmentReads.cancel({ key: attachmentReadKey({ owner }) });
