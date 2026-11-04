@@ -16,7 +16,10 @@ export const RunStepSkipAndGoOn = ({ agent, workflowRunId }: Props) => {
   const skip = async (): Promise<void> => {
     setIsBusy(true);
     try {
-      await skipStuckStepAndAdvance(agent.sessionId, workflowRunId, { agentId: agent.id });
+      await skipStuckStepAndAdvance(agent.sessionId, workflowRunId, {
+        agentId: agent.id,
+        shouldGoOn: true,
+      });
     } finally {
       setIsBusy(false);
     }

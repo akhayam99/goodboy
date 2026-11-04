@@ -342,6 +342,32 @@ describe('a stuck step in a run that asks every step', () => {
     );
     expect(skips).toHaveLength(1);
   });
+
+  it('starts the next step from Skip and go on when the run asks every step', async () => {
+    const { session, run, activateWorkflowAgent } = seed({
+      run: { autoRun: false },
+      agents: [{ id: SCOUT, status: 'blocked' }, { id: BUILD }],
+    });
+
+    await useAppStore
+      .getState()
+      .skipStuckStepAndAdvance(session.id, run.id, { agentId: SCOUT, shouldGoOn: true });
+
+    expect(statusOf({ id: SCOUT })).toBe('skipped');
+    expect(activateWorkflowAgent).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips and stays put from the menu when the run asks every step', async () => {
+    const { session, run, activateWorkflowAgent } = seed({
+      run: { autoRun: false },
+      agents: [{ id: SCOUT, status: 'blocked' }, { id: BUILD }],
+    });
+
+    await useAppStore.getState().skipStuckStepAndAdvance(session.id, run.id, { agentId: SCOUT });
+
+    expect(statusOf({ id: SCOUT })).toBe('skipped');
+    expect(activateWorkflowAgent).not.toHaveBeenCalled();
+  });
 });
 
 describe('a late result and a question', () => {

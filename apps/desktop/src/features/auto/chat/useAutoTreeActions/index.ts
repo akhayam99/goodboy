@@ -118,7 +118,9 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
         if (result.kind === 'refused') {
           throw new Error(result.message);
         }
-        await loadAutoTrees({ sessionId });
+        await loadAutoTrees({ sessionId }).catch((error: unknown) => {
+          setFailure({ title: "Couldn't refresh the queue", message: formatError(error) });
+        });
         return result.kind;
       } catch (error) {
         setFailure({ title: "Couldn't take the message back", message: formatError(error) });

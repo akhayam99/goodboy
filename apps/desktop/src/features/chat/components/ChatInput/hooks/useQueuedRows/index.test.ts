@@ -110,6 +110,21 @@ describe('Edit on an Auto row', () => {
     expect(spies.editQueued).not.toHaveBeenCalled();
   });
 
+  it('still moves the words to the composer when the refresh after the withdraw fails', async () => {
+    registerWithdrawPort({ port: vi.fn<WithdrawPort>(async () => ({ kind: 'withdrawn' })) });
+    const store = await importStore();
+    store.setState({
+      loadAutoTrees: vi.fn(async () => {
+        throw new Error('database is locked');
+      }),
+    });
+    const { spies, current } = mountRows();
+
+    await act(async () => current().onEdit(MESSAGE.rowId));
+
+    expect(spies.setValue).toHaveBeenCalledWith(MESSAGE.text);
+  });
+
   it('leaves the composer alone when Auto already claimed the row', async () => {
     registerWithdrawPort({ port: vi.fn<WithdrawPort>(async () => ({ kind: 'delivered' })) });
     const { spies, current } = mountRows();

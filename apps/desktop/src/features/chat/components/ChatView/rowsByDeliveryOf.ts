@@ -22,16 +22,17 @@ const echoOf = ({ row }: RowParams) =>
 
 const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
   const sent = echoOf({ row: echo });
-  if (sent === null || sent.text === '') {
-    return false;
-  }
-  if (delivery.kind !== 'item' || delivery.item.kind !== 'auto_delivery') {
+  if (sent === null || delivery.kind !== 'item' || delivery.item.kind !== 'auto_delivery') {
     return false;
   }
   if (sent.outboxId !== undefined) {
     return delivery.item.outboxIds?.includes(sent.outboxId) === true;
   }
-  return delivery.item.outboxIds === undefined && delivery.item.text.includes(sent.text);
+  return (
+    sent.text !== '' &&
+    delivery.item.outboxIds === undefined &&
+    delivery.item.text.includes(sent.text)
+  );
 };
 
 export const rowsByDeliveryOf = ({
@@ -43,9 +44,8 @@ export const rowsByDeliveryOf = ({
   const movedKeys = new Set<string>();
   const unreadKeys = new Set<string>();
   rows.forEach((row, index) => {
-    const delivery = rows
-      .slice(index + 1)
-      .find((later) => isDeliveryOf({ echo: row, delivery: later }));
+    const candidates = echoOf({ row })?.outboxId === undefined ? rows.slice(index + 1) : rows;
+    const delivery = candidates.find((other) => isDeliveryOf({ echo: row, delivery: other }));
     if (delivery !== undefined) {
       movedKeys.add(row.key);
       movedBefore.set(delivery.key, [...(movedBefore.get(delivery.key) ?? []), row]);

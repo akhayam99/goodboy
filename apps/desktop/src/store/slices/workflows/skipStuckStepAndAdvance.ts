@@ -21,6 +21,7 @@ export type SkipStepOptions = {
   readonly force?: boolean;
   readonly agentId?: AgentId;
   readonly reason?: string;
+  readonly shouldGoOn?: boolean;
 };
 
 type SkipParams = {
@@ -122,7 +123,7 @@ const runSkipAndAdvance = async (params: SkipParams): Promise<void> => {
   const current = findWorkflowRun({ get, sessionId, workflowRunId });
   if (
     current == null ||
-    current.autoRun !== true ||
+    (current.autoRun !== true && options.shouldGoOn !== true) ||
     isRunPaused({ run: current }) ||
     isRunHeldForPlan({ run: current })
   ) {

@@ -81,6 +81,24 @@ describe('echo rows of messages Auto has not read', () => {
     expect(shown.map((row) => row.key)).toEqual(['dropped']);
   });
 
+  it('draws an echo written after the delivery that already carried it', () => {
+    const rows = [
+      delivery({ key: 'told', text: 'MESSAGES', outboxIds: ['row-1'] }),
+      echo({ key: 'sent', text: 'Split the export', offsetMs: 90_000, outboxId: 'row-1' }),
+    ];
+
+    expect(rowsByDeliveryOf({ rows }).map((row) => row.key)).toEqual(['sent', 'told']);
+  });
+
+  it('draws the echo of an image only message once a delivery lists it', () => {
+    const rows = [
+      echo({ key: 'sent', text: '', offsetMs: 0, outboxId: 'row-1' }),
+      delivery({ key: 'told', text: 'MESSAGES', outboxIds: ['row-1'] }),
+    ];
+
+    expect(rowsByDeliveryOf({ rows }).map((row) => row.key)).toEqual(['sent', 'told']);
+  });
+
   it('keeps the echo of an older message that has no id', () => {
     const rows = [echo({ key: 'old', text: TEXT, offsetMs: -3_600_000 })];
 
