@@ -230,7 +230,9 @@ export {
   isResultsPayload,
   isRefusalPayload,
   isUserPayload,
+  mountNoteOf,
   storedDeliveryOf,
+  type MountNote,
   type QuestionPayload,
   type ResultsPayload,
   type StoredDelivery,
@@ -273,6 +275,7 @@ export {
 } from './mountPick';
 
 export { buildMountsLine } from './mountsLine';
+export { parseMountSpec, type MountSpec } from './mountSpec';
 
 export {
   ADOPTION_DEFAULT_INSTRUCTION,

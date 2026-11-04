@@ -91,14 +91,24 @@ const refusalsBlock = ({ payloads }: RefusalsBlockParams): string | null => {
   if (payloads.length === 0) {
     return null;
   }
-  const lines = payloads.flatMap((payload) => [
+  const done = payloads.filter((payload) => payload.mount?.state === 'done');
+  const refused = payloads.filter((payload) => payload.mount?.state !== 'done');
+  const doneLines = done.flatMap((payload) => payload.text.split('\n').map((line) => `- ${line}`));
+  const lines = refused.flatMap((payload) => [
     `- your ${payload.action} block was refused (${payload.code}):`,
     ...payload.text.split('\n').map((line) => `  ${line}`),
   ]);
   return [
-    'REFUSED, NOT DONE',
-    ...lines,
-    'Nothing in the refused blocks was started. Choose again; do not send the same block.',
+    ...(doneLines.length === 0
+      ? []
+      : ['DONE BY GOODBOY', ...doneLines, 'Tell the user it is done and go on with the request.']),
+    ...(lines.length === 0
+      ? []
+      : [
+          'REFUSED, NOT DONE',
+          ...lines,
+          'Nothing in the refused blocks was started. Choose again; do not send the same block.',
+        ]),
   ].join('\n');
 };
 

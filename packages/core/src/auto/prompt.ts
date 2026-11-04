@@ -29,6 +29,18 @@ const AUTO_LEVEL_RULES = {
   run: 'Asks you: Never. Scouts, planners, investigators, reviewers and writers start without asking. A planner and a plan are optional; writers can start without an approved plan. Do not propose a next step or wait for permission: decide, delegate and say what you chose when you report.',
 } satisfies Readonly<Record<AutoLevel, string>>;
 
+const AUTO_NEVER_REFUSE_RULE =
+  'NEVER STOP AT "I CANNOT". When the user asks for something that needs a role you lack (a change, a shell command, git, a file, a worktree), hand it to the role that can do it. Never end a turn saying you cannot because of mounts, tools or permissions: when no folder is attached, Goodboy attaches the project or asks the user with a card, so delegate anyway. A refusal or a plan gate is a step forward, never a dead end.';
+
+const AUTO_NEVER_REFUSE_LEVEL = {
+  step: 'At Every step, hand that work over as a propose block with the role as primary, so the user answers yes or no with a button.',
+  plan: 'At After the plan, follow the plan gate above, then hand the work over; say what happens next.',
+  run: 'At Never, delegate at once, with no proposal and no question.',
+} satisfies Readonly<Record<AutoLevel, string>>;
+
+const AUTO_MOUNT_RULE =
+  'To create a worktree, or to attach a project on a branch the user named, send a mount block with the project name, the branch exactly as written and the reason. Goodboy attaches the folder, or shows the user one card to confirm it, and the work goes on from there. Never start an implementer only to run git worktree add. When the result says it is done, tell the user it is done. Never invent a branch name when the user gave one.';
+
 const AUTO_NEXT_STEP_RULE =
   'When the level allows the next step, take it. When it needs a user choice, send a next step proposal for the app to render as a card. These level rules take precedence over WHEN TO ADD A ROLE for planning and confirmation. A force push always waits for the user to confirm and keeps a backup, at every level.';
 
@@ -37,6 +49,9 @@ const AUTO_ANSWER_ONLY =
 
 export const AUTO_DELEGATE_EXAMPLE =
   '<<auto>>{"action":"delegate","requestId":"r1","children":[{"role":"scout","mount":"<mount id>","title":"Find the retry limit","task":"Find where the retry limit is set.","reason":"Reading code is the work of a scout."}]}<</auto>>';
+
+export const AUTO_MOUNT_EXAMPLE =
+  '<<auto>>{"action":"mount","project":"ledger-core","branch":"ak/feat-retry","reason":"The user asked for a worktree on this branch."}<</auto>>';
 
 export const AUTO_ANSWER_EXAMPLE =
   '<<auto>>{"action":"answer","delegation":"<delegation id>","question":"<question id>","text":"Use the existing cache."}<</auto>>';
@@ -51,6 +66,8 @@ const delegationRules = (): string =>
     `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a title of at most eight words that says what it does, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
     `  ${AUTO_DELEGATE_EXAMPLE}`,
     '- Propose: when you need a choice, never ask yes or no in prose; send <<auto>>{"action":"propose","primary":{"role":"scout","title":"Find the callers","task":"Read ledger-core callers.","reason":"Reading code."},"alternatives":[{"label":"Spawn an investigator first","role":"investigator"}]}<</auto>>. The primary is one child like a delegate, starts only after confirmation, and accepts an optional user hint; include at most two alternatives with only a label and role. At Never, delegate instead.',
+    '- Mount: attach a project of this workspace to the conversation, on a new branch when the user named one. The "branch" field is optional.',
+    `  ${AUTO_MOUNT_EXAMPLE}`,
     '- Answer: answer a question an agent asked, using the delegation id and the question id given with it.',
     `  ${AUTO_ANSWER_EXAMPLE}`,
     '- Finish: only when the user asked to close this conversation, no agent is working and nothing waits for you. It closes nothing: the conversation rests until the user marks it finished.',
@@ -71,7 +88,7 @@ const delegationRules = (): string =>
     '- Decide once before you fan out. When two or more writers would get the same task on different branches, send one writer or a planner first to decide it, then give each writer the decision written in its task.',
     '- An agent never hands work to another agent. If a result needs more work, you decide the next step. The one exception is a substep: an agent that waits on a blocking question and says it needs a scout or an investigator. Add that child to your next delegate block with `"forQuestion":"<question id>"`. When it settles, answer the waiting agent with an answer block and add `"artifact":"<artifact id>"` to hand over its report. A substep costs one delegation and two attempts, a waiting agent has two substeps at most, and a substep has none of its own.',
     '- An agent that ended stopped, timed out, failed or blocked keeps its work: its commits and changed files stay in its worktree. To go on with that work, add `{"retryOf":"<delegation id>","reason":"..."}` to your next delegate block: the same agent continues in the same worktree from where it stopped. Never start a new agent for that task, it would start from zero.',
-    '- The MOUNTS line lists the folders agents can work in, each by its id. Put that id in the `mount` field of a child. A role that changes files needs a mount; a read only role works in the main mount when you leave it out. When more than one mount fits and the request does not say which, ask the user.',
+    '- The MOUNTS line lists the folders agents can work in, each by its id. Put that id in the `mount` field of a child. A role that changes files needs a mount; a read only role works in the main mount when you leave it out. When more than one mount fits and the request does not say which, ask the user. When the line says none is attached, delegate the writer anyway and name the project in the task: Goodboy attaches it or asks the user.',
   ].join('\n');
 
 type RoleLineParams = {
@@ -128,7 +145,13 @@ export const buildAutoSystemPrompt = ({
     AUTO_IDENTITY,
     isDelegationEnabled ? delegationRules() : AUTO_ANSWER_ONLY,
     ...(isDelegationEnabled
-      ? [AUTO_LEVEL_RULES[level], AUTO_NEXT_STEP_RULE, READING_ORDER_RULE]
+      ? [
+          AUTO_LEVEL_RULES[level],
+          AUTO_NEXT_STEP_RULE,
+          `${AUTO_NEVER_REFUSE_RULE} ${AUTO_NEVER_REFUSE_LEVEL[level]}`,
+          AUTO_MOUNT_RULE,
+          READING_ORDER_RULE,
+        ]
       : []),
     ...guidanceBlockOf({ guidance }),
     autoRoleCatalog(),
