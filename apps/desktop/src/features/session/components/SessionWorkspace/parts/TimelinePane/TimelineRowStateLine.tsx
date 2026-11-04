@@ -15,7 +15,11 @@ export const TimelineRowStateLine = ({ state }: Props) => {
   return (
     <span
       data-testid="timeline-row-state"
-      className={cn(WORK_ROW.stateSlot, 'text-meta text-muted-foreground')}
+      className={cn(
+        WORK_ROW.stateSlot,
+        'text-meta',
+        state.reason?.kind === 'notFinished' ? 'text-warning' : 'text-muted-foreground',
+      )}
     >
       <TimelineRowStateWord shown={shown} />
     </span>

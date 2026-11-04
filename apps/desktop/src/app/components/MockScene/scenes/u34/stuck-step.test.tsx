@@ -56,7 +56,8 @@ describe('u34 stuck step scenes', () => {
   it('shows a not finished step with Keep working and no reason on the run page', async () => {
     renderScene({ id: 'u34-p25-not-finished' });
 
-    await screen.findByText('Not finished', undefined, WAIT);
+    const word = await screen.findByText('Not finished', undefined, WAIT);
+    expect(word.closest('[data-testid="timeline-row-state"]')?.className).toContain('text-warning');
     screen.getByRole('button', { name: /Keep working on/ });
     expect(screen.queryByText(/without saying why/)).toBeNull();
   });
