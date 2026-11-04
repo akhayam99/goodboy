@@ -34,6 +34,7 @@ export const AUTO_REFUSAL_TEXT = {
   provider_unproven: 'The model chosen for that role cannot be confined to the role yet.',
   mount_missing: 'That mount cannot be used.',
   mount_ambiguous: 'More than one mount matches.',
+  mount_elsewhere: 'That project is already added on another branch.',
   delegation_unknown: 'That agent does not belong to this conversation.',
   question_unknown: 'That agent asked no such question.',
   not_paused: 'That agent is not waiting for an answer.',

@@ -2,6 +2,7 @@ import type {
   AutoDelegationRole,
   BranchFacts,
   CheckReport,
+  MountNote,
   MountSnapshot,
   PickableMount,
   RemoteRead,
@@ -37,6 +38,7 @@ export type BridgeOutcome = Readonly<{
   error?: string;
   code?: string;
   data?: unknown;
+  mount?: MountNote;
 }>;
 
 export type RoutingRequest = Readonly<{
@@ -295,6 +297,7 @@ export type MountProjectParams = Readonly<{
 
 export type MountProjectOutcome =
   | Readonly<{ kind: 'mounted'; name: string; branch: string }>
+  | Readonly<{ kind: 'elsewhere'; name: string; branch: string; requested: string }>
   | Readonly<{ kind: 'ask'; name: string }>
   | Readonly<{ kind: 'failed'; name: string; error: string }>
   | Readonly<{ kind: 'unknown' }>

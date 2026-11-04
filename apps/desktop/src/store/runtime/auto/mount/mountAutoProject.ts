@@ -33,6 +33,9 @@ export const mountAutoProject = async ({ get, params }: Params): Promise<MountPr
   const existing = (state.sessionProjectMounts[sessionId] ?? []).find(
     (mount) => mount.projectId === project.id,
   );
+  if (existing !== undefined && branch !== null && existing.branch !== branch) {
+    return { kind: 'elsewhere', name: project.name, branch: existing.branch, requested: branch };
+  }
   if (existing !== undefined) {
     return { kind: 'mounted', name: project.name, branch: existing.branch };
   }

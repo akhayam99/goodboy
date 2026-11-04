@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isRefusalPayload, mountNoteOf } from '@goodboy/core/auto';
-import { listAutoOutbox } from '@goodboy/db';
+import { getAutoTree, listAutoOutbox } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { writeAutoLevel } from '../level/writeAutoLevel';
 import type { MountProjectOutcome } from '../ports';
@@ -108,6 +108,33 @@ describe('the mount action of the block', () => {
     const refusal = await refusalOf(world);
     expect(refusal.payload.code).toBe('mount_missing');
     expect(refusal.mount).toBeNull();
+  });
+
+  it('counts a mounted turn as neither a refusal nor a turn without progress', async () => {
+    const world = await mountTurn('run', {
+      kind: 'mounted',
+      name: 'ledger-core',
+      branch: 'ak/feat-new-explore',
+    });
+
+    const tree = await getAutoTree({ db: world.state.world.db, treeId: world.treeId });
+    expect(tree).toMatchObject({ refusalsUsed: 0, noProgressStreak: 0 });
+    expect((await refusalOf(world)).payload.code).toBe('mounted');
+  });
+
+  it('tells Auto the real branch when the project is already added on another one', async () => {
+    const world = await mountTurn('run', {
+      kind: 'elsewhere',
+      name: 'ledger-core',
+      branch: 'ak/old-branch',
+      requested: 'ak/feat-new-explore',
+    });
+
+    const refusal = await refusalOf(world);
+    expect(refusal.payload.code).toBe('mount_elsewhere');
+    expect(refusal.mount).toBeNull();
+    expect(refusal.payload.text).toContain('already added on branch ak/old-branch');
+    expect(refusal.payload.text).toContain('not on ak/feat-new-explore');
   });
 
   it('writes exactly one row for the turn', async () => {

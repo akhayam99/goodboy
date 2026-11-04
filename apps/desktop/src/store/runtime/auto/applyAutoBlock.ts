@@ -108,7 +108,10 @@ const runBlock = async ({
   block,
 }: RunBlockParams): Promise<ApplyAutoBlockOutcome> => {
   if (block.action === 'mount') {
-    await applyMountBlock({ ctx, tree, ended, block });
+    const isDone = await applyMountBlock({ ctx, tree, ended, block });
+    if (isDone) {
+      return { kind: 'applied', action: 'mount' };
+    }
     return { kind: 'refused', action: 'mount', code: 'mount_missing' };
   }
   const command = commandOf({
@@ -138,6 +141,7 @@ const runBlock = async ({
     code,
     text: outcome.error ?? describeAutoRefusal({ code: INVALID_BLOCK_CODE }),
     roles: rolesOf({ block }),
+    ...(outcome.mount === undefined ? {} : { mount: outcome.mount }),
   });
   return { kind: 'refused', action: block.action, code };
 };

@@ -156,6 +156,29 @@ describe('refusals and the state digest in a delivery', () => {
     );
   });
 
+  it('reports a mounted row as done and never as a refused block', () => {
+    const text = buildDeliveryText({
+      ...input,
+      rows: [
+        {
+          id: 'mounted-row',
+          payload: {
+            kind: 'refusal',
+            runId: 'run-2',
+            action: 'mount',
+            code: 'mounted',
+            text: 'Mounted notify-relay on branch ak/feat-new-explore. The folder is ready.',
+          },
+        },
+      ],
+    });
+
+    expect(text).toContain('DONE BY GOODBOY');
+    expect(text).toContain('Mounted notify-relay on branch ak/feat-new-explore');
+    expect(text).not.toContain('REFUSED, NOT DONE');
+    expect(text).not.toContain('was refused');
+  });
+
   it('places the digest and the artifact text around the results', () => {
     const text = buildDeliveryText({
       ...input,

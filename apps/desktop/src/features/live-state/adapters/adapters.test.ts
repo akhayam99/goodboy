@@ -167,6 +167,26 @@ describe('autoTreeLive', () => {
     expect(facts?.phrase).toMatch(/^Auto tried to start an Implementer\. Not started:/);
   });
 
+  it('keeps a mounted row out of the rail word', () => {
+    const view = {
+      ...aView({ phase: 'waiting' }),
+      pendingRefusal: {
+        action: 'mount',
+        code: 'mounted',
+        roles: [],
+        mount: {
+          project: 'notify-relay',
+          branch: 'ak/feat-new-explore',
+          reason: 'The user asked for it.',
+          state: 'done' as const,
+        },
+      },
+    };
+    const facts = autoTreeLive({ ...base, view, rootTurn: null });
+    expect(facts?.state).toBe('waiting');
+    expect(facts?.phrase).not.toMatch(/Auto tried|Not started|refused/);
+  });
+
   it('leaves the tail to the plan ask while a plan waits for approval', () => {
     const view = aView({
       phase: 'waiting',

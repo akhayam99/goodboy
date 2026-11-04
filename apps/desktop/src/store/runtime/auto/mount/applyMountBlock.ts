@@ -1,4 +1,10 @@
-import type { AutoBlock, AutoLevel, MountNote } from '@goodboy/core/auto';
+import {
+  AUTO_MOUNTED_CODE,
+  isAutoMountedCode,
+  type AutoBlock,
+  type AutoLevel,
+  type MountNote,
+} from '@goodboy/core/auto';
 import type { AutoTree } from '@goodboy/db';
 import { readAutoLevel } from '../level/readAutoLevel';
 import type { AutoTurnEnded, MountProjectOutcome, MountProjectParams } from '../ports';
@@ -51,10 +57,16 @@ const writtenOf = ({ block, outcome }: OutcomeParams): Written => {
       mount: mountNoteOfBlock({ block, state: 'ask' }),
     };
   }
+  if (outcome.kind === 'elsewhere') {
+    return {
+      code: 'mount_elsewhere',
+      text: `${outcome.name} is already added on branch ${outcome.branch}, not on ${outcome.requested}. Nothing was changed. Work on branch ${outcome.branch}, or ask the user whether to remove ${outcome.name} and add it again on ${outcome.requested}.`,
+    };
+  }
   if (outcome.kind === 'mounted') {
     const branch = outcome.branch === '' ? '' : ` on branch ${outcome.branch}`;
     return {
-      code: 'mounted',
+      code: AUTO_MOUNTED_CODE,
       text: `Mounted ${outcome.name}${branch}. The folder is ready.`,
       mount: mountNoteOfBlock({ block, state: 'done' }),
     };
@@ -78,7 +90,7 @@ const writtenOf = ({ block, outcome }: OutcomeParams): Written => {
   };
 };
 
-export const applyMountBlock = async ({ ctx, tree, ended, block }: Params): Promise<void> => {
+export const applyMountBlock = async ({ ctx, tree, ended, block }: Params): Promise<boolean> => {
   const level = await readAutoLevel({ db: ctx.db, target: { sessionId: tree.sessionId } });
   const outcome = await ctx.ports.mountProject({
     sessionId: tree.sessionId,
@@ -98,4 +110,5 @@ export const applyMountBlock = async ({ ctx, tree, ended, block }: Params): Prom
     roles: [],
     ...(written.mount === undefined ? {} : { mount: written.mount }),
   });
+  return isAutoMountedCode({ code: written.code });
 };

@@ -72,8 +72,10 @@ export {
 
 export {
   AUTO_LIMIT_REFUSAL_CODES,
+  AUTO_MOUNTED_CODE,
   AUTO_REFUSAL_CODES,
   isAutoLimitRefusal,
+  isAutoMountedCode,
   type AutoRefusalCode,
 } from './refusals';
 

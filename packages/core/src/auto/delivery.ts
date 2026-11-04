@@ -10,6 +10,7 @@ import {
   type UserFacts,
   type UserPayload,
 } from './outboxPayload';
+import { isAutoMountedCode } from './refusals';
 import { renderDelegationResult } from './result';
 
 export type DeliveryRow = Readonly<{
@@ -91,8 +92,8 @@ const refusalsBlock = ({ payloads }: RefusalsBlockParams): string | null => {
   if (payloads.length === 0) {
     return null;
   }
-  const done = payloads.filter((payload) => payload.mount?.state === 'done');
-  const refused = payloads.filter((payload) => payload.mount?.state !== 'done');
+  const done = payloads.filter((payload) => isAutoMountedCode({ code: payload.code }));
+  const refused = payloads.filter((payload) => !isAutoMountedCode({ code: payload.code }));
   const doneLines = done.flatMap((payload) => payload.text.split('\n').map((line) => `- ${line}`));
   const lines = refused.flatMap((payload) => [
     `- your ${payload.action} block was refused (${payload.code}):`,

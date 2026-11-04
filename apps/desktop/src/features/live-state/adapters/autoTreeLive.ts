@@ -3,6 +3,7 @@ import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { refusalNoticeOf } from '../../auto/chat/refusalNoticeOf';
+import { shownRefusalOf } from '../../auto/chat/shownRefusalOf';
 import { isAutoPlanAwaitingApproval } from '../../auto/isAutoPlanAwaitingApproval';
 import { joinNouns } from '../../auto/joinNouns';
 import { openRoleNouns } from '../../auto/openRoleNouns';
@@ -142,8 +143,9 @@ export const autoTreeLive = ({
   if (phase === 'deciding') {
     return working({ phrase: 'Deciding what to do next' });
   }
-  if (view.pendingRefusal !== null && HANDS_OVER.has(phase)) {
-    return working({ phrase: refusalNoticeOf({ refusal: view.pendingRefusal }) });
+  const refusal = shownRefusalOf({ view });
+  if (refusal !== null && HANDS_OVER.has(phase)) {
+    return working({ phrase: refusalNoticeOf({ refusal }) });
   }
   if (phase === 'delegating') {
     return working({ phrase: 'Starting agents' });

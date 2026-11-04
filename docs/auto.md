@@ -674,7 +674,13 @@ It decides by ending its final reply with at most one block:
   allows it (the same allowance as `mountTaskFolders`) and otherwise asks, **Every step** always
   asks. The result is a `refusal` row with a `mount` note (`state` `ask` or `done`), so replay,
   recovery and the one row per turn work as for a refused delegate. A project that is unknown
-  or ambiguous falls back to the folder list.
+  or ambiguous falls back to the folder list. A done mount is written with the code `mounted`
+  (`AUTO_MOUNTED_CODE`): it is never a refusal, so it adds no refusal to the count, no strike to
+  the no-progress streak, no refusal line in the tail or the rail, and the delivery lists it under
+  DONE BY GOODBOY. A project already added on another branch than the one named is not claimed
+  as done: the row has the code `mount_elsewhere`, it says which branch the project is on and
+  that the user decides about moving it, and the tail reads "Not added: that project is already
+  added on another branch".
 - No block is a plain answer to the user.
 
 The prompt takes an Asks you level, using the same three values as workflows
@@ -1105,7 +1111,8 @@ refused children; while it is pending for the current generation, `readAutoTreeV
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
 folder fits and it did not say which. Auto is choosing again." A refusal about the project
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`). When
-the refusal comes from a `mount` block and the project is known, the ask is one inline step:
+the refusal comes from a `mount` block, or from a writer delegate whose `mount` names a project
+of the workspace that is not added yet (`refusalMountNote`), and the project is known, the ask is one inline step:
 "To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
 main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
 runs, a failure keeps the card with the reason), then **Another folder...**, **No folder, just
