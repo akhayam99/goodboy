@@ -1144,6 +1144,8 @@ u34-p21-mount-failed
 u34-p21-mount-mounting
 u34-p22-delivered
 u34-p22-waiting
+u34-p24-ten-hints
+u34-p24-ten-hints-reading
 u34-peek-drawer-changed
 u34-peek-drawer-unchanged
 u34-peek-popover-order

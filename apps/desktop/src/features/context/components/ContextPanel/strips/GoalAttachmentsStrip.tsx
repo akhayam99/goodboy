@@ -11,15 +11,20 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { attachmentDirOf } from '../../../../../store/slices/attachments/attachmentDirOf';
 import { AttachmentStrip, type AttachmentStripItem } from '../../../../attachments/AttachmentStrip';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
+import { useRunHintAttachmentIds } from '../../../hooks/useRunHintAttachmentIds';
 
 export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachmentOwner }) => {
   const loadGoalAttachments = useAppStore((s) => s.loadGoalAttachments);
   const removeGoalAttachment = useAppStore((s) => s.removeGoalAttachment);
-  const attachments = useAppStore((s) =>
+  const owned = useAppStore((s) =>
     owner.type === 'session'
       ? (s.sessionAttachments[owner.id as SessionId] ?? EMPTY_ARRAY)
       : (s.workflowRunAttachments[owner.id as WorkflowRunId] ?? EMPTY_ARRAY),
   );
+  const hintAttachmentIds = useRunHintAttachmentIds({
+    runId: owner.type === 'workflow_run' ? brandId<WorkflowRunId>({ value: owner.id }) : null,
+  });
+  const attachments = owned.filter((att) => !hintAttachmentIds.has(att.id));
   const worktreeDir = useAppStore((s) => {
     const sessionId = owner.type === 'session' ? (owner.id as SessionId) : s.currentSessionId;
     return sessionId === null ? null : ((s.sessionWorktrees[sessionId] ?? EMPTY_ARRAY)[0] ?? null);

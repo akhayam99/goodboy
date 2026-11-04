@@ -1,9 +1,11 @@
 import type { MouseEvent } from 'react';
 import { ImageOff, X } from 'lucide-react';
-import { Button, ICON_SIZE, IconButton, Skeleton, Tooltip } from '@goodboy/ui';
+import { Button, ICON_SIZE, IconButton, Skeleton, Tooltip, cn } from '@goodboy/ui';
 import type { AttachmentThumbnail } from '../components/AttachmentChip';
+import type { StripSize } from './stripLayout';
 
 type Props = {
+  readonly size?: StripSize;
   readonly id: string;
   readonly fileName: string;
   readonly thumbnail: AttachmentThumbnail;
@@ -12,10 +14,18 @@ type Props = {
   readonly onRemove?: () => void;
 };
 
-const FRAME =
-  'group relative h-12 w-12 shrink-0 overflow-hidden rounded-md ring-1 ring-border-soft';
+const FRAME = 'group relative shrink-0 overflow-hidden ring-1 ring-border-soft';
 
-export const AttachmentThumb = ({ id, fileName, thumbnail, title, onOpen, onRemove }: Props) => {
+export const AttachmentThumb = ({
+  id,
+  fileName,
+  thumbnail,
+  title,
+  onOpen,
+  onRemove,
+  size = 'default',
+}: Props) => {
+  const isCompact = size === 'compact';
   const isFailed = thumbnail.status === 'failed';
   const removeButton =
     onRemove == null ? null : (
@@ -30,7 +40,7 @@ export const AttachmentThumb = ({ id, fileName, thumbnail, title, onOpen, onRemo
 
   return (
     <Tooltip content={title}>
-      <div className={FRAME}>
+      <div className={cn(FRAME, isCompact ? 'h-6 w-6 rounded-sm' : 'h-12 w-12 rounded-md')}>
         <Button
           variant="ghost"
           onClick={onOpen}

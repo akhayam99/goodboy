@@ -52,7 +52,11 @@ export const ORCHESTRATED_COPY = {
   done: 'Done',
   left: 'Left',
   composerPlaceholder: 'Hint the orchestrator',
-  queuedHintsNote: 'Waits for the next decision',
+  queuedHintsHeading: ({ count }: CountParams): string =>
+    `Queued hints ${count}, read at the next decision`,
+  queuedHintsLine: ({ count }: CountParams): string =>
+    `${countNoun({ count, one: 'hint' })} queued`,
+  queuedHintsView: 'View',
   stepGone: 'This step is no longer in the run.',
   stepPane: 'Step',
   nextStep: 'Next step, not decided yet',

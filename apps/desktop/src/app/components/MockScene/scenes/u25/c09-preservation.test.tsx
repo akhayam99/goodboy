@@ -201,7 +201,8 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(screen.getByTestId('orchestrator-hint-queue').textContent).toContain('Queue');
     expect(screen.getByTestId('orchestrator-hint-now').textContent).toContain('Send now');
     const queued = within(screen.getByRole('list', { name: 'Queued hints' }));
-    expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
+    expect(screen.getAllByText('Queued hints 1, read at the next decision')).toHaveLength(1);
+    expect(nodeOf('[data-hint-queue-line]').textContent).toMatch(/^1 hint queued/);
     expect(queued.getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(checklist().getByText('Read at step 3')).toBeDefined();
   });
@@ -223,6 +224,8 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
       },
     });
     await settle();
+    expect(nodeOf('[data-hint-queue]').textContent).toContain('Add a row count');
+    expect(document.querySelector('[data-orchestrated-composer]')).toBeNull();
     expect(tail().getByRole('button', { name: 'Read 1 queued' })).toBeDefined();
     patchRun({
       patch: {
