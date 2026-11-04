@@ -12,6 +12,22 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.5
+
+The folded session rail tells branches apart, and the Running card says only what differs.
+
+### Improved
+
+#### Branches in the folded session rail
+<!-- gb area=sessions -->
+
+Only a branch that needs you or is open keeps its own icon. The rest share one branches button with a count, and it opens a list of every branch.
+
+#### A quieter Running card
+<!-- gb area=sessions -->
+
+A working row on the Overview shows its time only, and the branch name appears only when the session has two or more branches.
+
 ## Goodboy v0.31.4
 
 Scrolled pages lose the full-width line under the header, and diffs and branch pages read cleaner.
