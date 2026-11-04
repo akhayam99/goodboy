@@ -205,7 +205,7 @@ reads the trees again before the tray lets go, and `queuedRowsOf` hides the `sen
 whose outbox row is already in the view. A pending echo is not drawn in the chat: `rowsByDeliveryOf`
 draws an `operator_text` echo that carries an `outboxId` only at the delivery event that lists that
 id in `outboxIds`, right before it, so it never jumps above rows that happened before Auto read it,
-and a withdrawn or never delivered echo is never drawn, after a restart too. Events written before
+and a pending or withdrawn echo is never drawn, after a restart too. A row dropped for another reason (`droppedMessageIds` of the tree view) keeps its echo where it was written, so its words stay in the chat. Events written before
 the ids existed have no `outboxId` and stay where they were written.
 
 A row reads one status word and nothing else: "Waits for this turn", "Waits for <task of the

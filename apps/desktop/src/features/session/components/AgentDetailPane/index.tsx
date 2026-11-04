@@ -304,6 +304,7 @@ export const AgentDetailPane = ({
           ) : undefined
         }
         insertions={insertions}
+        {...(autoChat.droppedEchoIds !== undefined && { droppedEchoIds: autoChat.droppedEchoIds })}
       />
     </PaneShell>
   );

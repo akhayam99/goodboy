@@ -163,6 +163,7 @@ const earlierViewOf = ({ view }: EarlierParams): AutoTreeView => ({
   artifacts: [],
   pendingRefusal: null,
   pendingMessages: [],
+  droppedMessageIds: [],
 });
 
 type ViewsParams = {

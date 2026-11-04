@@ -1,4 +1,10 @@
-import { autoBudgetOf, isRefusalPayload, isUserPayload, mountNoteOf } from '@goodboy/core/auto';
+import {
+  AUTO_WITHDRAWN_REASON,
+  autoBudgetOf,
+  isRefusalPayload,
+  isUserPayload,
+  mountNoteOf,
+} from '@goodboy/core/auto';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
@@ -74,6 +80,17 @@ const pendingMessagesOf = ({
       images: userImagesOf({ rows: [row] }),
     }));
 
+const droppedMessageIdsOf = ({ tree, pending }: PendingRefusalParams): ReadonlyArray<string> =>
+  pending
+    .filter(
+      (row) =>
+        row.kind === 'user' &&
+        row.state === 'dropped' &&
+        row.droppedReason !== AUTO_WITHDRAWN_REASON &&
+        !isShownMessage({ tree, row }),
+    )
+    .map((row) => String(row.id));
+
 export const readAutoTreeViews = async ({
   db,
   sessionId,
@@ -100,6 +117,7 @@ export const readAutoTreeViews = async ({
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         pendingMessages: pendingMessagesOf({ tree, pending }),
+        droppedMessageIds: droppedMessageIdsOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,
       };

@@ -70,6 +70,17 @@ describe('echo rows of messages Auto has not read', () => {
     expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['planner', 'u2', 'd1']);
   });
 
+  it('keeps the echo of a message Auto dropped, so its words stay in the chat', () => {
+    const rows = [
+      echo({ key: 'dropped', text: 'Cover chargebacks', offsetMs: 0, outboxId: 'row-1' }),
+      echo({ key: 'waiting', text: 'And refunds', offsetMs: 1_000, outboxId: 'row-2' }),
+    ];
+
+    const shown = rowsByDeliveryOf({ rows, droppedEchoIds: ['row-1'] });
+
+    expect(shown.map((row) => row.key)).toEqual(['dropped']);
+  });
+
   it('keeps the echo of an older message that has no id', () => {
     const rows = [echo({ key: 'old', text: TEXT, offsetMs: -3_600_000 })];
 

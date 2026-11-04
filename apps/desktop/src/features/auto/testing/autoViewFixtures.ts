@@ -216,6 +216,7 @@ export const aView = ({
   hiddenChildIds: [],
   pendingRefusal,
   pendingMessages,
+  droppedMessageIds: [],
   deliveredResults,
   rootAsk,
   tree: aTree({ phase, capUsd }),

@@ -2,6 +2,7 @@ import type { ConversationRow } from '../../utils/conversationRows';
 
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
+  readonly droppedEchoIds?: ReadonlyArray<string>;
 };
 
 type RowParams = {
@@ -32,7 +33,10 @@ const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
   return delivery.item.outboxIds === undefined && delivery.item.text.includes(sent.text);
 };
 
-export const rowsByDeliveryOf = ({ rows }: Params): ReadonlyArray<ConversationRow> => {
+export const rowsByDeliveryOf = ({
+  rows,
+  droppedEchoIds = [],
+}: Params): ReadonlyArray<ConversationRow> => {
   const movedBefore = new Map<string, ConversationRow[]>();
   const movedKeys = new Set<string>();
   const unreadKeys = new Set<string>();
@@ -45,7 +49,8 @@ export const rowsByDeliveryOf = ({ rows }: Params): ReadonlyArray<ConversationRo
       movedBefore.set(delivery.key, [...(movedBefore.get(delivery.key) ?? []), row]);
       return;
     }
-    if (echoOf({ row })?.outboxId !== undefined) {
+    const outboxId = echoOf({ row })?.outboxId;
+    if (outboxId !== undefined && !droppedEchoIds.includes(outboxId)) {
       unreadKeys.add(row.key);
     }
   });

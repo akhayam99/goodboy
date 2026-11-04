@@ -1,3 +1,4 @@
+import { AUTO_WITHDRAWN_REASON } from '@goodboy/core/auto';
 import {
   getAutoOutbox,
   getAutoTree,
@@ -6,8 +7,6 @@ import {
 } from '@goodboy/db';
 import { brandId, type AutoOutboxId } from '@goodboy/types';
 import type { AgentVerbContext } from '../verbContext';
-
-const WITHDRAWN_REASON = 'withdrawn';
 
 const ABORT_PHASE = 'withdraw_phase';
 const ABORT_ROW = 'withdraw_row';
@@ -43,7 +42,7 @@ export const withdrawMessage = async ({
     if (row === null || row.treeId !== treeId || row.kind !== 'user') {
       return { kind: 'delivered' };
     }
-    if (row.state === 'dropped' && row.droppedReason === WITHDRAWN_REASON) {
+    if (row.state === 'dropped' && row.droppedReason === AUTO_WITHDRAWN_REASON) {
       return { kind: 'withdrawn' };
     }
     const isHeld =
@@ -62,7 +61,7 @@ export const withdrawMessage = async ({
         withdrawAutoOutboxStatement({
           outboxId,
           generation: row.generation,
-          reason: WITHDRAWN_REASON,
+          reason: AUTO_WITHDRAWN_REASON,
           abortCode: ABORT_ROW,
         }),
       ],
