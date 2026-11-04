@@ -1,7 +1,8 @@
 import type { OrchestratorHint, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
-import type { RailInk } from '../../../workTreeModel/railGeometry';
+import { railThroughOf, type RailInk } from '../../../workTreeModel/railGeometry';
+import { TimelineRail } from '../SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { OrchestratedHintRow } from './OrchestratedHintRow';
 
 type Props = {
@@ -18,6 +19,8 @@ type RemoveParams = {
 };
 
 const NO_READING: ReadonlyArray<string> = [];
+
+const HEADING_HEIGHT = 32;
 
 export const OrchestratedQueue = ({
   sessionId,
@@ -48,7 +51,22 @@ export const OrchestratedQueue = ({
   return (
     <div data-hint-queue={run.id} className="flex min-w-0 flex-col">
       <div className="flex h-8 min-w-0 items-end">
-        <span aria-hidden className="shrink-0" style={{ width: slotWidth }} />
+        <span aria-hidden className="relative h-full shrink-0" style={{ width: slotWidth }}>
+          {ink === null ? null : (
+            <span data-hint-rail="" className="absolute inset-0">
+              <TimelineRail
+                rail={railThroughOf({
+                  id: `queue-${run.id}`,
+                  height: HEADING_HEIGHT,
+                  markerY: HEADING_HEIGHT,
+                  ink,
+                  hasLineBelow: true,
+                })}
+                width={slotWidth}
+              />
+            </span>
+          )}
+        </span>
         <p
           data-hint-queue-heading=""
           className="min-w-0 flex-1 truncate px-2 text-ui tabular-nums text-faint-foreground"
