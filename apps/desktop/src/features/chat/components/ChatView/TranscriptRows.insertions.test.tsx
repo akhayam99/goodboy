@@ -2,7 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
@@ -38,6 +44,13 @@ type UserParams = {
 
 const user = ({ key, text, at }: UserParams): TranscriptRow =>
   itemRow({ kind: 'user_text', key, text, at: brandId<IsoDateTime>({ value: at.toISOString() }) });
+
+type EchoParams = {
+  readonly key: string;
+  readonly text: string;
+  readonly outboxId: string;
+  readonly at: Date;
+};
 
 const reply = (key: string, text: string): TranscriptRow =>
   itemRow({ kind: 'assistant_text', key, text });
@@ -133,78 +146,50 @@ describe('transcript insertions', () => {
     rerender(<ul />);
   });
 
-  it('seats waiting messages after the open row, each bubble above its own line', () => {
-    const echo = ({ key, text, at }: UserParams): TranscriptRow =>
+  it('draws no bubble for a message Auto has not read, and one at its delivery after', () => {
+    const echo = ({ key, text, outboxId, at }: EchoParams): TranscriptRow =>
       itemRow({
         kind: 'user_text',
         key,
         text,
         isOperatorEcho: true,
+        outboxId,
         at: brandId<IsoDateTime>({ value: at.toISOString() }),
       });
-    const waiting = (text: string, at: Date) => ({
-      key: text,
-      text,
-      sentAtMs: at.getTime(),
-      line: <div data-testid="line">line of {text}</div>,
-    });
-    const { container } = renderRows({
+    const delivery = (outboxIds: ReadonlyArray<string>): TranscriptRow =>
+      itemRow({
+        kind: 'auto_delivery',
+        key: 'd1',
+        runId: brandId<ProviderRunId>({ value: 'run-1' }),
+        text: 'MESSAGES FROM THE USER',
+        outboxIds,
+        at: brandId<IsoDateTime>({ value: T2.toISOString() }),
+      });
+    const waiting = renderRows({
       rows: [
         user({ key: 'u1', text: 'goal', at: T0 }),
-        echo({ key: 'e1', text: 'first', at: T1 }),
-        echo({ key: 'e2', text: 'second', at: T2 }),
+        echo({ key: 'e1', text: 'first', outboxId: 'row-1', at: T1 }),
       ],
-      insertions: [
-        insertion('batch-open', null),
-        {
-          ...insertion('auto-pending', null),
-          takesOver: [waiting('first', T1), waiting('second', T2)],
-        },
-      ],
+      insertions: [insertion('batch-open', null)],
     });
 
-    const texts = textsOf(container).filter((text) => text !== '' && !text.startsWith('Oct'));
-    expect(texts.slice(0, 2)).toEqual(['goal', 'batch-open']);
-    const groups = [...container.querySelectorAll('[data-taken-echo]')];
-    expect(groups.map((group) => group.textContent)).toEqual([
-      expect.stringMatching(/first.*line of first$/),
-      expect.stringMatching(/second.*line of second$/),
-    ]);
-    expect(texts.join('|')).toMatch(/batch-open\|.*first.*line of first.*second/);
-  });
-
-  it('keeps the images of a waiting message, also when it has no text', () => {
-    const { container } = renderRows({
+    expect(textsOf(waiting.container).filter((text) => text.includes('first'))).toEqual([]);
+    cleanup();
+    const delivered = renderRows({
       rows: [
         user({ key: 'u1', text: 'goal', at: T0 }),
-        itemRow({
-          kind: 'user_text',
-          key: 'e1',
-          text: '',
-          isOperatorEcho: true,
-          outboxId: 'row-1',
-          attachments: [
-            {
-              id: 'img-1',
-              fileName: 'sketch.png',
-              mimeType: 'image/png',
-              kind: 'image',
-              relPath: '.goodboy/attachments/sketch.png',
-            },
-          ],
-          at: brandId<IsoDateTime>({ value: T1.toISOString() }),
-        }),
+        reply('r1', 'working on it'),
+        echo({ key: 'e1', text: 'first', outboxId: 'row-1', at: T1 }),
+        delivery(['row-1']),
       ],
-      insertions: [
-        {
-          ...insertion('auto-pending', null),
-          takesOver: [{ key: 'row-1', text: '', sentAtMs: T1.getTime(), line: null }],
-        },
-      ],
+      insertions: [],
     });
 
-    const taken = container.querySelector('[data-taken-echo]');
-    expect(taken?.querySelector('[data-attachment-control="img-1"]')).not.toBeNull();
+    const texts = textsOf(delivered.container).filter(
+      (text) => text !== '' && !text.startsWith('Oct'),
+    );
+    expect(texts.indexOf('first')).toBeGreaterThan(texts.indexOf('assistant_text'));
+    expect(texts.indexOf('first')).toBeLessThan(texts.indexOf('auto_delivery'));
   });
 
   it('renders nothing extra without insertions', () => {

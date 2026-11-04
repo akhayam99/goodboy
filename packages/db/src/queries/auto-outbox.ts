@@ -347,3 +347,26 @@ export const dropAutoOutboxStatement = ({
     params: [reason, treeId, ...fromStates],
   };
 };
+
+const STOPPED_DROP_REASON = 'stopped';
+
+type WithdrawOutboxStatementParams = {
+  readonly outboxId: AutoOutboxId;
+  readonly generation: number;
+  readonly reason: string;
+  readonly abortCode: string;
+};
+
+export const withdrawAutoOutboxStatement = ({
+  outboxId,
+  generation,
+  reason,
+  abortCode,
+}: WithdrawOutboxStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_outbox SET state = 'dropped', dropped_reason = ?
+    WHERE id = ? AND generation = ? AND kind = 'user' AND claimed_by IS NULL
+      AND (state = 'pending' OR (state = 'dropped' AND dropped_reason = ?))`,
+  params: [reason, outboxId, generation, STOPPED_DROP_REASON],
+  abortWhen: 'noChanges',
+  abortCode,
+});

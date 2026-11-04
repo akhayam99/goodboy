@@ -4,14 +4,18 @@ import {
   fromStoredAttachment,
   type PendingAttachment,
 } from '../../../../../attachments/pendingAttachment';
+import { autoTreeOfAgent } from '../../../../../auto/autoTreeOfAgent';
+import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
 import type { QueuedTurn } from '../../lib';
 import { useMessageQueue } from '../useMessageQueue';
+import { useQueuedRows } from '../useQueuedRows';
 import type { useTurnRouting } from '../useTurnRouting';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
+  readonly views: ReadonlyArray<AutoTreeView>;
   readonly setValue: (next: string) => void;
   readonly setAttachments: (next: ReadonlyArray<PendingAttachment>) => void;
   readonly routing: ReturnType<typeof useTurnRouting>;
@@ -21,6 +25,7 @@ type Params = {
 export const useComposerQueue = ({
   sessionId,
   agentId,
+  views,
   setValue,
   setAttachments,
   routing,
@@ -40,5 +45,23 @@ export const useComposerQueue = ({
     [setValue, setAttachments, routing, wrapperRef],
   );
 
-  return useMessageQueue({ sessionId, agentId, onEdit: onEditQueued });
+  const { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued } = useMessageQueue({
+    sessionId,
+    agentId,
+    onEdit: onEditQueued,
+  });
+  const tree = agentId === null ? null : autoTreeOfAgent({ views, agentId });
+  const queued = useQueuedRows({
+    sessionId,
+    queue,
+    view: tree?.kind === 'root' ? tree.view : null,
+    editQueued,
+    removeQueued,
+    sendQueued,
+    setValue,
+    setAttachments,
+    wrapperRef,
+  });
+
+  return { enqueue, sendNow, queued };
 };

@@ -1,10 +1,7 @@
-import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import type { ConversationRow } from '../../utils/conversationRows';
-import { takenEchoesOf } from './takenEchoesOf';
 
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
-  readonly insertions: ReadonlyArray<TranscriptInsertion>;
 };
 
 type RowParams = {
@@ -35,23 +32,25 @@ const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
   return delivery.item.outboxIds === undefined && delivery.item.text.includes(sent.text);
 };
 
-export const rowsByDeliveryOf = ({ rows, insertions }: Params): ReadonlyArray<ConversationRow> => {
-  const takenKeys = new Set([...takenEchoesOf({ rows, insertions }).values()].map((t) => t.key));
-  const kept = rows.filter((row) => !takenKeys.has(row.key));
+export const rowsByDeliveryOf = ({ rows }: Params): ReadonlyArray<ConversationRow> => {
   const movedBefore = new Map<string, ConversationRow[]>();
   const movedKeys = new Set<string>();
-  kept.forEach((row, index) => {
-    const delivery = kept
+  const unreadKeys = new Set<string>();
+  rows.forEach((row, index) => {
+    const delivery = rows
       .slice(index + 1)
       .find((later) => isDeliveryOf({ echo: row, delivery: later }));
-    if (delivery === undefined) {
+    if (delivery !== undefined) {
+      movedKeys.add(row.key);
+      movedBefore.set(delivery.key, [...(movedBefore.get(delivery.key) ?? []), row]);
       return;
     }
-    movedKeys.add(row.key);
-    movedBefore.set(delivery.key, [...(movedBefore.get(delivery.key) ?? []), row]);
+    if (echoOf({ row })?.outboxId !== undefined) {
+      unreadKeys.add(row.key);
+    }
   });
-  return kept.flatMap((row) => {
-    if (movedKeys.has(row.key)) {
+  return rows.flatMap((row) => {
+    if (movedKeys.has(row.key) || unreadKeys.has(row.key)) {
       return [];
     }
     return [...(movedBefore.get(row.key) ?? []), row];

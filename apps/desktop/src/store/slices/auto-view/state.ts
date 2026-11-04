@@ -1,6 +1,6 @@
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoOutcome, AutoTree } from '@goodboy/db';
 import type { AutoBudgetFacts, MountNote, OutcomeLine } from '@goodboy/core/auto';
-import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+import type { AgentId, MessageAttachment, ProviderRunId, SessionId } from '@goodboy/types';
 
 export type AutoTreeView = Readonly<{
   tree: AutoTree;
@@ -45,6 +45,7 @@ export type AutoPendingMessage = Readonly<{
   rowId: string;
   createdAt: number;
   text: string;
+  images: ReadonlyArray<MessageAttachment>;
 }>;
 
 export type AutoViewState = {

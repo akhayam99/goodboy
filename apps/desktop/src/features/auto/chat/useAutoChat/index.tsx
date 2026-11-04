@@ -5,7 +5,6 @@ import type { TranscriptInsertion } from '../../../../shared/types/transcriptIns
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
 import { AutoDelegationLines } from '../AutoDelegationLines';
-import { AutoPendingMessages } from '../AutoPendingMessages';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
 import { AutoWorkTime } from '../AutoWorkTime';
@@ -14,7 +13,6 @@ import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { mergedBatchesOf } from '../mergedBatchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
-import { pendingMessageLineOf } from '../pendingMessageOf';
 import { useAutoTreeActions } from '../useAutoTreeActions';
 
 type Params = {
@@ -70,22 +68,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
           <AutoProjectAsk sessionId={session.id} rootAgentId={agent.id} ask={ask} />
         ),
     };
-    const pending: TranscriptInsertion = {
-      key: `auto-pending-${view.tree.id}`,
-      beforeMs: null,
-      node: null,
-      takesOver:
-        pendingMessageLineOf({ view }) === null
-          ? []
-          : view.pendingMessages.map((message) => ({
-              key: message.rowId,
-              text: message.text,
-              sentAtMs: message.createdAt,
-              line: (
-                <AutoPendingMessages sessionId={session.id} view={view} rowId={message.rowId} />
-              ),
-            })),
-    };
     const mounted = mountedLineOf({ view });
     const mountedLine: ReadonlyArray<TranscriptInsertion> =
       mounted === null
@@ -101,7 +83,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
               ),
             },
           ];
-    return [...lines, ...mountedLine, pending, tail];
+    return [...lines, ...mountedLine, tail];
   }, [view, agents, agent, openChild, openArtifact, session]);
 
   return {

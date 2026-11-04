@@ -20,6 +20,7 @@ import {
 import { currentPublishPort, registerPublishPort } from '../../../features/auto/publishPort';
 import { currentSendNowPort, registerSendNowPort } from '../../../features/auto/sendNowPort';
 import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
+import { currentWithdrawPort, registerWithdrawPort } from '../../../features/auto/withdrawPort';
 import { currentTreeStopPort, registerTreeStopPort } from '../../../features/auto/treeStopPort';
 import {
   AUTO_BRIDGE_EVENT,
@@ -64,6 +65,7 @@ const REGISTERED_PORTS: AutoBridgePorts = {
   stop: (params) => requirePort({ port: currentTreeStopPort() })(params),
   retry: (params) => requirePort({ port: currentTreeRetryPort() })(params),
   sendNow: ({ treeId, rowId }) => requirePort({ port: currentSendNowPort() })({ treeId, rowId }),
+  withdraw: ({ treeId, rowId }) => requirePort({ port: currentWithdrawPort() })({ treeId, rowId }),
   userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
   decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
   rerunChecks: (params) => requirePort({ port: currentChecksRerunPort() })(params),
@@ -79,6 +81,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
   registerTreeStopPort({ port: client.ports.stop });
   registerTreeRetryPort({ port: client.ports.retry });
   registerSendNowPort({ port: client.ports.sendNow });
+  registerWithdrawPort({ port: client.ports.withdraw });
   registerChecksRerunPort({ port: client.ports.rerunChecks });
   registerPublishPort({ port: client.ports.publish });
   registerDelegationDecisionPort({ port: client.ports.decision });
@@ -94,6 +97,7 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
     registerTreeStopPort({ port: null });
     registerTreeRetryPort({ port: null });
     registerSendNowPort({ port: null });
+    registerWithdrawPort({ port: null });
     registerChecksRerunPort({ port: null });
     registerPublishPort({ port: null });
     registerDelegationDecisionPort({ port: null });
@@ -186,6 +190,24 @@ export const startAutoRuntime = async ({
       return { kind: 'retried' };
     },
   });
+  registerWithdrawPort({
+    port: async ({ treeId, rowId }) => {
+      const outcome = await runtimeOf().withdraw({
+        treeId: brandId<AutoTreeId>({ value: treeId }),
+        rowId,
+      });
+      if (outcome.kind === 'idle') {
+        return {
+          kind: 'refused',
+          message:
+            outcome.reason === 'not_owner'
+              ? 'Another window runs this conversation. Edit it there.'
+              : 'This conversation is gone.',
+        };
+      }
+      return outcome;
+    },
+  });
   registerChecksRerunPort({
     port: ({ delegationId }) =>
       runtimeOf().rerunChecks(brandId<AutoDelegationId>({ value: delegationId })),
@@ -211,6 +233,7 @@ export const startAutoRuntime = async ({
     registerPublishPort({ port: null });
     registerTreeRetryPort({ port: null });
     registerSendNowPort({ port: null });
+    registerWithdrawPort({ port: null });
     registerAutoUserTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });

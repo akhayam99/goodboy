@@ -53,14 +53,16 @@ type HarnessParams = {
 const harness = ({ agents }: HarnessParams) => {
   const reportError = vi.fn(async () => undefined);
   const appendTurnEvent = vi.fn<AutoTurnState['appendTurnEvent']>();
+  const loadAutoTrees = vi.fn<AutoTurnState['loadAutoTrees']>(async () => undefined);
   const state: AutoTurnState = {
     sessions: [{ id: SESSION, workspaceId: WORKSPACE }],
     sessionPhaseRuns: { [SESSION]: agents },
     selectedAgentId: { [SESSION]: AUTO_AGENT },
     reportError,
     appendTurnEvent,
+    loadAutoTrees,
   };
-  return { reportError, appendTurnEvent, get: () => state };
+  return { reportError, appendTurnEvent, loadAutoTrees, get: () => state };
 };
 
 const inputOf = (overrides: Partial<SendTurnInput> = {}): SendTurnInput => ({
@@ -110,6 +112,18 @@ describe('a message typed to an Auto agent', () => {
       SESSION,
       expect.objectContaining({ kind: 'operator_text', outboxId: 'outbox-row-7' }),
     );
+  });
+
+  it('reads the trees again before the composer tray lets go of the message', async () => {
+    registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'queued') });
+    const { get, loadAutoTrees } = harness({ agents: [autoRow] });
+    const onStarted = vi.fn(() => {
+      expect(loadAutoTrees).toHaveBeenCalledWith({ sessionId: SESSION });
+    });
+
+    await routeAutoUserTurn({ get, input: inputOf({ onStarted }) });
+
+    expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
   it('follows the selected agent when the send names none', async () => {

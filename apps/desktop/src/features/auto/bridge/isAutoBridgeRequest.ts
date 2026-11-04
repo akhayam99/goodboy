@@ -21,7 +21,7 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
   if (kind === 'stop' || kind === 'retry') {
     return isText(value['treeId']);
   }
-  if (kind === 'sendNow') {
+  if (kind === 'sendNow' || kind === 'withdraw') {
     return isText(value['treeId']) && isText(value['rowId']);
   }
   if (kind === 'rerunChecks') {

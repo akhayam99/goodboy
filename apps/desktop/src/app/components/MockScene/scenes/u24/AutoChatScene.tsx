@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
-import type { AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
+import type { AgentQueuedTurn } from '../../../../../store/slices/agentQueue/types';
 import { SceneAutoTreeNav } from '../u26/SceneAutoTreeNav';
 import { shellFoldsOf } from '../../../../shellArrangement/shellFoldsOf';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
@@ -25,6 +26,27 @@ type Props = {
   readonly isPlanOpen?: boolean;
   readonly selected?: 'root' | 'planner';
   readonly mountAct?: 'pending' | 'failing';
+};
+
+const TRAY_IMAGE_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+const TRAY_TURN: AgentQueuedTurn = {
+  id: 'mock-tray-turn-1',
+  agentId: AUTO_ROOT_ID,
+  content: 'And log every retry with its idempotency key.',
+  attachments: [
+    {
+      id: 'mock-tray-image-1',
+      fileName: 'retry-log.png',
+      mimeType: 'image/png',
+      dataUrl: TRAY_IMAGE_DATA_URL,
+      relPath: null,
+    },
+  ],
+  override: undefined,
+  status: 'queued',
+  createdAt: brandId<IsoDateTime>({ value: '2026-10-20T12:11:00.000Z' }),
 };
 
 const PLAN_OPEN_DELAY_MS = 400;
@@ -59,6 +81,7 @@ export const AutoChatScene = ({
       selectedAgentId: { [AUTO_SESSION.id]: selectedId },
       agentPane: { [AUTO_SESSION.id]: 'transcript' },
       agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
+      agentQueue: { [AUTO_ROOT_ID]: state === 'bothQueues' ? [TRAY_TURN] : [] },
       transcripts: { [AUTO_ROOT_ID]: scene.events },
       loadAgentTranscript: async () => undefined,
       sessionPlans: { [AUTO_SESSION.id]: scene.hasPlanArtifact ? [AUTO_PLAN] : [] },

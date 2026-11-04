@@ -5,6 +5,7 @@ import type { PublishAct, PublishPort } from '../publishPort';
 import type { SendNowPort } from '../sendNowPort';
 import type { TreeRetryPort } from '../treeRetryPort';
 import type { TreeStopPort } from '../treeStopPort';
+import type { WithdrawPort } from '../withdrawPort';
 
 export const AUTO_BRIDGE_EVENT = {
   request: 'goodboy:auto-request',
@@ -20,6 +21,7 @@ export type AutoBridgeCall =
   | Readonly<{ kind: 'stop'; treeId: string }>
   | Readonly<{ kind: 'retry'; treeId: string }>
   | Readonly<{ kind: 'sendNow'; treeId: string; rowId: string }>
+  | Readonly<{ kind: 'withdraw'; treeId: string; rowId: string }>
   | Readonly<{ kind: 'rerunChecks'; delegationId: string }>
   | Readonly<{ kind: 'publish'; act: PublishAct; delegationIds: ReadonlyArray<string> }>
   | Readonly<{ kind: 'userTurn'; messageId: string; turn: AutoUserTurnParams }>
@@ -58,6 +60,7 @@ export type AutoBridgePorts = Readonly<{
   stop: TreeStopPort;
   retry: TreeRetryPort;
   sendNow: SendNowPort;
+  withdraw: WithdrawPort;
   rerunChecks: ChecksRerunPort;
   publish: PublishPort;
   userTurn: AutoUserTurnPort;

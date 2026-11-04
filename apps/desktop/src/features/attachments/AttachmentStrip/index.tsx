@@ -18,6 +18,7 @@ export type AttachmentStripItem = {
   readonly relPath: string;
   readonly workingDir: string | null;
   readonly title?: string;
+  readonly previewSrc?: string;
   readonly onRemove?: () => void;
 };
 
@@ -99,11 +100,14 @@ export const AttachmentStrip = ({
     }
   }, [isOpenGone, setOpenId]);
 
-  const sources: ReadonlyArray<ThumbnailSource> = loaded.map(({ id, relPath, workingDir }) => ({
-    id,
-    relPath,
-    workingDir,
-  }));
+  const sources: ReadonlyArray<ThumbnailSource> = loaded.map(
+    ({ id, relPath, workingDir, previewSrc }) => ({
+      id,
+      relPath,
+      workingDir,
+      ...(previewSrc === undefined ? {} : { previewSrc }),
+    }),
+  );
   const thumbnails = useAttachmentThumbnails({ sources });
 
   const thumbnailOf = ({ id }: IdParams): AttachmentThumbnail => thumbnails[id] ?? LOADING;
