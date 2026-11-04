@@ -533,7 +533,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const { worktreePath, hintInput } = await orchestratorHintContext({
+      const { clientDeps, hintInput } = await orchestratorHintContext({
         get,
         sessionId,
         workflowRunId,
@@ -593,7 +593,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           const client = new OrchestratorClient({
             ...model,
             invokeFn: invokeCommand,
-            ...(worktreePath != null && { workingDir: worktreePath }),
+            ...clientDeps,
           });
           let reply: OrchestratorClientResult;
           try {

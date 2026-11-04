@@ -297,8 +297,19 @@ pub(crate) struct SideJob<'a> {
     pub system_prompt: &'a str,
     pub user_message: &'a str,
     pub working_dir: Option<&'a str>,
+    pub read_dirs: &'a [String],
     pub tools_disabled: bool,
     pub effort: Option<&'a str>,
+}
+
+fn add_read_dirs(argv: &mut Vec<String>, side: &SideJob<'_>) {
+    if side.tools_disabled || side.job == Job::Summarizer {
+        return;
+    }
+    for dir in side.read_dirs {
+        argv.push("--add-dir".to_string());
+        argv.push(dir.to_string());
+    }
 }
 
 pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError> {
@@ -332,6 +343,7 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
             denied.push("mcp__*");
             v.push("--disallowedTools".to_string());
             v.push(denied.join(","));
+            add_read_dirs(&mut v, side);
             v.extend(effort);
             v
         }
@@ -376,6 +388,7 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
                 v.push("-C".to_string());
                 v.push(dir.to_string());
             }
+            add_read_dirs(&mut v, side);
             v.extend(effort);
             v
         }
@@ -892,9 +905,29 @@ mod tests {
             system_prompt: "you plan",
             user_message: "plan this",
             working_dir: None,
+            read_dirs: &[],
             tools_disabled: false,
             effort: None,
         }
+    }
+
+    #[test]
+    fn a_tool_enabled_claude_planner_gets_an_add_dir_per_read_dir() {
+        let dirs = strings(&["/data/scratch/session-a"]);
+        let mut planner = side("anthropic", Job::Planner);
+        planner.read_dirs = &dirs;
+        let argv = side_job_args(&planner).expect("argv");
+        assert_eq!(
+            value_after(&argv, "--add-dir").as_deref(),
+            Some("/data/scratch/session-a")
+        );
+        assert_eq!(
+            read_only_violations(Cli::Claude, Job::Planner, &argv),
+            Vec::<String>::new()
+        );
+        planner.tools_disabled = true;
+        let without_tools = side_job_args(&planner).expect("argv");
+        assert!(!without_tools.contains(&"--add-dir".to_string()));
     }
 
     #[test]

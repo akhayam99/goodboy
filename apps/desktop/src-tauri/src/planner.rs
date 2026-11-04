@@ -65,6 +65,8 @@ pub struct PlannerArgs {
     #[serde(default)]
     pub working_dir: Option<String>,
     #[serde(default)]
+    pub read_dirs: Vec<String>,
+    #[serde(default)]
     pub tools_disabled: bool,
     #[serde(default)]
     pub effort: Option<String>,
@@ -139,6 +141,7 @@ fn side_job_of(args: &PlannerArgs) -> SideJob<'_> {
         system_prompt: &args.system_prompt,
         user_message: &args.user_message,
         working_dir: args.working_dir.as_deref(),
+        read_dirs: &args.read_dirs,
         tools_disabled: args.tools_disabled,
         effort: args.effort.as_deref(),
     }
@@ -160,6 +163,7 @@ mod tests {
             user_message: "plan this".to_string(),
             system_prompt: "you plan".to_string(),
             working_dir: None,
+            read_dirs: Vec::new(),
             tools_disabled: false,
             effort: None,
             run_id: None,

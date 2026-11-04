@@ -39,6 +39,7 @@ describe('buildHintImagesBlock', () => {
         attachment('doc', 'file'),
       ],
       worktreeDir: WORKTREE,
+      scratchDir: null,
       stepNumber: 2,
     });
     expect(block.text).toContain("Images from the user's hint: remove this header");
@@ -59,19 +60,39 @@ describe('buildHintImagesBlock', () => {
       ],
       attachments: [attachment('a')],
       worktreeDir: WORKTREE,
+      scratchDir: null,
       stepNumber: 2,
     });
     expect(block.text).toBe('');
     expect(block.attachmentIds.size).toBe(0);
   });
 
-  it('has nothing to point at without a worktree', () => {
+  it('has nothing to point at for a worktree file without a worktree', () => {
     const block = buildHintImagesBlock({
       hints: [hint({ attachmentIds: ['a'] })],
       attachments: [attachment('a')],
       worktreeDir: null,
+      scratchDir: '/data/scratch/session-1',
       stepNumber: 2,
     });
     expect(block.text).toBe('');
+  });
+
+  it('points at the scratch dir for a file saved before the run had a worktree', () => {
+    const scratched = {
+      ...attachment('s'),
+      relPath: '.goodboy/attachments/scratch-s-s.png',
+    };
+    const block = buildHintImagesBlock({
+      hints: [hint({ attachmentIds: ['s', 'a'] })],
+      attachments: [scratched, attachment('a')],
+      worktreeDir: WORKTREE,
+      scratchDir: '/data/scratch/session-1',
+      stepNumber: 2,
+    });
+    expect(block.text.split('\n').filter((line) => line.startsWith('- '))).toEqual([
+      '- /data/scratch/session-1/.goodboy/attachments/scratch-s-s.png',
+      `- ${WORKTREE}/.goodboy/attachments/a/a.png`,
+    ]);
   });
 });

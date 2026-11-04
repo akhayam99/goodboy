@@ -1364,7 +1364,9 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
 - **Hints.** Hints are saved in the run's hint log (`orchestrator_hint_log` on
   `session_workflows`) and survive a restart. A hint with images carries
   `attachmentIds`; the files are `goal_attachments` rows owned by the run, so
-  every step agent's kickoff lists them. The decision reads each hint as one
+  every step agent's kickoff lists them. A run with no worktree keeps the
+  files in the session scratch dir; `attachmentDirOf` says which dir holds a
+  row (see Attachments never need a worktree in `docs/traps.md`). The decision reads each hint as one
   `- [new]` line, and every further line of the hint is indented by two
   spaces, so a line inside a hint can never pose as a hint of its own. **Read now** on a live
   orchestrated run marks a decision in flight for restart: its answer is

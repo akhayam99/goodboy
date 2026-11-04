@@ -3,6 +3,7 @@ import type { GoalAttachmentOwner, SessionId, WorkflowRunId } from '@goodboy/typ
 import { tauriDatabase } from '../../../shared/lib/db';
 import { attachmentReadKey } from './attachmentReadKey';
 import { attachmentReads } from './attachmentReads';
+import { ensureScratchForRows } from './ensureScratchForRows';
 import type { GetFn, SetFn } from './types';
 
 type OwnerParams = {
@@ -22,6 +23,7 @@ export const loadGoalAttachments = (set: SetFn, get: GetFn) => {
       const read = attachmentReads.claim({ key });
       try {
         const attachments = await listGoalAttachmentsForSession(tauriDatabase, sessionId);
+        await ensureScratchForRows({ set, get, owner, attachments });
         if (read.isCurrent()) {
           set((state) => ({
             sessionAttachments: { ...state.sessionAttachments, [sessionId]: attachments },
@@ -41,6 +43,7 @@ export const loadGoalAttachments = (set: SetFn, get: GetFn) => {
     const read = attachmentReads.claim({ key });
     try {
       const attachments = await listGoalAttachmentsForRun(tauriDatabase, runId);
+      await ensureScratchForRows({ set, get, owner, attachments });
       if (read.isCurrent()) {
         set((state) => ({
           workflowRunAttachments: { ...state.workflowRunAttachments, [runId]: attachments },

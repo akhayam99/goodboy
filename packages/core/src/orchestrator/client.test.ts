@@ -116,6 +116,24 @@ describe('OrchestratorClient', () => {
     expect(on.args()['toolsDisabled']).toBe(false);
   });
 
+  it('passes the extra read dirs of the decision to the planner run', async () => {
+    const without = capture();
+    const withDirs = capture();
+    const deps = { providerId: 'anthropic', model: 'sonnet-5-5' } as const;
+
+    await new OrchestratorClient({ ...deps, invokeFn: without.invokeFn }).decide(
+      input({ canReadFiles: true }),
+    );
+    await new OrchestratorClient({
+      ...deps,
+      readDirs: ['/data/scratch/session-northwind'],
+      invokeFn: withDirs.invokeFn,
+    }).decide(input({ canReadFiles: true }));
+
+    expect(without.args()['readDirs']).toBeUndefined();
+    expect(withDirs.args()['readDirs']).toEqual(['/data/scratch/session-northwind']);
+  });
+
   it('swaps in the file-reading system prompt only when the decision has files to read', async () => {
     const off = capture();
     const on = capture();

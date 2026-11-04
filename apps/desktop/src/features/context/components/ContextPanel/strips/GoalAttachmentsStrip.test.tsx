@@ -16,6 +16,7 @@ type MockState = {
   sessionAttachments: Record<string, ReadonlyArray<Attachment>>;
   workflowRunAttachments: Record<string, ReadonlyArray<Attachment>>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  sessionScratchDirs: Record<string, string>;
   currentSessionId: string | null;
   loadGoalAttachments: ReturnType<typeof vi.fn>;
   removeGoalAttachment: ReturnType<typeof vi.fn>;
@@ -40,6 +41,7 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
       ],
     },
     sessionWorktrees: {},
+    sessionScratchDirs: {},
     currentSessionId: 'sess-1',
     loadGoalAttachments: vi.fn(async () => undefined),
     removeGoalAttachment: vi.fn(async () => undefined),
