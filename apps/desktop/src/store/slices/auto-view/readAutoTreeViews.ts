@@ -1,4 +1,4 @@
-import { autoBudgetOf, isRefusalPayload } from '@goodboy/core/auto';
+import { autoBudgetOf, isRefusalPayload, mountNoteOf } from '@goodboy/core/auto';
 import {
   listAutoArtifactLedger,
   listAutoDelegations,
@@ -38,10 +38,12 @@ const pendingRefusalOf = ({ tree, pending }: PendingRefusalParams): AutoPendingR
     return null;
   }
   const roles = latest.payload.roles ?? [];
+  const mount = mountNoteOf({ value: latest.payload.mount });
   return {
     action: latest.payload.action,
     code: latest.payload.code,
     roles: roles.filter((role) => typeof role === 'string'),
+    ...(mount === null ? {} : { mount }),
   };
 };
 

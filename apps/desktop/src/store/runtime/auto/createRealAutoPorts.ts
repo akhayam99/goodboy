@@ -23,6 +23,7 @@ import type {
   StartChildTurnParams,
 } from './ports';
 import { listAutoChecks } from './listAutoChecks';
+import { mountAutoProject } from './mountAutoProject';
 import { mountAutoTaskFolders } from './mountAutoTaskFolders';
 import {
   makeBranchFactsReaders,
@@ -145,6 +146,11 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     loadMounts: async ({ sessionId }) =>
       (await deps.loadSessionMounts({ sessionId })).map((view) => pickableOf({ view })),
     mountTaskFolders: (params) => mountAutoTaskFolders({ get: deps.getState, params }),
+    mountProject: ({ sessionId, name, branch, reason, mode }) =>
+      mountAutoProject({
+        get: deps.getState,
+        params: { sessionId, name, branch, reason, mode },
+      }),
     resolveRouting: async (request) =>
       resolveChildRouting({ state: deps.getState(), request, nowMs: deps.nowMs() }),
     isPlanApprovalRequired: deps.isPlanApprovalRequired,

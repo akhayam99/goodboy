@@ -5,14 +5,15 @@ import {
   parseProposeSpec,
   type AutoBlock,
   type AutoRefusalCode,
-  type RefusalPayload,
 } from '@goodboy/core/auto';
-import { getAutoTree, insertAutoOutbox, type AutoTree } from '@goodboy/db';
-import { brandId, type AutoOutboxId, type AutoRequestId } from '@goodboy/types';
+import { getAutoTree, type AutoTree } from '@goodboy/db';
+import { brandId, type AutoRequestId } from '@goodboy/types';
 import { replayAdmission } from './admit';
+import { applyMountBlock } from './applyMountBlock';
 import type { AgentCommand, AutoTurnEnded } from './ports';
 import { runAutoCommand } from './runAutoCommand';
 import type { AgentVerbContext } from './verbContext';
+import { writeRefusal } from './writeRefusal';
 
 export type ApplyAutoBlockParams = Readonly<{
   ctx: AgentVerbContext;
@@ -42,7 +43,7 @@ const workspaceOf = async ({ ctx, tree }: Pick<GrantParams, 'ctx' | 'tree'>): Pr
 };
 
 type CommandParams = {
-  readonly block: AutoBlock;
+  readonly block: Exclude<AutoBlock, { action: 'mount' }>;
   readonly grant: AgentCommand['grant'];
 };
 
@@ -93,40 +94,6 @@ const rolesOf = ({ block }: RolesParams): ReadonlyArray<string> => {
   return spec.children.flatMap((child) => (child.role === null ? [] : [child.role]));
 };
 
-type WriteRefusalParams = {
-  readonly ctx: AgentVerbContext;
-  readonly tree: AutoTree;
-  readonly runId: string;
-  readonly action: string;
-  readonly code: string;
-  readonly text: string;
-  readonly roles: ReadonlyArray<string>;
-};
-
-const writeRefusal = async ({
-  ctx,
-  tree,
-  runId,
-  action,
-  code,
-  text,
-  roles,
-}: WriteRefusalParams): Promise<void> => {
-  const payload: RefusalPayload = { kind: 'refusal', runId, action, code, text, roles };
-  await insertAutoOutbox({
-    db: ctx.db,
-    outbox: {
-      id: brandId<AutoOutboxId>({ value: ctx.ports.newId() }),
-      treeId: tree.id,
-      generation: tree.generation,
-      kind: 'refusal',
-      joinKey: `refusal:${runId}`,
-      payload,
-      nowMs: ctx.now(),
-    },
-  });
-};
-
 type RunBlockParams = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -140,6 +107,10 @@ const runBlock = async ({
   ended,
   block,
 }: RunBlockParams): Promise<ApplyAutoBlockOutcome> => {
+  if (block.action === 'mount') {
+    await applyMountBlock({ ctx, tree, ended, block });
+    return { kind: 'refused', action: 'mount', code: 'mount_missing' };
+  }
   const command = commandOf({
     block,
     grant: {

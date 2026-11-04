@@ -80,6 +80,19 @@ describe('the images of a user message', () => {
 });
 
 describe('delivering stored rows to Auto', () => {
+  it('tells Auto a writer can still be delegated when no mount is attached', async () => {
+    const state = await makeDeliveryWorld();
+    state.ports.setMounts([]);
+    await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'create a worktree' });
+
+    await deliver(state);
+
+    const text = state.ports.autoTurns[0]?.text ?? '';
+    expect(text).toContain('MOUNTS: none attached yet.');
+    expect(text).toContain('delegate a role that changes files as usual');
+    expect(text).not.toMatch(/cannot start|No agent that changes files/);
+  });
+
   it('claims the row, makes the tree deciding on the planned run and accepts it once the turn started', async () => {
     const state = await makeDeliveryWorld();
     await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'add the ledger export' });
