@@ -161,7 +161,7 @@
       }
     },
     "website": {
-      "entry": ["src/server/renderSite.tsx"],
+      "entry": ["src/prerender/renderSite.tsx"],
       "project": ["src/**/*.{ts,tsx}", "src/**/*.css"],
       "ignoreDependencies": ["tailwindcss"]
     }
