@@ -913,6 +913,13 @@
           "isNew": false
         },
         {
+          "id": "steps-that-cannot-finish",
+          "title": "Steps that cannot finish",
+          "copy": "A step that cannot finish ends as Not finished, and the level you picked decides if the run goes on.",
+          "image": null,
+          "isNew": false
+        },
+        {
           "id": "run-defaults",
           "title": "Run defaults",
           "copy": "Set what every new run starts with on the Run defaults page in Settings.",

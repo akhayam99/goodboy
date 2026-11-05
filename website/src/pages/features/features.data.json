@@ -619,8 +619,10 @@
         },
         {
           "title": "Steps that cannot finish",
-          "text": "A step that cannot finish ends as Not finished and the run goes on without it. With Every step it stops and offers Skip and go on, and two in a row stop the run at any level.",
-          "group": "Workflows"
+          "text": "A step that cannot finish ends as Not finished, and the level you picked decides if the run goes on.",
+          "group": "Workflows",
+          "also": "steps that cannot finish",
+          "shown": true
         },
         {
           "title": "Why each step, and the run recap",
