@@ -424,6 +424,7 @@
   .mockStage .dfrAvatar,
   .mockStage .dfrStatus,
   .mockStage .dfrRailRow,
+  .mockStage .dfrTab,
   .mockStage .dfrThreadHead {
     font-size: 13px;
   }

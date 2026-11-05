@@ -1,20 +1,12 @@
+import { DIFF_REVIEW_FILES } from './diffReviewFiles';
 import { Check } from './icons';
-
-type TreeFile = {
-  readonly name: string;
-  readonly state: 'active' | 'viewed' | 'none';
-  readonly note: boolean;
-};
-
-const FILES: readonly TreeFile[] = [
-  { name: 'applyWebhook.ts', state: 'active', note: true },
-  { name: 'dedupe.ts', state: 'viewed', note: false },
-];
 
 export const DiffReviewTree = () => (
   <nav aria-hidden className="dfrTree">
     <div className="dfrTreeGroup">
-      <p className="dfrTreeCount">1 of 2 viewed</p>
+      <p className="dfrTreeCount">
+        {`${DIFF_REVIEW_FILES.filter((file) => file.state === 'viewed').length} of ${DIFF_REVIEW_FILES.length} viewed`}
+      </p>
       <span className="dfrTreeBar">
         <i />
       </span>
@@ -26,15 +18,15 @@ export const DiffReviewTree = () => (
           <circle cx="6" cy="6" r="4.5" pathLength="100" className="dfrRingFill" />
         </svg>
         <span>webhooks</span>
-        <span className="dfrTreeNum">2</span>
+        <span className="dfrTreeNum">{DIFF_REVIEW_FILES.length}</span>
       </p>
-      {FILES.map((file) => (
+      {DIFF_REVIEW_FILES.map((file) => (
         <p key={file.name} className="dfrTreeFile" data-state={file.state}>
           <span className="dfrTreeMark">
             {file.state === 'viewed' ? <Check size={11} /> : null}
           </span>
           <span className="dfrTreeName">{file.name}</span>
-          {file.note ? <span className="dfrTreeNum">1</span> : null}
+          {file.hasNote ? <span className="dfrTreeNum">1</span> : null}
         </p>
       ))}
     </div>
