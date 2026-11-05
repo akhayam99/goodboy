@@ -1,13 +1,13 @@
 import './Hero.css';
 import type { CSSProperties } from 'react';
-import { BrandMark } from '../components/BrandIcons';
-import { Eyebrow } from '../components/Eyebrow';
-import { HeroShot } from '../components/HeroShot';
-import { ProviderLine } from '../components/ProviderLine';
-import { StarButton } from '../components/StarButton';
-import { StarCount } from '../components/StarCount';
-import { useDownloads } from '../hooks/useDownloads';
-import { SITE } from '../lib/site';
+import { BrandMark } from '../../../components/BrandIcons';
+import { Eyebrow } from '../../../components/Eyebrow';
+import { HeroShot } from '../../../components/HeroShot';
+import { ProviderLine } from '../../../components/ProviderLine';
+import { StarButton } from '../../../components/StarButton';
+import { StarCount } from '../../../components/StarCount';
+import { useDownloads } from '../../../hooks/useDownloads';
+import { SITE } from '../../../lib/site';
 
 type RiseStyle = CSSProperties & {
   readonly '--i': number;

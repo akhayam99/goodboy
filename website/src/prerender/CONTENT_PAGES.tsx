@@ -6,7 +6,7 @@ import { DocsIndex } from '../pages/content/DocsIndex';
 import { NotFound } from '../pages/content/NotFound';
 import { ReleaseNotes } from '../pages/content/ReleaseNotes';
 import featuresData from '../pages/features/features.data.json';
-import type { NavSection } from '../sections/Nav';
+import type { NavSection } from '../pages/home/sections/Nav';
 import { SITE } from '../lib/site';
 import { clipText } from './clipText';
 import { FEATURE_DOCS, type FeatureDoc } from './FEATURE_DOCS';

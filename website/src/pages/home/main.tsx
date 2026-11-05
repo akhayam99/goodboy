@@ -1,8 +1,8 @@
 import { App } from './App';
-import { FidelityView } from './components/FidelityView';
-import { mountRoot } from './lib/mountRoot';
-import './styles/base.css';
-import './styles/consent.css';
+import { FidelityView } from '../../components/FidelityView';
+import { mountRoot } from '../../lib/mountRoot';
+import '../../styles/base.css';
+import '../../styles/consent.css';
 
 const params = new URLSearchParams(window.location.search);
 const theme = params.get('theme');

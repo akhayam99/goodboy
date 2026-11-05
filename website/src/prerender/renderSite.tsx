@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { renderToStaticMarkup, renderToString } from 'react-dom/server';
-import { App } from '../App';
+import { App } from '../pages/home/App';
 import { FeaturesPage } from '../pages/features/FeaturesPage';
-import { Footer } from '../sections/Footer';
-import { Nav } from '../sections/Nav';
+import { Footer } from '../pages/home/sections/Footer';
+import { Nav } from '../pages/home/sections/Nav';
 import { changelogFeed } from './changelogFeed';
 import { CONTENT_PAGES, type ContentPageEntry } from './CONTENT_PAGES';
 import { injectPage } from './injectPage';

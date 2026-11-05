@@ -43,7 +43,7 @@
   "raw-scroller": {},
   "tone-border-rail": {},
   "footer-cta-bar": {
-    "website/src/sections/Footer.tsx": 1
+    "website/src/pages/home/sections/Footer.tsx": 1
   },
   "half-step-spacing": {},
   "role-weight-override": {},

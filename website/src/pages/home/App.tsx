@@ -7,7 +7,7 @@ import { Tour } from './sections/Tour';
 import { Install } from './sections/Install';
 import { BrandLine } from './sections/BrandLine';
 import { Footer } from './sections/Footer';
-import { useReveal } from './hooks/useReveal';
+import { useReveal } from '../../hooks/useReveal';
 
 export const App = () => {
   useReveal();

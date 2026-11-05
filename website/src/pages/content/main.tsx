@@ -1,10 +1,10 @@
 import { inject } from '@vercel/analytics';
 import { mountRoot } from '../../lib/mountRoot';
-import { Nav, type NavSection } from '../../sections/Nav';
+import { Nav, type NavSection } from '../home/sections/Nav';
 import '../../styles/base.css';
 import '../../styles/consent.css';
 import '../../components/Statement.css';
-import '../../sections/Footer.css';
+import '../home/sections/Footer.css';
 import './ContentPage.css';
 
 const SECTIONS: readonly NavSection[] = ['home', 'features', 'docs', 'changelog', 'none'];
