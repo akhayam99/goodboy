@@ -5,7 +5,7 @@ const appStylesPath = resolve(
   new URL('../../apps/desktop/src/styles.css', import.meta.url).pathname,
 );
 const outputPath = resolve(
-  new URL('../src/components/mocks/app-tokens.css', import.meta.url).pathname,
+  new URL('../src/mocks/app-tokens.css', import.meta.url).pathname,
 );
 const checkOnly = process.argv.includes('--check');
 
@@ -123,7 +123,7 @@ const main = async () => {
   if (checkOnly) {
     if (current !== expected) {
       throw new Error(
-        'website/src/components/mocks/app-tokens.css is out of sync with apps/desktop/src/styles.css',
+        'website/src/mocks/app-tokens.css is out of sync with apps/desktop/src/styles.css',
       );
     }
     return;

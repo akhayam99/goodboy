@@ -1,15 +1,15 @@
 import './Cluster.css';
 import type { ReactNode } from 'react';
 import { CardRow } from '../../components/CardRow';
-import { AskCodeMock } from '../../components/mocks/AskCodeMock';
-import { BoardMock } from '../../components/mocks/BoardMock';
-import { DiffReviewMock } from '../../components/mocks/DiffReviewMock';
-import { HandoffMock } from '../../components/mocks/HandoffMock';
-import { InboxMock } from '../../components/mocks/InboxMock';
-import { SessionMock } from '../../components/mocks/SessionMock';
-import { StorageMock } from '../../components/mocks/StorageMock';
-import { TwoWaysBars } from '../../components/mocks/TwoWaysBars';
-import { WorkflowRunMock } from '../../components/mocks/WorkflowRunMock';
+import { AskCodeMock } from '../../mocks/AskCodeMock';
+import { BoardMock } from '../../mocks/BoardMock';
+import { DiffReviewMock } from '../../mocks/DiffReviewMock';
+import { HandoffMock } from '../../mocks/HandoffMock';
+import { InboxMock } from '../../mocks/InboxMock';
+import { SessionMock } from '../../mocks/SessionMock';
+import { StorageMock } from '../../mocks/StorageMock';
+import { TwoWaysBars } from '../../mocks/TwoWaysBars';
+import { WorkflowRunMock } from '../../mocks/WorkflowRunMock';
 import { SITE } from '../../lib/site';
 
 export type MockKey =

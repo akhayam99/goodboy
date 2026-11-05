@@ -1,10 +1,10 @@
 import './Tour.css';
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Chapter } from '../components/Chapter';
-import { BoardMock } from '../components/mocks/BoardMock';
-import { DiffReviewMock } from '../components/mocks/DiffReviewMock';
-import { InboxMock } from '../components/mocks/InboxMock';
-import { WorkflowRunMock } from '../components/mocks/WorkflowRunMock';
+import { BoardMock } from '../mocks/BoardMock';
+import { DiffReviewMock } from '../mocks/DiffReviewMock';
+import { InboxMock } from '../mocks/InboxMock';
+import { WorkflowRunMock } from '../mocks/WorkflowRunMock';
 
 type Stop = {
   readonly id: string;
