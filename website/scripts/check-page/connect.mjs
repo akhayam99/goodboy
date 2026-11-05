@@ -1,3 +1,5 @@
+import { readPageError } from './readPageError.mjs';
+
 export const connect = async ({ socketUrl }) => {
   const socket = new WebSocket(socketUrl);
   await new Promise((done) => socket.addEventListener('open', done));
@@ -6,11 +8,9 @@ export const connect = async ({ socketUrl }) => {
   let nextId = 0;
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(event.data);
-    if (message.method === 'Runtime.exceptionThrown') {
-      errors.push(message.params.exceptionDetails.exception?.description ?? 'uncaught exception');
-    }
-    if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') {
-      errors.push(message.params.args.map((arg) => arg.value ?? arg.description).join(' '));
+    const pageError = readPageError({ message });
+    if (pageError !== null) {
+      errors.push(pageError);
     }
     if (message.id === undefined || !pending.has(message.id)) {
       return;
