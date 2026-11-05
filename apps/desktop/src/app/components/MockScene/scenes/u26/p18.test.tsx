@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -49,7 +49,15 @@ const mount = ({ id }: MountParams) => {
 };
 
 const drawerOf = async (): Promise<HTMLElement> => {
-  const notes = await screen.findByRole('button', { name: /^Notes, \d+ lines?$/ }, WAIT);
+  const notes = await waitFor(() => {
+    const found = screen
+      .getAllByRole('button', { name: /^Notes, \d+ lines?$/ })
+      .find((button) => button.closest('[data-auto-child-end]') !== null);
+    if (found === undefined) {
+      throw new Error('no notes button in the drawer');
+    }
+    return found;
+  }, WAIT);
   fireEvent.click(notes);
   const answer = await screen.findByText('Trailer grep:', undefined, WAIT);
   const drawer = answer.closest('[data-auto-child-end]');
