@@ -36,13 +36,9 @@ import { lastRowIndexByRun } from './lastRowIndexByRun';
 import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
 import { isWorkflowRailRow } from './workflowRailGroup';
-import type {
-  InsertionReply,
-  TranscriptInsertion,
-} from '../../../../shared/types/transcriptInsertion';
+import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { InsertionRow } from './InsertionRow';
-import { claimedRepliesOf } from './claimedRepliesOf';
-import { rowsByDeliveryOf } from './rowsByDeliveryOf';
+import { placedRowsOf } from './placedRowsOf';
 import { dueInsertionsOf } from './dueInsertionsOf';
 import { isTurnStartRow } from './isTurnStartRow';
 
@@ -79,8 +75,6 @@ const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'us
 
 const RAIL_ROW_PX = 56;
 
-const NO_REPLIES: ReadonlyArray<InsertionReply> = [];
-
 type CacheKeyParams = {
   readonly agentId: AgentId | null;
   readonly isStepsOnly: boolean;
@@ -112,7 +106,7 @@ export const TranscriptRows = ({
   activeRunId,
   turnFooters,
   briefLabel,
-  insertions = [],
+  insertions: givenInsertions = [],
   onOpenTranscript,
   onStop,
   isStepsOnly = false,
@@ -122,8 +116,7 @@ export const TranscriptRows = ({
   clockStepAgentId,
   newFromKey = null,
 }: Props) => {
-  const rows = rowsByDeliveryOf({ rows: givenRows, insertions });
-  const claims = claimedRepliesOf({ rows, insertions });
+  const { rows, insertions } = placedRowsOf({ rows: givenRows, insertions: givenInsertions });
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
@@ -148,13 +141,7 @@ export const TranscriptRows = ({
   const flushInsertions = ({ beforeMs }: FlushParams) => {
     for (const insertion of dueInsertionsOf({ insertions, placed: placedInsertions, beforeMs })) {
       placedInsertions.add(insertion.key);
-      out.push(
-        <InsertionRow
-          key={`insertion-${insertion.key}`}
-          insertion={insertion}
-          replies={claims.repliesByInsertion.get(insertion.key) ?? NO_REPLIES}
-        />,
-      );
+      out.push(<InsertionRow key={`insertion-${insertion.key}`} insertion={insertion} />);
     }
   };
   const todayKey = dayKey(new Date().toISOString());
@@ -208,9 +195,6 @@ export const TranscriptRows = ({
   };
 
   rows.forEach((row, idx) => {
-    if (claims.claimedKeys.has(row.key)) {
-      return;
-    }
     const isNewDivider = newFromKey !== null && row.key === newFromKey;
     const isTurnStart = isTurnStartRow({ row, previous: rows[idx - 1] });
     if (isNewDivider && !isTurnStart) {

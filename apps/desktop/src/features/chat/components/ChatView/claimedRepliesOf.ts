@@ -26,7 +26,7 @@ type RankParams = {
 
 const NO_CLAIMS: Claims = { claimedKeys: new Set(), repliesByInsertion: new Map() };
 
-const rankOf = ({ insertion }: RankParams): number =>
+const settleMsOf = ({ insertion }: RankParams): number =>
   insertion.beforeMs ?? Number.POSITIVE_INFINITY;
 
 const candidateOf = ({ claimers, atMs, text }: CandidateParams): TranscriptInsertion | null => {
@@ -35,7 +35,10 @@ const candidateOf = ({ claimers, atMs, text }: CandidateParams): TranscriptInser
     const isEligible =
       insertion.claimsReply?.({ text }) === true &&
       (insertion.beforeMs === null || insertion.beforeMs >= atMs);
-    if (isEligible && (best === null || rankOf({ insertion }) < rankOf({ insertion: best }))) {
+    if (
+      isEligible &&
+      (best === null || settleMsOf({ insertion }) < settleMsOf({ insertion: best }))
+    ) {
       best = insertion;
     }
   }

@@ -1,16 +1,16 @@
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 
-type Params = {
-  readonly insertions: ReadonlyArray<TranscriptInsertion>;
+type Params<Insertion extends TranscriptInsertion> = {
+  readonly insertions: ReadonlyArray<Insertion>;
   readonly placed: ReadonlySet<string>;
   readonly beforeMs: number | null;
 };
 
-export const dueInsertionsOf = ({
+export const dueInsertionsOf = <Insertion extends TranscriptInsertion>({
   insertions,
   placed,
   beforeMs,
-}: Params): ReadonlyArray<TranscriptInsertion> =>
+}: Params<Insertion>): ReadonlyArray<Insertion> =>
   insertions.filter(
     (insertion) =>
       !placed.has(insertion.key) &&
