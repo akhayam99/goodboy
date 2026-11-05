@@ -193,6 +193,30 @@ describe('refusals and the state digest in a delivery', () => {
     expect(order.every((index) => index >= 0)).toBe(true);
   });
 
+  it.each([
+    ['an empty cost', { ...result, cost: {} }],
+    ['a null artifact', { ...result, artifacts: [null] }],
+    ['an empty check', { ...result, verified: { ...result.verified, checks: [{}] } }],
+    ['a question without text', { ...result, openQuestions: [{ questionId: 'question-1' }] }],
+  ])('keeps a result with %s out of the full render', (_name, stored) => {
+    const text = buildDeliveryText({
+      ledgerBlock: '',
+      budgetLine: '',
+      mountsLine: '',
+      digestBlock: '',
+      artifactsBlock: '',
+      childLabels: new Map(),
+      isRestart: false,
+      rows: [
+        {
+          id: 'outbox-partial',
+          payload: { kind: 'results', batchId: 'batch-3', results: [stored] },
+        },
+      ],
+    });
+    expect(text).toContain(`- delegation ${result.delegationId}: `);
+  });
+
   it('renders a result stored without its fields and never throws on it', () => {
     const text = buildDeliveryText({
       ledgerBlock: '',

@@ -18,7 +18,7 @@ Declining a step no longer locks an Auto chat.
 
 ### Fixed
 
-- Declining a step Auto proposed no longer breaks the chat with an error on every message. Chats already stuck this way open again by themselves and Auto hears about the decline. <!-- gb area=agents -->
+- Declining a step Auto proposed no longer breaks the chat on every message. Chats already stuck this way open again by themselves. <!-- gb area=agents -->
 
 ## Goodboy v0.31.7
 
