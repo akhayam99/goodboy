@@ -12,7 +12,7 @@
     "recipe": "--scene 'brand-slack&brand=1' --click 'Also received' --clip 290,60,940,232 --window 1280x800 --wait 8000"
   },
   "features/agents-workspace-chat": {
-    "version": "0.27.1",
+    "version": "0.31.10",
     "recipe": "--scene 'chat-room&brand=1' --window 1280x800 --wait 8000"
   },
   "features/artifact-compare": {
@@ -40,7 +40,7 @@
     "recipe": "--scene 'board-shell&brand=1' --clip 727,125,492,236 --window 1700x700 --wait 8000"
   },
   "features/board-stage": {
-    "version": "0.27.1",
+    "version": "0.31.10",
     "recipe": "--scene 'board-shell&brand=1' --window 1700x560 --wait 8000"
   },
   "features/context-decisions": {
@@ -48,7 +48,7 @@
     "recipe": "--scene 'brand-context&brand=1' --window 1280x800 --wait 8000"
   },
   "features/context-drawer": {
-    "version": "0.27.1",
+    "version": "0.31.10",
     "recipe": "--scene 'context-drawer&brand=1' --window 1280x800 --wait 8000"
   },
   "features/context-summary": {
@@ -160,7 +160,7 @@
     "recipe": "--scene 'c04-worktree-files&brand=1' --window 1500x760 --wait 8000"
   },
   "features/review-pr-page": {
-    "version": "0.27.1",
+    "version": "0.31.10",
     "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x820 --wait 8000"
   },
   "features/review-push-confirm": {
@@ -296,7 +296,7 @@
     "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x900 --wait 8000"
   },
   "features/workflow-run": {
-    "version": "0.27.1",
+    "version": "0.31.10",
     "recipe": "--scene 'c08-run-ready&brand=1' --window 1280x720 --wait 8000"
   },
   "features/workflow-studio-steps": {
@@ -328,7 +328,7 @@
     "recipe": "--scene 'mounts&brand=1' --window 1280x700 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.27.1",
+    "version": "0.31.10",
     "recipe": "pnpm readme:hero"
   }
 }

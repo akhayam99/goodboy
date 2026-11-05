@@ -698,14 +698,18 @@ every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
 browser tab raises. The README images live in `docs/readme/`, the
 feature-area guide ones in the public
 [goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
-and light `.webp` pairs. The README hero is also the website's hero picture,
-the one capture on the site; every other product view there is a React mock.
-`pnpm readme:hero` shoots the `readme-hero` scene (the Harborline session on
-its Overview with the Projects card unfolded, the shared Context drawer open
-and three runs interleaving in Activity) from the desktop mock dev server
-(`http://localhost:5230`, or the URL passed as its first argument) at
-1920x1200 and scale 4, in both themes. It writes
-`docs/readme/readme-hero-{dark,light}.webp` at the full 7680 px and
+and light `.webp` pairs. The website's hero picture is the one capture on the
+site; every other product view there is a React mock. `pnpm readme:hero` shoots
+two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
+passed as its first argument), at scale 4, in both themes. The `readme-hero-log`
+scene (the session title and state line above the Activity timeline of the
+Harborline session, with the model of every row, Sonnet 5.5, Astra, GPT-6.1 Sol,
+Composer 2.5 or Kimi K3) is shot in a 1460x900 window and clipped to the header and
+twelve rows, 905x636 css px, so the text stays at 12 px or more at the 880 px
+GitHub draws it at; both themes come from one frozen clock so their times match; it writes
+`docs/readme/readme-hero-{dark,light}.webp`. The `readme-hero` scene (the
+session on its Overview with the Projects card unfolded and the shared Context
+drawer open) is shot at 1920x1200 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
 the width the site draws it at, cropped to the top 840 px of the window and
 resampled once from the same capture. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.

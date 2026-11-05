@@ -220,7 +220,8 @@ const AGENTS: ReadonlyArray<Agent> = [
     name: 'Replay one event three times',
     kind: 'tester',
     status: 'completed',
-    outputSummary: 'Added 8 redelivery cases, including the triple delivery from the Sentry trace.',
+    outputSummary:
+      'Added 8 redelivery cases, including the triple delivery from the failing trace.',
     startedAt: clock.iso({ at: '2026-09-14T16:05:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
@@ -383,7 +384,7 @@ const applyCredit = async ({ tx, event }: ApplyCreditArgs): Promise<CreditResult
 ## Next steps
 
 - Answer the banner question before #57 merges.
-- Watch Sentry for \`DuplicateCreditError\` for a week after the deploy.
+- Watch the error log for \`DuplicateCreditError\` for a week after the deploy.
 - Remove the handler check once no caller relies on it.`;
 
 const CHANGE_REPORT_BODY = `# Local change report
@@ -439,7 +440,7 @@ this pack is the only evidence you have. it carries final agent messages, not to
 - ${SCOUT_AGENT_ID} scout "Trace where a retried webhook posts": the handler checks the event id before the transaction opens.
 - ${PLANNER_AGENT_ID} planner "Plan the event id dedupe": check the event id inside the transaction, record attempts in notify-relay.
 - ${IMPLEMENTER_AGENT_ID} implementer "Dedupe on the event id in payments-api": the event id check moved into the credit transaction.
-- ${TESTER_AGENT_ID} tester "Replay one event three times": 8 new redelivery cases, including the triple delivery from the Sentry trace.
+- ${TESTER_AGENT_ID} tester "Replay one event three times": 8 new redelivery cases, including the triple delivery from the failing trace.
 
 ## artifacts
 
