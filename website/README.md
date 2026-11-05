@@ -22,7 +22,7 @@ deployed by Vercel from `website/vercel.json`.
 Every page ships its full text as HTML, so a crawler or a link preview that
 runs no JavaScript reads the same page a visitor does.
 `website/scripts/prerender.mjs` runs the client build, then a server build of
-`website/src/server/renderSite.tsx`, and writes what `renderSite` returns into
+`website/src/prerender/renderSite.tsx`, and writes what `renderSite` returns into
 `dist/`: each template's
 `<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
 client entries mount through `website/src/mountRoot.tsx`: it hydrates
@@ -36,9 +36,9 @@ an effect or a handler, never while it renders. The nav takes the current
 section as a prop for the same reason. `?fidelity=<Mock>` skips hydration and
 renders the mock alone.
 
-The templates hold no title or social tags. `pageHead` in `website/src/server/`
+The templates hold no title or social tags. `pageHead` in `website/src/prerender/`
 writes them at each template's `<!--app-head-->` mark from the page's meta (the
-home and features meta live in `website/src/server/STATIC_PAGES.ts`): title, description,
+home and features meta live in `website/src/prerender/STATIC_PAGES.ts`): title, description,
 canonical, Open Graph and X card, all from one title and one description. A
 title names what the page is for in the words people search, such as AI coding
 agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
@@ -47,7 +47,7 @@ characters; a description stays under 160.
 ## Search and sharing
 
 - Every page ends its head with one JSON-LD `@graph`, built by
-  `website/src/server/jsonLd.ts`: the schema.org Organization and WebSite with
+  `website/src/prerender/jsonLd.ts`: the schema.org Organization and WebSite with
   the GitHub and X profiles, the SoftwareApplication with the newest
   snapshot's version, date and release notes link and the four download URLs,
   then the page itself and its BreadcrumbList when it sits below the home page.
@@ -84,7 +84,7 @@ characters; a description stays under 160.
   `docs/features/<area>.md`, in `FEATURES.md` index order. The doc's title is
   the h1, its first paragraph the lead, and each `###` an h2 with the same
   anchor GitHub gives it. A few areas add the words people search to their
-  page title, from a short map in `website/src/server/CONTENT_PAGES.tsx`. Every
+  page title, from a short map in `website/src/prerender/CONTENT_PAGES.tsx`. Every
   page carries breadcrumbs, a link to the same file on GitHub and its
   neighbours.
 
@@ -95,10 +95,10 @@ the nav alone, since the rest is static. The server build reads
 the Vercel project must keep files outside `website/` in the build (the
 default). Markdown renders with `marked` at build time and ships no parser to
 the browser. HTML comments come out with a character scanner
-(`website/src/server/stripComments.ts`), not a regex. A doc's
+(`website/src/prerender/stripComments.ts`), not a regex. A doc's
 `<picture>` with a `prefers-color-scheme: dark` source becomes two lazy
 images, one per site theme, so the header toggle picks the screenshot, not the
-system (`website/src/server/themePictures.ts`). `pnpm test` runs their tests, and
+system (`website/src/prerender/themePictures.ts`). `pnpm test` runs their tests, and
 `website/scripts/site-copy.test.mjs` holds the site copy to the retired names list and the
 dash rule ([docs/testing.md](../docs/testing.md)).
 

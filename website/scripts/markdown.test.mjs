@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { stripComments } from '../src/server/stripComments.ts';
-import { themePictures } from '../src/server/themePictures.ts';
+import { stripComments } from '../src/prerender/stripComments.ts';
+import { themePictures } from '../src/prerender/themePictures.ts';
 
 const strip = (source) => stripComments({ source });
 
