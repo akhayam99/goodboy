@@ -180,7 +180,7 @@ describe('paths that tests read from website and docs', () => {
     assert.equal(shouldRunTestsForPullRequest({ paths: ['website/src/styles/base.css'] }), true);
     assert.equal(shouldRunTestsForPullRequest({ paths: ['website/public/favicon.svg'] }), true);
     assert.equal(
-      shouldRunTestsForPullRequest({ paths: ['website/scripts/build-brand-assets.mjs'] }),
+      shouldRunTestsForPullRequest({ paths: ['website/scripts/brand-assets/tileMetrics.mjs'] }),
       true,
     );
     assert.equal(shouldRunTestsForPullRequest({ paths: ['docs/changelog'] }), true);
