@@ -449,8 +449,8 @@ writing to it reopens it to **Deciding**.
   to the end, so a late result stays with the turn that read it; a reload and a
   second window read the same rows.
 - **The glance line and the cards.** The Auto page header keeps the title, the
-  trail and the menu, then one glance line: a dot, the state word (**Waiting
-  for you**, **Planning**, **Working**, **Stuck**, **Stopped**, **Done**,
+  trail and the menu, then one glance line: a dot, the state word (**Needs
+  you**, **Planning**, **Working**, **Stuck**, **Stopped**, **Done**,
   **Idle**), one sentence, the spend of the limit and **Settings**
   (`autoGlanceOf`, `AutoGlanceLine`). **Settings** unfolds the unchanged chip row
   inline, never a popover; the row stays mounted so the asks and model slots

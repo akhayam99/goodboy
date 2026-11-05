@@ -50,6 +50,7 @@ export type TranscriptItem =
       runId: ProviderRunId;
       text: string;
       outboxIds?: ReadonlyArray<string>;
+      isRepeat?: boolean;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; key: string; text: string; runId?: ProviderRunId | null }

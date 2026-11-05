@@ -11,7 +11,8 @@ type Props = {
 export const AutoTurnCard = ({ delegations, children }: Props) => {
   const head = autoCardHeadOf({ delegations });
   return (
-    <section
+    <div
+      role="group"
       data-turn=""
       data-soft-card=""
       aria-label={head.name}
@@ -31,6 +32,6 @@ export const AutoTurnCard = ({ delegations, children }: Props) => {
         </span>
       </div>
       {children}
-    </section>
+    </div>
   );
 };

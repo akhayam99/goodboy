@@ -178,13 +178,12 @@ export const AgentDetailPane = ({
     anchorKey: `agent-header:${agent.id}`,
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
-  const autoView = isAutoRoot ? (autoChat.tree?.view ?? null) : null;
   const runSettings =
     runStep === undefined ? (
       <AgentRunSettings
         session={session}
         agent={agent}
-        autoView={autoView}
+        autoView={isAutoRoot ? (autoChat.tree?.view ?? null) : null}
         asksSlotRef={setAsksSlot}
         modelsSlotRef={setModelsSlot}
       />
@@ -304,7 +303,7 @@ export const AgentDetailPane = ({
           ) : undefined
         }
         insertions={insertions}
-        {...(autoChat.dock !== undefined && { dock: autoChat.dock })}
+        {...(autoChat.dock !== undefined && { composerLead: autoChat.dock })}
       />
     </PaneShell>
   );

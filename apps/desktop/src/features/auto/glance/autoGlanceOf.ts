@@ -33,7 +33,7 @@ type GlanceParams = {
 };
 
 const WORD: Record<AutoGlanceState, string> = {
-  waiting: 'Waiting for you',
+  waiting: 'Needs you',
   planning: 'Planning',
   working: 'Working',
   stuck: 'Stuck',

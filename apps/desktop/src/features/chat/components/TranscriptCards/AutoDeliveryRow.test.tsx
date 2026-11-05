@@ -27,8 +27,8 @@ describe('AutoDeliveryRow', () => {
   it('draws no fold again for a later delivery', () => {
     render(
       <TranscriptCard
-        isToldHidden
         item={{
+          isRepeat: true,
           kind: 'auto_delivery',
           key: 'auto-delivery-1',
           runId: brandId<ProviderRunId>({ value: 'run-auto-2' }),

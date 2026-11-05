@@ -154,7 +154,6 @@ export const TranscriptRows = ({
   let railGroup: Array<ReactNode> = [];
   let railGroupKey: string | null = null;
   let lastFooterRunId: ProviderRunId | null = null;
-  let hasToldRow = false;
   const turnStarts = new Set<number>();
 
   const flushRailGroup = () => {
@@ -276,10 +275,6 @@ export const TranscriptRows = ({
     if (row.kind === 'item' && row.item.kind === 'usage') {
       lastFooterRunId = row.item.runId;
     }
-    const isToldRepeat = row.kind === 'item' && row.item.kind === 'auto_delivery' && hasToldRow;
-    if (row.kind === 'item' && row.item.kind === 'auto_delivery') {
-      hasToldRow = true;
-    }
     const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
     out.push(
       <li
@@ -340,7 +335,6 @@ export const TranscriptRows = ({
                 : undefined
             }
             previousRunId={previousRunId}
-            isToldHidden={isToldRepeat}
             isBrief={
               (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
               turnIndex === 0 &&

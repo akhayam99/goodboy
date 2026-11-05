@@ -36,7 +36,12 @@ export const AutoDockLive = ({ sessionId, view, rootAgent }: Props) => {
         <span className="min-w-0 truncate text-muted-foreground">{glance.sentence}</span>
         <span className="flex-1" />
         {canChange ? (
-          <Button variant="quiet" size="xs" onClick={() => void actions.changeApproach({ view })}>
+          <Button
+            variant="quiet"
+            size="xs"
+            disabled={actions.isStopping}
+            onClick={() => void actions.changeApproach({ view })}
+          >
             Change approach
           </Button>
         ) : null}

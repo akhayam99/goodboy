@@ -1,13 +1,34 @@
 // @vitest-environment happy-dom
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
-import { useAppStore } from '../../../store';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../store/storyHarness';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
 import { AutoDock } from './AutoDock';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
 
 afterEach(cleanup);
 
@@ -38,9 +59,9 @@ describe('AutoDock', () => {
       onOpenArtifact,
     });
 
-    expect(screen.getByText('Plan v1 waits for your OK')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Ask for changes' })).toBeDefined();
+    screen.getByText('Plan v1 waits for your OK');
+    screen.getByRole('button', { name: 'Approve plan' });
+    screen.getByRole('button', { name: 'Ask for changes' });
     fireEvent.click(screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }));
     expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
     expect(document.querySelectorAll('[data-auto-dock] button')).toHaveLength(3);
@@ -54,11 +75,9 @@ describe('AutoDock', () => {
       }),
     });
 
-    expect(screen.getByText('Plan v1 · changes asked')).toBeDefined();
+    screen.getByText('Plan v1 · changes asked');
     expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    expect(
-      screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }),
-    ).toBeDefined();
+    screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
   });
 
   it('says approved in the artifact tone with Open plan only', () => {
@@ -78,7 +97,7 @@ describe('AutoDock', () => {
       view: aView({ phase: 'waiting', artifacts: [{ ...aPlanRow(), status: 'consumed' }] }),
     });
 
-    expect(screen.getByText('Plan v1 used')).toBeDefined();
+    screen.getByText('Plan v1 used');
     expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
   });
 
@@ -87,7 +106,7 @@ describe('AutoDock', () => {
       view: { ...aView({ phase: 'waiting', artifacts: [aPlanRow()] }), level: 'run' },
     });
 
-    expect(screen.getByText('Plan v1 · no approval needed')).toBeDefined();
+    screen.getByText('Plan v1 · no approval needed');
     expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
   });
 
@@ -101,10 +120,8 @@ describe('AutoDock', () => {
 
     const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
     expect(dock?.querySelector('[data-dock-plan]')).toBeNull();
-    expect(within(dock as HTMLElement).getByText('Waiting for Implementer')).toBeDefined();
-    expect(
-      within(dock as HTMLElement).getByRole('button', { name: 'Change approach' }),
-    ).toBeDefined();
+    within(dock as HTMLElement).getByText('Waiting for Implementer');
+    within(dock as HTMLElement).getByRole('button', { name: 'Change approach' });
   });
 
   it('draws nothing when no plan exists and nothing runs', () => {

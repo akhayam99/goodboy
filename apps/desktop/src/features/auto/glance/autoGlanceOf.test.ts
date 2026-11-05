@@ -15,7 +15,7 @@ describe('autoGlanceOf', () => {
 
     expect(glance).toMatchObject({
       state: 'waiting',
-      word: 'Waiting for you',
+      word: 'Needs you',
       tone: 'warning',
       sentence: 'Plan v1 needs your OK',
       isLive: false,
