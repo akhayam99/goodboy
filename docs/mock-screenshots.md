@@ -106,7 +106,7 @@ network call is Vercel Web Analytics, cookieless, added by the `demoPlugins` Vit
 The Tauri build, `pnpm dev` and the app's own `index.html` never carry either, and
 `apps/desktop/vite/demoHtml.test.ts` pins that.
 
-The website links it as Live demo from `SITE.demo` in `website/src/site.ts`:
+The website links it as Live demo from `SITE.demo` in `website/src/lib/site.ts`:
 the yellow pill in the nav actions (a sheet link on narrow screens), the
 hero's text link and the install section on desktop, and the footer.
 
@@ -391,7 +391,7 @@ The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
 wins on first load, then the choice kept under `goodboy-demo-theme` (every read
 and write survives blocked storage), then dark, and the param is stripped from
 the url right after. The website appends it at click time from its own theme
-(`website/src/theme/syncDemoLinks.ts`, one delegated listener, never read
+(`website/src/lib/syncDemoLinks.ts`, one delegated listener, never read
 during render because the site prerenders). Toggling the theme never reloads a
 frame: frames are keyed by scene, params and replay (`frameKey.ts`), not by
 theme, the stage sends every ready frame a `theme` command, and the frame

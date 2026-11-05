@@ -6,7 +6,7 @@ import { LATEST_VERSION } from '../../data/latestVersion';
 import { Footer } from '../../sections/Footer';
 import { Nav } from '../../sections/Nav';
 import { useReveal } from '../../hooks/useReveal';
-import { SITE } from '../../site';
+import { SITE } from '../../lib/site';
 import { Cluster, type FeatureCluster } from './Cluster';
 import { ClusterRail } from './ClusterRail';
 import data from './features.data.json';

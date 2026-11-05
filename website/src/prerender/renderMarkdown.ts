@@ -1,5 +1,5 @@
 import { Marked, type Tokens } from 'marked';
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 import { escapeHtml } from './escapeHtml';
 import { stripComments } from './stripComments';
 import { themePictures } from './themePictures';

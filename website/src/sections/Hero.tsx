@@ -7,7 +7,7 @@ import { ProviderLine } from '../components/ProviderLine';
 import { StarButton } from '../components/StarButton';
 import { StarCount } from '../components/StarCount';
 import { useDownloads } from '../hooks/useDownloads';
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 
 type RiseStyle = CSSProperties & {
   readonly '--i': number;

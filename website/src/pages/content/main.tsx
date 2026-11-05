@@ -1,5 +1,5 @@
 import { inject } from '@vercel/analytics';
-import { mountRoot } from '../../mountRoot';
+import { mountRoot } from '../../lib/mountRoot';
 import { Nav, type NavSection } from '../../sections/Nav';
 import '../../styles.css';
 import '../../styles/consent.css';

@@ -1,4 +1,4 @@
-import { SITE } from '../../site';
+import { SITE } from '../../lib/site';
 import type { Crumb } from './Breadcrumbs';
 import { ContentPage } from './ContentPage';
 import type { DocSummary } from './DocsIndex';

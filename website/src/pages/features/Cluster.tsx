@@ -10,7 +10,7 @@ import { SessionMock } from '../../components/mocks/SessionMock';
 import { StorageMock } from '../../components/mocks/StorageMock';
 import { TwoWaysBars } from '../../components/mocks/TwoWaysBars';
 import { WorkflowRunMock } from '../../components/mocks/WorkflowRunMock';
-import { SITE } from '../../site';
+import { SITE } from '../../lib/site';
 
 export type MockKey =
   'session' | 'board' | 'handoff' | 'workflow' | 'diff' | 'inbox' | 'bars' | 'askcode' | 'storage';

@@ -13836,11 +13836,6 @@
       "count": 1
     }
   },
-  "website/src/data/downloads.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
   "website/src/hooks/useDownloads/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -13857,6 +13852,11 @@
   "website/src/hooks/useReveal/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
+    }
+  },
+  "website/src/lib/downloads.ts": {
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 5
     }
   },
   "website/src/pages/features/Cluster.tsx": {

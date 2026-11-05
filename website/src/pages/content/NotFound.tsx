@@ -1,4 +1,4 @@
-import { SITE } from '../../site';
+import { SITE } from '../../lib/site';
 import { ContentPage } from './ContentPage';
 
 export const NotFound = () => (

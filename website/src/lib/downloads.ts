@@ -1,5 +1,5 @@
-import { LATEST_VERSION } from './latestVersion';
-import { SITE } from '../site';
+import { LATEST_VERSION } from '../data/latestVersion';
+import { SITE } from './site';
 
 export type AssetKind = 'dmg' | 'appimage' | 'deb' | 'rpm';
 

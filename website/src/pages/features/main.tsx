@@ -1,4 +1,4 @@
-import { mountRoot } from '../../mountRoot';
+import { mountRoot } from '../../lib/mountRoot';
 import { FeaturesPage } from './FeaturesPage';
 import '../../styles.css';
 import '../../styles/consent.css';

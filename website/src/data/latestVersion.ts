@@ -1,4 +1,4 @@
-import { compareVersions } from './compareVersions';
+import { compareVersions } from '../lib/compareVersions';
 
 const VERSIONS = Object.keys(import.meta.glob('./releases/*.json')).map((path) =>
   path.replace('./releases/', '').replace('.json', ''),
