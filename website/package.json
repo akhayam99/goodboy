@@ -7,6 +7,7 @@
     "dev": "vite --port 1499 --host",
     "build": "tsc -b && node scripts/prerender.mjs && node scripts/check-seo.mjs",
     "check:seo": "node scripts/check-seo.mjs",
+    "check:images": "node scripts/sync-image-sizes.mjs",
     "test": "node --test scripts/*.test.mjs",
     "build:brand": "node scripts/build-brand-assets.mjs",
     "sync:tokens": "node scripts/sync-app-tokens.mjs",

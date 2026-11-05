@@ -124,7 +124,7 @@ const imageChecks = ({ page }) =>
           issue({
             rule: 'img-size',
             file: page.file,
-            message: `img ${src} has no width and height`,
+            message: `img ${src} has no width and height, run node scripts/sync-image-sizes.mjs <path to the media checkout>`,
           }),
         );
       }

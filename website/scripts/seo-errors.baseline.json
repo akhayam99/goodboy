@@ -1,22 +1,5 @@
 {
   "img-size": {
-    "docs/agents.html": 8,
-    "docs/artifacts.html": 10,
-    "docs/board.html": 4,
-    "docs/branch-history.html": 12,
-    "docs/context.html": 6,
-    "docs/inbox.html": 12,
-    "docs/keyboard.html": 6,
-    "docs/overview.html": 6,
-    "docs/providers.html": 12,
-    "docs/review.html": 12,
-    "docs/search.html": 8,
-    "docs/security.html": 12,
-    "docs/setup.html": 18,
-    "docs/storage.html": 4,
-    "docs/support.html": 2,
-    "docs/switching.html": 8,
-    "docs/workflows.html": 12,
-    "docs/workspace.html": 12
+    "docs/setup.html": 6
   }
 }

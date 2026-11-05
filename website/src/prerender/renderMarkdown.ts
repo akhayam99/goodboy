@@ -1,5 +1,6 @@
 import { Marked, type Tokens } from 'marked';
 import { SITE } from '../lib/site';
+import { docImageSize } from './docImageSize';
 import { escapeHtml } from './escapeHtml';
 import { stripComments } from './stripComments';
 import { themePictures } from './themePictures';
@@ -58,12 +59,15 @@ export const renderMarkdown = ({ source, directory }: Params) => {
         return `<h${level} id="${uniqueSlug(text)}">${this.parser.parseInline(tokens)}</h${level}>\n`;
       },
       html({ text }) {
-        return themePictures({ html: text });
+        return themePictures({ html: text, sizeOf: docImageSize });
       },
       image({ href, title, text }) {
         const titleAttribute =
           title === null || title === undefined ? '' : ` title="${escapeHtml(title)}"`;
-        return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text)}"${titleAttribute} loading="lazy" decoding="async">`;
+        const size = docImageSize({ src: href });
+        const sizeAttributes =
+          size === null ? '' : ` width="${size.width}" height="${size.height}"`;
+        return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text)}"${titleAttribute}${sizeAttributes} loading="lazy" decoding="async">`;
       },
     },
   });

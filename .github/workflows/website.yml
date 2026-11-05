@@ -28,7 +28,7 @@ jobs:
             echo "website=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if printf '%s\n' "$files" | grep -qE '^(website/|\.github/workflows/website\.yml$)'; then
+          if printf '%s\n' "$files" | grep -qE '^(website/|docs/features/|FEATURES\.md$|CHANGELOG\.md$|\.github/workflows/website\.yml$)'; then
             echo "website=true" >> "$GITHUB_OUTPUT"
           else
             echo "website=false" >> "$GITHUB_OUTPUT"
@@ -51,6 +51,10 @@ jobs:
       - name: test
         if: steps.changes.outputs.website == 'true'
         run: pnpm test
+
+      - name: check image sizes
+        if: steps.changes.outputs.website == 'true'
+        run: pnpm check:images
 
       - name: build
         if: steps.changes.outputs.website == 'true'

@@ -225,6 +225,7 @@ describe('checkSeo', () => {
       htmlFiles: { 'index.html': page({ body: body('<img src="/a.png" alt="a">') }) },
     });
     assert.deepEqual(rulesOf(size), ['img-size']);
+    assert.match(size[0].message, /node scripts\/sync-image-sizes\.mjs/);
     const ok = run({
       htmlFiles: {
         'index.html': page({ body: body('<img src="/a.png" alt="a" width="2" height="1">') }),
