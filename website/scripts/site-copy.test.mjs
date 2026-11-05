@@ -81,7 +81,7 @@ describe('measureSiteCopy', () => {
   it('counts a retired name in JSX text, a prop and a template', () => {
     const measured = withSite({
       files: {
-        'sections/Step.tsx': `export const Step = () => (
+        'components/Step.tsx': `export const Step = () => (
           <section aria-label="Open a folder">
             <p>Open a folder to begin</p>
             <p>{\`Open a folder \${1}\`}</p>
@@ -90,23 +90,23 @@ describe('measureSiteCopy', () => {
       },
       run: ({ srcRoot }) => measureSiteCopy({ srcRoot, patterns }),
     });
-    assert.equal(measured['website/src/sections/Step.tsx']['retired-name'], 3);
+    assert.equal(measured['website/src/components/Step.tsx']['retired-name'], 3);
   });
 
   it('counts an em dash and an en dash in copy', () => {
     const measured = withSite({
       files: {
-        'sections/Line.tsx': `export const Line = () => <p>One ${EM} two ${EN} three</p>;`,
+        'components/Line.tsx': `export const Line = () => <p>One ${EM} two ${EN} three</p>;`,
       },
       run: ({ srcRoot }) => measureSiteCopy({ srcRoot, patterns }),
     });
-    assert.equal(measured['website/src/sections/Line.tsx'].dash, 2);
+    assert.equal(measured['website/src/components/Line.tsx'].dash, 2);
   });
 
   it('leaves class names, ids, links, imports and type literals alone', () => {
     const measured = withSite({
       files: {
-        'sections/Quiet.tsx': `import { Inbox } from './Inbox';
+        'components/Quiet.tsx': `import { Inbox } from './Inbox';
           type Key = 'inbox' | 'board';
           export const Quiet = ({ kind }: { kind: Key }) => (
             <a className="Inbox Inbox" id="Inbox" href="/Inbox" data-kind={kind}>fine</a>
@@ -114,7 +114,7 @@ describe('measureSiteCopy', () => {
       },
       run: ({ srcRoot }) => measureSiteCopy({ srcRoot, patterns }),
     });
-    assert.deepEqual(measured['website/src/sections/Quiet.tsx'], { 'retired-name': 0, dash: 0 });
+    assert.deepEqual(measured['website/src/components/Quiet.tsx'], { 'retired-name': 0, dash: 0 });
   });
 
   it('reads the copy keys of a data file and not its ids', () => {
@@ -131,10 +131,10 @@ describe('measureSiteCopy', () => {
 
   it('names the line of each hit', () => {
     const lines = withSite({
-      files: { 'sections/Where.tsx': `export const Where = () => (\n  <p>Open a folder</p>\n);` },
+      files: { 'components/Where.tsx': `export const Where = () => (\n  <p>Open a folder</p>\n);` },
       run: ({ srcRoot }) => locationsOf({ srcRoot, patterns, id: 'retired-name' }),
     });
-    assert.deepEqual(lines, ['website/src/sections/Where.tsx:2: Open a folder']);
+    assert.deepEqual(lines, ['website/src/components/Where.tsx:2: Open a folder']);
   });
 });
 
