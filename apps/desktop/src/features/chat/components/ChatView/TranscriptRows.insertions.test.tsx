@@ -192,6 +192,30 @@ describe('transcript insertions', () => {
     expect(texts.indexOf('first')).toBeLessThan(texts.indexOf('auto_delivery'));
   });
 
+  it('moves an approval into the card that follows it and keeps a free message', () => {
+    const claimingCard: TranscriptInsertion = {
+      key: 'building',
+      beforeMs: NOW.getTime(),
+      claimsReply: ({ text }) => text.startsWith('Approved plan'),
+      node: ({ replies }) => (
+        <div data-testid="inserted">{replies.map((item) => `you:${item.text}`).join('|')}</div>
+      ),
+    };
+    const { container } = renderRows({
+      rows: [
+        user({ key: 'u1', text: 'goal', at: T0 }),
+        user({ key: 'u2', text: 'Approved plan v1.', at: T1 }),
+        user({ key: 'u3', text: 'also add a test', at: T2 }),
+      ],
+      insertions: [claimingCard],
+    });
+
+    const texts = textsOf(container).filter((text) => text !== '' && !text.startsWith('Oct'));
+    expect(texts).toContain('you:Approved plan v1.');
+    expect(texts).not.toContain('Approved plan v1.');
+    expect(texts).toContain('also add a test');
+  });
+
   it('renders nothing extra without insertions', () => {
     const { container } = renderRows({
       rows: [user({ key: 'u1', text: 'goal', at: T0 })],

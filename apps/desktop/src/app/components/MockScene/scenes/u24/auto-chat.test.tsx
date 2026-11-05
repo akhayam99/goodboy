@@ -110,6 +110,18 @@ describe('the Auto chat scenes', () => {
     expect(within(tail).getByRole('button', { name: /^Stop/ })).toBeDefined();
   });
 
+  it('auto-chat-working keeps the approval as a quiet You line inside its card, no bubble', async () => {
+    mount({ id: 'auto-chat-working' });
+
+    await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const lines = [...document.querySelectorAll('[data-card-reply]')];
+    expect(lines.map((line) => line.textContent?.replace(/\d{1,2}:\d{2}.*$/, ''))).toEqual([
+      'YouApproved plan v1',
+    ]);
+    expect(lines[0]?.closest('[data-soft-card]')).not.toBeNull();
+    expect(screen.queryByText('Approved plan v1.')).toBeNull();
+  });
+
   it('auto-chat-plan asks for approval in the reader pane and folds the rail beside it', async () => {
     mount({ id: 'auto-chat-plan' });
 

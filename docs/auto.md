@@ -458,6 +458,11 @@ writing to it reopens it to **Deciding**.
   inline, never a popover; the row stays mounted so the asks and model slots
   keep their portals. Each cluster of agents is one soft card (`AutoTurnCard`,
   head `autoCardHeadOf`): name, agent count and a state word, then flat rows.
+  Your plan approval is a quiet line at the head of the card that follows it,
+  **You · Approved plan v1**, never a right aligned bubble: an insertion that sets
+  `claimsReply` receives the replies `claimedRepliesOf` gives it (the first card
+  that settles after the reply, the open one last), and the approval text comes
+  from `approvedPlanReply`. A message you write yourself stays a bubble.
   **What Auto was told** shows once, on the first delivery.
 - **The tail.** Auto's state is said once, in the dock and on the tail at the end of the
   conversation (`AutoDock`, `AutoTail`, phrases from `autoTreeLive`): **Waiting for

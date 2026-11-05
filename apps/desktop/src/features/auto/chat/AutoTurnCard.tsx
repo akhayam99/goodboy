@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
 import type { AutoDelegation } from '@goodboy/db';
 import { cn } from '@goodboy/ui';
+import type { InsertionReply } from '../../../shared/types/transcriptInsertion';
+import { AutoCardReply } from './AutoCardReply';
 import { autoCardHeadOf } from './autoCardHeadOf';
 
 type Props = {
   readonly delegations: ReadonlyArray<AutoDelegation>;
+  readonly replies?: ReadonlyArray<InsertionReply>;
   readonly children: ReactNode;
 };
 
-export const AutoTurnCard = ({ delegations, children }: Props) => {
+export const AutoTurnCard = ({ delegations, replies = [], children }: Props) => {
   const head = autoCardHeadOf({ delegations });
   return (
     <div
@@ -31,6 +34,9 @@ export const AutoTurnCard = ({ delegations, children }: Props) => {
           {head.word}
         </span>
       </div>
+      {replies.map((reply) => (
+        <AutoCardReply key={reply.key} reply={reply} />
+      ))}
       {children}
     </div>
   );

@@ -4,6 +4,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
+import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
 import { AutoDock } from '../AutoDock';
 import { AutoProjectAsk } from '../AutoProjectAsk';
@@ -44,9 +45,10 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
       (batch): TranscriptInsertion => ({
         key: batch.key,
         beforeMs: batch.beforeMs,
-        node: (
+        claimsReply: ({ text }) => approvedPlanLabelOf({ text }) !== null,
+        node: ({ replies }) => (
           <AutoWorkTime session={session}>
-            <AutoTurnCard delegations={batch.delegations}>
+            <AutoTurnCard delegations={batch.delegations} replies={replies}>
               <AutoDelegationLines
                 sessionId={session.id}
                 view={view}
