@@ -196,11 +196,13 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working shows one glance line and Settings opens the same chips inline', async () => {
     mount({ id: 'c07-auto-working' });
 
-    const glance = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-glance]');
-      expect(found).not.toBeNull();
-      return found as HTMLElement;
-    }, WAIT);
+    await waitFor(() => expect(document.querySelector('[data-glance]')).not.toBeNull(), WAIT);
+    const glance = within(document.body)
+      .getAllByRole('status')
+      .find((node) => node.hasAttribute('data-glance'));
+    if (glance === undefined) {
+      throw new Error('no glance line');
+    }
     expect(glance.dataset.glance).toBe('working');
     const toggle = within(glance).getByRole('button', { name: /Settings/ });
     const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
@@ -246,7 +248,10 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-plan' });
 
     await screen.findByText('Plan v1 waits for your OK', undefined, WAIT);
-    const dock = document.querySelector<HTMLElement>('[data-auto-dock]') as HTMLElement;
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
+    if (dock === null) {
+      throw new Error('no dock');
+    }
     const approve = within(dock).getByRole('button', { name: 'Approve plan' });
     expect(within(dock).getByRole('button', { name: /^Open plan / }).textContent).toBe('Open plan');
     expect(within(dock).getByRole('button', { name: 'Ask for changes' })).toBeDefined();

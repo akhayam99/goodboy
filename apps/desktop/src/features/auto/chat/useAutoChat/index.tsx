@@ -89,7 +89,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
             },
           ];
     return [...lines, ...mountedLine, tail];
-  }, [view, agents, agent, openChild, openArtifact, session]);
+  }, [view, agents, agent, openChild, session]);
 
   const dock =
     view === null ? undefined : (

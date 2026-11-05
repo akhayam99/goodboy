@@ -119,9 +119,12 @@ describe('AutoDock', () => {
     });
 
     const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
-    expect(dock?.querySelector('[data-dock-plan]')).toBeNull();
-    within(dock as HTMLElement).getByText('Waiting for Implementer');
-    within(dock as HTMLElement).getByRole('button', { name: 'Change approach' });
+    if (dock === null) {
+      throw new Error('no dock');
+    }
+    expect(dock.querySelector('[data-dock-plan]')).toBeNull();
+    within(dock).getByText('Waiting for Implementer');
+    within(dock).getByRole('button', { name: 'Change approach' });
   });
 
   it('draws nothing when no plan exists and nothing runs', () => {

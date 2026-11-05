@@ -52,7 +52,7 @@ export const AutoGlanceLine = ({ agent, view, settings }: Props) => {
           size="xs"
           aria-expanded={isOpen}
           aria-controls={`auto-settings-${agent.id}`}
-          onClick={() => setIsOpen((current) => !current)}
+          onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         >
           Settings
           <ChevronDown size={ICON_SIZE.row} aria-hidden className={cn(isOpen && 'rotate-180')} />
