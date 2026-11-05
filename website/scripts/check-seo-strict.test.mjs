@@ -21,13 +21,13 @@ describe('check-seo exit status', () => {
     assert.equal(runCheckSeo({ pages: [HOME] }).status, 0);
   });
 
-  it('lets a grown warning pass without --strict and says so', () => {
+  it('lets a warning pass without --strict and says so', () => {
     const { status, output } = runCheckSeo({ pages: [HOME, SHORT] });
     assert.equal(status, 0);
-    assert.match(output, /warnings grew/);
+    assert.match(output, /warning title-length/);
   });
 
-  it('fails a grown warning with --strict', () => {
+  it('fails a warning with --strict', () => {
     const { status, output } = runCheckSeo({ pages: [HOME, SHORT], args: ['--strict'] });
     assert.equal(status, 1);
     assert.match(output, /title-length/);

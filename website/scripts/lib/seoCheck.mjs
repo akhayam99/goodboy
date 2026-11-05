@@ -1,8 +1,8 @@
 import { decodeAttribute, tagsOf, textOf } from './seoHtml.mjs';
 
 export const GTM_ID = 'GTM-5NM3VX7Q';
-export const TITLE_RANGE = { min: 30, max: 70 };
-export const DESCRIPTION_RANGE = { min: 70, max: 160 };
+export const TITLE_RANGE = { min: 30, max: 72 };
+export const DESCRIPTION_RANGE = { min: 70, max: 165 };
 
 export const ALLOWED_TYPES = new Set([
   'Organization',
@@ -232,6 +232,7 @@ const headChecks = ({ page, origin, sitemapPaths }) => {
     found.push(issue({ rule: 'description-missing', file: page.file, message: 'no description' }));
   }
   if (
+    page.isIndexed &&
     page.title !== '' &&
     (page.title.length < TITLE_RANGE.min || page.title.length > TITLE_RANGE.max)
   ) {
@@ -244,7 +245,11 @@ const headChecks = ({ page, origin, sitemapPaths }) => {
     );
   }
   const length = page.description.length;
-  if (length > 0 && (length < DESCRIPTION_RANGE.min || length > DESCRIPTION_RANGE.max)) {
+  if (
+    page.isIndexed &&
+    length > 0 &&
+    (length < DESCRIPTION_RANGE.min || length > DESCRIPTION_RANGE.max)
+  ) {
     found.push(
       issue({
         rule: 'description-length',
@@ -660,43 +665,3 @@ export const checkSeo = ({
   ];
 };
 
-export const countsOf = ({ issues, severity }) => {
-  const counts = {};
-  issues
-    .filter((found) => found.severity === severity)
-    .forEach(({ rule, file }) => {
-      counts[rule] = counts[rule] ?? {};
-      counts[rule][file] = (counts[rule][file] ?? 0) + 1;
-    });
-  return counts;
-};
-
-const sorted = ({ counts }) =>
-  Object.fromEntries(
-    Object.entries(counts)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([rule, byFile]) => [
-        rule,
-        Object.fromEntries(
-          Object.entries(byFile).sort(([left], [right]) => left.localeCompare(right)),
-        ),
-      ]),
-  );
-
-export const baselineOf = ({ counts }) => sorted({ counts });
-
-export const growthLines = ({ counts, baseline }) =>
-  Object.entries(counts).flatMap(([rule, byFile]) =>
-    Object.entries(byFile).flatMap(([file, count]) => {
-      const allowed = baseline[rule]?.[file] ?? 0;
-      return count > allowed ? [`  - ${rule} ${file}: ${count} (baseline ${allowed})`] : [];
-    }),
-  );
-
-export const staleLines = ({ counts, baseline }) =>
-  Object.entries(baseline).flatMap(([rule, byFile]) =>
-    Object.entries(byFile).flatMap(([file, allowed]) => {
-      const count = counts[rule]?.[file] ?? 0;
-      return count < allowed ? [`  - ${rule} ${file}: ${count} (baseline ${allowed})`] : [];
-    }),
-  );

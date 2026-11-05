@@ -3,15 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import {
-  RULES,
-  baselineOf,
-  checkSeo,
-  countsOf,
-  growthLines,
-  pathOfFile,
-  staleLines,
-} from './lib/seoCheck.mjs';
+import { checkSeo, pathOfFile } from './lib/seoCheck.mjs';
 import { tagsOf } from './lib/seoHtml.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -446,56 +438,27 @@ describe('checkSeo', () => {
     assert.deepEqual(rulesOf(issues), ['description-length', 'title-length']);
     assert.ok(issues.every(({ severity }) => severity === 'warning'));
   });
-});
 
-describe('baseline ratchet', () => {
-  const issues = run({
-    htmlFiles: { 'index.html': page({ title: 'Acme', body: '<h1>A</h1><h1>B</h1>' }) },
+  it('skips the length rules on a noindex page', () => {
+    const noindex = page({ title: 'Acme', description: 'Short one.', robots: 'noindex', path: '/404' });
+    const issues = run({ htmlFiles: { 'index.html': page(), '404.html': noindex } });
+    assert.deepEqual(rulesOf(issues), []);
   });
 
-  it('counts per rule and file, split by severity', () => {
-    assert.deepEqual(countsOf({ issues, severity: 'error' }), { 'h1-count': { 'index.html': 1 } });
-    assert.deepEqual(countsOf({ issues, severity: 'warning' }), {
-      'title-length': { 'index.html': 1 },
-    });
-  });
-
-  it('fails a count that grows past the baseline and stays quiet below it', () => {
-    const counts = countsOf({ issues, severity: 'error' });
-    assert.equal(growthLines({ counts, baseline: {} }).length, 1);
-    assert.equal(growthLines({ counts, baseline: { 'h1-count': { 'index.html': 1 } } }).length, 0);
-    assert.equal(growthLines({ counts, baseline: { 'h1-count': { 'index.html': 4 } } }).length, 0);
-  });
-
-  it('reports a baseline row above the measured count', () => {
-    const counts = countsOf({ issues, severity: 'error' });
-    assert.equal(staleLines({ counts, baseline: { 'h1-count': { 'index.html': 4 } } }).length, 1);
-    assert.equal(staleLines({ counts, baseline: { 'h1-count': { 'index.html': 1 } } }).length, 0);
-  });
-
-  it('writes the same shape it reads', () => {
-    const counts = countsOf({ issues, severity: 'error' });
-    assert.deepEqual(baselineOf({ counts }), counts);
+  it('allows a title up to 72 characters and a description up to 165', () => {
+    const lengths = ({ title, description }) =>
+      rulesOf(run({ htmlFiles: { 'index.html': page({ title, description }) } }));
+    assert.deepEqual(lengths({ title: 'T'.repeat(72), description: 'D'.repeat(165) }), []);
+    assert.deepEqual(lengths({ title: 'T'.repeat(73), description: 'D'.repeat(166) }), [
+      'description-length',
+      'title-length',
+    ]);
   });
 });
 
-describe('committed baselines', () => {
-  const read = (name) => JSON.parse(readFileSync(join(HERE, name), 'utf8'));
-
-  it('hold each rule in the file of its severity, with positive counts', () => {
-    [
-      ['seo-errors.baseline.json', 'error'],
-      ['seo-warnings.baseline.json', 'warning'],
-    ].forEach(([name, severity]) => {
-      Object.entries(read(name)).forEach(([rule, byFile]) => {
-        assert.equal(RULES[rule], severity, `${rule} belongs in the ${RULES[rule]} baseline`);
-        Object.values(byFile).forEach((count) => assert.ok(count > 0));
-      });
-    });
-  });
-
+describe('published paths', () => {
   it('lists published paths from the root, sorted and unique', () => {
-    const paths = read('seo-published-paths.json');
+    const paths = JSON.parse(readFileSync(join(HERE, 'seo-published-paths.json'), 'utf8'));
     assert.ok(paths.includes('/'));
     assert.deepEqual(paths, [...new Set(paths)].sort());
     paths.forEach((path) => assert.ok(path.startsWith('/')));
