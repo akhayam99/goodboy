@@ -1,7 +1,8 @@
 import './ContentPage.css';
 import type { ReactNode } from 'react';
 import { Statement } from '../../components/Statement';
-import { Breadcrumbs, type Crumb } from './Breadcrumbs';
+import type { Crumb } from '../../lib/Crumb';
+import { Breadcrumbs } from './Breadcrumbs';
 
 type Props = {
   readonly crumbs: readonly Crumb[];

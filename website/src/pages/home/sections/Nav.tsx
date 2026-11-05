@@ -6,8 +6,7 @@ import { ThemeToggle } from '../../../components/ThemeToggle';
 import { useScrolled } from '../../../hooks/useScrolled';
 import { SITE } from '../../../lib/site';
 import { trackAttributes } from '../../../lib/trackAttributes';
-
-export type NavSection = 'home' | 'features' | 'docs' | 'changelog' | 'none';
+import type { NavSection } from '../../../lib/NavSection';
 
 type NavLink = {
   readonly label: string;

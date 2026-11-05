@@ -1,4 +1,4 @@
-import type { Crumb } from '../pages/content/Breadcrumbs';
+import type { Crumb } from '../lib/Crumb';
 
 export type PageKind =
   'home' | 'features' | 'docs-index' | 'doc' | 'changelog-index' | 'release' | 'not-found';
