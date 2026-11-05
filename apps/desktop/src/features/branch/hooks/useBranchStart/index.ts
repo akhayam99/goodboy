@@ -20,14 +20,16 @@ export type BranchStart = {
   readonly line: BranchStartLine;
   readonly conflictFiles: ReadonlyArray<string>;
   readonly baseBranch: string;
+  readonly configuredBase: string | null;
 };
 
 const NO_FILES: ReadonlyArray<string> = [];
 
 export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params): BranchStart => {
-  const baseBranch = useAppStore(
-    (state) => selectMountBaseBranch({ state, sessionId, path: mountPath }) ?? 'main',
+  const configuredBase = useAppStore((state) =>
+    selectMountBaseBranch({ state, sessionId, path: mountPath }),
   );
+  const baseBranch = configuredBase ?? 'main';
   const conflictFiles = useAppStore((state) => {
     const conflict = rebaseConflictOf({
       run: mountId === null ? null : state.historyRuns[mountId],
@@ -50,6 +52,7 @@ export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params
       line: branchStartLineOf({ step, baseBranch, localCheck, now }),
       conflictFiles: files,
       baseBranch,
+      configuredBase,
     };
-  }, [baseBranch, conflictFiles, hasConflictStop, isDone, localCheck, now, status]);
+  }, [baseBranch, configuredBase, conflictFiles, hasConflictStop, isDone, localCheck, now, status]);
 };

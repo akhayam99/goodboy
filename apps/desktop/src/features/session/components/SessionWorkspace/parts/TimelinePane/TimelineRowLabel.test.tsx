@@ -242,7 +242,7 @@ describe('TimelineRowLabel', () => {
     render(
       <TimelineRowLabel
         item={itemOf({ entry: mountEntry() })}
-        diffStat={{ additions: 2000, deletions: 200 }}
+        diffStat={{ additions: 2000, deletions: 200, files: null }}
       />,
     );
 
@@ -254,7 +254,7 @@ describe('TimelineRowLabel', () => {
     const { container } = render(
       <TimelineRowLabel
         item={itemOf({ entry: mountEntry() })}
-        diffStat={{ additions: 0, deletions: 0 }}
+        diffStat={{ additions: 0, deletions: 0, files: null }}
       />,
     );
 

@@ -423,11 +423,12 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         : matchedDetail?.checksRead === 'failed'
           ? "Checks unknown: couldn't read them"
           : null;
+  const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
   const entryFacts = worktreeEntryFactsOf({
     pullRequestState: scope.state,
     commentsNeedYou: reviewCounts({ threads: entries.map((e) => e.row.thread) }).needYou,
-    files: filesCount,
-    diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
+    files: mountStat?.files ?? filesCount,
+    diff: mountStat,
     commits: start.step.ahead,
     notPushed: pushCount,
     checks: checksRuns,

@@ -14,7 +14,7 @@ type Props = {
   readonly mountPath: string | null;
   readonly branch: string | null;
   readonly step: BranchNextStep;
-  readonly baseBranch: string;
+  readonly configuredBase: string | null;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly conflictFiles: ReadonlyArray<string>;
   readonly isConnected: boolean;
@@ -30,7 +30,7 @@ export const BranchStartPage = ({
   mountPath,
   branch,
   step,
-  baseBranch,
+  configuredBase,
   commits,
   conflictFiles,
   isConnected,
@@ -65,7 +65,7 @@ export const BranchStartPage = ({
         session={session}
         mountPath={mountPath}
         prefill={prefill}
-        defaultBase={baseBranch}
+        defaultBase={configuredBase ?? ''}
         submitVariant={step.submit === 'secondary' ? 'secondary' : 'primary'}
         isRepoMissing={false}
         isConnected={isConnected}
