@@ -75,7 +75,7 @@ Twelve files kept a claim from a release migration: each `it()` says a capabilit
 | New session: Start a run from the Overview New menu       | `create-and-search`: overview New opens its menu, and Start a run opens the field   |
 | New session: Report and Wireframe drawer forms            | `create-and-search`: new drawer, write report and write wireframe                   |
 | Agent page: View transcript opens the transcript pane     | `headers`: agent page, View transcript opens the transcript pane                    |
-| Branch page: Comments entry keeps its groups              | `branch-page`: worktree level, the Comments entry opens the Branch on its Comments  |
+| Branch page: Comments entry keeps its groups              | `branch-page`: the Comments tab opens the Branch on its Comments                    |
 
 A file name or a baseline key that still says `preservation` moves with its baseline in the PR that owns the ratchet, never here.
 

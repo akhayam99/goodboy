@@ -663,14 +663,14 @@
         {
           "id": "pull-request-on-the-branch-page",
           "title": "Pull request on the Branch page",
-          "copy": "Click a worktree under Projects in a session and the session rail steps into it: the project and the branch on top, a status line with Rebase while the branch is behind, then Pull request, Comments, Files (with the lines added and removed beside the file count), Commits and Checks with their counts.",
+          "copy": "Click a branch under Projects in a session and the Branch page opens on Pull request, the branch page when it has none yet.",
           "image": "review-pr-page",
           "isNew": false
         },
         {
           "id": "one-trail-to-the-branch-page",
           "title": "One trail to the Branch page",
-          "copy": "Every way into a branch, from the palette, a notification, a chat card or the board, opens the same Branch page with the session rail stepped into that branch.",
+          "copy": "Every way into a branch, from the palette, a notification, a chat card or the board, opens the same Branch page, and the session rail stays on the session.",
           "image": null,
           "isNew": false
         },

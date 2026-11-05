@@ -872,8 +872,7 @@ token block fails the same test.
 the session rail, the drawer track, the diff file rail) eases in
 `--duration-base` (`DURATION_BASE_MS`); words fade in `--duration-quick`
 (`fold-label-out`, and `fold-label-in` after one `--delay-step`, so they arrive
-once there is room); a level drill takes `--duration-base` in, after one
-`--delay-step`, and `--duration-quick` out (`DURATION_BASE_MS`); drawer content fades in
+once there is room); drawer content fades in
 `--duration-quick` after one `--delay-step` (`drawer-content-in`) and out in
 `--duration-quick` (`drawer-content-out`).
 Width moves only on the one element that owns it; what moves inside it is
