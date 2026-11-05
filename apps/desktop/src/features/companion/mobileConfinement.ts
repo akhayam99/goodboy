@@ -13,6 +13,7 @@ import type {
 } from '@goodboy/types';
 import { evaluatePrMergeReadiness, mergeIsClear } from '../review/prMergeReadiness';
 import { sessionMergeFacts, type PullRequestFacts } from '../actions/kinds/pullRequestFacts';
+import { unpushedCommitsOf } from '../branch/unpushedCommitsOf';
 import type { AppStore } from '../../store/store';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { projectById } from '../../store/slices/projects/projectIndex';
@@ -26,17 +27,35 @@ export type MergeGate =
   | { readonly ok: true; readonly pr: PullRequestState; readonly method: PrMergeMethod }
   | { readonly ok: false; readonly reason: string };
 
-export const mobileMergeFacts = ({
-  state,
-  sessionId,
-}: {
+type MergeFactsParams = {
   readonly state: Pick<AppStore, 'sessionGithub' | 'sessionResolveThreads'>;
   readonly sessionId: SessionId;
-}): PullRequestFacts =>
+  readonly unpushed: number;
+};
+
+export const mobileMergeFactsOf = ({
+  state,
+  sessionId,
+  unpushed,
+}: MergeFactsParams): PullRequestFacts =>
   sessionMergeFacts({
     sessionId,
     github: state.sessionGithub[sessionId] ?? null,
     threads: state.sessionResolveThreads?.[sessionId] ?? [],
+    unpushed,
+  });
+
+export const mobileMergeFacts = ({
+  state,
+  sessionId,
+}: {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+}): PullRequestFacts =>
+  mobileMergeFactsOf({
+    state,
+    sessionId,
+    unpushed: unpushedCommitsOf({ state, sessionId, mountId: null }),
   });
 
 type MobileMergeParams = {

@@ -315,6 +315,7 @@ export type PullRequestActionTarget = {
   readonly mountId?: MountId | null;
   readonly prNumber: number | null;
   readonly host?: PullRequestHost;
+  readonly unpushed?: number;
 };
 
 export type DiffActionTarget = {

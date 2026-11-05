@@ -235,6 +235,21 @@ const ROWS: ReadonlyArray<Row> = [
 ];
 
 describe('evaluatePrMergeReadiness tone', () => {
+  it('blocks a merge while commits are not pushed, and names them', () => {
+    const readiness = evaluatePrMergeReadiness({ facts: factsOf({ unpushed: 3 }) });
+    expect(mergeIsClear({ readiness })).toBe(false);
+    expect(readiness.blockers).toContain('3 commits not pushed. Push before you merge.');
+    expect(readiness.word).toBe('Blocked: 3 commits not pushed');
+  });
+
+  it('leaves a merged pull request alone with commits on this machine', () => {
+    const readiness = evaluatePrMergeReadiness({
+      facts: factsOf({ phase: 'merged', unpushed: 3 }),
+    });
+    expect(readiness.word).toBe('Merged');
+    expect(readiness.blockers).not.toContain('3 commits not pushed. Push before you merge.');
+  });
+
   it.each([
     ['nothing outstanding', factsOf(), 'success'],
     ['comments waiting', factsOf({ commentsNeedYou: 2 }), 'warning'],

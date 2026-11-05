@@ -135,7 +135,7 @@ export const useAutoPlanApproval = ({
   if (found === null || rootAgentId === null) {
     return null;
   }
-  const approval = artifactApprovalOf({ row: found.row });
+  const approval = artifactApprovalOf({ row: found.row, level: found.view.level });
   if (approval === null) {
     return null;
   }

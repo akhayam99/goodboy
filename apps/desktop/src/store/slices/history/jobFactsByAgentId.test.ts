@@ -145,6 +145,47 @@ describe('the rows of a rebase job after a restart', () => {
     });
   });
 
+  it('lets a stop go once a newer one on the branch replaced it, or it was settled', () => {
+    const older = event({
+      id: 'ev-older',
+      kind: 'history_stopped',
+      at: '2026-10-10T09:05:00.000Z',
+      payload: {
+        origin: 'rebase',
+        mountId: A_REBASE_MOUNT_ID,
+        agentId: A_REBASE_AGENT_ID,
+        reason: 'origin-moved',
+      },
+    });
+    const newer = event({
+      id: 'ev-newer',
+      kind: 'history_stopped',
+      at: '2026-10-11T09:05:00.000Z',
+      payload: {
+        origin: 'rebase',
+        mountId: A_REBASE_MOUNT_ID,
+        agentId: brandedId<AgentId>({ value: 'agent-later' }),
+        reason: 'origin-moved',
+      },
+    });
+
+    expect(factsOf({ events: [older] }).get(A_REBASE_AGENT_ID)?.phase).toBe('waiting');
+    expect(factsOf({ events: [older, newer] }).get(A_REBASE_AGENT_ID)).toMatchObject({
+      word: 'Stopped',
+      phase: 'done',
+    });
+    expect(
+      jobFactsByAgentId({
+        sessionId: A_REBASE_SESSION_ID,
+        historyRuns: {},
+        scribeWork: {},
+        events: [older],
+        contextOf,
+        settledStopIds: new Set(['ev-older']),
+      }).get(A_REBASE_AGENT_ID)?.phase,
+    ).toBe('done');
+  });
+
   it('reads Stopped from the latest event of the agent', () => {
     const stopped = event({
       id: 'ev-2',

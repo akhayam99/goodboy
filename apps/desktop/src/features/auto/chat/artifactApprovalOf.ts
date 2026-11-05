@@ -1,23 +1,31 @@
 import type { AutoArtifactLedgerRow } from '@goodboy/db';
+import type { AutoLevel } from '@goodboy/core/auto';
 import type { Tone } from '@goodboy/ui';
 import { AUTO_STATE_TONE } from './autoStateTone';
 
 export type ArtifactApprovalView = Readonly<{
   word: string;
   tone: Tone;
-  state: 'needs_approval' | 'approved' | 'revising';
+  state: 'needs_approval' | 'approved' | 'revising' | 'used' | 'not_needed';
 }>;
 
 type Params = {
   readonly row: AutoArtifactLedgerRow;
+  readonly level?: AutoLevel | undefined;
 };
 
-export const artifactApprovalOf = ({ row }: Params): ArtifactApprovalView | null => {
+export const artifactApprovalOf = ({ row, level }: Params): ArtifactApprovalView | null => {
   if (row.artifact.kind !== 'plan') {
     return null;
   }
+  if (row.status === 'consumed') {
+    return { word: 'Used', tone: AUTO_STATE_TONE.artifact, state: 'used' };
+  }
   switch (row.artifact.approvalState) {
     case 'needs_approval':
+      if (level === 'run') {
+        return { word: 'No approval needed', tone: AUTO_STATE_TONE.artifact, state: 'not_needed' };
+      }
       return {
         word: 'Needs approval',
         tone: AUTO_STATE_TONE.waitingOnYou,

@@ -359,7 +359,9 @@ writing to it reopens it to **Deciding**.
   **Tell Auto**, which sends "Approved plan v1." again. An approved plan is the
   artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the ask does not
   unmount: it settles to "Plan v1 approved" with **View plan**. While the plan is
-  revised the ask settles to one quiet line, "Plan v1 · changes asked".
+  revised the ask settles to one quiet line, "Plan v1 · changes asked". A plan a
+  writer took reads "Plan v1 used", and at the level **Never** it reads
+  "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it

@@ -45,6 +45,19 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
       </p>
     );
   }
+  if (model.approval.state === 'used' || model.approval.state === 'not_needed') {
+    return (
+      <p
+        data-plan-settled={model.approval.state}
+        className="flex min-w-0 items-center gap-2 text-ui text-muted-foreground"
+      >
+        <span>
+          Plan v{model.version} {model.approval.state === 'used' ? 'used' : '· no approval needed'}
+        </span>
+        {viewPlan}
+      </p>
+    );
+  }
   if (model.approval.state === 'revising') {
     return (
       <p className="flex min-w-0 items-center gap-2 text-ui text-muted-foreground">

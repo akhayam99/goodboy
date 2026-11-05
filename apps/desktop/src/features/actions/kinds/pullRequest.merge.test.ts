@@ -34,6 +34,7 @@ const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => (
   sessionId: SESSION,
   mountId: null,
   isRebaseStopOpen: false,
+  unpushed: 0,
   host: 'github',
   pr: PR,
   number: 318,

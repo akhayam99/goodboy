@@ -32,7 +32,7 @@ export const AutoPlanToolbar = ({ model }: Props) => {
           </Button>
         </>
       ) : null}
-      {model.approval.state === 'approved' ? null : (
+      {model.approval.state === 'approved' || model.approval.state === 'used' ? null : (
         <>
           <Button variant="ghost" size="sm" onClick={model.askForChanges}>
             <MessageSquare size={ICON_SIZE.control} aria-hidden />

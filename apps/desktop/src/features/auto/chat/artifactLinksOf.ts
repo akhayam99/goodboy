@@ -38,6 +38,6 @@ export const artifactLinksOf = ({ view, artifacts }: Params): ReadonlyArray<Arti
         row === undefined
           ? null
           : artifactLeadOf({ kind: artifact.kind, sourceText: row.sourceText }),
-      approval: row === undefined ? null : artifactApprovalOf({ row }),
+      approval: row === undefined ? null : artifactApprovalOf({ row, level: view.level }),
     };
   });

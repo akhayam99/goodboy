@@ -184,6 +184,39 @@ describe('the pull request page scenes', () => {
     expect(base.textContent).not.toContain('[]');
   });
 
+  it('leads with the push and blocks the merge while commits are not pushed', async () => {
+    answerWith({ behind: 0, unpushed: 3 });
+    draw({ name: 'branch-pr-merge-methods' });
+
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
+      ).toBe('diff.push'),
+    );
+    await waitFor(() => expect(cellText({ id: 'merge' })).toContain('3 commits not pushed'));
+    expect(cellText({ id: 'merge' })).toContain('Blocked');
+    expect(document.querySelector('[data-branch-secondary]')).toBeNull();
+  });
+
+  it('opens the merge again once the push went through', async () => {
+    answerWith({ behind: 0, unpushed: 3 });
+    draw({ name: 'branch-pr-merge-methods' });
+    const push = await waitFor(() => {
+      const button = document.querySelector('[data-branch-primary="diff.push"]');
+      if (button === null) {
+        throw new Error('no Push in the header yet');
+      }
+      return button;
+    });
+
+    answerWith({ behind: 0 });
+    store.setState({ pushBranch: async () => ({ ok: true }) });
+    fireEvent.click(push);
+
+    await waitFor(() => expect(cellText({ id: 'merge' })).not.toContain('not pushed'));
+    expect(document.querySelector('[data-branch-primary="diff.push"]')).toBeNull();
+  });
+
   it('branch-pr-merge-blocked says in Readiness why Merge cannot run', async () => {
     answerWith({ behind: 0 });
     draw({ name: 'branch-pr-merge-blocked' });

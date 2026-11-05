@@ -37,11 +37,16 @@ the new branch form (`forkMount` lands on the new worktree on its landing tab);
 a folder project cannot fork and shows none.
 
 The header holds at most one secondary and one primary (`branchActionsOf`), and the primary is never
-disabled. The secondary is the first push that applies: `Push N fixes` (every accepted thread), `Push
-N commits` while the branch is level with origin, `Publish N replies` (the fix is already on origin),
-`Retry N`; a merged or closed request has none, and `Force push` never sits there: while the online
-copy moved it waits in `⋯` behind its confirm. The primary is the page's next step
-(`pullRequestNextStepOf`): `Mark ready for review` on a draft, `Request review` while nobody was
+disabled. A push that applies leads: `Push N fixes` (every accepted thread) or `Push N commits` while
+the branch is level with origin is the primary and the step below waits in `⋯`. While it runs, while
+a stop is open or on a queued request it sits in the secondary alone, with no primary beside it. A
+merged or closed request has none, and `Force push` never sits there: while the online copy moved it
+waits in `⋯` behind its confirm. With no push the secondary is `Publish N replies` (the fix is
+already on origin) or `Retry N`. Commits not on origin block the merge (`unpushed` in
+`MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
+`Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
+(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same count. Otherwise the primary is the page's next
+step (`pullRequestNextStepOf`): `Mark ready for review` on a draft, `Request review` while nobody was
 asked, `Fix comments` while changes are requested or comments need you, `Fix checks` while a check
 fails (both open their tab), the merge method (`Squash and merge`) once the pull request is ready,
 `Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a reviewer or a
