@@ -1,4 +1,9 @@
-import { EMPTY_USER_FACTS, isResultsPayload, type UserFacts } from '@goodboy/core/auto';
+import {
+  EMPTY_USER_FACTS,
+  isResultsPayload,
+  storedResultOf,
+  type UserFacts,
+} from '@goodboy/core/auto';
 import { getAutoTree, insertAutoOutboxStatement, listAutoOutbox, type AutoTree } from '@goodboy/db';
 import { brandId, type AutoOutboxId, type MessageAttachment } from '@goodboy/types';
 import { treeArtifacts } from './treeArtifacts';
@@ -34,7 +39,9 @@ const factsOf = async ({ ctx, tree, given }: FactsParams): Promise<UserFacts> =>
   );
   const last = results[results.length - 1]?.payload;
   const lastArtifactIds = isResultsPayload(last)
-    ? last.results.flatMap((result) => result.artifacts.map((artifact) => artifact.id))
+    ? last.results.flatMap(
+        (value) => storedResultOf({ value })?.artifacts.map((artifact) => artifact.id) ?? [],
+      )
     : [];
   const focus = given?.focusArtifactId ?? null;
   const attached = given?.attachedArtifacts ?? [];

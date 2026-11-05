@@ -192,4 +192,31 @@ describe('refusals and the state digest in a delivery', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(order.every((index) => index >= 0)).toBe(true);
   });
+
+  it('renders a result stored without its fields and never throws on it', () => {
+    const text = buildDeliveryText({
+      ledgerBlock: '',
+      budgetLine: '',
+      mountsLine: '',
+      digestBlock: '',
+      artifactsBlock: '',
+      childLabels: new Map(),
+      isRestart: false,
+      rows: [
+        {
+          id: 'outbox-partial',
+          payload: {
+            kind: 'results',
+            batchId: 'batch-2',
+            results: [
+              { outcome: 'stopped', reason: 'declined', delegationId: 'delegation-3' },
+              null,
+            ],
+          },
+        },
+      ],
+    });
+    expect(text).toContain('- delegation delegation-3: stopped, declined');
+    expect(text).toContain('- the result of one agent could not be read');
+  });
 });

@@ -1,4 +1,5 @@
 import type { AutoOutcome } from '@goodboy/db';
+import { isRecord } from '@goodboy/types/helpers';
 import { oneLine } from './oneLine';
 import type { ChildClosing, ChildCompletion } from './closing';
 import { checksTextOf } from './checks';
@@ -217,6 +218,40 @@ export const buildDelegationResult = (params: BuildResultParams): DelegationResu
   };
 };
 
+type StoredResultParams = {
+  readonly value: unknown;
+};
+
+const hasResultShape = ({ value }: StoredResultParams): boolean =>
+  isRecord(value) &&
+  value['schemaVersion'] === DELEGATION_RESULT_SCHEMA_VERSION &&
+  typeof value['delegationId'] === 'string' &&
+  isRecord(value['routing']) &&
+  isRecord(value['process']) &&
+  isRecord(value['declared']) &&
+  isRecord(value['cost']) &&
+  isRecord(value['verified']) &&
+  Array.isArray(value['verified']['changedFiles']) &&
+  Array.isArray(value['verified']['checks']) &&
+  Array.isArray(value['artifacts']) &&
+  Array.isArray(value['openQuestions']);
+
+export const storedResultOf = ({ value }: StoredResultParams): DelegationResultV1 | null =>
+  [value].find((entry): entry is DelegationResultV1 => hasResultShape({ value: entry })) ?? null;
+
+type PartialResultParams = {
+  readonly entry: unknown;
+};
+
+export const renderPartialResult = ({ entry }: PartialResultParams): string => {
+  if (!isRecord(entry) || typeof entry['delegationId'] !== 'string') {
+    return '- the result of one agent could not be read';
+  }
+  const outcome = typeof entry['outcome'] === 'string' ? entry['outcome'] : 'unknown';
+  const reason = typeof entry['reason'] === 'string' ? `, ${entry['reason']}` : '';
+  return `- delegation ${entry['delegationId']}: ${outcome}${reason}`;
+};
+
 type RenderResultParams = {
   readonly result: DelegationResultV1;
   readonly label?: string;
@@ -250,6 +285,10 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
     `- ${who}: ${result.outcome}${result.reason === null ? '' : `, ${result.reason}`}`,
     `  ran on ${result.routing.provider} ${result.routing.model} ${result.routing.effort}; ${result.process.turns} turns, ${Math.round(result.process.durationMs / 1000)}s, cost ${result.cost.usd === null ? 'unknown' : `${result.cost.usd.toFixed(2)} USD (${result.cost.basis})`}`,
   ];
+  if (result.reason === 'declined') {
+    lines.push('  the user declined this step, so it never ran');
+    return lines.join('\n');
+  }
   if (result.declared.summary !== '') {
     lines.push(`  it said: ${oneLine({ text: result.declared.summary })}`);
   }

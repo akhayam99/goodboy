@@ -179,6 +179,7 @@ export {
   buildDelegationResult,
   renderDelegationResult,
   resolveDelegationOutcome,
+  storedResultOf,
   type BuildResultParams,
   type DelegationOutcome,
   type DelegationResultV1,
