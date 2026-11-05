@@ -11,6 +11,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { nextWorkflowRunId } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { brandId, type IsoDateTime } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -177,6 +178,25 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByPlaceholderText(/^Message/)).toBeNull();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
+  });
+
+  it('draws no running row on a discarded run', async () => {
+    await mount('c09-orch-reading');
+    expect(checklist().querySelector('[data-plan-row="now"]')).not.toBeNull();
+
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessions: state.sessions.map((session) => ({
+          ...session,
+          workflowRuns: session.workflowRuns?.map((run) => ({
+            ...run,
+            discardedAt: brandId<IsoDateTime>({ value: '2026-11-05T10:00:00.000Z' }),
+          })),
+        })),
+      }));
+    });
+
+    expect(checklist().querySelector('[data-plan-row="now"]')).toBeNull();
   });
 
   it('c09-orch-reading shows the hint being read and the running row after the steps', async () => {

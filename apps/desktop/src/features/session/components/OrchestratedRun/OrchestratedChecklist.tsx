@@ -61,7 +61,8 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     agents,
     hints: run.orchestratorHints ?? [],
     summary: parseRunSummaryText(run.orchestratorSummary?.trim() ?? ''),
-    isBetweenSteps: isBetweenStepsPhase({ phase: view.orchestrator.state.phase }),
+    isBetweenSteps:
+      !view.isDiscarded && isBetweenStepsPhase({ phase: view.orchestrator.state.phase }),
     isDone,
   });
   const queuedHints = (run.orchestratorHints ?? []).filter((hint) => hint.consumedAt == null);
