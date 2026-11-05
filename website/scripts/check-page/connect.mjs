@@ -2,9 +2,16 @@ export const connect = async ({ socketUrl }) => {
   const socket = new WebSocket(socketUrl);
   await new Promise((done) => socket.addEventListener('open', done));
   const pending = new Map();
+  const errors = [];
   let nextId = 0;
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(event.data);
+    if (message.method === 'Runtime.exceptionThrown') {
+      errors.push(message.params.exceptionDetails.exception?.description ?? 'uncaught exception');
+    }
+    if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') {
+      errors.push(message.params.args.map((arg) => arg.value ?? arg.description).join(' '));
+    }
     if (message.id === undefined || !pending.has(message.id)) {
       return;
     }
@@ -28,5 +35,6 @@ export const connect = async ({ socketUrl }) => {
     }
     return response.result?.result?.value;
   };
-  return { send, evaluate, close: () => socket.close() };
+  const takeErrors = () => errors.splice(0);
+  return { send, evaluate, takeErrors, close: () => socket.close() };
 };
