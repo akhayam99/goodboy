@@ -149,9 +149,19 @@ describe('readDevToolsPort', () => {
             waits += 1;
           },
         }),
-        /exited before it wrote DevToolsActivePort/,
+        /exited before DevTools was ready/,
       );
       assert.equal(waits, 2);
+    });
+  });
+
+  it('ignores a port file left by a Chrome that already exited', async () => {
+    await withProfile(async (profile) => {
+      writeFileSync(join(profile, 'DevToolsActivePort'), '41873\n/devtools/browser/x\n');
+      await assert.rejects(
+        readDevToolsPort({ profile, hasExited: () => true }),
+        /exited before DevTools was ready/,
+      );
     });
   });
 
