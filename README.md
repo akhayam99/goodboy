@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="The Activity timeline of a Harborline session, each row with its model: Sonnet 5.5, Astra, GPT-6.1 Sol, Composer 2.5 and Kimi K3" width="880">
+  <img src="./docs/readme/readme-hero-light.webp" alt="The Overview of a Harborline session: Needs you 4, Running, Branches and Done, with the sessions rail and the Context drawer open on Decisions 5">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.10</sub>
@@ -32,7 +32,7 @@ Every task is a session, and the board shows where each one stands. Six lanes, *
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in five lanes: Needs you holds four sessions, each with a question waiting">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board in six lanes: Needs you holds four sessions, each with a question waiting">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.10</sub>
@@ -54,7 +54,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context drawer on Decisions 5: four changes since you last looked, then decisions 7, 6 and 4" width="439">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context drawer on Decisions 5: four changes since you last looked, then decisions 7, 6, 4 and 2, beside the session Overview">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.10</sub>
@@ -65,7 +65,7 @@ The **Branch** page holds one branch: its pull request, review comments, changed
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of #318: Checks 1 failing, Changes requested, Merge Blocked by checks, reviewers and description" width="688">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of #318: Checks 1 failing, Changes requested, Merge Blocked by checks, reviewers, description and activity">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.10</sub>
@@ -76,7 +76,7 @@ Ask about your repos without starting a session. **Chat** reads every project an
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list and a table of three payments-api files, Read 3 files, then a follow-up answer">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list and a table of three source files, Read 3 files, then a follow-up answer">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.10</sub>

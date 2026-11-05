@@ -2,12 +2,8 @@ import { useEffect, useState } from 'react';
 import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
-import { PaneShell } from '@goodboy/ui';
 import { LogPane } from '../../../../features/session/central/log/LogPane';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
-import { HeaderBand } from '../../../../features/session/components/SessionOverviewPane/HeaderBand';
-import { OverviewHeaderActions } from '../../../../features/session/components/SessionOverviewPane/OverviewHeaderActions';
-import { OverviewTitle } from '../../../../features/session/components/SessionOverviewPane/OverviewTitle';
 import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
 import {
   SESSION,
@@ -94,7 +90,6 @@ type Props = {
   readonly isContextRead?: boolean;
   readonly seedRuns?: () => void;
   readonly isLogShown?: boolean;
-  readonly isLogTitled?: boolean;
 };
 
 const IDLE_SESSION: Session = {
@@ -110,7 +105,6 @@ export const ActivityRunScene = ({
   isContextRead = false,
   seedRuns = seedActivityRunScene,
   isLogShown = false,
-  isLogTitled = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -168,16 +162,6 @@ export const ActivityRunScene = ({
           <div className="relative h-full w-full">
             <SessionWorkspace session={session} />
           </div>
-        ) : isLogShown && isLogTitled ? (
-          <PaneShell
-            page="overview"
-            title={<OverviewTitle session={session} />}
-            actions={<OverviewHeaderActions session={session} />}
-            headerRhythm="section"
-          >
-            <HeaderBand session={session} />
-            <LogPane session={session} />
-          </PaneShell>
         ) : isLogShown ? (
           <LogPane session={session} />
         ) : (

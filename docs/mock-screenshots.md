@@ -701,15 +701,14 @@ feature-area guide ones in the public
 and light `.webp` pairs. The website's hero picture is the one capture on the
 site; every other product view there is a React mock. `pnpm readme:hero` shoots
 two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
-passed as its first argument), at scale 4, in both themes. The `readme-hero-log`
-scene (the session title and state line above the Activity timeline of the
-Harborline session, with the model of every row, Sonnet 5.5, Astra, GPT-6.1 Sol,
-Composer 2.5 or Kimi K3) is shot in a 1460x900 window and clipped to the header and
-twelve rows, 905x636 css px, so the text stays at 12 px or more at the 880 px
-GitHub draws it at; both themes come from one frozen clock so their times match; it writes
-`docs/readme/readme-hero-{dark,light}.webp`. The `readme-hero` scene (the
-session on its Overview with the Projects card unfolded and the shared Context
-drawer open) is shot at 1920x1200 and writes
+passed as its first argument), in both themes. The `readme-hero` scene (the
+Harborline session on its Overview with the Projects card unfolded and the shared
+Context drawer open) is shot twice from the same scene. The README picture is the
+whole app window, 1680x1118 css px at scale 2, so the left rail, the header and
+the drawer all show and the columns keep their widths (a 1440 wide window folds
+the session pages column); both themes come from one frozen clock so their times
+match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
+is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
 the width the site draws it at, cropped to the top 840 px of the window and
 resampled once from the same capture. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
@@ -751,6 +750,8 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
 - `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
 - `--hover "<css selector>"` moves the pointer to the center of the first match, after the clicks and before the capture. It shoots a tooltip or a hover card the scene does not open by itself, such as the limits card of a provider chip in the top bar (`--hover '[aria-label^="Claude limits"]'`).
 - `--scroll "<css selector>"` scrolls the first match to the top of the window, after the clicks and before the capture. It shoots a pane the scene stacks below the first screen, such as the studio home under the workflow builder (`--scroll '[data-studio-overlay]'`).
+- `--frozen-at 2026-11-05T16:00:00` fixes the page clock, so the dark and the light shot of one figure show the same times.
+- `--out-dir <folder>` writes the two files straight into `<folder>` and records nothing in `docs/figures.json`. Use it for a trial shot.
 - `--version x.y.z` names the version the manifest records for the figure. Without it the shot takes the version of `apps/desktop/package.json` of the checkout that runs the script.
 
 Each feature-area guide points at each file with its raw URL,

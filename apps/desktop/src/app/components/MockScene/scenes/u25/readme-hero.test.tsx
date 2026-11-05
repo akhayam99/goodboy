@@ -77,24 +77,4 @@ describe('readme hero scene', () => {
     expect([...providers].sort()).toEqual(['anthropic', 'codex', 'cursor']);
     expect(agents.some((agent) => agent.modelOverride === 'claude-haiku-4-5')).toBe(false);
   });
-
-  it('registers the log scene and shows the Activity timeline on three providers', async () => {
-    expect(MOCK_SCENES['readme-hero-log']).toBeDefined();
-    const Scene = U25_README_HERO_SCENES['readme-hero-log'];
-    render(
-      <ToastProvider>
-        <Scene />
-      </ToastProvider>,
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-    expect(screen.queryByText('Something went wrong')).toBeNull();
-    expect(screen.getByRole('searchbox')).toBeDefined();
-    expect(useAppStore.getState().drawer).toBeNull();
-
-    const agents = useAppStore.getState().sessionPhaseRuns[SESSION_ID] ?? [];
-    const providers = new Set(agents.map((agent) => agent.providerOverride));
-    expect([...providers].sort()).toEqual(['anthropic', 'codex', 'cursor']);
-  });
 });
