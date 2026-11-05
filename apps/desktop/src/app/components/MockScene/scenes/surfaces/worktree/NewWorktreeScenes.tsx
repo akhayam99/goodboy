@@ -3,7 +3,7 @@ import { brandId, type MountId, type SessionId } from '@goodboy/types';
 import { SETTINGS_PROJECTS } from '../../audit/settingsSeed';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../../store';
-import { WorktreeSetupOffer } from '../../../../../../features/session/components/SessionOverviewPane/ProjectMountRows/WorktreeSetupOffer';
+import { WorktreeSetupOffer } from '../../../../../../features/worktree/WorktreeSetupOffer';
 import { NewWorktreesField } from '../../../../../../features/worktree/NewWorktreesField';
 import { mockSceneIpc } from '../../mockSceneIpc';
 

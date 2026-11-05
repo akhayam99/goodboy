@@ -1,14 +1,12 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () =>
-  (await import('../../../../../../store/storyHarness')).dbModuleMock(),
-);
+vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -19,7 +17,7 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../../../store/storyHarness';
+} from '../../../store/storyHarness';
 import { WorktreeSetupOffer } from './index';
 
 const SESSION = aSession({ workspaceId: aWorkspace({}).id }).id;
@@ -78,7 +76,15 @@ describe('WorktreeSetupOffer', () => {
     expect(runDiscoveredScript).not.toHaveBeenCalled();
   });
 
-  it('runs the command in the worktree only on the click, then says it finished', async () => {
+  it('says nothing once the setup ran fine', () => {
+    offered({ state: 'done' });
+    show();
+
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText(/Setup finished/)).toBeNull();
+  });
+
+  it('runs the command in the worktree only on the click, then saves it as done', async () => {
     show();
 
     fireEvent.click(screen.getByRole('button', { name: 'Run' }));

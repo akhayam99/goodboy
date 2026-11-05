@@ -10,7 +10,6 @@ import { ForeignCommitsNotice } from '../ProjectMountRows/ForeignCommitsNotice';
 import { MountActionFailureNotice } from '../ProjectMountRows/MountActionFailureNotice';
 import { MountBranchDecision } from '../ProjectMountRows/MountBranchDecision';
 import { RebaseStoppedNotice } from '../ProjectMountRows/RebaseStoppedNotice';
-import { WorktreeSetupOffer } from '../ProjectMountRows/WorktreeSetupOffer';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -49,15 +48,6 @@ export const MountNotices = ({ sessionId, row, status }: Props) => {
       {controls.failure === null ? null : (
         <MountActionFailureNotice projectName={row.projectName} controls={controls} />
       )}
-      {hasTools ? (
-        <WorktreeSetupOffer
-          sessionId={sessionId}
-          mountId={row.mountId}
-          worktreePath={worktreePath}
-          projectName={row.projectName}
-          branch={row.branch}
-        />
-      ) : null}
       {hasTools ? <ForeignCommitsNotice sessionId={sessionId} row={row} status={status} /> : null}
       {row.projectKind === 'repo' && row.branch !== '' ? (
         <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />

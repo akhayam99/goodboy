@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
-import { useAppStore } from '../../../../../../store';
-import { pluralize } from '../../../../../../shared/utils/pluralize';
+import { useAppStore } from '../../../store';
+import { pluralize } from '../../../shared/utils/pluralize';
 import {
   setupOfferKey,
   setupOfferOf,
   setupOfferValueOf,
   type SetupOffer,
-} from '../../../../../worktree/newWorktreeSettings';
+} from '../newWorktreeSettings';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -109,19 +109,7 @@ export const WorktreeSetupOffer = ({
     return <Notice tone="info" placement="inline" role="status" title={`Running ${command}…`} />;
   }
   if (offer.state === 'done') {
-    return (
-      <Notice
-        tone="success"
-        placement="inline"
-        role="status"
-        title={`Setup finished: ${command ?? 'nothing to run'}.`}
-        actions={
-          <Button variant="ghost" size="xs" onClick={dismiss}>
-            Dismiss
-          </Button>
-        }
-      />
-    );
+    return null;
   }
   if (record?.status === 'error' && command !== null) {
     const reason = tailLineOf({ text: record.result?.stderr ?? record.output ?? '' });
