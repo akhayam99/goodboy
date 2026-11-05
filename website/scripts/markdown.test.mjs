@@ -54,6 +54,19 @@ describe('themePictures', () => {
     assert.ok(html.endsWith(' after'));
   });
 
+  it('writes the width and height of each image from the size list', () => {
+    const plain = picture.replace(' width="480"', '');
+    const sizeOf = ({ src }) => (src.endsWith('light.webp') ? { width: 4080, height: 2640 } : null);
+    const html = themePictures({ html: plain, sizeOf });
+    assert.equal(html.match(/width="4080" height="2640"/g)?.length, 1);
+    assert.equal(html.match(/height=/g)?.length, 1);
+  });
+
+  it('scales the height to a width the markdown already sets', () => {
+    const html = themePictures({ html: picture, sizeOf: () => ({ width: 4000, height: 2000 }) });
+    assert.equal(html.match(/height="240"/g)?.length, 2);
+  });
+
   it('keeps a picture that is not a light and dark pair', () => {
     const other = picture.replace('(prefers-color-scheme: dark)', '(min-width: 800px)');
     assert.equal(themePictures({ html: other }), other);

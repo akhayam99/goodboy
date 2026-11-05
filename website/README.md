@@ -159,7 +159,7 @@ the browser. HTML comments come out with a character scanner
 (`website/src/prerender/stripComments.ts`), not a regex. A doc's
 `<picture>` with a `prefers-color-scheme: dark` source becomes two lazy
 images, one per site theme, so the header toggle picks the screenshot, not the
-system (`website/src/prerender/themePictures.ts`). `pnpm test` runs their tests, and
+system (`website/src/prerender/themePictures.ts`). Every doc image carries `width` and `height` from `website/src/prerender/imageSizes.json`, keyed by its path in the media repository, so the page does not shift while it loads; the images stay on their current host. After a doc adds a screenshot, run `node scripts/sync-image-sizes.mjs <path to the media checkout>` to write its size, and `check-seo` fails an `img` without both. `pnpm test` runs their tests, and
 `website/scripts/site-copy.test.mjs` holds the site copy to the retired names list and the
 dash rule ([docs/testing.md](../docs/testing.md)).
 
