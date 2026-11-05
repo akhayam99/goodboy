@@ -51,7 +51,7 @@
   card measured 370px. The Artifacts list uses the same group label as Questions, and an
   artifact state is a word with a 6px dot, never an icon.
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
-  selecting a card swaps the list for the detail, and the trail or Back is the
+  selecting a card swaps the list for the detail, and the back row or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one
   exception, because its work happens in bulk: the open comment sits in the
   drawer beside the list, and the list stays visible
@@ -90,9 +90,9 @@
   second `Answer` on the timeline row.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
-  through `openExternalTaskLens`, so the session trail ends in Issue, its lens
-  crumb returns to the list and Back does too. The page draws no back button of
-  its own. `Remove link from this session` sits in the record's `⋯`, asks first and
+  through `openExternalTaskLens`, so the back row above it reads `Back to` its
+  tool and returns to the list, and Back does too. The page draws no back
+  button of its own. `Remove link from this session` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
   lens list, unless the user already moved on. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the

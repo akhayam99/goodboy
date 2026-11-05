@@ -241,7 +241,7 @@ Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
 Workflows, Tasks detail, settings pages, agent and pull request detail. The
-header, the trail band (the `Session` crumbs and the Ask button), the body and
+header, the back row (`Back to X` and the Ask button), the body and
 the footer share the same column edges, so moving from Overview to Runs to
 Agents to a settings page never shifts the first letter. The Ask button is the
 last item of the trail's `PageColumn`: its right edge is the column's right

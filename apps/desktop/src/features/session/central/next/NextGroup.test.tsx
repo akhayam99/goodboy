@@ -13,7 +13,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { Place } from '../../../../store/slices/navigation/types';
-import { upTrailOf } from '../../../../store/slices/navigation/upTrailOf';
+import { backOf } from '../../../../store/slices/navigation/backOf';
 import {
   FIXTURE_ROOT,
   FIXTURE_SESSION,
@@ -342,11 +342,9 @@ describe('a row click opens its place', () => {
       { at: 'agent', sessionId: FIXTURE_SESSION, agentId: BILLING_CHILD.agentId },
       BRANCH_CHECKS,
     ]);
-    expect(
-      upTrailOf({ state: useAppStore.getState(), place: BRANCH_CHECKS, onUp: () => undefined }).map(
-        (segment) => segment.label,
-      ),
-    ).toEqual([SESSION.goal, 'Branch']);
+    expect(backOf({ state: useAppStore.getState(), place: BRANCH_CHECKS })?.label).toBe(
+      'Back to overview',
+    );
   });
 
   it('opens the place from the keyboard once', () => {

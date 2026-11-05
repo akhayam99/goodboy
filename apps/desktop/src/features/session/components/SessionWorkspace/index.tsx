@@ -14,7 +14,7 @@ import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface, type LensSurface } from '../../lens-surface';
-import { SessionTrail } from './SessionTrail';
+import { SessionBackRow } from './SessionBackRow';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 
 const LENS_KEEP_ALIVE_CAP = 3;
@@ -64,7 +64,7 @@ export const SessionWorkspace = ({ session }: Props) => {
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
-  const trail = <SessionTrail sessionId={sessionId} />;
+  const trail = <SessionBackRow sessionId={sessionId} />;
 
   const lensLayers = keptSurfaces.map((target) => ({
     key: target,

@@ -34,7 +34,19 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     return sessionPlace({ sessionId, lens: 'review' });
   }
   if (view.agentId !== null) {
+    const agents = state.sessionPhaseRuns[sessionId] ?? [];
+    const agent = agents.find((candidate) => candidate.id === view.agentId);
+    const parentAgentId = agent?.parentAgentId ?? null;
+    const isStep = agent?.workflowRunId != null && agent.stepId != null;
     const home = agentHomeFor({ state, sessionId, agentId: view.agentId }) ?? view.lens;
+    if (
+      !isStep &&
+      parentAgentId !== null &&
+      parentAgentId !== view.agentId &&
+      agents.some((candidate) => candidate.id === parentAgentId)
+    ) {
+      return sessionPlace({ sessionId, lens: home, agentId: parentAgentId });
+    }
     const runId =
       home === 'workflows'
         ? ((state.sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === view.agentId)

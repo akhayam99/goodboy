@@ -8,6 +8,7 @@ import {
   both,
   branchTab,
   click,
+  clickBackArrow,
   clickButton,
   heading,
   lens,
@@ -119,7 +120,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
       await click(await findSection(/^Checks/));
       await click(await findSection(/^Comments/));
       expect(stackDepth()).toBe(depth);
-      await clickButton(/^Back(?! to Sessions$| to session )/);
+      await clickBackArrow();
     },
     lands: lens(null),
   },

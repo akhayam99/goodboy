@@ -453,6 +453,17 @@ export const clickButton = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('button', { name }));
 };
 
+export const findBackArrow = async (): Promise<HTMLElement> =>
+  waitFor(() => {
+    const arrow = document.querySelector<HTMLElement>('[data-nav-arrow="back"]');
+    expect(arrow).not.toBeNull();
+    return arrow!;
+  });
+
+export const clickBackArrow = async (): Promise<void> => {
+  await click(await findBackArrow());
+};
+
 export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('menuitem', { name }));
 };

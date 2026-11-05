@@ -135,7 +135,6 @@
   "apps/desktop/src/store/slices/history/remapRewrittenCommits.test.ts": 1,
   "apps/desktop/src/store/runtime/models/selectTaskModel.test.ts": 1,
   "apps/desktop/src/store/slices/navigation/index.test.ts": 1,
-  "apps/desktop/src/store/slices/navigation/upTrailOf.test.ts": 1,
   "apps/desktop/src/store/slices/project-mounts/ensureProjectMounted.firstLap.test.ts": 1,
   "apps/desktop/src/store/slices/project-mounts/mountViews.test.ts": 1,
   "apps/desktop/src/store/slices/projects/linkProjectRemote.test.ts": 1,

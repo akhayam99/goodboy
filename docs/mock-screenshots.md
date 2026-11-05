@@ -289,7 +289,7 @@ the workflow and budget rule lists and the unread list with an empty list, and
 `db_execute` with no rows touched, when the scene has nothing, so Settings and
 the Branch page open there too. A bare `mockIPC` answers `undefined` and the
 real code crashes on it in a browser, never in a unit test that mocks `invoke`. The `shell`
-scene mounts the real `SessionWorkspace` (trail band, **Ask**, page rows that
+scene mounts the real `SessionWorkspace` (back row, **Ask**, page rows that
 move), and a scene that opens a session seeds its agents and plans so the
 overview never stays on its loading skeleton.
 

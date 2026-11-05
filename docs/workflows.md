@@ -99,7 +99,7 @@ the middle of a word. When nothing usable is left it is the first line of the
 ask, cut at a word. A session or agent title goes through the same cleaning at
 the parse boundary (`parseGeneratedTitle`, with the ask as the fallback). A title stored before this reads cleaned too: the same
 function runs when the run rows load, and never touches a name you chose. The activity feed,
-the workflow detail and the breadcrumb show that title, so
+the workflow detail and the run page show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
 name generated for its workflow and gets no second title. You rename a run
@@ -311,8 +311,11 @@ read top to bottom at the conversation measure:
   scroll, the composer docks below it. The right click on the title lists the
   same items. Asks you is not in this menu: its chip holds it. An archived run shows
   **Restore** and reads dimmed, with no composer.
-- **Goal** (`OrchestratedGoal`). The goal as prose, then the run settings line
-  (`OrchestratedFacts`, the same on a preset run's Overview): one chip per
+- **Goal** (`OrchestratedGoal`). The goal as prose, then one glance line (state
+  word, one sentence from `runGlanceOf`, the spend of the limit and **Settings**,
+  `RunGlanceLine`, the same on a preset run's Overview and on every other run
+  kind) over the run settings line (`OrchestratedFacts`): **Settings** unfolds it
+  inline. One chip per
   setting while the run lives (`RunSettingsLine`), each reading its label, its
   value and where it comes from, as "Limit $0.92 of $5.00 this run". A chip
   opens only its own popover on `AnchoredPopover` (320px): the setting, one

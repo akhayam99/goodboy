@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
@@ -56,24 +56,17 @@ describe('breadcrumbs scenes', () => {
     expect(Object.keys(U27_BREADCRUMBS_SCENES)).toHaveLength(10);
   });
 
-  it.each<readonly [string, ReadonlyArray<string>]>([
-    ['run', ['Runs', 'Run']],
-    ['step', ['Runs', 'Run', 'Record the attempts on each delivery in notify-relay']],
-    ['agent', ['Runs', 'Read retry state from the typed endpoint']],
-    ['artifact', ['Artifacts', 'Artifact']],
-    ['branch-file', ['Branch', 'File']],
-  ])('draws the real session trail on the %s page', async (slug, tail) => {
+  it.each<readonly [string, string]>([
+    ['run', 'Back to runs'],
+    ['step', 'Back to run'],
+    ['agent', 'Back to runs'],
+    ['artifact', 'Back to artifacts'],
+    ['branch-file', 'Back to branch'],
+  ])('draws one back row and no trail on the %s page', async (slug, label) => {
     mount({ id: `u27-breadcrumbs-after-${slug}-light` });
-    const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' });
-    const labels = [...trail.querySelectorAll('[data-trail-piece]')].map(
-      (piece) => piece.textContent ?? '',
-    );
+    const back = await screen.findByRole('button', { name: label });
 
-    expect(labels).toEqual(tail);
-    expect(
-      within(trail)
-        .getByText(tail.at(-1) ?? '')
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(back.closest('[data-session-back]')).not.toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 });

@@ -19,7 +19,7 @@ import { SessionWorkspace } from '../../features/session/components/SessionWorks
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import { agentPlace, branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
-import { upTrailOf } from '../../store/slices/navigation/upTrailOf';
+import { backOf } from '../../store/slices/navigation/backOf';
 import { LENS_KINDS } from '../../store/slices/session-view/types';
 import {
   AGENT_BACKFILL_ID,
@@ -37,7 +37,8 @@ import type { StoryStore } from '../../store/storyHarness';
 
 const SRC = join(__dirname, '..', '..');
 const UI_SRC = join(SRC, '..', '..', '..', 'packages', 'ui', 'src');
-const TRAIL = 'nav[aria-label="Breadcrumb"]';
+const BACK_ROW = '[data-session-back] button';
+const BREADCRUMB = 'nav[aria-label="Breadcrumb"]';
 const BACK_ICON = /\b(ArrowLeft|ChevronLeft)\b/;
 const FIRST_MOUNT_PATH = FLOW_MOUNTS[0]?.worktreePath ?? null;
 const FIRST_ARTIFACT_ID = CHAT_ARTIFACTS[0]?.id ?? null;
@@ -55,6 +56,7 @@ const WAYS_UP = new Set([
   DRAWER_FRAME,
   ...drawerFrameParts(),
   'app/components/AppTopBar/NavCluster/HistoryArrow.tsx',
+  'features/session/components/SessionWorkspace/SessionBackRow/index.tsx',
 ]);
 
 const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
@@ -65,7 +67,7 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
   'shared/components/StudioShell/StudioBackButton.tsx':
     'Back to app is the studio Close, not an up',
   'features/session/components/SessionWorkspace/parts/AgentOverlay.tsx':
-    'the empty state of a gone agent; the trail above it is the way up',
+    'the empty state of a gone agent; the back row above it is the way up',
   'features/session/ask/components/AskDrawer/AskPlanView.tsx':
     'a view inside the Ask drawer; moves to the DrawerFrame back when touched (plan P5)',
   'features/session/components/ContextDrawer/VersionsView.tsx':
@@ -186,12 +188,11 @@ afterEach(() => {
 const isShown = (node: Element): boolean =>
   node.closest('[inert]') === null && node.closest('[hidden]') === null;
 
-const shownTrails = (): ReadonlyArray<ReadonlyArray<string>> =>
-  [...document.querySelectorAll(TRAIL)]
-    .filter(isShown)
-    .map((trail) =>
-      [...trail.querySelectorAll('[data-trail-piece]')].map((piece) => piece.textContent ?? ''),
-    );
+const shownBacks = (): ReadonlyArray<string> =>
+  [...document.querySelectorAll(BACK_ROW)].filter(isShown).map((back) => back.textContent ?? '');
+
+const shownBreadcrumbs = (): number =>
+  [...document.querySelectorAll(BREADCRUMB)].filter(isShown).length;
 
 const sourcesOf = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir).flatMap((name) => {
@@ -216,14 +217,10 @@ const keyOf = (path: string): string =>
   path.startsWith(UI_SRC) ? `packages/ui/src/${relative(UI_SRC, path)}` : relative(SRC, path);
 
 describe('every place has a way up', () => {
-  it.each(PLACES)('draws the up trail on %s', async (name, to) => {
+  it.each(PLACES)('draws one back row and no trail on %s', async (name, to) => {
     act(() => useAppStore.getInitialState().navigate({ to }));
     const state = useAppStore.getState();
-    const expected = upTrailOf({
-      state,
-      place: captureLocation({ state }).place,
-      onUp: () => undefined,
-    }).map((segment) => segment.label);
+    const expected = backOf({ state, place: captureLocation({ state }).place })?.label ?? null;
 
     render(
       <ToastProvider>
@@ -232,11 +229,12 @@ describe('every place has a way up', () => {
     );
 
     if (PAGELESS[name] !== undefined) {
-      expect(shownTrails()).toEqual([]);
+      expect(shownBacks()).toEqual([]);
       return;
     }
-    expect(expected.length).toBeGreaterThan(1);
-    await waitFor(() => expect(shownTrails()).toEqual([expected]), { timeout: 4_000 });
+    expect(expected).not.toBeNull();
+    await waitFor(() => expect(shownBacks()).toEqual([expected]), { timeout: 4_000 });
+    expect(shownBreadcrumbs()).toBe(0);
   });
 
   it('names only walked places as pageless', () => {
@@ -245,7 +243,7 @@ describe('every place has a way up', () => {
     expect(Object.keys(PAGELESS).filter((name) => !names.has(name))).toEqual([]);
   });
 
-  it('draws a back arrow or chevron only in Trail, DrawerFrame and the history arrows', () => {
+  it('draws a back arrow or chevron only in the back row, DrawerFrame and the history arrows', () => {
     const offenders = [
       ...sourcesOf(join(SRC, 'app')),
       ...sourcesOf(join(SRC, 'features')),
