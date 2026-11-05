@@ -9,16 +9,19 @@ import {
   SceneNotReadyError,
   WARM_UP_TIMEOUT_MS,
   annotationLines,
+  appendStderrTail,
   failingScenes,
   failureLines,
   inboxAgeFailures,
   measureScene,
   notReadyFailure,
   readDevToolsPort,
+  startWithRetries,
   summaryLine,
   summaryMarkdown,
   timeCellFailures,
   unmeasuredFailures,
+  withChromeStderr,
 } from './validateScenesBrowser.mjs';
 import {
   COLUMN_NAMES,
@@ -168,7 +171,7 @@ const connect = async (port) => {
   return { send, disconnect: () => socket.close() };
 };
 
-const browser = async () => {
+const startChrome = async () => {
   const profile = mkdtempSync(join(tmpdir(), 'validate-scenes-'));
   const child = spawn(
     CHROME,
@@ -181,10 +184,19 @@ const browser = async () => {
       `--user-data-dir=${profile}`,
       'about:blank',
     ],
-    { stdio: 'ignore', detached: true },
+    { stdio: ['ignore', 'ignore', 'pipe'], detached: true },
   );
+  let stderr = '';
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (chunk) => {
+    stderr = appendStderrTail({ tail: stderr, chunk });
+  });
+  let hasExited = false;
   const exited = new Promise((resolvePromise) => {
-    child.once('exit', resolvePromise);
+    child.once('exit', (...result) => {
+      hasExited = true;
+      resolvePromise(result);
+    });
   });
   const killGroup = (signal) => {
     try {
@@ -207,6 +219,7 @@ const browser = async () => {
       await exited;
     }
     killGroup('SIGKILL');
+    child.stderr.destroy();
     try {
       rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     } catch {
@@ -214,15 +227,17 @@ const browser = async () => {
     }
   };
   try {
-    const port = await readDevToolsPort({ profile });
+    const port = await readDevToolsPort({ profile, hasExited: () => hasExited });
     const connection = await connect(port);
     disconnect = connection.disconnect;
     return { send: connection.send, close };
   } catch (error) {
     await close();
-    throw error;
+    throw withChromeStderr({ error, stderr });
   }
 };
+
+const browser = () => startWithRetries({ start: startChrome });
 
 const run = async (send, fn, argument, timeoutMs = CALL_TIMEOUT_MS) => {
   const result = await send(
