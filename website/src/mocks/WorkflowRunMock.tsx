@@ -122,7 +122,7 @@ export const WorkflowRunMock = ({ className }: Props) => (
           <Waypoints size={18} />
         </span>
         <div className="wfrHeadText">
-          <h4 className="wfrTitle">Duplicate credit fix</h4>
+          <div className="wfrTitle">Duplicate credit fix</div>
           <p className="wfrMeta">5 steps, 10 agents, $2.74</p>
         </div>
       </div>

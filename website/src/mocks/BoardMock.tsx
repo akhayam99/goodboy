@@ -108,10 +108,10 @@ export const BoardMock = ({ className }: Props) => (
     <div className="brdBoard">
       {COLUMNS.map(({ name, tone, isBreathing = false, cards }) => (
         <section key={name} className="brdCol" data-tone={tone}>
-          <h4 className="brdHead">
+          <div className="brdHead">
             <span className="brdHeadLabel">{name}</span>
             <span className="brdCount">{cards.length}</span>
-          </h4>
+          </div>
           {cards.map((card) => (
             <article key={card.title} className="brdCard">
               <ToneBar tone={tone} isBreathing={isBreathing} />

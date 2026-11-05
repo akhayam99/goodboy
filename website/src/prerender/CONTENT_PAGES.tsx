@@ -12,8 +12,11 @@ import { clipText } from './clipText';
 import { FEATURE_DOCS, type FeatureDoc } from './FEATURE_DOCS';
 import type { PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
+import { releaseDescription } from './releaseDescription';
+import { releaseTitle } from './releaseTitle';
 import { renderMarkdown } from './renderMarkdown';
 import { STATIC_PAGES } from './STATIC_PAGES';
+import { stripComments } from './stripComments';
 
 export type ContentPageEntry = {
   readonly file: string;
@@ -34,6 +37,19 @@ const SEARCH_HINTS: Readonly<Record<string, string>> = {
   agents: 'talk to and steer coding agents',
   context: 'one brief every coding agent reads',
   review: 'turn review comments into commits',
+  artifacts: 'artifacts coding agents write',
+  board: 'see every coding agent task by stage',
+  'branch-history': 'fold, reword and drop git commits',
+  inbox: 'issues from your trackers in one list',
+  keyboard: 'a shell in the git worktree and shortcuts',
+  overview: 'what a coding agent session did',
+  search: 'find any session, message or plan',
+  security: 'keep tokens out, back up, update safely',
+  setup: 'from install to your first coding agent',
+  start: 'begin from an issue, a workflow or a question',
+  storage: 'free disk space and clean up branches',
+  support: 'report a bug from inside the app',
+  switching: 'move between tasks without losing your place',
 };
 
 const CLUSTER_OF_AREA = new Map(
@@ -47,12 +63,17 @@ const docTitle = (doc: FeatureDoc) => {
   return hint === undefined ? `${doc.title} | Goodboy docs` : `${doc.title}: ${hint}`;
 };
 
-const docDescription = (doc: FeatureDoc) =>
-  clipText(
-    doc.intro === ''
-      ? `${doc.title} in Goodboy: ${doc.headings.slice(0, 4).join(', ')} and more.`
-      : doc.intro,
+const SHORT_INTRO = 110;
+
+const docDescription = (doc: FeatureDoc) => {
+  const topics = doc.headings.slice(0, 4).join(', ');
+  if (doc.intro === '') {
+    return clipText(`${doc.title} in Goodboy: ${topics} and more.`);
+  }
+  return clipText(
+    doc.intro.length < SHORT_INTRO && topics !== '' ? `${doc.intro} Covers ${topics}.` : doc.intro,
   );
+};
 
 const changelogIndex = (): ContentPageEntry => {
   const crumbs = [HOME, CHANGELOG];
@@ -82,8 +103,15 @@ const releasePages = (): readonly ContentPageEntry[] =>
       file: `changelog/${release.version}.html`,
       meta: {
         path,
-        title: `Goodboy ${release.version} release notes`,
-        description: clipText(release.summary),
+        title: releaseTitle({ version: release.version, summary: release.summary }),
+        description: clipText(
+          releaseDescription({
+            version: release.version,
+            date: release.date,
+            summary: release.summary,
+            notes: stripComments({ source: release.notes }),
+          }),
+        ),
         ogType: 'article',
         pageType: 'WebPage',
         crumbs,
