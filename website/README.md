@@ -31,7 +31,8 @@ Where code runs:
 - Browser: `src/pages/*/main.tsx` entries, `src/components/`, `src/mocks/`,
   `src/hooks/`, `src/lib/`.
 - Build time only: `website/scripts/prerender.mjs` and `website/src/prerender/`, which render
-  the pages and write `dist/`.
+  the pages and write `dist/`. `website/vite/` holds the star count fetch and the clean-URL
+  plugin that `vite.config.ts` loads.
 - Generated, never edited by hand: `src/mocks/generated/` (from
   `website/scripts/sync-icons.mjs` and `website/scripts/sync-app-tokens.mjs`), `dist/`.
 - Hand-written data: `src/pages/features/features.data.json`,
@@ -293,7 +294,7 @@ All in `website/src/components/`, each with its own CSS file.
 - `StarButton`, a Star on GitHub link to `SITE.repo`, shown on touch devices in
   place of the downloads. On desktop the hero shows its own Star on GitHub button
   next to the download.
-- `StarCount`, the star total inside every Star on GitHub button. `vite.config.ts`
+- `StarCount`, the star total inside every Star on GitHub button. `vite/readStarCount.ts`
   reads `stargazers_count` from the GitHub API once per build, so visitors never
   call GitHub, and `src/lib/formatStars.ts` floors it to the hundred, shown as 100+,
   200+, then 1.2k+. Under 100, or when the build cannot reach the API, the

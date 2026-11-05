@@ -1,73 +1,15 @@
-import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defineConfig, type Connect, type Plugin } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { cleanUrls } from './vite/cleanUrls';
+import { readStarCount } from './vite/readStarCount';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
-const REPO_API = 'https://api.github.com/repos/akhayam99/goodboy';
-const STAR_FETCH_TIMEOUT_MS = 5000;
-
-const fetchStarCount = async (): Promise<number | null> => {
-  try {
-    const response = await fetch(REPO_API, {
-      headers: { Accept: 'application/vnd.github+json' },
-      signal: AbortSignal.timeout(STAR_FETCH_TIMEOUT_MS),
-    });
-    const payload: unknown = response.ok ? await response.json() : null;
-    const count = (payload as { readonly stargazers_count?: unknown } | null)?.stargazers_count;
-    return typeof count === 'number' ? count : null;
-  } catch {
-    return null;
-  }
-};
-
-const readStarCount = async (): Promise<number | null> => {
-  const cached = process.env.GOODBOY_STARS;
-  if (cached !== undefined) {
-    return JSON.parse(cached) as number | null;
-  }
-  const count = await fetchStarCount();
-  process.env.GOODBOY_STARS = JSON.stringify(count);
-  return count;
-};
-
-const CLEAN_URLS: Record<string, string> = {
-  '/features': '/features.html',
-  '/features/': '/features.html',
-};
-
-const rewriteCleanUrls: Connect.NextHandleFunction = (request, _response, next) => {
-  const path = request.url?.split('?')[0] ?? '';
-  const target = CLEAN_URLS[path];
-  if (target !== undefined) {
-    request.url = target;
-  }
-  next();
-};
-
-const rewriteBuiltPages: Connect.NextHandleFunction = (request, _response, next) => {
-  const path = (request.url?.split('?')[0] ?? '').replace(/\/$/, '');
-  const target = `${path}.html`;
-  if (path !== '' && existsSync(resolve(ROOT, 'dist', `.${target}`))) {
-    request.url = target;
-  }
-  next();
-};
-
-const cleanUrls = (): Plugin => ({
-  name: 'goodboy-clean-urls',
-  configureServer: (server) => {
-    server.middlewares.use(rewriteCleanUrls);
-  },
-  configurePreviewServer: (server) => {
-    server.middlewares.use(rewriteBuiltPages);
-  },
-});
 
 export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss(), cleanUrls()],
+  plugins: [react(), tailwindcss(), cleanUrls({ root: ROOT })],
   define: {
     __GOODBOY_STARS__: JSON.stringify(await readStarCount()),
   },
