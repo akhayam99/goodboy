@@ -695,6 +695,7 @@ rail-pinned
 rail-ticket-ids
 railorder
 readme-hero
+readme-hero-log
 rebase-bring-back
 rebase-choosing
 rebase-done-carried

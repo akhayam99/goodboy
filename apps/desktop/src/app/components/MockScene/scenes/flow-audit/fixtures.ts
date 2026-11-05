@@ -467,7 +467,7 @@ const DYNAMIC_STEPS: ReadonlyArray<Step> = [
     promptPrefix:
       'Deliver the same event id three times and expect one credit and three 200 responses.',
     orchestratorReason:
-      'The Sentry trace shows three deliveries of one event, so the run does not close until a test replays exactly that.',
+      'The failing trace shows three deliveries of one event, so the run does not close until a test replays exactly that.',
   },
 ];
 
@@ -511,7 +511,7 @@ const DYNAMIC_RUN: WorkflowRun = {
     },
     {
       id: 'flow-hint-queued',
-      text: 'Replay the event from the Sentry trace before the tester signs off.',
+      text: 'Replay the event from the failing trace before the tester signs off.',
       createdAt: clock.iso({ at: '2026-09-16T09:40:00.000Z' }),
     },
     {
