@@ -17,7 +17,7 @@ type Props = {
 };
 
 type FrameParams = {
-  readonly spend: string | null;
+  readonly spentUsd: number;
   readonly chips: ReactNode;
 };
 
@@ -78,5 +78,5 @@ export const RunSettingsLine = ({ session, run, kind, isOpen, frame }: Props) =>
   if (frame === undefined) {
     return chips;
   }
-  return frame({ spend: settings.limit.value === 'none' ? null : settings.limit.value, chips });
+  return frame({ spentUsd, chips });
 };

@@ -156,7 +156,7 @@ describe('the run settings line', () => {
     render(<RunSettingsLine session={SESSION} run={noLimit} isOpen />);
 
     const trigger = chip('Limit');
-    expect(trigger.getAttribute('aria-label')).toContain('$17.00 of $20.00');
+    expect(trigger.getAttribute('aria-label')).toContain('$20.00');
     fireEvent.click(trigger);
     const popover = screen.getByRole('dialog', { name: 'Limit' });
     expect(popover.textContent).toContain('$2.00 of it this run');

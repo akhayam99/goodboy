@@ -100,7 +100,7 @@ describe('c07 Auto scenes', () => {
     expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Limit: \$0\.27 of \$10\.00/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Limit: \$10\.00/ })).toBeDefined();
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -204,7 +204,12 @@ describe('c07 Auto scenes', () => {
       throw new Error('no glance line');
     }
     expect(glance.dataset.glance).toBe('working');
-    const toggle = within(glance).getByRole('button', { name: /Settings/ });
+    expect(glance.textContent).not.toContain('Waiting for');
+    expect(
+      document.querySelector('[data-auto-dock]')?.textContent?.match(/Waiting for/g),
+    ).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
+    const toggle = within(glance).getByRole('button', { name: 'Run settings' });
     const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
     expect(region?.dataset.open).toBe('false');
     expect(region?.querySelector('[data-agent-settings]')).not.toBeNull();

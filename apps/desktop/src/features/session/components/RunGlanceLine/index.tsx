@@ -31,16 +31,21 @@ export const RunGlanceLine = ({ id, glance, spend, settings }: Props) => {
           )}
         />
         <span className={cn('shrink-0 text-row', tint.text)}>{glance.word}</span>
-        <span aria-hidden="true" className="text-faint-foreground">
-          ·
-        </span>
-        <span className="min-w-0 truncate text-muted-foreground">{glance.sentence}</span>
+        {glance.sentence === '' ? null : (
+          <>
+            <span aria-hidden="true" className="text-faint-foreground">
+              ·
+            </span>
+            <span className="min-w-0 truncate text-muted-foreground">{glance.sentence}</span>
+          </>
+        )}
         <span className="flex-1" />
         {spend === null ? null : <span className="shrink-0 text-faint-foreground">{spend}</span>}
         <Button
           variant="quiet"
           size="xs"
           aria-expanded={isOpen}
+          aria-label="Run settings"
           aria-controls={settingsId}
           onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         >

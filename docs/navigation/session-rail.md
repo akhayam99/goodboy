@@ -702,8 +702,7 @@ Folding the rail leaves the column in place.
   selected agent is revealed when the panel opens or the selection changes:
   a fold hiding it opens and the row scrolls to the middle, later changes
   scroll only as far as needed, and an agent missing from the tree changes
-  nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's **Working now** chips
-  and chat **Open** actions set the Agents drawer's child target without
+  nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's chat **Open** actions set the Agents drawer's child target without
   navigating the center. The target takes precedence over the main selection
   (`useSpawnedFocus`); **All runs** still works, and another reveal returns
   to the target's launch. An Auto

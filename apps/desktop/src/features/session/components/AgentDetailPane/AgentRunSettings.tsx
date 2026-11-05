@@ -1,8 +1,10 @@
 import type { RefCallback } from 'react';
 import type { Agent, Session } from '@goodboy/types';
-import { useAppStore, useSessionCost } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { autoGlanceOf } from '../../../auto/glance/autoGlanceOf';
+import { isAutoDockSpeaking } from '../../../auto/glance/isAutoDockSpeaking';
+import { useAgentSpendById } from '../../../workflows/hooks/useAgentSpendById';
 import { agentGlanceOf } from '../../glance/agentGlanceOf';
 import { spendTextOf } from '../../glance/spendTextOf';
 import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
@@ -27,10 +29,7 @@ export const AgentRunSettings = ({
   modelsSlotRef,
 }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
-  const sessionCapUsd = useAppStore(
-    (state) => state.sessionBudgets[session.id]?.softCapUsd ?? null,
-  );
-  const sessionSpentUsd = useSessionCost(session.id);
+  const agentSpendUsd = useAgentSpendById({ sessionId: session.id }).get(agent.id) ?? 0;
   const line = (
     <AgentSettingsLine
       session={session}
@@ -45,19 +44,17 @@ export const AgentRunSettings = ({
     />
   );
   const budget = autoView?.budget ?? null;
+  const glance =
+    autoView === null
+      ? agentGlanceOf({ agent, turnState })
+      : autoGlanceOf({ view: autoView, rootTurn: turnState });
+  const isDockSpeaking =
+    autoView !== null && isAutoDockSpeaking({ view: autoView, rootTurn: turnState });
   return (
     <RunGlanceLine
       id={agent.id}
-      glance={
-        autoView === null
-          ? agentGlanceOf({ agent, turnState })
-          : autoGlanceOf({ view: autoView, rootTurn: turnState })
-      }
-      spend={
-        budget === null
-          ? spendTextOf({ spentUsd: sessionSpentUsd, capUsd: sessionCapUsd })
-          : spendTextOf({ spentUsd: budget.spentUsd, capUsd: budget.capUsd })
-      }
+      glance={isDockSpeaking ? { ...glance, sentence: '' } : glance}
+      spend={spendTextOf({ spentUsd: budget === null ? agentSpendUsd : budget.spentUsd })}
       settings={line}
     />
   );

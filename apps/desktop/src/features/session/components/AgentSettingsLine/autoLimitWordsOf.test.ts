@@ -32,7 +32,7 @@ describe('where the Auto limit comes from', () => {
     const capUsd = autoTreeCapUsd({ sessionCapUsd: 8, workspaceLimitUsd: 5 });
 
     expect(wordsOf({ sessionCapUsd: 8, capUsd })).toEqual({
-      value: '$0.85 of $5.00',
+      value: '$5.00',
       source: 'from Harborline',
       isFromWorkspace: true,
       chain: 'This Auto $5.00, then session $8.00, then Harborline $5.00. $5.00 comes first.',
@@ -43,14 +43,14 @@ describe('where the Auto limit comes from', () => {
     const capUsd = autoTreeCapUsd({ sessionCapUsd: 2, workspaceLimitUsd: 5 });
 
     expect(wordsOf({ sessionCapUsd: 2, capUsd })).toMatchObject({
-      value: '$0.85 of $2.00',
+      value: '$2.00',
       source: 'from session',
     });
   });
 
   it('names this Auto when its own limit was set on it', () => {
     expect(wordsOf({ sessionCapUsd: null, capUsd: 3 })).toMatchObject({
-      value: '$0.85 of $3.00',
+      value: '$3.00',
       source: 'this Auto',
       chain: 'This Auto $3.00, then session none, then Harborline $5.00. $3.00 comes first.',
     });
@@ -59,7 +59,6 @@ describe('where the Auto limit comes from', () => {
   it('says nothing stops an Auto with no limit and no session limit', () => {
     expect(wordsOf({ sessionCapUsd: null, capUsd: null })).toMatchObject({
       value: 'none',
-      spentText: '$0.85 spent',
       source: '',
     });
   });
@@ -74,7 +73,6 @@ describe('where the Auto limit comes from', () => {
       }),
     ).toEqual({
       value: 'none',
-      spentText: '$0.85 spent',
       source: '',
       chain: 'This Auto none, then session none, then Harborline none. Nothing stops this Auto.',
     });

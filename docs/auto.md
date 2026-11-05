@@ -302,7 +302,7 @@ writing to it reopens it to **Deciding**.
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
   **Stopped**; the Auto agents list reads the same words.
 - **Changing the limit.** The Auto page's settings line (`AgentSettingsLine`)
-  holds **Limit** "$0.85 of $5.00 from Harborline" (`autoLimitWordsOf`: the
+  holds **Limit** "$5.00 from Harborline" (`autoLimitWordsOf`: the
   source names the winner, "this Auto" once you set its own, and the popover's
   last line reads the chain, "This Auto $5.00, then session $8.00, then
   Harborline $5.00. $5.00 comes first."). Its popover takes an amount and applies
@@ -482,15 +482,18 @@ writing to it reopens it to **Deciding**.
   **Mark finished** is in the header. A Stop that fails says why in the dock and a Retry on the
   tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
-  thinking line of the conversation speaks instead. The **Working now** strip
-  (`AutoWorkingNow`) remains above the message field while children start or run,
-  newest first, even during Auto's own turn, and hidden while the Agents drawer
-  is open, which holds the full tree. Each chip shows the short task title,
+  thinking line of the conversation speaks instead. There is no separate strip
+  of running children: the running rows of the cards, the rail and the dock
+  already say it. The glance line under the title says a sentence once: while
+  the dock speaks (a live row, or a plan that waits) it keeps the state word,
+  the spend and **Settings** only (`isAutoDockSpeaking`); on Stuck, Done and
+  Stopped it keeps its sentence. While a plan waits the dock owns the one
+  filled button (**Approve plan**) and the next step card's **Continue** is
+  secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
-  A chip or a delegation line's **Open** reveals that child in Agents without
+  A delegation line's **Open** reveals that child in Agents without
   changing the main agent or its draft (`useAutoTreeActions`, the `spawned` drawer
-  payload and `useSpawnedFocus`). Settled children leave the strip even if their
-  turn state arrives late. While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
+  payload and `useSpawnedFocus`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
 - **A child preview opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)

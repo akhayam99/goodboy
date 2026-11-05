@@ -19,7 +19,7 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
   }
   const status = effectiveAgentStatusOf({ agent, turn: turnState });
   if (status === 'running') {
-    return glanceOf({ state: 'working', sentence: 'Working on it' });
+    return glanceOf({ state: 'working', sentence: '' });
   }
   if (status === 'failed') {
     return glanceOf({ state: 'stuck', sentence: 'The agent failed' });

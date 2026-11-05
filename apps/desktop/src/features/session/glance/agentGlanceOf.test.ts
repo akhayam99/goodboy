@@ -33,4 +33,13 @@ describe('agentGlanceOf', () => {
     expect(glance.sentence).toBe('No route');
     expect(glance.word).toBe('Stuck');
   });
+
+  it('says a running agent with the word alone', () => {
+    const glance = agentGlanceOf({
+      agent: anAgent({ id: AGENT, status: 'running' }),
+      turnState: { kind: 'running', runId: RUN, startedAt: AT },
+    });
+
+    expect(glance).toMatchObject({ word: 'Working', sentence: '' });
+  });
 });

@@ -3,6 +3,7 @@ import type { Session } from '@goodboy/types';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { RunSettingsLine } from '../../../workflows/components/RunSettingsLine';
 import { runGlanceOf } from '../../glance/runGlanceOf';
+import { spendTextOf } from '../../glance/spendTextOf';
 import { RunGlanceLine } from '../RunGlanceLine';
 import { RunTimeLeftLabel } from '../../../workflows/components/RunTimeLeftLabel';
 import { useRunTimeLeft } from '../../../workflows/hooks/useRunTimeLeft';
@@ -68,8 +69,13 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
           session={session}
           run={run}
           isOpen={isOpen}
-          frame={({ spend, chips }) => (
-            <RunGlanceLine id={run.id} glance={glance} spend={spend} settings={chips} />
+          frame={({ spentUsd, chips }) => (
+            <RunGlanceLine
+              id={run.id}
+              glance={glance}
+              spend={spendTextOf({ spentUsd })}
+              settings={chips}
+            />
           )}
           kind={
             <>

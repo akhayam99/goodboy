@@ -5,6 +5,7 @@ import { Button, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
+import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { AutoChildCard } from './AutoChildCard';
 import { AutoNextAction } from './AutoNextAction';
 import { cardTitleOf } from './cardTitleOf';
@@ -34,6 +35,7 @@ export const AutoDelegationLines = ({
   const publishing = usePublishAct();
   const labels = autoChildLabelsOf({ delegations: view.delegations });
   const waiting = waitingPublishesOf({ delegations });
+  const isPlanWaiting = isAutoPlanAwaitingApproval({ view });
   return (
     <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
       {delegations.map((delegation) => {
@@ -81,6 +83,7 @@ export const AutoDelegationLines = ({
                 rootAgentId={view.tree.rootAgentId}
                 action={nextActionOf({ view, delegation, card })}
                 untold={untold[delegation.id] ?? null}
+                isPlanWaiting={isPlanWaiting}
                 onUntold={(content) =>
                   setUntold((current) => {
                     const rest = Object.fromEntries(

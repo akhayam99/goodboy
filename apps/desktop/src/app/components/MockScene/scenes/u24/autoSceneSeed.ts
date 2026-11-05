@@ -665,7 +665,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
           spentUsd: 0.2,
           reservedUsd: 0.75,
         }),
-        agents: [root('running'), planner('completed')],
+        agents: [root('completed', '12:07:30'), planner('completed')],
         events: [
           ...first,
           ...second,
@@ -675,7 +675,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
             run: RUN_THREE,
           }),
         ],
-        rootTurn: { kind: 'running', runId: RUN_THREE, startedAt: at({ time: '12:07:00' }) },
+        rootTurn: IDLE,
         hasPlanArtifact: true,
       };
     case 'refused':

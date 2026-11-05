@@ -147,9 +147,10 @@ describe('the Auto chat scenes', () => {
     const work = rail();
     expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
-    expect(screen.getAllByText('Waiting for Implementer and Tester').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Waiting for Implementer and Tester')).toHaveLength(1);
+    expect(document.querySelector('[data-glance]')?.textContent).toContain('$0.27');
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
-    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 of \$10\.00/);
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$10\.00/);
     expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
   });
 
@@ -235,7 +236,7 @@ describe('the Auto chat scenes', () => {
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
     expect(limitChip().getAttribute('aria-label')).toBe('Limit: none');
-    expect(document.querySelector('[data-setting-spent]')?.textContent).toBe('$0.27 spent');
+    expect(document.querySelector('[data-glance]')?.textContent).toContain('$0.27');
     expect(limitChip().textContent).not.toMatch(/left/);
   });
 
@@ -277,7 +278,7 @@ describe('the Auto chat scenes', () => {
     expect(rail().querySelectorAll('[data-agent-id]')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
-    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$10\.00/);
   });
 
   it('auto-chat-done says Idle in the rail with no tail, and Mark finished in the header once', async () => {

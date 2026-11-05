@@ -72,11 +72,11 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(card).toContain('Sonnet 5.5');
   });
 
-  it('Spent, Reserved, Left: the Limit chip says spent of limit, its popover the rest', async () => {
+  it('Spent, Reserved, Left: the Limit chip says the limit, its popover the rest', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     await autoLevel();
-    fireEvent.click(screen.getByRole('button', { name: /^Limit: \$0\.27 of \$10\.00/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Limit: \$10\.00/ }));
     const popover = screen.getByRole('dialog', { name: 'Limit' });
     expect(within(popover).getByText('Spent')).toBeDefined();
     expect(within(popover).getByText('$0.27')).toBeDefined();

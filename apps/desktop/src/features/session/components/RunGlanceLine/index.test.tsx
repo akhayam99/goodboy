@@ -26,6 +26,19 @@ describe('RunGlanceLine', () => {
     expect(screen.getByText('$1.20 of $5.00').textContent).toBe('$1.20 of $5.00');
   });
 
+  it('draws the word alone when the sentence is empty', () => {
+    render(
+      <RunGlanceLine
+        id="agent-ledger-core"
+        glance={glanceOf({ state: 'working', sentence: '' })}
+        spend={null}
+        settings={<span>Model chips</span>}
+      />,
+    );
+
+    expect(screen.getByRole('status').textContent).toBe('WorkingSettings');
+  });
+
   it('draws no spend when there is nothing to say', () => {
     mount({ spend: null });
 
@@ -34,7 +47,7 @@ describe('RunGlanceLine', () => {
 
   it('keeps the chips behind Settings and opens them inline', () => {
     const { container } = mount({ spend: null });
-    const button = screen.getByRole('button', { name: 'Settings' });
+    const button = screen.getByRole('button', { name: 'Run settings' });
     const panel = container.querySelector('#run-settings-agent-ledger-core');
 
     expect(button.getAttribute('aria-expanded')).toBe('false');

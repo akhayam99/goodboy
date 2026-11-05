@@ -58,17 +58,7 @@ export const SettingChip = ({
       <span className="min-w-0 max-w-56 truncate text-eyebrow text-foreground">{words.value}</span>
     </Button>
   );
-  const trigger =
-    words.spentText === undefined ? (
-      chip
-    ) : (
-      <span className="inline-flex min-w-0 items-center gap-2">
-        {chip}
-        <span data-setting-spent="" className="shrink-0 text-meta text-faint-foreground">
-          {words.spentText}
-        </span>
-      </span>
-    );
+  const trigger = chip;
   return (
     <AnchoredPopover
       dropdown={dropdown}
