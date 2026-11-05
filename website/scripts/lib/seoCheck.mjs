@@ -39,6 +39,7 @@ export const RULES = {
   'jsonld-invalid': 'error',
   'jsonld-type': 'error',
   'jsonld-ref': 'error',
+  'jsonld-page-kind': 'error',
   'link-broken': 'error',
   'link-to-redirect': 'error',
   'redirect-chain': 'error',
@@ -127,6 +128,8 @@ const imageChecks = ({ page }) =>
       return found;
     });
 
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 const walkTypes = ({ node, visit }) => {
   if (Array.isArray(node)) {
     node.forEach((item) => walkTypes({ node: item, visit }));
@@ -156,9 +159,11 @@ const jsonLdChecks = ({ page }) => {
     const defined = new Set();
     const cited = new Set();
     const found = [];
+    const nodes = [];
     walkTypes({
       node: data,
       visit: ({ node }) => {
+        nodes.push(node);
         const keys = Object.keys(node);
         if (keys.length === 1 && keys[0] === '@id') {
           cited.add(node['@id']);
@@ -187,6 +192,26 @@ const jsonLdChecks = ({ page }) => {
         );
       }
     });
+    const isDoc = /^docs\/[^/]+\.html$/.test(page.file);
+    const isRelease = /^changelog\/[^/]+\.html$/.test(page.file);
+    if (isDoc && !nodes.some((node) => node['@type'] === 'TechArticle')) {
+      found.push(
+        issue({
+          rule: 'jsonld-page-kind',
+          file: page.file,
+          message: 'a doc page has no TechArticle',
+        }),
+      );
+    }
+    if (isRelease && !nodes.some((node) => DATE.test(node.datePublished ?? ''))) {
+      found.push(
+        issue({
+          rule: 'jsonld-page-kind',
+          file: page.file,
+          message: 'a release page has no datePublished',
+        }),
+      );
+    }
     return found;
   });
 };

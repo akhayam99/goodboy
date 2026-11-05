@@ -86,8 +86,10 @@ characters; a description stays under 160.
   the GitHub and X profiles, the SoftwareApplication with the newest
   snapshot's version, date and release notes link and the four download URLs,
   then the page itself and its BreadcrumbList when it sits below the home page.
-  Mark up only what the page shows: no rating and no FAQ that isn't on the
-  page.
+  A doc page is a TechArticle, a release page a WebPage with the `datePublished`
+  of its snapshot, the two index pages are CollectionPages, and every other page
+  a WebPage. Mark up only what the page shows: no rating, no `license` and no FAQ
+  that isn't on the page. The check fails on a type outside that list.
 - `website/src/prerender/PAGE_REGISTRY.ts` is the one list of pages: the home page,
   features, every content page and the 404, each with its `PageMeta`. The build writes `dist/sitemap.xml` and `dist/llms.txt` from it, so they cannot
   disagree, and `/changelog.xml` from the release snapshots; a new release or doc shows up in all three on its own. A page has a `lastmod`

@@ -1,7 +1,7 @@
 import PROVIDER_SOURCES from '../components/brandIcons.source.json';
 import { BUILD_ASSET_URLS } from '../lib/downloads';
 import { SITE } from '../lib/site';
-import type { PageMeta } from './PageMeta';
+import type { PageKind, PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { STATIC_PAGES } from './STATIC_PAGES';
 
@@ -13,6 +13,18 @@ const ROOT_URL = `${SITE.origin}/`;
 const ORGANIZATION_ID = `${SITE.origin}/#organization`;
 const WEBSITE_ID = `${SITE.origin}/#website`;
 const SOFTWARE_ID = `${SITE.origin}/#software`;
+
+const AUTHOR = { '@type': 'Person', name: 'Amin Khayam', url: 'https://github.com/akhayam99' };
+
+const SCHEMA_TYPE = {
+  home: 'WebPage',
+  features: 'WebPage',
+  'docs-index': 'CollectionPage',
+  doc: 'TechArticle',
+  'changelog-index': 'CollectionPage',
+  release: 'WebPage',
+  'not-found': 'WebPage',
+} as const satisfies Record<PageKind, string>;
 
 const FEATURE_LIST = [
   'A briefing per task: goal, decisions and summary, read by every agent on it',
@@ -64,7 +76,7 @@ const software = () => {
     installUrl: `${SITE.origin}/#install`,
     image: `${SITE.origin}/og-image.png`,
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    author: { '@type': 'Person', name: 'Amin Khayam', url: 'https://github.com/akhayam99' },
+    author: AUTHOR,
     publisher: { '@id': ORGANIZATION_ID },
     sameAs: [SITE.repo],
     featureList: FEATURE_LIST,
@@ -84,14 +96,20 @@ const breadcrumbList = ({ page }: Params) => ({
 
 const webPage = ({ page }: Params) => {
   const url = `${SITE.origin}${page.path}`;
+  const isRelease = page.kind === 'release';
+  const isDoc = page.kind === 'doc';
   return {
-    '@type': page.pageType,
+    '@type': SCHEMA_TYPE[page.kind],
     '@id': `${url}#webpage`,
     url,
     name: page.title,
+    headline: isDoc ? page.title : undefined,
     description: page.description,
     inLanguage: 'en',
-    dateModified: page.lastmod,
+    datePublished: isRelease ? page.lastmod : undefined,
+    dateModified: isRelease ? undefined : page.lastmod,
+    author: isDoc ? AUTHOR : undefined,
+    publisher: isDoc ? { '@id': ORGANIZATION_ID } : undefined,
     isPartOf: { '@id': WEBSITE_ID },
     about: { '@id': SOFTWARE_ID },
     breadcrumb: page.crumbs.length > 1 ? { '@id': `${url}#breadcrumb` } : undefined,

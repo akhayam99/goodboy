@@ -175,6 +175,7 @@ describe('checkSeo', () => {
         path: '/changelog/1.0.0',
         title: TITLE + ' one',
         description: DESCRIPTION + ' One.',
+        ld: graph({ extra: [{ '@type': 'WebPage', '@id': 'z', datePublished: '2026-11-05' }] }),
       }),
     };
     const sitemapPaths = ['/', '/docs', '/changelog/1.0.0'];
@@ -242,6 +243,46 @@ describe('checkSeo', () => {
       },
     });
     assert.deepEqual(rulesOf(ref), ['jsonld-ref']);
+  });
+
+  it('wants a TechArticle on a doc and a datePublished on a release', () => {
+    const doc = (ld) =>
+      run({
+        htmlFiles: {
+          'index.html': page(),
+          'docs/a.html': page({
+            path: '/docs/a',
+            ld,
+            title: TITLE + ' a',
+            description: DESCRIPTION + ' A.',
+          }),
+        },
+        sitemapPaths: ['/', '/docs/a'],
+      });
+    assert.deepEqual(rulesOf(doc(graph())), ['jsonld-page-kind']);
+    assert.deepEqual(rulesOf(doc(graph({ extra: [{ '@type': 'TechArticle', '@id': 'x' }] }))), []);
+    const release = (ld) =>
+      run({
+        htmlFiles: {
+          'index.html': page(),
+          'changelog/1.0.0.html': page({
+            path: '/changelog/1.0.0',
+            ld,
+            title: TITLE + ' r',
+            description: DESCRIPTION + ' R.',
+          }),
+        },
+        sitemapPaths: ['/', '/changelog/1.0.0'],
+      });
+    assert.deepEqual(rulesOf(release(graph())), ['jsonld-page-kind']);
+    assert.deepEqual(
+      rulesOf(
+        release(
+          graph({ extra: [{ '@type': 'WebPage', '@id': 'y', datePublished: '2026-11-05' }] }),
+        ),
+      ),
+      [],
+    );
   });
 
   it('fails a broken internal link and a link to a redirect source', () => {
