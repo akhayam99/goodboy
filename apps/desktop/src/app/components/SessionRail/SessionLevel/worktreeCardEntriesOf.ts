@@ -102,6 +102,7 @@ export const worktreeCardEntriesOf = ({
     commentsNeedYou: reviewCounts({ threads: ownThreads }).needYou,
     files: null,
     diff,
+    commits: null,
     notPushed: branchPushFactsOf({ status, commits, hasRemoteHead }).toPush,
     checks: runsOf({ github, view, pr }),
     checksUnreadReason: unreadReasonOf({ view, pr }),

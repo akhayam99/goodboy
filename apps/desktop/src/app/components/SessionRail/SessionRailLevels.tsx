@@ -1,22 +1,16 @@
 import type { Session } from '@goodboy/types';
-import type { RailLevel } from '../../../store/slices/navigation/railLevel';
-import { LevelStack } from './LevelStack';
+import { LEVEL_LAYER } from './levelLayerClass';
 import { SessionLevel } from './SessionLevel';
 
 type Props = {
   readonly session: Session;
-  readonly level: RailLevel;
   readonly isStudioOver: boolean;
 };
 
-export const SessionRailLevels = ({ session, level, isStudioOver }: Props) => (
-  <LevelStack
-    level={level}
-    layers={[
-      {
-        level: 'session',
-        node: <SessionLevel session={session} isActive={level === 'session' && !isStudioOver} />,
-      },
-    ]}
-  />
+export const SessionRailLevels = ({ session, isStudioOver }: Props) => (
+  <div data-level-stack="session" className="relative min-h-0 flex-1 overflow-clip">
+    <div data-level-layer="session" className={LEVEL_LAYER}>
+      <SessionLevel session={session} isActive={!isStudioOver} />
+    </div>
+  </div>
 );

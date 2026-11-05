@@ -1,23 +1,15 @@
 import type { Session } from '@goodboy/types';
-import type { RailLevel } from '../../../store/slices/navigation/railLevel';
-import { LevelStack } from './LevelStack';
+import { LEVEL_LAYER } from './levelLayerClass';
 import { RailSessionLevel } from './RailSessionLevel';
-import { RailWorktreeLevel } from './RailWorktreeLevel';
 
 type Props = {
   readonly session: Session;
-  readonly level: RailLevel;
 };
 
-export const SessionRailIcons = ({ session, level }: Props) => (
-  <LevelStack
-    level={level}
-    layers={[
-      { level: 'session', node: <RailSessionLevel session={session} /> },
-      {
-        level: 'worktree',
-        node: level === 'worktree' ? <RailWorktreeLevel session={session} /> : null,
-      },
-    ]}
-  />
+export const SessionRailIcons = ({ session }: Props) => (
+  <div data-level-stack="session" className="relative min-h-0 flex-1 overflow-clip">
+    <div data-level-layer="session" className={LEVEL_LAYER}>
+      <RailSessionLevel session={session} />
+    </div>
+  </div>
 );

@@ -23,7 +23,7 @@ describe('branchNextStepOf', () => {
     {
       name: 'not pushed',
       status: statusOf({ ahead: 3, behind: 0, upstream: NOT_PUSHED }),
-      expected: { state: 'unpushed', header: 'push', submit: 'secondary', unpushed: 3 },
+      expected: { state: 'unpushed', header: 'push', submit: 'primary', unpushed: 3 },
     },
     {
       name: 'pushed, no pull request',

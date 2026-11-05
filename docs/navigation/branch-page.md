@@ -15,8 +15,7 @@ quoted headers, so a name with accents is its own file.
 **Frame.** The Branch page is the center of the Projects tree (Session
 rail): one detail with no rail of its own. Its sections are the tab strip under
 its title (`BranchTabStrip`); the page computes its counts once
-(`worktreeEntryFactsOf`) and publishes them for the folded rail
-(`worktreeEntryFactsBus`). The tree row of the branch has no rows under it, only
+(`worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
 one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next.
@@ -175,17 +174,14 @@ review, Convert to draft, Close or Reopen, Open with the host logo, named Open o
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
 branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
 
-**Sections and landing.** The worktree level lists the entries the state has, in this order
+**Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
 pull request and no comment `Pull request`, `Files`, `Commits`; with a local note or a thread
 and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
 Closed show all five, `Pull request`, `Comments`, `Files`, `Commits`, `Checks`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
-request. A row is 28px with an icon, the label and one fixed right-aligned slot
-(`worktreeEntryFactsOf`; empty until a count is known, the fact in the tooltip), then a chevron
-column that only Files fills. The current row carries `aria-current="page"`,
-Up and Down move between rows while the list has focus, and a pick replaces the address. The page repeats the same entries as a tab strip under the title (`BranchTabStrip`, a `tablist` named `Branch pages`), each tab with the count of the same `worktreeEntryFactsOf` fact the row reads, so the strip and the rail never drift; the active tab keeps its count. Merged and
+request. A pick replaces the address. Each tab carries its facts from `worktreeEntryFactsOf`, empty until a count is known, the active tab included: `Files` the file count and the lines added and removed in green and red (`DiffStat`), `Commits` the commits on the branch and, in amber, `↑3` for the ones not pushed, `Comments` and `Checks` what needs you. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
@@ -215,7 +211,7 @@ Back and a reload leave it where it was, and the push confirm names the reposito
 has more than one.
 
 **Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`): the status strip first, then the same two summary cards (a folder row in the Changes card opens Files filtered to that top folder: `useOpenBranchFolder` writes `branchFilesFolder` for the session, switches the shared diff back to the branch view and clears its commit focus, so the folder never filters a working-tree or commit diff, and `useReviewState` filters on it, `Clear` in the Files head resets it and restores the tree; the card reads its own branch diff, so the Files tab selection never changes it), `N open threads · M need you` when review threads are
+(`features/branch/components/PullRequestTab`): the status strip first, then `N open threads · M need you` when review threads are
 open (`OpenThreadsLink`, counted by `commentsCountOf` through the readiness facts, a click opens Comments), then two columns, the
 reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
 below an 880px page container the side column moves above the reading column as one wrapping
@@ -247,30 +243,20 @@ one event to the next. Rows that open something carry `ROW_INTERACTIVE`. Reviewe
 opens the picker that searches the host's collaborators), Checks reads `4 passed · 1 failing`
 (`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
 `Link issue` opens the popover). Without a pull request the section is the branch
-page (`BranchStartPage`): the header names the branch with `Not pushed`, `Pushed`,
-`Diverged` (warning, when origin also has commits the branch lacks) or `Rebasing` and `3 ahead, 0 behind main` under it, a four cell strip (Local checks:
-`Passed` or `Declined` with the age of the last push from this machine, read from the push
+page (`BranchStartPage`): no status strip and no summary, since the header and the tabs already say all of it. The line under the title (`branchStartLineOf`) names the branch with `3 not pushed`, `Up to date with origin`,
+`Diverged` (warning, when origin also has commits the branch lacks) or `Rebasing`, adds `3 behind main` only when the base moved, and adds what the pre-push hook answered, `Pre-push hook passed` or `Pre-push hook declined` with its age, once this machine pushed: read from the push
 result since the repo's pre-push hook is the one local gate, kept in memory per mount
-(`local-checks` slice, `mountLocalChecks`), so after a restart it reads `Not run` until the
-next push; a push that went through counts as `Passed` whether or not the repo has a hook,
+(`local-checks` slice, `mountLocalChecks`), so after a restart the line says nothing until the
+next push; a push that went through counts as passed whether or not the repo has a hook,
 and a failure that does not name `pre-push` leaves the last result, a remote
-`pre-receive hook declined` included (`localCheckOf`);
-Pull request `None yet`, Remote, Branch, the conflict cell amber), then the create
+`pre-receive hook declined` included (`localCheckOf`). Then the create
 form, prefilled from the branch (`pullRequestPrefillOf`: one commit gives its
 headline, several give the linked issue and the first headline, the description
 lists the other commits, never a `fixup!`, `squash!` or `amend!` one and never the one the
-headline already says, and `Closes HL-1372` for a Linear issue), and two summary cards
-(`BranchSummary`, numbers from `branchSummaryOf`): `Commits` with the count, how many are not pushed and the last three
-subjects, and `Changes` with the files, the lines added and removed, a bar by top folder and the three biggest
-folders. The files always come from the branch against its base (`useBranchSummaryDiff`, its own read),
-never from the Files tab, which can show one commit or the working tree. Each card opens its tab (Commits, Files); the lists themselves live there. A card reads a skeleton while
-the diff loads and `Couldn't read this` with Retry when it fails. The form works on the branch on screen: it
+headline already says, and `Closes HL-1372` for a Linear issue). `Into` starts on the base of the mount (`defaultBase`) and the host's default only fills it when that is empty. The form works on the branch on screen: it
 reads that mount's status and base branches and opens the pull request from it,
 never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
-and prefill and hands the mount to `createMrForSession`. Its submit is the one primary once the
-branch is pushed and up to date, and secondary, `Push and create pull request`,
-while commits are not on origin. On a diverged branch the Remote cell reads `Diverged` with
-`2 yours and 1 online`, and the submit reads `Force push and create pull request`: it opens
+and prefill and hands the mount to `createMrForSession`. Its submit is the one primary of the tab, also as `Push and create pull request` while commits are not on origin, and the header's `Push N commits` steps down to secondary there (`isFormLeading`); on every other tab the header's push stays primary. While the branch is behind, the header's Rebase leads and the submit is secondary. On a diverged branch the submit reads `Force push and create pull request`: it opens
 the same confirm as the Push action (`forcePushConfirm`, which also lists the commits that
 exist only online) and only then force pushes with lease and opens the request
 (`createPrForSession` with `forcePush`); a plain push is never tried on a diverged branch. While a rebase is stopped the form waits and the

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
 import { PageColumn, PaneShell } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
@@ -41,7 +41,6 @@ import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
-import { worktreeEntryFactsBus } from '../../worktreeEntryFactsBus';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -274,8 +273,16 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     onMutated();
   }, [onMutated, sessionId, setPullRequestMode]);
 
+  const isGithubConnected = !githubConnection.isResolved || githubConnection.isAuthenticated;
   const capabilities = activeSource?.capabilities ?? REVIEW_SOURCE_CAPABILITIES[host];
+  const isFormLeading =
+    isBranchStart &&
+    tab === 'pr' &&
+    start.step.state === 'unpushed' &&
+    !bitbucketRemote.isBitbucket &&
+    (sources.length > 0 || repo !== null);
   const isPrimaryYielding =
+    isFormLeading ||
     push.phase.kind === 'confirm' ||
     push.phase.kind === 'pushing' ||
     push.phase.kind === 'sync_confirm' ||
@@ -296,7 +303,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     : requestReason === null
       ? { kind: 'allowed' }
       : { kind: 'disabled', reason: requestReason };
-  const isGithubConnected = !githubConnection.isResolved || githubConnection.isAuthenticated;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
 
   const body = () => {
@@ -337,7 +343,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               branchFacts={branchFacts}
               mergeWord={mergeWord}
               commits={diff.commits}
-              diffRevision={historyRevision}
               canEdit={canEditBody}
               request={request}
               isConnected={isGithubConnected}
@@ -423,20 +428,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     commentsNeedYou: reviewCounts({ threads: entries.map((e) => e.row.thread) }).needYou,
     files: filesCount,
     diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
+    commits: start.step.ahead,
     notPushed: pushCount,
     checks: checksRuns,
     checksUnreadReason,
   });
-  const factsKey = JSON.stringify(entryFacts);
-  const latestFacts = useRef(entryFacts);
-  latestFacts.current = entryFacts;
-  useEffect(() => {
-    if (!isActive) {
-      return;
-    }
-    worktreeEntryFactsBus.publish({ sessionId, facts: latestFacts.current });
-  }, [factsKey, isActive, sessionId]);
-  useEffect(() => () => worktreeEntryFactsBus.clear({ sessionId }), [sessionId]);
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
   const tabActionsSlotNode = (

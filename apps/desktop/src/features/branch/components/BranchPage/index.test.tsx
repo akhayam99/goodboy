@@ -38,7 +38,6 @@ import {
   SESSION,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
-import { SceneBranchTabs } from '../../../../app/components/MockScene/scenes/SceneBranchTabs';
 import { railOf, sectionNames } from '../../../../test/branchRail';
 import { BranchPage } from './index';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
@@ -69,7 +68,6 @@ const mount = async ({
   seedResolveScene({ expandedThreadId: threadId });
   render(
     <ToastProvider>
-      <SceneBranchTabs sessionId={SESSION.id} />
       <BranchPage session={SESSION} workingDir={null} />
       <DrawerHost />
     </ToastProvider>,
@@ -219,7 +217,7 @@ const headerColumnElement = (): HTMLElement => {
   return column;
 };
 
-const railRow = (name: RegExp): HTMLElement => within(railOf()).getByRole('button', { name });
+const railRow = (name: RegExp): HTMLElement => within(railOf()).getByRole('tab', { name });
 
 const visit = async (name: RegExp): Promise<void> => {
   fireEvent.click(railRow(name));
@@ -277,7 +275,7 @@ describe('Branch page header and sections', () => {
       useAppStore.getState().sessionGithub[SESSION.id]?.pr?.title,
     );
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
-    expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
   });
 
   it('draws the five sections as a tab strip under the title, each count the one the rail row reads', async () => {
@@ -324,7 +322,7 @@ describe('Branch page header and sections', () => {
 
     expect(useAppStore.getState().branchTab[SESSION.id]).toBe('checks');
     expect(depthOf()).toBe(depth);
-    expect(railRow(/^Checks/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Checks/).getAttribute('aria-selected')).toBe('true');
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBeNull();
   });
 });
@@ -369,7 +367,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Files/).getAttribute('aria-selected')).toBe('true');
   });
 
   it('puts no primary in the header of a merged pull request and says its state once, under the title', async () => {
@@ -402,7 +400,6 @@ describe('Branch page sections by state', () => {
     withCommits();
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -471,7 +468,6 @@ describe('Branch page column', () => {
     withCommits();
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -530,7 +526,6 @@ describe('Branch page counts', () => {
     });
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -549,7 +544,6 @@ describe('Branch page counts', () => {
     withCommits({ remoteSha: 'c'.repeat(40) });
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -574,7 +568,6 @@ describe('Branch page counts before any visit', () => {
     useAppStore.setState({ loadHistoryDraft });
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -582,7 +575,7 @@ describe('Branch page counts before any visit', () => {
 
     expect(loadHistoryDraft).toHaveBeenCalledTimes(1);
     expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
-    expect(railRow(/^Comments/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
     expect(countOf(/^Files/)).toBe('2');
     expect(countOf(/^Commits/)).toBe('↑3');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
@@ -596,7 +589,6 @@ describe('Branch page counts before any visit', () => {
     useAppStore.setState({ loadHistoryDraft });
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -727,7 +719,7 @@ describe('Branch page Checks and Files', () => {
     await visit(/^Files/);
 
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
-    expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Files/).getAttribute('aria-selected')).toBe('true');
   });
 
   it('explains there is no diff when the session has no worktree', async () => {
@@ -746,7 +738,6 @@ describe('Branch page entries in the sidebar', () => {
     withCommits();
     render(
       <ToastProvider>
-        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -756,27 +747,20 @@ describe('Branch page entries in the sidebar', () => {
   const fileRail = (): HTMLElement | null =>
     document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
 
-  it('never draws the entries beside the page', async () => {
-    await mountFiles();
-
-    expect(document.querySelector('[data-branch-pane]')?.contains(railOf())).toBe(false);
-    expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
-  });
-
   it('keeps Files a plain entry with its count and puts the file list on the right of the page', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedShownPullRequest();
     await mountFiles();
     expect(fileRail()).toBeNull();
     expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
-    expect(railRow(/^Files/).getAttribute('aria-label')).toMatch(/^Files, \d+$/);
+    expect(railRow(/^Files/).textContent).toMatch(/^Files\d+/);
 
     await visit(/^Files/);
     const rail = fileRail();
     if (rail === null) {
       throw new Error('the Files entry opens no file rail');
     }
-    expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
+    expect(railRow(/^Files/).getAttribute('aria-selected')).toBe('true');
     expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
     expect(railOf().contains(rail)).toBe(false);
     expect(document.querySelector('[data-branch-pane]')?.lastElementChild?.contains(rail)).toBe(
@@ -808,7 +792,6 @@ describe('Branch page entries in the sidebar', () => {
     });
     await settle();
 
-    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
     expect(screen.getAllByText(/credit\.ts/).length).toBeGreaterThan(0);
   });
 });

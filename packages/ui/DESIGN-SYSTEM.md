@@ -839,8 +839,7 @@ one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
 `nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
 `layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
 `drawer-overlay-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
-`popover-in`, `fold-fade-in`, `fold-fade-out`, `level-in-forward`,
-`level-in-back`, `level-out-forward`, `level-out-back`, `wizard-fade-in`,
+`popover-in`, `fold-fade-in`, `fold-fade-out`, `wizard-fade-in`,
 `wizard-fade-out`, `wizard-step-in`, `wizard-step-out`) move content between
 states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
@@ -881,7 +880,7 @@ Width moves only on the one element that owns it; what moves inside it is
 opacity and `transform`, and the content keeps its final width, so nothing
 reflows or wraps mid move. Every new keyframe lives under
 `prefers-reduced-motion: no-preference`, and the hooks that stage a move
-(`useFoldPhase`, `useLevelSwap`, `useDrawerExit`) check `canAnimate` first: under
+(`useFoldPhase`, `useDrawerExit`) check `canAnimate` first: under
 reduced motion, or with nothing laid out, the state changes in place.
 
 **A floating control stays mounted and fades.** A control that comes and goes
@@ -915,12 +914,7 @@ the identity row's line and its pages on 28px rows, and the main rail's New
 and doors sit on the column's rows. Neither layer carries a toggle: the one
 sidebar toggle sits in the top bar, so it never moves when the column folds.
 
-**A drill crosses levels in one move.** `LevelStack` keeps its layers
-absolute, so no height changes. On a level change `useLevelSwap` copies the
-leaving layer (`exitSnapshotOf`, the drawer's exit copy) during the render that
-changes it, slides the copy 24px toward the back and fades it, and slides the
-new layer in 24px from the drill side (forward from the right, back from the
-left). The folded icon levels drill the same way. The `Trail` closes a crumb label with `grid-template-columns` from
+The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (`--duration-base`, `--ease-enter`, 40ms cascade), the same
 trick as `Reveal` on the other axis.
 

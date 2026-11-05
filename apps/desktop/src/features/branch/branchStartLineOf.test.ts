@@ -18,6 +18,8 @@ const lineOf = ({ upstream }: UpstreamParams) =>
       hasConflictStop: false,
     }),
     baseBranch: 'main',
+    localCheck: null,
+    now: 0,
   });
 
 describe('branchStartLineOf', () => {
@@ -30,7 +32,8 @@ describe('branchStartLineOf', () => {
     expect(lineOf({ upstream: { kind: 'known', ahead: 2, behind: 0 } })).toEqual({
       word: '2 not pushed',
       tone: 'neutral',
-      distance: '0 behind main',
+      distance: null,
+      check: null,
     });
   });
   it('reads Up to date with origin when nothing remains to push', () => {
@@ -51,5 +54,41 @@ describe('branchStartLineOf', () => {
     expect(lineOf({ upstream: { kind: 'unknown', reason: 'no-upstream' } }).word).toBe(
       '3 not pushed',
     );
+  });
+
+  it('names the distance to the base only when the base moved', () => {
+    const line = branchStartLineOf({
+      step: branchNextStepOf({
+        status: {
+          mainDistance: { kind: 'known', ahead: 3, behind: 4 },
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+          inProgress: null,
+        },
+        hasConflictStop: false,
+      }),
+      baseBranch: 'main',
+      localCheck: null,
+      now: 0,
+    });
+    expect(line.distance).toBe('4 behind main');
+  });
+
+  it('says what the pre-push hook answered, and nothing before it ran', () => {
+    const step = branchNextStepOf({
+      status: {
+        mainDistance: { kind: 'known', ahead: 3, behind: 0 },
+        upstreamDistance: { kind: 'known', ahead: 3, behind: 0 },
+        inProgress: null,
+      },
+      hasConflictStop: false,
+    });
+    const declined = branchStartLineOf({
+      step,
+      baseBranch: 'main',
+      localCheck: { outcome: 'declined', at: 0, message: null },
+      now: 0,
+    });
+    expect(declined.check).toMatchObject({ tone: 'danger' });
+    expect(declined.check?.word).toContain('Pre-push hook declined');
   });
 });

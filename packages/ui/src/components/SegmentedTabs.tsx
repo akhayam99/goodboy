@@ -168,7 +168,9 @@ export const SegmentedTabs = <T extends string>({
             >
               {mark}
               <span className="min-w-0">
-                <span className="block truncate">{option.label}</span>
+                <span data-tab-label="" className="block truncate">
+                  {option.label}
+                </span>
               </span>
               {isShownBadge({ badge: option.badge, isActive }) ? (
                 typeof option.badge === 'string' ? (

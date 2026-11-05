@@ -94,9 +94,9 @@ describe('the comments and counts scenes', () => {
   it('shows the commit and file counts once on the pull request page', async () => {
     mount({ name: 'u34-u43-summary' });
 
-    const summary = await screen.findByRole('region', { name: 'Summary' });
-    expect(summary.textContent).not.toMatch(/not pushed/);
-    expect(within(summary).queryByText('5', { selector: 'span' })).toBeNull();
+    const strip = await screen.findByRole('tablist', { name: 'Branch pages' });
+    expect(within(strip).getByRole('tab', { name: /^Commits/ }).textContent).toMatch(/^Commits/);
+    expect(screen.queryByRole('region', { name: 'Summary' })).toBeNull();
   });
 
   it('reads Draft on the chip of a comment not posted yet', async () => {

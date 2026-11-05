@@ -1,5 +1,5 @@
 import { SESSION_TOOL_RAIL_WIDTH } from '../../../features/session/components/SessionTools/sessionToolRailWidth';
-import { useMemo, type KeyboardEvent } from 'react';
+import { useMemo } from 'react';
 import {
   COLLAPSED_RAIL_WIDTH,
   FoldLayers,
@@ -10,7 +10,6 @@ import {
   useDrawerContentInset,
 } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { openLens } from '../../../features/session/openLens';
 import { ActionStatusLine } from '../../../features/actions/components/ActionControls/ActionStatusLine';
 import type { ObjectTarget } from '../../../features/actions/types';
 import { useActionControls } from '../../../features/actions/useActionControls';
@@ -19,7 +18,6 @@ import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
-import { useSessionRailLevel } from './useSessionRailLevel';
 import {
   SESSION_RAIL_WIDTH_VAR,
   useSessionRailSizing,
@@ -31,15 +29,11 @@ type Props = {
   readonly sizing?: SessionRailSizing;
 };
 
-const isBackKey = (event: KeyboardEvent): boolean =>
-  event.key === '[' && event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey;
-
 export const SessionRail = ({ session, sizing }: Props) => {
   const sessionId = session.id;
   const place = useColumnPlace();
   const localSizing = useSessionRailSizing();
   const { resizable, fold } = sizing ?? localSizing;
-  const level = useSessionRailLevel({ sessionId, isFolded: fold.isFolded });
   useDrawerContentInset({
     width: (fold.isFolded ? COLLAPSED_RAIL_WIDTH : resizable.width) + SESSION_TOOL_RAIL_WIDTH,
   });
@@ -52,22 +46,14 @@ export const SessionRail = ({ session, sizing }: Props) => {
   });
   const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
   const controls = useActionControls({ target, scopeKey: sessionId });
-  const isSessionChrome = level === 'session' && !fold.isFolded;
+  const isSessionChrome = !fold.isFolded;
   const isTopFailure = controls.failure !== null;
   return (
     <nav
       ref={resizable.targetRef}
       aria-label="Session"
-      data-session-rail={level}
+      data-session-rail="session"
       data-rail-folded={fold.isFolded ? '' : undefined}
-      onKeyDown={(event) => {
-        if (level === 'session' || !isBackKey(event)) {
-          return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        openLens({ sessionId, lens: null });
-      }}
       style={{
         ...resizable.style,
         width: fold.isFolded ? COLLAPSED_RAIL_WIDTH : `var(${SESSION_RAIL_WIDTH_VAR})`,
@@ -98,12 +84,12 @@ export const SessionRail = ({ session, sizing }: Props) => {
         openWidth={`var(${SESSION_RAIL_WIDTH_VAR})`}
         open={
           <div className="flex min-h-0 flex-1 flex-col gap-1">
-            <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />
+            <SessionRailLevels session={session} isStudioOver={isStudioOver} />
           </div>
         }
         folded={
           <div className="flex min-h-0 flex-1 flex-col gap-1">
-            <SessionRailIcons session={session} level={level} />
+            <SessionRailIcons session={session} />
           </div>
         }
       />

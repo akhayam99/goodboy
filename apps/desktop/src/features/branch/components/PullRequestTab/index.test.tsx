@@ -592,28 +592,3 @@ describe('the Overview grid', () => {
     expect(screen.queryByRole('region', { name: 'Base' })).toBeNull();
   });
 });
-
-describe('the Changes summary', () => {
-  it('keeps the changes of the branch while the Files tab shows one commit', async () => {
-    await show();
-    const summary = await screen.findByRole('region', { name: 'Summary' });
-    const branchSummary = summary.textContent;
-    expect(branchSummary).toContain('src4 files');
-
-    act(() => {
-      useAppStore
-        .getState()
-        .setDiffFocus(SESSION.id, { kind: 'commit', sha: 'abc1234', path: null });
-    });
-    await waitFor(() =>
-      expect(vi.mocked(invoke).mock.calls.map(([command]) => command)).toContain(
-        'worktree_diff_commit',
-      ),
-    );
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(screen.getByRole('region', { name: 'Summary' }).textContent).toBe(branchSummary);
-  });
-});

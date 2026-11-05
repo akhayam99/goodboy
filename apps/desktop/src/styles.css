@@ -291,16 +291,6 @@
 
   --animate-fold-label-out: fold-fade-out var(--duration-quick) var(--ease-exit) forwards;
 
-  --animate-level-in-forward: level-in-forward var(--duration-base) var(--ease-enter)
-    var(--delay-step) both;
-
-  --animate-level-in-back: level-in-back var(--duration-base) var(--ease-enter) var(--delay-step)
-    both;
-
-  --animate-level-out-forward: level-out-forward var(--duration-quick) var(--ease-exit) forwards;
-
-  --animate-level-out-back: level-out-back var(--duration-quick) var(--ease-exit) forwards;
-
   --animate-layer-in: layer-in var(--duration-quick) var(--ease-enter);
 
   --animate-trail-crumb-in: trail-crumb-in var(--duration-base) var(--ease-enter) var(--delay-step)
@@ -421,50 +411,6 @@
     }
     to {
       opacity: 0;
-    }
-  }
-
-  @keyframes level-in-forward {
-    from {
-      opacity: 0;
-      transform: translateX(24px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes level-in-back {
-    from {
-      opacity: 0;
-      transform: translateX(-24px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes level-out-forward {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateX(-24px);
-    }
-  }
-
-  @keyframes level-out-back {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateX(24px);
     }
   }
 

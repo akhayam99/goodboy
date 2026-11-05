@@ -107,7 +107,6 @@ const rail = (): HTMLElement => elementOf('[data-session-rail]');
 const foldOf = (): string | null => elementOf('[data-fold]').getAttribute('data-fold');
 const openLayer = () => document.querySelector<HTMLElement>('[data-fold-layer="open"]');
 const foldedLayer = () => document.querySelector<HTMLElement>('[data-fold-layer="folded"]');
-const ghost = () => document.querySelector<HTMLElement>('[data-level-ghost]');
 
 const advance = (ms: number) =>
   act(() => {
@@ -189,39 +188,6 @@ describe('the session rail drill', () => {
 
     expect(rail().getAttribute('data-session-rail')).toBe('session');
     expect(document.querySelector('[data-level-layer="worktree"]')).toBeNull();
-    expect(ghost()).toBeNull();
-  });
-
-  it('drills the folded icons with a slide and comes back with the opposite one', () => {
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    render(<Shell />);
-
-    goTo('branch');
-
-    expect(elementOf('[data-level-layer="worktree"]').getAttribute('data-level-entry')).toBe(
-      'forward',
-    );
-    expect(elementOf('[data-rail-level="worktree"]')).toBeDefined();
-    expect(ghost()?.getAttribute('data-level-ghost')).toBe('forward');
-    advance(DURATION_BASE_MS);
-    expect(ghost()).toBeNull();
-
-    goTo(null);
-
-    expect(elementOf('[data-level-layer="session"]').getAttribute('data-level-entry')).toBe('back');
-    expect(ghost()?.getAttribute('data-level-ghost')).toBe('back');
-  });
-
-  it('changes the folded level in place under reduced motion', () => {
-    setMotion({ isReduced: true });
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    render(<Shell />);
-
-    goTo('branch');
-
-    expect(rail().getAttribute('data-session-rail')).toBe('worktree');
-    expect(ghost()).toBeNull();
-    expect(elementOf('[data-level-layer="worktree"]').hasAttribute('data-level-entry')).toBe(false);
   });
 });
 
@@ -245,19 +211,5 @@ describe('the session tools column at the right of the content', () => {
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')?.split(',')[0]),
     ).toEqual(['Explore', 'Context', 'Ask this session', 'Agents', 'Scripts', 'Terminal']);
-  });
-
-  it('stays put while the folded rail drills into a level', () => {
-    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
-    render(<Shell />);
-    const before = tools();
-
-    goTo('branch');
-
-    expect(elementOf('[data-level-layer="worktree"]').getAttribute('data-level-entry')).toBe(
-      'forward',
-    );
-    expect(tools()).toBe(before);
-    expect(ghost()?.querySelector('[data-testid="session-tools"]')).toBeNull();
   });
 });

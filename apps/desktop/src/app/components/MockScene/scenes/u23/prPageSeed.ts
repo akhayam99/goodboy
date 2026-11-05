@@ -525,11 +525,28 @@ type MountStateParams = {
   readonly github: SessionGithubState;
 };
 
+const WORKTREE_RECORDS = {
+  [SESSION_ID]: [
+    {
+      id: 'mock-worktree-pr-page',
+      sessionId: SESSION_ID,
+      worktreePath: PR_PAGE_WORKTREE,
+      branch: MOUNT.branch,
+      parallelIndex: 0,
+      projectId: PROJECT_ID,
+      mountName: MOUNT.mountName,
+      repoSlug: 'harborline/payments-api',
+      createdAt: 0,
+    },
+  ],
+};
+
 export const prPageMountState = ({ github }: MountStateParams) => ({
   projects: [projectOf()],
   sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
   sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
   diffMountPath: { [SESSION_ID]: PR_PAGE_WORKTREE },
+  sessionWorktreeRecords: WORKTREE_RECORDS,
   mountGithub: {
     [MOUNT_ID]: githubOf({ pr: github.pr, detail: github.detail }),
   },
@@ -576,6 +593,7 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
     sessionProjectMounts: { [SESSION_ID]: isRebasing ? [MOUNT, WRITE_MOUNT] : [MOUNT] },
     sessionActiveMount: { [SESSION_ID]: isRebasing ? WRITE_MOUNT.mountId : MOUNT_ID },
     diffMountPath: { [SESSION_ID]: PR_PAGE_WORKTREE },
+    sessionWorktreeRecords: WORKTREE_RECORDS,
     branchTab: { [SESSION_ID]: 'pr' },
     sessionGithub: {
       [SESSION_ID]: {

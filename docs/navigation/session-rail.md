@@ -8,18 +8,13 @@
 shows the workspace: New session, the doors, then the Pinned and Sessions
 lists. Clicking a session row selects that row, opens the session on its
 Overview and shows its session rail at the left of the page, inside the
-content sheet. The rail holds the levels that drill: level 1 is the session (its Projects tree holds every branch, with no level for a worktree),
-and only the folded rail drills into a worktree's pages. A preset run and Auto
-never drill the rail: what they spawned lives in the Agents panel of the
-session tools (see The session tools). A drill and its back cross the
-rail's levels in one move: a frozen copy of the leaving level slides 24px
-toward the back and fades in 120ms while the new level slides in 24px from the
-drill side over 200ms (`LevelStack`, `useLevelSwap`; the folded icons drill the
-same way; instant under reduced motion); the column never moves. The host is `SessionRail` (`app/components/SessionRail`),
+content sheet. The rail has one level, the session: its Projects tree holds every
+branch, and neither the open rail nor the folded rail drills. A branch's pages are the
+tab strip of the Branch page, so the rail never repeats them. A preset run and Auto
+never drill either: what they spawned lives in the Agents panel of the session tools
+(see The session tools). The host is `SessionRail` (`app/components/SessionRail`),
 mounted once for the open session by `SessionFrame` beside the kept-alive
-session pages, its level read by `useSessionRailLevel`. Every level stays
-mounted, so the session level keeps its scroll and its selection while a
-deeper level shows, and the hidden ones are `inert`. The rail is 240px by
+session pages. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
@@ -192,9 +187,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   lists every worktree of the session with project, branch, pull request state,
   reason and dot (`RailBranchRow`), and a row opens the branch like its icon does. One
   quiet worktree keeps its own icon, so the button never counts one. The
-  folded rail never draws the session node, and a worktree icon there drills
-  the folded rail into the worktree's page icons (`RailWorktreeLevel`), since
-  the folded rail has no tree. **Rebase all**
+  folded rail never draws the session node, and a worktree icon there opens the
+  Branch page, whose tab strip holds the pages of the branch. **Rebase all**
   (`features/history/RebaseAllCard`) is the first line of the card: `n branches behind`
   with a Rebase all button, then, while a batch runs, `Rebasing 2 of 9` with
   Abort in the same 28px line and the same button size, and Dismiss once it
@@ -282,9 +276,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Unlink and Move. It is a card like Projects, and its header carries the same
   `+` (`LevelAddTrigger`, named Link work), opening Link work (L). Every card
   header of the session level uses this one control, never a bordered chip.
-- **Back.** On the folded worktree level the back icon goes up to level 1, and
-  so does ⌘[ while focus is in the rail; on level 1 ⌘[ in the rail does
-  nothing, and anywhere else ⌘[ is the top bar Back. Any move into the session
+- **Back.** ⌘[ is the top bar Back everywhere. Any move into the session
   (a row click, a page key, a link from the palette, a notification) starts a
   fresh history entry. A
   studio over the session (Tasks, Chat, Workflows, Terminal, Monitoring,
@@ -296,9 +288,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   on a worktree, on a run and on Auto, folded rail or not.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
   rail, ⌥⌘B) folds it to the current level as icons with right tooltips
-  (`SessionRailIcons`): on a branch the back icon, then one icon per page of the
-  worktree (`RailWorktreeLevel`; only the folded rail drills there); on level 1
-  one icon per page with its dot, then the pull request number per
+  (`SessionRailIcons`): one icon per page with its dot, then the pull request number per
   worktree, with its state and dot reason in the tooltip. The folded rail has no foot and no top
   row buttons; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session

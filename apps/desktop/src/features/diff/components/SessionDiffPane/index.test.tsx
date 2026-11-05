@@ -35,8 +35,6 @@ const baseStore = () => ({
   updateReviewDraft: vi.fn(),
   discardReviewDraft: vi.fn(),
   reportError: vi.fn(),
-  branchFilesFolder: {},
-  setBranchFilesFolder: vi.fn(),
 });
 
 vi.mock('../../../../store/slices/review-drafts/resolveReviewTarget', () => ({

@@ -84,7 +84,7 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws Overview, Files and Commits and no Comments or Checks with no pull request', async () => {
     renderScene({ name: 'branch-nopr' });
-    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Files', 'Commits']);
@@ -94,12 +94,12 @@ describe('the u24 prpage frame scenes', () => {
 
   it('adds Comments when a local note exists, no count since no note needs you', async () => {
     renderScene({ name: 'branch-nopr-notes' });
-    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(
-      within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('button', {
+      within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', {
         name: /^Comments/,
       }).textContent,
     ).toBe('Comments');
@@ -107,7 +107,7 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws all five sections with Mark ready for review as the one primary of a draft', async () => {
     renderScene({ name: 'branch-draft' });
-    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
@@ -118,7 +118,7 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws the open state with Merge as the one primary', async () => {
     renderScene({ name: 'branch-open' });
-    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
     expect(chip().getAttribute('data-state')).toBe('approved');
@@ -127,7 +127,7 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws the queued state with no primary and the queue in the Readiness property', async () => {
     renderScene({ name: 'branch-queued' });
-    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
     expect(chip().getAttribute('data-state')).toBe('queued');
@@ -138,7 +138,7 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws the merged state in the merged tone with no primary', async () => {
     renderScene({ name: 'branch-merged' });
-    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
     expect(chip().getAttribute('data-tone')).toBe('merged');

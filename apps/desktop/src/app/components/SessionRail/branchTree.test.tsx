@@ -221,13 +221,13 @@ describe('one tree for every branch', () => {
     expect(rowButton('ledger-core', /#77/).hasAttribute('aria-current')).toBe(false);
   });
 
-  it('keeps the folded rail drilling to the branch pages, since it has no tree', async () => {
+  it('keeps the folded rail on the session pages while a branch is open', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     await mountRail();
     await openWorktree();
 
-    expect(document.querySelector('[data-rail-level="worktree"]')).not.toBeNull();
+    expect(document.querySelector('[data-rail-level="session"]')).not.toBeNull();
   });
 
   it('opens the same menu from the row dots, a right click and Shift+F10', async () => {

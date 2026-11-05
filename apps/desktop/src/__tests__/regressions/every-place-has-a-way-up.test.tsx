@@ -58,8 +58,6 @@ const WAYS_UP = new Set([
 ]);
 
 const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
-  'app/components/SessionRail/RailWorktreeLevel.tsx':
-    'the session rail level row back to the session, a list level and not a page',
   'features/chat/components/HandoffBlock/HandoffPanel.tsx': 'a pager between handoffs',
   'features/context/components/QuestionsTab/QuestionCard/QuestionPager.tsx':
     'a pager between questions',

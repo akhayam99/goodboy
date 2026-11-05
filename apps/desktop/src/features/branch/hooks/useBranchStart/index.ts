@@ -7,8 +7,6 @@ import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/s
 import { rebaseConflictOf } from '../../../history/rebaseConflictOf';
 import { branchNextStepOf, type BranchNextStep } from '../../branchNextStepOf';
 import { branchStartLineOf, type BranchStartLine } from '../../branchStartLineOf';
-import { branchStartCellsOf } from '../../components/PullRequestTab/branchStartCellsOf';
-import type { StatusCell } from '../../components/PullRequestTab/statusCell';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -20,7 +18,6 @@ type Params = {
 export type BranchStart = {
   readonly step: BranchNextStep;
   readonly line: BranchStartLine;
-  readonly cells: ReadonlyArray<StatusCell>;
   readonly conflictFiles: ReadonlyArray<string>;
   readonly baseBranch: string;
 };
@@ -48,18 +45,9 @@ export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params
   return useMemo(() => {
     const step = branchNextStepOf({ status, hasConflictStop, isDone });
     const files = isDone ? NO_FILES : (conflictFiles ?? NO_FILES);
-    const unmerged =
-      status !== null && status.workingTree.kind === 'known' ? status.workingTree.unmerged : 0;
     return {
       step,
-      line: branchStartLineOf({ step, baseBranch }),
-      cells: branchStartCellsOf({
-        step,
-        baseBranch,
-        conflictCount: files.length > 0 ? files.length : unmerged,
-        localCheck,
-        now,
-      }),
+      line: branchStartLineOf({ step, baseBranch, localCheck, now }),
       conflictFiles: files,
       baseBranch,
     };
