@@ -9,7 +9,7 @@ export const RULE_FIXES = {
 
 export const RULE_IDS = Object.keys(RULE_FIXES);
 
-const SCANNED = ['lib/site.ts', 'components', 'mocks', 'pages', 'hooks'];
+const SCANNED = ['lib/site.ts', 'components', 'mocks', 'pages', 'prerender', 'hooks'];
 const SKIPPED_DIRECTORIES = new Set(['node_modules']);
 const SKIPPED_ATTRIBUTES = new Set(['className', 'key', 'id', 'href', 'src', 'srcSet', 'type']);
 const JSON_COPY_KEYS = new Set(['title', 'text', 'lead', 'label', 'also']);
