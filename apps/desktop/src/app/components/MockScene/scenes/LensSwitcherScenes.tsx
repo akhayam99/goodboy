@@ -380,44 +380,13 @@ const seedLensSwitcherScene = (): void => {
   });
 };
 
-type SceneParams = Readonly<{
-  isMenuOpen: boolean;
-}>;
-
-const useOpenDestinationMenu = ({ isMenuOpen }: SceneParams): void => {
-  useEffect(() => {
-    if (!isMenuOpen) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      const trigger = window.document.querySelector<HTMLButtonElement>(
-        'nav[aria-label="Breadcrumb"] button[aria-haspopup="menu"]',
-      );
-      if (trigger === null) {
-        return;
-      }
-      if (trigger.getAttribute('aria-expanded') !== 'true') {
-        trigger.click();
-      }
-      window.clearInterval(interval);
-    }, 120);
-    return () => window.clearInterval(interval);
-  }, [isMenuOpen]);
-};
-
-type SceneProps = {
-  readonly isMenuOpen: boolean;
-};
-
-const LensSwitcher = ({ isMenuOpen }: SceneProps) => {
+const LensSwitcher = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedLensSwitcherScene();
     setIsReady(true);
   }, []);
-
-  useOpenDestinationMenu({ isMenuOpen: isReady && isMenuOpen });
 
   if (!isReady) {
     return null;
@@ -426,6 +395,6 @@ const LensSwitcher = ({ isMenuOpen }: SceneProps) => {
   return <ShellFrame session={SESSION} main={<BranchPage session={SESSION} workingDir={null} />} />;
 };
 
-export const LensSwitcherScene = () => <LensSwitcher isMenuOpen />;
+export const LensSwitcherScene = () => <LensSwitcher />;
 
-export const LensSwitcherClosedScene = () => <LensSwitcher isMenuOpen={false} />;
+export const LensSwitcherClosedScene = () => <LensSwitcher />;

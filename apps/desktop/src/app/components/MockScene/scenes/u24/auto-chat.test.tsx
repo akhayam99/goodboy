@@ -341,6 +341,15 @@ describe('the Auto chat scenes', () => {
     expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0);
   });
 
+  it('auto-chat-child shows a finished agent a plain composer, no Stop, Send now or Queue', async () => {
+    mount({ id: 'auto-chat-child' });
+
+    await screen.findAllByRole('textbox', undefined, WAIT);
+    expect(screen.queryByRole('button', { name: /^Send now/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Queue/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
+  });
+
   it('u35-auto-plan-used says the plan was used and offers no Review or approval', async () => {
     mount({ id: 'u35-auto-plan-used' });
 

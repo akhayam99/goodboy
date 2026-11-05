@@ -1,6 +1,6 @@
 # The session rail and its tools
 
-> **Read this when** you change the rail of a session, its breadcrumbs, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
+> **Read this when** you change the rail of a session, its back row, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
 ## Session rail
 

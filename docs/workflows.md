@@ -3,14 +3,14 @@
 > **Read this when** you want to know how workflows, the orchestrator and
 > hands-free runs work, or you are changing the workflow tables, the code that
 > moves a run to its next step, or the summarizer that runs after each step.
-> **Not for** the workflow header and breadcrumbs ([navigation/session-rail.md](navigation/session-rail.md)).
+> **Not for** the workflow header and back row ([navigation/session-rail.md](navigation/session-rail.md)).
 
 A workflow splits a task into steps and runs each step as its own agent. This
 page covers how you pick or build one, what the orchestrator does and how a
 run moves from step to step. The code details come at the end.
 
 Each object in Goodboy is explained in [concepts.md](concepts.md). The
-header and breadcrumbs are covered in [navigation/session-rail.md](navigation/session-rail.md).
+header and back row are covered in [navigation/session-rail.md](navigation/session-rail.md).
 
 ## What a workflow is
 

@@ -45,7 +45,19 @@ export const useAgentSelection = ({ session, agentId }: Params) => {
         !(s.transcripts[selectedAgentId] ?? []).some((event) => event.kind === 'user_text')
       : false,
   );
-  const isRunning = RUNNING_KINDS.has(selectedAgentState?.kind ?? session.state.kind);
+  const selectedAgentStatus = useAppStore((s) => {
+    if (!selectedAgentId) {
+      return null;
+    }
+    const runs = s.sessionPhaseRuns[session.id] ?? [];
+    return runs.find((r) => r.id === selectedAgentId)?.status ?? null;
+  });
+  const isAgentKnown = selectedAgentState !== null || selectedAgentStatus !== null;
+  const isRunning = isAgentKnown
+    ? selectedAgentState === null
+      ? selectedAgentStatus === 'running'
+      : RUNNING_KINDS.has(selectedAgentState.kind)
+    : RUNNING_KINDS.has(session.state.kind);
 
   return {
     selectedAgentId,
