@@ -24,6 +24,7 @@ const MOCK_MOUNT_DIFF_STATS = new Map([
   ['/mock/harborline/notify-relay/worktrees/2', { additions: 61, deletions: 4 }],
   ['/mock/cascadia/payments-api-webhook-credits', { additions: 224, deletions: 58 }],
   ['/mock/cascadia/notify-relay-webhook-credits', { additions: 41, deletions: 6 }],
+  ['~/code/harborline/payments-api-fix-duplicate-credit', { additions: 142, deletions: 37 }],
 ]);
 
 export const mockMountDiffStat = ({

@@ -121,7 +121,7 @@ describe('the Bitbucket scenes', () => {
   it('leads with the Pull request tab and the title as the one heading', async () => {
     await show();
 
-    expect(sectionRow(/^Pull request/).getAttribute('aria-current')).toBe('page');
+    expect(sectionRow(/^Pull request/).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );

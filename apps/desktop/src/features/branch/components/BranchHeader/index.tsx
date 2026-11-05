@@ -87,6 +87,7 @@ export const BranchHeader = ({
       <Button
         size="sm"
         variant={variant}
+        data-variant={variant}
         data-branch-primary={slot === 'primary' ? action.actionId : undefined}
         data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
         disabled={action.blockedReason !== null}

@@ -18,6 +18,7 @@ type WorktreeEntryFact = {
   readonly tone: WorktreeEntryTone;
   readonly tooltip: string | null;
   readonly diff: EntryDiffStat | null;
+  readonly notPushed: number | null;
 };
 
 export type WorktreeEntryFacts = Readonly<Record<BranchTab, WorktreeEntryFact>>;
@@ -27,12 +28,19 @@ type Params = {
   readonly commentsNeedYou: number;
   readonly files: number | null;
   readonly diff: EntryDiffStat | null;
+  readonly commits: number | null;
   readonly notPushed: number | null;
   readonly checks: ReadonlyArray<PrCheckRun> | null;
   readonly checksUnreadReason: string | null;
 };
 
-const EMPTY: WorktreeEntryFact = { text: null, tone: null, tooltip: null, diff: null };
+const EMPTY: WorktreeEntryFact = {
+  text: null,
+  tone: null,
+  tooltip: null,
+  diff: null,
+  notPushed: null,
+};
 
 const SLOT_STATES: ReadonlySet<PullRequestPresentationState> =
   new Set<PullRequestPresentationState>(['draft', 'merged', 'closed']);
@@ -71,14 +79,17 @@ const checksFactOf = ({ checks, checksUnreadReason }: ChecksParams): WorktreeEnt
   return { ...EMPTY, tooltip: word };
 };
 
-type NotPushedParams = Pick<Params, 'notPushed'>;
+type CommitsParams = Pick<Params, 'commits' | 'notPushed'>;
 
-const commitsFactOf = ({ notPushed }: NotPushedParams): WorktreeEntryFact => {
+const commitsFactOf = ({ commits, notPushed }: CommitsParams): WorktreeEntryFact => {
+  const text = countSlotText({ count: commits });
   if (notPushed === null || notPushed <= 0) {
-    return EMPTY;
+    return { ...EMPTY, text };
   }
-  const countWord = `${notPushed} not pushed`;
-  return { ...EMPTY, text: `↑${notPushed}`, tooltip: countWord };
+  const tooltip = `${notPushed} not pushed`;
+  return text === null
+    ? { ...EMPTY, text: `↑${notPushed}`, tooltip }
+    : { ...EMPTY, text, tooltip, notPushed };
 };
 
 type FilesParams = Pick<Params, 'files' | 'diff'>;
@@ -98,7 +109,7 @@ const filesFactOf = ({ files, diff }: FilesParams): WorktreeEntryFact => {
       `+${shownDiff.additions} -${shownDiff.deletions}`,
     ],
   });
-  return { text: count, tone: null, tooltip, diff: shownDiff };
+  return { ...EMPTY, text: count, tooltip, diff: shownDiff };
 };
 
 export const worktreeEntryFactsOf = ({
@@ -106,6 +117,7 @@ export const worktreeEntryFactsOf = ({
   commentsNeedYou,
   files,
   diff,
+  commits,
   notPushed,
   checks,
   checksUnreadReason,
@@ -119,7 +131,7 @@ export const worktreeEntryFactsOf = ({
         ? EMPTY
         : { ...EMPTY, text: needsYou, tone: 'warning', tooltip: needsYouWord },
     files: filesFactOf({ files, diff }),
-    commits: commitsFactOf({ notPushed }),
+    commits: commitsFactOf({ commits, notPushed }),
     checks: checksFactOf({ checks, checksUnreadReason }),
   };
 };

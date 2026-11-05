@@ -16,5 +16,8 @@ export const BranchStartLine = ({ start }: Props) => (
       {start.line.word}
     </span>
     {start.line.distance === null ? null : <span>{start.line.distance}</span>}
+    {start.line.check === null ? null : (
+      <span className={tintClasses(start.line.check.tone).text}>{start.line.check.word}</span>
+    )}
   </span>
 );

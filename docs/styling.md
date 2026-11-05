@@ -218,9 +218,7 @@ rail fold through `FoldLayers` (`packages/ui/src/components/FoldLayers.tsx`):
 the grid column or the rail width eases in 220ms, the open layer keeps its full
 width pinned to the left edge and clipped, so no label wraps or truncates anew,
 and its words fade over the icon layer, which draws each icon at its open row's
-x and y. Unfolding fades the words in after 60ms. A level drill in the session
-rail slides a copy of the leaving level out and the new level in, 24px each,
-from the drill side (`LevelStack`). Tokens and timings are in
+x and y. Unfolding fades the words in after 60ms. Tokens and timings are in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#motion-registry); under
 reduced motion each one is an instant swap.
 

@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { GithubConnectionEmptyState } from '../GithubConnectionEmptyState';
 import { CreatePrPanel } from './CreatePrPanel';
@@ -14,7 +13,7 @@ type Props = {
   readonly defaultTitle: string;
   readonly defaultBody: string;
   readonly submitVariant?: 'primary' | 'secondary';
-  readonly trailing?: ReactNode;
+  readonly defaultBase?: string;
   readonly isRepoMissing: boolean;
   readonly isConnected: boolean;
   readonly onConnected: () => void;
@@ -28,7 +27,7 @@ export const PullRequestStart = ({
   defaultTitle,
   defaultBody,
   submitVariant = 'primary',
-  trailing = null,
+  defaultBase = '',
   isRepoMissing,
   isConnected,
   onConnected,
@@ -50,7 +49,7 @@ export const PullRequestStart = ({
       defaultTitle={defaultTitle}
       defaultBody={defaultBody}
       submitVariant={submitVariant}
-      trailing={trailing}
+      defaultBase={defaultBase}
       onCreated={onCreated}
     />
   );

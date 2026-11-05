@@ -14,6 +14,7 @@ const BASE: Parameters<typeof worktreeEntryFactsOf>[0] = {
   commentsNeedYou: 0,
   files: 12,
   diff: null,
+  commits: null,
   notPushed: 0,
   checks: [run('success')],
   checksUnreadReason: null,
@@ -35,6 +36,7 @@ describe('the facts of the worktree entries', () => {
       tone: 'warning',
       tooltip: '2 need you',
       diff: null,
+      notPushed: null,
     });
   });
 
@@ -52,10 +54,17 @@ describe('the facts of the worktree entries', () => {
       tone: null,
       tooltip: '12 files · +652 -99',
       diff: { additions: 652, deletions: 99 },
+      notPushed: null,
     });
     expect(
       worktreeEntryFactsOf({ ...BASE, files: null, diff: { additions: 4, deletions: 0 } }).files,
-    ).toEqual({ text: null, tone: null, tooltip: '+4 -0', diff: { additions: 4, deletions: 0 } });
+    ).toEqual({
+      text: null,
+      tone: null,
+      tooltip: '+4 -0',
+      diff: { additions: 4, deletions: 0 },
+      notPushed: null,
+    });
     expect(worktreeEntryFactsOf({ ...BASE, diff: { additions: 0, deletions: 0 } }).files.diff).toBe(
       null,
     );
@@ -67,18 +76,20 @@ describe('the facts of the worktree entries', () => {
       tone: null,
       tooltip: '2 not pushed',
       diff: null,
+      notPushed: null,
     });
   });
 
   it('counts failing checks in danger, running ones in info, and nothing when all passed', () => {
     expect(
       worktreeEntryFactsOf({ ...BASE, checks: [run('failure'), run('success')] }).checks,
-    ).toEqual({ text: '1', tone: 'danger', tooltip: '1 failing', diff: null });
+    ).toEqual({ text: '1', tone: 'danger', tooltip: '1 failing', diff: null, notPushed: null });
     expect(worktreeEntryFactsOf({ ...BASE, checks: [run('pending')] }).checks).toEqual({
       text: '1',
       tone: 'info',
       tooltip: '1 running',
       diff: null,
+      notPushed: null,
     });
     expect(worktreeEntryFactsOf(BASE).checks.text).toBeNull();
   });
@@ -86,6 +97,20 @@ describe('the facts of the worktree entries', () => {
   it('says nothing for checks it could not read, the reason in the tooltip, never a zero', () => {
     expect(
       worktreeEntryFactsOf({ ...BASE, checks: null, checksUnreadReason: 'Checks unknown' }).checks,
-    ).toEqual({ text: null, tone: null, tooltip: 'Checks unknown', diff: null });
+    ).toEqual({ text: null, tone: null, tooltip: 'Checks unknown', diff: null, notPushed: null });
+  });
+
+  it('counts the commits and keeps the ones not pushed beside the count', () => {
+    expect(worktreeEntryFactsOf({ ...BASE, commits: 11, notPushed: 3 }).commits).toEqual({
+      text: '11',
+      tone: null,
+      tooltip: '3 not pushed',
+      diff: null,
+      notPushed: 3,
+    });
+    expect(worktreeEntryFactsOf({ ...BASE, commits: 11, notPushed: 0 }).commits).toMatchObject({
+      text: '11',
+      notPushed: null,
+    });
   });
 });

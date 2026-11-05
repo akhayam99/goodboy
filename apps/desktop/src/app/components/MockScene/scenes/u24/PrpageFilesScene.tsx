@@ -194,7 +194,7 @@ export const PrpageFilesScene = ({ variant, stageWidth }: Props) => {
     >
       <UnderTrailContext.Provider value>
         <StudioBandContext.Provider value={null}>
-          <WorktreeSceneColumn isRailBare={variant === 'draft'}>
+          <WorktreeSceneColumn>
             <BranchPage session={SESSION} workingDir={PR_PAGE_WORKTREE} />
           </WorktreeSceneColumn>
         </StudioBandContext.Provider>

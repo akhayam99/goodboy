@@ -32,7 +32,7 @@ const stepOf = ({ state }: StepParams): Pick<BranchNextStep, 'header' | 'submit'
     case 'pushed':
       return { header: null, submit: 'primary' };
     case 'unpushed':
-      return { header: 'push', submit: 'secondary' };
+      return { header: 'push', submit: 'primary' };
     case 'behind':
       return { header: 'rebase', submit: 'secondary' };
     case 'empty':

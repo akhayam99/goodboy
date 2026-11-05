@@ -49,7 +49,7 @@ const violationsOf = async (container: HTMLElement): Promise<ReadonlyArray<strin
 describe('a11y, the worktree level files rail', () => {
   it('has no violation with the Files group open in the worktree level', async () => {
     const container = mount({ scene: 'branch-files-docked', paneWidth: 1676 });
-    await screen.findByRole('complementary', { name: 'Worktree level' }, WAIT);
+    await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
 
     expect(await violationsOf(container)).toEqual([]);

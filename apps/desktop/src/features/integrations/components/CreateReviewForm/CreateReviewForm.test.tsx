@@ -418,6 +418,43 @@ describe('the create form', () => {
     expect(screen.queryByRole('region', { name: 'Reviewers' })).toBeNull();
   });
 
+  it('follows the base of the branch until a target is picked by hand', async () => {
+    const seeded = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+    seeded.unmount();
+    const sessionId = firstSessionId();
+    const form = (defaultBase: string) => (
+      <ToastProvider>
+        <CreateReviewForm
+          sessionId={sessionId}
+          defaultTitle="Goal"
+          defaultBase={defaultBase}
+          nouns={NOUNS}
+          canSetDraft={false}
+          loadBases={null}
+          searchReviewers={null}
+          hasPushStep
+          hasCloses
+          create={async () => ({ number: 1, url: null })}
+          requestReviewers={async () => undefined}
+          onCreated={() => undefined}
+        />
+      </ToastProvider>
+    );
+    const target = (): HTMLInputElement =>
+      screen.getByRole<HTMLInputElement>('textbox', { name: 'Target branch' });
+    const { rerender } = render(form('develop'));
+    await titleField();
+    expect(target().value).toBe('develop');
+
+    rerender(form('release'));
+    expect(target().value).toBe('release');
+
+    fireEvent.change(target(), { target: { value: 'staging' } });
+    rerender(form('develop'));
+    expect(target().value).toBe('staging');
+  });
+
   it('requests the chosen reviewers only after the pull request exists', async () => {
     const seeded = renderScene({ name: 'branch-create', state: 'empty' });
     await titleField();

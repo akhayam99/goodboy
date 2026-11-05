@@ -16,6 +16,7 @@ type Props = {
   readonly mountId?: MountId | null;
   readonly defaultTitle?: string;
   readonly defaultBody?: string;
+  readonly defaultBase?: string;
   readonly onCreated: (created: CreatedReview) => void;
 };
 
@@ -32,6 +33,7 @@ export const CreateMrForm = ({
   mountId = null,
   defaultTitle,
   defaultBody = '',
+  defaultBase = '',
   onCreated,
 }: Props) => {
   const createMrForSession = useAppStore((state) => state.createMrForSession);
@@ -60,6 +62,7 @@ export const CreateMrForm = ({
       mountId={mountId}
       defaultTitle={defaultTitle ?? goal}
       defaultBody={defaultBody}
+      defaultBase={defaultBase}
       nouns={NOUNS}
       canSetDraft={REVIEW_SOURCE_CAPABILITIES.gitlab.canSetDraft}
       loadBases={null}

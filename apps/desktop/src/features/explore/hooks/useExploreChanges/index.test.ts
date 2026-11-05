@@ -86,7 +86,7 @@ describe('useExploreChanges', () => {
 
     await waitFor(() => expect(result.current.explore.isAvailable).toBe(true));
     await waitFor(() =>
-      expect(result.current.stats.get(DIR)).toEqual({ additions: 3, deletions: 1 }),
+      expect(result.current.stats.get(DIR)).toEqual({ additions: 3, deletions: 1, files: 2 }),
     );
     expect(changedCalls()).toHaveLength(1);
   });

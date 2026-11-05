@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type { Session } from '@goodboy/types';
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { useAppStore } from '../../../../store';
@@ -14,7 +13,7 @@ type Props = {
   readonly mountPath: string | null;
   readonly prefill: PullRequestPrefill;
   readonly submitVariant?: 'primary' | 'secondary';
-  readonly trailing?: ReactNode;
+  readonly defaultBase?: string;
   readonly isRepoMissing: boolean;
   readonly isConnected: boolean;
   readonly onConnected: () => void;
@@ -33,7 +32,7 @@ export const NoPullRequest = ({
   mountPath,
   prefill,
   submitVariant = 'primary',
-  trailing = null,
+  defaultBase = '',
   isRepoMissing,
   isConnected,
   onConnected,
@@ -59,6 +58,7 @@ export const NoPullRequest = ({
         mountId={mountId}
         defaultTitle={prefill.title}
         defaultBody={prefill.body}
+        defaultBase={defaultBase}
         onCreated={onCreated}
       />
     );
@@ -72,7 +72,7 @@ export const NoPullRequest = ({
       defaultTitle={prefill.title}
       defaultBody={prefill.body}
       submitVariant={submitVariant}
-      trailing={trailing}
+      defaultBase={defaultBase}
       isRepoMissing={isRepoMissing}
       isConnected={isConnected}
       onConnected={onConnected}

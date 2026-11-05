@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowUpToLine } from 'lucide-react';
 import { Button, ICON_SIZE, InlineConfirm, Tooltip, formatError } from '@goodboy/ui';
@@ -60,7 +60,7 @@ type Props = {
   readonly requestReviewers: (params: RequestReviewersParams) => Promise<void>;
   readonly onCreated: (created: CreatedReview) => void;
   readonly submitVariant?: 'primary' | 'secondary';
-  readonly trailing?: ReactNode;
+  readonly defaultBase?: string;
 };
 
 type Phase =
@@ -98,7 +98,7 @@ export const CreateReviewForm = ({
   requestReviewers,
   onCreated,
   submitVariant = 'primary',
-  trailing = null,
+  defaultBase = '',
 }: Props) => {
   const { showToast } = useToast();
   const repo = useSessionRepo({ sessionId, mountId });
@@ -118,7 +118,9 @@ export const CreateReviewForm = ({
   const [isRoutingTouched, setIsRoutingTouched] = useState(false);
   const [title, setTitle] = useState(defaultTitle);
   const [body, setBody] = useState(defaultBody);
-  const [base, setBase] = useState('');
+  const [pickedBase, setPickedBase] = useState<string | null>(null);
+  const [hostBase, setHostBase] = useState('');
+  const base = pickedBase ?? (defaultBase === '' ? hostBase : defaultBase);
   const [isDraft, setIsDraft] = useState(false);
   const [reviewers, setReviewers] = useState<ReadonlyArray<string>>([]);
   const [dismissed, setDismissed] = useState<ReadonlyArray<number>>([]);
@@ -144,11 +146,7 @@ export const CreateReviewForm = ({
     }
   }, [isRoutingTouched, resolvedRouting]);
 
-  const onDefaultBase = useCallback(
-    (branchName: string) => setBase((current) => (current.trim() === '' ? branchName : current)),
-    [],
-  );
-  const bases = useCreateReviewBases({ load: loadBases, onDefault: onDefaultBase });
+  const bases = useCreateReviewBases({ load: loadBases, onDefault: setHostBase });
   const branchOptions = useMemo<ReadonlyArray<LocalBranchInfo> | null>(
     () =>
       loadBases === null
@@ -457,7 +455,6 @@ export const CreateReviewForm = ({
             onCancel={() => setIsConfirmingForce(false)}
           />
         )}
-        {trailing}
       </div>
       <ReviewSettings
         sessionId={sessionId}
@@ -473,7 +470,7 @@ export const CreateReviewForm = ({
         searchReviewers={searchReviewers}
         references={hasCloses ? references : []}
         changelogEntry={changelogEntry}
-        onBaseChange={setBase}
+        onBaseChange={(next) => setPickedBase(next.trim() === '' ? null : next)}
         onDraftChange={setIsDraft}
         onReviewersChange={setReviewers}
         onReferenceRemove={onReferenceRemove}

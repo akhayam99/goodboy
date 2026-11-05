@@ -122,4 +122,4 @@ The Workspace step of setup clones through `repo_clone.rs`, the one clone path i
 The branch header counts commits ahead of origin through `branchPushFactsOf`,
 as does the Push action. A branch with nothing left to push reads Up to date
 with origin; a diverged branch names both sides (`branchStartLineOf`). The
-request summary calls its total commits on this branch (`CommitsCardBody`).
+request summary calls its total commits on this branch (the Commits tab).

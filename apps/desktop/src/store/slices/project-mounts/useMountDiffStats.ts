@@ -10,6 +10,7 @@ import { useMountDiffRevision } from './useMountDiffRevision';
 export type MountDiffStat = {
   readonly additions: number;
   readonly deletions: number;
+  readonly files: number | null;
 };
 
 const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
@@ -20,7 +21,7 @@ type LoadMountDiffStatParams = {
   readonly revision: string;
 };
 
-const NO_MOUNT_DIFF_STAT: MountDiffStat = { additions: 0, deletions: 0 };
+const NO_MOUNT_DIFF_STAT: MountDiffStat = { additions: 0, deletions: 0, files: null };
 
 const loadMountDiffStat = async ({
   worktreePath,
@@ -29,13 +30,17 @@ const loadMountDiffStat = async ({
 }: LoadMountDiffStatParams): Promise<MountDiffStat> => {
   const mocked = readMockMountDiffStat({ worktreePath });
   if (mocked !== null) {
-    return mocked;
+    return { ...mocked, files: null };
   }
   const summary = await loadMountChangedFiles({ worktreePath, baseBranch, revision });
   if (summary === null) {
     return NO_MOUNT_DIFF_STAT;
   }
-  return { additions: summary.additions, deletions: summary.deletions };
+  return {
+    additions: summary.additions,
+    deletions: summary.deletions,
+    files: summary.paths.length,
+  };
 };
 
 type MountStatTarget = {

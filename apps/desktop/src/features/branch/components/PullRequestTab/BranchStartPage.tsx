@@ -1,17 +1,12 @@
 import { useMemo, type ReactNode } from 'react';
 import { EmptyState } from '@goodboy/ui';
-import type { BranchCommit, FileDiff, Session, SessionExternalTask } from '@goodboy/types';
+import type { BranchCommit, Session, SessionExternalTask } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
-import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchNextStep } from '../../branchNextStepOf';
 import { pullRequestPrefillOf } from '../../pullRequestPrefillOf';
-import { useOpenBranchFolder } from '../../hooks/useOpenBranchFolder';
 import { BranchConflicts } from './BranchConflicts';
-import { BranchSummary } from './BranchSummary';
 import { NoPullRequest } from './NoPullRequest';
-import { PullRequestStatusStrip } from './PullRequestStatusStrip';
-import type { StatusCell } from './statusCell';
 
 type Props = {
   readonly hostForm: ReactNode;
@@ -19,17 +14,12 @@ type Props = {
   readonly mountPath: string | null;
   readonly branch: string | null;
   readonly step: BranchNextStep;
-  readonly cells: ReadonlyArray<StatusCell>;
+  readonly configuredBase: string | null;
   readonly commits: ReadonlyArray<BranchCommit>;
-  readonly files: ReadonlyArray<FileDiff>;
-  readonly isDiffLoading: boolean;
-  readonly diffError: string | null;
-  readonly onRetryDiff: () => void;
   readonly conflictFiles: ReadonlyArray<string>;
   readonly isConnected: boolean;
   readonly onConnected: () => void;
   readonly onCreated: () => void;
-  readonly onSelectTab: (tab: BranchTab) => void;
 };
 
 const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];
@@ -40,45 +30,24 @@ export const BranchStartPage = ({
   mountPath,
   branch,
   step,
-  cells,
+  configuredBase,
   commits,
-  files,
-  isDiffLoading,
-  diffError,
-  onRetryDiff,
   conflictFiles,
   isConnected,
   onConnected,
   onCreated,
-  onSelectTab,
 }: Props) => {
-  const openFolder = useOpenBranchFolder({ sessionId: session.id, onSelectTab });
   const tasks = useAppStore((state) => state.sessionExternalTasks[session.id] ?? NO_TASKS);
   const prefill = useMemo(
     () => pullRequestPrefillOf({ commits, tasks, branch }),
     [branch, commits, tasks],
   );
-  const summary = (
-    <BranchSummary
-      commits={commits}
-      files={files}
-      isLoading={isDiffLoading}
-      error={diffError}
-      onRetry={onRetryDiff}
-      onOpen={onSelectTab}
-      onOpenFolder={openFolder}
-    />
-  );
+  const isStatusLoaded = step.ahead !== null;
   const main = () => {
     if (step.state === 'conflict') {
-      return (
-        <>
-          <BranchConflicts files={conflictFiles} requestNoun="pull request" />
-          {summary}
-        </>
-      );
+      return <BranchConflicts files={conflictFiles} requestNoun="pull request" />;
     }
-    if (step.state === 'empty') {
+    if (isStatusLoaded && step.state === 'empty') {
       return (
         <EmptyState
           size="page"
@@ -89,20 +58,15 @@ export const BranchStartPage = ({
       );
     }
     if (hostForm !== null) {
-      return (
-        <>
-          {hostForm}
-          {summary}
-        </>
-      );
+      return hostForm;
     }
     return (
       <NoPullRequest
         session={session}
         mountPath={mountPath}
         prefill={prefill}
+        defaultBase={configuredBase ?? ''}
         submitVariant={step.submit === 'secondary' ? 'secondary' : 'primary'}
-        trailing={summary}
         isRepoMissing={false}
         isConnected={isConnected}
         onConnected={onConnected}
@@ -111,9 +75,8 @@ export const BranchStartPage = ({
     );
   };
   return (
-    <div data-branch-start={step.state} className="@container flex min-w-0 flex-col gap-6">
-      <PullRequestStatusStrip cells={cells} onOpen={onSelectTab} />
-      <div className="flex min-w-0 flex-col gap-8">{main()}</div>
+    <div data-branch-start={step.state} className="@container flex min-w-0 flex-col gap-8">
+      {main()}
     </div>
   );
 };

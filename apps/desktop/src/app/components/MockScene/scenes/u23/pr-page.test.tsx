@@ -102,7 +102,7 @@ describe('the pull request page scenes', () => {
   it('branch-pr-github leads with the Pull request tab and its title as the one heading', async () => {
     draw({ name: 'branch-pr-github' });
 
-    expect((await findSectionRow(/^Pull request/)).getAttribute('aria-current')).toBe('page');
+    expect((await findSectionRow(/^Pull request/)).getAttribute('aria-selected')).toBe('true');
     expect(sectionNames()[0]).toBe('Pull request');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
@@ -258,7 +258,7 @@ describe('the branch page of a branch with no pull request', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'hl/fix-duplicate-credit' }),
     ).toBeDefined();
-    expect(header().textContent).toBe('Up to date with origin');
+    expect(header().textContent).toBe('Up to date with origin3 behind main');
     await waitFor(() =>
       expect(
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
@@ -266,9 +266,8 @@ describe('the branch page of a branch with no pull request', () => {
     );
     const create = screen.getByRole('button', { name: 'Create pull request' });
     expect(create.getAttribute('data-create-submit')).toBe('secondary');
-    const strip = screen.getByRole('group', { name: 'Status' });
-    expect(within(strip).getByText('3 behind')).toBeDefined();
-    expect(within(strip).getByText('None yet')).toBeDefined();
+    expect(screen.queryByRole('group', { name: 'Status' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Summary' })).toBeNull();
   });
 
   it('says 3 not pushed, never up to date, when the seed holds three unpushed commits', async () => {
@@ -282,6 +281,13 @@ describe('the branch page of a branch with no pull request', () => {
 
     await waitFor(() => expect(header().textContent).toContain('3 not pushed'));
     expect(header().textContent).not.toContain('Up to date with origin');
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-create-submit]')?.getAttribute('data-create-submit'),
+      ).toBe('primary'),
+    );
+    const push = document.querySelector<HTMLElement>('[data-branch-primary="diff.push"]');
+    expect(push?.getAttribute('data-variant')).toBe('secondary');
   });
 
   it('makes Create the one primary once the branch is pushed and up to date', async () => {
@@ -304,11 +310,6 @@ describe('the branch page of a branch with no pull request', () => {
         'Keep the processor event id on every credit row',
       ),
     );
-    expect(
-      within(screen.getByRole('region', { name: 'Summary' })).queryByText('5', {
-        selector: 'span',
-      }),
-    ).toBeNull();
     expect(screen.queryByRole('region', { name: 'In this branch' })).toBeNull();
   });
 
@@ -320,10 +321,6 @@ describe('the branch page of a branch with no pull request', () => {
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(screen.queryByRole('button', { name: /create pull request/i })).toBeNull();
     expect(header().textContent).toContain('Rebasing');
-    const strip = screen.getByRole('group', { name: 'Status' });
-    const branch = strip.querySelector('[data-cell="branch"]');
-    expect(branch?.getAttribute('data-tone')).toBe('warning');
-    expect(branch?.textContent).toContain('Conflicts');
   });
 
   it('opens the pull request from the shown branch, not the branch the session writes to', async () => {
