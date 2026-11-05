@@ -225,21 +225,24 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByText('Delegated to')).toBeNull();
     expect(document.querySelectorAll('[data-auto-child-card]').length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
-    const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
-    expect(tail?.textContent).toContain('Waiting for Implementer and Tester');
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
+    expect(dock?.textContent).toContain('Waiting for Implementer and Tester');
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
-  it('c07-auto-plan asks for the plan approval in the stream with View plan as the one primary', async () => {
+  it('c07-auto-plan pins the plan ask in the dock with Approve plan as the one primary', async () => {
     mount({ id: 'c07-auto-plan' });
 
-    await screen.findByText('Plan v1 needs your approval', undefined, WAIT);
-    const viewPlan = screen.getByRole('button', { name: /^Open plan / });
-    expect(viewPlan.textContent).toBe('View plan');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    await screen.findByText('Plan v1 waits for your OK', undefined, WAIT);
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]') as HTMLElement;
+    const approve = within(dock).getByRole('button', { name: 'Approve plan' });
+    expect(within(dock).getByRole('button', { name: /^Open plan / }).textContent).toBe('Open plan');
+    expect(within(dock).getByRole('button', { name: 'Ask for changes' })).toBeDefined();
+    expect(screen.queryByText('View plan')).toBeNull();
+    expect(screen.queryByText('Plan v1 needs your approval')).toBeNull();
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
-    fireEvent.click(viewPlan);
-    expect(await screen.findByRole('button', { name: 'Approve plan' }, WAIT)).toBeDefined();
+    expect(approve.className).toContain('bg-primary');
+    expect(dock.querySelectorAll('button.bg-primary')).toHaveLength(1);
   });
 
   it('c07-auto-idle offers Mark finished in the header and draws no tail', async () => {
@@ -520,12 +523,12 @@ describe('c07 Auto scenes', () => {
     expect(alert?.textContent).toContain('This conversation reached its time limit.');
   });
 
-  it('c07-auto-stop-failed shows the failed Stop inline on the tail', async () => {
+  it('c07-auto-stop-failed shows the failed Stop inline in the dock', async () => {
     mount({ id: 'c07-auto-stop-failed' });
 
     const title = await screen.findByText("Couldn't stop the Auto agents", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
-    expect(alert?.closest('[data-auto-tail]')).not.toBeNull();
+    expect(alert?.closest('[data-auto-dock]')).not.toBeNull();
     expect(alert?.textContent).toContain('Auto is not running yet. Stop it again in a moment.');
   });
 

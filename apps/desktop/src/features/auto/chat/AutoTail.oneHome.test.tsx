@@ -14,6 +14,7 @@ import { anAgent } from '@goodboy/types/testing';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { registerTreeStopPort } from '../treeStopPort';
 import { aDelegation, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
+import { AutoDock } from './AutoDock';
 import { AutoTail } from './AutoTail';
 
 const ROOT = anAgent({
@@ -58,12 +59,32 @@ describe('the Auto tail after refused hand overs', () => {
 });
 
 describe('the Auto tail verbs', () => {
-  it('has Change approach and no Stop while Auto waits for its agents', () => {
+  it('leaves Change approach and Stop to the dock', () => {
     const view = aView({
       phase: 'waiting',
       delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
     });
     render(<AutoTail sessionId={FIXTURE_SESSION} view={view} rootAgent={ROOT} />);
+
+    expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
+  });
+});
+
+describe('the Auto dock verbs', () => {
+  it('has Change approach and no Stop while Auto waits for its agents', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+    render(
+      <AutoDock
+        sessionId={FIXTURE_SESSION}
+        view={view}
+        rootAgent={ROOT}
+        onOpenArtifact={vi.fn()}
+      />,
+    );
 
     screen.getByRole('button', { name: 'Change approach' });
     expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
@@ -76,7 +97,14 @@ describe('the Auto tail verbs', () => {
       phase: 'delegating',
       delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'starting' })],
     });
-    render(<AutoTail sessionId={FIXTURE_SESSION} view={view} rootAgent={ROOT} />);
+    render(
+      <AutoDock
+        sessionId={FIXTURE_SESSION}
+        view={view}
+        rootAgent={ROOT}
+        onOpenArtifact={vi.fn()}
+      />,
+    );
 
     expect(screen.queryByRole('button', { name: 'Stop Auto and its agents' })).toBeNull();
 

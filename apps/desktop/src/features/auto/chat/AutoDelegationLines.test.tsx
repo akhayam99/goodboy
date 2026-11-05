@@ -39,10 +39,9 @@ const SETTLED_PLAN = aDelegation({
 type RenderParams = {
   readonly view: AutoTreeView;
   readonly onOpenChild?: () => void;
-  readonly onOpenArtifact?: () => void;
 };
 
-const renderLines = ({ view, onOpenChild = vi.fn(), onOpenArtifact = vi.fn() }: RenderParams) => {
+const renderLines = ({ view, onOpenChild = vi.fn() }: RenderParams) => {
   useAppStore.setState({ autoTreeViews: { [SESSION_ID]: [view] } });
   return render(
     <AutoDelegationLines
@@ -51,7 +50,6 @@ const renderLines = ({ view, onOpenChild = vi.fn(), onOpenArtifact = vi.fn() }: 
       delegations={view.delegations}
       agents={[]}
       onOpenChild={onOpenChild}
-      onOpenArtifact={onOpenArtifact}
     />,
   );
 };
@@ -118,7 +116,6 @@ describe('AutoDelegationLines', () => {
           delegations={view.delegations}
           agents={[]}
           onOpenChild={vi.fn()}
-          onOpenArtifact={vi.fn()}
         />
       </WorkTimeContext.Provider>,
     );
@@ -143,60 +140,14 @@ describe('AutoDelegationLines', () => {
     expect(within(lines[1] ?? document.body).getByRole('img', { name: 'Reviewer' })).toBeDefined();
   });
 
-  it('asks for the plan approval under the Planner line, with the plan one click away', () => {
-    const onOpenArtifact = vi.fn();
+  it('draws no plan ask in the transcript, the dock owns it', () => {
     renderLines({
       view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
-      onOpenArtifact,
-    });
-
-    expect(screen.getByText('Plan v1 needs your approval')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Ask for changes' })).toBeNull();
-    expect(screen.getByText('View plan')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }));
-    expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
-  });
-
-  it('marks the plan used once a writer took it, with no ask left', () => {
-    renderLines({
-      view: aView({
-        phase: 'waiting',
-        delegations: [SETTLED_PLAN],
-        artifacts: [{ ...aPlanRow(), status: 'consumed' }],
-      }),
     });
 
     expect(screen.queryByText(/needs your approval/)).toBeNull();
-    expect(screen.getByText('Plan v1 used')).toBeDefined();
-  });
-
-  it('never asks for the plan when Auto asks you nothing', () => {
-    renderLines({
-      view: {
-        ...aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
-        level: 'run',
-      },
-    });
-
-    expect(screen.queryByText(/needs your approval/)).toBeNull();
-    expect(screen.getByText('Plan v1 · no approval needed')).toBeDefined();
-  });
-
-  it('settles the plan card to Plan v1 approved in the artifact tone instead of unmounting', () => {
-    renderLines({
-      view: aView({
-        phase: 'waiting',
-        delegations: [SETTLED_PLAN],
-        artifacts: [aPlanRow({ approvalState: 'approved', approvedRevision: 1 })],
-      }),
-    });
-
-    expect(screen.queryByText(/needs your approval/)).toBeNull();
-    expect(screen.getByText('Plan v1 approved').getAttribute('data-tone')).toBe('merged');
-    expect(
-      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
-    ).toHaveLength(1);
+    expect(screen.queryByText('View plan')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Open plan / })).toBeNull();
   });
 
   it('draws no row for another artifact, the result card owns them', () => {
@@ -227,16 +178,6 @@ describe('AutoDelegationLines', () => {
 
     expect(screen.queryByRole('button', { name: /^Open report / })).toBeNull();
     expect(screen.queryByText('Approved')).toBeNull();
-  });
-
-  it('keeps one ask and no second row for a plan that needs approval', () => {
-    renderLines({
-      view: aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
-    });
-
-    expect(
-      screen.getAllByRole('button', { name: 'Open plan Retry-safe credit retries' }),
-    ).toHaveLength(1);
   });
 
   it('shows a revision on the same producer line', () => {

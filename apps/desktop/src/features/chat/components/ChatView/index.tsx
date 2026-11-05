@@ -77,6 +77,7 @@ type Props = {
   readonly briefLabel?: string;
   readonly insertions?: ReadonlyArray<TranscriptInsertion>;
   readonly composerLead?: ReactNode;
+  readonly dock?: ReactNode;
   readonly controlSlots?: ComposerControlSlots;
   readonly mode?: ChatViewMode;
   readonly onOpenTranscript?: OpenTranscriptAt;
@@ -100,6 +101,7 @@ export const ChatView = ({
   briefLabel,
   insertions,
   composerLead,
+  dock,
   controlSlots,
   mode = 'record',
   onOpenTranscript,
@@ -627,6 +629,7 @@ export const ChatView = ({
       {hasComposer && !isEnded && selectedAgentId != null && composerLead !== undefined ? (
         <ConversationColumn className="py-1">{composerLead}</ConversationColumn>
       ) : null}
+      {dock === undefined ? null : <ConversationColumn className="py-1">{dock}</ConversationColumn>}
       {!hasComposer ? (
         composerNotice === undefined ? null : (
           <ConversationColumn className="py-3">{composerNotice}</ConversationColumn>

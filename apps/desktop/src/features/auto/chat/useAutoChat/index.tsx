@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
 import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoDock } from '../AutoDock';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
 import { AutoWorkTime } from '../AutoWorkTime';
@@ -23,6 +24,7 @@ type Params = {
 export type AutoChat = Readonly<{
   tree: AutoTreeOfAgent | null;
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
+  dock: ReactNode | undefined;
   composerPlaceholder: string | undefined;
 }>;
 
@@ -49,7 +51,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
               delegations={batch.delegations}
               agents={agents}
               onOpenChild={openChild}
-              onOpenArtifact={openArtifact}
             />
           </AutoWorkTime>
         ),
@@ -87,9 +88,20 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     return [...lines, ...mountedLine, tail];
   }, [view, agents, agent, openChild, openArtifact, session]);
 
+  const dock =
+    view === null ? undefined : (
+      <AutoDock
+        sessionId={session.id}
+        view={view}
+        rootAgent={agent}
+        onOpenArtifact={openArtifact}
+      />
+    );
+
   return {
     tree,
     insertions,
+    dock,
     composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
   };
 };

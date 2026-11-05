@@ -304,6 +304,7 @@ export const AgentDetailPane = ({
           ) : undefined
         }
         insertions={insertions}
+        {...(autoChat.dock !== undefined && { dock: autoChat.dock })}
       />
     </PaneShell>
   );

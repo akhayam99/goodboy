@@ -59,7 +59,6 @@ const renderCard = () => {
       delegations={view.delegations}
       agents={[]}
       onOpenChild={vi.fn()}
-      onOpenArtifact={vi.fn()}
     />,
   );
 };

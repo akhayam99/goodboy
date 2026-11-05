@@ -26,7 +26,6 @@ export const NextStepScene = () => {
           delegations={view.delegations}
           agents={agents}
           onOpenChild={() => undefined}
-          onOpenArtifact={() => undefined}
         />
       </div>
     </div>

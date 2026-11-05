@@ -99,20 +99,19 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
-  it('Auto phase words and Change approach: the tail of the Auto chat', async () => {
+  it('Auto phase words and Change approach: the dock of the Auto chat', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
-    const tail = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-tail]');
-      expect(found).not.toBeNull();
+    const dock = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-auto-dock]');
+      expect(found?.textContent).toContain('Waiting for Implementer and Tester');
       return found;
     }, WAIT);
-    if (tail === null) {
-      throw new Error('no tail');
+    if (dock === null) {
+      throw new Error('no dock');
     }
-    expect(tail.textContent).toContain('Waiting for Implementer and Tester');
-    expect(within(tail).getByRole('button', { name: 'Change approach' })).toBeDefined();
-    expect(within(tail).queryByRole('button', { name: /^Stop/ })).toBeNull();
+    expect(within(dock).getByRole('button', { name: 'Change approach' })).toBeDefined();
+    expect(within(dock).queryByRole('button', { name: /^Stop/ })).toBeNull();
   });
 
   it('Composer placeholder by state: Message Auto while Auto waits', async () => {
@@ -137,16 +136,17 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
   });
 
-  it('Auto plan approval: the ask with View plan, then Approve plan in the plan view', async () => {
+  it('Auto plan approval: the dock asks with Approve plan and keeps Open plan one click away', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-plan'] });
 
-    expect(await screen.findByText('Plan v1 needs your approval', undefined, WAIT)).toBeDefined();
-    const viewPlan = screen.getByText('View plan').closest('button');
-    if (viewPlan === null) {
-      throw new Error('no View plan');
+    expect(await screen.findByText('Plan v1 waits for your OK', undefined, WAIT)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    const openPlan = screen.getByText('Open plan').closest('button');
+    if (openPlan === null) {
+      throw new Error('no Open plan');
     }
-    fireEvent.click(viewPlan);
-    expect(await screen.findByText('Approve plan', undefined, WAIT)).toBeDefined();
+    fireEvent.click(openPlan);
+    expect(await screen.findAllByText('Approve plan', undefined, WAIT)).not.toHaveLength(0);
   });
 
   it('Child page notice with Open Auto, after Open full', async () => {

@@ -5,10 +5,8 @@ import { Button, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
-import { artifactLinksOf } from './artifactLinksOf';
 import { AutoChildCard } from './AutoChildCard';
 import { AutoNextAction } from './AutoNextAction';
-import { AutoPlanAsk } from './AutoPlanAsk';
 import { cardTitleOf } from './cardTitleOf';
 import { delegationCardOf } from './delegationCardOf';
 import { nextActionOf } from './nextActionOf';
@@ -23,7 +21,6 @@ type Props = {
   readonly delegations: ReadonlyArray<AutoDelegation>;
   readonly agents: ReadonlyArray<Agent>;
   readonly onOpenChild: (agentId: AgentId) => void;
-  readonly onOpenArtifact: (artifactId: string) => void;
 };
 
 export const AutoDelegationLines = ({
@@ -32,7 +29,6 @@ export const AutoDelegationLines = ({
   delegations,
   agents,
   onOpenChild,
-  onOpenArtifact,
 }: Props) => {
   const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
   const publishing = usePublishAct();
@@ -46,9 +42,6 @@ export const AutoDelegationLines = ({
         const title = cardTitleOf({ card });
         const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });
-        const asks = artifactLinksOf({ view, artifacts: card.result?.artifacts ?? [] }).filter(
-          (link) => link.approval !== null,
-        );
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
             {delegation.state === 'settled' ? (
@@ -98,14 +91,6 @@ export const AutoDelegationLines = ({
                 }
               />
             ) : null}
-            {asks.map((link) => (
-              <AutoPlanAsk
-                key={link.artifactId}
-                sessionId={sessionId}
-                link={link}
-                onOpen={onOpenArtifact}
-              />
-            ))}
           </li>
         );
       })}
