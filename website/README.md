@@ -88,10 +88,14 @@ characters; a description stays under 160.
   then the page itself and its BreadcrumbList when it sits below the home page.
   Mark up only what the page shows: no rating and no FAQ that isn't on the
   page.
-- `dist/sitemap.xml` and the `/changelog.xml` feed are written by the build,
-  so a new release or doc shows up on its own. A release page's `lastmod` is
-  its snapshot date; every other page takes the newest release date. No
-  sitemap lives in `website/public/`, so there is none to edit by hand.
+- `website/src/prerender/PAGE_REGISTRY.ts` is the one list of pages: the home page,
+  features, every content page and the 404, each with its `PageMeta`. The build writes `dist/sitemap.xml` and `dist/llms.txt` from it, so they cannot
+  disagree, and `/changelog.xml` from the release snapshots; a new release or doc shows up in all three on its own. A page has a `lastmod`
+  only when its date is true: a release page has its snapshot date, the changelog index the newest release date, and the home page,
+  features and docs have none. `llms.txt` is a plain index for agents that
+  reach the site: the home description, then Product, Docs, the newest ten releases and Download, one line per
+  page. No sitemap or `llms.txt` lives in `website/public/`, so there is none to edit by hand, and the SEO check fails
+  when the sitemap, `llms.txt`, the feed and the built pages list different URLs.
 - `/404` is the branded not-found page, built from the content template and
   marked `noindex`. Vercel serves `404.html` for any path it doesn't know.
 - `pnpm build` ends with `website/scripts/check-seo.mjs`, which reads the final HTML

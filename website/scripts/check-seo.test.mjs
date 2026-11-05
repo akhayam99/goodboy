@@ -68,11 +68,18 @@ const run = ({
   distFiles = [],
   redirects = [],
   published = [],
+  llmsPaths = sitemapPaths.filter((path) => !path.startsWith('/changelog/')),
+  feedPaths = sitemapPaths.filter((path) => path.startsWith('/changelog/')),
 } = {}) =>
   checkSeo({
     htmlFiles: new Map(Object.entries(htmlFiles)),
     distFiles: new Set([...Object.keys(htmlFiles), ...distFiles]),
     sitemap: sitemapPaths.map((path) => `<url><loc>${ORIGIN}${path}</loc></url>`).join(''),
+    llms: llmsPaths.map((path) => `- [x](${ORIGIN}${path}): y`).join('\n'),
+    feed: [
+      `<id>${ORIGIN}/changelog.xml</id>`,
+      ...feedPaths.map((path) => `<id>${ORIGIN}${path}</id>`),
+    ].join('\n'),
     redirects,
     published,
     origin: ORIGIN,
@@ -154,6 +161,44 @@ describe('checkSeo', () => {
 
   it('fails a sitemap url with no indexed page', () => {
     assert.deepEqual(rulesOf(run({ sitemapPaths: ['/', '/gone'] })), ['sitemap-unknown-page']);
+  });
+
+  it('fails a page missing from llms.txt, a llms.txt url with no page, and a feed that disagrees', () => {
+    const pages = {
+      'index.html': page(),
+      'docs.html': page({
+        path: '/docs',
+        title: TITLE + ' docs',
+        description: DESCRIPTION + ' Docs.',
+      }),
+      'changelog/1.0.0.html': page({
+        path: '/changelog/1.0.0',
+        title: TITLE + ' one',
+        description: DESCRIPTION + ' One.',
+      }),
+    };
+    const sitemapPaths = ['/', '/docs', '/changelog/1.0.0'];
+    assert.deepEqual(rulesOf(run({ htmlFiles: pages, sitemapPaths })), []);
+    assert.deepEqual(rulesOf(run({ htmlFiles: pages, sitemapPaths, llmsPaths: ['/'] })), [
+      'llms-missing-page',
+    ]);
+    assert.deepEqual(
+      rulesOf(run({ htmlFiles: pages, sitemapPaths, llmsPaths: ['/', '/docs', '/gone'] })),
+      ['llms-unknown-page'],
+    );
+    assert.deepEqual(rulesOf(run({ htmlFiles: pages, sitemapPaths, feedPaths: [] })), [
+      'feed-mismatch',
+    ]);
+    assert.deepEqual(
+      rulesOf(
+        run({
+          htmlFiles: pages,
+          sitemapPaths,
+          feedPaths: ['/changelog/1.0.0', '/changelog/0.9.0'],
+        }),
+      ),
+      ['feed-mismatch'],
+    );
   });
 
   it('fails an image with no alt, an empty alt or no size', () => {

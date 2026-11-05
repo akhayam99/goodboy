@@ -30,6 +30,9 @@ export const RULES = {
   'noindex-in-sitemap': 'error',
   'sitemap-missing-page': 'error',
   'sitemap-unknown-page': 'error',
+  'llms-missing-page': 'error',
+  'llms-unknown-page': 'error',
+  'feed-mismatch': 'error',
   'og-missing': 'error',
   'img-alt': 'error',
   'img-size': 'error',
@@ -319,6 +322,62 @@ const sitemapChecks = ({ pages, sitemapPaths }) => {
   return [...missing, ...unknown];
 };
 
+const RELEASE_PATH = /^\/changelog\/[^/]+$/;
+
+const listedPathsOf = ({ text, pattern, origin }) =>
+  new Set(
+    [...text.matchAll(pattern)]
+      .map(([, url]) => url)
+      .filter((url) => url.startsWith(`${origin}/`))
+      .map((url) => internalPath({ href: url.slice(origin.length) })),
+  );
+
+const listChecks = ({ llms, feed, sitemapPaths, origin }) => {
+  const listed = listedPathsOf({ text: llms, pattern: /\]\(([^)\s]+)\)/g, origin });
+  const fed = new Set(
+    [...listedPathsOf({ text: feed, pattern: /<id>([^<]*)<\/id>/g, origin })].filter((path) =>
+      RELEASE_PATH.test(path),
+    ),
+  );
+  const found = [];
+  [...sitemapPaths]
+    .filter((path) => !RELEASE_PATH.test(path) && !listed.has(path))
+    .forEach((path) => {
+      found.push(
+        issue({
+          rule: 'llms-missing-page',
+          file: 'llms.txt',
+          message: `${path} is in the sitemap and not in llms.txt`,
+        }),
+      );
+    });
+  [...listed]
+    .filter((path) => !sitemapPaths.has(path))
+    .forEach((path) => {
+      found.push(
+        issue({
+          rule: 'llms-unknown-page',
+          file: 'llms.txt',
+          message: `${path} is in llms.txt and not in the sitemap`,
+        }),
+      );
+    });
+  const releases = [...sitemapPaths].filter((path) => RELEASE_PATH.test(path));
+  [
+    ...releases.filter((path) => !fed.has(path)),
+    ...[...fed].filter((path) => !sitemapPaths.has(path)),
+  ].forEach((path) => {
+    found.push(
+      issue({
+        rule: 'feed-mismatch',
+        file: 'changelog.xml',
+        message: `${path} is not in both the feed and the sitemap`,
+      }),
+    );
+  });
+  return found;
+};
+
 const existsInDist = ({ path, distFiles }) =>
   distFiles.has(path.slice(1)) ||
   distFiles.has(`${path.slice(1)}.html`) ||
@@ -420,7 +479,16 @@ const trackingChecks = ({ page }) => {
   return found;
 };
 
-export const checkSeo = ({ htmlFiles, distFiles, sitemap, redirects, published, origin }) => {
+export const checkSeo = ({
+  htmlFiles,
+  distFiles,
+  sitemap,
+  llms,
+  feed,
+  redirects,
+  published,
+  origin,
+}) => {
   const pages = [...htmlFiles.entries()].map(([file, html]) => pageFacts({ file, html }));
   const sitemapPaths = sitemapPathsOf({ sitemap, origin });
   return [
@@ -435,6 +503,7 @@ export const checkSeo = ({ htmlFiles, distFiles, sitemap, redirects, published, 
     ...duplicateChecks({ pages, field: 'title', rule: 'title-duplicate' }),
     ...duplicateChecks({ pages, field: 'description', rule: 'description-duplicate' }),
     ...sitemapChecks({ pages, sitemapPaths }),
+    ...listChecks({ llms, feed, sitemapPaths, origin }),
     ...redirectChecks({ redirects, distFiles }),
     ...publishedChecks({ published, redirects, distFiles }),
   ];
