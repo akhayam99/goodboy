@@ -94,6 +94,26 @@ characters; a description stays under 160.
   sitemap lives in `website/public/`, so there is none to edit by hand.
 - `/404` is the branded not-found page, built from the content template and
   marked `noindex`. Vercel serves `404.html` for any path it doesn't know.
+- `pnpm build` ends with `website/scripts/check-seo.mjs`, which reads the final HTML
+  in `dist/`, without Chrome, and fails the build on a structural error: a
+  missing or shared title or description, not exactly one h1, a skipped
+  heading level, a canonical that is not the page URL, a page and the sitemap
+  that disagree, an `img` without `alt`, `width` or `height`, JSON-LD that does
+  not parse, names a type outside its list or cites an `@id` the graph lacks,
+  a broken internal link, a redirect chain, and a Tag Manager id that is
+  repeated or comes before the Consent Mode default. A title outside 30 to
+  70 characters and a description outside 70 to 160 are warnings. Known
+  errors and warnings sit per rule and file in `website/scripts/seo-errors.baseline.json`
+  and `website/scripts/seo-warnings.baseline.json`: a count may fall and never grows,
+  and `node scripts/check-seo.mjs --write` lowers the rows after a fix. The
+  rules live in `website/scripts/lib/seoCheck.mjs`, the CI step `check seo` of
+  `.github/workflows/website.yml` runs `pnpm check:seo`.
+- A renamed or removed page keeps its old URL alive: add a permanent redirect
+  to `redirects` in `vercel.json` and leave the old path in
+  `website/scripts/seo-published-paths.json`, which only gains lines. The check fails
+  when a published path is neither built nor a redirect source, when a
+  redirect points at a page that is not built or at another redirect, and when
+  a link on the site uses a redirect source.
 - `vercel.json` sets `trailingSlash: false`, so `/features/` redirects to
   `/features`, and caches `/assets/` and `/fonts/` for a year as immutable. A
   hashed asset changes name when it changes; the font carries its version in

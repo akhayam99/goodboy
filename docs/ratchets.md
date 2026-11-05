@@ -132,6 +132,8 @@ test file, unless its row above says otherwise.
 | `contractions-copy.baseline.json`                        | could not, cannot and other spelled out negations                                                    |
 | `doc-budget.baseline.json`                               | long sentences and paragraphs, long picture text, code names in docs                                 |
 | `website/scripts/site-copy.baseline.json`                | retired names and em or en dashes in the website copy                                                |
+| `website/scripts/seo-errors.baseline.json`               | structural SEO errors found in the built website pages                                               |
+| `website/scripts/seo-warnings.baseline.json`             | website titles and descriptions outside their length range                                           |
 | `former-names-guard.baseline.json`                       | former names that the retired names guard cannot catch                                               |
 | `cross-feature-imports.baseline.json`                    | imports across features                                                                              |
 | `control-heights.baseline.json`                          | a height class on a control                                                                          |
