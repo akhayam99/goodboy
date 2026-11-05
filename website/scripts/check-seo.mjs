@@ -45,6 +45,8 @@ const main = () => {
     htmlFiles,
     distFiles: new Set(files),
     sitemap: readFileSync(join(DIST, 'sitemap.xml'), 'utf8'),
+    llms: readFileSync(join(DIST, 'llms.txt'), 'utf8'),
+    feed: readFileSync(join(DIST, 'changelog.xml'), 'utf8'),
     redirects: readJson({ path: resolve(ROOT, 'vercel.json'), fallback: {} }).redirects ?? [],
     published: readJson({ path: PUBLISHED, fallback: [] }),
     origin: originOf(),

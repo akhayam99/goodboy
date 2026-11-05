@@ -1,9 +1,7 @@
 import { SITE } from '../lib/site';
 import type { PageMeta } from './PageMeta';
-import { RELEASES } from './RELEASES';
 
 const HOME = { name: 'Home', path: '/' };
-const LATEST_DATE = RELEASES[0]?.date ?? '';
 
 export const STATIC_PAGES = {
   home: {
@@ -12,9 +10,9 @@ export const STATIC_PAGES = {
     description:
       'Goodboy is a free desktop app that runs Claude Code, Codex, Cursor, Gemini and Copilot on one task, with git worktrees, shared context and review. macOS and Linux.',
     ogType: 'website',
+    kind: 'home',
     pageType: 'WebPage',
     crumbs: [HOME],
-    lastmod: LATEST_DATE,
     isIndexed: true,
   },
   features: {
@@ -23,9 +21,9 @@ export const STATIC_PAGES = {
     description:
       'Everything Goodboy does: workflows that split a goal into agent steps, a git worktree per branch, shared context, a stage board, review and spend limits.',
     ogType: 'website',
+    kind: 'features',
     pageType: 'WebPage',
     crumbs: [HOME, { name: 'Features', path: SITE.features }],
-    lastmod: LATEST_DATE,
     isIndexed: true,
   },
   notFound: {
@@ -33,9 +31,9 @@ export const STATIC_PAGES = {
     title: 'Page not found | Goodboy',
     description: "This page isn't on goodboy-ai.dev. The home page, the features and the docs are.",
     ogType: 'website',
+    kind: 'not-found',
     pageType: 'WebPage',
     crumbs: [],
-    lastmod: LATEST_DATE,
     isIndexed: false,
   },
 } as const satisfies Record<string, PageMeta>;

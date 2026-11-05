@@ -7,6 +7,8 @@ import { Nav } from '../pages/home/sections/Nav';
 import { changelogFeed } from './changelogFeed';
 import { CONTENT_PAGES, type ContentPageEntry } from './CONTENT_PAGES';
 import { injectPage } from './injectPage';
+import { llmsTxt } from './llmsTxt';
+import { PAGE_REGISTRY } from './PAGE_REGISTRY';
 import { pageHead } from './pageHead';
 import { RELEASES } from './RELEASES';
 import { sitemap } from './sitemap';
@@ -81,14 +83,6 @@ export const renderSite = ({ templates }: Params): readonly SiteFile[] => [
   },
   ...CONTENT_PAGES.map((entry) => renderContentPage({ template: templates.content, entry })),
   { path: 'changelog.xml', content: changelogFeed({ releases: RELEASES }) },
-  {
-    path: 'sitemap.xml',
-    content: sitemap({
-      pages: [
-        STATIC_PAGES.home,
-        STATIC_PAGES.features,
-        ...CONTENT_PAGES.map((entry) => entry.meta),
-      ],
-    }),
-  },
+  { path: 'sitemap.xml', content: sitemap({ pages: PAGE_REGISTRY }) },
+  { path: 'llms.txt', content: llmsTxt({ pages: PAGE_REGISTRY }) },
 ];
