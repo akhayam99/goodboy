@@ -297,7 +297,7 @@ const main = async () => {
   if (IS_CHECK) {
     const current = existsSync(OUTPUT_PATH) ? readFileSync(OUTPUT_PATH, 'utf8') : '';
     if (current !== expected) {
-      fail('icons: mocks/icons.tsx is out of date, run node scripts/sync-icons.mjs');
+      fail('icons: mocks/generated/icons.tsx is out of date, run node scripts/sync-icons.mjs');
     }
   } else {
     writeFileSync(OUTPUT_PATH, expected);
