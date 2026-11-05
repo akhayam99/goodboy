@@ -13777,11 +13777,6 @@
       "count": 2
     }
   },
-  "website/src/components/mocks/DiffReviewTree.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "website/src/components/mocks/kit/AppButton.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
