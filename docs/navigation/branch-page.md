@@ -244,7 +244,7 @@ opens the picker that searches the host's collaborators), Checks reads `4 passed
 (`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
 `Link issue` opens the popover). Without a pull request the section is the branch
 page (`BranchStartPage`): no status strip and no summary, since the header and the tabs already say all of it. The line under the title (`branchStartLineOf`) names the branch with `3 not pushed`, `Up to date with origin`,
-`Diverged` (warning, when origin also has commits the branch lacks) or `Rebasing`, adds `3 behind main` only when the base moved, and adds what the pre-push hook answered, `Pre-push hook passed` or `Pre-push hook declined` with its age, once this machine pushed: read from the push
+`Diverged` (warning, when origin also has commits the branch lacks) or `Rebasing`, adds `3 behind main` only when the base moved, and adds what the pre-push hook answered, `Pre-push hook passed` or `Pre-push hook declined` with its age, once this machine pushed, a pass only while nothing waits to be pushed, since it does not cover those commits: read from the push
 result since the repo's pre-push hook is the one local gate, kept in memory per mount
 (`local-checks` slice, `mountLocalChecks`), so after a restart the line says nothing until the
 next push; a push that went through counts as passed whether or not the repo has a hook,

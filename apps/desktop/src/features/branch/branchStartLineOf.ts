@@ -22,10 +22,12 @@ type Params = {
   readonly now: number;
 };
 
-type CheckParams = Pick<Params, 'localCheck' | 'now'>;
+type CheckParams = Pick<Params, 'localCheck' | 'now'> & {
+  readonly unpushed: number;
+};
 
-const checkOf = ({ localCheck, now }: CheckParams): BranchStartCheck | null => {
-  if (localCheck === null) {
+const checkOf = ({ localCheck, now, unpushed }: CheckParams): BranchStartCheck | null => {
+  if (localCheck === null || (localCheck.outcome === 'passed' && unpushed > 0)) {
     return null;
   }
   const age = formatAge({ from: localCheck.at, now });
@@ -59,7 +61,7 @@ export const branchStartLineOf = ({
   localCheck,
   now,
 }: Params): BranchStartLine => {
-  const check = checkOf({ localCheck, now });
+  const check = checkOf({ localCheck, now, unpushed: step.unpushed });
   const stopped = stoppedWordOf({ step });
   if (stopped !== null) {
     return { ...stopped, distance: null, check };

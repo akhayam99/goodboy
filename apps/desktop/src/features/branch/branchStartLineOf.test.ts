@@ -73,7 +73,7 @@ describe('branchStartLineOf', () => {
     expect(line.distance).toBe('4 behind main');
   });
 
-  it('says what the pre-push hook answered, and nothing before it ran', () => {
+  it('keeps a decline beside commits not pushed, never a pass that does not cover them', () => {
     const step = branchNextStepOf({
       status: {
         mainDistance: { kind: 'known', ahead: 3, behind: 0 },
@@ -90,5 +90,12 @@ describe('branchStartLineOf', () => {
     });
     expect(declined.check).toMatchObject({ tone: 'danger' });
     expect(declined.check?.word).toContain('Pre-push hook declined');
+    const passed = branchStartLineOf({
+      step,
+      baseBranch: 'main',
+      localCheck: { outcome: 'passed', at: 0, message: null },
+      now: 0,
+    });
+    expect(passed.check).toBeNull();
   });
 });
