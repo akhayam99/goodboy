@@ -1,4 +1,4 @@
-import { AppBrandIcon, type AppBrandId } from '../icons';
+import { AppBrandIcon, type AppBrandId } from '../generated/icons';
 import { cx } from './cx';
 
 type Props = {

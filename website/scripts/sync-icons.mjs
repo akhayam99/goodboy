@@ -7,7 +7,7 @@ const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const WEBSITE_DIRECTORY = resolve(SCRIPT_DIRECTORY, '..');
 const REPOSITORY_DIRECTORY = resolve(WEBSITE_DIRECTORY, '..');
 
-const OUTPUT_PATH = resolve(WEBSITE_DIRECTORY, 'src/mocks/icons.tsx');
+const OUTPUT_PATH = resolve(WEBSITE_DIRECTORY, 'src/mocks/generated/icons.tsx');
 const BRAND_SOURCES_PATH = resolve(WEBSITE_DIRECTORY, 'src/components/brandIcons.source.json');
 const APP_BRAND_PATH = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/components/brandIcons.tsx');
 const COPILOT_ICON_PATH = resolve(REPOSITORY_DIRECTORY, 'packages/ui/src/components/CopilotIcon.tsx');
@@ -18,7 +18,8 @@ const APP_SOURCE_DIRECTORIES = [
 const LUCIDE_RESOLVE_ROOT = resolve(REPOSITORY_DIRECTORY, 'apps/desktop/package.json');
 
 const SOURCE_DIRECTORY = resolve(WEBSITE_DIRECTORY, 'src');
-const ICON_IMPORT = /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'(?:\.\.?\/)+(?:mocks\/)?icons'/g;
+const ICON_IMPORT =
+  /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*'(?:\.\.?\/)+(?:mocks\/)?(?:generated\/)?icons'/g;
 
 const APP_BRAND_EXPORTS = {
   ClaudeIcon: 'anthropic',

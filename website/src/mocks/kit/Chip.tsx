@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import './kit.css';
-import { AppBrandIcon, type AppBrandId } from '../icons';
+import { AppBrandIcon, type AppBrandId } from '../generated/icons';
 import { cx } from './cx';
 import { TONE_COLOR, type Tone } from './spec';
 

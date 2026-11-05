@@ -9,7 +9,7 @@ import {
   Plus,
   SquareKanban,
   Waypoints,
-} from './icons';
+} from './generated/icons';
 import {
   AppButton,
   AppRow,

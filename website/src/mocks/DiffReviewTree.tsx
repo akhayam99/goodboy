@@ -1,5 +1,5 @@
 import { DIFF_REVIEW_FILES } from './diffReviewFiles';
-import { Check } from './icons';
+import { Check } from './generated/icons';
 
 export const DiffReviewTree = () => (
   <nav aria-hidden className="dfrTree">

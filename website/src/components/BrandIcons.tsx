@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import PROVIDER_SOURCES from './brandIcons.source.json';
-import { APP_BRAND_PATHS } from '../mocks/icons';
+import { APP_BRAND_PATHS } from '../mocks/generated/icons';
 
 const PROVIDER_IDS = [
   'anthropic',

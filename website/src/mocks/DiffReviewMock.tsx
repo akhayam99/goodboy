@@ -1,6 +1,6 @@
 import './DiffReviewMock.css';
 import type { ReactNode } from 'react';
-import { ChevronRight } from './icons';
+import { ChevronRight } from './generated/icons';
 import { Chip, StateBadge } from './kit';
 import { MockStage } from './MockStage';
 import { DiffReviewRail } from './DiffReviewRail';

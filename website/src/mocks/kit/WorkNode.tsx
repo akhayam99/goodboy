@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import './kit.css';
-import { Check, Minus, Shield } from '../icons';
+import { Check, Minus, Shield } from '../generated/icons';
 import { cx } from './cx';
 import {
   MIXED_TONE_STROKE,

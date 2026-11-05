@@ -1,6 +1,6 @@
 import './InboxMock.css';
 import { MockStage } from './MockStage';
-import { AppBrandIcon, Contrast, Inbox, CirclePlay, type AppBrandId } from './icons';
+import { AppBrandIcon, Contrast, Inbox, CirclePlay, type AppBrandId } from './generated/icons';
 import { AppRow, Chip, GroupLabel, RecordState, type InboxState } from './kit';
 
 type Props = {

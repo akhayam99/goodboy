@@ -1,4 +1,4 @@
-import { FolderTree } from '../icons';
+import { FolderTree } from '../generated/icons';
 import { Chip } from './Chip';
 
 type Props = {

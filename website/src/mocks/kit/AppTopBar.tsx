@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import './kit.css';
-import { ChevronDown, GitGraph } from '../icons';
+import { ChevronDown, GitGraph } from '../generated/icons';
 import { cx } from './cx';
 
 type Props = {

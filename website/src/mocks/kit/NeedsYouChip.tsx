@@ -1,4 +1,4 @@
-import { CircleHelp } from '../icons';
+import { CircleHelp } from '../generated/icons';
 import { Chip } from './Chip';
 
 type Props = {

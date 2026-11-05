@@ -1,4 +1,4 @@
-import { FolderTree, GitPullRequest } from './icons';
+import { FolderTree, GitPullRequest } from './generated/icons';
 
 export const DiffReviewRail = () => (
   <nav aria-hidden className="dfrRail">
