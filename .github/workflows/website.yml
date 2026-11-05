@@ -56,6 +56,10 @@ jobs:
         if: steps.changes.outputs.website == 'true'
         run: pnpm build
 
+      - name: check seo
+        if: steps.changes.outputs.website == 'true'
+        run: pnpm check:seo --strict
+
       - name: check pages
         if: steps.changes.outputs.website == 'true'
         run: |

@@ -14,7 +14,7 @@
 
 ## Test
 
-A build from `website/` and a test beside the page when it holds logic.
+A build from `website/` and a test beside the page when it holds logic. The build ends with `pnpm check:seo`, which fails on a page without a unique title and description, a canonical or a sitemap line, or on a broken internal link; a renamed URL needs a redirect in `website/vercel.json` ([website/README.md](../../website/README.md) → Search and sharing).
 
 ## Docs that move
 
