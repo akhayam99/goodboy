@@ -109,9 +109,6 @@
     "features.html": 1,
     "index.html": 1
   },
-  "heading-skip": {
-    "features.html": 2
-  },
   "img-size": {
     "docs/agents.html": 8,
     "docs/artifacts.html": 10,

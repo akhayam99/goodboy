@@ -131,15 +131,15 @@ characters; a description stays under 160.
   `vercel.json` serves them without `.html`, and the dev and preview servers
   rewrite `/features` the same way.
 - `/changelog`, every release newest first, and `/changelog/<version>`, one
-  page per release: its date and summary from the snapshot in
+  page per release, titled `Goodboy <version>: <summary theme>` in 70 characters or fewer and described by its summary, plus the first note entries when the summary is short: its date and summary from the snapshot in
   `website/src/data/releases/`, and its New, Improved and Fixed notes from the
   `## Goodboy v<version>` entry in `CHANGELOG.md`. `/changelog.xml` is the
   Atom feed of the same list.
 - `/docs`, the feature guide, and `/docs/<area>`, one page per
   `docs/features/<area>.md`, in `FEATURES.md` index order. The doc's title is
   the h1, its first paragraph the lead, and each `###` an h2 with the same
-  anchor GitHub gives it. A few areas add the words people search to their
-  page title, from a short map in `website/src/prerender/CONTENT_PAGES.tsx`. Every
+  anchor GitHub gives it. Every area adds the words people search to its
+  page title, from a map in `website/src/prerender/CONTENT_PAGES.tsx`. Every
   page carries breadcrumbs, a link to the same file on GitHub and its
   neighbours.
 
