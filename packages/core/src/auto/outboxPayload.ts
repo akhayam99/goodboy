@@ -1,6 +1,5 @@
 import type { MessageAttachment } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
-import type { DelegationResultV1 } from './result';
 import type { AutoDelegationRole } from './roles';
 import type { AutoSubstepRole } from './substep';
 
@@ -19,7 +18,7 @@ export type UserFacts = Readonly<{
 export type ResultsPayload = Readonly<{
   kind: 'results';
   batchId: string;
-  results: ReadonlyArray<DelegationResultV1>;
+  results: ReadonlyArray<unknown>;
 }>;
 
 export type QuestionPayload = Readonly<{

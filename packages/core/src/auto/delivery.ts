@@ -11,7 +11,7 @@ import {
   type UserPayload,
 } from './outboxPayload';
 import { isAutoMountedCode } from './refusals';
-import { renderDelegationResult } from './result';
+import { renderDelegationResult, renderPartialResult, storedResultOf } from './result';
 
 export type DeliveryRow = Readonly<{
   id: string;
@@ -43,7 +43,11 @@ const resultsBlock = ({ payloads, childLabels }: ResultsBlockParams): string | n
   }
   const lines = payloads.flatMap((payload) => [
     `Results of batch ${payload.batchId}:`,
-    ...payload.results.map((result) => {
+    ...payload.results.map((value) => {
+      const result = storedResultOf({ value });
+      if (result === null) {
+        return renderPartialResult({ entry: value });
+      }
       const label = childLabels.get(result.childAgentId);
       return renderDelegationResult({ result, ...(label !== undefined && { label }) });
     }),

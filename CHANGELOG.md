@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.8
+
+Declining a step no longer locks an Auto chat.
+
+### Fixed
+
+- Declining a step Auto proposed no longer breaks the chat on every message. Chats already stuck this way open again by themselves. <!-- gb area=agents -->
+
 ## Goodboy v0.31.7
 
 A step that cannot finish no longer stops the run, and every waiting message sits in one place.

@@ -9,6 +9,7 @@ import {
 } from '@goodboy/db';
 import type { ArtifactId, AutoDelegationId } from '@goodboy/types';
 import { brandId } from '@goodboy/types';
+import { attemptEnvelope } from './attemptEnvelope';
 import type { AgentVerbContext } from './verbContext';
 
 export type ConfirmDelegationParams = Readonly<{
@@ -88,6 +89,19 @@ export const confirmDelegation = async ({
     return outcome.status === 'committed' ? 'confirmed' : 'lost';
   }
   const artifactId = delegation.reviseOf;
+  const declined = {
+    ...attemptEnvelope({
+      delegation,
+      attempt: { id: delegation.firstAttemptId },
+      generation: delegation.generation,
+      exit: 'cancelled',
+      closing: null,
+      artifactPersistence: 'not_applicable',
+      costUsd: null,
+      turns: 0,
+    }),
+    reason: 'declined',
+  };
   const outcome = await ctx.db.transaction({
     statements: [
       guard,
@@ -103,7 +117,7 @@ export const confirmDelegation = async ({
         generation: delegation.generation,
         outcome: 'stopped',
         reason: 'declined',
-        result: { outcome: 'stopped', reason: 'declined', delegationId },
+        result: declined,
         nowMs,
         abortCode: ABORT_STATE,
       }),
