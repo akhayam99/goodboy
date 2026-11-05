@@ -3,8 +3,6 @@
     "website/src/hooks/useReveal/index.ts": 1
   },
   "extra-component-per-file": {
-    "website/src/mocks/HandoffMock.tsx": 2,
-    "website/src/mocks/InboxMock.tsx": 2,
     "website/src/mocks/kit/RunTree.tsx": 2,
     "website/src/mocks/kit/WorkNode.tsx": 3
   },
