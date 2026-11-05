@@ -1,15 +1,17 @@
 import type { ReactElement } from 'react';
-import type { Crumb } from '../pages/content/Breadcrumbs';
+import type { Crumb } from '../lib/Crumb';
 import { ChangelogIndex } from '../pages/content/ChangelogIndex';
 import { DocArticle } from '../pages/content/DocArticle';
 import { DocsIndex } from '../pages/content/DocsIndex';
 import { NotFound } from '../pages/content/NotFound';
 import { ReleaseNotes } from '../pages/content/ReleaseNotes';
 import featuresData from '../pages/features/features.data.json';
-import type { NavSection } from '../pages/home/sections/Nav';
+import type { NavSection } from '../lib/NavSection';
 import { SITE } from '../lib/site';
 import { clipText } from './clipText';
-import { FEATURE_DOCS, type FeatureDoc } from './FEATURE_DOCS';
+import { docDescription } from './docDescription';
+import { docTitle } from './docTitle';
+import { FEATURE_DOCS } from './FEATURE_DOCS';
 import type { PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { releaseDescription } from './releaseDescription';
@@ -30,50 +32,11 @@ const HOME: Crumb = { name: 'Home', path: '/' };
 const CHANGELOG: Crumb = { name: 'Changelog', path: SITE.changelog };
 const DOCS: Crumb = { name: 'Docs', path: SITE.docs };
 
-const SEARCH_HINTS: Readonly<Record<string, string>> = {
-  providers: 'Claude Code, Codex and Cursor plan limits',
-  workflows: 'run several coding agents on one task',
-  workspace: 'repos and git worktrees for coding agents',
-  agents: 'talk to and steer coding agents',
-  context: 'one brief every coding agent reads',
-  review: 'turn review comments into commits',
-  artifacts: 'artifacts coding agents write',
-  board: 'see every coding agent task by stage',
-  'branch-history': 'fold, reword and drop git commits',
-  inbox: 'issues from your trackers in one list',
-  keyboard: 'a shell in the git worktree and shortcuts',
-  overview: 'what a coding agent session did',
-  search: 'find any session, message or plan',
-  security: 'keep tokens out, back up, update safely',
-  setup: 'from install to your first coding agent',
-  start: 'begin from an issue, a workflow or a question',
-  storage: 'free disk space and clean up branches',
-  support: 'report a bug from inside the app',
-  switching: 'move between tasks without losing your place',
-};
-
 const CLUSTER_OF_AREA = new Map(
   featuresData.clusters.flatMap((cluster) =>
     cluster.guides.map((guide) => [guide.area, cluster.id] as const),
   ),
 );
-
-const docTitle = (doc: FeatureDoc) => {
-  const hint = SEARCH_HINTS[doc.area];
-  return hint === undefined ? `${doc.title} | Goodboy docs` : `${doc.title}: ${hint}`;
-};
-
-const SHORT_INTRO = 110;
-
-const docDescription = (doc: FeatureDoc) => {
-  const topics = doc.headings.slice(0, 4).join(', ');
-  if (doc.intro === '') {
-    return clipText(`${doc.title} in Goodboy: ${topics} and more.`);
-  }
-  return clipText(
-    doc.intro.length < SHORT_INTRO && topics !== '' ? `${doc.intro} Covers ${topics}.` : doc.intro,
-  );
-};
 
 const changelogIndex = (): ContentPageEntry => {
   const crumbs = [HOME, CHANGELOG];
@@ -158,8 +121,8 @@ const docPages = (): readonly ContentPageEntry[] =>
       file: `docs/${doc.area}.html`,
       meta: {
         path,
-        title: docTitle(doc),
-        description: docDescription(doc),
+        title: docTitle({ doc }),
+        description: docDescription({ doc }),
         ogType: 'article',
         kind: 'doc',
         crumbs,

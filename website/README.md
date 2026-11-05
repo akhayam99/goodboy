@@ -148,7 +148,7 @@ characters; a description stays under 160.
   `docs/features/<area>.md`, in `FEATURES.md` index order. The doc's title is
   the h1, its first paragraph the lead, and each `###` an h2 with the same
   anchor GitHub gives it. Every area adds the words people search to its
-  page title, from a map in `website/src/prerender/CONTENT_PAGES.tsx`. Every
+  page title, from a map in `website/src/prerender/SEARCH_HINTS.ts`. Every
   page carries breadcrumbs, a link to the same file on GitHub and its
   neighbours.
 
