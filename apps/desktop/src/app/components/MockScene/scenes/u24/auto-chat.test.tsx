@@ -103,14 +103,12 @@ describe('the Auto chat scenes', () => {
     expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(2);
     expect(railLabels().some((label) => label.endsWith('Starting'))).toBe(true);
     expect(screen.queryByRole('article')).toBeNull();
-    const tail = screen
-      .getAllByText('Starting agents')
-      .map((line) => line.closest('[role="status"]:not([data-glance])'))
-      .find((status) => status !== null);
-    if (!(tail instanceof HTMLElement)) {
-      throw new Error('no tail');
+    const dock = document.querySelector('[data-dock-live]');
+    if (!(dock instanceof HTMLElement)) {
+      throw new Error('no dock');
     }
-    expect(within(tail).getByRole('button', { name: /^Stop/ })).toBeDefined();
+    expect(within(dock).getByText('Starting agents')).toBeDefined();
+    expect(within(dock).getByRole('button', { name: /^Stop/ })).toBeDefined();
   });
 
   it('auto-chat-working keeps the approval as a quiet You line inside its card, no bubble', async () => {
