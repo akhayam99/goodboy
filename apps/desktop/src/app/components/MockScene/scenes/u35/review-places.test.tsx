@@ -1,18 +1,20 @@
 // @vitest-environment happy-dom
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
-import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import {
   importStore,
   resetStoryStore,
+  storySpies,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
 import { MOCK_SCENES } from '../..';
@@ -25,11 +27,17 @@ beforeAll(async () => {
 beforeEach(async () => {
   installFakeResizeObserver();
   await resetStoryStore();
+  clearSceneInvoke();
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (typeof command !== 'string') {
+      throw new Error('The scene command must be a string.');
+    }
+    return sceneInvoke({ command, args });
+  });
 });
 
 afterEach(() => {
   cleanup();
-  clearSceneInvoke();
 });
 
 type MountParams = {
@@ -67,15 +75,15 @@ describe('the u35 review place scenes', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: 'Back to Add the stuck-delivery banner' }),
     );
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Back to runs' })).toBeDefined();
-    });
+    await screen.findByRole('button', { name: 'Back to runs' });
   });
 
   it('u35-branch-setup-offer draws the setup offer inside the Branch page', async () => {
     mount({ id: 'u35-branch-setup-offer' });
 
-    expect(await screen.findByText(/is ready\./)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Back to overview' })).toBeDefined();
+    await screen.findByText(/is ready\./);
+    await waitFor(() => {
+      screen.getByRole('button', { name: 'Back to overview' });
+    });
   });
 });

@@ -4,8 +4,8 @@ import { useAppStore } from '../../../../store';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { autoGlanceOf } from '../../../auto/glance/autoGlanceOf';
 import { isAutoDockSpeaking } from '../../../auto/glance/isAutoDockSpeaking';
-import { useAgentSpendById } from '../../../workflows/hooks/useAgentSpendById';
 import { agentGlanceOf } from '../../glance/agentGlanceOf';
+import { useAgentSpend } from '../../hooks/useAgentSpend';
 import { spendTextOf } from '../../glance/spendTextOf';
 import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
 import { AgentSettingsLine } from '../AgentSettingsLine';
@@ -29,7 +29,7 @@ export const AgentRunSettings = ({
   modelsSlotRef,
 }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
-  const agentSpendUsd = useAgentSpendById({ sessionId: session.id }).get(agent.id) ?? 0;
+  const agentSpendUsd = useAgentSpend({ sessionId: session.id, agentId: agent.id });
   const line = (
     <AgentSettingsLine
       session={session}

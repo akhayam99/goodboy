@@ -7,7 +7,6 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useAppStore } from '../../../../../store';
 import { captureLocation } from '../../../../../store/slices/navigation/captureLocation';
 import { stackKey } from '../../../../../store/slices/navigation/currentStack';
 import { FLOW_SESSION_ID } from '../flow-audit/fixtures';
@@ -22,8 +21,12 @@ import {
 import { MOCK_SCENES } from '../..';
 import { U27_BREADCRUMBS_SCENES } from './breadcrumbs';
 
+type Store = Awaited<ReturnType<typeof importStore>>;
+
+let useAppStore: Store;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -87,7 +90,7 @@ describe('breadcrumbs scenes', () => {
       expect(useAppStore.getState().diffFocus[FLOW_SESSION_ID]?.path ?? null).toBeNull();
     });
     expect(screen.queryByRole('button', { name: 'Back to branch' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Back to overview' })).toBeDefined();
+    screen.getByRole('button', { name: 'Back to overview' });
   });
 
   it('goes back in history to the branch page when one sits below the file', async () => {
