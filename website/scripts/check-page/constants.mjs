@@ -1,0 +1,10 @@
+export const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
+export const FEATURE_GUIDE_URL = `${REPO_BLOB_PREFIX}FEATURES.md`;
+export const FEATURE_DOCS_URL = `${REPO_BLOB_PREFIX}docs/features/`;
+export const FEATURE_DOCS_DIRECTORY = 'docs/features';
+export const SITE_DOCS_PREFIX = '/docs/';
+export const MARKETING_PAGES = ['home', 'features'];
+export const STAGE_GRADIENT_TOKEN = '--g-stage-gradient';
+export const MAX_SENTENCE_WORDS = 20;
+export const MIN_TOUCH_FONT_PX = 13;
+export const MIN_TOUCH_TARGET_PX = 44;
