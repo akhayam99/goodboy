@@ -40,7 +40,8 @@ Where code runs:
 - Root: `index.html`, `features.html` and `content.html` are the page
   templates, the Vite inputs.
 - `scripts/`: `prerender.mjs` is the build, `sync-*.mjs` write generated files,
-  `check-page.mjs` and `*.test.mjs` check the site, `build-brand-assets.mjs`
+  `check-page.mjs` and `*.test.mjs` check the site (`check-page/` holds its
+  probes, its per-page checks and the browser launcher), `build-brand-assets.mjs`
   writes `public/` images.
 
 ## Install and run
