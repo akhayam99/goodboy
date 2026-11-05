@@ -6,7 +6,7 @@ import { agentGlanceOf } from './agentGlanceOf';
 
 const AGENT = brandId<AgentId>({ value: 'agent-ledger-core' });
 const RUN = brandId<ProviderRunId>({ value: 'run-1' });
-const AT = '2026-11-05T10:00:00.000Z' as IsoDateTime;
+const AT = brandId<IsoDateTime>({ value: '2026-11-05T10:00:00.000Z' });
 
 describe('agentGlanceOf', () => {
   it.each([
@@ -16,7 +16,7 @@ describe('agentGlanceOf', () => {
     ['starting', { kind: 'starting', startedAt: AT } as const, 'pending', 'working'],
     ['a stopped agent', null, 'stopped', 'stopped'],
     ['a failed agent', null, 'failed', 'stuck'],
-    ['a completed agent', null, 'completed', 'done'],
+    ['a completed agent', null, 'completed', 'idle'],
     ['a queued agent', null, 'pending', 'idle'],
   ] as const)('reads %s', (_name, turnState, status, state) => {
     const glance = agentGlanceOf({ agent: anAgent({ id: AGENT, status }), turnState });
