@@ -1,5 +1,4 @@
 import './HandoffMock.css';
-import type { ReactNode } from 'react';
 import {
   AppBrandIcon,
   ArrowRight,
@@ -11,51 +10,13 @@ import {
   Waypoints,
 } from './generated/icons';
 import { GroupLabel, KindChip, WorkNode } from './kit';
+import { HANDOFF_CAPTIONS } from './HANDOFF_CAPTIONS';
+import { HANDOFF_HOLDS } from './HANDOFF_HOLDS';
+import { HandoffDecisionRow } from './HandoffDecisionRow';
 import { useStepLoop } from './useStepLoop';
 
-const HOLDS: ReadonlyArray<number> = [1600, 3200, 3200, 2800, 4800];
-
-const CAPTIONS: ReadonlyArray<string> = [
-  'Decisions live in the task, not in a chat.',
-  'The planner finishes and adds a new decision.',
-  'It replaces an old one, which stays marked Replaced.',
-  'The next agent starts fresh, with no chat to read.',
-  'Its brief shows the decision it read. Nothing to repeat.',
-];
-
-const DoneNode = () => <WorkNode state="done" label="Done" size="sm" />;
-
-type RowProps = {
-  readonly number: number;
-  readonly source: string;
-  readonly children: ReactNode;
-  readonly isHot?: boolean;
-  readonly isOld?: boolean;
-  readonly label?: ReactNode;
-};
-
-const DecisionRow = ({
-  number,
-  source,
-  children,
-  isHot = false,
-  isOld = false,
-  label,
-}: RowProps) => (
-  <div className="hmDec" data-hot={isHot ? '' : undefined} data-old={isOld ? '' : undefined}>
-    <span className="hmNum">{number}</span>
-    <div className="hmDecBody">
-      <div className="hmDecText">
-        {children}
-        {label}
-      </div>
-      <div className="hmDecSource">{source}</div>
-    </div>
-  </div>
-);
-
 export const HandoffMock = () => {
-  const { ref, step } = useStepLoop<HTMLDivElement>({ holds: HOLDS });
+  const { ref, step } = useStepLoop<HTMLDivElement>({ holds: HANDOFF_HOLDS });
   const isAdded = step >= 1;
   const isReplaced = step >= 2;
   const isStarted = step >= 3;
@@ -110,7 +71,7 @@ export const HandoffMock = () => {
           </p>
           <div className="hmOps">
             <ChevronRight size={14} />
-            <DoneNode />
+            <WorkNode state="done" label="Done" size="sm" />
             <GroupLabel label="Operations" className="hmOpsLabel" />
             <span className="hmBadge">3</span>
             <span className="hmMuted">3 edit</span>
@@ -158,10 +119,10 @@ export const HandoffMock = () => {
                 Edit source
               </span>
             </div>
-            <DecisionRow number={4} source="You · 1d">
+            <HandoffDecisionRow number={4} source="You · 1d">
               Backfill runs read only for its first pass
-            </DecisionRow>
-            <DecisionRow
+            </HandoffDecisionRow>
+            <HandoffDecisionRow
               number={5}
               source="Plan · turn 9 · 2h"
               isHot={step === 2}
@@ -169,15 +130,15 @@ export const HandoffMock = () => {
               label={<span className="hmLabel hmReplaced">Replaced by 7</span>}
             >
               Show the banner after the first failed retry
-            </DecisionRow>
-            <DecisionRow
+            </HandoffDecisionRow>
+            <HandoffDecisionRow
               number={6}
               source="Design the idempotency key and backfill plan · turn 11 · 1h"
             >
               Keep the retry state store on payments-api, so notify-relay stays a read only view
-            </DecisionRow>
+            </HandoffDecisionRow>
             <div className="hmNewSlot" data-shown={isAdded ? '' : undefined}>
-              <DecisionRow
+              <HandoffDecisionRow
                 number={7}
                 source="Agree where the dedupe belongs · turn 14 · just now"
                 isHot={step === 1 || step === 4}
@@ -196,7 +157,7 @@ export const HandoffMock = () => {
                 }
               >
                 Show the stuck-delivery banner after the third failed retry, not the first
-              </DecisionRow>
+              </HandoffDecisionRow>
             </div>
           </div>
         </div>
@@ -207,7 +168,7 @@ export const HandoffMock = () => {
             <span key={dot} className="hmStepDot" data-on={step >= dot ? '' : undefined} />
           ))}
         </span>
-        <p className="hmCaptionText">{CAPTIONS[step]}</p>
+        <p className="hmCaptionText">{HANDOFF_CAPTIONS[step]}</p>
       </div>
     </div>
   );
