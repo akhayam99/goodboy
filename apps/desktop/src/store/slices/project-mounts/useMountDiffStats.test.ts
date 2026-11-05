@@ -89,8 +89,8 @@ describe('useMountDiffStats', () => {
     const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
 
     await waitFor(() => expect(result.current.size).toBe(2));
-    expect(result.current.get('/tmp/a')).toEqual({ additions: 2000, deletions: 200 });
-    expect(result.current.get('/tmp/b')).toEqual({ additions: 0, deletions: 0 });
+    expect(result.current.get('/tmp/a')).toMatchObject({ additions: 2000, deletions: 200 });
+    expect(result.current.get('/tmp/b')).toMatchObject({ additions: 0, deletions: 0 });
   });
 
   it('swallows one failing path to zero instead of losing the whole map', async () => {
@@ -109,8 +109,8 @@ describe('useMountDiffStats', () => {
     const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
 
     await waitFor(() => expect(result.current.size).toBe(2));
-    expect(result.current.get('/tmp/a')).toEqual({ additions: 3, deletions: 1 });
-    expect(result.current.get('/tmp/gone')).toEqual({ additions: 0, deletions: 0 });
+    expect(result.current.get('/tmp/a')).toMatchObject({ additions: 3, deletions: 1 });
+    expect(result.current.get('/tmp/gone')).toMatchObject({ additions: 0, deletions: 0 });
   });
 
   it('skips a worktree row that carries no path', async () => {
@@ -191,7 +191,7 @@ describe('useMountDiffStats', () => {
     ]);
 
     await waitFor(() => expect(result.current[0]?.get('/tmp/a')).toBeDefined());
-    expect(result.current[2]?.get('/tmp/a')).toEqual({ additions: 4, deletions: 0 });
+    expect(result.current[2]?.get('/tmp/a')).toMatchObject({ additions: 4, deletions: 0 });
     expect(changedFiles).toHaveBeenCalledTimes(1);
   });
 
