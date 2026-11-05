@@ -230,6 +230,18 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
+  it('c07-auto-substep groups each turn of agents in one soft card with a head and a state word', async () => {
+    mount({ id: 'c07-auto-substep' });
+
+    await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-soft-card]'));
+    expect(cards.length).toBeGreaterThan(0);
+    for (const card of cards) {
+      expect(card.querySelector('ul[aria-label="Delegations"]')).not.toBeNull();
+      expect(card.textContent).toMatch(/Running|Done/);
+    }
+  });
+
   it('c07-auto-plan pins the plan ask in the dock with Approve plan as the one primary', async () => {
     mount({ id: 'c07-auto-plan' });
 

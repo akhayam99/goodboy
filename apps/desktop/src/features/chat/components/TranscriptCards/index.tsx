@@ -43,6 +43,7 @@ type TranscriptCardProps = {
   readonly turnStartedAt?: IsoDateTime | null;
   readonly previousRunId?: ProviderRunId | null;
   readonly isBrief?: boolean;
+  readonly isToldHidden?: boolean;
   readonly clampLines?: number;
 };
 
@@ -62,6 +63,7 @@ const TranscriptCardImpl = ({
   turnStartedAt,
   previousRunId = null,
   isBrief = false,
+  isToldHidden = false,
   clampLines,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
@@ -79,11 +81,12 @@ const TranscriptCardImpl = ({
         />
       );
     case 'auto_delivery':
-      return sessionId === null ? (
-        <AutoDeliveryRow text={item.text} />
-      ) : (
+      if (sessionId === null) {
+        return isToldHidden ? null : <AutoDeliveryRow text={item.text} />;
+      }
+      return (
         <div className="flex min-w-0 flex-col gap-3">
-          <AutoDeliveryRow text={item.text} />
+          {isToldHidden ? null : <AutoDeliveryRow text={item.text} />}
           <AutoDeliveryResults sessionId={sessionId} runId={item.runId} />
         </div>
       );
@@ -234,5 +237,6 @@ export const TranscriptCard = memo(
     prev.turnStartedAt === next.turnStartedAt &&
     prev.previousRunId === next.previousRunId &&
     prev.isBrief === next.isBrief &&
+    prev.isToldHidden === next.isToldHidden &&
     prev.clampLines === next.clampLines,
 );

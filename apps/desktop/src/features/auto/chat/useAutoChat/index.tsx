@@ -8,6 +8,7 @@ import { AutoDelegationLines } from '../AutoDelegationLines';
 import { AutoDock } from '../AutoDock';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
+import { AutoTurnCard } from '../AutoTurnCard';
 import { AutoWorkTime } from '../AutoWorkTime';
 import { mountedLineOf } from '../mountedLineOf';
 import { projectAskOf } from '../projectAskOf';
@@ -45,13 +46,15 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
         beforeMs: batch.beforeMs,
         node: (
           <AutoWorkTime session={session}>
-            <AutoDelegationLines
-              sessionId={session.id}
-              view={view}
-              delegations={batch.delegations}
-              agents={agents}
-              onOpenChild={openChild}
-            />
+            <AutoTurnCard delegations={batch.delegations}>
+              <AutoDelegationLines
+                sessionId={session.id}
+                view={view}
+                delegations={batch.delegations}
+                agents={agents}
+                onOpenChild={openChild}
+              />
+            </AutoTurnCard>
           </AutoWorkTime>
         ),
       }),

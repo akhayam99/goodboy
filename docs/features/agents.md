@@ -129,7 +129,7 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 - In the list of all conversations, a conversation row never folds. A finished one keeps its helpers behind one line under it, such as "3 helpers", with the most urgent state of those helpers beside the count. An agent with helpers of its own folds the same way. A fold opens by itself when a hidden helper needs you.
 - The chat shows each agent Auto starts as one line with its role, task, state and elapsed time. The whole line opens the agent, by a click or by Enter, and it has no buttons. To stop that agent, right click the line and pick **Stop**. **Working now** above the message field lists running agents, newest first, with their elapsed time. It stays visible while Auto replies and hides while the **Agents** drawer is open. A chip or **Open** reveals the agent in **Agents** and keeps Auto in view.
 - When agents report back, each report sits in that agent's card right above Auto's reply. The card shows role, name, model, state and **Open**.
-- Auto's reply adds only what the reports mean together. **View plan** shows right there when a Planner finished, with the first steps. Approve it from the plan view.
+- Auto's reply adds only what the reports mean together. The plan waits in a dock above the message field with **Approve plan**, **Ask for changes** and **Open plan**.
 - Auto's state shows once, at the end, as in **Waiting for Implementer and Tester**.
 
 **Limit and control**
