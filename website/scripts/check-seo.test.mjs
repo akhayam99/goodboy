@@ -347,6 +347,34 @@ describe('checkSeo', () => {
     assert.deepEqual(ok, []);
   });
 
+  it('fails an iubenda script that comes before the consent default or the preference handler', () => {
+    const consent = "<script>gtag('consent', 'default', {});</script>";
+    const handler = '<script>consent.onPreference = function () {};</script>';
+    const iubenda = '<script src="https://cdn.iubenda.com/cs/iubenda_cs.js" async></script>';
+    const check = (head) => run({ htmlFiles: { 'index.html': page({ head }) } });
+    assert.deepEqual(check(`${consent}${handler}${iubenda}`), []);
+    const early = check(`${consent}${iubenda}${handler}`);
+    assert.deepEqual(rulesOf(early), ['consent-order']);
+    assert.match(early[0].message, /handler/);
+    assert.deepEqual(rulesOf(check(`${consent}${iubenda}`)), ['consent-order']);
+    const unguarded = check(`${handler}${iubenda}${consent}`);
+    assert.deepEqual(rulesOf(unguarded), ['consent-order']);
+    assert.match(unguarded[0].message, /default/);
+  });
+
+  it('fails a Google tag, frame or image in the static html', () => {
+    const issues = run({
+      htmlFiles: {
+        'index.html': page({
+          head: '<script async src="https://www.googletagmanager.com/gtm.js?id=X"></script>',
+          body: '<h1>A</h1><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=X"></iframe></noscript>',
+        }),
+      },
+    });
+    assert.deepEqual(rulesOf(issues), ['google-before-consent']);
+    assert.equal(issues.length, 2);
+  });
+
   it('warns on a title or description length, and never fails on it', () => {
     const issues = run({
       htmlFiles: { 'index.html': page({ title: 'Acme', description: 'Short one.' }) },
