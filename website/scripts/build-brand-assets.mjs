@@ -20,7 +20,10 @@ const providerRegistrySource = readSource('packages/types/src/provider-registry.
 const providerBrandSource = readSource(
   'apps/desktop/src/features/providers/components/provider-brand.ts',
 );
-const iconSource = readSource('packages/ui/src/components/brandIcons.tsx');
+const iconSource = [
+  readSource('packages/ui/src/components/brandIcons.tsx'),
+  readSource('packages/ui/src/components/CopilotIcon.tsx'),
+].join('\n');
 const desktopStylesSource = readSource('apps/desktop/src/styles.css');
 const websiteStylesSource = readSource('website/src/styles/base.css');
 const mascotBase64 = readFileSync(resolve(WEBSITE_DIRECTORY, 'src/assets/mascot.png')).toString(
