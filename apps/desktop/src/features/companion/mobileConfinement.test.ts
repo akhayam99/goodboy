@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
-import { useAppStore } from '../../store';
 import type {
   IsoDateTime,
   PrCheckRun,
@@ -17,7 +16,7 @@ import {
   evaluateMobileMerge,
   evaluateMobileSpawnWorkflow,
   isMergeMethod,
-  mobileMergeFacts,
+  mobileMergeFactsOf,
 } from './mobileConfinement';
 import type { PullRequestFacts } from '../actions/kinds/pullRequestFacts';
 import type { SessionGithubState } from '../../store/types';
@@ -88,18 +87,20 @@ const factsOf = ({
   pr = eligiblePr(),
   checks = null,
   threads = [],
+  unpushed = 0,
 }: {
   readonly pr?: PullRequestState | null;
   readonly checks?: ReadonlyArray<PrCheckRun> | null;
   readonly threads?: ReadonlyArray<ResolveThread>;
+  readonly unpushed?: number;
 } = {}): PullRequestFacts =>
-  mobileMergeFacts({
+  mobileMergeFactsOf({
     state: {
-      ...useAppStore.getState(),
       sessionGithub: { [sid('s1')]: githubOf({ pr, checks }) },
       sessionResolveThreads: { [sid('s1')]: threads },
     },
     sessionId: sid('s1'),
+    unpushed,
   });
 
 const run = (name: PrCheckRun['name'], conclusion: PrCheckRun['conclusion']): PrCheckRun => ({
@@ -140,6 +141,11 @@ const thread = (state: ResolveThread['state']): ResolveThread => ({
 });
 
 describe('evaluateMobileMerge', () => {
+  it('refuses while commits are not pushed', () => {
+    const gate = evaluateMobileMerge({ facts: factsOf({ unpushed: 2 }), method: 'squash' });
+    expect(gate.ok).toBe(false);
+  });
+
   it('permits an approved, green, mergeable PR with every supported method', () => {
     const facts = factsOf();
     expect(evaluateMobileMerge({ facts, method: 'squash' })).toEqual({

@@ -27,6 +27,24 @@ export type MergeGate =
   | { readonly ok: true; readonly pr: PullRequestState; readonly method: PrMergeMethod }
   | { readonly ok: false; readonly reason: string };
 
+type MergeFactsParams = {
+  readonly state: Pick<AppStore, 'sessionGithub' | 'sessionResolveThreads'>;
+  readonly sessionId: SessionId;
+  readonly unpushed: number;
+};
+
+export const mobileMergeFactsOf = ({
+  state,
+  sessionId,
+  unpushed,
+}: MergeFactsParams): PullRequestFacts =>
+  sessionMergeFacts({
+    sessionId,
+    github: state.sessionGithub[sessionId] ?? null,
+    threads: state.sessionResolveThreads?.[sessionId] ?? [],
+    unpushed,
+  });
+
 export const mobileMergeFacts = ({
   state,
   sessionId,
@@ -34,10 +52,9 @@ export const mobileMergeFacts = ({
   readonly state: AppStore;
   readonly sessionId: SessionId;
 }): PullRequestFacts =>
-  sessionMergeFacts({
+  mobileMergeFactsOf({
+    state,
     sessionId,
-    github: state.sessionGithub[sessionId] ?? null,
-    threads: state.sessionResolveThreads?.[sessionId] ?? [],
     unpushed: unpushedCommitsOf({ state, sessionId, mountId: null }),
   });
 

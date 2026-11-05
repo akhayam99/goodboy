@@ -92,7 +92,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'headers: opening Push keeps the header Push secondary, yields the header primary, and the confirm pushes once',
+    name: 'headers: Push leads the header, opening it yields the primary, and the confirm pushes once',
     covers: ['navigate'],
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
@@ -103,7 +103,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       });
       await openComments(ctx);
       await applyNeedsYou({ count: 2 });
-      expect(headerPush().getAttribute('data-variant')).toBe('secondary');
+      expect(headerPush().getAttribute('data-variant')).toBe('primary');
       await click(headerPush());
     },
     lands: async () => {

@@ -9,7 +9,6 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { invoke } from '@tauri-apps/api/core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -203,13 +202,15 @@ describe('the pull request page scenes', () => {
     answerWith({ behind: 0, unpushed: 3 });
     draw({ name: 'branch-pr-merge-methods' });
     const push = await waitFor(() => {
-      const button = document.querySelector<HTMLElement>('[data-branch-primary="diff.push"]');
-      expect(button).not.toBeNull();
-      return button as HTMLElement;
+      const button = document.querySelector('[data-branch-primary="diff.push"]');
+      if (button === null) {
+        throw new Error('no Push in the header yet');
+      }
+      return button;
     });
 
     answerWith({ behind: 0 });
-    useAppStore.setState({ pushBranch: async () => ({ ok: true }) });
+    store.setState({ pushBranch: async () => ({ ok: true }) });
     fireEvent.click(push);
 
     await waitFor(() => expect(cellText({ id: 'merge' })).not.toContain('not pushed'));
