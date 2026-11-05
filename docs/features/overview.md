@@ -65,7 +65,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 - It is the one card for everything that waits for you. First come runs and agents that paused for an answer, oldest first.
 - Then come the rows that ask a decision or a fix: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
-- Its header counts the rows drawn. With nothing waiting it shrinks to one line: **Nothing needs you**.
+- Its header counts the rows drawn. With nothing waiting the card is gone and the line under the goal says **Nothing needs you**.
 - The first row holds the one filled button. Every other row has one quiet verb and no **⋯** at rest; the rest of its moves sit in the right click menu.
 - A run or agent that waits is not drawn again when a row above already asks the same thing.
 - Auto shows as one row with a button such as **2 agents**. It opens the list of its agents; the full tree stays in the Auto chat.

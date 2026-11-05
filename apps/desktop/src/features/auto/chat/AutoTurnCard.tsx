@@ -16,7 +16,6 @@ export const AutoTurnCard = ({ delegations, replies = [], children }: Props) => 
   return (
     <div
       role="group"
-      data-turn=""
       data-soft-card=""
       aria-label={head.name}
       className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4"

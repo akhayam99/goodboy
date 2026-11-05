@@ -108,9 +108,7 @@ describe('the u21 page-state scenes', () => {
 
     expect(await screen.findByRole('heading', { level: 1 })).toBeDefined();
     expect(
-      document.querySelectorAll(
-        '[data-overview-card="needs-you"]:not([data-needs-you-empty]), [data-overview-card="running"]',
-      ),
+      document.querySelectorAll('[data-overview-card="needs-you"], [data-overview-card="running"]'),
     ).toHaveLength(0);
     expect(screen.queryByText('Nothing yet')).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Log' })).toBeNull();

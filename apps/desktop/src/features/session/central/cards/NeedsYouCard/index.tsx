@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { EmptyLine, EntryWash, useEntryWash } from '@goodboy/ui';
+import { EntryWash, useEntryWash } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import type { ActionCardModel } from '../../next/actionCardsOf';
 import type { NextBranchName } from '../../next/nextRowCopyOf';
@@ -45,16 +45,7 @@ export const NeedsYouCard = ({
 }: Props) => {
   const washed = useEntryWash({ keys: needsYouRowKeysOf({ waiting, cards }) });
   if (card.count === 0) {
-    return (
-      <section
-        aria-label={card.title}
-        data-overview-card={card.id}
-        data-needs-you-empty=""
-        className="flex h-8 min-w-0 items-center rounded-lg bg-subtle px-4"
-      >
-        <EmptyLine className="flex-1">Nothing needs you</EmptyLine>
-      </section>
-    );
+    return null;
   }
   const live =
     waiting.length === 0 ? null : (

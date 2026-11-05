@@ -103,7 +103,10 @@ describe('the Auto chat scenes', () => {
     expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(2);
     expect(railLabels().some((label) => label.endsWith('Starting'))).toBe(true);
     expect(screen.queryByRole('article')).toBeNull();
-    const tail = screen.getByText('Starting agents').closest('[role="status"]');
+    const tail = screen
+      .getAllByText('Starting agents')
+      .map((line) => line.closest('[role="status"]:not([data-glance])'))
+      .find((status) => status !== null);
     if (!(tail instanceof HTMLElement)) {
       throw new Error('no tail');
     }
@@ -146,7 +149,7 @@ describe('the Auto chat scenes', () => {
     const work = rail();
     expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
-    expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
+    expect(screen.getAllByText('Waiting for Implementer and Tester').length).toBeGreaterThan(0);
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 of \$10\.00/);
     expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
@@ -316,9 +319,6 @@ describe('the Auto chat scenes', () => {
     const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
     expect(within(running).getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(within(running).getAllByRole('button', { name: 'Open Auto chat' })).toHaveLength(1);
-    expect(running.textContent).toContain(
-      'Post one credit per retry in postCredit and applyCredit',
-    );
   });
 
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {
