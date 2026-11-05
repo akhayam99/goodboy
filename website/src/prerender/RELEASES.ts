@@ -1,4 +1,5 @@
 import changelog from '../../../CHANGELOG.md?raw';
+import { SNAPSHOT_VERSIONS } from '../data/latestVersion';
 import { compareVersions } from '../lib/compareVersions';
 
 type ReleaseSnapshot = {
@@ -17,6 +18,18 @@ const SNAPSHOTS = import.meta.glob<ReleaseSnapshot>('../data/releases/*.json', {
 });
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+type SnapshotParams = {
+  readonly version: string;
+};
+
+const snapshotOf = ({ version }: SnapshotParams): ReleaseSnapshot => {
+  const snapshot = SNAPSHOTS[`../data/releases/${version}.json`];
+  if (snapshot === undefined || snapshot.version !== version) {
+    throw new Error(`release snapshot ${version}.json does not hold version ${version}`);
+  }
+  return snapshot;
+};
 
 const notesOf = (version: string) => {
   const lines = changelog.split('\n');
@@ -45,6 +58,6 @@ const toRelease = (snapshot: ReleaseSnapshot): Release => {
   };
 };
 
-export const RELEASES: readonly Release[] = Object.values(SNAPSHOTS)
-  .map(toRelease)
-  .sort((left, right) => compareVersions({ left: left.version, right: right.version }));
+export const RELEASES: readonly Release[] = SNAPSHOT_VERSIONS.map((version) =>
+  toRelease(snapshotOf({ version })),
+).sort((left, right) => compareVersions({ left: left.version, right: right.version }));
