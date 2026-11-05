@@ -36,8 +36,9 @@ import {
 import { sceneInvoke, clearSceneInvoke } from '../../../test/sceneInvoke';
 import { U26_CENTRAL_NEXT_SCENES } from '../../../app/components/MockScene/scenes/u26/central-next';
 import { U26_CENTRAL_SCENES } from '../../../app/components/MockScene/scenes/u26/central';
+import { U33_OVERVIEW_NEEDS_YOU_SCENES } from '../../../app/components/MockScene/scenes/surfaces/overview-needs-you/overview-needs-you';
 
-const COLUMN_SCENES = [U26_CENTRAL_NEXT_SCENES, U26_CENTRAL_SCENES];
+const COLUMN_SCENES = [U26_CENTRAL_NEXT_SCENES, U26_CENTRAL_SCENES, U33_OVERVIEW_NEEDS_YOU_SCENES];
 
 const ALLOWED_VARIANTS: ReadonlySet<string> = new Set(['primary', 'secondary', 'quiet']);
 const NARROW_SCENE = 'u26-central-next-narrow-light';
@@ -143,6 +144,15 @@ describe('the CTA rule of the central column', () => {
       }
     },
   );
+
+  it.each(cases)('$name: a Needs you row after the first holds at most one verb', (params) => {
+    const { container } = show(params);
+
+    const rows = container.querySelectorAll('[data-overview-card="needs-you"] [data-action-card]');
+    for (const card of [...rows].slice(1)) {
+      expect(card.querySelectorAll('button').length).toBeLessThanOrEqual(1);
+    }
+  });
 
   it.each(cases)('$name: every card holds at most two secondary buttons', (params) => {
     const { container } = show(params);

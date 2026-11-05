@@ -83,6 +83,7 @@ export const NeedsYouCard = ({
       washedIds={washed}
       hasHeader={false}
       canLead
+      isFlat
       actionsFor={actionsFor}
       openFor={openFor}
       chipFor={chipFor}

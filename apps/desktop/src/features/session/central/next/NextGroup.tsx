@@ -15,11 +15,16 @@ type CardParams = {
   readonly card: ActionCardModel;
 };
 
+type IndexParams = {
+  readonly index: number;
+};
+
 type Props = {
   readonly group: NextGroupModel;
   readonly hasLabel: boolean;
   readonly isLead: boolean;
   readonly isNarrow: boolean;
+  readonly isFlat?: boolean;
   readonly washedIds?: ReadonlySet<string>;
   readonly actionsFor: ActionCardActions['actionsFor'];
   readonly openFor?: ActionCardActions['openFor'];
@@ -33,6 +38,7 @@ export const NextGroup = ({
   hasLabel,
   isLead,
   isNarrow,
+  isFlat = false,
   washedIds,
   actionsFor,
   openFor,
@@ -47,8 +53,10 @@ export const NextGroup = ({
   });
   const updateAll = useAppStore((state) => state.updateAll);
   const shown = group.rows.map((card) => ({ card, actions: actionsFor({ card, isNarrow }) }));
+  const isQuietAt = ({ index }: IndexParams): boolean => isFlat && !(isLead && index === 0);
   const hasOverflowColumn = shown.some(
-    ({ actions }) => actions.menu !== null || actions.foldedTarget !== null,
+    ({ actions }, index) =>
+      !isQuietAt({ index }) && (actions.menu !== null || actions.foldedTarget !== null),
   );
   const bulk = nextBulkOf({ group, sessionId, stopRowFor });
   const retries =
@@ -133,6 +141,7 @@ export const NextGroup = ({
             card={card}
             actions={actions}
             isFirst={isLead && index === 0}
+            isQuiet={isQuietAt({ index })}
             hasOverflowColumn={hasOverflowColumn}
             chip={chipFor?.({ card })}
             onOpen={openFor?.({ card }) ?? null}

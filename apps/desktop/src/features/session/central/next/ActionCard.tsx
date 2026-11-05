@@ -14,6 +14,7 @@ import { BAND_TONE } from '../../../suggestions/bandTone';
 import { NextStepMenu } from '../../../suggestions/NextStepMenu';
 import { NextStepRebasePicker } from '../../../suggestions/NextStepRebasePicker';
 import { ActionCardOverflowMenu } from '../../../actions/ActionCardOverflowMenu';
+import { ActionCardMenuArea } from '../../../actions/ActionCardMenuArea';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
 import { LiveGlyph } from '../now/LiveGlyph';
 import { ROW_COLUMNS } from '../rowColumns';
@@ -25,6 +26,7 @@ type Props = {
   readonly card: ActionCardModel;
   readonly actions: CardActions;
   readonly isFirst: boolean;
+  readonly isQuiet?: boolean;
   readonly hasOverflowColumn?: boolean;
   readonly chip?: ReactNode;
   readonly onOpen?: (() => void) | null;
@@ -55,6 +57,7 @@ export const ActionCard = ({
   card,
   actions,
   isFirst,
+  isQuiet = false,
   hasOverflowColumn = false,
   chip,
   onOpen = null,
@@ -120,7 +123,7 @@ export const ActionCard = ({
     );
 
   const overflow =
-    menu !== null ? (
+    menu !== null && !isQuiet ? (
       <NextStepMenu
         isBare
         target={menu.target}
@@ -130,9 +133,9 @@ export const ActionCard = ({
         onPreview={setPreviewKind}
         trackChoice={menu.trackChoice}
       />
-    ) : foldedTarget !== null ? (
+    ) : foldedTarget !== null && !isQuiet ? (
       <ActionCardOverflowMenu target={foldedTarget} label={`More options for ${card.title}`} />
-    ) : hasOverflowColumn ? (
+    ) : hasOverflowColumn && !isQuiet ? (
       <span aria-hidden className="size-7" />
     ) : null;
 
@@ -147,7 +150,7 @@ export const ActionCard = ({
       />
     ) : null;
 
-  return (
+  const content = (
     <>
       <div
         data-action-card
@@ -207,7 +210,7 @@ export const ActionCard = ({
         <HeaderActions
           className="@max-[360px]:col-start-2 @max-[360px]:justify-start"
           secondary={
-            second === null
+            second === null || isQuiet
               ? null
               : verbButton({ verb: second, variant: 'secondary', onClick: second.run })
           }
@@ -219,4 +222,13 @@ export const ActionCard = ({
       {picker}
     </>
   );
+  const quietTarget = menu?.target ?? foldedTarget;
+  if (isQuiet && quietTarget !== null) {
+    return (
+      <ActionCardMenuArea target={quietTarget} anchorKey={card.id}>
+        {content}
+      </ActionCardMenuArea>
+    );
+  }
+  return content;
 };

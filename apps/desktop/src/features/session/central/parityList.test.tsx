@@ -144,6 +144,7 @@ describe('the parity list of the Overview, walked on the cards', () => {
     });
     expect(auto.getAttribute('data-state')).toBe('stuck');
     expect(auto.textContent).toContain('Stuck');
+    fireEvent.click(within(auto).getByRole('button', { name: /agents?$/ }));
     expect(auto.textContent).toContain('Never started');
     within(auto).getByRole('button', { name: 'Open Auto chat' });
   });
@@ -158,6 +159,11 @@ describe('the parity list of the Overview, walked on the cards', () => {
   it('1: a child that declared itself blocked says Blocked on the Auto row', async () => {
     await show({ kind: 'blocked' });
 
+    for (const toggle of within(cardOf({ name: 'Running' })).getAllByRole('button', {
+      name: /agents?$/,
+    })) {
+      fireEvent.click(toggle);
+    }
     expect(cardOf({ name: 'Running' }).textContent).toContain('Blocked');
   });
 

@@ -11,9 +11,9 @@ The Overview is titled with the session's name, with its linked issue key in gra
 It reads top to bottom:
 
 - The goal.
-- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.
-- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
-- One card per job, in the order of who acts: **Needs you** (you must), **Running** (agents are), **Next** (you may), **Branches** (where each branch stands) and **Done** (finished).
+- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
+- One line under the goal says what is happening: how many things wait for you (amber), how many agents work (blue), what is stuck (red), or **Nothing needs you** (green). It reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
+- One card per question you ask: **Needs you** (what do I do), **Branches** (what can I do next), **Running** (what is moving) and **Done** (what finished).
 
 An empty card is not drawn. An archived session keeps only **Done**.
 
@@ -63,9 +63,11 @@ See what needs you, what runs, what is next, where each branch stands and what f
 **Needs you**
 
 - It is the one card for everything that waits for you. First come runs and agents that paused for an answer, oldest first.
-- Then come the **Decide** and **Fix** rows: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations.
-- Its header counts them all. With nothing waiting it shrinks to one line: **Nothing needs you**.
-- With both kinds present, each kind has a quiet label with its count (**Decide 2**, **Fix 1**), no bar and no chevron. With one kind, the rows sit right under the header with no label.
+- Then come the rows that ask a decision or a fix: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
+- Its header counts the rows drawn. With nothing waiting it shrinks to one line: **Nothing needs you**.
+- The first row holds the one filled button. Every other row has one quiet verb and no **⋯** at rest; the rest of its moves sit in the right click menu.
+- A run or agent that waits is not drawn again when a row above already asks the same thing.
+- Auto shows as one row with a button such as **2 agents**. It opens the list of its agents; the full tree stays in the Auto chat.
 
 **Running**
 
@@ -76,7 +78,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - A run shows its steps as a bar. Done steps are grey, the running step is the accent color and pulses, a step that waits for your go is amber and a failed step is red. The role never colors the bar. A run of two steps or fewer shows a count instead, such as **1/2**.
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
-- The agents a run, an agent or Auto started hang under it on one thin line.
+- The agents a run or an agent started hang under it on one thin line. Auto shows one row with a button such as **2 agents**, which opens its agents.
 - When an agent Auto started is stuck, the Auto row says **Stuck**. One line under it offers **Answer** and **Stop**. **Retry** is on the **Needs you** card, once.
 - **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 
