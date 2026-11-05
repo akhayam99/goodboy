@@ -381,8 +381,12 @@ const stripHtml = (input: string): string => {
     }
 
     if (ch === '<' && input[i + 1] === '<') {
-      out += '<<';
-      i += 2;
+      let end = i;
+      while (input[end] === '<') {
+        end += 1;
+      }
+      out += input[end] === '/' ? '<<' : input.slice(i, end);
+      i = end;
       continue;
     }
 

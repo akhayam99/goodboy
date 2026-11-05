@@ -23,6 +23,10 @@ A run shows what it is doing right after the last step.
 
 While an orchestrated run picks its next step, the moving row sits right after the last step and above the planned ones, not under the page.
 
+### Fixed
+
+- A plan with a badly closed block no longer nests every decision inside the one before it. <!-- gb area=agents -->
+
 ## Goodboy v0.31.9
 
 The branch page says each thing once.

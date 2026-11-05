@@ -980,3 +980,5 @@ A card that offers **Let an agent fix the push** can be left, remounted or reloa
 ## The setup wizard decides once per window
 
 The wizard has more than one host in a window (`AppOverlayRouter` mounts it in two layouts), and the first session swaps the layout right after Start. A host that mounts then reads the saved wizard state before the `done` write lands, so it could reopen setup on a stale step. `useOnboardingWizard` records the first open or close in `WIZARD_WINDOW_DECISION` (`OnboardingWizard/wizardWindowDecision.ts`), and a later host never opens the wizard on its own once that is set; only an explicit open event does. The hook test "keeps a second host closed" pins it.
+
+**A kit block closer can arrive with one bracket too many.** Models sometimes write `<<</decision>>`. `stripHtml` in `parseMarkdown.ts` would read `</decision>` as an html tag and drop it, and every block after it would nest. It reads a run of `<` before `/` as `<<`, so keep any new tag stripping behind that branch.

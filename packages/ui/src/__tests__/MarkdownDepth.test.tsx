@@ -71,4 +71,13 @@ describe('Markdown callout depth', () => {
     );
     expect(container.querySelectorAll('table').length).toBe(1);
   });
+
+  it('reads a closer with one bracket too many as a closer, so blocks stay siblings', () => {
+    const { blocks } = parseMarkdown({
+      text: '<<decision>>\nfirst\n<<</decision>>\n<<decision>>\nsecond\n<<</decision>>',
+    });
+
+    expect(blocks.map((block) => block.kind)).toEqual(['callout', 'callout']);
+    expect(JSON.stringify(blocks)).not.toContain('<<');
+  });
 });
