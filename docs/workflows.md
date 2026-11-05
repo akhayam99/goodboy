@@ -348,8 +348,11 @@ read top to bottom at the conversation measure:
   screen) before the step whose decision read it; while that step has no row
   yet, or the hint has no recorded step, the hint sits after the steps and the
   words are plain text or absent. A hint keeps its expansion, its focus and its
-  open image when it moves from the composer to the list. A dashed row
-  "Next step, not decided yet" while the orchestrator chooses, then the recap's
+  open image when it moves from the composer to the list. While no step runs and
+  the orchestrator chooses or is about to go on (`isBetweenStepsPhase`), one row
+  sits right after the last step with the running node and the phrase
+  (`OrchestratedNowRow`, `Choosing the next step` or `Continuing automatically`),
+  and the tail draws no line of its own, then the recap's
   **Left** items that name a role as dashed rows, so the plan and the progress
   are one list (`orchestratedChecklistOf`). A Left entry with no role is not a
   step: it sits in a folded **Left open (2)** list under the steps

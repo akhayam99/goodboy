@@ -16,7 +16,7 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly hints: ReadonlyArray<OrchestratorHint>;
   readonly summary: Summary | null;
-  readonly isDeciding: boolean;
+  readonly isBetweenSteps: boolean;
   readonly isDone: boolean;
 };
 
@@ -60,7 +60,7 @@ export const orchestratedChecklistOf = ({
   agents,
   hints,
   summary,
-  isDeciding,
+  isBetweenSteps,
   isDone,
 }: Params): OrchestratedChecklist => {
   const roots = agents
@@ -92,6 +92,6 @@ export const orchestratedChecklistOf = ({
     trailingHints,
     left: open.left,
     notes: open.notes,
-    isNextShown: isDeciding,
+    isNextShown: isBetweenSteps,
   };
 };

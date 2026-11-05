@@ -8,12 +8,14 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import { RunTree } from '../../../workflows/components/RunTree';
 import type { RunTreeInsert } from '../../../workflows/runTreeInsert';
 import { useRunTree } from '../../../workflows/components/RunTree/useRunTree';
+import { isBetweenStepsPhase } from '../../../workflows/isBetweenStepsPhase';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { orchestratedChecklistOf } from '../../../workflows/orchestratedChecklistOf';
 import type { AgentKind } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedNotes } from './OrchestratedNotes';
 import { OrchestratedHintRow } from './OrchestratedHintRow';
+import { OrchestratedNowRow } from './OrchestratedNowRow';
 import { OrchestratedPlanRow } from './OrchestratedPlanRow';
 import { OrchestratedQueue } from './OrchestratedQueue';
 
@@ -59,7 +61,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     agents,
     hints: run.orchestratorHints ?? [],
     summary: parseRunSummaryText(run.orchestratorSummary?.trim() ?? ''),
-    isDeciding: view.orchestrator.state.phase === 'deciding',
+    isBetweenSteps: isBetweenStepsPhase({ phase: view.orchestrator.state.phase }),
     isDone,
   });
   const queuedHints = (run.orchestratorHints ?? []).filter((hint) => hint.consumedAt == null);
@@ -123,7 +125,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
         hasLineBelow={hasLineBelow}
       />
       {checklist.isNextShown ? (
-        <OrchestratedPlanRow kind="next" label={ORCHESTRATED_COPY.nextStep} slotWidth={slotWidth} />
+        <OrchestratedNowRow phrase={view.orchestrator.state.sentence} slotWidth={slotWidth} />
       ) : null}
       {skipped.map((change) => (
         <OrchestratedPlanRow

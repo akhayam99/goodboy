@@ -179,12 +179,16 @@ describe('the c09 orchestrated scenes', () => {
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
   });
 
-  it('c09-orch-reading shows the hint being read and the next step not decided', async () => {
+  it('c09-orch-reading shows the hint being read and the running row after the steps', async () => {
     await mount('c09-orch-reading');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('deciding');
-    expect(within(tail()).getByText('Choosing the next step')).toBeDefined();
-    expect(within(checklist()).getByText('Next step, not decided yet')).toBeDefined();
+    expect(tail().querySelector('[data-tail]')).toBeNull();
+    const rows = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row]')].map(
+      (row) => row.dataset.planRow,
+    );
+    expect(rows.filter((row) => row !== 'hint')[0]).toBe('now');
+    expect(within(checklist()).getByRole('status').textContent).toBe('Choosing the next step');
     const queued = screen.getByRole('list', { name: 'Queued hints' });
     expect(within(queued).getByText('Reading now')).toBeDefined();
     expect(within(queued).getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(
