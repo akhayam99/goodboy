@@ -41,8 +41,14 @@ const main = () => {
       .filter((file) => file.endsWith('.html'))
       .map((file) => [file, readFileSync(join(DIST, file), 'utf8')]),
   );
+  const cssFiles = new Map(
+    files
+      .filter((file) => file.endsWith('.css'))
+      .map((file) => [file, readFileSync(join(DIST, file), 'utf8')]),
+  );
   const issues = checkSeo({
     htmlFiles,
+    cssFiles,
     distFiles: new Set(files),
     sitemap: readFileSync(join(DIST, 'sitemap.xml'), 'utf8'),
     llms: readFileSync(join(DIST, 'llms.txt'), 'utf8'),

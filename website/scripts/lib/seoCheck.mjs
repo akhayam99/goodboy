@@ -537,23 +537,55 @@ const trackAttributeChecks = ({ page, trackSpec }) =>
     });
 
 const IUBENDA_SCRIPT = 'cdn.iubenda.com/cs/iubenda_cs.js';
-const GOOGLE_HOSTS = ['googletagmanager.com', 'google-analytics.com'];
+const GOOGLE_HOSTS = [
+  'googletagmanager.com',
+  'google-analytics.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
+];
+
+const hasGoogleHost = ({ text }) => GOOGLE_HOSTS.some((host) => text.includes(host));
+
+const cssChecks = ({ cssFiles }) =>
+  [...cssFiles.entries()]
+    .filter(([, css]) => hasGoogleHost({ text: css }))
+    .map(([file]) =>
+      issue({
+        rule: 'google-before-consent',
+        file,
+        message: 'the stylesheet references a Google origin',
+      }),
+    );
 
 const trackingChecks = ({ page }) => {
   const found = page.tags
     .filter((tag) => !tag.isClosing)
-    .filter((tag) =>
-      GOOGLE_HOSTS.some((host) =>
-        (tag.attributes.get('src') ?? tag.attributes.get('href') ?? '').includes(host),
-      ),
-    )
-    .map((tag) =>
-      issue({
-        rule: 'google-before-consent',
-        file: page.file,
-        message: `<${tag.name}> loads Google in the static html`,
-      }),
-    );
+    .flatMap((tag) => {
+      const isStyle = tag.name === 'style' && hasGoogleHost({ text: tag.body ?? '' });
+      const isAttribute = [...tag.attributes.values()].some((value) =>
+        hasGoogleHost({ text: value }),
+      );
+      return [
+        ...(isAttribute
+          ? [
+              issue({
+                rule: 'google-before-consent',
+                file: page.file,
+                message: `<${tag.name}> loads Google in the static html`,
+              }),
+            ]
+          : []),
+        ...(isStyle
+          ? [
+              issue({
+                rule: 'google-before-consent',
+                file: page.file,
+                message: '<style> references a Google origin',
+              }),
+            ]
+          : []),
+      ];
+    });
   const count = page.html.split(GTM_ID).length - 1;
   if (count > 1) {
     found.push(
@@ -604,6 +636,7 @@ export const checkSeo = ({
   published,
   trackSpec,
   origin,
+  cssFiles = new Map(),
 }) => {
   const pages = [...htmlFiles.entries()].map(([file, html]) => pageFacts({ file, html }));
   const sitemapPaths = sitemapPathsOf({ sitemap, origin });
@@ -623,6 +656,7 @@ export const checkSeo = ({
     ...listChecks({ llms, feed, sitemapPaths, origin }),
     ...redirectChecks({ redirects, distFiles }),
     ...publishedChecks({ published, redirects, distFiles }),
+    ...cssChecks({ cssFiles }),
   ];
 };
 

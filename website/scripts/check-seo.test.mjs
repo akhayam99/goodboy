@@ -74,6 +74,7 @@ const run = ({
   redirects = [],
   published = [],
   trackSpec = TRACK_SPEC,
+  cssFiles = {},
   llmsPaths = sitemapPaths.filter((path) => !path.startsWith('/changelog/')),
   feedPaths = sitemapPaths.filter((path) => path.startsWith('/changelog/')),
 } = {}) =>
@@ -89,6 +90,7 @@ const run = ({
     redirects,
     published,
     trackSpec,
+    cssFiles: new Map(Object.entries(cssFiles)),
     origin: ORIGIN,
   });
 
@@ -381,6 +383,31 @@ describe('checkSeo', () => {
     });
     assert.deepEqual(rulesOf(issues), ['google-before-consent']);
     assert.equal(issues.length, 2);
+  });
+
+  it('fails a Google Fonts stylesheet, preconnect, inline style or css reference', () => {
+    const fail = ({ head = '', css = {} }) =>
+      run({ htmlFiles: { 'index.html': page({ head }) }, cssFiles: css });
+    const cases = [
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">',
+      '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+      '<link rel="preload" as="font" href="https://fonts.gstatic.com/s/inter.woff2">',
+      '<style>@import url("https://fonts.googleapis.com/css2?family=Inter");</style>',
+      '<style>@font-face { src: url(https://fonts.gstatic.com/s/inter.woff2); }</style>',
+    ];
+    cases.forEach((head) =>
+      assert.deepEqual(rulesOf(fail({ head })), ['google-before-consent'], head),
+    );
+    const css = fail({
+      css: { 'assets/site.css': '@font-face { src: url(https://fonts.gstatic.com/s/i.woff2); }' },
+    });
+    assert.deepEqual(rulesOf(css), ['google-before-consent']);
+    assert.equal(css[0].file, 'assets/site.css');
+    assert.deepEqual(fail({ head: '<link rel="preload" href="/fonts/Inter.woff2">' }), []);
+    assert.deepEqual(
+      fail({ css: { 'assets/site.css': '@font-face { src: url(/fonts/i.woff2); }' } }),
+      [],
+    );
   });
 
   it('fails a data-track event or parameter that the spec does not list', () => {
