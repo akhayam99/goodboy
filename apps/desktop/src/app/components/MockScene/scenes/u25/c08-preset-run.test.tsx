@@ -163,6 +163,18 @@ describe('the c08 preset run scenes', () => {
     expect(tail().getAttribute('data-run-tail')).toBe('openStep');
   });
 
+  it('u35-preset-run-glance draws one glance line with the run spend once and Run settings', async () => {
+    await mount('u35-preset-run-glance');
+
+    const glance = document.querySelector<HTMLElement>('[data-glance]');
+    expect(glance).not.toBeNull();
+    expect(glance?.textContent?.match(/\$/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    expect(
+      within(glance ?? document.body).getByRole('button', { name: 'Run settings' }),
+    ).toBeDefined();
+    expect(document.querySelectorAll('[data-glance]')).toHaveLength(1);
+  });
+
   it('c08-run-ready says the step is done on the tail and carries Start step 3 in the header', async () => {
     await mount('c08-run-ready');
 

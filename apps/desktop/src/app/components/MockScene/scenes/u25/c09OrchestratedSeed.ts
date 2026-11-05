@@ -695,6 +695,9 @@ export const seedC09 = ({
     loadAgentTranscript: async () => undefined,
     loadSessionTelemetry: async () => undefined,
     sessionPlans: { [C09_SESSION_ID]: [] },
+    sessionArtifacts: { [C09_SESSION_ID]: [] },
+    artifactLoadErrors: {},
+    loadSessionArtifacts: async () => undefined,
     sessionOpenQuestions: {
       [C09_SESSION_ID]: openQuestionsOf({ state }),
     },

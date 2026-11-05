@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -76,6 +76,7 @@ describe('the Auto chat scenes', () => {
       'u34-p27-auto-done',
       'u34-p28-both-queues',
       'u34-p28-not-delivered',
+      'u35-auto-plan-used',
     ]);
     for (const [id, Scene] of Object.entries(U24_AUTO_CHAT_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -338,6 +339,20 @@ describe('the Auto chat scenes', () => {
     const menu = await screen.findByRole('menu', undefined, WAIT);
     expect(within(menu).queryByRole('menuitem', { name: 'Mount a project' })).toBeNull();
     expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0);
+  });
+
+  it('u35-auto-plan-used says the plan was used and offers no Review or approval', async () => {
+    mount({ id: 'u35-auto-plan-used' });
+
+    const dock = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-auto-dock]');
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    }, WAIT);
+    expect(dock.querySelector('[data-dock-plan]')?.getAttribute('data-dock-plan')).toBe('used');
+    expect(dock.textContent).toContain('Plan v1 used');
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
   });
 
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {

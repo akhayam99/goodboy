@@ -6,6 +6,7 @@ export const U25_C08_PRESET_RUN_SCENES = {
   'c08-run-working': () => <C08RunScene state="working" selection="implementer" />,
   'c08-run-working-other': () => <C08RunScene state="working" selection="scout" />,
   'c08-run-overview': () => <C08RunScene state="working" selection="overview" />,
+  'u35-preset-run-glance': () => <C08RunScene state="working" selection="overview" />,
   'c08-run-ready': () => <C08RunScene state="ready" selection="implementer" />,
   'c08-run-approval': () => <C08RunScene state="approval" selection="scout" />,
   'c08-run-capped': () => <C08RunScene state="capped" selection="implementer" />,
