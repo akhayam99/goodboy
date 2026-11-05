@@ -179,6 +179,16 @@ export const AgentDetailPane = ({
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
   const autoView = isAutoRoot ? (autoChat.tree?.view ?? null) : null;
+  const runSettings =
+    runStep === undefined ? (
+      <AgentRunSettings
+        session={session}
+        agent={agent}
+        autoView={autoView}
+        asksSlotRef={setAsksSlot}
+        modelsSlotRef={setModelsSlot}
+      />
+    ) : null;
   const lead = (
     <>
       {context}
@@ -204,17 +214,7 @@ export const AgentDetailPane = ({
       lead={lead}
       header={
         <AgentHeader
-          settings={
-            runStep === undefined ? (
-              <AgentRunSettings
-                session={session}
-                agent={agent}
-                autoView={autoView}
-                asksSlotRef={setAsksSlot}
-                modelsSlotRef={setModelsSlot}
-              />
-            ) : null
-          }
+          {...(isAutoRoot ? { below: runSettings } : { settings: runSettings })}
           title={
             <span
               className="flex min-w-0 items-center gap-2"

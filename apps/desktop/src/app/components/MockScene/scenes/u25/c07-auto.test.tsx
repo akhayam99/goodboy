@@ -180,16 +180,37 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('u34-p20-auto-narrow keeps the title in its own wrapping lead with the settings and no provider mark', async () => {
+  it('u34-p20-auto-narrow keeps the title in its own wrapping lead, the glance below it and no provider mark', async () => {
     mount({ id: 'u34-p20-auto-narrow' });
 
     const row = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
     const lead = within(row).getByTestId('agent-header-lead');
     within(lead).getByRole('heading', { level: 1 });
-    expect(within(lead).getByTestId('agent-header-settings')).toBeDefined();
+    expect(within(lead).queryByTestId('agent-header-settings')).toBeNull();
+    expect(document.querySelector('[data-glance]')).not.toBeNull();
     expect(within(lead).queryByRole('button', { name: 'More agent actions' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByTestId('agent-header-provider')).toBeNull();
+  });
+
+  it('c07-auto-working shows one glance line and Settings opens the same chips inline', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    const glance = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-glance]');
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    }, WAIT);
+    expect(glance.dataset.glance).toBe('working');
+    const toggle = within(glance).getByRole('button', { name: /Settings/ });
+    const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+    expect(region?.dataset.open).toBe('false');
+    expect(region?.querySelector('[data-agent-settings]')).not.toBeNull();
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(region?.dataset.open).toBe('true');
   });
 
   it('c07-auto-working keeps the center lean: no role chip, live cards for running children, one tail', async () => {
@@ -421,7 +442,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-session-level' });
 
     await waitFor(() => expect(levelStack().dataset.levelStack).toBe('session'), WAIT);
-    expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
+    expect(screen.getAllByText('Waiting for Implementer and Tester').length).toBeGreaterThan(0);
   });
 
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
