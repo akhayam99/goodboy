@@ -13,6 +13,7 @@ import {
   classifyAgent,
   kindConsumesPlan,
 } from '../../../features/session/agent-kind';
+import { composeMissingStepsSection } from './stuckStep/composeMissingStepsSection';
 import { standingGuidanceSection } from './standingGuidance';
 import {
   buildGoalKickoffSection,
@@ -224,6 +225,10 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       goalSection,
       planSection,
       guidanceSection,
+      composeMissingStepsSection({
+        runs: get().sessionPhaseRuns[sessionId] ?? [],
+        workflowRunId: agent.workflowRunId,
+      }),
       instruction,
       composeStepBoundary(agentId),
     );

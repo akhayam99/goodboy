@@ -6,6 +6,7 @@ export type ThumbnailSource = {
   readonly id: string;
   readonly relPath: string;
   readonly workingDir: string | null;
+  readonly previewSrc?: string;
 };
 
 type Params = {
@@ -64,14 +65,18 @@ export const useAttachmentThumbnails = ({
       return kept.length === Object.keys(current).length ? current : Object.fromEntries(kept);
     });
     for (const source of sources) {
-      const { id, relPath, workingDir } = source;
-      const token = tokenOf({ relPath, workingDir });
+      const { id, relPath, workingDir, previewSrc } = source;
+      const token = tokenOf({ relPath: previewSrc ?? relPath, workingDir });
       if (requested.get(id)?.token === token) {
         continue;
       }
       requestCountRef.current += 1;
       const request = requestCountRef.current;
       requested.set(id, { token, request });
+      if (previewSrc !== undefined) {
+        settle({ id, request, thumbnail: { status: 'ready', src: previewSrc } });
+        continue;
+      }
       if (workingDir === null) {
         settle({ id, request, thumbnail: { status: 'failed' } });
         continue;

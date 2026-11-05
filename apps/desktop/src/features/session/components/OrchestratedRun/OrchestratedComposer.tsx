@@ -1,11 +1,10 @@
 import type { Agent, OrchestratorHint, SessionId, WorkflowRun } from '@goodboy/types';
+import { Button } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { OrchestratorHintComposer } from '../../../workflows/components/OrchestratorStrip/OrchestratorHintComposer';
 import { OrchestratorRoutingRow } from '../../../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
 import { isRunPaused } from '../../../workflows/isRunPaused';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
-import { RUN_TREE_SLOT_WIDTH } from '../../../workTreeModel/runTreeSlotWidth';
-import { OrchestratedHintRow } from './OrchestratedHintRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -13,62 +12,38 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-type RemoveParams = {
-  readonly hint: OrchestratorHint;
-};
-
 const NO_HINTS: ReadonlyArray<OrchestratorHint> = [];
-const NO_READING: ReadonlyArray<string> = [];
 
 export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   const addWorkflowOrchestratorHint = useAppStore((state) => state.addWorkflowOrchestratorHint);
-  const removeWorkflowOrchestratorHint = useAppStore(
-    (state) => state.removeWorkflowOrchestratorHint,
-  );
   const reportError = useAppStore((state) => state.reportError);
-  const readingIds = useAppStore((state) => state.orchestratorReadingHints[run.id] ?? NO_READING);
   const isOrchestrating = useAppStore(
     (state) => state.orchestratingWorkflowRuns?.[run.id] ?? false,
   );
   const draft = useAppStore((state) => state.orchestratorHintDrafts[run.id] ?? '');
   const setOrchestratorHintDraft = useAppStore((state) => state.setOrchestratorHintDraft);
   const restoreOrchestratorHintDraft = useAppStore((state) => state.restoreOrchestratorHintDraft);
-  const waiting = (run.orchestratorHints ?? NO_HINTS).filter((hint) => hint.consumedAt == null);
+  const waitingCount = (run.orchestratorHints ?? NO_HINTS).filter(
+    (hint) => hint.consumedAt == null,
+  ).length;
   const isStepRunning = agents.some((agent) => agent.status === 'running');
-  const isAnyQueued = waiting.some((hint) => !readingIds.includes(hint.id));
 
-  const remove = async ({ hint }: RemoveParams) => {
-    try {
-      await removeWorkflowOrchestratorHint(sessionId, run.id, hint.id);
-    } catch (error) {
-      await reportError({ title: "Couldn't remove the hint", error, sessionId });
-    }
+  const viewQueue = () => {
+    document.querySelector(`[data-hint-queue="${run.id}"]`)?.scrollIntoView({ block: 'nearest' });
   };
 
   return (
     <div data-orchestrated-composer="" className="flex min-w-0 flex-col gap-2">
-      {waiting.length > 0 ? (
-        <div className="flex min-w-0 flex-col gap-1">
-          {isAnyQueued ? (
-            <p data-hint-queue-note="" className="px-2 text-ui text-muted-foreground">
-              {ORCHESTRATED_COPY.queuedHintsNote}
-            </p>
-          ) : null}
-          <ul aria-label="Queued hints" className="flex min-w-0 flex-col gap-1">
-            {waiting.map((hint) => (
-              <li key={hint.id} className="min-w-0">
-                <OrchestratedHintRow
-                  hint={hint}
-                  sessionId={sessionId}
-                  runId={run.id}
-                  state={readingIds.includes(hint.id) ? 'reading' : 'queued'}
-                  slotWidth={RUN_TREE_SLOT_WIDTH}
-                  onRemove={() => void remove({ hint })}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
+      {waitingCount > 0 ? (
+        <p
+          data-hint-queue-line=""
+          className="flex min-h-6 items-center gap-1 px-2 text-ui text-muted-foreground"
+        >
+          {ORCHESTRATED_COPY.queuedHintsLine({ count: waitingCount })}
+          <Button variant="quiet" size="xs" onClick={viewQueue}>
+            {ORCHESTRATED_COPY.queuedHintsView}
+          </Button>
+        </p>
       ) : null}
       <OrchestratorHintComposer
         isDeciding={isOrchestrating}

@@ -17,6 +17,10 @@ import { ReportedError } from '../../slices/notifications/reportedError';
 import { AUTO_CONFINED_ROLE } from '../../slices/turn/confinedRoleOf';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
 
+type LoadTreesParams = {
+  readonly sessionId: SessionId;
+};
+
 type AutoTurnState = Readonly<{
   sessions: ReadonlyArray<Pick<Session, 'id' | 'workspaceId'>>;
   sessionPhaseRuns: Readonly<
@@ -25,6 +29,7 @@ type AutoTurnState = Readonly<{
   selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
   reportError: (params: ReportErrorParams) => Promise<void>;
   appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
+  loadAutoTrees: (params: LoadTreesParams) => Promise<void>;
 }>;
 
 export type RouteAutoUserTurnParams = Readonly<{
@@ -126,6 +131,13 @@ export const routeAutoUserTurn = async ({
   if (result === 'lost') {
     return refuse({ get, input, message: AUTO_MESSAGE_LOST_MESSAGE });
   }
+  await state.loadAutoTrees({ sessionId: input.sessionId }).catch((error: unknown) =>
+    state.reportError({
+      title: "Couldn't read the Auto agents",
+      error,
+      sessionId: input.sessionId,
+    }),
+  );
   state.appendTurnEvent(agentId, input.sessionId, {
     kind: 'operator_text',
     runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),

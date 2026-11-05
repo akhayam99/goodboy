@@ -1,10 +1,9 @@
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import type { ConversationRow } from '../../utils/conversationRows';
-import { takenEchoesOf } from './takenEchoesOf';
 
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
-  readonly insertions: ReadonlyArray<TranscriptInsertion>;
+  readonly insertions?: ReadonlyArray<Pick<TranscriptInsertion, 'keptEchoIds'>>;
 };
 
 type RowParams = {
@@ -23,35 +22,42 @@ const echoOf = ({ row }: RowParams) =>
 
 const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
   const sent = echoOf({ row: echo });
-  if (sent === null || sent.text === '') {
-    return false;
-  }
-  if (delivery.kind !== 'item' || delivery.item.kind !== 'auto_delivery') {
+  if (sent === null || delivery.kind !== 'item' || delivery.item.kind !== 'auto_delivery') {
     return false;
   }
   if (sent.outboxId !== undefined) {
     return delivery.item.outboxIds?.includes(sent.outboxId) === true;
   }
-  return delivery.item.outboxIds === undefined && delivery.item.text.includes(sent.text);
+  return (
+    sent.text !== '' &&
+    delivery.item.outboxIds === undefined &&
+    delivery.item.text.includes(sent.text)
+  );
 };
 
-export const rowsByDeliveryOf = ({ rows, insertions }: Params): ReadonlyArray<ConversationRow> => {
-  const takenKeys = new Set([...takenEchoesOf({ rows, insertions }).values()].map((t) => t.key));
-  const kept = rows.filter((row) => !takenKeys.has(row.key));
+export const rowsByDeliveryOf = ({
+  rows,
+  insertions = [],
+}: Params): ReadonlyArray<ConversationRow> => {
+  const keptEchoIds = insertions.flatMap((insertion) => insertion.keptEchoIds ?? []);
   const movedBefore = new Map<string, ConversationRow[]>();
   const movedKeys = new Set<string>();
-  kept.forEach((row, index) => {
-    const delivery = kept
-      .slice(index + 1)
-      .find((later) => isDeliveryOf({ echo: row, delivery: later }));
-    if (delivery === undefined) {
+  const unreadKeys = new Set<string>();
+  rows.forEach((row, index) => {
+    const candidates = echoOf({ row })?.outboxId === undefined ? rows.slice(index + 1) : rows;
+    const delivery = candidates.find((other) => isDeliveryOf({ echo: row, delivery: other }));
+    if (delivery !== undefined) {
+      movedKeys.add(row.key);
+      movedBefore.set(delivery.key, [...(movedBefore.get(delivery.key) ?? []), row]);
       return;
     }
-    movedKeys.add(row.key);
-    movedBefore.set(delivery.key, [...(movedBefore.get(delivery.key) ?? []), row]);
+    const outboxId = echoOf({ row })?.outboxId;
+    if (outboxId !== undefined && !keptEchoIds.includes(outboxId)) {
+      unreadKeys.add(row.key);
+    }
   });
-  return kept.flatMap((row) => {
-    if (movedKeys.has(row.key)) {
+  return rows.flatMap((row) => {
+    if (movedKeys.has(row.key) || unreadKeys.has(row.key)) {
       return [];
     }
     return [...(movedBefore.get(row.key) ?? []), row];

@@ -178,8 +178,8 @@ runtime (`routeAutoUserTurn`), which creates the tree if it is missing and
 queues the text as a `user` outbox row; Auto reads it with the next delivery.
 Approving a plan is the same path ("Approved plan v1."). Once the runtime has
 taken a message, `routeAutoUserTurn` writes the user's own words to the
-transcript as an `operator_text` event, so the bubble appears once at queue
-time and never depends on the delivery. The delivery text Auto builds for its
+transcript as an `operator_text` event, which carries the outbox row id; the
+chat draws it once Auto has read the message (see **One queue**). The delivery text Auto builds for its
 own agent (the ledger, the budget line, the results, "MESSAGES FROM THE USER")
 is stored with `deliveredBy: 'auto'` on its `user_text` event, set in
 `startTurnRun` when the turn's origin is `delegation` (the root's deliveries
@@ -194,40 +194,57 @@ message" and the composer keeps its text.
 **When a message waits.** A `user` row is delivered in every phase that takes a turn
 (`chooseDeliveryRows`), except while the tree is `waiting` for running agents: there it
 stays `pending` and goes with the next results, so a message typed during a long child run
-reaches Auto only when the child ends. The chat draws each waiting message as a bubble after the running child row and any live rows, in
-send order, with its own quiet line under it, "Waits for <task of the child>" or "Waits for 2
-agents", and **Send now** (`AutoPendingMessages`, from `pendingMessages` of the tree view, which
-carries the message text). The same insertion lists the operator echoes it takes over
-(`takesOver`), and `TranscriptRows` drops those echo rows so the bubble never shows twice; the
-bubble is drawn from the taken echo row, so its images stay. The outbox row id is the key: the
-`operator_text` event stores it as `outboxId`, and the delivery event lists the rows it carries as
-`outboxIds`. Once the message is delivered, `rowsByDeliveryOf` seats its echo right before the
-delivery row that lists its id, so it never jumps above rows that happened before Auto read it.
-Events written before the ids existed match by text instead: an echo is taken only when no later
-delivery already holds its text, and a delivery without ids is matched by its text. **Send now**
-(`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that one row at
-once as its own Auto turn, like a child's question, and leaves the children running; the line goes
-away when the row is claimed. The send runs in the tree's queue and claims the row with the tree's
-phase revision and the row's `claimed_by`, so a child that ends at the same moment cannot deliver
-it twice: whoever claims first delivers it and the other finds no row. A waiting tree with no
-child in `starting` or `running` (a lost turn end) is the watchdog's case: `deliverNext` delivers
-the pending `user` rows and logs one `[auto] ... waited with no running agent` line.
+reaches Auto only when the child ends.
+
+**One queue.** The chat holds only what Auto has read. Every message not delivered yet sits above
+the composer in one list, in send order (`QueuedMessages`, rows from `queuedRowsOf`): the `user`
+outbox rows of the tree first (`pendingMessages` of the tree view, with their images), then the
+messages of the agent queue (`store/slices/agentQueue`, used while the root's turn runs). A
+message the drain moves from the agent queue to the outbox keeps its place: `routeAutoUserTurn`
+reads the trees again before the tray lets go, and `queuedRowsOf` hides the `sending` tray row
+whose outbox row is already in the view. A pending echo is not drawn in the chat: `rowsByDeliveryOf`
+draws an `operator_text` echo that carries an `outboxId` only at the delivery event that lists that
+id in `outboxIds`, right before it, so it never jumps above rows that happened before Auto read it,
+and a pending or withdrawn echo is never drawn, after a restart too. A row dropped for another reason (`droppedMessageIds` of the tree view) keeps its echo where it was written, so its words stay in the chat. Events written before
+the ids existed have no `outboxId` and stay where they were written.
+
+A row reads one status word and nothing else: "Waits for this turn", "Waits for <task of the
+child>" or "Waits for 2 agents" while the tree waits for running agents (`pendingMessageLineOf`,
+`waitingForOf`), and "Not delivered" for a blocked or stopped tree, with the reason in its tooltip.
+**Send now** (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that
+one row at once as its own Auto turn, like a child's question, and leaves the children running. It
+runs in the tree's queue and claims the row with the tree's phase revision and the row's
+`claimed_by`, so a child that ends at the same moment cannot deliver it twice: whoever claims first
+delivers it and the other finds no row. A waiting tree with no child in `starting` or `running`
+(a lost turn end) is the watchdog's case: `deliverNext` delivers the pending `user` rows and logs
+one `[auto] ... waited with no running agent` line.
+
+**Edit and Remove.** Both work on an Auto row through one withdraw (`runtime.withdraw`, through
+`registerWithdrawPort` and the window bridge, `withdrawMessage`). In the tree's queue it checks the
+phase revision and the row, and ends the `pending` `user` row as `dropped` with the reason
+`withdrawn` (`withdrawAutoOutboxStatement`, guarded on `claimed_by IS NULL`). A row the stop dropped
+with the reason `stopped` can be withdrawn too. The row leaves, and for Edit the text and the images
+return to the composer, only after the withdraw succeeded; the images are read before it, so a
+failed read keeps the row. If the row was already claimed, nothing changes and the answer is
+`delivered`: the message counts as delivered and arrives in the chat as any other, so words are
+never lost. A refused withdraw (another window runs the tree) shows its message under the list and
+keeps the row.
 
 **A message the tree cannot take.** A `user` row is never sent to a tree that cannot run a turn,
-and its line says so: "Not delivered: <reason>". A tree blocked by the budget shows the reason
-with **Change limit** (raising it delivers the row, as before). A tree blocked for any other
-reason but the time limit shows it with **Retry**, which resumes the tree and delivers the row
-(the send itself already tries one Retry). The time limit and a stopped or stopping tree have no
-action ("This conversation reached its time limit.", "Auto was stopped."): the row stays unsent
-and the words are not lost from the chat. Stopping drops the pending rows with the reason
-`stopped`; `readAutoTreeViews` keeps those user rows in `pendingMessages` while the tree is stopping
-or stopped, so the line still shows under them. A `finished` or `done` tree takes the message as a
-normal follow-up turn. Rows left from old trees show the same line on load and are never
-auto-sent.
+and its row says "Not delivered". A tree blocked by the budget shows **Change limit** (raising it
+delivers the row, as before). A tree blocked for any other reason but the time limit shows
+**Retry**, which resumes the tree and delivers the row (the send itself already tries one Retry).
+The time limit and a stopped or stopping tree have no action ("This conversation reached its time
+limit.", "Auto was stopped." in the tooltip): the row stays unsent, and Edit or Remove still take it
+back. Stopping drops the pending rows with the reason `stopped`; `readAutoTreeViews` keeps those user
+rows in `pendingMessages` while the tree is stopping or stopped, so the row still shows. A
+`finished` or `done` tree takes the message as a normal follow-up turn. Rows left from old trees
+show the same row on load and are never auto-sent.
 
 **Images.** A message to Auto may carry images. `routeAutoUserTurn` writes them once to the
 session's scratch folder (`storeAutoImages`), so they have a full path, queues them on the `user`
-outbox row (`images` in the payload) and shows them on the bubble (`operator_text` with
+outbox row (`images` in the payload), shows them as compact thumbs on the queued row and keeps them
+on the echo (`operator_text` with
 `attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
 `sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
 after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows

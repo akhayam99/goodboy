@@ -147,8 +147,9 @@ describe('the c09 orchestrated scenes', () => {
       within(tail()).getByText('The batching must be proven on 12,000 rows before any CSV work.'),
     ).toBeDefined();
     const queued = screen.getByRole('list', { name: 'Queued hints' });
-    expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
-    expect(within(queued).queryByText('Waits for the next decision')).toBeNull();
+    expect(screen.getAllByText('Queued hints 1, read at the next decision')).toHaveLength(1);
+    expect(nodeOf('[data-slot="pane-dock"]').contains(queued)).toBe(false);
+    expect(nodeOf('[data-hint-queue-line]').textContent).toMatch(/^1 hint queued/);
     expect(within(queued).getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     const dock = nodeOf('[data-slot="pane-dock"]');

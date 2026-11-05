@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES, brandId, type ArtifactId } from '@goodboy/types';
 import { aWorkflowRun } from '@goodboy/types/testing';
 import { aPlan } from '../../test/planFixtures';
+import { aPlanRow, aView } from '../auto/testing/autoViewFixtures';
 import { planHandoffOf } from './planHandoffOf';
 
 const approved = aWorkflowRun({
@@ -58,6 +59,24 @@ describe('planHandoffOf', () => {
         plan: aPlan(),
         run: aWorkflowRun({ rulesSnapshot: DEFAULT_WORKFLOW_RULES }),
       }),
+    ).toBe('none');
+  });
+
+  it('reads auto-approved for a plan Auto approved, and none while Auto waits on it', () => {
+    const approvedView = aView({ artifacts: [aPlanRow({ approvalState: 'approved' })] });
+    const waitingView = aView({ artifacts: [aPlanRow({ approvalState: 'needs_approval' })] });
+    const plan = aPlan({ id: brandId<ArtifactId>({ value: 'artifact-plan' }) });
+    expect(planHandoffOf({ plan, run: null, views: [approvedView] })).toBe('auto-approved');
+    expect(planHandoffOf({ plan, run: null, views: [waitingView] })).toBe('none');
+    expect(
+      planHandoffOf({
+        plan: aPlan({ id: brandId<ArtifactId>({ value: 'artifact-other' }) }),
+        run: null,
+        views: [approvedView],
+      }),
+    ).toBe('none');
+    expect(
+      planHandoffOf({ plan: { ...plan, consumptionCount: 1 }, run: null, views: [approvedView] }),
     ).toBe('none');
   });
 

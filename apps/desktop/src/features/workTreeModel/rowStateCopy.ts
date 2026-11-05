@@ -91,6 +91,12 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Closed by you';
     case 'skipped':
       return 'Skipped';
+    case 'notFinished':
+      return 'Not finished';
+    case 'didNotStart':
+      return 'Did not start';
+    case 'without':
+      return `Without ${reason.steps}`;
     case 'paused':
       return 'Paused by you';
     case 'planReady':
@@ -158,6 +164,9 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'failed':
     case 'stepFailed':
     case 'skipped':
+    case 'notFinished':
+    case 'didNotStart':
+    case 'without':
     case 'discarded':
     case 'job':
     case 'review':
@@ -203,6 +212,9 @@ const isRowStoppedByUser = ({ state }: StateParams): boolean =>
 export const rowStateTone = ({ state }: StateParams): Tone => {
   if (state.reason?.kind === 'review') {
     return REVIEW_COMMENT_TONE[state.reason.state];
+  }
+  if (state.reason?.kind === 'notFinished') {
+    return 'warning';
   }
   return state.reason != null && NEUTRAL_REASONS.has(state.reason.kind)
     ? 'neutral'

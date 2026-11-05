@@ -25,10 +25,6 @@ type HintParams = {
   readonly hint: string;
 };
 
-type AsksParams = {
-  readonly isQuestion: boolean;
-};
-
 export const ORCHESTRATED_COPY = {
   emptyTitle: 'No orchestrated runs yet',
   showGuidance: 'Show guidance',
@@ -52,7 +48,11 @@ export const ORCHESTRATED_COPY = {
   done: 'Done',
   left: 'Left',
   composerPlaceholder: 'Hint the orchestrator',
-  queuedHintsNote: 'Waits for the next decision',
+  queuedHintsHeading: ({ count }: CountParams): string =>
+    `Queued hints ${count}, read at the next decision`,
+  queuedHintsLine: ({ count }: CountParams): string =>
+    `${countNoun({ count, one: 'hint' })} queued`,
+  queuedHintsView: 'View',
   stepGone: 'This step is no longer in the run.',
   stepPane: 'Step',
   nextStep: 'Next step, not decided yet',
@@ -64,13 +64,11 @@ export const ORCHESTRATED_COPY = {
   continueAction: 'Continue',
   hintLabel: 'Add a hint and continue',
   blockedAnswerLabel: 'Answer the step',
-  blockedAnswerAction: 'Answer',
+  blockedAnswerAction: 'Keep working',
   blockedAnswerFailed: "Couldn't send the answer",
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",
-  blockedNoReason: 'The step stopped without saying why. Tell it what to do next.',
-  blockedAsks: ({ isQuestion }: AsksParams): string =>
-    isQuestion ? 'The step asked' : 'The step stopped after saying',
+  blockedAsked: 'The step asked',
   openAgentChat: 'Open agent chat',
   continueFailed: "Couldn't continue the run",
   leftOpen: ({ count }: CountParams): string => `Left open (${count})`,

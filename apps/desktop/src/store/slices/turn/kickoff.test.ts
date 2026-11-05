@@ -36,12 +36,16 @@ describe('composePlanSection', () => {
 });
 
 describe('composeStepBoundary', () => {
-  it('states the scope and the done marker in one line, then the question channel', () => {
+  it('states the scope and the done marker in one line, then the ending, then the question channel', () => {
     const text = composeStepBoundary('agent-1' as AgentId);
-    const [scope, gap, questions] = text.split('\n');
+    const [scope, firstGap, ending, secondGap, questions] = text.split('\n');
     expect(scope).toContain('**Scope** this step only');
     expect(scope).toContain('<<step-done id="agent-1">>');
-    expect(gap).toBe('');
+    expect(firstGap).toBe('');
+    expect(ending).toContain('**Ending** every turn ends in exactly one of three ways');
+    expect(ending).toContain('<<step-stuck id="agent-1" reason="why it cannot finish">>');
+    expect(ending).toContain('Never end a turn with none of them');
+    expect(secondGap).toBe('');
     expect(questions).toContain('**Questions** a question in plain prose never reaches the user');
     expect(questions).toContain('<<ctx-question blocking="true">>');
   });

@@ -12,6 +12,34 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.7
+
+A step that cannot finish no longer stops the run, and every waiting message sits in one place.
+
+### Improved
+
+#### One queue above the message box
+<!-- gb area=agents image=one-queue -->
+
+Every message an agent has not read yet waits in one list above the message box, in every chat, with Edit, Remove and Send now. The chat shows a message only once the agent has read it.
+
+#### Steps that cannot finish
+<!-- gb area=workflows image=stuck-step -->
+
+With Never or After the plan, a step that cannot finish ends as Not finished and the run goes on without it, with Keep working on its row. With Every step it stops and offers Skip and go on. Two in a row stop the run at any level.
+
+#### Queued hints leave the run page readable
+<!-- gb area=workflows -->
+
+Queued hints sit on the run's own line with one fixed line over the input, so the page keeps its space and scrolls. An image on a hint shows once.
+
+### Fixed
+
+- A finished Auto run leaves nothing stale under Needs you: no Review plan, no Start on its plan, no Continue on a replaced agent. <!-- gb area=agents -->
+- A plan Auto approved reads Approved in Artifacts, not Ready to run. <!-- gb area=agents -->
+- A run step that lost its folder offers Add a project when it has nowhere else to write. <!-- gb area=workflows -->
+- The workspace name on the Auto limit opens its Run defaults. <!-- gb area=agents -->
+
 ## Goodboy v0.31.6
 
 Auto no longer stops when a project is missing, and files attach to a run before it has a worktree.

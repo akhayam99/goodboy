@@ -4,6 +4,7 @@ import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { Session } from '@goodboy/types';
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { RunFinishedActions } from '../AgentTree/RunFinishedActions';
+import { RunNotFinishedLinks } from '../RunNotFinishedLinks';
 import type { RunView } from '../AgentTree/useRunView';
 import { decisionEntries } from '../../../workflows/decisionEntries';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
@@ -48,6 +49,7 @@ export const OrchestratedResult = ({ session, view }: Props) => {
           />
         </div>
       )}
+      <RunNotFinishedLinks session={session} view={view} isPhraseShown />
       {view.isDiscarded ? null : (
         <RunFinishedActions sessionId={session.id} workflowRunId={run.id} />
       )}

@@ -355,6 +355,103 @@ describe('advance in waves', () => {
   });
 });
 
+describe('a stuck part in waves', () => {
+  const runs = (statuses: ReadonlyArray<Agent['status']>): ReadonlyArray<Agent> => [
+    parent(),
+    ...statuses.map((status, index) => child(index, status)),
+  ];
+
+  const unfinished = (index: number): Agent => ({
+    ...child(index, 'skipped'),
+    outputSummary: 'the ledger-core build is red',
+  });
+
+  const advanceStuck = async (id: string, agents: ReadonlyArray<Agent>) => {
+    storySpies.invokeAgentList.mockResolvedValue(agents);
+    useAppStore.setState({ sessions: [aSession({ id: SESSION_ID, autoRun: true })] });
+    await useAppStore
+      .getState()
+      .advanceClusterImplementation(
+        SESSION_ID,
+        brandId<AgentId>({ value: id }),
+        `<<cluster-stuck id="${id}" reason="the ledger-core build is red">>`,
+      );
+  };
+
+  it('skips the part that comes after it and leaves the others alone', async () => {
+    seed({ agents: runs(['completed', 'running', 'running', 'pending']), clusters: sharedThenTwo });
+
+    await advanceStuck('part-1', [...runs(['completed', 'running', 'running', 'pending'])]);
+
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'part-1',
+      expect.objectContaining({
+        status: 'skipped',
+        outputSummary: 'the ledger-core build is red',
+      }),
+    );
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'part-3',
+      expect.objectContaining({
+        status: 'skipped',
+        outputSummary: expect.stringContaining('Did not start: it depends on part 2'),
+      }),
+    );
+    expect(storySpies.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      'part-2',
+      expect.anything(),
+    );
+    expect(sentTo()).toEqual([]);
+  });
+
+  it('starts a part that does not come after it', async () => {
+    seed({ agents: runs(['completed', 'running', 'pending', 'pending']), clusters: sharedThenTwo });
+
+    await advanceStuck('part-1', [
+      child(0, 'completed'),
+      unfinished(1),
+      child(2, 'pending'),
+      child(3, 'pending'),
+    ]);
+
+    expect(sentTo()).toEqual(['part-2']);
+  });
+
+  it('never starts a part from a part that did not finish', async () => {
+    seed({ agents: runs(['completed', 'running', 'running', 'pending']), clusters: sharedThenTwo });
+
+    await advanceStuck('part-1', [child(0, 'completed'), unfinished(1), child(2, 'running')]);
+
+    expect(sentTo()).not.toContain('part-3');
+  });
+
+  it('completes the container once the last running part is done and the rest were skipped', async () => {
+    seed({
+      agents: runs(['completed', 'skipped', 'running', 'skipped']),
+      clusters: sharedThenTwo,
+    });
+
+    await advance({
+      id: 'part-2',
+      agents: [
+        parent(),
+        child(0, 'completed'),
+        unfinished(1),
+        child(2, 'completed'),
+        { ...child(3, 'skipped'), outputSummary: 'Did not start: it depends on part 2' },
+      ],
+    });
+
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      PARENT_ID,
+      expect.objectContaining({
+        status: 'completed',
+        outputSummary: 'completed 2 of 4 clusters',
+      }),
+    );
+  });
+});
+
 describe('resume in waves', () => {
   const runs = (statuses: ReadonlyArray<Agent['status']>): ReadonlyArray<Agent> => [
     parent(),

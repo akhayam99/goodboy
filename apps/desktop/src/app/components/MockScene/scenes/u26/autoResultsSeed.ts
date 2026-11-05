@@ -212,6 +212,7 @@ export const RESULTS_VIEW: AutoTreeView = {
   }),
   pendingRefusal: null,
   pendingMessages: [],
+  droppedMessageIds: [],
   deliveredResults: CHILDREN.map((child) => deliveredOf(child)),
   hiddenChildIds: [],
   rootAsk: null,

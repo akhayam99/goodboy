@@ -87,6 +87,7 @@ const movedViewOf = (): AutoTreeView => ({
   budget: null,
   pendingRefusal: null,
   pendingMessages: [],
+  droppedMessageIds: [],
   deliveredResults: [],
   hiddenChildIds: [],
   rootAsk: null,

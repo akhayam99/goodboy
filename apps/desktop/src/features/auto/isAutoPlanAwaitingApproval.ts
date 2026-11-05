@@ -7,6 +7,7 @@ type Params = {
 export const isAutoPlanAwaitingApproval = ({ view }: Params): boolean =>
   view.artifacts.some(
     (row) =>
+      row.artifact.kind === 'plan' &&
       row.artifact.approvalState === 'needs_approval' &&
       row.artifact.openReviseDelegationId === null,
   );

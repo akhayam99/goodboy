@@ -25,6 +25,7 @@ import {
   type SubmitUserMessageParams,
 } from './submitUserMessage';
 import type { AgentVerbContext } from './verbContext';
+import { withdrawMessage, type WithdrawMessageOutcome } from './withdrawMessage';
 
 const MAX_DRIVE_PASSES = 25;
 const DEFAULT_WATCH_POLLS = 3_600;
@@ -59,6 +60,7 @@ export type AutoRuntime = Readonly<{
   publish: (params: Omit<PublishActParams, 'ctx'>) => ReturnType<typeof publishAct>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
   sendNow: (params: SendNowRuntimeParams) => Promise<DeliverOutcome>;
+  withdraw: (params: SendNowRuntimeParams) => Promise<WithdrawMessageOutcome>;
   recover: (treeId: AutoTree['id']) => Promise<boolean>;
   recoverAll: () => Promise<void>;
   settled: () => Promise<void>;
@@ -197,6 +199,8 @@ export const createAutoRuntime = ({
       await drive(treeId);
       return outcome;
     },
+    withdraw: ({ treeId, rowId }) =>
+      queue.run({ key: treeId, task: () => withdrawMessage({ ctx, treeId, rowId }) }),
     recover,
     recoverAll: async () => {
       const trees = await listAutoTreesToRecover({ db: ctx.db });

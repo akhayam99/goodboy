@@ -70,6 +70,9 @@ describe('the Auto chat scenes', () => {
       'auto-overview-row',
       'u34-p22-delivered',
       'u34-p22-waiting',
+      'u34-p27-auto-done',
+      'u34-p28-both-queues',
+      'u34-p28-not-delivered',
     ]);
     for (const [id, Scene] of Object.entries(U24_AUTO_CHAT_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -137,47 +140,68 @@ describe('the Auto chat scenes', () => {
     expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
   });
 
-  it('auto-chat-queued says under the bubble that the message waits, with Send now', async () => {
+  type RowAtParams = {
+    readonly rows: ReadonlyArray<HTMLElement | undefined>;
+    readonly index: number;
+  };
+
+  const rowAt = ({ rows, index }: RowAtParams): HTMLElement => {
+    const row = rows[index];
+    if (row === undefined) {
+      throw new Error(`no queued row at ${index}`);
+    }
+    return row;
+  };
+
+  const queueRows = () => within(screen.getByRole('list', { name: 'Queued messages' }));
+
+  it('auto-chat-queued lists the message above the composer and draws no bubble in the chat', async () => {
     mount({ id: 'auto-chat-queued' });
 
-    expect(
-      await screen.findByText('Also keep the retry window at 30 seconds.', undefined, WAIT),
-    ).toBeDefined();
-    const line = document.querySelector('[data-auto-pending-message]');
-    if (!(line instanceof HTMLElement)) {
-      throw new Error('no pending line');
-    }
-    expect(line.textContent).toMatch(/^Waits for /);
-    expect(within(line).getAllByRole('button')).toHaveLength(1);
-    expect(within(line).getAllByRole('button')[0]?.textContent).toBe('Send now');
-    expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(1);
+    const rows = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.getAttribute('data-source')).toBe('auto');
+    expect(rows[0]?.textContent).toContain('Also keep the retry window at 30 seconds.');
+    expect(rows[0]?.textContent).toMatch(/Waits for /);
+    within(rowAt({ rows, index: 0 })).getByRole('button', { name: 'Send now' });
+    expect(screen.getAllByText('Also keep the retry window at 30 seconds.')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(0);
   });
 
-  it('u34-p22-waiting puts both messages after the running row, each with its own line', async () => {
+  it('u34-p28-both-queues lists the Auto row and the tray row in one list, thumbs on both', async () => {
+    mount({ id: 'u34-p28-both-queues' });
+
+    const rows = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
+    expect(rows.map((row) => row.getAttribute('data-source'))).toEqual(['auto', 'agent']);
+    expect(rows[0]?.textContent).toMatch(/Waits for /);
+    expect(rows[1]?.textContent).toContain('Waits for this turn');
+    expect(rows[0]?.querySelectorAll('[data-attachment-control]')).toHaveLength(2);
+    expect(rows[1]?.querySelectorAll('[data-attachment-control]')).toHaveLength(1);
+    expect(queueRows().getAllByRole('button', { name: 'Send now' })).toHaveLength(2);
+    expect(
+      screen.getAllByText('Also keep the retry window at 30 seconds, see the timeline.'),
+    ).toHaveLength(1);
+  });
+
+  it('u34-p28-not-delivered says Not delivered in one word with Retry, no sentence', async () => {
+    mount({ id: 'u34-p28-not-delivered' });
+
+    const [row] = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
+    expect(row?.getAttribute('data-status')).toBe('notDelivered');
+    within(rowAt({ rows: [row], index: 0 })).getByText('Not delivered');
+    within(rowAt({ rows: [row], index: 0 })).getByRole('button', { name: 'Retry' });
+    expect(row?.textContent).not.toMatch(/Not delivered:/);
+  });
+
+  it('u34-p22-waiting lists both messages in the tray and none in the chat', async () => {
     mount({ id: 'u34-p22-waiting' });
 
-    const [list] = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    const groups = [...document.querySelectorAll('[data-taken-echo]')];
-    expect(groups).toHaveLength(2);
-    expect(list?.compareDocumentPosition(groups[0] ?? document)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-    expect(groups[0]?.textContent).toContain('Keep the retry window at 30 seconds.');
-    expect(groups[1]?.textContent).toContain('Add a test for the second retry.');
-    for (const group of groups) {
-      expect(group.querySelectorAll('[data-auto-pending-message]')).toHaveLength(1);
-    }
+    const rows = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.textContent).toContain('Keep the retry window at 30 seconds.');
+    expect(rows[1]?.textContent).toContain('Add a test for the second retry.');
     expect(screen.getAllByText('Keep the retry window at 30 seconds.')).toHaveLength(1);
-  });
-
-  it('u34-p22-delivered shows the messages once, after the running row, with no line', async () => {
-    mount({ id: 'u34-p22-delivered' });
-
-    const [list] = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    const bubble = await screen.findByText('Keep the retry window at 30 seconds.', undefined, WAIT);
-    expect(document.querySelectorAll('[data-auto-pending-message]')).toHaveLength(0);
-    expect(screen.getAllByText('Keep the retry window at 30 seconds.')).toHaveLength(1);
-    expect(list?.compareDocumentPosition(bubble)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(document.querySelectorAll('[data-taken-echo]')).toHaveLength(0);
   });
 
   it('auto-chat-working opens the limit popover from the chip line', async () => {
@@ -283,5 +307,14 @@ describe('the Auto chat scenes', () => {
     expect(running.textContent).toContain(
       'Post one credit per retry in postCredit and applyCredit',
     );
+  });
+
+  it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {
+    mount({ id: 'u34-p27-auto-done' });
+
+    await screen.findByText('Nothing needs you', undefined, WAIT);
+    expect(screen.queryByText(/Auto waits on your OK/)).toBeNull();
+    expect(screen.queryByText('Ready to implement')).toBeNull();
+    expect(screen.queryByText(/Stopped when Goodboy closed/)).toBeNull();
   });
 });

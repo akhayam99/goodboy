@@ -1,4 +1,9 @@
-import { extractClusterDone, extractStepDone, hasBlockingQuestion } from '@goodboy/core/context';
+import {
+  extractClusterDone,
+  extractStepDone,
+  extractStuckMarker,
+  hasBlockingQuestion,
+} from '@goodboy/core/context';
 import type { AgentId, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { isTurnActivity } from './isTurnActivity';
 import { lingeringTurns } from './lingeringTurns';
@@ -26,6 +31,8 @@ type ArmParams = {
 const isClosingText = ({ text }: TextParams): boolean =>
   extractStepDone(text) !== null ||
   extractClusterDone(text) !== null ||
+  extractStuckMarker({ text, kind: 'step' }) !== null ||
+  extractStuckMarker({ text, kind: 'cluster' }) !== null ||
   hasBlockingQuestion({ assistantText: text });
 
 const BACKGROUND_NOTE = 'moved to the background';

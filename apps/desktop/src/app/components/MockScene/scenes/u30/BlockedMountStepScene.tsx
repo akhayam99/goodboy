@@ -31,16 +31,20 @@ const ACTIONS: ColumnActions = {
   openShortcuts: noop,
 };
 
-export const BlockedMountStepScene = () => {
+type Props = {
+  readonly seed?: () => void;
+};
+
+export const BlockedMountStepScene = ({ seed = seedBlockedMountStep }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(BLOCKED_MOUNT_SESSION_ID);
   const sizing = useAppStore(selectDrawerSizing);
   const isDrawerOpen = useAppStore((current) => current.drawer !== null);
 
   useEffect(() => {
-    seedBlockedMountStep();
+    seed();
     setIsSeeded(true);
-  }, []);
+  }, [seed]);
 
   if (!isSeeded || session === null) {
     return null;

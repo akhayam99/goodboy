@@ -36,6 +36,30 @@ describe('a message the user wrote before stopping Auto', () => {
       [],
     );
 
-    expect((await viewOf(world)).pendingMessages).toEqual([]);
+    const view = await viewOf(world);
+    expect(view.pendingMessages).toEqual([]);
+    expect(view.droppedMessageIds).toEqual(['outbox-user-1']);
+  });
+
+  it('leaves no words behind for a message the user withdrew', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await addUserRow({ world: world.state.world, id: 'outbox-user-1', text: 'split the export' });
+    await world.state.world.db.execute(
+      "UPDATE auto_outbox SET state = 'dropped', dropped_reason = 'withdrawn'",
+      [],
+    );
+
+    expect((await viewOf(world)).droppedMessageIds).toEqual([]);
+  });
+
+  it('gives the words back to the chat once a stopped tree moves on', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await addUserRow({ world: world.state.world, id: 'outbox-user-1', text: 'split the export' });
+    await world.runtime.stop(world.treeId);
+    expect((await viewOf(world)).droppedMessageIds).toEqual([]);
+
+    await world.state.world.db.execute("UPDATE auto_trees SET phase = 'done'", []);
+
+    expect((await viewOf(world)).droppedMessageIds).toEqual(['outbox-user-1']);
   });
 });

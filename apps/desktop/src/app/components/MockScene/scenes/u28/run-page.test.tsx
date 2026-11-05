@@ -103,7 +103,7 @@ describe('the u28 run page scenes', () => {
       .map((button) => button.textContent);
     expect(verbs.indexOf('Restart step')).toBeGreaterThan(-1);
     expect(verbs).toContain('Open agent chat');
-    const answer = within(form).getByRole('button', { name: 'Answer' });
+    const answer = within(form).getByRole('button', { name: 'Keep working' });
     expect(answer.hasAttribute('disabled')).toBe(true);
     within(tail()).getByRole('button', { name: 'Restart step' });
     expect(header().textContent).not.toContain('Restart step');
@@ -119,7 +119,7 @@ describe('the u28 run page scenes', () => {
     const form = within(tail()).getByRole('form', { name: 'Answer the step' });
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Answer' }));
+      fireEvent.click(within(form).getByRole('button', { name: 'Keep working' }));
     });
 
     expect(answerBlockedStep).toHaveBeenCalledWith({
@@ -271,7 +271,7 @@ describe('the u28 run page scenes', () => {
     const form = within(tail()).getByRole('form', { name: 'Answer the step' });
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Answer' }));
+      fireEvent.click(within(form).getByRole('button', { name: 'Keep working' }));
     });
 
     expect(within(form).getByRole('alert').textContent).toContain('no longer waiting');

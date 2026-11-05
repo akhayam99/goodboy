@@ -1011,7 +1011,7 @@ describe('advanceClusterImplementation', () => {
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
   });
 
-  it('blocks the live child and notifies after exhausting continue attempts', async () => {
+  it('skips the live child as not finished after exhausting continue attempts', async () => {
     const child = childAgent({ id: 'cont-b', ordinal: 0 });
     const p = plan({});
     const store = makeStore({
@@ -1027,11 +1027,11 @@ describe('advanceClusterImplementation', () => {
     await advance(SID, 'cont-b' as AgentId, 'no marker 2');
     expect(store.sendTurn).toHaveBeenCalledTimes(1);
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('cont-b', {
-      status: 'blocked',
+      status: 'skipped',
       completedAt: expect.any(String),
+      outputSummary: 'The agent stopped without finishing and without saying why.',
     });
     expect(store.emitNotification).toHaveBeenCalled();
-    expect(store.refreshUnreadWorkspaces).toHaveBeenCalled();
   });
 
   it('fails the child only when its last turn died', async () => {

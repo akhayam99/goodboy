@@ -28,4 +28,9 @@ export const RUN_STEP_PIN_COPY = {
   pick: 'Pick a branch',
   pickLabel: 'Branches in this session',
   failed: "Couldn't start the step",
+  addProject: 'Add a project',
+  adding: 'Adding',
+  cancelAdd: 'Cancel',
+  addReason: 'A run step needs a project to write to.',
+  addNothing: 'No project was added.',
 } as const;

@@ -442,9 +442,11 @@ read top to bottom at the conversation measure:
 - **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
   orchestrator". A queued hint is a dashed node with its first line, and
   **Show more** when that line is cut or the hint has a second line.
-  Waiting hints sit above it under one line, **Waits for the next decision**,
-  each row with **Remove**; a row being read says **Reading now** with
-  **Remove** disabled. Enter queues,
+  Waiting hints sit on the run's line under the steps, under one heading,
+  **Queued hints 3, read at the next decision**, each row with **Remove**;
+  a row being read says **Reading now** with **Remove** disabled. The
+  composer keeps one fixed line, **3 hints queued** with **View**, over the
+  input. Enter queues,
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
@@ -1131,6 +1133,11 @@ own **Open in Artifacts**.
   tone) with "The run is choosing the next step", the drawer line says the same
   and there is no primary; when the step that consumes the plan starts the chip
   reads **Running**.
+- **A plan Auto holds.** `planHandoffOf` reads `auto-approved` when the
+  plan's `auto_artifacts` row is `approved` and no step consumed it. The chip
+  reads **Approved** with "Auto works from this plan", the Artifacts list files
+  it under Consumed, and there is no Run plan. A held plan still waiting on
+  approval keeps its state.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not
   held starts the step through `runPlan`). The button reads **Approving** and
@@ -1482,9 +1489,17 @@ When a step or a sub-agent ends a turn without its `step-done` or
   the end of the turn. A question the heuristic gets wrong still closes: write
   what you mean and choose **Send as message** on the card.
 
-Otherwise `continueOrPause` decides. A hands-free step or sub-agent is
-re-kicked once. After that, or at once when autorun is off, the agent stops in
-one of two states:
+Otherwise `continueOrPause` decides. Every turn must end in `step-done`,
+`step-stuck` (or the `cluster-` pair) or one question; `composeUnitBoundary`
+says so. The app decides, the marker only adds the reason: no done marker after
+the retry is stuck as well. A hands-free step or sub-agent (autorun on) is
+re-kicked once, except when it sent a stuck marker. Then it is not finished:
+status `skipped` with the reason in `outputSummary`, and the run goes on through
+`skipStuckStepAndAdvance` (a paused run or a plan held for approval starts
+nothing). A sub-agent that comes after it does not start (`Did not start:`, see
+`skipDependentsOfStuck`). The second not finished agent in a row blocks instead
+(`isAfterStuckAgent`). With autorun off, or at once, the agent stops in one of
+two states:
 
 - `failed`: the agent died. Its last turn ended with a stream error or with no
   output at all. A crash, a non-zero exit, a spawn error, an auth or quota

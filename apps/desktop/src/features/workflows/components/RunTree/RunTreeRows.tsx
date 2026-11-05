@@ -7,6 +7,7 @@ import type { RowPhase } from '../../../workTreeModel/rowState';
 import { railInkAbove, type RailInk } from '../../../workTreeModel/railGeometry';
 import { RunTreeFoldRow } from './RunTreeFoldRow';
 import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
+import { withoutStepsOf } from './withoutStepsOf';
 import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
@@ -99,6 +100,7 @@ export const RunTreeRows = ({
         (LIVE_PHASES.has(item.rowState.phase) ||
           (isAgentRow(item) && plans.has(item.entry.agent.id))),
     );
+  const withoutSteps = withoutStepsOf({ items: stream.items });
   const agentById = new Map<string, Agent>();
   for (const item of stream.items) {
     if (item.kind === 'row' && isAgentRow(item)) {
@@ -161,6 +163,14 @@ export const RunTreeRows = ({
         }
         const isNested = parentOf({ entry: item.entry }) !== null;
         const stepId = isNested ? null : (item.entry.agent.stepId ?? null);
+        const without = withoutSteps.get(item.entry.agent.id);
+        const shownItem: AgentRowItem =
+          without === undefined
+            ? item
+            : {
+                ...item,
+                rowState: { ...item.rowState, reason: { kind: 'without', steps: without } },
+              };
         return (
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
             {isNested || beforeRow === undefined
@@ -173,7 +183,7 @@ export const RunTreeRows = ({
                 })}
             <RunTreeRow
               density={density}
-              item={item}
+              item={shownItem}
               entry={item.entry}
               rail={railRow}
               railWidth={rail.width}

@@ -18,6 +18,7 @@ import {
 } from './artifactStateOf';
 import { planConsumerLabel, resolvePlanConsumer } from '../../shared/utils/planConsumer';
 import type { WorkNodeState } from '@goodboy/ui';
+import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
 import { planHandoffOf } from '../plans/planHandoffOf';
 import { planOwnerOf } from '../plans/planOwnerOf';
@@ -63,6 +64,7 @@ type Params = Readonly<{
   openQuestionCount: number;
   askingAgentIds: ReadonlySet<AgentId>;
   revising: ReadonlyMap<ArtifactId, PlanRevising>;
+  autoViews: ReadonlyArray<AutoTreeView>;
   now: number;
 }>;
 
@@ -115,6 +117,7 @@ const planRow = ({
   openQuestionCount,
   askingAgentIds,
   revising,
+  autoViews,
 }: {
   readonly plan: PlanWithCount;
   readonly agents: ReadonlyArray<Agent>;
@@ -123,6 +126,7 @@ const planRow = ({
   readonly openQuestionCount: number;
   readonly askingAgentIds: ReadonlySet<AgentId>;
   readonly revising: PlanRevising;
+  readonly autoViews: ReadonlyArray<AutoTreeView>;
 }): ArtifactListRow => {
   const partRows = planPartRows({ plan, agents, askingAgentIds });
   const owner = planOwnerOf({ plan, agents, runs, templates });
@@ -130,7 +134,7 @@ const planRow = ({
     plan,
     rows: partRows,
     revising,
-    handoff: planHandoffOf({ plan, run: owner }),
+    handoff: planHandoffOf({ plan, run: owner, views: autoViews }),
   });
   const state = artifactStateOf({
     kind: 'plan',
@@ -217,6 +221,7 @@ export const buildArtifactListRows = ({
   openQuestionCount,
   askingAgentIds,
   revising,
+  autoViews,
   now,
 }: Params): ReadonlyArray<ArtifactListRow> =>
   [
@@ -230,6 +235,7 @@ export const buildArtifactListRows = ({
         openQuestionCount,
         askingAgentIds,
         revising: revising.get(plan.id) ?? NOT_REVISING,
+        autoViews,
       }),
     ),
     ...artifacts

@@ -27,6 +27,8 @@ user: Move rounding from post_line to settle_batch.
 
 **Scope** this step only, never a later one. Emit `<<step-done id="agent-2">>` on its own line once it is truly done.
 
+**Ending** every turn ends in exactly one of three ways: step done (`<<step-done id="agent-2">>`), step stuck (`<<step-stuck id="agent-2" reason="why it cannot finish">>` with the reason in your own words, when you cannot finish it and nothing can be asked), or one question to the user. Never end a turn with none of them.
+
 **Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one `<<ctx-question blocking="true">>the question<</ctx-question>>` block and stop. Before asking, check the decisions in the shared context: when an active decision settles the point, follow it and do not ask. A decision holds as written even when it says assumed or proposed, and you never ask to confirm one. If following it looks wrong, follow it, say why in your report, and leave the change to the user.
 
 workflow handoff (carried forward): ## workflow handoff
@@ -61,5 +63,7 @@ Every posting rounds itself, 3,100 lines per batch.
 Move rounding from post_line to settle_batch.
 
 **Scope** this step only, never a later one. Emit `<<step-done id="agent-2">>` on its own line once it is truly done.
+
+**Ending** every turn ends in exactly one of three ways: step done (`<<step-done id="agent-2">>`), step stuck (`<<step-stuck id="agent-2" reason="why it cannot finish">>` with the reason in your own words, when you cannot finish it and nothing can be asked), or one question to the user. Never end a turn with none of them.
 
 **Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one `<<ctx-question blocking="true">>the question<</ctx-question>>` block and stop. Before asking, check the decisions in the shared context: when an active decision settles the point, follow it and do not ask. A decision holds as written even when it says assumed or proposed, and you never ask to confirm one. If following it looks wrong, follow it, say why in your report, and leave the change to the user.

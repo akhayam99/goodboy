@@ -456,6 +456,7 @@ const autoViewOf = (): AutoTreeView => ({
   }),
   pendingRefusal: null,
   pendingMessages: [],
+  droppedMessageIds: [],
   deliveredResults: [],
   hiddenChildIds: [],
   rootAsk: AUTO_ASK,

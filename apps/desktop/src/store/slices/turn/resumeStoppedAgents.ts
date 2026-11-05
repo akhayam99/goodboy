@@ -16,7 +16,7 @@ export const resumeStoppedAgents = (get: GetFn) => {
     const views = get().autoTreeViews[sessionId] ?? [];
     const stopped = runs.filter(
       (agent) =>
-        isStoppedByRestart({ agent, runs }) &&
+        isStoppedByRestart({ agent, runs, views }) &&
         !inFlight.has(agent.id) &&
         autoRetryRouteOf({ views, runs, agentId: agent.id }) === null &&
         (workflowRunId === undefined || agent.workflowRunId === workflowRunId),

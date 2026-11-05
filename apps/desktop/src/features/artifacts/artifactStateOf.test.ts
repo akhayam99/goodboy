@@ -68,6 +68,56 @@ describe('artifactStateOf', () => {
     });
   });
 
+  it('says Approved, not Ready to run, for a plan Auto approved and works from', () => {
+    const state = artifactStateOf({
+      ...NO_PLAN,
+      kind: 'plan',
+      status: 'active',
+      isNew: false,
+      handoff: 'auto-approved',
+      partCount: 2,
+    });
+    expect(state).toMatchObject({
+      key: 'autoApproved',
+      label: 'Approved',
+      reason: 'Auto works from this plan',
+      tone: 'success',
+      group: 'consumed',
+      detail: '2 parts',
+    });
+  });
+
+  it('keeps a revising plan and a planner question above an Auto approved plan', () => {
+    const base = {
+      ...NO_PLAN,
+      kind: 'plan' as const,
+      status: 'active' as const,
+      isNew: false,
+      handoff: 'auto-approved' as const,
+    };
+    expect(artifactStateOf({ ...base, revising: { kind: 'revising', nextRevision: 2 } })?.key).toBe(
+      'revising',
+    );
+    expect(artifactStateOf({ ...base, openQuestionCount: 1, plannerQuestionCount: 1 })?.key).toBe(
+      'needs',
+    );
+  });
+
+  it('leaves a plain plan and a plan Auto still waits on at Ready to run', () => {
+    expect(artifactStateOf({ ...NO_PLAN, kind: 'plan', status: 'active', isNew: false })?.key).toBe(
+      'ready',
+    );
+    expect(
+      artifactStateOf({
+        ...NO_PLAN,
+        kind: 'plan',
+        status: 'active',
+        isNew: false,
+        handoff: 'none',
+      })?.group,
+    ).toBe('ready');
+  });
+
   it('turns Approved into Running once the consumer step started', () => {
     const state = artifactStateOf({
       ...NO_PLAN,
@@ -313,6 +363,7 @@ describe('the list and the document agree', () => {
       openQuestionCount: 0,
       askingAgentIds: NO_ASKING,
       revising: new Map(),
+      autoViews: [],
       now: Date.parse(NOW),
     });
     const rows = planPartRows({ plan: planFixture, agents, askingAgentIds: NO_ASKING });

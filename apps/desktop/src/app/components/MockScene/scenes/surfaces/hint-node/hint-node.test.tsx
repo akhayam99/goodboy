@@ -73,7 +73,7 @@ describe('the hint node scene', () => {
   it('registers the scene and frames the capture on one 680px element', async () => {
     expect(MOCK_SCENES['u32-hint-node']).toBe(Scene);
     const { container } = render(<Scene />);
-    await screen.findByText('Waits for the next decision', undefined, WAIT);
+    await screen.findByText('Queued hints 1, read at the next decision', undefined, WAIT);
     const frames = container.querySelectorAll<HTMLElement>('[data-shot]');
     expect(frames).toHaveLength(1);
     expect(frames[0]?.style.width).toBe('680px');
@@ -82,7 +82,7 @@ describe('the hint node scene', () => {
 
   it('shows a queued hint as a dashed node with its text and a Remove control', async () => {
     render(<Scene />);
-    await screen.findByText('Waits for the next decision', undefined, WAIT);
+    await screen.findByText('Queued hints 1, read at the next decision', undefined, WAIT);
     const row = queuedRow();
     row.getByText('Also cover the refund webhook.');
     row.getByRole('button', { name: 'Remove' });
@@ -154,7 +154,7 @@ describe('the hint node scene', () => {
 
   it('keeps a short hint on one line with no expand control', async () => {
     render(<Scene />);
-    await screen.findByText('Waits for the next decision', undefined, WAIT);
+    await screen.findByText('Queued hints 1, read at the next decision', undefined, WAIT);
     expect(queuedRow().queryByRole('button', { name: /^Show more/ })).toBeNull();
   });
 

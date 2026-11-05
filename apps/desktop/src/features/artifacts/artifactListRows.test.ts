@@ -14,6 +14,8 @@ import {
   type WorkflowRunId,
 } from '@goodboy/types';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import type { AutoTreeView } from '../../store/slices/auto-view/state';
+import { aPlanRow, aView } from '../auto/testing/autoViewFixtures';
 import type { PlanRevising } from '../plans/planRevising';
 import { resolveArtifactGenerations, type ArtifactGeneration } from './artifactCollection';
 import { liveArtifactCountOf } from './liveArtifactCountOf';
@@ -90,6 +92,7 @@ const build = (params: {
   readonly openQuestionCount?: number;
   readonly revising?: ReadonlyMap<ArtifactId, PlanRevising>;
   readonly runs?: ReadonlyArray<WorkflowRun>;
+  readonly autoViews?: ReadonlyArray<AutoTreeView>;
 }) =>
   buildArtifactListRows({
     plans: params.plans ?? [],
@@ -101,6 +104,7 @@ const build = (params: {
     openQuestionCount: params.openQuestionCount ?? 0,
     askingAgentIds: NO_ASKING,
     revising: params.revising ?? new Map(),
+    autoViews: params.autoViews ?? [],
     now: NOW,
   });
 
@@ -127,6 +131,17 @@ describe('buildArtifactListRows', () => {
     });
     const [row] = build({ plans: [owned], runs: [approved], agents: [] });
     expect(row?.state).toMatchObject({ key: 'approved', label: 'Approved' });
+    expect(row?.isPlanRunning).toBe(false);
+  });
+
+  it('files a plan Auto approved under Consumed as Approved, never Ready to run', () => {
+    const held = plan({ id: brandId<ArtifactId>({ value: 'artifact-plan' }) });
+    const [row] = build({
+      plans: [held],
+      autoViews: [aView({ artifacts: [aPlanRow({ approvalState: 'approved' })] })],
+    });
+    expect(row?.state).toMatchObject({ key: 'autoApproved', label: 'Approved' });
+    expect(row?.group).toBe('consumed');
     expect(row?.isPlanRunning).toBe(false);
   });
 

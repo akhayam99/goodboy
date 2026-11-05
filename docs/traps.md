@@ -676,6 +676,10 @@ fails silently at runtime.
   unlinks, and `forget_folder` returns `FolderBusy` under the folder lock, so a
   turn started in another window keeps its staging.
 
+## Not finished is a skip that carries a summary
+
+A step that did not finish is `skipped` with a reason in `outputSummary`; there is no `not_finished` status, because adding one needs a migration. The row word, the "without step N" notes, the end line and the two-in-a-row stop all read `notFinishedKindOf`. Never write an `outputSummary` on a step the user skips, and never read plain `skipped` as "did not finish". A step stopped by "Every step" or by the two-in-a-row rule is `blocked` and keeps no reason; the agent page holds it in the transcript.
+
 ## Traps in the toolchain
 
 - A new worktree needs `pnpm install`. In this checkout that install exits 1
@@ -893,6 +897,7 @@ Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegat
 - Delegation cards are inserted into the transcript by time: before the first user or handoff row at or after the last settle of their batch. Do not anchor them on a run id; the delegation row does not keep the run that created it.
 - The approval of a plan tells Auto once. `approveAutoPlan` reads the artifact before the swap and does not send "Approved plan vN." when that version was already approved, which is what a second window sees. The swap itself is idempotent, so the read is the guard.
 - `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
+- Only a `plan` artifact waits on approval: a reviewer report is stored as `needs_approval` too and is never approved, so any reader of `approvalState` checks `kind === 'plan'` first (`isAutoPlanAwaitingApproval`). Auto never writes `plan_consumptions` and its agents have no run, so a plan with an `auto_artifacts` row is owned by its tree (`isPlanHeldByAuto`), never "Ready to implement" and never Run plan. A child whose delegation settled, or whose tree is at rest or stopped, is not resumable: Auto retried it with a new agent (`isStoppedByRestart` takes the views).
 - A prompt line must never say an action is impossible when the app has a path for it. "MOUNTS: none. No agent that changes files can start" made Auto believe it, so it never delegated, no refusal existed and the "Where should the Implementer work?" card never appeared: the user got prose. State the fact and the way forward (`NO_MOUNTS_LINE`, `describeMounts`), and pin it with a test that the line has no "cannot".
 - A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
 - A composer in a drawer never reads the session's `selectedAgentId`. In an Auto session that id is the Auto root, so a `ChatInput` that reads it shows the root's draft, queue and "running" state in a child's drawer and sends the child's message to Auto. `ChatView` passes `agentId` down and `ChatInput` threads it through `useAgentSelection`, `useTurnRouting` and `cleanupSentAttachments`; any new hook in the composer takes the agent id from there, never from the store. The pin is `ChatInput/drawerComposer.test.tsx`, and the toolbar width at the drawer minimum is the `drawer-composer` probe of `validate:scenes`.

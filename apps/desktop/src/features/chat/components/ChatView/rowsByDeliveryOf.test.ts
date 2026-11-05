@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
-import type { TakenEcho, TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { ConversationRow } from '../../utils/conversationRows';
 import { rowsByDeliveryOf } from './rowsByDeliveryOf';
@@ -50,45 +49,60 @@ const keysOf = (rows: ReadonlyArray<ConversationRow>) => rows.map((row) => row.k
 
 const TEXT = 'Keep the retry window at 30 seconds.';
 
-const takes = (
-  echoes: ReadonlyArray<Pick<TakenEcho, 'text' | 'sentAtMs'>>,
-): TranscriptInsertion => ({
-  key: 'auto-pending',
-  beforeMs: null,
-  node: null,
-  takesOver: echoes.map((echo, index) => ({ ...echo, key: `row-${index}`, line: null })),
-});
-
 describe('echo rows of messages Auto has not read', () => {
-  it('takes the echo of a waiting message out of the transcript', () => {
-    const rows = [reply('planner'), echo({ key: 'u1', text: TEXT, offsetMs: 500 })];
-
-    const placed = rowsByDeliveryOf({
-      rows,
-      insertions: [takes([{ text: TEXT, sentAtMs: SENT_AT }])],
-    });
-
-    expect(keysOf(placed)).toEqual(['planner']);
-  });
-
-  it('takes one echo per waiting message, in send order, and keeps an older identical one', () => {
+  it('draws no echo of a message that no delivery lists yet', () => {
     const rows = [
-      echo({ key: 'old', text: TEXT, offsetMs: -3_600_000 }),
-      echo({ key: 'u1', text: TEXT, offsetMs: 500 }),
-      echo({ key: 'u2', text: TEXT, offsetMs: 9_000 }),
+      reply('planner'),
+      echo({ key: 'u1', text: TEXT, offsetMs: 500, outboxId: 'row-a' }),
     ];
 
-    const placed = rowsByDeliveryOf({
-      rows,
-      insertions: [
-        takes([
-          { text: TEXT, sentAtMs: SENT_AT },
-          { text: TEXT, sentAtMs: SENT_AT + 8_000 },
-        ]),
-      ],
-    });
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['planner']);
+  });
 
-    expect(keysOf(placed)).toEqual(['old']);
+  it('draws no echo of a withdrawn message, whatever the rows around it say', () => {
+    const rows = [
+      echo({ key: 'u1', text: TEXT, offsetMs: 500, outboxId: 'row-a' }),
+      echo({ key: 'u2', text: TEXT, offsetMs: 900, outboxId: 'row-b' }),
+      reply('planner'),
+      delivery({ key: 'd1', text: 'next turn', outboxIds: ['row-b'] }),
+    ];
+
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['planner', 'u2', 'd1']);
+  });
+
+  it('keeps the echo of a message Auto dropped, so its words stay in the chat', () => {
+    const rows = [
+      echo({ key: 'dropped', text: 'Cover chargebacks', offsetMs: 0, outboxId: 'row-1' }),
+      echo({ key: 'waiting', text: 'And refunds', offsetMs: 1_000, outboxId: 'row-2' }),
+    ];
+
+    const shown = rowsByDeliveryOf({ rows, insertions: [{ keptEchoIds: ['row-1'] }] });
+
+    expect(shown.map((row) => row.key)).toEqual(['dropped']);
+  });
+
+  it('draws an echo written after the delivery that already carried it', () => {
+    const rows = [
+      delivery({ key: 'told', text: 'MESSAGES', outboxIds: ['row-1'] }),
+      echo({ key: 'sent', text: 'Split the export', offsetMs: 90_000, outboxId: 'row-1' }),
+    ];
+
+    expect(rowsByDeliveryOf({ rows }).map((row) => row.key)).toEqual(['sent', 'told']);
+  });
+
+  it('draws the echo of an image only message once a delivery lists it', () => {
+    const rows = [
+      echo({ key: 'sent', text: '', offsetMs: 0, outboxId: 'row-1' }),
+      delivery({ key: 'told', text: 'MESSAGES', outboxIds: ['row-1'] }),
+    ];
+
+    expect(rowsByDeliveryOf({ rows }).map((row) => row.key)).toEqual(['sent', 'told']);
+  });
+
+  it('keeps the echo of an older message that has no id', () => {
+    const rows = [echo({ key: 'old', text: TEXT, offsetMs: -3_600_000 })];
+
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['old']);
   });
 
   it('puts a delivered echo at its delivery, after the rows that came before it was read', () => {
@@ -101,7 +115,7 @@ describe('echo rows of messages Auto has not read', () => {
       }),
     ];
 
-    const placed = rowsByDeliveryOf({ rows, insertions: [] });
+    const placed = rowsByDeliveryOf({ rows });
 
     expect(keysOf(placed)).toEqual(['planner', 'u1', 'd1']);
   });
@@ -115,48 +129,7 @@ describe('echo rows of messages Auto has not read', () => {
       delivery({ key: 'd1', text: `${TEXT}\n${second}` }),
     ];
 
-    expect(keysOf(rowsByDeliveryOf({ rows, insertions: [] }))).toEqual([
-      'planner',
-      'u1',
-      'u2',
-      'd1',
-    ]);
-  });
-
-  it('takes the echo that carries the id of the waiting message, not an older identical one', () => {
-    const rows = [
-      echo({ key: 'u1', text: TEXT, offsetMs: 500, outboxId: 'row-a' }),
-      echo({ key: 'u2', text: TEXT, offsetMs: 900, outboxId: 'row-b' }),
-    ];
-
-    const placed = rowsByDeliveryOf({
-      rows,
-      insertions: [
-        {
-          key: 'auto-pending',
-          beforeMs: null,
-          node: null,
-          takesOver: [{ key: 'row-b', text: TEXT, sentAtMs: SENT_AT, line: null }],
-        },
-      ],
-    });
-
-    expect(keysOf(placed)).toEqual(['u1']);
-  });
-
-  it('does not hide an echo already delivered when the same text is sent again at once', () => {
-    const rows = [
-      echo({ key: 'u1', text: TEXT, offsetMs: 500 }),
-      delivery({ key: 'd1', text: `1. The user wrote:\n${TEXT}` }),
-      echo({ key: 'u2', text: TEXT, offsetMs: 1_000 }),
-    ];
-
-    const placed = rowsByDeliveryOf({
-      rows,
-      insertions: [takes([{ text: TEXT, sentAtMs: SENT_AT + 900 }])],
-    });
-
-    expect(keysOf(placed)).toEqual(['u1', 'd1']);
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['planner', 'u1', 'u2', 'd1']);
   });
 
   it('places each echo at the delivery that lists its id, even when texts repeat', () => {
@@ -168,23 +141,17 @@ describe('echo rows of messages Auto has not read', () => {
       delivery({ key: 'd2', text: 'next turn', outboxIds: ['row-a'] }),
     ];
 
-    expect(keysOf(rowsByDeliveryOf({ rows, insertions: [] }))).toEqual([
-      'planner',
-      'u2',
-      'd1',
-      'u1',
-      'd2',
-    ]);
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['planner', 'u2', 'd1', 'u1', 'd2']);
   });
 
-  it('ignores a delivery that only mentions the text when ids are known', () => {
+  it('does not seat an echo at a delivery that only mentions its text when ids are known', () => {
     const rows = [
       echo({ key: 'u1', text: TEXT, offsetMs: 500, outboxId: 'row-a' }),
       reply('planner'),
       delivery({ key: 'd1', text: `RESULT: ${TEXT}`, outboxIds: ['row-z'] }),
     ];
 
-    expect(keysOf(rowsByDeliveryOf({ rows, insertions: [] }))).toEqual(['u1', 'planner', 'd1']);
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['planner', 'd1']);
   });
 
   it('leaves an echo that already sits next to its delivery', () => {
@@ -193,6 +160,6 @@ describe('echo rows of messages Auto has not read', () => {
       delivery({ key: 'd1', text: `1. The user wrote:\n${TEXT}` }),
     ];
 
-    expect(keysOf(rowsByDeliveryOf({ rows, insertions: [] }))).toEqual(['u1', 'd1']);
+    expect(keysOf(rowsByDeliveryOf({ rows }))).toEqual(['u1', 'd1']);
   });
 });

@@ -78,6 +78,7 @@ const base: Omit<ArtifactFacts, 'kind' | 'title' | 'plan' | 'stored' | 'planStat
   planRun: null,
   planDrafts: [],
   plannerQuestionCount: 0,
+  isPlanHeldByAuto: false,
   generation: null,
   kickoff: 'a kickoff',
   ports: {},

@@ -15,6 +15,7 @@ import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedNotes } from './OrchestratedNotes';
 import { OrchestratedHintRow } from './OrchestratedHintRow';
 import { OrchestratedPlanRow } from './OrchestratedPlanRow';
+import { OrchestratedQueue } from './OrchestratedQueue';
 
 type Props = {
   readonly session: Session;
@@ -61,6 +62,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     isDeciding: view.orchestrator.state.phase === 'deciding',
     isDone,
   });
+  const queuedHints = (run.orchestratorHints ?? []).filter((hint) => hint.consumedAt == null);
   const stepCount = agents.filter((agent) => agent.parentAgentId == null).length;
   const skipped = (run.rulesSnapshot?.planChanges ?? []).filter(
     (change) => change.kind === 'skipped',
@@ -107,9 +109,19 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
           state="read"
           slotWidth={slotWidth}
           ink={ink}
-          hasLineBelow={hasLineBelow || index < checklist.trailingHints.length - 1}
+          hasLineBelow={
+            hasLineBelow || index < checklist.trailingHints.length - 1 || queuedHints.length > 0
+          }
         />
       ))}
+      <OrchestratedQueue
+        sessionId={sessionId}
+        run={run}
+        hints={queuedHints}
+        slotWidth={slotWidth}
+        ink={ink}
+        hasLineBelow={hasLineBelow}
+      />
       {checklist.isNextShown ? (
         <OrchestratedPlanRow kind="next" label={ORCHESTRATED_COPY.nextStep} slotWidth={slotWidth} />
       ) : null}
@@ -138,6 +150,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     checklist.left.length === 0 &&
     checklist.notes.length === 0 &&
     skipped.length === 0 &&
+    queuedHints.length === 0 &&
     !checklist.isNextShown
   ) {
     return null;

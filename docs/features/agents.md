@@ -135,8 +135,9 @@ Auto is always available. Start it from **Start a run**, which hands one-agent a
 **Limit and control**
 
 - Set a **Limit** once per workspace.
-- Change, raise or remove the **Limit** of a running conversation from the line of settings under its title, such as "Limit $0.85 of $5.00 from Harborline". Clear the amount to remove it. **Undo** is there.
+- Change, raise or remove the **Limit** of a running conversation from the line of settings under its title, such as "Limit $0.85 of $5.00 from Harborline". Clear the amount to remove it. **Undo** is there. When the limit comes from the workspace, the "from Harborline" tag in the popover is a link to the Run defaults.
 - **Change approach** while it waits. It stops Auto and puts you in the message field.
+- A message you send to Auto while it works waits in one list above the message box, in the order you sent it. It stays there until Auto has read it. Each row reads **Waits for this turn**, **Waits for** the task it waits for, or **Not delivered** with the reason on hover. Its images show as small thumbnails. **Send now**, **Retry** or **Change limit** sit on the row. **Edit** or **Remove** take the message back, with its text and images, until Auto has read it. Once it has, the message shows in the chat before the turn that read it.
 - The smallest limit pauses Auto. A session limit under Auto's own lowers it, and the chip says which one wins.
 - An agent's page has the same line of settings under its title: how it runs, when it asks you, the session **Limit** and its **Models**. Each setting is plain text with no border. Its border appears when you point at it or tab to it. The composer keeps only the message.
 - An Auto page shows **Asks you** in that chip line: **Every step**, **After the plan** or **Never**. It starts on the workspace default, a pick changes this Auto only, and it applies to what Auto starts next. An agent already waiting for your go keeps waiting. The message field stays under the conversation at every level.
