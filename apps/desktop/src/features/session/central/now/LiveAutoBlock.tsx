@@ -5,6 +5,7 @@ import { agentPlace, useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { NAMES } from '../../../../shared/utils/names';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
+import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
 import { autoChildCopyOf } from '../../../auto/group/autoChildCopyOf';
 import type { AutoGroupChild } from '../../../auto/autoGroupOf';
 import { agentKindPalette } from '../../agent-kind';
@@ -40,10 +41,15 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const auto = group.group;
-  const title = auto.title ?? NAMES.runKind.autoAgent;
-  const tone = group.state === 'stuck' ? 'danger' : LIVE_TONE.state[group.state].tone;
+  const isGenericTitle = auto.title === null || auto.title.toLowerCase() === 'auto';
+  const title = isGenericTitle ? NAMES.runKind.autoAgent : auto.title;
+  const stateSpec = LIVE_TONE.state[group.state];
+  const tone = group.state === 'stuck' ? 'danger' : stateSpec.tone;
   const palette = agentKindPalette({ kind: 'auto' });
-  const status = liveStatusOf({ word: auto.word, detail: null });
+  const status =
+    auto.word.includes(' ') && !auto.word.includes(': ')
+      ? { word: stateSpec.word, reason: auto.word }
+      : liveStatusOf({ word: auto.word, detail: null });
   const isOwn = liveOwnStateOf({ group, word: status.word });
   return (
     <section
@@ -52,24 +58,29 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
       data-state={group.state}
       className="flex min-w-0 flex-col"
     >
-      <LiveRow
-        glyph={<LiveGlyph icon={palette.icon} colorClass={palette.fg} />}
-        kindWord={NAMES.runKind.autoAgent}
-        title={title}
-        reason={status.reason}
-        openLabel="Open Auto chat"
-        onOpen={() => navigate({ to: agentPlace({ sessionId, agentId: auto.rootAgentId }) })}
-        where={where}
-        end={
-          <LiveStateWord
-            tone={tone}
-            word={status.word}
-            autoWord={auto.isStuck ? 'stuck' : auto.phase}
-            isSectionState={isOwn}
-          />
-        }
-        time={<DelegationClock agentId={auto.rootAgentId} isLive={auto.phase === 'running'} />}
-      />
+      <ObjectMenuArea
+        target={{ kind: 'agent', sessionId, agentId: auto.rootAgentId }}
+        anchorKey={`live-auto:${auto.rootAgentId}`}
+      >
+        <LiveRow
+          glyph={<LiveGlyph icon={palette.icon} colorClass={palette.fg} />}
+          kindWord={NAMES.runKind.autoAgent}
+          title={title}
+          reason={status.reason}
+          openLabel="Open Auto chat"
+          onOpen={() => navigate({ to: agentPlace({ sessionId, agentId: auto.rootAgentId }) })}
+          where={where}
+          end={
+            <LiveStateWord
+              tone={tone}
+              word={status.word}
+              autoWord={auto.isStuck ? 'stuck' : auto.phase}
+              isSectionState={isOwn}
+            />
+          }
+          time={<DelegationClock agentId={auto.rootAgentId} isLive={auto.phase === 'running'} />}
+        />
+      </ObjectMenuArea>
       {auto.children.length === 0 ? null : (
         <div data-live-agents-toggle="" className="flex min-w-0">
           <Button

@@ -122,7 +122,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'mid',
     facts: {
-      cards: ['needs-you', 'branches', 'running', 'done'],
+      cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Answer',
       done: null,
     },
@@ -162,7 +162,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'branches',
     facts: {
-      cards: ['needs-you', 'branches', 'running', 'done'],
+      cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Answer',
       done: null,
     },
@@ -179,14 +179,14 @@ describe('the central column, kind by kind', () => {
     },
   );
 
-  it('draws the cards Needs you, Branches, Running, Done, with no Now and no Activity', async () => {
+  it('draws the cards Needs you, Running, Branches, Done, with no Now and no Activity', async () => {
     const { container } = await showColumn({ kind: 'mid' });
 
     const column = container.querySelector('[data-central-column]');
     const ids = [...(column?.querySelectorAll(':scope > [data-overview-card]') ?? [])].map((card) =>
       card.getAttribute('data-overview-card'),
     );
-    const order = ['needs-you', 'branches', 'running', 'done'];
+    const order = ['needs-you', 'running', 'branches', 'done'];
     expect(ids.length).toBeGreaterThan(0);
     expect(
       [...ids].sort((first, second) => order.indexOf(first ?? '') - order.indexOf(second ?? '')),
@@ -209,7 +209,7 @@ describe('the central column, kind by kind', () => {
     const wheres = () =>
       [
         ...document.querySelectorAll(
-          '[data-overview-card="running"] [data-live-group] > [data-live-row]',
+          '[data-overview-card="running"] [data-live-group] > [data-live-row], [data-overview-card="running"] [data-live-group] > .contents > [data-live-row]',
         ),
       ].map((row) =>
         [...row.querySelectorAll('[data-live-where]')].map((cell) => cell.textContent),

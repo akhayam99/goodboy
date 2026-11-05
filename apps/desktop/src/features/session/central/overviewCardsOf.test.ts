@@ -45,7 +45,7 @@ const NONE = {
 } as const;
 
 describe('overviewCardsOf', () => {
-  it('orders the cards by the reader question: do, next, moving, finished', () => {
+  it('orders the cards as the prototype does: do, moving, branches, finished', () => {
     const shown = overviewCardsOf({
       ...NONE,
       cards: CARDS,
@@ -56,8 +56,8 @@ describe('overviewCardsOf', () => {
 
     expect(shown.map((card) => [card.title, card.count])).toEqual([
       ['Needs you', 1],
-      ['Branches', 3],
       ['Running', 2],
+      ['Branches', 3],
       ['Done', 4],
     ]);
   });

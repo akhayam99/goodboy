@@ -14,7 +14,7 @@ It reads top to bottom:
 - No setup line: a new worktree's setup (**Run** and **Not now**) is offered on the Branch page.
 - Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
 - One line under the goal says what is happening: how many things wait for you (amber), how many agents work (blue), what is stuck (red), or **Nothing needs you** (green). It reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
-- One card per question you ask: **Needs you** (what do I do), **Branches** (what can I do next), **Running** (what is moving) and **Done** (what finished).
+- One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order.
 
 An empty card is not drawn. An archived session keeps only **Done**.
 
@@ -73,6 +73,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 **Running**
 
 - It groups the agents and runs in two parts. **Running** works or decides, **Stopped** failed or was stopped by you, and keeps its **Continue**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
+- The Auto agent row says **Auto agent** once and shows what it waits for under its title, so a long sentence is never cut in the state column. A right click on it opens the same menu as the agent.
 - Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to, only when the session has two or more branches. It is blank when the run writes nowhere. It shows the project only across two projects.
 - A row that is working shows its time and nothing else: the part already says Running. A word with one colored dot shows only when it differs from the part, such as **Failed**, **Deciding** or **Needs you**. A row can also carry the run's own next move. Its time sits in a right column that lines up for child agents too. The cause, such as "Origin moved" or "Waits for your go on step 2", sits on a second muted line only for a row that waits or stopped.

@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -38,7 +39,9 @@ const mount = ({ id }: { readonly id: string }): void => {
   }
   render(
     <ToastProvider>
-      <Scene />
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
 };
@@ -318,6 +321,23 @@ describe('the Auto chat scenes', () => {
     const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
     expect(within(running).getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(within(running).getAllByRole('button', { name: 'Open Auto chat' })).toHaveLength(1);
+  });
+
+  it('auto-overview-row says Auto agent once, keeps the sentence whole and opens a menu on right click', async () => {
+    mount({ id: 'auto-overview-row' });
+
+    const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
+    const row = running.querySelector<HTMLElement>('[data-live-row]');
+    expect(row?.textContent?.match(/Auto agent/g)).toHaveLength(1);
+    expect(row?.querySelector('[data-live-reason]')?.textContent).toBe(
+      'Waiting for Implementer and Tester',
+    );
+
+    fireEvent.contextMenu(row ?? running);
+
+    const menu = await screen.findByRole('menu', undefined, WAIT);
+    expect(within(menu).queryByRole('menuitem', { name: 'Mount a project' })).toBeNull();
+    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0);
   });
 
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {
