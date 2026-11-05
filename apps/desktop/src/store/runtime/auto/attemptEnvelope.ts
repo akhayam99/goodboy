@@ -17,7 +17,7 @@ import type { AutoAttempt, AutoDelegation } from '@goodboy/db';
 
 export type AttemptEnvelopeParams = Readonly<{
   delegation: AutoDelegation;
-  attempt: AutoAttempt;
+  attempt: Pick<AutoAttempt, 'id'>;
   generation: number;
   exit: ProcessExit;
   isTimedOut?: boolean;

@@ -745,7 +745,10 @@ refusal. `proposals/propose.sqlite.test.ts` covers admission, recovery and repla
 it to the task and kickoff in the same transaction that accepts the child, so
 confirmation needs no extra Auto turn and a retry of the work retains the hint.
 A failed save leaves the old request pending. A competing decision, stop, changed
-generation or lost owner returns `lost` without saving the hint. Decline ignores
+generation or lost owner returns `lost` without saving the hint. A decline stores a
+full result with reason `declined`, because the delivery reads every result in the
+batch. `storedResultOf` guards each reader: a stored entry that fails it reaches
+Auto as one line and never stops the delivery or a new message. Decline ignores
 hints. Confirm and decline both check pending state inside their transaction, so
 a late decline cannot cancel a confirmed child. The proposal tests cover rollback,
 retry and competing decisions.

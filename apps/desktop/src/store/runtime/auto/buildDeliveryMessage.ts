@@ -7,6 +7,7 @@ import {
   buildStateDigest,
   isResultsPayload,
   parseSubstepNeeds,
+  storedResultOf,
   substepLinkOf,
   type AutoSubstepRole,
   type DeliveryArtifactBody,
@@ -115,8 +116,8 @@ const resultArtifactIds = ({ rows }: ArtifactIdsParams): ReadonlyArray<string> =
     if (!isResultsPayload(row.payload)) {
       continue;
     }
-    for (const result of row.payload.results) {
-      for (const artifact of result.artifacts) {
+    for (const value of row.payload.results) {
+      for (const artifact of storedResultOf({ value })?.artifacts ?? []) {
         if (!ids.includes(artifact.id)) {
           ids.push(artifact.id);
         }
