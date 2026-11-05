@@ -1,5 +1,5 @@
 import { SITE } from '../../lib/site';
-import type { Crumb } from './Breadcrumbs';
+import type { Crumb } from '../../lib/Crumb';
 import type { ReleaseSummary } from './ChangelogIndex';
 import { ContentPage } from './ContentPage';
 import { formatDate } from './formatDate';
