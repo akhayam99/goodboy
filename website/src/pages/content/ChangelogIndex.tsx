@@ -1,4 +1,4 @@
-import { SITE } from '../../site';
+import { SITE } from '../../lib/site';
 import { ContentPage } from './ContentPage';
 import type { Crumb } from './Breadcrumbs';
 import { formatDate } from './formatDate';

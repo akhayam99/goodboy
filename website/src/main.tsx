@@ -1,6 +1,6 @@
 import { App } from './App';
 import { FidelityView } from './components/FidelityView';
-import { mountRoot } from './mountRoot';
+import { mountRoot } from './lib/mountRoot';
 import './styles.css';
 import './styles/consent.css';
 

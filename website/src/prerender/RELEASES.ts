@@ -1,5 +1,5 @@
 import changelog from '../../../CHANGELOG.md?raw';
-import { compareVersions } from '../data/compareVersions';
+import { compareVersions } from '../lib/compareVersions';
 
 type ReleaseSnapshot = {
   readonly version: string;

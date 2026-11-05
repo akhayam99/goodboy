@@ -1,6 +1,6 @@
 import PROVIDER_SOURCES from '../components/brandIcons.source.json';
-import { BUILD_ASSET_URLS } from '../data/downloads';
-import { SITE } from '../site';
+import { BUILD_ASSET_URLS } from '../lib/downloads';
+import { SITE } from '../lib/site';
 import type { PageMeta } from './PageMeta';
 import { RELEASES } from './RELEASES';
 import { STATIC_PAGES } from './STATIC_PAGES';

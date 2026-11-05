@@ -1,4 +1,4 @@
-import { SITE } from '../site';
+import { SITE } from './site';
 import { currentTheme } from './theme';
 
 const EVENTS = ['click', 'auxclick', 'contextmenu', 'focusin'] as const;

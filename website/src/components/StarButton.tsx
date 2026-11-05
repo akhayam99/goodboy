@@ -1,7 +1,7 @@
 import './StarButton.css';
 import { BrandMark } from './BrandIcons';
 import { StarCount } from './StarCount';
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 
 type Props = {
   readonly isSmall?: boolean;

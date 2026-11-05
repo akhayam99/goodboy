@@ -1,4 +1,4 @@
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 import { escapeHtml } from './escapeHtml';
 import type { Release } from './RELEASES';
 

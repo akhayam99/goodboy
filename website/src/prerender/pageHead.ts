@@ -1,4 +1,4 @@
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 import { escapeHtml } from './escapeHtml';
 import { jsonLd } from './jsonLd';
 import type { PageMeta } from './PageMeta';

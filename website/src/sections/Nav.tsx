@@ -4,7 +4,7 @@ import { Logo } from '../components/Logo';
 import { NavMenu, type NavMenuLink } from '../components/NavMenu';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useScrolled } from '../hooks/useScrolled';
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 
 export type NavSection = 'home' | 'features' | 'docs' | 'changelog' | 'none';
 

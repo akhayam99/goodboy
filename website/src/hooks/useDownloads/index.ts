@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { BUILD_ASSET_URLS, resolveAssetUrls, type AssetUrls } from '../../data/downloads';
-import { SITE } from '../../site';
+import { BUILD_ASSET_URLS, resolveAssetUrls, type AssetUrls } from '../../lib/downloads';
+import { SITE } from '../../lib/site';
 import { usePlatform, type Platform } from '../usePlatform';
 
 const CACHE_KEY = 'goodboy.release-assets';

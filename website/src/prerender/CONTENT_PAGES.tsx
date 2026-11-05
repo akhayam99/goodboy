@@ -7,7 +7,7 @@ import { NotFound } from '../pages/content/NotFound';
 import { ReleaseNotes } from '../pages/content/ReleaseNotes';
 import featuresData from '../pages/features/features.data.json';
 import type { NavSection } from '../sections/Nav';
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 import { clipText } from './clipText';
 import { FEATURE_DOCS, type FeatureDoc } from './FEATURE_DOCS';
 import type { PageMeta } from './PageMeta';

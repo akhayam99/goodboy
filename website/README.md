@@ -25,7 +25,7 @@ runs no JavaScript reads the same page a visitor does.
 `website/src/prerender/renderSite.tsx`, and writes what `renderSite` returns into
 `dist/`: each template's
 `<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
-client entries mount through `website/src/mountRoot.tsx`: it hydrates
+client entries mount through `website/src/lib/mountRoot.tsx`: it hydrates
 prerendered HTML and renders from scratch in `pnpm dev` or when the root holds
 no element, as the unbuilt templates do.
 
@@ -197,7 +197,7 @@ All in `website/src/components/`, each with its own CSS file.
   next to the download.
 - `StarCount`, the star total inside every Star on GitHub button. `vite.config.ts`
   reads `stargazers_count` from the GitHub API once per build, so visitors never
-  call GitHub, and `src/data/formatStars.ts` floors it to the hundred, shown as 100+,
+  call GitHub, and `src/lib/formatStars.ts` floors it to the hundred, shown as 100+,
   200+, then 1.2k+. Under 100, or when the build cannot reach the API, the
   button shows no number. The total refreshes on every deploy.
 - `BrandIcons`, the provider marks, in their brand colours with the names in
@@ -225,7 +225,7 @@ or more.
 Downloads live in the hero and the install block only; the nav carries none.
 Every `[data-download]` link is a direct file download from
 `https://github.com/akhayam99/goodboy/releases/download/v<version>/<asset>`,
-never the releases page. `src/data/downloads.ts` builds the four asset URLs
+never the releases page. `src/lib/downloads.ts` builds the four asset URLs
 (`.dmg`, `.AppImage`, `.deb`, `.rpm`) from `LATEST_VERSION`, the newest
 snapshot in `src/data/releases/`. That snapshot lands in the version bump
 commit, before the release build attaches the assets, so for a short window the

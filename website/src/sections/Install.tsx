@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Chapter } from '../components/Chapter';
 import { StarButton } from '../components/StarButton';
 import { useDownloads } from '../hooks/useDownloads';
-import { SITE } from '../site';
+import { SITE } from '../lib/site';
 
 const COPIED_MS = 1500;
 

@@ -1,6 +1,6 @@
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
-import { syncDemoLinks } from './theme/syncDemoLinks';
+import { syncDemoLinks } from './syncDemoLinks';
 
 type Params = {
   readonly container: HTMLElement;
