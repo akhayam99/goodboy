@@ -609,7 +609,7 @@ const providerBrandSource = readSource(
 );
 const iconSource = readSource('packages/ui/src/components/brandIcons.tsx');
 const desktopStylesSource = readSource('apps/desktop/src/styles.css');
-const websiteStylesSource = readSource('website/src/styles.css');
+const websiteStylesSource = readSource('website/src/styles/base.css');
 const mascotBase64 = readFileSync(resolve(WEBSITE_DIRECTORY, 'src/assets/mascot.png')).toString(
   'base64',
 );

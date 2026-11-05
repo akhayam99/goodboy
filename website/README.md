@@ -144,10 +144,10 @@ The page follows the system theme until the visitor picks one with the header
 toggle, which is kept in `localStorage` under `goodboy-site:theme`. A script at
 the top of `website/index.html` sets `data-theme` before the first paint, so
 the page never flashes. Colours come from the tokens at the top of
-`website/src/styles.css`, with a dark set under `:root[data-theme='dark']`:
+`website/src/styles/base.css`, with a dark set under `:root[data-theme='dark']`:
 one page background, a `--band` a step above it, the `--g-stage-gradient` token
 behind every stage and mock (a flat 160 degree linear gradient, dark teal to
-near black, with no sheen or glow, defined once in `website/src/styles.css`),
+near black, with no sheen or glow, defined once in `website/src/styles/base.css`),
 one raised surface for controls, hairlines instead of shadows, four text
 tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and focus
 rings only. The logo is always the dark tile with the white dog, in both
@@ -215,7 +215,7 @@ links and in the phone sheet alike.
 
 A touch device is told by pointer, `(hover: none) and (pointer: coarse)`, never
 by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it with
-a mouse, both in `src/styles.css`. On touch the hero download buttons and the
+a mouse, both in `src/styles/base.css`. On touch the hero download buttons and the
 install block give way to `StarButton`. A phone has no
 `[data-download]` element, and every button, `.btn` and nav link is 44 px tall
 or more.
@@ -337,7 +337,7 @@ repository. When the canon changes, it changes everywhere in one pass.
 ## Image frames
 
 Every frame that hosts a picture reads its corners from tokens in
-`website/src/styles.css`: `--r-stage` for the outer radius, `--stage-pad` and
+`website/src/styles/base.css`: `--r-stage` for the outer radius, `--stage-pad` and
 `--stage-border-width` for the space inside it, and `--r-shot` for the picture
 or window it holds, which is the larger of `--r-view` and the outer radius minus
 the padding and the border. A new frame or window inside a stage uses

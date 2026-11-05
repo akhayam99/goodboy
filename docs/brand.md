@@ -92,7 +92,7 @@ own `--accent` token for the same role. Read the tokens, do not retype them.
 
 The tile behind the mark is **black, never the primary colour**. It is the same
 value on the site, in the favicon and in the app icon: `--brand-tile` in
-`website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
+`website/src/styles/base.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
 
 **The working chrome never paints the tile.** A fixed black tile on the top bar
