@@ -9,7 +9,7 @@ import { BrandLine } from './sections/BrandLine';
 import { Footer } from './sections/Footer';
 import { useReveal } from '../../hooks/useReveal';
 
-export const App = () => {
+export const HomePage = () => {
   useReveal();
   return (
     <>
