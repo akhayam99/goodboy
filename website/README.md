@@ -8,6 +8,41 @@
 The landing page is a Vite and React app outside the pnpm workspace, built and
 deployed by Vercel from `website/vercel.json`.
 
+## Map
+
+Find a file by what you want to change.
+
+| I want to change                          | Look in                                                                                                   |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/App.tsx` |
+| a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                              |
+| the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                       |
+| docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                      |
+| titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                          |
+| a release snapshot                        | `src/data/releases/` (written by the release flow)                                                        |
+| colours, type, layout tokens              | `src/styles/base.css`                                                                                     |
+| shared button, chapter or logo pieces     | `src/components/`                                                                                         |
+| shared helpers, theme, links and URLs     | `src/lib/` (`site.ts` holds every link)                                                                   |
+| a hook                                    | `src/hooks/useFoo/index.ts`                                                                               |
+| fonts, hero images, favicon, brand assets | `public/`                                                                                                 |
+
+Where code runs:
+
+- Browser: `src/pages/*/main.tsx` entries, `src/components/`, `src/mocks/`,
+  `src/hooks/`, `src/lib/`.
+- Build time only: `website/scripts/prerender.mjs` and `website/src/prerender/`, which render
+  the pages and write `dist/`.
+- Generated, never edited by hand: `src/mocks/generated/` (from
+  `website/scripts/sync-icons.mjs` and `website/scripts/sync-app-tokens.mjs`), `dist/`.
+- Hand-written data: `src/pages/features/features.data.json`,
+  `src/components/brandIcons.source.json`. Written by the release flow:
+  `src/data/releases/`.
+- Root: `index.html`, `features.html` and `content.html` are the page
+  templates, the Vite inputs.
+- `scripts/`: `prerender.mjs` is the build, `sync-*.mjs` write generated files,
+  `check-page.mjs` and `*.test.mjs` check the site, `build-brand-assets.mjs`
+  writes `public/` images.
+
 ## Install and run
 
 - Install from `website/` with `pnpm install --ignore-workspace`. The site
