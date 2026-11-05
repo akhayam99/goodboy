@@ -1,4 +1,4 @@
-import { App } from './App';
+import { HomePage } from './HomePage';
 import { FidelityView } from '../../components/FidelityView';
 import { mountRoot } from '../../lib/mountRoot';
 import '../../styles/base.css';
@@ -10,14 +10,12 @@ if (theme === 'dark' || theme === 'light') {
   document.documentElement.dataset.theme = theme;
 }
 
-const container = document.getElementById('root')!;
 const mock = params.get('fidelity');
 
 if (mock !== null) {
-  container.replaceChildren();
+  document.getElementById('root')?.replaceChildren();
 }
 
 mountRoot({
-  container,
-  children: mock === null ? <App /> : <FidelityView mock={mock} />,
+  children: mock === null ? <HomePage /> : <FidelityView mock={mock} />,
 });

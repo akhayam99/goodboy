@@ -12,19 +12,19 @@ deployed by Vercel from `website/vercel.json`.
 
 Find a file by what you want to change.
 
-| I want to change                          | Look in                                                                                                   |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/App.tsx` |
-| a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                              |
-| the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                       |
-| docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                      |
-| titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                          |
-| a release snapshot                        | `src/data/releases/` (written by the release flow)                                                        |
-| colours, type, layout tokens              | `src/styles/base.css`                                                                                     |
-| shared button, chapter or logo pieces     | `src/components/`                                                                                         |
-| shared helpers, theme, links and URLs     | `src/lib/` (`site.ts` holds every link)                                                                   |
-| a hook                                    | `src/hooks/useFoo/index.ts`                                                                               |
-| fonts, hero images, favicon, brand assets | `public/`                                                                                                 |
+| I want to change                          | Look in                                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx` |
+| a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                                   |
+| the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                            |
+| docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                           |
+| titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                               |
+| a release snapshot                        | `src/data/releases/` (written by the release flow)                                                             |
+| colours, type, layout tokens              | `src/styles/base.css`                                                                                          |
+| shared button, chapter or logo pieces     | `src/components/`                                                                                              |
+| shared helpers, theme, links and URLs     | `src/lib/` (`site.ts` holds every link)                                                                        |
+| a hook                                    | `src/hooks/useFoo/index.ts`                                                                                    |
+| fonts, hero images, favicon, brand assets | `public/`                                                                                                      |
 
 Where code runs:
 
@@ -130,7 +130,7 @@ characters; a description stays under 160.
 
 ## Pages
 
-- `/`, the landing page, from `website/index.html` and `website/src/pages/home/App.tsx`.
+- `/`, the landing page, from `website/index.html` and `website/src/pages/home/HomePage.tsx`.
   Its sections live in `website/src/pages/home/sections/`, in this order: Nav, Hero,
   TwoWays, SharedContext, Tour, Install, BrandLine, Footer. `BrandLine` is the
   brand line alone, the last block before the footer.

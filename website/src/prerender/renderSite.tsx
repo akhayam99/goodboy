@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { renderToStaticMarkup, renderToString } from 'react-dom/server';
-import { App } from '../pages/home/App';
+import { HomePage } from '../pages/home/HomePage';
 import { FeaturesPage } from '../pages/features/FeaturesPage';
 import { Footer } from '../pages/home/sections/Footer';
 import { Nav } from '../pages/home/sections/Nav';
@@ -64,7 +64,7 @@ export const renderSite = ({ templates }: Params): readonly SiteFile[] => [
       head: pageHead({ page: STATIC_PAGES.home }),
       html: renderToString(
         <StrictMode>
-          <App />
+          <HomePage />
         </StrictMode>,
       ),
     }),
