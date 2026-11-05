@@ -110,8 +110,10 @@ Below, `X` is the new version and `X-1` is the current latest.
    `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the
    dmg, `hdiutil attach`, copy `Goodboy.app` out of the mounted volume, then
-   run `spctl -a -vvv` and `codesign -dv --verbose=4` against the copy. Expect
-   `accepted, source=Notarized Developer ID`. The required team and what
+   run `spctl -a -vvv`, `codesign -dv --verbose=4` and
+   `xcrun stapler validate Goodboy.app` against the copy. Expect
+   `accepted, source=Notarized Developer ID` and `The validate action worked!`:
+   without a stapled ticket the first open fails offline. The required team and what
    counts as a failure are in [release.md](release.md). Detach. If a Goodboy
    volume is already mounted, `hdiutil attach` mounts the new one at
    `/Volumes/Goodboy 1`. So detach earlier volumes first, and take the mount
@@ -247,9 +249,9 @@ chapter, in the order a task lives. Its text is in
    fresh build, so the rc check in step 4 does not cover this dmg. Check
    notarization again on the draft's own dmg:
    `gh release download vX --repo akhayam99/goodboy --pattern 'Goodboy_X_universal.dmg'`,
-   `hdiutil attach`, copy `Goodboy.app` out, run `spctl -a -vvv` and
-   `codesign -dv --verbose=4` against the copy with the same expectations as
-   step 4, then detach. Any failure stops the release here, still a draft.
+   `hdiutil attach`, copy `Goodboy.app` out, run `spctl -a -vvv`,
+   `codesign -dv --verbose=4` and `xcrun stapler validate Goodboy.app` against
+   the copy with the same expectations as step 4, then detach. Any failure stops the release here, still a draft.
    Then publish it: `gh release edit vX --draft=false`. Confirm `homebrew.yml`
    starts and succeeds (`gh run list --workflow=homebrew.yml`). Compare
    `shasum -a 256` of the checked dmg with the `sha256` in

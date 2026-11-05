@@ -284,8 +284,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   and leaves the session row unselected.
 - **The tools sit in their own column and never drill.** They are not in the
   rail: a thin icon toolbar at the right edge of the session content, between
-  the page and the open drawer (see The session tools), the same on level 1,
-  on a worktree, on a run and on Auto, folded rail or not.
+  the page and the open drawer (see The session tools), the same on every
+  page of the session, folded rail or not.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
   rail, ⌥⌘B) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): one icon per page with its dot, then the pull request number per
@@ -646,7 +646,7 @@ terminal command. An overlay drawer leaves live tools at its right edge
 through `DrawerEdgeContext`. The page has a scrim and is inert until close.
 `drawerLayoutOf` decides push or overlay from the content width excluding
 both rails ([styling.md](../styling.md)).
-Folding the rail leaves the column in place, and a drill never moves it.
+Folding the rail leaves the column in place.
 
 - **Agents holds every agent of the session** (drawer kind `spawned`,
   `app/components/SpawnedPanel`), in place of the old level 2 of the session

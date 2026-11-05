@@ -231,7 +231,7 @@ the mock scenes alike, reads). **The column never changes; a session adds one
 rail of its own.** The column is the workspace's navigation and looks the same
 on every screen. Inside a session the session rail (see Session rail) sits at
 the left of the page, inside the content sheet on the page background, and
-holds the levels that drill (session, run, Auto). No other surface
+has one level, the session. No other surface
 adds a navigation column: filters or a list that belong to a page sit beside
 the detail as a page rail. The right drawer is context, never navigation. The
 right drawer holds reference material beside the page and closes with the pane

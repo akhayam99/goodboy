@@ -618,6 +618,13 @@
           "shown": true
         },
         {
+          "title": "Steps that cannot finish",
+          "text": "A step that cannot finish ends as Not finished, and the level you picked decides if the run goes on.",
+          "group": "Workflows",
+          "also": "steps that cannot finish",
+          "shown": true
+        },
+        {
           "title": "Why each step, and the run recap",
           "text": "See why each step was picked, with a short recap of what is done and what is left.",
           "group": "Workflows",
@@ -654,7 +661,7 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "One Branch page for Overview, Comments, Files, Commits and Checks: reshape history, turn comments into commits, push once.",
+      "lead": "One Branch page for Pull request, Comments, Files, Commits and Checks: reshape history, turn comments into commits, push once.",
       "groups": ["Commits and history", "Review and resolve on the Branch page"],
       "mocks": ["diff"],
       "guides": [
@@ -822,13 +829,13 @@
         },
         {
           "title": "Pull request on the Branch page",
-          "text": "See in plain words whether a pull request can merge, with its checks. It is the Overview of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows. A pull request held for a merge reads Queued.",
+          "text": "See in plain words whether a pull request can merge, with its checks. It is the Pull request tab of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows. A pull request held for a merge reads Queued.",
           "group": "Review and resolve on the Branch page",
           "also": "pull request page"
         },
         {
           "title": "One trail to the Branch page",
-          "text": "Open a branch from the palette, a notification, a chat card or the board and the session rail steps into the same branch. The back row steps out, and Back is history.",
+          "text": "Open a branch from the palette, a notification, a chat card or the board and the same Branch page opens. The session rail stays on the session, and Back is history.",
           "group": "Review and resolve on the Branch page",
           "also": "review layers"
         },
@@ -1209,7 +1216,7 @@
         },
         {
           "title": "Queue or send now",
-          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and Send now, in view while it works, sends it now.",
+          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and every waiting message sits in one list above the message box with Edit, Remove and Send now.",
           "group": "Agents",
           "also": "queue or send now",
           "shown": true
