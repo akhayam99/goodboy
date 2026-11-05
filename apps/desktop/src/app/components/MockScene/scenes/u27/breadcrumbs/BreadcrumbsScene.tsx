@@ -27,8 +27,13 @@ export const BreadcrumbsScene = ({ theme, placeId }: Props) => {
       telemetryAt: NOW,
       lens: null,
     });
-    useAppStore.setState({ currentWorkspaceId: session.workspaceId, selectedAgentId: {} });
-    useAppStore.getInitialState().navigate({ to: spec.to });
+    const { navigate } = useAppStore.getInitialState();
+    useAppStore.setState({
+      currentWorkspaceId: session.workspaceId,
+      selectedAgentId: {},
+      navigate,
+    });
+    navigate({ to: spec.to });
     setIsReady(true);
   }, [session, spec, theme]);
 

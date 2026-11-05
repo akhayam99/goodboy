@@ -23,9 +23,16 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
       return { ...place, view: { ...view, target: { ...target, threadId: null } } };
     }
     if (target.tab === 'files' && target.focus?.path != null) {
+      const isPlainFile = target.focus.kind === 'branch' && target.focus.threadId == null;
       return {
         ...place,
-        view: { ...view, target: { ...target, focus: { ...target.focus, path: null } } },
+        view: {
+          ...view,
+          target: {
+            ...target,
+            focus: isPlainFile ? null : { ...target.focus, path: null },
+          },
+        },
       };
     }
     return sessionPlace({ sessionId });
@@ -38,12 +45,17 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     const agent = agents.find((candidate) => candidate.id === view.agentId);
     const parentAgentId = agent?.parentAgentId ?? null;
     const isStep = agent?.workflowRunId != null && agent.stepId != null;
+    const parent = agents.find((candidate) => candidate.id === parentAgentId);
+    const isParentStepOfRun =
+      parent?.workflowRunId != null &&
+      parent.stepId != null &&
+      parent.workflowRunId === agent?.workflowRunId;
     const home = agentHomeFor({ state, sessionId, agentId: view.agentId }) ?? view.lens;
     if (
-      !isStep &&
+      (!isStep || isParentStepOfRun) &&
       parentAgentId !== null &&
       parentAgentId !== view.agentId &&
-      agents.some((candidate) => candidate.id === parentAgentId)
+      parent !== undefined
     ) {
       return sessionPlace({ sessionId, lens: home, agentId: parentAgentId });
     }

@@ -599,8 +599,9 @@ activity yet show the plain overview with its actions.
   `ChevronLeft`; its `aria-label` is its text. `backOf` (store, navigation)
   names the parent from `parentPlace`: a main agent reads `Back to runs`, a sub
   agent and a sub sub agent read `Back to {parent agent name}` (`parentPlace`
-  walks `parentAgentId` one step; a run step keeps its run), a run reads `Back
-to runs`, a run step `Back to run`, a plan or any artifact `Back to
+  walks `parentAgentId` one step; a top level run step keeps its run, a sub
+  step reads `Back to {parent step name}`), a run reads `Back
+to runs`, a top level run step `Back to run`, a plan or any artifact `Back to
 artifacts`, a Branch file or thread `Back to branch`, every other lens page
   and a Branch section `Back to overview`. A product lens keeps its name (`Back
 to GitHub issue`). A click calls `upTo` with the parent place: a real

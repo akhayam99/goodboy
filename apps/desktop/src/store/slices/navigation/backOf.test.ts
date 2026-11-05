@@ -29,6 +29,8 @@ const CHILD = brandId<AgentId>({ value: 'agent-scout' });
 const GRANDCHILD = brandId<AgentId>({ value: 'agent-tester' });
 const STEP = brandId<AgentId>({ value: 'agent-step' });
 const RESOLVER = brandId<AgentId>({ value: 'agent-resolver' });
+const SUB_STEP = brandId<AgentId>({ value: 'agent-sub-step' });
+const SUB_SUB_STEP = brandId<AgentId>({ value: 'agent-sub-sub-step' });
 const ARTIFACT = brandId<ArtifactId>({ value: 'artifact-1' });
 const DYNAMIC_RUN = brandId<WorkflowRunId>({ value: 'run-dynamic' });
 
@@ -58,6 +60,22 @@ beforeAll(async () => {
           stepId: brandId<StepId>({ value: 'step-1' }),
         }),
         anAgent({ id: RESOLVER, sessionId: S1, name: 'resolve: ana on a.ts:4' }),
+        anAgent({
+          id: SUB_STEP,
+          sessionId: S1,
+          name: 'scout',
+          parentAgentId: STEP,
+          workflowRunId: DYNAMIC_RUN,
+          stepId: brandId<StepId>({ value: 'step-1-1' }),
+        }),
+        anAgent({
+          id: SUB_SUB_STEP,
+          sessionId: S1,
+          name: 'reader',
+          parentAgentId: SUB_STEP,
+          workflowRunId: DYNAMIC_RUN,
+          stepId: brandId<StepId>({ value: 'step-1-1-1' }),
+        }),
       ],
     },
     agentKindOverride: { [RESOLVER]: 'resolver' },
@@ -84,6 +102,8 @@ describe('backOf', () => {
     ['a sub agent', agentAt({ agentId: CHILD }), 'Back to planner'],
     ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), 'Back to scout'],
     ['a run step', agentAt({ agentId: STEP }), 'Back to run'],
+    ['a sub step', agentAt({ agentId: SUB_STEP }), 'Back to implementer'],
+    ['a sub sub step', agentAt({ agentId: SUB_SUB_STEP }), 'Back to scout'],
     [
       'a run',
       sessionPlace({
