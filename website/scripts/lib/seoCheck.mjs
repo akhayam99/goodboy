@@ -48,6 +48,8 @@ export const RULES = {
   'gtm-count': 'error',
   'consent-order': 'error',
   'google-before-consent': 'error',
+  'track-invalid': 'error',
+  'track-missing': 'error',
   'title-length': 'warning',
   'description-length': 'warning',
 };
@@ -483,6 +485,57 @@ const publishedChecks = ({ published, redirects, distFiles }) => {
     );
 };
 
+const TRACK_PREFIX = 'data-track-';
+
+const isTrackValueAllowed = ({ rule, value }) =>
+  value !== undefined &&
+  (Array.isArray(rule) ? rule.includes(value) : new RegExp(rule.pattern).test(value));
+
+const trackProblem = ({ tag, spec }) => {
+  const event = tag.attributes.get('data-track');
+  if (!Object.hasOwn(spec, event)) {
+    return `unknown event ${event}`;
+  }
+  const rules = spec[event];
+  const declared = [...tag.attributes.keys()]
+    .filter((name) => name.startsWith(TRACK_PREFIX))
+    .map((name) => name.slice(TRACK_PREFIX.length).replaceAll('-', '_'));
+  const unknown = declared.find((name) => !Object.hasOwn(rules, name));
+  if (unknown !== undefined) {
+    return `${event} has no parameter ${unknown}`;
+  }
+  const bad = Object.entries(rules).find(
+    ([name, rule]) =>
+      !isTrackValueAllowed({
+        rule,
+        value: tag.attributes.get(`${TRACK_PREFIX}${name.replaceAll('_', '-')}`),
+      }),
+  );
+  return bad === undefined ? null : `${event} has a missing or unlisted ${bad[0]}`;
+};
+
+const trackAttributeChecks = ({ page, trackSpec }) =>
+  page.tags
+    .filter((tag) => !tag.isClosing)
+    .flatMap((tag) => {
+      if (tag.attributes.has('data-track')) {
+        const problem = trackProblem({ tag, spec: trackSpec });
+        return problem === null
+          ? []
+          : [issue({ rule: 'track-invalid', file: page.file, message: problem })];
+      }
+      const isAction = tag.attributes.has('data-download') || tag.attributes.has('data-star');
+      return isAction
+        ? [
+            issue({
+              rule: 'track-missing',
+              file: page.file,
+              message: `<${tag.name} href=${tag.attributes.get('href')}> has no data-track`,
+            }),
+          ]
+        : [];
+    });
+
 const IUBENDA_SCRIPT = 'cdn.iubenda.com/cs/iubenda_cs.js';
 const GOOGLE_HOSTS = ['googletagmanager.com', 'google-analytics.com'];
 
@@ -549,6 +602,7 @@ export const checkSeo = ({
   feed,
   redirects,
   published,
+  trackSpec,
   origin,
 }) => {
   const pages = [...htmlFiles.entries()].map(([file, html]) => pageFacts({ file, html }));
@@ -561,6 +615,7 @@ export const checkSeo = ({
       ...jsonLdChecks({ page }),
       ...linkChecks({ page, redirects, distFiles }),
       ...trackingChecks({ page }),
+      ...trackAttributeChecks({ page, trackSpec }),
     ]),
     ...duplicateChecks({ pages, field: 'title', rule: 'title-duplicate' }),
     ...duplicateChecks({ pages, field: 'description', rule: 'description-duplicate' }),

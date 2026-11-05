@@ -49,6 +49,7 @@ const main = () => {
     feed: readFileSync(join(DIST, 'changelog.xml'), 'utf8'),
     redirects: readJson({ path: resolve(ROOT, 'vercel.json'), fallback: {} }).redirects ?? [],
     published: readJson({ path: PUBLISHED, fallback: [] }),
+    trackSpec: readJson({ path: resolve(ROOT, 'src/lib/trackEvents.json'), fallback: {} }),
     origin: originOf(),
   });
   let isFailed = false;

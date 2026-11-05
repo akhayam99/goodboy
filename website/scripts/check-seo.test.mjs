@@ -20,6 +20,11 @@ const TITLE = 'Acme: a tool for running agents on one task';
 const DESCRIPTION =
   'Acme runs several coding agents on one task, with a git worktree per branch, shared context and a review step before anything merges.';
 
+const TRACK_SPEC = {
+  star_click: { cta_location: ['hero', 'install'] },
+  download_click: { app_version: { pattern: '^\\d+\\.\\d+\\.\\d+$' } },
+};
+
 const graph = ({ extra = [] } = {}) =>
   JSON.stringify({
     '@context': 'https://schema.org',
@@ -68,6 +73,7 @@ const run = ({
   distFiles = [],
   redirects = [],
   published = [],
+  trackSpec = TRACK_SPEC,
   llmsPaths = sitemapPaths.filter((path) => !path.startsWith('/changelog/')),
   feedPaths = sitemapPaths.filter((path) => path.startsWith('/changelog/')),
 } = {}) =>
@@ -82,6 +88,7 @@ const run = ({
     ].join('\n'),
     redirects,
     published,
+    trackSpec,
     origin: ORIGIN,
   });
 
@@ -373,6 +380,35 @@ describe('checkSeo', () => {
     });
     assert.deepEqual(rulesOf(issues), ['google-before-consent']);
     assert.equal(issues.length, 2);
+  });
+
+  it('fails a data-track event or parameter that the spec does not list', () => {
+    const link = (attributes) => ({
+      'index.html': page({ body: `<h1>A</h1><a href="https://x.test" ${attributes}>x</a>` }),
+    });
+    const rules = (attributes) => rulesOf(run({ htmlFiles: link(attributes) }));
+    assert.deepEqual(rules('data-track="star_click" data-track-cta-location="hero"'), []);
+    assert.deepEqual(rules('data-track="menu_click"'), ['track-invalid']);
+    assert.deepEqual(rules('data-track="star_click" data-track-cta-location="footer"'), [
+      'track-invalid',
+    ]);
+    assert.deepEqual(rules('data-track="star_click"'), ['track-invalid']);
+    assert.deepEqual(
+      rules('data-track="star_click" data-track-cta-location="hero" data-track-text="x"'),
+      ['track-invalid'],
+    );
+    assert.deepEqual(rules('data-track="download_click" data-track-app-version="0.31.10"'), []);
+    assert.deepEqual(rules('data-track="download_click" data-track-app-version="latest"'), [
+      'track-invalid',
+    ]);
+    assert.deepEqual(rules('data-track="constructor"'), ['track-invalid']);
+  });
+
+  it('fails a download or star link that carries no data-track', () => {
+    const html = {
+      'index.html': page({ body: '<h1>A</h1><a href="https://x.test" data-download>x</a>' }),
+    };
+    assert.deepEqual(rulesOf(run({ htmlFiles: html })), ['track-missing']);
   });
 
   it('warns on a title or description length, and never fails on it', () => {

@@ -5,6 +5,7 @@ import { NavMenu, type NavMenuLink } from '../../../components/NavMenu';
 import { ThemeToggle } from '../../../components/ThemeToggle';
 import { useScrolled } from '../../../hooks/useScrolled';
 import { SITE } from '../../../lib/site';
+import { trackAttributes } from '../../../lib/trackAttributes';
 
 export type NavSection = 'home' | 'features' | 'docs' | 'changelog' | 'none';
 
@@ -34,7 +35,11 @@ export const Nav = ({ current }: Props) => {
   }));
   const sheetLinks: readonly NavMenuLink[] = [
     ...menuLinks,
-    { label: 'Live demo', href: SITE.demo },
+    {
+      label: 'Live demo',
+      href: SITE.demo,
+      track: trackAttributes({ event: 'demo_click', params: { cta_location: 'nav_sheet' } }),
+    },
   ];
 
   return (
@@ -55,7 +60,11 @@ export const Nav = ({ current }: Props) => {
           </nav>
           <span className="navSpacer" />
           <div className="navActions">
-            <a className="navDemo" href={SITE.demo}>
+            <a
+              className="navDemo"
+              href={SITE.demo}
+              {...trackAttributes({ event: 'demo_click', params: { cta_location: 'nav' } })}
+            >
               <span className="navDemoDot" aria-hidden="true" />
               Live demo
             </a>

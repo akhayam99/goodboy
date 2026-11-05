@@ -256,6 +256,24 @@ embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
 in the iubenda dashboard. The GTM iubenda tag stays paused so the card never
 loads twice.
 
+## Tracking events
+
+Four actions carry an event, and no link text, class or menu is read. The spec is
+`website/src/lib/trackEvents.json`: `download_click` (`platform`, `package`,
+`cta_location`, `app_version`), `star_click` and `demo_click` (`cta_location`) and
+`copy_install_command` (`install_method`). A component declares its action with
+`trackAttributes` from `website/src/lib/trackAttributes.ts`, which writes
+`data-track` and one `data-track-<parameter>` attribute per parameter, and
+`downloadTrack` writes the download set. One click listener on the document,
+started by `website/src/lib/mountRoot.tsx` for every page entry
+(`website/src/lib/startTracking.ts`), reads the attributes with `readTrackEvent` and
+pushes `{ event, ...parameters }` to `dataLayer`. It pushes nothing, and queues
+nothing, unless `window.goodboyConsent.isMeasurementGranted` is true (Cookie consent
+above). An event or value outside the spec is dropped, and `check-seo` fails the
+build on a `data-track` outside it and on a `data-download` or `data-star` link
+without one. A new event is a line in the spec, a `data-track` in the markup and a
+trigger in the Tag Manager container.
+
 ## Components
 
 All in `website/src/components/`, each with its own CSS file.
