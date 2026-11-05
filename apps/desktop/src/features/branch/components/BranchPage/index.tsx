@@ -386,7 +386,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       mountId: historyMountId,
       push,
       pushCount: push.phase.kind === 'idle' ? pushCount : 0,
-      isPushInHeader: controls.secondary?.label.startsWith('Push ') === true,
+      isPushInHeader: (controls.primary ?? controls.secondary)?.label.startsWith('Push ') === true,
       isVisible: isActive,
       onRequestReview:
         request.kind === 'allowed'

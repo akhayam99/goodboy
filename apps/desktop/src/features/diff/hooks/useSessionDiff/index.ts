@@ -1,3 +1,8 @@
+import {
+  readWorktreeStatus,
+  subscribe,
+  worktreeStatusKey,
+} from '../../../../store/runtime/worktreeStatuses/cache';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { parseUnifiedDiff } from '@goodboy/core/github';
@@ -217,6 +222,22 @@ export const useSessionDiff = ({
       cancelled = true;
     };
   }, [worktreePath, baseBranch, refreshTick, branchRevision]);
+
+  useEffect(() => {
+    if (worktreePath === null) {
+      return undefined;
+    }
+    const key = worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined });
+    return subscribe({
+      key,
+      listener: () => {
+        const next = readWorktreeStatus(key);
+        if (next !== null) {
+          setStatus(next);
+        }
+      },
+    });
+  }, [worktreePath, baseBranch]);
 
   useEffect(() => {
     const fetcher =

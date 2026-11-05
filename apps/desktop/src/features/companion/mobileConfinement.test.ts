@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
+import { useAppStore } from '../../store';
 import type {
   IsoDateTime,
   PrCheckRun,
@@ -94,6 +95,7 @@ const factsOf = ({
 } = {}): PullRequestFacts =>
   mobileMergeFacts({
     state: {
+      ...useAppStore.getState(),
       sessionGithub: { [sid('s1')]: githubOf({ pr, checks }) },
       sessionResolveThreads: { [sid('s1')]: threads },
     },

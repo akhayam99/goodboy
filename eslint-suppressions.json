@@ -1981,7 +1981,7 @@
   },
   "apps/desktop/src/features/branch/components/BranchHeader/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
+      "count": 7
     }
   },
   "apps/desktop/src/features/branch/components/BranchPage/index.test.tsx": {

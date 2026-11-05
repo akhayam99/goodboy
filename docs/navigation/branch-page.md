@@ -44,7 +44,8 @@ merged or closed request has none, and `Force push` never sits there: while the 
 waits in `⋯` behind its confirm. With no push the secondary is `Publish N replies` (the fix is
 already on origin) or `Retry N`. Commits not on origin block the merge (`unpushed` in
 `MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
-`Blocked: 3 commits not pushed` and `⋯` shows the reason. Otherwise the primary is the page's next
+`Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
+(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same count. Otherwise the primary is the page's next
 step (`pullRequestNextStepOf`): `Mark ready for review` on a draft, `Request review` while nobody was
 asked, `Fix comments` while changes are requested or comments need you, `Fix checks` while a check
 fails (both open their tab), the merge method (`Squash and merge`) once the pull request is ready,

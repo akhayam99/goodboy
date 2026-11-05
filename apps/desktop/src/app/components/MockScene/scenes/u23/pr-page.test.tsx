@@ -9,6 +9,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { invoke } from '@tauri-apps/api/core';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -196,6 +197,23 @@ describe('the pull request page scenes', () => {
     await waitFor(() => expect(cellText({ id: 'merge' })).toContain('3 commits not pushed'));
     expect(cellText({ id: 'merge' })).toContain('Blocked');
     expect(document.querySelector('[data-branch-secondary]')).toBeNull();
+  });
+
+  it('opens the merge again once the push went through', async () => {
+    answerWith({ behind: 0, unpushed: 3 });
+    draw({ name: 'branch-pr-merge-methods' });
+    const push = await waitFor(() => {
+      const button = document.querySelector<HTMLElement>('[data-branch-primary="diff.push"]');
+      expect(button).not.toBeNull();
+      return button as HTMLElement;
+    });
+
+    answerWith({ behind: 0 });
+    useAppStore.setState({ pushBranch: async () => ({ ok: true }) });
+    fireEvent.click(push);
+
+    await waitFor(() => expect(cellText({ id: 'merge' })).not.toContain('not pushed'));
+    expect(document.querySelector('[data-branch-primary="diff.push"]')).toBeNull();
   });
 
   it('branch-pr-merge-blocked says in Readiness why Merge cannot run', async () => {
