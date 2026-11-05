@@ -6,7 +6,7 @@
 ## Steps
 
 1. The website is a standalone package: install and build from `website/` ([website/README.md](../../website/README.md)).
-2. Add the page under `website/src/pages/` and its route, and draw it from the shared sections in `website/src/sections/`.
+2. Add the page under `website/src/pages/` and its route, and draw it from the shared sections in `website/src/pages/home/sections/`.
 3. Copy is human first and short; no license terms, no internals ([tone-of-voice.md](../tone-of-voice.md)).
 4. Images use the brand pipeline ([brand.md](../brand.md)); a mock screenshot never carries a real name.
 5. Do not add telemetry; the cookieless visit counter is the only exception (`SECURITY.md`).

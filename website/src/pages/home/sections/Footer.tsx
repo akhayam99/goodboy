@@ -1,7 +1,7 @@
 import './Footer.css';
-import { Logo } from '../components/Logo';
-import { LATEST_VERSION } from '../data/latestVersion';
-import { SITE } from '../lib/site';
+import { Logo } from '../../../components/Logo';
+import { LATEST_VERSION } from '../../../data/latestVersion';
+import { SITE } from '../../../lib/site';
 
 type FooterLink = {
   readonly label: string;

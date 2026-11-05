@@ -1,5 +1,5 @@
 import './BrandLine.css';
-import { Chapter } from '../components/Chapter';
+import { Chapter } from '../../../components/Chapter';
 
 export const BrandLine = () => (
   <Chapter id="brand-line" tone="page" label="Goodboy">

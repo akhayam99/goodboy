@@ -2263,6 +2263,8 @@
     "website/src/pages/content/formatDate.ts": 1,
     "website/src/pages/content/main.tsx": 1,
     "website/src/pages/content/ReleaseNotes.tsx": 1,
+    "website/src/pages/home/sections/Hero.tsx": 1,
+    "website/src/pages/home/sections/Tour.tsx": 2,
     "website/src/prerender/changelogFeed.ts": 1,
     "website/src/prerender/clipText.ts": 1,
     "website/src/prerender/CONTENT_PAGES.tsx": 2,
@@ -2270,8 +2272,6 @@
     "website/src/prerender/FEATURE_DOCS.ts": 3,
     "website/src/prerender/RELEASES.ts": 2,
     "website/src/prerender/renderMarkdown.ts": 3,
-    "website/src/prerender/stripComments.ts": 1,
-    "website/src/sections/Hero.tsx": 1,
-    "website/src/sections/Tour.tsx": 2
+    "website/src/prerender/stripComments.ts": 1
   }
 }

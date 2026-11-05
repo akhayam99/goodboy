@@ -66,8 +66,8 @@ characters; a description stays under 160.
 
 ## Pages
 
-- `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
-  Its sections live in `website/src/sections/`, in this order: Nav, Hero,
+- `/`, the landing page, from `website/index.html` and `website/src/pages/home/App.tsx`.
+  Its sections live in `website/src/pages/home/sections/`, in this order: Nav, Hero,
   TwoWays, SharedContext, Tour, Install, BrandLine, Footer. `BrandLine` is the
   brand line alone, the last block before the footer.
 - `/features`, one cluster per topic, from `website/features.html` and
