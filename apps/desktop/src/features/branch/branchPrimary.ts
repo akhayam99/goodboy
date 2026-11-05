@@ -135,7 +135,7 @@ const reviewAction = ({
   tab: null,
 });
 
-const secondaryOf = ({
+const pushOf = ({
   diff,
   review,
   hasPullRequest,
@@ -159,6 +159,13 @@ const secondaryOf = ({
   const push = find({ actions: diff, id: 'diff.push' });
   if (push !== null && push.slot !== 'menu' && !hasOpenRebaseStop) {
     return fromAction({ source: 'diff', action: push, icon: ArrowUp });
+  }
+  return null;
+};
+
+const followUpOf = ({ review, hasPullRequest, state }: Params): BranchPrimary | null => {
+  if (state === 'merged' || state === 'closed' || state === 'none' || !hasPullRequest) {
+    return null;
   }
   if (review.replies > 0) {
     return reviewAction({
@@ -234,10 +241,15 @@ const primaryOf = (params: Params): BranchPrimary | null => {
   return primary === null || primary.blockedReason !== null ? null : primary;
 };
 
-export const branchActionsOf = (params: Params): BranchActions => ({
-  primary: primaryOf(params),
-  secondary: secondaryOf(params),
-});
+export const branchActionsOf = (params: Params): BranchActions => {
+  const push = pushOf(params);
+  if (push === null) {
+    return { primary: primaryOf(params), secondary: followUpOf(params) };
+  }
+  return push.blockedReason !== null || params.hasOpenRebaseStop || params.state === 'queued'
+    ? { primary: null, secondary: push }
+    : { primary: push, secondary: null };
+};
 
 export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
   'pullRequest.merge',

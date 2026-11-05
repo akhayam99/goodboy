@@ -450,7 +450,7 @@ describe('BranchHeader actions by state', () => {
     screen.getByRole('menuitem', { name: /Cancel auto-merge/ });
   });
 
-  it('puts Push N as the secondary ahead of Publish and Retry, counting commits ahead of origin', () => {
+  it('puts Push N as the primary ahead of Publish and Retry, counting commits ahead of origin', () => {
     withMountPr();
     status = statusOf({});
     renderHeader({
@@ -466,8 +466,8 @@ describe('BranchHeader actions by state', () => {
 
     expect(
       screen.getByRole('button', { name: /^Push 3 commits$/ }).getAttribute('data-variant'),
-    ).toBe('secondary');
-    expect(secondaries()).toHaveLength(1);
+    ).toBe('primary');
+    expect(secondaries()).toHaveLength(0);
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
   });
@@ -489,7 +489,7 @@ describe('BranchHeader actions by state', () => {
     screen.getByRole('button', { name: 'Retry push' });
   });
 
-  it('keeps the push next to the primary, secondary first', () => {
+  it('leads with the push over a pull request ready to merge', () => {
     const open: PullRequestState = { ...PR, isDraft: false };
     withRequest(open);
     status = statusOf({});
@@ -505,11 +505,32 @@ describe('BranchHeader actions by state', () => {
       nextStep: 'merge',
     });
 
-    const push = screen.getByRole('button', { name: /^Push 3 commits$/ });
-    const primary = primaries()[0] as HTMLElement;
-    const more = screen.getByRole('button', { name: 'Branch actions' });
-    expect(push.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(primaries()).toHaveLength(1);
+    expect(primaries()[0]?.textContent).toContain('Push 3 commits');
+    expect(secondaries()).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /merge/i })).toBeNull();
+  });
+
+  it('shows only the running push while commits go up', () => {
+    const open: PullRequestState = { ...PR, isDraft: false };
+    withRequest(open);
+    status = statusOf({});
+    renderHeader({
+      pr: open,
+      review: {
+        accepted: 1,
+        replies: 0,
+        failed: 0,
+        isPushing: true,
+        push: { state: 'busy', count: 0 },
+      },
+      nextStep: 'merge',
+    });
+
+    expect(primaries()).toHaveLength(0);
+    expect(secondaries()).toHaveLength(1);
+    expect(secondaries()[0]?.textContent).toContain('Pushing');
+    expect(screen.queryByRole('button', { name: /merge/i })).toBeNull();
   });
 
   it('keeps Abort rebase off the header and its menu while a rebase stopped, the status line owns it', () => {

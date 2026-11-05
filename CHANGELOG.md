@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.11
+
+Commits on your machine go up before anything else.
+
+### Fixed
+
+- With commits not pushed, Push is the primary on a pull request and the merge waits, Blocked in the Merge cell. <!-- gb area=review -->
+
 ## Goodboy v0.31.10
 
 A run shows what it is doing right after the last step.

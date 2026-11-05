@@ -184,6 +184,20 @@ describe('the pull request page scenes', () => {
     expect(base.textContent).not.toContain('[]');
   });
 
+  it('leads with the push and blocks the merge while commits are not pushed', async () => {
+    answerWith({ behind: 0, unpushed: 3 });
+    draw({ name: 'branch-pr-merge-methods' });
+
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
+      ).toBe('diff.push'),
+    );
+    await waitFor(() => expect(cellText({ id: 'merge' })).toContain('3 commits not pushed'));
+    expect(cellText({ id: 'merge' })).toContain('Blocked');
+    expect(document.querySelector('[data-branch-secondary]')).toBeNull();
+  });
+
   it('branch-pr-merge-blocked says in Readiness why Merge cannot run', async () => {
     answerWith({ behind: 0 });
     draw({ name: 'branch-pr-merge-blocked' });

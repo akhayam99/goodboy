@@ -25,6 +25,7 @@ const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
   sessionId: 'session-harborline' as SessionId,
   mountId: null,
   isRebaseStopOpen: false,
+  unpushed: 0,
   host: 'github',
   pr: PR,
   number: 318,

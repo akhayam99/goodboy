@@ -38,6 +38,7 @@ import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
 import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { describePrWriteInFlight } from '../../review/prLifecycle';
 import { hasOpenRebaseStopOf } from '../../branch/hasOpenRebaseStopOf';
+import { unpushedCommitsOf } from '../../branch/unpushedCommitsOf';
 import {
   evaluatePrMergeReadiness,
   mergeIsClear,
@@ -607,6 +608,8 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
         sessionId: target.sessionId,
         mountId: mountId ?? selectActiveMountId({ state, sessionId: target.sessionId }),
       }),
+      unpushed:
+        target.unpushed ?? unpushedCommitsOf({ state, sessionId: target.sessionId, mountId }),
       ...signals,
       ...(view === null
         ? {}

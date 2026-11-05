@@ -159,6 +159,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     sessionId,
     mountId: historyMountId,
     isRebaseStopOpen: hasOpenRebaseStop,
+    unpushed: start.step.unpushed,
   });
   const mergeMethod = useAppStore(
     (s) =>
@@ -170,10 +171,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       })?.view?.mergeMethods[0],
   );
   const mergeWord = MERGE_METHOD_LABEL[mergeMethod ?? 'squash'];
-  const onlineAhead =
-    diff.status !== null && diff.status.upstreamDistance.kind === 'known'
-      ? diff.status.upstreamDistance.behind
-      : 0;
+  const onlineAhead = start.step.originOnly ?? 0;
   const branchFacts = useMemo(
     () => ({
       ahead: start.step.ahead ?? 0,

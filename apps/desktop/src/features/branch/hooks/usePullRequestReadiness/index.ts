@@ -21,6 +21,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId | null;
   readonly isRebaseStopOpen: boolean;
+  readonly unpushed?: number;
 };
 
 export type PullRequestReadiness = {
@@ -37,6 +38,7 @@ export const usePullRequestReadiness = ({
   sessionId,
   mountId,
   isRebaseStopOpen,
+  unpushed = 0,
 }: Params): PullRequestReadiness => {
   const githubState = useAppStore((state) => branchGithubOf({ state, sessionId, mountId }));
   const pr = useAppStore((state) => sessionPullRequestOf({ state, sessionId, mountId }));
@@ -59,6 +61,7 @@ export const usePullRequestReadiness = ({
       threads,
       mergeView: view,
       isRebaseStopOpen,
+      unpushed,
     });
     const detail = github?.detail ?? null;
     const reviewers =
@@ -72,5 +75,5 @@ export const usePullRequestReadiness = ({
       commentsUnread: reviewCounts({ threads: [], unread }).unread,
       reviewers: pullRequestReviewerGroupsOf({ reviewers }),
     };
-  }, [github, host, isRebaseStopOpen, sessionId, threads, unread, view]);
+  }, [github, host, isRebaseStopOpen, sessionId, threads, unpushed, unread, view]);
 };

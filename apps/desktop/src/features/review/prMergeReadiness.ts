@@ -30,6 +30,7 @@ export type MergeReadinessFacts = {
   readonly isFixRunLive: boolean;
   readonly host?: ReviewSourceKind;
   readonly isRebaseStopOpen?: boolean;
+  readonly unpushed?: number;
 };
 
 const MERGE_CHECKED_BY_HOST = 'Bitbucket checks this when you merge';
@@ -113,11 +114,24 @@ const conflictBlocker = ({ facts, base }: ConflictParams): string | null => {
     : `Conflicts with ${base}. Rebase on ${base} from the Branch header.`;
 };
 
+const unpushedOf = ({ facts }: FactsParams): string | null => {
+  const count = facts.unpushed ?? 0;
+  return facts.phase === 'open' && count > 0
+    ? `${countNoun({ count, one: 'commit', many: 'commits' })} not pushed`
+    : null;
+};
+
+const unpushedBlocker = ({ facts }: FactsParams): string | null => {
+  const unpushed = unpushedOf({ facts });
+  return unpushed === null ? null : `${unpushed}. Push before you merge.`;
+};
+
 const blockersOf = ({ facts }: { readonly facts: MergeReadinessFacts }): ReadonlyArray<string> => {
   const base = baseOf({ facts });
   const found = [
     facts.writeInFlight === null ? null : `${facts.writeInFlight}.`,
     phaseBlocker({ facts }),
+    unpushedBlocker({ facts }),
     conflictBlocker({ facts, base }),
     checksBlocker({ facts }),
     reviewBlocker({ facts }),
@@ -165,6 +179,10 @@ const blockedWord = ({ facts }: { readonly facts: MergeReadinessFacts }): string
   }
   if (facts.hasConflicts) {
     return `Blocked: conflicts with ${baseOf({ facts })}`;
+  }
+  const unpushed = unpushedOf({ facts });
+  if (unpushed !== null) {
+    return `Blocked: ${unpushed}`;
   }
   if (facts.checks === 'unknown') {
     return 'Blocked: checks unknown';

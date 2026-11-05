@@ -45,6 +45,7 @@ export type PullRequestFacts = {
   readonly mergeMethodReasons: Readonly<Partial<Record<PrMergeMethod, string>>>;
   readonly commitCount: number | null;
   readonly isRebaseStopOpen: boolean;
+  readonly unpushed: number;
 };
 
 type FixSignals = {
@@ -91,6 +92,7 @@ type Params = {
   readonly mergeMethodReasons?: Readonly<Partial<Record<PrMergeMethod, string>>>;
   readonly commitCount?: number | null;
   readonly isRebaseStopOpen?: boolean;
+  readonly unpushed?: number;
 };
 
 const phaseOf = ({ pr }: { readonly pr: PullRequestState | null }): PullRequestPhase => {
@@ -173,6 +175,7 @@ export const pullRequestFacts = ({
   mergeMethodReasons = {},
   commitCount = null,
   isRebaseStopOpen = false,
+  unpushed = 0,
 }: Params): PullRequestFacts => {
   const runs = checks ?? [];
   const groups = checksGroupsOf({ checks: runs });
@@ -203,6 +206,7 @@ export const pullRequestFacts = ({
     mergeMethodReasons,
     commitCount,
     isRebaseStopOpen,
+    unpushed,
   };
 };
 
@@ -213,6 +217,7 @@ type SessionMergeParams = {
   readonly threads: ReadonlyArray<ResolveThread>;
   readonly mergeView?: PullRequestView | null;
   readonly isRebaseStopOpen?: boolean;
+  readonly unpushed?: number;
 };
 
 export const sessionMergeFacts = ({
@@ -222,6 +227,7 @@ export const sessionMergeFacts = ({
   threads,
   mergeView = null,
   isRebaseStopOpen = false,
+  unpushed = 0,
 }: SessionMergeParams): PullRequestFacts => {
   const pr = github?.pr ?? null;
   const detail =
@@ -238,6 +244,7 @@ export const sessionMergeFacts = ({
     writeInFlight: null,
     isScribeWriting: false,
     isRebaseStopOpen,
+    unpushed,
     ...fixSignalsOf({ threads }),
     ...(mergeView === null
       ? {}

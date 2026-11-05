@@ -110,10 +110,11 @@ describe('Branch page capabilities from the branch tree', () => {
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
   });
 
-  it('the header primary follows the state: Mark ready for review on a draft', async () => {
+  it('the header primary follows the state: a draft with commits to push pushes first', async () => {
     await mount('c04-worktree-pr-draft');
 
-    expect(document.querySelector('[data-branch-primary="pullRequest.markReady"]')).not.toBeNull();
+    expect(document.querySelector('[data-branch-primary="diff.push"]')).not.toBeNull();
+    expect(document.querySelector('[data-branch-primary="pullRequest.markReady"]')).toBeNull();
   });
 
   it('merge readiness reads in words in the Merge cell of the status strip', async () => {

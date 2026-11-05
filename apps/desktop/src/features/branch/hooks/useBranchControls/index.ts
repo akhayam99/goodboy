@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProjectId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { branchPushFactsOf } from '../../../../shared/lib/branchPushState';
 import { mainBehindOf } from '../../../../shared/lib/gitStatus';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
@@ -120,9 +121,10 @@ export const useBranchControls = ({
       sessionId,
       mountId,
       prNumber: pr?.number ?? null,
+      unpushed: branchPushFactsOf({ status: diff.status }).toPush,
       ...(remoteHost === undefined ? {} : { host: remoteHost }),
     }),
-    [mountId, pr?.number, remoteHost, sessionId],
+    [diff.status, mountId, pr?.number, remoteHost, sessionId],
   );
   const scopeKey = `${sessionId}:${worktreePath ?? ''}`;
   const diffControls = useActionControls({ target: diffTarget, scopeKey });
