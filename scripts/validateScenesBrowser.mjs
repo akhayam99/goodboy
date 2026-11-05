@@ -51,9 +51,9 @@ export const readDevToolsPort = async ({
   const path = join(profile, 'DevToolsActivePort');
   const attempts = Math.max(1, Math.ceil(timeoutMs / PORT_FILE_POLL_MS));
   for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (hasExited()) throw new Error('Chrome exited before DevTools was ready');
     const port = parseDevToolsPort({ text: tryRead({ read, path }) });
     if (port !== null) return port;
-    if (hasExited()) throw new Error('Chrome exited before it wrote DevToolsActivePort');
     await pause(PORT_FILE_POLL_MS);
   }
   throw new Error(`Chrome did not write DevToolsActivePort in ${Math.round(timeoutMs / 1000)}s`);
