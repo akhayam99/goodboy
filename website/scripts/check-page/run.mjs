@@ -42,6 +42,7 @@ export const run = async () => {
   let featuresIds = null;
   try {
     await cdp.send('Page.enable');
+    await cdp.send('Runtime.enable');
     await cdp.send('Network.enable');
     await cdp.send('Network.setBlockedURLs', { urls: BLOCKED_URLS });
     for (const url of urls) {
@@ -61,10 +62,16 @@ export const run = async () => {
           await cdp.send('Emulation.setEmulatedMedia', {
             features: [{ name: 'prefers-color-scheme', value: theme }],
           });
+          cdp.takeErrors();
           await cdp.send('Page.navigate', { url });
           await sleep(SETTLE_MS);
           await scrollThrough(cdp);
           await sleep(SETTLE_MS);
+          failures.push(
+            ...cdp
+              .takeErrors()
+              .map((error) => `${page} ${viewport.name} ${theme}: console error: ${error}`),
+          );
           const probe = await cdp.evaluate(PAGE_PROBE);
           const rules = await cdp.evaluate(rulesProbe);
           const touch = viewport.isTouch === true ? await cdp.evaluate(TOUCH_PROBE) : null;
