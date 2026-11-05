@@ -2,11 +2,13 @@ import './NavMenu.css';
 import { useEffect, useRef, useState } from 'react';
 import { StarButton } from './StarButton';
 import { ThemeToggle } from './ThemeToggle';
+import type { TrackAttributes } from '../lib/trackAttributes';
 
 export type NavMenuLink = {
   readonly label: string;
   readonly href: string;
   readonly isCurrent?: boolean;
+  readonly track?: TrackAttributes;
 };
 
 type Props = {
@@ -86,6 +88,7 @@ export const NavMenu = ({ links }: Props) => {
               key={link.href}
               href={link.href}
               aria-current={link.isCurrent === true ? 'page' : undefined}
+              {...link.track}
             >
               {link.label}
             </a>
@@ -96,7 +99,7 @@ export const NavMenu = ({ links }: Props) => {
           <ThemeToggle />
         </div>
         <div className="navSheetAction onlyCoarse">
-          <StarButton />
+          <StarButton location="nav_sheet" />
         </div>
       </div>
     </span>

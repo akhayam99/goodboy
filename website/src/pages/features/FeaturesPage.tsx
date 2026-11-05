@@ -32,7 +32,7 @@ export const FeaturesPage = () => {
               level={1}
             >
               <div className="ctaRow ftHeadLinks">
-                <StarButton />
+                <StarButton location="features" />
                 <a className="refLink" href={SITE.docs}>
                   Full reference
                 </a>

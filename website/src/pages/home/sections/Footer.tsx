@@ -2,11 +2,13 @@ import './Footer.css';
 import { Logo } from '../../../components/Logo';
 import { LATEST_VERSION } from '../../../data/latestVersion';
 import { SITE } from '../../../lib/site';
+import { trackAttributes, type TrackAttributes } from '../../../lib/trackAttributes';
 
 type FooterLink = {
   readonly label: string;
   readonly href: string;
   readonly className?: string;
+  readonly track?: TrackAttributes;
 };
 
 type Column = {
@@ -19,7 +21,11 @@ const COLUMNS: readonly Column[] = [
     title: 'Product',
     links: [
       { label: 'All features', href: SITE.features },
-      { label: 'Live demo', href: SITE.demo },
+      {
+        label: 'Live demo',
+        href: SITE.demo,
+        track: trackAttributes({ event: 'demo_click', params: { cta_location: 'footer' } }),
+      },
       { label: 'How it works', href: SITE.howItWorks },
       { label: 'Workflows', href: `${SITE.features}#workflows` },
       { label: 'Changelog', href: SITE.changelog },
@@ -69,7 +75,7 @@ export const Footer = () => (
             <nav key={column.title} className="footerColumn" aria-label={column.title}>
               <p className="footerTitle">{column.title}</p>
               {column.links.map((link) => (
-                <a key={link.label} href={link.href} className={link.className}>
+                <a key={link.label} href={link.href} className={link.className} {...link.track}>
                   {link.label}
                 </a>
               ))}

@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Chapter } from '../../../components/Chapter';
 import { StarButton } from '../../../components/StarButton';
 import { useDownloads } from '../../../hooks/useDownloads';
+import { downloadTrack } from '../../../lib/downloadTrack';
 import { SITE } from '../../../lib/site';
+import { trackAttributes } from '../../../lib/trackAttributes';
 
 const COPIED_MS = 1500;
 
 export const Install = () => {
-  const { platform, urls, primary } = useDownloads();
+  const { platform, urls, versions, primary } = useDownloads();
   const step =
     platform === 'linux' ? 'Get Goodboy for your Linux computer.' : 'Get Goodboy for your Mac.';
   const [isCopied, setIsCopied] = useState(false);
@@ -53,27 +55,73 @@ export const Install = () => {
       <div className="install">
         <div className="installCta" data-reveal="">
           <div className="onlyFine">
-            <a className="btn installMain" href={primary.href} data-download>
+            <a
+              className="btn installMain"
+              href={primary.href}
+              data-download
+              {...downloadTrack({
+                os: primary.os,
+                packageName: primary.packageName,
+                location: 'install',
+                version: primary.version,
+              })}
+            >
               {primary.label}
             </a>
             <p className="installAlt">
               {platform === 'linux' ? (
                 <>
                   Also as{' '}
-                  <a href={urls.deb} data-download>
+                  <a
+                    href={urls.deb}
+                    data-download
+                    {...downloadTrack({
+                      os: 'linux',
+                      packageName: 'deb',
+                      location: 'install',
+                      version: versions.deb,
+                    })}
+                  >
                     .deb
                   </a>{' '}
                   and{' '}
-                  <a href={urls.rpm} data-download>
+                  <a
+                    href={urls.rpm}
+                    data-download
+                    {...downloadTrack({
+                      os: 'linux',
+                      packageName: 'rpm',
+                      location: 'install',
+                      version: versions.rpm,
+                    })}
+                  >
                     .rpm
                   </a>
                   .{' '}
-                  <a href={urls.dmg} data-download>
+                  <a
+                    href={urls.dmg}
+                    data-download
+                    {...downloadTrack({
+                      os: 'macos',
+                      packageName: 'dmg',
+                      location: 'install',
+                      version: versions.dmg,
+                    })}
+                  >
                     macOS build
                   </a>
                 </>
               ) : (
-                <a href={urls.appimage} data-download>
+                <a
+                  href={urls.appimage}
+                  data-download
+                  {...downloadTrack({
+                    os: 'linux',
+                    packageName: 'appimage',
+                    location: 'install',
+                    version: versions.appimage,
+                  })}
+                >
                   Linux build
                 </a>
               )}
@@ -81,17 +129,32 @@ export const Install = () => {
             {platform === 'mac' ? (
               <p className="installBrew">
                 <span className="installDim">or with Homebrew</span> <code>{SITE.brew}</code>{' '}
-                <button type="button" onClick={handleCopy} aria-live="polite">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  aria-live="polite"
+                  {...trackAttributes({
+                    event: 'copy_install_command',
+                    params: { install_method: 'brew' },
+                  })}
+                >
                   {isCopied ? 'Copied' : 'Copy'}
                 </button>
               </p>
             ) : null}
             <p className="installAlt">
-              Not ready to install? <a href={SITE.demo}>Try the live demo</a> in your browser.
+              Not ready to install?{' '}
+              <a
+                href={SITE.demo}
+                {...trackAttributes({ event: 'demo_click', params: { cta_location: 'install' } })}
+              >
+                Try the live demo
+              </a>{' '}
+              in your browser.
             </p>
           </div>
           <div className="onlyCoarse">
-            <StarButton />
+            <StarButton location="install" />
             <p className="installAlt">
               Goodboy runs on macOS and Linux. Star it now and find it on your computer later.
             </p>
