@@ -7,6 +7,7 @@ import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRes
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
 import { decisionEntries } from '../../../workflows/decisionEntries';
+import { isBetweenStepsPhase } from '../../../workflows/isBetweenStepsPhase';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
 import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
@@ -87,7 +88,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     >
       {placement === 'before-state' ? questionCluster : null}
       <div className="flex min-w-0 flex-col gap-1">
-        {isMountBlocked ? null : (
+        {isMountBlocked || isBetweenStepsPhase({ phase }) ? null : (
           <TailLine
             facts={{
               state: tail.state,

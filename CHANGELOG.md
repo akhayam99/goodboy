@@ -12,6 +12,21 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.10
+
+A run shows what it is doing right after the last step.
+
+### Improved
+
+#### The working row of a run
+<!-- gb area=workflows -->
+
+While an orchestrated run picks its next step, the moving row sits right after the last step and above the planned ones, not under the page.
+
+### Fixed
+
+- A plan with a badly closed block no longer nests every decision inside the one before it. <!-- gb area=agents -->
+
 ## Goodboy v0.31.9
 
 The branch page says each thing once.

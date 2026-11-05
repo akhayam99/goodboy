@@ -11,6 +11,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { nextWorkflowRunId } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { brandId, type IsoDateTime } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -179,12 +180,35 @@ describe('the c09 orchestrated scenes', () => {
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
   });
 
-  it('c09-orch-reading shows the hint being read and the next step not decided', async () => {
+  it('draws no running row on a discarded run', async () => {
+    await mount('c09-orch-reading');
+    expect(checklist().querySelector('[data-plan-row="now"]')).not.toBeNull();
+
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessions: state.sessions.map((session) => ({
+          ...session,
+          workflowRuns: session.workflowRuns?.map((run) => ({
+            ...run,
+            discardedAt: brandId<IsoDateTime>({ value: '2026-11-05T10:00:00.000Z' }),
+          })),
+        })),
+      }));
+    });
+
+    expect(checklist().querySelector('[data-plan-row="now"]')).toBeNull();
+  });
+
+  it('c09-orch-reading shows the hint being read and the running row after the steps', async () => {
     await mount('c09-orch-reading');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('deciding');
-    expect(within(tail()).getByText('Choosing the next step')).toBeDefined();
-    expect(within(checklist()).getByText('Next step, not decided yet')).toBeDefined();
+    expect(tail().querySelector('[data-tail]')).toBeNull();
+    const rows = [...checklist().querySelectorAll<HTMLElement>('[data-plan-row]')].map(
+      (row) => row.dataset.planRow,
+    );
+    expect(rows.filter((row) => row !== 'hint')[0]).toBe('now');
+    expect(within(checklist()).getByRole('status').textContent).toBe('Choosing the next step');
     const queued = screen.getByRole('list', { name: 'Queued hints' });
     expect(within(queued).getByText('Reading now')).toBeDefined();
     expect(within(queued).getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(

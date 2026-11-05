@@ -45,7 +45,7 @@ describe('orchestratedChecklistOf', () => {
       agents: [SECOND, FIRST],
       hints: [hintOf({ key: 'a', step: 2 }), hintOf({ key: 'b', step: 2 }), hintOf({ key: 'c' })],
       summary: SUMMARY,
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(list.readHintsBefore.get(SECOND.id)?.map((hint) => hint.id)).toEqual(['a', 'b']);
@@ -58,7 +58,7 @@ describe('orchestratedChecklistOf', () => {
       agents: [FIRST],
       hints: [hintOf({ key: 'a', step: 2 })],
       summary: null,
-      isDeciding: true,
+      isBetweenSteps: true,
       isDone: false,
     });
     expect(list.trailingHints.map((hint) => hint.id)).toEqual(['a']);
@@ -77,7 +77,7 @@ describe('orchestratedChecklistOf', () => {
       agents: [FIRST],
       hints: [legacy, hintOf({ key: 'a', step: 2 }), hintOf({ key: 'queued' })],
       summary: null,
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(list.trailingHints.map((hint) => hint.id)).toEqual(['a', 'legacy']);
@@ -89,7 +89,7 @@ describe('orchestratedChecklistOf', () => {
       agents: [FIRST],
       hints: [],
       summary: SUMMARY,
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(live.left).toEqual([{ text: 'Prove the batching', role: 'tester' }]);
@@ -97,7 +97,7 @@ describe('orchestratedChecklistOf', () => {
       agents: [FIRST],
       hints: [],
       summary: SUMMARY,
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: true,
     });
     expect(done.left).toEqual([]);
@@ -109,7 +109,7 @@ describe('orchestratedChecklistOf', () => {
       agents: [FIRST],
       hints: [],
       summary: SUMMARY,
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(list.left.map((item) => item.text)).toEqual(['Prove the batching']);
@@ -134,7 +134,7 @@ describe('orchestratedChecklistOf', () => {
           'Prove the  batching': 'tester',
         },
       },
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(list.left.map((item) => item.text)).toEqual(['Prove the batching']);
@@ -151,7 +151,7 @@ describe('orchestratedChecklistOf', () => {
         left: ['Verify the checks and open the draft PR'],
         leftRoles: {},
       },
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(list.notes).toEqual([]);
@@ -171,7 +171,7 @@ describe('orchestratedChecklistOf', () => {
           'Add tests for invalid payments': 'tester',
         },
       },
-      isDeciding: false,
+      isBetweenSteps: false,
       isDone: false,
     });
     expect(list.left.map((item) => item.text)).toEqual([

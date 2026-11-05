@@ -6,7 +6,7 @@ import { agentKindPalette, kindForRole } from '../../agent-kind';
 import { OrchestratedPlanSlot } from './OrchestratedPlanSlot';
 
 type Props = {
-  readonly kind: 'next' | 'left' | 'skipped';
+  readonly kind: 'left' | 'skipped';
   readonly label: string;
   readonly role?: AgentRole | null;
   readonly slotWidth: number;
@@ -17,10 +17,7 @@ export const OrchestratedPlanRow = ({ kind, label, role = null, slotWidth }: Pro
   return (
     <div data-plan-row={kind} className="flex h-8 min-w-0 items-center">
       <OrchestratedPlanSlot slotWidth={slotWidth}>
-        <CircleDashed
-          size={ICON_SIZE.mark}
-          className={kind === 'next' ? 'text-info' : 'text-faint-foreground'}
-        />
+        <CircleDashed size={ICON_SIZE.mark} className="text-faint-foreground" />
       </OrchestratedPlanSlot>
       <span className="flex min-w-0 flex-1 items-center gap-2 px-2 text-ui">
         <span className="w-14 shrink-0" />
