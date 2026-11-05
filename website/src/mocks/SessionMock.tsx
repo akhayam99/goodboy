@@ -1,15 +1,6 @@
 import './SessionMock.css';
 import { MockStage } from './MockStage';
-import {
-  Database,
-  FileText,
-  FolderTree,
-  Inbox,
-  MessageCircle,
-  Plus,
-  SquareKanban,
-  Waypoints,
-} from './generated/icons';
+import { Plus, Waypoints } from './generated/icons';
 import {
   AppButton,
   AppRow,
@@ -19,204 +10,14 @@ import {
   RunTree,
   StartsInChip,
   WorkNode,
-  type RailGroupInput,
-  type RunTreeRowData,
-  type WorkNodeState,
   useIsCoarse,
 } from './kit';
-
-const HEADING = 'Now';
-
-const TOOLS = [MessageCircle, FileText, FolderTree, Database] as const;
-
-const ROWS: ReadonlyArray<RunTreeRowData> = [
-  {
-    id: 'step-5',
-    stepLabel: '5',
-    kind: 'tester',
-    title: 'Replay one event three times',
-    phase: 'queued',
-    routing: { provider: 'anthropic', name: 'Sonnet 5', isPlanned: true },
-  },
-  {
-    id: 'step-4-2',
-    stepLabel: '4.2',
-    kind: 'debugger',
-    title: 'Pick the retry limit',
-    phase: 'waiting',
-    reason: { kind: 'question', stepLabel: '4.2' },
-    groupId: 'fan-4',
-    isNested: true,
-    gap: 'sibling',
-    routing: { provider: 'anthropic', name: 'Sonnet 5.5', detail: 'Medium' },
-    time: '6m',
-    cost: '$0.04',
-  },
-  {
-    id: 'step-4-1',
-    stepLabel: '4.1',
-    kind: 'reviewer',
-    title: 'Check the attempt counter against the spec',
-    phase: 'failed',
-    reason: { kind: 'stepFailed', stepLabel: '4.1' },
-    groupId: 'fan-4',
-    isNested: true,
-    gap: 'sibling',
-    routing: { provider: 'codex', name: 'GPT-5.6 Terra' },
-    time: '2m',
-    cost: '$0.03',
-  },
-  {
-    id: 'step-4',
-    stepLabel: '4',
-    kind: 'implementer',
-    title: 'Record the attempts on each delivery in notify-relay',
-    phase: 'running',
-    gap: 'sibling',
-    routing: { provider: 'moonshot', name: 'Kimi K3', detail: 'Low' },
-    time: '46m',
-    cost: '$0.23',
-  },
-  {
-    id: 'step-3',
-    stepLabel: '3',
-    kind: 'implementer',
-    title: 'Dedupe on the event id in payments-api',
-    phase: 'done',
-    gap: 'sibling',
-    isSelected: true,
-    routing: { provider: 'codex', name: 'GPT-5.6 Sol', detail: 'Medium' },
-    cost: '$0.94',
-  },
-  {
-    id: 'step-2',
-    stepLabel: '2',
-    kind: 'planner',
-    title: 'Agree where the dedupe belongs',
-    phase: 'done',
-    gap: 'sibling',
-    routing: { provider: 'anthropic', name: 'Opus 5.5', detail: 'High' },
-    cost: '$1.28',
-  },
-  {
-    id: 'step-1-3',
-    stepLabel: '1.3',
-    kind: 'scout',
-    title: 'Check the retry notices in notify-relay',
-    phase: 'done',
-    groupId: 'fan-1',
-    isNested: true,
-    gap: 'sibling',
-    routing: { provider: 'cursor', name: 'Composer 2.5' },
-    cost: '$0.01',
-  },
-  {
-    id: 'step-1-2',
-    stepLabel: '1.2',
-    kind: 'scout',
-    title: 'Read the webhook handler in payments-api',
-    phase: 'done',
-    groupId: 'fan-1',
-    isNested: true,
-    gap: 'sibling',
-    routing: { provider: 'codex', name: 'GPT-5.6 Terra' },
-    cost: '$0.06',
-  },
-  {
-    id: 'step-1-1',
-    stepLabel: '1.1',
-    kind: 'scout',
-    title: 'Read the posting path in ledger-core',
-    phase: 'done',
-    groupId: 'fan-1',
-    isNested: true,
-    gap: 'sibling',
-    routing: { provider: 'anthropic', name: 'Sonnet 5' },
-    cost: '$0.02',
-  },
-  {
-    id: 'step-1',
-    stepLabel: '1',
-    kind: 'scout',
-    title: 'Trace where a retried webhook posts',
-    phase: 'done',
-    gap: 'sibling',
-    routing: { provider: 'cursor', name: 'Composer 2.5' },
-    cost: '$0.13',
-  },
-];
-
-type SessionRowData = {
-  readonly id: string;
-  readonly title: string;
-  readonly state: WorkNodeState;
-  readonly stateLabel: string;
-  readonly isSelected?: boolean;
-};
-
-const DOORS = [
-  { label: 'Board', Icon: SquareKanban },
-  { label: 'Tasks', Icon: Inbox },
-  { label: 'Chat', Icon: MessageCircle },
-  { label: 'Workflows', Icon: Waypoints },
-] as const;
-
-const SESSIONS: ReadonlyArray<SessionRowData> = [
-  {
-    id: 'duplicate-credit',
-    title: 'Duplicate credit fix',
-    state: 'question',
-    stateLabel: 'Needs you',
-    isSelected: true,
-  },
-  {
-    id: 'payout-export',
-    title: 'Speed up the payout export',
-    state: 'running',
-    stateLabel: 'Running',
-  },
-  {
-    id: 'retried-webhooks',
-    title: 'Stop retried webhooks posting a second credit',
-    state: 'done',
-    stateLabel: 'Done',
-  },
-  {
-    id: 'signing-secret',
-    title: 'Rotate the processor signing secret',
-    state: 'queued',
-    stateLabel: 'Idle',
-  },
-];
-
-const PHONE_ROW_IDS: ReadonlySet<string> = new Set([
-  'step-5',
-  'step-4-2',
-  'step-4-1',
-  'step-4',
-  'step-3',
-]);
-
-const PHONE_ROWS: ReadonlyArray<RunTreeRowData> = ROWS.filter((row) => PHONE_ROW_IDS.has(row.id));
-
-const GROUPS: ReadonlyArray<RailGroupInput> = [
-  {
-    id: 'fan-4',
-    parentGroupId: null,
-    identityIndex: 1,
-    isMuted: false,
-    originRowId: 'step-4',
-    shape: 'merged',
-  },
-  {
-    id: 'fan-1',
-    parentGroupId: null,
-    identityIndex: 2,
-    isMuted: false,
-    originRowId: 'step-1',
-    shape: 'merged',
-  },
-];
+import { SESSION_DOORS } from './SESSION_DOORS';
+import { SESSION_GROUPS } from './SESSION_GROUPS';
+import { SESSION_LIST } from './SESSION_LIST';
+import { SESSION_PHONE_ROWS } from './SESSION_PHONE_ROWS';
+import { SESSION_ROWS } from './SESSION_ROWS';
+import { SESSION_TOOLS } from './SESSION_TOOLS';
 
 export const SessionMock = () => {
   const isCoarse = useIsCoarse();
@@ -249,7 +50,7 @@ export const SessionMock = () => {
               New session
             </AppButton>
             <div className="smDoors">
-              {DOORS.map(({ label, Icon }) => (
+              {SESSION_DOORS.map(({ label, Icon }) => (
                 <span key={label} className="smDoor">
                   <Icon size={14} />
                   {label}
@@ -258,7 +59,7 @@ export const SessionMock = () => {
             </div>
             <GroupLabel label="Sessions" muted className="smColLabel" />
             <div className="smSessions">
-              {SESSIONS.map((session) => (
+              {SESSION_LIST.map((session) => (
                 <AppRow
                   key={session.id}
                   isSelected={session.isSelected}
@@ -291,15 +92,15 @@ export const SessionMock = () => {
             </div>
             <RunTree
               className="smTree"
-              rows={isCoarse ? PHONE_ROWS : ROWS}
-              groups={GROUPS}
+              rows={isCoarse ? SESSION_PHONE_ROWS : SESSION_ROWS}
+              groups={SESSION_GROUPS}
               hasSpine
-              heading={HEADING}
+              heading="Now"
               label="Steps"
             />
           </div>
           <div className="smTools" aria-hidden="true">
-            {TOOLS.map((Tool, index) => (
+            {SESSION_TOOLS.map((Tool, index) => (
               <span key={index} className="smTool">
                 <Tool size={14} />
               </span>
