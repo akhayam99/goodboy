@@ -1,3 +1,4 @@
+import { planAwaitsYou } from './planAwaitsYou';
 import type { Agent, AgentId } from '@goodboy/types';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
@@ -69,11 +70,8 @@ type ViewParams = {
 };
 
 const planOf = ({ view }: ViewParams): AutoPlanFacts | null => {
-  const row = view.artifacts.find(
-    (candidate) =>
-      candidate.artifact.kind === 'plan' &&
-      candidate.artifact.approvalState === 'needs_approval' &&
-      candidate.artifact.openReviseDelegationId === null,
+  const row = view.artifacts.find((candidate) =>
+    planAwaitsYou({ row: candidate, level: view.level }),
   );
   if (row === undefined || row.title.trim() === '') {
     return null;

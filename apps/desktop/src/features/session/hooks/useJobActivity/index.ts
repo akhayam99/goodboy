@@ -7,6 +7,7 @@ import {
 } from '../../../../store/slices/history/jobFactsByAgentId';
 import { resolveMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { useCiFixActivity } from '../useCiFixActivity';
+import { useOpenStopMountIds } from '../useOpenStopMountIds';
 
 export type JobActivity = {
   readonly factsByAgentId: ReadonlyMap<string, JobActivityFacts>;
@@ -23,6 +24,8 @@ export const useJobActivity = ({ sessionId }: UseJobActivityParams): JobActivity
   const mounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY);
   const projects = useAppStore((s) => s.projects);
   const ciFixFacts = useCiFixActivity({ sessionId });
+  const settled = useAppStore((s) => s.settledRebaseStops[sessionId] ?? EMPTY_ARRAY);
+  const openMountIds = useOpenStopMountIds({ sessionId });
   return useMemo(
     () => ({
       factsByAgentId: new Map([
@@ -31,6 +34,8 @@ export const useJobActivity = ({ sessionId }: UseJobActivityParams): JobActivity
           historyRuns,
           scribeWork,
           events,
+          settledStopIds: new Set(settled),
+          openMountIds,
           contextOf: ({ mountId }) => {
             const mount = mounts.find((candidate) => candidate.mountId === mountId) ?? null;
             return {
@@ -42,6 +47,16 @@ export const useJobActivity = ({ sessionId }: UseJobActivityParams): JobActivity
         ...ciFixFacts,
       ]),
     }),
-    [ciFixFacts, events, historyRuns, mounts, projects, scribeWork, sessionId],
+    [
+      ciFixFacts,
+      events,
+      historyRuns,
+      mounts,
+      openMountIds,
+      projects,
+      scribeWork,
+      sessionId,
+      settled,
+    ],
   );
 };

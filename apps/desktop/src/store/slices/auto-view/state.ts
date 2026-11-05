@@ -1,3 +1,4 @@
+import type { AutoLevel } from '@goodboy/core/auto';
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoOutcome, AutoTree } from '@goodboy/db';
 import type { AutoBudgetFacts, MountNote, OutcomeLine } from '@goodboy/core/auto';
 import type { AgentId, MessageAttachment, ProviderRunId, SessionId } from '@goodboy/types';
@@ -13,6 +14,7 @@ export type AutoTreeView = Readonly<{
   droppedMessageIds: ReadonlyArray<string>;
   deliveredResults: ReadonlyArray<AutoDeliveredResult>;
   rootAsk: string | null;
+  level?: AutoLevel;
 }>;
 
 export type AutoDeliveredArtifact = Readonly<{

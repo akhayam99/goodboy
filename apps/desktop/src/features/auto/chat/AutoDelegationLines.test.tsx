@@ -158,6 +158,31 @@ describe('AutoDelegationLines', () => {
     expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
   });
 
+  it('marks the plan used once a writer took it, with no ask left', () => {
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [SETTLED_PLAN],
+        artifacts: [{ ...aPlanRow(), status: 'consumed' }],
+      }),
+    });
+
+    expect(screen.queryByText(/needs your approval/)).toBeNull();
+    expect(screen.getByText('Plan v1 used')).toBeDefined();
+  });
+
+  it('never asks for the plan when Auto asks you nothing', () => {
+    renderLines({
+      view: {
+        ...aView({ phase: 'waiting', delegations: [SETTLED_PLAN], artifacts: [aPlanRow()] }),
+        level: 'run',
+      },
+    });
+
+    expect(screen.queryByText(/needs your approval/)).toBeNull();
+    expect(screen.getByText('Plan v1 · no approval needed')).toBeDefined();
+  });
+
   it('settles the plan card to Plan v1 approved in the artifact tone instead of unmounting', () => {
     renderLines({
       view: aView({

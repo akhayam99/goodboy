@@ -18,6 +18,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
+import { readAutoLevel } from '../../runtime/auto/level/readAutoLevel';
 import { userImagesOf } from '../../runtime/auto/userImagesOf';
 import { deliveredResultsOf } from './deliveredResultsOf';
 import { hiddenChildIdsOf } from './hiddenChildIdsOf';
@@ -96,6 +97,10 @@ export const readAutoTreeViews = async ({
   sessionId,
 }: Params): Promise<ReadonlyArray<AutoTreeView>> => {
   const trees = await listAutoTreesOfSession({ db, sessionId });
+  if (trees.length === 0) {
+    return [];
+  }
+  const level = await readAutoLevel({ db, target: { sessionId } });
   return Promise.all(
     trees.map(async (tree): Promise<AutoTreeView> => {
       const [delegations, goneChildIds, artifacts, spend, pending, accepted, rootAsk] =
@@ -120,6 +125,7 @@ export const readAutoTreeViews = async ({
         droppedMessageIds: droppedMessageIdsOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
         rootAsk,
+        level,
       };
     }),
   );

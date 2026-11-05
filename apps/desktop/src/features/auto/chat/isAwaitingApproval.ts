@@ -5,4 +5,4 @@ type Params = {
 };
 
 export const isAwaitingApproval = ({ link }: Params): boolean =>
-  link.approval !== null && link.approval.state !== 'approved';
+  link.approval?.state === 'needs_approval' || link.approval?.state === 'revising';

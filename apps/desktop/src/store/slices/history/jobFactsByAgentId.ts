@@ -1,5 +1,6 @@
 import type { MountId, SessionEvent, SessionId } from '@goodboy/types';
 import type { CiFixStage } from '../../../features/branch/checks/ciFixStages';
+import { hasHistoryRecovery } from '../../../features/history/historyRecovery';
 import { historyStopCause } from '../../../features/history/historyStopCause';
 import { rebaseJobOf, type RebaseJobTone } from '../../../features/history/rebaseJob';
 import type { ScribeWork } from '../scribe/types';
@@ -32,6 +33,8 @@ type Params = {
   readonly scribeWork: Readonly<Record<string, ScribeWork>>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly contextOf: (params: ContextOfParams) => JobMountContext;
+  readonly settledStopIds?: ReadonlySet<string>;
+  readonly openMountIds?: ReadonlySet<string>;
 };
 
 const PHASE_OF_TONE: Readonly<Record<RebaseJobTone, JobActivityPhase>> = {
@@ -90,14 +93,19 @@ type IsFailureReasonParams = {
 const isFailureReason = ({ reason }: IsFailureReasonParams): boolean =>
   reason === 'failed' || reason === 'push-failed';
 
-type RebaseFactOfEventParams = {
+type RebaseFactOfEventParams = Pick<
+  Params,
+  'events' | 'contextOf' | 'settledStopIds' | 'openMountIds'
+> & {
   readonly event: SessionEvent;
-  readonly contextOf: Params['contextOf'];
 };
 
 const rebaseFactOfEvent = ({
   event,
+  events,
   contextOf,
+  settledStopIds,
+  openMountIds,
 }: RebaseFactOfEventParams): JobActivityFacts | null => {
   const payload = event.payload;
   if (payload?.agentId === undefined || payload.origin !== 'rebase') {
@@ -118,6 +126,9 @@ const rebaseFactOfEvent = ({
   if (event.kind !== 'history_stopped') {
     return null;
   }
+  if (!hasHistoryRecovery({ event, events, settledStopIds, openMountIds })) {
+    return { ...base, word: 'Stopped', phase: 'done' };
+  }
   const cause = historyStopCause({ reason: payload.reason, message: payload.title });
   return {
     ...base,
@@ -129,7 +140,12 @@ const rebaseFactOfEvent = ({
 const rebaseFactsOfEvents = ({
   events,
   contextOf,
-}: Pick<Params, 'events' | 'contextOf'>): ReadonlyMap<string, JobActivityFacts> => {
+  settledStopIds,
+  openMountIds,
+}: Pick<Params, 'events' | 'contextOf' | 'settledStopIds' | 'openMountIds'>): ReadonlyMap<
+  string,
+  JobActivityFacts
+> => {
   const latest = new Map<string, SessionEvent>();
   for (const event of events) {
     const agentId = event.payload?.agentId;
@@ -143,7 +159,7 @@ const rebaseFactsOfEvents = ({
   }
   const facts = new Map<string, JobActivityFacts>();
   for (const [agentId, event] of latest) {
-    const fact = rebaseFactOfEvent({ event, contextOf });
+    const fact = rebaseFactOfEvent({ event, events, contextOf, settledStopIds, openMountIds });
     if (fact !== null) {
       facts.set(agentId, fact);
     }
@@ -224,9 +240,11 @@ export const jobFactsByAgentId = ({
   scribeWork,
   events,
   contextOf,
+  settledStopIds,
+  openMountIds,
 }: Params): ReadonlyMap<string, JobActivityFacts> =>
   new Map([
-    ...rebaseFactsOfEvents({ events, contextOf }),
+    ...rebaseFactsOfEvents({ events, contextOf, settledStopIds, openMountIds }),
     ...rebaseFactsOfRuns({ sessionId, historyRuns, contextOf }),
     ...scribeFactsOf({ sessionId, scribeWork }),
   ]);

@@ -19,6 +19,8 @@ Commits on your machine go up before anything else.
 ### Fixed
 
 - With commits not pushed, Push is the primary on a pull request and the merge waits, Blocked in the Merge cell. <!-- gb area=review -->
+- A plan Auto already took reads Used, and at Never it asks for no approval. <!-- gb area=agents -->
+- An old History rewriter stop leaves Needs you once a newer stop on its branch replaced it. <!-- gb area=agents -->
 
 ## Goodboy v0.31.10
 
