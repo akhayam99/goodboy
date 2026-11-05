@@ -1,7 +1,7 @@
 import { inject } from '@vercel/analytics';
 import { mountRoot } from '../../lib/mountRoot';
 import { Nav, type NavSection } from '../../sections/Nav';
-import '../../styles.css';
+import '../../styles/base.css';
 import '../../styles/consent.css';
 import '../../components/Statement.css';
 import '../../sections/Footer.css';
