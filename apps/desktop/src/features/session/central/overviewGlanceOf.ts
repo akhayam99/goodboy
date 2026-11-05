@@ -1,5 +1,5 @@
 import type { Tone } from '@goodboy/ui';
-import type { AutoGlance } from '../../auto/glance/autoGlanceOf';
+import type { Glance } from '../glance/glanceOf';
 import type { OverviewCardModel } from './overviewCardsOf';
 
 export type OverviewGlanceState = 'waiting' | 'stuck' | 'working' | 'clear';
@@ -13,7 +13,7 @@ export type OverviewGlance = Readonly<{
 type Params = {
   readonly cards: ReadonlyArray<OverviewCardModel>;
   readonly stuckCount: number;
-  readonly autoGlances: ReadonlyArray<AutoGlance>;
+  readonly autoGlances: ReadonlyArray<Glance>;
 };
 
 type CountParams = {

@@ -13,9 +13,15 @@ type Props = {
   readonly run: WorkflowRun;
   readonly kind?: ReactNode;
   readonly isOpen: boolean;
+  readonly frame?: (params: FrameParams) => ReactNode;
 };
 
-export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
+type FrameParams = {
+  readonly spend: string | null;
+  readonly chips: ReactNode;
+};
+
+export const RunSettingsLine = ({ session, run, kind, isOpen, frame }: Props) => {
   const sessionId = session.id;
   const workspaceId = session.workspaceId;
   const workspaceName = useAppStore(
@@ -49,7 +55,7 @@ export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
     months: monthTiersOf({ statuses }),
     providers,
   });
-  return (
+  const chips = (
     <div
       role="group"
       aria-label="Run settings"
@@ -69,4 +75,8 @@ export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
       ) : null}
     </div>
   );
+  if (frame === undefined) {
+    return chips;
+  }
+  return frame({ spend: settings.limit.value === 'none' ? null : settings.limit.value, chips });
 };

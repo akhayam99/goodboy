@@ -213,7 +213,7 @@ export const AgentDetailPane = ({
       lead={lead}
       header={
         <AgentHeader
-          {...(isAutoRoot ? { below: runSettings } : { settings: runSettings })}
+          below={runSettings}
           title={
             <span
               className="flex min-w-0 items-center gap-2"

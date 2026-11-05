@@ -1,9 +1,13 @@
 import type { RefCallback } from 'react';
 import type { Agent, Session } from '@goodboy/types';
+import { useAppStore, useSessionCost } from '../../../../store';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
+import { autoGlanceOf } from '../../../auto/glance/autoGlanceOf';
+import { agentGlanceOf } from '../../glance/agentGlanceOf';
+import { spendTextOf } from '../../glance/spendTextOf';
 import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
 import { AgentSettingsLine } from '../AgentSettingsLine';
-import { AutoGlanceLine } from './AutoGlanceLine';
+import { RunGlanceLine } from '../RunGlanceLine';
 
 type AutoView = NonNullable<ReturnType<typeof useAutoChat>['tree']>['view'];
 
@@ -22,6 +26,11 @@ export const AgentRunSettings = ({
   asksSlotRef,
   modelsSlotRef,
 }: Props) => {
+  const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
+  const sessionCapUsd = useAppStore(
+    (state) => state.sessionBudgets[session.id]?.softCapUsd ?? null,
+  );
+  const sessionSpentUsd = useSessionCost(session.id);
   const line = (
     <AgentSettingsLine
       session={session}
@@ -35,8 +44,21 @@ export const AgentRunSettings = ({
       modelsSlotRef={modelsSlotRef}
     />
   );
-  if (autoView === null) {
-    return line;
-  }
-  return <AutoGlanceLine agent={agent} view={autoView} settings={line} />;
+  const budget = autoView?.budget ?? null;
+  return (
+    <RunGlanceLine
+      id={agent.id}
+      glance={
+        autoView === null
+          ? agentGlanceOf({ agent, turnState })
+          : autoGlanceOf({ view: autoView, rootTurn: turnState })
+      }
+      spend={
+        budget === null
+          ? spendTextOf({ spentUsd: sessionSpentUsd, capUsd: sessionCapUsd })
+          : spendTextOf({ spentUsd: budget.spentUsd, capUsd: budget.capUsd })
+      }
+      settings={line}
+    />
+  );
 };

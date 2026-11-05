@@ -1,29 +1,19 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Button, ICON_SIZE, cn, formatUsd, tintClasses } from '@goodboy/ui';
-import type { Agent } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
-import { autoGlanceOf } from '../../../auto/glance/autoGlanceOf';
+import { Button, ICON_SIZE, cn, tintClasses } from '@goodboy/ui';
+import type { Glance } from '../../glance/glanceOf';
 
 type Props = {
-  readonly agent: Agent;
-  readonly view: AutoTreeView;
+  readonly id: string;
+  readonly glance: Glance;
+  readonly spend: string | null;
   readonly settings: ReactNode;
 };
 
-export const AutoGlanceLine = ({ agent, view, settings }: Props) => {
-  const rootTurn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
+export const RunGlanceLine = ({ id, glance, spend, settings }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const glance = autoGlanceOf({ view, rootTurn });
   const tint = tintClasses(glance.tone);
-  const budget = view.budget;
-  const spend =
-    budget === null
-      ? null
-      : budget.capUsd === null
-        ? formatUsd(budget.spentUsd)
-        : `${formatUsd(budget.spentUsd)} of ${formatUsd(budget.capUsd)}`;
+  const settingsId = `run-settings-${id}`;
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div
@@ -51,7 +41,7 @@ export const AutoGlanceLine = ({ agent, view, settings }: Props) => {
           variant="quiet"
           size="xs"
           aria-expanded={isOpen}
-          aria-controls={`auto-settings-${agent.id}`}
+          aria-controls={settingsId}
           onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         >
           Settings
@@ -59,7 +49,7 @@ export const AutoGlanceLine = ({ agent, view, settings }: Props) => {
         </Button>
       </div>
       <div
-        id={`auto-settings-${agent.id}`}
+        id={settingsId}
         data-open={isOpen}
         className={cn(
           'min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-3 py-2',

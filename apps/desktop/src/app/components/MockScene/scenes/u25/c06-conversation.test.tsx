@@ -80,7 +80,13 @@ describe('the c06 conversation scenes', () => {
     expect(within(row).queryByText('Running')).toBeNull();
     expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
     expect(within(row).getByRole('heading', { level: 1 }).textContent).not.toContain('Sonnet 5.5');
-    within(row).getByRole('button', { name: /^Model/ });
+    expect(within(row).queryByRole('button', { name: /^Model/ })).toBeNull();
+    const settings = screen.getByRole('button', { name: 'Settings' });
+    expect(screen.getByText('Working')).toBeDefined();
+    expect(settings.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(settings);
+    expect(settings.getAttribute('aria-expanded')).toBe('true');
+    screen.getByRole('button', { name: /^Model/ });
     expect(screen.queryByRole('tab')).toBeNull();
   });
 

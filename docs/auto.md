@@ -448,11 +448,13 @@ writing to it reopens it to **Deciding**.
   result whose delivery row is not in the transcript is not drawn, never moved
   to the end, so a late result stays with the turn that read it; a reload and a
   second window read the same rows.
-- **The glance line and the cards.** The Auto page header keeps the title, the
-  trail and the menu, then one glance line: a dot, the state word (**Needs
+- **The glance line and the cards.** The Auto page header keeps the back row, the title
+  and the menu, then one glance line, the same component for every run kind
+  (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
   you**, **Planning**, **Working**, **Stuck**, **Stopped**, **Done**,
   **Idle**), one sentence, the spend of the limit and **Settings**
-  (`autoGlanceOf`, `AutoGlanceLine`). **Settings** unfolds the unchanged chip row
+  (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the others, all
+  through `glanceOf`). **Settings** unfolds the unchanged chip row
   inline, never a popover; the row stays mounted so the asks and model slots
   keep their portals. Each cluster of agents is one soft card (`AutoTurnCard`,
   head `autoCardHeadOf`): name, agent count and a state word, then flat rows.

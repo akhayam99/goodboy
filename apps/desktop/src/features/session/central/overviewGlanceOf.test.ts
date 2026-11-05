@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AutoGlance } from '../../auto/glance/autoGlanceOf';
+import type { Glance } from '../glance/glanceOf';
 import { overviewGlanceOf } from './overviewGlanceOf';
 import type { OverviewCardModel } from './overviewCardsOf';
 
@@ -14,7 +14,7 @@ const cardsOf = ({ needs, running }: CardsParams): ReadonlyArray<OverviewCardMod
   ...(running > 0 ? [{ id: 'running' as const, title: 'Running', count: running }] : []),
 ];
 
-const AUTO_STUCK: AutoGlance = {
+const AUTO_STUCK: Glance = {
   state: 'stuck',
   word: 'Stuck',
   tone: 'danger',

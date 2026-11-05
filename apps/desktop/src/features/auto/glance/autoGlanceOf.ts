@@ -1,22 +1,10 @@
 import type { TurnState } from '@goodboy/types';
-import type { Tone } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { AUTO_STATE_TONE } from '../chat/autoStateTone';
+import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
-
-export type AutoGlanceState =
-  'waiting' | 'planning' | 'working' | 'stuck' | 'stopped' | 'done' | 'idle';
-
-export type AutoGlance = Readonly<{
-  state: AutoGlanceState;
-  word: string;
-  tone: Tone;
-  sentence: string;
-  isLive: boolean;
-}>;
 
 type Params = {
   readonly view: AutoTreeView;
@@ -26,39 +14,6 @@ type Params = {
 type ViewParams = {
   readonly view: AutoTreeView;
 };
-
-type GlanceParams = {
-  readonly state: AutoGlanceState;
-  readonly sentence: string;
-};
-
-const WORD: Record<AutoGlanceState, string> = {
-  waiting: 'Needs you',
-  planning: 'Planning',
-  working: 'Working',
-  stuck: 'Stuck',
-  stopped: 'Stopped',
-  done: 'Done',
-  idle: 'Idle',
-};
-
-const TONE: Record<AutoGlanceState, Tone> = {
-  waiting: AUTO_STATE_TONE.waitingOnYou,
-  planning: AUTO_STATE_TONE.running,
-  working: AUTO_STATE_TONE.running,
-  stuck: AUTO_STATE_TONE.failed,
-  stopped: AUTO_STATE_TONE.idle,
-  done: AUTO_STATE_TONE.done,
-  idle: AUTO_STATE_TONE.idle,
-};
-
-const glanceOf = ({ state, sentence }: GlanceParams): AutoGlance => ({
-  state,
-  word: WORD[state],
-  tone: TONE[state],
-  sentence,
-  isLive: state === 'planning' || state === 'working',
-});
 
 const planRowOf = ({ view }: ViewParams) =>
   view.artifacts.find((row) => row.artifact.kind === 'plan') ?? null;
@@ -80,7 +35,7 @@ const stepsSentenceOf = ({ view }: ViewParams): string => {
   return `${settled} of ${total} steps`;
 };
 
-export const autoGlanceOf = ({ view, rootTurn }: Params): AutoGlance => {
+export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   const phase = view.tree.phase;
   if (phase === 'stopped' || phase === 'stopping') {
     return glanceOf({ state: 'stopped', sentence: 'You stopped Auto, nothing is running' });
