@@ -233,7 +233,24 @@ rather than through Google Tag Manager, so the repo owns its language, position
 and look. It asks in Italian, sits at the bottom left, and takes its colours
 from `website/src/styles/consent.css`; the `onBannerShown` callback drops
 iubenda's inline colours so the site tokens apply in both themes. Consent Mode
-defaults to denied before any tag loads. iubenda shows no card for a language
+defaults to denied in the first script of each template, with one `wait_for_update`.
+Nothing from Google loads before consent: the Tag Manager loader in each template
+runs only when iubenda's `onPreferenceExpressedOrNotNeeded` callback reports the
+Measurement purpose (`preference.purposes["4"]`) as accepted, for a new
+acceptance and for a returning visitor whose choice is stored. It pushes
+`gtag('consent', 'update', { analytics_storage: 'granted' })` first, then starts
+`gtm.js` when the browser is idle. A refusal, a visitor who has not answered
+and a visit where no preference is needed load nothing from Google, and the
+templates carry no `noscript` frame, since a visitor without JavaScript
+cannot answer the banner. A visitor who withdraws in the preferences panel
+sets `analytics_storage` back to denied and `window.goodboyConsent.isMeasurementGranted` to false,
+and when Tag Manager was already requested the page reloads once, so the tag is
+gone. The reload cannot loop: a fresh page has no tag, so it never reloads
+again. The loader installs `onPreference` before the iubenda script tag, so a
+cached iubenda cannot call the empty stub. `check-seo` fails a Google script,
+frame or image in the static HTML, a repeated Tag Manager id, a Consent Mode
+default that comes after it, and an iubenda script that comes before the
+Consent Mode default or before the preference handler. iubenda shows no card for a language
 the cookie policy lacks, and the policy has only an Italian version, so the
 embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
 in the iubenda dashboard. The GTM iubenda tag stays paused so the card never

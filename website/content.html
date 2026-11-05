@@ -36,6 +36,7 @@
         security_storage: 'granted',
         wait_for_update: 500,
       });
+      window.goodboyConsent = { isMeasurementGranted: false, onPreference: function () {} };
       var _iub = window._iub || [];
       window._iub = _iub;
       _iub.csConfiguration = {
@@ -51,6 +52,9 @@
         preferenceCookie: { expireAfter: 180 },
         floatingPreferencesButtonDisplay: false,
         callback: {
+          onPreferenceExpressedOrNotNeeded: function (preference) {
+            window.goodboyConsent.onPreference(preference);
+          },
           onBannerShown: function () {
             document
               .querySelectorAll(
@@ -76,48 +80,49 @@
         },
       };
     </script>
-    <script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
-
-    <!-- Google Tag Manager -->
+    <!-- Google Tag Manager, loaded only after the visitor accepts measurement -->
     <script>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-        var done = false;
+      (function (w, d) {
+        var GTM_ID = 'GTM-5NM3VX7Q';
+        var MEASUREMENT = '4';
+        var consent = w.goodboyConsent;
+        var isLoaded = false;
         var load = function () {
-          if (done) return;
-          try {
-            var f = d.getElementsByTagName(s)[0],
-              j = d.createElement(s),
-              dl = l != 'dataLayer' ? '&l=' + l : '';
-            j.async = true;
-            j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-            f.parentNode.insertBefore(j, f);
-            done = true;
-          } catch (e) {}
+          if (isLoaded || !consent.isMeasurementGranted) return;
+          isLoaded = true;
+          w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+          var first = d.getElementsByTagName('script')[0];
+          var script = d.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+          first.parentNode.insertBefore(script, first);
         };
         var schedule = function () {
           if (w.requestIdleCallback) w.requestIdleCallback(load, { timeout: 4000 });
           else w.setTimeout(load, 2000);
         };
-        var opts = { once: true, passive: true };
-        var events = ['pointerdown', 'keydown', 'scroll'];
-        if (typeof w.addEventListener === 'function') {
-          for (var k = 0; k < events.length; k++) {
-            try {
-              w.addEventListener(events[k], load, opts);
-            } catch (e) {
-              w.addEventListener(events[k], load, false);
-            }
+        var isAccepted = function (preference) {
+          if (!preference) return false;
+          if (preference.purposes) return preference.purposes[MEASUREMENT] === true;
+          return preference.consent === true;
+        };
+        consent.onPreference = function (preference) {
+          var isGranted = isAccepted(preference);
+          consent.isMeasurementGranted = isGranted;
+          w.gtag('consent', 'update', { analytics_storage: isGranted ? 'granted' : 'denied' });
+          if (isGranted) {
+            schedule();
+            return;
           }
-          if (d.readyState === 'complete') schedule();
-          else w.addEventListener('load', schedule, false);
-        } else {
-          schedule();
-        }
-      })(window, document, 'script', 'dataLayer', 'GTM-5NM3VX7Q');
+          if (isLoaded)
+            w.setTimeout(function () {
+              w.location.reload();
+            }, 300);
+        };
+      })(window, document);
     </script>
     <!-- End Google Tag Manager -->
+    <script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
 
     <link
       rel="preload"
@@ -137,17 +142,6 @@
     <meta name="color-scheme" content="light dark" />
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript
-      ><iframe
-        src="https://www.googletagmanager.com/ns.html?id=GTM-5NM3VX7Q"
-        height="0"
-        width="0"
-        style="display: none; visibility: hidden"
-      ></iframe
-    ></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-
     <div id="root"><!--app-html--></div>
     <script type="module" src="/src/pages/content/main.tsx"></script>
   </body>

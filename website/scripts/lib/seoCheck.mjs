@@ -47,6 +47,7 @@ export const RULES = {
   'published-missing': 'error',
   'gtm-count': 'error',
   'consent-order': 'error',
+  'google-before-consent': 'error',
   'title-length': 'warning',
   'description-length': 'warning',
 };
@@ -482,8 +483,24 @@ const publishedChecks = ({ published, redirects, distFiles }) => {
     );
 };
 
+const IUBENDA_SCRIPT = 'cdn.iubenda.com/cs/iubenda_cs.js';
+const GOOGLE_HOSTS = ['googletagmanager.com', 'google-analytics.com'];
+
 const trackingChecks = ({ page }) => {
-  const found = [];
+  const found = page.tags
+    .filter((tag) => !tag.isClosing)
+    .filter((tag) =>
+      GOOGLE_HOSTS.some((host) =>
+        (tag.attributes.get('src') ?? tag.attributes.get('href') ?? '').includes(host),
+      ),
+    )
+    .map((tag) =>
+      issue({
+        rule: 'google-before-consent',
+        file: page.file,
+        message: `<${tag.name}> loads Google in the static html`,
+      }),
+    );
   const count = page.html.split(GTM_ID).length - 1;
   if (count > 1) {
     found.push(
@@ -498,6 +515,26 @@ const trackingChecks = ({ page }) => {
         rule: 'consent-order',
         file: page.file,
         message: 'Consent Mode default does not come before the Tag Manager id',
+      }),
+    );
+  }
+  const iubenda = page.html.indexOf(IUBENDA_SCRIPT);
+  const handler = page.html.search(/\.onPreference\s*=/);
+  if (iubenda !== -1 && (consent === -1 || consent > iubenda)) {
+    found.push(
+      issue({
+        rule: 'consent-order',
+        file: page.file,
+        message: 'Consent Mode default does not come before the iubenda script',
+      }),
+    );
+  }
+  if (iubenda !== -1 && (handler === -1 || handler > iubenda)) {
+    found.push(
+      issue({
+        rule: 'consent-order',
+        file: page.file,
+        message: 'the preference handler is not installed before the iubenda script',
       }),
     );
   }
