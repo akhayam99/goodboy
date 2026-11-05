@@ -3,7 +3,9 @@ import { join } from 'node:path';
 
 export const CALL_TIMEOUT_MS = 60_000;
 export const WARM_UP_TIMEOUT_MS = 90_000;
-export const PORT_FILE_TIMEOUT_MS = 10_000;
+export const PORT_FILE_TIMEOUT_MS = 30_000;
+export const CHROME_START_ATTEMPTS = 3;
+export const CHROME_STDERR_TAIL_LINES = 20;
 
 const PORT_FILE_POLL_MS = 100;
 
@@ -44,15 +46,34 @@ export const readDevToolsPort = async ({
   timeoutMs = PORT_FILE_TIMEOUT_MS,
   pause = defaultPause,
   read = (path) => readFileSync(path, 'utf8'),
+  hasExited = () => false,
 }) => {
   const path = join(profile, 'DevToolsActivePort');
   const attempts = Math.max(1, Math.ceil(timeoutMs / PORT_FILE_POLL_MS));
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const port = parseDevToolsPort({ text: tryRead({ read, path }) });
     if (port !== null) return port;
+    if (hasExited()) throw new Error('Chrome exited before it wrote DevToolsActivePort');
     await pause(PORT_FILE_POLL_MS);
   }
   throw new Error(`Chrome did not write DevToolsActivePort in ${Math.round(timeoutMs / 1000)}s`);
+};
+
+export const appendStderrTail = ({ tail, chunk }) =>
+  `${tail}${chunk}`.split('\n').slice(-CHROME_STDERR_TAIL_LINES).join('\n');
+
+export const withChromeStderr = ({ error, stderr }) =>
+  stderr.trim() === '' ? error : new Error(`${error.message}\n${stderr.trim()}`);
+
+export const startWithRetries = async ({ start, attempts = CHROME_START_ATTEMPTS }) => {
+  for (let attempt = 1; attempt < attempts; attempt += 1) {
+    try {
+      return await start();
+    } catch (error) {
+      console.warn(`validate-scenes: Chrome start ${attempt} failed: ${error.message}`);
+    }
+  }
+  return start();
 };
 
 export const measureScene = async ({ scene, task, attempts = 2 }) => {

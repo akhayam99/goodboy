@@ -295,7 +295,9 @@ A test that reads the clock, or that builds a seed with `sceneClock` (it shifts 
 The scene measures workflow has two kinds of step. `chrome ready` (the mock
 preview answers, Chrome starts, the warm-up scene renders; `--ready-only` runs
 just this) is a normal step: when it fails the job is red, so an infrastructure
-fault never looks like a pass. `scene measures` is advisory
+fault never looks like a pass. A Chrome start gets 30 s and three tries with a
+fresh profile, stops early when Chrome exits, and a failure prints the tail of
+Chrome's stderr. `scene measures` is advisory
 (`continue-on-error` on the step) and must never be configured as a required
 check. Its findings reach the pull request three ways: one `::error`
 annotation per failure (the first ten, then a count), the failing scene ids and
