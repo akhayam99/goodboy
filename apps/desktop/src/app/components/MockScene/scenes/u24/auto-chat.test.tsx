@@ -353,13 +353,12 @@ describe('the Auto chat scenes', () => {
   it('u35-auto-plan-used says the plan was used and offers no Review or approval', async () => {
     mount({ id: 'u35-auto-plan-used' });
 
-    const dock = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-dock]');
-      expect(found).not.toBeNull();
-      return found as HTMLElement;
+    await waitFor(() => {
+      expect(document.querySelector('[data-auto-dock] [data-dock-plan]')).not.toBeNull();
     }, WAIT);
-    expect(dock.querySelector('[data-dock-plan]')?.getAttribute('data-dock-plan')).toBe('used');
-    expect(dock.textContent).toContain('Plan v1 used');
+    const dock = document.querySelector('[data-auto-dock]');
+    expect(dock?.querySelector('[data-dock-plan]')?.getAttribute('data-dock-plan')).toBe('used');
+    expect(dock?.textContent).toContain('Plan v1 used');
     expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
   });

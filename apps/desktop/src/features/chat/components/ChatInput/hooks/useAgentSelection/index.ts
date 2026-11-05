@@ -46,7 +46,7 @@ export const useAgentSelection = ({ session, agentId }: Params) => {
       : false,
   );
   const selectedAgentStatus = useAppStore((s) => {
-    if (!selectedAgentId) {
+    if (selectedAgentId === null) {
       return null;
     }
     const runs = s.sessionPhaseRuns[session.id] ?? [];

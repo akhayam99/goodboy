@@ -275,7 +275,7 @@ describe('reduceTranscript incremental resume', () => {
   });
 
   it('keeps the reply of a later run apart from the reply of the run before', () => {
-    const later = 'run-2' as ProviderRunId;
+    const later = brandId<ProviderRunId>({ value: 'run-2' });
     const items = reduceTranscript([
       assistantText({ delta: 'Then I start a Tester.' }),
       { ...assistantText({ delta: 'The Planner finished.' }), runId: later },

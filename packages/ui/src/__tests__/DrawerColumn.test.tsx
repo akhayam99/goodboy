@@ -634,7 +634,7 @@ describe('DrawerColumn sizes', () => {
       expect(gutter?.className).toContain('w-2');
       expect(gutter?.className).toContain('shrink-0');
       expect(card()?.className).toContain('min-w-0');
-      expect(card()?.className).toContain('overflow-hidden');
+      expect(card()?.className).toContain('overflow-clip');
       if (mode === 'overlay') {
         expect(inner?.style.minWidth).toBe(`${aside}px`);
       }

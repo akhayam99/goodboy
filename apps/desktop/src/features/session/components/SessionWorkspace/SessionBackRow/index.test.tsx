@@ -11,6 +11,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   brandId,
+  type ArtifactId,
   type AgentId,
   type SessionId,
   type StepId,
@@ -48,6 +49,16 @@ const RUN_PLACE = sessionPlace({
   target: { kind: 'run', runId: RUN },
 });
 const STEP_PLACE = agentPlace({ sessionId: S1, agentId: STEP });
+const ARTIFACT_PLACE = sessionPlace({
+  sessionId: S1,
+  lens: 'plans',
+  target: { kind: 'artifact', artifactId: brandId<ArtifactId>({ value: 'artifact-plan' }) },
+});
+const ISSUE_PLACE = sessionPlace({
+  sessionId: S1,
+  lens: 'github_issue',
+  target: { kind: 'github-issue', issueNumber: 12 },
+});
 const MAIN_PLACE = agentPlace({ sessionId: S1, agentId: MAIN });
 const CHILD_PLACE = agentPlace({ sessionId: S1, agentId: CHILD });
 const GRANDCHILD_PLACE = agentPlace({ sessionId: S1, agentId: GRANDCHILD });
@@ -145,6 +156,25 @@ describe('SessionBackRow', () => {
     walk({ places: [MAIN_PLACE] });
     expect(arrived).toBe(hereKey());
     expect(currentStack(useAppStore.getState()).index).toBe(index + 1);
+  });
+
+  it('closes the artifact on a deep link and lands on the list', () => {
+    walk({ places: [ARTIFACT_PLACE] });
+    render(<SessionBackRow sessionId={S1} />);
+
+    fireEvent.click(backButton('Back to artifacts'));
+
+    expect(useAppStore.getState().focusedArtifactId[S1]).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back to artifacts' })).toBeNull();
+  });
+
+  it('closes the issue on a deep link and lands on the list', () => {
+    walk({ places: [ISSUE_PLACE] });
+    render(<SessionBackRow sessionId={S1} />);
+
+    fireEvent.click(backButton('Back to GitHub issue'));
+
+    expect(useAppStore.getState().focusedGithubIssueNumber[S1]).toBeNull();
   });
 
   it('reuses the entry below when it is the parent', () => {

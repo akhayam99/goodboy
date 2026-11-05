@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, ProviderRunId, SessionId, TelemetryRecord } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { agentSpendById } from '../../timeline/agentSpendById';
 
 type Params = {
@@ -9,18 +9,16 @@ type Params = {
   readonly agentId: AgentId;
 };
 
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+const NO_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
+
 export const useAgentSpend = ({ sessionId, agentId }: Params): number => {
-  const agents = useAppStore(
-    (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const telemetry = useAppStore(
-    (state) => state.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
-  );
+  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
+  const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId] ?? NO_TELEMETRY);
   const agentRunHistory = useAppStore(
     useShallow((state) => {
       const history: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      for (const agent of state.sessionPhaseRuns[sessionId] ??
-        (EMPTY_ARRAY as ReadonlyArray<Agent>)) {
+      for (const agent of state.sessionPhaseRuns[sessionId] ?? NO_AGENTS) {
         const runIds = state.agentRunHistory[agent.id];
         if (runIds != null) {
           history[agent.id] = runIds;
