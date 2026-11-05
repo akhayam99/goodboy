@@ -108,10 +108,11 @@ characters; a description stays under 160.
   not parse, names a type outside its list or cites an `@id` the graph lacks,
   a broken internal link, a redirect chain, and a Tag Manager id that is
   repeated or comes before the Consent Mode default. A title outside 30 to
-  70 characters and a description outside 70 to 160 are warnings. Known
-  errors and warnings sit per rule and file in `website/scripts/seo-errors.baseline.json`
-  and `website/scripts/seo-warnings.baseline.json`: a count may fall and never grows,
-  and `node scripts/check-seo.mjs --write` lowers the rows after a fix. The
+  72 characters and a description outside 70 to 165 are warnings, on indexed
+  pages only: a `noindex` page such as `/404` skips the length rules. Search
+  engines publish no hard limit, so the maximums sit a little above where
+  results usually cut a line. No ledger holds known problems: `pnpm check:seo`
+  fails on any error and `pnpm check:seo --strict` fails on any warning. The
   rules live in `website/scripts/lib/seoCheck.mjs`, the CI step `check seo` of
   `.github/workflows/website.yml` runs `pnpm check:seo`.
 - A renamed or removed page keeps its old URL alive: add a permanent redirect

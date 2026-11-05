@@ -439,6 +439,14 @@
     "width": 4080,
     "height": 2340
   },
+  "features/setup-agents-dark.webp": {
+    "width": 4080,
+    "height": 2580
+  },
+  "features/setup-agents-light.webp": {
+    "width": 4080,
+    "height": 2580
+  },
   "features/setup-cli-update-dark.webp": {
     "width": 4080,
     "height": 2640
@@ -446,6 +454,14 @@
   "features/setup-cli-update-light.webp": {
     "width": 4080,
     "height": 2640
+  },
+  "features/setup-home-dark.webp": {
+    "width": 4080,
+    "height": 2040
+  },
+  "features/setup-home-light.webp": {
+    "width": 4080,
+    "height": 2040
   },
   "features/setup-integrations-dark.webp": {
     "width": 4080,
@@ -478,6 +494,14 @@
   "features/setup-welcome-light.webp": {
     "width": 4080,
     "height": 2040
+  },
+  "features/setup-workspace-dark.webp": {
+    "width": 4080,
+    "height": 2820
+  },
+  "features/setup-workspace-light.webp": {
+    "width": 4080,
+    "height": 2820
   },
   "features/storage-branches-dark.webp": {
     "width": 4080,

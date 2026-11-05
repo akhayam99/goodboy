@@ -6,7 +6,6 @@ import { imageSize } from './lib/imageSize.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = resolve(ROOT, '..', 'docs', 'features');
 const SIZES = resolve(ROOT, 'src', 'prerender', 'imageSizes.json');
-const SEO_BASELINE = resolve(ROOT, 'scripts', 'seo-errors.baseline.json');
 const MEDIA_URL =
   /https:\/\/raw\.githubusercontent\.com\/akhayam99\/goodboy-media\/main\/([^"\s)]+)/g;
 
@@ -47,16 +46,11 @@ const main = async () => {
   const used = usedPaths();
   const known = existsSync(SIZES) ? JSON.parse(readFileSync(SIZES, 'utf8')) : {};
   if (mediaRoot === undefined) {
-    const baseline = existsSync(SEO_BASELINE) ? JSON.parse(readFileSync(SEO_BASELINE, 'utf8')) : {};
     const missing = used.filter((path) => !Object.hasOwn(known, path));
     const extra = Object.keys(known).filter((path) => !used.includes(path));
-    const allowed = Object.values(baseline['img-size'] ?? {}).reduce(
-      (total, count) => total + count,
-      0,
-    );
-    if (missing.length > allowed || extra.length > 0) {
+    if (missing.length > 0 || extra.length > 0) {
       console.error(
-        `imageSizes.json is out of date: ${missing.length} missing (${allowed} allowed by the seo baseline), ${extra.length} unused. Run node scripts/sync-image-sizes.mjs <path to the media checkout>`,
+        `imageSizes.json is out of date: ${missing.length} missing, ${extra.length} unused. Run node scripts/sync-image-sizes.mjs <path to the media checkout>`,
       );
       missing.forEach((path) => console.error(`  missing ${path}`));
       extra.forEach((path) => console.error(`  unused ${path}`));

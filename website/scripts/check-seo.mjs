@@ -1,16 +1,11 @@
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { baselineOf, checkSeo, countsOf, growthLines, staleLines } from './lib/seoCheck.mjs';
+import { checkSeo } from './lib/seoCheck.mjs';
 
 const ROOT = process.env.CHECK_SEO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
-const BASELINES = {
-  error: resolve(ROOT, 'scripts/seo-errors.baseline.json'),
-  warning: resolve(ROOT, 'scripts/seo-warnings.baseline.json'),
-};
 const PUBLISHED = resolve(ROOT, 'scripts/seo-published-paths.json');
-const IS_WRITE = process.argv.includes('--write');
 const IS_STRICT = process.argv.includes('--strict');
 
 const walk = ({ dir }) =>
@@ -58,40 +53,20 @@ const main = () => {
     trackSpec: readJson({ path: resolve(ROOT, 'src/lib/trackEvents.json'), fallback: {} }),
     origin: originOf(),
   });
-  let isFailed = false;
-  Object.entries(BASELINES).forEach(([severity, path]) => {
-    const counts = countsOf({ issues, severity });
-    const baseline = readJson({ path, fallback: {} });
-    const growth = growthLines({ counts, baseline });
-    const stale = staleLines({ counts, baseline });
-    if (IS_WRITE && (growth.length === 0 || !existsSync(path))) {
-      writeFileSync(path, `${JSON.stringify(baselineOf({ counts }), null, 2)}\n`);
-      console.log(`check-seo: wrote ${relative(ROOT, path)}`);
-      return;
-    }
-    if (growth.length > 0) {
-      const isBlocking = severity === 'error' || IS_STRICT;
-      isFailed = isFailed || isBlocking;
-      const report = isBlocking ? console.error : console.warn;
-      const rules = new Set(growth.map((line) => line.trim().split(' ')[1]));
-      report(
-        `check-seo: ${severity}s grew past ${relative(ROOT, path)}:\n${growth.slice(0, 15).join('\n')}${growth.length > 15 ? `\n  ... ${growth.length - 15} more` : ''}`,
-      );
-      issues
-        .filter((found) => found.severity === severity && rules.has(found.rule))
-        .slice(0, 15)
-        .forEach((found) => report(`    ${found.rule} ${found.file}: ${found.message}`));
-    }
-    if (stale.length > 0) {
-      console.warn(
-        `check-seo: ${relative(ROOT, path)} is above the measured count, run node scripts/check-seo.mjs --write:\n${stale.join('\n')}`,
-      );
-    }
+  const errors = issues.filter(({ severity }) => severity === 'error');
+  const warnings = issues.filter(({ severity }) => severity === 'warning');
+  const blocking = IS_STRICT ? issues : errors;
+  const reportWarning = IS_STRICT ? console.error : console.warn;
+  warnings.forEach((found) => {
+    reportWarning(`check-seo: warning ${found.rule} ${found.file}: ${found.message}`);
   });
-  if (!isFailed) {
+  errors.forEach((found) => {
+    console.error(`check-seo: error ${found.rule} ${found.file}: ${found.message}`);
+  });
+  if (blocking.length === 0) {
     console.log(`check-seo ok: ${htmlFiles.size} pages`);
   }
-  return isFailed ? 1 : 0;
+  return blocking.length > 0 ? 1 : 0;
 };
 
 process.exit(main());
