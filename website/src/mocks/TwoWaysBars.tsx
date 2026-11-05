@@ -1,6 +1,6 @@
 import './TwoWaysBars.css';
 import type { CSSProperties } from 'react';
-import { BrandMark, type ProviderId } from '../BrandIcons';
+import { BrandMark, type ProviderId } from '../components/BrandIcons';
 import { usePlayOnce } from './usePlayOnce';
 
 type Turn = {

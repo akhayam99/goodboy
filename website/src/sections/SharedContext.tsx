@@ -1,7 +1,7 @@
 import './SharedContext.css';
 import { CardRow, type CardRowItem } from '../components/CardRow';
 import { Chapter } from '../components/Chapter';
-import { HandoffMock } from '../components/mocks/HandoffMock';
+import { HandoffMock } from '../mocks/HandoffMock';
 import { Statement } from '../components/Statement';
 
 const FACTS: readonly CardRowItem[] = [

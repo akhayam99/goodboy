@@ -1,6 +1,6 @@
 import './TwoWays.css';
 import { Chapter } from '../components/Chapter';
-import { TwoWaysBars } from '../components/mocks/TwoWaysBars';
+import { TwoWaysBars } from '../mocks/TwoWaysBars';
 
 export const TwoWays = () => (
   <Chapter

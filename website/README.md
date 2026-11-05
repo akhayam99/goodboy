@@ -119,7 +119,7 @@ hero, a real app capture of the `readme-hero` mock scene. Every other product
 view is a React mock, built from the same tokens as the page, so it is sharp at
 any zoom, follows the theme and ships no raster file.
 
-- `website/src/components/mocks/` holds the kit: `MockStage` puts a mock on a
+- `website/src/mocks/` holds the kit: `MockStage` puts a mock on a
   stage, `MockWindow` is the app window chrome, and `mocks.css` holds the shared
   look. Each scene (`SessionMock`, `BoardMock`, `InboxMock` and the rest) has its
   own `.tsx` and `.css`.

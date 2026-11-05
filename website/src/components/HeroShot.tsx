@@ -1,5 +1,5 @@
 import './HeroShot.css';
-import { MockStage } from './mocks/MockStage';
+import { MockStage } from '../mocks/MockStage';
 
 const WIDTH = 1208;
 const HEIGHT = 529;

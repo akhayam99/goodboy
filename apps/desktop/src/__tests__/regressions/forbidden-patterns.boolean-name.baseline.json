@@ -442,10 +442,10 @@
     "packages/ui/src/components/Trail/CrumbMenuRow.tsx": 2,
     "packages/ui/src/useDropdown/index.ts": 3,
     "packages/ui/src/useDropdownDirection.ts": 1,
-    "website/src/components/mocks/DiffReviewTree.tsx": 1,
-    "website/src/components/mocks/kit/AppButton.tsx": 1,
-    "website/src/components/mocks/kit/Chip.tsx": 1,
-    "website/src/components/mocks/kit/GroupLabel.tsx": 1,
-    "website/src/components/mocks/kit/KindChip.tsx": 2
+    "website/src/mocks/DiffReviewTree.tsx": 1,
+    "website/src/mocks/kit/AppButton.tsx": 1,
+    "website/src/mocks/kit/Chip.tsx": 1,
+    "website/src/mocks/kit/GroupLabel.tsx": 1,
+    "website/src/mocks/kit/KindChip.tsx": 2
   }
 }

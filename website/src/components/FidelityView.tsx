@@ -1,12 +1,12 @@
-import { AskCodeMock } from './mocks/AskCodeMock';
+import { AskCodeMock } from '../mocks/AskCodeMock';
 import type { ReactNode } from 'react';
-import { BoardMock } from './mocks/BoardMock';
-import { DiffReviewMock } from './mocks/DiffReviewMock';
-import { HandoffMock } from './mocks/HandoffMock';
-import { InboxMock } from './mocks/InboxMock';
-import { SessionMock } from './mocks/SessionMock';
-import { StorageMock } from './mocks/StorageMock';
-import { WorkflowRunMock } from './mocks/WorkflowRunMock';
+import { BoardMock } from '../mocks/BoardMock';
+import { DiffReviewMock } from '../mocks/DiffReviewMock';
+import { HandoffMock } from '../mocks/HandoffMock';
+import { InboxMock } from '../mocks/InboxMock';
+import { SessionMock } from '../mocks/SessionMock';
+import { StorageMock } from '../mocks/StorageMock';
+import { WorkflowRunMock } from '../mocks/WorkflowRunMock';
 
 type Props = {
   readonly mock: string;
