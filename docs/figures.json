@@ -13,7 +13,7 @@
   },
   "features/agents-workspace-chat": {
     "version": "0.31.10",
-    "recipe": "--scene 'chat-room&brand=1' --window 1280x800 --wait 8000"
+    "recipe": "--scene 'chat-room&brand=1' --window 1500x720 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/artifact-compare": {
     "version": "0.27.1",
@@ -41,7 +41,7 @@
   },
   "features/board-stage": {
     "version": "0.31.10",
-    "recipe": "--scene 'board-shell&brand=1' --window 1700x560 --wait 8000"
+    "recipe": "--scene 'board-shell&brand=1' --window 1920x620 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-decisions": {
     "version": "0.27.1",
@@ -49,7 +49,7 @@
   },
   "features/context-drawer": {
     "version": "0.31.10",
-    "recipe": "--scene 'context-drawer&brand=1' --window 1280x800 --wait 8000"
+    "recipe": "--scene 'context-drawer&brand=1' --window 1680x890 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-summary": {
     "version": "0.27.1",
@@ -161,7 +161,7 @@
   },
   "features/review-pr-page": {
     "version": "0.31.10",
-    "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x820 --wait 8000"
+    "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x850 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/review-push-confirm": {
     "version": "0.27.1",
@@ -297,7 +297,7 @@
   },
   "features/workflow-run": {
     "version": "0.31.10",
-    "recipe": "--scene 'c08-run-ready&brand=1' --window 1280x720 --wait 8000"
+    "recipe": "--scene 'workflow-run&run=finished&brand=1' --window 1500x820 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/workflow-studio-steps": {
     "version": "0.27.1",

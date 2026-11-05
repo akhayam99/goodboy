@@ -24,12 +24,12 @@
     "height": 936
   },
   "features/agents-workspace-chat-dark.webp": {
-    "width": 3243,
-    "height": 2238
+    "width": 3160,
+    "height": 1600
   },
   "features/agents-workspace-chat-light.webp": {
-    "width": 3243,
-    "height": 2238
+    "width": 3160,
+    "height": 1600
   },
   "features/artifact-compare-dark.webp": {
     "width": 4080,
@@ -80,12 +80,12 @@
     "height": 948
   },
   "features/board-stage-dark.webp": {
-    "width": 3546,
-    "height": 1761
+    "width": 4000,
+    "height": 1400
   },
   "features/board-stage-light.webp": {
-    "width": 3546,
-    "height": 1761
+    "width": 4000,
+    "height": 1400
   },
   "features/context-decisions-dark.webp": {
     "width": 4080,
@@ -96,12 +96,12 @@
     "height": 2640
   },
   "features/context-drawer-dark.webp": {
-    "width": 1317,
-    "height": 1992
+    "width": 3520,
+    "height": 1940
   },
   "features/context-drawer-light.webp": {
-    "width": 1317,
-    "height": 1992
+    "width": 3520,
+    "height": 1940
   },
   "features/context-summary-dark.webp": {
     "width": 4080,
@@ -320,12 +320,12 @@
     "height": 2520
   },
   "features/review-pr-page-dark.webp": {
-    "width": 2064,
-    "height": 1980
+    "width": 2360,
+    "height": 1860
   },
   "features/review-pr-page-light.webp": {
-    "width": 2064,
-    "height": 1980
+    "width": 2360,
+    "height": 1860
   },
   "features/review-push-confirm-dark.webp": {
     "width": 4080,
@@ -568,12 +568,12 @@
     "height": 2640
   },
   "features/workflow-run-dark.webp": {
-    "width": 2928,
-    "height": 2136
+    "width": 3160,
+    "height": 1800
   },
   "features/workflow-run-light.webp": {
-    "width": 2928,
-    "height": 2136
+    "width": 3160,
+    "height": 1800
   },
   "features/workflow-studio-steps-dark.webp": {
     "width": 4080,

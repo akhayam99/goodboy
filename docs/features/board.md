@@ -8,7 +8,7 @@ See where each task stands without moving cards around. Six lanes, **building**,
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in five lanes: Building 4, Running 2, Needs you 4 with a question waiting on each card, In review 2 with #318 and #90, and Done 4">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in six lanes: Building 3, Running 2, Needs you 4 with a question waiting on each card, In review 2 with #318 and #90, Done 2 with #198 and #205, and Archived 2">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.10</sub>
