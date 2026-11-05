@@ -12,6 +12,22 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.9
+
+The branch page says each thing once.
+
+### Improved
+
+#### One way around a branch
+<!-- gb area=review -->
+
+The tabs under the title are the only way around a branch: a folded session rail stays on the session pages. **Files** shows the lines added and removed in color, and **Commits** shows the count with the commits not pushed in amber.
+
+#### A quieter pull request page
+<!-- gb area=review -->
+
+The Commits and Changes cards are gone, since the tabs carry them. With no pull request the status cards go too and the line under the title says what matters. **Push and create pull request** is the one primary, and **Into** starts on the branch's base.
+
 ## Goodboy v0.31.8
 
 Declining a step no longer locks an Auto chat.
