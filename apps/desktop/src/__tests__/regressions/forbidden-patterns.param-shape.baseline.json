@@ -2249,7 +2249,7 @@
     "website/src/lib/site.ts": 4,
     "website/src/lib/theme.ts": 2,
     "website/src/mocks/DiffReviewMock.tsx": 4,
-    "website/src/mocks/icons.tsx": 1,
+    "website/src/mocks/generated/icons.tsx": 1,
     "website/src/mocks/InboxMock.tsx": 2,
     "website/src/mocks/kit/cx.ts": 2,
     "website/src/mocks/kit/Rail.tsx": 5,

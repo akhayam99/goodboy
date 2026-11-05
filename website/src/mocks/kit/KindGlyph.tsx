@@ -16,7 +16,7 @@ import {
   ScanEye,
   Telescope,
   type IconComponent,
-} from '../icons';
+} from '../generated/icons';
 import { AGENT_KIND_PALETTE, UNKNOWN_KIND_COLOR, type AgentKind } from './spec';
 import { cx } from './cx';
 

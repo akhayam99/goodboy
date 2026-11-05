@@ -1,6 +1,12 @@
 import type { CSSProperties } from 'react';
 import './kit.css';
-import { Circle, CircleCheck, Contrast, TriangleAlert, type IconComponent } from '../icons';
+import {
+  Circle,
+  CircleCheck,
+  Contrast,
+  TriangleAlert,
+  type IconComponent,
+} from '../generated/icons';
 import { cx } from './cx';
 import { TONE_COLOR, type Tone } from './spec';
 

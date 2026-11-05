@@ -1,6 +1,6 @@
 import './WorkflowRunMock.css';
 import { MockStage } from './MockStage';
-import { Waypoints } from './icons';
+import { Waypoints } from './generated/icons';
 import { RunTree, StartsInChip, type RailGroupInput, type RunTreeRowData } from './kit';
 
 type Props = {

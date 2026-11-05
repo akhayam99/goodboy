@@ -9,7 +9,7 @@ import {
   Database,
   Plus,
   Waypoints,
-} from './icons';
+} from './generated/icons';
 import { GroupLabel, KindChip, WorkNode } from './kit';
 import { useStepLoop } from './useStepLoop';
 

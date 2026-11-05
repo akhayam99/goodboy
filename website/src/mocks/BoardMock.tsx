@@ -1,6 +1,6 @@
 import './BoardMock.css';
 import type { ReactNode } from 'react';
-import { CircleHelp, GitPullRequest } from './icons';
+import { CircleHelp, GitPullRequest } from './generated/icons';
 import { ToneBar, type Tone } from './kit';
 import { MockStage } from './MockStage';
 

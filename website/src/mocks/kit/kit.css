@@ -1,4 +1,4 @@
-@import '../app-tokens.css';
+@import '../generated/app-tokens.css';
 
 @property --gk-spin-angle {
   syntax: '<angle>';
