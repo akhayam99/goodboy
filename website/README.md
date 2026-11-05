@@ -42,7 +42,7 @@ Where code runs:
 - `scripts/`: `prerender.mjs` is the build, `sync-*.mjs` write generated files,
   `check-page.mjs` and `*.test.mjs` check the site (`check-page/` holds its
   probes, its per-page checks and the browser launcher), `build-brand-assets.mjs`
-  writes `public/` images.
+  writes `public/` images (`brand-assets/` holds its icon, OG image and social renderers).
 
 ## Install and run
 
@@ -225,7 +225,7 @@ display drawing from 32 px up, so there is no separate display file. The type
 roles live as `--t-*` tokens next to the colours: 64, 48 and 32 for headings,
 20 for a lead, 16 for body, 15 for a cell, and weights 400, 500 and 600 only.
 The subset carries no `cv11` or `ss01` alternates, so the site sets only
-`calt`. `website/scripts/build-brand-assets.mjs` embeds the same file, so the
+`calt`. `website/scripts/brand-assets/html/createBaseHtml.mjs` embeds the same file, so the
 OG image renders in Inter on a machine without it installed.
 
 ## Cookie consent

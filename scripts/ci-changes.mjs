@@ -7,7 +7,7 @@ const WEBSITE_PATHS_READ_BY_TESTS = [
   'website/src/pages/home/sections/Hero.tsx',
   'website/src/styles/base.css',
   'website/public/favicon.svg',
-  'website/scripts/build-brand-assets.mjs',
+  'website/scripts/brand-assets/tileMetrics.mjs',
 ];
 
 const DOC_PATHS_READ_BY_TESTS = [

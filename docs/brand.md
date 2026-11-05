@@ -74,7 +74,7 @@ axes, that is a bug. It happened once, and it put the mark 3% too low on every
 surface.
 
 **The app icon is the one deliberate exception.** It uses
-`APP_ICON_MARK_SCALE_EXCEPTION` in `website/scripts/build-brand-assets.mjs`,
+`APP_ICON_MARK_SCALE_EXCEPTION` in `website/scripts/brand-assets/tileMetrics.mjs`,
 which is a smaller `0.66`. The dock shows the icon between 32 and 64px, and at
 that size the dog's outline needs space around it to stay readable. Nothing
 else changes: the badge, the site logo and the favicon all use the shared
@@ -191,7 +191,7 @@ colour space the product ships in. Some surfaces compress images hard. For
 those, render at `--force-device-scale-factor=2` and let the platform scale it
 down. So far every LinkedIn cover needs this.
 
-`website/scripts/build-brand-assets.mjs` owns every generated surface: the
+`website/scripts/build-brand-assets.mjs` owns every generated surface (its modules sit in `website/scripts/brand-assets/`): the
 five social formats above, plus `favicon` and `app-icon`. To rebuild one
 surface and leave the rest alone, pass its slug:
 
