@@ -17,7 +17,13 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
+import {
+  aDelegation,
+  anArtifactRow,
+  aPlanRow,
+  aView,
+  FIXTURE_SESSION,
+} from '../testing/autoViewFixtures';
 import { AutoDock } from './AutoDock';
 
 let useAppStore: StoryStore;
@@ -65,6 +71,24 @@ describe('AutoDock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }));
     expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
     expect(document.querySelectorAll('[data-auto-dock] button')).toHaveLength(3);
+  });
+
+  it('asks for the plan that waits when an older plan was used', () => {
+    const waiting = anArtifactRow({
+      id: 'artifact-plan-2',
+      kind: 'plan',
+      title: 'Second',
+      revision: 2,
+    });
+    const used = {
+      ...anArtifactRow({ id: 'artifact-plan-1', kind: 'plan', title: 'First' }),
+      status: 'consumed',
+    } as const;
+    renderDock({ view: aView({ phase: 'waiting', artifacts: [waiting, used] }) });
+
+    screen.getByText('Plan v2 waits for your OK');
+    screen.getByRole('button', { name: 'Approve plan' });
+    expect(screen.queryByText('Plan v1 used')).toBeNull();
   });
 
   it('says changes asked while the plan is revised, with Open plan only', () => {

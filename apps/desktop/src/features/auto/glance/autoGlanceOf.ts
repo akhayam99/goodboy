@@ -2,6 +2,7 @@ import type { TurnState } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
+import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
@@ -14,9 +15,6 @@ type Params = {
 type ViewParams = {
   readonly view: AutoTreeView;
 };
-
-const planRowOf = ({ view }: ViewParams) =>
-  view.artifacts.find((row) => row.artifact.kind === 'plan') ?? null;
 
 const isPausedAtLimit = ({ view }: ViewParams): boolean => {
   const budget = view.budget;
@@ -56,7 +54,7 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
       ? glanceOf({ state: 'working', sentence: 'Auto is answering' })
       : glanceOf({ state: 'idle', sentence: 'Write to continue' });
   }
-  const plan = planRowOf({ view });
+  const plan = dockPlanRowOf({ view });
   if (isAutoPlanAwaitingApproval({ view })) {
     return glanceOf({
       state: 'waiting',
