@@ -63,9 +63,11 @@ When an agent recommends another role, its transcript shows **Agent suggests** w
 
 Keep talking while an agent works. **Enter** queues your message for its next turn, and **Send now** (**⌘Enter**), in view beside **Queue** for as long as the turn runs, reads it now, interrupting the turn. The queue survives a restart. A queued message stays saved until the provider accepts it, so a refused send puts it back and a crash does not lose it.
 
+**Send** to an idle agent saves the message the same way first. When it starts at once, you see nothing extra. When it cannot start, it stays above the box as a row that reads **Not delivered**, with the reason on hover and **Retry**. Click the row to put the text back in the box. A message for a stopped agent reads **Sends when you Continue**. Saved messages start on their own when the session opens, and never twice.
+
 ### Message and document fields
 
-Write to an agent the same way everywhere. Every message and document field takes markdown with **Write** and **Preview**, and files by paste, drop or **Attach**. A message sends on **Enter** with the same **Send** button in the session, Ask and Chat composers, and a document saves on **⌘Enter**. A refused send puts your message back unless you typed something new meanwhile.
+Write to an agent the same way everywhere. Every message and document field takes markdown with **Write** and **Preview**, and files by paste, drop or **Attach**. A message sends on **Enter** with the same **Send** button in the session, Ask and Chat composers, and a document saves on **⌘Enter**. What you type in the message box, in **New session** and in an answer to a question survives a reload and an archive, and a send that lands clears it. When every provider is over its limit, a button that sends says so instead of doing nothing.
 
 **Agents** in the tool column (⌘⌥L) lists every agent of the session, the same set as the Runs page. Each run and Auto tree has its agents under it, and an agent you started yourself is a launch of one row with its state word. Picking a row opens that agent in the center, on the same page a top-level agent has. The panel stays open with the row selected, so hopping from one agent to the next is one click. With focus on a row of the tree, **j** and **k** do it from the keyboard. A session without agents says "No agents in this session yet".
 
@@ -189,6 +191,10 @@ Get agents and summaries in the language of your goal.
 ## Under the hood
 
 This part is for contributors and agents who change the feature.
+
+- Durable send: `useTurnDispatch` calls `sendAgentMessage`, which writes the row (`enqueueAgentMessage` with `isDirect`, saved as `sending`) and then delivers it through `deliverQueuedTurn` with the `queue:<id>` delivery id. A held row carries `hold.reason`; `queuedRowsOf` draws it as Not delivered with Retry (`retryQueuedMessage`), hides a direct row for its first 500 ms (`directRevealAtOf`) and words a stopped agent's row. `drainSessionQueues` runs after `loadAgentQueues`. `store.sqlite-send-durable.test.ts` proves one delivery per row across a refusal, a reload, two drains and a crash replay; the `u36-p2-send-held` and `u36-p2-send-stopped` scenes show the rows.
+- Refusals: `throwIfRefused` raises `TurnRefused`, whose words come from `turnRefusalMessage` alone (`store/slices/turn/refusal/`). `refusal/turnRefused.test.ts` covers each press.
+- Drafts: `storedAgentDraft`, `storedSessionDraftText` and `storedQuestionDrafts` keep the three boxes in local storage; `hydrateAgentDraft` and `hydrateSessionDraft` read them back and never over typed text. Archive keeps `agentDraft`; a delete sweeps it (`evictSession`, `deleteAgent`, `detachWorkflowFromSession`).
 
 - Model by name: `modelLineOf` is the one formatter for provider, display name and effort word. An id the catalog does not know keeps its own words, so a retired model still reads by name. The raw id shows in a tooltip only. "Unknown model" is only for an id with no known provider.
 - Who reads it: `agentRanModels`, the Auto child card, the Agents tree row (`SpawnedTreeRow` and `SpawnedStateRow`, hidden under 24rem) and the Runs grid model column. The last three render `AgentModelLine`; the `u30-model-lines` scene shows the rail and the cards.

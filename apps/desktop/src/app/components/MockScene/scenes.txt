@@ -1202,6 +1202,8 @@ u36-p1-run-stopped
 u36-p1-run-stopping
 u36-p1-window-close
 u36-p1-window-close-stuck
+u36-p2-send-held
+u36-p2-send-stopped
 update-card
 update-card-long-version
 update-card-narrow

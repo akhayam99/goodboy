@@ -283,7 +283,11 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   bound to their run), so a started agent with no seed, plan or step prompt sits in Pending until you
   type. A seed fills the kickoff only when no `initialPrompt` or step prompt
   does, and unlike `initialPrompt` it does not stop an implementer from
-  fanning a clustered plan out.
+  fanning a clustered plan out. A plan the kickoff carries is marked used
+  (`recordPlanConsumption`) only once that turn started or was lane queued,
+  in `spawnAgent` and `activateWorkflowAgent` alike; a refused kickoff keeps
+  the plan active and reports "The agent didn't start". A fan-out still
+  marks the plan before its children start.
 - A child of another agent counts as a fan-out child only by its shape
   (`fanOutChildKind`): an implementer under an implementer is a cluster part, a
   scout under a wireframe or report is an artifact scout, and a child of the
@@ -1367,6 +1371,15 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   idle or running, and `Message the agent` when the role is unknown. While a
   turn runs, Queue (Enter) is the primary and Send now (⌘Enter) a quiet word
   beside it. No prefix syntax appears in it.
+- Send to an idle agent is durable: `sendAgentMessage` saves the row first
+  (status `sending`, `isDirect`), then `deliverQueuedTurn` sends it with
+  `queue:<id>`, so the dedup above covers it. A refusal, a cancelled writer
+  wait or an error puts the row back as `queued` with `hold.reason`; the row
+  owns Retry (`retryQueuedMessage`), and RoutingIndicator's Send anyway
+  forces the held row when the box is empty. `drainAgentQueue` sends nothing
+  while any row of the agent is `sending`. A refusal the caller must see is
+  raised with `throwIfRefused` (`TurnRefused`); `turnRefusalMessage` is the
+  only owner of its words, `routeTurn` included.
 - Queued messages and the agent's own suggestion sit in a tray attached above
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
