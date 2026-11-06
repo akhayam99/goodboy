@@ -16,6 +16,7 @@ export type ArtifactScoutRow = Readonly<{
   root: string | null;
   branch: string | null;
   reason: string | null;
+  agentId: AgentId | null;
 }>;
 
 const ROLE_WORDS = /[-_]+/g;
@@ -49,6 +50,7 @@ export const artifactScoutRoster = ({
       root: entry.root,
       branch: mount?.branch ?? null,
       reason: entry.reason,
+      agentId: entry.agentId,
     } satisfies ArtifactScoutRow;
   });
   const claimed = new Set(plan.map((entry) => entry.agentId));
@@ -65,6 +67,7 @@ export const artifactScoutRoster = ({
           root: null,
           branch: null,
           reason: null,
+          agentId: entry.agentId,
         }) satisfies ArtifactScoutRow,
     );
   return [...planned, ...unplanned];

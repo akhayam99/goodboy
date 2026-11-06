@@ -245,17 +245,19 @@ export const buildArtifactListRows = ({
 
 const ARTIFACT_GROUP_ORDER: ReadonlyArray<ArtifactGroup> = [
   'needs',
-  'ready',
   'running',
+  'ready',
+  'read',
   'consumed',
   'deleted',
 ];
 
 export const ARTIFACT_GROUP_LABEL: Readonly<Record<ArtifactGroup, string>> = {
   needs: 'Needs you',
-  ready: 'Ready',
   running: 'Running',
-  consumed: 'Consumed',
+  ready: 'Ready',
+  read: 'To read',
+  consumed: 'Used',
   deleted: 'Recently deleted',
 };
 

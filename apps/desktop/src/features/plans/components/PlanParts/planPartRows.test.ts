@@ -8,7 +8,7 @@ import type {
   PlanWithCount,
   SessionId,
 } from '@goodboy/types';
-import { planPartRows, planPartsProgress, planSplitSentence } from './planPartRows';
+import { planPartRows, planPartsProgress } from './planPartRows';
 
 const CLUSTERS = [
   {
@@ -169,16 +169,5 @@ describe('planPartsProgress', () => {
       askingAgentIds: new Set(),
     });
     expect(planPartsProgress({ rows: done, hasRun: true })).toEqual({ kind: 'done', total: 3 });
-  });
-});
-
-describe('planSplitSentence', () => {
-  it('writes who split the plan on the screen', () => {
-    expect(planSplitSentence({ count: 3, plannerName: 'Planner 2' })).toBe(
-      'Planner 2 split this plan into 3 parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.',
-    );
-    expect(planSplitSentence({ count: 1, plannerName: 'Planner 2' })).toBe(
-      'Runs as one part, in a single implementer.',
-    );
   });
 });

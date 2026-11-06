@@ -24,7 +24,7 @@ export { artifactsInitialState } from './state';
 
 export const createArtifactsSlice = ({ set, get }: SliceDeps) => {
   return {
-    loadSessionArtifacts: loadSessionArtifacts(set),
+    loadSessionArtifacts: loadSessionArtifacts(set, get),
     updateArtifactSource: updateArtifactSource(set),
     setArtifactStatus: setArtifactStatus(set),
     deleteArtifact: deleteArtifact(set, get),

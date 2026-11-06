@@ -180,6 +180,7 @@ export type ActionDefinition<F> = {
   readonly hasCustomConfirm?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly slot?: (params: FactsParams<F>) => ActionSlot;
+  readonly isSecondary?: (params: FactsParams<F>) => boolean;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
   readonly doneLabel?: (params: FactsParams<F>) => string;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
@@ -210,6 +211,7 @@ export type ResolvedAction = {
   readonly group: ActionGroup;
   readonly submenu?: ActionSubmenu;
   readonly slot: ActionSlot;
+  readonly isSecondary?: boolean;
   readonly pendingLabel: string | null;
   readonly doneLabel: string | null;
   readonly shortcut: ShortcutId | null;

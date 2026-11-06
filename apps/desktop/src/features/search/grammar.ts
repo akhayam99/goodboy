@@ -79,7 +79,7 @@ const STATUS_LABELS: Readonly<Record<string, string>> = {
   merged: 'Merged',
   closed: 'Closed',
   active: 'Active',
-  consumed: 'Consumed',
+  consumed: 'Used',
   superseded: 'Superseded',
   discarded: 'Discarded',
   replaced: 'Replaced',
