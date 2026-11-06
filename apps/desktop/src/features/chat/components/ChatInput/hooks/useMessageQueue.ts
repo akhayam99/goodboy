@@ -36,9 +36,9 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
       if (agentId === null) {
         return;
       }
-      void removeQueuedMessage({ agentId, itemId });
+      void removeQueuedMessage({ sessionId, agentId, itemId });
     },
-    [agentId, removeQueuedMessage],
+    [agentId, removeQueuedMessage, sessionId],
   );
 
   const sendQueued = useCallback(
@@ -76,13 +76,13 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
       if (agentId === null) {
         return;
       }
-      const item = takeQueuedMessage({ agentId, itemId });
+      const item = takeQueuedMessage({ sessionId, agentId, itemId });
       if (item === null) {
         return;
       }
       onEdit(item);
     },
-    [agentId, takeQueuedMessage, onEdit],
+    [agentId, takeQueuedMessage, onEdit, sessionId],
   );
 
   return {

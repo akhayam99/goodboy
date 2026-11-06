@@ -1300,6 +1300,7 @@ describe('ChatInput, composer flows', () => {
     await user.click(screen.getByRole('button', { name: 'queued words' }));
 
     expect(mockStore.getState().takeQueuedMessage).toHaveBeenCalledWith({
+      sessionId: 'session-1',
       agentId: 'agent-1',
       itemId: 'q-1',
     });

@@ -240,6 +240,11 @@ const stopAgent = () =>
     },
   }));
 
+type HeldHeadParams = {
+  readonly head: string;
+  readonly behind: string;
+};
+
 describe('Send writes the row, then delivers', () => {
   it('delivers a message to an idle agent once and leaves no row', async () => {
     const delivery = await send('send-1');
@@ -484,5 +489,39 @@ describe('Send writes the row, then delivers', () => {
 
     expect(storySpies.runTurn).not.toHaveBeenCalled();
     expect(rows()).toEqual([{ id: 'send-8', status: 'queued', reason: LIMIT }]);
+  });
+
+  const holdHeadWithRowBehind = async ({ head, behind }: HeldHeadParams) => {
+    await routeTo({ reason: 'all-exceeded' });
+    await send(head);
+    await routeTo({ reason: 'preferred' });
+    await useAppStore.getState().enqueueAgentMessage({
+      turn: { id: behind, agentId, content: TEXT, attachments: [], override: undefined },
+    });
+    expect(rows().map((row) => row.id)).toEqual([head, behind]);
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+  };
+
+  it('sends the row behind a held head once the held row is deleted', async () => {
+    await holdHeadWithRowBehind({ head: 'send-16', behind: 'send-17' });
+
+    await useAppStore.getState().removeQueuedMessage({ sessionId, agentId, itemId: 'send-16' });
+
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(1));
+    await vi.waitFor(async () => expect(await savedQueue()).toEqual([]));
+    expect(rows()).toEqual([]);
+  });
+
+  it('sends the row behind a held head once the held row is taken to edit', async () => {
+    await holdHeadWithRowBehind({ head: 'send-18', behind: 'send-19' });
+
+    const taken = useAppStore
+      .getState()
+      .takeQueuedMessage({ sessionId, agentId, itemId: 'send-18' });
+
+    expect(taken?.id).toBe('send-18');
+    await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(1));
+    await vi.waitFor(async () => expect(await savedQueue()).toEqual([]));
+    expect(rows()).toEqual([]);
   });
 });

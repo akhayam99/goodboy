@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, TurnProviderOverride } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionId, TurnProviderOverride } from '@goodboy/types';
 import type { StoredAttachment } from '../../../features/attachments/pendingAttachment';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -33,6 +33,11 @@ export type AgentQueueItemParams = Readonly<{
   agentId: AgentId;
   itemId: string;
 }>;
+
+export type AgentQueueItemInSessionParams = AgentQueueItemParams &
+  Readonly<{
+    sessionId: SessionId;
+  }>;
 
 export type QueuedTurnDelivery = Readonly<{
   isDelivered: boolean;
