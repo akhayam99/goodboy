@@ -163,6 +163,28 @@ export const listOpenQuestionsForSession = async (
   return rows.map(toOpenQuestion);
 };
 
+type SessionsParams = {
+  readonly db: Database;
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
+export const listOpenQuestionsForSessions = async ({
+  db,
+  sessionIds,
+}: SessionsParams): Promise<ReadonlyArray<OpenQuestion>> => {
+  if (sessionIds.length === 0) {
+    return [];
+  }
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const rows = await db.select<OpenQuestionRow>(
+    `SELECT * FROM open_questions
+     WHERE session_id IN (${placeholders}) AND status = 'open'
+     ORDER BY created_at ASC`,
+    sessionIds,
+  );
+  return rows.map(toOpenQuestion);
+};
+
 export const listResolvedQuestionTextsForSession = async (
   db: Database,
   sessionId: SessionId,

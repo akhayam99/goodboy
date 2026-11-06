@@ -1,10 +1,9 @@
 import type { LiveGroupModel } from './liveGroupsOf';
-import { LIVE_TONE } from './liveTone';
 
 type Params = {
-  readonly group: LiveGroupModel;
-  readonly word: string;
+  readonly group: Pick<LiveGroupModel, 'state'>;
+  readonly isStateWord: boolean;
 };
 
-export const liveOwnStateOf = ({ group, word }: Params): boolean =>
-  group.state === 'working' && word === LIVE_TONE.state.working.word;
+export const liveOwnStateOf = ({ group, isStateWord }: Params): boolean =>
+  group.state === 'working' && isStateWord;

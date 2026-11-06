@@ -299,8 +299,6 @@ const snapshotFor = ({ variant }: VariantParams): MonitorSnapshot => {
   return { listeners: [], processes: [], takenAt, isPlatformSupported: true };
 };
 
-const noop = () => undefined;
-
 export const seedScriptsLive = ({ variant }: VariantParams): void => {
   const mount = mountOf({
     mountId: MOUNT_ID,
@@ -350,7 +348,6 @@ export const seedScriptsLive = ({ variant }: VariantParams): void => {
     discoveredScriptScans: {
       [SCRIPTS_LIVE_SESSION_ID]: { [WORKTREE]: { status: 'ready', error: null } },
     },
-    scriptsLensScope: null,
     monitorSnapshot: snapshotFor({ variant }),
     monitorLedger: [],
     monitorScanned: {
@@ -367,7 +364,6 @@ export const seedScriptsLive = ({ variant }: VariantParams): void => {
     cancelScript: async () => undefined,
     loadDiscoveredScripts: async () => undefined,
     refreshDiscoveredScripts: async () => undefined,
-    setScriptsLensScope: noop,
     navigate: () => undefined,
   });
 };

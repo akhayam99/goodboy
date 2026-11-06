@@ -631,6 +631,51 @@ describe('agent writes', () => {
       expect(row?.stopped_at).toBeGreaterThan(0);
     });
 
+    it('keeps a run whose permission ask has no decision, and stops one that was decided', async () => {
+      await seedRunning('asking', 'run-asking');
+      await seedRunning('answered', 'run-answered');
+      type EventParams = {
+        readonly id: string;
+        readonly agentId: string;
+        readonly payload: object;
+      };
+      const event = async ({ id, agentId, payload }: EventParams): Promise<void> => {
+        await db.execute(
+          `INSERT INTO turn_events (id, session_id, agent_id, payload, created_at)
+           VALUES (?, ?, ?, ?, 1)`,
+          [id, sessionId, agentId, JSON.stringify(payload)],
+        );
+      };
+      const ask = { kind: 'permission_request', toolName: 'Bash', input: {}, at: '' };
+      await event({
+        id: 'ask-1',
+        agentId: 'asking',
+        payload: { ...ask, runId: 'run-asking', toolUseId: 'tool-1' },
+      });
+      await event({
+        id: 'ask-2',
+        agentId: 'answered',
+        payload: { ...ask, runId: 'run-answered', toolUseId: 'tool-2' },
+      });
+      await event({
+        id: 'decision-2',
+        agentId: 'answered',
+        payload: {
+          kind: 'permission_decision',
+          runId: 'run-answered',
+          toolUseId: 'tool-2',
+          decision: 'deny',
+          ruleId: null,
+          decidedBy: 'user',
+          at: '',
+        },
+      });
+
+      expect(await stopGhostAgents({ db, keepRunIds: [] })).toBe(1);
+      expect(await statusOf('asking')).toBe('running');
+      expect(await statusOf('answered')).toBe('stopped');
+    });
+
     it('is a no-op the second time', async () => {
       await seedRunning('ghost', 'run-ghost');
       await stopGhostAgents({ db, keepRunIds: [] });

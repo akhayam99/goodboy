@@ -4,6 +4,7 @@ import type {
   FileDiff,
   MountId,
   OpenQuestionId,
+  ProjectId,
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -75,7 +76,7 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'scripts';
-      readonly payload: null;
+      readonly payload: { readonly projectId: ProjectId } | null;
     }
   | {
       readonly kind: 'conversation';

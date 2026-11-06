@@ -168,7 +168,6 @@ type StoredParams = Readonly<{
   kind: ArtifactKind;
   status: ArtifactStatus;
   isNew: boolean;
-  openQuestionCount: number;
 }> &
   PlanStateInputs;
 
@@ -218,12 +217,6 @@ const planState = (params: StoredParams): ArtifactState => {
   }
   if (params.plannerQuestionCount > 0) {
     return withDetail({ key: 'needs', detail: PLANNER_ASKED_DETAIL });
-  }
-  if (params.openQuestionCount > 0) {
-    return withDetail({
-      key: 'needs',
-      detail: countNoun({ count: params.openQuestionCount, one: 'question' }),
-    });
   }
   if (params.handoff === 'auto-approved') {
     return withDetail({ key: 'autoApproved', detail: partsDetail({ count: params.partCount }) });

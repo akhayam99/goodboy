@@ -101,7 +101,7 @@ export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props
   };
   const stateSpec = LIVE_TONE.state[group.state];
   const status = liveStatusOf({ word: stateSpec.word, detail: runStatusDetailOf({ group }) });
-  const isOwn = liveOwnStateOf({ group, word: status.word });
+  const isOwn = liveOwnStateOf({ group, isStateWord: true });
   const stateWord = (
     <LiveStateWord tone={stateSpec.tone} word={status.word} isSectionState={isOwn} />
   );

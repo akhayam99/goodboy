@@ -78,7 +78,6 @@ describe('planDrawerReasonOf', () => {
       kind: 'plan',
       status: 'active',
       isNew: false,
-      openQuestionCount: 0,
       handoff: 'approved-waiting',
     });
     expect(

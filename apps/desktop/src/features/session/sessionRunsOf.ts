@@ -11,7 +11,7 @@ import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
-import { autoTreeWordOf } from '../auto/autoTreeWordOf';
+import { autoTreeWordOf, type AutoTreeState, type AutoTreeWord } from '../auto/autoTreeWordOf';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
 import { splitWorkflowRuns } from '../workflows/activeWorkflowRuns';
 import { runRowFactsOf } from '../workflows/runRowFactsOf';
@@ -182,24 +182,27 @@ const workflowRowsOf = ({
 };
 
 type AutoDotParams = {
-  readonly word: string;
-  readonly node: string;
+  readonly state: AutoTreeState;
 };
 
-const autoDotOf = ({ word, node }: AutoDotParams): DotState => {
-  if (word === 'Needs you') {
-    return 'needsYou';
+const autoDotOf = ({ state }: AutoDotParams): DotState => {
+  switch (state) {
+    case 'asking':
+    case 'blocked':
+      return 'needsYou';
+    case 'running':
+      return 'running';
+    case 'done':
+      return 'done';
+    case 'stopped':
+      return 'stopped';
+    case 'idle':
+      return 'idle';
+    default: {
+      const exhaustive: never = state;
+      return exhaustive;
+    }
   }
-  if (node === 'running') {
-    return 'running';
-  }
-  if (node === 'done') {
-    return 'done';
-  }
-  if (node === 'stopped') {
-    return 'stopped';
-  }
-  return 'idle';
 };
 
 type AutoRowParams = {
@@ -211,13 +214,13 @@ type AutoRowParams = {
 
 const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRun => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
-  const resting =
+  const resting: Pick<AutoTreeWord, 'state' | 'word'> =
     root.status === 'running'
-      ? { word: 'Running', node: 'running' }
-      : { word: 'Idle', node: 'queued' };
+      ? { state: 'running', word: 'Running' }
+      : { state: 'idle', word: 'Idle' };
   const state =
     view === undefined ? resting : autoTreeWordOf({ view, rootTurn: rootTurns[root.id] ?? null });
-  const dot = autoDotOf(state);
+  const dot = autoDotOf({ state: state.state });
   const children = descendantAgentsOf({ agents, rootId: root.id });
   const agentIds = [root.id, ...children.map((child) => child.id)];
   return {

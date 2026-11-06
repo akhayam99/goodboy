@@ -1,4 +1,4 @@
-import type { PlanWithCount } from '@goodboy/types';
+import type { OpenQuestion, PlanWithCount } from '@goodboy/types';
 import {
   planPartsProgress,
   type PlanPartRow,
@@ -6,6 +6,7 @@ import {
 } from './components/PlanParts/planPartRows';
 import type { PlanHandoff } from './planHandoffOf';
 import { NOT_REVISING, type PlanRevising } from './planRevising';
+import { plannerQuestionsOf } from './plannerQuestions';
 
 export type PlanStateInputs = Readonly<{
   partCount: number;
@@ -29,13 +30,13 @@ export const planStateInputsOf = ({
   plan,
   rows,
   revising = NOT_REVISING,
-  plannerQuestionCount = 0,
+  openQuestions = [],
   handoff = 'none',
 }: {
   readonly plan: PlanWithCount;
   readonly rows: ReadonlyArray<PlanPartRow>;
   readonly revising?: PlanRevising;
-  readonly plannerQuestionCount?: number;
+  readonly openQuestions?: ReadonlyArray<OpenQuestion>;
   readonly handoff?: PlanHandoff;
 }): PlanStateInputs => ({
   partCount: plan.clusters?.length ?? 0,
@@ -45,6 +46,6 @@ export const planStateInputsOf = ({
       : null,
   hasPartAgents: rows.some((row) => row.agentId !== null),
   revising,
-  plannerQuestionCount,
+  plannerQuestionCount: plannerQuestionsOf({ questions: openQuestions, plan }).length,
   handoff,
 });
