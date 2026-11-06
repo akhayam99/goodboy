@@ -20,6 +20,9 @@ type Props = {
   readonly frameRow?: (params: { readonly row: Row; readonly children: ReactNode }) => ReactNode;
 };
 
+const PARTS_RULE =
+  'Parts that touch the same files go one after the other; the rest can run together.';
+
 export const PlanParts = ({ sessionId, planId, rows, hasRun, onOpenPart, frameRow }: Props) => {
   const order = useMemo(() => planPartOrder({ rows }), [rows]);
   if (rows.length === 0) {
@@ -52,7 +55,7 @@ export const PlanParts = ({ sessionId, planId, rows, hasRun, onOpenPart, frameRo
         <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
       {hasRun ? null : (
-        <p className="text-meta text-muted-foreground">
+        <p className="text-meta text-muted-foreground" title={PARTS_RULE}>
           {planPartsLine({ order, count: rows.length })}
         </p>
       )}

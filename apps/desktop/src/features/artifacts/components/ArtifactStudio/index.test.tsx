@@ -635,6 +635,9 @@ describe('ArtifactStudio plan parts', () => {
     renderStudio();
     const parts = screen.getByTestId('plan-parts');
     expect(within(parts).getByText('2 parts, one after the other.')).toBeDefined();
+    expect(within(parts).getByText('2 parts, one after the other.').getAttribute('title')).toBe(
+      'Parts that touch the same files go one after the other; the rest can run together.',
+    );
     expect(within(parts).getByText('Done when: run pnpm test ledger-core')).toBeDefined();
     expect(within(parts).getByText('2 files')).toBeDefined();
     expect(within(parts).getAllByText('Auto')).toHaveLength(2);

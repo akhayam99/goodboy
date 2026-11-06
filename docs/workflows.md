@@ -1116,7 +1116,8 @@ own **Open in Artifacts**.
   button; pressing **Approve** or **Run plan** then asks inline "Approve without
   your 3 comments?" or "Run without your 3 comments?", with **Approve anyway**
   or **Run anyway**. One function, `unsentCommentsConfirmOf`, writes that
-  question for the primary button and for `artifact.runPlan`. The header
+  question for the primary button, for `artifact.runPlan` and for the **Start
+  implementer** next step (`SuggestionAction.confirm`). The header
   primary is the only **Approve** on either surface: the comment bar holds
   **Send to planner** and, with no comment, the hint "Select text or click a
   block to comment". An open question the planner asked turns the primary off with

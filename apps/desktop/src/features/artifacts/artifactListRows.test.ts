@@ -136,7 +136,7 @@ describe('buildArtifactListRows', () => {
     expect(row?.isPlanRunning).toBe(false);
   });
 
-  it('files a plan Auto approved under Consumed as Approved, never Ready to run', () => {
+  it('files a plan Auto approved under Used as Approved, never Ready to run', () => {
     const held = plan({ id: brandId<ArtifactId>({ value: 'artifact-plan' }) });
     const [row] = build({
       plans: [held],
@@ -305,7 +305,7 @@ describe('buildArtifactListRows', () => {
     ]);
   });
 
-  it('files a replaced report under Consumed, faint', () => {
+  it('files a replaced report under Used, faint', () => {
     const [row] = build({ artifacts: [report({ status: 'superseded' })] });
     expect(row).toMatchObject({ group: 'consumed', isFaint: true });
     expect(row?.state?.label).toBe('Replaced');
@@ -348,7 +348,7 @@ describe('buildArtifactListRows', () => {
     ]);
   });
 
-  it('groups in the order Needs you, Ready, Running, Consumed, Recently deleted', () => {
+  it('groups in the order Needs you, Running, Ready, To read, Used, Recently deleted', () => {
     const rows = build({
       plans: [
         plan({ id: 'p-ready' as ArtifactId, title: 'Ready plan' }),
