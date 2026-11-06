@@ -8,6 +8,7 @@ import { useQuestionsLens } from '../hooks/useQuestionsLens';
 import { useNow } from '../../../shared/hooks/useNow';
 import { AGENT_KIND_META, type AgentKind } from '../agent-kind';
 import { openAsker } from '../openAsker';
+import { openQuestion } from '../openQuestion';
 import { questionMetaOf } from './SessionWorkspace/parts/questionMetaOf';
 import { nextWaitingQuestion, questionRowsOf } from './SessionWorkspace/parts/questionsLensModel';
 
@@ -35,7 +36,6 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
     sessionId,
     load: 'when-missing',
   });
-  const openDrawer = useAppStore((state) => state.openDrawer);
   const kindOverrides = useAppStore((state) => state.agentKindOverride ?? NO_KIND_OVERRIDES);
   const now = useNow(30_000);
   const dismissOpenQuestion = useAppStore((state) => state.dismissOpenQuestion);
@@ -45,18 +45,14 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
     [model, questionId],
   );
 
-  const openQuestion = useCallback(
+  const openNext = useCallback(
     ({ next }: NextParams) => {
       if (next === null) {
         return;
       }
-      openDrawer({
-        kind: 'question',
-        sessionId,
-        payload: from === null ? { questionId: next } : { questionId: next, from },
-      });
+      openQuestion({ state: useAppStore.getState(), sessionId, questionId: next });
     },
-    [from, openDrawer, sessionId],
+    [sessionId],
   );
 
   const dismiss = async ({ question }: QuestionParams) => {
@@ -116,10 +112,7 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
       icon={CONCEPT_ICONS.questions}
       iconClassName="text-muted-foreground"
       {...(from === 'ask' && {
-        back: {
-          label: 'Back to Ask',
-          onBack: () => openDrawer({ kind: 'ask', sessionId, payload: null }),
-        },
+        back: { label: 'Back to Ask', onBack: onClose },
       })}
       onClose={onClose}
     >
@@ -140,11 +133,11 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
           autoFocus
           settled={row.kind === 'answered' || row.kind === 'dismissed' ? row.kind : null}
           onAnswered={(answered) =>
-            openQuestion({ next: nextWaitingQuestion({ model, from: answered.id }) })
+            openNext({ next: nextWaitingQuestion({ model, from: answered.id }) })
           }
           onSkip={
             model.waiting.length > 1
-              ? () => openQuestion({ next: nextWaitingQuestion({ model, from: row.question.id }) })
+              ? () => openNext({ next: nextWaitingQuestion({ model, from: row.question.id }) })
               : null
           }
           onDismiss={() => void dismiss({ question: row.question })}

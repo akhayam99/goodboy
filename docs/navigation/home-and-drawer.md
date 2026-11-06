@@ -335,8 +335,8 @@ it centres on the first line of text even when the line wraps; once a thread has
 turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
 targets a page navigates (the drawer stays, see above), except a question: it
-opens the Questions page and the question in the drawer under **Back to Ask**
-(`question` drawer, `from: 'ask'`); a chip that targets a
+opens the question on its address (`openQuestion`), the drawer under **Back to Ask**
+(`question` drawer, `from: 'ask'`; Back goes through the history); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,
 and Escape goes back before it closes. Buttons come only from verbs the action
 registry offers right now (`askVerb`, `useAskActions`): **Answer question N**

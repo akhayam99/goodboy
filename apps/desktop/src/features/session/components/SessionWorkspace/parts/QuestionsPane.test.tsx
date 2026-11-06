@@ -31,7 +31,9 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as never[],
-  useAppStore: (selector: (s: unknown) => unknown) => selector(store.state),
+  useAppStore: Object.assign((selector: (s: unknown) => unknown) => selector(store.state), {
+    getState: () => store.state,
+  }),
   useSessionOpenQuestions: () => store.open,
   useSessionAnsweredQuestions: () => store.answered,
 }));
@@ -45,6 +47,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ),
 }));
 
+import { questionPlace } from '../../../../../store/slices/navigation/place';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { QuestionDrawer } from '../../QuestionDrawer';
@@ -151,7 +154,7 @@ type DrawerParams = SeedParams & {
 };
 
 const setupDrawer = ({ questionId, ...params }: DrawerParams) => {
-  seed(params);
+  seed({ openedId: questionId, ...params });
   return render(
     <QuestionDrawer sessionId={SESSION_ID} questionId={questionId} from={null} onClose={vi.fn()} />,
   );
@@ -175,7 +178,6 @@ beforeEach(() => {
     drafts: {},
     staged: [],
     pendingUndo: null,
-    focusedQuestionId: null,
   });
 });
 
@@ -250,13 +252,21 @@ describe('QuestionsPane', () => {
     expect(within(quiet).queryByRole('img', { name: 'Blocking' })).toBeNull();
   });
 
-  it('opens the question in the drawer from its row, naming the question', () => {
+  it('opens the question from its row on its address, one step after the list', () => {
     setup();
     fireEvent.click(row('Keep the old dispatch path?'));
-    expect(actions.openDrawer).toHaveBeenCalledWith({
-      kind: 'question',
-      sessionId: SESSION_ID,
-      payload: { questionId: Q3.id },
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q3.id }),
+      mode: 'push',
+    });
+  });
+
+  it('switches to another question from its row in place, so Close still leaves the list', () => {
+    setup({ openedId: Q2.id });
+    fireEvent.click(row('Keep the old dispatch path?'));
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q3.id }),
+      mode: 'replace',
     });
   });
 
@@ -264,17 +274,6 @@ describe('QuestionsPane', () => {
     setup({ openedId: Q2.id });
     expect(row('Which events should be retried?').getAttribute('aria-current')).toBe('true');
     expect(row('Keep the old dispatch path?').getAttribute('aria-current')).toBeNull();
-  });
-
-  it('opens the question another surface asked to focus in the drawer', () => {
-    useOpenQuestions.setState({ focusedQuestionId: Q3.id });
-    setup();
-    expect(actions.openDrawer).toHaveBeenCalledWith({
-      kind: 'question',
-      sessionId: SESSION_ID,
-      payload: { questionId: Q3.id },
-    });
-    expect(useOpenQuestions.getState().focusedQuestionId).toBeNull();
   });
 
   it('keeps a question an agent is answering under Needs you, saying so in gray', () => {
@@ -309,10 +308,9 @@ describe('QuestionDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
     expect(useOpenQuestions.getState().staged).toEqual([Q1.id]);
     expect(actions.answerOpenQuestions).not.toHaveBeenCalled();
-    expect(actions.openDrawer).toHaveBeenCalledWith({
-      kind: 'question',
-      sessionId: SESSION_ID,
-      payload: { questionId: Q2.id },
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q2.id }),
+      mode: 'replace',
     });
   });
 

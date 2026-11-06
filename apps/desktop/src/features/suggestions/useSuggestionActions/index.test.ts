@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { agentPlace, branchPlace } from '../../../store/slices/navigation/place';
+import { agentPlace, branchPlace, questionPlace } from '../../../store/slices/navigation/place';
 import { renderHook } from '@testing-library/react';
 import type {
   Agent,
@@ -611,7 +611,7 @@ describe('useSuggestionActions', () => {
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);
   });
 
-  it('jumps to the agent that asked when one question is out of view', () => {
+  it('opens the question on its address when one question is out of view', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -629,11 +629,8 @@ describe('useSuggestionActions', () => {
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
-    });
-    expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
-      agentId: AGENT_ID,
-      questionId: 'question-1',
+      to: questionPlace({ sessionId: SESSION_ID, questionId: 'question-1' as OpenQuestionId }),
+      mode: 'push',
     });
   });
 

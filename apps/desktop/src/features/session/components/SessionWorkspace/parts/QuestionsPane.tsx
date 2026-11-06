@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { EmptyState, PaneShell, Skeleton } from '@goodboy/ui';
-import type { AgentId, OpenQuestionId, Session, SessionId } from '@goodboy/types';
+import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 import type { AgentKind } from '../../../agent-kind';
 import { useQuestionsLens } from '../../../hooks/useQuestionsLens';
+import { openQuestion } from '../../../openQuestion';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { QuestionsGrid } from './QuestionsGrid';
@@ -20,56 +21,21 @@ const TITLE = 'Questions';
 
 const SKELETON_ROWS = 3;
 
-type OpenParams = {
-  readonly questionId: OpenQuestionId;
-  readonly from: 'ask' | null;
-};
-
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
-  const { model, agents, isLoaded, hasLoadError, reload, focusedQuestionId, clearFocusedQuestion } =
-    useQuestionsLens({
-      sessionId,
-      load: 'on-mount',
-    });
+  const { model, agents, isLoaded, hasLoadError, reload } = useQuestionsLens({
+    sessionId,
+    load: 'on-mount',
+  });
   const kindOverrides = useAppStore((s) => s.agentKindOverride ?? NO_KIND_OVERRIDES);
-  const openDrawer = useAppStore((s) => s.openDrawer);
   const openedId = useAppStore((s) => {
     const drawer = selectOpenDrawer(s);
     return drawer?.kind === 'question' && drawer.sessionId === sessionId
       ? drawer.payload.questionId
       : null;
   });
-  const isAskOpen = useAppStore((s) => {
-    const drawer = selectOpenDrawer(s);
-    if (drawer === null || drawer.sessionId !== sessionId) {
-      return false;
-    }
-    return drawer.kind === 'ask' || (drawer.kind === 'question' && drawer.payload.from === 'ask');
-  });
   const groups = useMemo(() => questionGroupsOf({ model }), [model]);
   const rows = useMemo(() => questionRowsOf({ model }), [model]);
-
-  const openQuestion = useCallback(
-    ({ questionId, from }: OpenParams) => {
-      openDrawer({
-        kind: 'question',
-        sessionId,
-        payload: from === null ? { questionId } : { questionId, from },
-      });
-    },
-    [openDrawer, sessionId],
-  );
-
-  useEffect(() => {
-    if (focusedQuestionId === null || !isLoaded) {
-      return;
-    }
-    if (rows.some((row) => row.question.id === focusedQuestionId)) {
-      openQuestion({ questionId: focusedQuestionId, from: isAskOpen ? 'ask' : null });
-    }
-    clearFocusedQuestion();
-  }, [clearFocusedQuestion, focusedQuestionId, isAskOpen, isLoaded, openQuestion, rows]);
 
   if (!isLoaded && hasLoadError) {
     return (
@@ -115,7 +81,9 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
         agents={agents}
         kindOverrides={kindOverrides}
         selectedId={openedId}
-        onOpen={({ questionId }) => openQuestion({ questionId, from: isAskOpen ? 'ask' : null })}
+        onOpen={({ questionId }) =>
+          openQuestion({ state: useAppStore.getState(), sessionId, questionId })
+        }
       />
     </PaneShell>
   );

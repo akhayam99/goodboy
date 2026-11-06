@@ -25,7 +25,6 @@
   "apps/desktop/src/features/chat/reveal/useFreshLanding": 1,
   "apps/desktop/src/features/chat/reveal/useRevealedMarkdown": 1,
   "apps/desktop/src/features/chat/reveal/useRevealedText": 1,
-  "apps/desktop/src/features/context/useQuestionOpeners": 1,
   "apps/desktop/src/features/file-versions/useChangeSides": 1,
   "apps/desktop/src/features/file-versions/useChangesRestore": 1,
   "apps/desktop/src/features/history/useRebaseJob": 1,

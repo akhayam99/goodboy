@@ -31,8 +31,15 @@
   Needs you and says so in gray). A row reads the question with its answer in gray on a
   second line (`You:` or `Agent:`), then the asker's role and the age; there is no answer
   column. A blocking ask is one warning dot in the leading cell. The row
-  opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), titled with
-  the asker's role and the age (`questionMetaOf`, the same function as the row) while the
+  opens the question on its address: Questions with that question open, the `question`
+  target of the session address (`questionPlace`, one function for every door: a run row's
+  Answer, a Needs you row, the run menu, a search hit, an Ask chip, the board, the
+  banner and the Now chip all go through `openQuestion`). The address carries the id, so a
+  reload or a saved window reopens that question, and the drawer (`question` drawer kind,
+  `QuestionDrawer`) is derived from it. Opening another question while one is open replaces
+  the entry, so **Close** (the X and Esc, `closeQuestion`) goes back to where you came from, the
+  Overview or the list or Ask, never to an empty list. The drawer is titled with
+  the asker's role and "asks" (`questionMetaOf`, the same function as the row) while the
   card carries the question itself. The role in that title is a link to the asker
   (`openAsker`, `features/session/openAsker.ts`): an agent you started opens its
   conversation scrolled to the question, a step of a preset run opens that step on

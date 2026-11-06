@@ -53,6 +53,8 @@ const targetAddress = ({ target }: TargetParams): string => {
     }
     case 'thread':
       return `t/${target.threadId}`;
+    case 'question':
+      return `q/${target.questionId}`;
     default: {
       const unreachable: never = target;
       return unreachable;

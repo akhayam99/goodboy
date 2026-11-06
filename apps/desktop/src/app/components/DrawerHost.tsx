@@ -33,10 +33,17 @@ type RenderParams = {
   readonly drawer: DrawerRequest;
   readonly isReading: boolean;
   readonly closeDrawer: () => void;
+  readonly closeQuestion: () => void;
   readonly openDrawer: (request: DrawerRequest) => void;
 };
 
-const renderDrawer = ({ drawer, isReading, closeDrawer, openDrawer }: RenderParams): ReactNode => {
+const renderDrawer = ({
+  drawer,
+  isReading,
+  closeDrawer,
+  closeQuestion,
+  openDrawer,
+}: RenderParams): ReactNode => {
   switch (drawer.kind) {
     case 'context':
       return (
@@ -137,7 +144,7 @@ const renderDrawer = ({ drawer, isReading, closeDrawer, openDrawer }: RenderPara
           sessionId={drawer.sessionId}
           questionId={drawer.payload.questionId}
           from={drawer.payload.from ?? null}
-          onClose={closeDrawer}
+          onClose={closeQuestion}
         />
       );
     case 'new':
@@ -222,6 +229,7 @@ const renderDrawer = ({ drawer, isReading, closeDrawer, openDrawer }: RenderPara
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
+  const closeQuestion = useAppStore((s) => s.closeQuestion);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const isReading = useAppStore((s) => {
     const open = selectDrawerPanel(s);
@@ -240,7 +248,7 @@ export const DrawerHost = () => {
   }
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
-      {renderDrawer({ drawer, isReading, closeDrawer, openDrawer })}
+      {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
     </PanelBoundary>
   );
 };

@@ -25,6 +25,12 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     const threadId = resolverThread({ state, sessionId, agentId });
     return threadId === null ? null : { kind: 'thread', threadId };
   }
+  if (lens === 'questions') {
+    const drawer = state.drawer ?? null;
+    return drawer?.kind === 'question' && drawer.sessionId === sessionId
+      ? { kind: 'question', questionId: drawer.payload.questionId }
+      : null;
+  }
   if (lens === 'plans') {
     const artifactId = state.focusedArtifactId[sessionId] ?? null;
     return artifactId === null ? null : { kind: 'artifact', artifactId };

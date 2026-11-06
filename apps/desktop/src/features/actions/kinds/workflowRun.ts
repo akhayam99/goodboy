@@ -36,7 +36,7 @@ import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { isRunPaused } from '../../workflows/isRunPaused';
 import { STEP_ROUTING_REQUEST_EVENT, requestStepRouting } from '../../workflows/requestStepRouting';
 import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
-import { useOpenQuestions } from '../../context/components/QuestionsTab/useOpenQuestions';
+import { openQuestion } from '../../session/openQuestion';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -274,7 +274,12 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       when: ({ facts }) => facts.openQuestionId !== null && isWorkflowRunLive({ facts }),
       run: ({ facts, env }) => {
         if (facts.openQuestionId !== null) {
-          useOpenQuestions.getState().focusQuestion(facts.openQuestionId);
+          openQuestion({
+            state: env.getState(),
+            sessionId: facts.sessionId,
+            questionId: facts.openQuestionId,
+          });
+          return;
         }
         env
           .getState()

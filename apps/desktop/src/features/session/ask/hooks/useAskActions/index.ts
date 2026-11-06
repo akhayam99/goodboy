@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
-import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { runObjectAction } from '../../../../actions/registry';
 import type { ActionConfirm, ActionEnv } from '../../../../actions/types';
 import { useActionEnv } from '../../../../actions/useActionEnv';
@@ -32,8 +31,11 @@ const runButton = ({ button, sessionId, env }: RunParams): void => {
   const state = env.getState();
   switch (button.kind) {
     case 'answer':
-      focusQuestionAnswer({ questionId: button.questionId, prefill: button.prefill });
-      state.navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
+      focusQuestionAnswer({
+        sessionId,
+        questionId: button.questionId,
+        prefill: button.prefill,
+      });
       return;
     case 'review':
       void runObjectAction({

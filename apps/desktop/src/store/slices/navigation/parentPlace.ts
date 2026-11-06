@@ -69,7 +69,11 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
       target: runId === null ? null : { kind: 'run', runId },
     });
   }
-  if (view.target?.kind === 'github-issue' || view.target?.kind === 'external-task') {
+  if (
+    view.target?.kind === 'github-issue' ||
+    view.target?.kind === 'external-task' ||
+    view.target?.kind === 'question'
+  ) {
     return sessionPlace({ sessionId });
   }
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {

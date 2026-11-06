@@ -1,12 +1,14 @@
 import type {
   Agent,
+  OpenQuestion,
   ResolveAttempt,
   ResolveThread,
   Session,
   SessionAttentionReason,
   SessionId,
 } from '@goodboy/types';
-import { agentPlace, branchPlace, sessionPlace } from '../../store';
+import { agentPlace, branchPlace, questionPlace, sessionPlace } from '../../store';
+import { selectOpenQuestions } from './components/SessionOverviewPane/lib';
 import { branchLandingTabOf } from '../branch/branchLandingTab';
 import { isTurnStatePermissionBlocked } from './agent-lifecycle';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
@@ -28,6 +30,7 @@ type State = AutoWaitState &
   RunWaitState & {
     readonly sessions: ReadonlyArray<Session>;
     readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
+    readonly sessionOpenQuestions?: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
     readonly sessionResolveThreads?: Readonly<Record<string, ReadonlyArray<ResolveThread>>>;
     readonly sessionResolveAttempts?: Readonly<Record<string, ReadonlyArray<ResolveAttempt>>>;
   };
@@ -82,7 +85,10 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
       : agentPlace({ sessionId, agentId: root.id });
   }
   if (reason === 'open-question') {
-    return sessionPlace({ sessionId, lens: 'questions' });
+    const waiting = selectOpenQuestions(state.sessionOpenQuestions?.[sessionId] ?? [])[0];
+    return waiting === undefined
+      ? sessionPlace({ sessionId, lens: 'questions' })
+      : questionPlace({ sessionId, questionId: waiting.id });
   }
   if (reason === 'plan-approval') {
     const heldRun = state.sessions
