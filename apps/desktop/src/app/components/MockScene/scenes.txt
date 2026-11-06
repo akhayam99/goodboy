@@ -189,6 +189,7 @@ c04-worktree-files-narrow
 c04-worktree-folded
 c04-worktree-menu
 c04-worktree-no-pr
+c04-worktree-no-pr-fix
 c04-worktree-pr-behind
 c04-worktree-pr-draft
 c04-worktree-rebasing
