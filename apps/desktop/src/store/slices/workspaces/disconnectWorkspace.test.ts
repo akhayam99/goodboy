@@ -66,7 +66,7 @@ describe('disconnectWorkspace stops all live work', () => {
     useAppStore.setState({
       workspaces: [workspace],
       currentWorkspaceId: workspace.id,
-      stopWorkflowRunNow: vi.fn(async () => undefined),
+      stopWorkflowRunNow: vi.fn(async () => 'stopped' as const),
       emitNotification: vi.fn(async () => undefined),
     });
   });
