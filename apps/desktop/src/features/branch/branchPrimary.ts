@@ -2,21 +2,34 @@ import { countNoun } from '../../shared/utils/countNoun';
 import { NAMES } from '../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
 import {
+  Archive,
   ArrowUp,
+  Check,
   GitMerge,
   MessageSquare,
+  PencilLine,
   RotateCcw,
   RotateCw,
   Send,
+  Trash2,
   UserPlus,
   Wrench,
 } from 'lucide-react';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
-import type { BranchTab } from '../../store/slices/navigation/types';
 import type { ResolvedAction } from '../actions/types';
-import type { PullRequestNextStep } from './pullRequestNextStepOf';
+import { applyFixesLabel } from '../resolve/commentProjection';
+import {
+  branchStepOf,
+  type BranchCheckFacts,
+  type BranchClosingFacts,
+  type BranchCommentFacts,
+  type BranchLifecycleStep,
+  type BranchStep,
+} from './branchStepOf';
 
-type BranchPrimarySource = 'diff' | 'pullRequest' | 'review' | 'tab';
+type BranchPrimarySource = 'diff' | 'pullRequest' | 'review' | 'session' | 'step';
+
+export type BranchStepAction = 'answer' | 'apply' | 'fixComments' | 'checks';
 
 export type BranchPrimary = {
   readonly source: BranchPrimarySource;
@@ -28,7 +41,6 @@ export type BranchPrimary = {
   readonly isBusy: boolean;
   readonly note: string | null;
   readonly isExpanded: boolean | null;
-  readonly tab: BranchTab | null;
 };
 
 export type BranchPushState = 'idle' | 'busy' | 'open';
@@ -41,25 +53,39 @@ export type BranchReviewCounts = {
   readonly push: { readonly state: BranchPushState; readonly count: number };
 };
 
-export type BranchNextStep = 'push' | Exclude<PullRequestNextStep, null> | null;
+export type BranchNextStep = BranchLifecycleStep;
 
 type Params = {
   readonly diff: ReadonlyArray<ResolvedAction>;
   readonly pullRequest: ReadonlyArray<ResolvedAction>;
+  readonly session: ReadonlyArray<ResolvedAction>;
   readonly review: BranchReviewCounts;
+  readonly comments: BranchCommentFacts;
+  readonly checks: BranchCheckFacts;
+  readonly checkNote: string | null;
   readonly hasPullRequest: boolean;
   readonly state: PullRequestPresentationState;
   readonly nextStep: BranchNextStep;
+  readonly hasConflicts: boolean;
   readonly hasOpenRebaseStop: boolean;
   readonly mergeLabel: string;
 };
 
 export type BranchActions = {
+  readonly step: BranchStep;
   readonly primary: BranchPrimary | null;
   readonly secondary: BranchPrimary | null;
 };
 
 const REVIEW_PUSH_ID = 'review.push';
+const SESSION_ARCHIVE_ID = 'session.archive';
+
+export const BRANCH_STEP_ID: Readonly<Record<BranchStepAction, string>> = {
+  answer: 'step.answer',
+  apply: 'step.apply',
+  fixComments: 'step.fixComments',
+  checks: 'step.checks',
+};
 
 type FindParams = {
   readonly actions: ReadonlyArray<ResolvedAction>;
@@ -86,26 +112,25 @@ const fromAction = ({ source, action, label, icon }: FromActionParams): BranchPr
   isBusy: action.isBusy,
   note: action.description,
   isExpanded: null,
-  tab: null,
 });
 
-type TabParams = {
-  readonly tab: BranchTab;
+type StepActionParams = {
+  readonly action: BranchStepAction;
   readonly label: string;
   readonly icon: LucideIcon;
+  readonly note?: string | null;
 };
 
-const fromTab = ({ tab, label, icon }: TabParams): BranchPrimary => ({
-  source: 'tab',
-  actionId: `tab.${tab}`,
+const stepAction = ({ action, label, icon, note = null }: StepActionParams): BranchPrimary => ({
+  source: 'step',
+  actionId: BRANCH_STEP_ID[action],
   label,
   icon,
   blockedReason: null,
   pendingLabel: null,
   isBusy: false,
-  note: null,
+  note,
   isExpanded: null,
-  tab,
 });
 
 type ReviewActionParams = {
@@ -132,24 +157,43 @@ const reviewAction = ({
   isBusy,
   note: null,
   isExpanded,
-  tab: null,
 });
+
+type HostParams = Pick<Params, 'hasPullRequest' | 'state'>;
+
+type PushParams = HostParams & Pick<Params, 'diff' | 'review' | 'hasOpenRebaseStop'>;
+
+const hasPullRequestPush = ({ hasPullRequest, state }: HostParams): boolean =>
+  hasPullRequest && state !== 'merged' && state !== 'closed' && state !== 'none';
+
+const isReviewPushInFlight = ({ review }: Pick<Params, 'review'>): boolean =>
+  review.isPushing || review.push.state !== 'idle';
+
+type ReviewPushLeadParams = HostParams & Pick<Params, 'review'>;
+
+export const isReviewPushLeading = ({
+  review,
+  hasPullRequest,
+  state,
+}: ReviewPushLeadParams): boolean =>
+  hasPullRequestPush({ hasPullRequest, state }) &&
+  (review.accepted > 0 || isReviewPushInFlight({ review }));
 
 const pushOf = ({
   diff,
   review,
+  hasOpenRebaseStop,
   hasPullRequest,
   state,
-  hasOpenRebaseStop,
-}: Params): BranchPrimary | null => {
-  if (state === 'merged' || state === 'closed' || state === 'none' || !hasPullRequest) {
+}: PushParams): BranchPrimary | null => {
+  if (!hasPullRequestPush({ hasPullRequest, state })) {
     return null;
   }
-  if (review.accepted > 0 || review.isPushing || review.push.state !== 'idle') {
+  if (isReviewPushLeading({ review, hasPullRequest, state })) {
     const isBusy = review.isPushing || review.push.state === 'busy';
     const count = review.push.count;
     return reviewAction({
-      label: `${isBusy ? 'Pushing' : 'Push'} ${count > 0 ? countNoun({ count, one: 'commit', many: 'commits' }) : 'commits'}`,
+      label: `${isBusy ? 'Pushing' : NAMES.push}${count > 0 ? ` ${countNoun({ count, one: 'commit', many: 'commits' })}` : ''}`,
       icon: ArrowUp,
       blockedReason: isBusy ? 'Pushing now.' : null,
       isBusy,
@@ -163,43 +207,92 @@ const pushOf = ({
   return null;
 };
 
-const followUpOf = ({ review, hasPullRequest, state }: Params): BranchPrimary | null => {
-  if (state === 'merged' || state === 'closed' || state === 'none' || !hasPullRequest) {
-    return null;
+type CheckStepParams = Pick<Params, 'checkNote'> & {
+  readonly step: BranchStep;
+};
+
+const checkStepOf = ({ step, checkNote }: CheckStepParams): BranchPrimary => {
+  if (step === 'pushCheckFix') {
+    return stepAction({ action: 'checks', label: 'Push fix', icon: ArrowUp });
   }
-  if (review.replies > 0) {
-    return reviewAction({
-      label: `Publish ${countNoun({ count: review.replies, one: 'reply', many: 'replies' })}`,
-      icon: ArrowUp,
-    });
+  if (step === 'startCheckFix') {
+    return stepAction({ action: 'checks', label: 'Start fix', icon: Wrench });
   }
-  if (review.failed > 0) {
-    return reviewAction({ label: NAMES.retryPush, icon: RotateCw });
-  }
-  return null;
+  return stepAction({ action: 'checks', label: 'Fix checks', icon: Wrench, note: checkNote });
 };
 
 type StepParams = Params & {
-  readonly step: Exclude<BranchNextStep, null>;
+  readonly step: Exclude<BranchStep, null | 'working'>;
+};
+
+type RequestActionParams = Pick<FindParams, 'id'> & {
+  readonly label: string;
+  readonly icon: LucideIcon;
 };
 
 const stepPrimaryOf = ({
   step,
   diff,
   pullRequest,
+  session,
   mergeLabel,
+  comments,
+  review,
+  checkNote,
+  hasOpenRebaseStop,
+  hasPullRequest,
+  state,
 }: StepParams): BranchPrimary | null => {
+  const push = (): BranchPrimary | null =>
+    pushOf({ diff, review, hasOpenRebaseStop, hasPullRequest, state });
   const diffAction = ({ id }: Pick<FindParams, 'id'>) => {
     const action = find({ actions: diff, id });
     return action === null ? null : fromAction({ source: 'diff', action });
   };
-  const requestAction = ({ id, label, icon }: Pick<FindParams, 'id'> & Omit<TabParams, 'tab'>) => {
+  const closeAction = ({ id, label, icon }: RequestActionParams) => {
+    const action = find({ actions: diff, id });
+    return action === null ? null : fromAction({ source: 'diff', action, label, icon });
+  };
+  const sessionArchive = () => {
+    const action = find({ actions: session, id: SESSION_ARCHIVE_ID });
+    return action === null
+      ? null
+      : fromAction({ source: 'session', action, label: 'Archive session', icon: Archive });
+  };
+  const requestAction = ({ id, label, icon }: RequestActionParams) => {
     const action = find({ actions: pullRequest, id });
     return action === null ? null : fromAction({ source: 'pullRequest', action, label, icon });
   };
   switch (step) {
+    case 'answer':
+      return stepAction({ action: 'answer', label: 'Answer', icon: MessageSquare });
+    case 'apply':
+      return stepAction({
+        action: 'apply',
+        label: applyFixesLabel({ count: comments.waitingFixes }),
+        icon: Check,
+      });
+    case 'retryPush':
+      return review.accepted > 0
+        ? push()
+        : reviewAction({ label: NAMES.retryPush, icon: RotateCw });
+    case 'fixComments':
+      return stepAction({
+        action: 'fixComments',
+        label: `Fix ${countNoun({ count: comments.fixable, one: 'comment', many: 'comments' })}`,
+        icon: Wrench,
+      });
+    case 'publish':
+      return reviewAction({
+        label: `Publish ${countNoun({ count: review.replies, one: 'reply', many: 'replies' })}`,
+        icon: ArrowUp,
+      });
     case 'push':
-      return diffAction({ id: 'diff.push' });
+      return push() ?? diffAction({ id: 'diff.push' });
+    case 'pushCheckFix':
+    case 'startCheckFix':
+    case 'fixChecks':
+      return checkStepOf({ step, checkNote });
     case 'rebase':
       return diffAction({ id: 'diff.rebase' });
     case 'markReady':
@@ -216,12 +309,17 @@ const stepPrimaryOf = ({
       });
     case 'merge':
       return requestAction({ id: 'pullRequest.merge', label: mergeLabel, icon: GitMerge });
+    case 'review':
+      return requestAction({ id: 'pullRequest.writeReview', label: 'Review', icon: PencilLine });
     case 'reopen':
       return requestAction({ id: 'pullRequest.reopen', label: 'Reopen', icon: RotateCcw });
-    case 'fixChecks':
-      return fromTab({ tab: 'checks', label: 'Fix checks', icon: Wrench });
-    case 'fixComments':
-      return fromTab({ tab: 'comments', label: 'Fix comments', icon: MessageSquare });
+    case 'removeWorktree':
+      return closeAction({ id: 'diff.removeWorktree', label: NAMES.removeWorktree, icon: Trash2 });
+    case 'archiveSession':
+      return (
+        closeAction({ id: 'diff.archiveSession', label: 'Archive session', icon: Archive }) ??
+        sessionArchive()
+      );
     default: {
       const unexpected: never = step;
       return unexpected;
@@ -229,26 +327,77 @@ const stepPrimaryOf = ({
   }
 };
 
-const primaryOf = (params: Params): BranchPrimary | null => {
-  if (
-    params.nextStep === null ||
-    params.hasOpenRebaseStop ||
-    find({ actions: params.diff, id: 'diff.continueRebase' }) !== null
-  ) {
-    return null;
-  }
-  const primary = stepPrimaryOf({ ...params, step: params.nextStep });
-  return primary === null || primary.blockedReason !== null ? null : primary;
+type DiffStopParams = Pick<Params, 'diff' | 'hasOpenRebaseStop'>;
+
+const canDiffPush = ({ diff, hasOpenRebaseStop }: DiffStopParams): boolean => {
+  const push = find({ actions: diff, id: 'diff.push' });
+  return push !== null && push.slot !== 'menu' && !hasOpenRebaseStop;
 };
 
-export const branchActionsOf = (params: Params): BranchActions => {
-  const push = pushOf(params);
-  if (push === null) {
-    return { primary: primaryOf(params), secondary: followUpOf(params) };
+const isRebaseStopped = ({ diff, hasOpenRebaseStop }: DiffStopParams): boolean =>
+  hasOpenRebaseStop || find({ actions: diff, id: 'diff.continueRebase' }) !== null;
+
+const isWorktreeGone = ({ session }: Pick<Params, 'session'>): boolean =>
+  find({ actions: session, id: SESSION_ARCHIVE_ID }) !== null;
+
+const closingOf = ({ diff, session }: Pick<Params, 'diff' | 'session'>): BranchClosingFacts => ({
+  canRemove: find({ actions: diff, id: 'diff.removeWorktree' }) !== null,
+  canArchive:
+    find({ actions: diff, id: 'diff.archiveSession' }) !== null || isWorktreeGone({ session }),
+});
+
+const stepFor = ({
+  diff,
+  session,
+  review,
+  comments,
+  checks,
+  hasPullRequest,
+  state,
+  nextStep,
+  hasConflicts,
+  hasOpenRebaseStop,
+}: Params): BranchStep => {
+  const isPullRequestPush = hasPullRequestPush({ hasPullRequest, state });
+  return branchStepOf({
+    state: isWorktreeGone({ session }) || !(hasPullRequest || state === 'none') ? 'merged' : state,
+    lifecycle: nextStep,
+    hasConflicts,
+    comments,
+    checks,
+    closing: closingOf({ diff, session }),
+    push: {
+      isInFlight: isPullRequestPush && isReviewPushInFlight({ review }),
+      failed: isPullRequestPush ? review.failed : 0,
+      canPush:
+        isPullRequestPush && (review.accepted > 0 || canDiffPush({ diff, hasOpenRebaseStop })),
+      replies: isPullRequestPush ? review.replies : 0,
+    },
+  });
+};
+
+export const branchActionsOf = ({ ...facts }: Params): BranchActions => {
+  const step = stepFor(facts);
+  if (step === null || step === 'working') {
+    return { step, primary: null, secondary: null };
   }
-  return push.blockedReason !== null || params.hasOpenRebaseStop || params.state === 'queued'
-    ? { primary: null, secondary: push }
-    : { primary: push, secondary: null };
+  const primary = stepPrimaryOf({ ...facts, step });
+  if (primary === null) {
+    return { step, primary: null, secondary: null };
+  }
+  if (step === 'removeWorktree' && primary.blockedReason !== null) {
+    return { step, primary: null, secondary: primary };
+  }
+  const isPushStep = step === 'push' || (step === 'retryPush' && facts.state === 'queued');
+  if (isPushStep && hasPullRequestPush(facts)) {
+    return primary.blockedReason !== null || facts.hasOpenRebaseStop || facts.state === 'queued'
+      ? { step, primary: null, secondary: primary }
+      : { step, primary, secondary: null };
+  }
+  if (isRebaseStopped(facts) || primary.blockedReason !== null) {
+    return { step, primary: null, secondary: null };
+  }
+  return { step, primary, secondary: null };
 };
 
 export const BRANCH_MENU_PULL_REQUEST: ReadonlyArray<string> = [
@@ -269,4 +418,51 @@ export const BRANCH_MENU_DIFF: ReadonlyArray<string> = [
   'diff.rebase',
   'diff.changeBase',
   'diff.copyPatch',
+  'diff.archiveSession',
 ];
+
+const BRANCH_MENU_MAX_ROWS = 5;
+
+const BRANCH_MENU_PRIORITY: ReadonlyArray<string> = [
+  'pullRequest.merge',
+  'pullRequest.markReady',
+  'pullRequest.reopen',
+  'pullRequest.cancelAutoMerge',
+  'diff.push',
+  'diff.rebase',
+  'diff.changeBase',
+  'diff.archiveSession',
+  'pullRequest.close',
+  'pullRequest.openOnGithub',
+  'pullRequest.requestReview',
+  'pullRequest.convertToDraft',
+  'pullRequest.copyLink',
+  'pullRequest.editDetails',
+  'diff.copyPatch',
+];
+
+type MenuRowsParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
+export const branchMenuRowsOf = ({ ids }: MenuRowsParams): ReadonlySet<string> =>
+  new Set(BRANCH_MENU_PRIORITY.filter((id) => ids.includes(id)).slice(0, BRANCH_MENU_MAX_ROWS));
+
+const PUSH_STEPS: ReadonlySet<BranchStep> = new Set<BranchStep>([
+  'push',
+  'retryPush',
+  'pushCheckFix',
+]);
+
+type ShownIdsParams = Pick<BranchActions, 'primary' | 'secondary' | 'step'>;
+
+export const branchShownIdsOf = ({
+  primary,
+  secondary,
+  step,
+}: ShownIdsParams): ReadonlyArray<string> => {
+  const shown = [primary, secondary].flatMap((action) =>
+    action === null ? [] : [action.actionId],
+  );
+  return shown.length > 0 && PUSH_STEPS.has(step) ? [...shown, 'diff.push'] : shown;
+};

@@ -23,7 +23,7 @@ const TYPECHECK: AutoCheckScript = { id: 'typecheck-id', name: 'typecheck' };
 const START: MountSnapshot = { head: 'base000', entries: [], isPartial: false };
 const END: MountSnapshot = { head: 'abc123', entries: [], isPartial: false };
 
-const STALE = 'The online copy changed. Check again before force pushing.';
+const STALE = 'Origin changed. Check again before force pushing.';
 
 type PublishSpec = string | Readonly<Record<string, unknown>>;
 
@@ -634,7 +634,7 @@ describe('force pushing the branch of a writer, with a backup and one confirm', 
 
     expect(await recordOf(world)).toMatchObject({ state: 'failed', isRetryable: true });
     expect((await recordOf(world)).message).toContain(
-      'a backup of the online copy could not be kept',
+      'a backup of the branch on origin could not be kept',
     );
     expect(world.state.ports.pushes).toEqual([]);
   });

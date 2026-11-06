@@ -92,7 +92,7 @@ describe('the u23 comments scenes', () => {
     ).toHaveLength(1);
   });
 
-  it("orders Needs you as Question, Push failed, Fix to review, Open, and never calls a failed push Couldn't fix", async () => {
+  it("orders Needs you as Question, Push failed, Fix ready, Open, and never calls a failed push Couldn't fix", async () => {
     await renderScene({ name: 'comments-groups' });
 
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
@@ -102,9 +102,9 @@ describe('the u23 comments scenes', () => {
     expect(words).toEqual([
       'Question',
       'Push failed',
-      'Fix to review',
-      'Fix to review',
-      'Fix to review',
+      'Fix ready',
+      'Fix ready',
+      'Fix ready',
       'Open',
     ]);
     expect(within(list()).queryByText("Couldn't fix")).toBeNull();
@@ -127,7 +127,7 @@ describe('the u23 comments scenes', () => {
     expect(within(rail).queryByRole('button', { name: /^Commits/ })).toBeNull();
   });
 
-  it('shows the fixed comments under Done with their count, Push only in the header', async () => {
+  it('shows the fixed comments under Done with their count, Answer leading and no second push line under the list', async () => {
     const handlers = prPageHandlers({ behind: 0, unpushed: 3 });
     vi.mocked(invoke).mockImplementation(
       async (command: string) =>
@@ -137,7 +137,8 @@ describe('the u23 comments scenes', () => {
 
     const ready = within(list()).getByRole('region', { name: 'Done' });
     expect(within(ready).getByRole('heading', { name: 'Done 3' })).toBeDefined();
-    expect(await screen.findAllByRole('button', { name: /^Push 3 commits$/ })).toHaveLength(1);
+    expect(screen.queryByTestId('review-push-line')).toBeNull();
+    expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer');
     expect(within(ready).queryByRole('button', { name: 'Push 3 commits' })).toBeNull();
     expect(within(ready).getAllByRole('listitem')).toHaveLength(3);
     const first = ready.querySelector<HTMLElement>('button[data-thread-id]');
@@ -156,10 +157,9 @@ describe('the u23 comments scenes', () => {
     );
     await renderScene({ name: 'comments-ready-to-push' });
 
-    expect(screen.getAllByText('7 open threads · 3 need you').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('tab', { name: /^Comments\s*3$/ })).toHaveLength(1);
-    expect(screen.getAllByText('Fixing 1 of 4 threads').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Fixing 4 threads')).toBeNull();
+    expect(screen.getAllByText('Fixing 1 of 4 comments').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Fixing 4 comments')).toBeNull();
     const first = within(list())
       .getByRole('region', { name: 'Done' })
       .querySelector<HTMLElement>('button[data-thread-id]');

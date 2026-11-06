@@ -66,10 +66,10 @@ describe('the resolve fix scenes', () => {
     }
   });
 
-  it('resolve-fix-working says Fixing 8 threads and offers Stop', async () => {
+  it('resolve-fix-working says Fixing 8 comments and offers Stop', async () => {
     await mount({ name: 'resolve-fix-working' });
 
-    expect(statusText()).toContain('Fixing 8 threads');
+    expect(statusText()).toContain('Fixing 8 comments');
     expect(
       within(screen.getByTestId('resolve-run-status')).getByRole('button', { name: /^Stop/ }),
     ).toBeDefined();
@@ -78,7 +78,7 @@ describe('the resolve fix scenes', () => {
   it('resolve-fix-ready counts 8 fixes ready and never says Fixing', async () => {
     await mount({ name: 'resolve-fix-ready' });
 
-    expect(statusText()).toContain('Fix run · 8 threads');
+    expect(statusText()).toContain('Fix run · 8 comments');
     expect(statusText()).not.toContain('Fixing');
     expect(statusText()).not.toContain('need you');
   });
@@ -117,7 +117,7 @@ describe('the resolve fix scenes', () => {
   it('resolve-fix-failed shows Failed with a Retry in the same run', async () => {
     await mount({ name: 'resolve-fix-failed' });
 
-    expect(statusText()).toContain('Fix run · 8 threads');
+    expect(statusText()).toContain('Fix run · 8 comments');
     expect(screen.getAllByRole('button', { name: /Retry/ }).length).toBeGreaterThan(0);
   });
 });

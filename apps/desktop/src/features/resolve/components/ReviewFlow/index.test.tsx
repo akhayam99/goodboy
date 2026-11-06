@@ -231,7 +231,7 @@ describe('Review as one flow', () => {
         (node) => node.textContent ?? '',
       ),
     ];
-    for (const word of ['Fix to review', 'Question']) {
+    for (const word of ['Fix ready', 'Question']) {
       expect(words, word).toContain(word);
     }
     for (const word of ['Working', 'Applied', 'Needs you']) {
@@ -449,7 +449,7 @@ describe('Review as one flow', () => {
     const changed = rowDescribed(/Comment changed/);
     expect(changed.querySelector('[data-row-author]')?.textContent).toBe('kenji-w');
     expect(changed.querySelector('[data-row-file]')?.textContent).toMatch(/\.ts/);
-    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Fix to review');
+    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Fix ready');
     expect(changed.textContent).not.toContain('Comment changed');
   });
 

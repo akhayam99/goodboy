@@ -1127,17 +1127,17 @@ no migration, outcome still `completed`:
   `<sha>:refs/heads/<branch>` (`sourceSha`, `lease_push_args` in `github.rs`) with the lease on the
   recorded online sha, so a commit made after the checks is not pushed. On a failure it cannot
   classify it reads the online sha back before it writes anything. A lost lease reads the shipped
-  "The online copy changed. Check again before force pushing." Any failure is retryable once
+  "Origin changed. Check again before force pushing." Any failure is retryable once
   (`PUBLISH_MAX_TRIES`). **Try the push again** always plans from the attempt's own commit (the
   record's sha, never the head of now) and the exit and completion stored in its result. A force
-  retry reads the online copy again, keeps a new backup of it and waits for a new **Force push** with
+  retry reads origin again, keeps a new backup of it and waits for a new **Force push** with
   the new lease; a plain retry pushes the recorded sha again.
 - `publishAct` (`confirm`, `decline`, `retry`, `put_back`) runs in the main window through one
   keyed queue per worktree, writes with `patchAutoDelegationPublishStatement` and the attempt twin
   guarded by generation, and answers one row per branch, so two of four branches can succeed.
   **Put back** pushes the backed up online sha (`leaseSha`) with the lease on the pushed sha first;
   a lost lease, or a failure whose read back does not show the backup online, changes nothing online
-  or here and keeps **Put back** on offer. Only after the online copy is back does it move the local
+  or here and keeps **Put back** on offer. Only after origin is back does it move the local
   branch with the History restore, and only when the head is still the pushed sha; otherwise the card
   reads "Put back" with "The local branch was left as it is: " and the reason.
 - Auto reads the line in the digest ("Pushed ...", "Not pushed: ...", "Waiting for you to confirm

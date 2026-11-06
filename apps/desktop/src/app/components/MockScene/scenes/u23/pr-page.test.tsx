@@ -152,7 +152,9 @@ describe('the pull request page scenes', () => {
     draw({ name: 'branch-pr-draft' });
 
     const side = within(await screen.findByRole('group', { name: 'Properties' }));
-    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
+    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
+      'Draft',
+    );
     expect(side.getByText('Nobody asked yet')).toBeDefined();
   });
 
@@ -225,9 +227,12 @@ describe('the pull request page scenes', () => {
     await waitFor(() =>
       expect(
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
-      ).toBe('tab.checks'),
+      ).toBe('step.checks'),
     );
-    expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+    expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Fix checks');
+    expect(
+      screen.queryByRole('button', { name: /^(Squash and merge|Rebase and merge|Merge commit)/ }),
+    ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
     expect(screen.getByRole('menuitem', { name: /Merge/ }).getAttribute('aria-disabled')).toBe(
       'true',
@@ -272,7 +277,9 @@ describe('the pull request page scenes', () => {
         /merged this pull request/,
       ),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /^(Squash and merge|Rebase and merge|Merge commit)/ }),
+    ).toBeNull();
   });
 });
 
@@ -319,8 +326,8 @@ describe('the branch page of a branch with no pull request', () => {
         document.querySelector('[data-create-submit]')?.getAttribute('data-create-submit'),
       ).toBe('primary'),
     );
-    const push = document.querySelector<HTMLElement>('[data-branch-primary="diff.push"]');
-    expect(push?.getAttribute('data-variant')).toBe('secondary');
+    expect(document.querySelector('[data-branch-primary="diff.push"]')).toBeNull();
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('makes Create the one primary once the branch is pushed and up to date', async () => {

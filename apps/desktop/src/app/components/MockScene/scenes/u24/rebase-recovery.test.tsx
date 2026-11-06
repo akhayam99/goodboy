@@ -83,7 +83,7 @@ describe('the u24 rebase recovery scenes', () => {
   it('offers a retry, the terminal and the hook output when the push failed', async () => {
     renderScene({ name: 'rebase-push-failed' });
 
-    await screen.findByRole('button', { name: 'Fix with agent' }, { timeout: 4_000 });
+    await screen.findByRole('button', { name: 'Fix with an agent' }, { timeout: 4_000 });
     await waitForSettledReads();
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 

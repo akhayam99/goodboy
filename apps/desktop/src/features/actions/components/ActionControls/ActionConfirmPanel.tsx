@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChoiceCards, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
+import { ChoiceCards, ConfirmGoesStays, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 
 import type { ActionControls } from '../../useActionControls';
 
@@ -42,6 +42,7 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
         )
       }
     >
+      <ConfirmGoesStays goes={confirm?.goes} stays={confirm?.stays} />
       {choice !== null && selected !== null && (
         <ChoiceCards
           ariaLabel={choice.label}

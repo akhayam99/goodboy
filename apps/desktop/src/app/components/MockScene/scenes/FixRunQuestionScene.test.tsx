@@ -75,7 +75,7 @@ describe('the fix run transcript drawer scene', () => {
     const banner = await screen.findByTestId('resolve-run-status');
 
     expect(within(lead).getByRole('heading', { name: 'Covers 3 comments' })).toBeDefined();
-    expect(within(banner).getByText('Fix run · 3 threads')).toBeDefined();
+    expect(within(banner).getByText('Fix run · 3 comments')).toBeDefined();
     expect(within(banner).queryByRole('button', { name: 'Open transcript' })).toBeNull();
   });
 

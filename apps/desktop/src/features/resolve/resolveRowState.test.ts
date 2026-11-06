@@ -33,7 +33,7 @@ describe('resolveRowState', () => {
   }
 
   it('says To review for whatever kind of proposal waits for review', () => {
-    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Fix to review');
+    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Fix ready');
   });
 
   it('uses the five words for the stages that are not finished or failed', () => {

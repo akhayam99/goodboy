@@ -9,6 +9,7 @@ const MUTATING: ReadonlyArray<string> = [
   'diff.rebase',
   'diff.push',
   'diff.abortRebase',
+  'diff.removeWorktree',
   'pullRequest.markReady',
   'pullRequest.merge',
   'pullRequest.reopen',
@@ -18,6 +19,8 @@ const MUTATING: ReadonlyArray<string> = [
 ];
 
 const OPENS_A_FORM: ReadonlyArray<string> = ['diff.createPullRequest'];
+
+const SAYS_IT_IN_A_TOAST: ReadonlyArray<string> = ['diff.archiveSession'];
 
 const isAsync = (action: ActionDefinition<never>): boolean =>
   action.run.constructor.name === 'AsyncFunction';
@@ -42,7 +45,10 @@ describe('every mutating button action says what is happening and what happened'
   it('puts every async action of the diff and pull request kinds in the list', () => {
     const unlisted = ALL.filter(
       (action) =>
-        isAsync(action) && !MUTATING.includes(action.id) && !OPENS_A_FORM.includes(action.id),
+        isAsync(action) &&
+        !MUTATING.includes(action.id) &&
+        !OPENS_A_FORM.includes(action.id) &&
+        !SAYS_IT_IN_A_TOAST.includes(action.id),
     ).map((action) => action.id);
     expect(unlisted).toEqual([]);
   });

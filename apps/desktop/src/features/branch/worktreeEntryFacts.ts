@@ -1,6 +1,7 @@
 import type { PrCheckRun } from '@goodboy/types';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
+import { countNoun } from '../../shared/utils/countNoun';
 import { countSlotText } from '../../shared/utils/countSlotText';
 import { joinFacts } from '../../shared/utils/joinFacts';
 import { checksCountsOf, checksWordOf } from '../integrations/github/checksRollup';
@@ -19,6 +20,7 @@ type WorktreeEntryFact = {
   readonly tooltip: string | null;
   readonly diff: EntryDiffStat | null;
   readonly notPushed: number | null;
+  readonly countWord?: string;
 };
 
 export type WorktreeEntryFacts = Readonly<Record<BranchTab, WorktreeEntryFact>>;
@@ -79,37 +81,46 @@ const checksFactOf = ({ checks, checksUnreadReason }: ChecksParams): WorktreeEnt
   return { ...EMPTY, tooltip: word };
 };
 
+type CountWordParams = {
+  readonly count: number | null;
+  readonly one: string;
+};
+
+const countWordOf = ({ count, one }: CountWordParams): Pick<WorktreeEntryFact, 'countWord'> =>
+  count === null || countSlotText({ count }) === null
+    ? {}
+    : { countWord: countNoun({ count, one }) };
+
 type CommitsParams = Pick<Params, 'commits' | 'notPushed'>;
 
 const commitsFactOf = ({ commits, notPushed }: CommitsParams): WorktreeEntryFact => {
   const text = countSlotText({ count: commits });
+  const counted = countWordOf({ count: commits, one: 'commit' });
   if (notPushed === null || notPushed <= 0) {
-    return { ...EMPTY, text };
+    return { ...EMPTY, ...counted, text };
   }
   const tooltip = `${notPushed} not pushed`;
   return text === null
     ? { ...EMPTY, text: `↑${notPushed}`, tooltip }
-    : { ...EMPTY, text, tooltip, notPushed };
+    : { ...EMPTY, ...counted, text, tooltip, notPushed };
 };
 
 type FilesParams = Pick<Params, 'files' | 'diff'>;
 
 const filesFactOf = ({ files, diff }: FilesParams): WorktreeEntryFact => {
   const count = countSlotText({ count: files });
+  const counted = countWordOf({ count: files, one: 'file' });
   const shownDiff = diff !== null && (diff.additions > 0 || diff.deletions > 0) ? diff : null;
   if (count === null && shownDiff === null) {
     return EMPTY;
   }
   if (shownDiff === null) {
-    return { ...EMPTY, text: count };
+    return { ...EMPTY, ...counted, text: count };
   }
   const tooltip = joinFacts({
-    facts: [
-      count === null ? null : `${count} ${files === 1 ? 'file' : 'files'}`,
-      `+${shownDiff.additions} -${shownDiff.deletions}`,
-    ],
+    facts: [counted.countWord ?? null, `+${shownDiff.additions} -${shownDiff.deletions}`],
   });
-  return { ...EMPTY, text: count, tooltip, diff: shownDiff };
+  return { ...EMPTY, ...counted, text: count, tooltip, diff: shownDiff };
 };
 
 export const worktreeEntryFactsOf = ({
@@ -135,3 +146,27 @@ export const worktreeEntryFactsOf = ({
     checks: checksFactOf({ checks, checksUnreadReason }),
   };
 };
+
+type QuietParams = {
+  readonly facts: WorktreeEntryFacts;
+};
+
+type TooltipParams = {
+  readonly tooltip: string | null;
+};
+
+const quietOf = ({ tooltip }: TooltipParams): WorktreeEntryFact => ({
+  ...EMPTY,
+  tooltip: tooltip === null || tooltip === '' ? null : tooltip,
+});
+
+export const wantsYouFactsOf = ({ facts }: QuietParams): WorktreeEntryFacts => ({
+  pr: quietOf({ tooltip: facts.pr.text }),
+  comments: facts.comments,
+  files: quietOf({ tooltip: facts.files.tooltip ?? facts.files.countWord ?? null }),
+  commits: quietOf({
+    tooltip: joinFacts({ facts: [facts.commits.countWord ?? null, facts.commits.tooltip] }),
+  }),
+  checks:
+    facts.checks.tone === 'danger' ? facts.checks : quietOf({ tooltip: facts.checks.tooltip }),
+});

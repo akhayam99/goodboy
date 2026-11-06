@@ -24,8 +24,8 @@ detail; nothing moves from one section to the next.
 without a pull request; on a pull request you can edit, click it or press `E` on
 the Pull request entry and it becomes an input in the same 32px row, `Enter` saves
 to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. The
-line under the title says the state once (the state chip), the number, who wants to merge how
-many commits into which base and from which branch (`PullRequestHeaderLine`); without a pull
+line under the title is the same on every tab: an icon for the state (its word is the tooltip),
+the number, the branch into its base and the author (`PullRequestHeaderLine`); without a pull
 request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or
 the rail**: the branches of the session are the rows of the Projects tree
 (`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
@@ -37,27 +37,61 @@ the new branch form (`forkMount` lands on the new worktree on its landing tab);
 a folder project cannot fork and shows none.
 
 The header holds at most one secondary and one primary (`branchActionsOf`), and the primary is never
-disabled. A push that applies leads: `Push N fixes` (every accepted thread) or `Push N commits` while
-the branch is level with origin is the primary and the step below waits in `⋯`. While it runs, while
-a stop is open or on a queued request it sits in the secondary alone, with no primary beside it. A
-merged or closed request has none, and `Force push` never sits there: while the online copy moved it
-waits in `⋯` behind its confirm. With no push the secondary is `Publish N replies` (the fix is
-already on origin) or `Retry N`. Commits not on origin block the merge (`unpushed` in
+disabled. One function picks the step, the same on every tab (`branchStepOf`), in this order: a push
+already going up; `Answer` when a fix asks something, which opens that comment; no fill while an
+agent works on the branch; `Apply N fixes`; `Retry push`; `Fix N comments`, which opens the Fix
+comments drawer; `Push fix` for a check fix not yet on origin; `Push N commits`; `Publish N
+replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Start fix`
+once the Debugger proposed one; `Fix checks` while a check fails; then the pull request's own step.
+Comments come before the push so the branch is pushed once, a conflict is rebased before the checks
+(a host may not re-run a conflicting request), and the checks still red come last, but not while a
+pushed fix waits for the new run (`isAwaitingRun`: no check step until the check reports on the push).
+Every verb does the work where you stand and never just opens a tab: `Fix
+checks`, `Start fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
+and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
+While a fix run or a check agent works, a line under the tabs says what runs, with `Stop`
+(`BranchWorkLines`; the Comments tab keeps its own run line). One agent works per branch: a check
+agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
+sees it too; a fixer that ended never counts, even while its commit is unread) draws the work line and no fill, and the other doors that start an agent (row Analyze,
+the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
+the name of what runs. The `Push` row of `Branch actions` takes the same route as the header push
+(`pushFromMenu`): with an accepted fix waiting it is the review push, so the replies go with the commit.
+A push that runs, a stop that is open or a queued request keeps the push
+(and a `Retry push` there) in the secondary alone, with no primary beside it; `Publish N replies`
+stays reachable in the queue. On someone else's open request the step is `Review`
+(`pullRequest.writeReview`). A merged request ends the walk: `Remove worktree` while the folder is
+there (`diff.removeWorktree`, its confirm shares `mountCleanUpWordsOf` with Clean up: the folder and
+the local branch go, the pull request stays, and the branch on origin stays unless the after-merge
+setting removes it). Its toast offers Undo: the branch comes back from the keep ref, on origin too
+if it was there, and `attachMount` rebuilds the worktree in a fresh folder, so ignored files do
+not return. A blocker such as an open terminal draws it disabled in the secondary with the
+reason, and a refusal keeps the step, so it never jumps to the session wide archive; `Archive
+session` then waits in `⋯`. Once the last folder is gone the page has no diff target: the step is
+`Archive session` on the session itself (`session.archive`, `hasRemovedMergedMountOf`, every host),
+and another open branch of the session keeps it away. `diff.archiveSession` confirms only while
+agents run, with an Undo toast otherwise. While the new pull request form leads
+before a request exists, the header draws no push: it waits in `⋯`, so the unpushed count is said once,
+in the line under the title. A selection of comments takes the one fill and the header step steps
+down to secondary until the selection is cleared. A closed
+request has no push, and `Force push` never sits there: while origin moved it waits
+in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
 `MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
 `Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
-(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same count. Otherwise the primary is the page's next
-step (`pullRequestNextStepOf`): `Mark ready for review` on a draft, `Request review` while nobody was
-asked, `Fix comments` while changes are requested or comments need you, `Fix checks` while a check
-fails (both open their tab), the merge method (`Squash and merge`) once the pull request is ready,
-`Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a reviewer or a
-check is still on it, on a queued or merged one, or while a banner holds the next action (a stopped
-rebase, someone pushed). One predicate says when a stop is open for the shown branch
+(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same
+count. The pull request's own step (`pullRequestNextStepOf`) is `Mark ready for review` on a draft,
+`Request review` while nobody was asked or once changes were requested and nothing is left to fix,
+the merge method (`Squash and merge`) once the pull request
+is ready, `Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a
+reviewer, a check or a comment that needs you is still on it (the comments are counted for the shown
+request only, `pullRequestThreadsOf`, so another mount's threads never hold the merge), on a queued or merged one, or while a banner holds the next
+action (a stopped rebase, someone pushed). One predicate says when a stop is open for the shown branch
 (`hasOpenRebaseStopOf`: the stop the rebase panel shows, read through `rebaseStopOf`, live or
 rebuilt from the session events after a restart, or the worktree is mid rebase, read from the live status or, for the action registry and the
 palette, from the status cache of the mount: a palette target that names no mount reads the write
 destination's); while it holds
 the header draws no primary and no push, with or without a pull request, so nothing sits next
-to the stop panel. Without a pull request the branch's next step decides (`branchNextStepOf`):
+to the stop panel. Without a pull request the comment steps come first (notes to answer, apply or
+fix), then the branch's next step decides (`branchNextStepOf`):
 `Push N commits` while commits are not on origin, `Rebase on main` while the branch is behind, and
 none once it is pushed and up to date, where the create form's `Create pull request` is the one
 primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Mark ready` or
@@ -94,7 +128,7 @@ running on one branch never locks another). A rebase that is in progress in the 
 Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
 terminal, Abort rebase. The other states keep the strip (Stash and rebase, Bring them back, Undo rewrite, Retry
 with a note, Open providers, See what it did). A failed push after
-a rebase offers `Fix with agent` (the primary: an Implementer on that worktree briefed with the
+a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
 pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
 transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
@@ -104,15 +138,15 @@ push (`PushFailureActions`, shown when the failed action's error is a push failu
 agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
 with the lease read before the agent started and the commits the confirm named), and the terminal
 is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to the remote sha the
-confirm showed, `PushFailedError.confirmedRemoteSha`; when the online copy moved since, nothing is
-typed and the header says `The online copy changed. Check again before force pushing.`, and a
+confirm showed, `PushFailedError.confirmedRemoteSha`; when origin moved since, nothing is
+typed and the header says `Origin changed. Check again before force pushing.`, and a
 prefill always opens a new terminal tab). A retry that pushed clears the failure line
 (`settledBranchPushes`).
 A push failure keeps its cause. `git_push` returns stdout and stderr with credentials and home
 paths masked (`redact_output`), `pushOutputOf` joins both and bounds them (head plus the git
 verdict), and `pushFailureDigest` reads the failing hook or command and the first findings that
 `PushFailureBlock` shows on the failure card, the Comments banner (`PushBanner`) and the create
-form. The label is `Let an agent fix the push` (`PushFixAgentAction`): it calls
+form. The label is `Fix with an agent` (`PushFixAgentAction`): it calls
 `fixBranchPushWithAgent` with `pending`, the work that waits on the push (the replies of a failed
 publication, `pendingPublicationBrief`, or the text of the pull request being created), which the
 brief tells the agent not to do itself and never to skip a hook. The action tracks the agent
@@ -180,8 +214,11 @@ cancelled in the database; `missing` says `The push was already handled or
 cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open with the host logo, named Open on GitHub, Copy link) and the
-branch actions (Change base branch…, Open terminal, Open in editor, Copy
-branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
+branch actions (Change base branch…, only before a pull request exists, Copy patch, and `Archive session`
+on a merged request); a queued request with auto-merge adds `Cancel auto-merge`. It lists the push
+whenever the header does not draw one (`branchShownIdsOf`), and it never holds more than five rows
+(`branchMenuRowsOf`): the rows with another home drop first (Edit title and description, Copy link,
+Copy patch, and Rebase and Request review have their own place on Commits and Overview).
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
@@ -190,7 +227,7 @@ and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, 
 Closed show all five, `Pull request`, `Comments`, `Files`, `Commits`, `Checks`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
-request. A pick replaces the address. Each tab carries its facts from `worktreeEntryFactsOf`, empty until a count is known, the active tab included: `Files` the file count and the lines added and removed in green and red (`DiffStat`), `Commits` the commits on the branch and, in amber, `↑3` for the ones not pushed, `Comments` and `Checks` what needs you. Merged and
+request. A pick replaces the address. A tab badge means this many want you (`wantsYouFactsOf` over `worktreeEntryFactsOf`): `Comments` the ones that need you, `Checks` the failing ones, nothing else. The counts of files, commits and not pushed commits, the state of the request and the running checks stay in the tooltip of their tab, and the file count and the commit count are said in their page (the file rail, the line `N commits` above the list). Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
@@ -227,11 +264,11 @@ below an 880px page container the side column moves above the reading column as 
 row. The strip (`PullRequestStatusStrip`, cells from
 `pullRequestCellsOf`) has four fixed cells, each a label, a word with a `StatusDot` and one faint
 detail: Checks (`2 passed`, `1 failing` with the failing names, `Running, 2 of 3`, counted by
-`checksCountsOf` as the rail is, and a click opens the Checks entry), Review (`No approval yet`,
+`checksCountsOf` as the rail is), Review (`No approval yet`,
 `Waiting on dana-r`, `Changes requested`, `Approved by dana-r`), Merge (`Blocked by checks`,
 `Conflicts` in amber as in the branch state map, `Ready` with the merge method, `Queued` with the
 queue line, `Merged`) and Branch (`Up to date`, `7 behind main`, `Rebasing`, `Diverged` when
-someone pushed online). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
+someone pushed online). Every cell opens something: Checks opens Checks, Review opens Comments, Branch opens Commits, and Merge opens its confirm once it reads `Ready` (Checks while checks hold it, Comments while review does, Files on conflicts, Commits once merged, closed, queued or draft). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
 the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
 requests another), `Bots that commented` (bots whose only review is a comment, with no verdict,
 `pullRequestReviewerGroupsOf` in core), `Author` and `Linked issues`, all read from the branch on
@@ -265,7 +302,7 @@ lists the other commits, never a `fixup!`, `squash!` or `amend!` one and never t
 headline already says, and `Closes HL-1372` for a Linear issue). `Into` starts on the base of the mount (`defaultBase`) and the host's default only fills it when that is empty. The form works on the branch on screen: it
 reads that mount's status and base branches and opens the pull request from it,
 never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
-and prefill and hands the mount to `createMrForSession`. Its submit is the one primary of the tab, also as `Push and create pull request` while commits are not on origin, and the header's `Push N commits` steps down to secondary there (`isFormLeading`); on every other tab the header's push stays primary. While the branch is behind, the header's Rebase leads and the submit is secondary. On a diverged branch the submit reads `Force push and create pull request`: it opens
+and prefill and hands the mount to `createMrForSession`. Its submit is the one primary of the tab, also as `Push and create pull request` while commits are not on origin, and while it leads the header's push waits in `⋯` and any other header step steps down to secondary (`isFormLeading`); on every other tab the header's push stays primary. While the branch is behind, the header's Rebase leads and the submit is secondary. On a diverged branch the submit reads `Force push and create pull request`: it opens
 the same confirm as the Push action (`forcePushConfirm`, which also lists the commits that
 exist only online) and only then force pushes with lease and opens the request
 (`createPrForSession` with `forcePush`); a plain push is never tried on a diverged branch. While a rebase is stopped the form waits and the
@@ -499,19 +536,18 @@ is no row of fact chips over it: the graph already says how many commits are
 yours, how far main moved and what is online. At rest the section is one
 column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): one row
 per commit (title, then sha, author and age in
-`text-meta`, a faint `Not pushed` chip only on a commit that is not on the
-online copy, the grip a faint mark of a row that drags), then the base row.
+`text-meta`, a faint `Not pushed` chip only on a commit that is not on
+origin, the grip a faint mark of a row that drags), then the base row.
 
-**The base row** (`HistoryBaseRow`) is the action point for the base. Behind the
-base it reads `Based on main 9d4b1f7`; how far behind and `Rebase` live on the worktree
-status line. The base chip (`branch → main`, a
-searchable listbox of the repository's branches) picks another base; the button
-then reads `Rebase onto <branch>`. The button asks in a `ConfirmPopover` anchored
-to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
-base) with a version of the current history kept. The Activity rebase suggestion
-(`Open rebase`) opens this page on the mount it names, scrolled to the row with
-the button focused (`HISTORY_FOCUS_BASE_EVENT`).
-The page header has one `...` button (`HistoryKeysHint`, an anchored popover)
+**The base row** (`HistoryBaseRow`) only says where the branch starts: `Based on main 9d4b1f7`, the
+merge base subject and its age. The rebase lives in the Commits head (`HistoryRebaseHead`), a split:
+`Rebase on main` while the branch is behind, and a chevron listbox of the repository's branches
+(`Rebase on another branch`) that retargets the button to `Rebase on <branch>`. The button asks
+in a `ConfirmPopover` anchored to it and runs the rebase command (`rebaseBranch`, with `ontoBranch`
+for another base) with a version of the current history kept. The Activity rebase suggestion
+(`Open rebase`) opens this page on the mount it names, scrolled to the base row with the head
+button focused (`HISTORY_FOCUS_BASE_EVENT`).
+The page header has one `?` button (`HistoryKeysHint`, an anchored popover)
 with `How to edit commits` (the Guide chapter Commits) and the keys of the
 focused row (`useHistoryKeys/historyKeys.ts`); no teaching line sits under the
 list. Each row's `...` menu lives in a fixed cell that shows on hover and

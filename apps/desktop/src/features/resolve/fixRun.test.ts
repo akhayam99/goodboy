@@ -165,8 +165,8 @@ describe('fixRunTitle', () => {
       sources: [source('t1', 'drafting', FIRST), source('t2', 'drafting', FIRST)],
     });
 
-    expect(live === null ? '' : fixRunTitle({ run: live })).toBe('Fixing 1 of 2 threads');
-    expect(allWorking === null ? '' : fixRunTitle({ run: allWorking })).toBe('Fixing 2 threads');
-    expect(idle === null ? '' : fixRunTitle({ run: idle })).toBe('Fix run · 1 thread');
+    expect(live === null ? '' : fixRunTitle({ run: live })).toBe('Fixing 1 of 2 comments');
+    expect(allWorking === null ? '' : fixRunTitle({ run: allWorking })).toBe('Fixing 2 comments');
+    expect(idle === null ? '' : fixRunTitle({ run: idle })).toBe('Fix run · 1 comment');
   });
 });

@@ -1,5 +1,6 @@
 import { Cloud, GitPullRequest } from 'lucide-react';
 import { cn, ICON_SIZE, tintClasses } from '@goodboy/ui';
+import { NAMES } from '../../../../shared/utils/names';
 
 export type HistoryRowPillState = {
   readonly isHead: boolean;
@@ -20,7 +21,7 @@ export const HistoryRowPills = ({ isHead, remote, prNumber }: HistoryRowPillStat
       {remote === null ? null : (
         <span className={cn(PILL, remote === 'old' ? WARN.text : 'text-muted-foreground')}>
           <Cloud size={ICON_SIZE.row} aria-hidden />
-          {remote === 'old' ? 'Online copy: old version' : 'Online copy'}
+          {remote === 'old' ? `${NAMES.onOrigin}: old version` : NAMES.onOrigin}
         </span>
       )}
       {prNumber === null ? null : (

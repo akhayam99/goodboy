@@ -90,7 +90,7 @@ describe('ResolverThreadsCard', () => {
 
     expect(screen.getByTestId('resolver-threads-card')).toBeDefined();
     expect(screen.getByText('2')).toBeDefined();
-    expect(screen.getByText('1 fix to review · 1 no change')).toBeDefined();
+    expect(screen.getByText('1 fix ready · 1 no change')).toBeDefined();
     expect(screen.queryByText('thread 1')).toBeNull();
     expect(screen.queryByTestId('resolver-thread-verdict-0')).toBeNull();
   });
@@ -213,17 +213,17 @@ describe('ResolverThreadsCard', () => {
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
-    expect(screen.getByText('1 fix to review · 1 no change · 1 closed')).toBeDefined();
+    expect(screen.getByText('1 fix ready · 1 no change · 1 closed')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
 
     const rowWords = [0, 1, 2].map(
       (index) =>
         within(screen.getByTestId(`resolver-thread-verdict-${index}`)).getByText(
-          /^(fix to review|no change|explained|closed|question)$/,
+          /^(fix ready|no change|explained|closed|question)$/,
         ).textContent,
     );
 
-    expect(rowWords.slice().sort()).toEqual(['closed', 'fix to review', 'no change']);
+    expect(rowWords.slice().sort()).toEqual(['closed', 'fix ready', 'no change']);
   });
 });
