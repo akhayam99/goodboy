@@ -6213,9 +6213,6 @@
     }
   },
   "apps/desktop/src/features/suggestions/useSuggestionActions/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 31
-    },
     "@typescript-eslint/no-floating-promises": {
       "count": 18
     },

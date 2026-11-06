@@ -142,6 +142,7 @@ const verbOf = ({ label }: LabelParams): CardVerb => ({
   isDisabled: false,
   isBusy: false,
   confirmRole: null,
+  confirm: null,
   hasPicker: false,
   run: () => undefined,
 });

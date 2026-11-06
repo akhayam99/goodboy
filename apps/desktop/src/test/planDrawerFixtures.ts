@@ -227,3 +227,15 @@ export const seedPlanDrawer = ({
   });
   return { plan, stored };
 };
+
+type StubRunPlanParams = Readonly<{
+  runPlan: ReturnType<typeof useAppStore.getState>['runPlan'];
+}>;
+
+type SetPlanDraftsParams = Readonly<{ drafts: ReadonlyArray<ArtifactComment> }>;
+
+export const stubRunPlan = ({ runPlan }: StubRunPlanParams): void =>
+  useAppStore.setState({ runPlan });
+
+export const setPlanDrafts = ({ drafts }: SetPlanDraftsParams): void =>
+  useAppStore.setState({ artifactComments: { [PLAN_FIXTURE_SESSION]: drafts } });

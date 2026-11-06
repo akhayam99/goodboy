@@ -50,7 +50,7 @@ export const ArtifactShellHeader = ({
         onKeyDown={menu.onKeyDown}
       >
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
+          {isTitleInDocument ? null : <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />}
           {isTitleInDocument ? (
             <h1 data-testid="artifact-title" className="sr-only">
               {title}

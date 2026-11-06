@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type {
   Agent,
   ArtifactComment,
@@ -12,6 +12,12 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { planCommentGuard, type PlanCommentGuard } from '../planCommentGuard';
 import { usePlanRevising } from '../../useRevisingPlans';
+import { buildPlanCommentRequest } from '../buildPlanCommentRequest';
+import { isSameAnchor } from '../planCommentAnchors';
+import { planCommentsTargetOf, type PlanCommentsTarget } from '../planCommentsTargetOf';
+import { draftSavesOk } from '../draftSavesOk';
+import { heldDraftStore } from '../heldDraftStore';
+import { trackDraftSave } from '../trackDraftSave';
 import type { ComposingTarget, PlanCommentsApi } from '../planCommentsContext';
 
 const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
@@ -29,9 +35,14 @@ export type PlanCommentsModel = Readonly<{
   guard: PlanCommentGuard;
   isSending: boolean;
   isRevising: boolean;
+  isPlanRan: boolean;
   run: WorkflowRun | null;
   sendError: string | null;
   send: () => Promise<SendArtifactCommentsResult>;
+  sendToAgent: () => Promise<SendArtifactCommentsResult>;
+  target: PlanCommentsTarget | null;
+  requestText: string;
+  draftSavesOk: () => Promise<boolean>;
 }>;
 
 const failureOf = ({ result }: { readonly result: SendArtifactCommentsResult }): string | null =>
@@ -52,6 +63,7 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
   const editArtifactComment = useAppStore((state) => state.editArtifactComment);
   const removeArtifactComment = useAppStore((state) => state.removeArtifactComment);
   const sendArtifactComments = useAppStore((state) => state.sendArtifactComments);
+  const sendArtifactCommentsToAgent = useAppStore((state) => state.sendArtifactCommentsToAgent);
   const [composing, setComposing] = useState<ComposingTarget | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -81,24 +93,73 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     [runs, planner],
   );
 
-  const startComposing = useCallback(
-    ({ anchor }: { readonly anchor: ArtifactCommentAnchor }) => setComposing({ anchor }),
-    [],
+  const held = useSyncExternalStore(
+    (onChange) => heldDraftStore.subscribe({ onChange }),
+    () => heldDraftStore.allFor({ artifactId: plan.id }),
+    () => heldDraftStore.allFor({ artifactId: plan.id }),
   );
-  const cancelComposing = useCallback(() => setComposing(null), []);
+  const draftSavesSettled = useCallback(() => draftSavesOk({ artifactId: plan.id }), [plan.id]);
+  const startComposing = useCallback(
+    ({ anchor }: { readonly anchor: ArtifactCommentAnchor }) =>
+      setComposing((current) => {
+        if (current !== null && isSameAnchor({ left: current.anchor, right: anchor })) {
+          return current;
+        }
+        const kept = heldDraftStore
+          .allFor({ artifactId: plan.id })
+          .find(
+            (draft) =>
+              draft.revision === revision && isSameAnchor({ left: draft.anchor, right: anchor }),
+          );
+        return kept === undefined
+          ? { anchor }
+          : { anchor, revision: kept.revision, body: kept.body };
+      }),
+    [plan.id, revision],
+  );
+  const cancelComposing = useCallback(() => {
+    if (composing !== null) {
+      heldDraftStore.release({
+        draft: {
+          sessionId,
+          artifactId: plan.id,
+          revision: composing.revision ?? revision,
+          anchor: composing.anchor,
+        },
+      });
+    }
+    setComposing(null);
+  }, [composing, plan.id, revision, sessionId]);
+
+  useEffect(() => {
+    const first = held[0];
+    if (composing === null && first !== undefined) {
+      setComposing({ anchor: first.anchor, revision: first.revision, body: first.body });
+    }
+  }, [composing, held]);
+
   const add = useCallback(
     async ({ body }: { readonly body: string }) => {
       if (composing === null) {
         return;
       }
-      await addArtifactComment({
+      const draft = {
         sessionId,
         artifactId: plan.id,
-        revision,
+        revision: composing.revision ?? revision,
+        anchor: composing.anchor,
+        body,
+      };
+      const save = addArtifactComment({
+        sessionId,
+        artifactId: plan.id,
+        revision: draft.revision,
         anchor: composing.anchor,
         body,
       });
-      setComposing(null);
+      trackDraftSave({ save, draft });
+      await save;
+      setComposing((current) => (current === composing ? null : current));
     },
     [addArtifactComment, composing, plan.id, revision, sessionId],
   );
@@ -121,12 +182,27 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     return result;
   }, [plan, sendArtifactComments, sessionId]);
 
+  const sendToAgent = useCallback(async () => {
+    setSendError(null);
+    const result = await sendArtifactCommentsToAgent({ sessionId, plan });
+    setSendError(failureOf({ result }));
+    return result;
+  }, [plan, sendArtifactCommentsToAgent, sessionId]);
+  const target = useMemo(() => planCommentsTargetOf({ plan, agents }), [agents, plan]);
+  const requestText = useMemo(
+    () =>
+      buildPlanCommentRequest({ clusters: plan.clusters ?? [], comments: drafts, purpose: 'read' }),
+    [drafts, plan.clusters],
+  );
+  const isPlanRan = plan.status === 'consumed' || plan.consumptionCount > 0;
+
   const canComment = !isSending && plan.status !== 'discarded';
   const api = useMemo<PlanCommentsApi>(
     () => ({
       comments,
       revision,
       canComment,
+      isPlanRan,
       composing,
       startComposing,
       cancelComposing,
@@ -134,7 +210,18 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
       edit,
       remove,
     }),
-    [add, canComment, cancelComposing, comments, composing, edit, remove, revision, startComposing],
+    [
+      add,
+      canComment,
+      cancelComposing,
+      comments,
+      composing,
+      edit,
+      isPlanRan,
+      remove,
+      revision,
+      startComposing,
+    ],
   );
 
   return {
@@ -143,8 +230,13 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     guard,
     isSending,
     isRevising: revising.kind === 'revising',
+    isPlanRan,
     run,
     sendError,
     send,
+    sendToAgent,
+    target,
+    requestText,
+    draftSavesOk: draftSavesSettled,
   };
 };

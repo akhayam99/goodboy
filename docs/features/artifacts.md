@@ -4,7 +4,7 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 ### Artifacts
 
-Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Ready**, **Running**, **Consumed** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card with the state, its detail and what it means.
+Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Running**, **Ready** (plans), **To read** (reports and wireframes), **Used** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
@@ -17,6 +17,8 @@ Keep everything a session made in one list. The tabs **All**, **Plans**, **Repor
 
 Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent. Parts that touch the same file never run at the same time. The plan page groups parts into **Runs first** and **Then, in parallel**. It names a shared file and shows each part as a block of its files. On a plan that came from a workflow, the action reads **Approve** and continues that workflow.
 
+One line under **Parts** says how they run. It reads `3 parts, one after the other.` or `3 parts, 2 at once.` A part with no chosen model reads **Default model**. A plan version reads `v3`.
+
 ### Plan beside the planner
 
 Read the plan without leaving the planner. It shows as one row in the planner's chat, and pressing it opens the plan in a drawer on the right, with **Open page** and **Edit**. Reports and wireframes open the same way from Activity or from their chip in a transcript.
@@ -25,9 +27,19 @@ Read the plan without leaving the planner. It shows as one row in the planner's 
 
 Point at a part, a paragraph or a few words and leave a comment. Comments stay drafts until **Send to planner** posts them in plan order and asks for an updated plan. When the new version lands, each comment reads **Addressed** or **Not changed in v2**.
 
+While comments wait, **Send to planner** is the one filled button. **Run plan** and **Approve** ask before they go on without them. Text you typed and did not add is kept as a draft. It is saved when you leave the box, press Esc, press a button, close the page or reload.
+
+**Send to planner**, **Send to** the agent, **Copy**, **Run plan**, **Approve** and **Start implementer** wait for that save, from the header, the menu, the palette and the chat row. If it made a new comment, they ask again instead of starting. A comment that failed to save keeps its text and place and comes back as an open box. Those buttons stay off until you save it or press Cancel.
+
+Drafts load when the session opens, so a restart keeps them in the chat row, the list and the palette too.
+
+After the plan ran, the bar reads **Not sent**, with **Send to** the agent and **Copy**. A stopped agent, or a plan with no known agent, leaves only **Copy**. An agent that is still writing takes the comments in its queue, as a chat message does, and they read Sent once the turn starts or the queue is saved. A second batch goes through once the first was taken. Comments sent this way are never read back as a plan revision.
+
 ### Report as a document
 
-Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place.
+Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place. Its page shows no glyph above its own title.
+
+While an agent still writes an artifact, its page says so in one sentence, with no placeholder bars. **Follow** opens that agent, and each scout under **Agents on this run** opens its own. The wireframe **Flow** view says Flow once, on its tab.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-report-dark.webp">

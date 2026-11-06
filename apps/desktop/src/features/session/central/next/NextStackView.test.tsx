@@ -102,6 +102,7 @@ const actionsOf =
       isDisabled: false,
       isBusy: false,
       confirmRole: null,
+      confirm: null,
       hasPicker: false,
       run: () => {
         log.runs.push(card.id);

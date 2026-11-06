@@ -528,7 +528,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One list',
-        desc: 'All, Plans, Reports and Wireframes filter one list grouped as Needs you, Ready, Running, Consumed and Recently deleted. Each row shows one action, such as Run plan or Approve.',
+        desc: 'All, Plans, Reports and Wireframes filter one list grouped as Needs you, Running, Ready, To read, Used and Recently deleted. Each row shows one action, such as Run plan or Approve.',
       },
       {
         term: 'Plans',

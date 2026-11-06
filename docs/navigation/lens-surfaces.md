@@ -329,6 +329,10 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   (Edit, Open in browser, Copy source, Delete, Delete permanently) lives on
   right click and in the opened artifact. No kind column (the glyph says it);
   the state cell shows only what the group does not say, as one glyph and word
-  with the progress (`part 2 of 4`) in its tooltip. An artifact page header
-  draws no state chip: the state leads the gray meta line. A report shows its
-  title only in the document, the header keeps a hidden `h1`.
+  with the progress (`part 2 of 4`) in its tooltip. The groups are Needs you,
+  Running, Ready (plans), To read (reports and wireframes), Used, then Recently
+  deleted; a report nobody opened reads `Unread` in its row. A `Run plan` or
+  `Approve` verb is filled only when `planPrimaryOf` says so (`isSecondary`
+  false): with comments not sent it is plain, like the header. An artifact page
+  header draws no state chip: the state leads the gray meta line. A report
+  shows its title only in the document, the header keeps a hidden `h1`.

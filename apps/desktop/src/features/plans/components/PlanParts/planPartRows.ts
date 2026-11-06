@@ -158,17 +158,3 @@ export const planPartsProgress = ({
   const done = rows.filter((row) => row.node.state === 'done').length;
   return done === total ? { kind: 'done', total } : { kind: 'waiting', done, total };
 };
-
-export const planSplitSentence = ({
-  count,
-  plannerName,
-}: {
-  readonly count: number;
-  readonly plannerName: string | null;
-}): string => {
-  if (count === 1) {
-    return 'Runs as one part, in a single implementer.';
-  }
-  const who = plannerName ?? 'The planner';
-  return `${who} split this plan into ${count} parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.`;
-};

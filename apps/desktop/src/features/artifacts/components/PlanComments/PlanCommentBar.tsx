@@ -1,12 +1,15 @@
-import { Check } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
-import { PlanApproveConfirm } from '../../../plans/planSurfaces';
-import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
 import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 
-type PlanBarApprove = Pick<PlanPrimaryAction, 'press' | 'isBusy' | 'confirm'>;
+export type PlanCommentBarRan = Readonly<{
+  agentName: string | null;
+  canSend: boolean;
+  isSending: boolean;
+  onSend: () => Promise<unknown>;
+  onCopy: () => void;
+}>;
 
 type Props = {
   readonly count: number;
@@ -14,14 +17,47 @@ type Props = {
   readonly isSending: boolean;
   readonly error: string | null;
   readonly onSend: () => Promise<unknown>;
-  readonly approve: PlanBarApprove | null;
+  readonly ran?: PlanCommentBarRan | null;
+  readonly status?: string | null;
 };
 
 const CommentIcon = CONCEPT_ICONS.comments;
 
-export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve }: Props) => {
-  const note = error ?? (guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason);
+type CountParams = {
+  readonly count: number;
+};
+
+const commentsLabelOf = ({ count }: CountParams): string =>
+  count === 1 ? '1 comment' : `${count} comments`;
+
+type NoteParams = {
+  readonly guard: PlanCommentGuard;
+  readonly ran: PlanCommentBarRan | null;
+};
+
+const barNoteOf = ({ guard, ran }: NoteParams): string | null => {
+  if (ran !== null) {
+    if (ran.agentName === null) {
+      return 'No agent to send them to. Copy them instead.';
+    }
+    return ran.canSend
+      ? `${ran.agentName} can still read them.`
+      : `${ran.agentName} isn't running. Copy them instead.`;
+  }
+  return guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason;
+};
+
+export const PlanCommentBar = ({
+  count,
+  guard,
+  isSending,
+  error,
+  onSend,
+  ran = null,
+  status = null,
+}: Props) => {
   const hasDrafts = count > 0;
+  const note = error ?? barNoteOf({ guard, ran });
 
   return (
     <div
@@ -32,7 +68,7 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve
         {hasDrafts ? (
           <div className="flex min-w-0 flex-col">
             <span className="text-meta text-muted-foreground">
-              {count === 1 ? '1 comment' : `${count} comments`}
+              {ran === null ? commentsLabelOf({ count }) : `${commentsLabelOf({ count })} not sent`}
             </span>
             {note === null ? null : (
               <span
@@ -49,31 +85,40 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve
             )}
           </div>
         ) : (
-          <span className="flex min-w-0 items-center gap-2 text-meta text-faint-foreground">
+          <span
+            role={status === null ? undefined : 'status'}
+            className="flex min-w-0 items-center gap-2 text-meta text-faint-foreground"
+          >
             <CommentIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            <span className="truncate">Select text or click a block to comment</span>
+            <span className="truncate">{status ?? 'Select text or click a block to comment'}</span>
           </span>
         )}
         <div className="flex shrink-0 items-center gap-2">
-          {approve === null ? null : (
-            <PlanApproveConfirm
-              confirm={approve.confirm}
-              trigger={() => (
+          {hasDrafts && ran !== null ? (
+            <>
+              <Button
+                variant={ran.canSend ? 'ghost' : 'primary'}
+                size="sm"
+                onClick={ran.onCopy}
+                data-testid="plan-bar-copy"
+              >
+                Copy
+              </Button>
+              {ran.canSend ? (
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
-                  isBusy={approve.isBusy}
-                  onClick={approve.press}
-                  data-testid="plan-bar-approve"
-                  data-filled="false"
+                  isBusy={ran.isSending}
+                  onClick={() => void ran.onSend()}
+                  data-testid="plan-bar-send-agent"
+                  data-filled="true"
                 >
-                  <Check size={ICON_SIZE.row} aria-hidden />
-                  Approve
+                  {`Send to ${ran.agentName}`}
                 </Button>
-              )}
-            />
-          )}
-          {hasDrafts ? (
+              ) : null}
+            </>
+          ) : null}
+          {hasDrafts && ran === null ? (
             <Button
               variant="primary"
               size="sm"
