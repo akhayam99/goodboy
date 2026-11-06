@@ -909,11 +909,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/sessions/archiveTask.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/sessions/createSession.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 9
