@@ -84,7 +84,10 @@ const waitingPermissionOf = async ({ agent, runId }: WaitingParams): Promise<Tur
     db: tauriDatabase,
     agentId: agent.id,
     runId,
-  }).catch(() => null);
+  }).catch((error: unknown) => {
+    console.error('read the waiting permission failed', error);
+    return null;
+  });
   return ask === null ? null : { kind: 'blocked', runId: ask.runId, blockedAt: ask.at };
 };
 

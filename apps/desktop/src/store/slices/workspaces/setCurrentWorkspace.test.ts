@@ -88,6 +88,7 @@ import {
 } from '@goodboy/db';
 import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { retryWorkspaceFacts } from './retryWorkspaceFacts';
+import { switchEpoch } from './switchEpoch';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -349,7 +350,7 @@ describe('setCurrentWorkspace facts before the board', () => {
     expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toEqual([question]);
   });
 
-  it('keeps the error when Retry fails again, and drops a Retry for a workspace left behind', async () => {
+  it('keeps the error when Retry fails again, and drops a Retry answer that lands after a switch', async () => {
     const store = harness();
     vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('database is locked'));
     await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
@@ -359,10 +360,11 @@ describe('setCurrentWorkspace facts before the board', () => {
 
     expect(store.state.workspaceFactsError).toBe('disk I/O error');
 
-    vi.mocked(listOpenQuestionsForSessions).mockResolvedValueOnce([question]);
-    await retryWorkspaceFacts(store)({
-      workspaceId: brandId<WorkspaceId>({ value: 'workspace-2' }),
+    vi.mocked(listOpenQuestionsForSessions).mockImplementationOnce(async () => {
+      switchEpoch.value += 1;
+      return [question];
     });
+    await retryWorkspaceFacts(store)({ workspaceId: WORKSPACE_ID });
 
     expect(store.state.workspaceFactsError).toBe('disk I/O error');
     expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toBeUndefined();

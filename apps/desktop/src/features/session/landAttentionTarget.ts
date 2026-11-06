@@ -1,5 +1,7 @@
 import { agentPlace, sessionPlace, useAppStore } from '../../store';
 import { stageInfoOf } from '../../store/slices/session-view/stageInfoOf';
+import { selectSessionById } from '../../store/slices/sessions/selectSessionById';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { ATTENTION_HANDLED_EVENT } from './attentionHandledEvent';
 import { attentionPlace } from './attentionPlace';
 import type { AttentionTarget } from './attentionTarget';
@@ -13,16 +15,10 @@ type Params = {
 const landOf = ({ target }: Params): AttentionLanding => {
   const state = useAppStore.getState();
   const { sessionId, reason, agentId } = target;
-  const session = state.sessions.find((candidate) => candidate.id === sessionId);
-  const archived =
-    session === undefined
-      ? Object.values(state.archivedSessions)
-          .flat()
-          .find((candidate) => candidate.id === sessionId)
-      : undefined;
-  if (session === undefined && archived === undefined) {
+  if (selectSessionById(state, sessionId) === null) {
     return 'handled';
   }
+  const session = sessionById(state.sessions, sessionId);
   const restingPlace =
     agentId === null || session === undefined
       ? sessionPlace({ sessionId })

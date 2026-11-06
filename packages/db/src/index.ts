@@ -201,8 +201,6 @@ export {
   deleteTurnEventsForSessions,
   type PendingTurnEventInsert,
   type StoredTurnEvent,
-  type TurnEventStorageStats,
-  type UndecidedPermissionAsk,
 } from './queries/turn-event';
 export { getDatabaseSizeBytes } from './queries/storage';
 export {
@@ -450,10 +448,8 @@ export {
   listDecidedNudgeEventsForSessions,
   listNudgeEvents,
   updateNudgeEventOutcome,
-  type ListNudgeEventsOptions,
   type NextStepNudgeKind,
   type NudgeEvent,
-  type NudgeEventKind,
   type NudgeKind,
   type NudgeOutcome,
 } from './queries/nudge-event';

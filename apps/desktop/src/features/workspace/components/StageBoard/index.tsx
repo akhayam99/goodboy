@@ -21,7 +21,7 @@ import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm
 import { SetupCard } from '../../../onboarding/SetupCard';
 import { useIsMainWindow } from '../../useIsMainWindow';
 import { BlockedBoard } from './BlockedBoard';
-import { BoardFactsNotice } from './BoardFactsNotice';
+import { BoardFactsFrame } from './BoardFactsFrame';
 import { BoardSkeleton } from './BoardSkeleton';
 import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
@@ -71,7 +71,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const motionResetKey = useBoardMotionKey({ workspaceId });
   const filterSessions = useMemo(() => [...sessions, ...archived], [archived, sessions]);
   const boardReady = useAppStore((s) => s.boardReady && s.switchingToWorkspaceId == null);
-  const factsError = useAppStore((s) => s.workspaceFactsError);
   const workspace = useAppStore(
     (s) => s.workspaces.find((candidate) => candidate.id === workspaceId) ?? null,
   );
@@ -178,20 +177,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   const hoveredId = hover.target?.sessionId ?? null;
   const hoveredSession =
     hoveredId === null ? null : (boardSessions.find((session) => session.id === hoveredId) ?? null);
-  const lanes = (
-    <BoardLanes
-      layout={layout}
-      byStage={byStage}
-      archived={projectArchived}
-      isArchivedLoading={archivedList === undefined}
-      nav={nav}
-      selection={selection}
-      onRestore={onRestore}
-      motionResetKey={motionResetKey}
-      onCardEnter={hover.enter}
-      onCardLeave={hover.leave}
-    />
-  );
 
   return (
     <div ref={boardRef} className={cn('relative flex h-full w-full', PANE_RHYTHM.board.pad)}>
@@ -236,13 +221,21 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           />
         )}
 
-        {!pending && !empty && factsError === null && lanes}
-
-        {!pending && !empty && factsError !== null && (
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
-            <BoardFactsNotice workspaceId={workspaceId} error={factsError} />
-            {lanes}
-          </div>
+        {!pending && !empty && (
+          <BoardFactsFrame workspaceId={workspaceId}>
+            <BoardLanes
+              layout={layout}
+              byStage={byStage}
+              archived={projectArchived}
+              isArchivedLoading={archivedList === undefined}
+              nav={nav}
+              selection={selection}
+              onRestore={onRestore}
+              motionResetKey={motionResetKey}
+              onCardEnter={hover.enter}
+              onCardLeave={hover.leave}
+            />
+          </BoardFactsFrame>
         )}
       </div>
 

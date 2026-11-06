@@ -23,7 +23,6 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
 import { planHandoffOf } from '../plans/planHandoffOf';
 import { planOwnerOf } from '../plans/planOwnerOf';
-import { plannerQuestionsOf } from '../plans/plannerQuestions';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../plans/planStateInputs';
 import { NOT_REVISING, type PlanRevising } from '../plans/planRevising';
 
@@ -136,7 +135,7 @@ const planRow = ({
     plan,
     rows: partRows,
     revising,
-    plannerQuestionCount: plannerQuestionsOf({ questions: openQuestions, plan }).length,
+    openQuestions,
     handoff: planHandoffOf({ plan, run: owner, views: autoViews }),
   });
   const state = artifactStateOf({

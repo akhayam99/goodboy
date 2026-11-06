@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
-vi.mock('../../../../shared/lib/db', async () =>
-  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock(),
+);
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,8 +21,8 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import { BoardFactsNotice } from './BoardFactsNotice';
+} from '../../../../../store/storyHarness';
+import { BoardFactsFrame } from './index';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 
@@ -43,13 +45,20 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-describe('BoardFactsNotice', () => {
-  it('says the board could not read what needs you, and Retry reads it again', async () => {
-    render(<BoardFactsNotice workspaceId={HARBORLINE} error="database is locked" />);
+describe('BoardFactsFrame', () => {
+  it('says the board could not read what needs you above the lanes, and Retry reads it again', async () => {
+    render(
+      <BoardFactsFrame workspaceId={HARBORLINE}>
+        <p>lanes</p>
+      </BoardFactsFrame>,
+    );
 
     screen.getByText("Couldn't read what needs you");
+    screen.getByText('lanes');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(useAppStore.getState().workspaceFactsError).toBeNull());
+    expect(screen.queryByText("Couldn't read what needs you")).toBeNull();
+    screen.getByText('lanes');
   });
 });

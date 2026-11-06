@@ -7,7 +7,6 @@ import {
   type AgentId,
   type ArtifactId,
   type MountId,
-  type ProjectId,
   type ResolveAttempt,
   type SessionId,
   type SessionProjectMount,
@@ -217,60 +216,6 @@ describe('restoring a saved window location', () => {
     });
     expect(store.getState().currentSessionId).toBeNull();
     expect(keyOf(store)).toBe('board');
-  });
-
-  it('reopens an archived session the window was on, the page reads archived too', () => {
-    const ARCHIVED = brandId<SessionId>({ value: 'session-archived' });
-    const store = makeStore();
-    store.setState({ archivedSessions: { [WS]: [aSession({ id: ARCHIVED })] } });
-
-    store.getState().restoreLocation({
-      location: {
-        workspaceId: WS,
-        place: {
-          at: 'session',
-          sessionId: ARCHIVED,
-          view: { lens: null, agentId: null, target: null },
-        },
-        studio: null,
-        focus: EMPTY_FOCUS,
-      },
-    });
-
-    expect(store.getState().currentSessionId).toBe(ARCHIVED);
-  });
-
-  it('keeps the project the Scripts panel was opened for across a reload', () => {
-    const PROJECT = brandId<ProjectId>({ value: 'project-ledger-core' });
-    const before = makeStore();
-    before.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    before
-      .getState()
-      .openDrawer({ kind: 'scripts', sessionId: S1, payload: { projectId: PROJECT } });
-    const saved = parseLocation({
-      value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
-    });
-
-    const after = makeStore();
-    after.getState().restoreLocation({ location: saved! });
-
-    expect(after.getState().drawer).toMatchObject({
-      kind: 'scripts',
-      payload: { projectId: PROJECT },
-    });
-  });
-
-  it('brings Back to the Runs row the page was left from', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
-    store.getState().amendFocus({ patch: { scroll: { runs: 3 } } });
-    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
-
-    store.getState().back();
-
-    const stack = store.getState().navigation[WS];
-    expect(store.getState().activeLens[S1]).toBe('workflows');
-    expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ runs: 3 });
   });
 
   it('lands a saved session terminal page on the session overview', () => {

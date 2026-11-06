@@ -21,10 +21,7 @@ export const retryWorkspaceFacts = ({ set, get }: Params) => {
   return async ({ workspaceId }: Input): Promise<void> => {
     const claimed = latest.claim({ key: workspaceId });
     const epoch = switchEpoch.value;
-    const isCurrent = (): boolean =>
-      claimed.isCurrent() &&
-      epoch === switchEpoch.value &&
-      get().currentWorkspaceId === workspaceId;
+    const isCurrent = (): boolean => claimed.isCurrent() && epoch === switchEpoch.value;
     const state = get();
     try {
       const facts = await loadWorkspaceFacts({

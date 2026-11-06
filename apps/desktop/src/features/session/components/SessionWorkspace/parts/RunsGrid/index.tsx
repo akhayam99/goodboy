@@ -6,7 +6,7 @@ import { useNow } from '../../../../../../shared/hooks/useNow';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
-import { useRowReturn } from '../../../../useRowReturn';
+import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
 import { openSpawned } from '../../../../openSpawned';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';

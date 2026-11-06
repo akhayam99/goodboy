@@ -13,7 +13,6 @@ import {
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
-import { plannerQuestionsOf } from '../plans/plannerQuestions';
 import { NOT_REVISING } from '../plans/planRevising';
 import { planStateInputsOf } from '../plans/planStateInputs';
 import type { ArtifactGeneration } from './artifactCollection';
@@ -402,8 +401,7 @@ describe('the list and the document agree', () => {
       ...planStateInputsOf({
         plan: planFixture,
         rows: [],
-        plannerQuestionCount: plannerQuestionsOf({ questions: openQuestions, plan: planFixture })
-          .length,
+        openQuestions,
       }),
     });
 

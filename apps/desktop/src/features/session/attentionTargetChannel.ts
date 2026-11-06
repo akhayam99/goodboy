@@ -36,36 +36,36 @@ type ValueParams = {
   readonly value: unknown;
 };
 
-const textOf = ({ value }: ValueParams): string | null =>
+const filledTextOf = ({ value }: ValueParams): string | null =>
   typeof value === 'string' && value !== '' ? value : null;
 
-const reasonOf = ({ value }: ValueParams): SessionAttentionReason | null =>
+const attentionReasonOf = ({ value }: ValueParams): SessionAttentionReason | null =>
   Object.keys(ATTENTION_REASON_META).find((key): key is SessionAttentionReason => key === value) ??
   null;
 
-const targetOf = ({ value }: ValueParams): AttentionTarget | null => {
+const storedTargetOf = ({ value }: ValueParams): AttentionTarget | null => {
   if (typeof value !== 'object' || value === null) {
     return null;
   }
-  const sessionId = 'sessionId' in value ? textOf({ value: value.sessionId }) : null;
+  const sessionId = 'sessionId' in value ? filledTextOf({ value: value.sessionId }) : null;
   if (sessionId === null) {
     return null;
   }
-  const workspaceId = 'workspaceId' in value ? textOf({ value: value.workspaceId }) : null;
-  const agentId = 'agentId' in value ? textOf({ value: value.agentId }) : null;
+  const workspaceId = 'workspaceId' in value ? filledTextOf({ value: value.workspaceId }) : null;
+  const agentId = 'agentId' in value ? filledTextOf({ value: value.agentId }) : null;
   return {
     workspaceId: workspaceId === null ? null : brandId<WorkspaceId>({ value: workspaceId }),
     sessionId: brandId<SessionId>({ value: sessionId }),
-    reason: 'reason' in value ? reasonOf({ value: value.reason }) : null,
+    reason: 'reason' in value ? attentionReasonOf({ value: value.reason }) : null,
     agentId: agentId === null ? null : brandId<AgentId>({ value: agentId }),
   };
 };
 
-const pendingOf = ({ value }: ValueParams): Pending | null => {
+const pendingTargetOf = ({ value }: ValueParams): Pending | null => {
   if (typeof value !== 'object' || value === null || !('target' in value) || !('at' in value)) {
     return null;
   }
-  const target = targetOf({ value: value.target });
+  const target = storedTargetOf({ value: value.target });
   return target === null || typeof value.at !== 'number' ? null : { target, at: value.at };
 };
 
@@ -75,7 +75,7 @@ const readPending = (): Pending | null => {
     if (raw === null) {
       return null;
     }
-    return pendingOf({ value: JSON.parse(raw) });
+    return pendingTargetOf({ value: JSON.parse(raw) });
   } catch {
     return null;
   }
@@ -117,7 +117,7 @@ export const attentionTargetChannel = {
       return () => undefined;
     }
     return listen<unknown>(TARGET_EVENT, (event) => {
-      const target = targetOf({ value: event.payload });
+      const target = storedTargetOf({ value: event.payload });
       if (target !== null) {
         onTarget({ target });
       }

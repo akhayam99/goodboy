@@ -27,7 +27,7 @@ import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact'
 import { useEscapeLayer } from '@goodboy/ui';
 import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { openArtifactPage } from '../../openArtifactPage';
-import { useRowReturn } from '../../../session/useRowReturn';
+import { useRowReturn } from '../../../../shared/hooks/useRowReturn';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {

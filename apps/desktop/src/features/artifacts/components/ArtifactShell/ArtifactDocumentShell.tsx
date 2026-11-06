@@ -7,7 +7,6 @@ import { usePlanRevising } from '../../../plans/useRevisingPlans';
 import { usePlanRun } from '../../../plans/usePlanRun';
 import { artifactStateOf } from '../../artifactStateOf';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../../../plans/planStateInputs';
-import { plannerQuestionsOf } from '../../../plans/plannerQuestions';
 import {
   planPartsProgress,
   planSplitSentence,
@@ -46,8 +45,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const { artifact } = subject;
   const plan = subject.kind === 'plan' ? subject.plan : null;
   const openQuestions = useSessionOpenQuestions(sessionId);
-  const plannerQuestionCount =
-    plan === null ? 0 : plannerQuestionsOf({ questions: openQuestions, plan }).length;
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -221,7 +218,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           plan,
           rows: partRows,
           revising,
-          plannerQuestionCount,
+          openQuestions,
           handoff,
         })),
   });

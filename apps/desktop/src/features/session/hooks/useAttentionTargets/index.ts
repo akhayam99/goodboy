@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { useAppStore } from '../../../store';
-import { useShowToast } from '../../../shared/components/Toast/useShowToast';
-import { ATTENTION_HANDLED_EVENT } from '../attentionHandledEvent';
-import { attentionTargetChannel } from '../attentionTargetChannel';
-import { landAttentionTarget } from '../landAttentionTarget';
+import { useAppStore } from '../../../../store';
+import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
+import { ATTENTION_HANDLED_EVENT } from '../../attentionHandledEvent';
+import { attentionTargetChannel } from '../../attentionTargetChannel';
+import { landAttentionTarget } from '../../landAttentionTarget';
 
 const takeAndLand = (): void => {
   const state = useAppStore.getState();

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { UndecidedPermissionAsk } from '@goodboy/db';
 import type { Agent, IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
 const {
@@ -15,7 +14,8 @@ const {
     async (_params: {
       readonly agentId: string;
       readonly runId: string;
-    }): Promise<UndecidedPermissionAsk | null> => null,
+    }): ReturnType<typeof import('@goodboy/db').findUndecidedPermissionAsk> =>
+      Promise.resolve(null),
   ),
   recordAgentStatus: vi.fn(async () => undefined),
   updateSessionState: vi.fn(async () => undefined),
@@ -172,11 +172,14 @@ describe('loaded run reconciliation', () => {
   it('stops the agent when the saved ask cannot be read, never a guess', async () => {
     const agent = buildAgent({ status: 'running' });
     findUndecidedPermissionAsk.mockRejectedValueOnce(new Error('database is locked'));
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
 
     expect(reconciled.waiting).toBeNull();
     expect(reconciled.agent.status).toBe('stopped');
+    expect(logged).toHaveBeenCalledWith('read the waiting permission failed', expect.any(Error));
+    logged.mockRestore();
   });
 
   it('keeps a running agent this window was streaming before it reloaded', async () => {

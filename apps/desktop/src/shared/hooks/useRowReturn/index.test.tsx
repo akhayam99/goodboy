@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
-vi.mock('../../../shared/lib/db', async () =>
+vi.mock('../../lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
 

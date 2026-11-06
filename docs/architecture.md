@@ -1196,7 +1196,7 @@ kept.
   run reads once. Two hooks on one session share one interval
   (`useAutoTrees/sharedPoll.ts`); nothing pushes tree changes to a window yet.
   The shared poll keeps reading in a hidden window, every 10 seconds instead of
-  2, and `useAutoBoardWatch` (in `AwayAlertsBridge`) polls every session the
+  2, and `useAutoBoardWatch` (mounted by `NeedsYouAnnouncementBridge` in every window) polls every session the
   board shows with a live Auto agent (`watchedAutoSessionsOf`), so Auto's waits
   reach the lane, the door and the away banner without opening the session.
   A read moves `autoClockAt` in 15 second steps while a child waits to start

@@ -16,6 +16,7 @@ import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { scriptsScopeOf } from '../../scriptsScopeOf';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
 import { isService } from '../../classifyScript';
@@ -88,12 +89,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     const drawer = selectOpenDrawer(state);
     return drawer?.kind === 'scriptRun' && drawer.sessionId === sessionId ? drawer.payload : null;
   });
-  const scopeProjectId = useAppStore((state) => {
-    const drawer = selectOpenDrawer(state);
-    return drawer?.kind === 'scripts' && drawer.sessionId === sessionId
-      ? (drawer.payload?.projectId ?? null)
-      : null;
-  });
+  const scopeProjectId = useAppStore((state) => scriptsScopeOf({ state, sessionId }));
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
   const deleteScript = useAppStore((state) => state.deleteScript);

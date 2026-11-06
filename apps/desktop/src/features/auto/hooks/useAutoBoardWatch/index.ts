@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { startSharedPoll } from '../useAutoTrees/sharedPoll';
-import { watchedAutoSessionsOf } from '../watchedAutoSessionsOf';
+import { useAppStore } from '../../../../store';
+import { startSharedPoll } from '../../useAutoTrees/sharedPoll';
+import { watchedAutoSessionsOf } from '../../watchedAutoSessionsOf';
 
 type Inputs = Readonly<{
   sessions: unknown;
