@@ -24,20 +24,13 @@ import { isService } from '../../classifyScript';
 import { defaultClosedPackageKeys } from '../../defaultClosedPackageKeys';
 import { filterScriptGroups } from '../../filterScriptGroups';
 import { groupScriptsByPackage } from '../../groupScriptsByPackage';
-import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
 import { useScriptKeys } from '../../hooks/useScriptKeys';
 import { useScriptLive } from '../../hooks/useScriptLive';
-import { useScriptPins } from '../../hooks/useScriptPins';
 import { useServiceStarts } from '../../hooks/useServiceStarts';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { isScriptOpenIn } from '../../isScriptOpenIn';
-import { scriptPinId } from '../../scriptPinId';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
-import {
-  readPackagesCollapsedOverrides,
-  writePackagesCollapsedOverrides,
-} from '../../packagesCollapsedStorage';
 import { scriptRunRecordFor } from '../../scriptRunRecordFor';
 import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
 import { scriptRecordOutput } from '../../scriptRecordOutput';
@@ -62,7 +55,9 @@ import { ScriptsFilterInput } from './ScriptsFilterInput';
 import { UnmountedScriptsNote } from './UnmountedScriptsNote';
 import { packageSectionKey } from './packageSectionKey';
 import { unmountedScriptsOf } from './unmountedScriptsOf';
+import { useScriptCollapse } from './useScriptCollapse';
 import { useScriptDraft } from './useScriptDraft';
+import { useScriptPinActions } from './useScriptPinActions';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
@@ -106,16 +101,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const refreshDiscoveredScripts = useAppStore((state) => state.refreshDiscoveredScripts);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
-  const toggleScriptPin = useAppStore((state) => state.toggleScriptPin);
-  const reportError = useAppStore((state) => state.reportError);
 
   const [query, setQuery] = useState('');
-  const [collapsed, setCollapsed] = useState<ReadonlySet<MountId>>(() =>
-    readCollapsedGroups({ workspaceId }),
-  );
-  const [packagesOverrides, setPackagesOverrides] = useState<Readonly<Record<string, boolean>>>(
-    () => readPackagesCollapsedOverrides({ workspaceId }),
-  );
+  const { collapsed, packagesOverrides, setGroupCollapsed, setPackageCollapsed } =
+    useScriptCollapse({ workspaceId });
   const [scopedProjectId] = useState(() => scopeProjectId);
   const [pageError, setPageError] = useState<string | null>(null);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
@@ -143,21 +132,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     () => unmountedScriptsOf({ groups, saved, projects: workspaceProjects }),
     [groups, saved, workspaceProjects],
   );
-  const pins = useScriptPins({ projectIds: groups.map((group) => group.projectId) });
-  const isPinned = ({ group, script }: RowParams): boolean =>
-    (pins[group.projectId] ?? []).includes(scriptPinId(script));
-  const togglePinId = ({
-    group,
-    pinId,
-  }: {
-    readonly group: SessionScriptGroup;
-    readonly pinId: string;
-  }) =>
-    void toggleScriptPin({ projectId: group.projectId, pinId }).catch((error: unknown) =>
-      reportError({ title: "Couldn't pin the script", error }),
-    );
-  const togglePin = ({ group, script }: RowParams) =>
-    togglePinId({ group, pinId: scriptPinId(script) });
+  const { pins, isPinned, togglePinId, togglePin } = useScriptPinActions({ groups });
   const activeGroup =
     groups.find((group) => group.projectId === scopedProjectId) ??
     groups.find((group) => group.projectId === activeProjectId) ??
@@ -167,41 +142,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   useEffect(() => {
     void loadScripts(workspaceId);
   }, [loadScripts, workspaceId]);
-
-  const setGroupCollapsed = useCallback(
-    ({ mountId, isCollapsed }: { readonly mountId: MountId; readonly isCollapsed: boolean }) => {
-      setCollapsed((current) => {
-        const next = new Set(current);
-        if (isCollapsed) {
-          next.add(mountId);
-        } else {
-          next.delete(mountId);
-        }
-        writeCollapsedGroups({ workspaceId, collapsed: next });
-        return next;
-      });
-    },
-    [workspaceId],
-  );
-
-  const setPackageCollapsed = useCallback(
-    ({
-      mountId,
-      sectionKey,
-      isCollapsed,
-    }: {
-      readonly mountId: MountId;
-      readonly sectionKey: string;
-      readonly isCollapsed: boolean;
-    }) => {
-      setPackagesOverrides((current) => {
-        const next = { ...current, [packageSectionKey({ mountId, sectionKey })]: isCollapsed };
-        writePackagesCollapsedOverrides({ workspaceId, overrides: next });
-        return next;
-      });
-    },
-    [workspaceId],
-  );
 
   const openNew = useCallback(
     ({ group }: { readonly group: SessionScriptGroup }) => {
