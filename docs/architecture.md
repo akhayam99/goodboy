@@ -275,8 +275,9 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   provider run is not live as stopped (`reconcileGhostAgents`), in all
   workspaces, not only the open one. Runs the backend still holds, runs
   this window can reattach to and runs whose permission ask nobody answered
-  (`listUndecidedAskRunIds`) are kept. If that ask read fails, the sweep stops
-  nothing and each workspace load reconciles its own agents.
+  (a `NOT EXISTS` on `turn_events` inside `stopGhostAgents`) are kept. The
+  sweep is one statement, so if it fails it stops nothing and each workspace
+  load reconciles its own agents.
 
 ### Terminal and script output
 

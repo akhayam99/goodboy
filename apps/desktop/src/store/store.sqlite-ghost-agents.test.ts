@@ -182,7 +182,7 @@ describe('store on sqlite: ghost running agents at boot', () => {
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-asking': 'running' });
   });
 
-  it('stops nothing when the waiting permissions cannot be read', async () => {
+  it('stops nothing when the sweep cannot read the waiting permissions', async () => {
     await seedAgent({
       id: 'agent-ghost',
       sessionId: ONBOARDING_ID,
@@ -191,12 +191,9 @@ describe('store on sqlite: ghost running agents at boot', () => {
     });
     stubStoryInvoke({ turn_list_live: () => [] });
     injectDbFault({ match: /permission_request/ });
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    expect(await reconcileGhostAgents()).toBe(0);
-    expect(errorSpy).toHaveBeenCalledWith('read the waiting permissions failed', expect.any(Error));
+    await expect(reconcileGhostAgents()).rejects.toThrow('injected db fault');
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-ghost': 'running' });
-    errorSpy.mockRestore();
   });
 
   it('stops nothing when the live runs cannot be read', async () => {

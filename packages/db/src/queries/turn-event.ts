@@ -375,37 +375,6 @@ export const findUndecidedPermissionAsk = async ({
   return asks.filter((ask) => !decided.has(ask.toolUseId)).at(-1) ?? null;
 };
 
-type RunIdRow = {
-  run_id: string;
-};
-
-type UndecidedAskRunIdsParams = {
-  readonly db: Database;
-};
-
-export const listUndecidedAskRunIds = async ({
-  db,
-}: UndecidedAskRunIdsParams): Promise<ReadonlyArray<ProviderRunId>> => {
-  const rows = await db.select<RunIdRow>(
-    `SELECT DISTINCT a.provider_run_id AS run_id
-     FROM agents a
-     JOIN turn_events ask
-       ON ask.agent_id = a.id
-      AND json_extract(ask.payload, '$.kind') = 'permission_request'
-      AND json_extract(ask.payload, '$.runId') = a.provider_run_id
-     WHERE a.status = 'running'
-       AND a.provider_run_id IS NOT NULL
-       AND NOT EXISTS (
-         SELECT 1 FROM turn_events decision
-         WHERE decision.agent_id = a.id
-           AND json_extract(decision.payload, '$.kind') = 'permission_decision'
-           AND json_extract(decision.payload, '$.runId') = a.provider_run_id
-           AND json_extract(decision.payload, '$.toolUseId') = json_extract(ask.payload, '$.toolUseId')
-       )`,
-  );
-  return rows.map((row) => row.run_id as ProviderRunId);
-};
-
 type SessionScopedTurnEventParams = {
   readonly db: Database;
   readonly sessionIds: ReadonlyArray<SessionId>;

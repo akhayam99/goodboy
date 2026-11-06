@@ -8,7 +8,6 @@ import {
   insertTurnEvent,
   listTurnEventEntriesForAgent,
   listTurnEventsForAgent,
-  listUndecidedAskRunIds,
   readFirstUserText,
 } from './turn-event';
 
@@ -238,60 +237,6 @@ describe('turn event queries', () => {
       at,
     });
     expect(await findUndecidedPermissionAsk({ db, agentId: otherAgentId, runId })).toBeNull();
-  });
-
-  it('lists the run of a running agent whose ask nobody decided, and no other run', async () => {
-    const otherRunId = 'run-2' as ProviderRunId;
-    await db.execute(`UPDATE agents SET status = 'running', provider_run_id = ? WHERE id = ?`, [
-      runId,
-      agentId,
-    ]);
-    await db.execute(`UPDATE agents SET status = 'running', provider_run_id = ? WHERE id = ?`, [
-      otherRunId,
-      otherAgentId,
-    ]);
-    type AskParams = {
-      readonly id: string;
-      readonly owner: AgentId;
-      readonly run: ProviderRunId;
-      readonly toolUseId: string;
-    };
-    const ask = ({ id, owner, run, toolUseId }: AskParams) =>
-      insertTurnEvent(db, {
-        id,
-        sessionId,
-        agentId: owner,
-        event: {
-          kind: 'permission_request',
-          runId: run,
-          toolUseId,
-          toolName: 'Bash',
-          input: { command: 'pnpm test' },
-          at,
-        },
-      });
-    await ask({ id: 'event-ask-1', owner: agentId, run: runId, toolUseId: 'tool-1' });
-    await ask({ id: 'event-ask-2', owner: otherAgentId, run: otherRunId, toolUseId: 'tool-2' });
-    await insertTurnEvent(db, {
-      id: 'event-decision-2',
-      sessionId,
-      agentId: otherAgentId,
-      event: {
-        kind: 'permission_decision',
-        runId: otherRunId,
-        toolUseId: 'tool-2',
-        decision: 'deny',
-        ruleId: null,
-        decidedBy: 'user',
-        at,
-      },
-    });
-
-    expect(await listUndecidedAskRunIds({ db })).toEqual([runId]);
-
-    await db.execute(`UPDATE agents SET status = 'stopped' WHERE id = ?`, [agentId]);
-
-    expect(await listUndecidedAskRunIds({ db })).toEqual([]);
   });
 
   it('lists the stored id with each event of one agent, oldest first', async () => {

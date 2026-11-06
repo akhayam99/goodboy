@@ -1,7 +1,6 @@
 import type { Agent, IsoDateTime, ProviderRunId, Session, TurnState } from '@goodboy/types';
 import {
   findUndecidedPermissionAsk,
-  listUndecidedAskRunIds,
   recordAgentStatus,
   stopGhostAgents,
   updateSessionState,
@@ -135,17 +134,8 @@ export const reconcileGhostAgents = async (): Promise<number> => {
   if (liveRunIds === null) {
     return 0;
   }
-  const waitingRunIds = await listUndecidedAskRunIds({ db: tauriDatabase }).catch(
-    (error: unknown) => {
-      console.error('read the waiting permissions failed', error);
-      return null;
-    },
-  );
-  if (waitingRunIds === null) {
-    return 0;
-  }
   return stopGhostAgents({
     db: tauriDatabase,
-    keepRunIds: [...liveRunIds, ...listTurnCursorRunIds(), ...waitingRunIds],
+    keepRunIds: [...liveRunIds, ...listTurnCursorRunIds()],
   });
 };

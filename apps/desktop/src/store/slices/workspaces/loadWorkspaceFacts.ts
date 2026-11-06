@@ -1,14 +1,12 @@
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import {
-  listAutoTreesOfSessions,
+  listAutoTreesToRecover,
   listDecidedNudgeEventsForSessions,
   listOpenQuestionsForSessions,
-  type AutoTree,
   type Database,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { autoRootsOf } from '../../../features/auto/autoRootsOf';
-import { isAutoTreeResting } from '../../../features/auto/isAutoTreeResting';
 import type { AgentKind } from '../../../features/session/agent-kind';
 import { dismissedFingerprintsFromEvents } from '../../../features/suggestions/nextStepOutcomes';
 import { readAutoTreeViews } from '../auto-view/readAutoTreeViews';
@@ -45,18 +43,15 @@ const readMovingAutoViews = async ({
   if (sessionIds.length === 0) {
     return { views: {}, failure: null };
   }
-  const trees = await listAutoTreesOfSessions({ db, sessionIds });
-  const treesBySession = new Map<SessionId, Array<AutoTree>>();
-  for (const tree of trees) {
-    treesBySession.set(tree.sessionId, [...(treesBySession.get(tree.sessionId) ?? []), tree]);
-  }
-  const moving = [...treesBySession].filter(([, sessionTrees]) =>
-    sessionTrees.some((tree) => !isAutoTreeResting({ phase: tree.phase })),
+  const wanted = new Set<string>(sessionIds);
+  const moving = new Set(
+    (await listAutoTreesToRecover({ db }))
+      .map((tree) => tree.sessionId)
+      .filter((sessionId) => wanted.has(sessionId)),
   );
   const settled = await Promise.allSettled(
-    moving.map(
-      async ([sessionId, sessionTrees]) =>
-        [sessionId, await readAutoTreeViews({ db, sessionId, trees: sessionTrees })] as const,
+    [...moving].map(
+      async (sessionId) => [sessionId, await readAutoTreeViews({ db, sessionId })] as const,
     ),
   );
   const failed = settled.find((result) => result.status === 'rejected');

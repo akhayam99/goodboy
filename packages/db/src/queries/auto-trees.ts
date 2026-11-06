@@ -180,26 +180,6 @@ export const listAutoTreesOfSession = async ({
   return rows.map((row) => toTree({ row }));
 };
 
-type ListAutoTreesOfSessionsParams = {
-  readonly db: Database;
-  readonly sessionIds: ReadonlyArray<SessionId>;
-};
-
-export const listAutoTreesOfSessions = async ({
-  db,
-  sessionIds,
-}: ListAutoTreesOfSessionsParams): Promise<ReadonlyArray<AutoTree>> => {
-  if (sessionIds.length === 0) {
-    return [];
-  }
-  const placeholders = sessionIds.map(() => '?').join(', ');
-  const rows = await db.select<TreeRow>(
-    `${TREE_SELECT} WHERE session_id IN (${placeholders}) ORDER BY created_at`,
-    sessionIds,
-  );
-  return rows.map((row) => toTree({ row }));
-};
-
 type ListAutoTreesToRecoverParams = {
   readonly db: Database;
 };

@@ -132,7 +132,7 @@ describe('loadWorkspaceFacts', () => {
     expect(selects).toHaveBeenCalledTimes(3);
   });
 
-  it('reads all tree rows in one query and full views only of the trees that move', async () => {
+  it('reads full views only of the trees that move, and nothing more for 150 at rest', async () => {
     const db = await seeded();
     const moving = [0, 1].map((index) => sessionIdOf(index));
     const resting = Array.from({ length: 150 }, (_, index) => sessionIdOf(index + 10));
@@ -166,7 +166,6 @@ describe('loadWorkspaceFacts', () => {
     });
 
     expect(selects).toHaveBeenCalledTimes(withoutResting);
-    expect(withoutResting).toBeLessThanOrEqual(3 + moving.length * 10);
     expect(Object.keys(facts.autoTreeViews ?? {}).sort()).toEqual([...moving].sort());
     expect(facts.autoTreeViews?.[sessionIdOf(0)]?.map((view) => view.tree.phase)).toEqual([
       'delegating',

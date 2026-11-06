@@ -238,7 +238,7 @@ describe('RunsGrid', () => {
     expect(scrolled.mock.contexts[0]).toBe(
       document.querySelector(`[data-row-key="${earlier?.id ?? ''}"]`),
     );
-    expect(screen.getByRole('button', { name: 'Show fewer' })).toBeTruthy();
+    screen.getByRole('button', { name: 'Show fewer' });
   });
 
   it('keeps the model column out when no run has a model', () => {
