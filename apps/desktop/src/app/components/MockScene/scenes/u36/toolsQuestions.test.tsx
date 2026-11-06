@@ -74,8 +74,8 @@ describe('the u36 tools and questions scenes', () => {
 
       const panel = await screen.findByRole('region', { name: 'Agents' });
       expect(useAppStore.getState().drawer?.kind).toBe('spawned');
-      expect(within(panel).getByRole('button', { name: 'All runs' })).toBeDefined();
-      expect(await screen.findByRole('list', { name: 'Runs' })).toBeDefined();
+      within(panel).getByRole('button', { name: 'All runs' });
+      await screen.findByRole('list', { name: 'Runs' });
     },
   );
 
@@ -92,7 +92,7 @@ describe('the u36 tools and questions scenes', () => {
       expect(picked.map((radio) => radio.getAttribute('aria-label'))).toEqual([
         'Dedicated retry queue',
       ]);
-      expect(within(card).getByRole('button', { name: 'More' })).toBeDefined();
+      within(card).getByRole('button', { name: 'More' });
       expect(screen.getByRole('button', { name: /^Open the agent: / }).textContent).toBe(
         'Implementer',
       );

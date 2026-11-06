@@ -1,34 +1,34 @@
 // @vitest-environment happy-dom
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OpenQuestionId, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type OpenQuestionId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
-import { closeCurrentLevel } from '../../../app/hooks/useAppShortcuts/closeCurrentLevel';
-import { openReviewComment } from '../../../features/resolve/openReviewComment';
+import { closeCurrentLevel } from '../../app/hooks/useAppShortcuts/closeCurrentLevel';
+import { openReviewComment } from '../resolve/openReviewComment';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../storyHarness';
-import { captureLocation } from './captureLocation';
-import { parentPlace } from './parentPlace';
-import { branchPlace, questionPlace, sessionPlace } from './place';
+} from '../../store/storyHarness';
+import { captureLocation } from '../../store/slices/navigation/captureLocation';
+import { parentPlace } from '../../store/slices/navigation/parentPlace';
+import { branchPlace, questionPlace, sessionPlace } from '../../store/slices/navigation/place';
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../storyHarness')).tauriCoreModuleMock(),
+  (await import('../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../storyHarness')).tauriEventModuleMock(),
+  (await import('../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
-vi.mock('../../../shared/lib/db', async () =>
-  (await import('../../storyHarness')).dbLibModuleMock(),
+vi.mock('@goodboy/db', async () => (await import('../../store/storyHarness')).dbModuleMock());
+vi.mock('../../shared/lib/db', async () =>
+  (await import('../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const WS = 'ws-harborline' as WorkspaceId;
-const SESSION = 'session-ledger-core' as SessionId;
+const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
+const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
 const THREAD = 'thread-retry-queue';
-const QUESTION = 'question-queue' as OpenQuestionId;
+const QUESTION = brandId<OpenQuestionId>({ value: 'question-queue' });
 
 let store: StoryStore;
 

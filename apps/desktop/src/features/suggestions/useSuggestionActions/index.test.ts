@@ -629,7 +629,10 @@ describe('useSuggestionActions', () => {
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: questionPlace({ sessionId: SESSION_ID, questionId: 'question-1' as OpenQuestionId }),
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'question-1' }),
+      }),
       mode: 'push',
     });
   });

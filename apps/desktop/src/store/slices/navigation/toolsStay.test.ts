@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -22,10 +22,10 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
 
-const WS = 'ws-harborline' as WorkspaceId;
-const S1 = 'session-ledger-core' as SessionId;
-const S2 = 'session-notify-relay' as SessionId;
-const AGENT = 'agent-implementer' as AgentId;
+const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
+const S1 = brandId<SessionId>({ value: 'session-ledger-core' });
+const S2 = brandId<SessionId>({ value: 'session-notify-relay' });
+const AGENT = brandId<AgentId>({ value: 'agent-implementer' });
 
 let store: StoryStore;
 

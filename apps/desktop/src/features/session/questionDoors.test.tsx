@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { OpenQuestion, OpenQuestionId, SearchHit, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type SearchHit,
+  type SessionId,
+} from '@goodboy/types';
 import { TEST_NOW, aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -31,9 +37,9 @@ vi.mock('../../shared/lib/db', async () =>
   (await import('../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const SESSION = 'session-ledger-core' as SessionId;
-const FIRST = 'question-first' as OpenQuestionId;
-const SECOND = 'question-second' as OpenQuestionId;
+const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
+const FIRST = brandId<OpenQuestionId>({ value: 'question-first' });
+const SECOND = brandId<OpenQuestionId>({ value: 'question-second' });
 
 let useAppStore: StoryStore;
 

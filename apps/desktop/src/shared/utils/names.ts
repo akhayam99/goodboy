@@ -25,7 +25,6 @@ export const NAMES = {
   stopStep: 'Stop step',
   questions: 'Questions',
   agents: 'Agents',
-  autoAgents: 'Auto agents',
   runs: 'Runs',
   orchestrated: 'Orchestrated',
   runKind: {

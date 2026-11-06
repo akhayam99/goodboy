@@ -170,8 +170,8 @@ describe('the question card top row', () => {
   it('keeps one filled button: the footer holds only Skip and Answer on a full card', () => {
     renderCard({ variant: 'full' });
 
-    expect(screen.getByRole('button', { name: 'Skip' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Answer' })).toBeDefined();
+    screen.getByRole('button', { name: 'Skip' });
+    screen.getByRole('button', { name: 'Answer' });
     expect(screen.queryByRole('button', { name: 'Send as message' })).toBeNull();
     expect(screen.queryByText('Let an agent decide')).toBeNull();
   });
@@ -179,8 +179,8 @@ describe('the question card top row', () => {
   it('keeps the compact card as it was: delegate link and Send as message in the footer', () => {
     renderCard({ variant: 'compact' });
 
-    expect(screen.getByRole('button', { name: 'Send as message' })).toBeDefined();
-    expect(screen.getByText('Let an agent decide')).toBeDefined();
+    screen.getByRole('button', { name: 'Send as message' });
+    screen.getByText('Let an agent decide');
     expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 });

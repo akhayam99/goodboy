@@ -68,6 +68,7 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+import { brandId } from '@goodboy/types';
 import { questionPlace } from '../../../../store/slices/navigation/place';
 import { NextActionStrip } from './index';
 import { QUESTION_DELEGATE_SOURCE_KIND } from '../../../context/questionDelegate';
@@ -308,7 +309,10 @@ describe('NextActionStrip', () => {
     fireEvent.click(within(strip).getByRole('button', { name: 'Answer' }));
 
     expect(store.navigate).toHaveBeenCalledWith({
-      to: questionPlace({ sessionId: SESSION_ID, questionId: 'q-1' as OpenQuestionId }),
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'q-1' }),
+      }),
       mode: 'push',
     });
   });
