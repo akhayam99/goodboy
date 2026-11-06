@@ -31,13 +31,7 @@ const openDiffHistory = async (): Promise<void> => {
 
 const pressedKind = (name: string): Promise<void> =>
   waitFor(() => {
-    const tab = within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole(
-      'tab',
-      {
-        name,
-      },
-    );
-    expect(tab.getAttribute('aria-selected')).toBe('true');
+    screen.getByRole('button', { name: `How: ${name}` });
   }, WAIT);
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [

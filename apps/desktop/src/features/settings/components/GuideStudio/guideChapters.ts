@@ -177,7 +177,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'What kind of run?',
-        desc: 'The How chip holds Auto, Agent, Orchestrated and Preset. One form shows only what that kind needs.',
+        desc: 'How picks Auto, Agent, Orchestrated or Preset. One form shows only what that kind needs.',
       },
       {
         term: NAMES.startARun,
@@ -330,7 +330,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'A run draws its steps top down, with Add step under them on a preset. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
+        desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
       },
       {
         term: 'Orchestrated',

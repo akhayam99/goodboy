@@ -261,7 +261,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       const draft = useAppStore.getState().sessionDrafts[workspaceId];
       expect(draft?.pickedIssues[0]?.identifier).toBe('HBL-415');
       expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-      expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
+      screen.getByRole('button', { name: /^How: / });
       expect(startCalls.briefs).toHaveLength(0);
       expect(startCalls.sessions).toHaveLength(0);
       expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();
@@ -273,14 +273,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     open: (ctx) => openTasksAndStartOn({ ctx, lastStart: 'preset' }),
     lands: async () => {
       await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
-      const kinds = within(screen.getByRole('tablist', { name: 'What kind of run?' }));
-      expect(kinds.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-        'Auto',
-        'Agent',
-        'Orchestrated',
-        'Preset',
-      ]);
-      expect(kinds.getByRole('tab', { name: 'Preset' }).getAttribute('aria-selected')).toBe('true');
+      screen.getByRole('button', { name: 'How: Preset' });
       const task = within(screen.getByRole('region', { name: 'Goal' }));
       expect(task.queryByRole('combobox', { name: 'Projects' })).toBeNull();
       const settings = startSettingsRowOf({
