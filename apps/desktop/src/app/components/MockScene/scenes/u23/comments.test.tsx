@@ -157,7 +157,6 @@ describe('the u23 comments scenes', () => {
     );
     await renderScene({ name: 'comments-ready-to-push' });
 
-    expect(screen.getAllByText('7 open threads · 3 need you').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('tab', { name: /^Comments\s*3$/ })).toHaveLength(1);
     expect(screen.getAllByText('Fixing 1 of 4 threads').length).toBeGreaterThan(0);
     expect(screen.queryByText('Fixing 4 threads')).toBeNull();

@@ -1,5 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
 import type { BranchCommit, HistoryGraph, SessionId } from '@goodboy/types';
+import { countNoun } from '../../../../shared/utils/countNoun';
 import type { HistoryDropTarget } from '../../hooks/useHistoryDrag';
 import type { RowPositions } from '../../hooks/useRowPositions';
 import type { LaneNode } from './HistoryLaneSvg';
@@ -40,6 +41,9 @@ export const HistoryNowColumn = ({
   onKeyDown,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
+    <p data-history-count="" className="px-2 text-meta text-muted-foreground">
+      {countNoun({ count: rows.length, one: 'commit' })}
+    </p>
     <HistoryNowList
       sessionId={sessionId}
       view={view}

@@ -152,7 +152,9 @@ describe('the pull request page scenes', () => {
     draw({ name: 'branch-pr-draft' });
 
     const side = within(await screen.findByRole('group', { name: 'Properties' }));
-    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
+    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
+      'Draft',
+    );
     expect(side.getByText('Nobody asked yet')).toBeDefined();
   });
 

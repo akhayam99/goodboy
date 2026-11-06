@@ -443,13 +443,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                 isBranchStart ? (
                   <BranchStartLine start={start} />
                 ) : pr === null ? null : (
-                  <PullRequestHeaderLine
-                    pr={pr}
-                    host={host}
-                    view={pullRequestView.view}
-                    readiness={prReadiness}
-                    isThreadsShown={tab === 'comments'}
-                  />
+                  <PullRequestHeaderLine pr={pr} host={host} />
                 )
               }
               controls={controls}

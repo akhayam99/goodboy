@@ -47,7 +47,7 @@ export const RebaseRowScene = ({ variant }: Props) => {
 
   useSceneClicks({
     isReady,
-    labels: variant === 'picker' ? ['Other base'] : [],
+    labels: variant === 'picker' ? ['Another branch'] : [],
     selector: '[role="combobox"]',
     match: 'prefix',
     intervalMs: CLICK_MS,

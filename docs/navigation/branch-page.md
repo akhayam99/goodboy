@@ -24,8 +24,8 @@ detail; nothing moves from one section to the next.
 without a pull request; on a pull request you can edit, click it or press `E` on
 the Pull request entry and it becomes an input in the same 32px row, `Enter` saves
 to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. The
-line under the title says the state once (the state chip), the number, who wants to merge how
-many commits into which base and from which branch (`PullRequestHeaderLine`); without a pull
+line under the title is the same on every tab: an icon for the state (its word is the tooltip),
+the number, the branch into its base and the author (`PullRequestHeaderLine`); without a pull
 request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or
 the rail**: the branches of the session are the rows of the Projects tree
 (`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
@@ -215,7 +215,7 @@ and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, 
 Closed show all five, `Pull request`, `Comments`, `Files`, `Commits`, `Checks`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
-request. A pick replaces the address. Each tab carries its facts from `worktreeEntryFactsOf`, empty until a count is known, the active tab included: `Files` the file count and the lines added and removed in green and red (`DiffStat`), `Commits` the commits on the branch and, in amber, `↑3` for the ones not pushed, `Comments` and `Checks` what needs you. Merged and
+request. A pick replaces the address. A tab badge means this many want you (`wantsYouFactsOf` over `worktreeEntryFactsOf`): `Comments` the ones that need you, `Checks` the failing ones, nothing else. The counts of files, commits and not pushed commits, the state of the request and the running checks stay in the tooltip of their tab, and the file count and the commit count are said in their page (the file rail, the line `N commits` above the list). Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else

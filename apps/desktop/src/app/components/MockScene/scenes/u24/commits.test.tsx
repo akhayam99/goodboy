@@ -74,7 +74,9 @@ describe('the u24 commits scenes', () => {
     await settle();
 
     const pushedCount = CTX_COMMITS.filter((commit) => commit.pushed).length;
-    expect(screen.getByText(/wants to merge/).textContent).toContain(`${pushedCount} commits`);
+    expect(document.querySelector('[data-history-count]')?.textContent).toBe(
+      `${CTX_COMMITS.length} commits`,
+    );
     expect(screen.getAllByText('Online copy')).toHaveLength(1);
     expect(screen.getAllByText('Not pushed')).toHaveLength(CTX_COMMITS.length - pushedCount);
     const rows = screen.getByRole('list', { name: 'Commits' }).textContent ?? '';
