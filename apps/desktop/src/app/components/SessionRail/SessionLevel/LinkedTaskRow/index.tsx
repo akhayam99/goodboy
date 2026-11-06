@@ -29,7 +29,8 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
     projectId: task.projectId ?? null,
     branch,
   } satisfies ObjectTarget;
-  const openLabel = task.provider === 'sentry' ? 'Open in Tasks' : `Open ${task.identifier}`;
+  const openLabel =
+    task.provider === 'sentry' ? `Open ${task.identifier} in Tasks` : `Open ${task.identifier}`;
   const placement = branches.length === 0 ? null : taskPlacementLabel({ branches });
 
   return (

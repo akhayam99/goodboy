@@ -443,7 +443,10 @@ const expectLinked = async (session: Session, entry: ProviderCase): Promise<void
   );
   const sessionRegion = screen.getByRole('region', { name: 'Session' });
   within(sessionRegion).getByRole('button', {
-    name: entry.provider === 'sentry' ? 'Open in Tasks' : `Open ${entry.identifier}`,
+    name:
+      entry.provider === 'sentry'
+        ? `Open ${entry.identifier} in Tasks`
+        : `Open ${entry.identifier}`,
   });
   const inboxRegion = screen.getByRole('region', { name: 'Task' });
   within(inboxRegion).getByRole('button', { name: /Open session/ });

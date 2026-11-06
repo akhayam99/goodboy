@@ -60,7 +60,9 @@ describe('Linked work row', () => {
     window.addEventListener('goodboy:open-inbox', opened);
     render(<LinkedTaskRow sessionId={SESSION_ID} task={task} branches={[]} isShown={false} />);
     fireEvent.click(
-      screen.getByRole('button', { name: provider === 'sentry' ? 'Open in Tasks' : 'Open HAR-42' }),
+      screen.getByRole('button', {
+        name: provider === 'sentry' ? 'Open HAR-42 in Tasks' : 'Open HAR-42',
+      }),
     );
     if (provider === 'sentry') {
       screen.getByText('Open in Tasks');
@@ -73,5 +75,30 @@ describe('Linked work row', () => {
       expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBe(42);
     }
     window.removeEventListener('goodboy:open-inbox', opened);
+  });
+
+  it('gives two Sentry rows their own names', () => {
+    const base: SessionExternalTask = {
+      sessionId: SESSION_ID,
+      provider: 'sentry',
+      externalId: '1',
+      identifier: 'LEDGER-1',
+      title: 'Timeout in ledger sync',
+      url: 'https://example.test/harborline/1',
+      createdAt: brandId<IsoDateTime>({ value: '2026-11-01T09:00:00.000Z' }),
+    };
+    render(
+      <>
+        <LinkedTaskRow sessionId={SESSION_ID} task={base} branches={[]} isShown={false} />
+        <LinkedTaskRow
+          sessionId={SESSION_ID}
+          task={{ ...base, externalId: '2', identifier: 'LEDGER-2' }}
+          branches={[]}
+          isShown={false}
+        />
+      </>,
+    );
+    screen.getByRole('button', { name: 'Open LEDGER-1 in Tasks' });
+    screen.getByRole('button', { name: 'Open LEDGER-2 in Tasks' });
   });
 });
