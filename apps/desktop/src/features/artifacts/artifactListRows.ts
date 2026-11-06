@@ -4,6 +4,7 @@ import type {
   ArtifactId,
   ArtifactKind,
   IsoDateTime,
+  OpenQuestion,
   PlanWithCount,
   SessionArtifact,
   Workflow,
@@ -22,6 +23,7 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
 import { planHandoffOf } from '../plans/planHandoffOf';
 import { planOwnerOf } from '../plans/planOwnerOf';
+import { plannerQuestionsOf } from '../plans/plannerQuestions';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../plans/planStateInputs';
 import { NOT_REVISING, type PlanRevising } from '../plans/planRevising';
 
@@ -61,7 +63,7 @@ type Params = Readonly<{
   agents: ReadonlyArray<Agent>;
   runs: ReadonlyArray<WorkflowRun>;
   templates: ReadonlyArray<Workflow>;
-  openQuestionCount: number;
+  openQuestions: ReadonlyArray<OpenQuestion>;
   askingAgentIds: ReadonlySet<AgentId>;
   revising: ReadonlyMap<ArtifactId, PlanRevising>;
   autoViews: ReadonlyArray<AutoTreeView>;
@@ -114,7 +116,7 @@ const planRow = ({
   agents,
   runs,
   templates,
-  openQuestionCount,
+  openQuestions,
   askingAgentIds,
   revising,
   autoViews,
@@ -123,7 +125,7 @@ const planRow = ({
   readonly agents: ReadonlyArray<Agent>;
   readonly runs: ReadonlyArray<WorkflowRun>;
   readonly templates: ReadonlyArray<Workflow>;
-  readonly openQuestionCount: number;
+  readonly openQuestions: ReadonlyArray<OpenQuestion>;
   readonly askingAgentIds: ReadonlySet<AgentId>;
   readonly revising: PlanRevising;
   readonly autoViews: ReadonlyArray<AutoTreeView>;
@@ -134,13 +136,13 @@ const planRow = ({
     plan,
     rows: partRows,
     revising,
+    plannerQuestionCount: plannerQuestionsOf({ questions: openQuestions, plan }).length,
     handoff: planHandoffOf({ plan, run: owner, views: autoViews }),
   });
   const state = artifactStateOf({
     kind: 'plan',
     status: plan.status,
     isNew: false,
-    openQuestionCount,
     ...inputs,
   });
   return {
@@ -186,7 +188,6 @@ const documentRow = ({
     kind: artifact.kind,
     status: artifact.status,
     isNew: isNewArtifact({ artifact, now }),
-    openQuestionCount: 0,
     ...NO_PLAN_STATE_INPUTS,
   });
   return {
@@ -218,7 +219,7 @@ export const buildArtifactListRows = ({
   agents,
   runs,
   templates,
-  openQuestionCount,
+  openQuestions,
   askingAgentIds,
   revising,
   autoViews,
@@ -232,7 +233,7 @@ export const buildArtifactListRows = ({
         agents,
         runs,
         templates,
-        openQuestionCount,
+        openQuestions,
         askingAgentIds,
         revising: revising.get(plan.id) ?? NOT_REVISING,
         autoViews,

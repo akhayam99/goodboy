@@ -46,7 +46,6 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
       ? 'none'
       : planHandoffOf({ plan, run: owner, views: s.autoTreeViews[sessionId] ?? EMPTY_ARRAY }),
   );
-  const openQuestionCount = openQuestions.length;
   const plannerQuestionCount =
     plan === null ? 0 : plannerQuestionsOf({ questions: openQuestions, plan }).length;
 
@@ -63,7 +62,6 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
         kind: 'plan',
         status: plan.status,
         isNew: false,
-        openQuestionCount,
         ...planStateInputsOf({
           plan,
           rows,
@@ -76,5 +74,5 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
       agents,
       hasRun: plan.consumptionCount > 0,
     };
-  }, [plan, stored, revising, openQuestionCount, plannerQuestionCount, rows, agents, handoff]);
+  }, [plan, stored, revising, plannerQuestionCount, rows, agents, handoff]);
 };
