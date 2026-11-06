@@ -70,7 +70,7 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
     meta === null || meta.askerKind === null
       ? FALLBACK_TITLE
       : AGENT_KIND_META[meta.askerKind].noun;
-  const title = meta === null ? FALLBACK_TITLE : `${asker} · ${meta.age}`;
+  const title = meta === null ? FALLBACK_TITLE : `${asker} asks`;
   const askerId = row?.question.createdByAgentId ?? null;
   const askerAgent =
     askerId === null
@@ -101,7 +101,7 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
         >
           {asker}
         </button>
-        <span className="text-muted-foreground">{` · ${meta.age}`}</span>
+        <span className="text-muted-foreground">{' asks'}</span>
       </h2>
     );
 

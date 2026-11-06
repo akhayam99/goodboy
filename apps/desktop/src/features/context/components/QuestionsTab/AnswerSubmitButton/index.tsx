@@ -14,7 +14,7 @@ type Props = {
   readonly lead?: ReactNode;
 };
 
-const SEND_AS_MESSAGE_HINT =
+export const SEND_AS_MESSAGE_HINT =
   'Not an answer? Sends your text to the agent as a normal message and closes this question.';
 
 export const AnswerSubmitButton = ({

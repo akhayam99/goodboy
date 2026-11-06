@@ -1202,6 +1202,10 @@ u36-p6-gone-run-dark
 u36-p6-gone-run-light
 u36-p6-step-back-dark
 u36-p6-step-back-light
+u36-p7-tools-stay-dark
+u36-p7-tools-stay-light
+u36-p8-question-dark
+u36-p8-question-light
 update-card
 update-card-long-version
 update-card-narrow

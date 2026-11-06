@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import {
   brandId,
@@ -63,7 +63,6 @@ const renderCard = (patch: Partial<CardProps> = {}) => {
     variant: 'compact',
     state: 'open',
     askerName: 'Implementer',
-    askerKind: 'planner',
     age: '2m',
     draft: undefined,
     pager: null,
@@ -142,13 +141,46 @@ describe('the question card top row', () => {
     expect(isFirstRow({ node: title() })).toBe(true);
   });
 
-  it('puts Blocking beside the asker on the full card, with the pager on the same row', () => {
+  it('puts Blocking beside the age on the full card, with the pager on the same row, and no asker', () => {
     renderCard({ variant: 'full', pager: PAGER });
 
     const row = within(topRow());
-    row.getByText('Implementer');
+    row.getByText('2m');
     row.getByText('Blocking');
     row.getByText('1 of 2');
+    expect(within(card()).queryByText('Implementer')).toBeNull();
     expect(topRow().contains(title())).toBe(false);
+  });
+
+  it('keeps the extras of a full card in one More menu next to the pager', () => {
+    renderCard({
+      variant: 'full',
+      pager: PAGER,
+      question: { ...QUESTION, isBlocking: false },
+      onDismiss: vi.fn(),
+    });
+
+    fireEvent.click(within(topRow()).getByRole('button', { name: 'More' }));
+
+    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent);
+    expect(labels).toEqual(['Let an agent decide', 'Send as message', 'Dismiss question']);
+    expect(within(topRow()).queryByRole('button', { name: 'Dismiss question' })).toBeNull();
+  });
+
+  it('keeps one filled button: the footer holds only Skip and Answer on a full card', () => {
+    renderCard({ variant: 'full' });
+
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Send as message' })).toBeNull();
+    expect(screen.queryByText('Let an agent decide')).toBeNull();
+  });
+
+  it('keeps the compact card as it was: delegate link and Send as message in the footer', () => {
+    renderCard({ variant: 'compact' });
+
+    expect(screen.getByRole('button', { name: 'Send as message' })).toBeDefined();
+    expect(screen.getByText('Let an agent decide')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
   });
 });

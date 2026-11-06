@@ -52,7 +52,6 @@ const renderCard = (patch: Partial<CardProps> = {}) => {
     variant: 'full',
     state: 'open',
     askerName: 'Retry planner',
-    askerKind: 'planner',
     age: '4m ago',
     draft: undefined,
     pager: null,
@@ -71,10 +70,10 @@ const renderCard = (patch: Partial<CardProps> = {}) => {
 };
 
 describe('QuestionCard', () => {
-  it('shows who asks with their kind chip, the blocking tag, the question as a title and its context', () => {
+  it('shows the age, the blocking tag, the question as a title and its context, and names no asker', () => {
     renderCard();
-    screen.getByText('Retry planner');
-    screen.getByText('Planner');
+    expect(screen.queryByText('Retry planner')).toBeNull();
+    screen.getByText('4m ago');
     screen.getByText('Blocking');
     screen.getByRole('heading', { name: 'Which queue should webhook retries run on?' });
     screen.getByText('src/jobs/queue.ts', { selector: 'span' });
@@ -210,7 +209,8 @@ describe('QuestionCard', () => {
 
   it('lets a question that does not block be dismissed', () => {
     const props = renderCard({ question: { ...QUESTION, isBlocking: false } });
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Dismiss question' }));
     expect(props.onDismiss).toHaveBeenCalledOnce();
   });
 

@@ -293,13 +293,42 @@ describe('QuestionsPane', () => {
 });
 
 describe('QuestionDrawer', () => {
-  it('shows the question card, with the asker in the card and the question as the title', () => {
+  it('names the asker once, in the head, and the card carries the question', () => {
     setupDrawer({ questionId: Q1.id });
     const card = screen.getByRole('article');
-    expect(within(card).getAllByText('Planner').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Planner')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Open the agent: Planner' }).textContent).toBe(
+      'Planner',
+    );
+    expect(within(card).queryByText('Planner')).toBeNull();
     expect(screen.getAllByText('Which queue should retries run on?').length).toBeGreaterThanOrEqual(
       1,
     );
+  });
+
+  it('starts with the Recommended answer picked, so Enter sends it', () => {
+    const recommended = question('q-rec', 'Which queue should retries run on?', 'planner', {
+      suggestedAnswers: ['Retry queue', 'Main queue'],
+      recommendedAnswer: 'Main queue',
+    });
+    setupDrawer({ questionId: recommended.id, open: [recommended, Q2] });
+
+    expect(screen.getByRole('radio', { name: 'Main queue' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(screen.getByRole('article'), { key: 'Enter' });
+
+    expect(useOpenQuestions.getState().staged).toEqual([recommended.id]);
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q2.id }),
+      mode: 'replace',
+    });
+  });
+
+  it('leaves a question with no Recommended answer unpicked', () => {
+    setupDrawer({ questionId: Q1.id });
+
+    expect(screen.getByRole('button', { name: 'Answer' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('stages an answer and moves the drawer to the next waiting question', () => {
@@ -348,7 +377,8 @@ describe('QuestionDrawer', () => {
 
   it('dismisses a question and offers Undo in the drawer', async () => {
     const view = setupDrawer({ questionId: Q3.id });
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Dismiss question' }));
     await waitFor(() => expect(actions.dismissOpenQuestion).toHaveBeenCalledWith(SESSION_ID, Q3));
     view.unmount();
     setupDrawer({ questionId: Q3.id, open: [Q1, Q2] });

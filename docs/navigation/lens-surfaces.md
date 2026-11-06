@@ -47,8 +47,12 @@
   pane (drawer `run-step`). A deleted asker keeps its role with no link. A row's
   right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
   **Open question** and **Open the agent** (the same `openAsker`, hidden for a
-  deleted asker); the card answers, skips, dismisses and undoes; answering moves the drawer to the next
-  waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
+  deleted asker); the card in the drawer (variant `full`) names no asker, the head does,
+  starts with the Recommended answer picked (`LiveQuestionCard`), so Enter sends it, and
+  keeps one filled button: the footer holds Skip and Answer, and **More** at the top of the
+  card holds **Let an agent decide**, **Send as message** and **Dismiss question**
+  (`questionMenuOf`, three rows at most). The compact card in the chat keeps its footer.
+  Answering moves the drawer to the next waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question
   (a top row holds Blocking as a dot and a word on the left and the pager on the right; the question starts on its own line below at the left edge). That card is one subtle surface

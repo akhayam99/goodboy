@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
@@ -25,6 +26,8 @@ type Props = {
   readonly selection: C08Selection | 'list';
   readonly click?: C08Click;
   readonly isFolded?: boolean;
+  readonly isToolOpen?: boolean;
+  readonly theme?: 'light' | 'dark';
 };
 
 const noop = () => undefined;
@@ -65,7 +68,14 @@ const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   addStep: '[data-spawned-panel] [data-run-add-step] button',
 };
 
-export const C08RunScene = ({ state, selection, click = 'none', isFolded = false }: Props) => {
+export const C08RunScene = ({
+  state,
+  selection,
+  click = 'none',
+  isFolded = false,
+  isToolOpen = false,
+  theme,
+}: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C08_SESSION_ID);
   const sizing = useAppStore(selectDrawerSizing);
@@ -73,14 +83,17 @@ export const C08RunScene = ({ state, selection, click = 'none', isFolded = false
   useSceneRailFold({ isFolded });
 
   useEffect(() => {
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seedC08({ state, selection });
-    if (selection !== 'list') {
+    if (selection !== 'list' || isToolOpen) {
       useAppStore
         .getState()
         .openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
     }
     setIsSeeded(true);
-  }, [state, selection]);
+  }, [state, selection, isToolOpen, theme]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {
