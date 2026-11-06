@@ -276,6 +276,7 @@ describe('setCurrentWorkspace run recovery', () => {
 
 describe('setCurrentWorkspace stops all live work', () => {
   it('stops a blocked turn as stopped by you and stops a deciding workflow run', async () => {
+    vi.mocked(listLiveRunIds).mockResolvedValueOnce(new Set(['run-blocked']));
     const waiting = aSession({ workspaceId: WORKSPACE_ID });
     const agent = anAgent({ sessionId: waiting.id });
     const run = aWorkflowRun();
@@ -302,6 +303,30 @@ describe('setCurrentWorkspace stops all live work', () => {
     });
     expect(cancelTurn).not.toHaveBeenCalled();
     expect(stopWorkflowRunNow).toHaveBeenCalledWith(deciding.id, run.id);
+  });
+
+  it('keeps a permission wait whose run ended, so the ask is there on return', async () => {
+    vi.mocked(listLiveRunIds).mockResolvedValueOnce(new Set());
+    const waiting = aSession({ workspaceId: WORKSPACE_ID });
+    const agent = anAgent({ sessionId: waiting.id });
+    const cancelTurnConfirmed = vi.fn(async () => ({ outcome: 'exited' as const, exitedAt: NOW }));
+    const store = harness({
+      sessions: [waiting],
+      sessionPhaseRuns: { [waiting.id]: [agent] },
+      agentTurnState: {
+        [agent.id]: {
+          kind: 'blocked',
+          runId: brandId<ProviderRunId>({ value: 'run-ended' }),
+          blockedAt: NOW,
+        },
+      },
+      cancelTurnConfirmed,
+    });
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(cancelTurnConfirmed).not.toHaveBeenCalled();
+    expect(cancelTurn).not.toHaveBeenCalled();
   });
 
   it('marks a running turn the store has no agent row for as cancelled before the kill', async () => {

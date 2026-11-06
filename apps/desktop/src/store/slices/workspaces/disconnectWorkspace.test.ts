@@ -79,6 +79,7 @@ describe('disconnectWorkspace stops all live work', () => {
     disconnectWorkspace(useAppStore.setState, useAppStore.getState)(workspace.id);
 
   it('stops a blocked turn as stopped by you and stops a deciding workflow run', async () => {
+    storySpies.listLiveRunIds.mockResolvedValueOnce(new Set(['run-blocked']));
     const waiting = aSession({ workspaceId: workspace.id });
     const agent = anAgent({ sessionId: waiting.id });
     storySpies.invokeAgentUpdateStatus.mockResolvedValue({

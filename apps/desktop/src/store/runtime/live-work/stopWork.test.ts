@@ -8,6 +8,7 @@ import {
   type SessionId,
   type TurnEvent,
 } from '@goodboy/types';
+import { cancelledRunIds } from '../../slices/sessions/sessionMutators';
 import { summarizerQueues } from '../../slices/turn/turnHelpers';
 import {
   buildStoryWorkspace,
@@ -310,6 +311,122 @@ describe('stopWork', () => {
     expect(stoppedBy[0]?.stopped_by).toBe('you');
     const errors = append.mock.calls.filter(([, , event]) => event.kind === 'error');
     expect(errors).toEqual([]);
+  });
+
+  describe('a permission wait on leaving', () => {
+    const waitingRun = brandId<ProviderRunId>({ value: 'run-permission' });
+
+    const seedWaiting = () => {
+      cancelledRunIds.delete(waitingRun);
+      useAppStore.setState((state) => ({
+        agentTurnState: {
+          [agentId]: { kind: 'blocked', runId: waitingRun, blockedAt: TEST_NOW },
+        },
+        sessions: state.sessions.map((session) => ({
+          ...session,
+          state: { kind: 'running', runId: waitingRun, startedAt: TEST_NOW },
+        })),
+      }));
+    };
+
+    const stoppedBy = async (): Promise<string | null | undefined> =>
+      (
+        await rowsOf<{ stopped_by: string | null }>({
+          sql: 'SELECT stopped_by FROM agents WHERE id = ?',
+          params: [agentId],
+        })
+      )[0]?.stopped_by;
+
+    it('keeps the ask of a run that ended, so it is still there on return', async () => {
+      seedWaiting();
+      const statusBefore = await agentStatus();
+
+      const result = await stopWork({
+        getState: useAppStore.getState,
+        scope: { kind: 'all' },
+        reason: 'leave',
+      });
+
+      expect(result).toEqual({ stopped: 0, stillRunning: 0 });
+      expect(storySpies.cancelTurn).not.toHaveBeenCalled();
+      expect(cancelledRunIds.has(waitingRun)).toBe(false);
+      expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('blocked');
+      expect(await agentStatus()).toBe(statusBefore);
+      expect(await stoppedBy()).toBeNull();
+    });
+
+    it('stops a wait whose process is still alive', async () => {
+      seedWaiting();
+      const live = new Set<string>([waitingRun]);
+      storySpies.listLiveRunIds.mockImplementation(async () => live);
+      storySpies.cancelTurn.mockImplementation(async () => {
+        live.clear();
+      });
+
+      const result = await stopWork({
+        getState: useAppStore.getState,
+        scope: { kind: 'all' },
+        reason: 'leave',
+      });
+
+      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(storySpies.cancelTurn).toHaveBeenCalledWith(waitingRun);
+      expect(await stoppedBy()).toBe('you');
+    });
+
+    it('stops a running agent and keeps the ended ask of another one', async () => {
+      const other = await useAppStore.getState().createSession({
+        workspaceId: workspace.id,
+        goal: 'Retry the notify-relay webhook',
+        firstAgentKind: 'generic',
+      });
+      const [otherAgent] = useAppStore.getState().sessionPhaseRuns[other.session.id] ?? [];
+      if (otherAgent === undefined) {
+        throw new Error('createSession left no agent');
+      }
+      const hold = gate();
+      const live = new Set<string>();
+      storySpies.listLiveRunIds.mockImplementation(async () => live);
+      storySpies.cancelTurn.mockImplementation(async () => {
+        live.clear();
+        hold.open();
+      });
+      const { pending } = await startStreaming({ hold: hold.opened });
+      const runId = runningRunId();
+      live.add(runId);
+      useAppStore.setState((state) => ({
+        agentTurnState: {
+          ...state.agentTurnState,
+          [otherAgent.id]: { kind: 'blocked', runId: waitingRun, blockedAt: TEST_NOW },
+        },
+      }));
+
+      const result = await stopWork({
+        getState: useAppStore.getState,
+        scope: { kind: 'all' },
+        reason: 'leave',
+      });
+      await pending;
+
+      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(storySpies.cancelTurn.mock.calls).toEqual([[runId]]);
+      expect(useAppStore.getState().agentTurnState[otherAgent.id]?.kind).toBe('blocked');
+    });
+
+    it('still stops an ended ask when one session is archived', async () => {
+      seedWaiting();
+
+      const result = await stopWork({
+        getState: useAppStore.getState,
+        scope: { kind: 'session', sessionId },
+        reason: 'leave',
+      });
+
+      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(await agentStatus()).toBe('stopped');
+      expect(await stoppedBy()).toBe('you');
+      expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
+    });
   });
 
   it('leaves another session alone when the scope is one session', async () => {

@@ -449,7 +449,13 @@ continuation never resumes, because it runs in another directory.
   (`stoppingAgents.ts`). When the kill is refused and the process lives, or the
   live list cannot be read, the turn and the agent stay running with nothing
   marked stopped, the error shows, the queue drains again when the turn ends,
-  and pressing Stop again retries. Every user Stop is also recorded in
+  and pressing Stop again retries. Leaving everything (a workspace switch,
+  a disconnect, the window close sheet: `stopWork` with reason `leave` and
+  scope `all`) skips a `blocked` agent whose run already left
+  `turn_list_live`: there is no process to stop, and marking it stopped would
+  kill a permission ask the next load can still show. A wait whose process is
+  alive is stopped, and archiving a session (scope `session`) stops the ask
+  too. Every user Stop is also recorded in
   `stopRequests.ts` (agent, run, instant) until the exit is confirmed, and
   `useAgentStop` (`shared/hooks/`) turns it into the phase the square, the
   header chip and the tail read: `stopping` at once, `stalled` after 5 s

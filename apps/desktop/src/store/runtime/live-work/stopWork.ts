@@ -5,7 +5,7 @@ import {
   type ProviderRunId,
   type SessionId,
 } from '@goodboy/types';
-import { cancelTurn } from '../../../features/chat/turn';
+import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import type { AppStore } from '../../store';
 import { cancelledRunIds } from '../../slices/sessions/sessionMutators';
@@ -39,6 +39,8 @@ type Params = Readonly<{
   reason: CancelTurnReason;
 }>;
 
+const NO_RUNS: ReadonlySet<ProviderRunId> = new Set();
+
 type Target = Readonly<{
   sessionId: SessionId;
   agent: Agent;
@@ -58,35 +60,56 @@ type StateParams = Readonly<{
   scope: StopWorkScope;
 }>;
 
-const targetsOf = ({ state, scope }: StateParams): ReadonlyArray<Target> =>
+type KeptParams = Readonly<{
+  keptRuns: ReadonlySet<ProviderRunId>;
+}>;
+
+type TargetsParams = StateParams & KeptParams;
+
+const targetsOf = ({ state, scope, keptRuns }: TargetsParams): ReadonlyArray<Target> =>
   Object.keys(state.sessionPhaseRuns).flatMap((key) => {
     const sessionId = brandId<SessionId>({ value: key });
     if (!isInScope({ scope, sessionId })) {
       return [];
     }
-    return liveAgentsOf({ state, sessionId }).map((agent) => ({
-      sessionId,
-      agent,
-      wasLive: isTurnStateLive({ turnState: state.agentTurnState[agent.id], includeBlocked: true }),
-    }));
+    return liveAgentsOf({ state, sessionId }).flatMap((agent) => {
+      const turnState = state.agentTurnState[agent.id];
+      if (turnState?.kind === 'blocked' && keptRuns.has(turnState.runId)) {
+        return [];
+      }
+      return [
+        {
+          sessionId,
+          agent,
+          wasLive: isTurnStateLive({ turnState, includeBlocked: true }),
+        },
+      ];
+    });
   });
 
 type OrphanParams = StateParams &
+  KeptParams &
   Readonly<{
     targets: ReadonlyArray<Target>;
   }>;
 
-const orphanRunIdsOf = ({ state, scope, targets }: OrphanParams): ReadonlyArray<ProviderRunId> => {
+const orphanRunIdsOf = ({
+  state,
+  scope,
+  targets,
+  keptRuns,
+}: OrphanParams): ReadonlyArray<ProviderRunId> => {
   const targeted = new Set<AgentId>(targets.map((target) => target.agent.id));
   const runIds = new Set<ProviderRunId>();
-  const claimed = new Set<ProviderRunId>(
-    targets.flatMap((target) => {
+  const claimed = new Set<ProviderRunId>([
+    ...keptRuns,
+    ...targets.flatMap((target) => {
       const turnState = state.agentTurnState[target.agent.id];
       return turnState?.kind === 'running' || turnState?.kind === 'blocked'
         ? [turnState.runId]
         : [];
     }),
-  );
+  ]);
   for (const session of state.sessions) {
     if (!isInScope({ scope, sessionId: session.id }) || session.state.kind !== 'running') {
       continue;
@@ -130,10 +153,29 @@ const cancelOrphanRun = async ({ runId }: OrphanCancelParams): Promise<boolean> 
   }
 };
 
+type WaitingParams = Readonly<{
+  state: StopWorkState;
+}>;
+
+const endedWaitingRunsOf = async ({
+  state,
+}: WaitingParams): Promise<ReadonlySet<ProviderRunId>> => {
+  const waiting = Object.values(state.agentTurnState).flatMap((turnState) =>
+    turnState?.kind === 'blocked' ? [turnState.runId] : [],
+  );
+  if (waiting.length === 0) {
+    return NO_RUNS;
+  }
+  const live = await listLiveRunIds();
+  return new Set(waiting.filter((runId) => !live.has(runId)));
+};
+
 export const stopWork = async ({ getState, scope, reason }: Params): Promise<StopWorkResult> => {
+  const isLeavingEverything = reason === 'leave' && scope.kind === 'all';
+  const keptRuns = isLeavingEverything ? await endedWaitingRunsOf({ state: getState() }) : NO_RUNS;
   const state = getState();
-  const targets = targetsOf({ state, scope });
-  const orphans = orphanRunIdsOf({ state, scope, targets });
+  const targets = targetsOf({ state, scope, keptRuns });
+  const orphans = orphanRunIdsOf({ state, scope, targets, keptRuns });
   const isReported = reason === 'user' || reason === 'leave';
   const [settled, orphanOutcomes] = await Promise.all([
     Promise.allSettled(

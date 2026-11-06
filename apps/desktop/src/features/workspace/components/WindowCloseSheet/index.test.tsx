@@ -14,6 +14,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { CancelOutcome } from '../../../../store/slices/turn/cancelTurnConfirmed';
@@ -34,10 +35,12 @@ beforeAll(async () => {
 
 type SeedParams = Readonly<{
   cancel: () => Promise<CancelOutcome>;
+  liveRuns?: ReadonlyArray<string>;
 }>;
 
-const seedLive = ({ cancel }: SeedParams) => {
+const seedLive = ({ cancel, liveRuns = ['run-first', 'run-second'] }: SeedParams) => {
   const cancelTurnConfirmed = vi.fn(cancel);
+  stubStoryInvoke({ turn_list_live: liveRuns });
   useAppStore.setState({
     sessions: [session],
     sessionPhaseRuns: { [session.id]: [first, second] },
@@ -123,6 +126,27 @@ describe('the window close sheet', () => {
     });
 
     expect(cancelTurnConfirmed).toHaveBeenCalledTimes(2);
+    expect(cancelTurnConfirmed).toHaveBeenCalledWith({
+      sessionId: session.id,
+      agentId: first.id,
+      reason: 'leave',
+    });
+    expect(screen.queryByRole('dialog', { name: /did not stop/ })).toBeNull();
+  });
+
+  it('keeps a permission ask whose run ended and still closes the window', async () => {
+    const { cancelTurnConfirmed } = seedLive({
+      cancel: async () => ({ outcome: 'exited', exitedAt: AT }),
+      liveRuns: ['run-first'],
+    });
+    render(<WindowCloseSheet />);
+    await requestClose();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Stop 2 agents' }));
+    });
+
+    expect(cancelTurnConfirmed).toHaveBeenCalledTimes(1);
     expect(cancelTurnConfirmed).toHaveBeenCalledWith({
       sessionId: session.id,
       agentId: first.id,
