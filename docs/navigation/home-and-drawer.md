@@ -226,7 +226,7 @@ drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
 open on its page); a header holds at most one labelled button (Stop,
-Run again, Open in Files, New) and utilities share one icon tone. The count slot
+Run again, New) and utilities share one icon tone. The count slot
 is for a count or a version, never for the session title: Ask's header reads
 `Ask`.
 
@@ -498,7 +498,9 @@ right branch.
 page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
-`Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
+the Open page arrow, which opens the Files tab of the Branch page on that mount with the file in
+focus. A changed file in the Explore drawer offers the same arrow, and its `⋯` menu no longer
+holds `Open in Files`.
 `identifier-peek` (payload `{ worktreePath, word, selected }`, reader width) is
 where every result of the identifier popover in a diff opens; the page behind it
 does not move. See [session-rail.md](./session-rail.md) for what it shows.

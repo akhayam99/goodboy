@@ -89,8 +89,9 @@ describe('the explore changes scenes', () => {
     expect(screen.queryByRole('tab', { name: 'Source' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Open in Files/ })).toBeNull();
     const drawer = screen.getByRole('region', { name: 'rounding.ts' });
+    expect(within(drawer).getAllByRole('button', { name: 'Open page' })).toHaveLength(1);
     fireEvent.click(within(drawer).getByRole('button', { name: 'Actions for rounding.ts' }));
-    expect(screen.getByRole('menuitem', { name: 'Open in Files' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Open in Files' })).toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
   });
 });
