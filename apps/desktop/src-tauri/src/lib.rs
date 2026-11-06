@@ -97,6 +97,7 @@ mod turn_delivery;
 mod turn_quiet;
 mod usage_probe;
 mod util;
+mod window_close;
 mod window_heartbeat;
 mod workflows;
 mod worktree;
@@ -202,9 +203,17 @@ pub fn run() {
                 .app_handle()
                 .state::<dropped_paths::DroppedPaths>()
                 .record_window_event(event);
+            if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+                window_close::arm(window.app_handle(), window.label());
+                return;
+            }
             if !matches!(event, tauri::WindowEvent::Destroyed) {
                 return;
             }
+            window
+                .app_handle()
+                .state::<window_close::CloseClaims>()
+                .forget(window.label());
             let app = window.app_handle();
             let survivors = app
                 .webview_windows()
@@ -247,6 +256,7 @@ pub fn run() {
         .manage(slack_token_cache)
         .manage(frame_protocol::FrameStages::default())
         .manage(dropped_paths::DroppedPaths::default())
+        .manage(window_close::CloseClaims::default())
         .manage(window_heartbeat::Heartbeats::default())
         .setup(move |app| {
             use tauri::Manager;
@@ -487,6 +497,7 @@ pub fn run() {
             restart_marker::restart_abort,
             turn::turn_list_live,
             turn::turn_quiet,
+            window_close::window_close_claim,
             window_heartbeat::window_heartbeat,
             turn::turn_delivery_lookup,
             chat::chat_turn,
@@ -728,6 +739,15 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen {
+                has_visible_windows: false,
+                ..
+            } = event
+            {
+                window_close::reveal_main(app);
+                return;
+            }
             if matches!(
                 event,
                 tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit

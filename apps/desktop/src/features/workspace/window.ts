@@ -2,9 +2,11 @@ import { WebviewWindow, getAllWebviewWindows } from '@tauri-apps/api/webviewWind
 import { getCurrentWindow, primaryMonitor, type WindowOptions } from '@tauri-apps/api/window';
 import { LogicalPosition } from '@tauri-apps/api/dpi';
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { WorkspaceId } from '@goodboy/types';
 import { currentPlatform } from '../../shared/platform';
 import { isTauriRuntime } from '../../shared/lib/isTauriRuntime';
+import { decideWindowClose, type WindowCloseGuard } from './decideWindowClose';
 
 export const MAIN_WINDOW_LABEL = 'main';
 const WORKSPACE_HASH_KEY = 'ws';
@@ -64,6 +66,9 @@ export const focusWindow = async (label: string): Promise<boolean> => {
     return false;
   }
   await target.unminimize().catch(() => undefined);
+  if (!(await target.isVisible().catch(() => true))) {
+    await target.show();
+  }
   await target.setFocus();
   return true;
 };
@@ -120,6 +125,11 @@ const settleAfterSpaceSwitch = (): Promise<void> => {
 
 const returnToMainWindowSpace = async (): Promise<void> => {
   if (isMainWindow()) {
+    return;
+  }
+  const windows = await getAllWebviewWindows().catch(() => []);
+  const main = windows.find((win) => win.label === MAIN_WINDOW_LABEL);
+  if (main === undefined || !(await main.isVisible().catch(() => false))) {
     return;
   }
   const switched = await focusWindow(MAIN_WINDOW_LABEL);
@@ -229,9 +239,94 @@ export const listenPresence = async (handlers: PresenceHandlers): Promise<Unlist
   };
 };
 
+const ALLOW_CLOSE: WindowCloseGuard = async () => 'close';
+
+const closeCallbacks = new Set<() => void>();
+const closeGuard: { current: WindowCloseGuard } = { current: ALLOW_CLOSE };
+let closeListener: Promise<UnlistenFn> | null = null;
+
+type GuardParams = Readonly<{
+  guard: WindowCloseGuard;
+}>;
+
+export const setWindowCloseGuard = ({ guard }: GuardParams): (() => void) => {
+  closeGuard.current = guard;
+  return () => {
+    if (closeGuard.current === guard) {
+      closeGuard.current = ALLOW_CLOSE;
+    }
+  };
+};
+
+export const closeWindowNow = async (): Promise<void> => {
+  for (const callback of closeCallbacks) {
+    try {
+      callback();
+    } catch (error) {
+      console.warn('[window] a close step failed, closing anyway', error);
+    }
+  }
+  if (!isTauriRuntime()) {
+    return;
+  }
+  await getCurrentWindow().destroy();
+};
+
+const hideOrClose = async (): Promise<void> => {
+  if (!isTauriRuntime()) {
+    return;
+  }
+  try {
+    await getCurrentWindow().hide();
+  } catch (error) {
+    console.warn('[window] hide failed, closing instead', error);
+    await closeWindowNow();
+  }
+};
+
+const claimClose = async (): Promise<void> => {
+  if (!isTauriRuntime()) {
+    return;
+  }
+  try {
+    await invokeCommand<void>('window_close_claim');
+  } catch (error) {
+    console.warn('[window] close claim failed', error);
+  }
+};
+
+type CloseRequestEvent = Readonly<{
+  preventDefault: () => void;
+}>;
+
+type CloseRequestParams = Readonly<{
+  event: CloseRequestEvent;
+}>;
+
+export const handleWindowCloseRequest = async ({ event }: CloseRequestParams): Promise<void> => {
+  event.preventDefault();
+  await claimClose();
+  const decision = await decideWindowClose({ guard: closeGuard.current });
+  if (decision === 'hold') {
+    return;
+  }
+  if (decision === 'hide') {
+    await hideOrClose();
+    return;
+  }
+  await closeWindowNow();
+};
+
 export const onWindowClose = async (callback: () => void): Promise<UnlistenFn> => {
   if (!isTauriRuntime()) {
     return () => undefined;
   }
-  return getCurrentWindow().onCloseRequested(() => callback());
+  closeCallbacks.add(callback);
+  closeListener ??= getCurrentWindow().onCloseRequested((event) =>
+    handleWindowCloseRequest({ event }),
+  );
+  await closeListener;
+  return () => {
+    closeCallbacks.delete(callback);
+  };
 };

@@ -984,3 +984,7 @@ The wizard has more than one host in a window (`AppOverlayRouter` mounts it in t
 ## A kit block closer can arrive with one bracket too many
 
 Models sometimes write `<<</decision>>`. `stripHtml` in `parseMarkdown.ts` would read `</decision>` as an html tag and drop it, and every block after it would nest. It reads a run of `<` before `/` as `<<`, so keep any new tag stripping behind that branch.
+
+## A window close goes through one guard, with a Rust fallback
+
+Tauri hands a close to the page as soon as one `onCloseRequested` listener exists, and every listener destroys the window unless it calls `preventDefault`. So the page registers exactly one listener (`onWindowClose` in `features/workspace/window.ts`), and every other close step joins it as a callback; a second `getCurrentWindow().onCloseRequested` would destroy the window before the sheet can ask. The listener claims the close (`window_close_claim`), asks the guard (`setWindowCloseGuard`, owned by `WindowCloseSheet`) and races it against 2 seconds (`decideWindowClose`). A page too frozen to claim is closed by Rust after the same 2 seconds (`window_close.rs`). On macOS the main window hides instead of closing, because it hosts the Auto runtime; the dock icon shows it again (`RunEvent::Reopen`), and `focusWindow` shows a hidden window before it focuses it. Elsewhere the main window still closes, and Auto stops with it.

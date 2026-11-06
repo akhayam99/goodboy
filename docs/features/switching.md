@@ -75,4 +75,6 @@ Leave agents working and look away. While no Goodboy window is in front, the app
 
 ### Open in new window
 
-Give each workspace its own window, so switching does not interrupt running agents. After a reload or an update, every window comes back on the screen it showed.
+Give each workspace its own window, so switching does not interrupt running agents. After a reload or an update, every window comes back on the screen it showed. Closing a window while its agents work asks once: **Stop 2 agents**, or **Cancel**. An agent that does not stop says so, with **Close anyway**. On a Mac the main window hides instead of closing, so Auto keeps working; the dock icon brings it back.
+
+Switching workspace or disconnecting one stops its agents the way **Stop** does: on return each reads **Stopped by you** with **Continue**, and nothing half done reads Done.

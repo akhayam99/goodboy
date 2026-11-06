@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
@@ -14,8 +14,9 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
 } from '../../../../../store/storyHarness';
-import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U36_P1_RUNSTOP_SCENES } from './p1-runstop';
 
@@ -31,6 +32,13 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  clearSceneInvoke();
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (typeof command !== 'string') {
+      throw new Error('The scene command must be a string.');
+    }
+    return sceneInvoke({ command, args });
+  });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 });
 
