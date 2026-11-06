@@ -1485,7 +1485,8 @@ const diffTarget = (status: WorktreeStatus | null, patch = 'diff --git a/x b/x')
 
 const DIFF_TOOLS = ['diff.openTerminal menu', 'diff.openInEditor menu'];
 const DIFF_COPIES = ['diff.copyBranch menu', 'diff.copyPatch menu'];
-const DIFF_TAIL = ['diff.changeBase menu', 'diff.restoreBackup menu', ...DIFF_COPIES];
+const DIFF_TAIL_WITH_PR = ['diff.restoreBackup menu', ...DIFF_COPIES];
+const DIFF_TAIL = ['diff.changeBase menu', ...DIFF_TAIL_WITH_PR];
 
 const DIFF_STATES: ReadonlyArray<
   readonly [string, 'open' | null, WorktreeStatus, ReadonlyArray<string>]
@@ -1494,7 +1495,7 @@ const DIFF_STATES: ReadonlyArray<
     'on origin, PR open',
     'open',
     gitStatus({}),
-    [...DIFF_TOOLS, 'diff.rewriteHistory secondary', ...DIFF_TAIL],
+    [...DIFF_TOOLS, 'diff.rewriteHistory secondary', ...DIFF_TAIL_WITH_PR],
   ],
   [
     '3 not pushed, no PR',
@@ -1511,13 +1512,13 @@ const DIFF_STATES: ReadonlyArray<
     '2 not pushed, PR open',
     'open',
     gitStatus({ ahead: 6, unpushed: 2 }),
-    [...DIFF_TOOLS, 'diff.push primary', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
+    [...DIFF_TOOLS, 'diff.push primary', 'diff.rewriteHistory secondary', ...DIFF_TAIL_WITH_PR],
   ],
   [
     'behind main by 4',
     'open',
     gitStatus({ behind: 4 }),
-    [...DIFF_TOOLS, 'diff.rebase primary', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
+    [...DIFF_TOOLS, 'diff.rebase primary', 'diff.rewriteHistory secondary', ...DIFF_TAIL_WITH_PR],
   ],
   [
     '2 uncommitted',
@@ -1527,7 +1528,6 @@ const DIFF_STATES: ReadonlyArray<
       ...DIFF_TOOLS,
       'diff.rebase primary (2 files have changes that are not committed. Commit or stash them first.)',
       'diff.rewriteHistory secondary (2 files have changes that are not committed. Commit or stash them first.)',
-      'diff.changeBase menu',
       'diff.restoreBackup menu (2 files have changes that are not committed. Commit or stash them first.)',
       ...DIFF_COPIES,
     ],
@@ -1536,7 +1536,7 @@ const DIFF_STATES: ReadonlyArray<
     'diverged',
     'open',
     gitStatus({ unpushed: 1, originAhead: 1 }),
-    [...DIFF_TOOLS, 'diff.push menu', 'diff.rewriteHistory secondary', ...DIFF_TAIL],
+    [...DIFF_TOOLS, 'diff.push menu', 'diff.rewriteHistory secondary', ...DIFF_TAIL_WITH_PR],
   ],
   [
     'rebase stopped',

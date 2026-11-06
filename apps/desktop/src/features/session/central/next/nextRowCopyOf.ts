@@ -28,7 +28,7 @@ const sentenceOf = ({ row }: RowParams): string | null => {
     row.folded.length === 0
   ) {
     const count = source.suggestion.payload.eligibleThreadCount;
-    return `${count} review ${count === 1 ? 'conversation waits' : 'conversations wait'} for a fix.`;
+    return `${count} ${count === 1 ? 'comment' : 'comments'} to fix`;
   }
   const head = row.title.endsWith('.') ? row.title : `${row.title}.`;
   if (row.detail === null || row.detail === '') {

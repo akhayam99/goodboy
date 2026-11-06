@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Wrench } from 'lucide-react';
 import { Button, DrawerFrame, ScrollFade, SectionHeader, SegmentedTabs } from '@goodboy/ui';
-import type { OpenQuestion, ResolveAttempt, SessionId } from '@goodboy/types';
+import type { MountId, OpenQuestion, ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { requestHostOf } from '../../../../store/slices/review-source/requestHostOf';
 import { AgentChain } from '../../../../shared/components/AgentChain';
@@ -27,6 +27,7 @@ import { useFixLaunch } from './useFixLaunch';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly focusThreadId: string | null;
   readonly threadIds: ReadonlyArray<string> | null;
   readonly fromThreadId?: string | null;
@@ -38,6 +39,7 @@ const NO_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
 export const FixCommentsDrawer = ({
   sessionId,
+  mountId = null,
   focusThreadId,
   threadIds,
   fromThreadId = null,
@@ -138,6 +140,7 @@ export const FixCommentsDrawer = ({
   });
   const launch = useFixLaunch({
     sessionId,
+    mountId,
     routing: draft.routing,
     threadIds: selectedIds,
     hint: '',
@@ -274,12 +277,7 @@ export const FixCommentsDrawer = ({
             label={START_HINT_COPY.agentLabel}
             placeholder={START_HINT_COPY.fixComments}
           />
-          <FixCommentsLaunchRow
-            count={selectedIds.length}
-            startedMode={launch.startedMode}
-            error={launch.error}
-            onStart={(mode) => void launch.start(mode)}
-          />
+          <FixCommentsLaunchRow count={selectedIds.length} launch={launch} />
         </section>
       </div>
     </DrawerFrame>

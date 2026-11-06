@@ -309,7 +309,6 @@
   "apps/desktop/src/features/providers/components/InlineTerminal.replay.test.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderAttentionNotice.test.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/index.test.tsx": 1,
-  "apps/desktop/src/features/resolve/components/FixCommentsButton.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/triage.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixRunSummary/FixRunLead.test.tsx": 1,
@@ -393,7 +392,6 @@
   "apps/desktop/src/store/slices/workflows/retryWorkflowOrchestration.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/setWorkflowRunSpendLimit.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": 1,
-  "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.test.ts": 1,
   "apps/desktop/src/store/slices/workflowStudio/startWorkflowGeneration.test.ts": 1

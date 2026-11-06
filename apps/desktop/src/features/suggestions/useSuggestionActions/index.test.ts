@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { agentPlace, branchPlace } from '../../../store/slices/navigation/place';
+import { agentPlace, branchPlace, questionPlace } from '../../../store/slices/navigation/place';
 import { renderHook } from '@testing-library/react';
 import type {
   Agent,
@@ -70,33 +70,36 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   const phaseRuns: Record<string, ReadonlyArray<unknown>> = {};
   const record = <T>(): Record<string, T> => ({});
   const list = <T>(): ReadonlyArray<T> => [];
+  const shared = {
+    ensureProjectMounted,
+    recordSessionEvent,
+    setSessionActiveProject,
+    emitNotification,
+    reportError,
+    spawnAgent,
+    navigate,
+    runPlan,
+    pushBranch,
+    openRewriteHistory,
+    createPrForSession,
+    markPrReady,
+    mergePr,
+    resolveMountCleanup,
+    mergeSeriesInOrder,
+    moveTrackerItem,
+    undoTrackerMove,
+    attachWorkflowToSession,
+    resumeStoppedAgents,
+    openMountTerminal,
+    requestReviewLaunch,
+  };
   return {
     fixable: { ids: list<string>() },
     spies: {
-      requestReviewLaunch,
-      openMountTerminal,
+      ...shared,
       readWorktreeStatus,
-      ensureProjectMounted,
-      recordSessionEvent,
-      setSessionActiveProject,
-      emitNotification,
-      reportError,
       advanceAgent: vi.fn(async () => undefined),
-      spawnAgent,
-      navigate,
       rebaseRun,
-      runPlan,
-      pushBranch,
-      openRewriteHistory,
-      createPrForSession,
-      markPrReady,
-      mergePr,
-      resolveMountCleanup,
-      mergeSeriesInOrder,
-      moveTrackerItem,
-      undoTrackerMove,
-      attachWorkflowToSession,
-      resumeStoppedAgents,
       archiveSessions,
       showToast,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
@@ -108,6 +111,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       })),
     },
     storeState: {
+      ...shared,
       sessionProjectMounts: record<ReadonlyArray<unknown>>(),
       rebaseAllRuns: noRebaseAllRuns,
       sessionPhaseRuns: phaseRuns,
@@ -115,30 +119,9 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       mountRequests: record<unknown>(),
       projects: list<unknown>(),
       artifactComments: record<ReadonlyArray<unknown>>(),
-      ensureProjectMounted,
-      recordSessionEvent,
-      setSessionActiveProject,
-      emitNotification,
-      reportError,
-      spawnAgent,
-      runPlan,
-      navigate,
-      pushBranch,
-      openRewriteHistory,
-      createPrForSession,
-      markPrReady,
-      mergePr,
-      resolveMountCleanup,
-      mergeSeriesInOrder,
-      moveTrackerItem,
-      undoTrackerMove,
-      attachWorkflowToSession,
-      resumeStoppedAgents,
       bulkArchiveTask,
       bulkUnarchiveTask,
-      openMountTerminal,
       requestOpenQuestionScroll: vi.fn(),
-      requestReviewLaunch,
       currentSessionId: 'session-elsewhere',
       activeLens: record<string>(),
       branchTab: record<string>(),
@@ -609,7 +592,7 @@ describe('useSuggestionActions', () => {
     expect(spies.showToast).not.toHaveBeenCalled();
   });
 
-  it('hands the questions lens the answer action', () => {
+  it('opens the first question on its address even when several are open', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -629,10 +612,32 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Answer');
     actions.primary?.run();
 
+    expect(onSelectQuestions).not.toHaveBeenCalled();
+    expect(spies.navigate).toHaveBeenCalledWith({
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'question-1' }),
+      }),
+      mode: 'push',
+    });
+  });
+
+  it('hands the questions lens the answer action when no question is known', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'answer-questions:session-1',
+        kind: 'answer-questions',
+        payload: { count: 2, firstQuestion: null, rootAgentId: null },
+      },
+    });
+
+    void actions.primary?.run();
+
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);
   });
 
-  it('jumps to the agent that asked when one question is out of view', () => {
+  it('opens the question on its address when one question is out of view', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -653,11 +658,11 @@ describe('useSuggestionActions', () => {
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
-    });
-    expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
-      agentId: AGENT_ID,
-      questionId: 'question-1',
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'question-1' }),
+      }),
+      mode: 'push',
     });
   });
 

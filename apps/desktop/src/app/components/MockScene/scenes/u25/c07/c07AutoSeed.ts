@@ -323,7 +323,9 @@ export const seedC07 = ({
     });
   }
   if (place === 'list' || place === 'start') {
-    store.navigate({ to: lensPlace({ state: store, sessionId: AUTO_SESSION.id, lens: 'auto' }) });
+    store.navigate({
+      to: lensPlace({ state: store, sessionId: AUTO_SESSION.id, lens: 'workflows' }),
+    });
   }
   if (pane !== undefined && place !== 'child') {
     useAppStore.getState().openDrawer({

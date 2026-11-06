@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { branchPlace, sessionPlace, useAppStore } from '../../../../../store';
-import { useQuestionOpeners } from '../../../../context/useQuestionOpeners';
+import { useOpenAgentQuestion } from '../../../../context/hooks/useOpenAgentQuestion';
 import { openReview } from '../../../../review/openReview';
 import type { useTimelineOpen } from '../../../hooks/useTimelineOpen';
 import type { NeedsYouOwner } from '../../../timeline/needsYou';
@@ -19,7 +19,7 @@ export type OpenNeedsYou = (params: OwnerParams) => void;
 
 export const useOpenNeedsYou = ({ sessionId, openTargetFor }: Params): OpenNeedsYou => {
   const navigate = useAppStore((s) => s.navigate);
-  const { focusQuestion, openAgentQuestion } = useQuestionOpeners({ sessionId });
+  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
 
   return useCallback(
     ({ owner }) => {
@@ -39,21 +39,18 @@ export const useOpenNeedsYou = ({ sessionId, openTargetFor }: Params): OpenNeeds
         });
         return;
       }
-      if (owner.kind === 'question') {
-        if (owner.question !== null) {
-          focusQuestion(owner.question.id);
-        }
-        navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
-        return;
-      }
       if (owner.question !== null) {
         openAgentQuestion({ question: owner.question });
+        return;
+      }
+      if (owner.kind === 'question') {
+        navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
         return;
       }
       if (owner.item !== null) {
         openTargetFor({ entry: owner.item.entry })?.open();
       }
     },
-    [focusQuestion, navigate, openAgentQuestion, openTargetFor, sessionId],
+    [navigate, openAgentQuestion, openTargetFor, sessionId],
   );
 };

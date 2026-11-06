@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type MountId, type SessionId } from '@goodboy/types';
+import { brandId, type MountId, type OpenQuestionId, type SessionId } from '@goodboy/types';
 import type { SessionSuggestion } from '../../../suggestions/types';
 import { suggestionPlaceOf } from './suggestionPlaceOf';
 
@@ -49,6 +49,23 @@ describe('suggestionPlaceOf', () => {
     });
     expect(suggestionPlaceOf({ suggestion: QUESTIONS, mountId: null })).toEqual({
       kind: 'questions',
+      questionId: null,
+    });
+  });
+
+  it('names the first question when the card knows it', () => {
+    const question = brandId<OpenQuestionId>({ value: 'question-1' });
+    const known: SessionSuggestion = {
+      ...QUESTIONS,
+      payload: {
+        count: 2,
+        firstQuestion: { id: question, createdByAgentId: null },
+        rootAgentId: null,
+      },
+    };
+    expect(suggestionPlaceOf({ suggestion: known, mountId: null })).toEqual({
+      kind: 'questions',
+      questionId: question,
     });
   });
 

@@ -2,10 +2,12 @@ import type { UnsentCommentsConfirm } from '../../../../plans/unsentCommentsConf
 import { useCallback, useRef, useState } from 'react';
 import type { ConfirmRole } from '@goodboy/ui';
 import type { MountId, Session } from '@goodboy/types';
+import { NAMES } from '../../../../../shared/utils/names';
 import {
   EMPTY_ARRAY,
   agentPlace,
   branchPlace,
+  questionPlace,
   sessionPlace,
   useAppStore,
 } from '../../../../../store';
@@ -45,6 +47,7 @@ export type CardVerb = {
   readonly label: string;
   readonly ariaLabel: string | undefined;
   readonly isDisabled: boolean;
+  readonly blockedReason?: string;
   readonly isBusy: boolean;
   readonly confirmRole: ConfirmRole | null;
   readonly confirm: UnsentCommentsConfirm | null;
@@ -114,6 +117,7 @@ type VerbParams = {
   readonly run: () => void;
   readonly isBusy?: boolean;
   readonly isDisabled?: boolean;
+  readonly blockedReason?: string;
   readonly confirmRole?: ConfirmRole | null;
   readonly confirm?: UnsentCommentsConfirm | null;
   readonly hasPicker?: boolean;
@@ -187,6 +191,7 @@ const verbOf = ({
   run,
   isBusy = false,
   isDisabled = false,
+  blockedReason,
   confirmRole = null,
   confirm = null,
   hasPicker = false,
@@ -194,6 +199,7 @@ const verbOf = ({
   label,
   ariaLabel,
   isDisabled,
+  ...(blockedReason !== undefined && { blockedReason }),
   isBusy,
   confirmRole,
   confirm,
@@ -330,7 +336,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       case 'retry-rebase':
         return { label: 'Retry rebase', run: runIt({ task: verbs.retryRebase }) };
       case 'fix-push':
-        return { label: 'Fix with agent', run: runIt({ task: verbs.fixPush }) };
+        return { label: NAMES.fixPushWithAgent, run: runIt({ task: verbs.fixPush }) };
       case 'open':
         return { label: ownerVerbOf({ owner }), run: () => openNeedsYou({ owner }) };
       default: {
@@ -483,6 +489,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
                     ? undefined
                     : primary.label,
               isDisabled: primary.isDisabled || (isChoicePending && !isPending),
+              blockedReason: primary.blockedReason,
               isBusy: isPending,
               confirmRole:
                 primary.requiresConfirm === true
@@ -581,7 +588,9 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       navigate({
         to:
           place.kind === 'questions'
-            ? sessionPlace({ sessionId, lens: 'questions' })
+            ? place.questionId === null
+              ? sessionPlace({ sessionId, lens: 'questions' })
+              : questionPlace({ sessionId, questionId: place.questionId })
             : branchPlace({ sessionId, mountPath, tab: place.tab }),
       });
     };

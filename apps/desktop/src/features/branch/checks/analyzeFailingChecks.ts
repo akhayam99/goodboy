@@ -16,8 +16,10 @@ import { worktreeChangedFiles } from '../../worktree/worktree';
 import { buildAnalyzeChecksPrompt } from './buildAnalyzeChecksPrompt';
 import { checkAnalysisOf } from './checkAnalysisOf';
 import { checkRoutingOf } from './checkRoutingOf';
+import { checkWorkReasonOf } from './checkWorkReasonOf';
 import { ciFixName } from './ciFixName';
 import { fetchFailedCheckLog } from './fetchFailedCheckLog';
+import { liveCheckWorkOf } from './liveCheckWorkOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -31,7 +33,14 @@ type Params = {
 
 const ALREADY_ANALYZING = 'A Debugger is already analyzing this check. Your hint was not applied.';
 
-const pending = new Map<string, Promise<AgentId>>();
+const STARTING_ELSEWHERE = 'A Debugger is already starting on another check of this branch';
+
+type Pending = {
+  readonly url: string;
+  readonly result: Promise<AgentId>;
+};
+
+const pending = new Map<string, Pending>();
 
 const start = async ({
   sessionId,
@@ -62,6 +71,10 @@ const start = async ({
       throw new Error(ALREADY_ANALYZING);
     }
     return previous.id;
+  }
+  const live = liveCheckWorkOf({ state, sessionId, mountId, exceptUrl: firstUrl });
+  if (live !== null) {
+    throw new Error(checkWorkReasonOf({ work: live }));
   }
   const resolved = checkRoutingOf({ state, sessionId, mountId });
   if (resolved.isBlocked && routing === undefined) {
@@ -123,13 +136,17 @@ export const analyzeFailingChecks = ({
   hint = '',
   onAccepted,
 }: Params): Promise<AgentId> => {
-  const key = JSON.stringify([sessionId, mountId, checks[0]?.detailsUrl ?? pullRequest.url]);
+  const key = JSON.stringify([sessionId, mountId]);
+  const url = checks[0]?.detailsUrl ?? pullRequest.url;
   const existing = pending.get(key);
+  if (existing !== undefined && existing.url !== url) {
+    return Promise.reject(new Error(STARTING_ELSEWHERE));
+  }
   if (existing !== undefined) {
     if (hint.trim().length > 0) {
       return Promise.reject(new Error(ALREADY_ANALYZING));
     }
-    return existing;
+    return existing.result;
   }
   const result = start({
     sessionId,
@@ -140,6 +157,6 @@ export const analyzeFailingChecks = ({
     hint,
     ...(onAccepted !== undefined && { onAccepted }),
   }).finally(() => pending.delete(key));
-  pending.set(key, result);
+  pending.set(key, { url, result });
   return result;
 };

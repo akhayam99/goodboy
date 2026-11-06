@@ -174,7 +174,7 @@ export const WriterWaitScene = ({ theme }: Props) => {
       siblings: [WRITING, FAQ],
       branches: {},
       telemetryAt: at({ minute: 31 }),
-      lens: 'agents',
+      lens: 'workflows',
     });
     useAppStore.setState({
       selectedAgentId: { [WAITING_ID]: WAITER_ID, [WRITING_ID]: WRITER_ID },

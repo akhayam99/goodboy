@@ -32,10 +32,8 @@ it. From the top:
 
 - **Name**: a large inline field that wraps a long name instead of cutting
   it, and never takes a line break. It stays empty and shows a name as its
-  placeholder. Once you leave the goal, Goodboy asks the naming model for a
-  title from the goal and shows it there; **Tab** keeps it. The suggestion is
-  never typed into the field for you. An empty field starts with the
-  suggestion, or else the planner title, the preset name, "Custom workflow" or
+  placeholder. An empty field starts with the planner title, the preset name,
+  "Custom workflow" or
   "Orchestrated workflow", so the name never blocks the start. If you rename a
   preset, you get a new workflow of your own and the shared preset keeps its
   name.
@@ -92,13 +90,23 @@ changes it, so looking at another tab does not. A remembered **Preset** falls
 back to **Orchestrated** once the workspace has no presets left.
 
 Each run also gets a title of its own, at most six words, written from the run
-goal by the `agent_naming` task model when the run starts. The title is cleaned
-(`cleanWorkflowRunTitle` in `@goodboy/db`): a `Title:` label, quotes and markdown
-marks go, a reply that reads as a sentence is dropped, and a title never ends in
-the middle of a word. When nothing usable is left it is the first line of the
-ask, cut at a word. A session or agent title goes through the same cleaning at
-the parse boundary (`parseGeneratedTitle`, with the ask as the fallback). A title stored before this reads cleaned too: the same
-function runs when the run rows load, and never touches a name you chose. The activity feed,
+goal by the `agent_naming` task model when the run starts. The prompt asks for a
+verb plus an object in the language of the goal, inside one closed tag:
+`<title>Block double credits</title>`. Only the tag is read (`titleInTag` in
+`@goodboy/db`, plain `indexOf`, no regex). No tag, an empty or unclosed tag, a
+sentence that reads as the model talking, or a text that talks about the title,
+the role, the task or the routing ("Title generation", "Auto routed to ...")
+is discarded, as is a tagged title over six words, and the title becomes the
+one derived from the goal (`heuristicAgentTitle` in `@goodboy/db`: the first
+clause of the goal in the user's own words, first letter capitalised, at most
+ten words and 60 characters, cut on a word, in any language). Only the leading
+phrase of a talk reply is matched, so "Fix title generation crash" stays. One parser serves run, agent and session titles (`parseGeneratedTitle`,
+then `cleanWorkflowRunTitle`). A title stored before this reads through the same
+check when the run rows load: one that fails shows the goal derived title, the
+database row is not written, and one that passes stays. Neither the generated
+write of a run (`updateGeneratedWorkflowRunTitle`) nor that of a session
+(`renameSession` with `titleUserEdited` false) can replace a name you chose: both
+carry `title_user_edited = 0` in the `WHERE` clause. The activity feed,
 the workflow detail and the run page show that title, so
 two runs of the same preset read apart. Until the title arrives, or when the
 run has no goal, they show the workflow name. An orchestrated run keeps the
@@ -914,7 +922,7 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/`: the Studio editor. It draws the plan with the shared step tree; `GoalField`, `BuilderTitleField` and `PlanDraftingBanner` sit beside it. `presetEdits.ts` marks the steps edited from their preset and `providerPool.ts` toggles the provider pool of a run, both in `features/workflows/`
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
 - `apps/desktop/src/features/workflows/components/WorkflowsPanel/`: the Studio. `useWorkflowEditor` owns the open workflow, autosave and Draft steps; `WorkflowStudio/WorkflowList` is the home and `WorkflowStudio/WorkflowEditor` the editor on the step tree. The Studio leaves the time and cost columns empty: a preset has no run to estimate from
-- `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
+- `apps/desktop/src/store/slices/workflows/generateWorkflowTitle.ts`: renames a saved orchestrated run that started on the fallback name, with the same tagged reply as every generated title
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows, among them no label the step made up
 - `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`. Every operator facing string (a reason, a run-summary entry) names a thread, decision or commit by what the operator can find in the app, never by a label a step invented

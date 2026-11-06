@@ -10,7 +10,7 @@ const ALL_LENSES: ReadonlyArray<LensKind | null> = [
   'pr',
   'files',
   'workflows',
-  'agents',
+  'orchestrated',
   'plans',
   'questions',
   'linear',
@@ -71,14 +71,14 @@ describe('currentSignOf', () => {
   });
 
   it('marks the session row when the pages are folded', () => {
-    expect(currentSignOf({ activeLens: 'agents', pages: NO_PAGES, hasStudioOver: false })).toBe(
+    expect(currentSignOf({ activeLens: 'workflows', pages: NO_PAGES, hasStudioOver: false })).toBe(
       'session',
     );
   });
 
   it('remembers the session while a studio sits over it', () => {
     expect(
-      currentSignOf({ activeLens: 'agents', pages: cardPages(true), hasStudioOver: true }),
+      currentSignOf({ activeLens: 'workflows', pages: cardPages(true), hasStudioOver: true }),
     ).toBe('remembered');
   });
 });

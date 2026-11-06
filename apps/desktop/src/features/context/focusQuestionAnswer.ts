@@ -1,15 +1,17 @@
-import type { OpenQuestionId } from '@goodboy/types';
+import type { OpenQuestionId, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../store';
+import { openQuestion } from '../session/openQuestion';
 import { useOpenQuestions } from './components/QuestionsTab/useOpenQuestions';
 
 type Params = {
+  readonly sessionId: SessionId;
   readonly questionId: OpenQuestionId;
   readonly prefill?: string;
 };
 
-export const focusQuestionAnswer = ({ questionId, prefill = '' }: Params): void => {
-  const questions = useOpenQuestions.getState();
+export const focusQuestionAnswer = ({ sessionId, questionId, prefill = '' }: Params): void => {
   if (prefill !== '') {
-    questions.setCustomAnswer(questionId, prefill);
+    useOpenQuestions.getState().setCustomAnswer(questionId, prefill);
   }
-  questions.focusQuestion(questionId);
+  openQuestion({ state: useAppStore.getState(), sessionId, questionId });
 };

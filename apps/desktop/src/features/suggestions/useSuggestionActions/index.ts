@@ -33,6 +33,7 @@ import { continueWithRole } from '../../session/startRun/continueWithRole';
 import { openSettings } from '../../settings/openSettings';
 import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { archiveSessionAction } from './archiveSessionAction';
+import { checkWorkLockOf } from '../../branch/checks/checkWorkLockOf';
 import { fixChecksActions } from './fixChecksActions';
 import { mergeSeriesAction } from './mergeSeriesAction';
 import { planReadyAction } from './planReadyAction';
@@ -54,6 +55,7 @@ type SuggestionAction = {
   readonly shortLabel?: string;
   readonly agentKind?: AgentKind;
   readonly isDisabled: boolean;
+  readonly blockedReason?: string;
   readonly isBusy?: boolean;
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
@@ -161,6 +163,16 @@ export const useSuggestionActions = ({
   );
 
   const threadIds = useFixableThreadIds({ sessionId });
+  const checkLocks = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        mounts.map((mount) => [
+          mount.mountId,
+          checkWorkLockOf({ state, sessionId, mountId: mount.mountId }),
+        ]),
+      ),
+    ),
+  );
 
   const openFixPanel = async (): Promise<void> => {
     if (threadIds.length === 0) {
@@ -273,14 +285,14 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'answer-questions') {
-      const { count, firstQuestion } = suggestion.payload;
+      const { firstQuestion } = suggestion.payload;
       return {
         primary: {
           label: 'Answer',
           isDisabled: false,
           failureTitle: "Couldn't open the questions",
           run: async () => {
-            if (count === 1 && firstQuestion != null) {
+            if (firstQuestion != null) {
               openAgentQuestion({ question: firstQuestion });
               return;
             }
@@ -391,7 +403,11 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      return fixChecksActions({ sessionId, payload: suggestion.payload });
+      return fixChecksActions({
+        sessionId,
+        payload: suggestion.payload,
+        lock: checkLocks[suggestion.payload.mountId] ?? null,
+      });
     }
     if (suggestion.kind === 'push-branch' && suggestion.payload.state === 'diverged') {
       return {

@@ -5,7 +5,7 @@ import {
   usePendingAction,
   type PendingActionRun,
 } from '../../../../../shared/hooks/usePendingAction';
-import type { RebaseRequest } from '../HistoryBaseRow';
+import type { RebaseRequest } from '../HistoryRebaseHead';
 
 type Params = {
   readonly sessionId: SessionId;

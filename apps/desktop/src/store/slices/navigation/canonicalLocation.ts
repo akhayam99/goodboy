@@ -78,6 +78,11 @@ type PlaceParams = {
   readonly request: Place;
 };
 
+type SessionParams = {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+};
+
 const hasMount = ({
   state,
   sessionId,
@@ -205,12 +210,38 @@ const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   return request;
 };
 
+const isAskHandOver = ({ state, sessionId }: SessionParams): boolean => {
+  const drawer = state.drawer ?? null;
+  if (drawer === null || drawer.sessionId !== sessionId) {
+    return false;
+  }
+  return drawer.kind === 'ask' || (drawer.kind === 'question' && drawer.payload.from === 'ask');
+};
+
+const canonicalQuestion = ({ state, request }: PlaceParams): CanonicalPlace | null => {
+  if (request.at !== 'session' || request.view.target?.kind !== 'question') {
+    return null;
+  }
+  const { sessionId } = request;
+  const { questionId } = request.view.target;
+  const from = isAskHandOver({ state, sessionId }) ? 'ask' : null;
+  return {
+    place: canonicalPlace({ state, request }),
+    drawer: {
+      kind: 'question',
+      sessionId,
+      payload: from === null ? { questionId } : { questionId, from },
+    },
+  };
+};
+
 export const canonicalLocation = ({ state, request }: Params): CanonicalPlace => {
   if (request.at === 'agent') {
     return canonicalAgent({ state, request });
   }
   return (
-    formerFixRunPage({ state, request }) ?? {
+    formerFixRunPage({ state, request }) ??
+    canonicalQuestion({ state, request }) ?? {
       place: canonicalPlace({ state, request }),
       drawer: null,
     }

@@ -1542,11 +1542,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/actions/kinds/pullRequest.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/actions/kinds/pullRequestFacts.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -5099,7 +5094,7 @@
   },
   "apps/desktop/src/features/session/agentDoors.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
@@ -5153,11 +5148,6 @@
   "apps/desktop/src/features/session/ask/runAskTurn.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    }
-  },
-  "apps/desktop/src/features/session/attentionPlace.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
     }
   },
   "apps/desktop/src/features/session/branchRequests.test.ts": {
@@ -7074,9 +7064,6 @@
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }
@@ -11085,11 +11072,6 @@
   "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 15
-    }
-  },
-  "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
     }
   },
   "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": {

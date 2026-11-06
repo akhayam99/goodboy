@@ -8,7 +8,7 @@ describe('resolveLensSurface', () => {
   });
 
   it('leaves every other lens on its own surface', () => {
-    expect(resolveLensSurface({ lens: 'agents' })).toBe('agents');
+    expect(resolveLensSurface({ lens: 'questions' })).toBe('questions');
     expect(resolveLensSurface({ lens: 'workflows' })).toBe('workflows');
   });
 });

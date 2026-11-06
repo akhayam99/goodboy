@@ -504,13 +504,21 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
     lands: both(lens('workflows'), () => heading('Runs')),
   }),
-  pressRow({ id: 'lens.agents', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
   pressRow({ id: 'lens.files', lands: branchTab('files') }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
   pressRow({ id: 'lens.scripts', lands: pane('Scripts') }),
   pressRow({ id: 'session.spawned', lands: pane('Agents') }),
+  keyRow({
+    id: 'session.spawned',
+    note: 'stays open when the page moves to Runs',
+    open: async () => {
+      await press('session.spawned')();
+      await press('lens.workflows')();
+    },
+    lands: both(lens('workflows'), pane('Agents')),
+  }),
   pressRow({
     id: 'session.terminal',
     lands: async () => {

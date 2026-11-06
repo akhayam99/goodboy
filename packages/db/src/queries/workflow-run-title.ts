@@ -1,5 +1,7 @@
 import { stripTitlePreamble } from './title-preamble';
 import { stripTrailingPunctuation } from './strip-trailing-punctuation';
+import { heuristicAgentTitle } from './heuristic-agent-title';
+import { talksAboutTitle } from './title-talk';
 
 const WORKFLOW_RUN_TITLE_MAX_LENGTH = 60;
 
@@ -8,7 +10,7 @@ const MAX_TITLE_WORDS = 10;
 const ELLIPSIS = '…';
 
 const LEAK_PATTERN =
-  /^(?:the user (?:asked|wants|said|wrote|is|needs|has)\b|user (?:asked|wants|said|wrote)\b|i(?:'ll|'d| will| would| need| should| am| have)\b|let me\b|here(?:'s| is| are)\b|this (?:run|workflow) (?:is|will|needs)\b)/i;
+  /^(?:l'utente\b|the user (?:asked|wants|said|wrote|is|needs|has)\b|user (?:asked|wants|said|wrote)\b|i(?:'ll|'d| will| would| need| should| am| have)\b|let me\b|here(?:'s| is| are)\b|this (?:run|workflow) (?:is|will|needs)\b)/i;
 
 type TextParams = {
   readonly text: string;
@@ -32,7 +34,10 @@ const clampAtWord = ({ text, isEllipsisAllowed }: ClampParams): string => {
 };
 
 const isUsableTitle = ({ text }: TextParams): boolean =>
-  text !== '' && !LEAK_PATTERN.test(text) && text.split(/\s+/).length <= MAX_TITLE_WORDS;
+  text !== '' &&
+  !LEAK_PATTERN.test(text) &&
+  !talksAboutTitle({ text }) &&
+  text.split(/\s+/).length <= MAX_TITLE_WORDS;
 
 type Params = {
   readonly title: string | null | undefined;
@@ -46,6 +51,10 @@ export const cleanWorkflowRunTitle = ({ title, goal }: Params): string => {
   }).trim();
   if (isUsableTitle({ text: candidate })) {
     return clampAtWord({ text: candidate, isEllipsisAllowed: false });
+  }
+  const derived = heuristicAgentTitle({ prompt: goal ?? '' });
+  if (derived !== null) {
+    return derived;
   }
   const fallback = stripTitlePreamble({ text: leadingLineOf({ text: goal ?? '' }) }).trim();
   if (fallback === '') {

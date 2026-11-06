@@ -27,7 +27,6 @@
   "apps/desktop/src/features/settings/config-export.ts": 1,
   "apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts": 1,
   "apps/desktop/src/shared/components/section-icons.ts": 1,
-  "apps/desktop/src/shared/lib/agent-title-heuristic.ts": 1,
   "apps/desktop/src/shared/lib/parse-cap.ts": 1,
   "apps/desktop/src/shared/lib/storage-keys.ts": 1,
   "apps/desktop/src/shared/utils/display-path.ts": 1,

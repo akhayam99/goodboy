@@ -68,6 +68,8 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+import { brandId } from '@goodboy/types';
+import { questionPlace } from '../../../../store/slices/navigation/place';
 import { NextActionStrip } from './index';
 import { QUESTION_DELEGATE_SOURCE_KIND } from '../../../context/questionDelegate';
 
@@ -273,7 +275,7 @@ describe('NextActionStrip', () => {
     expect(screen.queryByRole('region', { name: 'Next action: answer' })).toBeNull();
   });
 
-  it('sends Answer to the agent that asked when no tree row shows it, on a warning line', () => {
+  it('sends Answer to the question address when no tree row shows it, on a warning line', () => {
     const delegate: Agent = {
       ...agent(1, 'completed'),
       id: 'agent-1' as AgentId,
@@ -300,8 +302,6 @@ describe('NextActionStrip', () => {
         },
       ],
     };
-    const listener = vi.fn();
-    window.addEventListener('goodboy:reveal-chat', listener);
     renderStrip();
 
     const strip = screen.getByRole('region', { name: 'Next action: answer' });
@@ -309,14 +309,12 @@ describe('NextActionStrip', () => {
     fireEvent.click(within(strip).getByRole('button', { name: 'Answer' }));
 
     expect(store.navigate).toHaveBeenCalledWith({
-      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'q-1' }),
+      }),
+      mode: 'push',
     });
-    expect(store.requestOpenQuestionScroll).toHaveBeenCalledWith({
-      agentId: 'agent-1',
-      questionId: 'q-1',
-    });
-    expect(listener).toHaveBeenCalledTimes(1);
-    window.removeEventListener('goodboy:reveal-chat', listener);
   });
 
   it('says whose handoff is being written, with nothing to click', () => {

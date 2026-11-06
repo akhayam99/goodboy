@@ -7,7 +7,7 @@ import type { SidebarNavConfig } from '../u23/sidebarNavSeed';
 import { seedSideSignals } from './b-side-signals';
 import { seedSideInfoValues } from './seedSideInfoValues';
 
-const MANY: Partial<SidebarNavConfig> = { lens: 'agents', branches: 3, hasDiff: true };
+const MANY: Partial<SidebarNavConfig> = { lens: 'workflows', branches: 3, hasDiff: true };
 
 type Props = {
   readonly config: Partial<SidebarNavConfig>;

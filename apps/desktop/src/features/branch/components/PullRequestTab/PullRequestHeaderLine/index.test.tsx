@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { PullRequestState } from '@goodboy/types';
 import { PullRequestHeaderLine } from '.';
 
@@ -23,42 +23,25 @@ const PR: PullRequestState = {
   author: 'nadia-p',
 };
 
-const VIEW = { number: 318, commits: ['a', 'b', 'c', 'd', 'e'] };
-
-const READINESS = {
-  facts: { commentsUnresolved: 6 },
-  commentsNeedYou: 4,
-  commentsUnread: 2,
-};
-
 describe('PullRequestHeaderLine', () => {
-  it('says who wants to merge how many commits on the pull request page', () => {
-    const { container } = render(
-      <PullRequestHeaderLine
-        pr={PR}
-        host="github"
-        view={VIEW}
-        readiness={READINESS}
-        isThreadsShown={false}
-      />,
-    );
+  it('says the number, the branch, the base and the author, and nothing else', () => {
+    const { container } = render(<PullRequestHeaderLine pr={PR} host="github" />);
 
-    expect(container.textContent).toContain('nadia-p wants to merge 5 commits into');
+    expect(container.textContent).toBe('#318hl/fix-duplicate-creditintomainby nadia-p');
   });
 
-  it('swaps the merge sentence for the thread counts on the comments page', () => {
-    const { container } = render(
-      <PullRequestHeaderLine
-        pr={PR}
-        host="github"
-        view={VIEW}
-        readiness={READINESS}
-        isThreadsShown
-      />,
-    );
+  it('draws the state as an icon with its word for a screen reader and a tooltip', () => {
+    render(<PullRequestHeaderLine pr={{ ...PR, state: 'merged' }} host="github" />);
 
-    expect(container.textContent).toContain('#318');
-    expect(container.textContent).toContain('6 open threads · 4 need you · 2 unread');
+    const icon = screen.getByRole('img', { name: 'Merged' });
+    expect(icon.getAttribute('data-state')).toBe('merged');
+    expect(screen.queryByText('Merged')).toBeNull();
+  });
+
+  it('reads the same on every tab, with no thread counts and no merge sentence', () => {
+    const { container } = render(<PullRequestHeaderLine pr={PR} host="github" />);
+
     expect(container.textContent).not.toContain('wants to merge');
+    expect(container.textContent).not.toContain('open thread');
   });
 });

@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { brandId, type IsoDateTime } from '@goodboy/types';
+import { brandId, type IsoDateTime, type OpenQuestionId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -20,6 +20,7 @@ import {
 } from '../../../../auto/testing/autoViewFixtures';
 import type { SessionSuggestion } from '../../../../suggestions/types';
 import type { NeedsYouOwner } from '../../../timeline/needsYou';
+import { questionPlace } from '../../../../../store/slices/navigation/place';
 import { actionCardsOf, type AutoActionTarget } from '../actionCardsOf';
 
 const { runs } = vi.hoisted(() => ({
@@ -353,5 +354,40 @@ describe('a late result for a card that is already gone', () => {
     });
 
     expect(result.current.isHidden({ card })).toBe(true);
+  });
+});
+
+describe('a click on the questions card', () => {
+  const QUESTION_ID = brandId<OpenQuestionId>({ value: 'question-1' });
+  const QUESTIONS: SessionSuggestion = {
+    id: 'answer-questions:ledger-core',
+    kind: 'answer-questions',
+    priority: 40,
+    band: 2,
+    title: 'Answer open questions',
+    sessionId: FIXTURE_SESSION,
+    fingerprint: 'answer-questions:2',
+    targetKey: null,
+    payload: {
+      count: 2,
+      firstQuestion: { id: QUESTION_ID, createdByAgentId: null },
+      rootAgentId: null,
+    },
+  };
+
+  it('opens the first question on its address, not the list', () => {
+    const navigate = vi.fn();
+    useAppStore.setState({ navigate });
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const [card] = actionCardsOf({ owners: [], suggestions: [QUESTIONS], autoTargets: [] });
+    if (card === undefined) {
+      throw new Error('Expected the questions card');
+    }
+
+    result.current.openFor({ card })?.();
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: FIXTURE_SESSION, questionId: QUESTION_ID }),
+    });
   });
 });

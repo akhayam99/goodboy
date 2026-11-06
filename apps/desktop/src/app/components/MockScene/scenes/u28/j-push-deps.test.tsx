@@ -72,7 +72,7 @@ describe('the u28 push and dependencies scenes', () => {
 
     await screen.findByText('An agent is fixing the push');
     screen.getByRole('button', { name: 'Open the agent' });
-    expect(screen.queryByRole('button', { name: 'Let an agent fix the push' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
   });
 
   it('shows a pushed fix and the pull request it opened', async () => {
@@ -104,7 +104,7 @@ describe('the u28 push and dependencies scenes', () => {
     const alert = await screen.findByRole('alert');
     expect(within(alert).queryByRole('button', { name: 'Reinstall dependencies' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Reinstall dependencies' })).toHaveLength(1);
-    within(alert).getByRole('button', { name: 'Let an agent fix the push' });
+    within(alert).getByRole('button', { name: 'Fix with an agent' });
   });
 
   it('shows the install running and its last line', async () => {

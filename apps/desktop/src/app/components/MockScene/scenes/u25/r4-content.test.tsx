@@ -123,7 +123,7 @@ describe('the r4 content scenes', () => {
 
     const drawerTitle = document.querySelector('[data-container="drawer"] h2')?.textContent ?? '';
     const card = screen.getByRole('article');
-    expect(drawerTitle).toMatch(/^\S.* · \S+/);
+    expect(drawerTitle).toMatch(/^\S.* asks$/);
     expect(card.textContent ?? '').not.toContain(drawerTitle);
     const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
     const question = row?.getAttribute('aria-label')?.split(', ')[0] ?? '';
@@ -146,7 +146,7 @@ describe('the r4 content scenes', () => {
 
     const link = screen.getByRole('button', { name: /^Open the agent: / });
     expect(link.textContent).toBe('Implementer');
-    expect(link.closest('h2')?.textContent).toMatch(/^Implementer · \S+/);
+    expect(link.closest('h2')?.textContent).toBe('Implementer asks');
     await act(async () => {
       fireEvent.click(link);
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
@@ -202,7 +202,7 @@ describe('the r4 content scenes', () => {
 
     expect(screen.queryByRole('button', { name: /^Open the agent: / })).toBeNull();
     const drawerTitle = document.querySelector('[data-container="drawer"] h2')?.textContent ?? '';
-    expect(drawerTitle).toMatch(/^Implementer · \S+/);
+    expect(drawerTitle).toBe('Implementer asks');
     const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
     if (row === null) {
       throw new Error('no open row');

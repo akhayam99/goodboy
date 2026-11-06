@@ -47,7 +47,7 @@ export const AgentTranscriptDrawer = ({
     return (
       s.currentSessionId === sessionId &&
       s.selectedAgentId[sessionId] === agentId &&
-      (lens === 'agents' || lens === 'auto' || lens === 'workflows')
+      lens === 'workflows'
     );
   });
   const turn = useAppStore((s) => {

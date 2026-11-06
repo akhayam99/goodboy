@@ -202,11 +202,11 @@ One drawer at a time, per window. The `drawer` store slice holds
 (pressing the trigger again closes it). **The open drawer is part of the
 history entry's focus.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
-Escape and its X close it in place. The one exception is the `ask` drawer: a
-forward move that stays in its session keeps it open (`keepAskDrawer` in
-`navigate`), so a chip in an answer changes the page beside it; leaving the
-session closes it, and Back brings it back like any drawer. Another drawer
-opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
+Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
+Scripts, Agents, Terminal): a forward move that stays in its session keeps it open
+(`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
+it; leaving the session closes it, and Back brings it back like any drawer. A
+reader, an item or a form never stays. Another drawer opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
@@ -335,8 +335,8 @@ it centres on the first line of text even when the line wraps; once a thread has
 turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
 targets a page navigates (the drawer stays, see above), except a question: it
-opens the Questions page and the question in the drawer under **Back to Ask**
-(`question` drawer, `from: 'ask'`); a chip that targets a
+opens the question on its address (`openQuestion`), the drawer under **Back to Ask**
+(`question` drawer, `from: 'ask'`; Back goes through the history); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,
 and Escape goes back before it closes. Buttons come only from verbs the action
 registry offers right now (`askVerb`, `useAskActions`): **Answer: {the question}**

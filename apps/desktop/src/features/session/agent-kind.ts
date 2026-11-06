@@ -34,7 +34,7 @@ import type {
 
 export type AgentKind = AgentKindLabel;
 
-export type AgentHomeLens = 'agents' | 'auto' | 'review' | 'workflows';
+export type AgentHomeLens = 'review' | 'workflows';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
@@ -70,13 +70,7 @@ export const agentHomeLens = ({ agent, kind }: AgentHomeLensParams): AgentHomeLe
   if (agent.workflowRunId != null && agent.stepId != null) {
     return 'workflows';
   }
-  if (kind === 'resolver') {
-    return 'review';
-  }
-  if (kind === 'auto') {
-    return 'auto';
-  }
-  return 'agents';
+  return kind === 'resolver' ? 'review' : 'workflows';
 };
 
 type PageKindParams = {

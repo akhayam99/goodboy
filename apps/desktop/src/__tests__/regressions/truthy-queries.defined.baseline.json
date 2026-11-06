@@ -347,7 +347,6 @@
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/ResetCreditRow/index.test.tsx": 8,
   "apps/desktop/src/features/providers/policyOneHome.test.tsx": 3,
   "apps/desktop/src/features/reports/components/ReportStudio/index.test.tsx": 1,
-  "apps/desktop/src/features/resolve/components/FixCommentsButton.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.test.tsx": 3,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/triage.test.tsx": 9,
   "apps/desktop/src/features/resolve/components/FixRunSummary/FixRunLead.test.tsx": 2,

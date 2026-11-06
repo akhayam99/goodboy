@@ -219,7 +219,6 @@
     "apps/desktop/src/store/slices/workflows/retryStepSummary.test.ts": 6,
     "apps/desktop/src/store/slices/workflows/scoutTree.fanout.test.ts": 7,
     "apps/desktop/src/store/slices/workflows/skipStuckStepAndAdvance.test.ts": 4,
-    "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": 3,
     "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": 2,
     "apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.test.ts": 2,
     "apps/desktop/src/store/slices/workspaces/checkReconnectCandidate.test.ts": 1,
@@ -521,7 +520,6 @@
     "apps/desktop/src/store/slices/workflows/renameWorkflowRun.test.ts": 1,
     "apps/desktop/src/store/slices/workflows/reprocessGoalForWorkflow.test.ts": 1,
     "apps/desktop/src/store/slices/workflows/scoutTree.fanout.test.ts": 2,
-    "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": 1,
     "apps/desktop/src/store/slices/workspaces/checkReconnectCandidate.test.ts": 3,
     "apps/desktop/src/store/slices/workspaces/reconnectMovedProject.test.ts": 1,
     "apps/desktop/src/test/storyHarness/spies.ts": 1

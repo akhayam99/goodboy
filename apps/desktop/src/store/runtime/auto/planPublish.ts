@@ -118,7 +118,7 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
       wanted,
       branch,
       sha,
-      message: 'the online copy was not read when the agent started, so a force push is not safe',
+      message: 'origin was not read when the agent started, so a force push is not safe',
       isRetryable: false,
       tries,
     });
@@ -164,7 +164,7 @@ export const planPublish = async (params: PlanPublishParams): Promise<ResultPubl
       wanted,
       branch,
       sha,
-      message: `a backup of the online copy could not be kept (${formatError(error)}), so nothing was pushed. Fetch the branch and try again`,
+      message: `a backup of the branch on origin could not be kept (${formatError(error)}), so nothing was pushed. Fetch the branch and try again`,
       isRetryable: true,
       tries,
     });

@@ -57,33 +57,44 @@ const panelMode = (): string | null =>
 const panel = (): HTMLElement => screen.getByRole('region', { name: 'Agents' });
 
 describe('the Agents panel', () => {
-  it('follows the open run, lists every launch on All runs, and follows the run picked there', async () => {
+  it('follows the open run, and All runs goes to the Runs page with the tool still open', async () => {
     await mount('c08-run-working');
 
     expect(panelMode()).toBe('run');
     expect(within(panel()).getByText('Fix flaky tests in the ledger export')).toBeDefined();
 
     fireEvent.click(within(panel()).getByRole('button', { name: 'All runs' }));
-    expect(panelMode()).toBe('all');
+    await settle();
+
+    const state = useAppStore.getState();
+    expect(state.activeLens[C08_SESSION_ID]).toBe('workflows');
+    expect(state.focusedWorkflowRunId[C08_SESSION_ID]).toBeNull();
+    expect(state.drawer?.kind).toBe('spawned');
+    expect(panelMode()).toBe('live');
+  });
+
+  it('shows only what is live when no run is open, and a row opens its page without a tool change', async () => {
+    await mount('c08-run-working');
+    fireEvent.click(within(panel()).getByRole('button', { name: 'All runs' }));
+    await settle();
+
     const launches = within(panel()).getByRole('tree', { name: 'Launches' });
     const heads = within(launches)
       .getAllByRole('treeitem')
       .filter((item) => item.getAttribute('aria-level') === '1');
-    expect(heads.length).toBeGreaterThan(1);
-    const other = heads.find((item) =>
-      (item.getAttribute('aria-label') ?? '').startsWith('Document the payments-api retry cap'),
-    );
-    if (other === undefined) {
-      throw new Error('no second run in the launches');
-    }
+    expect(heads.length).toBeGreaterThan(0);
+    const labels = heads.map((item) => item.getAttribute('aria-label') ?? '');
+    expect(labels.some((label) => label.includes('Done'))).toBe(false);
 
-    fireEvent.click(other);
+    const first = heads[0];
+    if (first === undefined) {
+      throw new Error('no live launch');
+    }
+    fireEvent.click(first);
     await settle();
 
     expect(useAppStore.getState().drawer?.kind).toBe('spawned');
     expect(panelMode()).toBe('run');
-    expect(within(panel()).getByText('Document the payments-api retry cap')).toBeDefined();
-    expect(useAppStore.getState().focusedWorkflowRunId[C08_SESSION_ID]).not.toBeNull();
   });
 
   it('opens a step in the center and keeps the run tree open beside it', async () => {

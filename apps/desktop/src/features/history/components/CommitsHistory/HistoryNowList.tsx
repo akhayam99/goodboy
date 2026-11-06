@@ -6,14 +6,12 @@ import { historyDaysOf } from '../../historyDaysOf';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
 import type { HistoryDropTarget } from '../../hooks/useHistoryDrag';
 import type { RowPositions } from '../../hooks/useRowPositions';
-import { HistoryBaseRow, type RebaseRequest } from './HistoryBaseRow';
+import { HistoryBaseRow } from './HistoryBaseRow';
 import { HistoryLaneSvg, type LaneNode } from './HistoryLaneSvg';
 import type { HistoryRowView } from './historyRowLine';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly repoPath: string;
-  readonly ownBranch: string;
   readonly view: HistoryRowView;
   readonly rows: ReadonlyArray<BranchCommit>;
   readonly listRef: RefObject<HTMLDivElement | null>;
@@ -22,17 +20,13 @@ type Props = {
   readonly graph: HistoryGraph | null;
   readonly baseSha: string;
   readonly baseBranch: string;
-  readonly isInteractive: boolean;
   readonly dropTarget: HistoryDropTarget | null;
   readonly nowMs: number;
   readonly renderRow: (commit: BranchCommit) => ReactNode;
-  readonly onRebase: (params: RebaseRequest) => void;
 };
 
 export const HistoryNowList = ({
   sessionId,
-  repoPath,
-  ownBranch,
   view,
   rows,
   listRef,
@@ -41,11 +35,9 @@ export const HistoryNowList = ({
   graph,
   baseSha,
   baseBranch,
-  isInteractive,
   dropTarget,
   nowMs,
   renderRow,
-  onRebase,
 }: Props) => {
   const forkAge =
     graph === null
@@ -82,11 +74,7 @@ export const HistoryNowList = ({
             baseBranch={baseBranch}
             baseSha={baseSha}
             forkAge={forkAge}
-            repoPath={repoPath}
-            ownBranch={ownBranch}
-            isInteractive={isInteractive && view === 'now'}
             isDone={view === 'done'}
-            onRebase={onRebase}
           />
         </span>
       </div>

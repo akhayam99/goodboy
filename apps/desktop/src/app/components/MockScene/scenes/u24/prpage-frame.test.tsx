@@ -111,7 +111,7 @@ describe('the u24 prpage frame scenes', () => {
     await settle();
 
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
-    expect(chip().textContent).toBe('Draft');
+    expect(chip().getAttribute('aria-label')).toBe('Draft');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: /Mark ready for review/ })).toBeDefined();
   });
@@ -142,6 +142,8 @@ describe('the u24 prpage frame scenes', () => {
     await settle();
 
     expect(chip().getAttribute('data-tone')).toBe('merged');
-    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
+    const primaries = document.querySelectorAll('[data-branch-primary]');
+    expect(primaries).toHaveLength(1);
+    expect(primaries[0]?.textContent).toMatch(/^(Remove worktree|Archive session)$/);
   });
 });

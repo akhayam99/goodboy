@@ -4,7 +4,7 @@ import { openUrl } from '../../shared/lib/editor';
 import { openPlanAnywhere } from '../plans/openPlanAnywhere';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import { isNoteOnBranch, isUnassignedNote } from '../resolve/notes/noteThread';
-import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
+import { openQuestion } from '../session/openQuestion';
 import { searchHitTarget, type SearchHitTarget } from './searchHitTarget';
 import { dispatchWindowEvent } from '../../shared/lib/dispatchWindowEvent';
 
@@ -93,8 +93,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       });
       return true;
     case 'question':
-      useOpenQuestions.getState().focusQuestion(target.questionId);
-      store.navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
+      openQuestion({ state: store, sessionId, questionId: target.questionId });
       return true;
     case 'linked-issue':
       store.openExternalTaskLens(sessionId, target.task);

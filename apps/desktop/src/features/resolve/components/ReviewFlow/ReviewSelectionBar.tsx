@@ -49,7 +49,7 @@ export const ReviewSelectionBar = ({
           {
             id: 'accept',
             label: acceptCountLabel({ count: acceptCount }),
-            tone: 'primary' as const,
+            tone: fixCount === 0 ? ('primary' as const) : ('neutral' as const),
             isBusy: isAccepting,
             onRun: onAccept,
           },

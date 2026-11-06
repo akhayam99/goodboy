@@ -49,6 +49,7 @@ export type PullRequestPageProps = {
   readonly onMutated: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
+  readonly onMerge: () => void;
 };
 
 const ACTIVITY_LOADING = 'Reading the activity';
@@ -71,6 +72,7 @@ export const PullRequestPage = ({
   onMutated,
   onReload,
   onSelectTab,
+  onMerge,
 }: PullRequestPageProps) => {
   const sessionId = session.id;
   const port = usePullRequestPort({ sessionId, mountId });
@@ -109,7 +111,10 @@ export const PullRequestPage = ({
 
   return (
     <div data-slot="overview-grid" className="@container flex min-w-0 flex-col gap-6">
-      <PullRequestStatusStrip cells={cells} onOpen={onSelectTab} />
+      <PullRequestStatusStrip
+        cells={cells}
+        onOpen={(target) => (target === 'merge' ? onMerge() : onSelectTab(target))}
+      />
       <OpenThreadsLink
         unresolved={facts.commentsUnresolved}
         unreadCount={commentsUnread}

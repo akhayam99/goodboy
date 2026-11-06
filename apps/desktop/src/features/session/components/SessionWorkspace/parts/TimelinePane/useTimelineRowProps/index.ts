@@ -10,7 +10,6 @@ import {
 import { useSessionRoleModels } from '../../../../../../../shared/hooks/useSessionRoleModels';
 import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAction';
 import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
-import { useOpenQuestions } from '../../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useOpenAgentQuestion } from '../../../../../../context/hooks/useOpenAgentQuestion';
 import type {
   TimelineRowItem,
@@ -68,7 +67,6 @@ export const useTimelineRowProps = ({
   const openMountDiff = useAppStore((s) => s.openMountDiff);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const openContextDrawer = useAppStore((s) => s.openContextDrawer);
-  const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -160,20 +158,15 @@ export const useTimelineRowProps = ({
 
   const answerAction = ({
     question,
-    isAskerOffScreen,
   }: {
     readonly question: OpenQuestion | null;
-    readonly isAskerOffScreen: boolean;
   }): TimelineRowAction => ({
     label: ROW_ACTION_LABEL.answer,
     variant: 'secondary',
     onAct: () => {
-      if (question != null && isAskerOffScreen) {
+      if (question != null) {
         openAgentQuestion({ question });
         return;
-      }
-      if (question != null) {
-        focusQuestion(question.id);
       }
       navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
     },
@@ -263,7 +256,7 @@ export const useTimelineRowProps = ({
         if (isNeedsYouShown && isOwnedByNeedsYou({ item })) {
           return null;
         }
-        return answerAction({ question: ask.question, isAskerOffScreen: entry.kind === 'run' });
+        return answerAction({ question: ask.question });
       case 'restartStep': {
         const target = openTargetFor({ entry });
         if (target == null) {
@@ -359,22 +352,19 @@ export const useTimelineRowProps = ({
         });
         return;
       }
-      if (owner.kind === 'question') {
-        if (owner.question !== null) {
-          focusQuestion(owner.question.id);
-        }
-        navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
-        return;
-      }
       if (owner.question !== null) {
         openAgentQuestion({ question: owner.question });
+        return;
+      }
+      if (owner.kind === 'question') {
+        navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
         return;
       }
       if (owner.item !== null) {
         openTargetFor({ entry: owner.item.entry })?.open();
       }
     },
-    [focusQuestion, navigate, openAgentQuestion, openTargetFor, sessionId],
+    [navigate, openAgentQuestion, openTargetFor, sessionId],
   );
 
   const isGroupExpanded = ({ id }: { readonly id: string }): boolean =>

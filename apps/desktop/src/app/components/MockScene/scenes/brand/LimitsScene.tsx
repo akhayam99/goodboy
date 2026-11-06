@@ -338,7 +338,7 @@ export const BrandLimitsScene = () => {
       siblings: SIBLINGS,
       branches: BRANCHES,
       telemetryAt: at(62),
-      lens: 'agents',
+      lens: 'workflows',
     });
     useAppStore.setState({
       selectedAgentId: { [SESSION_ID]: TEST_ID },

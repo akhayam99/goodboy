@@ -3,7 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PAGE_MEASURE } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import { brandId, type OpenQuestionId, type Session, type SessionId } from '@goodboy/types';
+import { questionPlace } from '../../../../store/slices/navigation/place';
 
 const transcriptRowsMock = vi.hoisted(() => vi.fn());
 const workflowAdvance = vi.hoisted(() => ({ visible: false }));
@@ -407,7 +408,7 @@ describe('ChatView', () => {
     expect(screen.queryByText('q-other-agent')).toBeNull();
   });
 
-  it('opens the agent chat that owns questions outside the selected chat', () => {
+  it('opens a question outside the selected chat on its own address', () => {
     state.selectedAgentId = { 'sess-1': 'agent-1' };
     state.sessionPhaseRuns = {
       'sess-1': [
@@ -428,11 +429,11 @@ describe('ChatView', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 open question from implementer' }));
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-2' },
-    });
-    expect(state.requestOpenQuestionScroll).toHaveBeenCalledWith({
-      agentId: 'agent-2',
-      questionId: 'q-other-agent',
+      to: questionPlace({
+        sessionId: brandId<SessionId>({ value: 'sess-1' }),
+        questionId: brandId<OpenQuestionId>({ value: 'q-other-agent' }),
+      }),
+      mode: 'push',
     });
   });
 

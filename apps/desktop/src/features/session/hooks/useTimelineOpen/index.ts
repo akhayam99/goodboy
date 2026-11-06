@@ -44,7 +44,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   project_materialization_dismissed: null,
   project_detached: null,
   external_task_created: { lens: null, label: 'Open overview' },
-  rebase_requested: { lens: 'agents', label: 'Open agents' },
+  rebase_requested: { lens: 'workflows', label: 'Open runs' },
   session_archived: null,
   session_restored: null,
   write_destination_changed: { lens: 'files', label: 'Open files' },

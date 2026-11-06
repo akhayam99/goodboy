@@ -479,11 +479,12 @@ export const renameSession = async (
   goal: string,
   updatedAt: IsoDateTime,
   titleUserEdited = true,
-): Promise<void> => {
-  await db.execute(
-    'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ?',
-    [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id],
+): Promise<boolean> => {
+  const { rowsAffected } = await db.execute(
+    'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ? AND (? = 1 OR title_user_edited = 0)',
+    [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id, titleUserEdited ? 1 : 0],
   );
+  return rowsAffected > 0;
 };
 
 export const deleteSession = async (db: Database, id: SessionId): Promise<void> => {

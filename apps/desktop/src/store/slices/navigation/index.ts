@@ -1,5 +1,6 @@
 import { amendFocus } from './amendFocus';
 import { back } from './back';
+import { closeQuestion } from './closeQuestion';
 import { forward } from './forward';
 import { goToHistory } from './goToHistory';
 import { navigate } from './navigate';
@@ -13,6 +14,7 @@ export const createNavigationSlice = ({ set, get }: SliceDeps) => {
   return {
     navigate: navigate(set, get),
     back: back(set, get),
+    closeQuestion: closeQuestion({ set, get }),
     forward: forward(set, get),
     goToHistory: goToHistory(set, get),
     up: up(set, get),

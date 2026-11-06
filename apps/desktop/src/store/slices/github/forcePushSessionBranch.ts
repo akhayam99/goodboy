@@ -9,7 +9,7 @@ import type { pushSessionBranch } from './pushSessionBranch';
 import type { GetFn } from './types';
 
 const NEVER_PUSHED_MESSAGE =
-  'This branch has no online copy this machine knows of. Push it normally first.';
+  'This branch is not on origin as far as this machine knows. Push it normally first.';
 
 type PushResult = Awaited<ReturnType<typeof pushSessionBranch>>;
 

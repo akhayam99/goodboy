@@ -33,12 +33,12 @@ The Rust files with the most comments lost them in one pass. What a reader would
 
 - The Storage verdict for a worktree folder has two owners on purpose. Rust decides `safe`, `dirty`, `writing`, `operation`, `not-tracked` and `unavailable` (`folder_verdict`); the live terminals are the store's `terminalTabs`, which Rust cannot see, so `storageFolderStatus` turns a `safe` verdict into `terminal-open` when `terminalsInFolder` finds a live shell. Do not recompute the Rust half from `reasons` in TypeScript, and do not add the terminal half to Rust. Every count of safe folders goes through `summarizeStorage` with the same terminal map.
 
-- `navigate` closes the open drawer (only Ask survives, `keepAskDrawer`),
-  because the drawer belongs to the history entry. A row of the Agents panel
-  that opens a page in the center must pass the panel as `drawer`
-  (`openSpawned`), or the panel closes under the click. Do not make the panel
-  survive every navigation: then it would also stay over pages that have
-  nothing to do with the run or Auto it showed.
+- `navigate` closes the open drawer unless it is a tool of the session it
+  stays in (`keepToolDrawer` reads the `tool` rows of `DRAWER_KINDS` that light a
+  pane), because the drawer belongs to the history entry. A reader, an item or a
+  form never survives a move. The Agents tool keeps no revealed agent through a
+  move: it follows the page. A row never opens a tool: the tool is open already
+  or the user did not ask for it.
 
 - The macOS menu bar and the web view share every ⌘ key, and the web view sees
   the key first: a `preventDefault` in a shortcut handler stops the native menu
@@ -151,7 +151,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
   another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
-- The verbs of a stopped rebase (Resolve with Auto, Resolve myself, Keep, Bring them in, Undo rebase, Retry rebase, Fix with agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
+- The verbs of a stopped rebase (Resolve with Auto, Resolve myself, Keep, Bring them in, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
 - There is one push verb, `pushBranch({ sessionId, mountId, mode })` (github slice):
   `plain` pushes the branch, `lease` force pushes with lease, either behind a `confirmed` guard
   (the commits the confirm listed, re-read from origin first) or an `expected` guard (the remote
@@ -907,7 +907,7 @@ Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegat
 - An Auto writer attempt records its online branch sha in `baseline_json.remote` only at launch (`attemptToLaunch`); a new launch path that skips it gets no watch, and `result_json.verified.remote` stays absent, which reads as "not watched", never as "unchanged". A failed read must stay `unknown`.
 - A writer's changed files are the status snapshot diff plus the tree diff between its start head and its end head (`readCommittedFilesOf`). Compare trees, never commit ids: a rewrite to the same tree must list nothing, and a failed diff read must fall back to the status list, not to "no change".
 - An Auto check verdict is never green unless every ticked script exited 0 on a clean tree whose head did not move (`runAutoChecks`): `unknown`, `timed_out`, a dirty tree and a moved head all read `not_checked`. A rerun refused because the head moved or the tree is dirty must leave the old verdict untouched; overwriting it would swap a real result for a statement about newer code. The rerun waits 30 minutes on the Auto bridge (`longTimeoutMs`), not the 30 seconds of Stop and Retry. The scripts run in the main window's Scripts runner and stay in its run list; a new check path must go through `runAutoChecks` so the per worktree queue serializes it.
-- A publish is written in two places that must agree: `result_json.verified.publish` of the settled delegation and the same path in the envelope of its last ended attempt (`publishAct` patches both in one transaction). A plain push is never sent before the attempt settles: it is recorded as `pushing` and sent only after `claimAutoAttemptPublishStatement` proves the tree is still at that generation, not stopping and owned by this window, and a failure there must stay `completed` with a `failed` record, never fail the delegation. A force push must never reuse a lease read after the agent worked: the lease is the online sha recorded at attempt start; a lost lease is retryable only by reading the online copy again, keeping a new backup and asking for a new confirm. Before any push `executePublish` reads the online sha back, because a result that was pushed but not saved would otherwise be force pushed twice. The backup ref keeps the online sha the force push replaces, made at the settle, not at the confirm.
+- A publish is written in two places that must agree: `result_json.verified.publish` of the settled delegation and the same path in the envelope of its last ended attempt (`publishAct` patches both in one transaction). A plain push is never sent before the attempt settles: it is recorded as `pushing` and sent only after `claimAutoAttemptPublishStatement` proves the tree is still at that generation, not stopping and owned by this window, and a failure there must stay `completed` with a `failed` record, never fail the delegation. A force push must never reuse a lease read after the agent worked: the lease is the online sha recorded at attempt start; a lost lease is retryable only by reading origin again, keeping a new backup and asking for a new confirm. Before any push `executePublish` reads the online sha back, because a result that was pushed but not saved would otherwise be force pushed twice. The backup ref keeps the online sha the force push replaces, made at the settle, not at the confirm.
 
 ## Diff file body height
 
@@ -969,7 +969,7 @@ A write to a searchable table fires the search triggers, and the full text index
 
 ## A push fix outlives its card, and an install never goes through a link
 
-A card that offers **Let an agent fix the push** can be left, remounted or reloaded while the agent works, so the fix and its result cannot live in a component. `branchPushFixes` and `pushFixOutcomes` hold them in the store and `pushFixMemory` writes both through to browser storage, which a reload keeps. A remembered fix whose agent record is gone, deleted or finished is not working any more (`pushFixStateOf`), so a crash never leaves a branch stuck on "An agent is fixing the push". The result is kept for six hours, and a new fix on the branch clears it.
+A card that offers **Fix with an agent** can be left, remounted or reloaded while the agent works, so the fix and its result cannot live in a component. `branchPushFixes` and `pushFixOutcomes` hold them in the store and `pushFixMemory` writes both through to browser storage, which a reload keeps. A remembered fix whose agent record is gone, deleted or finished is not working any more (`pushFixStateOf`), so a crash never leaves a branch stuck on "An agent is fixing the push". The result is kept for six hours, and a new fix on the branch clears it.
 
 `worktree_deps_unlink` removes a symlinked install folder (`node_modules`, `vendor` or a nested one) only when it resolves outside the worktree, and only the link, never what it points to. The install must not run through such a link: a package manager writes through it into the other checkout. Both `worktree_deps_check` and `worktree_deps_unlink` take the repository path with the worktree path and refuse any folder that the repository does not list as one of its worktrees. Anything else in the worktree is left to the package manager, and nothing is deleted without the person pressing **Reinstall dependencies**.
 

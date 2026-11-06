@@ -254,7 +254,7 @@ const session = aSession({
 
 beforeEach(() => {
   store.sessions = [session];
-  store.activeLens = { [SESSION_ID]: 'agents' };
+  store.activeLens = { [SESSION_ID]: 'workflows' };
   store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
   store.sessionWorktrees = {};
   store.sessionBranches = {};
@@ -469,7 +469,7 @@ describe('SessionWorkspace agents lens', () => {
 
 describe('SessionWorkspace pane metadata', () => {
   it('draws no status subtitle under Agents, the rows and the Completed group say it', () => {
-    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = {};
     store.sessionPhaseRuns = {
       [SESSION_ID]: [
@@ -523,14 +523,14 @@ describe('SessionWorkspace page header', () => {
     expect(trailBands()).toBe(0);
     expect((await screen.findByTestId('branch-page')).textContent).toBe('');
 
-    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
     view.rerender(<SessionWorkspace session={session} />);
     expect(trailBands()).toBe(0);
   });
 
   it('shows the loading state while the selected agent has not loaded yet', () => {
-    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: 'agent-not-loaded' };
     store.sessionPhaseRuns = {};
 
@@ -541,7 +541,7 @@ describe('SessionWorkspace page header', () => {
   });
 
   it('names a selected agent the loaded session no longer has', () => {
-    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: 'agent-gone' };
     store.sessionPhaseRuns = { [SESSION_ID]: [] };
 

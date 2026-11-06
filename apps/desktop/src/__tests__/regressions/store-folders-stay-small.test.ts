@@ -12,7 +12,7 @@ const ALLOWED: Readonly<Record<string, number>> = {
   'slices/project-mounts': 70,
   'slices/resolve': 109,
   'slices/turn': 101,
-  'slices/workflows': 101,
+  'slices/workflows': 100,
 };
 
 const isFlatSource = (name: string): boolean => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name);
