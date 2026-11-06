@@ -82,7 +82,7 @@ export const storyDbStubs = () => ({
   insertSession: storySpies.insertSession,
   insertSessionWorktree: storySpies.insertSessionWorktree,
   insertSessionEvent: storySpies.insertSessionEvent,
-  renameSession: vi.fn(async () => undefined),
+  renameSession: vi.fn(async () => true),
   deleteSession: storySpies.deleteSession,
   purgeSessionForDelete: vi.fn(async () => undefined),
   archiveSession: vi.fn(async () => undefined),

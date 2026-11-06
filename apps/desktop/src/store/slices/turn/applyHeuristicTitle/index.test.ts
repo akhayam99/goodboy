@@ -7,7 +7,7 @@ import { applyHeuristicTitle } from './index';
 
 const { invokeMock, renameSessionMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
-  renameSessionMock: vi.fn(async () => undefined),
+  renameSessionMock: vi.fn(async () => true),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
@@ -84,7 +84,7 @@ describe('applyHeuristicTitle', () => {
 
   it('replaces eligible heuristic titles with the generated title', async () => {
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stdout: JSON.stringify({ result: '<title>Implement secure authentication flow</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -132,7 +132,7 @@ describe('applyHeuristicTitle', () => {
         ),
       },
     }));
-    resolveInvoke({ stdout: 'Generated title', stderr: '', exitCode: 0 });
+    resolveInvoke({ stdout: '<title>Generated title</title>', stderr: '', exitCode: 0 });
     await pending;
 
     expect(harness.read().sessions[0]?.goal).toBe('User session title');
@@ -150,9 +150,9 @@ describe('applyHeuristicTitle', () => {
       prompt: 'Implement a secure authentication flow',
     });
 
-    expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+    expect(harness.read().sessions[0]?.goal).toBe('Implement a secure authentication flow');
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe(
-      'implement secure authentication',
+      'Implement a secure authentication flow',
     );
   });
 
@@ -176,7 +176,7 @@ describe('applyHeuristicTitle', () => {
 
   it('null-heuristic prompt: AI title replaces placeholder agent name', async () => {
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Fix login crash' }),
+      stdout: JSON.stringify({ result: '<title>Fix login crash</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -186,7 +186,7 @@ describe('applyHeuristicTitle', () => {
       ...harness,
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
-      prompt: 'fix it',
+      prompt: '`only code`',
     });
 
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('Fix login crash');
@@ -206,7 +206,7 @@ describe('applyHeuristicTitle', () => {
       get,
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
-      prompt: 'fix it',
+      prompt: '`only code`',
     });
 
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('agent 2');
@@ -215,7 +215,7 @@ describe('applyHeuristicTitle', () => {
 
   it('non-founding agent gets AI name but session goal is untouched', async () => {
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Refactor auth module' }),
+      stdout: JSON.stringify({ result: '<title>Refactor auth module</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -277,14 +277,29 @@ describe('applyHeuristicTitle', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('reverts the title when the store skipped the write, a name was chosen elsewhere', async () => {
+    renameSessionMock.mockResolvedValueOnce(false);
+    invokeMock.mockRejectedValue(new Error('offline'));
+    const harness = createHarness();
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Implement a secure authentication flow',
+    });
+
+    expect(harness.read().sessions[0]?.goal).toBe('original goal');
+  });
+
   it('reverts the generated title when persisting it fails, so the ui never lies', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stdout: JSON.stringify({ result: '<title>Implement secure authentication flow</title>' }),
       stderr: '',
       exitCode: 0,
     });
-    renameSessionMock.mockResolvedValueOnce(undefined);
+    renameSessionMock.mockResolvedValueOnce(true);
     renameSessionMock.mockRejectedValueOnce(new Error('db locked'));
     const harness = createHarness();
 
@@ -295,7 +310,7 @@ describe('applyHeuristicTitle', () => {
       prompt: 'Implement a secure authentication flow',
     });
 
-    expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+    expect(harness.read().sessions[0]?.goal).toBe('Implement a secure authentication flow');
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'failed to persist generated session title',
       expect.any(Error),
@@ -331,12 +346,12 @@ describe('applyHeuristicTitle', () => {
   it('keeps a user rename that lands while the generated title write is in flight', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stdout: JSON.stringify({ result: '<title>Implement secure authentication flow</title>' }),
       stderr: '',
       exitCode: 0,
     });
     const harness = createHarness();
-    renameSessionMock.mockResolvedValueOnce(undefined);
+    renameSessionMock.mockResolvedValueOnce(true);
     renameSessionMock.mockImplementationOnce(async () => {
       harness.set((state) => ({
         sessions: state.sessions.map((s) =>
@@ -375,9 +390,9 @@ describe('applyHeuristicTitle', () => {
       await vi.advanceTimersByTimeAsync(15_000);
       await expect(pending).resolves.toBeUndefined();
 
-      expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+      expect(harness.read().sessions[0]?.goal).toBe('Implement a secure authentication flow');
       expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe(
-        'implement secure authentication',
+        'Implement a secure authentication flow',
       );
     } finally {
       vi.useRealTimers();

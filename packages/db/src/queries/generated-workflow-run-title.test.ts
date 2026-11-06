@@ -74,7 +74,7 @@ describe('a generated run title', () => {
     expect(await storedTitleOf({ db })).toBe('Center the patient settings');
   });
 
-  it('falls back to the first line of the ask when the reply is a leaked preamble', async () => {
+  it('falls back to the title derived from the goal when the reply is a leaked preamble', async () => {
     const written = await updateGeneratedWorkflowRunTitle({
       db,
       workflowRunId: RUN,
@@ -106,7 +106,7 @@ describe('a run title read from the database', () => {
     db = await seed();
   });
 
-  it('reads a stored leaked preamble as the first line of the ask', async () => {
+  it('reads a stored leaked preamble as the title derived from the goal', async () => {
     await db.execute('UPDATE session_workflows SET title = ? WHERE workflow_run_id = ?', [
       'Title: the user asked for a',
       RUN,
