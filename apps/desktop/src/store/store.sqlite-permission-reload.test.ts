@@ -22,11 +22,14 @@ import {
   importStore,
   openStorySqlite,
   resetStoryStore,
+  storySpies,
   storySqlite,
   stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
 import { writeReloadIntent } from '../features/workspace/windowView';
+import { stageInfosOf } from './slices/session-view/stageInfosOf';
+import { cancelledRunIds } from './slices/sessions/sessionMutators';
 import { flushTurnEvents } from './slices/transcripts/buffer';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -61,12 +64,23 @@ vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoM
 vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
 const HARBORLINE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+const NORTHWIND_ID = brandId<WorkspaceId>({ value: 'workspace-northwind' });
 const LEDGER_ID = brandId<SessionId>({ value: 'session-ledger' });
 const AGENT_ID = brandId<AgentId>({ value: 'agent-ledger' });
 const RUN_ID = brandId<ProviderRunId>({ value: 'run-ledger-ask' });
 const TOOL_USE_ID = 'tool-ledger-migrate';
 
 let useAppStore: StoryStore;
+
+const prepareReload = (): void => {
+  stubStoryInvoke({ turn_list_live: () => [] });
+  writeReloadIntent({
+    mode: 'restore',
+    workspaceId: HARBORLINE_ID,
+    sessionId: LEDGER_ID,
+    agentId: AGENT_ID,
+  });
+};
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -79,6 +93,10 @@ beforeEach(async () => {
   await insertWorkspace({
     db,
     workspace: buildStoryWorkspace({ id: HARBORLINE_ID, name: 'Harborline', slug: 'harborline' }),
+  });
+  await insertWorkspace({
+    db,
+    workspace: buildStoryWorkspace({ id: NORTHWIND_ID, name: 'Northwind', slug: 'northwind' }),
   });
   await insertSession(
     db,
@@ -105,19 +123,23 @@ beforeEach(async () => {
       at: STORY_NOW,
     },
   });
-  stubStoryInvoke({ turn_list_live: () => [] });
-  writeReloadIntent({
-    mode: 'restore',
-    workspaceId: HARBORLINE_ID,
-    sessionId: LEDGER_ID,
-    agentId: AGENT_ID,
-  });
+  prepareReload();
 });
 
 const savedStatus = async (): Promise<string | undefined> =>
   (await listAgentsForSessions(storySqlite(), [LEDGER_ID]))
     .get(LEDGER_ID)
     ?.find((agent) => agent.id === AGENT_ID)?.status;
+
+const expectStillWaiting = async (): Promise<void> => {
+  expect(await savedStatus()).toBe('running');
+  const state = useAppStore.getState();
+  expect(state.sessionPhaseRuns[LEDGER_ID]?.find((run) => run.id === AGENT_ID)?.status).toBe(
+    'running',
+  );
+  expect(state.agentTurnState[AGENT_ID]).toMatchObject({ kind: 'blocked', runId: RUN_ID });
+  expect(stageInfosOf({ state })[LEDGER_ID]?.stage).toBe('attention');
+};
 
 describe('store on sqlite: a waiting permission across a reload', () => {
   it('still needs you after the reload, and the card answers it', async () => {
@@ -139,6 +161,45 @@ describe('store on sqlite: a waiting permission across a reload', () => {
         expect.objectContaining({ kind: 'permission_request', toolUseId: TOOL_USE_ID }),
       );
     });
+
+    await useAppStore.getState().resolvePermissionRequest({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      toolUseId: TOOL_USE_ID,
+      toolName: 'Bash',
+      runId: RUN_ID,
+      scope: 'once',
+    });
+    flushTurnEvents();
+
+    await vi.waitFor(async () => {
+      expect(
+        await findUndecidedPermissionAsk({ db: storySqlite(), agentId: AGENT_ID, runId: RUN_ID }),
+      ).toBeNull();
+    });
+  });
+
+  it('survives leaving the workspace, the return and a reload, and the card still answers', async () => {
+    await useAppStore.getState().hydrate();
+    await expectStillWaiting();
+
+    await useAppStore.getState().setCurrentWorkspace(NORTHWIND_ID);
+    expect(useAppStore.getState().currentWorkspaceId).toBe(NORTHWIND_ID);
+    expect(storySpies.cancelTurn).not.toHaveBeenCalled();
+    expect(cancelledRunIds.has(RUN_ID)).toBe(false);
+    expect(await savedStatus()).toBe('running');
+
+    await useAppStore.getState().setCurrentWorkspace(HARBORLINE_ID);
+    expect(useAppStore.getState().currentWorkspaceId).toBe(HARBORLINE_ID);
+    expect(useAppStore.getState().boardReady).toBe(true);
+    await expectStillWaiting();
+
+    await resetStoryStore();
+    prepareReload();
+    await useAppStore.getState().hydrate();
+    expect(useAppStore.getState().bootPhase).toBe('ready');
+    await expectStillWaiting();
+    expect(storySpies.cancelTurn).not.toHaveBeenCalled();
 
     await useAppStore.getState().resolvePermissionRequest({
       sessionId: LEDGER_ID,

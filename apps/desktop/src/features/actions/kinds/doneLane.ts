@@ -1,6 +1,6 @@
 import type { Session, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { runningAgentCountOf } from '../../../store/runtime/live-work/runningAgentCountOf';
+import { liveAgentsOf } from '../../../store/runtime/live-work/liveAgentsOf';
 import { inactivityInputsOf } from '../../../store/slices/session-view/inactivityInputsOf';
 import { sessionLastActivityMs } from '../../../store/slices/session-view/sessionInactivityOf';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
@@ -108,7 +108,7 @@ export const DONE_LANE_KIND: ObjectKindDefinition<DoneLaneActionTarget, DoneLane
     }
     const runningIn = ({ archive }: RunningParams): number =>
       archive.sessions.reduce(
-        (total, session) => total + runningAgentCountOf({ state, sessionId: session.id }),
+        (total, session) => total + liveAgentsOf({ state, sessionId: session.id }).length,
         0,
       );
     return {

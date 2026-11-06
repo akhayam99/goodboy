@@ -1,22 +1,9 @@
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { selectKindRouting } from '../agents/selectKindRouting';
-import type { SendTurnResult } from '../turn/types';
+import { TurnRefused } from '../turn/refusal/TurnRefused';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { PUSH_FIXER_NAME } from './pushFix/pushFixerName';
 import type { GetFn } from './types';
-
-type RefusalParams = {
-  readonly result: SendTurnResult;
-};
-
-const refusalOf = ({ result }: RefusalParams): string | null => {
-  if (result.blockedOverBudget) {
-    return 'The session budget is reached. Raise it to start the fix';
-  }
-  if (result.isWriterLeaseDenied === true) {
-    return 'Another agent is writing in this folder. Try again in a moment';
-  }
-  return null;
-};
 
 type BindParams = { readonly agentId: AgentId };
 
@@ -80,7 +67,7 @@ export const spawnPushFixer = async ({
     })
     .then(
       async (result) => {
-        const refusal = refusalOf({ result });
+        const refusal = turnRefusalOf({ result });
         if (refusal === null) {
           if (result.isLaneQueued === true) {
             onAccepted?.();
@@ -90,7 +77,7 @@ export const spawnPushFixer = async ({
         await dropFix();
         void get().reportError({
           title: "The agent didn't start",
-          error: new Error(refusal),
+          error: new TurnRefused({ refusal }),
           sessionId,
         });
       },

@@ -4,7 +4,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
-import { runningAgentCountOf } from '../../../store/runtime/live-work/runningAgentCountOf';
+import { liveAgentsOf } from '../../../store/runtime/live-work/liveAgentsOf';
 import { unreadTargetOf } from '../../../store/slices/agents/unreadTargetOf';
 import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasUnread';
 import type { ObjectKindDefinition, SessionsActionTarget } from '../types';
@@ -62,7 +62,7 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
       active,
       archived: sessions.filter((session) => session.archivedAt != null),
       runningAgentCount: active.reduce(
-        (count, session) => count + runningAgentCountOf({ state, sessionId: session.id }),
+        (count, session) => count + liveAgentsOf({ state, sessionId: session.id }).length,
         0,
       ),
       unread: active.filter((session) => sessionHasUnread({ state, sessionId: session.id })),

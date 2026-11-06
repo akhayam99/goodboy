@@ -271,8 +271,10 @@ describe('agent queue', () => {
     const sending = slice.sendQueuedNow({ sessionId: SESSION_ID, agentId: AGENT_ID, itemId: 'a' });
     await Promise.resolve();
 
-    await slice.removeQueuedMessage({ agentId: AGENT_ID, itemId: 'a' });
-    expect(slice.takeQueuedMessage({ agentId: AGENT_ID, itemId: 'a' })).toBeNull();
+    await slice.removeQueuedMessage({ sessionId: SESSION_ID, agentId: AGENT_ID, itemId: 'a' });
+    expect(
+      slice.takeQueuedMessage({ sessionId: SESSION_ID, agentId: AGENT_ID, itemId: 'a' }),
+    ).toBeNull();
     expect(queue().map((item) => item.id)).toEqual(['a']);
 
     markTurnSettled({ agentId: AGENT_ID });

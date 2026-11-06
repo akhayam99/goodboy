@@ -74,6 +74,61 @@ afterEach(() => {
 });
 
 describe('runTurn', () => {
+  it('says the process spawned only after turn_spawn resolved', async () => {
+    const runId = brandId<ProviderRunId>({ value: 'spawned-run' });
+    const order: Array<string> = [];
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        order.push('spawn');
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 0, stderr: '' });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn(
+      {
+        runId,
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        workingDir: '/tmp/worktree',
+        writableRoots: [],
+        prompt: 'hello',
+      },
+      undefined,
+      { onSpawned: () => order.push('spawned') },
+    )[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toThrow('provider exited without a response');
+    expect(order).toEqual(['spawn', 'spawned']);
+  });
+
+  it('never says the process spawned when turn_spawn fails', async () => {
+    const runId = brandId<ProviderRunId>({ value: 'unspawned-run' });
+    const onSpawned = vi.fn();
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        throw new Error('claude: command not found');
+      }
+      return runId;
+    });
+
+    const iterator = runTurn(
+      {
+        runId,
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-6',
+        workingDir: '/tmp/worktree',
+        writableRoots: [],
+        prompt: 'hello',
+      },
+      undefined,
+      { onSpawned },
+    )[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toThrow('claude: command not found');
+    expect(onSpawned).not.toHaveBeenCalled();
+  });
+
   it('surfaces an error when a provider exits successfully without events', async () => {
     const runId = 'mute-provider-run' as ProviderRunId;
     invokeMock.mockImplementation(async (command: string) => {

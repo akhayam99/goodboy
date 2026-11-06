@@ -9,28 +9,28 @@ type CountParams = {
   readonly count: number;
 };
 
-const sessionsWord = ({ count }: CountParams): string =>
-  count === 1 ? 'session' : `${count} sessions`;
+const agentsWord = ({ count }: CountParams): string =>
+  count === 1 ? '1 agent' : `${count} agents`;
 
 const keptOf = ({ count }: CountParams): string =>
   `Branches, worktrees and history stay on disk, and Restore brings ${count === 1 ? 'it' : 'them'} back.`;
 
-const runningOf = ({ sessionCount, runningAgentCount }: Params): string => {
-  const agents = runningAgentCount === 1 ? 'agent is' : 'agents are';
-  const keeps = runningAgentCount === 1 ? 'keeps' : 'keep';
-  const place = sessionCount === 1 ? 'this session' : 'these sessions';
-  const after = sessionCount === 1 ? 'it' : 'them';
-  return `${runningAgentCount} ${agents} still running in ${place} and ${keeps} running after you archive ${after}.`;
-};
-
-export const archiveConfirmOf = ({ sessionCount, runningAgentCount }: Params): ActionConfirm => {
-  const kept = keptOf({ count: sessionCount });
-  const subject = sessionsWord({ count: sessionCount });
+export const archiveConfirmOf = ({
+  sessionCount,
+  runningAgentCount,
+}: Params): ActionConfirm | null => {
+  if (runningAgentCount === 0) {
+    return null;
+  }
+  const agents = agentsWord({ count: runningAgentCount });
+  const isOne = runningAgentCount === 1;
+  const stops = isOne
+    ? 'Archive stops it first and keeps what it wrote.'
+    : 'Archive stops them first and keeps what they wrote.';
   return {
-    title: `Archive ${subject}?`,
-    description:
-      runningAgentCount === 0 ? kept : `${runningOf({ sessionCount, runningAgentCount })} ${kept}`,
-    confirmLabel: `Archive ${subject}`,
+    title: `Stop ${agents} and archive?`,
+    description: `${stops} ${keptOf({ count: sessionCount })}`,
+    confirmLabel: `Stop ${agents} and archive`,
     role: 'alert',
   };
 };

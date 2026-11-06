@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -15,8 +17,10 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { queueOnlyInvoke } from '../../../../test/queueOnlyInvoke';
 import { P21DrawerComposerScene } from '../../../../app/components/MockScene/scenes/u26/P21DrawerComposerScene';
 import {
   AUTO_ROOT_ID,
@@ -39,6 +43,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command?: unknown, args?: unknown) =>
+    queueOnlyInvoke({ command, args }),
+  );
 });
 
 afterEach(() => {
@@ -73,7 +80,7 @@ type SpiesParams = {
 
 const spyOnActions = ({ sendTurn }: SpiesParams = {}) => {
   const sent = vi.fn<AppState['sendTurn']>(sendTurn ?? (async () => IDLE_RESULT));
-  const queued = vi.fn<AppState['enqueueAgentMessage']>(async () => undefined);
+  const queued = vi.fn<AppState['enqueueAgentMessage']>(store.getState().enqueueAgentMessage);
   const now = vi.fn<AppState['sendAgentMessageNow']>(async () => undefined);
   store.setState({ sendTurn: sent, enqueueAgentMessage: queued, sendAgentMessageNow: now });
   return { sent, queued, now };
@@ -193,6 +200,20 @@ describe('the child drawer composer names its agent', () => {
       turn: expect.objectContaining({ agentId: IMPLEMENTER_ID, content: DRAFT }),
     });
     expect(queued).not.toHaveBeenCalled();
+  });
+
+  it('keeps the text in the box and says so when the message could not be saved', async () => {
+    const failure = "The message couldn't be saved, so it was not sent.";
+    store.setState({
+      sendAgentMessage: async () => ({ isDelivered: false, failure, isUnwritten: true }),
+    });
+    await mountScene();
+    setChildTurn({ isRunning: false });
+
+    await userEvent.click(await enabledSend());
+
+    await screen.findByText(failure, undefined, WAIT);
+    expect((await drawerBox()).value).toBe(DRAFT);
   });
 
   it('drops the late failure of a closed drawer instead of showing it in another one', async () => {

@@ -5,14 +5,16 @@ import type { AgentQueuedTurn, AgentQueuedTurnInput, GetFn, SetFn } from './type
 type Params = Readonly<{
   turn: AgentQueuedTurnInput;
   placement?: 'last' | 'first';
+  isDirect?: boolean;
 }>;
 
 export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
-  return async ({ turn, placement = 'last' }: Params): Promise<void> => {
+  return async ({ turn, placement = 'last', isDirect = false }: Params): Promise<boolean> => {
     const queued: AgentQueuedTurn = {
       ...turn,
-      status: 'queued',
+      status: isDirect ? 'sending' : 'queued',
       createdAt: new Date().toISOString() as IsoDateTime,
+      ...(isDirect && { isDirect: true }),
     };
     const current = readAgentQueue({ get, agentId: turn.agentId });
     const sending = current.filter((item) => item.status === 'sending');
@@ -22,6 +24,6 @@ export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
       agentId: turn.agentId,
       queue: placement === 'first' ? [...sending, queued, ...waiting] : [...current, queued],
     });
-    await persistAgentQueue({ get, agentId: turn.agentId });
+    return persistAgentQueue({ get, agentId: turn.agentId });
   };
 };

@@ -873,8 +873,9 @@ or several answers apply.
   its last one is answered, every staged answer of that agent is saved at
   once. It reaches the asking agent only when that agent has no open question
   left (one handed to a delegate still counts). Then all its answers travel in
-  one turn and are marked delivered. Answered and delivered are two different
-  facts.
+  one turn and are marked delivered once that agent's process runs, one agent
+  at a time, so a reload or a provider error mid turn never offers them again. Answered and delivered are two different facts: an answer saved but
+  never sent reads not delivered with Retry when you open the session.
 
 ## Artifacts
 

@@ -134,9 +134,9 @@ export const SESSION_EVICTION = [
   { key: 'artifactComments', keyedBy: 'session', evictOn: 'archive' },
   { key: 'transcripts', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'messages', keyedBy: 'agent', evictOn: 'archive' },
-  { key: 'agentDraft', keyedBy: 'agent', evictOn: 'archive' },
+  { key: 'agentDraft', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'agentUnseenSince', keyedBy: 'agent', evictOn: 'archive' },
-  { key: 'agentAttachments', keyedBy: 'agent', evictOn: 'archive' },
+  { key: 'agentAttachments', keyedBy: 'agent', evictOn: 'delete' },
   { key: 'outputHandoffs', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'agentQueue', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionExternalTasks', keyedBy: 'session', evictOn: 'delete' },
@@ -380,6 +380,7 @@ export const NON_SESSION_STATE_KEYS = [
   'taskArrivals',
   'taskNewKeys',
   'endedWork',
+  'planStarts',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

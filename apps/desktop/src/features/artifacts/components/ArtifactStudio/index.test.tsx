@@ -6,6 +6,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 const { notify, state, showToast, subscribers } = vi.hoisted(() => {
   const listeners = new Set<() => void>();
   const nothing = (): unknown => null;
+  const noRows = (): ReadonlyArray<unknown> => [];
+  const noRecords = (): ReadonlyArray<Record<string, unknown>> => [];
+  const noEntries = <Value,>(): Record<string, Value> => ({});
+  const plansLens: Record<string, string | null> = { 'sess-1': 'plans' };
   return {
     subscribers: listeners,
     notify: () => {
@@ -19,25 +23,25 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       currentWorkspaceId: null,
       navigation: Object.fromEntries(Array.of<[string, never]>()),
       amendFocus: () => undefined,
-      activeLens: { 'sess-1': 'plans' } as Record<string, string | null>,
-      drawer: null as unknown,
+      activeLens: plansLens,
+      drawer: nothing(),
       appStudio: nothing(),
-      sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
-      phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionPhaseRuns: noEntries<ReadonlyArray<unknown>>(),
+      phaseTemplates: noEntries<ReadonlyArray<unknown>>(),
       autoTreeViews: {},
-      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-      wireframeDrafts: {} as Record<string, unknown>,
-      artifactComments: {} as Record<string, ReadonlyArray<unknown>>,
-      artifactCommentSends: {} as Record<string, true>,
+      sessionArtifacts: noEntries<ReadonlyArray<unknown>>(),
+      wireframeDrafts: noEntries<unknown>(),
+      artifactComments: noEntries<ReadonlyArray<unknown>>(),
+      artifactCommentSends: noEntries<true>(),
       loadArtifactComments: vi.fn(async () => undefined),
       addArtifactComment: vi.fn(async () => null),
       editArtifactComment: vi.fn(async () => true),
       removeArtifactComment: vi.fn(async () => true),
       sendArtifactComments: vi.fn(async () => ({ kind: 'empty' })),
       approveWorkflowRunPlan: vi.fn(async () => undefined),
-      planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
-      agentTurnState: {} as Record<string, { readonly kind: string }>,
-      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+      planConsumptions: noEntries<ReadonlyArray<unknown>>(),
+      agentTurnState: noEntries<{ readonly kind: string }>(),
+      transcripts: noEntries<ReadonlyArray<unknown>>(),
       loadSessionArtifacts: vi.fn(async () => undefined),
       loadConsumptionsForPlan: vi.fn(async () => undefined),
       updatePlanBody: vi.fn(async () => ({ kind: 'saved', revision: 2 })),
@@ -72,17 +76,17 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       loadAgentTranscript: vi.fn(async () => undefined),
       openDrawer: vi.fn(),
       toggleDrawer: vi.fn(),
-      focusedArtifactId: {} as Record<string, string | null>,
+      focusedArtifactId: noEntries<string | null>(),
       setFocusedArtifactId: vi.fn((sessionId: string, artifactId: string | null) => {
         state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: artifactId };
         notify();
       }),
-      artifactFilter: {} as Record<string, string>,
+      artifactFilter: noEntries<string>(),
       setArtifactFilter: vi.fn(),
-      sessions: [] as ReadonlyArray<Record<string, unknown>>,
-      workspaces: [] as ReadonlyArray<Record<string, unknown>>,
-      selectedAgentId: {} as Record<string, string | null>,
-      awaitedArtifactAgentId: {} as Record<string, string | null>,
+      sessions: noRecords(),
+      workspaces: noRecords(),
+      selectedAgentId: noEntries<string | null>(),
+      awaitedArtifactAgentId: noEntries<string | null>(),
       awaitArtifactAgent: vi.fn(
         ({
           sessionId,
@@ -112,12 +116,13 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       setArtifactDraft: vi.fn(),
       stopArtifactGeneration: vi.fn(async () => undefined),
       wireframeScoutVerification: {},
-      plans: [] as ReadonlyArray<unknown>,
+      plans: noRows(),
+      planStarts: noEntries<number>(),
       get sessionPlans(): Record<string, ReadonlyArray<unknown>> {
         return { 'sess-1': this.plans };
       },
-      openQuestions: [] as ReadonlyArray<unknown>,
-      sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
+      openQuestions: noRows(),
+      sessionOpenQuestions: noEntries<ReadonlyArray<unknown>>(),
     },
   };
 });
@@ -143,7 +148,7 @@ vi.mock('../../../../store', async () => {
   };
   return {
     ...(await import('../../../../store/slices/navigation/place')),
-    EMPTY_ARRAY: [] as readonly never[],
+    EMPTY_ARRAY: Array.of<never>(),
     useAppStore,
     useSessionPlans: () => state.plans,
     useIsSessionCollectionLoaded: () => true,
@@ -264,7 +269,9 @@ import { ArtifactStudio } from './index';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
 
-const renderStudio = () => render(<ArtifactStudio sessionId={'sess-1' as never} />);
+const SESSION_ID = brandId<SessionId>({ value: 'sess-1' });
+
+const renderStudio = () => render(<ArtifactStudio sessionId={SESSION_ID} />);
 
 const openRow = (name: RegExp) => fireEvent.click(screen.getByRole('button', { name }));
 
@@ -370,10 +377,10 @@ describe('ArtifactStudio list', () => {
     const { rerender } = renderStudio();
     expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
     state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
-    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    rerender(<ArtifactStudio sessionId={SESSION_ID} />);
     expect(state.navigate).toHaveBeenLastCalledWith({
       to: sessionPlace({
-        sessionId: brandId<SessionId>({ value: 'sess-1' }),
+        sessionId: SESSION_ID,
         lens: 'plans',
         target: { kind: 'artifact', artifactId: brandId<ArtifactId>({ value: 'artifact-report' }) },
       }),
@@ -409,7 +416,7 @@ describe('ArtifactStudio list', () => {
     openRow(/^Plan Backfill the settled batches/);
     expect(state.navigate).toHaveBeenLastCalledWith({
       to: sessionPlace({
-        sessionId: brandId<SessionId>({ value: 'sess-1' }),
+        sessionId: SESSION_ID,
         lens: 'plans',
         target: { kind: 'artifact', artifactId: brandId<ArtifactId>({ value: 'plan-1' }) },
       }),
@@ -499,7 +506,7 @@ describe('ArtifactStudio shell', () => {
     focus('plan-1');
     renderStudio();
     fireEvent.click(screen.getByTestId('artifact-action-edit'));
-    const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
+    const textbox = screen.getByRole<HTMLTextAreaElement>('textbox');
     expect(textbox.value).toBe(
       '# Backfill the settled batches\n\n## Goal\nEvery settled batch matches its invoice.',
     );
@@ -750,7 +757,7 @@ describe('ArtifactStudio generating run', () => {
     const { rerender } = renderStudio();
     openRow(/^Wireframe High fidelity,/);
     state.sessionArtifacts = { 'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }] };
-    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    rerender(<ArtifactStudio sessionId={SESSION_ID} />);
     expect(state.focusedArtifactId['sess-1']).toBe('artifact-wireframe');
   });
 });

@@ -3,22 +3,14 @@ import { cancelQuestionDelegates } from './cancelQuestionDelegates';
 import { settleDismissedQuestion } from './dismissOpenQuestion';
 import { isReportedError } from '../notifications/reportedError';
 import type { SendTurnResult } from '../turn/types';
+import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly question: OpenQuestion;
   readonly text: string;
-};
-
-const refusalOf = (result: SendTurnResult): string | null => {
-  if (result.blockedOverBudget) {
-    return 'The session budget is reached. Raise it to send this message.';
-  }
-  if (result.isWriterLeaseDenied === true) {
-    return 'Another agent is writing in this folder. Try again in a moment.';
-  }
-  return null;
 };
 
 export const sendQuestionAsMessage = (set: SetFn, get: GetFn) => {
@@ -37,13 +29,13 @@ export const sendQuestionAsMessage = (set: SetFn, get: GetFn) => {
       }
       return false;
     }
-    const refusal = refusalOf(result);
+    const refusal = turnRefusalOf({ result });
     if (refusal !== null) {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
         title: "The message didn't send",
-        body: refusal,
+        body: turnRefusalMessage({ refusal }),
         sessionId,
         coalesceKey: `question-message-refused:${question.id}`,
       });

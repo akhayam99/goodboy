@@ -20,7 +20,8 @@ import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
-import { claimTurnStart } from './turnStartWindow';
+import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
+import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { hasOwnTurnRun } from './hasOwnTurnRun';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import type { GetFn, SetFn, WithInput, TurnPhaseValue } from './types';
@@ -79,7 +80,31 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       },
     };
   });
+  const providerRun: ProviderRun = {
+    id: runId,
+    sessionId,
+    provider,
+    model: spawnModel,
+    status: { kind: 'streaming', startedAt: now() },
+    routingDecision,
+    createdAt: now(),
+  };
+  const closeCancelled = async () => {
+    releaseUnstartedTurn({ set, get, sessionId, agentId: activeAgentId });
+    await updateProviderRunStatus(tauriDatabase, runId, {
+      kind: 'cancelled',
+      finishedAt: now(),
+    });
+    return turnDone({ result: NOT_BLOCKED });
+  };
+  if (isTurnStartCancelled({ agentId: activeAgentId })) {
+    claimTurnStart({ agentId: activeAgentId });
+    await insertProviderRun(tauriDatabase, providerRun);
+    return closeCancelled();
+  }
+
   if (retry == null) {
+    await ctx.input.onWritingUserText?.();
     const userMessage: Message = {
       id: crypto.randomUUID() as MessageId,
       sessionId,
@@ -106,33 +131,21 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       at: userMessage.createdAt,
     });
   }
-
-  const providerRun: ProviderRun = {
-    id: runId,
-    sessionId,
-    provider,
-    model: spawnModel,
-    status: { kind: 'streaming', startedAt: now() },
-    routingDecision,
-    createdAt: now(),
-  };
   await insertProviderRun(tauriDatabase, providerRun);
-
   if (claimTurnStart({ agentId: activeAgentId }) === 'cancelled') {
-    await updateProviderRunStatus(tauriDatabase, runId, {
-      kind: 'cancelled',
-      finishedAt: now(),
-    });
-    return turnDone({ result: NOT_BLOCKED });
+    return closeCancelled();
   }
 
   let resolvedAgentId: AgentId | null = null;
+  let agentBefore: Agent | null =
+    (get().sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === activeAgentId) ?? null;
   if (phaseDefinition) {
     const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
     const scopedRuns = phaseWorkflowRunId
       ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
       : runsForSession;
     const reusable = findReusableAgent(scopedRuns, phaseDefinition.id);
+    agentBefore = reusable;
     let resolved: Agent | null = null;
     try {
       resolved =
@@ -149,6 +162,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       console.error('resolvePhaseAgent failed', error);
     }
     if (resolved === null) {
+      releaseUnstartedTurn({ set, get, sessionId, agentId: activeAgentId });
       await updateProviderRunStatus(tauriDatabase, runId, {
         kind: 'failed',
         finishedAt: now(),
@@ -194,7 +208,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
   const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
   await updateSessionState(tauriDatabase, sessionId, derived, now());
-  return turnReady({ value: { runId, isFirstTurn, isHandoffTurn, resolvedAgentId } });
+  return turnReady({ value: { runId, isFirstTurn, isHandoffTurn, resolvedAgentId, agentBefore } });
 };
 
 export type StartedTurn = TurnPhaseValue<typeof startTurnRun>;

@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProviderRunId } from '@goodboy/types';
+import { disconnectWorkspaceAndProjects } from '@goodboy/db';
+import { brandId, type ProviderRunId, type TurnState } from '@goodboy/types';
 import { aSession, aWorkflowRun, aWorkspace, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -66,7 +67,7 @@ describe('disconnectWorkspace stops all live work', () => {
     useAppStore.setState({
       workspaces: [workspace],
       currentWorkspaceId: workspace.id,
-      stopWorkflowRunNow: vi.fn(async () => undefined),
+      stopWorkflowRunNow: vi.fn(async () => 'stopped' as const),
       emitNotification: vi.fn(async () => undefined),
     });
   });
@@ -78,9 +79,15 @@ describe('disconnectWorkspace stops all live work', () => {
   const disconnect = () =>
     disconnectWorkspace(useAppStore.setState, useAppStore.getState)(workspace.id);
 
-  it('cancels a blocked turn by its run id and stops a deciding workflow run', async () => {
+  it('stops a blocked turn as stopped by you and stops a deciding workflow run', async () => {
+    storySpies.listLiveRunIds.mockResolvedValueOnce(new Set(['run-blocked']));
     const waiting = aSession({ workspaceId: workspace.id });
     const agent = anAgent({ sessionId: waiting.id });
+    storySpies.invokeAgentUpdateStatus.mockResolvedValue({
+      ...agent,
+      status: 'stopped',
+      stoppedBy: 'you',
+    });
     const run = aWorkflowRun();
     const deciding = aSession({ workspaceId: workspace.id, workflowRuns: [run] });
     useAppStore.setState({
@@ -100,7 +107,62 @@ describe('disconnectWorkspace stops all live work', () => {
     await disconnect();
 
     expect(storySpies.cancelTurn).toHaveBeenCalledWith('run-blocked');
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      agent.id,
+      expect.objectContaining({ status: 'stopped', stoppedBy: 'you' }),
+    );
     expect(stopWorkflowRunNow).toHaveBeenCalledWith(deciding.id, run.id);
+  });
+
+  describe('when an agent does not stop', () => {
+    const live = aSession({ workspaceId: workspace.id });
+    const agent = anAgent({ sessionId: live.id, status: 'running' });
+    const running: TurnState = {
+      kind: 'running',
+      runId: brandId<ProviderRunId>({ value: 'run-stuck' }),
+      startedAt: TEST_NOW,
+    };
+
+    const seedLive = () => {
+      useAppStore.setState({
+        sessions: [live],
+        sessionPhaseRuns: { [live.id]: [agent] },
+        agentTurnState: { [agent.id]: running },
+        cancelTurnConfirmed: vi.fn(async () => ({
+          outcome: 'still_running' as const,
+          exitedAt: null,
+        })),
+      });
+    };
+
+    it('keeps the workspace and its agent state, and tells why', async () => {
+      seedLive();
+
+      await expect(disconnect()).rejects.toThrow('An agent did not stop');
+
+      const state = useAppStore.getState();
+      expect(state.workspaces).toEqual([workspace]);
+      expect(state.currentWorkspaceId).toBe(workspace.id);
+      expect(state.agentTurnState[agent.id]).toEqual(running);
+      expect(state.sessionPhaseRuns[live.id]).toEqual([agent]);
+      expect(disconnectWorkspaceAndProjects).not.toHaveBeenCalled();
+    });
+
+    it('goes through on the next try once the agent stopped', async () => {
+      seedLive();
+      await expect(disconnect()).rejects.toThrow('An agent did not stop');
+      useAppStore.setState({
+        cancelTurnConfirmed: vi.fn(async () => ({
+          outcome: 'exited' as const,
+          exitedAt: TEST_NOW,
+        })),
+      });
+
+      await disconnect();
+
+      expect(disconnectWorkspaceAndProjects).toHaveBeenCalledOnce();
+      expect(useAppStore.getState().workspaces).toEqual([]);
+    });
   });
 
   it('leaves live work alone when the workspace is not the current one', async () => {

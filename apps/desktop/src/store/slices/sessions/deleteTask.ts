@@ -11,11 +11,15 @@ import type {
 import { formatError } from '@goodboy/ui';
 import {
   detachSessionMounts,
+  listAgentsForSessions,
+  listOpenQuestionsForSession,
   listSessionMounts,
   purgeSessionForDelete,
   type MountDetachment,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { storedQuestionDrafts } from '../../../features/context/storedQuestionDrafts';
+import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { cancelTurn } from '../../../features/chat/turn';
 import {
   removeSessionDirectory,
@@ -207,7 +211,15 @@ export const deleteTask = (set: SetFn, get: GetFn) => {
       await purgeSessionFileVersions({ sessionId });
     }
     const sessionWorkspaceId = session.workspaceId;
+    const storedAgentIds = (
+      (await listAgentsForSessions(tauriDatabase, [sessionId])).get(sessionId) ?? []
+    ).map((agent) => agent.id);
+    const storedQuestionIds = (await listOpenQuestionsForSession(tauriDatabase, sessionId)).map(
+      (question) => question.id,
+    );
     await purgeSessionForDelete({ db: tauriDatabase, id: sessionId });
+    storedAgentDraft.forget({ agentIds: storedAgentIds });
+    storedQuestionDrafts.forget({ questionIds: storedQuestionIds });
     void get()
       .loadDormantSpend(sessionWorkspaceId)
       .catch(() => undefined);

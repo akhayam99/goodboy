@@ -92,20 +92,15 @@ describe('the Done lane menu', () => {
     screen.getByRole('menuitem', { name: 'Archive done older than 7 days' });
   });
 
-  it('asks the shared archive confirm for every session, then archives them with Undo', async () => {
+  it('archives every idle session with no confirm, with Undo', async () => {
     await open({ sessions: [FRESH, OLD, OLDER] });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Archive all in Done' }));
       await Promise.resolve();
     });
-    screen.getByText('Archive 3 sessions?');
-    expect(bulkArchiveTask).not.toHaveBeenCalled();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Archive 3 sessions' }));
-      await Promise.resolve();
-    });
 
+    expect(screen.queryByText('Archive 3 sessions?')).toBeNull();
     expect(bulkArchiveTask).toHaveBeenCalledWith([FRESH.id, OLD.id, OLDER.id]);
     screen.getByText('3 sessions archived');
     screen.getByRole('button', { name: 'Undo' });
@@ -116,11 +111,6 @@ describe('the Done lane menu', () => {
 
     await act(async () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Archive done older than 7 days' }));
-      await Promise.resolve();
-    });
-    screen.getByText('Archive 2 sessions?');
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Archive 2 sessions' }));
       await Promise.resolve();
     });
 
@@ -143,11 +133,7 @@ describe('the Done lane menu', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Archive all in Done' }));
       await Promise.resolve();
     });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Archive 2 sessions' }));
-      await Promise.resolve();
-    });
 
-    screen.getByText("Couldn't archive everything. 1 of 2 stay in Done.");
+    await screen.findByText("Couldn't archive everything. 1 of 2 stay in Done.");
   });
 });
