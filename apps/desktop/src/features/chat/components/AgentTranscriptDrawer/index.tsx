@@ -72,6 +72,8 @@ export const AgentTranscriptDrawer = ({
         null) === 'ended',
   );
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
+  const hydrateAgentDraft = useAppStore((s) => s.hydrateAgentDraft);
+  useEffect(() => hydrateAgentDraft({ agentId }), [agentId, hydrateAgentDraft]);
   const sendTurn = useAppStore((s) => s.sendTurn);
   const reportError = useAppStore((s) => s.reportError);
   const [isSending, setIsSending] = useState(false);

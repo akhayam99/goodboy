@@ -112,6 +112,7 @@ const {
     phaseTemplates: Record<string, never>;
     setAgentDraft: (agentId: string, value: string) => void;
     clearAgentDraft: (agentId: string) => void;
+    hydrateAgentDraft: () => void;
     setAgentAttachments: (agentId: string, attachments: ReadonlyArray<never>) => void;
     clearAgentAttachments: (agentId: string) => void;
     enqueueAgentMessage: ReturnType<typeof vi.fn>;
@@ -195,6 +196,7 @@ const {
         delete next[agentId];
         return { agentDraft: next };
       }),
+    hydrateAgentDraft: () => undefined,
     setAgentAttachments: (agentId, attachments) =>
       set((s) => ({ agentAttachments: { ...s.agentAttachments, [agentId]: attachments } })),
     clearAgentAttachments: (agentId) =>

@@ -6,6 +6,7 @@ import type {
   OpenQuestionSelectMode,
   ProviderId,
 } from '@goodboy/types';
+import { storedQuestionDrafts } from './storedQuestionDrafts';
 
 const UNDO_TTL_MS = 5_000;
 
@@ -81,8 +82,17 @@ export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string => {
 export const isDraftReady = (draft: QuestionDraft | undefined): boolean =>
   isDelegatedDraft(draft) || deriveDraftAnswer(draft).length > 0;
 
+type StoredParams = {
+  readonly drafts: Record<string, QuestionDraft>;
+};
+
+const withStored = ({ drafts }: StoredParams): StoredParams => {
+  storedQuestionDrafts.write({ drafts });
+  return { drafts };
+};
+
 export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
-  drafts: {},
+  drafts: { ...storedQuestionDrafts.read() },
   staged: [],
   pendingUndo: null,
   focusedQuestionId: null,
@@ -93,21 +103,21 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
     const alreadySelected = draft.selectedSuggestions.includes(suggestion);
     if (mode === 'one') {
       drafts[questionId] = { ...draft, selectedSuggestions: [suggestion], showCustomField: false };
-      set({ drafts });
+      set(withStored({ drafts }));
       return;
     }
     const next = alreadySelected
       ? draft.selectedSuggestions.filter((s) => s !== suggestion)
       : [...draft.selectedSuggestions, suggestion];
     drafts[questionId] = { ...draft, selectedSuggestions: next };
-    set({ drafts });
+    set(withStored({ drafts }));
   },
 
   setCustomAnswer: (questionId, text) => {
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
     drafts[questionId] = { ...draft, customAnswer: text, showCustomField: true };
-    set({ drafts });
+    set(withStored({ drafts }));
   },
 
   toggleCustomField: (questionId, mode = 'many') => {
@@ -115,23 +125,24 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
     const draft = drafts[questionId] ?? emptyDraft();
     if (mode === 'one') {
       drafts[questionId] = { ...draft, selectedSuggestions: [], showCustomField: true };
-      set({ drafts });
+      set(withStored({ drafts }));
       return;
     }
     drafts[questionId] = { ...draft, showCustomField: !draft.showCustomField };
-    set({ drafts });
+    set(withStored({ drafts }));
   },
 
   setAnswerIntent: (questionId, intent) => {
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
     drafts[questionId] = { ...draft, answerIntent: intent };
-    set({ drafts });
+    set(withStored({ drafts }));
   },
 
   clearDraft: (questionId) => {
     const drafts = { ...get().drafts };
     delete drafts[questionId];
+    storedQuestionDrafts.write({ drafts });
     set((s) => ({ drafts, staged: s.staged.filter((id) => id !== questionId) }));
   },
 
@@ -146,6 +157,7 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   flashAnswered: (ids) => {
     const drafts = { ...get().drafts };
     for (const id of ids) delete drafts[id];
+    storedQuestionDrafts.write({ drafts });
     set((s) => ({
       drafts,
       staged: s.staged.filter((id) => !ids.includes(id)),

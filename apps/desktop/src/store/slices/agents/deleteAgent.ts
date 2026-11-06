@@ -5,6 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
+import { storedAgentDraft } from './storedAgentDraft';
 import { stopAgentForDelete } from './stopAgentForDelete';
 import { stopAutoTreeForDelete } from './stopAutoTreeForDelete';
 import { releaseAgentFiles } from './releaseAgentFiles';
@@ -58,6 +59,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
       });
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     dropPendingTurnEvents({ agentIds: [agentId] });
+    storedAgentDraft.forget({ agentIds: [agentId] });
     set((s) => {
       const cleared = omitDeletedAgents({ state: s, sessionId, agentIds: new Set([agentId]) });
       const survivorStates = refreshed
