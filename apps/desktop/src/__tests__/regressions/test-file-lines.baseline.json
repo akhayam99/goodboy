@@ -9,7 +9,6 @@
   "apps/desktop/src/shared/components/RoutingPicker/index.test.tsx": 1113,
   "apps/desktop/src/store/slices/artifacts/artifactScoutRun.test.ts": 1107,
   "apps/desktop/src/store/slices/history/index.test.ts": 1678,
-  "apps/desktop/src/store/slices/navigation/index.test.ts": 1069,
   "apps/desktop/src/store/slices/resolve/candidateIntegration.test.ts": 1649,
   "apps/desktop/src/store/slices/resolve/drainResolveQueue.test.ts": 1475,
   "apps/desktop/src/store/slices/resolve/index.test.ts": 1650,

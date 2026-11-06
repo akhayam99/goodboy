@@ -517,7 +517,7 @@ describe('ArtifactStudio shell', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(state.up).not.toHaveBeenCalled();
     expect(state.focusedArtifactId['sess-1']).toBe('artifact-report');
-    expect(screen.getByTestId('artifact-shell')).toBeDefined();
+    screen.getByTestId('artifact-shell');
   });
 
   it('opens a wireframe on its flow, with Open in browser as the secondary and the variant under More', () => {

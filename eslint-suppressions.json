@@ -72,7 +72,7 @@
   },
   "apps/desktop/src/__tests__/keyboard/lens-shortcuts.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 18
+      "count": 17
     },
     "@typescript-eslint/naming-convention": {
       "count": 4

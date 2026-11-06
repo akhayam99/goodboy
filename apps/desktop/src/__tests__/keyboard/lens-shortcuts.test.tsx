@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
-import type { SessionId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import { act, cleanup, render } from '@testing-library/react';
 
 const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
@@ -14,6 +14,7 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
     { id: 'session-0', workspaceId: 'workspace-1' },
     { id: 'session-1', workspaceId: 'workspace-1' },
   ];
+  const noFocus = (): Record<string, string | null> => ({});
   return {
     sessionList: { current: sessions },
     sidebarOrder: { current: null as ReadonlyArray<string> | null },
@@ -46,6 +47,8 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       currentSessionId: 'session-1' as string | null,
       activeLens: {} as Record<string, string | null>,
       selectedAgentId: {} as Record<string, string | null>,
+      focusedWorkflowRunId: noFocus(),
+      focusedArtifactId: noFocus(),
       sessionPhaseRuns: {},
       agentKindOverride: {},
       sessionWorktrees: {},
@@ -201,6 +204,8 @@ beforeEach(() => {
   state.currentWorkspaceId = 'workspace-1';
   state.currentSessionId = 'session-1';
   state.activeLens = {};
+  state.focusedWorkflowRunId = {};
+  state.focusedArtifactId = {};
   state.workspaceIntegrations = {};
   state.navigate.mockClear();
   state.back.mockClear();
@@ -280,14 +285,27 @@ describe('App lens shortcuts on darwin', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('toggles back to the overview when the last lens of the chord is already active', () => {
+  it('stays on the Runs list when its chord is pressed there, since the up key is the one that leaves', () => {
     state.activeLens = { 'session-1': 'auto' };
     render(<App />);
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
+    expect(state.navigate).not.toHaveBeenCalled();
+  });
+
+  it('lands on the Runs list when its chord is pressed on a run', () => {
+    state.activeLens = { 'session-1': 'workflows' };
+    state.focusedWorkflowRunId = { 'session-1': 'run-1' };
+    render(<App />);
+
+    press({ code: 'KeyW', key: 'w', metaKey: true, altKey: true });
+
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: null }),
+      to: sessionPlace({
+        sessionId: brandId<SessionId>({ value: 'session-1' }),
+        lens: 'workflows',
+      }),
     });
   });
 

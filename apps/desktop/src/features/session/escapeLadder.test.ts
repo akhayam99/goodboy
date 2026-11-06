@@ -1,13 +1,15 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
-import { anAgent, aSession } from '@goodboy/types/testing';
+import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -16,12 +18,19 @@ import {
 } from '../../store/storyHarness';
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
 import { locationKey } from '../../store/slices/navigation/locationKey';
-import { agentPlace, sessionPlace } from '../../store/slices/navigation/place';
+import { sessionPlace } from '../../store/slices/navigation/place';
 import { escapeLadder } from './escapeLadder';
 
 const WORKSPACE = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
-const AGENT = brandId<AgentId>({ value: 'agent-tester' });
+const RUN_ID = 'run-ledger-core-retries';
+
+const RUNS = sessionPlace({ sessionId: SESSION, lens: 'workflows' });
+const RUN = sessionPlace({
+  sessionId: SESSION,
+  lens: 'workflows',
+  target: { kind: 'run', runId: RUN_ID },
+});
 
 let useAppStore: StoryStore;
 
@@ -33,8 +42,8 @@ beforeEach(async () => {
   await resetStoryStore();
   useAppStore.setState({
     currentWorkspaceId: WORKSPACE,
+    currentSessionId: SESSION,
     sessions: [aSession({ id: SESSION, workspaceId: WORKSPACE })],
-    sessionPhaseRuns: { [SESSION]: [anAgent({ id: AGENT, sessionId: SESSION, name: 'tester' })] },
   });
 });
 
@@ -44,6 +53,8 @@ afterEach(() => {
 
 const keyNow = (): string =>
   locationKey({ place: captureLocation({ state: useAppStore.getState() }).place });
+
+const depthNow = (): number => useAppStore.getState().navigation[WORKSPACE]?.entries.length ?? 0;
 
 type FieldParams = {
   readonly value: string;
@@ -59,22 +70,18 @@ const focusField = ({ value }: FieldParams): HTMLTextAreaElement => {
 
 describe('the Esc ladder', () => {
   it('leaves a field that holds text and keeps the text and the page', () => {
-    useAppStore.getState().navigate({ to: agentPlace({ sessionId: SESSION, agentId: AGENT }) });
-    const before = keyNow();
+    useAppStore.getState().navigate({ to: RUN });
     const field = focusField({ value: 'Check the retry header' });
 
     escapeLadder({});
 
     expect(document.activeElement).not.toBe(field);
     expect(field.value).toBe('Check the retry header');
-    expect(keyNow()).toBe(before);
+    expect(keyNow()).toBe(`s/${SESSION}/workflows/${RUN_ID}`);
   });
 
   it('goes past an empty field to the back row', () => {
-    useAppStore
-      .getState()
-      .navigate({ to: sessionPlace({ sessionId: SESSION, lens: 'workflows' }) });
-    useAppStore.getState().navigate({ to: agentPlace({ sessionId: SESSION, agentId: AGENT }) });
+    useAppStore.getState().navigate({ to: RUN });
     focusField({ value: '' });
 
     escapeLadder({});
@@ -83,9 +90,7 @@ describe('the Esc ladder', () => {
   });
 
   it('closes an open drawer before it moves the page', () => {
-    useAppStore
-      .getState()
-      .navigate({ to: sessionPlace({ sessionId: SESSION, lens: 'workflows' }) });
+    useAppStore.getState().navigate({ to: RUNS });
     useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
 
     escapeLadder({});
@@ -95,9 +100,7 @@ describe('the Esc ladder', () => {
   });
 
   it('does what the back row does on a list page', () => {
-    useAppStore
-      .getState()
-      .navigate({ to: sessionPlace({ sessionId: SESSION, lens: 'workflows' }) });
+    useAppStore.getState().navigate({ to: RUNS });
 
     escapeLadder({});
 
@@ -106,24 +109,23 @@ describe('the Esc ladder', () => {
 
   it('does nothing on the Overview, which has no back row', () => {
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION }) });
-    const depth = useAppStore.getState().navigation[WORKSPACE]?.entries.length ?? 0;
+    const depth = depthNow();
 
     escapeLadder({});
 
     expect(keyNow()).toBe(`s/${SESSION}`);
-    expect(useAppStore.getState().navigation[WORKSPACE]?.entries.length ?? 0).toBe(depth);
+    expect(depthNow()).toBe(depth);
   });
 
   it('comes back with history instead of a new entry when the parent is the page below', () => {
-    useAppStore
-      .getState()
-      .navigate({ to: sessionPlace({ sessionId: SESSION, lens: 'workflows' }) });
-    useAppStore.getState().navigate({ to: agentPlace({ sessionId: SESSION, agentId: AGENT }) });
-    const depth = useAppStore.getState().navigation[WORKSPACE]?.entries.length ?? 0;
+    useAppStore.getState().navigate({ to: RUNS });
+    useAppStore.getState().navigate({ to: RUN });
+    const depth = depthNow();
 
     escapeLadder({});
 
-    expect(useAppStore.getState().navigation[WORKSPACE]?.entries.length ?? 0).toBe(depth);
+    expect(depthNow()).toBe(depth);
     expect(useAppStore.getState().navigation[WORKSPACE]?.index).toBe(depth - 2);
+    expect(keyNow()).toBe(`s/${SESSION}/workflows`);
   });
 });
