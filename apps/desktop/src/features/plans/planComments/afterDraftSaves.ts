@@ -7,7 +7,10 @@ export const afterDraftSaves = ({ run }: Params): void => {
     run();
     return;
   }
-  void Promise.allSettled([...PENDING_DRAFT_SAVES]).then(() => {
+  void Promise.allSettled([...PENDING_DRAFT_SAVES]).then((outcomes) => {
+    if (outcomes.some((outcome) => outcome.status === 'rejected')) {
+      return;
+    }
     window.setTimeout(run, 0);
   });
 };

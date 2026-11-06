@@ -25,13 +25,15 @@ describe('afterDraftSaves', () => {
     await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1));
   });
 
-  it('still runs when the save failed', async () => {
+  it('does not run when the save failed', async () => {
     const run = vi.fn();
     const failed = Promise.reject(new Error('The database is locked'));
     trackDraftSave({ save: failed });
 
     afterDraftSaves({ run });
+    await failed.catch(() => undefined);
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
-    await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1));
+    expect(run).not.toHaveBeenCalled();
   });
 });
