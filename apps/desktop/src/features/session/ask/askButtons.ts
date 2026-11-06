@@ -1,4 +1,5 @@
 import type { AgentId, OpenQuestionId } from '@goodboy/types';
+import { answerLabelOf } from './answerLabelOf';
 import type { AskHandle } from './askHandles';
 import type { ParsedAskAnswer } from './parseAskAnswer';
 
@@ -20,7 +21,11 @@ export type AskButton =
   | { readonly kind: 'review'; readonly key: string; readonly label: string };
 
 export type AskButtonFacts = {
-  readonly openQuestions: ReadonlyArray<{ readonly id: OpenQuestionId; readonly number: number }>;
+  readonly openQuestions: ReadonlyArray<{
+    readonly id: OpenQuestionId;
+    readonly number: number;
+    readonly text: string;
+  }>;
   readonly messageableAgents: ReadonlyArray<{
     readonly id: AgentId;
     readonly name: string;
@@ -54,7 +59,7 @@ export const askButtons = ({ answer, facts }: Params): ReadonlyArray<AskButton> 
     buttons.push({
       kind: 'answer',
       key: `answer:${question.id}`,
-      label: `Answer question ${question.number}`,
+      label: answerLabelOf({ text: question.text, number: question.number }),
       questionId: question.id,
       prefill:
         suggested?.kind === 'question' && suggested.questionId === question.id

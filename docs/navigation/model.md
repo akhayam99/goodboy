@@ -226,7 +226,7 @@ drawer instead of the Terminal page.
      Terminal, Impact, Monitoring, Notifications, Settings), **Create**
      (`create`: New session, New chat, New terminal, New workspace), **App**
      (`action`: Resume setup while setup is unfinished in the main window,
-     Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, Reset chat, the column
+     Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, New question, the column
      fold) and **Help** (`help`: Guide, What's new, Keyboard shortcuts, Report a
      bug). New workspace answers to its former names, Open a folder and Start a
      new project (`formerNamesOf` in `shared/utils/names.ts`). Pair an iPhone and one

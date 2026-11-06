@@ -216,7 +216,7 @@ export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
           placement="inline"
           role="alert"
           title="Couldn't read this folder"
-          body="Goodboy could not list its files."
+          body="Goodboy couldn't list its files."
           detail={rootError}
           actions={
             <Button

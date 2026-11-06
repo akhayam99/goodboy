@@ -521,7 +521,7 @@ placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
 **New session is a draft, not a session.** New, ⌘N (on Chat, Terminal and
-inside Ask the same chord is new chat, new terminal and Reset chat, see
+inside Ask the same chord is new chat, new terminal and New question, see
 [keyboard.md](../keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or

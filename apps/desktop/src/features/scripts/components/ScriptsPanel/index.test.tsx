@@ -815,7 +815,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     rowMenu(group('ledger-core · nw/settlement'), 'test');
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Ask the agent about this' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Send to the agent' }));
 
     expect(state.queueOutputHandoff).toHaveBeenCalledTimes(1);
     const [{ agentId, handoff }] = state.queueOutputHandoff.mock.calls[0] ?? [{}];
@@ -834,7 +834,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     rowMenu(group('ledger-core · nw/settlement'), 'dev');
-    const item = screen.getByRole('menuitem', { name: /Ask the agent about this/ });
+    const item = screen.getByRole('menuitem', { name: /Send to the agent/ });
     expect(item.getAttribute('aria-disabled')).toBe('true');
     expect(item.getAttribute('aria-description')).toContain('No output yet');
     fireEvent.click(item);
@@ -858,7 +858,7 @@ describe('ScriptsPanel', () => {
 
     rowMenu(group('ledger-core · nw/settlement'), 'test');
 
-    expect(screen.queryByRole('menuitem', { name: /Ask the agent about this/ })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Send to the agent/ })).toBeNull();
     screen.getByRole('menuitem', { name: 'Copy command' });
   });
 

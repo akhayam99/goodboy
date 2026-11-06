@@ -101,7 +101,7 @@ describe('Ask turn shares the Chat transcript parts', () => {
   it('offers one Start work from chat action on a finished answer', () => {
     const started: ChatMessageId[] = [];
     mount({ reply: REPLY, onStartWork: (messageId) => started.push(messageId) });
-    const buttons = screen.getAllByRole('button', { name: NAMES.startWorkFromChat });
+    const buttons = screen.getAllByRole('button', { name: NAMES.startWorkFromAsk });
     expect(buttons).toHaveLength(1);
     fireEvent.click(buttons[0]!);
     expect(started).toEqual([REPLY.id]);
@@ -109,6 +109,6 @@ describe('Ask turn shares the Chat transcript parts', () => {
 
   it('hides Start work while the answer is still streaming', () => {
     mount({ reply: { ...REPLY, status: 'streaming' } });
-    expect(screen.queryByRole('button', { name: NAMES.startWorkFromChat })).toBeNull();
+    expect(screen.queryByRole('button', { name: NAMES.startWorkFromAsk })).toBeNull();
   });
 });

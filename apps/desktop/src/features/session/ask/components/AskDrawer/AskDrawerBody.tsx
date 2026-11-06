@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { NAMES } from '../../../../../shared/utils/names';
+import { useAskFollow } from '../../hooks/useAskFollow';
 import { RotateCcw } from 'lucide-react';
 import { DrawerFrame, IconButton } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
@@ -16,7 +18,6 @@ import { useAskRightNow } from '../../hooks/useAskRightNow';
 import { AskComposer } from './AskComposer';
 import { AskEarlier } from './AskEarlier';
 import { AskPlanView } from './AskPlanView';
-import { AskScope } from './AskScope';
 import { AskSuggestions } from './AskSuggestions';
 import { AskTurn } from './AskTurn';
 
@@ -61,9 +62,12 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
     void loadAskThreads({ sessionId });
   }, [loadAskThreads, sessionId]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: 'end' });
-  }, [lastContent, turns.length]);
+  useAskFollow({
+    endRef,
+    isActive: insideId === null,
+    contentLength: lastContent,
+    turnCount: turns.length,
+  });
 
   const ask = useCallback(
     (question: string) => sendAskQuestion({ sessionId, question, rightNow: rightNow.text }),
@@ -124,7 +128,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       action={
         <IconButton
           icon={RotateCcw}
-          label="Reset chat"
+          label={NAMES.newQuestion}
           shortcut="ask.reset"
           disabled={isAnyStreaming}
           onClick={reset}
@@ -136,7 +140,6 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
       ) : (
         <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
-          <AskScope session={session} />
           {turns.length === 0 && rightNow.suggestions.length > 0 ? (
             <AskSuggestions
               suggestions={rightNow.suggestions}

@@ -311,16 +311,16 @@ The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
 `ScrollFade` and the composer in its `dock`. The question bubble
-(`UserMessageBubble`) and the **Start work from chat** button
-(`StartWorkFromChatButton`) are the Chat ones, drawn from `shared/components`;
+(`UserMessageBubble`) and the Start work button
+(`StartWorkFromChatButton`, **Start work from this** in Ask) are the Chat ones, drawn from `shared/components`;
 the composer is the same `MessageComposer` (`shared/components`) that
 `ChatComposer` wraps, without images. Start work on a
 finished answer adds a brief drafted from the thread to this session and opens
 Start a run there (`startWorkFromAsk`), with no new session. The questions stay
 in the session's `ask` threads and are never listed in the Chat door. Its header is **Ask** and a
-**Reset chat** icon button (⌘N while focus is inside the panel, also in ⌘K), with
-no session title; the session is the scope chip at the top of the thread
-(`AskScope`, **Scope: {session}**). The rail icon has its own glyph
+**New question** icon button (⌘N while focus is inside the panel, also in ⌘K), with
+no session title and no scope chip. The thread follows the end of a reply only while you sit at the bottom
+(`useAskFollow`). The rail icon has its own glyph
 (`CONCEPT_ICONS.ask`, apart from the Chat door) and reads **Ask this session**
 with ⌘L on hover. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
 the next question makes a new chat id) and the old thread stays under **Earlier**,
@@ -336,7 +336,7 @@ opens the Questions page and the question in the drawer under **Back to Ask**
 (`question` drawer, `from: 'ask'`); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,
 and Escape goes back before it closes. Buttons come only from verbs the action
-registry offers right now (`askVerb`, `useAskActions`): **Answer question N**
+registry offers right now (`askVerb`, `useAskActions`): **Answer: {the question}**
 prefills and focuses the answer field, **Review N ready** runs
 `session.review`, **Tell {agent}…** prefills the agent's box and runs
 `agent.message`. A verb with a confirm shows an `InlineConfirm` first. Nothing
@@ -478,7 +478,7 @@ and the log, which follows the tail until you scroll up and then offers
 `Jump to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
 hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
-`Ask the agent about this` sits next to it, while the run is live too, and
+`Send to the agent` sits next to it, while the run is live too, and
 hands the log to the session's agent: it queues a text attachment titled
 `Output of <script>, <exit>, <project> on <branch>` (`outputHandoffOf`), opens
 the session when it is not on screen, and the composer takes it as a chip,

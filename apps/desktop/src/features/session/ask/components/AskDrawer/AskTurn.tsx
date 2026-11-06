@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../../store';
 import { useRevealedMarkdown } from '../../../../chat/reveal/useRevealedMarkdown';
 import { StartWorkFromChatButton } from '../../../../../shared/components/StartWorkFromChatButton';
 import { UserMessageBubble } from '../../../../../shared/components/UserMessageBubble';
+import { NAMES } from '../../../../../shared/utils/names';
 import type { AskButtonFacts } from '../../askButtons';
 import type { AskHandle } from '../../askHandles';
 import { useAskActions } from '../../hooks/useAskActions';
@@ -90,7 +91,11 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }:
           {isDone ? <AskActions actions={actions} /> : null}
           {isDone && hasText ? (
             <div className="flex">
-              <StartWorkFromChatButton messageId={reply.id} onStartWork={onStartWork} />
+              <StartWorkFromChatButton
+                messageId={reply.id}
+                label={NAMES.startWorkFromAsk}
+                onStartWork={onStartWork}
+              />
             </div>
           ) : null}
           {isWriting ? null : <AskReplyFooter message={reply} costUsd={costUsd} />}
