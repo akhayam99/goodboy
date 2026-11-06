@@ -22,7 +22,6 @@ import {
 } from '../../../../store/storyHarness';
 
 vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => <button>Restore</button> }));
-vi.mock('./ChatOriginRow', () => ({ ChatOriginRow: () => null }));
 vi.mock('./GoalTeaser', () => ({
   GoalTeaser: () => <button type="button">Goal: Keep the ledger balanced</button>,
 }));

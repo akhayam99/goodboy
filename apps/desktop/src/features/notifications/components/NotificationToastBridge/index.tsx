@@ -2,20 +2,21 @@ import { useEffect, useRef } from 'react';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
-import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
+import { sessionPlace, useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../shared/components/Toast';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { CLI_LABEL } from '../../../providers/cliLabel';
 import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
 import { openStorage } from '../../../storage/openStorage';
+import { mapAgentAction } from './mapAgentAction';
 import { mapRecoveryAction } from './mapRecoveryAction';
-import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { attentionPlaceLabelOf } from '../../../session/attentionPlaceLabel';
+import { mapOpenPlaceAction } from './mapOpenPlaceAction';
 import { openToolPane } from '../../../session/panes/openToolPane';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { markPointersActed } from '../../markPointersActed';
-import { continueNotifiedAgent } from '../../continueNotifiedAgent';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -59,6 +60,7 @@ export const notificationContext = (
 export const mapNotificationAction = (
   action: NotificationAction,
   store: ReturnType<typeof useAppStore.getState>,
+  notification: Notification,
 ): ToastAction | undefined => {
   if (action.kind === 'retry-summarizer') {
     const { sessionId } = action;
@@ -94,30 +96,17 @@ export const mapNotificationAction = (
   if (action.kind === 'open-activity') {
     const { sessionId } = action;
     return {
-      label: 'Open in Activity',
+      label: attentionPlaceLabelOf({ reason: null }),
       onClick: () => {
         store.navigate({ to: sessionPlace({ sessionId, lens: null }) });
       },
     };
   }
-  if (action.kind === 'continue-agent') {
-    const { sessionId, agentId } = action;
-    return {
-      label: 'Continue',
-      onClick: () => {
-        continueNotifiedAgent({ sessionId, agentId });
-      },
-    };
+  if (action.kind === 'open-place') {
+    return mapOpenPlaceAction({ action, store, notification });
   }
-  if (action.kind === 'open-agent') {
-    const { sessionId, agentId } = action;
-    return {
-      label: 'Open agent',
-      onClick: () => {
-        store.navigate({ to: agentPlace({ sessionId, agentId }) });
-        window.dispatchEvent(openAgentRevealEvent());
-      },
-    };
+  if (action.kind === 'continue-agent' || action.kind === 'open-agent') {
+    return mapAgentAction({ action, store });
   }
   if (action.kind === 'open-budget') {
     const scope: ImpactScope =
@@ -224,7 +213,7 @@ export const NotificationToastBridge = () => {
   useEffect(() => {
     for (const n of pickFreshFailures(notifications, seen.current, mountedAt.current)) {
       const store = useAppStore.getState();
-      const toastAction = n.action != null ? mapNotificationAction(n.action, store) : undefined;
+      const toastAction = n.action != null ? mapNotificationAction(n.action, store, n) : undefined;
       previewNotification({
         severity: n.severity === 'error' ? 'error' : 'warning',
         title: n.title,

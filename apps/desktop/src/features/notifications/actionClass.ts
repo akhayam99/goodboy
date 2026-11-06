@@ -23,6 +23,7 @@ export const notificationActionClass = ({ kind }: KindParams): NotificationActio
     case 'open-storage':
     case 'open-lens':
     case 'open-activity':
+    case 'open-place':
     case 'open-settings':
     case 'reveal-path':
       return 'pointer';
