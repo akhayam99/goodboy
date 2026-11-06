@@ -1,5 +1,5 @@
 import { Pin } from 'lucide-react';
-import { IconButton, InteractiveRow, Tooltip } from '@goodboy/ui';
+import { IconButton, InteractiveRow, SELECTED_ROW_CLASSES, Tooltip } from '@goodboy/ui';
 
 import type { RunnableScript } from '../../buildSessionScripts';
 import { RunToggle } from './RunToggle';
@@ -53,7 +53,11 @@ export const SuggestedRow = ({
   );
   if (onOpen === null) {
     return (
-      <div data-script-key={script.key} className={`${ROW_CLASS} rounded-md ${DIM_CLASS}`}>
+      <div
+        data-script-key={script.key}
+        data-selected={isSelected}
+        className={`${ROW_CLASS} rounded-md ${DIM_CLASS} ${SELECTED_ROW_CLASSES}`}
+      >
         {content}
       </div>
     );

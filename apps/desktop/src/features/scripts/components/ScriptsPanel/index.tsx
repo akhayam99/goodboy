@@ -72,6 +72,11 @@ type Props = {
 
 const FILTER_FROM_ROWS = 9;
 
+type SuggestedParams = {
+  readonly group: SessionScriptGroup;
+  readonly hasManifestScripts: boolean;
+};
+
 type RowParams = {
   readonly group: SessionScriptGroup;
   readonly script: RunnableScript;
@@ -476,6 +481,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const orderedKeys: string[] = [];
   const rowsByKey = new Map<string, RowParams>();
 
+  const registerRow = ({ group, script }: RowParams): string => {
+    const rowKey = `${group.mountId}:${script.key}`;
+    orderedKeys.push(rowKey);
+    rowsByKey.set(rowKey, { group, script });
+    return rowKey;
+  };
+
   const renderRow = ({ group, script }: RowParams) => {
     const isEditing =
       script.savedId !== null &&
@@ -484,9 +496,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     if (isEditing) {
       return <div key={script.key}>{editorNode}</div>;
     }
-    const rowKey = `${group.mountId}:${script.key}`;
-    orderedKeys.push(rowKey);
-    rowsByKey.set(rowKey, { group, script });
+    const rowKey = registerRow({ group, script });
     const record = scriptRunRecordFor({ runs, group, script });
     const projectId = group.projectId;
     const port =
@@ -594,6 +604,34 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     );
   };
 
+  const renderSuggested = ({ group, hasManifestScripts }: SuggestedParams) => {
+    if (group.suggested.length === 0 || pickerMountId === group.mountId) {
+      return null;
+    }
+    for (const script of group.suggested) {
+      registerRow({ group, script });
+    }
+    return (
+      <SuggestedBand
+        group={group}
+        runs={runs}
+        canPick={hasManifestScripts && group.isReady}
+        isPickerOpen={pickerMountId === group.mountId}
+        onTogglePicker={() =>
+          setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
+        }
+        isScriptSelected={(script) =>
+          focusedKey === `${group.mountId}:${script.key}` ||
+          isScriptOpenIn({ openPayload, group, script })
+        }
+        onOpen={(script) => onOpen({ group, script })}
+        onRun={(script) => onRun({ group, script })}
+        onStop={(script) => onStop({ script })}
+        onPin={(script) => togglePin({ group, script })}
+      />
+    );
+  };
+
   const renderGroupBands = ({ group }: { readonly group: SessionScriptGroup }) => {
     const services = group.scripts.filter((script) => isService({ script }));
     const tasks = group.scripts.filter((script) => !isService({ script }));
@@ -626,22 +664,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
           </ScriptBand>
         )}
-        {group.suggested.length === 0 || pickerMountId === group.mountId ? null : (
-          <SuggestedBand
-            group={group}
-            runs={runs}
-            canPick={hasManifestScripts && group.isReady}
-            isPickerOpen={pickerMountId === group.mountId}
-            onTogglePicker={() =>
-              setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
-            }
-            isScriptSelected={(script) => isScriptOpenIn({ openPayload, group, script })}
-            onOpen={(script) => onOpen({ group, script })}
-            onRun={(script) => onRun({ group, script })}
-            onStop={(script) => onStop({ script })}
-            onPin={(script) => togglePin({ group, script })}
-          />
-        )}
+        {renderSuggested({ group, hasManifestScripts })}
       </>
     );
   };
