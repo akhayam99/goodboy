@@ -29,7 +29,7 @@ const BOARD = {
   workspaceId: WS,
   place: { at: 'board' as const },
   studio: null,
-  focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+  focus: { drawer: null, scroll: {} },
 };
 
 beforeEach(() => {
@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 describe('windowLayout', () => {
-  it('keeps the readable parts of a focus and drops the rest', () => {
+  it('keeps the readable parts of a focus and drops the selection and reveals older builds stored', () => {
     expect(
       parseLocation({
         value: {
@@ -50,7 +50,7 @@ describe('windowLayout', () => {
       workspaceId: null,
       place: { at: 'board' },
       studio: null,
-      focus: { drawer: null, selection: { thread: 't1' }, scroll: { queue: 12 }, revealed: [] },
+      focus: { drawer: null, scroll: { queue: 12 } },
     });
     expect(parseLocation({ value: { place: { at: 'session' } } })).toBeNull();
   });

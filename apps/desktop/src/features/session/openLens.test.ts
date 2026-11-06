@@ -8,7 +8,6 @@ const { state } = vi.hoisted(() => {
   return {
     state: {
       navigate: vi.fn(),
-      setScriptsLensScope: vi.fn(),
       openDrawer: vi.fn(),
       setExploreMountPath: vi.fn(),
       currentSessionId: noSession(),
@@ -22,6 +21,7 @@ vi.mock('../../store', async () => ({
 }));
 
 import { openLens } from './openLens';
+import { openToolPane } from './panes/openToolPane';
 
 const SESSION_ID = 'sess-1' as SessionId;
 
@@ -31,12 +31,11 @@ const toLens = (lens: Parameters<typeof sessionPlace>[0]['lens']) => ({
 
 beforeEach(() => {
   state.navigate = vi.fn();
-  state.setScriptsLensScope = vi.fn();
   state.openDrawer = vi.fn();
   state.setExploreMountPath = vi.fn();
 });
 
-describe('openLens', () => {
+describe('openLens and openToolPane', () => {
   it('navigates to the lens as a history voice', () => {
     openLens({ sessionId: SESSION_ID, lens: 'review' });
     expect(state.navigate).toHaveBeenCalledWith({
@@ -46,8 +45,7 @@ describe('openLens', () => {
 
   it('opens the Scripts pane with no scope, without leaving the current session', () => {
     state.currentSessionId = SESSION_ID;
-    openLens({ sessionId: SESSION_ID, lens: 'scripts' });
-    expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
+    openToolPane({ sessionId: SESSION_ID, pane: 'scripts' });
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'scripts',
       sessionId: SESSION_ID,
@@ -58,7 +56,7 @@ describe('openLens', () => {
 
   it('goes to the session first when the Explore pane is asked from elsewhere', () => {
     state.currentSessionId = null;
-    openLens({ sessionId: SESSION_ID, lens: 'explore' });
+    openToolPane({ sessionId: SESSION_ID, pane: 'explore' });
     expect(state.navigate).toHaveBeenCalledWith(toLens(null));
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'explore',
@@ -67,10 +65,10 @@ describe('openLens', () => {
     });
   });
 
-  it('leaves the scripts scope alone for every other destination', () => {
+  it('opens no drawer for every other destination', () => {
     openLens({ sessionId: SESSION_ID, lens: 'plans' });
     openLens({ sessionId: SESSION_ID, lens: null });
-    expect(state.setScriptsLensScope).not.toHaveBeenCalled();
+    expect(state.openDrawer).not.toHaveBeenCalled();
     expect(state.navigate).toHaveBeenLastCalledWith(toLens(null));
   });
 });

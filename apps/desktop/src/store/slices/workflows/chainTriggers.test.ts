@@ -345,7 +345,7 @@ describe('startWorkflowRun', () => {
       agentId: 'q-s0',
       focus: 'none',
     });
-    expect(state['setFocusedWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, 'q');
+    expect(state['setFocusedWorkflowRun']).not.toHaveBeenCalled();
     expect(state['setActiveLens']).not.toHaveBeenCalled();
   });
 

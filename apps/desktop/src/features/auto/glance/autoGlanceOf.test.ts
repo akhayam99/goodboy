@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AutoPhase } from '@goodboy/db';
-import { aDelegation, aPlanRow, aView } from '../testing/autoViewFixtures';
+import { aDelegation, anArtifactRow, aPlanRow, aView } from '../testing/autoViewFixtures';
 import { autoGlanceOf } from './autoGlanceOf';
 
 const glanceOf = (phase: AutoPhase) => autoGlanceOf({ view: aView({ phase }), rootTurn: null });
@@ -20,6 +20,20 @@ describe('autoGlanceOf', () => {
       sentence: 'Plan v1 needs your OK',
       isLive: false,
     });
+  });
+
+  it('names the plan that waits when a newer plan was used', () => {
+    const used = {
+      ...anArtifactRow({ id: 'artifact-plan-3', kind: 'plan', title: 'Third', revision: 1 }),
+      status: 'consumed',
+    } as const;
+    const waiting = anArtifactRow({ id: 'artifact-plan-2', kind: 'plan', title: 'B', revision: 2 });
+    const glance = autoGlanceOf({
+      view: aView({ phase: 'waiting', artifacts: [used, waiting] }),
+      rootTurn: null,
+    });
+
+    expect(glance.sentence).toBe('Plan v2 needs your OK');
   });
 
   it('says Planning while the Planner revises the plan', () => {

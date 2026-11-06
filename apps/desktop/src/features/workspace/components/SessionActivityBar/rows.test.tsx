@@ -159,7 +159,7 @@ describe('a session row', () => {
 
   it('marks the session row itself when the open page has no row', () => {
     seedColumn({ store: useAppStore, sessions: all, currentSessionId: idle.id as SessionId });
-    useAppStore.setState({ activeLens: { [idle.id]: 'scripts' } });
+    useAppStore.setState({ activeLens: { [idle.id]: 'linear' } });
     renderBar();
     const marked = Array.from(document.querySelectorAll('[aria-current="page"]'));
     expect(marked).toHaveLength(1);

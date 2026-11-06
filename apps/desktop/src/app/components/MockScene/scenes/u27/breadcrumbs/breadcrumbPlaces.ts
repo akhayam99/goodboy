@@ -25,7 +25,7 @@ import {
 import { seedChatSurfaces, seedWorkflowRun } from '../../flow-audit/seeds';
 
 export type BreadcrumbPlaceId =
-  'run' | 'step' | 'agent' | 'artifact' | 'branchFile' | 'branchSetup' | 'chain';
+  'run' | 'step' | 'agent' | 'artifact' | 'branchFile' | 'branchSetup' | 'chain' | 'goneRun';
 
 export type BreadcrumbPlace = {
   readonly session: Session;
@@ -113,6 +113,16 @@ export const BREADCRUMB_PLACES: Readonly<Record<BreadcrumbPlaceId, BreadcrumbPla
     session: FLOW_SESSION,
     seed: seedWorkflowRun,
     to: RUN_PLACE,
+    handlers: null,
+  },
+  goneRun: {
+    session: FLOW_SESSION,
+    seed: seedWorkflowRun,
+    to: sessionPlace({
+      sessionId: FLOW_SESSION_ID,
+      lens: 'workflows',
+      target: { kind: 'run', runId: 'mock-flow-run-deleted' },
+    }),
     handlers: null,
   },
   step: {

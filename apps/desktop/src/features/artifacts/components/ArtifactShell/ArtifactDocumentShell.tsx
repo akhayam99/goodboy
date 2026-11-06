@@ -41,7 +41,7 @@ const COPY_NOT_READY = 'The saved copy is not ready yet';
 export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => {
   const { artifact } = subject;
   const plan = subject.kind === 'plan' ? subject.plan : null;
-  const openQuestionCount = useSessionOpenQuestions(sessionId).length;
+  const openQuestions = useSessionOpenQuestions(sessionId);
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -209,13 +209,13 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
     kind: artifact.kind,
     status: artifact.status,
     isNew: false,
-    openQuestionCount,
     ...(plan === null
       ? NO_PLAN_STATE_INPUTS
       : planStateInputsOf({
           plan,
           rows: partRows,
           revising,
+          openQuestions,
           handoff,
         })),
   });

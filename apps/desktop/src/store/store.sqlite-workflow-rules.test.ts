@@ -289,7 +289,6 @@ const surfacesOf = (plan: PlanWithCount) => {
     kind: 'plan',
     status: plan.status,
     isNew: false,
-    openQuestionCount: 0,
     ...NO_PLAN_STATE_INPUTS,
     handoff: planHandoffOf({ plan, run: owner }),
   });

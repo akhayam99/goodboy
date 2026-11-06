@@ -64,6 +64,7 @@ type StoreParams = {
 const buildStore = ({ agents, disconnected = false }: StoreParams) => {
   const appended: Array<{ agentId: string; event: TurnEvent }> = [];
   const sendTurn = vi.fn(async (_input: unknown) => ({ blockedOverBudget: false }));
+  const emitNotification = vi.fn(async (_input: unknown) => undefined);
   const transcripts: Record<string, ReadonlyArray<TurnEvent>> = Object.fromEntries(
     agents.map((agent) => [
       agent.id,
@@ -89,8 +90,9 @@ const buildStore = ({ agents, disconnected = false }: StoreParams) => {
       appended.push({ agentId, event });
     },
     sendTurn,
+    emitNotification,
   };
-  return { get: (() => state) as never, appended, sendTurn };
+  return { get: (() => state) as never, appended, sendTurn, emitNotification };
 };
 
 const writeMarker = (runIds: ReadonlyArray<string>, at = Date.now()) =>
@@ -200,5 +202,42 @@ describe('resumeInterruptedAgents', () => {
     await resumeInterruptedAgents({ get: store.get });
 
     expect(store.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('says a failed resume in one notice with Continue, never silently', async () => {
+    writeMarker(['run-a']);
+    const store = buildStore({ agents: [agentOf('agent-a', 'run-a')], disconnected: true });
+
+    await resumeInterruptedAgents({ get: store.get });
+
+    expect(store.emitNotification).toHaveBeenCalledOnce();
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Couldn't resume agent-a after the restart",
+        sessionId: SESSION,
+        action: { kind: 'continue-agent', sessionId: SESSION, agentId: 'agent-a' },
+      }),
+    );
+  });
+
+  it('says so when the resume itself throws', async () => {
+    writeMarker(['run-a']);
+    const store = buildStore({ agents: [agentOf('agent-a', 'run-a')] });
+    store.sendTurn.mockRejectedValueOnce(new Error('provider exited'));
+
+    await resumeInterruptedAgents({ get: store.get });
+
+    expect(store.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ action: expect.objectContaining({ kind: 'continue-agent' }) }),
+    );
+  });
+
+  it('says nothing when the resume went out', async () => {
+    writeMarker(['run-a']);
+    const store = buildStore({ agents: [agentOf('agent-a', 'run-a')] });
+
+    await resumeInterruptedAgents({ get: store.get });
+
+    expect(store.emitNotification).not.toHaveBeenCalled();
   });
 });

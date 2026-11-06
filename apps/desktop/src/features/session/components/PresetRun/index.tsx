@@ -1,11 +1,14 @@
-import { useEscapeLayer, useSkeletonGate } from '@goodboy/ui';
+import { PaneShell, useSkeletonGate } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { GoneObject } from '../../../../shared/components/GoneObject';
 import { RunWorkTime } from '../AgentTree/RunWorkTime';
 import { leaveRunLevel } from '../../../workflows/leaveRunLevel';
 import type { PresetRunFocus } from '../../../workflows/presetRunFocusOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { PresetRunBody } from './PresetRunBody';
+import { RunMetadataMissing } from './RunMetadataMissing';
 import { RunPageSkeleton } from './RunPageSkeleton';
 
 type Props = {
@@ -27,9 +30,21 @@ export const PresetRunPage = ({ session, focus }: Props) => {
     collection: 'workflows',
   });
   const phase = useSkeletonGate({ gateKey: focus.runId, isLoaded });
-  useEscapeLayer(() => leaveRunLevel({ sessionId: session.id }), agent === null);
+  if (attached === null && (phase === 'skeleton' || phase === 'fading')) {
+    return <RunPageSkeleton />;
+  }
   if (attached === null) {
-    return phase === 'skeleton' || phase === 'fading' ? <RunPageSkeleton /> : null;
+    const isRunPresent = session.workflowRuns.some(({ id }) => id === focus.runId);
+    const onBack = () => leaveRunLevel({ sessionId: session.id });
+    return (
+      <PaneShell page="run" title="Run">
+        {isRunPresent ? (
+          <RunMetadataMissing sessionId={session.id} onBack={onBack} />
+        ) : (
+          <GoneObject noun="run" icon={CONCEPT_ICONS.workflows} onBack={onBack} />
+        )}
+      </PaneShell>
+    );
   }
   return (
     <div data-preset-run={focus.runId} className="flex h-full min-h-0 min-w-0 flex-col">

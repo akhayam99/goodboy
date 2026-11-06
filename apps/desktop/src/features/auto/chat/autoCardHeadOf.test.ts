@@ -34,4 +34,32 @@ describe('autoCardHeadOf', () => {
 
     expect(head.name).toBe('Working');
   });
+
+  it.each([
+    ['failed', 'Failed'],
+    ['blocked', 'Blocked'],
+    ['stopped', 'Stopped'],
+    ['timed_out', 'Timed out'],
+  ] as const)('says %s for a settled agent that did not finish', (outcome, word) => {
+    const head = autoCardHeadOf({
+      delegations: [
+        aDelegation({ key: 'impl', role: 'implementer', state: 'settled', outcome }),
+        aDelegation({ key: 'test', role: 'tester', state: 'settled', outcome: 'completed' }),
+      ],
+    });
+
+    expect(head.word).toBe(word);
+    expect(head.isOpen).toBe(false);
+  });
+
+  it.each(['paused', 'awaiting_confirm'] as const)('says Needs you for a %s agent', (state) => {
+    const head = autoCardHeadOf({
+      delegations: [
+        aDelegation({ key: 'impl', role: 'implementer', state }),
+        aDelegation({ key: 'test', role: 'tester', state: 'running' }),
+      ],
+    });
+
+    expect(head.word).toBe('Needs you');
+  });
 });

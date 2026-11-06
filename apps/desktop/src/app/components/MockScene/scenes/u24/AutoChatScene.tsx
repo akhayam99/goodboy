@@ -79,7 +79,6 @@ export const AutoChatScene = ({
       autoTreeViews: { [AUTO_SESSION.id]: [scene.view] },
       loadAutoTrees: async () => undefined,
       selectedAgentId: { [AUTO_SESSION.id]: selectedId },
-      agentPane: { [AUTO_SESSION.id]: 'transcript' },
       agentTurnState: { [AUTO_ROOT_ID]: scene.rootTurn },
       agentQueue: { [AUTO_ROOT_ID]: state === 'bothQueues' ? [TRAY_TURN] : [] },
       transcripts: { [AUTO_ROOT_ID]: scene.events },

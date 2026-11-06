@@ -1,11 +1,11 @@
 import type { LensKind } from '../../store';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import { SIMPLE_LENSES } from './lens-labels';
+import type { ToolPaneDestination } from './panes/openToolPane';
 
-export type LensDestination = {
-  readonly lens: LensKind | null;
-  readonly shortcut: ShortcutId;
-};
+export type LensDestination =
+  | { readonly lens: LensKind | null; readonly pane?: never; readonly shortcut: ShortcutId }
+  | { readonly lens?: never; readonly pane: ToolPaneDestination; readonly shortcut: ShortcutId };
 
 type LensTool = 'linear' | 'gitlab' | 'jira' | 'slack';
 
@@ -19,8 +19,8 @@ const DESTINATIONS = [
   { lens: 'plans', shortcut: 'lens.plans' },
   { lens: 'review', shortcut: 'lens.review' },
   { lens: 'files', shortcut: 'lens.files' },
-  { lens: 'explore', shortcut: 'lens.explore' },
-  { lens: 'scripts', shortcut: 'lens.scripts' },
+  { pane: 'explore', shortcut: 'lens.explore' },
+  { pane: 'scripts', shortcut: 'lens.scripts' },
   { lens: 'pr', shortcut: 'lens.pr' },
   { lens: 'linear', shortcut: 'lens.linear' },
   { lens: 'gitlab_issues', shortcut: 'lens.gitlab_issues' },
@@ -40,20 +40,30 @@ type Params = {
   readonly connectedTools: ConnectedLensTools;
 };
 
+type DestinationParams = Params & {
+  readonly destination: LensDestination;
+};
+
+const isReachable = ({ destination, isBranchless, connectedTools }: DestinationParams): boolean => {
+  if (destination.pane !== undefined) {
+    return destination.pane === 'explore' || !isBranchless;
+  }
+  const lens = destination.lens ?? null;
+  if (lens === null) {
+    return true;
+  }
+  if (lens === 'files') {
+    return !isBranchless;
+  }
+  if (isBranchless && !SIMPLE_LENSES.has(lens)) {
+    return false;
+  }
+  const tool = TOOL_OF_LENS[lens];
+  return tool === undefined || connectedTools[tool];
+};
+
 export const lensDestinations = ({
   isBranchless,
   connectedTools,
 }: Params): ReadonlyArray<LensDestination> =>
-  DESTINATIONS.filter(({ lens }) => {
-    if (lens === null || lens === 'explore') {
-      return true;
-    }
-    if (lens === 'files') {
-      return !isBranchless;
-    }
-    if (isBranchless && !SIMPLE_LENSES.has(lens)) {
-      return false;
-    }
-    const tool = TOOL_OF_LENS[lens];
-    return tool === undefined || connectedTools[tool];
-  });
+  DESTINATIONS.filter((destination) => isReachable({ destination, isBranchless, connectedTools }));

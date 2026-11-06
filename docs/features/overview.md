@@ -12,7 +12,8 @@ It reads top to bottom:
 
 - The goal.
 - No setup line: a new worktree's setup (**Run** and **Not now**) is offered on the Branch page.
-- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
+- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.
+- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
 - One line under the goal says what is happening: how many things wait for you (amber), how many agents work (blue), what is stuck (red), or **Nothing needs you** (green). It reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
 - One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order.
 

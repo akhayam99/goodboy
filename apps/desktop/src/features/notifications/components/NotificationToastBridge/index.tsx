@@ -12,9 +12,10 @@ import { openStorage } from '../../../storage/openStorage';
 import { mapRecoveryAction } from './mapRecoveryAction';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { openLens } from '../../../session/openLens';
+import { openToolPane } from '../../../session/panes/openToolPane';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { markPointersActed } from '../../markPointersActed';
+import { continueNotifiedAgent } from '../../continueNotifiedAgent';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -96,6 +97,15 @@ export const mapNotificationAction = (
       label: 'Open in Activity',
       onClick: () => {
         store.navigate({ to: sessionPlace({ sessionId, lens: null }) });
+      },
+    };
+  }
+  if (action.kind === 'continue-agent') {
+    const { sessionId, agentId } = action;
+    return {
+      label: 'Continue',
+      onClick: () => {
+        continueNotifiedAgent({ sessionId, agentId });
       },
     };
   }
@@ -187,7 +197,7 @@ export const mapNotificationAction = (
     return {
       label: 'Show output',
       onClick: () => {
-        openLens({ sessionId, lens });
+        openToolPane({ sessionId, pane: lens });
       },
     };
   }

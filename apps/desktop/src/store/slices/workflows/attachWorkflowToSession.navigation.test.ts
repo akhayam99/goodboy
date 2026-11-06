@@ -126,20 +126,7 @@ describe('starting a workflow focuses the run without hijacking the lens', () =>
     expect((state['activeLens'] as Record<SessionId, string | null>)[SESSION_ID]).toBe('plans');
   });
 
-  it('still sets focusedWorkflowRunId while leaving a different lens untouched', async () => {
-    const state: StoreState = {};
-    const { set, get } = harness(state);
-    Object.assign(state, buildState({ [SESSION_ID]: 'plans' }), {
-      activateWorkflowAgent: vi.fn(async () => undefined),
-    });
-
-    await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID);
-
-    const runId = (state['focusedWorkflowRunId'] as Record<SessionId, string | null>)[SESSION_ID];
-    expect(runId).not.toBeNull();
-  });
-
-  it('still focuses the new run when already on the workflows lens', async () => {
+  it('leaves the Runs list on screen when the caller does not ask to move', async () => {
     const state: StoreState = {};
     const { set, get } = harness(state);
     Object.assign(state, buildState({ [SESSION_ID]: 'workflows' }), {
@@ -148,12 +135,13 @@ describe('starting a workflow focuses the run without hijacking the lens', () =>
 
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID);
 
-    const runId = (state['focusedWorkflowRunId'] as Record<SessionId, string | null>)[SESSION_ID];
-    expect(runId).not.toBeNull();
+    const focused = (state['focusedWorkflowRunId'] as Record<SessionId, string | null>)[SESSION_ID];
+    expect(focused ?? null).toBeNull();
     expect((state['activeLens'] as Record<SessionId, string | null>)[SESSION_ID]).toBe('workflows');
+    expect(state['navigate']).not.toHaveBeenCalled();
   });
 
-  it('navigates to the workflows lens when the caller opts in', async () => {
+  it('moves to the new run page when the caller opts in', async () => {
     const state: StoreState = {};
     const { set, get } = harness(state);
     Object.assign(state, buildState({ [SESSION_ID]: 'plans' }), {
@@ -163,7 +151,11 @@ describe('starting a workflow focuses the run without hijacking the lens', () =>
     await attachWorkflowToSession(set, get)(SESSION_ID, WF_ID, { navigate: true });
 
     expect(state['navigate']).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'workflows' }),
+      to: sessionPlace({
+        sessionId: SESSION_ID,
+        lens: 'workflows',
+        target: { kind: 'run', runId: expect.any(String) },
+      }),
     });
   });
 

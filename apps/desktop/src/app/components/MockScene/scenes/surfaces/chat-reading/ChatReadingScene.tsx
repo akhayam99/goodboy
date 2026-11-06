@@ -32,7 +32,6 @@ export const ChatReadingScene = ({ isSent = false }: Props) => {
       autoTreeViews: { [AUTO_SESSION.id]: [data.view] },
       loadAutoTrees: async () => undefined,
       selectedAgentId: { [AUTO_SESSION.id]: AUTO_ROOT_ID },
-      agentPane: { [AUTO_SESSION.id]: 'transcript' },
       agentTurnState: { [AUTO_ROOT_ID]: data.rootTurn },
       transcripts: { [AUTO_ROOT_ID]: data.events },
       loadAgentTranscript: async () => undefined,

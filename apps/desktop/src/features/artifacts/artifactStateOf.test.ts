@@ -1,12 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type {
-  Agent,
-  AgentId,
-  ArtifactId,
-  IsoDateTime,
-  PlanWithCount,
-  SessionId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ArtifactId,
+  type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type PlanWithCount,
+  type SessionId,
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
@@ -21,7 +24,6 @@ const NO_ASKING: ReadonlySet<AgentId> = new Set();
 const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
 
 const NO_PLAN = {
-  openQuestionCount: 0,
   plannerQuestionCount: 0,
   partCount: 0,
   progress: null,
@@ -98,9 +100,7 @@ describe('artifactStateOf', () => {
     expect(artifactStateOf({ ...base, revising: { kind: 'revising', nextRevision: 2 } })?.key).toBe(
       'revising',
     );
-    expect(artifactStateOf({ ...base, openQuestionCount: 1, plannerQuestionCount: 1 })?.key).toBe(
-      'needs',
-    );
+    expect(artifactStateOf({ ...base, plannerQuestionCount: 1 })?.key).toBe('needs');
   });
 
   it('leaves a plain plan and a plan Auto still waits on at Ready to run', () => {
@@ -132,27 +132,16 @@ describe('artifactStateOf', () => {
     expect(state).toMatchObject({ key: 'running', label: 'Running' });
   });
 
-  it('keeps a question above Approved', () => {
+  it('keeps a planner question above Approved', () => {
     const state = artifactStateOf({
       ...NO_PLAN,
       kind: 'plan',
       status: 'active',
       isNew: false,
       handoff: 'approved-waiting',
-      openQuestionCount: 1,
+      plannerQuestionCount: 1,
     });
     expect(state).toMatchObject({ key: 'needs' });
-  });
-
-  it('puts a plan with open questions under Needs you', () => {
-    const state = artifactStateOf({
-      ...NO_PLAN,
-      kind: 'plan',
-      status: 'active',
-      isNew: false,
-      openQuestionCount: 1,
-    });
-    expect(state).toMatchObject({ key: 'needs', detail: '1 question', group: 'needs' });
   });
 
   it('says waiting for your answer when the open question is the planner own', () => {
@@ -161,7 +150,6 @@ describe('artifactStateOf', () => {
       kind: 'plan',
       status: 'active',
       isNew: false,
-      openQuestionCount: 2,
       plannerQuestionCount: 1,
     });
     expect(state).toMatchObject({
@@ -178,7 +166,6 @@ describe('artifactStateOf', () => {
       kind: 'plan',
       status: 'active',
       isNew: false,
-      openQuestionCount: 1,
       plannerQuestionCount: 1,
       revising: { kind: 'revising', nextRevision: 3 },
     });
@@ -247,7 +234,7 @@ describe('artifactStateOf', () => {
         kind: 'plan',
         status: 'active',
         isNew: false,
-        openQuestionCount: 1,
+        plannerQuestionCount: 1,
       }),
       artifactStateOf({
         ...NO_PLAN,
@@ -362,7 +349,7 @@ describe('the list and the document agree', () => {
       agents,
       runs: [],
       templates: [],
-      openQuestionCount: 0,
+      openQuestions: [],
       askingAgentIds: NO_ASKING,
       revising: new Map(),
       autoViews: [],
@@ -373,9 +360,54 @@ describe('the list and the document agree', () => {
       kind: 'plan',
       status: planFixture.status,
       isNew: false,
-      openQuestionCount: 0,
       ...planStateInputsOf({ plan: planFixture, rows }),
     });
+    expect(row?.state).toEqual(documentState);
+  });
+
+  const question = ({ askedBy }: { readonly askedBy: string }): OpenQuestion => ({
+    id: brandId<OpenQuestionId>({ value: `question-${askedBy}` }),
+    sessionId: SESSION_ID,
+    createdByAgentId: brandId<AgentId>({ value: askedBy }),
+    text: 'Should the retries back off?',
+    suggestedAnswers: [],
+    isBlocking: false,
+    userAnswer: null,
+    status: 'open',
+    createdAt: NOW,
+  });
+
+  it.each([
+    ['a Tester question leaves the plan Ready', 'agent-tester', 'ready'],
+    ['its own planner question moves it to Needs you', 'agent-planner', 'needs'],
+  ] as const)('%s, in the list and the reader', (_name, askedBy, group) => {
+    const planFixture = plan({});
+    const openQuestions = [question({ askedBy })];
+    const [row] = buildArtifactListRows({
+      plans: [planFixture],
+      artifacts: [],
+      generations: [],
+      agents: [],
+      runs: [],
+      templates: [],
+      openQuestions,
+      askingAgentIds: NO_ASKING,
+      revising: new Map(),
+      autoViews: [],
+      now: Date.parse(NOW),
+    });
+    const documentState = artifactStateOf({
+      kind: 'plan',
+      status: planFixture.status,
+      isNew: false,
+      ...planStateInputsOf({
+        plan: planFixture,
+        rows: [],
+        openQuestions,
+      }),
+    });
+
+    expect(row?.group).toBe(group);
     expect(row?.state).toEqual(documentState);
   });
 });

@@ -273,8 +273,11 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   turn: "Stopped 2 processes this turn left running: next-server, 1 more."
 - **Boot reconcile.** At boot one update marks every `running` agent row whose
   provider run is not live as stopped (`reconcileGhostAgents`), in all
-  workspaces, not only the open one. Runs the backend still holds and runs
-  this window can reattach to are kept.
+  workspaces, not only the open one. Runs the backend still holds, runs
+  this window can reattach to and runs whose permission ask nobody answered
+  (a `NOT EXISTS` on `turn_events` inside `stopGhostAgents`) are kept. The
+  sweep is one statement, so if it fails it stops nothing and each workspace
+  load reconciles its own agents.
 
 ### Terminal and script output
 
@@ -1194,7 +1197,16 @@ kept.
   and polls every 2 seconds only while the session has an Auto agent that is
   pending, running or blocked, or a tree that is not finished; a finished Auto
   run reads once. Two hooks on one session share one interval
-  (`useAutoTrees/sharedPoll.ts`); nothing pushes tree changes to a window yet. The Settings
+  (`useAutoTrees/sharedPoll.ts`); nothing pushes tree changes to a window yet.
+  The shared poll keeps reading in a hidden window, every 10 seconds instead of
+  2, and `useAutoBoardWatch` (mounted by `NeedsYouAnnouncementBridge` in every window) polls every session the
+  board shows with a live Auto agent or a moving tree (`watchedAutoSessionsOf`),
+  so Auto's waits reach the lane, the door and the away banner without opening
+  the session. A resting tree (`AUTO_RESTING_PHASES`) is never polled, and a
+  `blocked` tree only while an agent of its session is still live.
+  A read moves `autoClockAt` in 15 second steps while a child waits to start
+  (`autoClockOf`), and `autoWaitRootsOf` reads that clock, so a child that
+  never started counts as stuck on the board too. The Settings
   row counts the working trees with `countLiveAutoTrees`.
 
 ### On-disk data layout

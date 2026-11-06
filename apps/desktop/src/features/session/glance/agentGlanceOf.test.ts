@@ -12,6 +12,13 @@ describe('agentGlanceOf', () => {
   it.each([
     ['running', { kind: 'running', runId: RUN, startedAt: AT } as const, 'pending', 'working'],
     ['blocked', { kind: 'blocked', runId: RUN, blockedAt: AT } as const, 'running', 'waiting'],
+    ['a blocked agent', null, 'blocked', 'waiting'],
+    [
+      'a resumed agent over a stale blocked status',
+      { kind: 'running', runId: RUN, startedAt: AT } as const,
+      'blocked',
+      'working',
+    ],
     ['an error', { kind: 'error', message: 'No route', failedAt: AT } as const, 'running', 'stuck'],
     ['starting', { kind: 'starting', startedAt: AT } as const, 'pending', 'working'],
     ['a stopped agent', null, 'stopped', 'stopped'],

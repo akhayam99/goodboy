@@ -17,6 +17,7 @@ vi.mock('../../../../store', async () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionPlans: () => state.plans,
+  useIsSessionCollectionLoaded: () => true,
   useSessionOpenQuestions: () => [],
 }));
 

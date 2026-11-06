@@ -5,7 +5,6 @@ import { closeArtifactConversation, openArtifactConversation } from './artifactC
 import { awaitArtifactAgent, openArtifactCreation } from './artifactCreation';
 import { markSessionOpened } from './markSessionOpened';
 import { setSessionViewPrefs } from './setSessionViewPrefs';
-import { setAgentTab } from './setAgentTab';
 import { setExploreExpanded } from './setExploreExpanded';
 import { setExploreMountPath } from './setExploreMountPath';
 import { dismissCheckProposal } from './dismissCheckProposal';
@@ -26,6 +25,7 @@ import {
 } from './workSurface';
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
+import { setFocusedRunAgent } from './setFocusedRunAgent';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import type { SessionViewSlice } from './types';
 import type { SliceDeps } from '../../slice-types';
@@ -38,7 +38,6 @@ export type { LensKind, DiffFocus, SessionCreationId } from './types';
 export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
     ...createInitialSessionViewState({}),
-    setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionViewPrefs: setSessionViewPrefs(set, get),
     markSessionOpened: markSessionOpened(set),
@@ -47,7 +46,6 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setSessionDismissedNextSteps: setSessionDismissedNextSteps({ set }),
     setExploreExpanded: setExploreExpanded(set),
     setExploreMountPath: setExploreMountPath(set),
-    setAgentTab: setAgentTab(set),
     setActiveLens: setActiveLens(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedArtifactId: setFocusedArtifactId(set),
@@ -56,6 +54,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     closeArtifactConversation: closeArtifactConversation(set),
     openArtifactCreation: openArtifactCreation(set, get),
     awaitArtifactAgent: awaitArtifactAgent(set),
+    setFocusedRunAgent: setFocusedRunAgent({ set }),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),

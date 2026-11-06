@@ -309,7 +309,7 @@ describe('NextActionStrip', () => {
     fireEvent.click(within(strip).getByRole('button', { name: 'Answer' }));
 
     expect(store.navigate).toHaveBeenCalledWith({
-      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1', pane: 'brief' },
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
     });
     expect(store.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-1',

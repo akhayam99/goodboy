@@ -32,19 +32,31 @@ type StatusParams = {
 
 const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
   if (delegation.isStopping && delegation.state !== 'settled') {
-    return { word: 'Stopping', tone: 'neutral', isLive: true };
+    return { state: 'stopping', word: 'Stopping', tone: 'neutral', isLive: true };
   }
   switch (delegation.state) {
     case 'accepted':
-      return { word: 'Queued', tone: 'neutral', isLive: false };
+      return { state: 'queued', word: 'Queued', tone: 'neutral', isLive: false };
     case 'awaiting_confirm':
-      return { word: 'Needs you', tone: 'warning', isLive: false, node: 'approval' };
+      return {
+        state: 'confirming',
+        word: 'Needs you',
+        tone: 'warning',
+        isLive: false,
+        node: 'approval',
+      };
     case 'starting':
-      return { word: 'Starting', tone: 'info', isLive: true };
+      return { state: 'starting', word: 'Starting', tone: 'info', isLive: true };
     case 'running':
-      return { word: 'Running', tone: 'info', isLive: true };
+      return { state: 'running', word: 'Running', tone: 'info', isLive: true };
     case 'paused':
-      return { word: 'Needs you', tone: 'warning', isLive: false, node: 'question' };
+      return {
+        state: 'paused',
+        word: 'Needs you',
+        tone: 'warning',
+        isLive: false,
+        node: 'question',
+      };
     case 'settled':
       return settledStatusOf({ outcome: delegation.outcome ?? 'failed' });
     default: {

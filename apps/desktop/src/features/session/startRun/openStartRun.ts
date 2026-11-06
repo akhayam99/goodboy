@@ -14,7 +14,6 @@ type Params = {
 export const openStartRun = ({ sessionId, text = '', file = null }: Params): void => {
   const state = useAppStore.getState();
   state.navigate({ to: lensPlace({ state, sessionId, lens: 'workflows' }) });
-  useAppStore.getState().setFocusedWorkflowRun(sessionId, null);
   dispatchAfterNavigation({
     name: startRunEventName({ sessionId }),
     detail: file === null ? { text } : { text, file },

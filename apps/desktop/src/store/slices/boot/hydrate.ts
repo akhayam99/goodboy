@@ -184,7 +184,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
             void setWindowTitle(snapWorkspace.name);
             const { location } = reloadIntent;
             if (location !== undefined) {
-              get().restoreLocation({ location });
+              await get().restoreLocation({ location });
             }
             const snapSessionId =
               reloadIntent.location === undefined ? reloadIntent.sessionId : null;
