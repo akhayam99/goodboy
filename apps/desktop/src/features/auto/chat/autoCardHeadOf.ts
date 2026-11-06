@@ -23,7 +23,7 @@ const NEEDS_YOU_STATES: ReadonlySet<string> = new Set(['awaiting_confirm', 'paus
 
 const WORST_FIRST: ReadonlyArray<AutoOutcome> = ['failed', 'timed_out', 'blocked', 'stopped'];
 
-const wordOf = ({ delegations, isOpen }: WordParams): string => {
+const headWordOf = ({ delegations, isOpen }: WordParams): string => {
   if (delegations.some((delegation) => NEEDS_YOU_STATES.has(delegation.state))) {
     return 'Needs you';
   }
@@ -45,7 +45,7 @@ export const autoCardHeadOf = ({ delegations }: Params): AutoCardHead => {
   return {
     name: isPlanning ? 'Planning' : isBuilding ? 'Building' : 'Working',
     meta: count === 1 ? '1 agent' : `${count} agents`,
-    word: wordOf({ delegations, isOpen }),
+    word: headWordOf({ delegations, isOpen }),
     isOpen,
   };
 };
