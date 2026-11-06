@@ -1,4 +1,4 @@
-import { useRef, useState, type FocusEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { Button, cn, useEscapeLayer } from '@goodboy/ui';
 import { PromptField } from '../PromptField';
 import { useFocusReturn } from '../../hooks/useFocusReturn';
@@ -82,6 +82,18 @@ export const CommentComposer = ({
     }
     run({ send: onKeep });
   };
+
+  useEffect(() => {
+    const release = (): void => {
+      isPressingInside.current = false;
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+    };
+  }, []);
 
   useEscapeLayer(isKeeping ? keep : onCancel);
   useFocusReturn({ rootRef });

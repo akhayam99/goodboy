@@ -14,6 +14,7 @@ type HarnessProps = {
   readonly isEmptyAllowed?: boolean;
   readonly error?: string | null;
   readonly initial?: string;
+  readonly onKeep?: (params: CommentComposerBody) => void | Promise<void>;
 };
 
 const Harness = ({
@@ -23,6 +24,7 @@ const Harness = ({
   isEmptyAllowed = false,
   error = null,
   initial = '',
+  onKeep,
 }: HarnessProps) => {
   const [value, setValue] = useState(initial);
   return (
@@ -34,6 +36,7 @@ const Harness = ({
       onSubmit={onSubmit}
       onCancel={onCancel}
       onAskAgent={onAskAgent}
+      onKeep={onKeep}
       isEmptyAllowed={isEmptyAllowed}
       error={error}
     />
@@ -162,5 +165,26 @@ describe('CommentComposer on the escape stack', () => {
     fireEvent.keyDown(field(), { key: 'Escape', code: 'Escape' });
 
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a draft on blur after a drag select released outside the box', () => {
+    const onKeep = vi.fn();
+    render(<Harness initial="Name the index" onKeep={onKeep} />);
+
+    fireEvent.pointerDown(field());
+    fireEvent.pointerUp(document.body);
+    fireEvent.blur(field(), { relatedTarget: document.body });
+
+    expect(onKeep).toHaveBeenCalledWith({ body: 'Name the index' });
+  });
+
+  it('does not keep a draft on blur while a press inside the box is still down', () => {
+    const onKeep = vi.fn();
+    render(<Harness initial="Name the index" onKeep={onKeep} />);
+
+    fireEvent.pointerDown(field());
+    fireEvent.blur(field(), { relatedTarget: document.body });
+
+    expect(onKeep).not.toHaveBeenCalled();
   });
 });
