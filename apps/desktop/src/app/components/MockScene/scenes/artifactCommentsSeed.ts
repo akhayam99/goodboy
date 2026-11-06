@@ -1,5 +1,14 @@
-import type { AgentId, ArtifactComment, ArtifactId, IsoDateTime } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ArtifactComment,
+  type ArtifactId,
+  type ArtifactStatus,
+  type IsoDateTime,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { sceneClock } from '../sceneClock';
 import { SESSION_ID, seedArtifactScene } from './artifactSeed';
 
@@ -49,54 +58,62 @@ type SeedParams = {
   readonly hasRun?: boolean;
 };
 
-const RAN_AGENT_ID = 'mock-plan-comments-agent-implementer' as AgentId;
+const RAN_AGENT_ID = brandId<AgentId>({ value: 'mock-plan-comments-agent-implementer' });
+
+const CONSUMED: ArtifactStatus = 'consumed';
+
+const SENT: ArtifactComment['status'] = 'sent';
+
+const RAN_AGENT: Agent = {
+  id: RAN_AGENT_ID,
+  sessionId: SESSION_ID,
+  ordinal: 40,
+  name: 'Implementer',
+  kind: 'implementer',
+  status: 'running',
+  startedAt: NOW,
+};
+
+const SENT_TO_AGENT: SendArtifactCommentsResult = {
+  kind: 'sentToAgent',
+  agentName: RAN_AGENT.name,
+};
 
 const seedRan = () => {
-  const ran = {
-    status: 'consumed' as const,
-    consumptionCount: 1,
-    lastConsumer: { agentId: RAN_AGENT_ID, name: 'Implementer' },
-  };
   useAppStore.setState((state) => ({
     sessionPlans: {
       ...state.sessionPlans,
       [SESSION_ID]: (state.sessionPlans[SESSION_ID] ?? []).map((plan) =>
-        plan.id === PLAN_COMMENTS_ARTIFACT_ID ? { ...plan, ...ran } : plan,
+        plan.id === PLAN_COMMENTS_ARTIFACT_ID
+          ? {
+              ...plan,
+              status: CONSUMED,
+              consumptionCount: 1,
+              lastConsumer: { agentId: RAN_AGENT_ID, name: RAN_AGENT.name },
+            }
+          : plan,
       ),
     },
     sessionArtifacts: {
       ...state.sessionArtifacts,
       [SESSION_ID]: (state.sessionArtifacts[SESSION_ID] ?? []).map((artifact) =>
-        artifact.id === PLAN_COMMENTS_ARTIFACT_ID
-          ? { ...artifact, status: 'consumed' as const }
-          : artifact,
+        artifact.id === PLAN_COMMENTS_ARTIFACT_ID ? { ...artifact, status: CONSUMED } : artifact,
       ),
     },
     sessionPhaseRuns: {
       ...state.sessionPhaseRuns,
-      [SESSION_ID]: [
-        ...(state.sessionPhaseRuns[SESSION_ID] ?? []),
-        {
-          id: RAN_AGENT_ID,
-          sessionId: SESSION_ID,
-          ordinal: 40,
-          name: 'Implementer',
-          kind: 'implementer' as const,
-          status: 'running' as const,
-          startedAt: NOW,
-        },
-      ],
+      [SESSION_ID]: [...(state.sessionPhaseRuns[SESSION_ID] ?? []), RAN_AGENT],
     },
     sendArtifactCommentsToAgent: async () => {
       useAppStore.setState((current) => ({
         artifactComments: {
           ...current.artifactComments,
           [SESSION_ID]: (current.artifactComments[SESSION_ID] ?? []).map((comment) =>
-            comment.status === 'draft' ? { ...comment, status: 'sent' as const } : comment,
+            comment.status === 'draft' ? { ...comment, status: SENT } : comment,
           ),
         },
       }));
-      return { kind: 'sentToAgent' as const, agentName: 'Implementer' };
+      return SENT_TO_AGENT;
     },
   }));
 };

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AgentId } from '@goodboy/types';
+import { brandId, type AgentId } from '@goodboy/types';
 import { ArtifactScoutList } from './ArtifactScoutList';
 import type { ArtifactScoutRow } from '../../artifactScoutRoster';
 
@@ -19,7 +19,7 @@ const row: ArtifactScoutRow = {
   root: '/mock/harborline/ledger-core-rounding',
   branch: 'ak/fix-posting-rounding',
   reason: REASON,
-  agentId: 'agent-scout-screens' as AgentId,
+  agentId: brandId<AgentId>({ value: 'agent-scout-screens' }),
 };
 
 import { asCutText, tooltipTextOf } from '../../../../__tests__/helpers/tooltip';

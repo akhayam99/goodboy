@@ -171,7 +171,9 @@ describe('PartCommentFrame', () => {
   });
 
   describe('a comment typed and not added', () => {
-    const composing = { anchor: { kind: 'part', index: 2, title: ROW.title } } as const;
+    const composing: PlanCommentsApi['composing'] = {
+      anchor: { kind: 'part', index: 2, title: ROW.title },
+    };
     const escape = () => fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
     it('is kept as a draft when focus leaves the box', async () => {
@@ -237,7 +239,7 @@ describe('PartCommentFrame', () => {
       fireEvent.blur(box);
 
       expect((await screen.findByRole('alert')).textContent).toContain('The database is locked');
-      expect((box as HTMLTextAreaElement).value).toBe('Split in two');
+      expect(box).toHaveProperty('value', 'Split in two');
       expect(value.cancelComposing).not.toHaveBeenCalled();
     });
   });

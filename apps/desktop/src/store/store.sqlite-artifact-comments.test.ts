@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { upsertPlan } from '@goodboy/db';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -8,6 +9,7 @@ import type {
   ImplementationCluster,
   IsoDateTime,
   PlanId,
+  PlanWithCount,
   ProviderRunId,
   SessionId,
   StepId,
@@ -602,11 +604,13 @@ describe('store on sqlite: plan comments', () => {
   });
 
   describe('sending to the agent that ran the plan', () => {
-    const IMPLEMENTER_ID = 'agent-implementer' as AgentId;
+    const IMPLEMENTER_ID = brandId<AgentId>({ value: 'agent-implementer' });
+
+    const CONSUMED: PlanWithCount['status'] = 'consumed';
 
     const ranPlan = () => ({
       ...planOf(),
-      status: 'consumed' as const,
+      status: CONSUMED,
       consumptionCount: 1,
       lastConsumer: { agentId: IMPLEMENTER_ID, name: 'Implement' },
     });
