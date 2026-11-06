@@ -75,9 +75,9 @@ Each agent row shows its model by name with the effort, muted. It hides when the
 
 ### One dock
 
-Everything that needs you sits in one block joined to the box you type in. The header keeps the state word, the spend and **Settings**, and the dock says the sentence. A permission asks there, with **Allow and continue**, **Always allow**, **Deny** and a `⋯` for the rarer answers. One line stays in the chat for each answer, such as "Allowed rm -rf node_modules". A question asks there too, with its pager, and the chat keeps "You answered". On Auto, a subagent's permission reaches the same dock, names the agent, and waits behind `1 of 2` when two ask at once. **Open Implementer** goes to its page.
+Everything that needs you sits in one block joined to the box you type in. The header keeps the state word, the spend and **Settings**, and the dock says the sentence. A permission asks there, with **Allow and continue**, **Always allow**, **Deny** and a `⋯` for the rarer answers. One line stays in the chat for each answer, such as "Allowed rm -rf node_modules". A question asks there too, with its pager, and the chat keeps "You answered". When two asks wait, the dock shows `1 of 2` and the agent goes on once you answered both. On Auto, a subagent's permission reaches the same dock and names the agent. **Open Implementer** goes to its page.
 
-A message you send while a permission waits denies it, and your text is the reason the agent reads. The box says so first: **Your message will deny this, with your text as the reason**, and Send reads **Send and deny**. On Auto the message goes to the agent that asks. If the message can't be sent, the ask stays open.
+A message you send while a permission waits denies it, and your text is the reason the agent reads. The box says so first: **Your message will deny this, with your text as the reason**, and Send reads **Send and deny**. On Auto the message goes to the agent that asks, and if that agent can't take it the message comes back to the box with the reason. If the message can't be sent, the ask stays open. A message you queued during the turn waits in the tray while a permission is open, and you can still edit it. It goes on once you answer.
 
 ### Stop and Continue
 
@@ -215,6 +215,8 @@ This part is for contributors and agents who change the feature.
 - Speaker: `TurnFooter` takes a `previousRunId` and names the model only on a change. The `u31-chat-reading` scene shows a long Auto exchange.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
 - Header glance and dock: `useConversationGlance` and `conversationAskOf` give both one word, `useConversationAsks` lists what asks; `useAutoTreeActions` names the child in the Agents drawer payload.
+- Ask in the chat or the dock: `useAskDock` gives `conversationRows` the asks the dock holds. An ask it does not hold keeps its transcript card in the last turn, which is how a second window answers one, since only `setting` syncs between windows. A stopped agent or a later message lapses the ask, so it gets no card.
+- Focus after an ask: `useDockAskFocus` sends a focus that fell to the body to the message field of its own box. `focusAgentComposer` targets `data-composer-field`, never a docked answer field.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order. `ChoiceChips` draws the options.
 - Next step scenes: the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row. The `u31-next-step` scene test holds its height.
 - Image strip: `AttachmentStrip` is the one strip for a message (`UserText`), a goal (`GoalAttachmentsStrip`) and a hint (`OrchestratedHintRow`). It lives in `features/attachments/AttachmentStrip/`, outside `components/` and `hooks/`, so other features import it without growing the cross-feature count.

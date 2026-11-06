@@ -234,7 +234,7 @@ export const ChatInput = ({
           />
           <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
           <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
-          <div className="relative" ref={wrapperRef}>
+          <div className="relative" ref={wrapperRef} data-composer-field="">
             {popoverOpen ? (
               <QuickActionsPopover
                 items={prefix.filteredQuickItems}
