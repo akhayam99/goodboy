@@ -4,7 +4,13 @@ import {
   storedResultOf,
   type UserFacts,
 } from '@goodboy/core/auto';
-import { getAutoTree, insertAutoOutboxStatement, listAutoOutbox, type AutoTree } from '@goodboy/db';
+import {
+  getAutoOutboxByJoinKey,
+  getAutoTree,
+  insertAutoOutboxStatement,
+  listAutoOutbox,
+  type AutoTree,
+} from '@goodboy/db';
 import { brandId, type AutoOutboxId, type MessageAttachment } from '@goodboy/types';
 import { treeArtifacts } from './treeArtifacts';
 import type { AgentVerbContext } from './verbContext';
@@ -15,10 +21,18 @@ export type SubmitUserMessageParams = Readonly<{
   text: string;
   facts?: Partial<Pick<UserFacts, 'focusArtifactId' | 'attachedArtifacts' | 'explicitChange'>>;
   images?: ReadonlyArray<MessageAttachment>;
+  deliveryId?: string;
 }>;
 
 export type SubmitUserMessageOutcome =
-  Readonly<{ kind: 'queued'; rowId: string }> | Readonly<{ kind: 'lost' }>;
+  Readonly<{ kind: 'queued'; rowId: string; isRepeat?: boolean }> | Readonly<{ kind: 'lost' }>;
+
+type JoinKeyParams = Readonly<{
+  rowId: string;
+  deliveryId: string | undefined;
+}>;
+
+const joinKeyOf = ({ rowId, deliveryId }: JoinKeyParams): string => `user:${deliveryId ?? rowId}`;
 
 const MAX_ATTEMPTS = 3;
 const ABORT_GENERATION = 'submit_generation';
@@ -63,11 +77,22 @@ export const submitUserMessage = async ({
   text,
   facts,
   images = [],
+  deliveryId,
 }: SubmitUserMessageParams): Promise<SubmitUserMessageOutcome> => {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const tree = await getAutoTree({ db: ctx.db, treeId });
     if (tree === null) {
       return { kind: 'lost' };
+    }
+    if (deliveryId !== undefined) {
+      const existing = await getAutoOutboxByJoinKey({
+        db: ctx.db,
+        treeId,
+        joinKey: joinKeyOf({ rowId: deliveryId, deliveryId }),
+      });
+      if (existing !== null) {
+        return { kind: 'queued', rowId: existing.id, isRepeat: true };
+      }
     }
     const rowId = ctx.ports.newId();
     const outcome = await ctx.db.transaction({
@@ -84,7 +109,7 @@ export const submitUserMessage = async ({
             treeId,
             generation: tree.generation,
             kind: 'user',
-            joinKey: `user:${rowId}`,
+            joinKey: joinKeyOf({ rowId, deliveryId }),
             payload: {
               kind: 'user',
               text,

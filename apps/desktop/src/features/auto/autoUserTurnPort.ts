@@ -2,6 +2,7 @@ import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 
 export type AutoUserTurnQueued = Readonly<{
   rowId: string;
+  isRepeat?: boolean;
 }>;
 
 export type AutoUserTurnParams = Readonly<{
@@ -10,6 +11,7 @@ export type AutoUserTurnParams = Readonly<{
   workspaceId: string;
   text: string;
   images?: ReadonlyArray<MessageAttachment>;
+  deliveryId?: string;
   onQueued?: (queued: AutoUserTurnQueued) => void;
 }>;
 
