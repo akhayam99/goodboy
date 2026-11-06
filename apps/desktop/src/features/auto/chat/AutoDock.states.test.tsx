@@ -8,7 +8,13 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ArtifactId,
+  type IsoDateTime,
+  type ProviderRunId,
+} from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -24,6 +30,8 @@ import {
   aView,
   FIXTURE_SESSION,
 } from '../testing/autoViewFixtures';
+import { aPlanDraft } from '../../../test/planDrawerFixtures';
+import { aPlan } from '../../../test/planFixtures';
 import { AutoDockUnderTest } from '../testing/AutoDockUnderTest';
 import { registerTreeRetryPort } from '../treeRetryPort';
 
@@ -204,6 +212,33 @@ describe('AutoDock', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
+  });
+
+  it('fills Send to planner while comments wait, and keeps Approve anyway in the menu', async () => {
+    const plan = aPlan({
+      id: brandId<ArtifactId>({ value: 'artifact-plan' }),
+      sessionId: FIXTURE_SESSION,
+    });
+    useAppStore.setState({
+      sessionPlans: { [FIXTURE_SESSION]: [plan] },
+      artifactComments: {
+        [FIXTURE_SESSION]: [
+          aPlanDraft({ id: 'draft-1', artifactId: plan.id, sessionId: FIXTURE_SESSION }),
+          aPlanDraft({ id: 'draft-2', artifactId: plan.id, sessionId: FIXTURE_SESSION }),
+        ],
+      },
+      loadArtifactComments: async () => undefined,
+    });
+
+    renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
+
+    screen.getByText('2 comments on plan v1 not sent to the Planner');
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
+    const button = screen.getByRole('button', { name: 'Send to planner' });
+    expect(button.getAttribute('data-variant')).toBe('primary');
+    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
+    await screen.findByRole('menuitem', { name: 'Approve anyway' });
+    screen.getByRole('menuitem', { name: 'Discard my comments' });
   });
 
   it('hides Approve while the next step revises that plan', () => {

@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { brandId, type IsoDateTime } from '@goodboy/types';
+import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -18,6 +18,7 @@ import {
   storySpies,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { aPlannerQuestion } from '../../../../../test/planDrawerFixtures';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { C06_AGENT_ID, C06_SESSION_ID } from '../u25/c06ConversationSeed';
@@ -162,6 +163,27 @@ describe('the dock after a stop', () => {
       agentId: C06_AGENT_ID,
     });
     expect(document.querySelector('[data-agent-stopped]')).toBeNull();
+  });
+});
+
+describe('the dock when another agent waits on you', () => {
+  it('offers the next item from the Overview cards, and Open reaches it', async () => {
+    const dock = await mount({ name: 'u36-p9-running' });
+    const asked = aPlannerQuestion({
+      sessionId: C06_SESSION_ID,
+      createdByAgentId: brandId<AgentId>({ value: 'mock-agent-tester' }),
+    });
+    act(() =>
+      useAppStore.setState({
+        sessionOpenQuestions: { [C06_SESSION_ID]: [asked] },
+        loadSessionOpenQuestions: async () => undefined,
+      }),
+    );
+    await settle();
+
+    const row = dock.querySelector<HTMLElement>('[data-dock-next]');
+    expect(row?.textContent).toMatch(/^Next:/);
+    within(row ?? dock).getByRole('button', { name: 'Open' });
   });
 });
 

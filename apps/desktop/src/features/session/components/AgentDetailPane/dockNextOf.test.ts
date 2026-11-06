@@ -1,9 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { brandId, type AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type WorktreeStatus } from '@goodboy/types';
 import { actionCardsOf, type AutoActionTarget } from '../../central/next/actionCardsOf';
 import { dockChangesOf } from './dockChangesOf';
 import { dockNextOf } from './dockNextOf';
+
+const BRANCH = 'hl/reinstall-deps';
+
+type StatusParams = {
+  readonly changed: number;
+  readonly ahead: number;
+};
 
 const HERE = brandId<AgentId>({ value: 'agent-here' });
 const ROOT = brandId<AgentId>({ value: 'agent-root' });
@@ -46,7 +53,43 @@ describe('dockNextOf', () => {
 });
 
 describe('dockChangesOf', () => {
+  const statusOf = ({ changed, ahead }: StatusParams): WorktreeStatus => ({
+    branch: BRANCH,
+    head: null,
+    headSubject: null,
+    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    mainDistance: { kind: 'known', ahead, behind: 0 },
+    workingTree: {
+      kind: 'known',
+      staged: 0,
+      unstaged: changed,
+      untracked: 0,
+      unmerged: 0,
+      changed,
+    },
+    upstream: null,
+    inProgress: null,
+  });
+
   it('has no line before the status is read', () => {
-    expect(dockChangesOf({ status: undefined, branch: 'hl/reinstall-deps' })).toBeNull();
+    expect(dockChangesOf({ status: undefined, branch: BRANCH })).toBeNull();
+  });
+
+  it('counts the changed files of the branch', () => {
+    const status = statusOf({ changed: 2, ahead: 0 });
+
+    expect(dockChangesOf({ status, branch: BRANCH })).toBe('2 files changed on hl/reinstall-deps');
+  });
+
+  it('counts the commits once the files are committed', () => {
+    const status = statusOf({ changed: 0, ahead: 3 });
+
+    expect(dockChangesOf({ status, branch: BRANCH })).toBe('3 commits on hl/reinstall-deps');
+  });
+
+  it('means no dock when nothing changed', () => {
+    const status = statusOf({ changed: 0, ahead: 0 });
+
+    expect(dockChangesOf({ status, branch: BRANCH })).toBeNull();
   });
 });
