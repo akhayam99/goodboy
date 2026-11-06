@@ -8,21 +8,25 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { importStore, resetStoryStore } from '../../../../../store/storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../../store/storyHarness';
 import { MOCK_SCENES } from '../..';
 import { U24_P_LISTS_SCENES } from './p-lists';
 
+const WAIT = { timeout: 15_000 };
+
 beforeAll(async () => {
   await importStore();
-});
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   await resetStoryStore();
 });
 
 afterEach(cleanup);
-
-const WAIT = { timeout: 15_000 };
 
 type MountParams = {
   readonly name: keyof typeof U24_P_LISTS_SCENES;
@@ -49,6 +53,7 @@ describe('the list scenes', () => {
 
   it('notifications-delete-all arms the popover beside the button', async () => {
     mount({ name: 'notifications-delete-all' });
+
     const dialog = await screen.findByRole(
       'dialog',
       { name: /^Delete \d+ notifications\?$/ },
@@ -62,8 +67,8 @@ describe('the list scenes', () => {
   it('activity-mark-seen shows Mark as read as a button, with no menu', async () => {
     mount({ name: 'activity-mark-seen' });
 
-    const activity = await screen.findByRole('region', { name: 'Log entries' });
-    await within(activity).findByRole('button', { name: 'Mark as read' });
+    const activity = await screen.findByRole('region', { name: 'Log entries' }, WAIT);
+    await within(activity).findByRole('button', { name: 'Mark as read' }, WAIT);
     within(activity).getByRole('button', { name: 'Mark as read' });
     expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
   });
@@ -71,7 +76,7 @@ describe('the list scenes', () => {
   it('tasks-cursor shows a quiet cursor on the first row and no drawer', async () => {
     mount({ name: 'tasks-cursor' });
 
-    await screen.findByRole('list', { name: 'Task items' });
+    await screen.findByRole('list', { name: 'Task items' }, WAIT);
     const cursors = document.querySelectorAll('[data-row-key][data-cursor]');
     expect(cursors).toHaveLength(1);
     expect(document.querySelectorAll('[data-row-key][data-selected="true"]')).toHaveLength(0);

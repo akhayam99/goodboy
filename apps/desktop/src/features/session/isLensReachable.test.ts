@@ -10,12 +10,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
-import {
-  STORE_IMPORT_TIMEOUT_MS,
-  importStore,
-  resetStoryStore,
-  type StoryStore,
-} from '../../store/storyHarness';
+import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
 import { isLensReachable } from './isLensReachable';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -48,7 +43,7 @@ let store: StoryStore;
 
 beforeAll(async () => {
   store = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 type SeedParams = {
   readonly isArchived: boolean;
