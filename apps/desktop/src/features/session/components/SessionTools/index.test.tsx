@@ -117,8 +117,8 @@ describe('SessionTools', () => {
     expect(order).toEqual([
       'explore',
       'context',
-      'session-tools-separator',
       'ask',
+      'session-tools-separator',
       'spawned',
       'scripts',
       'terminal',
@@ -333,7 +333,7 @@ describe('SessionTools', () => {
     await settle();
     expect(toggle('explore').getAttribute('aria-pressed')).toBe('true');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to files' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Explore' }));
     await settle();
 
     expect(drawerKind()).toBe('explore');

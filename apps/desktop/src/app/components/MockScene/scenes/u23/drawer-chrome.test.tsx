@@ -98,7 +98,7 @@ describe('the drawer chrome scenes', () => {
 
     const diff = screen.getByRole('region', { name: 'Changes' });
     expect(within(diff).getByRole('button', { name: 'Close' })).toBeDefined();
-    expect(within(diff).getByRole('button', { name: /Open in Files/ })).toBeDefined();
+    expect(within(diff).getByRole('button', { name: 'Open page' })).toBeDefined();
 
     const script = screen.getByRole('region', { name: 'test' });
     expect(within(script).getByRole('button', { name: 'Close' })).toBeDefined();

@@ -47,7 +47,6 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     page: 'guideChapter',
     files: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
   },
-  { page: 'explore', files: ['features/explore/components/ExplorePane/index.tsx'] },
   {
     page: 'settings',
     files: ['features/companion/components/IphonePage/index.tsx'],
@@ -115,7 +114,6 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   notifications: 'column',
   guide: 'column',
   guideChapter: 'column',
-  explore: 'column',
   whatsNew: 'column',
   release: 'column',
   impact: 'column',

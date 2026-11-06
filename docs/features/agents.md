@@ -100,7 +100,7 @@ Do more from the message box. The **+** opens **Attach files**, **Run a script**
 
 ### Attach files
 
-Hand an agent images, PDFs, CSV and text files, up to 10 at a time and 10 MB each, by paste, drop or pick. **Ask the agent about this** on a script's output or a terminal adds the text the same way, as a file titled with where it came from, redacted and cut to its last 24,000 characters.
+Hand an agent images, PDFs, CSV and text files, up to 10 at a time and 10 MB each, by paste, drop or pick. **Send to the agent** on a script's output or a terminal adds the text the same way, as a file titled with where it came from, redacted and cut to its last 24,000 characters.
 
 ### Drift warning
 

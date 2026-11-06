@@ -541,7 +541,7 @@ placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
 **New session is a draft, not a session.** New, ⌘N (on Chat, Terminal and
-inside Ask the same chord is new chat, new terminal and Reset chat, see
+inside Ask the same chord is new chat, new terminal and New question, see
 [keyboard.md](../keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
@@ -664,8 +664,8 @@ artifacts`, a Branch file or thread `Back to branch`, every other lens page,
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
-Context form the reading group; one separator leads to the other tools.
+Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore, Context and
+Ask form the reading group; one separator leads to the other tools.
 Each tool keeps its pane id and shortcut. `SessionToolButton` names every
 tool below its icon in the 9px `text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
@@ -775,7 +775,7 @@ Folding the rail leaves the column in place.
   closes the pane (`DrawerFrame`).
 - **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
   `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
-  from Explore replaces it and shows **Back to files**; a script output opened
+  from Explore replaces it and shows **Back to Explore**; a script output opened
   from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
   `back`, carried by the payload's `from`); Run on a Service does not open it,
   Run on a Task does. `openExplorePane` takes the
@@ -995,7 +995,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
 
 ## The Scripts pane
 
-`ScriptsPanel` is one `DrawerFrame` (`Scripts`, count `N projects · N running`,
+a `Filter scripts` field from nine rows on, that `/` focuses, and an icon `New script`) over one list
 a `Filter scripts` field that `/` focuses and `New script`) over one list
 grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick

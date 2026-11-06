@@ -94,6 +94,6 @@ describe('the explore row scenes', () => {
   it('explore-rows-empty says the folder is empty', async () => {
     mount({ id: 'explore-rows-empty' });
 
-    expect(await screen.findByText('This folder is empty', {}, WAIT)).toBeDefined();
+    expect(await screen.findByText('Nothing here yet', {}, WAIT)).toBeDefined();
   });
 });

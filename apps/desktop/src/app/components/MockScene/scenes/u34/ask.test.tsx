@@ -52,15 +52,15 @@ describe('the Ask as Chat studio scenes', () => {
   it('opens scoped to the session with the Chat composer', async () => {
     mount({ name: 'u34-u18-ask-first' });
     const drawer = await screen.findByRole('region', { name: 'Ask' });
-    expect(within(drawer).getByTestId('ask-scope').textContent).toContain('Scope: ');
+    expect(within(drawer).queryByTestId('ask-scope')).toBeNull();
     expect(within(drawer).getAllByTestId('ask-composer')).toHaveLength(1);
   });
 
-  it('shows the shared transcript with one Start work from chat action', async () => {
+  it('shows the shared transcript with one Start work from this action', async () => {
     const { container } = mount({ name: 'u34-u18-ask-answer' });
     const drawer = await screen.findByRole('region', { name: 'Ask' });
     expect(container.querySelectorAll('[data-chat-message="user"]').length).toBeGreaterThan(0);
-    const starts = await within(drawer).findAllByRole('button', { name: NAMES.startWorkFromChat });
+    const starts = await within(drawer).findAllByRole('button', { name: NAMES.startWorkFromAsk });
     expect(starts.length).toBeGreaterThan(0);
   });
 });

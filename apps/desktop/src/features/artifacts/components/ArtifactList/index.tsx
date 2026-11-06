@@ -133,7 +133,7 @@ export const ArtifactList = ({
             size="page"
             icon={CONCEPT_ICONS.artifacts}
             title="No artifacts yet"
-            description="Plans, reports and wireframes from this session become artifacts."
+            description="Plans, reports and wireframes this session wrote."
           />
         ) : rows.length === 0 ? (
           <EmptyLine

@@ -70,7 +70,9 @@ describe('the explore changes scenes', () => {
     expect(gone.getAttribute('aria-disabled')).toBe('true');
     expect(screen.queryByRole('treeitem', { name: 'package.json' })).toBeNull();
     expect(screen.getByRole('treeitem', { name: 'schema.sql' })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Changed/ }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'Changed only' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
   });
 
   it('explore-changedempty says nothing changed against main', async () => {
@@ -87,8 +89,9 @@ describe('the explore changes scenes', () => {
     expect(screen.queryByRole('tab', { name: 'Source' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Open in Files/ })).toBeNull();
     const drawer = screen.getByRole('region', { name: 'rounding.ts' });
+    expect(within(drawer).getAllByRole('button', { name: 'Open page' })).toHaveLength(1);
     fireEvent.click(within(drawer).getByRole('button', { name: 'Actions for rounding.ts' }));
-    expect(screen.getByRole('menuitem', { name: 'Open in Files' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Open in Files' })).toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
   });
 });

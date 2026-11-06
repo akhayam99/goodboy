@@ -159,7 +159,7 @@ describe('c07 Auto scenes', () => {
     expect(last?.getAttribute('aria-label')).toMatch(/^Tester, /);
     fireEvent.keyDown(last ?? auto, { key: 'Enter' });
     expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(await autoTree()).toBeDefined();
   });
 
@@ -174,7 +174,7 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
     screen.getByTestId('agent-header-title-row');
     screen.getByText('Started by Auto. Auto sees what you tell it.');
-    expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(levelStack().dataset.levelStack).toBe('session');
     expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
@@ -278,7 +278,7 @@ describe('c07 Auto scenes', () => {
     expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
     expect(screen.getByText('Started by Auto. Auto sees what you tell it.')).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open full' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open page' })).toBeDefined();
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();
     expect(
@@ -306,16 +306,16 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
 
     fireEvent.click(await treeRow(/^Auto agent, /));
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull());
     expect(await autoTree()).toBeDefined();
   });
 
-  it('Open full puts the child in the center and keeps the rail on the session', async () => {
+  it('Open page puts the child in the center and keeps the rail on the session', async () => {
     mount({ id: 'c07-auto-child' });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Open full' }, WAIT));
+    fireEvent.click(await screen.findByRole('button', { name: 'Open page' }, WAIT));
 
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull());
     expect(levelStack().dataset.levelStack).toBe('session');
     expect(await screen.findByRole('button', { name: 'Open Auto' }, WAIT)).toBeDefined();
   });

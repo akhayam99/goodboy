@@ -219,14 +219,14 @@ afterEach(() => {
 
 describe('ExplorePane header', () => {
   const header = (): HTMLElement => {
-    const element = document.querySelector<HTMLElement>('[data-page-header]');
+    const element = document.querySelector<HTMLElement>('[data-drawer-header]');
     if (element === null) {
-      throw new Error('the page header is not drawn');
+      throw new Error('the drawer header is not drawn');
     }
     return element;
   };
 
-  it('draws the page header with the title, the counts and no glyph before the title', async () => {
+  it('draws the frame head with the title and no count of the root', async () => {
     list({
       relPath: '',
       entries: [folder('docs'), folder('src'), entry({ relPath: 'notes.txt' })],
@@ -234,10 +234,9 @@ describe('ExplorePane header', () => {
     mount();
 
     await rowNamed('docs');
-    const title = screen.getByRole('heading', { level: 1, name: 'Explore' });
-    expect(header().getAttribute('data-page')).toBe('explore');
-    expect(title.previousElementSibling).toBeNull();
-    expect(screen.getByText('2 folders · 1 file').getAttribute('data-slot')).toBe('pane-meta');
+    expect(screen.getByRole('heading', { level: 2, name: 'Explore' })).toBeDefined();
+    expect(header().querySelector('[data-drawer-meta]')).toBeNull();
+    expect(screen.queryByText('2 folders · 1 file')).toBeNull();
   });
 
   it('puts the refresh and Close in the title row and closes from the button', async () => {
@@ -261,7 +260,7 @@ describe('ExplorePane header', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('counts the changed files while the Changed view is open', async () => {
+  it('says how many files changed, in either view', async () => {
     mountRepo();
     list({ relPath: '', entries: [folder('src'), entry({ relPath: 'notes.txt' })] });
     list({ relPath: 'src', entries: [entry({ relPath: 'src/a.ts' })] });
@@ -269,19 +268,19 @@ describe('ExplorePane header', () => {
     mount();
 
     await rowNamed('src');
-    expect(screen.getByText('1 folder · 1 file')).toBeDefined();
-    fireEvent.click(await screen.findByRole('tab', { name: /Changed/ }));
+    expect(await screen.findByText('1 changed')).toBeDefined();
+    fireEvent.click(await screen.findByRole('switch', { name: 'Changed only' }));
 
-    expect(await screen.findByText('1 file changed')).toBeDefined();
+    expect(await screen.findByText('1 changed')).toBeDefined();
   });
 
   it('keeps the header and shows no counts for an empty root', async () => {
     list({ relPath: '', entries: [] });
     mount();
 
-    await screen.findByRole('heading', { name: 'This folder is empty' });
-    expect(screen.getByRole('heading', { level: 1, name: 'Explore' })).toBeDefined();
-    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
+    await screen.findByRole('heading', { name: 'Nothing here yet' });
+    expect(screen.getByRole('heading', { level: 2, name: 'Explore' })).toBeDefined();
+    expect(document.querySelector('[data-drawer-meta]')).toBeNull();
   });
 });
 
@@ -342,20 +341,21 @@ describe('ExplorePane tree', () => {
     list({ relPath: '', entries: [] });
     mount();
 
-    expect(await screen.findByRole('heading', { name: 'This folder is empty' })).toBeDefined();
-    expect(
-      screen.getByText('Files that agents write here show up as soon as they are saved.'),
-    ).toBeDefined();
+    expect(await screen.findByRole('heading', { name: 'Nothing here yet' })).toBeDefined();
+    expect(screen.getByText('Agents write files as they work.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDefined();
     expect(screen.queryByRole('tree')).toBeNull();
   });
 
-  it('shows listing errors instead of the empty state and retries on request', async () => {
+  it('folds the raw listing error behind Details and retries on request', async () => {
     failList({ relPath: '', message: 'io error: permission denied' });
     mount();
 
-    expect(await screen.findByText("Couldn't read this session folder")).toBeDefined();
+    expect(await screen.findByText("Couldn't read this folder")).toBeDefined();
+    expect(screen.queryByText('io error: permission denied')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
     expect(screen.getByText('io error: permission denied')).toBeDefined();
-    expect(screen.queryByText('This folder is empty')).toBeNull();
+    expect(screen.queryByText('Nothing here yet')).toBeNull();
 
     list({ relPath: '', entries: [entry({ relPath: 'notes.txt' })] });
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -1052,7 +1052,7 @@ describe('ExplorePane changed files', () => {
     ]);
     mount();
 
-    fireEvent.click(await screen.findByRole('tab', { name: /Changed/ }));
+    fireEvent.click(await screen.findByRole('switch', { name: 'Changed only' }));
 
     expect(await rowNamed('a.ts')).toBeDefined();
     expect(screen.getByRole('treeitem', { name: 'src' })).toBeDefined();
@@ -1064,9 +1064,12 @@ describe('ExplorePane changed files', () => {
     fireEvent.click(gone);
     expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'All files' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Changed only' }));
 
     expect(await rowNamed('notes.txt')).toBeDefined();
+    expect(screen.getByRole('switch', { name: 'Changed only' }).getAttribute('aria-checked')).toBe(
+      'false',
+    );
   });
 
   it('says nothing changed against the base once the last change is gone', async () => {
@@ -1075,7 +1078,7 @@ describe('ExplorePane changed files', () => {
     summarise([{ path: 'page.tsx', status: 'modified' }]);
     mount();
 
-    fireEvent.click(await screen.findByRole('tab', { name: /Changed/ }));
+    fireEvent.click(await screen.findByRole('switch', { name: 'Changed only' }));
     summarise([]);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh the files' }));
 
@@ -1083,7 +1086,9 @@ describe('ExplorePane changed files', () => {
     expect(
       screen.getByText('Files that differ from main are listed when they change.'),
     ).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'All files' })).toBeDefined();
+    expect(screen.getByRole('switch', { name: 'Changed only' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
   });
 
   it('hides the filter when nothing changed or the folder has no git', async () => {
@@ -1094,14 +1099,14 @@ describe('ExplorePane changed files', () => {
 
     await rowNamed('page.tsx');
     await waitFor(() => expect(callsTo('worktree_changed_files')).toHaveLength(1));
-    expect(screen.queryByRole('tab', { name: /Changed/ })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Changed only' })).toBeNull();
 
     cleanup();
     h.summary.current = new Error('cannot resolve base branch merge-base');
     mount();
 
     await rowNamed('page.tsx');
-    expect(screen.queryByRole('tab', { name: /Changed/ })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Changed only' })).toBeNull();
   });
 
   it('shows Preview and Changes for a changed file and only Preview for the others', async () => {
@@ -1115,7 +1120,7 @@ describe('ExplorePane changed files', () => {
     summarise([{ path: 'page.tsx', status: 'modified' }]);
     mount();
     await waitFor(() => expect(callsTo('worktree_changed_files')).toHaveLength(1));
-    await screen.findByRole('tab', { name: /Changed/ });
+    await screen.findByRole('switch', { name: 'Changed only' });
 
     fireEvent.click(await rowNamed('page.tsx'));
 

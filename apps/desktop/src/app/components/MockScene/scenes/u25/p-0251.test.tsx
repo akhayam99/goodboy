@@ -76,7 +76,7 @@ describe('the p-0251 scenes', () => {
     expect(screen.queryByRole('button', { name: 'Mark as read' })).toBeNull();
   });
 
-  it('ask-reset shows a two turn chat with Reset chat in the header', async () => {
+  it('ask-reset shows a two turn chat with New question in the header', async () => {
     clearSceneInvoke();
     const Scene = U25_P_0251_SCENES['ask-reset'];
     render(
@@ -86,7 +86,7 @@ describe('the p-0251 scenes', () => {
     );
 
     const panel = await screen.findByRole('region', { name: 'Ask' }, WAIT);
-    within(panel).getByRole('button', { name: 'Reset chat' });
+    within(panel).getByRole('button', { name: 'New question' });
     await waitFor(() => expect(screen.getAllByTestId('ask-turn')).toHaveLength(2), WAIT);
   });
 });
