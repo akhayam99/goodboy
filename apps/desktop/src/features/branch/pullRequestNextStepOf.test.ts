@@ -22,6 +22,7 @@ type RowParams = {
   readonly hasReviewer?: boolean;
   readonly behind?: number;
   readonly isStopOpen?: boolean;
+  readonly isOwn?: boolean;
 };
 
 const stepOf = ({
@@ -30,11 +31,12 @@ const stepOf = ({
   hasReviewer = false,
   behind = 0,
   isStopOpen = false,
+  isOwn = true,
 }: RowParams) => {
   const merged = { ...OPEN, ...facts };
   return pullRequestNextStepOf({
     state,
-    facts: merged,
+    facts: { ...merged, isOwn },
     readiness: evaluatePrMergeReadiness({ facts: merged }),
     hasReviewer,
     behind,
@@ -98,6 +100,13 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     { name: 'in merge queue', row: { state: 'queued' as const }, step: null },
     { name: 'merged', row: { state: 'merged' as const }, step: null },
     { name: 'closed', row: { state: 'closed' as const }, step: 'reopen' },
+    { name: 'open, not yours', row: { isOwn: false }, step: 'review' },
+    {
+      name: 'approved, not yours',
+      row: { state: 'approved' as const, isOwn: false },
+      step: 'review',
+    },
+    { name: 'draft, not yours', row: { state: 'draft' as const, isOwn: false }, step: 'markReady' },
   ])('$name', ({ row, step }) => {
     expect(stepOf(row)).toBe(step);
   });

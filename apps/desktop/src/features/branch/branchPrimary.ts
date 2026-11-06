@@ -2,13 +2,16 @@ import { countNoun } from '../../shared/utils/countNoun';
 import { NAMES } from '../../shared/utils/names';
 import type { LucideIcon } from 'lucide-react';
 import {
+  Archive,
   ArrowUp,
   Check,
   GitMerge,
   MessageSquare,
+  PencilLine,
   RotateCcw,
   RotateCw,
   Send,
+  Trash2,
   UserPlus,
   Wrench,
 } from 'lucide-react';
@@ -18,6 +21,7 @@ import { applyFixesLabel } from '../resolve/commentProjection';
 import {
   branchStepOf,
   type BranchCheckFacts,
+  type BranchClosingFacts,
   type BranchCommentFacts,
   type BranchLifecycleStep,
   type BranchStep,
@@ -232,6 +236,10 @@ const stepPrimaryOf = ({
     const action = find({ actions: diff, id });
     return action === null ? null : fromAction({ source: 'diff', action });
   };
+  const closeAction = ({ id, label, icon }: RequestActionParams) => {
+    const action = find({ actions: diff, id });
+    return action === null ? null : fromAction({ source: 'diff', action, label, icon });
+  };
   const requestAction = ({ id, label, icon }: RequestActionParams) => {
     const action = find({ actions: pullRequest, id });
     return action === null ? null : fromAction({ source: 'pullRequest', action, label, icon });
@@ -282,8 +290,14 @@ const stepPrimaryOf = ({
       });
     case 'merge':
       return requestAction({ id: 'pullRequest.merge', label: mergeLabel, icon: GitMerge });
+    case 'review':
+      return requestAction({ id: 'pullRequest.writeReview', label: 'Review', icon: PencilLine });
     case 'reopen':
       return requestAction({ id: 'pullRequest.reopen', label: 'Reopen', icon: RotateCcw });
+    case 'removeWorktree':
+      return closeAction({ id: 'diff.removeWorktree', label: NAMES.removeWorktree, icon: Trash2 });
+    case 'archiveSession':
+      return closeAction({ id: 'diff.archiveSession', label: 'Archive session', icon: Archive });
     default: {
       const unexpected: never = step;
       return unexpected;
@@ -300,6 +314,14 @@ const canDiffPush = ({ diff, hasOpenRebaseStop }: DiffStopParams): boolean => {
 
 const isRebaseStopped = ({ diff, hasOpenRebaseStop }: DiffStopParams): boolean =>
   hasOpenRebaseStop || find({ actions: diff, id: 'diff.continueRebase' }) !== null;
+
+const closingOf = ({ diff }: Pick<Params, 'diff'>): BranchClosingFacts => {
+  const remove = find({ actions: diff, id: 'diff.removeWorktree' });
+  return {
+    canRemove: remove !== null && remove.blockedReason === null,
+    canArchive: find({ actions: diff, id: 'diff.archiveSession' }) !== null,
+  };
+};
 
 const stepFor = ({
   diff,
@@ -319,6 +341,7 @@ const stepFor = ({
     hasConflicts,
     comments,
     checks,
+    closing: closingOf({ diff }),
     push: {
       isInFlight: isPullRequestPush && isReviewPushInFlight({ review }),
       failed: isPullRequestPush ? review.failed : 0,

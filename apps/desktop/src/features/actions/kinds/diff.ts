@@ -17,14 +17,22 @@ import { selectMountForPath } from '../../../store/slices/project-mounts/selecto
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
 import { countNoun } from '../../../shared/utils/countNoun';
+import { NAMES } from '../../../shared/utils/names';
+import { runningAgentCountOf } from '../../../store/runtime/live-work/runningAgentCountOf';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { archiveConfirmOf } from '../../session/archiveConfirmOf';
+import { archiveSessions } from '../../session/sessionArchive';
+import { lifecyclePortsOf } from './lifecyclePortsOf';
 import { abortRebase, rebaseMount, settleRequest } from './gitRuns';
 import { mountFactsFor } from './mount';
 import type { MountFacts } from './mountFacts';
+import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
 import { pushAction } from './pushAction';
 
 export type DiffFacts = MountFacts & {
   readonly patch: string;
   readonly rebaseConflicts: number;
+  readonly runningAgentCount?: number;
 };
 
 type FactsOnly = { readonly facts: DiffFacts };
@@ -174,7 +182,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     label: 'Change base branch…',
     icon: GitCompare,
     group: 'act',
-    when: ({ facts }) => !facts.isRebasing && facts.isRepo,
+    when: ({ facts }) => !facts.isRebasing && facts.isRepo && !hasPr({ facts }),
     run: ({ facts }) => {
       dispatchAfterNavigation({
         name: diffEventName({ name: DIFF_CHANGE_BASE_EVENT, sessionId: facts.sessionId }),
@@ -193,6 +201,49 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
       dispatchAfterNavigation({
         name: diffEventName({ name: HISTORY_SHOW_BACKUPS_EVENT, sessionId: facts.sessionId }),
       });
+    },
+  },
+  {
+    ...MOUNT_CLEAN_UP_ACTION,
+    id: 'diff.removeWorktree',
+    label: NAMES.removeWorktree,
+    icon: CONCEPT_ICONS.delete,
+    when: ({ facts }) => facts.pr === 'merged' && !facts.isClosed && facts.worktreePath !== null,
+    blockedReason: ({ facts }) => facts.blockers[0] ?? null,
+    slot: () => 'primary',
+    pendingLabel: () => 'Removing…',
+    doneLabel: () => 'Worktree removed.',
+    confirm: ({ facts }) => ({
+      title: 'Remove the worktree?',
+      description: `The folder and the local branch ${facts.branch} go. The pull request and the branch on origin stay, so nothing is lost. Stops and says why if work is uncommitted or unpushed.`,
+      confirmLabel: NAMES.removeWorktree,
+      role: 'danger',
+    }),
+  },
+  {
+    id: 'diff.archiveSession',
+    label: 'Archive session',
+    icon: CONCEPT_ICONS.archive,
+    group: 'danger',
+    isUndoable: true,
+    when: ({ facts }) => facts.pr === 'merged',
+    slot: ({ facts }) => (facts.isClosed || facts.worktreePath === null ? 'primary' : 'menu'),
+    confirm: ({ facts }) =>
+      (facts.runningAgentCount ?? 0) === 0
+        ? null
+        : archiveConfirmOf({ sessionCount: 1, runningAgentCount: facts.runningAgentCount ?? 0 }),
+    run: async ({ facts, env }) => {
+      const session = sessionById(env.getState().sessions, facts.sessionId);
+      if (session === undefined) {
+        throw new Error('The session stays where it was.');
+      }
+      const { failed } = await archiveSessions({
+        sessions: [session],
+        ...lifecyclePortsOf({ env }),
+      });
+      if (failed.length > 0) {
+        throw new Error('The session stays where it was.');
+      }
     },
   },
   {
@@ -233,7 +284,12 @@ export const DIFF_KIND: ObjectKindDefinition<DiffActionTarget, DiffFacts> = {
     });
     return facts === null
       ? null
-      : { ...facts, patch: target.patch, rebaseConflicts: target.rebaseConflicts };
+      : {
+          ...facts,
+          patch: target.patch,
+          rebaseConflicts: target.rebaseConflicts,
+          runningAgentCount: runningAgentCountOf({ state, sessionId: target.sessionId }),
+        };
   },
   actions: DIFF_ACTIONS,
 };

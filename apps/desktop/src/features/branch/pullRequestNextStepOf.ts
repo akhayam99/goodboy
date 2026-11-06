@@ -3,14 +3,14 @@ import type { MergeReadinessFacts, PrMergeReadiness } from '../review/prMergeRea
 import { mergeIsClear } from '../review/prMergeReadiness';
 
 export type PullRequestNextStep =
-  'markReady' | 'requestReview' | 'rebase' | 'merge' | 'reopen' | null;
+  'markReady' | 'requestReview' | 'review' | 'rebase' | 'merge' | 'reopen' | null;
 
 type Params = {
   readonly state: PullRequestPresentationState;
   readonly facts: Pick<
     MergeReadinessFacts,
     'checks' | 'review' | 'hasConflicts' | 'commentsNeedYou'
-  >;
+  > & { readonly isOwn?: boolean };
   readonly readiness: PrMergeReadiness;
   readonly hasReviewer: boolean;
   readonly behind: number;
@@ -26,6 +26,9 @@ const openStepOf = ({
   behind,
   isStopOpen,
 }: OpenParams): PullRequestNextStep => {
+  if (facts.isOwn === false) {
+    return 'review';
+  }
   if (isStopOpen) {
     return null;
   }

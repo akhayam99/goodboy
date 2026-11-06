@@ -14,6 +14,8 @@ export type BranchStepKind =
   | 'publish'
   | 'startCheckFix'
   | 'fixChecks'
+  | 'removeWorktree'
+  | 'archiveSession'
   | Exclude<BranchLifecycleStep, null>;
 
 export type BranchStep = BranchStepKind | 'working' | null;
@@ -44,6 +46,13 @@ export type BranchPushFacts = {
   readonly replies: number;
 };
 
+export type BranchClosingFacts = {
+  readonly canRemove: boolean;
+  readonly canArchive: boolean;
+};
+
+export const NO_CLOSING_FACTS: BranchClosingFacts = { canRemove: false, canArchive: false };
+
 type Params = {
   readonly state: PullRequestPresentationState;
   readonly lifecycle: BranchLifecycleStep;
@@ -51,6 +60,7 @@ type Params = {
   readonly comments: BranchCommentFacts;
   readonly checks: BranchCheckFacts;
   readonly push: BranchPushFacts;
+  readonly closing?: BranchClosingFacts;
 };
 
 export const NO_COMMENT_FACTS: BranchCommentFacts = {
@@ -134,6 +144,17 @@ const queuedStepOf = ({ push }: Pick<OpenParams, 'push'>): BranchStep => {
   return push.replies > 0 ? 'publish' : null;
 };
 
+type MergedParams = {
+  readonly closing: BranchClosingFacts;
+};
+
+const mergedStepOf = ({ closing }: MergedParams): BranchStep => {
+  if (closing.canRemove) {
+    return 'removeWorktree';
+  }
+  return closing.canArchive ? 'archiveSession' : null;
+};
+
 export const branchStepOf = ({
   state,
   lifecycle,
@@ -141,12 +162,13 @@ export const branchStepOf = ({
   comments,
   checks,
   push,
+  closing = NO_CLOSING_FACTS,
 }: Params): BranchStep => {
   switch (state) {
     case 'none':
       return startStepOf({ lifecycle, hasConflicts, comments, checks, push });
     case 'merged':
-      return null;
+      return mergedStepOf({ closing });
     case 'queued':
       return queuedStepOf({ push });
     case 'closed':

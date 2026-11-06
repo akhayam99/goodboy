@@ -56,8 +56,15 @@ sees it too) draws the work line and no fill, and the other doors that start an 
 the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
 the name of what runs. A push that runs, a stop that is open or a queued request keeps the push
 (and a `Retry push` there) in the secondary alone, with no primary beside it; `Publish N replies`
-stays reachable in the queue. A merged or
-closed request has no push, and `Force push` never sits there: while the online copy moved it waits
+stays reachable in the queue. On someone else's open request the step is `Review`
+(`pullRequest.writeReview`). A merged request ends the walk: `Remove worktree` while the folder is
+there and nothing blocks it (`diff.removeWorktree`, its confirm says the folder and the local branch
+go and the pull request and the branch on origin stay), then `Archive session` (`diff.archiveSession`,
+one confirm only while agents run, an Undo toast otherwise). While the new pull request form leads
+before a request exists, the header draws no push: it waits in `⋯`, so the unpushed count is said once,
+in the line under the title. A selection of comments takes the one fill and the header step steps
+down to secondary until the selection is cleared. A closed
+request has no push, and `Force push` never sits there: while the online copy moved it waits
 in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
 `MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
 `Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
@@ -198,7 +205,7 @@ cancelled in the database; `missing` says `The push was already handled or
 cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open with the host logo, named Open on GitHub, Copy link) and the
-branch actions (Change base branch…, Open terminal, Open in editor, Copy
+branch actions (Change base branch…, only before a pull request exists, Open terminal, Open in editor, Copy
 branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order

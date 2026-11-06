@@ -320,8 +320,8 @@ describe('the branch page of a branch with no pull request', () => {
         document.querySelector('[data-create-submit]')?.getAttribute('data-create-submit'),
       ).toBe('primary'),
     );
-    const push = document.querySelector<HTMLElement>('[data-branch-primary="diff.push"]');
-    expect(push?.getAttribute('data-variant')).toBe('secondary');
+    expect(document.querySelector('[data-branch-primary="diff.push"]')).toBeNull();
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('makes Create the one primary once the branch is pushed and up to date', async () => {

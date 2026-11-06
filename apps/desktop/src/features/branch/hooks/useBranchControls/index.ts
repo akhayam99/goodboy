@@ -72,6 +72,7 @@ export type BranchControls = {
   readonly primary: BranchPrimary | null;
   readonly secondary: BranchPrimary | null;
   readonly press: (action: BranchPrimary) => void;
+  readonly merge: () => void;
   readonly controlsOf: (action: BranchPrimary) => ActionControls | null;
   readonly isChangingBase: boolean;
   readonly closeChangingBase: () => void;
@@ -324,9 +325,15 @@ export const useBranchControls = ({
     [busyStepId, diffControls, pullRequestControls, runStep, sessionId],
   );
 
+  const merge = useCallback(
+    () => pullRequestControls.trigger({ actionId: 'pullRequest.merge' }),
+    [pullRequestControls],
+  );
+
   return {
     diffControls,
     pullRequestControls,
+    merge,
     step,
     checkWork: checkStep.work,
     primary,

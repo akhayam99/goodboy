@@ -2,8 +2,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   branchStepOf,
+  NO_CLOSING_FACTS,
   NO_COMMENT_FACTS,
   type BranchCheckFacts,
+  type BranchClosingFacts,
   type BranchCommentFacts,
   type BranchLifecycleStep,
   type BranchPushFacts,
@@ -20,6 +22,7 @@ type RowParams = {
   readonly comments?: Partial<BranchCommentFacts>;
   readonly checks?: Partial<BranchCheckFacts>;
   readonly push?: Partial<BranchPushFacts>;
+  readonly closing?: Partial<BranchClosingFacts>;
 };
 
 const stepOf = ({
@@ -29,6 +32,7 @@ const stepOf = ({
   comments = {},
   checks = {},
   push = {},
+  closing = {},
 }: RowParams) =>
   branchStepOf({
     state,
@@ -37,6 +41,7 @@ const stepOf = ({
     comments: { ...NO_COMMENT_FACTS, ...comments },
     checks: { ...NO_CHECK_FACTS, ...checks },
     push: { ...NO_PUSH, ...push },
+    closing: { ...NO_CLOSING_FACTS, ...closing },
   });
 
 const EVERYTHING: RowParams = {
@@ -125,7 +130,24 @@ describe('branchStepOf walks the order table, one row per step', () => {
       row: { state: 'approved', lifecycle: 'merge' },
       step: 'merge',
     },
-    { order: 8, name: 'merged', row: { ...EVERYTHING, state: 'merged' }, step: null },
+    {
+      order: 8,
+      name: 'merged, nothing to close',
+      row: { ...EVERYTHING, state: 'merged' },
+      step: null,
+    },
+    {
+      order: 8,
+      name: 'merged, the worktree is still there',
+      row: { ...EVERYTHING, state: 'merged', closing: { canRemove: true, canArchive: true } },
+      step: 'removeWorktree',
+    },
+    {
+      order: 8,
+      name: 'merged, the worktree is gone',
+      row: { ...EVERYTHING, state: 'merged', closing: { canArchive: true } },
+      step: 'archiveSession',
+    },
   ] satisfies ReadonlyArray<{
     readonly order: number;
     readonly name: string;

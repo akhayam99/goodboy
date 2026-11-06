@@ -189,6 +189,7 @@ type HarnessProps = {
   readonly canEditTitle?: boolean;
   readonly isActive?: boolean;
   readonly isPrimaryYielding?: boolean;
+  readonly isStepHidden?: boolean;
   readonly nextStep?: BranchNextStep;
   readonly hasOpenRebaseStop?: boolean;
   readonly onMutated?: () => void;
@@ -220,6 +221,7 @@ const Harness = ({
   canEditTitle = false,
   isActive = true,
   isPrimaryYielding = false,
+  isStepHidden = false,
   nextStep = null,
   hasOpenRebaseStop = false,
   onMutated,
@@ -242,6 +244,7 @@ const Harness = ({
       controls={controls}
       isPushBusy={false}
       isPrimaryYielding={isPrimaryYielding}
+      isStepHidden={isStepHidden}
       tab="pr"
       isActive={isActive}
       canEditTitle={canEditTitle}
@@ -256,6 +259,7 @@ const renderHeader = ({
   canEditTitle,
   isActive,
   isPrimaryYielding,
+  isStepHidden,
   nextStep,
   hasOpenRebaseStop,
   onMutated,
@@ -268,6 +272,7 @@ const renderHeader = ({
         canEditTitle={canEditTitle}
         isActive={isActive}
         isPrimaryYielding={isPrimaryYielding}
+        isStepHidden={isStepHidden}
         nextStep={nextStep}
         hasOpenRebaseStop={hasOpenRebaseStop}
         onMutated={onMutated}
@@ -399,7 +404,7 @@ describe('BranchHeader actions by state', () => {
     expect(screen.queryByRole('menuitem', { name: /Reopen/ })).toBeNull();
   });
 
-  it('draws no primary and no push for a merged pull request', () => {
+  it('draws Remove worktree and no push for a merged pull request', () => {
     const merged: PullRequestState = { ...PR, isDraft: false, state: 'merged' };
     withRequest(merged);
     status = statusOf({});
@@ -408,9 +413,56 @@ describe('BranchHeader actions by state', () => {
       review: { accepted: 2, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
 
+    expect(primaries().map((button) => button.textContent)).toEqual(['Remove worktree']);
+    expect(secondaries()).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /^Push/ })).toBeNull();
+  });
+
+  it('asks before it removes the worktree and says what stays', () => {
+    const merged: PullRequestState = { ...PR, isDraft: false, state: 'merged' };
+    withRequest(merged);
+    status = statusOf({});
+    renderHeader({ pr: merged });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove worktree' }));
+
+    const confirm = screen.getByText('Remove the worktree?').closest('[role]');
+    expect(confirm?.textContent ?? '').toContain(
+      'The pull request and the branch on origin stay, so nothing is lost',
+    );
+  });
+
+  it('draws no step while the new pull request form leads, so the push waits in the menu', () => {
+    withMountPr();
+    status = statusOf({});
+    renderHeader({
+      pr: PR,
+      isStepHidden: true,
+      review: {
+        accepted: 1,
+        replies: 0,
+        failed: 0,
+        isPushing: false,
+        push: { state: 'idle', count: 3 },
+      },
+    });
+
     expect(primaries()).toHaveLength(0);
     expect(secondaries()).toHaveLength(0);
-    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /^Push 3 commits$/ })).toBeNull();
+  });
+
+  it('keeps Change base branch out of the menu once a pull request exists', () => {
+    withMountPr();
+    status = statusOf({ changed: 3 });
+    renderHeader({ pr: PR });
+
+    const more = screen.queryByRole('button', { name: 'Branch actions' });
+    if (more !== null) {
+      fireEvent.click(more);
+    }
+    const labels = screen.queryAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.some((label) => label.startsWith('Change base branch'))).toBe(false);
   });
 
   it('draws no primary for a queued pull request and leaves the queue to the property block', () => {

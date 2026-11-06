@@ -33,6 +33,7 @@ type Props = {
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
   readonly isPrimaryYielding: boolean;
+  readonly isStepHidden?: boolean;
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
@@ -54,13 +55,15 @@ export const BranchHeader = ({
   controls,
   isPushBusy,
   isPrimaryYielding,
+  isStepHidden = false,
   tab,
   isActive = true,
   canEditTitle,
   line = null,
   onMutated,
 }: Props) => {
-  const { primary, secondary } = controls;
+  const primary = isStepHidden ? null : controls.primary;
+  const secondary = isStepHidden ? null : controls.secondary;
   const titleEdit = usePullRequestTitleEdit({
     sessionId,
     pr,
@@ -111,7 +114,11 @@ export const BranchHeader = ({
 
   const primaryId = primary?.actionId ?? null;
   const shownIds = useMemo(() => (primaryId === null ? [] : [primaryId]), [primaryId]);
-  const primaryVariant = isPrimaryYielding ? 'secondary' : 'primary';
+  const isYielding =
+    isPrimaryYielding ||
+    controls.diffControls.confirming !== null ||
+    controls.pullRequestControls.confirming !== null;
+  const primaryVariant = isYielding ? 'secondary' : 'primary';
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
       <HeaderBand

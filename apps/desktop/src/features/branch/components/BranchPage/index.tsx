@@ -27,6 +27,7 @@ import { useBranchIdentity } from '../../hooks/useBranchIdentity';
 import { useBranchStart } from '../../hooks/useBranchStart';
 import { usePullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { pullRequestNextStepOf } from '../../pullRequestNextStepOf';
+import { pushPhaseYieldsOf } from '../../pushPhaseYieldsOf';
 import { hasOpenRebaseStopOf } from '../../hasOpenRebaseStopOf';
 import { MERGE_METHOD_LABEL } from '../../../actions/kinds/pullRequest';
 import { useBranchTab } from '../../hooks/useBranchTab';
@@ -281,13 +282,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     !bitbucketRemote.isBitbucket &&
     (sources.length > 0 || repo !== null);
   const isPrimaryYielding =
-    isFormLeading ||
-    push.phase.kind === 'confirm' ||
-    push.phase.kind === 'pushing' ||
-    push.phase.kind === 'sync_confirm' ||
-    (tab === 'comments' && branchReview.isSelecting) ||
-    controls.diffControls.confirming !== null ||
-    controls.pullRequestControls.confirming !== null;
+    pushPhaseYieldsOf({ kind: push.phase.kind }) ||
+    (tab === 'comments' && branchReview.isSelecting);
 
   const hasEditAction = controls.pullRequestControls.actions.some(
     (action) => action.id === 'pullRequest.editDetails',
@@ -458,6 +454,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               controls={controls}
               isPushBusy={isPushBusy}
               isPrimaryYielding={isPrimaryYielding}
+              isStepHidden={isFormLeading && controls.step === 'push'}
               tab={tab}
               isActive={isActive}
               canEditTitle={canEditTitle}
