@@ -5,7 +5,6 @@ import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useIsStoppedBeforeAnswer } from '../../hooks/useIsStoppedBeforeAnswer';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { decisionSentenceOf } from './decisionSentenceOf';
-import { RetryButton } from './RetryButton';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
@@ -45,12 +44,6 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
       {canContinue && (
         <div className="flex flex-wrap items-center gap-2">
           <span className={warningText}>Stopped before your answer.</span>
-          <RetryButton
-            sessionId={sessionId}
-            agentId={agentId}
-            toolName={item.toolName}
-            toolUseId={item.toolUseId}
-          />
         </div>
       )}
       {isOnceAllow && (

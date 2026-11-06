@@ -20,6 +20,7 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -316,6 +317,7 @@ describe('sendTurn, permission proxy integration', () => {
   it('retryBlockedTool re-sends the turn with a prompt naming the approved tool', async () => {
     setupSession(useAppStore);
     useAppStore.setState({
+      transcripts: { [AGENT_ID]: [] },
       agentTurnState: {
         [AGENT_ID]: {
           kind: 'blocked',
@@ -335,6 +337,37 @@ describe('sendTurn, permission proxy integration', () => {
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(String(args.prompt)).toContain('Permission for Bash is now granted.');
+  });
+
+  it('retryBlockedTool holds the turn while another ask of the batch is open', async () => {
+    setupSession(useAppStore);
+    const runId = brandId<ProviderRunId>({ value: 'run-blocked' });
+    const at = brandId<IsoDateTime>({ value: '2026-05-07T00:00:00.000Z' });
+    const openAsk = {
+      kind: 'permission_request',
+      runId,
+      toolName: 'Bash',
+      input: {},
+      at,
+    } satisfies Partial<TurnEvent>;
+    useAppStore.setState({
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId, blockedAt: at } },
+      transcripts: {
+        [AGENT_ID]: [
+          { ...openAsk, toolUseId: 'tool-blocked' },
+          { ...openAsk, toolUseId: 'tool-next' },
+        ],
+      },
+    });
+
+    await useAppStore.getState().retryBlockedTool({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolName: 'Bash',
+      toolUseId: 'tool-blocked',
+    });
+
+    expect(runTurnSpy).not.toHaveBeenCalled();
   });
 
   it('retryBlockedTool does nothing while that agent is still running', async () => {

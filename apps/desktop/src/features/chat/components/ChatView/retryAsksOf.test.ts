@@ -33,6 +33,31 @@ const sent: TurnEvent = {
 };
 
 describe('retryAsksOf', () => {
+  it('keeps the answers through a retry that failed too', () => {
+    const secondRun = brandId<ProviderRunId>({ value: 'run-second' });
+    const thirdRun = brandId<ProviderRunId>({ value: 'run-third' });
+    const second: TurnEvent = { ...sent, runId: secondRun };
+    const third: TurnEvent = { ...sent, runId: thirdRun };
+
+    expect(retryAsksOf({ events: [ask, denied, sent, second], runId: secondRun }).held).toEqual([
+      expect.objectContaining({ toolUseId: 'tool-migrate', decision: 'deny' }),
+    ]);
+    expect(
+      retryAsksOf({ events: [ask, denied, sent, second, third], runId: thirdRun }).held,
+    ).toEqual([expect.objectContaining({ toolUseId: 'tool-migrate', decision: 'deny' })]);
+  });
+
+  it('stops carrying at a different message', () => {
+    const otherRun = brandId<ProviderRunId>({ value: 'run-other' });
+    const other: TurnEvent = { ...sent, runId: otherRun, text: 'Now seed the table' };
+    const retried = brandId<ProviderRunId>({ value: 'run-retried' });
+    const retry: TurnEvent = { ...sent, runId: retried, text: 'Now seed the table' };
+
+    expect(retryAsksOf({ events: [ask, denied, sent, other, retry], runId: retried }).held).toEqual(
+      [],
+    );
+  });
+
   it('reads the answers the failed turn carried', () => {
     const { denied: open, held } = retryAsksOf({
       events: [ask, denied, sent],

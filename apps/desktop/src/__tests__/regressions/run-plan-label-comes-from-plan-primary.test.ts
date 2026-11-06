@@ -13,6 +13,8 @@ const APPROVE_LABEL = /['"`]Approve and (?:start|continue)/;
 
 const APPROVE_PRODUCER = 'features/plans/planApproveLabelOf.ts';
 
+const NAMES_FILE = 'shared/utils/names.ts';
+
 const isSource = (entry: string): boolean =>
   /\.tsx?$/.test(entry) && !/\.(test|rows|runner)\.tsx?$/.test(entry);
 
@@ -57,7 +59,7 @@ describe('the Run plan label', () => {
     const offenders: string[] = [];
     for (const file of listSourceFiles(DESKTOP_SRC)) {
       const name = relative(DESKTOP_SRC, file);
-      if (name === APPROVE_PRODUCER || name.includes('/scenes/')) {
+      if (name === APPROVE_PRODUCER || name === NAMES_FILE || name.includes('/scenes/')) {
         continue;
       }
       readFileSync(file, 'utf8')

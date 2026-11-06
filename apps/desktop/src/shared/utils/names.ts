@@ -108,6 +108,7 @@ export const NAMES = {
   rebaseNeedsYou: 'The rebase needs you',
   waitingForPermission: 'Waiting for your permission',
   needsApproval: 'Needs approval',
+  approveAndContinue: 'Approve and continue',
   runPlan: 'Run plan',
   follow: 'Follow',
   pin: 'Pin session',

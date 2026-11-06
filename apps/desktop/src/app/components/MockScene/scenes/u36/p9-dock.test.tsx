@@ -86,35 +86,17 @@ describe('the P9 dock scenes', () => {
     expect(document.querySelector('[data-glance]')?.textContent).not.toContain('wants to run');
   });
 
-  it('u36-p9-always-stopped keeps Continue on the record of an answer that never went out', async () => {
+  it('u36-p9-always-stopped leads the dock with Continue, and nothing reads as asking', async () => {
     const dock = await mount({ name: 'u36-p9-always-stopped' });
 
     expect(within(dock).queryByRole('button', { name: 'Allow and continue' })).toBeNull();
+    within(dock).getByText('Stopped before your answer');
+    expect(within(dock).getByRole('button', { name: 'Continue' }).dataset.variant).toBe('primary');
+    expect(screen.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
+    expect(within(dock).queryByText('Asking you')).toBeNull();
+    expect(within(dock).queryByText('Waiting for your OK to go on')).toBeNull();
+    expect(within(dock).queryByRole('button', { name: 'Stop' })).toBeNull();
     screen.getByText('Stopped before your answer.');
-    screen.getByRole('button', { name: 'Continue' });
-  });
-
-  it('a window that never saw the turn held keeps the ask in the chat, with its answers', async () => {
-    const dock = await mount({ name: 'u36-p9-permission' });
-
-    await act(async () => {
-      useAppStore.setState((state) => {
-        const { [C06_AGENT_ID]: _held, ...agentTurnState } = state.agentTurnState;
-        return { agentTurnState };
-      });
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-
-    expect(within(dock).queryByRole('button', { name: 'Allow and continue' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Allow and continue' })).toHaveLength(1);
-  });
-
-  it('u36-p9-always-stopped keeps Continue on the record of an answer that never went out', async () => {
-    const dock = await mount({ name: 'u36-p9-always-stopped' });
-
-    expect(within(dock).queryByRole('button', { name: 'Allow and continue' })).toBeNull();
-    screen.getByText('Stopped before your answer.');
-    screen.getByRole('button', { name: 'Continue' });
   });
 
   it('a window that never saw the turn held keeps the ask in the chat, with its answers', async () => {

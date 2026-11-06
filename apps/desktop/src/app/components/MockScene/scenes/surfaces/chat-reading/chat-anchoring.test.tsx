@@ -80,7 +80,7 @@ describe('the chat anchoring scene', () => {
     const turns = container.querySelectorAll('[data-turn]');
     expect(turns).toHaveLength(3);
     expect(turns[turns.length - 1]?.textContent).toContain(SENT_QUESTION);
-    expect(turns[turns.length - 1]?.textContent).toContain('Writing the answer');
+    expect(container.querySelector('[data-dock-live]')?.textContent).toContain('Auto is answering');
   });
 
   it('makes room under the sent message and leaves Jump to latest hidden while it fits', async () => {

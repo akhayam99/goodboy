@@ -3,6 +3,7 @@ import type { Agent, SessionId } from '@goodboy/types';
 import type { GlanceState } from '../../../session/glance/glanceOf';
 import { useConversationAsks } from '../../../../store/hooks/useConversationAsks';
 import { useConversationGlance } from '../../../../store/hooks/useConversationGlance';
+import { useStoppedAnswer } from '../../../../store/hooks/useStoppedAnswer';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,8 +19,9 @@ const SAID_ELSEWHERE: ReadonlySet<GlanceState> = new Set<GlanceState>([
 export const AgentDockLine = ({ sessionId, agent }: Props) => {
   const glance = useConversationGlance({ sessionId, agent, autoView: null });
   const { permissions, questions } = useConversationAsks({ sessionId, agentId: agent.id });
+  const stopped = useStoppedAnswer({ agentId: agent.id });
   const hasAsk = permissions.length > 0 || questions.length > 0;
-  if (hasAsk || glance.sentence === '' || SAID_ELSEWHERE.has(glance.state)) {
+  if (hasAsk || stopped !== null || glance.sentence === '' || SAID_ELSEWHERE.has(glance.state)) {
     return null;
   }
   return (

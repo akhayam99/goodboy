@@ -79,18 +79,27 @@ describe('DockLiveLine', () => {
 
 describe('conversationStopOf', () => {
   const agentStop = { phase: 'idle' as const, isLive: true, isBlocked: false, stop: vi.fn() };
+  const nothingOpen = { hasOpenAsk: false, isStoppedAnswer: false };
 
   it('prefers the scope the conversation names', () => {
     const scoped = stopOf({ label: 'Stop Auto' });
 
     expect(
-      conversationStopOf({ agentStop, scoped, stopLabel: null, isRunning: true, sentence: null }),
+      conversationStopOf({
+        ...nothingOpen,
+        agentStop,
+        scoped,
+        stopLabel: null,
+        isRunning: true,
+        sentence: null,
+      }),
     ).toBe(scoped);
   });
 
   it('offers no Stop when nothing runs', () => {
     expect(
       conversationStopOf({
+        ...nothingOpen,
         agentStop: { ...agentStop, isLive: false },
         scoped: null,
         stopLabel: null,
@@ -102,6 +111,7 @@ describe('conversationStopOf', () => {
 
   it('stops the reply on a step page with the label the page gives', () => {
     const stop = conversationStopOf({
+      ...nothingOpen,
       agentStop,
       scoped: null,
       stopLabel: 'Stop this reply',
@@ -116,11 +126,13 @@ describe('conversationStopOf', () => {
 
   it('keeps Stop beside a permission ask, saying what the agent waits for', () => {
     const stop = conversationStopOf({
+      ...nothingOpen,
       agentStop: { ...agentStop, isBlocked: true },
       scoped: null,
       stopLabel: null,
       isRunning: false,
       sentence: null,
+      hasOpenAsk: true,
     });
 
     expect(stop?.label).toBe('Stop');
@@ -128,8 +140,36 @@ describe('conversationStopOf', () => {
     expect(stop?.stop).toBe(agentStop.stop);
   });
 
+  it('does not read as asking when nothing is open', () => {
+    const stop = conversationStopOf({
+      ...nothingOpen,
+      agentStop: { ...agentStop, isBlocked: true },
+      scoped: null,
+      stopLabel: null,
+      isRunning: false,
+      sentence: null,
+    });
+
+    expect(stop?.sentence).toBeNull();
+  });
+
+  it('offers no Stop on an answer that never went out', () => {
+    expect(
+      conversationStopOf({
+        ...nothingOpen,
+        agentStop: { ...agentStop, isBlocked: true },
+        scoped: null,
+        stopLabel: null,
+        isRunning: false,
+        sentence: null,
+        isStoppedAnswer: true,
+      }),
+    ).toBeNull();
+  });
+
   it('keeps Stop during the start of a turn, before the run is live', () => {
     const stop = conversationStopOf({
+      ...nothingOpen,
       agentStop: { ...agentStop, isLive: false },
       scoped: null,
       stopLabel: null,

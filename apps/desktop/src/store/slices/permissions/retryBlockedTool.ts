@@ -29,7 +29,14 @@ export const retryBlockedTool = (get: GetFn) => {
     if (get().agentTurnState[agentId]?.kind === 'running') {
       return;
     }
-    const { held } = askBatchAfterAnswer({ transcripts: get().transcripts, agentId, toolUseId });
+    const { isWaiting, held } = askBatchAfterAnswer({
+      transcripts: get().transcripts,
+      agentId,
+      toolUseId,
+    });
+    if (isWaiting) {
+      return;
+    }
     throwIfRefused({
       result: await get().sendTurn({
         sessionId,

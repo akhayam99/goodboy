@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
   readonly toolUseId: string;
 };
 
-export const RetryButton = ({ sessionId, agentId, toolName, toolUseId }: Props) => {
+export const DockContinueButton = ({ sessionId, agentId, toolName, toolUseId }: Props) => {
   const retryBlockedTool = useAppStore((s) => s.retryBlockedTool);
   const isRunning = useAppStore((s) => s.agentTurnState[agentId]?.kind === 'running');
   const reportError = useAppStore((s) => s.reportError);
@@ -40,14 +41,14 @@ export const RetryButton = ({ sessionId, agentId, toolName, toolUseId }: Props) 
   return (
     <Tooltip content="Start a new turn so the agent retries the call with the new rule in place">
       <Button
-        variant="secondary"
-        size="xs"
+        variant="primary"
+        size="sm"
         isBusy={isBusy}
         disabled={isRunning}
         onClick={() => void handle()}
       >
         <RotateCcw size={ICON_SIZE.mark} aria-hidden />
-        Continue
+        {NAMES.continue}
       </Button>
     </Tooltip>
   );

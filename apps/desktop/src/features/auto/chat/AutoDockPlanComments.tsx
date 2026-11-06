@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { Button, OverflowMenu, tintClasses } from '@goodboy/ui';
+import { Button, tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { pluralize } from '../../../shared/utils/pluralize';
 import { useAppStore } from '../../../store';
+import { ObjectOverflowMenu } from '../../actions/ObjectOverflowMenu';
 import { usePlanComments } from '../../plans/planComments/usePlanComments';
 import { AUTO_STATE_TONE } from './autoStateTone';
 
@@ -59,31 +60,13 @@ export const AutoDockPlanComments = ({
       )}
       <span className="flex-1" />
       {openPlan}
-      <OverflowMenu
+      <ObjectOverflowMenu
         label="More plan actions"
         size="control"
-        entries={[
-          {
-            kind: 'item',
-            key: 'approve-anyway',
-            label: 'Approve anyway',
-            isDisabled: isBusy,
-            onSelect: onApproveAnyway,
-          },
-          {
-            kind: 'item',
-            key: 'discard-comments',
-            label: 'Discard my comments',
-            isDestructive: true,
-            confirm: {
-              title: `Discard ${count}?`,
-              description: 'They are removed from the plan and nothing is sent to the Planner.',
-              confirmLabel: 'Discard',
-              role: 'danger',
-            },
-            onSelect: discard,
-          },
-        ]}
+        target={{
+          kind: 'planComments',
+          facts: { count, isBusy, onApproveAnyway, onDiscard: () => void discard() },
+        }}
       />
       <Button
         variant="primary"

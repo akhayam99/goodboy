@@ -65,7 +65,6 @@ const decisionEvent: TurnEvent = {
 };
 
 let store: StoryStore;
-const retryBlockedToolMock = vi.fn(async () => undefined);
 
 const renderLine = (item: DecisionItem) =>
   render(<PermissionRecordLine item={item} sessionId={SESSION_ID} agentId={AGENT_ID} />);
@@ -76,9 +75,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  retryBlockedToolMock.mockReset().mockResolvedValue(undefined);
   store.setState({
-    retryBlockedTool: retryBlockedToolMock,
     transcripts: { [AGENT_ID]: [decisionEvent] },
     agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: AT } },
   });
@@ -87,20 +84,11 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('PermissionRecordLine', () => {
-  it('keeps Continue on an always allow whose turn never started', async () => {
+  it('says an always allow stopped, and leaves Continue to the dock', () => {
     renderLine(makeItem());
 
     screen.getByText('Stopped before your answer.');
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    });
-
-    expect(retryBlockedToolMock).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      agentId: AGENT_ID,
-      toolName: 'Bash',
-      toolUseId: 'tu-7',
-    });
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
   it('offers nothing once the turn went on', () => {

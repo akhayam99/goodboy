@@ -4,7 +4,6 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { useIsStoppedBeforeAnswer } from '../../hooks/useIsStoppedBeforeAnswer';
 import { decisionSentenceOf } from '../PermissionDecisionCard/decisionSentenceOf';
-import { RetryButton } from '../PermissionDecisionCard/RetryButton';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
@@ -40,12 +39,6 @@ export const PermissionRecordLine = ({ item, sessionId, agentId }: Props) => {
       {isStopped && sessionId !== null && agentId !== null && (
         <div className="flex flex-wrap items-center gap-2">
           <span className={warningText}>Stopped before your answer.</span>
-          <RetryButton
-            sessionId={sessionId}
-            agentId={agentId}
-            toolName={item.toolName}
-            toolUseId={item.toolUseId}
-          />
         </div>
       )}
     </div>

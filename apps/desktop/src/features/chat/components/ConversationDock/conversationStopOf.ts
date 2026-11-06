@@ -17,6 +17,8 @@ type Params = {
   readonly stopLabel: string | null;
   readonly isRunning: boolean;
   readonly sentence: string | null;
+  readonly hasOpenAsk: boolean;
+  readonly isStoppedAnswer: boolean;
 };
 
 export const conversationStopOf = ({
@@ -25,17 +27,19 @@ export const conversationStopOf = ({
   stopLabel,
   isRunning,
   sentence,
+  hasOpenAsk,
+  isStoppedAnswer,
 }: Params): ConversationStop | null => {
   if (scoped !== null) {
     return scoped;
   }
-  if (!isRunning && !agentStop.isLive) {
+  if (isStoppedAnswer || (!isRunning && !agentStop.isLive)) {
     return null;
   }
   return {
     label: stopLabel ?? NAMES.stop,
     phase: agentStop.phase,
-    sentence: sentence ?? (agentStop.isBlocked ? ASKING_YOU : null),
+    sentence: sentence ?? (agentStop.isBlocked && hasOpenAsk ? ASKING_YOU : null),
     stop: agentStop.stop,
   };
 };

@@ -3,11 +3,13 @@ import { ScrollFade } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
 import type { ConversationLive, ConversationStop } from '../../../../shared/types/conversationStop';
 import { useConversationAsks } from '../../../../store/hooks/useConversationAsks';
+import { useStoppedAnswer } from '../../../../store/hooks/useStoppedAnswer';
 import { ConversationDockAsk } from './ConversationDockAsk';
 import { ConversationDockLine } from './ConversationDockLine';
 import type { DockFailure } from './dockFailureOf';
 import { DockFailureLine } from './DockFailureLine';
 import { DockLiveLine } from './DockLiveLine';
+import { DockStoppedLine } from './DockStoppedLine';
 import { useDockAskFocus } from './useDockAskFocus';
 
 type Props = {
@@ -35,6 +37,7 @@ export const ConversationDock = ({
 }: Props) => {
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
+  const stopped = useStoppedAnswer({ agentId });
   useDockAskFocus({ dockRef, askCount: hasAsks ? permissions.length + questions.length : 0 });
   return (
     <div
@@ -56,6 +59,9 @@ export const ConversationDock = ({
         ) : null}
         {lead}
         {failure === null ? null : <DockFailureLine failure={failure} />}
+        {stopped === null || agentId === null || failure !== null ? null : (
+          <DockStoppedLine sessionId={session.id} agentId={agentId} stopped={stopped} />
+        )}
         {hasAsks && agentId !== null && failure === null ? (
           <ConversationDockLine sessionId={session.id} agentId={agentId} />
         ) : null}

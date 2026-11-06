@@ -2182,7 +2182,7 @@
   },
   "apps/desktop/src/features/chat/components/ChatInput/composerView.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/chat/components/ChatInput/hooks/useAgentSwitchSync.test.ts": {
@@ -2296,7 +2296,7 @@
   },
   "apps/desktop/src/features/chat/components/ChatInput/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 3
     }
   },
   "apps/desktop/src/features/chat/components/ChatInput/lib.ts": {
@@ -4196,11 +4196,8 @@
     }
   },
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 1
     }
   },
   "apps/desktop/src/features/permissions/components/PermissionsSettings/index.test.tsx": {
@@ -8900,11 +8897,6 @@
   },
   "apps/desktop/src/store/slices/overrides/workspaceWriteQueue.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/store/slices/permissions/allowAndContinue.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 2
     }
   },
