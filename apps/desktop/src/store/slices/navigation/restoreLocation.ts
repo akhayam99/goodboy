@@ -1,3 +1,4 @@
+import { selectSessionById } from '../sessions/selectSessionById';
 import { applyLocation } from './applyLocation';
 import { canonicalLocation } from './canonicalLocation';
 import { currentStack, stackKey } from './currentStack';
@@ -14,7 +15,7 @@ const placeStillThere = ({ get, location }: { readonly get: GetFn } & Params): L
   if (place.at !== 'session') {
     return location;
   }
-  const exists = get().sessions.some((session) => session.id === place.sessionId);
+  const exists = selectSessionById(get(), place.sessionId) !== null;
   return exists
     ? location
     : { ...location, place: { at: 'board' }, focus: { ...location.focus, drawer: null } };

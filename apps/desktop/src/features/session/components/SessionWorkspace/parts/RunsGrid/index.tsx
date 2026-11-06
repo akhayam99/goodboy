@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { ListGrid, ListGridGroup, FOCUS_RING, cn } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../../store';
@@ -6,6 +6,7 @@ import { useNow } from '../../../../../../shared/hooks/useNow';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
+import { useRowReturn } from '../../../../useRowReturn';
 import { openSpawned } from '../../../../openSpawned';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
@@ -53,8 +54,11 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const finished = live.filter((run) => run.isFinished);
   const shownFinished = isEarlierShown ? finished : finished.slice(0, VISIBLE_FINISHED_COUNT);
   const earlierCount = Math.max(0, finished.length - VISIBLE_FINISHED_COUNT);
+  const rowIds = useMemo(() => runs.map((run) => run.id), [runs]);
+  const rowReturn = useRowReturn({ listKey: 'runs', rowIds, rowAttribute: 'data-row-key' });
 
   const open = ({ run }: RowParams) => {
+    rowReturn.remember({ rowId: run.id });
     switch (run.open.kind) {
       case 'run':
         navigate({ to: runPlace({ sessionId, runId: run.open.runId }) });

@@ -1,11 +1,4 @@
-import type {
-  SessionId,
-  AgentId,
-  ProjectId,
-  WorkspaceId,
-  SessionViewPrefs,
-  ArtifactId,
-} from '@goodboy/types';
+import type { SessionId, AgentId, WorkspaceId, SessionViewPrefs, ArtifactId } from '@goodboy/types';
 import type {
   LensKind,
   DiffFocus,
@@ -19,7 +12,6 @@ import type { ArtifactFilter } from '../../../features/artifacts/artifactCollect
 
 export type SessionViewState = {
   readonly selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;

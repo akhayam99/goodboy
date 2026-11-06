@@ -342,7 +342,12 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   its `to` says: a place with no target is the list (Runs, Artifacts), never
   the run or artifact shown before, so every caller that means an object
   passes it as the target, and opening a row is a move that Back undoes
-  (`openArtifactPage`, `openGithubIssue`). A write in the background, such as
+  (`openArtifactPage`, `openGithubIssue`). The Runs and Artifacts lists write
+  the row they open into `focus.scroll` with `amendFocus` first
+  (`useRowReturn`), so Back scrolls to that row again. A reload keeps a
+  session it can still show, archived ones included (`selectSessionById` in
+  `restoreLocation`), and the Scripts drawer carries its project in its
+  payload, so a reload keeps that scope too. A write in the background, such as
   a run starting, never moves the page. The per-session keys the
   surfaces render from (`activeLens`, `selectedAgentId`, the
   focused target) are written only by the slice. A contract test

@@ -59,6 +59,7 @@ export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }:
     <ListGridRow
       ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
+      rowKey={run.id}
       {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
       cells={[
         <StateDot state={run.dot} label={run.stateWord} isLive={run.dot === 'running'} />,

@@ -99,6 +99,15 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'continue-agent') {
+    const { sessionId, agentId } = action;
+    return {
+      label: 'Continue',
+      onClick: () => {
+        void store.continueStoppedAgent({ sessionId, agentId });
+      },
+    };
+  }
   if (action.kind === 'open-agent') {
     const { sessionId, agentId } = action;
     return {

@@ -2,7 +2,6 @@ type Params = Record<string, never>;
 
 export const createInitialSessionViewState = ({}: Params) => ({
   selectedAgentId: {},
-  scriptsLensScope: null,
   sessionViewPrefs: {},
   activeLens: {},
   focusedArtifactId: {},

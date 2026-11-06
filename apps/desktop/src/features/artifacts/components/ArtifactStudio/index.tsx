@@ -27,6 +27,7 @@ import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact'
 import { useEscapeLayer } from '@goodboy/ui';
 import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { openArtifactPage } from '../../openArtifactPage';
+import { useRowReturn } from '../../../session/useRowReturn';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
@@ -201,9 +202,17 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
   const visibleRows = useMemo(() => filterArtifactRows({ rows, filter }), [rows, filter]);
 
+  const rowIds = useMemo(() => rows.map((row) => row.id), [rows]);
+  const rowReturn = useRowReturn({
+    listKey: 'artifacts',
+    rowIds,
+    rowAttribute: 'data-artifact-row',
+  });
+  const { remember } = rowReturn;
   const openRow = useCallback(
     (row: ArtifactListRow) => {
       if (row.target.kind === 'artifact') {
+        remember({ rowId: row.id });
         openArtifactPage({ sessionId, artifactId: row.target.artifactId });
         return;
       }
@@ -214,7 +223,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       }
       setFocusedRunAgentId(generation.agentId);
     },
-    [navigate, sessionId],
+    [navigate, remember, sessionId],
   );
 
   useEscapeLayer(

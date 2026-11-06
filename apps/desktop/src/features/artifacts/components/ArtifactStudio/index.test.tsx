@@ -15,6 +15,9 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
     showToast: vi.fn(),
     state: {
       currentSessionId: 'sess-1',
+      currentWorkspaceId: null,
+      navigation: Object.fromEntries(Array.of<[string, never]>()),
+      amendFocus: () => undefined,
       activeLens: { 'sess-1': 'plans' } as Record<string, string | null>,
       drawer: null as unknown,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
