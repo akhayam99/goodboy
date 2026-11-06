@@ -311,9 +311,8 @@ export const FixRunScene = () => {
     const open = sceneParam({ key: 'open' });
     const target =
       open === 'batch' ? BATCH_AGENT_ID : open === 'single' || isLive ? SINGLE_ID : null;
-    const pane = sceneParam({ key: 'pane' }) === 'transcript' ? 'transcript' : 'brief';
     if (target !== null) {
-      navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: target, pane }) });
+      navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: target }) });
     }
     setIsReady(true);
   }, []);

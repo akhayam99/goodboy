@@ -13,6 +13,7 @@ import {
   useWorkspaces,
   type LensKind,
 } from '../../../store';
+import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { doorMountPath } from '../../../store/slices/navigation/doorMountPath';
 import { foldedLensOf } from '../../../store/slices/navigation/foldedLensOf';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
@@ -60,6 +61,8 @@ type ContextParams = {
 type PaneParams = {
   readonly pane: ClusterPane;
 };
+
+const OBJECT_PAGE_LENSES: ReadonlySet<LensKind> = new Set<LensKind>(['workflows', 'plans']);
 
 const doorTabOf = ({ kind }: { readonly kind: LensKind | null }): BranchTab => {
   if (kind === 'files') {
@@ -129,6 +132,24 @@ export const useAppShortcuts = ({
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
+    if (kind !== null && OBJECT_PAGE_LENSES.has(kind) && active === kind) {
+      const openDrawerKind = selectOpenDrawer(state)?.kind ?? null;
+      const isBelowPage =
+        state.appStudio !== null ||
+        (openDrawerKind !== null && openDrawerKind !== 'ask') ||
+        (state.selectedAgentId[sessionId] ?? null) !== null ||
+        (kind === 'workflows' && (state.focusedWorkflowRunId[sessionId] ?? null) !== null) ||
+        (kind === 'plans' &&
+          ((state.focusedArtifactId[sessionId] ?? null) !== null ||
+            (state.focusedRunAgentId[sessionId] ?? null) !== null));
+      if (isBelowPage) {
+        if (kind === 'plans') {
+          state.setFocusedRunAgent({ sessionId, agentId: null });
+        }
+        openLens({ sessionId, lens: kind });
+      }
+      return;
+    }
     const isLeaving = kind != null && (active === kind || isBranchDoor);
     if (kind === 'review' && !isLeaving) {
       state.navigate({

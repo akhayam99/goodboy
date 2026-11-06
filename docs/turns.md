@@ -1360,8 +1360,9 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   twice does the same (`useEscapeStop`, id `agent.stop`): the first press
   shows "Esc again to stop" for 3 s, the second stops, and any open menu,
   drawer or dialog (`transientEscapeLayerCount`, `isOverlayOpen`) takes the
-  key first. The page level layer that goes up is a base layer and does not
-  count. The conversation tail (`ConversationTail`) carries the same Stop.
+  key first. The session's Esc ladder (`escapeLadder`) is a base layer: it
+  does not count, and the escape stack asks it last, after every other layer,
+  whatever order they mounted in. The conversation tail (`ConversationTail`) carries the same Stop.
   The agent header has none.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and

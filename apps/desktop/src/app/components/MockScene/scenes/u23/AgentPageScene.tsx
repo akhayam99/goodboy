@@ -89,7 +89,6 @@ const seedAgentPage = ({ isRunning }: AgentSeedParams): void => {
     sessions: [AGENT_SESSION],
     currentSessionId: AGENT_SESSION_ID,
     selectedAgentId: { [AGENT_SESSION_ID]: AGENT_ID },
-    agentPane: { [AGENT_SESSION_ID]: 'transcript' },
     sessionPhaseRuns: {
       [AGENT_SESSION_ID]: [agentOf({ status: isRunning ? 'running' : 'completed' })],
     },

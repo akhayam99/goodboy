@@ -6,6 +6,9 @@ type Layer = {
 const stack: Layer[] = [];
 let listening = false;
 
+const topLayer = (): Layer | undefined =>
+  stack.filter((layer) => !layer.isBase).at(-1) ?? stack.at(-1);
+
 const onKeyDown = (event: KeyboardEvent): void => {
   if (
     (event.code !== 'Escape' && event.key !== 'Escape') ||
@@ -17,7 +20,7 @@ const onKeyDown = (event: KeyboardEvent): void => {
   if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
     return;
   }
-  const top = stack[stack.length - 1];
+  const top = topLayer();
   if (top == null) {
     return;
   }
@@ -60,5 +63,5 @@ export const transientEscapeLayerCount = (): number =>
   stack.filter((layer) => !layer.isBase).length;
 
 export const dismissTopEscapeLayer = (): void => {
-  stack[stack.length - 1]?.handler();
+  topLayer()?.handler();
 };

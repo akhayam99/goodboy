@@ -1,11 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS } from '../../shared/keyboard/registry';
-import { lensDestinations, type ConnectedLensTools } from './lens-destinations';
 import { LENS_ICON } from './lens-labels';
 import { columnPagesOf, pagesOf } from './pageRegistry';
-
-const ALL_TOOLS: ConnectedLensTools = { linear: true, gitlab: true, jira: true, slack: true };
 
 describe('the session level pages', () => {
   it('read Overview, Runs, Artifacts in a session with a worktree', () => {
@@ -39,29 +36,19 @@ describe('the session level pages', () => {
   });
 
   it('add Questions last, only while something is open', () => {
-    const destinations = lensDestinations({ isBranchless: false, connectedTools: ALL_TOOLS });
-    const closed = pagesOf({ isBranchless: false, destinations, hasOpenQuestions: false });
-    const open = pagesOf({ isBranchless: false, destinations, hasOpenQuestions: true });
+    const closed = pagesOf({ isBranchless: false, hasOpenQuestions: false });
+    const open = pagesOf({ isBranchless: false, hasOpenQuestions: true });
 
     expect(closed.map((page) => page.id)).not.toContain('questions');
-    expect(open.map((page) => page.id).slice(0, 4)).toEqual([
-      'overview',
-      'runs',
-      'artifacts',
-      'questions',
-    ]);
+    expect(open.map((page) => page.id)).toEqual(['overview', 'runs', 'artifacts', 'questions']);
   });
 });
 
 describe('the page registry', () => {
-  const every = pagesOf({
-    isBranchless: false,
-    destinations: lensDestinations({ isBranchless: false, connectedTools: ALL_TOOLS }),
-    hasOpenQuestions: true,
-  });
+  const every = pagesOf({ isBranchless: true, hasOpenQuestions: true });
 
-  it('names every page after its shortcut except the linked records', () => {
-    for (const page of every.filter((candidate) => candidate.group !== 'linked')) {
+  it('names every page of a session with a worktree after its shortcut', () => {
+    for (const page of pagesOf({ isBranchless: false, hasOpenQuestions: true })) {
       expect(SHORTCUTS[page.shortcut].label, page.id).toBe(page.label);
     }
   });
@@ -82,6 +69,7 @@ describe('the page registry', () => {
 
   it('counts exactly the pages that the count grammar names', () => {
     expect(every.filter((page) => page.count !== null).map((page) => page.id)).toEqual([
+      'files',
       'runs',
       'artifacts',
       'questions',

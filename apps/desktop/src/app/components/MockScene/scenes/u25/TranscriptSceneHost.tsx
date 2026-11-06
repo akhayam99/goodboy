@@ -30,7 +30,6 @@ export const TranscriptSceneHost = ({ events }: Props) => {
     useAppStore.setState({
       sessionPhaseRuns: { [SESSION.id]: [AGENT] },
       selectedAgentId: { [SESSION.id]: AGENT_ID },
-      agentPane: { [SESSION.id]: 'transcript' },
       transcripts: { [AGENT_ID]: events },
       loadAgentTranscript: async () => undefined,
       sessionOpenQuestions: { [SESSION.id]: [] },

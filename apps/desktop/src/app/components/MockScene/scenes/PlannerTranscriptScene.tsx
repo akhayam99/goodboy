@@ -175,7 +175,6 @@ export const PlannerTranscriptScene = ({ variant = 'ready' }: Props) => {
       sessions: [SESSION],
       currentSessionId: SESSION_ID,
       selectedAgentId: { [SESSION_ID]: AGENT_ID },
-      agentPane: { [SESSION_ID]: 'transcript' },
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       agentTurnState: { [AGENT_ID]: turnFor({ variant }) },
       agentRunHistory: { [AGENT_ID]: isReplaced ? [FIRST_RUN, SECOND_RUN] : [FIRST_RUN] },

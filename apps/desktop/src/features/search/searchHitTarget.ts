@@ -1,5 +1,4 @@
 import { NAMES } from '../../shared/utils/names';
-import type { AgentPane } from '../../store/slices/navigation/types';
 import {
   isSessionExternalTaskProvider,
   type AgentId,
@@ -26,7 +25,6 @@ export type SearchHitTarget =
       readonly workspaceId: WorkspaceId | null;
       readonly sessionId: SessionId;
       readonly agentId: AgentId;
-      readonly pane: AgentPane | null;
       readonly label: string;
     }
   | {
@@ -153,7 +151,6 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
             kind: 'transcript',
             ...base,
             agentId: hit.agentId,
-            pane: hit.kind === 'agent' ? null : 'transcript',
             label: hit.kind === 'agent' ? 'Open agent' : 'Open in transcript',
           };
     case 'plan':

@@ -22,7 +22,7 @@ import type {
 } from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
-import type { AgentPane, BranchTab } from '../navigation/types';
+import type { BranchTab } from '../navigation/types';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -34,7 +34,6 @@ export type LensKind =
   | 'orchestrated'
   | 'review'
   | 'plans'
-  | 'scripts'
   | 'context'
   | 'goal'
   | 'decisions'
@@ -42,7 +41,6 @@ export type LensKind =
   | 'pr'
   | 'branch'
   | 'files'
-  | 'explore'
   | 'linear'
   | 'gitlab_issues'
   | 'jira_issues'
@@ -57,7 +55,6 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'orchestrated',
   'review',
   'plans',
-  'scripts',
   'context',
   'goal',
   'decisions',
@@ -65,7 +62,6 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'pr',
   'branch',
   'files',
-  'explore',
   'linear',
   'gitlab_issues',
   'jira_issues',
@@ -181,6 +177,11 @@ export type AwaitArtifactAgentParams = Readonly<{
   agentId: AgentId | null;
 }>;
 
+export type SetFocusedRunAgentParams = Readonly<{
+  sessionId: SessionId;
+  agentId: AgentId | null;
+}>;
+
 export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
 
 export type SessionCreationId = string;
@@ -200,10 +201,9 @@ type SessionViewSliceState = {
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly focusedRunAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
-  readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
-  readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
@@ -244,7 +244,6 @@ type SessionViewSliceActions = {
     readonly sessionId: SessionId;
     readonly mountPath: string | null;
   }): void;
-  setAgentTab(params: { readonly agentId: AgentId; readonly pane: AgentPane }): void;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionViewPrefs(params: SetSessionViewPrefsParams): void;
@@ -269,6 +268,7 @@ type SessionViewSliceActions = {
   }): void;
   openArtifactCreation(params: OpenArtifactCreationParams): void;
   awaitArtifactAgent(params: AwaitArtifactAgentParams): void;
+  setFocusedRunAgent(params: SetFocusedRunAgentParams): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;

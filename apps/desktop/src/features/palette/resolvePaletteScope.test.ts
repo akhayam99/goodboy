@@ -136,6 +136,6 @@ describe('resolvePaletteScope', () => {
       },
     };
 
-    expect(resolvePaletteScope({ ...base, lens: 'explore', heldScope: held })).toBe(held);
+    expect(resolvePaletteScope({ ...base, lens: 'files', heldScope: held })).toBe(held);
   });
 });

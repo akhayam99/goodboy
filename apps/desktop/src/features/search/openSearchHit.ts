@@ -67,7 +67,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       store.navigate({ to: sessionPlace({ sessionId }) });
       return true;
     case 'transcript':
-      store.navigate({ to: agentPlace({ sessionId, agentId: target.agentId, pane: target.pane }) });
+      store.navigate({ to: agentPlace({ sessionId, agentId: target.agentId }) });
       return true;
     case 'artifact':
       if (target.isPlan) {

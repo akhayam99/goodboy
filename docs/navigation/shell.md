@@ -300,7 +300,7 @@ run summary, **Stop run** (asks first), Archive run and Delete run, never
 **Approve plan**. A failed Pause, Continue or Stop leaves the run as it was,
 reports the error and keeps the word, so pressing it again is the retry.
 The title is the only h1 of the page; the row above it says `Back to runs`, it
-or Esc goes back to the list, and no other chevron on the page does.
+or Esc (the session's one Esc ladder) goes back to the list, and no other chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.

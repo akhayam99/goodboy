@@ -10,7 +10,6 @@ const LENS_ADDRESS: Record<LensKind, string> = {
   orchestrated: 'orchestrated',
   review: 'review',
   plans: 'artifacts',
-  scripts: 'scripts',
   context: 'context',
   goal: 'context/goal',
   decisions: 'context/decisions',
@@ -18,7 +17,6 @@ const LENS_ADDRESS: Record<LensKind, string> = {
   pr: 'pr',
   branch: 'branch',
   files: 'diff',
-  explore: 'explore',
   linear: 'linear',
   gitlab_issues: 'gitlab',
   jira_issues: 'jira',
@@ -55,12 +53,8 @@ const targetAddress = ({ target }: TargetParams): string => {
       const path = target.focus?.path == null ? '' : `#${target.focus.path}`;
       return `${target.tab}${mount}${thread}${focus}${sha}${path}`;
     }
-    case 'explore':
-      return target.mountPath;
     case 'thread':
       return `t/${target.threadId}`;
-    case 'agent':
-      return `pane/${target.pane}`;
     default: {
       const unreachable: never = target;
       return unreachable;
@@ -82,9 +76,6 @@ const sessionViewAddress = ({ view }: ViewParams): string => {
   }
   if (view.agentId !== null && view.target?.kind === 'thread') {
     parts.push('agent');
-    if (view.target.pane !== undefined) {
-      parts.push(view.target.pane);
-    }
   }
   if (view.agentId !== null && view.target?.kind !== 'thread') {
     parts.push('agent', view.agentId);

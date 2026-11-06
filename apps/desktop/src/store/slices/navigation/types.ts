@@ -5,8 +5,6 @@ import type { StudioPlace } from './studio';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type AgentPane = 'brief' | 'transcript';
-
 export type BranchTab = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 export type SessionTarget =
@@ -27,9 +25,7 @@ export type SessionTarget =
       readonly threadId: string | null;
       readonly focus: DiffFocus | null;
     }
-  | { readonly kind: 'explore'; readonly mountPath: string }
-  | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane }
-  | { readonly kind: 'agent'; readonly pane: AgentPane };
+  | { readonly kind: 'thread'; readonly threadId: string };
 
 export type SessionView = {
   readonly lens: LensKind | null;
@@ -48,14 +44,11 @@ export type PlaceRequest =
       readonly at: 'agent';
       readonly sessionId: SessionId;
       readonly agentId: AgentId;
-      readonly pane?: AgentPane;
     };
 
 export type Focus = {
   readonly drawer: OpenDrawer | null;
-  readonly selection: Readonly<Record<string, string>>;
   readonly scroll: Readonly<Record<string, number>>;
-  readonly revealed: ReadonlyArray<string>;
 };
 
 export type Location = {
@@ -76,7 +69,6 @@ export type NavigateParams = {
   readonly to: PlaceRequest;
   readonly mode?: NavigateMode;
   readonly drawer?: OpenDrawer | null;
-  readonly isExact?: boolean;
 };
 
 export type CanonicalPlace = {
@@ -92,6 +84,6 @@ export type StudioParams = {
   readonly studio: StudioPlace;
 };
 
-export const EMPTY_FOCUS: Focus = { drawer: null, selection: {}, scroll: {}, revealed: [] };
+export const EMPTY_FOCUS: Focus = { drawer: null, scroll: {} };
 
 export const HISTORY_LIMIT = 50;

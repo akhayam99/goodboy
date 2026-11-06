@@ -1,5 +1,6 @@
 import type { DrawerSizing } from '@goodboy/ui';
 import type { AppState } from '../../types';
+import { DRAWER_KINDS } from './drawerKinds';
 import { selectOpenDrawer } from './selectOpenDrawer';
 
 export const selectDrawerSizing = (
@@ -9,14 +10,5 @@ export const selectDrawerSizing = (
   if (drawer === null) {
     return 'side';
   }
-  if (
-    drawer.kind === 'new' ||
-    drawer.kind === 'explore-file' ||
-    drawer.kind === 'file-diff' ||
-    drawer.kind === 'identifier-peek' ||
-    drawer.kind === 'artifact-document'
-  ) {
-    return 'reader';
-  }
-  return 'side';
+  return DRAWER_KINDS[drawer.kind].sizing;
 };

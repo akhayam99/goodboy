@@ -10,13 +10,18 @@ import {
   clickButton,
   heading,
   openCrumb,
+  settle,
   useAppStore,
 } from './harness';
+import { pressShortcut } from '../../helpers/pressKey';
+import { agentPlace } from '../../../store/slices/navigation/place';
 
 const REPORT_AT: IsoDateTime = JSON.parse(JSON.stringify('2026-09-14T16:27:00.000Z'));
 const REPORT_ID: ArtifactId = JSON.parse(JSON.stringify('lists-journey-report'));
 const REPORT_AGENT_ID: AgentId = JSON.parse(JSON.stringify('lists-journey-report-agent'));
 const REPORT_TITLE = 'Webhook retries credit once';
+const GONE_ARTIFACT_ID: ArtifactId = JSON.parse(JSON.stringify('lists-journey-gone-artifact'));
+const GONE_AGENT_ID: AgentId = JSON.parse(JSON.stringify('lists-journey-gone-agent'));
 
 const reportOf = ({ sessionId }: { readonly sessionId: SessionId }): ReportArtifact => ({
   id: REPORT_ID,
@@ -109,6 +114,116 @@ export const LISTS_ROWS: ReadonlyArray<Row> = [
 
       await clickButton('Undo');
       await waitFor(() => expect(rowTitled(REPORT_TITLE)).not.toBeNull(), WAIT);
+    },
+  },
+  {
+    name: 'opening an artifact row is a move: Back comes back to the Artifacts list',
+    covers: ['navigate', 'back'],
+    open: async (ctx) => {
+      const sessionArtifacts = useAppStore.getState().sessionArtifacts;
+      useAppStore.setState({
+        sessionArtifacts: { ...sessionArtifacts, [ctx.sessionId]: [reportOf(ctx)] },
+      });
+      await openCrumb(/^Artifacts/);
+      await heading('Artifacts');
+      await click(
+        await screen.findByRole('button', { name: new RegExp(`^Report ${REPORT_TITLE}`) }, WAIT),
+      );
+      await waitFor(
+        () => expect(useAppStore.getState().focusedArtifactId[ctx.sessionId]).toBe(REPORT_ID),
+        WAIT,
+      );
+      pressShortcut({ id: 'nav.back' });
+      await settle();
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().focusedArtifactId[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
+      expect(useAppStore.getState().activeLens[ctx.sessionId]).toBe('plans');
+      await heading('Artifacts');
+      await waitFor(() => expect(rowTitled(REPORT_TITLE)).not.toBeNull(), WAIT);
+    },
+  },
+  {
+    name: 'the Artifacts key on an artifact page lands on the Artifacts list',
+    covers: ['navigate', 'key:lens.plans'],
+    open: async (ctx) => {
+      const sessionArtifacts = useAppStore.getState().sessionArtifacts;
+      useAppStore.setState({
+        sessionArtifacts: { ...sessionArtifacts, [ctx.sessionId]: [reportOf(ctx)] },
+      });
+      await openCrumb(/^Artifacts/);
+      await click(
+        await screen.findByRole('button', { name: new RegExp(`^Report ${REPORT_TITLE}`) }, WAIT),
+      );
+      await waitFor(
+        () => expect(useAppStore.getState().focusedArtifactId[ctx.sessionId]).toBe(REPORT_ID),
+        WAIT,
+      );
+      pressShortcut({ id: 'lens.plans' });
+      await settle();
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().focusedArtifactId[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
+      expect(useAppStore.getState().activeLens[ctx.sessionId]).toBe('plans');
+      await heading('Artifacts');
+    },
+  },
+  {
+    name: 'an artifact drawer whose artifact is gone says so instead of an empty panel',
+    covers: ['openDrawer'],
+    open: async (ctx) => {
+      await openCrumb(/^Artifacts/);
+      await heading('Artifacts');
+      useAppStore.getState().openDrawer({
+        kind: 'artifact',
+        sessionId: ctx.sessionId,
+        payload: { artifactId: GONE_ARTIFACT_ID, tab: 'details' },
+      });
+      await settle();
+    },
+    lands: async () => {
+      await screen.findByText('This artifact is no longer in this session', undefined, WAIT);
+    },
+  },
+  {
+    name: 'a plan part drawer whose plan is gone says so instead of an empty panel',
+    covers: ['openDrawer'],
+    open: async (ctx) => {
+      const sessionPlans = useAppStore.getState().sessionPlans;
+      useAppStore.setState({ sessionPlans: { ...sessionPlans, [ctx.sessionId]: [] } });
+      useAppStore.getState().openDrawer({
+        kind: 'plan-part',
+        sessionId: ctx.sessionId,
+        payload: { planId: GONE_ARTIFACT_ID, index: 0 },
+      });
+      await settle();
+    },
+    lands: async () => {
+      await screen.findByText('This plan is no longer in this session', undefined, WAIT);
+    },
+  },
+  {
+    name: 'an agent page whose agent is gone says so and its Back leaves it',
+    covers: ['navigate'],
+    open: async (ctx) => {
+      useAppStore.getState().navigate({
+        to: agentPlace({ sessionId: ctx.sessionId, agentId: GONE_AGENT_ID }),
+      });
+      await settle();
+      await screen.findByText('This agent is no longer in this session', undefined, WAIT);
+      await clickButton('Back');
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
     },
   },
 ];

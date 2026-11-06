@@ -1,11 +1,11 @@
-import { ArrowLeft } from 'lucide-react';
-import { Button, EmptyState, ICON_SIZE, PaneShell, Skeleton, SkeletonText } from '@goodboy/ui';
+import { PaneShell, Skeleton, SkeletonText } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
 import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
 import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { GoneObject } from '../../../../../shared/components/GoneObject';
 
 type Props = {
   readonly session: Session;
@@ -36,18 +36,7 @@ export const AgentOverlay = ({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedAgent === null && runsLoaded ? (
           <PaneShell page="agent" header={<AgentHeader title="Agent" actions={null} />}>
-            <EmptyState
-              size="section"
-              icon={CONCEPT_ICONS.agents}
-              title="This agent is no longer in this session"
-              description="It was deleted or moved. Go back to the session to pick another agent."
-              action={
-                <Button size="sm" variant="ghost" onClick={onBack}>
-                  <ArrowLeft size={ICON_SIZE.control} aria-hidden />
-                  Back
-                </Button>
-              }
-            />
+            <GoneObject noun="agent" icon={CONCEPT_ICONS.agents} onBack={onBack} />
           </PaneShell>
         ) : selectedAgent === null ? (
           <PaneShell

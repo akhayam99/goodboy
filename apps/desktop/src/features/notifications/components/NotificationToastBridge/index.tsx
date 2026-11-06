@@ -12,7 +12,7 @@ import { openStorage } from '../../../storage/openStorage';
 import { mapRecoveryAction } from './mapRecoveryAction';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { openLens } from '../../../session/openLens';
+import { openToolPane } from '../../../session/panes/openToolPane';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { markPointersActed } from '../../markPointersActed';
 
@@ -187,7 +187,7 @@ export const mapNotificationAction = (
     return {
       label: 'Show output',
       onClick: () => {
-        openLens({ sessionId, lens });
+        openToolPane({ sessionId, pane: lens });
       },
     };
   }
