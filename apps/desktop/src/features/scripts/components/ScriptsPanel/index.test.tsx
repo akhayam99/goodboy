@@ -758,6 +758,66 @@ describe('ScriptsPanel', () => {
     expect(within(suggested).getAllByRole('button', { name: 'Run test' })).toHaveLength(1);
   });
 
+  it('stops and opens a running suggested script from its row, with no second Run', () => {
+    state.mounts = [RELAY_MOUNT];
+    state.saved = [];
+    state.discovered = {
+      [RELAY_PATH]: manifest([{ name: 'dev', command: 'pnpm run dev' }]),
+    };
+    state.pins = {};
+    const devKey = manifestKey({ path: RELAY_PATH, name: 'dev' });
+    state.runs = {
+      [devKey]: {
+        status: 'pending',
+        result: null,
+        runId: 'run-3',
+        startedAt: Date.now(),
+        mountId: RELAY_MOUNT.mountId,
+      },
+    };
+    renderPanel();
+
+    const suggested = within(group('notify-relay · nw/retry-backoff')).getByRole('region', {
+      name: /^Suggested of /u,
+    });
+    expect(within(suggested).queryByRole('button', { name: 'Run dev' })).toBeNull();
+    fireEvent.click(within(suggested).getByRole('button', { name: 'Show dev output' }));
+    expect(state.toggleDrawer).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ scriptKey: devKey }) }),
+    );
+    fireEvent.click(within(suggested).getByRole('button', { name: 'Stop dev' }));
+    expect(state.cancelScript).toHaveBeenCalledWith(SESSION, devKey);
+    expect(state.runDiscoveredScript).not.toHaveBeenCalled();
+  });
+
+  it('keeps a running suggested script in its band after another script is pinned', () => {
+    state.mounts = [RELAY_MOUNT];
+    state.saved = [];
+    state.discovered = {
+      [RELAY_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev' },
+        { name: 'test', command: 'pnpm run test' },
+      ]),
+    };
+    state.pins = { [RELAY.id]: [pinIdOf({ relDir: '', name: 'test' })] };
+    state.runs = {
+      [manifestKey({ path: RELAY_PATH, name: 'dev' })]: {
+        status: 'pending',
+        result: null,
+        runId: 'run-4',
+        startedAt: Date.now(),
+        mountId: RELAY_MOUNT.mountId,
+      },
+    };
+    renderPanel();
+
+    const suggested = within(group('notify-relay · nw/retry-backoff')).getByRole('region', {
+      name: /^Suggested of /u,
+    });
+    expect(within(suggested).getByRole('button', { name: 'Stop dev' })).toBeDefined();
+    expect(within(suggested).queryByText('test')).toBeNull();
+  });
+
   it('draws the filter only from nine rows, or while a filter is typed', () => {
     renderPanel();
     expect(screen.queryByRole('searchbox', { name: 'Filter scripts' })).toBeNull();

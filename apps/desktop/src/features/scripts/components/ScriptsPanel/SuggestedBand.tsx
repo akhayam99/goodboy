@@ -13,7 +13,10 @@ type Props = {
   readonly canPick: boolean;
   readonly isPickerOpen: boolean;
   readonly onTogglePicker: () => void;
+  readonly isScriptSelected: (script: RunnableScript) => boolean;
+  readonly onOpen: (script: RunnableScript) => void;
   readonly onRun: (script: RunnableScript) => void;
+  readonly onStop: (script: RunnableScript) => void;
   readonly onPin: (script: RunnableScript) => void;
 };
 
@@ -23,7 +26,10 @@ export const SuggestedBand = ({
   canPick,
   isPickerOpen,
   onTogglePicker,
+  isScriptSelected,
+  onOpen,
   onRun,
+  onStop,
   onPin,
 }: Props) => (
   <ScriptBand
@@ -60,8 +66,12 @@ export const SuggestedBand = ({
                   exitCode: record.result?.exitCode ?? null,
                 })
           }
+          isRunning={record?.status === 'pending'}
+          isSelected={isScriptSelected(script)}
           blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
+          onOpen={record === null ? null : () => onOpen(script)}
           onRun={() => onRun(script)}
+          onStop={() => onStop(script)}
           onPin={() => onPin(script)}
         />
       );

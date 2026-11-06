@@ -639,7 +639,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             onTogglePicker={() =>
               setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
             }
+            isScriptSelected={(script) =>
+              openPayload !== null &&
+              openPayload.scriptKey === script.key &&
+              (openPayload.mountId === null || openPayload.mountId === group.mountId)
+            }
+            onOpen={(script) => onOpen({ group, script })}
             onRun={(script) => onRun({ group, script })}
+            onStop={(script) => onStop({ script })}
             onPin={(script) => togglePin({ group, script })}
           />
         )}
