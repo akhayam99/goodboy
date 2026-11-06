@@ -6,7 +6,9 @@ import {
   type Agent,
   type AgentId,
   type IsoDateTime,
+  type MountId,
   type ProviderRunId,
+  type ResolveThread,
   type SessionAttentionReason,
   type SessionId,
   type StepId,
@@ -21,11 +23,13 @@ import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { aView } from '../auto/testing/autoViewFixtures';
 import { attentionPlace } from './attentionPlace';
+import type { NotificationPlaceReason } from './notificationPlaceReason';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-now' });
 const EARLIER = brandId<AgentId>({ value: 'agent-earlier' });
 const LATEST = brandId<AgentId>({ value: 'agent-latest' });
 const AT = brandId<IsoDateTime>({ value: '2026-10-04T08:00:00.000Z' });
+const LEDGER_MOUNT = brandId<MountId>({ value: 'mount-ledger-core' });
 
 type BlockedViewParams = {
   readonly rootAgentId: AgentId;
@@ -120,6 +124,41 @@ afterEach(() => {
   useOpenQuestions.setState({ staged: [] });
 });
 
+type WaitingParams = {
+  readonly id: string;
+  readonly originKind: ResolveThread['originKind'];
+};
+
+const waitingThread = ({ id, originKind }: WaitingParams): ResolveThread => ({
+  id,
+  sessionId: SESSION_ID,
+  projectId: null,
+  prNumber: null,
+  threadId: id,
+  originKind,
+  diffCommentId: null,
+  state: 'needs_answer',
+  stage: 'asking',
+  stateReason: null,
+  revision: 1,
+  generation: 1,
+  reopenedFromThreadId: null,
+  activeAttemptId: null,
+  disposition: null,
+  replyDraft: null,
+  commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
+  question: null,
+  replyPostedAt: null,
+  replyId: null,
+  githubResolved: null,
+  closedAt: null,
+  closedSource: null,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
 describe('attentionPlace', () => {
   it('skips a delegated question and a staged one when it picks the question to open', () => {
     expect(questionDestination([delegateOf('q1')])).toMatchObject({
@@ -153,6 +192,78 @@ describe('attentionPlace', () => {
       });
     },
   );
+
+  it.each([
+    ['ci-failed', 'checks'],
+    ['push-failed', 'comments'],
+    ['fix-needs-you', 'comments'],
+    ['pr-approved', 'pr'],
+    ['pr-opened', 'pr'],
+    ['history-stopped', 'commits'],
+  ] satisfies ReadonlyArray<readonly [NotificationPlaceReason, string]>)(
+    'names the branch of a mount for %s',
+    (reason, tab) => {
+      const mounted = {
+        ...state,
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              mountId: LEDGER_MOUNT,
+              worktreePath: null,
+              lastWorktreePath: '/work/ledger-core',
+            },
+          ],
+        },
+      };
+
+      expect(
+        attentionPlace({
+          state: mounted,
+          sessionId: SESSION_ID,
+          reason,
+          mountId: LEDGER_MOUNT,
+        }),
+      ).toMatchObject({
+        at: 'session',
+        view: { lens: 'branch', target: { kind: 'branch', mountPath: '/work/ledger-core', tab } },
+      });
+    },
+  );
+
+  it.each([
+    ['note', 'files'],
+    ['comment', 'comments'],
+  ] as const)(
+    'lands a fix notice about a %s on %s even when the other kind needs you too',
+    (subject, tab) => {
+      const mixed = {
+        ...state,
+        sessionResolveThreads: {
+          [SESSION_ID]: [
+            waitingThread({ id: 'thread-comment', originKind: 'review_comment' }),
+            waitingThread({ id: 'thread-note', originKind: 'diff_comment' }),
+          ],
+        },
+      };
+
+      expect(
+        attentionPlace({ state: mixed, sessionId: SESSION_ID, reason: 'fix-needs-you', subject }),
+      ).toMatchObject({ view: { lens: 'branch', target: { kind: 'branch', tab } } });
+    },
+  );
+
+  it('opens the branch with no path when the mount is gone', () => {
+    expect(
+      attentionPlace({
+        state,
+        sessionId: SESSION_ID,
+        reason: 'ci-failed',
+        mountId: brandId<MountId>({ value: 'mount-removed' }),
+      }),
+    ).toMatchObject({
+      view: { lens: 'branch', target: { kind: 'branch', mountPath: null, tab: 'checks' } },
+    });
+  });
 
   it('opens the page of the run that holds the plan, skipping a discarded one', () => {
     expect(destination({ reason: 'plan-approval' })).toMatchObject({

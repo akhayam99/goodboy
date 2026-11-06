@@ -29,6 +29,8 @@ export type ObjectOverflowTriggerProps = ActionMenuBehavior & {
   readonly align?: 'left' | 'right';
   readonly anchorKey?: string | null;
   readonly omit?: ReadonlyArray<string>;
+  readonly only?: ReadonlyArray<string> | null;
+  readonly relabel?: ReadonlyMap<string, string> | null;
   readonly viewing?: ActionViewing | null;
   readonly disabled?: boolean;
   readonly onArm?: OnArm;
@@ -44,6 +46,8 @@ export const ObjectOverflowTrigger = ({
   align = 'right',
   anchorKey = null,
   omit = NO_OMISSIONS,
+  only = null,
+  relabel = null,
   disabled = false,
   viewing = null,
   onArm,
@@ -90,6 +94,8 @@ export const ObjectOverflowTrigger = ({
         label={label}
         anchorKey={anchorKey}
         omit={omit}
+        only={only}
+        relabel={relabel}
         viewing={viewing}
         onClose={dropdown.close}
         onArm={onArm}

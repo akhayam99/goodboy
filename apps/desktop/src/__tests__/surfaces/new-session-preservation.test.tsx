@@ -127,15 +127,17 @@ describe('New session draft and the New forms', () => {
     screen.getByText(/Named by Goodboy/);
   });
 
-  it('keeps the Overview New button filled only while Next holds no primary', async () => {
+  it('keeps the Overview New button outlined, the one filled button being Start on an empty session', async () => {
     await mountScene({ name: 'c05-overview-blank' });
 
-    const hasNext =
-      document.querySelector(
-        '[data-overview-card="needs-you"], [data-overview-card="branches"]',
-      ) !== null;
+    expect(
+      document.querySelector('[data-overview-card="needs-you"], [data-overview-card="branches"]'),
+    ).toBeNull();
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
-      hasNext ? 'secondary' : 'primary',
+      'secondary',
+    );
+    expect(screen.getByRole('button', { name: 'Start' }).getAttribute('data-variant')).toBe(
+      'primary',
     );
   });
 

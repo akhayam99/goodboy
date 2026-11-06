@@ -1,27 +1,40 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Notification } from '@goodboy/db';
-import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
-import { agentPlace, sessionPlace } from '../../store/slices/navigation/place';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type MountId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { agentPlace, branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 
-const { state } = vi.hoisted(() => ({
-  state: {
-    sessions: [] as ReadonlyArray<{ readonly id: string }>,
-    archivedSessions: Object.fromEntries(
-      Array.of<[string, ReadonlyArray<{ readonly id: string }>]>(),
-    ),
-    workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
-    currentWorkspaceId: 'ws-1' as string | null,
-    currentSessionId: null as string | null,
-    navigate: vi.fn(),
-    reportError: vi.fn(async () => undefined),
-    openWorkspace: vi.fn(async () => undefined),
-  },
-}));
+const { state } = vi.hoisted(() => {
+  const nullable = <T>(value: T | null): T | null => value;
+  return {
+    state: {
+      sessions: Array.of<{ readonly id: string }>(),
+      archivedSessions: Object.fromEntries(
+        Array.of<[string, ReadonlyArray<{ readonly id: string }>]>(),
+      ),
+      workspaces: Array.of<{ readonly id: string; readonly name: string }>(),
+      currentWorkspaceId: nullable('ws-1'),
+      currentSessionId: nullable<string>(null),
+      navigate: vi.fn(),
+      reportError: vi.fn(async () => undefined),
+      openWorkspace: vi.fn(async () => undefined),
+      refreshReviewSource: vi.fn(async () => undefined),
+      loadDiffComments: vi.fn(async () => undefined),
+      loadResolveSession: vi.fn(async () => undefined),
+    },
+  };
+});
 
 vi.mock('../../store', async () => {
   const useAppStore = <T>(selector: (s: typeof state) => T) => selector(state);
-  (useAppStore as unknown as { getState: () => typeof state }).getState = () => state;
+  Object.assign(useAppStore, { getState: () => state });
   return { ...(await import('../../store/slices/navigation/place')), useAppStore };
 });
 
@@ -30,23 +43,26 @@ import { attentionTargetChannel } from '../session/attentionTargetChannel';
 import { openNotificationSession } from './openNotificationSession';
 
 const HARBORLINE = brandId<WorkspaceId>({ value: 'ws-1' });
+const NORTHWIND = brandId<WorkspaceId>({ value: 'ws-2' });
 const SESSION_ONE = brandId<SessionId>({ value: 'session-1' });
+const AGENT_ONE = brandId<AgentId>({ value: 'agent-1' });
+const PAYMENTS_MOUNT = brandId<MountId>({ value: 'mount-payments-api' });
 
-const buildNotification = (overrides: Partial<Notification> = {}): Notification =>
-  ({
-    id: 'n1',
-    title: 'open session',
-    coalesceKey: 'single',
-    read: false,
-    sessionId: 'session-1',
-    ts: '2026-08-31T12:00:00.000Z',
-    kind: 'error',
-    body: null,
-    severity: 'warning',
-    workspaceId: null,
-    action: null,
-    ...overrides,
-  }) as Notification;
+const buildNotification = (overrides: Partial<Notification> = {}): Notification => ({
+  id: 'n1',
+  title: 'open session',
+  coalesceKey: 'single',
+  read: false,
+  sessionId: SESSION_ONE,
+  ts: brandId<IsoDateTime>({ value: '2026-08-31T12:00:00.000Z' }),
+  kind: 'error',
+  body: null,
+  severity: 'warning',
+  workspaceId: null,
+  action: null,
+  actedAt: null,
+  ...overrides,
+});
 
 beforeEach(() => {
   state.sessions = [];
@@ -64,12 +80,12 @@ describe('openNotificationSession', () => {
   it('opens the session directly when it already belongs to this window', async () => {
     state.sessions = [{ id: 'session-1' }];
     openNotificationSession({
-      notification: buildNotification({ workspaceId: 'ws-1' as WorkspaceId }),
+      notification: buildNotification({ workspaceId: HARBORLINE }),
     });
 
     await vi.waitFor(() =>
       expect(state.navigate).toHaveBeenCalledWith({
-        to: sessionPlace({ sessionId: 'session-1' as SessionId }),
+        to: sessionPlace({ sessionId: SESSION_ONE }),
       }),
     );
     expect(state.openWorkspace).not.toHaveBeenCalled();
@@ -79,18 +95,67 @@ describe('openNotificationSession', () => {
     state.sessions = [{ id: 'session-1' }];
     openNotificationSession({
       notification: buildNotification({
-        workspaceId: 'ws-1' as WorkspaceId,
+        workspaceId: HARBORLINE,
         action: {
           kind: 'retry-step-summary',
-          sessionId: 'session-1' as SessionId,
-          agentId: 'agent-1' as AgentId,
+          sessionId: SESSION_ONE,
+          agentId: AGENT_ONE,
         },
       }),
     });
 
     await vi.waitFor(() =>
       expect(state.navigate).toHaveBeenCalledWith({
-        to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-1' as AgentId }),
+        to: agentPlace({ sessionId: SESSION_ONE, agentId: AGENT_ONE }),
+      }),
+    );
+  });
+
+  it('lands on the Checks tab of the branch an open-place notification names', async () => {
+    state.sessions = [{ id: 'session-1' }];
+    Object.assign(state, {
+      sessionProjectMounts: {
+        'session-1': [
+          {
+            mountId: 'mount-payments-api',
+            worktreePath: '/work/payments-api',
+            lastWorktreePath: null,
+          },
+        ],
+      },
+    });
+    openNotificationSession({
+      notification: buildNotification({
+        workspaceId: HARBORLINE,
+        action: {
+          kind: 'open-place',
+          sessionId: SESSION_ONE,
+          reason: 'ci-failed',
+          mountId: PAYMENTS_MOUNT,
+        },
+      }),
+    });
+
+    await vi.waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: branchPlace({
+          sessionId: SESSION_ONE,
+          mountPath: '/work/payments-api',
+          tab: 'checks',
+        }),
+      }),
+    );
+  });
+
+  it('falls back to the session for an old notification with no action', async () => {
+    state.sessions = [{ id: 'session-1' }];
+    openNotificationSession({
+      notification: buildNotification({ workspaceId: HARBORLINE, action: null }),
+    });
+
+    await vi.waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SESSION_ONE }),
       }),
     );
   });
@@ -102,7 +167,7 @@ describe('openNotificationSession', () => {
       state.currentWorkspaceId = 'ws-2';
     });
     openNotificationSession({
-      notification: buildNotification({ workspaceId: 'ws-2' as WorkspaceId }),
+      notification: buildNotification({ workspaceId: NORTHWIND }),
     });
 
     await vi.waitFor(() =>
@@ -114,7 +179,7 @@ describe('openNotificationSession', () => {
     );
     await vi.waitFor(() =>
       expect(state.navigate).toHaveBeenCalledWith({
-        to: sessionPlace({ sessionId: 'session-1' as SessionId }),
+        to: sessionPlace({ sessionId: SESSION_ONE }),
       }),
     );
   });
@@ -123,7 +188,7 @@ describe('openNotificationSession', () => {
     state.workspaces = [{ id: 'ws-2', name: 'Northwind' }];
     state.sessions = [];
     openNotificationSession({
-      notification: buildNotification({ workspaceId: 'ws-2' as WorkspaceId }),
+      notification: buildNotification({ workspaceId: NORTHWIND }),
     });
 
     await vi.waitFor(() =>
@@ -147,6 +212,31 @@ describe('openNotificationSession', () => {
     const handled = vi.fn();
     globalThis.addEventListener(ATTENTION_HANDLED_EVENT, handled);
     openNotificationSession({ notification: buildNotification({ workspaceId: HARBORLINE }) });
+
+    await vi.waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SESSION_ONE }),
+      }),
+    );
+    expect(handled).toHaveBeenCalledOnce();
+    globalThis.removeEventListener(ATTENTION_HANDLED_EVENT, handled);
+  });
+
+  it('says Already handled and opens the session for a place of an archived session', async () => {
+    state.archivedSessions = { 'ws-1': [{ id: 'session-1' }] };
+    const handled = vi.fn();
+    globalThis.addEventListener(ATTENTION_HANDLED_EVENT, handled);
+    openNotificationSession({
+      notification: buildNotification({
+        workspaceId: HARBORLINE,
+        action: {
+          kind: 'open-place',
+          sessionId: SESSION_ONE,
+          reason: 'ci-failed',
+          mountId: PAYMENTS_MOUNT,
+        },
+      }),
+    });
 
     await vi.waitFor(() =>
       expect(state.navigate).toHaveBeenCalledWith({

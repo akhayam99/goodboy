@@ -1,5 +1,6 @@
 import type {
   Agent,
+  MountId,
   OpenQuestion,
   ResolveAttempt,
   ResolveThread,
@@ -11,6 +12,7 @@ import { agentPlace, branchPlace, questionPlace, sessionPlace } from '../../stor
 import { partitionDelegatedQuestions } from '../context/questionDelegate';
 import { stagedQuestionIds } from '../context/stagedQuestionIds';
 import { selectOpenQuestions } from './components/SessionOverviewPane/lib';
+import type { NotificationPlaceReason } from './notificationPlaceReason';
 import { branchLandingTabOf } from '../branch/branchLandingTab';
 import { isTurnStatePermissionBlocked } from './agent-lifecycle';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
@@ -35,12 +37,40 @@ type State = AutoWaitState &
     readonly sessionOpenQuestions?: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
     readonly sessionResolveThreads?: Readonly<Record<string, ReadonlyArray<ResolveThread>>>;
     readonly sessionResolveAttempts?: Readonly<Record<string, ReadonlyArray<ResolveAttempt>>>;
+    readonly sessionProjectMounts?: Readonly<
+      Record<
+        string,
+        ReadonlyArray<{
+          readonly mountId: MountId;
+          readonly worktreePath: string | null;
+          readonly lastWorktreePath: string | null;
+        }>
+      >
+    >;
   };
 
 type Params = {
   readonly state: State;
   readonly sessionId: SessionId;
-  readonly reason: SessionAttentionReason | null;
+  readonly reason: SessionAttentionReason | NotificationPlaceReason | null;
+  readonly mountId?: MountId | null;
+  readonly subject?: 'note' | 'comment';
+};
+
+type MountPathParams = {
+  readonly state: State;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
+};
+
+const mountPathOf = ({ state, sessionId, mountId }: MountPathParams): string | null => {
+  if (mountId === null) {
+    return null;
+  }
+  const mount = state.sessionProjectMounts?.[sessionId]?.find(
+    (candidate) => candidate.mountId === mountId,
+  );
+  return mount === undefined ? null : (mount.worktreePath ?? mount.lastWorktreePath);
 };
 
 const latestAgent = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): Agent | null =>
@@ -49,13 +79,20 @@ const latestAgent = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): Age
     null,
   );
 
-const RUN_WAIT_BY_REASON: Partial<Record<SessionAttentionReason, RunWaitEntry['wait']>> = {
+const RUN_WAIT_BY_REASON: Partial<Record<NotificationPlaceReason, RunWaitEntry['wait']>> = {
   'run-stopped': 'stopped',
   'run-paused-at-limit': 'limit',
   'run-waits-for-go': 'go',
 };
 
-export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceRequest => {
+export const attentionPlace = ({
+  state,
+  sessionId,
+  reason,
+  mountId = null,
+  subject,
+}: Params): PlaceRequest => {
+  const mountPath = mountPathOf({ state, sessionId, mountId });
   const runWait = reason === null ? undefined : RUN_WAIT_BY_REASON[reason];
   if (runWait !== undefined) {
     const session = sessionById(state.sessions, sessionId);
@@ -112,10 +149,13 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
     });
   }
   if (reason === 'push-failed') {
-    return branchPlace({ sessionId, tab: 'comments' });
+    return branchPlace({ sessionId, mountPath, tab: 'comments' });
   }
   if (reason === 'ci-failed') {
-    return branchPlace({ sessionId, tab: 'checks' });
+    return branchPlace({ sessionId, mountPath, tab: 'checks' });
+  }
+  if (reason === 'history-stopped') {
+    return branchPlace({ sessionId, mountPath, tab: 'commits' });
   }
   if (reason === 'fix-needs-you' || reason === 'fix-couldnt-fix') {
     const attention = resolveAttentionOf({
@@ -124,11 +164,17 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
     });
     const comments = reason === 'fix-needs-you' ? attention.needsYou : attention.couldntFix;
     const notes = reason === 'fix-needs-you' ? attention.notesNeedYou : attention.notesCouldntFix;
-    return branchPlace({ sessionId, tab: comments === 0 && notes > 0 ? 'files' : 'comments' });
-  }
-  if (reason === 'pr-approved' || reason === 'changes-requested') {
+    const isNoteFirst = subject === undefined ? comments === 0 && notes > 0 : subject === 'note';
     return branchPlace({
       sessionId,
+      mountPath,
+      tab: isNoteFirst ? 'files' : 'comments',
+    });
+  }
+  if (reason === 'pr-approved' || reason === 'changes-requested' || reason === 'pr-opened') {
+    return branchPlace({
+      sessionId,
+      mountPath,
       tab: branchLandingTabOf({ deepLink: 'pr' }),
     });
   }

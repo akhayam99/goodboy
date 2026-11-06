@@ -21,7 +21,7 @@ vi.mock('../../../integrations/github/github', async () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import {
   insertProject,
   insertSession,
@@ -75,10 +75,12 @@ const WORKTREE = '/repo/ledger-core/.goodboy/worktrees/review';
 
 let useAppStore: StoryStore;
 let OverviewNotices: typeof import('./OverviewNotices').OverviewNotices;
+let useOverviewNotices: typeof import('./useOverviewNotices').useOverviewNotices;
 
 beforeAll(async () => {
   useAppStore = await importStore();
   ({ OverviewNotices } = await import('./OverviewNotices'));
+  ({ useOverviewNotices } = await import('./useOverviewNotices'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const onBase = {
@@ -198,15 +200,22 @@ describe('a teammate pull request opened from Goodboy', () => {
       },
     });
     const session = aSession({ id: SESSION_ID, workspaceId: WORKSPACE_ID });
-    render(
+    const hook = renderHook(() => useOverviewNotices({ sessionId: SESSION_ID, isEnabled: true }));
+    const noticesOf = () => (
       <ToastProvider>
-        <OverviewNotices session={session} />
-      </ToastProvider>,
+        <OverviewNotices session={session} view={hook.result.current} />
+      </ToastProvider>
     );
+    const view = render(noticesOf());
 
     expect((await storedMount())?.branchOrigin).toBe('created');
 
-    fireEvent.click(await screen.findByRole('button', { name: "Use the PR's commits" }));
+    const button = await waitFor(() => {
+      view.rerender(noticesOf());
+      return screen.getByRole('button', { name: "Use the PR's commits" });
+    });
+    expect(hook.result.current.notices.map((notice) => notice.kind)).toEqual(['foreign']);
+    fireEvent.click(button);
 
     await waitFor(() =>
       expect(storySpies.moveToRemoteCommits).toHaveBeenCalledWith({
