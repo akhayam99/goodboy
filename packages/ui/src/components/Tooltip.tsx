@@ -1,6 +1,7 @@
 import {
   cloneElement,
   useCallback,
+  useContext,
   useEffect,
   useId,
   useLayoutEffect,
@@ -11,9 +12,12 @@ import { createPortal } from 'react-dom';
 import { cn } from '../cn';
 import { dismissTopEscapeLayer, registerEscapeLayer } from '../escape';
 import { FLOATING_SURFACE } from '../floatingSurface';
+import { hoverSurfaces } from '../hoverSurfaceStore';
 import { isKeyboardFocus } from '../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../placeFloating';
 import { glyphsOfShortcut } from '../shortcutGlyphs';
+import { TooltipTriggerContext } from '../tooltipTriggerContext';
+import { useHoverSurfaceCount } from '../useHoverSurfaceCount';
 import { Kbd } from './Kbd';
 
 export type TooltipSide = FloatingSide;
@@ -75,11 +79,16 @@ export const Tooltip = ({
   const [isHovered, setIsHovered] = useState(false);
   const hasContent =
     content !== undefined && content !== null && content !== false && content !== '';
-  const visible = (isHovered || isOpen) && !isSuppressed && hasContent;
+  const isNested = useContext(TooltipTriggerContext);
+  const surfaceCount = useHoverSurfaceCount();
+  const anchorRef = useRef<HTMLElement>(null);
+  const isCoveredBySurface =
+    surfaceCount > 0 && !hoverSurfaces.isInside({ anchor: anchorRef.current });
+  const isQuiet = isSuppressed || isNested || isCoveredBySurface;
+  const visible = (isHovered || isOpen) && !isQuiet && hasContent;
   const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<FloatingCoords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const anchorRef = useRef<HTMLElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const tipId = useId();
   const identityRef = useRef({});
@@ -99,8 +108,13 @@ export const Tooltip = ({
     setIsHovered(true);
   };
 
+  const isQuietNow = () =>
+    isSuppressed ||
+    isNested ||
+    (hoverSurfaces.count() > 0 && !hoverSurfaces.isInside({ anchor: anchorRef.current }));
+
   const show = () => {
-    if (isSuppressed) {
+    if (isQuietNow()) {
       return;
     }
     clearDelay();
@@ -110,6 +124,9 @@ export const Tooltip = ({
     }
     delayRef.current = setTimeout(() => {
       delayRef.current = null;
+      if (isQuietNow()) {
+        return;
+      }
       setIsHovered(true);
     }, restDelayMs ?? DEFAULT_DELAY_MS);
   };
@@ -146,7 +163,7 @@ export const Tooltip = ({
   };
 
   const focus = (target: EventTarget) => {
-    if (isRestRequired || isSuppressed) {
+    if (isRestRequired || isQuietNow()) {
       return;
     }
     if (isPointerDownRef.current) {
@@ -191,6 +208,15 @@ export const Tooltip = ({
     }
     wasSuppressedRef.current = isSuppressed;
   }, [isSuppressed]);
+
+  useEffect(() => {
+    if (!isCoveredBySurface) {
+      return;
+    }
+    clearDelay();
+    setIsHovered(false);
+    setCoords(null);
+  }, [isCoveredBySurface]);
 
   useEffect(() => {
     if (!visible) {
@@ -325,8 +351,12 @@ export const Tooltip = ({
       ? null
       : (anchorRef.current?.closest('dialog[open]') ?? document.body);
 
+  if (isNested) {
+    return children;
+  }
+
   return (
-    <>
+    <TooltipTriggerContext.Provider value={hasContent && !isSuppressed}>
       {enhanced}
       {visible && portalTarget !== null
         ? createPortal(
@@ -358,6 +388,6 @@ export const Tooltip = ({
             portalTarget,
           )
         : null}
-    </>
+    </TooltipTriggerContext.Provider>
   );
 };

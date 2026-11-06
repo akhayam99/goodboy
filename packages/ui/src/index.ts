@@ -8,6 +8,7 @@ export { DISABLED } from './disabledStyle';
 export { FOCUS_RING } from './focusRing';
 export { dismissTopEscapeLayer, registerEscapeLayer, transientEscapeLayerCount } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
+export { useHoverSurface } from './useHoverSurface';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';

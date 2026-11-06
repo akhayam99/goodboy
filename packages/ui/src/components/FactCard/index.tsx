@@ -14,6 +14,7 @@ import { dismissTopEscapeLayer, registerEscapeLayer } from '../../escape';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { isKeyboardFocus } from '../../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../../placeFloating';
+import { useHoverSurface } from '../../useHoverSurface';
 import { useRestHover } from '../../useRestHover';
 import { FactCardBody } from './FactCardBody';
 import { factCardSentence } from './factCardSentence';
@@ -62,6 +63,7 @@ export const FactCard = ({
   const sentence = factCardSentence({ card });
   const isHovered = target !== null;
   const isShown = (isHovered || isOpen) && !isSuppressed;
+  useHoverSurface({ isActive: isShown });
 
   useEffect(() => {
     if (!isHovered) {
@@ -246,6 +248,7 @@ export const FactCard = ({
               ref={cardRef}
               aria-hidden
               data-testid="fact-card"
+              data-hover-surface=""
               style={{
                 position: 'fixed',
                 top: coords?.top ?? -9999,
