@@ -409,7 +409,7 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch.tsx": {
+  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch/index.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }

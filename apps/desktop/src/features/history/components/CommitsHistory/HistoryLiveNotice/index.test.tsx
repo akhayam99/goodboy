@@ -6,15 +6,15 @@ import {
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
-} from '../../../../store/storyHarness';
-import type { HistoryLiveSession } from '../../../../store/slices/history/types';
-import { HistoryLiveNotice } from './HistoryLiveNotice';
+} from '../../../../../store/storyHarness';
+import type { HistoryLiveSession } from '../../../../../store/slices/history/types';
+import { HistoryLiveNotice } from './index';
 
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
 const SESSION_ID = brandId<SessionId>({ value: 'harborline-session' });
@@ -67,7 +67,7 @@ describe('HistoryLiveNotice action nodes', () => {
     expect(retry.parentElement).toBe(dismiss.parentElement);
     expect(retry.parentElement?.children).toHaveLength(3);
     expect(retry.parentElement?.parentElement?.parentElement).toBe(alert);
-    expect(within(alert).getByText(LIVE.error ?? '')).toBeDefined();
+    within(alert).getByText(LIVE.error ?? '');
 
     fireEvent.click(dismiss);
 

@@ -1,13 +1,13 @@
 import { Button, Notice } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { HistoryLiveSession } from '../../../../store/slices/history/types';
-import { StartHint } from '../../../../shared/components/StartHint';
-import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
-import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
-import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
-import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
-import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
+import { useAppStore } from '../../../../../store';
+import type { HistoryLiveSession } from '../../../../../store/slices/history/types';
+import { StartHint } from '../../../../../shared/components/StartHint';
+import { START_HINT_COPY } from '../../../../../shared/components/startHintCopy';
+import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../../store/slices/startHints/startHintScopes';
+import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
+import { isHistoryRunActive } from '../../../../../store/slices/history/isHistoryRunActive';
 
 type Props = {
   readonly sessionId: SessionId;

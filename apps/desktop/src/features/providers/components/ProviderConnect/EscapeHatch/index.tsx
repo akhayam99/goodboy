@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, formatError, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { openCommandInExternalTerminal } from '../../external-terminal';
-import { useAppStore } from '../../../../store';
+import { openCommandInExternalTerminal } from '../../../external-terminal';
+import { useAppStore } from '../../../../../store';
 import { CopyButton } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { SETTING_TERMINAL_APP } from '../../../settings/settings';
-import { commandTerminalLabel } from '../../commandTerminalLabel';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { SETTING_TERMINAL_APP } from '../../../../settings/settings';
+import { commandTerminalLabel } from '../../../commandTerminalLabel';
 
 type Props = {
   readonly command: string;

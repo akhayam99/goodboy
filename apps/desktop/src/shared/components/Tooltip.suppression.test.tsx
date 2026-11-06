@@ -102,7 +102,7 @@ describe('Tooltip during hover surface dismissal', () => {
     );
     fireEvent.mouseEnter(screen.getByRole('button'));
     advance({ milliseconds: 400 });
-    expect(screen.getByRole('tooltip')).toBeDefined();
+    screen.getByRole('tooltip');
     surface.rerender({ isActive: true });
     expect(screen.queryByRole('tooltip')).toBeNull();
     advance({ milliseconds: 500 });
@@ -110,7 +110,7 @@ describe('Tooltip during hover surface dismissal', () => {
     advance({ milliseconds: 399 });
     expect(screen.queryByRole('tooltip')).toBeNull();
     advance({ milliseconds: 1 });
-    expect(screen.getByRole('tooltip')).toBeDefined();
+    screen.getByRole('tooltip');
   });
 
   it('allows a tooltip inside the surface without exposing an outside tooltip', () => {
