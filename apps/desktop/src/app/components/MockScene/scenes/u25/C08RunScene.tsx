@@ -19,7 +19,7 @@ import {
   type C08State,
 } from './c08RunSeed';
 
-type C08Click = 'none' | 'menu' | 'addStep' | 'startRun';
+type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'how' | 'titleDouble';
 
 type Props = {
   readonly state: C08State;
@@ -68,6 +68,8 @@ const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
   addStep: '[data-run-overview] [data-run-add-step] button',
   startRun: '[data-start-run-row] button',
+  how: '[data-setting-chip="How"]',
+  titleDouble: '[data-run-row-title]',
 };
 
 export const C08RunScene = ({
@@ -104,7 +106,12 @@ export const C08RunScene = ({
       return;
     }
     const timer = window.setTimeout(() => {
-      document.querySelector<HTMLButtonElement>(SELECTOR[click])?.click();
+      const target = document.querySelector<HTMLElement>(SELECTOR[click]);
+      if (click === 'titleDouble') {
+        target?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+        return;
+      }
+      target?.click();
     }, CLICK_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [isSeeded, click]);

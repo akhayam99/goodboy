@@ -1,6 +1,5 @@
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
-import { WORKFLOW_RUN_KIND } from '../../../actions/kinds/workflowRun';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -8,14 +7,7 @@ type Props = {
   readonly stepAgentId: AgentId;
 };
 
-const STEP_VERBS: ReadonlySet<string> = new Set([
-  'workflowRun.stepTranscript',
-  'workflowRun.skipStep',
-]);
-
-const NOT_STEP_VERBS: ReadonlyArray<string> = WORKFLOW_RUN_KIND.actions
-  .map((action) => action.id)
-  .filter((id) => !STEP_VERBS.has(id));
+const STEP_VERBS: ReadonlyArray<string> = ['workflowRun.stepTranscript', 'workflowRun.skipStep'];
 
 export const RunStepActions = ({ sessionId, runId, stepAgentId }: Props) => (
   <ObjectOverflowMenu
@@ -23,7 +15,8 @@ export const RunStepActions = ({ sessionId, runId, stepAgentId }: Props) => (
     label="Step actions"
     anchorKey={`workflow-step:${stepAgentId}`}
     size="control"
-    omit={NOT_STEP_VERBS}
+    only={STEP_VERBS}
+    minEntries={1}
     hideWhenEmpty
   />
 );

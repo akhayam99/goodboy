@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
-import type { Session } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../../store';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { checksAnalyzeSeed } from '../u24/checksAnalyzeSeed';
 
-type Props = {
-  readonly phase: 'failing' | 'running' | 'proposal';
+type ExtraParams = {
+  readonly sessionId: SessionId;
 };
 
-export const BranchNextScene = ({ phase }: Props) => {
+type Props = {
+  readonly phase: 'failing' | 'running' | 'proposal';
+  readonly extra?: (params: ExtraParams) => void;
+};
+
+export const BranchNextScene = ({ phase, extra }: Props) => {
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     const seeded = checksAnalyzeSeed({ phase });
+    extra?.({ sessionId: seeded.sessionId });
     setSession(sessionById(useAppStore.getState().sessions, seeded.sessionId) ?? null);
-  }, [phase]);
+  }, [phase, extra]);
 
   if (session === null) {
     return null;
