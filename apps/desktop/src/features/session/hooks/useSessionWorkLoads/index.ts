@@ -25,7 +25,9 @@ export const useSessionWorkLoads = ({ sessionId }: Params): void => {
       loadSessionContextItems({ sessionId }).catch((error: unknown) => {
         void reportError({ title: "Couldn't load the session notes", error, sessionId });
       });
-      void loadSessionAnsweredQuestions(sessionId);
+      void loadSessionAnsweredQuestions(sessionId).then(() =>
+        useAppStore.getState().flagUndeliveredAnswers({ sessionId }),
+      );
       void loadSessionDismissedQuestions(sessionId);
     }
     return () => {

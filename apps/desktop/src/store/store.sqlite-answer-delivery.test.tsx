@@ -1,6 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertOpenQuestion, insertWorkspace } from '@goodboy/db';
-import { brandId, type OpenQuestionId, type SessionId, type WorkspaceId } from '@goodboy/types';
+import { insertAgent, insertOpenQuestion, insertWorkspace } from '@goodboy/db';
+import {
+  brandId,
+  type AgentId,
+  type OpenQuestionId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import {
   buildStoryWorkspace,
   importStore,
@@ -123,6 +130,129 @@ const askAThirdQuestion = async (): Promise<void> => {
 };
 
 const pending = () => useAppStore.getState().pendingOpenQuestionDeliveries[sessionId];
+
+const PLANNER_ID = brandId<AgentId>({ value: 'agent-planner-ledger' });
+const TESTER_ID = brandId<AgentId>({ value: 'agent-tester-ledger' });
+
+type AskedParams = {
+  readonly id: OpenQuestionId;
+  readonly text: string;
+  readonly agentId: AgentId;
+};
+
+const askedBy = async ({ id, text, agentId }: AskedParams): Promise<void> => {
+  await insertOpenQuestion(storySqlite(), {
+    id,
+    sessionId,
+    text,
+    suggestedAnswers: [],
+    isBlocking: true,
+    createdByAgentId: agentId,
+  });
+};
+
+const twoAskingAgents = async (): Promise<void> => {
+  await storySqlite().execute('DELETE FROM open_questions');
+  for (const agent of [
+    anAgent({ id: PLANNER_ID, sessionId, name: 'Planner' }),
+    anAgent({ id: TESTER_ID, sessionId, name: 'Tester', ordinal: 1 }),
+  ]) {
+    await insertAgent(storySqlite(), {
+      id: agent.id,
+      sessionId,
+      ordinal: agent.ordinal,
+      name: agent.name,
+      status: 'pending',
+    });
+  }
+  useAppStore.setState((state) => ({
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      [sessionId]: [
+        anAgent({ id: PLANNER_ID, sessionId, name: 'Planner' }),
+        anAgent({ id: TESTER_ID, sessionId, name: 'Tester', ordinal: 1 }),
+      ],
+    },
+  }));
+  await askedBy({ id: FIRST_ID, text: FIRST_TEXT, agentId: PLANNER_ID });
+  await askedBy({ id: SECOND_ID, text: SECOND_TEXT, agentId: TESTER_ID });
+  await useAppStore.getState().loadSessionOpenQuestions(sessionId);
+};
+
+const deliveredIds = () =>
+  (useAppStore.getState().sessionAnsweredQuestions[sessionId] ?? [])
+    .filter((question) => question.answerDeliveredAt !== undefined)
+    .map((question) => question.id);
+
+describe('answers commit per agent, after the agent got them', () => {
+  it('marks the agent that got its answers and keeps the refused one undelivered', async () => {
+    await twoAskingAgents();
+    const sendTurn = vi.fn(async ({ agentId }: { readonly agentId?: AgentId }) =>
+      agentId === TESTER_ID ? { blockedOverBudget: true } : { blockedOverBudget: false },
+    );
+    useAppStore.setState({ sendTurn });
+
+    await expect(
+      useAppStore.getState().answerOpenQuestions(sessionId, pairs, null),
+    ).rejects.toThrow('Every provider is over its limit');
+
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+    expect(deliveredIds()).toEqual([FIRST_ID]);
+    expect(pending()?.error).toContain('over its limit');
+
+    sendTurn.mockClear();
+    sendTurn.mockImplementation(async () => ({ blockedOverBudget: false }));
+    await useAppStore
+      .getState()
+      .retryOpenQuestionDelivery({ sessionId, attemptId: pending()?.attemptId ?? '' });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0].agentId).toBe(TESTER_ID);
+    expect([...deliveredIds()].sort()).toEqual([FIRST_ID, SECOND_ID].sort());
+    expect(pending()).toBeUndefined();
+  });
+
+  it('shows answers saved before a reload but never sent as Not delivered, and Retry sends them', async () => {
+    await twoAskingAgents();
+    useAppStore.setState({ sendTurn: vi.fn(async () => ({ blockedOverBudget: true })) });
+    await expect(
+      useAppStore.getState().answerOpenQuestions(sessionId, pairs, null),
+    ).rejects.toThrow('over its limit');
+    useAppStore.setState((state) => ({
+      pendingOpenQuestionDeliveries: {
+        ...state.pendingOpenQuestionDeliveries,
+        [sessionId]: undefined,
+      },
+      sessionAnsweredQuestions: {},
+    }));
+
+    await useAppStore.getState().loadSessionAnsweredQuestions(sessionId);
+    useAppStore.getState().flagUndeliveredAnswers({ sessionId });
+
+    expect(
+      pending()
+        ?.pairs.map((pair) => pair.id)
+        .sort(),
+    ).toEqual([FIRST_ID, SECOND_ID].sort());
+    const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+    useAppStore.setState({ sendTurn });
+    await useAppStore
+      .getState()
+      .retryOpenQuestionDelivery({ sessionId, attemptId: pending()?.attemptId ?? '' });
+    expect(sendTurn).toHaveBeenCalledTimes(2);
+    expect(pending()).toBeUndefined();
+  });
+
+  it('flags nothing when every saved answer reached its agent', async () => {
+    await twoAskingAgents();
+    useAppStore.setState({ sendTurn: vi.fn(async () => ({ blockedOverBudget: false })) });
+    await useAppStore.getState().answerOpenQuestions(sessionId, pairs, null);
+
+    useAppStore.getState().flagUndeliveredAnswers({ sessionId });
+
+    expect(pending()).toBeUndefined();
+  });
+});
 
 describe('answering open questions when the delivery fails after the answers are saved', () => {
   it('keeps the same batch retryable, re-sends without saving twice and clears on success', async () => {

@@ -70,6 +70,7 @@ import { brandedId } from '../../../features/history/testing/brandedId';
 import { kindRouting, type AgentKind } from '../../../features/session/agent-kind';
 import { beginSessionCreation, endSessionCreation } from '../session-view/sessionCreation';
 import type { SetFn } from '../../slice-types';
+import type { SendTurnResult } from '../turn/types';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'ses-1' as SessionId;
@@ -174,8 +175,13 @@ function buildHarness(
     ...sessionOverrides,
   };
   const sendTurn = vi.fn(
-    async (_arg: { sessionId: SessionId; agentId: AgentId; content: string; mountId?: string }) =>
-      undefined,
+    async (_arg: {
+      sessionId: SessionId;
+      agentId: AgentId;
+      content: string;
+      mountId?: string;
+      onStarted?: () => void;
+    }): Promise<SendTurnResult | undefined> => undefined,
   );
   const drainResolveQueue = vi.fn(async () => undefined);
   const reportError = vi.fn(async (_params: unknown) => undefined);
@@ -428,6 +434,42 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expectFannedOut(TWO_CLUSTERS);
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, INSERTED_ID);
     expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('keeps the plan unused when the kickoff is refused, and says the agent did not start', async () => {
+    const { sendTurn, reportError, spawn } = buildHarness([makePlan()]);
+    sendTurn.mockImplementationOnce(async () => ({ blockedOverBudget: true }));
+
+    await spawn(SESSION_ID, {
+      triggeredPlanId: PLAN_ID,
+      kindOverride: 'implementer',
+      initialPrompt: 'build the ledger-core export',
+    });
+
+    await vi.waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "The agent didn't start" }),
+      ),
+    );
+    expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
+  });
+
+  it('marks the plan used once the kickoff started', async () => {
+    const { sendTurn, spawn } = buildHarness([makePlan()]);
+    sendTurn.mockImplementationOnce(async (arg) => {
+      arg.onStarted?.();
+      return { blockedOverBudget: false };
+    });
+
+    await spawn(SESSION_ID, {
+      triggeredPlanId: PLAN_ID,
+      kindOverride: 'implementer',
+      initialPrompt: 'build the ledger-core export',
+    });
+
+    await vi.waitFor(() =>
+      expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, INSERTED_ID),
+    );
   });
 
   it('fans out the latest active plan with 2+ clusters (no triggeredPlanId)', async () => {

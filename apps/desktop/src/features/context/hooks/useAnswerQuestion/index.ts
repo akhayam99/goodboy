@@ -27,6 +27,8 @@ export type AnswerQuestionControls = {
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
+const ANSWERS_NOT_DELIVERED = "Your answers are saved, but the agent didn't get them";
+
 type RequestsParams = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly drafts: Readonly<Record<string, QuestionDraft>>;
@@ -107,6 +109,11 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
           void reportError({ title: "Couldn't send your answers", error: cause, sessionId });
           return;
         }
+        for (const pair of pairs) {
+          clearDraft(pair.id);
+        }
+        void reportError({ title: ANSWERS_NOT_DELIVERED, error: cause, sessionId });
+        return;
       }
       flashAnswered(pairs.map((pair) => pair.id));
     },

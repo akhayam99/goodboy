@@ -107,9 +107,9 @@ const deps = {
   }),
   loadSessionSlots: vi.fn(async () => undefined),
   maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
-  sendTurn: vi.fn(
-    async (_turn: { sessionId: SessionId; content: string; agentId?: string }) => undefined,
-  ),
+  sendTurn: vi.fn(async (_turn: { sessionId: SessionId; content: string; agentId?: string }) => ({
+    blockedOverBudget: false,
+  })),
 };
 
 const get = (() => deps) as never;
