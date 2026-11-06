@@ -16,7 +16,11 @@ import {
   measureScene,
   notReadyFailure,
   parseDevToolsPort,
+  appendStderrTail,
+  CHROME_STDERR_TAIL_LINES,
   readDevToolsPort,
+  startWithRetries,
+  withChromeStderr,
   summaryLine,
   summaryMarkdown,
   timeCellFailures,
@@ -61,6 +65,48 @@ const withProfile = async (body) => {
 
 const timeout = () => new DevToolsTimeoutError({ method: 'Runtime.evaluate', timeoutMs: 60_000 });
 
+describe('startWithRetries', () => {
+  it('returns the first start that works', async () => {
+    let starts = 0;
+    const start = async () => {
+      starts += 1;
+      if (starts < 3) throw new Error('no port');
+      return 'session';
+    };
+    assert.equal(await startWithRetries({ start }), 'session');
+    assert.equal(starts, 3);
+  });
+
+  it('fails with the last error once every attempt failed', async () => {
+    let starts = 0;
+    const start = async () => {
+      starts += 1;
+      throw new Error(`no port ${starts}`);
+    };
+    await assert.rejects(startWithRetries({ start }), /no port 3/);
+    assert.equal(starts, 3);
+  });
+});
+
+describe('Chrome stderr', () => {
+  it('keeps only the last lines', () => {
+    const lines = Array.from({ length: CHROME_STDERR_TAIL_LINES + 5 }, (_, i) => `l${i}`);
+    const tail = appendStderrTail({ tail: '', chunk: lines.join('\n') });
+    assert.equal(tail.split('\n').length, CHROME_STDERR_TAIL_LINES);
+    assert.equal(tail.endsWith(`l${CHROME_STDERR_TAIL_LINES + 4}`), true);
+  });
+
+  it('joins a line split across two chunks', () => {
+    assert.equal(appendStderrTail({ tail: 'par', chunk: 'tial' }), 'partial');
+  });
+
+  it('adds the tail to the error, and leaves the error alone when there is none', () => {
+    const error = new Error('no port');
+    assert.equal(withChromeStderr({ error, stderr: ' \n' }), error);
+    assert.equal(withChromeStderr({ error, stderr: 'sandbox\n' }).message, 'no port\nsandbox');
+  });
+});
+
 describe('readDevToolsPort', () => {
   it('reads the port from the first line of DevToolsActivePort', async () => {
     await withProfile(async (profile) => {
@@ -88,6 +134,33 @@ describe('readDevToolsPort', () => {
       await assert.rejects(
         readDevToolsPort({ profile, timeoutMs: 300, pause: async () => {} }),
         /did not write DevToolsActivePort/,
+      );
+    });
+  });
+
+  it('stops waiting as soon as Chrome exits', async () => {
+    await withProfile(async (profile) => {
+      let waits = 0;
+      await assert.rejects(
+        readDevToolsPort({
+          profile,
+          hasExited: () => waits === 2,
+          pause: async () => {
+            waits += 1;
+          },
+        }),
+        /exited before DevTools was ready/,
+      );
+      assert.equal(waits, 2);
+    });
+  });
+
+  it('ignores a port file left by a Chrome that already exited', async () => {
+    await withProfile(async (profile) => {
+      writeFileSync(join(profile, 'DevToolsActivePort'), '41873\n/devtools/browser/x\n');
+      await assert.rejects(
+        readDevToolsPort({ profile, hasExited: () => true }),
+        /exited before DevTools was ready/,
       );
     });
   });

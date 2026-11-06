@@ -19,9 +19,15 @@ const BRAND_TILE = join(__dirname, '..', '..', 'shared', 'components', 'BrandTil
 const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
 const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
 const SITE_LOGO = join(REPOSITORY_ROOT, 'website', 'src', 'components', 'Logo.tsx');
-const SITE_STYLES = join(REPOSITORY_ROOT, 'website', 'src', 'styles.css');
+const SITE_STYLES = join(REPOSITORY_ROOT, 'website', 'src', 'styles', 'base.css');
 const FAVICON = join(REPOSITORY_ROOT, 'website', 'public', 'favicon.svg');
-const BRAND_GENERATOR = join(REPOSITORY_ROOT, 'website', 'scripts', 'build-brand-assets.mjs');
+const BRAND_GENERATOR = join(
+  REPOSITORY_ROOT,
+  'website',
+  'scripts',
+  'brand-assets',
+  'tileMetrics.mjs',
+);
 const APP_ICON = 'icon.png';
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);

@@ -10,7 +10,7 @@ const SENTENCE =
 
 const PLACES: ReadonlyArray<readonly [string, string]> = [
   ['the README', 'README.md'],
-  ['the website hero', join('website', 'src', 'sections', 'Hero.tsx')],
+  ['the website hero', join('website', 'src', 'pages', 'home', 'sections', 'Hero.tsx')],
   [
     'the Agents step',
     join(

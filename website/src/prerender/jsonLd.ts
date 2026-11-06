@@ -1,0 +1,129 @@
+import PROVIDER_SOURCES from '../components/brandIcons.source.json';
+import { BUILD_ASSET_URLS } from '../lib/downloads';
+import { SITE } from '../lib/site';
+import type { PageKind, PageMeta } from './PageMeta';
+import { RELEASES } from './RELEASES';
+import { STATIC_PAGES } from './STATIC_PAGES';
+
+type Params = {
+  readonly page: PageMeta;
+};
+
+const ROOT_URL = `${SITE.origin}/`;
+const ORGANIZATION_ID = `${SITE.origin}/#organization`;
+const WEBSITE_ID = `${SITE.origin}/#website`;
+const SOFTWARE_ID = `${SITE.origin}/#software`;
+
+const AUTHOR = { '@type': 'Person', name: 'Amin Khayam', url: 'https://github.com/akhayam99' };
+
+const SCHEMA_TYPE = {
+  home: 'WebPage',
+  features: 'WebPage',
+  'docs-index': 'CollectionPage',
+  doc: 'TechArticle',
+  'changelog-index': 'CollectionPage',
+  release: 'WebPage',
+  'not-found': 'WebPage',
+} as const satisfies Record<PageKind, string>;
+
+const FEATURE_LIST = [
+  'A briefing per task: goal, decisions and summary, read by every agent on it',
+  'Workflows that run a goal as steps, each a fresh agent with a short brief',
+  `${PROVIDER_SOURCES.length} providers in one session: ${PROVIDER_SOURCES.map((source) => source.name).join(', ')}`,
+  'A git worktree for each branch of a task, across several repos',
+  'A board that shows which tasks are building, running, in review or need you',
+  'A timeline of what ran, what it cost and what was decided',
+  'Nine roles, each workflow step with its own provider, model and effort',
+  'Plans, reports and wireframes kept next to the task',
+  'GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in one Tasks list',
+  'Review comments resolved as commits, with replies you approve',
+  'Your tasks, decisions and settings stored on your computer, no account',
+];
+
+const organization = () => ({
+  '@type': 'Organization',
+  '@id': ORGANIZATION_ID,
+  name: 'Goodboy',
+  url: ROOT_URL,
+  logo: { '@type': 'ImageObject', url: `${SITE.origin}/favicon.svg` },
+  sameAs: [SITE.repo, SITE.x],
+});
+
+const website = () => ({
+  '@type': 'WebSite',
+  '@id': WEBSITE_ID,
+  name: 'Goodboy',
+  url: ROOT_URL,
+  inLanguage: 'en',
+  publisher: { '@id': ORGANIZATION_ID },
+});
+
+const software = () => {
+  const latest = RELEASES[0];
+  return {
+    '@type': 'SoftwareApplication',
+    '@id': SOFTWARE_ID,
+    name: 'Goodboy',
+    description: STATIC_PAGES.home.description,
+    url: ROOT_URL,
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'macOS, Linux',
+    softwareVersion: latest?.version,
+    dateModified: latest?.date,
+    releaseNotes:
+      latest === undefined ? undefined : `${SITE.origin}${SITE.release(latest.version)}`,
+    downloadUrl: Object.values(BUILD_ASSET_URLS),
+    installUrl: `${SITE.origin}/#install`,
+    image: `${SITE.origin}/og-image.png`,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    author: AUTHOR,
+    publisher: { '@id': ORGANIZATION_ID },
+    sameAs: [SITE.repo],
+    featureList: FEATURE_LIST,
+  };
+};
+
+const breadcrumbList = ({ page }: Params) => ({
+  '@type': 'BreadcrumbList',
+  '@id': `${SITE.origin}${page.path}#breadcrumb`,
+  itemListElement: page.crumbs.map((crumb, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: crumb.name,
+    item: `${SITE.origin}${crumb.path}`,
+  })),
+});
+
+const webPage = ({ page }: Params) => {
+  const url = `${SITE.origin}${page.path}`;
+  const isRelease = page.kind === 'release';
+  const isDoc = page.kind === 'doc';
+  return {
+    '@type': SCHEMA_TYPE[page.kind],
+    '@id': `${url}#webpage`,
+    url,
+    name: page.title,
+    headline: isDoc ? page.title : undefined,
+    description: page.description,
+    inLanguage: 'en',
+    datePublished: isRelease ? page.lastmod : undefined,
+    dateModified: isRelease ? undefined : page.lastmod,
+    author: isDoc ? AUTHOR : undefined,
+    publisher: isDoc ? { '@id': ORGANIZATION_ID } : undefined,
+    isPartOf: { '@id': WEBSITE_ID },
+    about: { '@id': SOFTWARE_ID },
+    breadcrumb: page.crumbs.length > 1 ? { '@id': `${url}#breadcrumb` } : undefined,
+  };
+};
+
+export const jsonLd = ({ page }: Params) => {
+  const graph = [
+    organization(),
+    website(),
+    software(),
+    ...(page.isIndexed ? [webPage({ page })] : []),
+    ...(page.isIndexed && page.crumbs.length > 1 ? [breadcrumbList({ page })] : []),
+  ];
+  const json = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
+  return `<script type="application/ld+json">${json.replace(/</g, '\\u003c')}</script>`;
+};

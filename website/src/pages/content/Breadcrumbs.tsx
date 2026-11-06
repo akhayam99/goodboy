@@ -1,7 +1,4 @@
-export type Crumb = {
-  readonly name: string;
-  readonly path: string;
-};
+import type { Crumb } from '../../lib/Crumb';
 
 type Props = {
   readonly crumbs: readonly Crumb[];

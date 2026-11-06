@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { stripComments } from '../src/server/stripComments.ts';
-import { themePictures } from '../src/server/themePictures.ts';
+import { stripComments } from '../src/prerender/stripComments.ts';
+import { themePictures } from '../src/prerender/themePictures.ts';
 
 const strip = (source) => stripComments({ source });
 
@@ -52,6 +52,19 @@ describe('themePictures', () => {
     assert.equal(html.match(/loading="lazy"/g)?.length, 2);
     assert.ok(!html.includes('<picture') && !html.includes('prefers-color-scheme'));
     assert.ok(html.endsWith(' after'));
+  });
+
+  it('writes the width and height of each image from the size list', () => {
+    const plain = picture.replace(' width="480"', '');
+    const sizeOf = ({ src }) => (src.endsWith('light.webp') ? { width: 4080, height: 2640 } : null);
+    const html = themePictures({ html: plain, sizeOf });
+    assert.equal(html.match(/width="4080" height="2640"/g)?.length, 1);
+    assert.equal(html.match(/height=/g)?.length, 1);
+  });
+
+  it('scales the height to a width the markdown already sets', () => {
+    const html = themePictures({ html: picture, sizeOf: () => ({ width: 4000, height: 2000 }) });
+    assert.equal(html.match(/height="240"/g)?.length, 2);
   });
 
   it('keeps a picture that is not a light and dark pair', () => {

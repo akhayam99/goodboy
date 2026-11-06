@@ -1,0 +1,658 @@
+{
+  "features/agents-composer-menu-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/agents-composer-menu-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/agents-transcript-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/agents-transcript-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/agents-what-received-dark.webp": {
+    "width": 3060,
+    "height": 936
+  },
+  "features/agents-what-received-light.webp": {
+    "width": 3060,
+    "height": 936
+  },
+  "features/agents-workspace-chat-dark.webp": {
+    "width": 3160,
+    "height": 1600
+  },
+  "features/agents-workspace-chat-light.webp": {
+    "width": 3160,
+    "height": 1600
+  },
+  "features/artifact-compare-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/artifact-compare-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/artifact-create-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/artifact-create-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/artifact-list-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/artifact-list-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/artifact-report-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/artifact-report-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/artifact-scouts-dark.webp": {
+    "width": 4080,
+    "height": 1230
+  },
+  "features/artifact-scouts-light.webp": {
+    "width": 4080,
+    "height": 1230
+  },
+  "features/board-card-dark.webp": {
+    "width": 1716,
+    "height": 948
+  },
+  "features/board-card-light.webp": {
+    "width": 1716,
+    "height": 948
+  },
+  "features/board-stage-dark.webp": {
+    "width": 4000,
+    "height": 1400
+  },
+  "features/board-stage-light.webp": {
+    "width": 4000,
+    "height": 1400
+  },
+  "features/context-decisions-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/context-decisions-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/context-drawer-dark.webp": {
+    "width": 3520,
+    "height": 1940
+  },
+  "features/context-drawer-light.webp": {
+    "width": 3520,
+    "height": 1940
+  },
+  "features/context-summary-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/context-summary-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/history-backups-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/history-backups-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/history-conflicts-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/history-conflicts-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/history-result-dark.webp": {
+    "width": 4080,
+    "height": 2190
+  },
+  "features/history-result-light.webp": {
+    "width": 4080,
+    "height": 2190
+  },
+  "features/history-rewrite-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/history-rewrite-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/history-stopped-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/history-stopped-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/history-trial-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/history-trial-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/inbox-comment-threads-dark.webp": {
+    "width": 4080,
+    "height": 2940
+  },
+  "features/inbox-comment-threads-light.webp": {
+    "width": 4080,
+    "height": 2940
+  },
+  "features/inbox-list-dark.webp": {
+    "width": 5040,
+    "height": 2940
+  },
+  "features/inbox-list-light.webp": {
+    "width": 5040,
+    "height": 2940
+  },
+  "features/inbox-lookup-dark.webp": {
+    "width": 5040,
+    "height": 2640
+  },
+  "features/inbox-lookup-light.webp": {
+    "width": 5040,
+    "height": 2640
+  },
+  "features/inbox-sentry-dark.webp": {
+    "width": 5040,
+    "height": 2460
+  },
+  "features/inbox-sentry-light.webp": {
+    "width": 5040,
+    "height": 2460
+  },
+  "features/inbox-slack-permissions-dark.webp": {
+    "width": 3210,
+    "height": 2205
+  },
+  "features/inbox-slack-permissions-light.webp": {
+    "width": 3210,
+    "height": 2205
+  },
+  "features/inbox-slack-reply-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/inbox-slack-reply-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/keyboard-explore-dark.webp": {
+    "width": 4740,
+    "height": 2520
+  },
+  "features/keyboard-explore-light.webp": {
+    "width": 4740,
+    "height": 2520
+  },
+  "features/keyboard-script-drawer-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/keyboard-script-drawer-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/keyboard-shortcuts-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/keyboard-shortcuts-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/overview-activity-dark.webp": {
+    "width": 2463,
+    "height": 2991
+  },
+  "features/overview-activity-light.webp": {
+    "width": 2463,
+    "height": 2991
+  },
+  "features/overview-next-dark.webp": {
+    "width": 2463,
+    "height": 756
+  },
+  "features/overview-next-light.webp": {
+    "width": 2463,
+    "height": 756
+  },
+  "features/overview-session-dark.webp": {
+    "width": 3342,
+    "height": 1752
+  },
+  "features/overview-session-light.webp": {
+    "width": 3342,
+    "height": 1752
+  },
+  "features/providers-codex-reset-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/providers-codex-reset-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/providers-fallback-auto-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/providers-fallback-auto-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/providers-impact-overview-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/providers-impact-overview-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/providers-limits-chip-dark.webp": {
+    "width": 1380,
+    "height": 858
+  },
+  "features/providers-limits-chip-light.webp": {
+    "width": 1380,
+    "height": 858
+  },
+  "features/providers-model-picker-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/providers-model-picker-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/providers-monthly-cap-dark.webp": {
+    "width": 4080,
+    "height": 2520
+  },
+  "features/providers-monthly-cap-light.webp": {
+    "width": 4080,
+    "height": 2520
+  },
+  "features/review-comment-states-dark.webp": {
+    "width": 1596,
+    "height": 2508
+  },
+  "features/review-comment-states-light.webp": {
+    "width": 1596,
+    "height": 2508
+  },
+  "features/review-diff-dark.webp": {
+    "width": 4740,
+    "height": 2520
+  },
+  "features/review-diff-light.webp": {
+    "width": 4740,
+    "height": 2520
+  },
+  "features/review-pr-page-dark.webp": {
+    "width": 2360,
+    "height": 1860
+  },
+  "features/review-pr-page-light.webp": {
+    "width": 2360,
+    "height": 1860
+  },
+  "features/review-push-confirm-dark.webp": {
+    "width": 4080,
+    "height": 1500
+  },
+  "features/review-push-confirm-light.webp": {
+    "width": 4080,
+    "height": 1500
+  },
+  "features/review-resolve-dark.webp": {
+    "width": 3540,
+    "height": 2640
+  },
+  "features/review-resolve-light.webp": {
+    "width": 3540,
+    "height": 2640
+  },
+  "features/review-write-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/review-write-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-command-palette-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-command-palette-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-go-anywhere-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-go-anywhere-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-jump-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-jump-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-overlay-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/search-overlay-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/security-backup-notice-dark.webp": {
+    "width": 3180,
+    "height": 945
+  },
+  "features/security-backup-notice-light.webp": {
+    "width": 3180,
+    "height": 945
+  },
+  "features/security-changelog-update-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/security-changelog-update-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/security-export-import-dark.webp": {
+    "width": 4080,
+    "height": 3390
+  },
+  "features/security-export-import-light.webp": {
+    "width": 4080,
+    "height": 3390
+  },
+  "features/security-findings-dark.webp": {
+    "width": 4080,
+    "height": 1500
+  },
+  "features/security-findings-light.webp": {
+    "width": 4080,
+    "height": 1500
+  },
+  "features/security-newer-data-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/security-newer-data-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/security-updates-dark.webp": {
+    "width": 1380,
+    "height": 690
+  },
+  "features/security-updates-light.webp": {
+    "width": 1380,
+    "height": 690
+  },
+  "features/setup-about-you-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/setup-about-you-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/setup-agents-dark.webp": {
+    "width": 4080,
+    "height": 2580
+  },
+  "features/setup-agents-light.webp": {
+    "width": 4080,
+    "height": 2580
+  },
+  "features/setup-cli-update-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/setup-cli-update-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/setup-home-dark.webp": {
+    "width": 4080,
+    "height": 2040
+  },
+  "features/setup-home-light.webp": {
+    "width": 4080,
+    "height": 2040
+  },
+  "features/setup-integrations-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/setup-integrations-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/setup-permissions-dark.webp": {
+    "width": 3240,
+    "height": 1080
+  },
+  "features/setup-permissions-light.webp": {
+    "width": 3240,
+    "height": 1080
+  },
+  "features/setup-provider-page-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/setup-provider-page-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/setup-welcome-dark.webp": {
+    "width": 4080,
+    "height": 2040
+  },
+  "features/setup-welcome-light.webp": {
+    "width": 4080,
+    "height": 2040
+  },
+  "features/setup-workspace-dark.webp": {
+    "width": 4080,
+    "height": 2820
+  },
+  "features/setup-workspace-light.webp": {
+    "width": 4080,
+    "height": 2820
+  },
+  "features/storage-branches-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/storage-branches-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/storage-worktrees-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/storage-worktrees-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/support-report-bug-dark.webp": {
+    "width": 2040,
+    "height": 945
+  },
+  "features/support-report-bug-light.webp": {
+    "width": 2040,
+    "height": 945
+  },
+  "features/switch-display-options-dark.webp": {
+    "width": 4080,
+    "height": 2940
+  },
+  "features/switch-display-options-light.webp": {
+    "width": 4080,
+    "height": 2940
+  },
+  "features/switch-notifications-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/switch-notifications-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/switch-now-chip-dark.webp": {
+    "width": 4740,
+    "height": 2040
+  },
+  "features/switch-now-chip-light.webp": {
+    "width": 4740,
+    "height": 2040
+  },
+  "features/switch-rail-dark.webp": {
+    "width": 2280,
+    "height": 2400
+  },
+  "features/switch-rail-light.webp": {
+    "width": 2280,
+    "height": 2400
+  },
+  "features/workflow-hints-dark.webp": {
+    "width": 3030,
+    "height": 810
+  },
+  "features/workflow-hints-light.webp": {
+    "width": 3030,
+    "height": 810
+  },
+  "features/workflow-question-agent-dark.webp": {
+    "width": 4740,
+    "height": 2640
+  },
+  "features/workflow-question-agent-light.webp": {
+    "width": 4740,
+    "height": 2640
+  },
+  "features/workflow-questions-dark.webp": {
+    "width": 4740,
+    "height": 2640
+  },
+  "features/workflow-questions-light.webp": {
+    "width": 4740,
+    "height": 2640
+  },
+  "features/workflow-recap-dark.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/workflow-recap-light.webp": {
+    "width": 4080,
+    "height": 2640
+  },
+  "features/workflow-run-dark.webp": {
+    "width": 3160,
+    "height": 1800
+  },
+  "features/workflow-run-light.webp": {
+    "width": 3160,
+    "height": 1800
+  },
+  "features/workflow-studio-steps-dark.webp": {
+    "width": 4080,
+    "height": 1980
+  },
+  "features/workflow-studio-steps-light.webp": {
+    "width": 4080,
+    "height": 1980
+  },
+  "features/workspace-branches-dark.webp": {
+    "width": 3264,
+    "height": 840
+  },
+  "features/workspace-branches-light.webp": {
+    "width": 3264,
+    "height": 840
+  },
+  "features/workspace-locate-dark.webp": {
+    "width": 3066,
+    "height": 1134
+  },
+  "features/workspace-locate-light.webp": {
+    "width": 3066,
+    "height": 1134
+  },
+  "features/workspace-repo-status-dark.webp": {
+    "width": 2220,
+    "height": 1320
+  },
+  "features/workspace-repo-status-light.webp": {
+    "width": 2220,
+    "height": 1320
+  },
+  "features/workspace-several-projects-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/workspace-several-projects-light.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/workspace-starred-dark.webp": {
+    "width": 3540,
+    "height": 2640
+  },
+  "features/workspace-starred-light.webp": {
+    "width": 3540,
+    "height": 2640
+  },
+  "features/workspace-worktrees-dark.webp": {
+    "width": 4080,
+    "height": 2340
+  },
+  "features/workspace-worktrees-light.webp": {
+    "width": 4080,
+    "height": 2340
+  }
+}

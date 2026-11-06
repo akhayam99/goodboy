@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { BUILD_ASSET_URLS, resolveAssetUrls, type AssetUrls } from '../../data/downloads';
-import { SITE } from '../../site';
+import { assetVersions, type AssetVersions } from '../../lib/assetVersions';
+import { BUILD_ASSET_URLS, resolveAssetUrls, type AssetUrls } from '../../lib/downloads';
+import { SITE } from '../../lib/site';
 import { usePlatform, type Platform } from '../usePlatform';
 
 const CACHE_KEY = 'goodboy.release-assets';
@@ -56,7 +57,14 @@ const loadAssetUrls = (): Promise<AssetUrls> => {
 type Downloads = {
   readonly platform: Platform;
   readonly urls: AssetUrls;
-  readonly primary: { readonly label: string; readonly href: string };
+  readonly versions: AssetVersions;
+  readonly primary: {
+    readonly label: string;
+    readonly href: string;
+    readonly version: string;
+    readonly os: 'macos' | 'linux';
+    readonly packageName: 'dmg' | 'appimage';
+  };
 };
 
 export const useDownloads = (): Downloads => {
@@ -75,10 +83,24 @@ export const useDownloads = (): Downloads => {
     };
   }, []);
 
-  const primary =
-    platform === 'linux'
-      ? { label: 'Download for Linux', href: urls.appimage }
-      : { label: 'Download for macOS', href: urls.dmg };
+  const versions = assetVersions({ urls });
 
-  return { platform, urls, primary };
+  const primary: Downloads['primary'] =
+    platform === 'linux'
+      ? {
+          label: 'Download for Linux',
+          href: urls.appimage,
+          version: versions.appimage,
+          os: 'linux',
+          packageName: 'appimage',
+        }
+      : {
+          label: 'Download for macOS',
+          href: urls.dmg,
+          version: versions.dmg,
+          os: 'macos',
+          packageName: 'dmg',
+        };
+
+  return { platform, urls, versions, primary };
 };

@@ -1384,12 +1384,12 @@
       "count": 3
     }
   },
-  "website/src/components/mocks/kit/RunTree.tsx": {
+  "website/src/mocks/kit/RunTree.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }
   },
-  "website/src/components/mocks/kit/railGeometry.ts": {
+  "website/src/mocks/kit/railGeometry.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     }

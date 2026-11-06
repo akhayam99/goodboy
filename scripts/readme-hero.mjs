@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { appVersionOf, chromePathOf, DEFAULT_SHOT_URL, recordFigure } from './lib/figures.mjs';
+import { FROZEN_AT, frozenClockSource } from './lib/frozenClock.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/readme');
@@ -12,6 +13,9 @@ const SITE_DIRECTORY = resolve(ROOT_DIRECTORY, 'website/public/hero');
 const THEMES = ['dark', 'light'];
 const WIDTH = 1920;
 const HEIGHT = 1200;
+const README_WIDTH = 1680;
+const README_HEIGHT = 1118;
+const README_SCALE = 2;
 const SCALE = 4;
 const SETTLE_MS = 12000;
 const SITE_WIDTH = 1208;
@@ -98,13 +102,13 @@ const webp = ({ input, output, width, cropHeight }) => {
   execFileSync('cwebp', ['-quiet', '-q', '82', '-m', '6', ...crop, ...resize, input, '-o', output]);
 };
 
-const shoot = async ({ theme, workDirectory }) => {
+const capture = async ({ theme, workDirectory, scene, width, height, scale, name, frozenAt }) => {
   const { send, close } = await openBrowser();
   try {
     await send('Emulation.setDeviceMetricsOverride', {
-      width: WIDTH,
-      height: HEIGHT,
-      deviceScaleFactor: SCALE,
+      width,
+      height,
+      deviceScaleFactor: scale,
       mobile: false,
     });
     await send('Emulation.setEmulatedMedia', {
@@ -114,27 +118,61 @@ const shoot = async ({ theme, workDirectory }) => {
       ],
     });
     await send('Page.enable');
-    await send('Page.navigate', { url: `${APP}/?scene=${SCENE}&theme=${theme}` });
+    if (frozenAt !== undefined) {
+      await send('Page.addScriptToEvaluateOnNewDocument', {
+        source: frozenClockSource({ at: frozenAt }),
+      });
+    }
+    await send('Page.navigate', { url: `${APP}/?scene=${scene}&theme=${theme}` });
     await pause(SETTLE_MS);
-    const shot = await send('Page.captureScreenshot', { format: 'png' });
+    const shot = await send('Page.captureScreenshot', {
+      format: 'png',
+    });
     if (!shot.result?.data) {
       throw new Error(`capture failed ${JSON.stringify(shot.error ?? {})}`);
     }
-    const pngPath = join(workDirectory, `${theme}.png`);
+    const pngPath = join(workDirectory, `${name}-${theme}.png`);
     writeFileSync(pngPath, Buffer.from(shot.result.data, 'base64'));
-    const outPath = join(OUT_DIRECTORY, `readme-hero-${theme}.webp`);
-    webp({ input: pngPath, output: outPath });
-    mkdirSync(SITE_DIRECTORY, { recursive: true });
-    const sitePaths = SITE_DENSITIES.map((density) => {
-      const width = SITE_WIDTH * density;
-      const output = join(SITE_DIRECTORY, `hero-${theme}-${width}.webp`);
-      webp({ input: pngPath, output, width, cropHeight: SITE_CROP_HEIGHT });
-      return output;
-    });
-    return { outPath, sitePaths, pixels: `${WIDTH * SCALE}x${HEIGHT * SCALE}` };
+    return pngPath;
   } finally {
     close();
   }
+};
+
+const shoot = async ({ theme, workDirectory }) => {
+  const readmePng = await capture({
+    theme,
+    workDirectory,
+    scene: SCENE,
+    width: README_WIDTH,
+    height: README_HEIGHT,
+    scale: README_SCALE,
+    name: 'readme',
+    frozenAt: FROZEN_AT,
+  });
+  const outPath = join(OUT_DIRECTORY, `readme-hero-${theme}.webp`);
+  webp({ input: readmePng, output: outPath });
+  const pngPath = await capture({
+    theme,
+    workDirectory,
+    scene: SCENE,
+    width: WIDTH,
+    height: HEIGHT,
+    scale: SCALE,
+    name: 'site',
+  });
+  mkdirSync(SITE_DIRECTORY, { recursive: true });
+  const sitePaths = SITE_DENSITIES.map((density) => {
+    const width = SITE_WIDTH * density;
+    const output = join(SITE_DIRECTORY, `hero-${theme}-${width}.webp`);
+    webp({ input: pngPath, output, width, cropHeight: SITE_CROP_HEIGHT });
+    return output;
+  });
+  return {
+    outPath,
+    sitePaths,
+    pixels: `${README_WIDTH * README_SCALE}x${README_HEIGHT * README_SCALE}`,
+  };
 };
 
 const workDirectory = mkdtempSync(join(tmpdir(), 'readme-hero-png-'));

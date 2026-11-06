@@ -77,10 +77,10 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The run Fix flaky tests in the ledger: the rail with Overview and three steps, step 2 Fix the batching selected, the step conversation with its answer, the line Step 2 done, ready to continue with Start step 3, Stop run in the header and the limit and spend at the foot">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of the session in the app, with the run Duplicate credit fix on GPT-6.1 Sol, pinned at High, writing to payments-api on hl/fix-duplicate-credit, with Steps 5 all done: three scouts under step 1, a planner, two implementers and a tester, the two hints read at step 1 and step 2, the orchestrator summary and the Create report and Create wireframe buttons">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.10</sub>
 
 ### Hints to the orchestrator
 

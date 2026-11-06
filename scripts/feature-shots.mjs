@@ -10,6 +10,7 @@ import {
   recipeOf,
   recordFigure,
 } from './lib/figures.mjs';
+import { frozenClockSource } from './lib/frozenClock.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(
@@ -36,7 +37,7 @@ const USAGE = `usage: node scripts/feature-shots.mjs --scene <key&params> --out 
   [--selector <css>] [--clip x,y,w,h] [--window 1280x800] [--pad 24]
   [--scale 3] [--wait 5000] [--frame-pad 40] [--themes dark,light]
   [--click "Text one,Text two"] [--scroll <css>] [--hover <css>] [--version x.y.z]
-  [--base http://localhost:5230]
+  [--base http://localhost:5230] [--out-dir <folder>] [--frozen-at 2026-11-05T16:00:00]
        node scripts/feature-shots.mjs --scene <key&params> --probe <css> [--window 1280x800]`;
 
 const parseArgs = (argv) => {
@@ -68,6 +69,8 @@ const parseArgs = (argv) => {
     hover: args.hover ?? null,
     scroll: args.scroll ?? null,
     version: args.version ?? null,
+    outDir: args['out-dir'] === undefined ? null : resolve(args['out-dir']),
+    frozenAt: args['frozen-at'] === undefined ? null : Date.parse(args['frozen-at']),
     themes: (args.themes ?? THEMES.join(',')).split(','),
     base: args.base ?? process.env.GOODBOY_SHOT_URL ?? DEFAULT_SHOT_URL,
   };
@@ -212,6 +215,11 @@ const captureScene = async ({ send, options, theme }) => {
     mobile: false,
   });
   await send('Page.enable');
+  if (options.frozenAt !== null) {
+    await send('Page.addScriptToEvaluateOnNewDocument', {
+      source: frozenClockSource({ at: options.frozenAt }),
+    });
+  }
   const url = `${options.base}/?scene=${options.scene}&theme=${theme}`;
   await send('Page.navigate', { url });
   await sleep(options.wait);
@@ -327,7 +335,7 @@ const composeFrame = async ({ send, capture, options, theme, workDirectory }) =>
   }
   const pngPath = join(workDirectory, `${theme}.png`);
   writeFileSync(pngPath, Buffer.from(shot.result.data, 'base64'));
-  const outPath = join(OUT_DIRECTORY, `${options.out}-${theme}.webp`);
+  const outPath = join(options.outDir ?? OUT_DIRECTORY, `${options.out}-${theme}.webp`);
   execFileSync('cwebp', [
     '-quiet',
     '-q',
@@ -374,6 +382,9 @@ const main = async () => {
       console.log(
         `shot ok: ${outPath} ${pixels} ${kilobytes} KB (clip ${capture.width}x${capture.height} css, frame ${frameWidth} css wide)`,
       );
+    }
+    if (options.outDir !== null) {
+      return;
     }
     const version = appVersionOf({ override: options.version ?? undefined });
     recordFigure({

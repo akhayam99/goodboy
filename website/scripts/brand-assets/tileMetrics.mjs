@@ -1,0 +1,12 @@
+export const FAVICON_CANVAS_PX = 32;
+export const FAVICON_GLYPH_PX = 256;
+export const APP_ICON_PX = 1024;
+export const ICNS_HEADER_BYTES = 8;
+export const TILE_RADIUS_RATIO = 0.28;
+export const MARK_SCALE = 0.76;
+export const APP_ICON_MARK_SCALE_EXCEPTION = 0.66;
+export const DEV_ICON_CONTENT_RATIO = 0.8125;
+export const DEV_ICON_CORNER_RADIUS_RATIO = 0.2237;
+export const DEV_ICON_FILES = ['icon.png', '32x32.png', '128x128.png', '128x128@2x.png'];
+export const PNG_WIDTH_OFFSET_BYTES = 16;
+export const APP_ICON_MARK_PX = APP_ICON_PX * APP_ICON_MARK_SCALE_EXCEPTION;

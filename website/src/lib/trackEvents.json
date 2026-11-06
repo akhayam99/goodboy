@@ -1,0 +1,17 @@
+{
+  "download_click": {
+    "platform": ["macos", "linux"],
+    "package": ["dmg", "appimage", "deb", "rpm"],
+    "cta_location": ["hero", "install"],
+    "app_version": { "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" }
+  },
+  "star_click": {
+    "cta_location": ["hero", "install", "features", "nav_sheet"]
+  },
+  "demo_click": {
+    "cta_location": ["hero", "install", "nav", "nav_sheet", "footer"]
+  },
+  "copy_install_command": {
+    "install_method": ["brew"]
+  }
+}

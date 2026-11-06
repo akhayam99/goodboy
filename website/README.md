@@ -8,6 +8,43 @@
 The landing page is a Vite and React app outside the pnpm workspace, built and
 deployed by Vercel from `website/vercel.json`.
 
+## Map
+
+Find a file by what you want to change.
+
+| I want to change                          | Look in                                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| the hero or any landing section           | `src/pages/home/sections/` (`Hero.tsx`, `Tour.tsx`, `Install.tsx`), assembled by `src/pages/home/HomePage.tsx` |
+| a product mock shown on the page          | `src/mocks/` (`kit/` is the shared app look)                                                                   |
+| the features page or its copy             | `src/pages/features/`, copy in `features.data.json`                                                            |
+| docs, changelog, release or 404 pages     | `src/pages/content/`                                                                                           |
+| titles, JSON-LD, sitemap, feed, markdown  | `src/prerender/`                                                                                               |
+| a release snapshot                        | `src/data/releases/` (written by the release flow)                                                             |
+| colours, type, layout tokens              | `src/styles/base.css`                                                                                          |
+| shared button, chapter or logo pieces     | `src/components/`                                                                                              |
+| shared helpers, theme, links and URLs     | `src/lib/` (`site.ts` holds every link)                                                                        |
+| a hook                                    | `src/hooks/useFoo/index.ts`                                                                                    |
+| fonts, hero images, favicon, brand assets | `public/`                                                                                                      |
+
+Where code runs:
+
+- Browser: `src/pages/*/main.tsx` entries, `src/components/`, `src/mocks/`,
+  `src/hooks/`, `src/lib/`.
+- Build time only: `website/scripts/prerender.mjs` and `website/src/prerender/`, which render
+  the pages and write `dist/`. `website/vite/` holds the star count fetch and the clean-URL
+  plugin that `vite.config.ts` loads.
+- Generated, never edited by hand: `src/mocks/generated/` (from
+  `website/scripts/sync-icons.mjs` and `website/scripts/sync-app-tokens.mjs`), `dist/`.
+- Hand-written data: `src/pages/features/features.data.json`,
+  `src/components/brandIcons.source.json`. Written by the release flow:
+  `src/data/releases/`.
+- Root: `index.html`, `features.html` and `content.html` are the page
+  templates, the Vite inputs.
+- `scripts/`: `prerender.mjs` is the build, `sync-*.mjs` write generated files,
+  `check-page.mjs` and `*.test.mjs` check the site (`check-page/` holds its
+  probes, its per-page checks and the browser launcher), `build-brand-assets.mjs`
+  writes `public/` images (`brand-assets/` holds its icon, OG image and social renderers).
+
 ## Install and run
 
 - Install from `website/` with `pnpm install --ignore-workspace`. The site
@@ -22,10 +59,10 @@ deployed by Vercel from `website/vercel.json`.
 Every page ships its full text as HTML, so a crawler or a link preview that
 runs no JavaScript reads the same page a visitor does.
 `website/scripts/prerender.mjs` runs the client build, then a server build of
-`website/src/server/renderSite.tsx`, and writes what `renderSite` returns into
+`website/src/prerender/renderSite.tsx`, and writes what `renderSite` returns into
 `dist/`: each template's
 `<!--app-html-->` mark gets the page rendered with `react-dom/server`. The
-client entries mount through `website/src/mountRoot.tsx`: it hydrates
+client entries mount through `website/src/lib/mountRoot.tsx`: it hydrates
 prerendered HTML and renders from scratch in `pnpm dev` or when the root holds
 no element, as the unbuilt templates do.
 
@@ -36,9 +73,9 @@ an effect or a handler, never while it renders. The nav takes the current
 section as a prop for the same reason. `?fidelity=<Mock>` skips hydration and
 renders the mock alone.
 
-The templates hold no title or social tags. `pageHead` in `website/src/server/`
+The templates hold no title or social tags. `pageHead` in `website/src/prerender/`
 writes them at each template's `<!--app-head-->` mark from the page's meta (the
-home and features meta live in `website/src/server/STATIC_PAGES.ts`): title, description,
+home and features meta live in `website/src/prerender/STATIC_PAGES.ts`): title, description,
 canonical, Open Graph and X card, all from one title and one description. A
 title names what the page is for in the words people search, such as AI coding
 agent orchestrator, Claude Code, Codex, Cursor or git worktrees, in about 70
@@ -47,18 +84,45 @@ characters; a description stays under 160.
 ## Search and sharing
 
 - Every page ends its head with one JSON-LD `@graph`, built by
-  `website/src/server/jsonLd.ts`: the schema.org Organization and WebSite with
+  `website/src/prerender/jsonLd.ts`: the schema.org Organization and WebSite with
   the GitHub and X profiles, the SoftwareApplication with the newest
   snapshot's version, date and release notes link and the four download URLs,
   then the page itself and its BreadcrumbList when it sits below the home page.
-  Mark up only what the page shows: no rating and no FAQ that isn't on the
-  page.
-- `dist/sitemap.xml` and the `/changelog.xml` feed are written by the build,
-  so a new release or doc shows up on its own. A release page's `lastmod` is
-  its snapshot date; every other page takes the newest release date. No
-  sitemap lives in `website/public/`, so there is none to edit by hand.
+  A doc page is a TechArticle, a release page a WebPage with the `datePublished`
+  of its snapshot, the two index pages are CollectionPages, and every other page
+  a WebPage. Mark up only what the page shows: no rating, no `license` and no FAQ
+  that isn't on the page. The check fails on a type outside that list.
+- `website/src/prerender/PAGE_REGISTRY.ts` is the one list of pages: the home page,
+  features, every content page and the 404, each with its `PageMeta`. The build writes `dist/sitemap.xml` and `dist/llms.txt` from it, so they cannot
+  disagree, and `/changelog.xml` from the release snapshots; a new release or doc shows up in all three on its own. A page has a `lastmod`
+  only when its date is true: a release page has its snapshot date, the changelog index the newest release date, and the home page,
+  features and docs have none. `llms.txt` is a plain index for agents that
+  reach the site: the home description, then Product, Docs, the newest ten releases and Download, one line per
+  page. No sitemap or `llms.txt` lives in `website/public/`, so there is none to edit by hand, and the SEO check fails
+  when the sitemap, `llms.txt`, the feed and the built pages list different URLs.
 - `/404` is the branded not-found page, built from the content template and
   marked `noindex`. Vercel serves `404.html` for any path it doesn't know.
+- `pnpm build` ends with `website/scripts/check-seo.mjs`, which reads the final HTML
+  in `dist/`, without Chrome, and fails the build on a structural error: a
+  missing or shared title or description, not exactly one h1, a skipped
+  heading level, a canonical that is not the page URL, a page and the sitemap
+  that disagree, an `img` without `alt`, `width` or `height`, JSON-LD that does
+  not parse, names a type outside its list or cites an `@id` the graph lacks,
+  a broken internal link, a redirect chain, and a Tag Manager id that is
+  repeated or comes before the Consent Mode default. A title outside 30 to
+  72 characters and a description outside 70 to 165 are warnings, on indexed
+  pages only: a `noindex` page such as `/404` skips the length rules. Search
+  engines publish no hard limit, so the maximums sit a little above where
+  results usually cut a line. No ledger holds known problems: `pnpm check:seo`
+  fails on any error and `pnpm check:seo --strict` fails on any warning. The
+  rules live in `website/scripts/lib/seoCheck.mjs`, the CI step `check seo` of
+  `.github/workflows/website.yml` runs `pnpm check:seo`.
+- A renamed or removed page keeps its old URL alive: add a permanent redirect
+  to `redirects` in `vercel.json` and leave the old path in
+  `website/scripts/seo-published-paths.json`, which only gains lines. The check fails
+  when a published path is neither built nor a redirect source, when a
+  redirect points at a page that is not built or at another redirect, and when
+  a link on the site uses a redirect source.
 - `vercel.json` sets `trailingSlash: false`, so `/features/` redirects to
   `/features`, and caches `/assets/` and `/fonts/` for a year as immutable. A
   hashed asset changes name when it changes; the font carries its version in
@@ -66,8 +130,8 @@ characters; a description stays under 160.
 
 ## Pages
 
-- `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
-  Its sections live in `website/src/sections/`, in this order: Nav, Hero,
+- `/`, the landing page, from `website/index.html` and `website/src/pages/home/HomePage.tsx`.
+  Its sections live in `website/src/pages/home/sections/`, in this order: Nav, Hero,
   TwoWays, SharedContext, Tour, Install, BrandLine, Footer. `BrandLine` is the
   brand line alone, the last block before the footer.
 - `/features`, one cluster per topic, from `website/features.html` and
@@ -76,15 +140,15 @@ characters; a description stays under 160.
   `vercel.json` serves them without `.html`, and the dev and preview servers
   rewrite `/features` the same way.
 - `/changelog`, every release newest first, and `/changelog/<version>`, one
-  page per release: its date and summary from the snapshot in
+  page per release, titled `Goodboy <version>: <summary theme>` in 70 characters or fewer and described by its summary, plus the first note entries when the summary is short: its date and summary from the snapshot in
   `website/src/data/releases/`, and its New, Improved and Fixed notes from the
   `## Goodboy v<version>` entry in `CHANGELOG.md`. `/changelog.xml` is the
   Atom feed of the same list.
 - `/docs`, the feature guide, and `/docs/<area>`, one page per
   `docs/features/<area>.md`, in `FEATURES.md` index order. The doc's title is
   the h1, its first paragraph the lead, and each `###` an h2 with the same
-  anchor GitHub gives it. A few areas add the words people search to their
-  page title, from a short map in `website/src/server/CONTENT_PAGES.tsx`. Every
+  anchor GitHub gives it. Every area adds the words people search to its
+  page title, from a map in `website/src/prerender/SEARCH_HINTS.ts`. Every
   page carries breadcrumbs, a link to the same file on GitHub and its
   neighbours.
 
@@ -95,10 +159,10 @@ the nav alone, since the rest is static. The server build reads
 the Vercel project must keep files outside `website/` in the build (the
 default). Markdown renders with `marked` at build time and ships no parser to
 the browser. HTML comments come out with a character scanner
-(`website/src/server/stripComments.ts`), not a regex. A doc's
+(`website/src/prerender/stripComments.ts`), not a regex. A doc's
 `<picture>` with a `prefers-color-scheme: dark` source becomes two lazy
 images, one per site theme, so the header toggle picks the screenshot, not the
-system (`website/src/server/themePictures.ts`). `pnpm test` runs their tests, and
+system (`website/src/prerender/themePictures.ts`). Every doc image carries `width` and `height` from `website/src/prerender/imageSizes.json`, keyed by its path in the media repository, so the page does not shift while it loads; the images stay on their current host. After a doc adds a screenshot, run `node scripts/sync-image-sizes.mjs <path to the media checkout>` to write its size, and `check-seo` fails an `img` without both. `pnpm test` runs their tests, and
 `website/scripts/site-copy.test.mjs` holds the site copy to the retired names list and the
 dash rule ([docs/testing.md](../docs/testing.md)).
 
@@ -119,7 +183,7 @@ hero, a real app capture of the `readme-hero` mock scene. Every other product
 view is a React mock, built from the same tokens as the page, so it is sharp at
 any zoom, follows the theme and ships no raster file.
 
-- `website/src/components/mocks/` holds the kit: `MockStage` puts a mock on a
+- `website/src/mocks/` holds the kit: `MockStage` puts a mock on a
   stage, `MockWindow` is the app window chrome, and `mocks.css` holds the shared
   look. Each scene (`SessionMock`, `BoardMock`, `InboxMock` and the rest) has its
   own `.tsx` and `.css`.
@@ -144,10 +208,10 @@ The page follows the system theme until the visitor picks one with the header
 toggle, which is kept in `localStorage` under `goodboy-site:theme`. A script at
 the top of `website/index.html` sets `data-theme` before the first paint, so
 the page never flashes. Colours come from the tokens at the top of
-`website/src/styles.css`, with a dark set under `:root[data-theme='dark']`:
+`website/src/styles/base.css`, with a dark set under `:root[data-theme='dark']`:
 one page background, a `--band` a step above it, the `--g-stage-gradient` token
 behind every stage and mock (a flat 160 degree linear gradient, dark teal to
-near black, with no sheen or glow, defined once in `website/src/styles.css`),
+near black, with no sheen or glow, defined once in `website/src/styles/base.css`),
 one raised surface for controls, hairlines instead of shadows, four text
 tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and focus
 rings only. The logo is always the dark tile with the white dog, in both
@@ -162,7 +226,7 @@ display drawing from 32 px up, so there is no separate display file. The type
 roles live as `--t-*` tokens next to the colours: 64, 48 and 32 for headings,
 20 for a lead, 16 for body, 15 for a cell, and weights 400, 500 and 600 only.
 The subset carries no `cv11` or `ss01` alternates, so the site sets only
-`calt`. `website/scripts/build-brand-assets.mjs` embeds the same file, so the
+`calt`. `website/scripts/brand-assets/html/createBaseHtml.mjs` embeds the same file, so the
 OG image renders in Inter on a machine without it installed.
 
 ## Cookie consent
@@ -172,11 +236,46 @@ rather than through Google Tag Manager, so the repo owns its language, position
 and look. It asks in Italian, sits at the bottom left, and takes its colours
 from `website/src/styles/consent.css`; the `onBannerShown` callback drops
 iubenda's inline colours so the site tokens apply in both themes. Consent Mode
-defaults to denied before any tag loads. iubenda shows no card for a language
+defaults to denied in the first script of each template, with one `wait_for_update`.
+Nothing from Google loads before consent: the Tag Manager loader in each template
+runs only when iubenda's `onPreferenceExpressedOrNotNeeded` callback reports the
+Measurement purpose (`preference.purposes["4"]`) as accepted, for a new
+acceptance and for a returning visitor whose choice is stored. It pushes
+`gtag('consent', 'update', { analytics_storage: 'granted' })` first, then starts
+`gtm.js` when the browser is idle. A refusal, a visitor who has not answered
+and a visit where no preference is needed load nothing from Google, and the
+templates carry no `noscript` frame, since a visitor without JavaScript
+cannot answer the banner. A visitor who withdraws in the preferences panel
+sets `analytics_storage` back to denied and `window.goodboyConsent.isMeasurementGranted` to false,
+and when Tag Manager was already requested the page reloads once, so the tag is
+gone. The reload cannot loop: a fresh page has no tag, so it never reloads
+again. The loader installs `onPreference` before the iubenda script tag, so a
+cached iubenda cannot call the empty stub. `check-seo` fails a Google script,
+frame or image in the static HTML, a repeated Tag Manager id, a Consent Mode
+default that comes after it, and an iubenda script that comes before the
+Consent Mode default or before the preference handler. iubenda shows no card for a language
 the cookie policy lacks, and the policy has only an Italian version, so the
 embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
 in the iubenda dashboard. The GTM iubenda tag stays paused so the card never
 loads twice.
+
+## Tracking events
+
+Four actions carry an event, and no link text, class or menu is read. The spec is
+`website/src/lib/trackEvents.json`: `download_click` (`platform`, `package`,
+`cta_location`, `app_version`), `star_click` and `demo_click` (`cta_location`) and
+`copy_install_command` (`install_method`). A component declares its action with
+`trackAttributes` from `website/src/lib/trackAttributes.ts`, which writes
+`data-track` and one `data-track-<parameter>` attribute per parameter, and
+`downloadTrack` writes the download set. One click listener on the document,
+started by `website/src/lib/mountRoot.tsx` for every page entry
+(`website/src/lib/startTracking.ts`), reads the attributes with `readTrackEvent` and
+pushes `{ event, ...parameters }` to `dataLayer`. It pushes nothing, and queues
+nothing, unless `window.goodboyConsent.isMeasurementGranted` is true (Cookie consent
+above). An event or value outside the spec is dropped, and `check-seo` fails the
+build on a `data-track` outside it and on a `data-download` or `data-star` link
+without one. A new event is a line in the spec, a `data-track` in the markup and a
+trigger in the Tag Manager container.
 
 ## Components
 
@@ -195,9 +294,9 @@ All in `website/src/components/`, each with its own CSS file.
 - `StarButton`, a Star on GitHub link to `SITE.repo`, shown on touch devices in
   place of the downloads. On desktop the hero shows its own Star on GitHub button
   next to the download.
-- `StarCount`, the star total inside every Star on GitHub button. `vite.config.ts`
+- `StarCount`, the star total inside every Star on GitHub button. `vite/readStarCount.ts`
   reads `stargazers_count` from the GitHub API once per build, so visitors never
-  call GitHub, and `src/data/formatStars.ts` floors it to the hundred, shown as 100+,
+  call GitHub, and `src/lib/formatStars.ts` floors it to the hundred, shown as 100+,
   200+, then 1.2k+. Under 100, or when the build cannot reach the API, the
   button shows no number. The total refreshes on every deploy.
 - `BrandIcons`, the provider marks, in their brand colours with the names in
@@ -215,7 +314,7 @@ links and in the phone sheet alike.
 
 A touch device is told by pointer, `(hover: none) and (pointer: coarse)`, never
 by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it with
-a mouse, both in `src/styles.css`. On touch the hero download buttons and the
+a mouse, both in `src/styles/base.css`. On touch the hero download buttons and the
 install block give way to `StarButton`. A phone has no
 `[data-download]` element, and every button, `.btn` and nav link is 44 px tall
 or more.
@@ -225,7 +324,7 @@ or more.
 Downloads live in the hero and the install block only; the nav carries none.
 Every `[data-download]` link is a direct file download from
 `https://github.com/akhayam99/goodboy/releases/download/v<version>/<asset>`,
-never the releases page. `src/data/downloads.ts` builds the four asset URLs
+never the releases page. `src/lib/downloads.ts` builds the four asset URLs
 (`.dmg`, `.AppImage`, `.deb`, `.rpm`) from `LATEST_VERSION`, the newest
 snapshot in `src/data/releases/`. That snapshot lands in the version bump
 commit, before the release build attaches the assets, so for a short window the
@@ -337,7 +436,7 @@ repository. When the canon changes, it changes everywhere in one pass.
 ## Image frames
 
 Every frame that hosts a picture reads its corners from tokens in
-`website/src/styles.css`: `--r-stage` for the outer radius, `--stage-pad` and
+`website/src/styles/base.css`: `--r-stage` for the outer radius, `--stage-pad` and
 `--stage-border-width` for the space inside it, and `--r-shot` for the picture
 or window it holds, which is the larger of `--r-view` and the outer radius minus
 the padding and the border. A new frame or window inside a stage uses

@@ -106,7 +106,7 @@ network call is Vercel Web Analytics, cookieless, added by the `demoPlugins` Vit
 The Tauri build, `pnpm dev` and the app's own `index.html` never carry either, and
 `apps/desktop/vite/demoHtml.test.ts` pins that.
 
-The website links it as Live demo from `SITE.demo` in `website/src/site.ts`:
+The website links it as Live demo from `SITE.demo` in `website/src/lib/site.ts`:
 the yellow pill in the nav actions (a sheet link on narrow screens), the
 hero's text link and the install section on desktop, and the footer.
 
@@ -391,7 +391,7 @@ The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
 wins on first load, then the choice kept under `goodboy-demo-theme` (every read
 and write survives blocked storage), then dark, and the param is stripped from
 the url right after. The website appends it at click time from its own theme
-(`website/src/theme/syncDemoLinks.ts`, one delegated listener, never read
+(`website/src/lib/syncDemoLinks.ts`, one delegated listener, never read
 during render because the site prerenders). Toggling the theme never reloads a
 frame: frames are keyed by scene, params and replay (`frameKey.ts`), not by
 theme, the stage sends every ready frame a `theme` command, and the frame
@@ -698,14 +698,17 @@ every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
 browser tab raises. The README images live in `docs/readme/`, the
 feature-area guide ones in the public
 [goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
-and light `.webp` pairs. The README hero is also the website's hero picture,
-the one capture on the site; every other product view there is a React mock.
-`pnpm readme:hero` shoots the `readme-hero` scene (the Harborline session on
-its Overview with the Projects card unfolded, the shared Context drawer open
-and three runs interleaving in Activity) from the desktop mock dev server
-(`http://localhost:5230`, or the URL passed as its first argument) at
-1920x1200 and scale 4, in both themes. It writes
-`docs/readme/readme-hero-{dark,light}.webp` at the full 7680 px and
+and light `.webp` pairs. The website's hero picture is the one capture on the
+site; every other product view there is a React mock. `pnpm readme:hero` shoots
+two scenes from the desktop mock dev server (`http://localhost:5230`, or the URL
+passed as its first argument), in both themes. The `readme-hero` scene (the
+Harborline session on its Overview with the Projects card unfolded and the shared
+Context drawer open) is shot twice from the same scene. The README picture is the
+whole app window, 1680x1118 css px at scale 2, so the left rail, the header and
+the drawer all show and the columns keep their widths (a 1440 wide window folds
+the session pages column); both themes come from one frozen clock so their times
+match, and it writes `docs/readme/readme-hero-{dark,light}.webp`. The site picture
+is shot at 1920x1200 and scale 4 and writes
 `website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
 the width the site draws it at, cropped to the top 840 px of the window and
 resampled once from the same capture. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
@@ -731,7 +734,7 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
   device scale, so the app pixels are never resampled.
 - The frame has a 16 px radius. The clip inside it takes the larger of 8 px and
   the frame radius minus the frame padding and its 1 px border, the same rule as
-  `--r-shot` in `website/src/styles.css`. Frames drawn before this rule keep the
+  `--r-shot` in `website/src/styles/base.css`. Frames drawn before this rule keep the
   old radii until their file is captured again.
 - The frame's corners are transparent, so one file reads on both GitHub
   themes. The dark and light files still follow the OS through `<picture>`.
@@ -747,6 +750,8 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
 - `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
 - `--hover "<css selector>"` moves the pointer to the center of the first match, after the clicks and before the capture. It shoots a tooltip or a hover card the scene does not open by itself, such as the limits card of a provider chip in the top bar (`--hover '[aria-label^="Claude limits"]'`).
 - `--scroll "<css selector>"` scrolls the first match to the top of the window, after the clicks and before the capture. It shoots a pane the scene stacks below the first screen, such as the studio home under the workflow builder (`--scroll '[data-studio-overlay]'`).
+- `--frozen-at 2026-11-05T16:00:00` fixes the page clock, so the dark and the light shot of one figure show the same times.
+- `--out-dir <folder>` writes the two files straight into `<folder>` and records nothing in `docs/figures.json`. Use it for a trial shot.
 - `--version x.y.z` names the version the manifest records for the figure. Without it the shot takes the version of `apps/desktop/package.json` of the checkout that runs the script.
 
 Each feature-area guide points at each file with its raw URL,

@@ -41,7 +41,7 @@ A window with no workspace open shows Home, which lists your workspaces with the
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Home with the Goodboy tile and its version, the Workspaces list with Harborline 3 folders, Northwind 2 folders, Acme web 1 folder and Cascadia 4 folders, each with where its folders live and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Home with the Goodboy tile and its version, the Workspaces list with Harborline 3 projects, Northwind 2 projects, Acme web 1 project and Cascadia 4 projects, each with where it lives and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

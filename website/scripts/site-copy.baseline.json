@@ -1,7 +1,7 @@
 {
   "retired-name": {
-    "website/src/components/mocks/InboxMock.tsx": 1,
-    "website/src/components/mocks/kit/spec.ts": 1,
+    "website/src/mocks/InboxMock.tsx": 1,
+    "website/src/mocks/kit/spec.ts": 1,
     "website/src/pages/features/features.data.json": 6
   }
 }

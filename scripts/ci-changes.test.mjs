@@ -145,7 +145,7 @@ const collectPathsReadByTests = () => {
 describe('paths that tests read from website and docs', () => {
   it('finds the reads this guard is about', () => {
     const paths = [...collectPathsReadByTests().keys()];
-    assert.ok(paths.includes('website/src/styles.css'), paths.join('\n'));
+    assert.ok(paths.includes('website/src/styles/base.css'), paths.join('\n'));
     assert.ok(paths.includes('docs/changelog'), paths.join('\n'));
     assert.ok(paths.includes('docs/architecture.md'), paths.join('\n'));
   });
@@ -177,10 +177,10 @@ describe('paths that tests read from website and docs', () => {
       shouldRunTestsForPullRequest({ paths: ['website/src/components/Logo.tsx'] }),
       true,
     );
-    assert.equal(shouldRunTestsForPullRequest({ paths: ['website/src/styles.css'] }), true);
+    assert.equal(shouldRunTestsForPullRequest({ paths: ['website/src/styles/base.css'] }), true);
     assert.equal(shouldRunTestsForPullRequest({ paths: ['website/public/favicon.svg'] }), true);
     assert.equal(
-      shouldRunTestsForPullRequest({ paths: ['website/scripts/build-brand-assets.mjs'] }),
+      shouldRunTestsForPullRequest({ paths: ['website/scripts/brand-assets/tileMetrics.mjs'] }),
       true,
     );
     assert.equal(shouldRunTestsForPullRequest({ paths: ['docs/changelog'] }), true);

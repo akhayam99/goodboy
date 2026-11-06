@@ -1,6 +1,6 @@
-import { SITE } from '../../site';
+import { SITE } from '../../lib/site';
 import { ContentPage } from './ContentPage';
-import type { Crumb } from './Breadcrumbs';
+import type { Crumb } from '../../lib/Crumb';
 import { formatDate } from './formatDate';
 
 export type ReleaseSummary = {

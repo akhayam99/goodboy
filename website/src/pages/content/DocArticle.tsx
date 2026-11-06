@@ -1,5 +1,5 @@
-import { SITE } from '../../site';
-import type { Crumb } from './Breadcrumbs';
+import { SITE } from '../../lib/site';
+import type { Crumb } from '../../lib/Crumb';
 import { ContentPage } from './ContentPage';
 import type { DocSummary } from './DocsIndex';
 import { Pager, type PagerLink } from './Pager';

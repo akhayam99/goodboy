@@ -6,7 +6,7 @@ import { build } from 'vite';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
 const SSR_DIST = resolve(ROOT, 'node_modules/.cache/goodboy-ssr');
-const SSR_ENTRY = resolve(ROOT, 'src/server/renderSite.tsx');
+const SSR_ENTRY = resolve(ROOT, 'src/prerender/renderSite.tsx');
 const TEMPLATES = {
   home: 'index.html',
   features: 'features.html',

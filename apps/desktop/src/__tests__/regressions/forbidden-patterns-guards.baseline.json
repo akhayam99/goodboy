@@ -3,10 +3,8 @@
     "website/src/hooks/useReveal/index.ts": 1
   },
   "extra-component-per-file": {
-    "website/src/components/mocks/HandoffMock.tsx": 2,
-    "website/src/components/mocks/InboxMock.tsx": 2,
-    "website/src/components/mocks/kit/RunTree.tsx": 2,
-    "website/src/components/mocks/kit/WorkNode.tsx": 3
+    "website/src/mocks/kit/RunTree.tsx": 2,
+    "website/src/mocks/kit/WorkNode.tsx": 3
   },
   "function-component": {},
   "comment": {
@@ -43,7 +41,7 @@
   "raw-scroller": {},
   "tone-border-rail": {},
   "footer-cta-bar": {
-    "website/src/sections/Footer.tsx": 1
+    "website/src/pages/home/sections/Footer.tsx": 1
   },
   "half-step-spacing": {},
   "role-weight-override": {},
