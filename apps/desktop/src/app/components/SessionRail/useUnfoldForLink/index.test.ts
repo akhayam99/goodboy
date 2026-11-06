@@ -2,12 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { brandId, type SessionId } from '@goodboy/types';
 import { linkIssueEventName } from '../../../../features/actions/kinds/session';
 import { useUnfoldForLink } from './index';
 
-const SESSION_ID = 'sess-1' as SessionId;
-const OTHER_ID = 'sess-2' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'sess-1' });
+const OTHER_ID = brandId<SessionId>({ value: 'sess-2' });
 const NAME = linkIssueEventName({ sessionId: SESSION_ID });
 
 type RenderParams = {
