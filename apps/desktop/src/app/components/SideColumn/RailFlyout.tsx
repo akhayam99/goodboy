@@ -1,6 +1,13 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { FLOATING_SURFACE, ScrollFade, cn, useEscapeLayer, useFloatingPlace } from '@goodboy/ui';
+import {
+  FLOATING_SURFACE,
+  ScrollFade,
+  cn,
+  useEscapeLayer,
+  useFloatingPlace,
+  useHoverSurface,
+} from '@goodboy/ui';
 import type { RailFlyoutTarget } from './useRailFlyout';
 
 const FLYOUT_WIDTH = 288;
@@ -31,6 +38,7 @@ export const RailFlyout = ({
   const isShown = target !== null;
   const cardRef = useRef<HTMLDivElement | null>(null);
   useEscapeLayer(onDismiss, isShown);
+  useHoverSurface({ isActive: isShown });
   const place = useFloatingPlace({
     anchor: target === null ? null : target.anchor,
     tipRef: cardRef,
@@ -70,6 +78,7 @@ export const RailFlyout = ({
       role="dialog"
       aria-label={label}
       data-rail-flyout={target.key}
+      data-hover-surface=""
       onMouseEnter={onKeep}
       onMouseLeave={onLeave}
       onFocus={onKeep}

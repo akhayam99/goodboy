@@ -285,7 +285,7 @@
     "apps/desktop/src/features/notifications/components/NotificationRow/index.tsx": 1,
     "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 2,
     "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 1,
-    "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch.tsx": 1,
+    "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/GuidePanel.tsx": 3,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,

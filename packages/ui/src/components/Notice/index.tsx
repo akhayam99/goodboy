@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
+import { Children, Fragment, isValidElement, useId, useState, type ReactNode } from 'react';
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
@@ -53,6 +53,16 @@ type HasContentParams = {
 const hasContent = ({ node }: HasContentParams): boolean =>
   node !== undefined && node !== null && node !== false && node !== '';
 
+const MAX_ACTIONS_BESIDE = 2;
+
+const countActions = ({ node }: HasContentParams): number =>
+  Children.toArray(node).reduce<number>((total, child) => {
+    if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment) {
+      return total + countActions({ node: child.props.children });
+    }
+    return total + 1;
+  }, 0);
+
 export const Notice = ({
   tone,
   placement,
@@ -72,6 +82,7 @@ export const Notice = ({
   const Icon = icon ?? TONE_ICON[tone];
   const hasDetail = detail !== null && detail.trim() !== '';
   const isTitleOnly = !hasContent({ node: body }) && !hasDetail && !hasContent({ node: children });
+  const isActionsBeside = countActions({ node: actions }) <= MAX_ACTIONS_BESIDE;
 
   return (
     <div
@@ -94,8 +105,9 @@ export const Notice = ({
       <div
         data-notice-layout
         className={cn(
-          'grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 @md/notice:grid-cols-[auto_minmax(0,1fr)_auto]',
-          isTitleOnly && '@md/notice:items-center',
+          'grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2',
+          isActionsBeside && '@md/notice:grid-cols-[auto_minmax(0,1fr)_auto]',
+          isTitleOnly && isActionsBeside && '@md/notice:items-center',
         )}
       >
         <Icon
@@ -152,7 +164,12 @@ export const Notice = ({
           {hasContent({ node: children }) && <div className="w-full">{children}</div>}
         </div>
         {hasContent({ node: actions }) && (
-          <div className="col-start-2 flex flex-wrap items-center gap-2 @md/notice:col-start-3 @md/notice:row-start-1">
+          <div
+            className={cn(
+              'col-start-2 flex flex-wrap items-center gap-2',
+              isActionsBeside && '@md/notice:col-start-3 @md/notice:row-start-1',
+            )}
+          >
             {actions}
           </div>
         )}

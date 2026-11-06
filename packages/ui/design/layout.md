@@ -451,6 +451,9 @@ and keeps it from opening: `MenuTriggerButton` passes its open state, and
 `IconButton` takes `isTooltipSuppressed` for a trigger that opens a popover
 (the Explore ask button). A press on the control and Esc close an open tooltip,
 and the focus a closing menu hands back to its trigger does not reopen it.
+An open hover surface suppresses tooltips outside that surface. `Tooltip`
+retains a pending hover or focus and starts its full delay when suppression
+ends. Leaving, blurring or pressing the trigger cancels that pending request.
 Keyboard focus (`:focus-visible`) opens the tooltip at once, and so does any
 tooltip that opens less than 300ms after another one closed, so a row of icons
 reads as one hover and not as four waits. A card with `restDelayMs` keeps its
