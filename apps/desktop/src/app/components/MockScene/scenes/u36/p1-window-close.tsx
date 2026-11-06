@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { WindowCloseSheet } from '../../../../../features/workspace/components/WindowCloseSheet';
@@ -8,10 +8,10 @@ import { FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from '../flow-audit/fixt
 import { seedWorkflowRun } from '../flow-audit/seeds';
 
 type SceneProps = {
-  readonly isStuck: boolean;
+  readonly ask: ComponentProps<typeof WindowCloseSheet>['initialAsk'];
 };
 
-const WindowCloseScene = ({ isStuck }: SceneProps) => {
+const WindowCloseScene = ({ ask }: SceneProps) => {
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
@@ -41,12 +41,15 @@ const WindowCloseScene = ({ isStuck }: SceneProps) => {
           </div>
         }
       />
-      <WindowCloseSheet initialAsk={{ count: isStuck ? 1 : 2, isStuck }} />
+      <WindowCloseSheet initialAsk={ask} />
     </>
   );
 };
 
 export const U36_P1_WINDOW_CLOSE_SCENES = {
-  'u36-p1-window-close': () => <WindowCloseScene isStuck={false} />,
-  'u36-p1-window-close-stuck': () => <WindowCloseScene isStuck />,
+  'u36-p1-window-close': () => <WindowCloseScene ask={{ count: 2, isStuck: false }} />,
+  'u36-p1-window-close-run': () => (
+    <WindowCloseScene ask={{ count: 1, runCount: 1, isStuck: false }} />
+  ),
+  'u36-p1-window-close-stuck': () => <WindowCloseScene ask={{ count: 1, isStuck: true }} />,
 };

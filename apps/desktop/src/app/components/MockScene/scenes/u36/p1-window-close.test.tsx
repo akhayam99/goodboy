@@ -22,7 +22,11 @@ import { U36_P1_WINDOW_CLOSE_SCENES } from './p1-window-close';
 
 const SETTLE_MS = 2_000;
 
-const NAMES = ['u36-p1-window-close', 'u36-p1-window-close-stuck'] as const;
+const NAMES = [
+  'u36-p1-window-close',
+  'u36-p1-window-close-run',
+  'u36-p1-window-close-stuck',
+] as const;
 
 type SceneName = (typeof NAMES)[number];
 
@@ -86,6 +90,15 @@ describe('the window close scenes', () => {
     });
 
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('u36-p1-window-close-run counts a deciding run next to the agent', async () => {
+    await mount({ name: 'u36-p1-window-close-run' });
+
+    const sheet = within(
+      screen.getByRole('dialog', { name: '1 agent and 1 run still working in this window' }),
+    );
+    sheet.getByRole('button', { name: 'Stop 1 agent and 1 run' });
   });
 
   it('u36-p1-window-close-stuck says the agent did not stop and offers Close anyway', async () => {
