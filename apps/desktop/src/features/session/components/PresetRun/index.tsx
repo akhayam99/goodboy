@@ -8,6 +8,7 @@ import { leaveRunLevel } from '../../../workflows/leaveRunLevel';
 import type { PresetRunFocus } from '../../../workflows/presetRunFocusOf';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { PresetRunBody } from './PresetRunBody';
+import { RunMetadataMissing } from './RunMetadataMissing';
 import { RunPageSkeleton } from './RunPageSkeleton';
 
 type Props = {
@@ -33,13 +34,15 @@ export const PresetRunPage = ({ session, focus }: Props) => {
     return <RunPageSkeleton />;
   }
   if (attached === null) {
+    const isRunPresent = session.workflowRuns.some(({ id }) => id === focus.runId);
+    const onBack = () => leaveRunLevel({ sessionId: session.id });
     return (
       <PaneShell page="run" title="Run">
-        <GoneObject
-          noun="run"
-          icon={CONCEPT_ICONS.workflows}
-          onBack={() => leaveRunLevel({ sessionId: session.id })}
-        />
+        {isRunPresent ? (
+          <RunMetadataMissing sessionId={session.id} onBack={onBack} />
+        ) : (
+          <GoneObject noun="run" icon={CONCEPT_ICONS.workflows} onBack={onBack} />
+        )}
       </PaneShell>
     );
   }

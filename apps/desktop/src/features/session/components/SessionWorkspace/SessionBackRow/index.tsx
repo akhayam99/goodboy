@@ -37,9 +37,15 @@ export const SessionBackRow = ({ sessionId }: Props) => {
   };
   return (
     <div data-session-back="" className="flex min-w-0 items-center">
-      <Button variant="quiet" size="xs" className="pl-0" onClick={goBack} aria-label={label}>
+      <Button
+        variant="quiet"
+        size="xs"
+        className="max-w-full pl-0"
+        onClick={goBack}
+        aria-label={label}
+      >
         <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-        {label}
+        <span className="truncate">{label}</span>
       </Button>
     </div>
   );

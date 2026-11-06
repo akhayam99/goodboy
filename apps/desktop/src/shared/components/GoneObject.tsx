@@ -4,11 +4,10 @@ import { Button, EmptyState, ICON_SIZE } from '@goodboy/ui';
 type Props = {
   readonly noun: string;
   readonly icon: LucideIcon;
-  readonly backLabel?: string;
   readonly onBack?: () => void;
 };
 
-export const GoneObject = ({ noun, icon, backLabel = 'Back', onBack }: Props) => (
+export const GoneObject = ({ noun, icon, onBack }: Props) => (
   <EmptyState
     size="section"
     icon={icon}
@@ -18,7 +17,7 @@ export const GoneObject = ({ noun, icon, backLabel = 'Back', onBack }: Props) =>
       action: (
         <Button size="sm" variant="ghost" onClick={onBack}>
           <ArrowLeft size={ICON_SIZE.control} aria-hidden />
-          {backLabel}
+          Back
         </Button>
       ),
     })}

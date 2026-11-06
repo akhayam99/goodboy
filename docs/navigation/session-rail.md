@@ -326,11 +326,16 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   free. Pressed below Runs (a run,
   a step, an agent or an Auto conversation) ⌘⌥W lands on the Runs list, and
   pressed on the list it stays: ⌘↑ is the key that leaves. ⌘⌥P does the same
-  for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`).
+  for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`). A studio or a
+  drawer open over the list, and a generating artifact page (`focusedRunAgentId`
+  in the store, cleared by the key), count as below the list, so the key lands
+  on it.
 - **A gone object says so.** A run, an agent, an artifact or a plan part that
   was deleted or moved shows one empty state, "This run is no longer in this
   session" (`GoneObject`), on its page or in its drawer, with Back on a page;
-  a drawer waits for its collection to load before it says so.
+  a drawer waits for its collection to load before it says so. A run that is
+  still in the session but whose steps did not load says "This run couldn't be
+  read" with Retry (`RunMetadataMissing`), never that it is gone.
 
 The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
 they open from the session tools column at the right of the content (see The
