@@ -6,7 +6,13 @@ import {
   insertWorkspace,
   listAgentsForSessions,
 } from '@goodboy/db';
-import type { AgentId, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   buildStorySession,
   buildStoryWorkspace,
@@ -166,10 +172,10 @@ describe('store on sqlite: ghost running agents at boot', () => {
     await insertTurnEvent(storySqlite(), {
       id: 'event-asking',
       sessionId: ONBOARDING_ID,
-      agentId: 'agent-asking' as AgentId,
+      agentId: brandId<AgentId>({ value: 'agent-asking' }),
       event: {
         kind: 'permission_request',
-        runId: 'run-asking' as ProviderRunId,
+        runId: brandId<ProviderRunId>({ value: 'run-asking' }),
         toolUseId: 'tool-asking',
         toolName: 'Bash',
         input: { command: 'pnpm test' },

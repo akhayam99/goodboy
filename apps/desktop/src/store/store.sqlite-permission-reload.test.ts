@@ -7,7 +7,13 @@ import {
   insertWorkspace,
   listAgentsForSessions,
 } from '@goodboy/db';
-import type { AgentId, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   STORY_NOW,
@@ -54,10 +60,10 @@ vi.mock('../features/worktree/worktree', async () =>
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-const HARBORLINE_ID = 'workspace-harborline' as WorkspaceId;
-const LEDGER_ID = 'session-ledger' as SessionId;
-const AGENT_ID = 'agent-ledger' as AgentId;
-const RUN_ID = 'run-ledger-ask' as ProviderRunId;
+const HARBORLINE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+const LEDGER_ID = brandId<SessionId>({ value: 'session-ledger' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-ledger' });
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-ledger-ask' });
 const TOOL_USE_ID = 'tool-ledger-migrate';
 
 let useAppStore: StoryStore;

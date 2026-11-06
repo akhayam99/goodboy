@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { archiveSession, insertSession, insertWorkspace } from '@goodboy/db';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   buildStorySession,
@@ -46,9 +46,9 @@ vi.mock('../features/worktree/worktree', async () =>
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-const HARBORLINE_ID = 'workspace-harborline' as WorkspaceId;
-const LEDGER_ID = 'session-ledger' as SessionId;
-const SHIPPED_ID = 'session-shipped' as SessionId;
+const HARBORLINE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
+const LEDGER_ID = brandId<SessionId>({ value: 'session-ledger' });
+const SHIPPED_ID = brandId<SessionId>({ value: 'session-shipped' });
 
 let useAppStore: StoryStore;
 

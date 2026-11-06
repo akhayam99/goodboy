@@ -67,12 +67,12 @@ const restoreTestStore = () =>
   }));
 
 describe('the rest of a reload', () => {
-  it('reopens an archived session the window was on, the page reads archived too', () => {
+  it('reopens an archived session the window was on, the page reads archived too', async () => {
     const ARCHIVED = brandId<SessionId>({ value: 'session-archived' });
     const store = restoreTestStore();
     store.setState({ archivedSessions: { [WS]: [aSession({ id: ARCHIVED })] } });
 
-    store.getState().restoreLocation({
+    await store.getState().restoreLocation({
       location: {
         workspaceId: WS,
         place: {
@@ -88,7 +88,7 @@ describe('the rest of a reload', () => {
     expect(store.getState().currentSessionId).toBe(ARCHIVED);
   });
 
-  it('keeps the project the Scripts panel was opened for across a reload', () => {
+  it('keeps the project the Scripts panel was opened for across a reload', async () => {
     const PROJECT = brandId<ProjectId>({ value: 'project-ledger-core' });
     const before = restoreTestStore();
     before.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
@@ -100,7 +100,7 @@ describe('the rest of a reload', () => {
     });
 
     const after = restoreTestStore();
-    after.getState().restoreLocation({ location: saved! });
+    await after.getState().restoreLocation({ location: saved! });
 
     expect(after.getState().drawer).toMatchObject({
       kind: 'scripts',
