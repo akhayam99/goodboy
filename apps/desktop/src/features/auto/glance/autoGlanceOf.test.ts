@@ -15,9 +15,9 @@ describe('autoGlanceOf', () => {
 
     expect(glance).toMatchObject({
       state: 'waiting',
-      word: 'Needs you',
+      word: 'Needs approval',
       tone: 'warning',
-      sentence: 'Plan v1 needs your OK',
+      sentence: 'Plan v1 needs approval',
       isLive: false,
     });
   });
@@ -33,7 +33,7 @@ describe('autoGlanceOf', () => {
       rootTurn: null,
     });
 
-    expect(glance.sentence).toBe('Plan v2 needs your OK');
+    expect(glance.sentence).toBe('Plan v2 needs approval');
   });
 
   it('says Planning while the Planner revises the plan', () => {
@@ -59,7 +59,7 @@ describe('autoGlanceOf', () => {
         phase: 'waiting',
         delegations: [
           aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
-          aDelegation({ key: 'test', role: 'tester', state: 'running' }),
+          aDelegation({ key: 'test', role: 'tester', state: 'accepted' }),
         ],
       }),
       rootTurn: null,
@@ -67,7 +67,7 @@ describe('autoGlanceOf', () => {
 
     expect(glance).toMatchObject({
       state: 'working',
-      sentence: 'Waiting for Implementer and Tester',
+      sentence: 'Implementer running, Tester queued',
       isLive: true,
     });
   });
@@ -88,7 +88,7 @@ describe('autoGlanceOf', () => {
   it('says Stopped, Done and Idle for the resting phases', () => {
     expect(glanceOf('stopped')).toMatchObject({
       state: 'stopped',
-      sentence: 'You stopped Auto, nothing is running',
+      sentence: 'Stopped by you. What they wrote is kept.',
     });
     expect(glanceOf('finished')).toMatchObject({ state: 'done', word: 'Done' });
     expect(glanceOf('done')).toMatchObject({ state: 'idle', word: 'Idle' });

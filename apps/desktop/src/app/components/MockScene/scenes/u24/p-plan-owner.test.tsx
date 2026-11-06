@@ -54,7 +54,7 @@ describe('the plan owner scene', () => {
     renderScene();
 
     await screen.findByTestId('plan-drawer');
-    expect(screen.getByTestId('plan-primary').textContent).toBe('Approve');
+    expect(screen.getByTestId('plan-primary').textContent).toBe('Approve and continue');
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
   });
 

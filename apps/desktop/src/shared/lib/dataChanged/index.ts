@@ -1,14 +1,24 @@
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { isTauriRuntime } from '../isTauriRuntime';
 
 const DATA_CHANGED_EVENT = 'goodboy:data-changed';
 
 const ORIGIN = globalThis.crypto?.randomUUID?.() ?? `window-${Math.random().toString(36).slice(2)}`;
 
-type DataChange = {
-  readonly kind: 'setting';
-  readonly key: string;
-};
+type DataChange =
+  | {
+      readonly kind: 'setting';
+      readonly key: string;
+      readonly sessionId?: undefined;
+      readonly agentId?: undefined;
+    }
+  | {
+      readonly kind: 'agent-turn';
+      readonly key?: undefined;
+      readonly sessionId: SessionId;
+      readonly agentId: AgentId;
+    };
 
 type Announcement = DataChange & {
   readonly origin: string;

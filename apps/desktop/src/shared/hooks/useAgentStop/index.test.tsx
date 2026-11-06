@@ -62,6 +62,28 @@ describe('useAgentStop', () => {
     expect(result.current).toMatchObject({ phase: 'idle', isLive: true });
   });
 
+  it('reads live and blocked while a permission ask holds the turn, so Stop stays reachable', () => {
+    useAppStore.setState({
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: STORY_NOW } },
+    });
+    const { result } = hook();
+
+    expect(result.current).toMatchObject({ phase: 'idle', isLive: true, isBlocked: true });
+    act(() => result.current.stop());
+    expect(cancelMock).toHaveBeenCalledWith(SESSION_ID, AGENT_ID, 'user');
+  });
+
+  it('reads stopping for a blocked turn once the stop is requested', () => {
+    useAppStore.setState({
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: STORY_NOW } },
+    });
+    const { result } = hook();
+
+    act(() => stopRequests.request({ agentId: AGENT_ID, runId: RUN_ID, at: Date.now() }));
+
+    expect(result.current.phase).toBe('stopping');
+  });
+
   it('stops the turn of the named agent as the user', () => {
     const { result } = hook();
 

@@ -58,6 +58,23 @@ const harness = ({ send, lookups }: Script): Harness => {
 const NOT_BLOCKED: SendTurnResult = { blockedOverBudget: false };
 
 describe('starting the turn of Auto through the store', () => {
+  it('hands the read grant to the turn, which reads no answers again', async () => {
+    const state = harness({
+      lookups: [{ runId: 'run-planned', isLive: true }],
+      send: async () => NOT_BLOCKED,
+    });
+
+    await state.start({
+      ...state.params,
+      permissionOnceAllows: ['Read(//notify-relay/README.md)'],
+    });
+
+    expect(state.inputs[0]).toMatchObject({
+      permissionOnceAllows: ['Read(//notify-relay/README.md)'],
+      resolvedAsks: { denied: [], held: [] },
+    });
+  });
+
   it('sends a delegation turn that carries its run, delivery and tree, and reports the end once', async () => {
     const state = harness({
       lookups: [null, null, { runId: 'run-planned', isLive: true }],

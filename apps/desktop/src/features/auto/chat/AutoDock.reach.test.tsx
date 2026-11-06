@@ -24,7 +24,7 @@ import {
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { registerTreeStopPort } from '../treeStopPort';
 import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
-import { AutoDock } from './AutoDock';
+import { AutoDockUnderTest } from '../testing/AutoDockUnderTest';
 
 let useAppStore: StoryStore;
 
@@ -46,9 +46,7 @@ const ROOT = anAgent({ id: brandId<AgentId>({ value: 'agent-auto' }) });
 
 const renderDock = ({ view }: { readonly view: AutoTreeView }) => {
   useAppStore.setState({ autoTreeViews: { [FIXTURE_SESSION]: [view] } });
-  return render(
-    <AutoDock sessionId={FIXTURE_SESSION} view={view} rootAgent={ROOT} onOpenArtifact={vi.fn()} />,
-  );
+  return render(<AutoDockUnderTest view={view} rootAgent={ROOT} onOpenArtifact={vi.fn()} />);
 };
 
 const RUNNING = [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })];
@@ -60,8 +58,8 @@ describe('the Auto dock Stop outside working', () => {
     const view = aView({ phase: 'waiting', delegations: RUNNING, spentUsd: 10, capUsd: 10 });
     renderDock({ view });
 
-    expect(screen.queryByText('Paused at the limit')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+    screen.getByText(/^At the \$10\.00 limit\. No new agent starts\./);
+    fireEvent.click(screen.getByRole('button', { name: 'Stop Auto and 1 agent' }));
 
     await waitFor(() => expect(stop).toHaveBeenCalledWith({ treeId: view.tree.id }));
   });
@@ -72,7 +70,7 @@ describe('the Auto dock Stop outside working', () => {
       view: { ...base, tree: { ...base.tree, blockedReason: AUTO_BLOCK_TEXT.budget } },
     });
 
-    screen.getByRole('button', { name: 'Stop' });
+    screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
@@ -84,14 +82,15 @@ describe('the Auto dock Stop outside working', () => {
       }),
     });
 
-    screen.getByRole('button', { name: 'Stop' });
+    screen.getByRole('button', { name: 'Stop Auto' });
+    screen.getByText('Where should the Implementer work?');
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
   it('draws no Stop once Auto is stopped or finished', () => {
     renderDock({ view: aView({ phase: 'stopped' }) });
 
-    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
   });
 });
 
@@ -99,7 +98,7 @@ describe('the Auto dock live region', () => {
   it('announces the working sentence the glance line leaves out', () => {
     renderDock({ view: aView({ phase: 'waiting', delegations: RUNNING }) });
 
-    expect(screen.getByRole('status').textContent).toBe('Waiting for Implementer');
+    expect(screen.getByRole('status').textContent).toBe('Implementer running');
   });
 });
 
@@ -118,10 +117,10 @@ describe('the Auto dock when Auto was not told', () => {
     });
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
     const tell = await screen.findByRole('button', { name: 'Tell Auto' });
     screen.getByText('Plan v1 approved, Auto did not hear it');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
     fireEvent.click(tell);
 
     await waitFor(() =>
@@ -147,7 +146,7 @@ describe('the Auto dock when Auto was not told', () => {
     });
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Tell Auto' }));
 
     await waitFor(() =>

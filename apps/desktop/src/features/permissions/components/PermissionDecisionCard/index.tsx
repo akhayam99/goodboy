@@ -2,10 +2,9 @@ import { tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
-import { useAppStore } from '../../../../store';
+import { useIsStoppedBeforeAnswer } from '../../hooks/useIsStoppedBeforeAnswer';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { decisionSentenceOf } from './decisionSentenceOf';
-import { RetryButton } from './RetryButton';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'permission_decision' }>;
@@ -17,24 +16,9 @@ const warningText = tintClasses('warning').text;
 
 export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
   const timestamp = formatClock({ at: item.at });
-  const isRuleAllow =
-    item.decision === 'allow' &&
-    item.scope !== undefined &&
-    item.scope !== 'once' &&
-    item.scope !== 'deny';
   const isOnceAllow = item.decision === 'allow' && item.scope === 'once';
-  const isWaitingForContinue = useAppStore((state) => {
-    if (!isRuleAllow || agentId === null) {
-      return false;
-    }
-    const kind = state.agentTurnState[agentId]?.kind;
-    if (kind === 'running' || kind === 'starting') {
-      return false;
-    }
-    const last = (state.transcripts[agentId] ?? []).at(-1);
-    return last?.kind === 'permission_decision' && last.toolUseId === item.toolUseId;
-  });
-  const canContinue = isWaitingForContinue && sessionId !== null && agentId !== null;
+  const isStopped = useIsStoppedBeforeAnswer({ item, agentId });
+  const canContinue = isStopped && sessionId !== null && agentId !== null;
   const sentence = decisionSentenceOf({
     decision: item.decision,
     scope: item.scope,
@@ -60,7 +44,6 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
       {canContinue && (
         <div className="flex flex-wrap items-center gap-2">
           <span className={warningText}>Stopped before your answer.</span>
-          <RetryButton sessionId={sessionId} agentId={agentId} toolName={item.toolName} />
         </div>
       )}
       {isOnceAllow && (

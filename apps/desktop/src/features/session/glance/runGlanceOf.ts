@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import { pluralize } from '../../../shared/utils/pluralize';
 import type { RunPrimaryKind } from '../../workflows/runPrimaryOf';
 import { glanceOf, type Glance } from './glanceOf';
@@ -20,9 +21,15 @@ const stepsSentenceOf = ({ doneCount, stepCount, isDynamic }: StepsParams): stri
   return `${doneCount} of ${pluralize(stepCount, 'step')}`;
 };
 
+const PLAN_HOLD = glanceOf({
+  state: 'waiting',
+  word: NAMES.needsApproval,
+  sentence: 'The plan needs approval',
+});
+
 const PRIMARY_GLANCE: Readonly<Record<Exclude<RunPrimaryKind, 'continue'>, Glance>> = {
-  'review-plan': glanceOf({ state: 'waiting', sentence: 'The plan needs your OK' }),
-  'approve-plan': glanceOf({ state: 'waiting', sentence: 'The plan needs your OK' }),
+  'review-plan': PLAN_HOLD,
+  'approve-plan': PLAN_HOLD,
   answer: glanceOf({ state: 'waiting', sentence: 'A question needs your answer' }),
   'decide-next': glanceOf({ state: 'waiting', sentence: 'Decide what happens next' }),
   resume: glanceOf({ state: 'idle', sentence: 'The run is paused' }),

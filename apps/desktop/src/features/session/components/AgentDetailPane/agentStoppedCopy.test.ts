@@ -13,9 +13,10 @@ describe('agentStoppedCopy', () => {
       provider: 'anthropic',
       isProviderConnected: true,
       isAutoChild: false,
+      isRunStep: false,
     });
 
-    expect(copy.title).toBe('You stopped this agent. What it wrote is kept.');
+    expect(copy.title).toBe('Stopped by you. What it wrote is kept.');
     expect(copy.body).toBeNull();
     expect(copy.canContinue).toBe(true);
   });
@@ -26,6 +27,7 @@ describe('agentStoppedCopy', () => {
       provider: 'codex',
       isProviderConnected: true,
       isAutoChild: false,
+      isRunStep: false,
     });
 
     expect(copy.body).toBe(
@@ -40,6 +42,7 @@ describe('agentStoppedCopy', () => {
       provider: 'codex',
       isProviderConnected: false,
       isAutoChild: false,
+      isRunStep: false,
     });
 
     expect(copy.body).toBe('Connect Codex to continue.');
@@ -52,6 +55,7 @@ describe('agentStoppedCopy', () => {
       provider: 'anthropic',
       isProviderConnected: true,
       isAutoChild: false,
+      isRunStep: false,
     });
 
     expect(copy.canContinue).toBe(false);
@@ -63,23 +67,37 @@ describe('agentStoppedCopy', () => {
       provider: 'anthropic',
       isProviderConnected: true,
       isAutoChild: false,
+      isRunStep: false,
     });
 
-    expect(copy.title).toBe('Stopped by restart. What it wrote is kept.');
-    expect(copy.actionLabel).toBe('Continue');
+    expect(copy.title).toBe('Stopped by a restart of the app. What it wrote is kept.');
     expect(copy.canContinue).toBe(true);
   });
 
-  it('offers only a retry through Auto for an agent Auto started', () => {
+  it('offers a stopped subagent Continue, and says Auto reads the result', () => {
     const copy = agentStoppedCopy({
-      agent: agentOf({ stoppedBy: 'app' }),
+      agent: agentOf(),
       provider: 'anthropic',
       isProviderConnected: true,
       isAutoChild: true,
+      isRunStep: false,
     });
 
-    expect(copy.actionLabel).toBe('Retry through Auto');
-    expect(copy.body).toBe('Auto started this agent, so Auto runs the retry and reads its result.');
+    expect(copy.title).toBe('Stopped by you. Auto reads the result.');
+    expect(copy.body).toBeNull();
     expect(copy.canContinue).toBe(true);
+  });
+
+  it('says the run is paused on a step, and leaves Continue to the run head', () => {
+    const copy = agentStoppedCopy({
+      agent: agentOf(),
+      provider: 'anthropic',
+      isProviderConnected: true,
+      isAutoChild: false,
+      isRunStep: true,
+    });
+
+    expect(copy.title).toBe('Stopped by you. The run is paused.');
+    expect(copy.canContinue).toBe(false);
   });
 });

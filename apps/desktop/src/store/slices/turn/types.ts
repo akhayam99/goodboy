@@ -11,6 +11,8 @@ import type {
   TurnProviderOverride,
   UserTurnSentVia,
 } from '@goodboy/types';
+import type { AnsweredAsk } from '../../../features/permissions/askBatchOf';
+import type { OpenPermissionAsk } from '../../../features/permissions/openPermissionAsksOf';
 import type { WriteSetEntry } from '../../../features/worktree/worktree';
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -55,13 +57,19 @@ export type SendTurnInput = Readonly<{
   origin?: 'operator' | 'workflow' | 'mount-continuation' | 'delegation';
   handoff?: HandoffDraft;
   sentVia?: UserTurnSentVia;
-  permissionOnceAllow?: string;
+  permissionOnceAllows?: ReadonlyArray<string>;
+  resolvedAsks?: ResolvedAsks;
   retry?: Readonly<{
     attempt: number;
     provider: ProviderId;
     model: string;
     attachmentRefs: ReadonlyArray<MessageAttachment>;
   }>;
+}>;
+
+export type ResolvedAsks = Readonly<{
+  denied: ReadonlyArray<OpenPermissionAsk>;
+  held: ReadonlyArray<AnsweredAsk>;
 }>;
 
 export type WithInput = Readonly<{ input: SendTurnInput }>;

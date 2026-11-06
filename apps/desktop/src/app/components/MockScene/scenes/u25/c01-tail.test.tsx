@@ -55,11 +55,11 @@ describe('c01 tail scenes', () => {
     screen.getByText('Pressed raiseLimit');
   });
 
-  it('offers Retry through Auto, never Continue, for a stopped Auto child', () => {
+  it('offers Continue, never Retry, for a stopped Auto child', () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-childstopped'];
     render(<Scene />);
-    screen.getByRole('button', { name: 'Retry through Auto' });
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    screen.getByRole('button', { name: 'Continue' });
+    expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull();
   });
 
   it('reads a child that waits for your OK as needing you, with Confirm first', async () => {

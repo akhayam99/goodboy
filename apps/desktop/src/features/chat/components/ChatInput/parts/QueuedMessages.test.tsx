@@ -74,6 +74,28 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('QueuedMessages', () => {
+  it('says a Retry denies the open ask, the same words as the box', () => {
+    const handlers = {
+      onEdit: vi.fn(),
+      onRemove: vi.fn(),
+      onSendNow: vi.fn(),
+      onRetry: vi.fn(),
+    };
+    render(
+      <QueuedMessages
+        items={[row('outbox-1', { status: 'notDelivered', action: 'retry' })]}
+        canEdit
+        retryLabel="Send and deny"
+        {...handlers}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send and deny' }));
+
+    expect(handlers.onRetry).toHaveBeenCalledWith('outbox-1');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
   it('renders each routing label from the queued item override', () => {
     renderQueue([
       row('turn-1', {

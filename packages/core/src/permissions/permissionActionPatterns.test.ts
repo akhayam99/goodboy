@@ -27,6 +27,15 @@ describe('commandPrefix', () => {
 });
 
 describe('oncePatternText', () => {
+  it('scopes a Read to its file, in the rule form of an absolute path', () => {
+    expect(
+      oncePatternText({ toolName: 'Read', input: { file_path: '/notify-relay/README.md' } }),
+    ).toBe('Read(//notify-relay/README.md)');
+    expect(oncePatternText({ toolName: 'Read', input: { file_path: 'docs/notes.md' } })).toBe(
+      'Read(docs/notes.md)',
+    );
+  });
+
   it('renders the exact bash command', () => {
     expect(
       oncePatternText({ toolName: 'Bash', input: { command: 'pnpm test --filter ledger-core' } }),
@@ -41,6 +50,7 @@ describe('oncePatternText', () => {
 
   it('falls back to the bare tool name when the field is missing', () => {
     expect(oncePatternText({ toolName: 'Bash', input: {} })).toBe('Bash');
+    expect(oncePatternText({ toolName: 'Read', input: {} })).toBe('Read');
   });
 });
 

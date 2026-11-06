@@ -31,6 +31,7 @@ import type { NotificationFacts } from './kinds/notification';
 import type { ProviderFacts } from './kinds/provider';
 import type { IntegrationFacts } from './kinds/integration';
 import type { BranchFacts } from './kinds/branch';
+import type { PlanCommentsFacts } from './kinds/planComments';
 import type { ProjectAskFacts } from './kinds/projectAsk';
 import type { CheckRunFacts } from './kinds/checkRun';
 import type { DecisionFacts } from './kinds/decision';
@@ -442,6 +443,11 @@ export type BranchActionTarget = {
   readonly facts: BranchFacts;
 };
 
+export type PlanCommentsActionTarget = {
+  readonly kind: 'planComments';
+  readonly facts: PlanCommentsFacts;
+};
+
 export type ProjectAskActionTarget = {
   readonly kind: 'projectAsk';
   readonly facts: ProjectAskFacts;
@@ -559,6 +565,7 @@ export type ObjectTarget =
   | ProviderActionTarget
   | IntegrationActionTarget
   | BranchActionTarget
+  | PlanCommentsActionTarget
   | ProjectAskActionTarget
   | LinkActionTarget
   | CheckRunActionTarget

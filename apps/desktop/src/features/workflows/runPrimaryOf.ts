@@ -1,4 +1,5 @@
 import { NAMES } from '../../shared/utils/names';
+import { planApproveLabelOf } from '../plans/planApproveLabelOf';
 import type { OrchestratorPhase } from './orchestratorState';
 
 export type RunPrimaryKind =
@@ -33,6 +34,7 @@ type StaticFlow = {
   readonly kind: 'static';
   readonly isPaused: boolean;
   readonly nextStepNumber: number | null;
+  readonly nextStepName?: string | null;
 };
 
 export type RunFlow = DynamicFlow | StaticFlow;
@@ -47,7 +49,6 @@ type Params = {
 
 const LABELS = {
   'review-plan': 'Review plan',
-  'approve-plan': 'Approve plan',
   answer: 'Answer',
   resume: NAMES.continue,
   continue: NAMES.continue,
@@ -57,7 +58,7 @@ const LABELS = {
   'decide-next': 'Decide next step',
   'start-run': 'Start run',
   restore: 'Restore',
-} as const satisfies Record<Exclude<RunPrimaryKind, 'start-step'>, string>;
+} as const satisfies Record<Exclude<RunPrimaryKind, 'start-step' | 'approve-plan'>, string>;
 
 type FixedParams = {
   readonly kind: keyof typeof LABELS;
@@ -67,13 +68,16 @@ const fixed = ({ kind }: FixedParams): RunPrimary => ({ kind, label: LABELS[kind
 
 type PlanEntryParams = {
   readonly hold: RunPlanHold;
+  readonly nextStepName: string | null;
 };
 
-const planEntry = ({ hold }: PlanEntryParams): RunPrimary | null => {
+const planEntry = ({ hold, nextStepName }: PlanEntryParams): RunPrimary | null => {
   if (hold === 'with-plan') {
     return fixed({ kind: 'review-plan' });
   }
-  return hold === 'without-plan' ? fixed({ kind: 'approve-plan' }) : null;
+  return hold === 'without-plan'
+    ? { kind: 'approve-plan', label: planApproveLabelOf({ nextStepName }) }
+    : null;
 };
 
 type DynamicParams = {
@@ -85,9 +89,9 @@ const dynamicPrimary = ({ flow, hold }: DynamicParams): RunPrimary | null => {
   switch (flow.phase) {
     case 'plan-question':
     case 'needs-answer':
-      return flow.hasQuestion ? fixed({ kind: 'answer' }) : planEntry({ hold });
+      return flow.hasQuestion ? fixed({ kind: 'answer' }) : planEntry({ hold, nextStepName: null });
     case 'plan-approval':
-      return planEntry({ hold });
+      return planEntry({ hold, nextStepName: null });
     case 'plan-revising':
       return null;
     case 'paused':
@@ -140,7 +144,7 @@ export const runPrimaryOf = ({
   if (flow.kind === 'dynamic') {
     return dynamicPrimary({ flow, hold });
   }
-  const entry = planEntry({ hold });
+  const entry = planEntry({ hold, nextStepName: flow.nextStepName ?? null });
   if (entry !== null) {
     return entry;
   }

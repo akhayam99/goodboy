@@ -155,7 +155,7 @@ A run starts as soon as you add it. A run can also be queued to wait for your go
 **Asks you** (it was Autonomy) comes from the workspace rules, **Every step**
 until you change them: the run waits for your go after each step so you can
 review it. **After the plan** (it was Balanced) runs on its own but holds once
-when the plan is written, until you press **Approve plan**. **Never** (it was
+when the plan is written, until you approve it. **Never** (it was
 Autopilot for a run) starts each next step by itself. The words live in
 `NAMES` (`asksYou`, `everyStep`, `afterThePlan`, `asksNever`) and the old ones
 stay findable through `FORMER_NAMES`. The choice is stored as the run's autorun
@@ -310,7 +310,7 @@ read top to bottom at the conversation measure:
 
 - **Header.** The run title, the one primary of the run (`runHeaderPrimaryOf`): an open question makes it
   **Answer**, a run paused at the limit **Raise limit**, else the `runPrimaryOf`
-  verb through `RunPrimaryAction` (**Review plan**, **Approve plan**,
+  verb through `RunPrimaryAction` (**Review plan**, **Approve and continue**,
   **Decide next step**, **Start step 2**, **Start run**, **Retry**, **Continue
   the run**, **Restore**; a run the orchestrator stopped on a human call has no
   header button: its action is the field **Add a hint and continue**, docked in
@@ -650,7 +650,7 @@ an agent, with its role glyph), never a joined tooltip line.
   with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. The header holds the one primary
   (`runHeaderPrimaryOf`: **Answer**, **Raise limit**, the `runPrimaryOf` verb
   with today's gates, `StartStepPrimary` and its Start anyway confirm,
-  `WorkflowRunStartButton`, **Review plan**, **Approve plan**, or else **Pause
+  `WorkflowRunStartButton`, **Review plan**, **Approve and continue**, or else **Pause
   run** and **Continue**); every other verb is on the tail or in the menu.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry: View diff, Asks you (Every step, After the plan, Never, a
@@ -1043,13 +1043,19 @@ and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
 button, a skip, a read-now hint and a retry all stop at the hold.
 Switching the run to another autonomy also drops the hold. A plan step that
 writes no plan never holds. While it holds, the run's status reads
-**Plan ready**, not a failure (a status, never a button: **Review plan** is the
-primary of the run header), and **Start step** is hidden, so **Approve** is the
+**Needs approval**, not a failure (a status, never a button: **Review plan** is the
+primary of the run header), and **Start step** is hidden, so approving is the
 only way on; **Start step 2** comes back once the plan is approved.
+
+The button says what it starts (`planApproveLabelOf`): **Approve and start Implement**
+when the step that starts next is known (`planNextStepNameOf`), **Approve and continue**
+for a dynamic run, where the orchestrator picks the step, and for a run that goes on alone.
+`planPrimaryOf` and `runPrimaryOf` both read that one function, and the toast after it has
+one owner too, `planApprovedFollowOf`.
 
 #### Approve moves the run on
 
-**Approve** (`approveWorkflowRunPlan(sessionId, runId)`) approves the plan the
+The approve button (`approveWorkflowRunPlan(sessionId, runId)`) approves the plan the
 run holds for and moves the run on, whether or not it runs on its own.
 It writes the copy's `planApproved` first, then clears the stop, then moves on,
 and it answers with what happened so the caller can say it:
@@ -1064,7 +1070,7 @@ and it answers with what happened so the caller can say it:
 
 A write that fails leaves no half approval: the snapshot write comes first, and
 if clearing the stop fails after it, the snapshot is put back. The in-store run
-changes only after both writes went through. The run tail's Approve plan
+changes only after both writes went through. The run tail's approve button
 (for a run with no plan to read) reads it through `useApproveRunPlan`; the plan drawer, its comment bar and the plan row
 read it through `usePlanPrimaryAction`; the Artifacts page, the palette and the
 object menu read it through `artifact.runPlan` ([The orchestrated document](#the-orchestrated-document)).

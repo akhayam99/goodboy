@@ -252,6 +252,46 @@ describe('a real Stop on sqlite', () => {
     await pending;
   });
 
+  it('stops a turn that waits on a permission ask and leaves the ask undecided, not denied', async () => {
+    const hold = gate();
+    const live = new Set<string>();
+    storySpies.listLiveRunIds.mockImplementation(async () => live);
+    storySpies.cancelTurn.mockImplementation(async () => {
+      live.clear();
+      hold.open();
+    });
+    const { pending } = await startStreaming(hold.opened);
+    const runId = runningRunId();
+    live.add(runId);
+    useAppStore.setState({
+      agentTurnState: { [agentId]: { kind: 'blocked', runId, blockedAt: TEST_NOW } },
+      transcripts: {
+        [agentId]: [
+          {
+            kind: 'permission_request',
+            runId,
+            toolUseId: 'tool-1',
+            toolName: 'Read',
+            input: {},
+            at: TEST_NOW,
+          },
+        ],
+      },
+    });
+
+    const result = await useAppStore
+      .getState()
+      .cancelTurnConfirmed({ sessionId, agentId, reason: 'user' });
+
+    expect(result.outcome).toBe('exited');
+    expect(storySpies.cancelTurn).toHaveBeenCalledWith(runId);
+    expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
+    const kinds = (useAppStore.getState().transcripts[agentId] ?? []).map((event) => event.kind);
+    expect(kinds).toContain('permission_request');
+    expect(kinds).not.toContain('permission_decision');
+    await pending;
+  });
+
   it('does nothing and reports exited when the agent has no turn running', async () => {
     const result = await useAppStore
       .getState()

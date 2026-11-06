@@ -1222,6 +1222,13 @@
           "shown": true
         },
         {
+          "title": "One dock",
+          "text": "Everything that needs you sits in one block joined to the box you type in: permissions, failures, stops and the next step.",
+          "group": "Agents",
+          "also": "one dock",
+          "shown": true
+        },
+        {
           "title": "Stop and Continue",
           "text": "Stopping keeps what the agent wrote and offers Continue. An agent working during a restart picks up where it stopped.",
           "group": "Agents",

@@ -1496,7 +1496,38 @@ specific rule that fits wins.
   (this workspace, everywhere, this session) write a rule (command-prefix for
   Bash, the whole tool for an edit) and resume the blocked call the same way,
   with no second click; only when the turn could not be resumed does the
-  decision card say "Stopped before your answer." and offer **Continue**
+  decision card say "Stopped before your answer." and the dock offer a filled
+  **Continue** (`stoppedAnswerOf`), held while another ask of the batch is open
+- A message sent while the ask is open denies it, with the text as the reason
+  (`startTurnRun`, right before the user text, which reads the asks again so an
+  ask you answered during the writer wait stays answered; `turnBeforeLease`
+  keeps the ask readable while that wait shows `starting`), and the agent reads
+  `Denied Bash. <text>`. On Auto's own ask `routeAutoUserTurn` does the same,
+  since Auto's confined turns run in default mode and a read outside its folder
+  can ask. It works only for a message you typed (origin `operator`), and a send
+  that never starts leaves the ask open. A message queued during the turn never
+  denies: `drainAgentQueue` holds while an ask is open and goes on once it is
+  answered or lapses. Before it holds it asks the database (`refreshAgentAsks`):
+  an answer or a stop from another window closes the ask there, and every
+  decision and every settled turn sends `agent-turn` on `goodboy:data-changed`
+  so the other windows refresh and drain at once
+- Several asks of one agent are answered in turn: the dock shows `1 of 2`, and
+  an answer that leaves another ask open starts no turn (`askBatchAfterAnswer`).
+  The last answer starts one turn that carries every answer (`withHeldAnswers`,
+  `heldOnceAllowsOf`). `user_text` closes an open ask, so sending earlier would
+  drop the second ask undecided
+- An answer stays owed until a turn writes its `user_text`. If the turn it
+  started was refused, a writer timeout say, the decisions are saved and the
+  next turn of any origin carries them (`resolvedAsksAtWrite`), after a reload
+  too. The answers read at the write are `resolvedAsks`: the fallback and limit
+  retries of `recoverTurnFailure` and Retry on a failed turn (`retryAsksOf`)
+  resend them with the once grants. The answer paths pass `NO_RESOLVED_ASKS`,
+  since their text already says it, and so does Auto's delivered turn
+- A record line keeps **Continue** on an always allow whose turn never started
+  (`useIsStoppedBeforeAnswer`, the same check as the decision card)
+- A once allow of a Read is scoped to its file: `Read(//absolute/path)`. On Auto
+  it goes through the `permissionOnceAllows` of the `user` outbox row, since
+  Auto's turn starts from the runtime and not from the message
 - **Deny** answers this call only: it records a once decision, writes no rule
   and tells the agent the call is denied so it carries on another way. The
   session-wide ban is a separate item in the card's overflow, **Never allow
@@ -1870,7 +1901,7 @@ session up again in Goodboy.
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn: the square in the composer, the line at the end of the conversation, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
+- **Stop** is the one name for ending a running turn: the labeled button in the dock, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. A button that stops more or less than the open agent names its scope (**Stop Auto and 2 agents**, **Stop this reply** on a step page).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word

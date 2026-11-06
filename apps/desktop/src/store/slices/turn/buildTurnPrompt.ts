@@ -46,7 +46,7 @@ type Params = Readonly<{
 
 export const buildTurnPrompt = async ({ get, ctx }: Params) => {
   let resolvedPrompt = ctx.resolvedPrompt;
-  const { sessionId, permissionOnceAllow } = ctx.input;
+  const { sessionId, permissionOnceAllows = [] } = ctx.input;
   const { session, activeAgentId, phaseDefinition, provider, model, turnAgentKind } = ctx;
   const providerInfo = get().providers.find((p) => p.id === provider);
 
@@ -66,12 +66,8 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
         scope: { workspaceId: session.workspaceId, sessionId },
         permissionMode,
       });
-      const onceAllowedTools =
-        permissionOnceAllow === undefined || flags.allowedTools.includes(permissionOnceAllow)
-          ? flags.allowedTools
-          : [...flags.allowedTools, permissionOnceAllow];
       claudeFlags = {
-        allowedTools: onceAllowedTools,
+        allowedTools: [...new Set([...flags.allowedTools, ...permissionOnceAllows])],
         disallowedTools: flags.disallowedTools,
         permissionMode: flags.permissionMode,
       };
@@ -81,7 +77,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
         err,
       );
       claudeFlags = {
-        allowedTools: permissionOnceAllow === undefined ? [] : [permissionOnceAllow],
+        allowedTools: permissionOnceAllows,
         disallowedTools: [],
         permissionMode,
       };

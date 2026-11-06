@@ -28,6 +28,7 @@ type Props = {
   readonly onRemove: (id: string) => void;
   readonly onSendNow: (id: string) => void;
   readonly onRetry?: (id: string) => void;
+  readonly retryLabel?: string;
   readonly onRaiseLimit?: (id: string) => void;
 };
 
@@ -83,6 +84,7 @@ export const QueuedMessages = ({
   onRemove,
   onSendNow,
   onRetry,
+  retryLabel = ACTION_LABEL.retry,
   onRaiseLimit,
 }: Props) => {
   if (items.length === 0) {
@@ -170,7 +172,7 @@ export const QueuedMessages = ({
                   disabled={action === 'sendNow' && isHandingOff}
                   onClick={() => act({ id: item.id, action })}
                 >
-                  {ACTION_LABEL[action]}
+                  {action === 'retry' ? retryLabel : ACTION_LABEL[action]}
                 </Button>
               )}
               <IconButton

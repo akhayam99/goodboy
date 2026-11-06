@@ -84,7 +84,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('the plan drawer of an Auto plan', () => {
-  it('puts Needs approval, the version, Ask for changes and Approve plan on the second row', () => {
+  it('puts Needs approval, the version, Ask for changes and the approve label on the second row', () => {
     seedAutoPlan();
 
     renderDrawer();
@@ -93,7 +93,7 @@ describe('the plan drawer of an Auto plan', () => {
     expect(within(toolbar).getByText('Needs approval')).toBeDefined();
     expect(within(toolbar).getByText('v2')).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: /Ask for changes/ })).toBeDefined();
-    expect(within(toolbar).getByRole('button', { name: /Approve plan/ })).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: /Approve and start Build/ })).toBeDefined();
     expect(screen.queryByTestId('plan-drawer-toolbar')).toBeNull();
   });
 
@@ -102,7 +102,7 @@ describe('the plan drawer of an Auto plan', () => {
     approveAutoPlan.mockResolvedValue({ kind: 'approved', revision: 2 });
     renderDrawer();
 
-    fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Approve and start Build/ }));
 
     await waitFor(() => expect(approveAutoPlan).toHaveBeenCalledOnce());
     expect(approveAutoPlan).toHaveBeenCalledWith(
@@ -133,7 +133,7 @@ describe('the plan drawer of an Auto plan', () => {
     });
     renderDrawer();
 
-    fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Approve and start Build/ }));
 
     await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
     expect(reportError).toHaveBeenCalledWith(
@@ -160,16 +160,16 @@ describe('the plan drawer of an Auto plan', () => {
     approveAutoPlan.mockResolvedValueOnce({ kind: 'approved', revision: 2 });
     renderDrawer();
 
-    fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Approve and start Build/ }));
     await waitFor(() => expect(approveAutoPlan).toHaveBeenCalledTimes(1));
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Approve plan/ })).toHaveProperty(
+      expect(screen.getByRole('button', { name: /Approve and start Build/ })).toHaveProperty(
         'disabled',
         false,
       ),
     );
     expect(useAppStore.getState().drawer).not.toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Approve and start Build/ }));
 
     await waitFor(() => expect(approveAutoPlan).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
@@ -194,7 +194,7 @@ describe('the plan drawer of an Auto plan', () => {
     });
     renderDrawer();
 
-    fireEvent.click(screen.getByRole('button', { name: /Approve plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Approve and start Build/ }));
     const tell = await screen.findByRole('button', { name: 'Tell Auto' });
     screen.getByText('Approved, Auto did not hear it');
     expect(useAppStore.getState().drawer).not.toBeNull();
@@ -210,12 +210,12 @@ describe('the plan drawer of an Auto plan', () => {
     await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
   });
 
-  it('turns Approve plan off while the planner revises, with the reason', () => {
+  it('turns the approve label off while the planner revises, with the reason', () => {
     seedAutoPlan({ approvalState: 'revising', openRevise: 'delegation-revise' });
 
     renderDrawer();
 
-    const approve = screen.getByRole('button', { name: /Approve plan/ });
+    const approve = screen.getByRole('button', { name: /Approve and start Build/ });
     expect(approve).toHaveProperty('disabled', true);
   });
 
@@ -249,7 +249,7 @@ describe('the plan drawer of an Auto plan', () => {
     renderDrawer();
 
     expect(screen.queryByTestId('auto-plan-toolbar')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
   });
 
   it('keeps the plan toolbar of today for a plan that no Auto tree owns', () => {

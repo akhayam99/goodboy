@@ -208,16 +208,11 @@ describe('the CTA rule of the central column', () => {
   it('leaves the one primary of the Auto chat to the dock while a plan waits', async () => {
     show({ scenes: U24_AUTO_CHAT_SCENES, name: 'auto-chat-confirm' });
 
-    const card = await screen.findByRole('region', { name: 'Next step' }, { timeout: 15_000 });
-    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
+    await screen.findByRole('region', { name: 'Next step' }, { timeout: 15_000 });
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]') ?? document.body;
 
-    expect(
-      within(dock ?? document.body).getByRole('button', { name: 'Approve plan' }).dataset.variant,
-    ).toBe('primary');
-    expect(card.querySelectorAll('[data-variant="primary"]')).toHaveLength(0);
-    expect(within(card).getByRole('button', { name: 'Continue' }).dataset.variant).toBe(
-      'secondary',
-    );
+    expect(dock.querySelectorAll('[data-variant="primary"]')).toHaveLength(1);
+    expect(within(dock).getByRole('button', { name: 'Continue' }).dataset.variant).toBe('primary');
   });
 
   it('keeps the second secondary visible at 560 px and up', () => {

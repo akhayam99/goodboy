@@ -21,6 +21,7 @@ import { NOTIFICATION_KIND } from './kinds/notification';
 import { PROVIDER_KIND } from './kinds/provider';
 import { INTEGRATION_KIND } from './kinds/integration';
 import { BRANCH_KIND } from './kinds/branch';
+import { PLAN_COMMENTS_KIND } from './kinds/planComments';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
@@ -80,6 +81,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['provider', PROVIDER_KIND.actions],
   ['integration', INTEGRATION_KIND.actions],
   ['branch', BRANCH_KIND.actions],
+  ['planComments', PLAN_COMMENTS_KIND.actions],
   ['projectAsk', PROJECT_ASK_KIND.actions],
   ['link', LINK_KIND.actions],
   ['checkRun', CHECK_RUN_KIND.actions],

@@ -1,7 +1,12 @@
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
 import { Button, tintClasses } from '@goodboy/ui';
+import { useSessionPlans } from '../../../store';
+import { useDraftPlanComments } from './hooks/useDraftPlanComments';
+import { AUTO_PLAN_APPROVE_LABEL } from '../plan/autoPlanApproveLabel';
 import { useAutoPlanApproval } from '../plan/useAutoPlanApproval';
 import { AUTO_STATE_TONE } from './autoStateTone';
+import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
+import { AutoDockPlanComments } from './AutoDockPlanComments';
 import { focusAgentComposer } from './focusAgentComposer';
 
 type Props = {
@@ -9,20 +14,32 @@ type Props = {
   readonly artifactId: string;
   readonly title: string;
   readonly onOpen: (artifactId: string) => void;
+  readonly isApproveHidden: boolean;
+  readonly isSettledHidden: boolean;
 };
 
 const SETTLED_COPY = {
+  needs_approval: ' · changes asked',
   revising: ' · changes asked',
   approved: ' approved',
   used: ' used',
   not_needed: ' · no approval needed',
 } as const;
 
-export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) => {
+export const AutoDockPlan = ({
+  sessionId,
+  artifactId,
+  title,
+  onOpen,
+  isApproveHidden,
+  isSettledHidden,
+}: Props) => {
   const model = useAutoPlanApproval({
     sessionId,
     artifactId: brandId<ArtifactId>({ value: artifactId }),
   });
+  const plan = useSessionPlans(sessionId).find((candidate) => candidate.id === artifactId) ?? null;
+  const hasUnsentComments = useDraftPlanComments({ sessionId, plan });
   if (model === null) {
     return null;
   }
@@ -65,7 +82,19 @@ export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) =>
       </div>
     );
   }
-  if (state === 'needs_approval') {
+  if (state === 'needs_approval' && !isApproveHidden && plan !== null && hasUnsentComments) {
+    return (
+      <AutoDockPlanComments
+        sessionId={sessionId}
+        plan={plan}
+        version={model.version}
+        openPlan={openPlan}
+        isBusy={model.isBusy}
+        onApproveAnyway={() => void model.approve()}
+      />
+    );
+  }
+  if (state === 'needs_approval' && !isApproveHidden) {
     return (
       <div
         data-dock-plan={state}
@@ -76,7 +105,7 @@ export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) =>
           aria-live="polite"
           className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
         >
-          Plan v{model.version} waits for your OK
+          {planNeedsApprovalOf({ version: model.version })}
         </span>
         <span className="flex-1" />
         <Button
@@ -96,10 +125,13 @@ export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) =>
           disabled={model.isBusy}
           onClick={() => void model.approve()}
         >
-          Approve plan
+          {AUTO_PLAN_APPROVE_LABEL}
         </Button>
       </div>
     );
+  }
+  if (isSettledHidden) {
+    return null;
   }
   return (
     <div

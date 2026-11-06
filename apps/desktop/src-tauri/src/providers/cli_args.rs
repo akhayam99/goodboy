@@ -501,9 +501,24 @@ pub(crate) fn role_access(role: &str) -> Option<RoleAccess> {
     None
 }
 
+fn is_scoped_read_grant(grant: &str) -> bool {
+    let Some(scope) = grant
+        .strip_prefix("Read(")
+        .and_then(|rest| rest.strip_suffix(')'))
+    else {
+        return false;
+    };
+    !scope.is_empty() && !scope.contains([',', '(', ')'])
+}
+
 fn claude_allowed_tools(args: &SpawnOneArgs<'_>, access: Option<RoleAccess>) -> Vec<String> {
     if access == Some(RoleAccess::ReadOnly) {
-        return Vec::new();
+        return args
+            .allowed_tools
+            .iter()
+            .filter(|grant| is_scoped_read_grant(grant))
+            .cloned()
+            .collect();
     }
     args.allowed_tools.to_vec()
 }
@@ -1109,6 +1124,33 @@ mod tests {
         argv.windows(2)
             .find(|pair| pair[0] == flag)
             .map(|pair| pair[1].clone())
+    }
+
+    #[test]
+    fn a_read_only_claude_role_keeps_only_a_scoped_read_grant() {
+        let allowed = strings(&[
+            "Read(//notify-relay/README.md)",
+            "Read",
+            "Read()",
+            "Read(x),Bash(rm *)",
+            "Bash(ls:*)",
+            "Edit(src/main.rs)",
+        ]);
+        let disallowed = strings(&["Read(.env)"]);
+        let args = spawn_args("default", Some("auto"), &allowed, &disallowed, &[]);
+        let argv = turn_args("claude", &args);
+        assert_eq!(
+            value_after(&argv, "--allowedTools").as_deref(),
+            Some("Read(//notify-relay/README.md)")
+        );
+        assert_eq!(
+            value_after(&argv, "--tools").as_deref(),
+            Some("Read,Grep,Glob")
+        );
+        let denied = value_after(&argv, "--disallowedTools").expect("deny list");
+        for tool in ["Read(.env)", "Bash", "Edit", "Write"] {
+            assert!(denied.split(',').any(|entry| entry == tool));
+        }
     }
 
     #[test]

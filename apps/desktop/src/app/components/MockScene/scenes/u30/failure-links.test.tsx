@@ -71,11 +71,11 @@ describe('the u30 failure link scenes', () => {
     }
   });
 
-  it('u30-failure-reason keeps the whole blocked reason in the tail and offers the transcript', async () => {
+  it('u30-failure-reason keeps the whole blocked reason in the dock and offers the transcript', async () => {
     mount('u30-failure-reason');
 
     const tail = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-tail]');
+      const found = document.querySelector<HTMLElement>('[data-dock-line="failed"]');
       expect(found?.textContent).toContain('waiting on the notify-relay queue to drain.');
       return found;
     }, WAIT);

@@ -541,7 +541,7 @@ describe('PlanCommentBar', () => {
     expect(screen.getByText('2 comments')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
     expect(onSend).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and continue' })).toBeNull();
   });
 
   it('says why Send is off', () => {

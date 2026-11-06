@@ -551,7 +551,7 @@ group back. A `tried` report is accepted only for the step that is next, in
 `onboardingHints.ts`, `agentHints.ts`, `orchestrateHints.ts`, `findHints.ts` and
 `reviewHints.ts`. `data-demo-anchor` marks only controls with no stable name:
 the setup buttons, Start session on a task, the Start button of the New session
-page, Auto's Approve plan, Start fix and the storage Remove button. Every group is walked to
+page, Auto's approve button, Start fix and the storage Remove button. Every group is walked to
 its last step in a test.
 
 While a hint points at something on screen, the stage dims and lightly blurs
@@ -682,7 +682,7 @@ waiting on the step (`scenes/flow-audit/parallelRun.ts`).
 `?scene=workflow-run&run=finished` shows the run done, with every step complete
 and no NOW (`scenes/flow-audit/finishedRun.ts`).
 `?scene=workflow-run&run=plan-hold` shows it as a custom run held in Ask after
-the plan, with **Review plan** in the header, **Approve plan** in its menu and
+the plan, with **Review plan** in the header, the approve button in its menu and
 the **Guidance** tag on the steps the standing guidance went to
 (`scenes/flow-audit/planHoldRun.ts`). The same file seeds the orchestrated
 hold behind `?scene=workflow-run-plan-review` (the plan drawer open over the

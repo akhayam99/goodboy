@@ -160,6 +160,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
         kind: 'static',
         isPaused: isRunPaused({ run }),
         nextStepNumber: nextStepIndex < 0 ? null : nextStepIndex + 1,
+        nextStepName: run.autoRun === true ? null : (nextStepAgent?.name ?? null),
       };
   const predecessor =
     run.chainAfterId == null
