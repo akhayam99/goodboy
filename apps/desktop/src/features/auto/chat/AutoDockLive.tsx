@@ -16,24 +16,35 @@ export const AutoDockLive = ({ sessionId, view, rootAgent }: Props) => {
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
   const actions = useAutoTreeActions({ sessionId });
   const glance = autoGlanceOf({ view, rootTurn });
-  if (glance.state !== 'working' && glance.state !== 'planning') {
-    return null;
-  }
+  const isSpeaking = glance.state === 'working' || glance.state === 'planning';
   const facts = autoTreeLive({ view, rootTurn, rootAgent, lastTool: null, project: null });
   const ids = facts?.actions.map((action) => action.id) ?? [];
-  const canChange = ids.includes('changeApproach');
+  const canChange = isSpeaking && ids.includes('changeApproach');
   const canStop = ids.includes('stopAuto') && !canChange;
+  if (!isSpeaking && !canStop) {
+    return null;
+  }
   return (
     <div data-dock-live="" className="flex min-w-0 flex-col gap-1">
       <div className="flex min-h-7 min-w-0 items-center gap-2 text-meta">
-        <span
-          aria-hidden="true"
-          className={cn(
-            'inline-block size-1.5 shrink-0 rounded-full motion-safe:animate-soft-pulse',
-            tintClasses(glance.tone).dot,
-          )}
-        />
-        <span className="min-w-0 truncate text-muted-foreground">{glance.sentence}</span>
+        {isSpeaking ? (
+          <>
+            <span
+              aria-hidden="true"
+              className={cn(
+                'inline-block size-1.5 shrink-0 rounded-full motion-safe:animate-soft-pulse',
+                tintClasses(glance.tone).dot,
+              )}
+            />
+            <span
+              role="status"
+              aria-live="polite"
+              className="min-w-0 truncate text-muted-foreground"
+            >
+              {glance.sentence}
+            </span>
+          </>
+        ) : null}
         <span className="flex-1" />
         {canChange ? (
           <Button
