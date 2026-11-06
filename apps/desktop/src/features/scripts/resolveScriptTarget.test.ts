@@ -60,7 +60,7 @@ describe('resolveScriptTarget', () => {
     const target = resolveScriptTarget({
       groups: [{ ...SETTLEMENT, scripts: [], suggested: [suggested] }],
       scriptKey: 'suggested-test',
-      mountId: 'mount-a' as MountId,
+      mountId: SETTLEMENT.mountId,
     });
 
     expect(target?.script.key).toBe('suggested-test');

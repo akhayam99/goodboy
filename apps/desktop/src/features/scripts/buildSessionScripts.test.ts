@@ -342,16 +342,18 @@ describe('buildSessionScripts', () => {
         relDir: '',
         name,
       });
-    const record = (mountId: string): ScriptRunRecord => ({
+    const here = mount('a', LEDGER, '/work/ledger');
+    const elsewhere = mount('other-mount', LEDGER, '/work/ledger-other');
+    const record = (owner: SessionProjectMount): ScriptRunRecord => ({
       status: 'pending',
       result: null,
       runId: 'run-1',
       startedAt: 1,
-      mountId: mountId as MountId,
+      mountId: owner.mountId,
     });
     const build = (runs: Record<string, ScriptRunRecord>) =>
       buildSessionScripts({
-        mounts: [mount('a', LEDGER, '/work/ledger')],
+        mounts: [here],
         projects: PROJECTS,
         saved: [],
         discovered: { '/work/ledger': MANIFEST },
@@ -364,9 +366,9 @@ describe('buildSessionScripts', () => {
       })[0];
 
     const kept = build({
-      [keyOf('dev')]: record('a'),
-      [keyOf('test')]: record('a'),
-      [keyOf('lint')]: record('other-mount'),
+      [keyOf('dev')]: record(here),
+      [keyOf('test')]: record(here),
+      [keyOf('lint')]: record(elsewhere),
     });
 
     expect(kept?.suggested.map((script) => script.name)).toEqual(['dev']);

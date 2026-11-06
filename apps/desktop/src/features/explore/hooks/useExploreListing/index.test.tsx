@@ -26,13 +26,14 @@ afterEach(cleanup);
 describe('useExploreListing', () => {
   it('never paints the missing folder error while the scratch folder resolves', () => {
     const frames: ExploreListing[] = [];
+    const initialProps: ProbeParams = { sessionDir: null };
     const { rerender } = renderHook(
       ({ sessionDir }: ProbeParams) => {
         const controls = useExploreListing({ sessionDir });
         frames.push(controls.listing);
         return controls;
       },
-      { initialProps: { sessionDir: null } as ProbeParams },
+      { initialProps },
     );
 
     rerender({ sessionDir: '/work/cascadia-scratch' });
