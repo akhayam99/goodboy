@@ -97,10 +97,8 @@ const storedLevel = ({
   return stored;
 };
 
-const PANEL = { kind: 'spawned', sessionId: SESSION_ID, payload: null };
-
 describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
-  it('lands a stored Auto level on the Auto agent with the Agents panel open and drops the level key', () => {
+  it('lands a stored Auto level on the Auto agent and opens no panel', () => {
     const next = withoutRemovedPages({
       location: storedLevel({
         lens: 'auto',
@@ -111,10 +109,10 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
     });
 
     expect(next.place).toMatchObject({ view: { lens: 'auto', agentId: 'agent-auto-root' } });
-    expect(next.focus.drawer).toEqual(PANEL);
+    expect(next.focus.drawer).toBeNull();
   });
 
-  it('lands a stored run on the run page with the Agents panel open', () => {
+  it('lands a stored run on the run page and opens no panel', () => {
     const next = withoutRemovedPages({
       location: storedLevel({
         lens: 'workflows',
@@ -127,10 +125,10 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
     expect(next.place).toMatchObject({
       view: { target: { kind: 'run', runId: 'run-ledger-core' } },
     });
-    expect(next.focus.drawer).toEqual(PANEL);
+    expect(next.focus.drawer).toBeNull();
   });
 
-  it('keeps the drawer the run had open instead of the panel', () => {
+  it('keeps the tool a stored run had open', () => {
     const drawer = { kind: 'scripts', sessionId: SESSION_ID, payload: null };
     const next = withoutRemovedPages({
       location: storedLevel({

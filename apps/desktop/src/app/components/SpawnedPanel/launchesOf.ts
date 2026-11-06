@@ -1,5 +1,4 @@
 import type { AgentId, Workflow, WorkflowRun } from '@goodboy/types';
-import { VISIBLE_FINISHED_COUNT } from '../../../features/session/finishedRunsCap';
 import type { SessionRun } from '../../../features/session/sessionRunsOf';
 
 type Attached = Readonly<{
@@ -59,20 +58,11 @@ const launchOf = ({ entry, attached }: LaunchParams): Launch | null => {
   }
 };
 
-export const launchesOf = ({ runs, attached }: Params): ReadonlyArray<Launch> => {
-  const launches = runs
-    .filter((entry) => !entry.isArchived)
+export const launchesOf = ({ runs, attached }: Params): ReadonlyArray<Launch> =>
+  runs
+    .filter((entry) => !entry.isArchived && !entry.isFinished)
     .flatMap((entry) => {
       const launch = launchOf({ entry, attached });
       return launch === null ? [] : [launch];
     })
     .sort((a, b) => b.at - a.at);
-  let finishedSeen = 0;
-  return launches.filter((launch) => {
-    if (!launch.isFinished) {
-      return true;
-    }
-    finishedSeen += 1;
-    return finishedSeen <= VISIBLE_FINISHED_COUNT;
-  });
-};

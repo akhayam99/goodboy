@@ -566,7 +566,8 @@ describe('c07 Auto scenes', () => {
     expect(levelStack().dataset.levelStack).toBe('session');
 
     fireEvent.click(rows[0] ?? list);
-    expect(await autoTree()).toBeDefined();
+    await waitFor(() => expect(document.querySelector('[data-auto-dock]')).not.toBeNull());
+    expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
     expect(levelStack().dataset.levelStack).toBe('session');
   });
 

@@ -84,26 +84,5 @@ const withoutRemovedLens = ({ location }: Params): Location => {
   };
 };
 
-const withoutRailLevel = ({ location }: Params): Location => {
-  const { place } = location;
-  if (place.at !== 'session' || location.focus.drawer !== null) {
-    return location;
-  }
-  const isRunShown = place.view.target?.kind === 'run';
-  const isAutoShown = place.view.lens === 'auto' && place.view.agentId !== null;
-  if (!isRunShown && !isAutoShown) {
-    return location;
-  }
-  return {
-    ...location,
-    focus: {
-      ...location.focus,
-      drawer: { kind: 'spawned', sessionId: place.sessionId, payload: null },
-    },
-  };
-};
-
 export const withoutRemovedPages = ({ location }: Params): Location =>
-  withoutRailLevel({
-    location: withoutRemovedLens({ location: withoutRemovedStudio({ location }) }),
-  });
+  withoutRemovedLens({ location: withoutRemovedStudio({ location }) });

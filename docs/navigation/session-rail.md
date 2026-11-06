@@ -318,7 +318,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   run page, which has no address yet, is the one exception. A step row of the document opens the step
   in the pane (drawer kind `run-step`), never the center.
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
-  conversation with the Agents panel open (`openSpawned`), and Runs stays
+  conversation and opens no tool, and Runs stays
   selected on the rail while an Auto agent is in the center. ⌘⌥W and the
   Agents key (`lens.agents`, ⌘⌥A) both open Runs. Pressed below Runs (a run,
   a step, an agent or an Auto conversation) they land on the Runs list, and
@@ -675,27 +675,28 @@ through `DrawerEdgeContext`. The page has a scrim and is inert until close.
 both rails ([styling.md](../styling.md)).
 Folding the rail leaves the column in place.
 
-- **Agents holds every agent of the session** (drawer kind `spawned`,
+- **Agents is the tree beside the page** (drawer kind `spawned`,
   `app/components/SpawnedPanel`), in place of the old level 2 of the session
-  rail: the same set as the Runs page, read from the same model
-  (`useSessionRuns`), so a run, an orchestrated run, Auto and an agent you
-  started yourself are all there. Its body follows the page (`useSpawnedFocus`): on a preset run (from
+  rail: the open run's tree, else what is live. Runs is the one list of work,
+  so the panel keeps no list of its own: its foot link **All runs** goes to the
+  Runs page (`openLens` workflows) and the panel stays open. Its body follows the page (`useSpawnedFocus`): on a preset run (from
   Runs, the Running card, the Done card or a link to a step, read through
   `presetRunFocusOf`) it shows the run's identity row (the state dot and the
   title, which renames inline on click), the run's agents as a tree, **Add
   step** and the foot "Limit $3.00 · $1.12 spent" (`RunSpendFoot`); on an Auto
   agent or one of its children it shows Auto and its children as a tree, "No
   agents started yet" while Auto has none; Auto's limit sits on the Auto page's
-  settings line (`AgentSettingsLine`), not in this panel. With nothing selected, or after **All runs**, it
-  lists every live and recent launch of the session newest first
-  (`launchesOf` over `sessionRunsOf`: runs that are not archived, orchestrated
-  ones included, Auto roots and standalone agents, with the 30 newest finished
-  ones as on Runs), each with its agents under it; a standalone agent is a
+  settings line (`AgentSettingsLine`), not in this panel. With no run or Auto
+  open, it lists what is live, newest first
+  (`launchesOf` over `sessionRunsOf`: runs that are not archived and not
+  finished, orchestrated ones included, Auto roots and standalone agents; the
+  finished work is on Runs), each with its agents under it; a standalone agent is a
   launch of one row (`SpawnedAgentGroup`: role glyph, name, state word on the
-  row) that opens its page in the center and keeps the panel open
-  (`openSpawned` target `agent`), and a session with none says "No agents in
-  this session yet"; picking a launch opens it in the center and keeps the
-  panel open (`openSpawned` passes the panel as the navigation's drawer). The
+  row) that opens its page in the center (`openSpawned` target `agent`), and
+  a session with nothing live says "Nothing live right now"; picking a launch
+  opens it in the center, and the tool, open already, stays through the move. A row
+  never opens a tool as a side effect: an Auto row of Runs opens the Auto page
+  and nothing beside it. The
   Overview's Now run header (`LiveRunBlock`) opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
@@ -723,8 +724,7 @@ Folding the rail leaves the column in place.
   scroll only as far as needed, and an agent missing from the tree changes
   nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's chat **Open** actions set the Agents drawer's child target without
   navigating the center. The target takes precedence over the main selection
-  (`useSpawnedFocus`); **All runs** still works, and another reveal returns
-  to the target's launch. An Auto
+  (`useSpawnedFocus`), and another reveal returns to the target's launch. An Auto
   root is titled by the ask it started with, loaded with the tree view, not
   its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
   ([auto.md](../auto.md#the-chat)). Every Auto parent folds on its row (chevron,
@@ -739,7 +739,7 @@ Folding the rail leaves the column in place.
 - **A row opens its agent in the center and the tree stays.** Every agent row
   (a run step, an Auto child, the Auto root, an agent you started) goes
   through `openSpawned` with target `agent`: it navigates to `agentPlace` and
-  passes the panel as the navigation's drawer, so a child shows on the same
+  the panel, a tool, survives the move (`keepToolDrawer`), so a child shows on the same
   page as a top-level agent (`AgentDetailPane`, with the Auto notice for an
   Auto child; a preset run step reads as its run step page through
   `presetRunFocusOf`) and the tree stays open with the row selected, one click
@@ -750,10 +750,10 @@ Folding the rail leaves the column in place.
   `run-step` drawers remain for the doors that preview a child while the
   center stays elsewhere (Now, the delegation lines, the orchestrated
   document) and carry no way back to the panel.
-- **A saved level 2 lands on the panel.** A window saved on a run or on the
-  Auto level before the panel opens on the same page with Agents open
-  (`withoutRemovedPages` drops the retired `sidebar-level` key). The panel
-  is per window: the drawer belongs to the window's store.
+- **A saved level 2 lands on its page.** A window saved on a run or on the
+  Auto level before the panel opens on the same page and opens no panel
+  (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had
+  open stays open. The panel is per window: the drawer belongs to the window's store.
 
 - **Outside a session there is no tools group.** The workspace pages (the
   board, the studios) already hold the two tools that make sense there as
