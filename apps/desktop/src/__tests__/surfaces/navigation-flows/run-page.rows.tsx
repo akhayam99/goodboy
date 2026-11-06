@@ -14,7 +14,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
-import { BOARD_PLACE, sessionPlace } from '../../../store/slices/navigation/place';
+import { BOARD_PLACE, agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { openLens } from '../../../features/session/openLens';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import userEvent from '@testing-library/user-event';
@@ -242,6 +242,52 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
       await pressEscape();
     },
     lands: backToTheList,
+  },
+  {
+    name: 'Esc on a step page does what its back row does and lands on its run',
+    covers: ['navigate', 'up'],
+    open: async (ctx) => {
+      await openRunPage(ctx);
+      act(() =>
+        useAppStore.getState().navigate({
+          to: agentPlace({ sessionId: ctx.sessionId, agentId: IMPLEMENT_AGENT_ID }),
+        }),
+      );
+      await settle();
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().selectedAgentId[ctx.sessionId]).toBe(IMPLEMENT_AGENT_ID),
+        WAIT,
+      );
+      await pressEscape();
+    },
+    lands: async (ctx) => {
+      await waitFor(() => {
+        expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).toBeNull();
+        expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId]).toBe(RUN_ID);
+      }, WAIT);
+      await screen.findByRole('region', RUN_TAIL, WAIT);
+    },
+  },
+  {
+    name: 'Esc on the Runs list does what its back row does and lands on the Overview',
+    covers: ['navigate', 'up'],
+    open: async (ctx) => {
+      act(() =>
+        useAppStore.getState().navigate({
+          to: sessionPlace({ sessionId: ctx.sessionId, lens: 'workflows' }),
+        }),
+      );
+      await settle();
+      await heading('Runs');
+      await pressEscape();
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
+    },
   },
   {
     name: 'the palette Open Runs on a run page lands on the Runs list, not on the run',

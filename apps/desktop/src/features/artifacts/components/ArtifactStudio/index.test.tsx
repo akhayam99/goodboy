@@ -509,23 +509,15 @@ describe('ArtifactStudio shell', () => {
     expect(screen.queryByTestId('artifact-built-from-link')).toBeNull();
   });
 
-  it('goes back to the list on Escape, but leaves Escape to the drawer while it is open', async () => {
+  it('leaves Escape on an artifact page to the session ladder, which owns the way up', async () => {
     state.sessionArtifacts = { 'sess-1': [report] };
     focus('artifact-report');
-    state.drawer = {
-      kind: 'artifact',
-      sessionId: 'sess-1',
-      lens: 'plans',
-      payload: { artifactId: 'artifact-report', tab: 'details' },
-    };
-    const { rerender } = renderStudio();
+    renderStudio();
     fireEvent.keyDown(window, { key: 'Escape' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(state.up).not.toHaveBeenCalled();
-    state.drawer = null;
-    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.keyDown(window, { key: 'Escape' });
-    await waitFor(() => expect(state.up).toHaveBeenCalledTimes(1));
+    expect(state.focusedArtifactId['sess-1']).toBe('artifact-report');
+    expect(screen.getByTestId('artifact-shell')).toBeDefined();
   });
 
   it('opens a wireframe on its flow, with Open in browser as the secondary and the variant under More', () => {
@@ -679,6 +671,15 @@ describe('ArtifactStudio generating run', () => {
     expect(state.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-wireframe-live' },
     });
+  });
+
+  it('goes back to the list on Escape from a run that has no address of its own', async () => {
+    renderStudio();
+    openRow(/^Wireframe High fidelity,/);
+    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByTestId('artifact-run-detail')).toBeNull());
+    expect(state.up).not.toHaveBeenCalled();
   });
 
   it('follows the run to the artifact it produced', () => {

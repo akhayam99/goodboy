@@ -1811,7 +1811,7 @@
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 26
+      "count": 25
     }
   },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": {

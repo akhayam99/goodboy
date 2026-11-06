@@ -116,6 +116,8 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **Esc** closes the dialog or preview in front, listed as Close the dialog or preview.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop square for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
 - A menu, a drawer or a dialog that is open always takes the key first. The key leaves the page only when no turn runs.
+- In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
+- **⌘⌥W** and **⌘⌥P** on a run, a step, an agent or an artifact go to Runs or Artifacts. Pressed on the list they stay.
 
 **The Mac menu bar**
 

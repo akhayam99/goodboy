@@ -298,15 +298,24 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
   its spawned agents are in the Agents panel (see The session tools). Esc on
-  the run Overview calls `leaveRunLevel`: the Runs list, a new history entry.
+  the run page does what its back row does and lands on the Runs list, through
+  history when the list is the page below.
   An orchestrated run shows its document with **Orchestrated** selected
   ([The orchestrated document](../workflows.md#the-orchestrated-document)).
 - **An orchestrated run opens from Runs.** Runs stays selected while any run,
   agent or Auto conversation is in the center (the Runs page lists every
   current lens, `pageLensOf` read by `useSessionPageLens` in the open, folded
-  and flyout session levels). Esc on an orchestrated run (`leaveRunLevel`) and
-  going up to Runs from a run land on the list, because a place with no run
-  is the list. A step row of the document opens the step
+  and flyout session levels). Esc on an orchestrated run and going up to Runs
+  from a run land on the list, because a place with no run is the list.
+- **Esc is one ladder in a session** (`escapeLadder`, the base escape layer of
+  `SessionWorkspace`, the same steps as ⌘W below its studio). A popover or a
+  confirm takes Esc first (its own layer). In a field that holds text, Esc
+  leaves the field and keeps the text; while an agent runs, the composer's Esc
+  arms Stop first and the page stays. An open drawer closes. A page with a back
+  row does what the row does: a step goes to its run, a run or an agent to
+  Runs, a list page to the Overview. The Overview has no row and Esc does
+  nothing there. No page registers an Esc of its own to leave; the artifact
+  run page, which has no address yet, is the one exception. A step row of the document opens the step
   in the pane (drawer kind `run-step`), never the center.
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation with the Agents panel open (`openSpawned`), and Runs stays

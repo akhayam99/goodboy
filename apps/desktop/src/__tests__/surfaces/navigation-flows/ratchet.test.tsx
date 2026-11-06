@@ -57,7 +57,6 @@ const EXEMPT: Readonly<Record<string, string>> = {
   setActiveLens: 'internal to the navigation slice, the one door is navigate',
   openPalette: 'opens the palette overlay, every palette destination has its own row',
   openShortcutHelp: 'same page as the shortcuts settings row',
-  up: 'leaves an agent overlay for its parent place, which the lens rows cover',
   openArtifactConversation: 'an effect of the artifact studio, no control calls it',
   openDiffLens: 'only resolver thread cards and the resolve publish strip call it',
   openResolveDiff: 'resolve queue control, covered by the resolve flows in main-flows',

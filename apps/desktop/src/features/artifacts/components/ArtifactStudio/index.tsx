@@ -24,7 +24,8 @@ import {
   type ArtifactListRow,
 } from '../../artifactListRows';
 import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact';
-import { useEscapeToList } from '../../hooks/useEscapeToList';
+import { useEscapeLayer } from '@goodboy/ui';
+import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { openArtifactPage } from '../../openArtifactPage';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
@@ -50,7 +51,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
   const navigate = useAppStore((s) => s.navigate);
-  const up = useAppStore((s) => s.up);
   const filter = useAppStore((s) => s.artifactFilter[sessionId] ?? 'all');
   const setArtifactFilter = useAppStore((s) => s.setArtifactFilter);
   const awaitedAgentId = useAppStore((s) => s.awaitedArtifactAgentId[sessionId] ?? null);
@@ -217,18 +217,15 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     [navigate, sessionId],
   );
 
-  const backToList = useCallback(() => {
-    if (focusedRunAgentId !== null) {
+  useEscapeLayer(
+    () => {
+      if (isTextEntryTarget(document.activeElement)) {
+        return;
+      }
       setFocusedRunAgentId(null);
-      return;
-    }
-    up();
-  }, [focusedRunAgentId, up]);
-
-  useEscapeToList({
-    isActive: subject !== null && !isArtifactDrawerOpen,
-    onEscape: backToList,
-  });
+    },
+    subject?.kind === 'generation' && !isArtifactDrawerOpen,
+  );
 
   if (subject !== null) {
     const key = subject.kind === 'generation' ? subject.generation.agentId : subject.artifact.id;

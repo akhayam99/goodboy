@@ -1,4 +1,4 @@
-import { PaneShell, useEscapeLayer, useSkeletonGate } from '@goodboy/ui';
+import { PaneShell, useSkeletonGate } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -29,7 +29,6 @@ export const PresetRunPage = ({ session, focus }: Props) => {
     collection: 'workflows',
   });
   const phase = useSkeletonGate({ gateKey: focus.runId, isLoaded });
-  useEscapeLayer(() => leaveRunLevel({ sessionId: session.id }), agent === null);
   if (attached === null && (phase === 'skeleton' || phase === 'fading')) {
     return <RunPageSkeleton />;
   }
