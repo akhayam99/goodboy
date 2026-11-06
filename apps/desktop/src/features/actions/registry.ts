@@ -20,6 +20,7 @@ import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
+import { RUN_ROW_KIND } from './kinds/runRow';
 import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { NOTIFICATIONS_KIND } from './kinds/notifications';
@@ -132,6 +133,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: AGENT_KIND, state, target });
     case 'workflowRun':
       return bind({ definition: WORKFLOW_RUN_KIND, state, target });
+    case 'runRow':
+      return bind({ definition: RUN_ROW_KIND, state, target });
     case 'planPart':
       return bind({ definition: PLAN_PART_KIND, state, target });
     case 'question':

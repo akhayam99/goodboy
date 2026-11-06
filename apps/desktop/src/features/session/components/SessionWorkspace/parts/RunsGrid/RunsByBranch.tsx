@@ -24,12 +24,18 @@ type ToggleParams = {
   readonly key: string;
 };
 
+type RevealParams = {
+  readonly run: SessionRun;
+  readonly fromGroupKey: string;
+};
+
 type Props = {
   readonly groups: ReadonlyArray<BranchGroup>;
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly openGroups: ReadonlySet<string>;
   readonly onToggleGroup: (params: ToggleParams) => void;
   readonly onOpenBranch: (params: OpenParams) => void;
+  readonly onRevealRun: (params: RevealParams) => void;
   readonly renderRow: (params: BranchRowParams) => ReactNode;
 };
 
@@ -91,6 +97,7 @@ export const RunsByBranch = ({
   openGroups,
   onToggleGroup,
   onOpenBranch,
+  onRevealRun,
   renderRow,
 }: Props) => (
   <>
@@ -166,8 +173,14 @@ export const RunsByBranch = ({
               rowKey: `${group.key}/${run.id}`,
               titleSuffix: (
                 <>
-                  <RunBranchChip branches={partBranchesOf({ run, head })} />
-                  <RunAlsoOnChip branches={alsoOnOf({ run, groupKey: group.key, mounts })} />
+                  <RunBranchChip
+                    branches={partBranchesOf({ run, head })}
+                    onOpenBranch={onOpenBranch}
+                  />
+                  <RunAlsoOnChip
+                    branches={alsoOnOf({ run, groupKey: group.key, mounts })}
+                    onReveal={() => onRevealRun({ run, fromGroupKey: group.key })}
+                  />
                 </>
               ),
             }),

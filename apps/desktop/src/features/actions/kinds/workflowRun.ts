@@ -3,6 +3,7 @@ import {
   ListChecks,
   MessageCircleQuestion,
   Pause,
+  Pencil,
   Play,
   RotateCcw,
   SkipForward,
@@ -39,6 +40,8 @@ import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
 import { openQuestion } from '../../session/openQuestion';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
+import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
+import { runObjectKey, runTitleAnchorKey } from '../runObjectKey';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
@@ -392,6 +395,24 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         await env.getState().skipStuckStepAndAdvance(facts.sessionId, facts.run.id, {
           force: true,
           agentId: facts.skipStep.agent.id,
+        });
+      },
+    },
+    {
+      id: 'workflowRun.rename',
+      label: 'Rename',
+      icon: Pencil,
+      group: 'act',
+      when: () => true,
+      run: ({ facts, env }) => {
+        const objectKey = runObjectKey({ runId: facts.run.id });
+        if (requestRename({ objectKey, anchorKey: env.anchorKey })) {
+          return;
+        }
+        openRun({ env, facts });
+        dispatchAfterNavigation({
+          name: RENAME_REQUEST_EVENT,
+          detail: { objectKey, anchorKey: runTitleAnchorKey({ runId: facts.run.id }) },
         });
       },
     },

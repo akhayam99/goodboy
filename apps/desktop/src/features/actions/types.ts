@@ -252,6 +252,12 @@ export type WorkflowRunActionTarget = {
   readonly stepAgentId?: AgentId | null;
 };
 
+export type RunRowActionTarget = {
+  readonly kind: 'runRow';
+  readonly sessionId: SessionId;
+  readonly runId: WorkflowRunId;
+};
+
 export type QuestionActionTarget = {
   readonly kind: 'question';
   readonly sessionId: SessionId;
@@ -532,6 +538,7 @@ export type ObjectTarget =
   | DoneLaneActionTarget
   | AgentActionTarget
   | WorkflowRunActionTarget
+  | RunRowActionTarget
   | PlanPartActionTarget
   | QuestionActionTarget
   | ArtifactActionTarget

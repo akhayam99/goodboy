@@ -1,23 +1,18 @@
 import type { ReactNode } from 'react';
-import {
-  formatUsd,
-  ICON_SIZE,
-  ListGridRow,
-  StateDot,
-  TruncatedText,
-  UNREAD_TITLE,
-  cn,
-} from '@goodboy/ui';
+import { formatUsd, ICON_SIZE, ListGridRow, StateDot } from '@goodboy/ui';
 import { NAMES } from '../../../../../../shared/utils/names';
-import type { AgentId, Session } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLine';
 import type { ModelLine } from '../../../../../providers/modelLine/modelLineOf';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { formatSpan } from '../../../../../../shared/utils/time/formatSpan';
+import type { ObjectTarget } from '../../../../../actions/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
+import { RunRowTitle } from './RunRowTitle';
 import { RunRowVerb } from './RunRowVerb';
+import { runRowAnchorKey } from './runRowAnchorKey';
 
 type Props = {
   readonly session: Session;
@@ -42,12 +37,15 @@ const SHAPE_LABEL: Readonly<Record<SessionRunShape, string>> = {
   lead: NAMES.runKind.agent,
 };
 
-type MenuAgentParams = {
+type MenuParams = {
   readonly run: SessionRun;
+  readonly session: Session;
 };
 
-const menuAgentOf = ({ run }: MenuAgentParams): AgentId | null =>
-  run.open.kind === 'run' ? null : run.open.agentId;
+const menuTargetOf = ({ run, session }: MenuParams): ObjectTarget =>
+  run.open.kind === 'run'
+    ? { kind: 'runRow', sessionId: session.id, runId: run.open.runId }
+    : { kind: 'agent', sessionId: session.id, agentId: run.open.agentId };
 
 type TimeParams = {
   readonly run: SessionRun;
@@ -73,12 +71,9 @@ export const RunsGridRow = ({
   onOpen,
   onVerb,
 }: Props) => {
-  const sessionId = session.id;
-  const agentId = menuAgentOf({ run });
   const menu = useObjectMenuTrigger({
-    target:
-      agentId === null ? { kind: 'session', sessionId } : { kind: 'agent', sessionId, agentId },
-    anchorKey: `run:${run.id}`,
+    target: menuTargetOf({ run, session }),
+    anchorKey: runRowAnchorKey({ rowKey }),
   });
   const Icon = SHAPE_ICON[run.shape];
   return (
@@ -86,13 +81,29 @@ export const RunsGridRow = ({
       ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
       rowKey={rowKey}
-      asideColumn="verb"
-      aside={
-        run.verb === null ? undefined : (
-          <RunRowVerb session={session} verb={run.verb} isBusy={isVerbBusy} onPress={onVerb} />
-        )
-      }
-      {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
+      overlays={[
+        {
+          column: 'title',
+          node: (
+            <RunRowTitle
+              sessionId={session.id}
+              run={run}
+              rowKey={rowKey}
+              suffix={titleSuffix}
+              onOpen={onOpen}
+            />
+          ),
+        },
+        {
+          column: 'verb',
+          node:
+            run.verb === null ? null : (
+              <RunRowVerb session={session} verb={run.verb} isBusy={isVerbBusy} onPress={onVerb} />
+            ),
+        },
+      ]}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       cells={[
         <StateDot state={run.dot} label={run.stateWord} isLive={run.dot === 'running'} />,
         <Icon
@@ -100,12 +111,7 @@ export const RunsGridRow = ({
           aria-label={SHAPE_LABEL[run.shape]}
           className="text-muted-foreground"
         />,
-        <>
-          <TruncatedText className={cn('min-w-0 shrink', run.isUnread && UNREAD_TITLE)}>
-            {run.title}
-          </TruncatedText>
-          {titleSuffix}
-        </>,
+        '',
         run.origin,
         modelLine === null ? '' : <AgentModelLine line={modelLine} />,
         run.stateWord,

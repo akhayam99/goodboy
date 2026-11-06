@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { MountId } from '@goodboy/types';
 import { Button, ListGridGroup } from '@goodboy/ui';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import type { RunGroup } from '../../../../runGroupsOf';
@@ -11,12 +12,17 @@ export type StateRowParams = {
   readonly titleSuffix: ReactNode;
 };
 
+type OpenParams = {
+  readonly mountId: MountId;
+};
+
 type Props = {
   readonly groups: ReadonlyArray<RunGroup>;
   readonly isEarlierShown: boolean;
   readonly isArchivedShown: boolean;
   readonly onToggleEarlier: () => void;
   readonly onToggleArchived: () => void;
+  readonly onOpenBranch: (params: OpenParams) => void;
   readonly renderRow: (params: StateRowParams) => ReactNode;
 };
 
@@ -26,6 +32,7 @@ export const RunsByState = ({
   isArchivedShown,
   onToggleEarlier,
   onToggleArchived,
+  onOpenBranch,
   renderRow,
 }: Props) => (
   <>
@@ -72,7 +79,9 @@ export const RunsByState = ({
                 renderRow({
                   run,
                   rowKey: run.id,
-                  titleSuffix: <RunBranchChip branches={run.branches} />,
+                  titleSuffix: (
+                    <RunBranchChip branches={run.branches} onOpenBranch={onOpenBranch} />
+                  ),
                 }),
               )}
         </ListGridGroup>

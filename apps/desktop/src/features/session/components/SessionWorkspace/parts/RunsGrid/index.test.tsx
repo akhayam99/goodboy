@@ -585,7 +585,7 @@ describe('RunsGrid by branch', () => {
 
     expect(useAppStore.getState().groupBySession[NOW_SESSION]).toBe('state');
     const running = screen.getByRole('list', { name: 'Running' });
-    expect(within(running).getAllByRole('button')).toHaveLength(2);
+    expect(within(running).getAllByRole('button', { name: /^Open .*Running/ })).toHaveLength(2);
     within(running).getByText('fix/duplicate-credit');
   });
 
@@ -609,9 +609,11 @@ describe('RunsGrid by branch', () => {
     renderWorld({ agents: [lead, child, onRetry('limit', 'Limit retries')] });
     fireEvent.click(screen.getByRole('tab', { name: 'By state' }));
 
-    const row = screen.getByRole('button', { name: /^Open Move the backfill/ });
-    expect(row.querySelector('[data-run-branch]')?.textContent).toBe('fix/duplicate-credit');
-    expect(row.querySelector('[data-run-branch-more]')?.textContent).toBe('+1');
+    const item = screen.getByRole('button', { name: /^Open Move the backfill/ }).closest('li');
+    expect(within(item as HTMLElement).getByTestId('run-branch').textContent).toBe(
+      'fix/duplicate-credit',
+    );
+    expect(item?.querySelector('[data-run-branch-more]')?.textContent).toBe('+1');
   });
 
   it('shows Stop all and Continue all in the page action row of the By branch view', () => {

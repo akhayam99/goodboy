@@ -8,6 +8,7 @@ import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentRe
 import { branchPlace } from '../../../../../../store/slices/navigation/place';
 import type { GroupBy } from '../../../../../../store/slices/session-grouping/state';
 import { useGroupBy } from '../../../../../../store/slices/session-grouping/selectors';
+import { runGroupFocusOf } from '../../../../../../store/slices/navigation/runGroupFocusOf';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
@@ -47,6 +48,11 @@ type GroupParams = {
 
 type MountParams = {
   readonly mountId: MountId;
+};
+
+type RevealParams = {
+  readonly run: SessionRun;
+  readonly fromGroupKey: string;
 };
 
 type AgentParams = {
@@ -128,6 +134,8 @@ export const RunsGrid = ({ session, runs }: Props) => {
     groupBy === 'state' && returnRowId !== null && archived.some((run) => run.id === returnRowId);
   const foldKeyOfReturn = foldKeyOfReturnRow({ groupBy, returnRowId, branchGroups });
   const unfoldedFor = useRef<string | null>(null);
+  const [revealRowKey, setRevealRowKey] = useState<string | null>(null);
+  const arrivedGroupKey = useAppStore((state) => runGroupFocusOf({ state })?.groupKey ?? null);
 
   useEffect(() => {
     if (returnRowId === null || unfoldedFor.current === returnRowId) {
@@ -147,6 +155,30 @@ export const RunsGrid = ({ session, runs }: Props) => {
     }
   }, [returnRowId, isReturnEarlier, isReturnArchived, foldKeyOfReturn]);
 
+  useEffect(() => {
+    if (revealRowKey === null) {
+      return;
+    }
+    const row = document.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(revealRowKey)}"]`);
+    if (row === null) {
+      return;
+    }
+    setRevealRowKey(null);
+    row.scrollIntoView?.({ block: 'center' });
+    row.focus();
+  }, [revealRowKey]);
+
+  useEffect(() => {
+    if (arrivedGroupKey === null) {
+      return;
+    }
+    setOpenGroups((open) => new Set([...open, arrivedGroupKey]));
+    const firstRun = branchGroups.find((group) => group.key === arrivedGroupKey)?.runs[0];
+    if (firstRun !== undefined) {
+      setRevealRowKey(`${arrivedGroupKey}/${firstRun.id}`);
+    }
+  }, [arrivedGroupKey]);
+
   const toggleGroup = useCallback(({ key }: GroupParams) => {
     setOpenGroups((open) => {
       const next = new Set(open);
@@ -158,6 +190,19 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const openBranch = ({ mountId }: MountParams) => {
     const mount = mounts.find((candidate) => candidate.mountId === mountId);
     navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+  };
+
+  const revealRun = ({ run, fromGroupKey }: RevealParams) => {
+    const groupKeys = branchGroups
+      .filter((group) => group.runs.some((candidate) => candidate.id === run.id))
+      .map((group) => group.key);
+    const nextIndex = (groupKeys.indexOf(fromGroupKey) + 1) % groupKeys.length;
+    const groupKey = groupKeys[nextIndex];
+    if (groupKey === undefined || groupKey === fromGroupKey) {
+      return;
+    }
+    setOpenGroups((open) => new Set([...open, groupKey, archivedFoldKeyOf({ groupKey })]));
+    setRevealRowKey(`${groupKey}/${run.id}`);
   };
 
   const open = ({ run, rowKey }: RowParams) => {
@@ -244,6 +289,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
             openGroups={openGroups}
             onToggleGroup={toggleGroup}
             onOpenBranch={openBranch}
+            onRevealRun={revealRun}
             renderRow={renderRow}
           />
         ) : (
@@ -253,6 +299,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
             isArchivedShown={isArchivedShown}
             onToggleEarlier={() => setIsEarlierShown((isShown) => !isShown)}
             onToggleArchived={() => setIsArchivedShown((isShown) => !isShown)}
+            onOpenBranch={openBranch}
             renderRow={renderRow}
           />
         )}
