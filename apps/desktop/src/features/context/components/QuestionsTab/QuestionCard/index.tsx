@@ -108,7 +108,9 @@ export const QuestionCard = ({
         });
   const hasMenu = menuEntries.length > 1;
   const isDelegateInFooter = isCompact && !isHandedOff;
-  const isDelegateRowShown = isCompact || isHandedOff;
+  const isDelegateOnlyInMenu =
+    !hasMenu && menuEntries.some((entry) => entry.kind === 'item' && entry.key === 'delegate');
+  const isDelegateRowShown = isCompact || isHandedOff || isDelegateOnlyInMenu;
   const delegateRow = (
     <DelegateAnswerRow
       state={delegate.delegateState}

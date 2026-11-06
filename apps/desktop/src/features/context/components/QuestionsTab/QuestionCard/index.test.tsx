@@ -224,6 +224,13 @@ describe('QuestionCard', () => {
     expect(props.onDismiss).toHaveBeenCalledOnce();
   });
 
+  it('keeps Let an agent decide on the card when a blocking question has no other menu entry', () => {
+    const props = renderCard();
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: QUESTION_DELEGATE_COPY.offer }));
+    expect(props.delegate.onChooseDelegate).toHaveBeenCalledOnce();
+  });
+
   it('shows the answer that was sent', () => {
     renderCard({
       state: 'answered',
