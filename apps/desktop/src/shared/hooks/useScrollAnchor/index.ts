@@ -15,6 +15,7 @@ type Params = {
   readonly viewportRef: RefObject<HTMLElement | null>;
   readonly rowSelector: string;
   readonly shouldHold?: () => boolean;
+  readonly isTopTracked?: boolean;
   readonly onRowMeasured?: (params: MeasuredParams) => void;
 };
 
@@ -34,6 +35,7 @@ export const useScrollAnchor = ({
   viewportRef,
   rowSelector,
   shouldHold,
+  isTopTracked = false,
   onRowMeasured,
 }: Params) => {
   const holdRef = useRef(shouldHold);
@@ -60,8 +62,10 @@ export const useScrollAnchor = ({
     const observed = new Set<Element>();
 
     const viewportTop = () => viewport.getBoundingClientRect().top;
+    let savedTop = viewportTop();
 
     const record = () => {
+      savedTop = viewportTop();
       const rows = viewport.querySelectorAll(rowSelector);
       const top = viewportTop();
       const index = pickAnchor({
@@ -75,16 +79,22 @@ export const useScrollAnchor = ({
 
     const isHeld = () => isSuspended.current || isDragging || holdRef.current?.() === true;
 
+    const topShift = () =>
+      isTopTracked
+        ? anchorShift({ savedOffset: savedTop, currentOffset: viewportTop(), isHeld: isHeld() })
+        : 0;
+
     const compensate = () => {
       if (anchor === null || !anchor.row.isConnected) {
         record();
         return;
       }
-      const shift = anchorShift({
-        savedOffset: anchor.offset,
-        currentOffset: anchor.row.getBoundingClientRect().top - viewportTop(),
-        isHeld: isHeld(),
-      });
+      const shift =
+        anchorShift({
+          savedOffset: anchor.offset,
+          currentOffset: anchor.row.getBoundingClientRect().top - viewportTop(),
+          isHeld: isHeld(),
+        }) + topShift();
       if (shift !== 0) {
         viewport.scrollTop += shift;
       }
@@ -124,6 +134,10 @@ export const useScrollAnchor = ({
       }
       compensate();
     });
+
+    if (isTopTracked) {
+      resize.observe(viewport);
+    }
 
     const syncRows = () => {
       for (const row of observed) {
@@ -212,7 +226,7 @@ export const useScrollAnchor = ({
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [rowSelector, viewportRef]);
+  }, [rowSelector, viewportRef, isTopTracked]);
 
   return { suspend };
 };
