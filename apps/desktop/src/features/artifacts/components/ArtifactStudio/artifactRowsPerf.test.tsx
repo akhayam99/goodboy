@@ -99,7 +99,7 @@ afterEach(cleanup);
 describe('artifact list with 200 artifacts', () => {
   it('redraws at most two rows when one artifact changes state', async () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
-    expect(await screen.findByRole('heading', { name: /^Consumed 100$/ })).toBeDefined();
+    expect(await screen.findByRole('heading', { name: /^Used 100$/ })).toBeDefined();
     await waitFor(() =>
       expect(screen.getAllByTestId('artifact-row-frame')).toHaveLength(2 * PER_GROUP),
     );
@@ -121,9 +121,7 @@ describe('artifact list with 200 artifacts', () => {
       });
     });
 
-    await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /^Consumed 101$/ })).toBeDefined(),
-    );
+    await waitFor(() => expect(screen.getByRole('heading', { name: /^Used 101$/ })).toBeDefined());
     expect(glyph.renders).toBeLessThanOrEqual(2);
     expect(screen.getAllByTestId('artifact-row-frame')).toHaveLength(2 * PER_GROUP);
   });

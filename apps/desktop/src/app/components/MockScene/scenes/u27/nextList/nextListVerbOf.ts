@@ -11,6 +11,7 @@ export const nextListVerbOf = ({ label, ariaLabel }: Params): CardVerb => ({
   isDisabled: false,
   isBusy: false,
   confirmRole: null,
+  confirm: null,
   hasPicker: false,
   run: () => undefined,
 });

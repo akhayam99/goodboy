@@ -14,10 +14,8 @@ type Props = {
   readonly plan: PlanWithCount;
   readonly rows: ReadonlyArray<PlanPartRow>;
   readonly hasRun: boolean;
-  readonly splitSentence: string;
   readonly onOpenPart: (row: PlanPartRow) => void;
   readonly onSent?: (result: SendArtifactCommentsResult) => void;
-  readonly isApproveInBar?: boolean;
   readonly measure?: 'reading' | 'full';
 };
 
@@ -25,10 +23,8 @@ export const ArtifactPlanBody = ({
   plan,
   rows,
   hasRun,
-  splitSentence,
   onOpenPart,
   onSent,
-  isApproveInBar = true,
   measure = 'reading',
 }: Props) => {
   const hasRows = rows.length > 0;
@@ -41,12 +37,7 @@ export const ArtifactPlanBody = ({
   const hasLead = body.lead.length > 0;
 
   return (
-    <PlanCommentsProvider
-      sessionId={plan.sessionId}
-      plan={plan}
-      onSent={onSent}
-      isApproveInBar={isApproveInBar}
-    >
+    <PlanCommentsProvider sessionId={plan.sessionId} plan={plan} onSent={onSent}>
       <div data-testid="plan-body" className="flex min-w-0 flex-1 flex-col gap-6">
         {hasLead ? <PlanProse text={body.lead} section="lead" measure={measure} /> : null}
         <PlanParts
@@ -54,7 +45,6 @@ export const ArtifactPlanBody = ({
           planId={plan.id}
           rows={rows}
           hasRun={hasRun}
-          splitSentence={splitSentence}
           onOpenPart={onOpenPart}
           frameRow={({ row, children }) => (
             <PartCommentFrame index={row.index} title={row.title}>

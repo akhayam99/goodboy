@@ -33,6 +33,7 @@ const resolveOne = <F>({
     group: definition.group,
     ...(definition.submenu !== undefined && { submenu: definition.submenu }),
     slot: definition.slot?.({ facts }) ?? 'menu',
+    ...(definition.isSecondary !== undefined && { isSecondary: definition.isSecondary({ facts }) }),
     pendingLabel: definition.pendingLabel?.({ facts }) ?? null,
     doneLabel: definition.doneLabel?.({ facts }) ?? null,
     shortcut: definition.shortcut ?? null,

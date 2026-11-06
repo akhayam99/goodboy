@@ -1,3 +1,4 @@
+import type { UnsentCommentsConfirm } from '../../../../plans/unsentCommentsConfirmOf';
 import { useCallback, useRef, useState } from 'react';
 import type { ConfirmRole } from '@goodboy/ui';
 import type { MountId, Session } from '@goodboy/types';
@@ -47,6 +48,7 @@ export type CardVerb = {
   readonly isDisabled: boolean;
   readonly isBusy: boolean;
   readonly confirmRole: ConfirmRole | null;
+  readonly confirm: UnsentCommentsConfirm | null;
   readonly hasPicker: boolean;
   readonly run: () => void;
 };
@@ -114,6 +116,7 @@ type VerbParams = {
   readonly isBusy?: boolean;
   readonly isDisabled?: boolean;
   readonly confirmRole?: ConfirmRole | null;
+  readonly confirm?: UnsentCommentsConfirm | null;
   readonly hasPicker?: boolean;
 };
 
@@ -186,6 +189,7 @@ const verbOf = ({
   isBusy = false,
   isDisabled = false,
   confirmRole = null,
+  confirm = null,
   hasPicker = false,
 }: VerbParams): CardVerb => ({
   label,
@@ -193,6 +197,7 @@ const verbOf = ({
   isDisabled,
   isBusy,
   confirmRole,
+  confirm,
   hasPicker,
   run,
 });
@@ -484,6 +489,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
                 primary.requiresConfirm === true
                   ? (CONFIRM_ROLE[suggestion.kind] ?? 'primary')
                   : null,
+              confirm: primary.confirm ?? null,
               hasPicker: primary.shouldOpenPicker === true,
               run: () => {
                 clearFailure({ key: suggestion.id });

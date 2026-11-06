@@ -1228,6 +1228,7 @@ u36-p7-tools-stay-dark
 u36-p7-tools-stay-light
 u36-p8-question-dark
 u36-p8-question-light
+u36-plan-ran
 update-card
 update-card-long-version
 update-card-narrow

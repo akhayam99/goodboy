@@ -11,7 +11,6 @@ import {
   seedPlanDrawer,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
-import { unsentCommentsQuestion } from '../../../plans/unsentCommentsQuestion';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import { ArtifactListRow } from './ArtifactListRow';
 
@@ -146,7 +145,7 @@ describe('an artifact row asks beside its button', () => {
 
     fireEvent.click(primary('Approve'));
 
-    const dialog = screen.getByRole('dialog', { name: unsentCommentsQuestion({ count: 1 }) });
+    const dialog = screen.getByRole('dialog', { name: 'Approve without your comment?' });
     expect(frame.contains(dialog)).toBe(false);
     expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(within(dialog).getByRole('button', { name: 'Approve anyway' })).toBeDefined();
