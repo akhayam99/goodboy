@@ -1,6 +1,6 @@
 import type { MountId } from '@goodboy/types';
 import type { MountRowView } from '../../store/slices/project-mounts/mountRowModel';
-import { branchGroupKeysOf } from './branchGroupsOf';
+import { branchGroupKeysOf, branchGroupShownCountOf, branchGroupsOf } from './branchGroupsOf';
 import type { SessionRun } from './sessionRunsOf';
 
 export type BranchRunLink = Readonly<{
@@ -16,8 +16,7 @@ type Params = {
 };
 
 export const branchRunLinkOf = ({ runs, mounts, mountId }: Params): BranchRunLink | null => {
-  const touching = runs.filter((run) => run.branches.some((branch) => branch.mountId === mountId));
-  const [first] = touching;
+  const first = runs.find((run) => run.branches.some((branch) => branch.mountId === mountId));
   if (first === undefined) {
     return null;
   }
@@ -29,9 +28,14 @@ export const branchRunLinkOf = ({ runs, mounts, mountId }: Params): BranchRunLin
   if (groupKey === undefined) {
     return null;
   }
+  const group = branchGroupsOf({ runs, mounts }).find((candidate) => candidate.key === groupKey);
+  const count = group === undefined ? 0 : branchGroupShownCountOf({ group });
+  if (count === 0) {
+    return null;
+  }
   return {
     groupKey,
-    count: touching.length,
-    label: `${touching.length} ${touching.length === 1 ? 'run' : 'runs'}`,
+    count,
+    label: `${count} ${count === 1 ? 'run' : 'runs'}`,
   };
 };

@@ -107,6 +107,13 @@ type CountParams = {
   readonly runs: ReadonlyArray<SessionRun>;
 };
 
+type ShownCountParams = {
+  readonly group: BranchGroup;
+};
+
+export const branchGroupShownCountOf = ({ group }: ShownCountParams): number =>
+  group.runs.filter((run) => !run.isArchived).length;
+
 const countsOf = ({ runs }: CountParams): BranchGroupCounts => ({
   needsYou: runs.filter((run) => runGroupKeyOf({ run }) === 'needsYou').length,
   running: runs.filter((run) => runGroupKeyOf({ run }) === 'running').length,

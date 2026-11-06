@@ -88,4 +88,47 @@ describe('branchRunLinkOf', () => {
       'series:series-rec',
     );
   });
+
+  it('counts what the group shows and leaves archived runs out', () => {
+    const runs = [
+      aSessionRun({ id: 'block', branches: [branchOf(DUP)] }),
+      aSessionRun({ id: 'limit', branches: [branchOf(DUP)], isArchived: true }),
+      aSessionRun({ id: 'retired', branches: [branchOf(DUP)], isArchived: true }),
+    ];
+
+    expect(branchRunLinkOf({ runs, mounts: MOUNTS, mountId: DUP.id })?.label).toBe('1 run');
+  });
+
+  it('is absent when every run on the branch is archived', () => {
+    const runs = [aSessionRun({ id: 'retired', branches: [branchOf(DUP)], isArchived: true })];
+
+    expect(branchRunLinkOf({ runs, mounts: MOUNTS, mountId: DUP.id })).toBeNull();
+  });
+
+  it('counts every run of the series group, the way the group header does', () => {
+    const series = {
+      seriesId: 'series-rec',
+      name: 'Ledger reconciliation',
+      position: 1,
+      plannedCount: 2,
+      label: '1',
+    };
+    const first = {
+      ...aMountRow({ key: 'dup', projectName: 'payments-api', branch: 'fix/duplicate-credit' }),
+      series,
+    };
+    const second = {
+      ...aMountRow({ key: 'retry', projectName: 'notify-relay', branch: 'feat/retry-budget' }),
+      series: { ...series, position: 2, label: '2' },
+    };
+    const runs = [
+      aSessionRun({ id: 'first', branches: [branchOf(DUP)] }),
+      aSessionRun({ id: 'second', branches: [branchOf(RETRY)] }),
+    ];
+
+    const link = branchRunLinkOf({ runs, mounts: [first, second], mountId: DUP.id });
+
+    expect(link?.groupKey).toBe('series:series-rec');
+    expect(link?.count).toBe(2);
+  });
 });

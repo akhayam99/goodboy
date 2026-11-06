@@ -3,7 +3,12 @@ import type { MountId } from '@goodboy/types';
 import { Button, ListGridGroup, ListGridRow } from '@goodboy/ui';
 import type { MountRowView } from '../../../../../../store/slices/project-mounts/mountRowModel';
 import { branchGroupSummaryOf } from '../../../../branchGroupSummaryOf';
-import { alsoOnOf, type BranchGroup, type BranchGroupHead } from '../../../../branchGroupsOf';
+import {
+  alsoOnOf,
+  branchGroupShownCountOf,
+  type BranchGroup,
+  type BranchGroupHead,
+} from '../../../../branchGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import type { WorkBranch } from '../../../../workBranchesOf';
 import { RunAlsoOnChip } from './RunAlsoOnChip';
@@ -121,7 +126,7 @@ export const RunsByBranch = ({
           headingLevel={2}
           label={groupLabelOf({ group })}
           mark={mark === null ? undefined : <span>{mark}</span>}
-          count={group.runs.length - archived.length}
+          count={branchGroupShownCountOf({ group })}
           fold={
             isFoldable
               ? {

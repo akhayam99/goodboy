@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { aProject, nextSessionId } from '@goodboy/types/testing';
 import type { MountRowView } from '../../store/slices/project-mounts/mountRowModel';
 import { aMountRow, aRequest } from './central/branches/testing/aMountRow';
-import { alsoOnOf, branchGroupKeysOf, branchGroupsOf, NO_BRANCH_KEY } from './branchGroupsOf';
+import {
+  alsoOnOf,
+  branchGroupKeysOf,
+  branchGroupShownCountOf,
+  branchGroupsOf,
+  NO_BRANCH_KEY,
+} from './branchGroupsOf';
 import { aMountView } from './testing/aMountView';
 import { aSessionRun } from './testing/aSessionRun';
 import { workBranchesOf } from './workBranchesOf';
@@ -161,5 +167,16 @@ describe('branchGroupsOf', () => {
     const run = aSessionRun({ id: 'orphan', branches });
 
     expect(branchGroupKeysOf({ run, mounts: MOUNTS })).toEqual([NO_BRANCH_KEY]);
+  });
+
+  it('counts the runs a group shows and leaves archived ones out', () => {
+    const runs = [
+      aSessionRun({ id: 'live', branches: [DUP] }),
+      aSessionRun({ id: 'done', branches: [DUP], isFinished: true }),
+      aSessionRun({ id: 'old', branches: [DUP], isArchived: true }),
+    ];
+    const [group] = branchGroupsOf({ runs, mounts: MOUNTS });
+
+    expect(group === undefined ? -1 : branchGroupShownCountOf({ group })).toBe(2);
   });
 });
