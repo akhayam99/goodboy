@@ -1,3 +1,4 @@
+import { isThirdParty } from './isThirdParty.mjs';
 import { readPageError } from './readPageError.mjs';
 
 export const connect = async ({ socketUrl }) => {
@@ -35,6 +36,10 @@ export const connect = async ({ socketUrl }) => {
     }
     return response.result?.result?.value;
   };
-  const takeErrors = () => errors.splice(0);
+  const takeErrors = ({ pageOrigin }) =>
+    errors
+      .splice(0)
+      .filter(({ url }) => !isThirdParty({ url, pageOrigin }))
+      .map(({ text }) => text);
   return { send, evaluate, takeErrors, close: () => socket.close() };
 };
