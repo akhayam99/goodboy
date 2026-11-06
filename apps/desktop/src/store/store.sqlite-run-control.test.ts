@@ -438,6 +438,49 @@ describe('store on sqlite: Stop step waits, and Continue picks the cut step up',
     await resumed;
   });
 
+  it('turns auto run back on after a reload when Stop run had turned it off', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    const review = await startStep('Review');
+    await useAppStore.getState().stopWorkflowRunNow(sessionId, workflowRunId);
+    await review.finished;
+    const reloaded = await getSessionById(storySqlite(), sessionId);
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((session) =>
+        session.id === sessionId && reloaded !== null ? reloaded : session,
+      ),
+    }));
+    expect(runOf(workflowRunId)?.autoRun).toBe(false);
+
+    const resumed = useAppStore
+      .getState()
+      .continueStoppedAgent({ sessionId, agentId: agentIdOf('Review') });
+
+    await vi.waitFor(() => expect(startedNames()).toEqual(['Review', 'Review']));
+    await vi.waitFor(() => expect(runOf(workflowRunId)?.autoRun).toBe(true));
+    expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+    const saved = await getSessionById(storySqlite(), sessionId);
+    expect(saved?.workflowRuns[0]?.autoRun).toBe(true);
+    turns[1]?.finish();
+    await resumed;
+  });
+
+  it('leaves auto run off when it was off before Stop run', async () => {
+    const workflowRunId = await attachRun({ autoRun: false });
+    const review = await startStep('Review');
+    await useAppStore.getState().stopWorkflowRunNow(sessionId, workflowRunId);
+    await review.finished;
+
+    const resumed = useAppStore
+      .getState()
+      .continueStoppedAgent({ sessionId, agentId: agentIdOf('Review') });
+
+    await vi.waitFor(() => expect(startedNames()).toEqual(['Review', 'Review']));
+    await vi.waitFor(() => expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined());
+    expect(runOf(workflowRunId)?.autoRun).toBe(false);
+    turns[1]?.finish();
+    await resumed;
+  });
+
   it('keeps a step whose cancel failed running, gives the run back, and never marks it', async () => {
     const workflowRunId = await attachRun({ autoRun: true });
     const review = await startStep('Review');

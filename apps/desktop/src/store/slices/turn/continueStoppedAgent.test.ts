@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Agent } from '@goodboy/types';
 import { brandId, type StepId } from '@goodboy/types';
 import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
-import { stoppedAutoRuns } from '../workflows/runState/stoppedAutoRuns';
 import { useAppStore, type AppStore } from '../../store';
 import {
   FIXTURE_ROOT,
@@ -134,10 +133,23 @@ describe('continueStoppedAgent on a run you stopped', () => {
 
   type StopParams = {
     readonly sendTurn: AppStore['sendTurn'];
+    readonly wasAutoRun?: boolean;
   };
 
-  const continueStep = ({ sendTurn }: StopParams) => {
-    useAppStore.setState({ sessions: [aSession({ id: FIXTURE_SESSION, workflowRuns: [run] })] });
+  const continueStep = ({ sendTurn, wasAutoRun = false }: StopParams) => {
+    const stoppedRun = wasAutoRun
+      ? {
+          ...run,
+          orchestrationStop: {
+            kind: 'operator' as const,
+            message: 'You stopped this run.',
+            wasAutoRun: true,
+          },
+        }
+      : run;
+    useAppStore.setState({
+      sessions: [aSession({ id: FIXTURE_SESSION, workflowRuns: [stoppedRun] })],
+    });
     const setWorkflowRunAutoRun = vi.fn<AppStore['setWorkflowRunAutoRun']>(async () => undefined);
     const get = () => ({
       ...useAppStore.getState(),
@@ -169,8 +181,8 @@ describe('continueStoppedAgent on a run you stopped', () => {
   });
 
   it('turns the run back on its own once the step started, when Stop run turned it off', async () => {
-    stoppedAutoRuns.remember({ workflowRunId: run.id });
     const { continuing, setWorkflowRunAutoRun } = continueStep({
+      wasAutoRun: true,
       sendTurn: vi.fn(async ({ onStarted }) => {
         onStarted?.();
         return { blockedOverBudget: false };
@@ -180,7 +192,6 @@ describe('continueStoppedAgent on a run you stopped', () => {
     await continuing;
 
     expect(setWorkflowRunAutoRun).toHaveBeenCalledWith(FIXTURE_SESSION, run.id, true);
-    expect(stoppedAutoRuns.has({ workflowRunId: run.id })).toBe(false);
   });
 });
 

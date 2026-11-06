@@ -67,7 +67,6 @@ vi.mock('../../../features/workflows/workflows', () => ({
 import type { CancelOutcome } from '../turn/cancelTurnConfirmed';
 import { clearAgentStopping, isAgentStopping, markAgentStopping } from '../turn/stoppingAgents';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
-import { stoppedAutoRuns } from './runState/stoppedAutoRuns';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -157,7 +156,6 @@ const runOf = (state: State) => (state['sessions'] as ReadonlyArray<Session>)[0]
 beforeEach(() => {
   vi.clearAllMocks();
   invokeAgentListSpy.mockResolvedValue([]);
-  stoppedAutoRuns.forget({ workflowRunId: RUN_ID });
 });
 
 describe('stopWorkflowRunNow', () => {
@@ -184,7 +182,7 @@ describe('stopWorkflowRunNow', () => {
     );
     expect(runOf(state).autoRun).toBe(false);
     expect(runOf(state).orchestrationStop?.kind).toBe('operator');
-    expect(stoppedAutoRuns.has({ workflowRunId: RUN_ID })).toBe(true);
+    expect(runOf(state).orchestrationStop?.wasAutoRun).toBe(true);
   });
 
   it('leaves no agent stranded on running', async () => {
@@ -219,7 +217,6 @@ describe('stopWorkflowRunNow', () => {
       const outcome = await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
 
       expect(outcome).toBe('still_running');
-      expect(stoppedAutoRuns.has({ workflowRunId: RUN_ID })).toBe(false);
       expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
       expect(runOf(state).orchestrationStop).toBeUndefined();
       expect(runOf(state).autoRun).toBe(true);
@@ -268,6 +265,18 @@ describe('stopWorkflowRunNow', () => {
 
     expect(seen).toEqual([true, true]);
     expect(isAgentStopping({ agentId: AGENT_ID })).toBe(false);
+  });
+
+  it('keeps that auto run was on when you press Stop run a second time', async () => {
+    const state = baseState();
+    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'stopped' }]);
+    const { set, get } = harness(state);
+
+    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+
+    expect(runOf(state).autoRun).toBe(false);
+    expect(runOf(state).orchestrationStop?.wasAutoRun).toBe(true);
   });
 
   it('clears the operator stop when autorun goes back on', async () => {

@@ -1,7 +1,6 @@
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
 import { sessionById } from '../sessions/sessionIndex';
-import { stoppedAutoRuns } from '../workflows/runState/stoppedAutoRuns';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import { withStepBoundary } from './kickoff';
@@ -33,9 +32,8 @@ const releaseOperatorStop = async ({ set, get, sessionId, agent }: ReleaseParams
   if (run?.orchestrationStop?.kind !== 'operator') {
     return;
   }
-  if (stoppedAutoRuns.has({ workflowRunId })) {
+  if (run.orchestrationStop.wasAutoRun === true) {
     await get().setWorkflowRunAutoRun(sessionId, workflowRunId, true);
-    stoppedAutoRuns.forget({ workflowRunId });
     return;
   }
   await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });

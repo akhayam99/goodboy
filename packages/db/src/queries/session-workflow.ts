@@ -78,11 +78,29 @@ type StopColumns = {
   readonly kind: string;
 };
 
+const OPERATOR_STOP_OF_AUTO_RUN = 'operator:auto-run';
+
 const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | null => {
   if (message == null || message === '') {
     return null;
   }
+  if (kind === OPERATOR_STOP_OF_AUTO_RUN) {
+    return { kind: 'operator', message, wasAutoRun: true };
+  }
   return { kind: kind as WorkflowOrchestrationStopKind, message };
+};
+
+type StopKindParams = {
+  readonly stop: WorkflowOrchestrationStop | null;
+};
+
+const stopKindColumnOf = ({ stop }: StopKindParams): string => {
+  if (stop === null) {
+    return 'failure';
+  }
+  return stop.kind === 'operator' && stop.wasAutoRun === true
+    ? OPERATOR_STOP_OF_AUTO_RUN
+    : stop.kind;
 };
 
 export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
@@ -498,7 +516,7 @@ export const updateWorkflowRunOrchestrationStop = async (
 ): Promise<void> => {
   await db.execute(
     'UPDATE session_workflows SET orchestration_error = ?, orchestration_stop_kind = ? WHERE workflow_run_id = ?',
-    [stop?.message ?? null, stop?.kind ?? 'failure', workflowRunId],
+    [stop?.message ?? null, stopKindColumnOf({ stop }), workflowRunId],
   );
 };
 
