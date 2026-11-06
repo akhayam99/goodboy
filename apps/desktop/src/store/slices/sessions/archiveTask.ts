@@ -5,12 +5,24 @@ import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { touchArchivedCache } from '../summaries/archivedCacheVersion';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
+import { stopWork } from '../../runtime/live-work/stopWork';
+
+const STILL_RUNNING_MESSAGE =
+  'An agent did not stop, so the session stays where it was. Try Archive again.';
 
 export const archiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
     const prev = sessionById(get().sessions, sessionId);
     if (!prev) {
       return;
+    }
+    const { stillRunning } = await stopWork({
+      getState: get,
+      scope: { kind: 'session', sessionId },
+      reason: 'user',
+    });
+    if (stillRunning > 0) {
+      throw new Error(STILL_RUNNING_MESSAGE);
     }
     const nowIso = new Date().toISOString() as IsoDateTime;
     const archived: Session = { ...prev, archivedAt: nowIso };

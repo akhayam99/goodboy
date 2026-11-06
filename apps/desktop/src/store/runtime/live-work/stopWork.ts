@@ -1,9 +1,11 @@
-import type { Agent, AgentId, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
+import type { Agent, AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import { cancelTurn } from '../../../features/chat/turn';
+import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import type { AppStore } from '../../store';
 import { cancelledRunIds } from '../../slices/sessions/sessionMutators';
 import type { CancelTurnReason } from '../../slices/turn/cancelCurrentTurn';
 import { cancelTurnStartWindow } from '../../slices/turn/turnStartWindow';
+import { liveAgentsOf } from './liveAgentsOf';
 import { selectLiveWork } from './selectLiveWork';
 
 export type StopWorkScope =
@@ -37,13 +39,6 @@ type Target = Readonly<{
   wasLive: boolean;
 }>;
 
-type TurnParams = Readonly<{
-  turnState: TurnState | undefined;
-}>;
-
-const isLiveTurn = ({ turnState }: TurnParams): boolean =>
-  turnState?.kind === 'running' || turnState?.kind === 'starting' || turnState?.kind === 'blocked';
-
 type ScopeParams = Readonly<{
   scope: StopWorkScope;
   sessionId: SessionId;
@@ -58,18 +53,16 @@ type StateParams = Readonly<{
 }>;
 
 const targetsOf = ({ state, scope }: StateParams): ReadonlyArray<Target> =>
-  Object.entries(state.sessionPhaseRuns).flatMap(([sessionId, agents]) => {
-    const id = sessionId as SessionId;
-    if (!isInScope({ scope, sessionId: id })) {
+  Object.keys(state.sessionPhaseRuns).flatMap((key) => {
+    const sessionId = key as SessionId;
+    if (!isInScope({ scope, sessionId })) {
       return [];
     }
-    return (agents ?? []).flatMap((agent) => {
-      const wasLive = isLiveTurn({ turnState: state.agentTurnState[agent.id] });
-      if (!wasLive && agent.status !== 'running') {
-        return [];
-      }
-      return [{ sessionId: id, agent, wasLive }];
-    });
+    return liveAgentsOf({ state, sessionId }).map((agent) => ({
+      sessionId,
+      agent,
+      wasLive: isTurnStateLive({ turnState: state.agentTurnState[agent.id], includeBlocked: true }),
+    }));
   });
 
 type OrphanParams = StateParams &
