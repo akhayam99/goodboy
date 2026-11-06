@@ -150,7 +150,7 @@ const mockEngines = () => {
     async () => undefined,
   );
   const savePhaseTemplate = vi.fn<StoryState['savePhaseTemplate']>(async () => RUN_TEMPLATE);
-  const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => undefined);
+  const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => 'stopped');
   const discardWorkflow = vi.fn<StoryState['discardWorkflow']>(async () => undefined);
   const closeWorkflowRun = vi.fn<StoryState['closeWorkflowRun']>(async () => 'closed');
   useAppStore.setState({

@@ -1809,11 +1809,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 25
-    }
-  },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -2301,7 +2296,7 @@
   },
   "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 41
+      "count": 40
     }
   },
   "apps/desktop/src/features/chat/components/ChatInput/index.tsx": {
@@ -2315,11 +2310,6 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerDispatchError.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerPlusMenu.tsx": {
@@ -11227,7 +11217,7 @@
   },
   "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
+      "count": 15
     }
   },
   "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": {

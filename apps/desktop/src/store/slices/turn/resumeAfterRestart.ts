@@ -1,6 +1,7 @@
 import type { AgentId, IsoDateTime, ProviderId, ProviderRunId, SessionId } from '@goodboy/types';
 import { planRestartResume, type RestartReason } from './planRestartResume';
 import { withStepBoundary } from './kickoff';
+import { throwIfRefused } from './refusal/throwIfRefused';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -11,7 +12,7 @@ type Params = {
   readonly reason: RestartReason;
 };
 
-export type ResumeAfterRestartResult = 'resumed' | 'unresumable' | 'blocked';
+type ResumeAfterRestartResult = 'resumed' | 'unresumable';
 
 export const resumeAfterRestart = async ({
   get,
@@ -50,6 +51,6 @@ export const resumeAfterRestart = async ({
   });
   const content =
     plan.mode === 'resend' ? plan.prompt : withStepBoundary({ agent, text: plan.prompt });
-  const result = await get().sendTurn({ sessionId, agentId, content });
-  return result.blockedOverBudget ? 'blocked' : 'resumed';
+  throwIfRefused({ result: await get().sendTurn({ sessionId, agentId, content }) });
+  return 'resumed';
 };

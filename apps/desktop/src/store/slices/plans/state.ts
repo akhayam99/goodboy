@@ -3,9 +3,11 @@ import type { SessionId, PlanWithCount, PlanId, PlanConsumption } from '@goodboy
 export type PlansState = {
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
+  readonly planStarts: Readonly<Record<PlanId, number>>;
 };
 
 export const plansInitialState: PlansState = {
   sessionPlans: {},
   planConsumptions: {},
+  planStarts: {},
 };

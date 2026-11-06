@@ -582,7 +582,7 @@ describe('the session rail top row and its menu', () => {
     await act(async () => {
       fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
     });
-    expect(within(rail()).getByText(/database is locked/)).toBeDefined();
+    expect(screen.getByText(/database is locked/)).toBeDefined();
     expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
@@ -622,25 +622,53 @@ describe('the session rail top row and its menu', () => {
     expect(deleteTask).toHaveBeenCalledWith(openId);
   });
 
-  it('asks before Archive, and Cancel leaves the session live', async () => {
+  it('with a live agent asks before Archive, and Cancel leaves the session live', async () => {
     seed();
+    useAppStore.setState({
+      sessionPhaseRuns: { [openId]: [anAgent({ sessionId: openId, status: 'running' })] },
+    });
     const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>();
     useAppStore.setState({ bulkArchiveTask });
     mountColumn();
 
     fireEvent.click(menuItem({ name: /^Archive/ }));
-    const dialog = within(await screen.findByRole('dialog', { name: 'Archive session?' }));
+    const dialog = within(await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' }));
     expect(dialog.getByText(/stay on disk/)).toBeDefined();
-    expect(dialog.queryByText(/running/)).toBeNull();
     await act(async () => {
       fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
     });
 
     expect(bulkArchiveTask).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog', { name: 'Archive session?' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Stop 1 agent and archive?' })).toBeNull();
   });
 
-  it('names the running agents in the Archive confirm, archives on confirm and undoes from the toast', async () => {
+  it('archives an idle session with no confirm and undoes from the toast', async () => {
+    seed();
+    const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async () => ({
+      succeeded: [openId],
+      failed: [],
+    }));
+    const bulkUnarchiveTask = vi.fn<AppStore['bulkUnarchiveTask']>(async () => ({
+      succeeded: [openId],
+      failed: [],
+    }));
+    useAppStore.setState({ bulkArchiveTask, bulkUnarchiveTask });
+    mountColumn();
+
+    const archiveItem = menuItem({ name: /^Archive/ });
+    await act(async () => {
+      fireEvent.click(archiveItem);
+    });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(bulkArchiveTask).toHaveBeenCalledWith([openId]);
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    });
+    expect(bulkUnarchiveTask).toHaveBeenCalledWith([openId]);
+  });
+
+  it('names the live agents it stops in the Archive confirm, archives on confirm and undoes from the toast', async () => {
     seed();
     useAppStore.setState({
       sessionPhaseRuns: { [openId]: [anAgent({ sessionId: openId, status: 'running' })] },
@@ -657,14 +685,10 @@ describe('the session rail top row and its menu', () => {
     mountColumn();
 
     fireEvent.click(menuItem({ name: /^Archive/ }));
-    const dialog = within(await screen.findByRole('dialog', { name: 'Archive session?' }));
-    expect(
-      dialog.getByText(
-        /1 agent is still running in this session and keeps running after you archive it/,
-      ),
-    ).toBeDefined();
+    const dialog = within(await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' }));
+    expect(dialog.getByText(/Archive stops it first and keeps what it wrote/)).toBeDefined();
     await act(async () => {
-      fireEvent.click(dialog.getByRole('button', { name: 'Archive session' }));
+      fireEvent.click(dialog.getByRole('button', { name: 'Stop 1 agent and archive' }));
     });
     expect(bulkArchiveTask).toHaveBeenCalledWith([openId]);
 
@@ -674,7 +698,7 @@ describe('the session rail top row and its menu', () => {
     expect(bulkUnarchiveTask).toHaveBeenCalledWith([openId]);
   });
 
-  it('says why Archive failed under the top row, keeps the session live and retries', async () => {
+  it('says why Archive failed, keeps the session live, and a second Archive retries', async () => {
     seed();
     const bulkArchiveTask = vi
       .fn<AppStore['bulkArchiveTask']>()
@@ -683,15 +707,16 @@ describe('the session rail top row and its menu', () => {
     useAppStore.setState({ bulkArchiveTask });
     mountColumn();
 
-    fireEvent.click(menuItem({ name: /^Archive/ }));
-    const dialog = await screen.findByRole('dialog', { name: 'Archive session?' });
+    const archiveItem = menuItem({ name: /^Archive/ });
     await act(async () => {
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Archive session' }));
+      fireEvent.click(archiveItem);
     });
-    expect(within(rail()).getByText(/database is locked/)).toBeDefined();
+    expect(screen.getByText(/database is locked/)).toBeDefined();
+    expect(useAppStore.getState().sessions.map((session) => session.id)).toContain(openId);
 
+    const again = menuItem({ name: /^Archive/ });
     await act(async () => {
-      fireEvent.click(within(rail()).getByRole('button', { name: 'Retry' }));
+      fireEvent.click(again);
     });
     expect(bulkArchiveTask).toHaveBeenCalledTimes(2);
     expect(bulkArchiveTask).toHaveBeenLastCalledWith([openId]);

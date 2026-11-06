@@ -53,6 +53,9 @@ const worldOf = ({ outcomes, idleTurns = [] }: WorldParams) => {
     anAgent({ id: idOf('elsewhere'), sessionId: OTHER_SESSION_ID, status: 'running' }),
   ];
   const state: StopAllState = {
+    sessions: [],
+    orchestratingWorkflowRuns: {},
+    stopWorkflowRunNow: vi.fn(async () => 'stopped' as const),
     sessionPhaseRuns: {
       [SESSION_ID]: agents.filter((agent) => agent.sessionId === SESSION_ID),
       [OTHER_SESSION_ID]: agents.filter((agent) => agent.sessionId === OTHER_SESSION_ID),
@@ -127,6 +130,28 @@ describe('stopAllRunningAgents', () => {
       error: failure,
       sessionId: SESSION_ID,
     });
+  });
+
+  it('counts a permission wait and a starting turn as stopped work', async () => {
+    const { cancel, getState } = worldOf({
+      outcomes: { 'agent-a': EXITED, 'agent-b': EXITED },
+    });
+    const state = getState();
+    const blocked = {
+      kind: 'blocked' as const,
+      runId: brandId<ProviderRunId>({ value: 'run-agent-a' }),
+      blockedAt: brandId<IsoDateTime>({ value: AT }),
+    };
+    const starting = { kind: 'starting' as const, startedAt: brandId<IsoDateTime>({ value: AT }) };
+    const waiting: StopAllState = {
+      ...state,
+      agentTurnState: { [idOf('agent-a')]: blocked, [idOf('agent-b')]: starting },
+    };
+
+    const result = await stopAllRunningAgents({ getState: () => waiting, sessionId: SESSION_ID });
+
+    expect(cancel).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ stopped: 2, stillRunning: 0 });
   });
 
   it('says what happened when nothing could be stopped, or everything was', () => {

@@ -13,12 +13,13 @@ type UseMessageQueueArgs = {
 const EMPTY: ReadonlyArray<AgentQueuedTurn> = [];
 
 export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueArgs) => {
-  const queue = useAppStore((s) => (agentId ? (s.agentQueue[agentId] ?? EMPTY) : EMPTY));
+  const queue = useAppStore((s) => (agentId === null ? EMPTY : (s.agentQueue[agentId] ?? EMPTY)));
   const enqueueAgentMessage = useAppStore((s) => s.enqueueAgentMessage);
   const removeQueuedMessage = useAppStore((s) => s.removeQueuedMessage);
   const takeQueuedMessage = useAppStore((s) => s.takeQueuedMessage);
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
   const sendAgentMessageNow = useAppStore((s) => s.sendAgentMessageNow);
+  const retryQueuedMessage = useAppStore((s) => s.retryQueuedMessage);
 
   const enqueue = useCallback(
     (turn: QueuedTurn) => void enqueueAgentMessage({ turn }),
@@ -32,17 +33,17 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
 
   const removeQueued = useCallback(
     (itemId: string) => {
-      if (!agentId) {
+      if (agentId === null) {
         return;
       }
-      void removeQueuedMessage({ agentId, itemId });
+      void removeQueuedMessage({ sessionId, agentId, itemId });
     },
-    [agentId, removeQueuedMessage],
+    [agentId, removeQueuedMessage, sessionId],
   );
 
   const sendQueued = useCallback(
     (itemId: string) => {
-      if (!agentId) {
+      if (agentId === null) {
         return;
       }
       void sendQueuedNow({ sessionId, agentId, itemId });
@@ -50,19 +51,48 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
     [agentId, sendQueuedNow, sessionId],
   );
 
-  const editQueued = useCallback(
+  const retryQueued = useCallback(
     (itemId: string) => {
-      if (!agentId) {
+      if (agentId === null) {
         return;
       }
-      const item = takeQueuedMessage({ agentId, itemId });
+      void retryQueuedMessage({ sessionId, agentId, itemId });
+    },
+    [agentId, retryQueuedMessage, sessionId],
+  );
+
+  const forceQueued = useCallback(
+    (itemId: string) => {
+      if (agentId === null) {
+        return;
+      }
+      void retryQueuedMessage({ sessionId, agentId, itemId, isForced: true });
+    },
+    [agentId, retryQueuedMessage, sessionId],
+  );
+
+  const editQueued = useCallback(
+    (itemId: string) => {
+      if (agentId === null) {
+        return;
+      }
+      const item = takeQueuedMessage({ sessionId, agentId, itemId });
       if (item === null) {
         return;
       }
       onEdit(item);
     },
-    [agentId, takeQueuedMessage, onEdit],
+    [agentId, takeQueuedMessage, onEdit, sessionId],
   );
 
-  return { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued };
+  return {
+    queue,
+    enqueue,
+    sendNow,
+    removeQueued,
+    sendQueued,
+    retryQueued,
+    forceQueued,
+    editQueued,
+  };
 };

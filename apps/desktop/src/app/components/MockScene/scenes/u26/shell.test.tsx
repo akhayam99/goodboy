@@ -172,8 +172,8 @@ describe('the u26 shell scenes', () => {
 
     expect(document.querySelector('[data-session-foot]')).toBeNull();
 
-    const dialog = within(screen.getByRole('dialog', { name: 'Archive session?' }));
-    expect(dialog.getByText(/still running in this session/)).toBeDefined();
+    const dialog = within(screen.getByRole('dialog', { name: 'Stop 1 agent and archive?' }));
+    expect(dialog.getByText(/Archive stops it first/)).toBeDefined();
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

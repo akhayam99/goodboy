@@ -97,7 +97,7 @@ const openChip = ({ phase }: RenderParams) => {
 
 const seedWork = () => {
   const spawnAgent = vi.fn<StoryState['spawnAgent']>(async () => NEW_AGENT);
-  const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => undefined);
+  const stopWorkflowRunNow = vi.fn<StoryState['stopWorkflowRunNow']>(async () => 'stopped');
   const closeWorkflowRun = vi.fn<StoryState['closeWorkflowRun']>(async () => 'closed');
   useAppStore.setState({
     spawnAgent,

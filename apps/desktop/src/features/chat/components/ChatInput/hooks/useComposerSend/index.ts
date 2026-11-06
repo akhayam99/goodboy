@@ -94,14 +94,14 @@ export const useComposerSend = ({
       if (selectedAgentId == null) {
         return;
       }
-      const result = await dispatch.dispatchTurn({
+      const outcome = await dispatch.dispatchTurn({
         content,
         atts,
         override,
         agentId: selectedAgentId,
         force,
       });
-      if (!result.blockedOverBudget) {
+      if (outcome !== 'unwritten') {
         return;
       }
       const current = useAppStore.getState().agentDraft[selectedAgentId] ?? '';
@@ -136,7 +136,6 @@ export const useComposerSend = ({
       return;
     }
     dispatch.setError(null);
-    dispatch.setLastFailedTurn(null);
 
     if (!force) {
       if (await scope.checkAndInterceptScope(content, atts)) {

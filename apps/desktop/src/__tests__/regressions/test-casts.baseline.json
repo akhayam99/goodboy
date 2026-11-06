@@ -388,7 +388,7 @@
     "apps/desktop/src/store/slices/workflows/recordOrchestratorUsage.test.ts": 2,
     "apps/desktop/src/store/slices/workflows/retryWorkflowOrchestration.test.ts": 2,
     "apps/desktop/src/store/slices/workflows/setWorkflowRunSpendLimit.test.ts": 2,
-    "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": 5,
+    "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": 3,
     "apps/desktop/src/store/slices/workspaces/projects.test.ts": 2,
     "apps/desktop/src/store/slices/worktrees/changeSessionBranch.test.ts": 2,
     "apps/desktop/src/store/slices/worktrees/reconcileOrphanWorktrees.test.ts": 4,

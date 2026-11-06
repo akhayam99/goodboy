@@ -4,6 +4,8 @@ import {
   fromStoredAttachment,
   type PendingAttachment,
 } from '../../../../../attachments/pendingAttachment';
+import { useAppStore } from '../../../../../../store';
+import { isQueueParked } from '../../../../../../store/slices/agentQueue/isQueueParked';
 import { autoTreeOfAgent } from '../../../../../auto/autoTreeOfAgent';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
@@ -18,7 +20,10 @@ type Params = {
   readonly views: ReadonlyArray<AutoTreeView>;
   readonly setValue: (next: string) => void;
   readonly setAttachments: (next: ReadonlyArray<PendingAttachment>) => void;
-  readonly routing: ReturnType<typeof useTurnRouting>;
+  readonly routing: Pick<
+    ReturnType<typeof useTurnRouting>,
+    'setSelectedProviderState' | 'setSelectedModelState' | 'setEffortState'
+  >;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 
@@ -45,23 +50,42 @@ export const useComposerQueue = ({
     [setValue, setAttachments, routing, wrapperRef],
   );
 
-  const { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued } = useMessageQueue({
+  const {
+    queue,
+    enqueue,
+    sendNow,
+    removeQueued,
+    sendQueued,
+    retryQueued,
+    forceQueued,
+    editQueued,
+  } = useMessageQueue({
     sessionId,
     agentId,
     onEdit: onEditQueued,
   });
+  const isAgentStopped = useAppStore((state) =>
+    isQueueParked({
+      agent: (state.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === agentId),
+    }),
+  );
   const tree = agentId === null ? null : autoTreeOfAgent({ views, agentId });
   const queued = useQueuedRows({
     sessionId,
     queue,
     view: tree?.kind === 'root' ? tree.view : null,
+    isAgentStopped,
     editQueued,
     removeQueued,
     sendQueued,
+    retryQueued,
     setValue,
     setAttachments,
     wrapperRef,
   });
 
-  return { enqueue, sendNow, queued };
+  const heldId = queue.find((turn) => turn.hold !== undefined)?.id ?? null;
+  const sendHeldAnyway = heldId === null ? null : () => forceQueued(heldId);
+
+  return { enqueue, sendNow, queued, sendHeldAnyway };
 };

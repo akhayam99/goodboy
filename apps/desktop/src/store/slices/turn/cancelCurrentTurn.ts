@@ -7,7 +7,7 @@ import { cancelTurnConfirmed } from './cancelTurnConfirmed';
 import { cancelTurnStartWindow } from './turnStartWindow';
 import type { GetFn, SetFn } from './types';
 
-export type CancelTurnReason = 'user' | 'handoff' | 'teardown';
+export type CancelTurnReason = 'user' | 'leave' | 'handoff' | 'teardown';
 
 export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
   return async (
@@ -19,7 +19,7 @@ export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
     if (activeAgentId == null) {
       return;
     }
-    if (reason === 'user') {
+    if (reason === 'user' || reason === 'leave') {
       await cancelTurnConfirmed(set, get)({ sessionId, agentId: activeAgentId, reason });
       return;
     }

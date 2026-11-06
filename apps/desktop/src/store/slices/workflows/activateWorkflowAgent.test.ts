@@ -86,6 +86,7 @@ type SendTurnInput = {
   readonly agentId: AgentId;
   readonly content: string;
   readonly origin?: 'workflow';
+  readonly onStarted?: () => void;
 };
 
 function makePlan(overrides: Partial<PlanWithCount> = {}): PlanWithCount {
@@ -168,7 +169,10 @@ function buildHarness(opts: {
     createdAt: NOW,
     updatedAt: NOW,
   };
-  const sendTurn = vi.fn(async (_arg: SendTurnInput) => undefined);
+  const sendTurn = vi.fn(async (arg: SendTurnInput) => {
+    arg.onStarted?.();
+    return { blockedOverBudget: false };
+  });
   const ensureProjectMounted = vi.fn(async () => undefined);
   const sessionSlots: Record<string, ReadonlyArray<ContextSlot>> = {};
   const state = {

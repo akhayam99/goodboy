@@ -16,7 +16,7 @@ export const createTurnSlice = ({ set, get }: SliceDeps) => {
     cancelTurnConfirmed: cancelTurnConfirmed(set, get),
     cancelWriterWait: cancelWriterWait({ get }),
     answerWithoutEditing: answerWithoutEditing({ get }),
-    continueStoppedAgent: continueStoppedAgent(get),
+    continueStoppedAgent: continueStoppedAgent(set, get),
     resumeStoppedAgents: resumeStoppedAgents(get),
     retrySummarizer: retrySummarizer(set, get),
     requestContextUpdate: requestContextUpdate(set, get),

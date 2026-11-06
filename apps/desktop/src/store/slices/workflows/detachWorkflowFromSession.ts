@@ -8,6 +8,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
+import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { stopAgentForDelete } from '../agents/stopAgentForDelete';
 import { releaseAgentFiles } from '../agents/releaseAgentFiles';
 import { omitDeletedAgents } from '../agents/omitDeletedAgents';
@@ -96,6 +97,7 @@ export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
 
     const refreshed = await invokeAgentList(sessionId);
     dropPendingTurnEvents({ agentIds: [...ownedIds] });
+    storedAgentDraft.forget({ agentIds: [...ownedIds] });
     const remaining = session.workflowRuns.filter((r) => r.id !== workflowRunId);
     const stillUsesTemplate = remaining.some((r) => r.workflowId === run.workflowId);
     let derived: ReturnType<typeof deriveSessionState> | null = null;
