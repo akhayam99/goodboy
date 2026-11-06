@@ -477,3 +477,35 @@ describe('the pinned sessions on the rail', () => {
     expect(card.getByRole('button', { name: 'Pinned work 2' })).toBeDefined();
   });
 });
+
+const plainTooltips = () =>
+  Array.from(document.querySelectorAll('[role="tooltip"]:not([data-hover-surface])'));
+
+describe('one hover on a rail node shows one thing', () => {
+  it('shows the hover card of a pin and never a tooltip with it', () => {
+    const pinned = pinnedSessions(3, runningState());
+    mountRail({ pinned, currentSessionId: pinnedId(pinned, 2) });
+    const other = screen.getByRole('button', { name: /Pinned work 1/ });
+
+    fireEvent.mouseEnter(other);
+    wait(450);
+    expect(plainTooltips()).toHaveLength(1);
+
+    wait(100);
+    expect(screen.getByTestId('session-hover-card')).toBeDefined();
+    expect(plainTooltips()).toHaveLength(0);
+
+    wait(1000);
+    expect(plainTooltips()).toHaveLength(0);
+  });
+
+  it('shows the flyout of the open node and never a tooltip with it', () => {
+    mountRail();
+    hoverOpenSession();
+    expect(flyout()).not.toBeNull();
+    expect(plainTooltips()).toHaveLength(0);
+
+    wait(1000);
+    expect(plainTooltips()).toHaveLength(0);
+  });
+});

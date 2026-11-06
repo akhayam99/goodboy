@@ -485,6 +485,51 @@ describe('StageBoardCard actions', () => {
     expect(onHoverLeave).toHaveBeenCalled();
   });
 
+  it('pauses the hover card while the pointer is on the quick action and resumes after', () => {
+    const onHoverEnter = vi.fn();
+    const onHoverLeave = vi.fn();
+    render(
+      <StageBoardCard
+        session={session}
+        nav={nav}
+        isArchived
+        onRestore={vi.fn()}
+        onHoverEnter={onHoverEnter}
+        onHoverLeave={onHoverLeave}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Session quick actions' });
+    const slot = group.parentElement as HTMLElement;
+
+    fireEvent.mouseEnter(slot);
+    expect(onHoverLeave).toHaveBeenCalledTimes(1);
+    fireEvent.mouseLeave(slot);
+    expect(onHoverEnter).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      anchor: screen.getByRole('article'),
+    });
+  });
+
+  it('pauses the hover card on the unreachable signal, which has the only explanation', () => {
+    hooks.prFetchState = 'unreachable';
+    const onHoverLeave = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
+
+    fireEvent.mouseEnter(signalSlot() as HTMLElement);
+
+    expect(onHoverLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the hover card armed over a plain signal, the card carries its words', () => {
+    hooks.isRunning = true;
+    const onHoverLeave = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
+
+    fireEvent.mouseEnter(signalSlot() as HTMLElement);
+
+    expect(onHoverLeave).not.toHaveBeenCalled();
+  });
+
   it('opens the hover card on keyboard focus of the title and closes it on blur', () => {
     const onHoverEnter = vi.fn();
     const onHoverLeave = vi.fn();
