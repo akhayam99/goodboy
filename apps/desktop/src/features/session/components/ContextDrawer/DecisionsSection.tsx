@@ -13,6 +13,7 @@ import {
 import type { DecisionOp } from '@goodboy/core/context';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectContextBaseline } from '../../../../store/slices/contextDrawer/selectContextBaseline';
 
 import { type DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { decisionChangeLabelOf } from './decisionChangeLabelOf';
@@ -83,7 +84,7 @@ export const DecisionsSection = ({
   onClearRemovals,
 }: Props) => {
   const ledger = useAppStore((state) => state.sessionDecisions[sessionId]);
-  const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const baseline = useAppStore((state) => selectContextBaseline({ state, sessionId }));
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId]);
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const applySessionDecisionOps = useAppStore((state) => state.applySessionDecisionOps);
@@ -307,9 +308,7 @@ export const DecisionsSection = ({
                   reworded={
                     row.previousText !== null &&
                     row.rewordedAt !== null &&
-                    (baseline === null ||
-                      baseline === undefined ||
-                      isAfterBaseline({ iso: row.rewordedAt, baseline }))
+                    (baseline === null || isAfterBaseline({ iso: row.rewordedAt, baseline }))
                       ? {
                           age: decisionAge({ iso: row.rewordedAt, nowMs }),
                           previousText: row.previousText,

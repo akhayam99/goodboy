@@ -16,6 +16,7 @@ import type {
   ContextDrawerView,
 } from '../../../../store/slices/drawer/state';
 import { decisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
+import { selectContextBaseline } from '../../../../store/slices/contextDrawer/selectContextBaseline';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
 import { shareableContext } from '../../context/shareableContext';
@@ -77,7 +78,7 @@ export const ContextDrawer = ({
   const slotsLoad = useSessionSlotsLoad(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
-  const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const baseline = useAppStore((state) => selectContextBaseline({ state, sessionId }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
   const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
