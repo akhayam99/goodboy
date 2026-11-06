@@ -78,8 +78,6 @@ const seed = ({ lead }: SceneParams): AgentId => {
     sessionPhaseRuns: { [SESSION.id]: isStopped ? [root, child] : [root] },
     sessionOpenQuestions: { [SESSION.id]: [] },
     selectedAgentId: { [SESSION.id]: shown.id },
-    agentPane: { [SESSION.id]: 'transcript' },
-    agentTab: {},
     agentTurnState: { [shown.id]: idle },
     transcripts: { [shown.id]: transcriptOf() },
     messages: { [SESSION.id]: [] },

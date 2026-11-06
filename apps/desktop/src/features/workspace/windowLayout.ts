@@ -77,21 +77,9 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
         ),
       )
     : {};
-  const selection = isRecord(value.selection)
-    ? Object.fromEntries(
-        Object.entries(value.selection).filter(
-          (entry): entry is [string, string] => typeof entry[1] === 'string',
-        ),
-      )
-    : {};
-  const revealed = Array.isArray(value.revealed)
-    ? value.revealed.filter((item): item is string => typeof item === 'string')
-    : [];
   return {
     drawer: isDrawer(value.drawer) ? value.drawer : null,
-    selection,
     scroll,
-    revealed,
   };
 };
 

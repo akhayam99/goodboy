@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { foldedLensOf } from './foldedLensOf';
-import type { AgentPane, BranchTab, GetFn, Location, SessionView, SetFn } from './types';
+import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
 type TabsParams = {
   readonly state: AppState;
@@ -22,9 +22,6 @@ const branchTabsAfter = ({ state, sessionId, target }: TabsParams): AppState['br
   return rest;
 };
 
-const paneOf = ({ target }: { readonly target: SessionView['target'] }): AgentPane | null =>
-  target?.kind === 'thread' || target?.kind === 'agent' ? (target.pane ?? null) : null;
-
 type SurfaceParams = {
   readonly state: AppState;
   readonly sessionId: SessionId;
@@ -40,7 +37,7 @@ const surfaceChanges = ({
 }: SurfaceParams): Partial<AppStore> => {
   const { lens, target } = view;
   const keep = <T>(isKept: boolean, current: T, next: T): T =>
-    isKept && !isRestore && (target === null || target.kind === 'agent') ? current : next;
+    isKept && !isRestore && target === null ? current : next;
   return {
     activeLens: { ...state.activeLens, [sessionId]: lens },
     selectedAgentId: { ...state.selectedAgentId, [sessionId]: view.agentId },
@@ -73,17 +70,6 @@ const surfaceChanges = ({
       ...state.branchThreadId,
       [sessionId]: target?.kind === 'branch' ? target.threadId : null,
     },
-    exploreMountPath:
-      lens === 'explore'
-        ? {
-            ...state.exploreMountPath,
-            [sessionId]: keep(
-              true,
-              state.exploreMountPath[sessionId] ?? null,
-              target?.kind === 'explore' ? target.mountPath : null,
-            ),
-          }
-        : state.exploreMountPath,
     focusedArtifactId: {
       ...state.focusedArtifactId,
       [sessionId]: keep(
@@ -103,10 +89,6 @@ const surfaceChanges = ({
     focusedExternalTask: {
       ...state.focusedExternalTask,
       [sessionId]: target?.kind === 'external-task' ? target.task : null,
-    },
-    agentPane: {
-      ...state.agentPane,
-      [sessionId]: paneOf({ target }) ?? null,
     },
   };
 };

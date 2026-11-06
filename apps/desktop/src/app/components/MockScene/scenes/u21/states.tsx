@@ -152,7 +152,7 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
     </StateScene>
   ),
   'scripts-empty': () => (
-    <StateScene lens="scripts" seed={seedNoMounts}>
+    <StateScene seed={seedNoMounts}>
       <ScriptsPanel
         workspaceId={SESSION.workspaceId}
         sessionId={SESSION_ID}

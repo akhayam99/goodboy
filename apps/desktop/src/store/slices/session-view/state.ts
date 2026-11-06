@@ -14,7 +14,7 @@ import type {
   ResolveQueueView,
 } from './types';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
-import type { AgentPane, BranchTab } from '../navigation/types';
+import type { BranchTab } from '../navigation/types';
 import type { ArtifactFilter } from '../../../features/artifacts/artifactCollection';
 
 export type SessionViewState = {
@@ -41,8 +41,6 @@ export type SessionViewState = {
   readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
-  readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
-  readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
   readonly exploreExpanded: Readonly<
     Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
   >;

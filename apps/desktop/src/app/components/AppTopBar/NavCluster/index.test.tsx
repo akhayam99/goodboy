@@ -60,14 +60,14 @@ const sessionView = (lens: string | null) => ({
     view: { lens, agentId: null, target: null },
   },
   studio: null,
-  focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+  focus: { drawer: null, scroll: {} },
 });
 
 const BOARD_ENTRY = {
   workspaceId: 'ws-1',
   place: { at: 'board' },
   studio: null,
-  focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+  focus: { drawer: null, scroll: {} },
 };
 
 beforeEach(() => {

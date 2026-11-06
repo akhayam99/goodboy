@@ -326,9 +326,12 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent and one target
-  (artifact, run, issue, diff focus, Explore project). Its `studio` is the app
+  (artifact, run, issue, diff focus, Branch section, thread). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
-  drawer, selection, scroll and revealed rows. `locationKey` prints the text
+  drawer and the scroll. An address carries only what a screen reads: a window
+  saved by an older build with an agent tab, an Explore folder, the Explore or
+  Scripts lens, a selection or revealed rows still loads, and
+  `withoutRemovedPages` drops those parts (an old lens opens its pane). `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,

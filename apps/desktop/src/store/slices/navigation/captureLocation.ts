@@ -20,24 +20,10 @@ type TargetParams = {
 };
 
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
-  const target = captureLensTarget({ state, sessionId, lens });
-  if (target !== null) {
-    return target;
-  }
-  const agentId = state.selectedAgentId[sessionId] ?? null;
-  const pane = state.agentPane?.[sessionId] ?? null;
-  return agentId === null || pane === null ? null : { kind: 'agent', pane };
-};
-
-const captureLensTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
   const agentId = state.selectedAgentId[sessionId] ?? null;
   if (lens === 'review' && agentId !== null) {
     const threadId = resolverThread({ state, sessionId, agentId });
-    if (threadId === null) {
-      return null;
-    }
-    const pane = state.agentPane?.[sessionId] ?? null;
-    return pane === null ? { kind: 'thread', threadId } : { kind: 'thread', threadId, pane };
+    return threadId === null ? null : { kind: 'thread', threadId };
   }
   if (lens === 'plans') {
     const artifactId = state.focusedArtifactId[sessionId] ?? null;
@@ -68,10 +54,6 @@ const captureLensTarget = ({ state, sessionId, lens }: TargetParams): SessionTar
       return null;
     }
     return { kind: 'diff', mountPath, focus };
-  }
-  if (lens === 'explore') {
-    const mountPath = state.exploreMountPath[sessionId] ?? null;
-    return mountPath === null ? null : { kind: 'explore', mountPath };
   }
   if (lens === null || !ISSUE_LENSES.has(lens)) {
     return null;

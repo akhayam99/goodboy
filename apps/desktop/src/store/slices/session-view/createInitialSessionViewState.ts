@@ -11,8 +11,6 @@ export const createInitialSessionViewState = ({}: Params) => ({
   awaitedArtifactAgentId: {},
   focusedGithubIssueNumber: {},
   focusedExternalTask: {},
-  agentPane: {},
-  agentTab: {},
   focusedWorkflowRunId: {},
   diffFocus: {},
   diffMountPath: {},

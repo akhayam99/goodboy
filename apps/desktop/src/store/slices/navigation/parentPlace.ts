@@ -70,12 +70,7 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
       target: runId === null ? null : { kind: 'run', runId },
     });
   }
-  if (
-    view.target !== null &&
-    view.target.kind !== 'diff' &&
-    view.target.kind !== 'explore' &&
-    view.target.kind !== 'thread'
-  ) {
+  if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {
     return { ...place, view: { ...view, target: null } };
   }
   if (view.lens !== null) {

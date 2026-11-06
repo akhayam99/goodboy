@@ -1321,7 +1321,6 @@ const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
     to: agentPlace({
       sessionId: ctx.sessionId,
       agentId: standaloneAgent(ctx) as never,
-      pane: 'transcript',
     }),
   });
   await settle();

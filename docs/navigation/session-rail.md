@@ -756,9 +756,10 @@ Folding the rail leaves the column in place.
   `back`, carried by the payload's `from`); Run on a Service does not open it,
   Run on a Task does. `openExplorePane` takes the
   worktree to browse (the mount registry's Browse files passes it),
-  `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
-  the old `explore` and `scripts` lenses to the panes, so the palette, toasts
-  and stored notifications (`open-lens` scripts) still land.
+  `openScriptsPane` the project to scope to (Open scripts). There is no
+  Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts
+  and stored notifications (`open-lens` scripts) open the pane through
+  `openToolPane`, which first goes to the session when another one is shown.
 - **Context signals ride on Context.** A 6px dot in the Context tool's right
   slot (on the folded icon, its corner) marks decisions changed since the last
   look (info), a running summary (info, pulsing) or a failed summary (danger)

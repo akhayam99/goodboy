@@ -22,6 +22,7 @@ vi.mock('../../store', async () => ({
 }));
 
 import { openLens } from './openLens';
+import { openToolPane } from './panes/openToolPane';
 
 const SESSION_ID = 'sess-1' as SessionId;
 
@@ -36,7 +37,7 @@ beforeEach(() => {
   state.setExploreMountPath = vi.fn();
 });
 
-describe('openLens', () => {
+describe('openLens and openToolPane', () => {
   it('navigates to the lens as a history voice', () => {
     openLens({ sessionId: SESSION_ID, lens: 'review' });
     expect(state.navigate).toHaveBeenCalledWith({
@@ -46,7 +47,7 @@ describe('openLens', () => {
 
   it('opens the Scripts pane with no scope, without leaving the current session', () => {
     state.currentSessionId = SESSION_ID;
-    openLens({ sessionId: SESSION_ID, lens: 'scripts' });
+    openToolPane({ sessionId: SESSION_ID, pane: 'scripts' });
     expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'scripts',
@@ -58,7 +59,7 @@ describe('openLens', () => {
 
   it('goes to the session first when the Explore pane is asked from elsewhere', () => {
     state.currentSessionId = null;
-    openLens({ sessionId: SESSION_ID, lens: 'explore' });
+    openToolPane({ sessionId: SESSION_ID, pane: 'explore' });
     expect(state.navigate).toHaveBeenCalledWith(toLens(null));
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'explore',

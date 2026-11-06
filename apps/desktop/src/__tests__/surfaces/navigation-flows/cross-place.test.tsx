@@ -495,7 +495,7 @@ const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
   if (agent === undefined) {
     throw new Error('the seeded session has no standalone agent');
   }
-  state.navigate({ to: agentPlace({ sessionId, agentId: agent.id, pane: 'transcript' }) });
+  state.navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
   await settle();
   await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);
 };

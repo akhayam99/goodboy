@@ -129,8 +129,6 @@ export const SESSION_EVICTION = [
   { key: 'artifactLoadErrors', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedGithubIssueNumber', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedExternalTask', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'agentPane', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'agentTab', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'diffComments', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactComments', keyedBy: 'session', evictOn: 'archive' },
   { key: 'transcripts', keyedBy: 'agent', evictOn: 'archive' },

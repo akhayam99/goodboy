@@ -76,16 +76,11 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
 
 const CONTEXT_DRAWER = 'opens the context drawer on the Overview; a drawer is not an address';
 
-const SIDE_PANE = 'openLens opens it as a pane beside the session, never as a page';
-
 const PAGELESS: Readonly<Record<string, string>> = {
   'the context page': CONTEXT_DRAWER,
   'the goal page': CONTEXT_DRAWER,
   'the decisions page': CONTEXT_DRAWER,
   'the last_output_summary page': CONTEXT_DRAWER,
-  'the scripts page': SIDE_PANE,
-  'the explore page': SIDE_PANE,
-  'an explore folder': SIDE_PANE,
 };
 
 const PLACES: ReadonlyArray<readonly [string, PlaceRequest]> = [
@@ -147,14 +142,6 @@ const PLACES: ReadonlyArray<readonly [string, PlaceRequest]> = [
       mountPath: FIRST_MOUNT_PATH,
       tab: 'comments',
       threadId: 'thread-1',
-    }),
-  ],
-  [
-    'an explore folder',
-    sessionPlace({
-      sessionId: FLOW_SESSION_ID,
-      lens: 'explore',
-      target: { kind: 'explore', mountPath: FIRST_MOUNT_PATH ?? '' },
     }),
   ],
   ['an agent', agentPlace({ sessionId: FLOW_SESSION_ID, agentId: AGENT_BACKFILL_ID })],
