@@ -143,13 +143,13 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
       );
     case 'openRun':
       return (
-        <button
-          type="button"
-          className={QUIET_VERB}
+        <Button
+          size="xs"
+          variant="quiet"
           onClick={() => navigate({ to: runPlace({ sessionId, runId }) })}
         >
           Open run
-        </button>
+        </Button>
       );
     case 'resumeAll':
       return (

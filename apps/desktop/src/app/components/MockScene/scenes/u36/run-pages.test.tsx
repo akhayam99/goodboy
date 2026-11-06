@@ -18,10 +18,10 @@ import {
   importStore,
   resetStoryStore,
   storySpies,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
-import { useAppStore } from '../../../../../store';
 import { C08RunScene } from '../u25/C08RunScene';
 import { C09OrchestratedScene } from '../u25/C09OrchestratedScene';
 import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
@@ -31,8 +31,10 @@ const SETTLE_MS = 2_000;
 
 type SceneName = keyof typeof U36_RUN_PAGES_SCENES;
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
