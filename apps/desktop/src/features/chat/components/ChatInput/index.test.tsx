@@ -32,6 +32,49 @@ const {
     mimeType: 'image/png',
     dataBase64: 'QUJD',
   }));
+  type StoredFake = { id: string; fileName: string; mimeType: string; dataUrl: string };
+  type SendAgentParams = {
+    sessionId: string;
+    turn: {
+      agentId: string;
+      content: string;
+      attachments: ReadonlyArray<StoredFake>;
+      override: unknown;
+    };
+    isForced?: boolean;
+  };
+  type Delivery = { isDelivered: boolean; failure: string | null };
+  const deliverDirect = async ({
+    sessionId,
+    turn,
+    isForced,
+  }: SendAgentParams): Promise<Delivery> => {
+    try {
+      const result = await send({
+        sessionId,
+        agentId: turn.agentId,
+        content: turn.content,
+        origin: 'operator',
+        ...(turn.attachments.length > 0 && {
+          attachments: turn.attachments.map((attachment) => ({
+            id: attachment.id,
+            fileName: attachment.fileName,
+            mimeType: attachment.mimeType,
+            dataBase64: attachment.dataUrl.split(',')[1] ?? '',
+          })),
+        }),
+        override: turn.override,
+        ...(isForced === true && { force: true }),
+      });
+      return { isDelivered: !result.blockedOverBudget, failure: null };
+    } catch (error) {
+      const isTranscriptOwned =
+        error instanceof Error && 'code' in error && error.code === 'TRANSCRIPT_OWNED_TURN_ERROR';
+      return isTranscriptOwned
+        ? { isDelivered: true, failure: null }
+        : { isDelivered: false, failure: error instanceof Error ? error.message : String(error) };
+    }
+  };
   type S = {
     sendTurn: typeof send;
     cancelCurrentTurn: typeof cancel;
@@ -76,6 +119,9 @@ const {
     removeQueuedMessage: ReturnType<typeof vi.fn>;
     takeQueuedMessage: ReturnType<typeof vi.fn>;
     sendQueuedNow: ReturnType<typeof vi.fn>;
+    sendAgentMessage: (params: SendAgentParams) => Promise<Delivery>;
+    retryQueuedMessage: ReturnType<typeof vi.fn>;
+    drainSessionQueues: () => Promise<void>;
     loadAgentQueues: () => Promise<void>;
     dismissSessionNudge: () => Promise<void>;
     acceptSessionNudgeHandoff: () => Promise<void>;
@@ -165,6 +211,9 @@ const {
     removeQueuedMessage: vi.fn(async () => undefined),
     takeQueuedMessage: vi.fn(() => null),
     sendQueuedNow: vi.fn(async () => undefined),
+    sendAgentMessage: deliverDirect,
+    retryQueuedMessage: vi.fn(async () => ({ isDelivered: false, failure: null })),
+    drainSessionQueues: async () => undefined,
     loadAgentQueues: async () => undefined,
     dismissSessionNudge: async () => undefined,
     recordNudgeShown: vi.fn(async () => 'nudge-event-1'),
@@ -453,21 +502,6 @@ describe('ChatInput, input wiring', () => {
 
     expect(sendTurnMock).toHaveBeenCalledOnce();
     expect(sendTurnMock).toHaveBeenCalledWith(expect.objectContaining({ content: 'hi there' }));
-  });
-
-  it('shows a composer alert with retry when sendTurn fails before transcript append', async () => {
-    sendTurnMock.mockRejectedValueOnce(new Error('session not found: session-1'));
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
-
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'hello');
-    await user.keyboard('{Enter}');
-
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByText("Couldn't send the message")).toBeTruthy();
-    expect(screen.getByText('session not found: session-1')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 
   it('suppresses the composer alert for transcript-owned stream failures', async () => {
@@ -840,76 +874,6 @@ describe('ChatInput, all providers over budget', () => {
     }
     return input as HTMLInputElement;
   }
-
-  it('restores the typed message into the composer when the send is blocked', async () => {
-    sendTurnMock.mockResolvedValue({ blockedOverBudget: true });
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
-
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'do not lose me');
-    await user.keyboard('{Enter}');
-
-    expect(sendTurnMock).toHaveBeenCalledOnce();
-    await waitFor(() => {
-      expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('do not lose me');
-    });
-    expect(mockStore.getState().agentDraft['agent-1']).toBe('do not lose me');
-  });
-
-  it('keeps the attachments and never deletes them from disk when the send is blocked', async () => {
-    mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });
-    sendTurnMock.mockResolvedValue({ blockedOverBudget: true });
-    const user = userEvent.setup();
-    const { container } = render(<ChatInput session={makeSession()} />);
-
-    await user.upload(fileInput(container), pngFile());
-    await screen.findByAltText('pic.png');
-    await waitFor(() => {
-      expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
-    });
-
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'with attachment');
-    await user.keyboard('{Enter}');
-
-    expect(sendTurnMock).toHaveBeenCalledOnce();
-    await waitFor(() => {
-      expect(screen.getByAltText('pic.png')).toBeTruthy();
-    });
-    expect(deleteAttachmentMock).not.toHaveBeenCalled();
-    expect(mockStore.getState().agentAttachments['agent-1']?.length).toBe(1);
-  });
-
-  it('sends the turn with force when the escape hatch is used, unlike a plain send', async () => {
-    resolveProviderMock.mockResolvedValue({
-      selectedProvider: 'anthropic',
-      selectedModel: 'claude-sonnet-4-6',
-      reason: 'all-exceeded',
-    });
-    sendTurnMock.mockResolvedValue({ blockedOverBudget: true });
-    const user = userEvent.setup();
-    render(<ChatInput session={makeSession()} />);
-
-    const textarea = screen.getByRole('textbox');
-    await user.type(textarea, 'over cap but urgent');
-    await user.keyboard('{Enter}');
-
-    expect(sendTurnMock).toHaveBeenCalledWith(
-      expect.objectContaining({ content: 'over cap but urgent' }),
-    );
-    expect(sendTurnMock.mock.calls[0]?.[0]).not.toHaveProperty('force');
-
-    sendTurnMock.mockResolvedValue({ blockedOverBudget: false });
-    const sendAnyway = await screen.findByRole('button', { name: 'Send anyway' });
-    await user.click(sendAnyway);
-
-    await waitFor(() => {
-      expect(sendTurnMock).toHaveBeenCalledWith(
-        expect.objectContaining({ content: 'over cap but urgent', force: true }),
-      );
-    });
-  });
 
   it('offers the escape hatch to an attachment-only message with no text', async () => {
     mockStore.setState({ sessionWorktrees: { 'session-1': ['/wt'] } });

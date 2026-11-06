@@ -4,6 +4,7 @@ import {
   fromStoredAttachment,
   type PendingAttachment,
 } from '../../../../../attachments/pendingAttachment';
+import { useAppStore } from '../../../../../../store';
 import { autoTreeOfAgent } from '../../../../../auto/autoTreeOfAgent';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
@@ -45,23 +46,42 @@ export const useComposerQueue = ({
     [setValue, setAttachments, routing, wrapperRef],
   );
 
-  const { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued } = useMessageQueue({
+  const {
+    queue,
+    enqueue,
+    sendNow,
+    removeQueued,
+    sendQueued,
+    retryQueued,
+    forceQueued,
+    editQueued,
+  } = useMessageQueue({
     sessionId,
     agentId,
     onEdit: onEditQueued,
   });
+  const isAgentStopped = useAppStore((state) =>
+    (state.sessionPhaseRuns[sessionId] ?? []).some(
+      (agent) => agent.id === agentId && agent.status === 'stopped',
+    ),
+  );
   const tree = agentId === null ? null : autoTreeOfAgent({ views, agentId });
   const queued = useQueuedRows({
     sessionId,
     queue,
     view: tree?.kind === 'root' ? tree.view : null,
+    isAgentStopped,
     editQueued,
     removeQueued,
     sendQueued,
+    retryQueued,
     setValue,
     setAttachments,
     wrapperRef,
   });
 
-  return { enqueue, sendNow, queued };
+  const heldId = queue.find((turn) => turn.hold !== undefined)?.id ?? null;
+  const sendHeldAnyway = heldId === null ? null : () => forceQueued(heldId);
+
+  return { enqueue, sendNow, queued, sendHeldAnyway };
 };

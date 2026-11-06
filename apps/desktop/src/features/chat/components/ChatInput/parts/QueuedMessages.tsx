@@ -72,12 +72,8 @@ type ActionOfParams = {
   readonly item: QueuedRow;
 };
 
-const actionOf = ({ item }: ActionOfParams): PendingMessageAction | null => {
-  if (item.source === 'agent') {
-    return item.status === 'sending' ? null : 'sendNow';
-  }
-  return item.action;
-};
+const actionOf = ({ item }: ActionOfParams): PendingMessageAction | null =>
+  item.status === 'sending' ? null : item.action;
 
 export const QueuedMessages = ({
   items,

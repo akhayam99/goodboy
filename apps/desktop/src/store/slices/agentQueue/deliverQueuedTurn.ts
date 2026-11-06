@@ -1,20 +1,32 @@
 import { countUserTextEvents } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { storedToAttachmentInput } from '../../../features/attachments/pendingAttachment';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
+import { isReportedError } from '../notifications/reportedError';
+import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
-import type { AgentQueuedTurn, GetFn, SetFn } from './types';
+import type { AgentQueueHold, AgentQueuedTurn, GetFn, QueuedTurnDelivery, SetFn } from './types';
 
 type Params = Readonly<{
   set: SetFn;
   get: GetFn;
   sessionId: SessionId;
   turn: AgentQueuedTurn;
-  sentVia: UserTurnSentVia;
+  sentVia?: UserTurnSentVia;
+  isForced?: boolean;
 }>;
 
-type QueuedTurnDelivery = 'delivered' | 'held';
+type FailParams = Readonly<{
+  error: unknown;
+  title: string;
+}>;
+
+const NOT_STARTED = 'The agent did not start. Your message is safe here.';
+
+const DELIVERED: QueuedTurnDelivery = { isDelivered: true, failure: null };
 
 export const deliverQueuedTurn = async ({
   set,
@@ -22,6 +34,7 @@ export const deliverQueuedTurn = async ({
   sessionId,
   turn,
   sentVia,
+  isForced = false,
 }: Params): Promise<QueuedTurnDelivery> => {
   const { agentId } = turn;
   let removal: Promise<boolean> | undefined;
@@ -36,10 +49,26 @@ export const deliverQueuedTurn = async ({
     })();
     return removal;
   };
-  const hold = async (): Promise<void> => {
+  const hold = async ({ reason }: AgentQueueHold): Promise<void> => {
     const rest = readAgentQueue({ get, agentId }).filter((item) => item.id !== turn.id);
-    writeAgentQueue({ set, agentId, queue: [{ ...turn, status: 'queued' }, ...rest] });
+    writeAgentQueue({
+      set,
+      agentId,
+      queue: [{ ...turn, status: 'queued', hold: { reason } }, ...rest],
+    });
     await persistAgentQueue({ get, agentId });
+  };
+  const fail = async ({ error, title }: FailParams): Promise<QueuedTurnDelivery> => {
+    const message = formatError(error);
+    await hold({ reason: message });
+    if (isReportedError(error)) {
+      return { isDelivered: false, failure: null };
+    }
+    if (turn.isDirect === true) {
+      return { isDelivered: false, failure: message };
+    }
+    void get().reportError({ title, error, sessionId });
+    return { isDelivered: false, failure: null };
   };
   const deliveryId = `queue:${turn.id}`;
   let isAccepted = false;
@@ -47,16 +76,10 @@ export const deliverQueuedTurn = async ({
     const delivered = await countUserTextEvents({ db: tauriDatabase, agentId, deliveryId });
     if (delivered > 0) {
       await accept();
-      return 'delivered';
+      return DELIVERED;
     }
   } catch (error) {
-    void get().reportError({
-      title: "Couldn't check the queued message",
-      error,
-      sessionId,
-    });
-    await hold();
-    return 'held';
+    return fail({ error, title: "Couldn't check the queued message" });
   }
   try {
     const result = await get().sendTurn({
@@ -69,37 +92,32 @@ export const deliverQueuedTurn = async ({
         attachments: turn.attachments.map(storedToAttachmentInput),
       }),
       ...(turn.override !== undefined && { override: turn.override }),
-      sentVia,
+      ...(sentVia !== undefined && { sentVia }),
+      ...(isForced && { force: true }),
       onStarted: () => {
         isAccepted = true;
         void accept();
       },
     });
-    if (result.blockedOverBudget || result.isWriterLeaseDenied === true) {
-      await hold();
-      return 'held';
+    const refusal = turnRefusalOf({ result });
+    if (refusal !== null && !isAccepted) {
+      await hold({ reason: turnRefusalMessage({ refusal }) });
+      return { isDelivered: false, failure: null };
     }
     if (isAccepted || result.isLaneQueued === true || result.isAlreadySent === true) {
       await accept();
-      return 'delivered';
+      return DELIVERED;
     }
-    await hold();
-    return 'held';
+    await hold({ reason: NOT_STARTED });
+    return { isDelivered: false, failure: null };
   } catch (error) {
-    if (isTranscriptOwnedTurnError({ error })) {
+    if (isTranscriptOwnedTurnError({ error }) || isAccepted) {
+      if (!isTranscriptOwnedTurnError({ error })) {
+        void get().reportError({ title: "Couldn't send the queued message", error, sessionId });
+      }
       await accept();
-      return 'delivered';
+      return DELIVERED;
     }
-    void get().reportError({
-      title: "Couldn't send the queued message",
-      error,
-      sessionId,
-    });
-    if (isAccepted) {
-      await accept();
-      return 'delivered';
-    }
-    await hold();
-    return 'held';
+    return fail({ error, title: "Couldn't send the queued message" });
   }
 };

@@ -1,7 +1,7 @@
 {
   "apps/desktop/src/__tests__/actions/stateMatrix.test.ts": 2192,
   "apps/desktop/src/app/components/SessionRail/branchTree.test.tsx": 1103,
-  "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 1183,
+  "apps/desktop/src/features/chat/components/ChatInput/index.test.tsx": 1162,
   "apps/desktop/src/features/companion/commandExecutor.commands.test.ts": 1242,
   "apps/desktop/src/features/session/timeline/buildTimelineStream/index.test.ts": 3136,
   "apps/desktop/src/features/suggestions/deriveNextSteps.test.ts": 1121,

@@ -15,13 +15,24 @@ export type AgentQueuedTurnInput = Readonly<{
   override: TurnProviderOverride | undefined;
 }>;
 
+export type AgentQueueHold = Readonly<{
+  reason: string;
+}>;
+
 export type AgentQueuedTurn = AgentQueuedTurnInput &
   Readonly<{
     status: AgentQueuedStatus;
     createdAt: IsoDateTime;
+    isDirect?: boolean;
+    hold?: AgentQueueHold;
   }>;
 
 export type AgentQueueItemParams = Readonly<{
   agentId: AgentId;
   itemId: string;
+}>;
+
+export type QueuedTurnDelivery = Readonly<{
+  isDelivered: boolean;
+  failure: string | null;
 }>;

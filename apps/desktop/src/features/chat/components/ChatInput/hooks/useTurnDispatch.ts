@@ -2,12 +2,12 @@ import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { isTranscriptOwnedTurnError } from '../../../turn-errors';
-import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
-import type { FailedTurn } from '../lib';
-import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
+import {
+  toStoredAttachment,
+  type PendingAttachment,
+  type StoredAttachment,
+} from '../../../../attachments/pendingAttachment';
 import type { CleanupSentParams } from './useAttachments';
-import type { SendTurnResult } from '../../../../../store/slices/turn/types';
 
 type UseTurnDispatchArgs = {
   readonly sessionId: SessionId;
@@ -22,11 +22,12 @@ export type DispatchTurnParams = {
   readonly force?: boolean;
 };
 
+export type DispatchOutcome = 'sent' | 'kept' | 'unwritten';
+
 export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) => {
-  const sendTurn = useAppStore((s) => s.sendTurn);
+  const sendAgentMessage = useAppStore((s) => s.sendAgentMessage);
 
   const [error, setError] = useState<string | null>(null);
-  const [lastFailedTurn, setLastFailedTurn] = useState<FailedTurn | null>(null);
 
   const dispatchTurn = useCallback(
     async ({
@@ -35,37 +36,30 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
       override,
       agentId,
       force = false,
-    }: DispatchTurnParams): Promise<SendTurnResult> => {
+    }: DispatchTurnParams): Promise<DispatchOutcome> => {
+      let attachments: ReadonlyArray<StoredAttachment>;
       try {
-        const inputs = atts.length > 0 ? await toAttachmentInputs(atts) : [];
-        const result = await sendTurn({
-          sessionId,
-          agentId,
-          content,
-          origin: 'operator',
-          ...(inputs.length > 0 ? { attachments: inputs } : {}),
-          override,
-          ...(force ? { force: true } : {}),
-        });
-        if (result.blockedOverBudget) {
-          return result;
-        }
-        setLastFailedTurn(null);
-        cleanupSentAttachments({ atts, agentId });
-        return result;
+        attachments = await Promise.all(atts.map(toStoredAttachment));
       } catch (err) {
-        if (isTranscriptOwnedTurnError({ error: err })) {
-          setError(null);
-          setLastFailedTurn(null);
-          return { blockedOverBudget: false };
-        }
         setError(formatError(err));
-        setLastFailedTurn({ agentId, content, attachments: atts, override });
-        return { blockedOverBudget: false };
+        return 'unwritten';
       }
+      const delivery = await sendAgentMessage({
+        sessionId,
+        turn: { id: crypto.randomUUID(), agentId, content, attachments, override },
+        isForced: force,
+      });
+      if (delivery.isDelivered) {
+        cleanupSentAttachments({ atts, agentId });
+        return 'sent';
+      }
+      if (delivery.failure !== null) {
+        setError(delivery.failure);
+      }
+      return 'kept';
     },
-    [sendTurn, sessionId, cleanupSentAttachments],
+    [sendAgentMessage, sessionId, cleanupSentAttachments],
   );
 
-  return { dispatchTurn, error, setError, lastFailedTurn, setLastFailedTurn };
+  return { dispatchTurn, error, setError };
 };

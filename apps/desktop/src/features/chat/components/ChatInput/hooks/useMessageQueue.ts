@@ -19,6 +19,7 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
   const takeQueuedMessage = useAppStore((s) => s.takeQueuedMessage);
   const sendQueuedNow = useAppStore((s) => s.sendQueuedNow);
   const sendAgentMessageNow = useAppStore((s) => s.sendAgentMessageNow);
+  const retryQueuedMessage = useAppStore((s) => s.retryQueuedMessage);
 
   const enqueue = useCallback(
     (turn: QueuedTurn) => void enqueueAgentMessage({ turn }),
@@ -50,6 +51,26 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
     [agentId, sendQueuedNow, sessionId],
   );
 
+  const retryQueued = useCallback(
+    (itemId: string) => {
+      if (!agentId) {
+        return;
+      }
+      void retryQueuedMessage({ sessionId, agentId, itemId });
+    },
+    [agentId, retryQueuedMessage, sessionId],
+  );
+
+  const forceQueued = useCallback(
+    (itemId: string) => {
+      if (!agentId) {
+        return;
+      }
+      void retryQueuedMessage({ sessionId, agentId, itemId, isForced: true });
+    },
+    [agentId, retryQueuedMessage, sessionId],
+  );
+
   const editQueued = useCallback(
     (itemId: string) => {
       if (!agentId) {
@@ -64,5 +85,14 @@ export const useMessageQueue = ({ sessionId, agentId, onEdit }: UseMessageQueueA
     [agentId, takeQueuedMessage, onEdit],
   );
 
-  return { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued };
+  return {
+    queue,
+    enqueue,
+    sendNow,
+    removeQueued,
+    sendQueued,
+    retryQueued,
+    forceQueued,
+    editQueued,
+  };
 };

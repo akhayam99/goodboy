@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react';
 import type { MessageAttachment, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
@@ -11,6 +11,7 @@ import { autoLimitOpenEvent } from '../../../../../auto/chat/autoLimitOpenEvent'
 import { useAutoTreeActions } from '../../../../../auto/chat/useAutoTreeActions';
 import { readAttachment } from '../../../../turn';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
+import { directRevealAtOf } from '../../directRevealAtOf';
 import { queuedRowsOf, type QueuedRow } from '../../queuedRowsOf';
 
 type Failure = Readonly<{
@@ -22,9 +23,11 @@ type Params = {
   readonly sessionId: SessionId;
   readonly queue: ReadonlyArray<AgentQueuedTurn>;
   readonly view: AutoTreeView | null;
+  readonly isAgentStopped: boolean;
   readonly editQueued: (id: string) => void;
   readonly removeQueued: (id: string) => void;
   readonly sendQueued: (id: string) => void;
+  readonly retryQueued: (id: string) => void;
   readonly setValue: (next: string) => void;
   readonly setAttachments: (next: ReadonlyArray<PendingAttachment>) => void;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
@@ -62,20 +65,48 @@ const restoredImageOf = async ({ image }: RestoreParams): Promise<PendingAttachm
   });
 };
 
+type RevealParams = {
+  readonly queue: ReadonlyArray<AgentQueuedTurn>;
+  readonly nowMs: number;
+};
+
+const nextRevealOf = ({ queue, nowMs }: RevealParams): number | null =>
+  queue.reduce<number | null>((next, turn) => {
+    const revealAt = directRevealAtOf({ turn });
+    if (revealAt === null || revealAt <= nowMs) {
+      return next;
+    }
+    return next === null ? revealAt : Math.min(next, revealAt);
+  }, null);
+
 export const useQueuedRows = ({
   sessionId,
   queue,
   view,
+  isAgentStopped,
   editQueued,
   removeQueued,
   sendQueued,
+  retryQueued,
   setValue,
   setAttachments,
   wrapperRef,
 }: Params): QueuedRows => {
   const actions = useAutoTreeActions({ sessionId });
   const [editFailure, setEditFailure] = useState<Failure | null>(null);
-  const rows = useMemo(() => queuedRowsOf({ queue, view }), [queue, view]);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const nextReveal = nextRevealOf({ queue, nowMs: Math.max(nowMs, Date.now()) });
+  useEffect(() => {
+    if (nextReveal === null) {
+      return;
+    }
+    const timer = window.setTimeout(() => setNowMs(Date.now()), nextReveal - Date.now());
+    return () => window.clearTimeout(timer);
+  }, [nextReveal]);
+  const rows = useMemo(
+    () => queuedRowsOf({ queue, view, isAgentStopped, nowMs: Math.max(nowMs, Date.now()) }),
+    [queue, view, isAgentStopped, nowMs],
+  );
 
   const messageOf = useCallback(
     ({ id }: IdParams) => view?.pendingMessages.find((message) => message.rowId === id) ?? null,
@@ -137,12 +168,17 @@ export const useQueuedRows = ({
     [actions, messageOf, sendQueued, view],
   );
 
-  const onRetry = useCallback(() => {
-    if (view !== null) {
+  const onRetry = useCallback(
+    (id: string) => {
+      if (view === null || messageOf({ id }) === null) {
+        retryQueued(id);
+        return;
+      }
       setEditFailure(null);
       void actions.retry({ view });
-    }
-  }, [actions, view]);
+    },
+    [actions, messageOf, retryQueued, view],
+  );
 
   const onRaiseLimit = useCallback(() => {
     if (view !== null) {

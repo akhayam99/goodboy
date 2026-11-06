@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { brandId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -21,11 +21,13 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { NAMES } from '../../../../shared/utils/names';
+import { queueOnlyInvoke } from '../../../../test/queueOnlyInvoke';
 import { P21DrawerComposerScene } from '../../../../app/components/MockScene/scenes/u26/P21DrawerComposerScene';
 import { IMPLEMENTER_ID } from '../../../../app/components/MockScene/scenes/u24/autoSceneSeed';
 
 const WAIT = { timeout: 15_000 };
 const DRAFT = 'Also cover the repeated key in applyCredit.';
+const LIMIT = 'Every provider is over its limit. Change a limit or wait for the next period.';
 const SINCE = brandId<IsoDateTime>({ value: '2026-10-13T12:09:16.000Z' });
 const LANDED: SendTurnResult = { blockedOverBudget: false };
 const BLOCKED: SendTurnResult = { blockedOverBudget: true };
@@ -40,7 +42,9 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  storySpies.tauriInvoke.mockImplementation(() => new Promise<never>(() => undefined));
+  storySpies.tauriInvoke.mockImplementation((command?: unknown, args?: unknown) =>
+    queueOnlyInvoke({ command, args }),
+  );
 });
 
 afterEach(() => {
@@ -52,18 +56,32 @@ type MountParams = {
   readonly sendTurn: AppState['sendTurn'];
 };
 
-const mountIdleChild = async ({ sendTurn }: MountParams) => {
-  const sent = vi.fn<AppState['sendTurn']>(sendTurn);
-  store.setState({ sendTurn: sent });
+const renderScene = () =>
   render(
     <ToastProvider>
       <P21DrawerComposerScene theme="light" />
     </ToastProvider>,
   );
+
+const findBox = async (): Promise<HTMLTextAreaElement> => {
   const box = await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
   if (!(box instanceof HTMLTextAreaElement)) {
     throw new Error('Message Implementer is not a textarea');
   }
+  return box;
+};
+
+const mountIdleChild = async ({ sendTurn }: MountParams) => {
+  const sent = vi.fn<AppState['sendTurn']>(async (input) => {
+    const result = await sendTurn(input);
+    if (!result.blockedOverBudget) {
+      input.onStarted?.();
+    }
+    return result;
+  });
+  store.setState({ sendTurn: sent });
+  const view = renderScene();
+  const box = await findBox();
   act(() => {
     store.setState((state) => ({
       agentTurnState: {
@@ -72,7 +90,7 @@ const mountIdleChild = async ({ sendTurn }: MountParams) => {
       },
     }));
   });
-  return { sent, box };
+  return { sent, box, view };
 };
 
 const clickSend = async () => {
@@ -84,15 +102,66 @@ const clickSend = async () => {
   await userEvent.click(enabled[0] ?? buttons[0] ?? document.body);
 };
 
+const heldRow = async () => {
+  const row = await screen.findByTestId('queued-message-row', undefined, WAIT);
+  return {
+    row,
+    status: within(row).getByTestId('queued-message-status').textContent,
+  };
+};
+
 describe('the session composer when a send is refused', () => {
-  it('puts the message back in the field and the draft when the budget blocks the send', async () => {
+  it('keeps the refused message in a Not delivered row and empties the box', async () => {
     const { sent, box } = await mountIdleChild({ sendTurn: async () => BLOCKED });
 
     await clickSend();
 
     await waitFor(() => expect(sent).toHaveBeenCalledTimes(1));
+    const { row, status } = await heldRow();
+    expect(status).toBe('Not delivered');
+    expect(row.getAttribute('data-status')).toBe('notDelivered');
+    expect(within(row).getByText(DRAFT).textContent).toBe(DRAFT);
+    expect(box.value).toBe('');
+    expect(store.getState().agentQueue[IMPLEMENTER_ID]?.[0]?.hold?.reason).toBe(LIMIT);
+  });
+
+  it('sends the held message once more on Retry and then drops the row', async () => {
+    const results = [BLOCKED, LANDED];
+    const { sent } = await mountIdleChild({
+      sendTurn: async () => results.shift() ?? LANDED,
+    });
+    await clickSend();
+    const { row } = await heldRow();
+
+    fireEvent.click(within(row).getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(sent).toHaveBeenCalledTimes(2));
+    expect(sent.mock.calls.map(([input]) => input.content)).toEqual([DRAFT, DRAFT]);
+    await waitFor(() => expect(screen.queryByTestId('queued-message-row')).toBeNull());
+  });
+
+  it('puts the held message back in the box when its row is clicked', async () => {
+    const { box } = await mountIdleChild({ sendTurn: async () => BLOCKED });
+    await clickSend();
+    const { row } = await heldRow();
+
+    fireEvent.click(within(row).getByText(DRAFT));
+
     await waitFor(() => expect(box.value).toBe(DRAFT));
-    expect(store.getState().agentDraft[IMPLEMENTER_ID]).toBe(DRAFT);
+    expect(screen.queryByTestId('queued-message-row')).toBeNull();
+  });
+
+  it('keeps the row for a fresh composer of the same agent', async () => {
+    const { view } = await mountIdleChild({ sendTurn: async () => BLOCKED });
+    await clickSend();
+    await heldRow();
+
+    view.unmount();
+    renderScene();
+    await findBox();
+
+    const { status } = await heldRow();
+    expect(status).toBe('Not delivered');
   });
 
   it('does not overwrite what was typed while the send was pending', async () => {
@@ -116,7 +185,7 @@ describe('the session composer when a send is refused', () => {
     expect(store.getState().agentDraft[IMPLEMENTER_ID]).toBe('a better message');
   });
 
-  it('clears the field and the draft once the send landed', async () => {
+  it('clears the field and the draft once the send landed, with no row left', async () => {
     const { sent, box } = await mountIdleChild({ sendTurn: async () => LANDED });
 
     await clickSend();
@@ -124,29 +193,25 @@ describe('the session composer when a send is refused', () => {
     await waitFor(() => expect(sent).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(store.getState().agentDraft[IMPLEMENTER_ID]).toBeUndefined());
     expect(box.value).toBe('');
+    await waitFor(() => expect(store.getState().agentQueue[IMPLEMENTER_ID]).toBeUndefined());
   });
 
-  it('shows the error with a Retry that sends the same message again', async () => {
-    const attempts: string[] = [];
-    const { sent, box } = await mountIdleChild({
-      sendTurn: async ({ content }) => {
-        attempts.push(content);
-        if (attempts.length === 1) {
-          throw new Error('provider refused the turn');
-        }
-        return LANDED;
+  it('shows the error and keeps the message in a row with Retry when the send throws', async () => {
+    const { sent } = await mountIdleChild({
+      sendTurn: async () => {
+        throw new Error('provider refused the turn');
       },
     });
 
     await clickSend();
 
-    expect(await screen.findByText('provider refused the turn')).toBeTruthy();
-    expect(box.value).toBe('');
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-
-    await waitFor(() => expect(sent).toHaveBeenCalledTimes(2));
-    expect(attempts).toEqual([DRAFT, DRAFT]);
-    await waitFor(() => expect(screen.queryByText('provider refused the turn')).toBeNull());
+    await waitFor(() => expect(sent).toHaveBeenCalledTimes(1));
+    expect((await screen.findByText('provider refused the turn')).textContent).toBe(
+      'provider refused the turn',
+    );
+    const { row, status } = await heldRow();
+    expect(status).toBe('Not delivered');
+    expect(within(row).getByRole('button', { name: 'Retry' }).hasAttribute('disabled')).toBe(false);
   });
 });
 
