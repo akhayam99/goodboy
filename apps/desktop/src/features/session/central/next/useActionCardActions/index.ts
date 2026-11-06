@@ -45,6 +45,7 @@ export type CardVerb = {
   readonly label: string;
   readonly ariaLabel: string | undefined;
   readonly isDisabled: boolean;
+  readonly blockedReason?: string;
   readonly isBusy: boolean;
   readonly confirmRole: ConfirmRole | null;
   readonly hasPicker: boolean;
@@ -113,6 +114,7 @@ type VerbParams = {
   readonly run: () => void;
   readonly isBusy?: boolean;
   readonly isDisabled?: boolean;
+  readonly blockedReason?: string;
   readonly confirmRole?: ConfirmRole | null;
   readonly hasPicker?: boolean;
 };
@@ -185,12 +187,14 @@ const verbOf = ({
   run,
   isBusy = false,
   isDisabled = false,
+  blockedReason,
   confirmRole = null,
   hasPicker = false,
 }: VerbParams): CardVerb => ({
   label,
   ariaLabel,
   isDisabled,
+  ...(blockedReason !== undefined && { blockedReason }),
   isBusy,
   confirmRole,
   hasPicker,
@@ -508,6 +512,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
                     ? undefined
                     : primary.label,
               isDisabled: primary.isDisabled || (isChoicePending && !isPending),
+              blockedReason: primary.blockedReason,
               isBusy: isPending,
               confirmRole:
                 primary.requiresConfirm === true

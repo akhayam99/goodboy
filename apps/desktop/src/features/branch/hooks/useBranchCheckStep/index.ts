@@ -9,6 +9,7 @@ import type { BranchCheckFacts } from '../../branchStepOf';
 import { checkChainActionOf } from '../../checks/checkChainActionOf';
 import { checkRoutingOf } from '../../checks/checkRoutingOf';
 import { checkStepTargetOf } from '../../checks/checkStepTargetOf';
+import { liveCheckWorkOf } from '../../checks/liveCheckWorkOf';
 import { useCheckChain } from '../useCheckChain';
 
 type Params = {
@@ -37,7 +38,6 @@ type Target = {
 };
 
 const NO_TARGET: Target = { url: '', name: null };
-const LIVE_CHAINS: ReadonlySet<CheckChainState> = new Set<CheckChainState>(['analyzing', 'fixing']);
 
 export const useBranchCheckStep = ({
   sessionId,
@@ -65,23 +65,33 @@ export const useBranchCheckStep = ({
     routing === null
       ? null
       : `Starts a Debugger on the failing checks with ${modelLabel(routing.model, routing.provider)} at ${routing.effort} effort`;
-  const facts = useMemo<BranchCheckFacts>(
-    () => ({ isFailing, chain: chain.state }),
-    [chain.state, isFailing],
+  const live = useAppStore(
+    useShallow((state) =>
+      mountId === null ? null : liveCheckWorkOf({ state, sessionId, mountId }),
+    ),
   );
-  const liveAgentId =
-    chain.state === 'fixing'
-      ? (chain.fix?.id ?? null)
-      : chain.state === 'analyzing'
-        ? (chain.debugger?.id ?? null)
-        : null;
+  const facts = useMemo<BranchCheckFacts>(
+    () => ({ isFailing, chain: live?.chain ?? chain.state }),
+    [chain.state, isFailing, live?.chain],
+  );
+  const liveAgentId = live?.agentId ?? null;
+  const liveChain = live?.chain ?? null;
+  const liveName = live?.name ?? null;
   const work = useMemo<BranchCheckWork>(
-    () => ({ chain: chain.state, agentId: liveAgentId, checkName: target.name }),
-    [chain.state, liveAgentId, target.name],
+    () => ({
+      chain: liveChain ?? chain.state,
+      agentId: liveAgentId,
+      checkName: liveName ?? target.name,
+    }),
+    [chain.state, liveAgentId, liveChain, liveName, target.name],
   );
   const chainState = chain.state;
   const run = useCallback(async (): Promise<void> => {
-    if (mountId === null || prNumber === null || LIVE_CHAINS.has(chainState)) {
+    if (
+      mountId === null ||
+      prNumber === null ||
+      liveCheckWorkOf({ state: useAppStore.getState(), sessionId, mountId }) !== null
+    ) {
       return;
     }
     const action = checkChainActionOf({ sessionId, mountId, prNumber, chain: chainState });

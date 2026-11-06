@@ -33,7 +33,7 @@
   "apps/desktop/src/features/palette/hooks/useCommandEntries.ts": 636,
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 355,
   "apps/desktop/src/features/reports/buildReportContext.ts": 911,
-  "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx": 281,
+  "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.tsx": 279,
   "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 667,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 418,
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 764,

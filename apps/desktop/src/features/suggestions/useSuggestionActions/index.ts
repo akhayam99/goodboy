@@ -26,6 +26,7 @@ import { continueWithRole } from '../../session/startRun/continueWithRole';
 import { openSettings } from '../../settings/openSettings';
 import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { archiveSessionAction } from './archiveSessionAction';
+import { checkWorkLockOf } from '../../branch/checks/checkWorkLockOf';
 import { fixChecksActions } from './fixChecksActions';
 import { mergeSeriesAction } from './mergeSeriesAction';
 import { moveTrackerAction } from './moveTrackerAction';
@@ -46,6 +47,7 @@ type SuggestionAction = {
   readonly shortLabel?: string;
   readonly agentKind?: AgentKind;
   readonly isDisabled: boolean;
+  readonly blockedReason?: string;
   readonly isBusy?: boolean;
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
@@ -149,6 +151,16 @@ export const useSuggestionActions = ({
   );
 
   const threadIds = useFixableThreadIds({ sessionId });
+  const checkLocks = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        mounts.map((mount) => [
+          mount.mountId,
+          checkWorkLockOf({ state, sessionId, mountId: mount.mountId }),
+        ]),
+      ),
+    ),
+  );
 
   const openFixPanel = async (): Promise<void> => {
     if (threadIds.length === 0) {
@@ -383,7 +395,11 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      return fixChecksActions({ sessionId, payload: suggestion.payload });
+      return fixChecksActions({
+        sessionId,
+        payload: suggestion.payload,
+        lock: checkLocks[suggestion.payload.mountId] ?? null,
+      });
     }
     if (suggestion.kind === 'push-branch' && suggestion.payload.state === 'diverged') {
       return {

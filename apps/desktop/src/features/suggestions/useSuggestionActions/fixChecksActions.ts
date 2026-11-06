@@ -8,21 +8,26 @@ type FixChecksPayload = Extract<SessionSuggestion, { readonly kind: 'fix-checks'
 type Params = {
   readonly sessionId: SessionId;
   readonly payload: FixChecksPayload;
+  readonly lock: string | null;
 };
 
-export const fixChecksActions = ({ sessionId, payload }: Params): SuggestionActions => {
+export const fixChecksActions = ({ sessionId, payload, lock }: Params): SuggestionActions => {
   const action = checkChainActionOf({
     sessionId,
     mountId: payload.mountId,
     prNumber: payload.prNumber,
     chain: payload.progress?.chain ?? 'none',
   });
+  const blocked = {
+    isDisabled: lock !== null,
+    ...(lock !== null && { blockedReason: lock }),
+  };
   if (action.kind === 'startFix') {
     return {
       primary: {
         label: 'Start fix',
         agentKind: 'implementer',
-        isDisabled: false,
+        ...blocked,
         failureTitle: action.failureTitle,
         run: () => action.run({}),
       },
@@ -44,7 +49,7 @@ export const fixChecksActions = ({ sessionId, payload }: Params): SuggestionActi
     primary: {
       label: action.isAgain ? 'Analyze again' : 'Analyze',
       agentKind: 'debugger',
-      isDisabled: false,
+      ...blocked,
       failureTitle: action.failureTitle,
       run: () => action.run({}),
       runsOn: {
