@@ -7,7 +7,5 @@ type Params = {
 };
 
 export const leaveRunLevel = ({ sessionId }: Params): void => {
-  const state = useAppStore.getState();
-  state.navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
-  useAppStore.getState().setFocusedWorkflowRun(sessionId, null);
+  useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
 };

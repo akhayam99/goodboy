@@ -135,8 +135,8 @@ from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 `goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
 drag ends; a double click on the handle resets to the tier default (400 or 720);
 the two saved widths never bleed. There is no third tier: no drawer expands over
-the whole column, the reader tier is the large one. `selectDrawerSizing` picks
-the tier from the drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+the whole column, the reader tier is the large one. `selectDrawerSizing` reads
+the tier from the kind table. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** The drawer uses the content width after both rails and the
 reserve of its tier, as defined in [styling.md](../styling.md). It pushes at
@@ -210,8 +210,11 @@ opened from the page replaces it. `app/components/DrawerHost` turns a `kind` int
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
-fills the frame instead. A new kind adds a variant to `DrawerContent` and a
-case to the host.
+fills the frame instead. A new kind adds a variant to `DrawerContent`, a
+case to the host and a row to `DRAWER_KINDS` (`store/slices/drawer/drawerKinds.ts`):
+its surface (tool, item, reader or form), its tier and the tool pane it lights.
+The build fails on a kind with no row, and `drawerKinds.test.ts` matches the rows
+to the kinds written in `state.ts`.
 
 Opening a side drawer folds the session rail when its expanded width would
 leave too little content for the push rule. A reader folds it at every width.

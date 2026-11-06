@@ -112,7 +112,6 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
 
     expect(next.place).toMatchObject({ view: { lens: 'auto', agentId: 'agent-auto-root' } });
     expect(next.focus.drawer).toEqual(PANEL);
-    expect(next.focus.selection).toEqual({ 'auto-row': 'kept' });
   });
 
   it('lands a stored run on the run page with the Agents panel open', () => {
@@ -145,18 +144,69 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
 
     expect(next.focus.drawer).toEqual(drawer);
   });
+});
 
-  it('opens no panel when the Auto level was left for the session level', () => {
+describe('withoutRemovedPages, address parts no screen reads', () => {
+  it('lands a stored agent pane on the agent page itself', () => {
     const next = withoutRemovedPages({
       location: storedLevel({
-        lens: 'auto',
-        agentId: 'agent-auto-root',
-        target: null,
-        selection: { 'sidebar-level': 'session' },
+        lens: 'workflows',
+        agentId: 'agent-implementer',
+        target: { kind: 'agent', pane: 'transcript' },
+        selection: {},
       }),
     });
 
+    expect(next.place).toEqual({
+      at: 'session',
+      sessionId: SESSION_ID,
+      view: { lens: 'workflows', agentId: 'agent-implementer', target: null },
+    });
+  });
+
+  it('drops a stored Explore folder target', () => {
+    const next = withoutRemovedPages({
+      location: storedLevel({
+        lens: 'branch',
+        agentId: null,
+        target: { kind: 'explore', mountPath: '/work/ledger-core' },
+        selection: {},
+      }),
+    });
+
+    expect(next.place).toMatchObject({ view: { lens: 'branch', target: null } });
+  });
+
+  it('keeps a stored thread and drops the pane it carried', () => {
+    const next = withoutRemovedPages({
+      location: storedLevel({
+        lens: 'review',
+        agentId: 'agent-fixer',
+        target: { kind: 'thread', threadId: 'gh:PRRT_7', pane: 'brief' },
+        selection: {},
+      }),
+    });
+
+    expect(next.place).toMatchObject({
+      view: { target: { kind: 'thread', threadId: 'gh:PRRT_7' } },
+    });
+    expect(next.place.at === 'session' ? next.place.view.target : null).toEqual({
+      kind: 'thread',
+      threadId: 'gh:PRRT_7',
+    });
+  });
+
+  it('loads a stored focus with a selection and reveals as the page it named', () => {
+    const next = withoutRemovedPages({
+      location: storedLevel({
+        lens: 'plans',
+        agentId: null,
+        target: null,
+        selection: { thread: 'gh:PRRT_7' },
+      }),
+    });
+
+    expect(next.place).toMatchObject({ view: { lens: 'plans', target: null } });
     expect(next.focus.drawer).toBeNull();
-    expect(next.focus.selection).toEqual({});
   });
 });

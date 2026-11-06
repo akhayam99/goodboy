@@ -168,11 +168,11 @@ describe('SessionBackRow', () => {
     expect(screen.queryByRole('button', { name: 'Back to artifacts' })).toBeNull();
   });
 
-  it('closes the issue on a deep link and lands on the list', () => {
+  it('closes the issue on a deep link and lands on the Overview', () => {
     walk({ places: [ISSUE_PLACE] });
     render(<SessionBackRow sessionId={S1} />);
 
-    fireEvent.click(backButton('Back to GitHub issue'));
+    fireEvent.click(backButton('Back to overview'));
 
     expect(useAppStore.getState().focusedGithubIssueNumber[S1]).toBeNull();
   });
@@ -185,6 +185,14 @@ describe('SessionBackRow', () => {
     fireEvent.click(backButton('Back to planner'));
 
     expect(currentStack(useAppStore.getState()).index).toBe(index - 1);
+  });
+
+  it('cuts a long title inside the row instead of overflowing it', () => {
+    walk({ places: [STEP_PLACE] });
+    render(<SessionBackRow sessionId={S1} />);
+
+    const label = backButton('Back to run').querySelector(':scope > span');
+    expect(label?.textContent).toBe('Back to run');
   });
 
   it('draws no breadcrumb trail', () => {

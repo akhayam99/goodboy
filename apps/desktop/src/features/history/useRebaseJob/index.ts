@@ -157,7 +157,7 @@ export const useRebaseJob = ({
       if (agentId === null) {
         return;
       }
-      navigate({ to: agentPlace({ sessionId, agentId, pane: 'transcript' }) });
+      navigate({ to: agentPlace({ sessionId, agentId }) });
     },
   };
 };

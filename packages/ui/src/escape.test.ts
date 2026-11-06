@@ -169,6 +169,18 @@ describe('base layers', () => {
     expect(transientEscapeLayerCount()).toBe(1);
   });
 
+  it('answer last even when they register after a surface, so a page Esc never jumps a panel', () => {
+    const close = vi.fn();
+    const leave = vi.fn();
+    layer(close);
+    cleanups.push(registerEscapeLayer(leave, true));
+
+    press();
+
+    expect(close).toHaveBeenCalledOnce();
+    expect(leave).not.toHaveBeenCalled();
+  });
+
   it('still close the page when nothing consumed the key', () => {
     const leave = vi.fn();
     cleanups.push(registerEscapeLayer(leave, true));

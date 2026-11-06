@@ -13,8 +13,6 @@ const ALL_LENSES: ReadonlyArray<LensKind | null> = [
   'agents',
   'plans',
   'questions',
-  'explore',
-  'scripts',
   'linear',
   'gitlab_issues',
   'jira_issues',
@@ -29,7 +27,6 @@ const ALL_LENSES: ReadonlyArray<LensKind | null> = [
 const cardPages = (hasOpenQuestions: boolean): ReadonlyArray<Page> =>
   pagesOf({
     isBranchless: false,
-    destinations: [{ lens: 'questions', shortcut: 'lens.questions' }],
     hasOpenQuestions,
   });
 
@@ -64,9 +61,9 @@ describe('currentSignOf', () => {
     );
   });
 
-  it('marks the session row on the Tools lenses and linked records', () => {
+  it('marks the session row on the linked records', () => {
     const pages = cardPages(true);
-    for (const activeLens of ['scripts', 'explore', 'linear', 'slack_threads'] as const) {
+    for (const activeLens of ['linear', 'slack_threads'] as const) {
       expect(currentSignOf({ activeLens, pages, hasStudioOver: false })).toBe('session');
     }
   });

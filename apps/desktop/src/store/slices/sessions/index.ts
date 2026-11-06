@@ -17,6 +17,7 @@ import { setSessionAutoRun } from './setSessionAutoRun';
 import { setSessionConfig } from './setSessionConfig';
 import { setSessionPermissionMode } from './setSessionPermissionMode';
 import { unarchiveTask } from './unarchiveTask';
+import { reloadSessionWorkflows } from './reloadSessionWorkflows';
 import { takeOffSessionExternalTask } from './takeOffSessionExternalTask';
 import { unlinkSessionExternalTask } from './unlinkSessionExternalTask';
 import type { SliceDeps } from '../../slice-types';
@@ -36,6 +37,7 @@ export const createSessionsSlice = ({ set, get }: SliceDeps) => {
     archiveTask: archiveTask(set, get),
     bulkArchiveTask: bulkArchiveTask(set, get),
     unarchiveTask: unarchiveTask(set, get),
+    reloadSessionWorkflows: reloadSessionWorkflows({ set }),
     bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),

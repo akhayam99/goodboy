@@ -201,10 +201,8 @@ pull request`) and Comments lists the session's notes. Every door to a pull
 comments`; the Needs you row for the pull request calls `openReview` with the
   destination `{ kind: 'threads', mountId, threadIds: [first comment that waits
 on you] }`. Any other agent keeps its page, one conversation with no tabs
-  (`AgentDetailPane`): every door lands on it, and the `pane` an address may
-  still carry (`agentPlace({ sessionId, agentId, pane })`, kept in the place as
-  the target `{ kind: 'agent', pane }` and in `agentPane`) changes nothing on
-  the page. The full record opens beside it in the `transcript` drawer, from
+  (`AgentDetailPane`): every door lands on it, and its address names the
+  agent only (`agentPlace({ sessionId, agentId })`). The full record opens beside it in the `transcript` drawer, from
   **View transcript**, from "Open in transcript" under a turn's summary line,
   and from a delegation line's **See more** for a child agent. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it

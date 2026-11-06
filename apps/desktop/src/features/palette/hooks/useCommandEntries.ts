@@ -23,8 +23,8 @@ import { NAMES, formerNamesOf } from '../../../shared/utils/names';
 import { switchTheme, type ThemePreference } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
-import { openLens } from '../../session/openLens';
-import { LENS_ICON } from '../../session/lens-labels';
+import { openDestination } from '../../session/openDestination';
+import { destinationIconOf } from '../../session/destinationIconOf';
 import { requestNewSession } from '../../session/requestNewSession';
 import { openNewSessionAs } from '../../session/startKind/openNewSessionAs';
 import { openReportSheet } from '../../bug-report/openReportSheet';
@@ -228,14 +228,14 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       );
       for (const destination of destinations) {
         out.push({
-          key: `lens:${destination.lens ?? 'overview'}`,
+          key: `lens:${destination.pane ?? destination.lens ?? 'overview'}`,
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
           kind: 'page',
           group: 'action',
-          icon: destination.lens === null ? CONCEPT_ICONS.sessions : LENS_ICON[destination.lens],
+          icon: destinationIconOf({ destination }),
           shortcut: destination.shortcut,
           secondary: formerNamesOf(SHORTCUTS[destination.shortcut].label),
-          run: () => openLens({ sessionId, lens: destination.lens }),
+          run: () => openDestination({ sessionId, destination }),
         });
       }
       out.push(contextPaletteEntryOf({ sessionId, toggle: toggleContextDrawer }));

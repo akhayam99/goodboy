@@ -106,7 +106,6 @@ export const AutoMoveScene = ({ state }: Props) => {
       autoTreeViews: { [AUTO_SESSION.id]: state === 'moved' ? [movedViewOf()] : [] },
       loadAutoTrees: async () => undefined,
       selectedAgentId: { [AUTO_SESSION.id]: SOURCE_ID },
-      agentPane: { [AUTO_SESSION.id]: 'transcript' },
       agentTurnState: { [SOURCE_ID]: { kind: 'idle', lastActivityAt: at({ time: '09:14:10' }) } },
       transcripts: { [SOURCE_ID]: EVENTS },
       loadAgentTranscript: async () => undefined,

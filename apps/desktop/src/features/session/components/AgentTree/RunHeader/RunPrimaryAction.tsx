@@ -29,7 +29,13 @@ export const RunPrimaryAction = ({ session, view, primary, variant = 'primary' }
           variant={variant}
           onStart={async () => {
             await startWorkflowRun(session.id, view.run.id);
-            navigate({ to: sessionPlace({ sessionId: session.id, lens: 'workflows' }) });
+            navigate({
+              to: sessionPlace({
+                sessionId: session.id,
+                lens: 'workflows',
+                target: { kind: 'run', runId: view.run.id },
+              }),
+            });
           }}
         />
       );

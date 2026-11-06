@@ -86,7 +86,7 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
     );
   }
   if (target === 'workflows') {
-    return <WorkflowsPane session={session} isActive={isShown} />;
+    return <WorkflowsPane session={session} />;
   }
   if (target === 'branch') {
     return (

@@ -287,7 +287,7 @@ export const ExploreScene = (props: Props) => {
       siblings: [],
       branches: {},
       telemetryAt: NOW,
-      lens: 'explore',
+      lens: null,
     });
     seedExploreRoots({ roots });
     setIsReady(true);

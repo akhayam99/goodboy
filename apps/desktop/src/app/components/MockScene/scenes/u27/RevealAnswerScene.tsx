@@ -121,7 +121,6 @@ export const RevealAnswerScene = ({ theme, landsAfterMs, copies, isLive, isTable
       sessions: [SESSION],
       sessionPhaseRuns: { [SESSION.id]: [AGENT] },
       selectedAgentId: { [SESSION.id]: AGENT_ID },
-      agentPane: { [SESSION.id]: 'transcript' },
       agentTurnState: { [AGENT_ID]: { kind: 'running', runId: LIVE_RUN, startedAt: NOW } },
       transcripts: { [AGENT_ID]: EARLIER },
       loadAgentTranscript: async () => undefined,

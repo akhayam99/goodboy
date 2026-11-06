@@ -3,7 +3,7 @@ import type { DiffFocus, LensKind } from '../session-view/types';
 import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 import type { OpenDrawer } from '../drawer/state';
 import { foldedLensOf } from './foldedLensOf';
-import type { AgentPane, BranchTab, Place, PlaceRequest, SessionTarget } from './types';
+import type { BranchTab, Place, PlaceRequest, SessionTarget } from './types';
 
 type SessionPlaceParams = {
   readonly sessionId: SessionId;
@@ -15,7 +15,6 @@ type SessionPlaceParams = {
 type AgentPlaceParams = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
-  readonly pane?: AgentPane | null;
 };
 
 export const BOARD_PLACE: Place = { at: 'board' };
@@ -54,8 +53,11 @@ export const branchPlace = ({
     target: { kind: 'branch', mountPath, tab, threadId, focus },
   });
 
-export const agentPlace = ({ sessionId, agentId, pane = null }: AgentPlaceParams): PlaceRequest =>
-  pane === null ? { at: 'agent', sessionId, agentId } : { at: 'agent', sessionId, agentId, pane };
+export const agentPlace = ({ sessionId, agentId }: AgentPlaceParams): PlaceRequest => ({
+  at: 'agent',
+  sessionId,
+  agentId,
+});
 
 type FixRunParams = {
   readonly sessionId: SessionId;

@@ -44,7 +44,13 @@ beforeAll(async () => {
       aSession({
         id: S1,
         goal: 'Guard the settlement batch',
-        workflowRuns: [aWorkflowRun({ id: DYNAMIC_RUN, executionMode: 'dynamic' })],
+        workflowRuns: [
+          aWorkflowRun({
+            id: DYNAMIC_RUN,
+            executionMode: 'dynamic',
+            title: 'Close the settlement batch',
+          }),
+        ],
       }),
     ],
     sessionPhaseRuns: {
@@ -101,7 +107,7 @@ describe('backOf', () => {
     ['a main agent', agentAt({ agentId: MAIN }), 'Back to runs'],
     ['a sub agent', agentAt({ agentId: CHILD }), 'Back to planner'],
     ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), 'Back to scout'],
-    ['a run step', agentAt({ agentId: STEP }), 'Back to run'],
+    ['a run step', agentAt({ agentId: STEP }), 'Back to Close the settlement batch'],
     ['a sub step', agentAt({ agentId: SUB_STEP }), 'Back to implementer'],
     ['a sub sub step', agentAt({ agentId: SUB_SUB_STEP }), 'Back to scout'],
     [
@@ -130,7 +136,7 @@ describe('backOf', () => {
         lens: 'github_issue',
         target: { kind: 'github-issue', issueNumber: 12 },
       }),
-      'Back to GitHub issue',
+      'Back to overview',
     ],
     ['a Branch section', branchPlace({ sessionId: S1, tab: 'commits' }), 'Back to overview'],
     [
@@ -149,6 +155,19 @@ describe('backOf', () => {
     ],
   ])('names the parent of %s', (_name, place, label) => {
     expect(labelOf({ place })).toBe(label);
+  });
+
+  it('names a run with no title and no workflow in its row as the run', () => {
+    const untitled: AppState = {
+      ...appState,
+      sessions: appState.sessions.map((session) => ({
+        ...session,
+        workflowRuns: [aWorkflowRun({ id: DYNAMIC_RUN, executionMode: 'dynamic' })],
+      })),
+    };
+    expect(backOf({ state: untitled, place: agentAt({ agentId: STEP }) })?.label).toBe(
+      'Back to run',
+    );
   });
 
   it('points at the real parent place', () => {

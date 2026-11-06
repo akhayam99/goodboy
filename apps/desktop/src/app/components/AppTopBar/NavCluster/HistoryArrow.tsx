@@ -38,13 +38,13 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
   const didHold = useRef(false);
   const isDisabled = target === null;
   const Icon = direction === 'back' ? ArrowLeft : ArrowRight;
-  const verb = direction === 'back' ? 'Back' : 'Forward';
+  const verb = direction === 'back' ? 'Previous' : 'Forward';
   const shortcut = direction === 'back' ? 'nav.back' : 'nav.forward';
   const tooltip = isDisabled
     ? direction === 'back'
       ? 'Nothing to go back to'
       : 'Nothing to go forward to'
-    : `${verb} to ${target.label}${target.context === null ? '' : `\n${target.context}`}`;
+    : `${verb}: ${target.label}${target.context === null ? '' : `\n${target.context}`}`;
 
   const clearHold = () => {
     if (holdTimer.current === null) {
@@ -58,7 +58,7 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
     {
       kind: 'radio',
       key: 'history',
-      label: verb,
+      label: 'History',
       choices: items.map((item) => ({
         id: String(item.index),
         label: item.label,
@@ -95,7 +95,7 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
         >
           <button
             type="button"
-            aria-label={isDisabled ? verb : `${verb} to ${target.label}`}
+            aria-label={isDisabled ? verb : `${verb}: ${target.label}`}
             aria-disabled={isDisabled ? true : undefined}
             data-nav-arrow={direction}
             onClick={() => {

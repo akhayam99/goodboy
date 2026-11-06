@@ -29,7 +29,7 @@ type LensesParams = {
 };
 
 const lenses = ({ isBranchless = false, connectedTools = NO_CONNECTED_TOOLS }: LensesParams = {}) =>
-  lensDestinations({ isBranchless, connectedTools }).map((d) => d.lens);
+  lensDestinations({ isBranchless, connectedTools }).map((d) => d.pane ?? d.lens);
 
 describe('lensDestinations', () => {
   it('offers every destination chord, and leaves the context parts to their region', () => {

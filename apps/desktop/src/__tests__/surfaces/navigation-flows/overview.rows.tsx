@@ -138,7 +138,7 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
       expect(screen.queryByRole('heading', { name: 'Runs' })).toBeNull();
       const back = Array.from(
         document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
-      ).find((candidate) => (candidate.getAttribute('aria-label') ?? '').startsWith('Back'));
+      ).find((candidate) => (candidate.getAttribute('aria-label') ?? '').startsWith('Previous'));
       if (back === undefined) {
         throw new Error('the navigation cluster has no Back button');
       }
@@ -198,7 +198,7 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
       ).toBeDefined();
       const back = Array.from(
         document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
-      ).find((candidate) => (candidate.getAttribute('aria-label') ?? '').startsWith('Back'));
+      ).find((candidate) => (candidate.getAttribute('aria-label') ?? '').startsWith('Previous'));
       if (back === undefined) {
         throw new Error('the navigation cluster has no Back button');
       }

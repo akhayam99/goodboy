@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { foldedLensOf } from './foldedLensOf';
-import type { AgentPane, BranchTab, GetFn, Location, SessionView, SetFn } from './types';
+import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
 type TabsParams = {
   readonly state: AppState;
@@ -22,91 +22,45 @@ const branchTabsAfter = ({ state, sessionId, target }: TabsParams): AppState['br
   return rest;
 };
 
-const paneOf = ({ target }: { readonly target: SessionView['target'] }): AgentPane | null =>
-  target?.kind === 'thread' || target?.kind === 'agent' ? (target.pane ?? null) : null;
-
 type SurfaceParams = {
   readonly state: AppState;
   readonly sessionId: SessionId;
   readonly view: SessionView;
-  readonly isRestore: boolean;
 };
 
-const surfaceChanges = ({
-  state,
-  sessionId,
-  view,
-  isRestore,
-}: SurfaceParams): Partial<AppStore> => {
+const surfaceChanges = ({ state, sessionId, view }: SurfaceParams): Partial<AppStore> => {
   const { lens, target } = view;
-  const keep = <T>(isKept: boolean, current: T, next: T): T =>
-    isKept && !isRestore && (target === null || target.kind === 'agent') ? current : next;
   return {
     activeLens: { ...state.activeLens, [sessionId]: lens },
     selectedAgentId: { ...state.selectedAgentId, [sessionId]: view.agentId },
     focusedWorkflowRunId: {
       ...state.focusedWorkflowRunId,
-      [sessionId]: keep(
-        lens === 'workflows',
-        state.focusedWorkflowRunId[sessionId] ?? null,
-        target?.kind === 'run' ? target.runId : null,
-      ),
+      [sessionId]: target?.kind === 'run' ? target.runId : null,
     },
     diffFocus: {
       ...state.diffFocus,
-      [sessionId]: keep(
-        lens === 'files',
-        state.diffFocus[sessionId] ?? null,
-        target?.kind === 'diff' || target?.kind === 'branch' ? target.focus : null,
-      ),
+      [sessionId]: target?.kind === 'diff' || target?.kind === 'branch' ? target.focus : null,
     },
     diffMountPath: {
       ...state.diffMountPath,
-      [sessionId]: keep(
-        lens === 'files',
-        state.diffMountPath[sessionId] ?? null,
-        target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
-      ),
+      [sessionId]: target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
     },
     branchTab: branchTabsAfter({ state, sessionId, target }),
     branchThreadId: {
       ...state.branchThreadId,
       [sessionId]: target?.kind === 'branch' ? target.threadId : null,
     },
-    exploreMountPath:
-      lens === 'explore'
-        ? {
-            ...state.exploreMountPath,
-            [sessionId]: keep(
-              true,
-              state.exploreMountPath[sessionId] ?? null,
-              target?.kind === 'explore' ? target.mountPath : null,
-            ),
-          }
-        : state.exploreMountPath,
     focusedArtifactId: {
       ...state.focusedArtifactId,
-      [sessionId]: keep(
-        lens === 'plans',
-        state.focusedArtifactId[sessionId] ?? null,
-        target?.kind === 'artifact' ? target.artifactId : null,
-      ),
+      [sessionId]: target?.kind === 'artifact' ? target.artifactId : null,
     },
     focusedGithubIssueNumber: {
       ...state.focusedGithubIssueNumber,
-      [sessionId]: keep(
-        lens === 'github_issue',
-        state.focusedGithubIssueNumber[sessionId] ?? null,
-        target?.kind === 'github-issue' ? target.issueNumber : null,
-      ),
+      [sessionId]: target?.kind === 'github-issue' ? target.issueNumber : null,
     },
     focusedExternalTask: {
       ...state.focusedExternalTask,
       [sessionId]: target?.kind === 'external-task' ? target.task : null,
-    },
-    agentPane: {
-      ...state.agentPane,
-      [sessionId]: paneOf({ target }) ?? null,
     },
   };
 };
@@ -145,7 +99,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   const folded: SessionView = { ...view, lens: foldedLensOf({ lens: view.lens }) };
   const resolved: SessionView = isAgentGone ? { ...folded, agentId: null } : folded;
   set((state) => ({
-    ...surfaceChanges({ state, sessionId, view: resolved, isRestore }),
+    ...surfaceChanges({ state, sessionId, view: resolved }),
     drawer,
     openSessionDraftWorkspaceId: null,
   }));

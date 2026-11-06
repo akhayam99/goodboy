@@ -15,7 +15,6 @@ import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { agentPlace } from '../../../store/slices/navigation/place';
-import type { AgentPane } from '../../../store/slices/navigation/types';
 import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../auto/adopt/moveToAutoEvent';
 import { autoMembershipOf } from '../../auto/autoMembershipOf';
@@ -67,13 +66,12 @@ const WAIT_FOR_TURN_REASON = 'Wait for the turn to end first.';
 type OpenAgentParams = {
   readonly env: ActionEnv;
   readonly facts: AgentFacts;
-  readonly pane?: AgentPane | null;
 };
 
-const openAgent = ({ env, facts, pane = null }: OpenAgentParams) => {
+const openAgent = ({ env, facts }: OpenAgentParams) => {
   env
     .getState()
-    .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: facts.agent.id, pane }) });
+    .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: facts.agent.id }) });
 };
 
 export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
@@ -164,7 +162,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         !facts.isAdopted &&
         !(viewing?.kind === 'agent' && viewing.id === facts.agent.id),
       run: ({ facts, env }) => {
-        openAgent({ env, facts, pane: 'transcript' });
+        openAgent({ env, facts });
         dispatchAfterNavigation({
           name: 'goodboy:reveal-chat',
           detail: { intent: OPEN_AGENT_INTENT },
@@ -249,7 +247,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       when: ({ facts }) => facts.isAutoOn && facts.canMoveToAuto,
       blockedReason: ({ facts }) => (facts.isTurnLive ? WAIT_FOR_TURN_REASON : null),
       run: ({ facts, env }) => {
-        openAgent({ env, facts, pane: 'transcript' });
+        openAgent({ env, facts });
         dispatchAfterNavigation({
           name: MOVE_TO_AUTO_EVENT,
           detail: moveToAutoDetail({ agentId: facts.agent.id }),
