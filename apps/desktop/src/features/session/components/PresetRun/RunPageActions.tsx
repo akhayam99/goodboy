@@ -33,6 +33,7 @@ const PAST_FIVE_ROWS_LIVE: ReadonlyArray<string> = [
 
 const PAST_FIVE_ROWS_ENDED: ReadonlyArray<string> = [
   'workflowRun.routing',
+  'workflowRun.close',
   'workflowRun.copySummary',
 ];
 

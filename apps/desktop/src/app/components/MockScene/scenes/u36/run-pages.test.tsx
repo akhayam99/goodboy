@@ -23,7 +23,7 @@ import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { useAppStore } from '../../../../../store';
 import { C08RunScene } from '../u25/C08RunScene';
-import { C08_IMPLEMENTER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
+import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
 import { U36_RUN_PAGES_SCENES } from './run-pages';
 
 const SETTLE_MS = 2_000;
@@ -91,6 +91,33 @@ const openHelperPage = (): void => {
       ],
     },
     selectedAgentId: { ...state.selectedAgentId, [C08_SESSION_ID]: HELPER_ID },
+  });
+};
+
+const openFailedChildOfDoneRun = (): void => {
+  const state = useAppStore.getState();
+  const reviewer = (state.sessionPhaseRuns[C08_SESSION_ID] ?? []).find(
+    (agent) => agent.id === C08_REVIEWER_ID,
+  );
+  if (reviewer === undefined) {
+    return;
+  }
+  useAppStore.setState({
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      [C08_SESSION_ID]: [
+        ...(state.sessionPhaseRuns[C08_SESSION_ID] ?? []),
+        {
+          ...reviewer,
+          id: HELPER_ID,
+          name: 'Re-run the export checks',
+          parentAgentId: reviewer.id,
+          stepId: undefined,
+          status: 'failed',
+          ordinal: 9,
+        },
+      ],
+    },
   });
 };
 
@@ -164,6 +191,28 @@ describe('one run page', () => {
     fireEvent.doubleClick(within(headOf()).getByText('Fix flaky tests in the ledger export'));
 
     within(headOf()).getByRole('textbox', { name: 'Rename run' });
+  });
+
+  it('keeps the head menu within five rows and off Stop run when every step is done but a helper failed', async () => {
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <C08RunScene state="done" selection="overview" extra={openFailedChildOfDoneRun} />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    fireEvent.click(within(headOf()).getByRole('button', { name: /run actions$/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    const menu = screen.getByRole('menu');
+    expect(within(menu).getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
+    expect(within(menu).queryByRole('menuitem', { name: 'Stop run' })).toBeNull();
   });
 
   it('opens the run menu from the keyboard on the head title and starts nothing on Enter or Space', async () => {
