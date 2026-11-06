@@ -1,12 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertAgent, insertOpenQuestion, insertProject, insertWorkspace } from '@goodboy/db';
-import type {
-  AgentId,
-  OpenQuestionId,
-  ProjectId,
-  SessionId,
-  WorkflowId,
-  WorkspaceId,
+import {
+  brandId,
+  type AgentId,
+  type OpenQuestionId,
+  type ProjectId,
+  type SessionId,
+  type WorkflowId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { storedQuestionDrafts } from '../features/context/storedQuestionDrafts';
 import { storedAgentDraft } from './slices/agents/storedAgentDraft';
@@ -179,8 +180,8 @@ describe('store on sqlite: deleting a session', () => {
 
   it('forgets the stored drafts of a session that was never opened', async () => {
     const sessionId = await createLiveSession();
-    const agentId = 'agent-ledger-scout' as AgentId;
-    const questionId = 'question-ledger-alias' as OpenQuestionId;
+    const agentId = brandId<AgentId>({ value: 'agent-ledger-scout' });
+    const questionId = brandId<OpenQuestionId>({ value: 'question-ledger-alias' });
     await insertAgent(storySqlite(), {
       id: agentId,
       sessionId,

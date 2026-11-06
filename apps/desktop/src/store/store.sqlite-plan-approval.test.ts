@@ -9,6 +9,7 @@ import {
 } from '@goodboy/db';
 import {
   DEFAULT_WORKFLOW_RULES,
+  brandId,
   type AgentId,
   type IsoDateTime,
   type OpenQuestionId,
@@ -309,7 +310,7 @@ describe('run a plan on sqlite while its first start is slow', () => {
   it('starts one implementer when Run plan is pressed twice before the agent starts', async () => {
     const plan = aPlan({
       sessionId,
-      agentId: 'agent-planner-gone' as AgentId,
+      agentId: brandId<AgentId>({ value: 'agent-planner-gone' }),
       title: 'Retry with backoff',
       bodyMd: '1. Add backoff\n2. Cover it with tests',
     });
