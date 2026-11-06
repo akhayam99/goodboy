@@ -202,6 +202,20 @@ describe('the child drawer composer names its agent', () => {
     expect(queued).not.toHaveBeenCalled();
   });
 
+  it('keeps the text in the box and says so when the message could not be saved', async () => {
+    const failure = "The message couldn't be saved, so it was not sent.";
+    store.setState({
+      sendAgentMessage: async () => ({ isDelivered: false, failure, isUnwritten: true }),
+    });
+    await mountScene();
+    setChildTurn({ isRunning: false });
+
+    await userEvent.click(await enabledSend());
+
+    await screen.findByText(failure, undefined, WAIT);
+    expect((await drawerBox()).value).toBe(DRAFT);
+  });
+
   it('drops the late failure of a closed drawer instead of showing it in another one', async () => {
     let fail: (reason: Error) => void = () => undefined;
     const { sent } = spyOnActions({

@@ -1423,7 +1423,9 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   beside it. No prefix syntax appears in it.
 - Send to an idle agent is durable: `sendAgentMessage` saves the row first
   (status `sending`, `isDirect`), then `deliverQueuedTurn` sends it with
-  `queue:<id>`, so the dedup above covers it. A refusal, a cancelled writer
+  `queue:<id>`, so the dedup above covers it. A row that could not be saved
+  is taken back and sends nothing: `isUnwritten` tells the composer and the
+  transcript drawer to keep the text in the box. A refusal, a cancelled writer
   wait or an error puts the row back as `queued` with `hold.reason`; the hold
   and `writtenTexts` are saved inside `override_json` under `queueState`, so a
   reload keeps them. The row owns Retry (`retryQueuedMessage`), and

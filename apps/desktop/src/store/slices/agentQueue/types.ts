@@ -42,4 +42,5 @@ export type AgentQueueItemInSessionParams = AgentQueueItemParams &
 export type QueuedTurnDelivery = Readonly<{
   isDelivered: boolean;
   failure: string | null;
+  isUnwritten?: boolean;
 }>;

@@ -56,7 +56,7 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
       if (delivery.failure !== null) {
         setError(delivery.failure);
       }
-      return 'kept';
+      return delivery.isUnwritten === true ? 'unwritten' : 'kept';
     },
     [sendAgentMessage, sessionId, cleanupSentAttachments],
   );

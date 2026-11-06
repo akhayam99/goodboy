@@ -494,6 +494,26 @@ describe('Send writes the row, then delivers', () => {
     expect(rows()).toEqual([{ id: 'send-8', status: 'queued', reason: LIMIT }]);
   });
 
+  it('sends nothing and hands the text back when the row could not be saved', async () => {
+    await storySqlite().execute(
+      `CREATE TRIGGER refuse_new_row BEFORE INSERT ON agent_queued_messages
+       BEGIN SELECT RAISE(ABORT, 'disk is full'); END`,
+    );
+
+    const delivery = await send('send-19');
+
+    expect(delivery).toEqual({
+      isDelivered: false,
+      failure: "The message couldn't be saved, so it was not sent.",
+      isUnwritten: true,
+    });
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(await userTexts()).toBe(0);
+    expect(await savedQueue()).toEqual([]);
+    expect(rows()).toEqual([]);
+    await storySqlite().execute('DROP TRIGGER refuse_new_row');
+  });
+
   it('writes no text and keeps the row when its count could not be saved', async () => {
     await storySqlite().execute(
       `CREATE TRIGGER refuse_written_count BEFORE INSERT ON agent_queued_messages

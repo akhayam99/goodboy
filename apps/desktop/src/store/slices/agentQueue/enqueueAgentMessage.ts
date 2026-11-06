@@ -9,7 +9,7 @@ type Params = Readonly<{
 }>;
 
 export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
-  return async ({ turn, placement = 'last', isDirect = false }: Params): Promise<void> => {
+  return async ({ turn, placement = 'last', isDirect = false }: Params): Promise<boolean> => {
     const queued: AgentQueuedTurn = {
       ...turn,
       status: isDirect ? 'sending' : 'queued',
@@ -24,6 +24,6 @@ export const enqueueAgentMessage = (set: SetFn, get: GetFn) => {
       agentId: turn.agentId,
       queue: placement === 'first' ? [...sending, queued, ...waiting] : [...current, queued],
     });
-    await persistAgentQueue({ get, agentId: turn.agentId });
+    return persistAgentQueue({ get, agentId: turn.agentId });
   };
 };

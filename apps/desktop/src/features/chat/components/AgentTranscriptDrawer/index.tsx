@@ -102,6 +102,10 @@ export const AgentTranscriptDrawer = ({
       const held = (useAppStore.getState().agentQueue[agentId] ?? []).find(
         (item) => item.id === id,
       )?.hold;
+      if (delivery.isUnwritten === true) {
+        const current = useAppStore.getState().agentDraft[agentId] ?? '';
+        setAgentDraft(agentId, restoreDraftOnFailedSend({ sent: content, current }));
+      }
       const failure = delivery.failure ?? held?.reason ?? null;
       if (!delivery.isDelivered && failure !== null) {
         void reportError({

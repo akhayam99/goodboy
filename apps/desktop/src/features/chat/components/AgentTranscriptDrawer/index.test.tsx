@@ -151,6 +151,27 @@ describe('AgentTranscriptDrawer', () => {
     expect(useAppStore.getState().agentDraft[PLANNER] ?? '').toBe('');
   });
 
+  it('puts the text back and says so when the message could not be saved', async () => {
+    const reportError = vi.fn<StoreState['reportError']>(async () => undefined);
+    const failure = "The message couldn't be saved, so it was not sent.";
+    const sendAgentMessage = vi.fn<StoreState['sendAgentMessage']>(async () => ({
+      isDelivered: false,
+      failure,
+      isUnwritten: true,
+    }));
+    stub({ sendAgentMessage, reportError });
+    useAppStore.getState().setAgentDraft(PLANNER, 'Retry the ledger-core export');
+
+    render(
+      <AgentTranscriptDrawer sessionId={SESSION_ID} agentId={PLANNER} onClose={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
+    expect(String(reportError.mock.calls[0]?.[0].error)).toContain(failure);
+    expect(useAppStore.getState().agentDraft[PLANNER]).toBe('Retry the ledger-core export');
+  });
+
   it('says so when the agent is gone', () => {
     render(
       <AgentTranscriptDrawer
