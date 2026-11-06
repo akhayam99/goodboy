@@ -107,6 +107,18 @@ describe('Ask turn shares the Chat transcript parts', () => {
     expect(started).toEqual([REPLY.id]);
   });
 
+  it('folds a raw provider error behind Details and keeps one plain sentence', () => {
+    const raw = 'spawn claude ENOENT\n    at ChildProcess._handle.onexit (node:internal/x:1:1)';
+    mount({ reply: { ...REPLY, content: '', status: 'failed', error: raw } });
+
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('No answer');
+    expect(alert.textContent).toContain('The provider stopped without an answer.');
+    expect(screen.queryByText(/ENOENT/u)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Details/u }));
+    expect(screen.getByText(/ENOENT/u)).toBeDefined();
+  });
+
   it('hides Start work while the answer is still streaming', () => {
     mount({ reply: { ...REPLY, status: 'streaming' } });
     expect(screen.queryByRole('button', { name: NAMES.startWorkFromAsk })).toBeNull();

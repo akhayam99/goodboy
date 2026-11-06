@@ -63,6 +63,18 @@ describe('the session Ask scene', () => {
     expect(trigger.getAttribute('aria-label')).toBe('Ask this session');
   });
 
+  it('says what Ask is above the questions to try, and drops it once a turn exists', async () => {
+    await renderState('rightnow');
+    const empty = within(askDrawer()).getByRole('heading', { name: 'Ask this session' });
+    expect(empty).toBeDefined();
+    expect(
+      within(askDrawer()).getByText('What it did, what it found, what waits on you.'),
+    ).toBeDefined();
+    cleanup();
+    await renderState('answer');
+    expect(within(askDrawer()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();
+  });
+
   it('closes and reopens from the trail button', async () => {
     const trigger = await renderState('closed');
     expect(trigger.getAttribute('aria-pressed')).toBe('false');

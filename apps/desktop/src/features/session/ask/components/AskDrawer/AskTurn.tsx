@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Notice, WorkNode } from '@goodboy/ui';
+import { Notice, splitErrorMessage, WorkNode } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useRevealedMarkdown } from '../../../../chat/reveal/useRevealedMarkdown';
@@ -53,6 +53,8 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }:
   const isDone = reply?.status === 'done' && !reveal.isRevealing;
   const actions = useAskActions({ sessionId, answer: isDone ? answer : EMPTY_ANSWER, facts });
   const hasText = shown.blocks.length > 0;
+  const failure =
+    reply?.status === 'failed' ? splitErrorMessage({ message: reply.error ?? '' }) : null;
   return (
     <div data-testid="ask-turn" className="flex flex-col gap-3">
       <UserMessageBubble isOnDrawer text={question.content} />
@@ -76,15 +78,16 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen, onStartWork }:
               onOpen={onOpen}
             />
           ) : null}
-          {reply.status === 'failed' ? (
+          {failure === null ? null : (
             <Notice
               tone="danger"
               placement="inline"
               role="alert"
               title="No answer"
-              body={reply.error ?? 'The provider stopped without an answer.'}
+              body={failure.summary ?? 'The provider stopped without an answer.'}
+              detail={failure.detail}
             />
-          ) : null}
+          )}
           {reply.status === 'stopped' ? (
             <p className="text-meta text-faint-foreground">Stopped</p>
           ) : null}
