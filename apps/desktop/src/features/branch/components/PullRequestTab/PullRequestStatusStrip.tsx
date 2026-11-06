@@ -1,10 +1,9 @@
 import { ROW_INTERACTIVE, Skeleton, StatusDot, cn } from '@goodboy/ui';
-import type { BranchTab } from '../../../../store/slices/navigation/types';
-import type { StatusCell } from './statusCell';
+import type { StatusCell, StatusTarget } from './statusCell';
 
 type Props = {
   readonly cells: ReadonlyArray<StatusCell>;
-  readonly onOpen: (tab: BranchTab) => void;
+  readonly onOpen: (target: StatusTarget) => void;
 };
 
 const CELL = 'flex min-w-0 flex-col gap-1 bg-subtle px-3 py-2 text-left';

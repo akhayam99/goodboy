@@ -4,7 +4,7 @@ import { checksCountsOf, checksGroupsOf } from '../../../integrations/github/che
 import type { PrMergeReadiness } from '../../../review/prMergeReadiness';
 import { mergeIsClear } from '../../../review/prMergeReadiness';
 import { BRANCH_STATE_TONE } from '../../../session/central/branches/branchStateTone';
-import type { StatusCell } from './statusCell';
+import type { StatusCell, StatusTarget } from './statusCell';
 
 export type PullRequestBranchFacts = {
   readonly ahead: number;
@@ -73,7 +73,7 @@ const loginsIn = ({ people, states }: PeopleParams): string | null => {
 type ReviewParams = Pick<Params, 'state' | 'pr' | 'people'>;
 
 const reviewCell = ({ state, pr, people }: ReviewParams): StatusCell => {
-  const cell = { id: 'review' as const, label: 'Review', opens: null };
+  const cell = { id: 'review' as const, label: 'Review', opens: 'comments' as const };
   if (state === 'draft') {
     return { ...cell, word: 'Draft', detail: 'not open for review', tone: 'neutral' };
   }
@@ -135,6 +135,9 @@ const blockedDetailOf = ({ readiness }: Pick<Params, 'readiness'>): string => {
   return 'by review';
 };
 
+const blockedTabOf = ({ readiness }: Pick<Params, 'readiness'>): StatusTarget =>
+  blockedDetailOf({ readiness }) === 'by checks' ? 'checks' : 'comments';
+
 const mergeCell = ({
   state,
   pr,
@@ -143,21 +146,28 @@ const mergeCell = ({
   mergeWord,
   queueLine,
 }: MergeParams): StatusCell => {
-  const cell = { id: 'merge' as const, label: 'Merge', opens: null };
+  const cell = { id: 'merge' as const, label: 'Merge' };
   switch (state) {
     case 'merged':
-      return { ...cell, word: 'Merged', detail: `into ${pr.baseBranch}`, tone: 'merged' };
+      return {
+        ...cell,
+        word: 'Merged',
+        detail: `into ${pr.baseBranch}`,
+        tone: 'merged',
+        opens: 'commits',
+      };
     case 'closed':
-      return { ...cell, word: 'Closed', detail: 'not merged', tone: 'neutral' };
+      return { ...cell, word: 'Closed', detail: 'not merged', tone: 'neutral', opens: 'commits' };
     case 'queued':
       return {
         ...cell,
         word: 'Queued',
         detail: queueLine ?? readiness.word,
         tone: BRANCH_STATE_TONE.queued,
+        opens: 'commits',
       };
     case 'draft':
-      return { ...cell, word: 'Blocked', detail: 'by draft', tone: 'neutral' };
+      return { ...cell, word: 'Blocked', detail: 'by draft', tone: 'neutral', opens: 'commits' };
     case 'none':
     case 'open':
     case 'approved':
@@ -173,6 +183,7 @@ const mergeCell = ({
       word: 'Conflicts',
       detail: `with ${pr.baseBranch}`,
       tone: BRANCH_STATE_TONE.conflicts,
+      opens: 'files',
     };
   }
   if (mergeIsClear({ readiness })) {
@@ -181,24 +192,37 @@ const mergeCell = ({
       word: 'Ready',
       detail: `${mergeWord} into ${pr.baseBranch}`,
       tone: BRANCH_STATE_TONE.ready,
+      opens: 'merge',
     };
   }
   if (readiness.labelBlocker === 'checks running') {
-    return { ...cell, word: 'Waiting', detail: 'on checks', tone: 'info' };
+    return { ...cell, word: 'Waiting', detail: 'on checks', tone: 'info', opens: 'checks' };
   }
   if (readiness.status === 'unknown') {
-    return { ...cell, word: 'Checking', detail: readiness.word, tone: 'neutral' };
+    return {
+      ...cell,
+      word: 'Checking',
+      detail: readiness.word,
+      tone: 'neutral',
+      opens: 'checks',
+    };
   }
   if (readiness.status === 'ready') {
-    return { ...cell, word: 'Ready', detail: readiness.word, tone: 'warning' };
+    return { ...cell, word: 'Ready', detail: readiness.word, tone: 'warning', opens: 'merge' };
   }
-  return { ...cell, word: 'Blocked', detail: blockedDetailOf({ readiness }), tone: 'neutral' };
+  return {
+    ...cell,
+    word: 'Blocked',
+    detail: blockedDetailOf({ readiness }),
+    tone: 'neutral',
+    opens: blockedTabOf({ readiness }),
+  };
 };
 
 type BranchParams = Pick<Params, 'state' | 'pr' | 'branch'>;
 
 const branchCell = ({ state, pr, branch }: BranchParams): StatusCell => {
-  const cell = { id: 'branch' as const, label: 'Branch', opens: null };
+  const cell = { id: 'branch' as const, label: 'Branch', opens: 'commits' as const };
   const base = pr.baseBranch;
   if (state === 'merged') {
     return { ...cell, word: 'Can be deleted', detail: null, tone: 'neutral' };

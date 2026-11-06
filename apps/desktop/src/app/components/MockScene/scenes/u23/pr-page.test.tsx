@@ -228,7 +228,9 @@ describe('the pull request page scenes', () => {
       ).toBe('step.checks'),
     );
     expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Fix checks');
-    expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /^(Squash and merge|Rebase and merge|Merge commit)/ }),
+    ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
     expect(screen.getByRole('menuitem', { name: /Merge/ }).getAttribute('aria-disabled')).toBe(
       'true',
@@ -273,7 +275,9 @@ describe('the pull request page scenes', () => {
         /merged this pull request/,
       ),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /^(Squash and merge|Rebase and merge|Merge commit)/ }),
+    ).toBeNull();
   });
 });
 

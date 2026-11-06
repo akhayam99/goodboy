@@ -252,11 +252,11 @@ below an 880px page container the side column moves above the reading column as 
 row. The strip (`PullRequestStatusStrip`, cells from
 `pullRequestCellsOf`) has four fixed cells, each a label, a word with a `StatusDot` and one faint
 detail: Checks (`2 passed`, `1 failing` with the failing names, `Running, 2 of 3`, counted by
-`checksCountsOf` as the rail is, and a click opens the Checks entry), Review (`No approval yet`,
+`checksCountsOf` as the rail is), Review (`No approval yet`,
 `Waiting on dana-r`, `Changes requested`, `Approved by dana-r`), Merge (`Blocked by checks`,
 `Conflicts` in amber as in the branch state map, `Ready` with the merge method, `Queued` with the
 queue line, `Merged`) and Branch (`Up to date`, `7 behind main`, `Rebasing`, `Diverged` when
-someone pushed online). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
+someone pushed online). Every cell opens something: Checks opens Checks, Review opens Comments, Branch opens Commits, and Merge opens its confirm once it reads `Ready` (Checks while checks hold it, Comments while review does, Files on conflicts, Commits once merged, closed, queued or draft). The strip is a fixed four-column grid, so a cell never changes width when its word changes. While the view loads the Activity holds three rows of `PullRequestActivitySkeleton` behind `SkeletonSwap` (nothing for 120 ms, then at least 160 ms). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
 the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
 requests another), `Bots that commented` (bots whose only review is a comment, with no verdict,
 `pullRequestReviewerGroupsOf` in core), `Author` and `Linked issues`, all read from the branch on
@@ -527,16 +527,15 @@ per commit (title, then sha, author and age in
 `text-meta`, a faint `Not pushed` chip only on a commit that is not on the
 online copy, the grip a faint mark of a row that drags), then the base row.
 
-**The base row** (`HistoryBaseRow`) is the action point for the base. Behind the
-base it reads `Based on main 9d4b1f7`; how far behind and `Rebase` live on the worktree
-status line. The base chip (`branch → main`, a
-searchable listbox of the repository's branches) picks another base; the button
-then reads `Rebase onto <branch>`. The button asks in a `ConfirmPopover` anchored
-to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
-base) with a version of the current history kept. The Activity rebase suggestion
-(`Open rebase`) opens this page on the mount it names, scrolled to the row with
-the button focused (`HISTORY_FOCUS_BASE_EVENT`).
-The page header has one `...` button (`HistoryKeysHint`, an anchored popover)
+**The base row** (`HistoryBaseRow`) only says where the branch starts: `Based on main 9d4b1f7`, the
+merge base subject and its age. The rebase lives in the Commits head (`HistoryRebaseHead`), a split:
+`Rebase on main` while the branch is behind, and a chevron listbox of the repository's branches
+(`Rebase on another branch`) that retargets the button to `Rebase on <branch>`. The button asks
+in a `ConfirmPopover` anchored to it and runs the rebase command (`rebaseBranch`, with `ontoBranch`
+for another base) with a version of the current history kept. The Activity rebase suggestion
+(`Open rebase`) opens this page on the mount it names, scrolled to the base row with the head
+button focused (`HISTORY_FOCUS_BASE_EVENT`).
+The page header has one `?` button (`HistoryKeysHint`, an anchored popover)
 with `How to edit commits` (the Guide chapter Commits) and the keys of the
 focused row (`useHistoryKeys/historyKeys.ts`); no teaching line sits under the
 list. Each row's `...` menu lives in a fixed cell that shows on hover and

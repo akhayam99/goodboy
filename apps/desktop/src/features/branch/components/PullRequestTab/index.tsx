@@ -46,6 +46,7 @@ type Props = {
   readonly onConnected: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
+  readonly onMerge: () => void;
 };
 
 export const PullRequestTab = ({
@@ -76,6 +77,7 @@ export const PullRequestTab = ({
   onConnected,
   onReload,
   onSelectTab,
+  onMerge,
 }: Props) => {
   if (pr === null) {
     return (
@@ -117,6 +119,7 @@ export const PullRequestTab = ({
       onMutated={onMutated}
       onReload={onReload}
       onSelectTab={onSelectTab}
+      onMerge={onMerge}
     />
   );
 };
