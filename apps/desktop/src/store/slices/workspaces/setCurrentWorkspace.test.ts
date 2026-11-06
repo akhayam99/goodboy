@@ -11,6 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
+import { brandId } from '@goodboy/types';
 import { aSession, aWorkflowRun, aWorkspace, anAgent } from '@goodboy/types/testing';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from './types';
@@ -304,17 +305,18 @@ describe('setCurrentWorkspace stops all live work', () => {
   });
 
   it('marks a running turn the store has no agent row for as cancelled before the kill', async () => {
+    const orphan = brandId<ProviderRunId>({ value: 'run-orphan' });
     const running = aSession({
       workspaceId: WORKSPACE_ID,
-      state: { kind: 'running', runId: 'run-orphan' as ProviderRunId, startedAt: NOW },
+      state: { kind: 'running', runId: orphan, startedAt: NOW },
     });
     const store = harness({ sessions: [running] });
 
     await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
 
     expect(cancelTurn).toHaveBeenCalledWith('run-orphan');
-    expect(cancelledRunIds.has('run-orphan' as ProviderRunId)).toBe(true);
-    cancelledRunIds.delete('run-orphan' as ProviderRunId);
+    expect(cancelledRunIds.has(orphan)).toBe(true);
+    cancelledRunIds.delete(orphan);
   });
 
   it('stops nothing when nothing is live', async () => {

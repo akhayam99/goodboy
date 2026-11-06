@@ -1,4 +1,10 @@
-import type { Agent, AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
 import { cancelTurn } from '../../../features/chat/turn';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import type { AppStore } from '../../store';
@@ -54,7 +60,7 @@ type StateParams = Readonly<{
 
 const targetsOf = ({ state, scope }: StateParams): ReadonlyArray<Target> =>
   Object.keys(state.sessionPhaseRuns).flatMap((key) => {
-    const sessionId = key as SessionId;
+    const sessionId = brandId<SessionId>({ value: key });
     if (!isInScope({ scope, sessionId })) {
       return [];
     }
@@ -91,11 +97,11 @@ const orphanRunIdsOf = ({ state, scope, targets }: OrphanParams): ReadonlyArray<
   }
   if (scope.kind === 'all') {
     for (const [agentId, turnState] of Object.entries(state.agentTurnState)) {
-      if (targeted.has(agentId as AgentId)) {
+      if (targeted.has(brandId<AgentId>({ value: agentId }))) {
         continue;
       }
       if (turnState?.kind === 'starting') {
-        cancelTurnStartWindow({ agentId: agentId as AgentId });
+        cancelTurnStartWindow({ agentId: brandId<AgentId>({ value: agentId }) });
         continue;
       }
       if (

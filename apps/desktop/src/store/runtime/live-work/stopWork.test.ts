@@ -1,7 +1,13 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace } from '@goodboy/db';
 import { nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
-import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { summarizerQueues } from '../../slices/turn/turnHelpers';
 import {
   buildStoryWorkspace,
@@ -209,7 +215,7 @@ describe('stopWork', () => {
       agentTurnState: {
         [agentId]: {
           kind: 'blocked',
-          runId: 'run-permission' as ProviderRunId,
+          runId: brandId<ProviderRunId>({ value: 'run-permission' }),
           blockedAt: TEST_NOW,
         },
       },
@@ -320,7 +326,7 @@ describe('stopWork', () => {
       agentTurnState: {
         [otherAgent.id]: {
           kind: 'blocked',
-          runId: 'run-elsewhere' as ProviderRunId,
+          runId: brandId<ProviderRunId>({ value: 'run-elsewhere' }),
           blockedAt: TEST_NOW,
         },
       },
