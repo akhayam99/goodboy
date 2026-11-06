@@ -67,6 +67,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 import type { CancelOutcome } from '../turn/cancelTurnConfirmed';
 import { clearAgentStopping, isAgentStopping, markAgentStopping } from '../turn/stoppingAgents';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
+import { stoppedAutoRuns } from './stoppedAutoRuns';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -156,6 +157,7 @@ const runOf = (state: State) => (state['sessions'] as ReadonlyArray<Session>)[0]
 beforeEach(() => {
   vi.clearAllMocks();
   invokeAgentListSpy.mockResolvedValue([]);
+  stoppedAutoRuns.forget({ workflowRunId: RUN_ID });
 });
 
 describe('stopWorkflowRunNow', () => {
@@ -182,6 +184,7 @@ describe('stopWorkflowRunNow', () => {
     );
     expect(runOf(state).autoRun).toBe(false);
     expect(runOf(state).orchestrationStop?.kind).toBe('operator');
+    expect(stoppedAutoRuns.has({ workflowRunId: RUN_ID })).toBe(true);
   });
 
   it('leaves no agent stranded on running', async () => {
@@ -216,6 +219,7 @@ describe('stopWorkflowRunNow', () => {
       const outcome = await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
 
       expect(outcome).toBe('still_running');
+      expect(stoppedAutoRuns.has({ workflowRunId: RUN_ID })).toBe(false);
       expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
       expect(runOf(state).orchestrationStop).toBeUndefined();
       expect(runOf(state).autoRun).toBe(true);

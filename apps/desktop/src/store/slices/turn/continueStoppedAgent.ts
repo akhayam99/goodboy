@@ -1,6 +1,7 @@
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
 import { sessionById } from '../sessions/sessionIndex';
+import { stoppedAutoRuns } from '../workflows/stoppedAutoRuns';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import { withStepBoundary } from './kickoff';
@@ -32,6 +33,11 @@ const releaseOperatorStop = async ({ set, get, sessionId, agent }: ReleaseParams
   if (run?.orchestrationStop?.kind !== 'operator') {
     return;
   }
+  if (stoppedAutoRuns.has({ workflowRunId })) {
+    await get().setWorkflowRunAutoRun(sessionId, workflowRunId, true);
+    stoppedAutoRuns.forget({ workflowRunId });
+    return;
+  }
   await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
 };
 
@@ -61,14 +67,30 @@ export const continueStoppedAgent = (set: SetFn, get: GetFn) => {
         return;
       }
     }
-    await releaseOperatorStop({ set, get, sessionId, agent });
-    throwIfRefused({
-      result: await get().sendTurn({
-        sessionId,
-        agentId,
-        content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
-        origin: 'operator',
-      }),
+    let release: Promise<unknown> | null = null;
+    const releaseOnce = (): Promise<unknown> => {
+      release ??= releaseOperatorStop({ set, get, sessionId, agent }).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      return release;
+    };
+    const result = await get().sendTurn({
+      sessionId,
+      agentId,
+      content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
+      origin: 'operator',
+      onStarted: () => {
+        void releaseOnce();
+      },
     });
+    if (release === null && result.isLaneQueued !== true && result.isAlreadySent !== true) {
+      throwIfRefused({ result });
+      return;
+    }
+    const failure = await releaseOnce();
+    if (failure !== null) {
+      throw failure;
+    }
   };
 };

@@ -2,6 +2,7 @@ import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { cancelRunningSteps } from './cancelRunningSteps';
 import { persistOrchestrationStop } from './orchestrateNextStep';
+import { stoppedAutoRuns } from './stoppedAutoRuns';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -52,6 +53,9 @@ const runStop = async ({
     cut: 'stopped',
   });
   if (stillRunning.length === 0) {
+    if (wasAutoRun) {
+      stoppedAutoRuns.remember({ workflowRunId });
+    }
     return 'stopped';
   }
   await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: previousStop });

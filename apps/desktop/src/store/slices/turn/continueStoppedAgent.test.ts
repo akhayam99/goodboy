@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Agent } from '@goodboy/types';
 import { brandId, type StepId } from '@goodboy/types';
-import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { stoppedAutoRuns } from '../workflows/stoppedAutoRuns';
 import { useAppStore, type AppStore } from '../../store';
 import {
   FIXTURE_ROOT,
@@ -116,6 +117,70 @@ describe('resumeStoppedAgents after a restart', () => {
 
     expect(count).toBe(0);
     expect(continueSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('continueStoppedAgent on a run you stopped', () => {
+  const run = aWorkflowRun({
+    autoRun: false,
+    orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+  });
+  const stepAgent = anAgent({
+    status: 'stopped',
+    stoppedBy: 'you',
+    stepId: brandId<StepId>({ value: 'step-implement' }),
+    workflowRunId: run.id,
+  });
+
+  type StopParams = {
+    readonly sendTurn: AppStore['sendTurn'];
+  };
+
+  const continueStep = ({ sendTurn }: StopParams) => {
+    useAppStore.setState({ sessions: [aSession({ id: FIXTURE_SESSION, workflowRuns: [run] })] });
+    const setWorkflowRunAutoRun = vi.fn<AppStore['setWorkflowRunAutoRun']>(async () => undefined);
+    const get = () => ({
+      ...useAppStore.getState(),
+      sessionPhaseRuns: { [FIXTURE_SESSION]: [stepAgent] },
+      autoTreeViews: {},
+      sendTurn,
+      setWorkflowRunAutoRun,
+    });
+    const continuing = continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
+    return { continuing, setWorkflowRunAutoRun };
+  };
+
+  const stopOf = () =>
+    useAppStore.getState().sessions.find((session) => session.id === FIXTURE_SESSION)
+      ?.workflowRuns[0]?.orchestrationStop?.kind;
+
+  it('keeps the run stopped when Continue is refused', async () => {
+    const { continuing, setWorkflowRunAutoRun } = continueStep({
+      sendTurn: vi.fn(async () => ({ blockedOverBudget: true })),
+    });
+
+    await expect(continuing).rejects.toThrow('over its limit');
+
+    expect(stopOf()).toBe('operator');
+    expect(setWorkflowRunAutoRun).not.toHaveBeenCalled();
+  });
+
+  it('turns the run back on its own once the step started, when Stop run turned it off', async () => {
+    stoppedAutoRuns.remember({ workflowRunId: run.id });
+    const { continuing, setWorkflowRunAutoRun } = continueStep({
+      sendTurn: vi.fn(async ({ onStarted }) => {
+        onStarted?.();
+        return { blockedOverBudget: false };
+      }),
+    });
+
+    await continuing;
+
+    expect(setWorkflowRunAutoRun).toHaveBeenCalledWith(FIXTURE_SESSION, run.id, true);
+    expect(stoppedAutoRuns.has({ workflowRunId: run.id })).toBe(false);
   });
 });
 
