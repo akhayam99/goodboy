@@ -86,4 +86,23 @@ describe('a tool stays open through a move inside its session', () => {
     state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     expect(state().drawer).toBeNull();
   });
+
+  it('keeps the tool open on Back and on the Back row to a page that had none', () => {
+    state().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    state().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    const tool: DrawerRequest = { kind: 'spawned', sessionId: S1, payload: null };
+    state().openDrawer(tool);
+    state().back();
+    expect(state().drawer).toEqual(tool);
+    state().forward();
+    state().upTo({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    expect(state().drawer).toEqual(tool);
+  });
+
+  it('does not carry a tool back into another session', () => {
+    state().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    state().openDrawer({ kind: 'spawned', sessionId: S2, payload: null });
+    state().back();
+    expect(state().drawer).toBeNull();
+  });
 });

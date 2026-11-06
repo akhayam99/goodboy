@@ -1,3 +1,4 @@
+import { keepToolDrawer } from '../drawer/keepToolDrawer';
 import { applyLocation } from './applyLocation';
 import { currentStack, stackKey } from './currentStack';
 import type { GetFn, SetFn } from './types';
@@ -19,6 +20,13 @@ export const goHistory = ({ set, get, delta }: Params): boolean => {
   set((current) => ({
     navigation: { ...current.navigation, [stackKey(current)]: { ...stack, index } },
   }));
-  applyLocation({ set, get, location: entry, isRestore: true });
+  const drawer = entry.focus.drawer ?? keepToolDrawer({ state, place: entry.place });
+  applyLocation({
+    set,
+    get,
+    location:
+      drawer === entry.focus.drawer ? entry : { ...entry, focus: { ...entry.focus, drawer } },
+    isRestore: true,
+  });
   return true;
 };
