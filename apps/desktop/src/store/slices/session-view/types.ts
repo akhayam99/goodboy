@@ -177,6 +177,11 @@ export type AwaitArtifactAgentParams = Readonly<{
   agentId: AgentId | null;
 }>;
 
+export type SetFocusedRunAgentParams = Readonly<{
+  sessionId: SessionId;
+  agentId: AgentId | null;
+}>;
+
 export type SessionCreationKind = 'agent' | 'workflow' | 'branch';
 
 export type SessionCreationId = string;
@@ -196,6 +201,7 @@ type SessionViewSliceState = {
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly focusedRunAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
@@ -262,6 +268,7 @@ type SessionViewSliceActions = {
   }): void;
   openArtifactCreation(params: OpenArtifactCreationParams): void;
   awaitArtifactAgent(params: AwaitArtifactAgentParams): void;
+  setFocusedRunAgent(params: SetFocusedRunAgentParams): void;
   setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;

@@ -92,6 +92,19 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
           notify();
         },
       ),
+      focusedRunAgentId: {} as Record<string, string | null>,
+      setFocusedRunAgent: vi.fn(
+        ({
+          sessionId,
+          agentId,
+        }: {
+          readonly sessionId: string;
+          readonly agentId: string | null;
+        }) => {
+          state.focusedRunAgentId = { ...state.focusedRunAgentId, [sessionId]: agentId };
+          notify();
+        },
+      ),
       openArtifactCreation: vi.fn(),
       setArtifactDraft: vi.fn(),
       stopArtifactGeneration: vi.fn(async () => undefined),
@@ -239,6 +252,7 @@ beforeEach(() => {
   state.sessions = [{ id: 'sess-1', goal: 'fix the rounding drift' }];
   state.selectedAgentId = {};
   state.awaitedArtifactAgentId = {};
+  state.focusedRunAgentId = {};
   vi.clearAllMocks();
 });
 afterEach(cleanup);

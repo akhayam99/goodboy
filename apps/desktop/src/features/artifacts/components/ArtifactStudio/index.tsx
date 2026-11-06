@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import {
@@ -87,15 +87,12 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     });
     return { activeAgentIds: active, runningAgentIds: running };
   }, [agents, turnKinds]);
-  const [focusedRunAgentId, setFocusedRunAgentId] = useState<AgentId | null>(null);
+  const focusedRunAgentId = useAppStore((s) => s.focusedRunAgentId[sessionId] ?? null);
+  const setFocusedRunAgent = useAppStore((s) => s.setFocusedRunAgent);
 
   useEffect(() => {
     void loadSessionArtifacts(sessionId);
   }, [sessionId, loadSessionArtifacts]);
-
-  useEffect(() => {
-    setFocusedRunAgentId(null);
-  }, [sessionId]);
 
   useEffect(() => {
     if (awaitedAgentId === null) {
@@ -142,11 +139,11 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       return;
     }
     const produced = artifacts.find((artifact) => artifact.agentId === focusedRunAgentId) ?? null;
-    setFocusedRunAgentId(null);
+    setFocusedRunAgent({ sessionId, agentId: null });
     if (produced !== null) {
       openArtifactPage({ sessionId, artifactId: produced.id, isArrival: true });
     }
-  }, [focusedRunAgentId, generations, artifacts, sessionId]);
+  }, [focusedRunAgentId, generations, artifacts, sessionId, setFocusedRunAgent]);
 
   const subject = useMemo((): ArtifactShellSubject | null => {
     if (focusedArtifactId !== null) {
@@ -221,9 +218,9 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
         navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) });
         return;
       }
-      setFocusedRunAgentId(generation.agentId);
+      setFocusedRunAgent({ sessionId, agentId: generation.agentId });
     },
-    [navigate, sessionId],
+    [navigate, sessionId, setFocusedRunAgent],
   );
 
   useEscapeLayer(
@@ -231,7 +228,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       if (isTextEntryTarget(document.activeElement)) {
         return;
       }
-      setFocusedRunAgentId(null);
+      setFocusedRunAgent({ sessionId, agentId: null });
     },
     isShown && selectedAgentId === null && subject?.kind === 'generation' && !isArtifactDrawerOpen,
   );
