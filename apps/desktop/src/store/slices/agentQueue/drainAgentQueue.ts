@@ -2,6 +2,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { deliverQueuedTurn } from './deliverQueuedTurn';
 import { isAgentStopping } from '../turn/stoppingAgents';
 import { isHandoffPending } from './handoff';
+import { isQueueParked } from './isQueueParked';
 import { readAgentQueue, writeAgentQueue } from './queueStore';
 import type { GetFn, SetFn } from './types';
 
@@ -22,7 +23,7 @@ export const drainAgentQueue = (set: SetFn, get: GetFn) => {
       return;
     }
     const agent = (state.sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === agentId);
-    if (agent?.status === 'stopped' || agent?.status === 'skipped') {
+    if (isQueueParked({ agent })) {
       return;
     }
     const queue = readAgentQueue({ get, agentId });

@@ -5,6 +5,7 @@ import {
   type PendingAttachment,
 } from '../../../../../attachments/pendingAttachment';
 import { useAppStore } from '../../../../../../store';
+import { isQueueParked } from '../../../../../../store/slices/agentQueue/isQueueParked';
 import { autoTreeOfAgent } from '../../../../../auto/autoTreeOfAgent';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
 import { focusComposerTextarea } from '../../focusComposerTextarea';
@@ -61,9 +62,9 @@ export const useComposerQueue = ({
     onEdit: onEditQueued,
   });
   const isAgentStopped = useAppStore((state) =>
-    (state.sessionPhaseRuns[sessionId] ?? []).some(
-      (agent) => agent.id === agentId && agent.status === 'stopped',
-    ),
+    isQueueParked({
+      agent: (state.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === agentId),
+    }),
   );
   const tree = agentId === null ? null : autoTreeOfAgent({ views, agentId });
   const queued = useQueuedRows({
