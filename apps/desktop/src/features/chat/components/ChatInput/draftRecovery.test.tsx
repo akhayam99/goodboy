@@ -151,6 +151,21 @@ describe('the session composer when a send is refused', () => {
     expect(screen.queryByTestId('queued-message-row')).toBeNull();
   });
 
+  it('locks the held row while the box holds typed text, so a click never overwrites it', async () => {
+    const { box } = await mountIdleChild({ sendTurn: async () => BLOCKED });
+    await clickSend();
+    await heldRow();
+    fireEvent.change(box, { target: { value: 'and check notify-relay too' } });
+    await waitFor(() => expect(box.value).toBe('and check notify-relay too'));
+    const { row } = await heldRow();
+
+    fireEvent.click(within(row).getByText(DRAFT));
+
+    expect(within(row).getByText(DRAFT).closest('button')?.disabled).toBe(true);
+    expect(box.value).toBe('and check notify-relay too');
+    expect(screen.getByTestId('queued-message-row')).toBeDefined();
+  });
+
   it('keeps the row for a fresh composer of the same agent', async () => {
     const { view } = await mountIdleChild({ sendTurn: async () => BLOCKED });
     await clickSend();
