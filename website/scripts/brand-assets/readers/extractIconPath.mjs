@@ -1,5 +1,3 @@
-import { requireMatch } from './requireMatch.mjs';
-
 export const extractIconPath = ({ iconSource, componentName }) => {
   const declaration = `export const ${componentName}:`;
   const declarationIndex = iconSource.indexOf(declaration);
@@ -11,9 +9,9 @@ export const extractIconPath = ({ iconSource, componentName }) => {
     throw new Error(`Could not find the end of ${componentName} in the app brand icons`);
   }
   const block = iconSource.slice(declarationIndex, blockEnd);
-  return requireMatch({
-    source: block,
-    pattern: /<path\s+d=["']([^"']+)["']\s*\/>/,
-    description: `path data for ${componentName} in the app brand icons`,
-  })[1];
+  const paths = [...block.matchAll(/<path\s+d=["']([^"']+)["']\s*\/>/g)].map((match) => match[1]);
+  if (paths.length === 0) {
+    throw new Error(`Could not find path data for ${componentName} in the app brand icons`);
+  }
+  return paths.join(' ');
 };
