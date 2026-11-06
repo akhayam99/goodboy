@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
-import { aSession, anAgent } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -182,6 +182,57 @@ describe('the window close sheet', () => {
     await requestClose();
 
     screen.getByRole('button', { name: 'Stop 2 agents' });
+  });
+
+  it('counts a run that is deciding, with no agent running', async () => {
+    const run = aWorkflowRun();
+    const stopWorkflowRunNow = vi.fn(async () => 'stopped' as const);
+    useAppStore.setState({
+      sessions: [{ ...session, workflowRuns: [run] }],
+      orchestratingWorkflowRuns: { [run.id]: true },
+      stopWorkflowRunNow,
+    });
+    render(<WindowCloseSheet />);
+
+    await requestClose();
+
+    const sheet = within(
+      screen.getByRole('dialog', { name: '1 run still working in this window' }),
+    );
+    await act(async () => {
+      fireEvent.click(sheet.getByRole('button', { name: 'Stop 1 run' }));
+    });
+    expect(stopWorkflowRunNow).toHaveBeenCalledWith(session.id, run.id);
+  });
+
+  it('counts an agent and a deciding run together', async () => {
+    const { cancelTurnConfirmed } = seedLive({
+      cancel: async () => ({ outcome: 'exited', exitedAt: AT }),
+    });
+    const run = aWorkflowRun();
+    useAppStore.setState({
+      sessions: [{ ...session, workflowRuns: [run] }],
+      orchestratingWorkflowRuns: { [run.id]: true },
+      stopWorkflowRunNow: vi.fn(async () => 'stopped' as const),
+    });
+    render(<WindowCloseSheet />);
+
+    await requestClose();
+
+    screen.getByRole('button', { name: 'Stop 2 agents and 1 run' });
+    expect(cancelTurnConfirmed).not.toHaveBeenCalled();
+  });
+
+  it('counts a session still running with no agent loaded, which the press also stops', async () => {
+    const runId = brandId<ProviderRunId>({ value: 'run-orphan' });
+    useAppStore.setState({
+      sessions: [{ ...session, state: { kind: 'running', runId, startedAt: AT } }],
+    });
+    render(<WindowCloseSheet />);
+
+    await requestClose();
+
+    screen.getByRole('button', { name: 'Stop 1 agent' });
   });
 
   it('says which agents did not stop and offers Close anyway, never a false stop', async () => {

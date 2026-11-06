@@ -6,6 +6,9 @@ import { stopWork } from '../../runtime/live-work/stopWork';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
+const STILL_RUNNING_MESSAGE =
+  'An agent did not stop, so the workspace stays connected. Try Disconnect again.';
+
 export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId) => {
     const state = get();
@@ -16,7 +19,14 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
 
     const wasCurrentWorkspace = state.currentWorkspaceId === id;
     if (wasCurrentWorkspace) {
-      await stopWork({ getState: get, scope: { kind: 'all' }, reason: 'leave' });
+      const { stillRunning } = await stopWork({
+        getState: get,
+        scope: { kind: 'all' },
+        reason: 'leave',
+      });
+      if (stillRunning > 0) {
+        throw new Error(STILL_RUNNING_MESSAGE);
+      }
       const termSessions = state.sessions.filter(
         (s) => state.terminalSessions[s.id as SessionId] === 'open',
       );

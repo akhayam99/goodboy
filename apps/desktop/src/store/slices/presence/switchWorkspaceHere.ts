@@ -10,6 +10,8 @@ type Params = {
 export const switchWorkspaceHere = (get: GetFn) => {
   return async ({ id, title }: Params): Promise<void> => {
     await get().setCurrentWorkspace(id);
-    void setWindowTitle(title);
+    if (get().currentWorkspaceId === id) {
+      void setWindowTitle(title);
+    }
   };
 };

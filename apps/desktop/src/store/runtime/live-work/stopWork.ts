@@ -1,23 +1,11 @@
-import {
-  brandId,
-  type Agent,
-  type AgentId,
-  type ProviderRunId,
-  type SessionId,
-} from '@goodboy/types';
+import type { ProviderRunId } from '@goodboy/types';
 import { cancelTurn } from '../../../features/chat/turn';
-import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import type { AppStore } from '../../store';
 import { cancelledRunIds } from '../../slices/sessions/sessionMutators';
 import type { CancelTurnReason } from '../../slices/turn/cancelCurrentTurn';
 import { cancelTurnStartWindow } from '../../slices/turn/turnStartWindow';
 import { NO_KEPT_RUNS, endedWaitingRunsOf } from './endedWaitingRunsOf';
-import { isKeptWait } from './isKeptWait';
-import { liveAgentsOf } from './liveAgentsOf';
-import { selectLiveWork } from './selectLiveWork';
-
-export type StopWorkScope =
-  Readonly<{ kind: 'all' }> | Readonly<{ kind: 'session'; sessionId: SessionId }>;
+import { stopPlanOf, type StopWorkScope } from './stopPlanOf';
 
 export type StopWorkResult = Readonly<{
   stopped: number;
@@ -41,103 +29,6 @@ type Params = Readonly<{
   reason: CancelTurnReason;
 }>;
 
-type Target = Readonly<{
-  sessionId: SessionId;
-  agent: Agent;
-  wasLive: boolean;
-}>;
-
-type ScopeParams = Readonly<{
-  scope: StopWorkScope;
-  sessionId: SessionId;
-}>;
-
-const isInScope = ({ scope, sessionId }: ScopeParams): boolean =>
-  scope.kind === 'all' || scope.sessionId === sessionId;
-
-type StateParams = Readonly<{
-  state: StopWorkState;
-  scope: StopWorkScope;
-}>;
-
-type KeptParams = Readonly<{
-  keptRuns: ReadonlySet<ProviderRunId>;
-}>;
-
-type TargetsParams = StateParams & KeptParams;
-
-const targetsOf = ({ state, scope, keptRuns }: TargetsParams): ReadonlyArray<Target> =>
-  Object.keys(state.sessionPhaseRuns).flatMap((key) => {
-    const sessionId = brandId<SessionId>({ value: key });
-    if (!isInScope({ scope, sessionId })) {
-      return [];
-    }
-    return liveAgentsOf({ state, sessionId }).flatMap((agent) => {
-      const turnState = state.agentTurnState[agent.id];
-      if (isKeptWait({ turnState, keptRuns })) {
-        return [];
-      }
-      return [
-        {
-          sessionId,
-          agent,
-          wasLive: isTurnStateLive({ turnState, includeBlocked: true }),
-        },
-      ];
-    });
-  });
-
-type OrphanParams = StateParams &
-  KeptParams &
-  Readonly<{
-    targets: ReadonlyArray<Target>;
-  }>;
-
-const orphanRunIdsOf = ({
-  state,
-  scope,
-  targets,
-  keptRuns,
-}: OrphanParams): ReadonlyArray<ProviderRunId> => {
-  const targeted = new Set<AgentId>(targets.map((target) => target.agent.id));
-  const runIds = new Set<ProviderRunId>();
-  const claimed = new Set<ProviderRunId>([
-    ...keptRuns,
-    ...targets.flatMap((target) => {
-      const turnState = state.agentTurnState[target.agent.id];
-      return turnState?.kind === 'running' || turnState?.kind === 'blocked'
-        ? [turnState.runId]
-        : [];
-    }),
-  ]);
-  for (const session of state.sessions) {
-    if (!isInScope({ scope, sessionId: session.id }) || session.state.kind !== 'running') {
-      continue;
-    }
-    if (!claimed.has(session.state.runId)) {
-      runIds.add(session.state.runId);
-    }
-  }
-  if (scope.kind === 'all') {
-    for (const [agentId, turnState] of Object.entries(state.agentTurnState)) {
-      if (targeted.has(brandId<AgentId>({ value: agentId }))) {
-        continue;
-      }
-      if (turnState?.kind === 'starting') {
-        cancelTurnStartWindow({ agentId: brandId<AgentId>({ value: agentId }) });
-        continue;
-      }
-      if (
-        (turnState?.kind === 'running' || turnState?.kind === 'blocked') &&
-        !claimed.has(turnState.runId)
-      ) {
-        runIds.add(turnState.runId);
-      }
-    }
-  }
-  return [...runIds];
-};
-
 type OrphanCancelParams = Readonly<{
   runId: ProviderRunId;
 }>;
@@ -159,8 +50,10 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
     ? await endedWaitingRunsOf({ state: getState() })
     : NO_KEPT_RUNS;
   const state = getState();
-  const targets = targetsOf({ state, scope, keptRuns });
-  const orphans = orphanRunIdsOf({ state, scope, targets, keptRuns });
+  const { targets, orphanRunIds, startingAgentIds } = stopPlanOf({ state, scope, keptRuns });
+  for (const agentId of startingAgentIds) {
+    cancelTurnStartWindow({ agentId });
+  }
   const isReported = reason === 'user' || reason === 'leave';
   const [settled, orphanOutcomes] = await Promise.all([
     Promise.allSettled(
@@ -172,7 +65,7 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
         }),
       ),
     ),
-    Promise.all(orphans.map((runId) => cancelOrphanRun({ runId }))),
+    Promise.all(orphanRunIds.map((runId) => cancelOrphanRun({ runId }))),
   ]);
   let stopped = 0;
   let stillRunning = orphanOutcomes.filter((isCancelled) => !isCancelled).length;
@@ -197,13 +90,12 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
       stopped += 1;
     }
   }
-  const deciding = selectLiveWork({ state: getState() }).decidingRuns.filter((run) =>
-    isInScope({ scope, sessionId: run.sessionId }),
-  );
-  await Promise.all(
-    deciding.map(({ sessionId, workflowRunId }) =>
+  const { decidingRuns } = stopPlanOf({ state: getState(), scope, keptRuns });
+  const runOutcomes = await Promise.all(
+    decidingRuns.map(({ sessionId, workflowRunId }) =>
       getState().stopWorkflowRunNow(sessionId, workflowRunId),
     ),
   );
+  stillRunning += runOutcomes.filter((outcome) => outcome !== 'stopped').length;
   return { stopped, stillRunning };
 };

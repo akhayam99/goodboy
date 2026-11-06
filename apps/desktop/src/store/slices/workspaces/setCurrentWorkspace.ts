@@ -58,6 +58,7 @@ import { workspaceVerification } from '../project-mounts/verify/workspaceVerific
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import { beginWorkspaceSwitch } from './beginWorkspaceSwitch';
 import { failWorkspaceSwitch } from './failWorkspaceSwitch';
+import { refuseWorkspaceSwitch } from './refuseWorkspaceSwitch';
 import { loadWorkspaceFacts, type WorkspaceFacts } from './loadWorkspaceFacts';
 import { workspaceFactsPatchOf } from './workspaceFactsPatchOf';
 import { switchEpoch } from './switchEpoch';
@@ -432,8 +433,16 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
     switchEpoch.value += 1;
     const isOpeningAnother = id != null && id !== get().currentWorkspaceId;
     beginWorkspaceSwitch({ set, id: isOpeningAnother ? id : null });
-    await stopWork({ getState: get, scope: { kind: 'all' }, reason: 'leave' });
+    const { stillRunning } = await stopWork({
+      getState: get,
+      scope: { kind: 'all' },
+      reason: 'leave',
+    });
     if (!claimed.isCurrent()) {
+      return;
+    }
+    if (stillRunning > 0) {
+      refuseWorkspaceSwitch({ set, get, id });
       return;
     }
 

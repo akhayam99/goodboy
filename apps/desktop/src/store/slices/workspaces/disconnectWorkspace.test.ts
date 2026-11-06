@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProviderRunId } from '@goodboy/types';
+import { disconnectWorkspaceAndProjects } from '@goodboy/db';
+import type { ProviderRunId, TurnState } from '@goodboy/types';
 import { aSession, aWorkflowRun, aWorkspace, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -111,6 +112,57 @@ describe('disconnectWorkspace stops all live work', () => {
       expect.objectContaining({ status: 'stopped', stoppedBy: 'you' }),
     );
     expect(stopWorkflowRunNow).toHaveBeenCalledWith(deciding.id, run.id);
+  });
+
+  describe('when an agent does not stop', () => {
+    const live = aSession({ workspaceId: workspace.id });
+    const agent = anAgent({ sessionId: live.id, status: 'running' });
+    const running: TurnState = {
+      kind: 'running',
+      runId: 'run-stuck' as ProviderRunId,
+      startedAt: TEST_NOW,
+    };
+
+    const seedLive = () => {
+      useAppStore.setState({
+        sessions: [live],
+        sessionPhaseRuns: { [live.id]: [agent] },
+        agentTurnState: { [agent.id]: running },
+        cancelTurnConfirmed: vi.fn(async () => ({
+          outcome: 'still_running' as const,
+          exitedAt: null,
+        })),
+      });
+    };
+
+    it('keeps the workspace and its agent state, and tells why', async () => {
+      seedLive();
+
+      await expect(disconnect()).rejects.toThrow('An agent did not stop');
+
+      const state = useAppStore.getState();
+      expect(state.workspaces).toEqual([workspace]);
+      expect(state.currentWorkspaceId).toBe(workspace.id);
+      expect(state.agentTurnState[agent.id]).toEqual(running);
+      expect(state.sessionPhaseRuns[live.id]).toEqual([agent]);
+      expect(disconnectWorkspaceAndProjects).not.toHaveBeenCalled();
+    });
+
+    it('goes through on the next try once the agent stopped', async () => {
+      seedLive();
+      await expect(disconnect()).rejects.toThrow('An agent did not stop');
+      useAppStore.setState({
+        cancelTurnConfirmed: vi.fn(async () => ({
+          outcome: 'exited' as const,
+          exitedAt: TEST_NOW,
+        })),
+      });
+
+      await disconnect();
+
+      expect(disconnectWorkspaceAndProjects).toHaveBeenCalledOnce();
+      expect(useAppStore.getState().workspaces).toEqual([]);
+    });
   });
 
   it('leaves live work alone when the workspace is not the current one', async () => {

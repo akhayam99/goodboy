@@ -456,9 +456,15 @@ continuation never resumes, because it runs in another directory.
   kill a permission ask the next load can still show. A wait whose process is
   alive is stopped, and archiving a session (scope `session`) stops the ask
   too. `endedWaitingRunsOf` is the one read: a failed live list keeps nothing,
-  so Stop never leaves a live agent, and the close sheet subtracts the same
-  kept asks from its number and closes on zero. Every user Stop is also
-  recorded in
+  so Stop never leaves a live agent. `stopPlanOf` is the one list of what a
+  stop reaches (agents, runs without an agent, deciding runs, minus the kept
+  asks); the close sheet's number (`liveWorkCountOf`) reads it and closes on
+  zero. `stopWork` counts a deciding run that did not stop as still running.
+  Anything still running keeps every caller where it is, since leaving would
+  drop the turn state a later Stop needs: archive keeps the session, a
+  disconnect keeps the workspace and rejects, a switch stays in the workspace
+  and says so (`refuseWorkspaceSwitch`, Retry on the failed switch stops
+  again). Every user Stop is also recorded in
   `stopRequests.ts` (agent, run, instant) until the exit is confirmed, and
   `useAgentStop` (`shared/hooks/`) turns it into the phase the square, the
   header chip and the tail read: `stopping` at once, `stalled` after 5 s

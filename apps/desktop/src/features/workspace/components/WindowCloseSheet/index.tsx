@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Dialog, FormActions } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { endedWaitingRunsOf } from '../../../../store/runtime/live-work/endedWaitingRunsOf';
-import { liveAgentCountOf } from '../../../../store/runtime/live-work/liveAgentCountOf';
+import { liveWorkCountOf } from '../../../../store/runtime/live-work/liveWorkCountOf';
 import { stopWork } from '../../../../store/runtime/live-work/stopWork';
 import { currentPlatform } from '../../../../shared/platform';
 import { NAMES } from '../../../../shared/utils/names';
@@ -12,6 +12,7 @@ import { windowCloseCopyOf } from './windowCloseCopyOf';
 
 type Ask = Readonly<{
   count: number;
+  runCount?: number;
   isStuck: boolean;
 }>;
 
@@ -31,11 +32,11 @@ export const WindowCloseSheet = ({ initialAsk = null }: Props) => {
             return 'hide';
           }
           const keptRuns = await endedWaitingRunsOf({ state: useAppStore.getState() });
-          const count = liveAgentCountOf({ state: useAppStore.getState(), keptRuns });
-          if (count === 0) {
+          const { agents, runs } = liveWorkCountOf({ state: useAppStore.getState(), keptRuns });
+          if (agents === 0 && runs === 0) {
             return 'close';
           }
-          setAsk({ count, isStuck: false });
+          setAsk({ count: agents, runCount: runs, isStuck: false });
           return 'hold';
         },
       }),
@@ -46,7 +47,7 @@ export const WindowCloseSheet = ({ initialAsk = null }: Props) => {
     return null;
   }
 
-  const copy = windowCloseCopyOf({ count: ask.count, isStuck: ask.isStuck });
+  const copy = windowCloseCopyOf(ask);
 
   const stopAndClose = async () => {
     if (ask.isStuck) {

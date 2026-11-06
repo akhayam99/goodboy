@@ -409,6 +409,75 @@ describe('setCurrentWorkspace stops all live work', () => {
     expect(stopWorkflowRunNow).toHaveBeenCalledWith(deciding.id, run.id);
   });
 
+  describe('when a process survives the stop', () => {
+    const OTHER_ID = brandId<WorkspaceId>({ value: 'workspace-northwind' });
+    const live = aSession({ workspaceId: WORKSPACE_ID });
+    const agent = anAgent({ sessionId: live.id, status: 'running' });
+    const running: TurnState = {
+      kind: 'running',
+      runId: 'run-stuck' as ProviderRunId,
+      startedAt: NOW,
+    };
+
+    const stuckStore = () =>
+      harness({
+        workspaces: [
+          { id: WORKSPACE_ID, lastAccessedAt: NOW },
+          { id: OTHER_ID, lastAccessedAt: NOW },
+        ],
+        currentWorkspaceId: WORKSPACE_ID,
+        sessions: [live],
+        sessionPhaseRuns: { [live.id]: [agent] },
+        agentTurnState: { [agent.id]: running },
+        cancelTurnConfirmed: vi.fn(async () => ({
+          outcome: 'still_running' as const,
+          exitedAt: null,
+        })),
+      } as unknown as Partial<AppStore>);
+
+    it('stays here with everything that controls it, and says so', async () => {
+      const store = stuckStore();
+
+      await setCurrentWorkspace(store.set, store.get)(OTHER_ID);
+
+      expect(store.state.currentWorkspaceId).toBe(WORKSPACE_ID);
+      expect(store.state.sessions).toEqual([live]);
+      expect(store.state.sessionPhaseRuns[live.id]).toEqual([agent]);
+      expect(store.state.agentTurnState[agent.id]).toEqual(running);
+      expect(store.state.switchingToWorkspaceId).toBeNull();
+      expect(store.state.workspaceSwitchError).toEqual({
+        workspaceId: OTHER_ID,
+        message: expect.stringContaining('An agent did not stop'),
+      });
+      expect(store.state.reportError).toHaveBeenCalledOnce();
+    });
+
+    it('says so too when the switch has no target', async () => {
+      const store = stuckStore();
+
+      await setCurrentWorkspace(store.set, store.get)(null);
+
+      expect(store.state.currentWorkspaceId).toBe(WORKSPACE_ID);
+      expect(store.state.agentTurnState[agent.id]).toEqual(running);
+      expect(store.state.workspaceSwitchError).toBeNull();
+      expect(store.state.reportError).toHaveBeenCalledOnce();
+    });
+
+    it('switches on Retry once the process exited', async () => {
+      const store = stuckStore();
+      const switchTo = setCurrentWorkspace(store.set, store.get);
+      await switchTo(OTHER_ID);
+      store.set({
+        cancelTurnConfirmed: vi.fn(async () => ({ outcome: 'exited' as const, exitedAt: NOW })),
+      });
+
+      await switchTo(OTHER_ID);
+
+      expect(store.state.currentWorkspaceId).toBe(OTHER_ID);
+      expect(store.state.workspaceSwitchError).toBeNull();
+    });
+  });
+
   it('keeps a permission wait whose run ended, so the ask is there on return', async () => {
     vi.mocked(listLiveRunIds).mockResolvedValueOnce(new Set());
     const waiting = aSession({ workspaceId: WORKSPACE_ID });

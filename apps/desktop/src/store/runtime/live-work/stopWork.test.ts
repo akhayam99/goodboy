@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace } from '@goodboy/db';
-import { nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
+import { aWorkflowRun, nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
 import {
   brandId,
   type AgentId,
@@ -442,6 +442,21 @@ describe('stopWork', () => {
       expect(await stoppedBy()).toBe('you');
       expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
     });
+  });
+
+  it('counts a deciding run that did not stop as still running', async () => {
+    const run = aWorkflowRun();
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((session) =>
+        session.id === sessionId ? { ...session, workflowRuns: [run] } : session,
+      ),
+      orchestratingWorkflowRuns: { [run.id]: true },
+      stopWorkflowRunNow: vi.fn(async () => 'still_running' as const),
+    }));
+
+    const result = await stopSession();
+
+    expect(result.stillRunning).toBe(1);
   });
 
   it('leaves another session alone when the scope is one session', async () => {

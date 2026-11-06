@@ -9,6 +9,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { aSession, aWorkflowRun, anAgent, nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
+import { setWindowTitle } from '../../../features/workspace/window';
 import { createPresenceSlice } from './index';
 
 const { focusWindow, spawnWorkspaceWindow, windowLabel } = vi.hoisted(() => ({
@@ -231,6 +232,15 @@ describe('presence slice', () => {
     const { slice } = harness({ sessions: [runningSession()], setCurrentWorkspace });
     await slice.switchWorkspaceHere({ id: wsB, title: 'B' });
     expect(setCurrentWorkspace).toHaveBeenCalledWith(wsB);
+  });
+
+  it('keeps the window title when the switch was refused', async () => {
+    vi.mocked(setWindowTitle).mockClear();
+    const { slice } = harness({ currentWorkspaceId: wsA });
+
+    await slice.switchWorkspaceHere({ id: wsB, title: 'B' });
+
+    expect(setWindowTitle).not.toHaveBeenCalled();
   });
 });
 
