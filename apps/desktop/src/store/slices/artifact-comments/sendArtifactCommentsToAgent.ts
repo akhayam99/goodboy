@@ -112,7 +112,7 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
         };
         const isSaved = await get().enqueueAgentMessage({ turn });
         if (!isSaved) {
-          await get().removeQueuedMessage({ agentId: target.agentId, itemId: turn.id });
+          await get().removeQueuedMessage({ sessionId, agentId: target.agentId, itemId: turn.id });
           const isTaken = (get().agentQueue[target.agentId] ?? []).some(
             (item) => item.id === turn.id,
           );
