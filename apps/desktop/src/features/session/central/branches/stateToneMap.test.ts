@@ -26,7 +26,7 @@ const EXPECTED_TONE: Readonly<Record<BranchState, Tone>> = {
   conflicts: 'warning',
   approved: 'success',
   ready: 'success',
-  queued: 'primary',
+  queued: 'neutral',
   merged: 'merged',
   closed: 'neutral',
 };
@@ -54,7 +54,6 @@ const GROUP_PAIRS: ReadonlyArray<readonly [SessionPrGroup, BranchState]> = [
 const REASON_PAIRS: ReadonlyArray<readonly [SessionAttentionReason, BranchState]> = [
   ['ci-failed', 'checks-failing'],
   ['changes-requested', 'changes-requested'],
-  ['pr-queued', 'queued'],
   ['pr-approved', 'approved'],
 ];
 

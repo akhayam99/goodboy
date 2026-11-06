@@ -36,7 +36,7 @@ export const BRANCH_STATE_TONE = {
   conflicts: 'warning',
   approved: 'success',
   ready: 'success',
-  queued: 'primary',
+  queued: 'neutral',
   merged: 'merged',
   closed: 'neutral',
 } as const satisfies Readonly<Record<BranchState, Tone>>;

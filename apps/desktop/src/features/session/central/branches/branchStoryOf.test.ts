@@ -477,7 +477,7 @@ describe('branchStoryOf, steps that do not apply', () => {
     const story = storyOf({ fact });
     expect(story.word).toBe('In merge queue');
     expect(story.steps[5]?.state).toBe('current');
-    expect(story.tone).toBe('primary');
+    expect(story.tone).toBe('neutral');
   });
 
   it('keeps the circle on a queued PR that was not read lately', () => {

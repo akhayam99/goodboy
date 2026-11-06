@@ -151,8 +151,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   request state glyph in its color (`pullRequestStateToneOf`, next to
   `pullRequestStateWordOf`, whose words are the labels of
   `PULL_REQUEST_PRESENTATION` so an open pull request reads Open everywhere;
-  draft gray, open blue, approved green, in the merge queue the primary teal,
-  merged violet, closed gray, no pull request a neutral branch glyph, the
+  draft gray, open blue, approved green, in the merge queue a quiet gray
+  (never the blue of open), merged violet, closed gray, no pull request a neutral branch glyph, the
   state table in packages/ui/design/rail-and-work.md), the title,
   and at most one chip. One function, `features/branch/branchRowFactsOf`,
   holds a row's title (the pull request title, else the branch name, drawn in

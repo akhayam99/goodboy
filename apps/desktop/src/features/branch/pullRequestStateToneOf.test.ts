@@ -25,7 +25,12 @@ const CASES: ReadonlyArray<{
   },
   { state: 'open', icon: GitPullRequest, tone: 'info', iconClass: 'text-info' },
   { state: 'approved', icon: GitPullRequest, tone: 'success', iconClass: 'text-success' },
-  { state: 'queued', icon: GitPullRequestArrow, tone: 'primary', iconClass: 'text-primary' },
+  {
+    state: 'queued',
+    icon: GitPullRequestArrow,
+    tone: 'neutral',
+    iconClass: 'text-muted-foreground',
+  },
   { state: 'merged', icon: GitMerge, tone: 'merged', iconClass: 'text-merged' },
   {
     state: 'closed',
