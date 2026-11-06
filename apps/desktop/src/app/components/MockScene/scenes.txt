@@ -1205,6 +1205,13 @@ u36-p1-window-close-run
 u36-p1-window-close-stuck
 u36-p2-send-held
 u36-p2-send-stopped
+u36-p18-ask-answer
+u36-p18-explore-changed
+u36-p18-explore-empty
+u36-p18-explore-head
+u36-p18-scripts-suggested
+u36-p18-terminal-head
+u36-p18-tools-column
 u36-p3-board-facts-failed-dark
 u36-p3-board-facts-failed-light
 u36-p3-plans-tester-question-dark

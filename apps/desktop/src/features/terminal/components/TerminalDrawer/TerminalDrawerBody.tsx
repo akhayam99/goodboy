@@ -1,6 +1,5 @@
 import { useEffect, useMemo, type KeyboardEvent } from 'react';
-import { ArrowUpRight } from 'lucide-react';
-import { DrawerFrame, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
@@ -110,8 +109,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       icon={CONCEPT_ICONS.terminal}
       iconClassName="text-faint-foreground"
       titleContent={
-        <span className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
-          <h2 className="shrink-0 text-heading text-foreground">Terminal</h2>
+        <span className="flex w-full min-w-0 items-center overflow-hidden">
           <TerminalScopePicker
             worktree={worktree}
             targets={targets}
@@ -122,15 +120,10 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
           />
         </span>
       }
-      action={
-        <IconButton
-          icon={ArrowUpRight}
-          label="Open on Terminal page"
-          tooltip="Open on Terminal page"
-          iconSize={ICON_SIZE.control}
-          onClick={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
-        />
-      }
+      page={{
+        tooltip: 'Open on the Terminal page. Leaves this session',
+        onOpen: () => openTerminalOnPage({ terminalId: selected.id, sessionId }),
+      }}
       onClose={onClose}
       scroll="self"
     >

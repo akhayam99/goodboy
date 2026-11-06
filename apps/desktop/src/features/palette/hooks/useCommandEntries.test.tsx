@@ -241,7 +241,7 @@ describe('the palette entries for new things', () => {
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.startKind).toBe('auto');
   });
 
-  it('lists Reset chat only while Ask is open for the session', () => {
+  it('lists New question only while Ask is open for the session', () => {
     expect(entryKeys()).not.toContain('action:ask-reset');
 
     act(() => {
@@ -251,7 +251,7 @@ describe('the palette entries for new things', () => {
     expect(entryKeys()).toContain('action:ask-reset');
   });
 
-  it('omits Reset chat while Ask is streaming', () => {
+  it('omits New question while Ask is streaming', () => {
     act(() => {
       useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
       useAppStore.setState({

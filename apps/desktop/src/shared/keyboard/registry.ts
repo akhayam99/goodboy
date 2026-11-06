@@ -492,7 +492,7 @@ export const SHORTCUTS = {
   },
   'ask.reset': {
     combo: 'cmd+KeyN',
-    label: 'Reset chat',
+    label: NAMES.newQuestion,
     plane: 'app',
     group: 'session',
     scope: 'ask',

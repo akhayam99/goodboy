@@ -86,7 +86,7 @@ describe('the plan and report drawer scenes', () => {
     expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(panel().style.width).toBe('736px');
     const frame = within(panel()).getByRole('region');
-    expect(headerButtons(frame)).toContain('Open in Artifacts');
+    expect(headerButtons(frame)).toContain('Open page');
     expect(headerButtons(frame)).toContain('Copy markdown');
     expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More plan actions' })).toBeNull();
@@ -107,6 +107,6 @@ describe('the plan and report drawer scenes', () => {
     await screen.findByTestId('artifact-reading-drawer');
     expect(panel().style.width).toBe('736px');
     const frame = within(panel()).getByRole('region');
-    expect(headerButtons(frame)).toEqual(['Open in Artifacts', 'Close']);
+    expect(headerButtons(frame)).toEqual(['Open page', 'Close']);
   });
 });

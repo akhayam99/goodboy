@@ -17,6 +17,10 @@ export const startRunnableScript = ({
   worktreePath,
 }: Params): Promise<ScriptRunResult> => {
   const state = useAppStore.getState();
+  const liveRecord = state.scriptRuns[sessionId]?.[script.savedId ?? script.key];
+  if (liveRecord !== undefined && liveRecord.status === 'pending') {
+    return Promise.resolve({ stdout: '', stderr: 'Already running', exitCode: -1 });
+  }
   if (script.savedId !== null) {
     return state.runScript({ sessionId, scriptId: script.savedId, mountId });
   }

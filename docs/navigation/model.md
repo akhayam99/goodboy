@@ -231,7 +231,7 @@ drawer instead of the Terminal page.
      Terminal, Impact, Monitoring, Notifications, Settings), **Create**
      (`create`: New session, New chat, New terminal, New workspace), **App**
      (`action`: Resume setup while setup is unfinished in the main window,
-     Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, Reset chat, the column
+     Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, New question, the column
      fold) and **Help** (`help`: Guide, What's new, Keyboard shortcuts, Report a
      bug). New workspace answers to its former names, Open a folder and Start a
      new project (`formerNamesOf` in `shared/utils/names.ts`). Pair an iPhone and one
@@ -307,7 +307,8 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
+**Run** on every row (a Run leaves its last result on the row, a running row swaps Run for **Stop**
+and opens its output, and a row with a result stays after another script is pinned) and a quiet **Pin**. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not

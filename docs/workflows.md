@@ -1099,7 +1099,7 @@ the current page (`openPlanAnywhere`); the only way to the Artifacts page is its
 own **Open in Artifacts**.
 
 - **Header.** Two rows at any width: the plan icon, the title (two lines at
-  most), two 28px icon buttons, **Open in Artifacts** and **Copy markdown**,
+  most), two 28px icon buttons, **Copy markdown** and **Open page**,
   and Close; then the state chip, the version (`v2`), the one primary and
   **Edit**. The drawer is a reader drawer (720px, drag 480 to 1000), with no
   Expand; the body stays on a 720px measure. A line under the header says one thing

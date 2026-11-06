@@ -106,7 +106,7 @@ describe('OverviewActions', () => {
     expect(useAppStore.getState().drawer).toMatchObject({ payload: { form: 'wireframe' } });
   });
 
-  it('leaves the chord to Reset chat while the Ask panel is open', async () => {
+  it('leaves the chord to New question while the Ask panel is open', async () => {
     useAppStore.setState({ drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null } });
     render(<OverviewActions session={SESSION} />);
 
