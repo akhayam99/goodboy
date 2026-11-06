@@ -346,7 +346,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   the row they open into `focus.scroll` with `amendFocus` first
   (`useRowReturn`), so Back scrolls to that row again. A reload keeps a
   session it can still show, archived ones included (`selectSessionById` in
-  `restoreLocation`), and the Scripts drawer carries its project in its
+  `restoreLocation`). A workspace load empties the archived list, so when the
+  saved session is not among the open ones `restoreLocation` awaits
+  `loadArchivedSessions` first; a reload on an open session reads no archive.
+  The Scripts drawer carries its project in its
   payload, so a reload keeps that scope too. A write in the background, such as
   a run starting, never moves the page. The per-session keys the
   surfaces render from (`activeLens`, `selectedAgentId`, the

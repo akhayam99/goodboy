@@ -140,6 +140,7 @@ const makeStore = () =>
     selectAgent: async (sessionId: SessionId, agentId: AgentId) => {
       set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
     },
+    loadArchivedSessions: async () => undefined,
     ...createNavigationSlice({ set, get }),
     ...createDrawerSlice({ set, get }),
   }));
@@ -200,9 +201,9 @@ describe('restoring a saved window location', () => {
     },
   );
 
-  it('falls back to the board when the saved session is gone', () => {
+  it('falls back to the board when the saved session is gone', async () => {
     const store = makeStore();
-    store.getState().restoreLocation({
+    await store.getState().restoreLocation({
       location: {
         workspaceId: WS,
         place: {
