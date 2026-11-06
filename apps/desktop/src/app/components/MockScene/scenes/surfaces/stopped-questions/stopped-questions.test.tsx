@@ -20,6 +20,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../../store/storyHarness';
+import type { SendTurnInput } from '../../../../../../store/slices/turn/types';
 import { StoppedPresetScene } from '../../../../../../__tests__/helpers/StoppedPresetScene';
 import { MOCK_SCENES } from '../../..';
 import { BLOCKED_MOUNT_AGENT_ID, BLOCKED_MOUNT_SESSION_ID } from '../../u30/blockedMountStepSeed';
@@ -176,7 +177,10 @@ type StubParams = {
 };
 
 const stubAnswerStore = ({ count }: StubParams) => {
-  const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+  const sendTurn = vi.fn(async ({ onStarted }: SendTurnInput) => {
+    onStarted?.();
+    return { blockedOverBudget: false };
+  });
   const opened = (
     useAppStore.getState().sessionOpenQuestions[BLOCKED_MOUNT_SESSION_ID] ?? []
   ).slice(0, count);
@@ -229,7 +233,11 @@ type OutcomeParams = {
 const outcomeOf = ({ sendTurn }: OutcomeParams): Outcome => {
   const state = useAppStore.getState();
   return {
-    sends: sendTurn.mock.calls,
+    sends: sendTurn.mock.calls.map(([{ sessionId, agentId, content }]) => ({
+      sessionId,
+      agentId,
+      content,
+    })),
     pending: state.pendingOpenQuestionDeliveries[BLOCKED_MOUNT_SESSION_ID] ?? null,
     answered: (state.sessionAnsweredQuestions[BLOCKED_MOUNT_SESSION_ID] ?? []).map(
       (question) => question.userAnswer,
