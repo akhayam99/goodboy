@@ -343,8 +343,11 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   the run or artifact shown before, so every caller that means an object
   passes it as the target, and opening a row is a move that Back undoes
   (`openArtifactPage`, `openGithubIssue`). The Runs and Artifacts lists write
-  the row they open into `focus.scroll` with `amendFocus` first
-  (`useRowReturn`), so Back scrolls to that row again. A reload keeps a
+  the row they open into `focus.returnRows` (its id) and `focus.scroll` (its
+  index) with `amendFocus` first (`useRowReturn`), so Back scrolls to that row
+  again even when a new row landed above it; the index is only the fallback
+  for a place saved before ids were kept. Runs unfolds Earlier or Archived when
+  the row sits there. A reload keeps a
   session it can still show, archived ones included (`selectSessionById` in
   `restoreLocation`). A workspace load empties the archived list, so when the
   saved session is not among the open ones `restoreLocation` awaits

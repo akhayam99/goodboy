@@ -77,9 +77,17 @@ const focusOf = ({ value }: { readonly value: unknown }): Focus => {
         ),
       )
     : {};
+  const returnRows = isRecord(value.returnRows)
+    ? Object.fromEntries(
+        Object.entries(value.returnRows).filter(
+          (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '',
+        ),
+      )
+    : {};
   return {
     drawer: isDrawer(value.drawer) ? value.drawer : null,
     scroll,
+    ...(Object.keys(returnRows).length > 0 ? { returnRows } : {}),
   };
 };
 

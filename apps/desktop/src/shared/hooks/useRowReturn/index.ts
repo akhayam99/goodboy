@@ -14,18 +14,39 @@ type RememberParams = {
 
 export type RowReturn = Readonly<{
   remember: (params: RememberParams) => void;
+  returnRowId: string | null;
 }>;
+
+type ResolveParams = {
+  readonly rowIds: ReadonlyArray<string>;
+  readonly savedRowId: string | null;
+  readonly savedIndex: number | null;
+};
+
+const returnRowOf = ({ rowIds, savedRowId, savedIndex }: ResolveParams): string | null => {
+  if (savedRowId !== null && rowIds.includes(savedRowId)) {
+    return savedRowId;
+  }
+  if (savedIndex === null) {
+    return null;
+  }
+  return rowIds[savedIndex] ?? null;
+};
 
 export const useRowReturn = ({ listKey, rowIds, rowAttribute }: Params): RowReturn => {
   const amendFocus = useAppStore((state) => state.amendFocus);
-  const returnIndex = useAppStore((state) => {
+  const savedIndex = useAppStore((state) => {
     const stack = state.navigation[stackKey(state)];
     return stack?.entries[stack.index]?.focus.scroll[listKey] ?? null;
+  });
+  const savedRowId = useAppStore((state) => {
+    const stack = state.navigation[stackKey(state)];
+    return stack?.entries[stack.index]?.focus.returnRows?.[listKey] ?? null;
   });
   const hasReturned = useRef(false);
   const rowIdsRef = useRef(rowIds);
   rowIdsRef.current = rowIds;
-  const returnRowId = returnIndex === null ? null : (rowIds[returnIndex] ?? null);
+  const returnRowId = returnRowOf({ rowIds, savedRowId, savedIndex });
 
   useEffect(() => {
     if (hasReturned.current || returnRowId === null) {
@@ -39,7 +60,7 @@ export const useRowReturn = ({ listKey, rowIds, rowAttribute }: Params): RowRetu
     }
     hasReturned.current = true;
     row.scrollIntoView?.({ block: 'center' });
-  }, [returnRowId, rowAttribute]);
+  });
 
   const remember = useCallback(
     ({ rowId }: RememberParams): void => {
@@ -49,11 +70,16 @@ export const useRowReturn = ({ listKey, rowIds, rowAttribute }: Params): RowRetu
       }
       const state = useAppStore.getState();
       const stack = state.navigation[stackKey(state)];
-      const scroll = stack?.entries[stack.index]?.focus.scroll ?? {};
-      amendFocus({ patch: { scroll: { ...scroll, [listKey]: index } } });
+      const focus = stack?.entries[stack.index]?.focus;
+      amendFocus({
+        patch: {
+          scroll: { ...focus?.scroll, [listKey]: index },
+          returnRows: { ...focus?.returnRows, [listKey]: rowId },
+        },
+      });
     },
     [amendFocus, listKey],
   );
 
-  return { remember };
+  return { remember, returnRowId };
 };

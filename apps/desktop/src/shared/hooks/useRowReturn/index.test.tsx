@@ -36,18 +36,19 @@ type RememberParams = {
 
 type ListProps = {
   readonly onRemember: (remember: (params: RememberParams) => void) => void;
+  readonly rowIds?: ReadonlyArray<string>;
 };
 
-const RunsList = ({ onRemember }: ListProps) => {
+const RunsList = ({ onRemember, rowIds = ROW_IDS }: ListProps) => {
   const rowReturn = useRowReturn({
     listKey: 'runs',
-    rowIds: ROW_IDS,
+    rowIds,
     rowAttribute: 'data-row-key',
   });
   onRemember(rowReturn.remember);
   return (
     <ul>
-      {ROW_IDS.map((rowId) => (
+      {rowIds.map((rowId) => (
         <li key={rowId} data-row-key={rowId}>
           {rowId}
         </li>
@@ -93,6 +94,38 @@ describe('useRowReturn', () => {
     render(<RunsList onRemember={() => undefined} />);
 
     expect(scrolled).toHaveBeenCalledOnce();
+    expect(scrolled.mock.contexts[0]).toBe(screen.getByText('run-payments-api'));
+  });
+
+  it('returns to the same row when a new row landed above it meanwhile', () => {
+    let remember: (params: RememberParams) => void = () => undefined;
+    const first = render(<RunsList onRemember={(next) => (remember = next)} />);
+    act(() => {
+      remember({ rowId: 'run-notify-relay' });
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION, lens: null }) });
+    });
+    first.unmount();
+    const scrolled = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrolled;
+
+    act(() => {
+      useAppStore.getState().back();
+    });
+    render(<RunsList onRemember={() => undefined} rowIds={['run-acme-new', ...ROW_IDS]} />);
+
+    expect(scrolled).toHaveBeenCalledOnce();
+    expect(scrolled.mock.contexts[0]).toBe(screen.getByText('run-notify-relay'));
+  });
+
+  it('falls back to the saved index for a place saved before row ids were kept', () => {
+    act(() => {
+      useAppStore.getState().amendFocus({ patch: { scroll: { runs: 2 } } });
+    });
+    const scrolled = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrolled;
+
+    render(<RunsList onRemember={() => undefined} />);
+
     expect(scrolled.mock.contexts[0]).toBe(screen.getByText('run-payments-api'));
   });
 

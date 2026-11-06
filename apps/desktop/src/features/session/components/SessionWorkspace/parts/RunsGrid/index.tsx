@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { ListGrid, ListGridGroup, FOCUS_RING, cn } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../../store';
@@ -56,6 +56,26 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const earlierCount = Math.max(0, finished.length - VISIBLE_FINISHED_COUNT);
   const rowIds = useMemo(() => runs.map((run) => run.id), [runs]);
   const rowReturn = useRowReturn({ listKey: 'runs', rowIds, rowAttribute: 'data-row-key' });
+  const { returnRowId } = rowReturn;
+  const isReturnEarlier =
+    returnRowId !== null &&
+    finished.slice(VISIBLE_FINISHED_COUNT).some((run) => run.id === returnRowId);
+  const isReturnArchived = returnRowId !== null && archived.some((run) => run.id === returnRowId);
+  const unfoldedFor = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (returnRowId === null || unfoldedFor.current === returnRowId) {
+      return;
+    }
+    if (isReturnEarlier) {
+      unfoldedFor.current = returnRowId;
+      setIsEarlierShown(true);
+    }
+    if (isReturnArchived) {
+      unfoldedFor.current = returnRowId;
+      setIsArchivedShown(true);
+    }
+  }, [returnRowId, isReturnEarlier, isReturnArchived]);
 
   const open = ({ run }: RowParams) => {
     rowReturn.remember({ rowId: run.id });

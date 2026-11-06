@@ -25,6 +25,8 @@ import {
 } from '../../../../../../store/storyHarness';
 import { aNowAgent, NOW_SESSION, NOW_STARTED_AT } from '../../../../central/now/testing/nowModelOf';
 import { sessionRunsOf } from '../../../../sessionRunsOf';
+import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
+import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { RunsGrid } from './index';
 
 const session = aSession({ id: NOW_SESSION });
@@ -205,6 +207,38 @@ describe('RunsGrid', () => {
     const line = row.querySelector('[data-model-line]');
     expect(line?.textContent).toBe('Sonnet 5.5 High');
     expect(row.textContent).not.toContain('sonnet-5.5');
+  });
+
+  it('unfolds Earlier and scrolls Back to a row the page was left from below the cap', async () => {
+    const agents = Array.from({ length: VISIBLE_FINISHED_COUNT + 2 }, (_, index) =>
+      aNowAgent({ key: `done-${index}`, name: `Done ${index}`, status: 'completed' }),
+    );
+    const runs = runsOf({ agents });
+    const earlier = runs.filter((run) => run.isFinished).at(-1);
+    useAppStore.setState({
+      currentWorkspaceId: session.workspaceId,
+      sessions: [session],
+      sessionPhaseRuns: { [NOW_SESSION]: agents },
+    });
+    useAppStore
+      .getState()
+      .navigate({ to: sessionPlace({ sessionId: NOW_SESSION, lens: 'workflows' }) });
+    useAppStore.getState().amendFocus({
+      patch: {
+        scroll: { runs: runs.length - 1 },
+        returnRows: { runs: earlier?.id ?? '' },
+      },
+    });
+    const scrolled = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrolled;
+
+    renderGrid({ runs });
+
+    await waitFor(() => expect(scrolled).toHaveBeenCalledOnce());
+    expect(scrolled.mock.contexts[0]).toBe(
+      document.querySelector(`[data-row-key="${earlier?.id ?? ''}"]`),
+    );
+    expect(screen.getByRole('button', { name: 'Show fewer' })).toBeTruthy();
   });
 
   it('keeps the model column out when no run has a model', () => {
