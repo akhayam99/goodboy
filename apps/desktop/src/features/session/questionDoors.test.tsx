@@ -231,6 +231,35 @@ describe('every door to a question', () => {
     expect(state().activeLens[SESSION] ?? null).toBeNull();
   });
 
+  it('replaces the entry when an attention action reopens a question, so Close returns to the page', async () => {
+    const attend = ({ questionId }: { readonly questionId: OpenQuestionId }) =>
+      state().navigate({
+        to: attentionPlace({
+          state: {
+            ...state(),
+            sessionOpenQuestions: { [SESSION]: [questionOf({ id: questionId })] },
+          },
+          sessionId: SESSION,
+          reason: 'open-question',
+        }),
+      });
+
+    await act(async () => {
+      attend({ questionId: FIRST });
+      attend({ questionId: SECOND });
+      attend({ questionId: FIRST });
+    });
+    landedOn({ questionId: FIRST });
+    const entries = state().navigation[state().currentWorkspaceId ?? '']?.entries ?? [];
+
+    await act(async () => {
+      state().closeQuestion();
+    });
+
+    expect(entries).toHaveLength(2);
+    expect(state().activeLens[SESSION] ?? null).toBeNull();
+  });
+
   it('closes in place when the address was the only entry, as after a reload', async () => {
     await act(async () => {
       state().navigate({
