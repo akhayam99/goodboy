@@ -5,6 +5,7 @@ import type {
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
+import { askBatchAfterAnswer } from './askBatchAfterAnswer';
 import type { GetFn } from './types';
 
 type Params = {
@@ -40,6 +41,14 @@ export const allowWithRule = ({ get }: Deps) => {
       scope,
       pattern,
     });
-    await get().retryBlockedTool({ sessionId, agentId, toolName });
+    const { isWaiting, held } = askBatchAfterAnswer({
+      transcripts: get().transcripts,
+      agentId,
+      toolUseId,
+    });
+    if (isWaiting) {
+      return;
+    }
+    await get().retryBlockedTool({ sessionId, agentId, toolName, held });
   };
 };

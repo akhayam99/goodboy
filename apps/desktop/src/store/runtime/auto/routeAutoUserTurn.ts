@@ -8,7 +8,13 @@ import type {
   Session,
   SessionId,
   TurnEvent,
+  TurnState,
 } from '@goodboy/types';
+import { askBatchOf } from '../../../features/permissions/askBatchOf';
+import { openPermissionAsksOf } from '../../../features/permissions/openPermissionAsksOf';
+import { askDenialEventOf } from '../../slices/permissions/askDenialEventOf';
+import { deniedPromptOf } from '../../slices/permissions/deniedPromptOf';
+import { withHeldAnswers } from '../../slices/permissions/withHeldAnswers';
 import { storeAutoImages } from './storeAutoImages';
 import type { ReportErrorParams } from '../../slices/notifications/reportError';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
@@ -27,6 +33,8 @@ type AutoTurnState = Readonly<{
     Record<SessionId, ReadonlyArray<Pick<Agent, 'id' | 'kind' | 'parentAgentId'>>>
   >;
   selectedAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  transcripts: Readonly<Record<AgentId, ReadonlyArray<TurnEvent>>>;
+  agentTurnState: Readonly<Record<AgentId, TurnState>>;
   reportError: (params: ReportErrorParams) => Promise<void>;
   appendTurnEvent: (agentId: AgentId, sessionId: SessionId, event: TurnEvent) => void;
   loadAutoTrees: (params: LoadTreesParams) => Promise<void>;
@@ -59,6 +67,24 @@ const refuse = async ({ get, input, message }: RefuseParams): Promise<never> => 
 };
 
 const QUEUED: SendTurnResult = { blockedOverBudget: false };
+
+type DeniedParams = {
+  readonly get: () => AutoTurnState;
+  readonly input: SendTurnInput;
+  readonly agentId: AgentId;
+};
+
+const askDenialOf = ({ get, input, agentId }: DeniedParams) => {
+  const { transcripts, agentTurnState } = get();
+  const events = transcripts[agentId] ?? [];
+  const asks =
+    input.origin === 'operator'
+      ? openPermissionAsksOf({ events, turnState: agentTurnState[agentId] })
+      : [];
+  const held = asks.length > 0 ? askBatchOf({ events }).answered : [];
+  const denied = deniedPromptOf({ asks, content: input.content, prompt: input.content });
+  return { asks, text: withHeldAnswers({ held, prompt: denied }) };
+};
 
 type StoreImages = typeof storeAutoImages;
 
@@ -121,11 +147,12 @@ export const routeAutoUserTurn = async ({
     outboxId: null,
     isRepeat: false,
   };
+  const denial = askDenialOf({ get, input, agentId });
   const result = await port({
     agentId,
     sessionId: input.sessionId,
     workspaceId: session.workspaceId,
-    text: input.content,
+    text: denial.text,
     ...(images.length > 0 && { images }),
     ...(input.deliveryId !== undefined && { deliveryId: input.deliveryId }),
     onQueued: ({ rowId, isRepeat = false }) => {
@@ -135,6 +162,19 @@ export const routeAutoUserTurn = async ({
   });
   if (result === 'lost') {
     return refuse({ get, input, message: AUTO_MESSAGE_LOST_MESSAGE });
+  }
+  const deniedAt = brandId<IsoDateTime>({ value: new Date().toISOString() });
+  for (const ask of denial.asks) {
+    state.appendTurnEvent(
+      agentId,
+      input.sessionId,
+      askDenialEventOf({
+        runId: ask.runId,
+        toolUseId: ask.toolUseId,
+        reason: input.content,
+        at: deniedAt,
+      }),
+    );
   }
   await state.loadAutoTrees({ sessionId: input.sessionId }).catch((error: unknown) =>
     state.reportError({

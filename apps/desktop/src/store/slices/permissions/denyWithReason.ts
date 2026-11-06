@@ -6,8 +6,12 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import { askBatchAfterAnswer } from './askBatchAfterAnswer';
+import { askDenialEventOf } from './askDenialEventOf';
 import { denialNoticeOf } from './denialNoticeOf';
+import { heldOnceAllowsOf } from './heldOnceAllowsOf';
 import type { GetFn } from './types';
+import { withHeldAnswers } from './withHeldAnswers';
 
 type Params = {
   sessionId: SessionId;
@@ -29,25 +33,29 @@ export const denyWithReason = (get: GetFn) => {
   }: Params): Promise<void> => {
     const now = brandId<IsoDateTime>({ value: new Date().toISOString() });
     const trimmed = reason.trim();
-    get().appendTurnEvent(agentId, sessionId, {
-      kind: 'permission_decision',
-      runId,
-      toolUseId,
-      decision: 'deny',
-      scope: 'once',
-      ruleId: null,
-      decidedBy: 'user',
-      ...(trimmed !== '' && { reason: trimmed }),
-      at: now,
-    });
+    get().appendTurnEvent(
+      agentId,
+      sessionId,
+      askDenialEventOf({ runId, toolUseId, reason: trimmed, at: now }),
+    );
     if (get().agentTurnState[agentId]?.kind === 'running') {
       return;
     }
+    const { isWaiting, held } = askBatchAfterAnswer({
+      transcripts: get().transcripts,
+      agentId,
+      toolUseId,
+    });
+    if (isWaiting) {
+      return;
+    }
+    const prompt = denialNoticeOf({ toolName, reason: trimmed });
     throwIfRefused({
       result: await get().sendTurn({
         sessionId,
         agentId,
-        content: denialNoticeOf({ toolName, reason: trimmed }),
+        content: withHeldAnswers({ held, prompt }),
+        ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });
   };

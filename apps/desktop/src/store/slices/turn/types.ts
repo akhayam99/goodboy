@@ -55,7 +55,7 @@ export type SendTurnInput = Readonly<{
   origin?: 'operator' | 'workflow' | 'mount-continuation' | 'delegation';
   handoff?: HandoffDraft;
   sentVia?: UserTurnSentVia;
-  permissionOnceAllow?: string;
+  permissionOnceAllows?: ReadonlyArray<string>;
   retry?: Readonly<{
     attempt: number;
     provider: ProviderId;

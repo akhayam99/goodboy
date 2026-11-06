@@ -231,6 +231,105 @@ describe('store on sqlite: a waiting permission across a reload', () => {
     });
   });
 
+  it('does not deny an ask you allowed while the message waited, and the prompt says so', async () => {
+    await hydrateWithAsk();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      content: 'Do a dry run first',
+      origin: 'operator',
+      onWritingUserText: async () => {
+        useAppStore.getState().appendTurnEvent(AGENT_ID, LEDGER_ID, {
+          kind: 'permission_decision',
+          runId: RUN_ID,
+          toolUseId: TOOL_USE_ID,
+          decision: 'allow',
+          scope: 'once',
+          ruleId: null,
+          decidedBy: 'user',
+          at: STORY_NOW,
+        });
+      },
+    });
+    flushTurnEvents();
+
+    const decisions = (useAppStore.getState().transcripts[AGENT_ID] ?? []).filter(
+      (event) => event.kind === 'permission_decision',
+    );
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0]).toMatchObject({ decision: 'allow' });
+    const prompt = JSON.stringify(storySpies.runTurn.mock.calls.at(-1));
+    expect(prompt).toContain('Do a dry run first');
+    expect(prompt).not.toContain('Denied Bash');
+  });
+
+  it('writes no empty reason for a message that only carries a file', async () => {
+    await hydrateWithAsk();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      content: '',
+      origin: 'operator',
+      storedAttachments: [
+        {
+          id: 'attachment-ledger',
+          kind: 'file',
+          fileName: 'ledger.csv',
+          mimeType: 'text/csv',
+          relPath: '.goodboy/attachments/attachment-ledger/ledger.csv',
+        },
+      ],
+    });
+    flushTurnEvents();
+
+    const decision = (useAppStore.getState().transcripts[AGENT_ID] ?? []).find(
+      (event) => event.kind === 'permission_decision',
+    );
+    expect(decision).toMatchObject({ decision: 'deny', toolUseId: TOOL_USE_ID });
+    expect(decision).not.toHaveProperty('reason');
+    const prompt = JSON.stringify(storySpies.runTurn.mock.calls.at(-1));
+    expect(prompt).toContain('Denied Bash for this one call.');
+    expect(prompt).toContain('ledger.csv');
+  });
+
+  it('keeps an answer you already gave when a message denies the ask that is left', async () => {
+    await hydrateWithAsk();
+    const later: TurnEvent = {
+      kind: 'permission_request',
+      runId: RUN_ID,
+      toolUseId: 'tool-ledger-seed',
+      toolName: 'Edit',
+      input: { file_path: 'ledger-core/seed.sql' },
+      at: STORY_NOW,
+    };
+    useAppStore.getState().appendTurnEvent(AGENT_ID, LEDGER_ID, later);
+    await useAppStore.getState().allowAndContinue({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      toolUseId: TOOL_USE_ID,
+      toolName: 'Bash',
+      input: { command: 'pnpm db:migrate' },
+      runId: RUN_ID,
+    });
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(readAsks().map((ask) => ask.toolUseId)).toEqual(['tool-ledger-seed']);
+
+    await useAppStore.getState().sendTurn({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      content: 'Leave the seed alone',
+      origin: 'operator',
+    });
+    flushTurnEvents();
+
+    const turn = JSON.stringify(storySpies.runTurn.mock.calls.at(-1));
+    expect(turn).toContain('Permission for Bash is granted for this one call.');
+    expect(turn).toContain('Denied Edit. Leave the seed alone');
+    expect(turn).toContain('Bash(pnpm db:migrate)');
+  });
+
   it('keeps the ask open when the message was never written', async () => {
     await hydrateWithAsk();
 

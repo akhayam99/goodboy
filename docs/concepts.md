@@ -1498,9 +1498,19 @@ specific rule that fits wins.
   with no second click; only when the turn could not be resumed does the
   decision card say "Stopped before your answer." and offer **Continue**
 - A message sent while the ask is open denies it, with the text as the reason
-  (`startTurnRun`, right before the user text), and the agent reads
-  `Denied Bash. <text>`. It works only for a message you typed
-  (origin `operator`), and a send that never starts leaves the ask open
+  (`startTurnRun`, right before the user text, which reads the asks again so an
+  ask you answered during the writer wait stays answered), and the agent reads
+  `Denied Bash. <text>`. On Auto's own ask `routeAutoUserTurn` does the same,
+  since Auto's confined turns run in default mode and a read outside its folder
+  can ask. It works only for a message you typed (origin `operator`), and a send
+  that never starts leaves the ask open. A message queued during the turn never
+  denies: `drainAgentQueue` holds while an ask is open and goes on once it is
+  answered or lapses
+- Several asks of one agent are answered in turn: the dock shows `1 of 2`, and
+  an answer that leaves another ask open starts no turn (`askBatchAfterAnswer`).
+  The last answer starts one turn that carries every answer (`withHeldAnswers`,
+  `heldOnceAllowsOf`). `user_text` closes an open ask, so sending earlier would
+  drop the second ask undecided
 - **Deny** answers this call only: it records a once decision, writes no rule
   and tells the agent the call is denied so it carries on another way. The
   session-wide ban is a separate item in the card's overflow, **Never allow

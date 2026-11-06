@@ -43,7 +43,7 @@ export const usePermissionAsk = ({ item, sessionId, agentId, isDocked, onAnswere
   );
   const allowAndContinue = useAppStore((state) => state.allowAndContinue);
   const allowWithRule = useAppStore((state) => state.allowWithRule);
-  const resolvePermissionRequest = useAppStore((state) => state.resolvePermissionRequest);
+  const neverAllowTool = useAppStore((state) => state.neverAllowTool);
   const denyWithReason = useAppStore((state) => state.denyWithReason);
   const reportError = useAppStore((state) => state.reportError);
 
@@ -107,10 +107,7 @@ export const usePermissionAsk = ({ item, sessionId, agentId, isDocked, onAnswere
     },
     neverAllow: () => {
       if (target !== null) {
-        void withBusy({
-          action: () =>
-            resolvePermissionRequest({ ...target, scope: 'deny', pattern: rule.pattern }),
-        });
+        void withBusy({ action: () => neverAllowTool({ ...target, pattern: rule.pattern }) });
       }
     },
     deny: ({ reason }: ReasonParams) => {

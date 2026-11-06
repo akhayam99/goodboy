@@ -19,8 +19,6 @@ import { rewriterCopyFor } from '../history/rewriterCopyFor';
 import { queueTurnInLane } from '../resolve/queueTurnInLane';
 import { resolverLaunchCopy } from '../resolve/resolverLaunchCopy';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
-import { openPermissionAsksOf } from '../../../features/permissions/openPermissionAsksOf';
-import { deniedPromptOf } from '../permissions/deniedPromptOf';
 import { persistAttachments } from './persistAttachments';
 import type { GetFn, SetFn, SendTurnInput, TurnPhaseValue } from './types';
 import { sessionById } from '../sessions/sessionIndex';
@@ -229,16 +227,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
 
   const userTurnText = content;
 
-  const atPrompt = get();
-  const deniedAsks =
-    origin === 'operator'
-      ? openPermissionAsksOf({
-          events: atPrompt.transcripts[activeAgentId] ?? [],
-          turnState: atPrompt.agentTurnState[activeAgentId],
-        })
-      : [];
-
-  let resolvedPrompt = deniedPromptOf({ asks: deniedAsks, content });
+  let resolvedPrompt = content;
 
   const attachmentInputs = attachments ?? [];
   const alreadyPersistedRefs = retry?.attachmentRefs ?? storedAttachments ?? [];
@@ -392,7 +381,6 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       activeAgentId,
       activeAgent,
       userTurnText,
-      deniedAsks,
       resolvedPrompt,
       attachmentRefs,
       phaseDefinition,

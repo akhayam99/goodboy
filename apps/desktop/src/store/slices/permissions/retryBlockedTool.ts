@@ -1,5 +1,8 @@
 import type { AgentId, SessionId } from '@goodboy/types';
+import type { AnsweredAsk } from '../../../features/permissions/askBatchOf';
+import { heldOnceAllowsOf } from './heldOnceAllowsOf';
 import type { GetFn } from './types';
+import { withHeldAnswers } from './withHeldAnswers';
 import { sessionById } from '../sessions/sessionIndex';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 
@@ -7,6 +10,7 @@ type Params = {
   sessionId: SessionId;
   agentId: AgentId;
   toolName: string;
+  held?: ReadonlyArray<AnsweredAsk>;
 };
 
 const composeRetryPrompt = ({ toolName }: Pick<Params, 'toolName'>): string =>
@@ -16,7 +20,7 @@ const composeRetryPrompt = ({ toolName }: Pick<Params, 'toolName'>): string =>
   ].join('\n');
 
 export const retryBlockedTool = (get: GetFn) => {
-  return async ({ sessionId, agentId, toolName }: Params): Promise<void> => {
+  return async ({ sessionId, agentId, toolName, held = [] }: Params): Promise<void> => {
     const session = sessionById(get().sessions, sessionId);
     if (session == null) {
       return;
@@ -28,7 +32,8 @@ export const retryBlockedTool = (get: GetFn) => {
       result: await get().sendTurn({
         sessionId,
         agentId,
-        content: composeRetryPrompt({ toolName }),
+        content: withHeldAnswers({ held, prompt: composeRetryPrompt({ toolName }) }),
+        ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });
   };

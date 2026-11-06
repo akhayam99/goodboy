@@ -16,9 +16,18 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { askBatchOf, type AnsweredAsk } from '../../../features/permissions/askBatchOf';
+import {
+  openPermissionAsksOf,
+  type OpenPermissionAsk,
+} from '../../../features/permissions/openPermissionAsksOf';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { askDenialEventOf } from '../permissions/askDenialEventOf';
+import { deniedPromptOf } from '../permissions/deniedPromptOf';
+import { heldOnceAllowsOf } from '../permissions/heldOnceAllowsOf';
+import { withHeldAnswers } from '../permissions/withHeldAnswers';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
 import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
@@ -44,7 +53,6 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     activeAgentId,
     activeAgent,
     userTurnText,
-    deniedAsks,
     attachmentRefs,
     phaseDefinition,
     phaseWorkflowRunId,
@@ -104,6 +112,8 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     return closeCancelled();
   }
 
+  let deniedAsks: ReadonlyArray<OpenPermissionAsk> = [];
+  let heldAnswers: ReadonlyArray<AnsweredAsk> = [];
   if (retry == null) {
     await ctx.input.onWritingUserText?.();
     const userMessage: Message = {
@@ -116,18 +126,26 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
     };
     await insertMessage(tauriDatabase, userMessage);
-    for (const ask of deniedAsks) {
-      get().appendTurnEvent(activeAgentId, sessionId, {
-        kind: 'permission_decision',
-        runId: ask.runId,
-        toolUseId: ask.toolUseId,
-        decision: 'deny',
-        scope: 'once',
-        ruleId: null,
-        decidedBy: 'user',
-        reason: userTurnText.trim(),
-        at: userMessage.createdAt,
+    if (ctx.input.origin === 'operator') {
+      const atWrite = get();
+      const events = atWrite.transcripts[activeAgentId] ?? [];
+      deniedAsks = openPermissionAsksOf({
+        events,
+        turnState: atWrite.agentTurnState[activeAgentId],
       });
+      heldAnswers = deniedAsks.length > 0 ? askBatchOf({ events }).answered : [];
+    }
+    for (const ask of deniedAsks) {
+      get().appendTurnEvent(
+        activeAgentId,
+        sessionId,
+        askDenialEventOf({
+          runId: ask.runId,
+          toolUseId: ask.toolUseId,
+          reason: userTurnText,
+          at: userMessage.createdAt,
+        }),
+      );
     }
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'user_text',
@@ -222,7 +240,30 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
   const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
   await updateSessionState(tauriDatabase, sessionId, derived, now());
-  return turnReady({ value: { runId, isFirstTurn, isHandoffTurn, resolvedAgentId, agentBefore } });
+  return turnReady({
+    value: {
+      runId,
+      isFirstTurn,
+      isHandoffTurn,
+      resolvedAgentId,
+      agentBefore,
+      resolvedPrompt: withHeldAnswers({
+        held: heldAnswers,
+        prompt: deniedPromptOf({
+          asks: deniedAsks,
+          content: userTurnText,
+          prompt: ctx.resolvedPrompt,
+        }),
+      }),
+      input: {
+        ...ctx.input,
+        permissionOnceAllows: [
+          ...(ctx.input.permissionOnceAllows ?? []),
+          ...heldOnceAllowsOf({ held: heldAnswers }),
+        ],
+      },
+    },
+  });
 };
 
 export type StartedTurn = TurnPhaseValue<typeof startTurnRun>;
