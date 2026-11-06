@@ -50,6 +50,11 @@ export type NotificationAction =
       readonly sessionId: SessionId;
       readonly agentId: AgentId;
     }
+  | {
+      readonly kind: 'continue-agent';
+      readonly sessionId: SessionId;
+      readonly agentId: AgentId;
+    }
   | { readonly kind: 'open-budget'; readonly sessionId: SessionId | null }
   | { readonly kind: 'open-orphan-worktrees'; readonly workspaceId: WorkspaceId }
   | {
@@ -110,6 +115,7 @@ const NOTIFICATION_ACTION_KINDS = {
   'retry-orchestrator': true,
   'retry-step-summary': true,
   'open-agent': true,
+  'continue-agent': true,
   'open-budget': true,
   'open-orphan-worktrees': true,
   'open-storage': true,

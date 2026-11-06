@@ -46,20 +46,28 @@ const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
   if (card.status.node !== undefined) {
     return card.status.node;
   }
-  switch (card.status.word) {
-    case 'Done':
+  switch (card.status.state) {
+    case 'done':
       return 'done';
-    case 'Failed':
-    case 'Timed out':
+    case 'failed':
+    case 'timedOut':
       return 'failed';
-    case 'Blocked':
+    case 'blocked':
       return 'alert';
-    case 'Stopped':
+    case 'stopped':
       return 'stopped';
-    case 'Queued':
+    case 'queued':
       return 'queued';
-    default:
+    case 'stopping':
+    case 'confirming':
+    case 'starting':
+    case 'running':
+    case 'paused':
       return 'running';
+    default: {
+      const exhaustive: never = card.status.state;
+      return exhaustive;
+    }
   }
 };
 

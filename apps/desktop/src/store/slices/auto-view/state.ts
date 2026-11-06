@@ -53,8 +53,10 @@ export type AutoPendingMessage = Readonly<{
 
 export type AutoViewState = {
   readonly autoTreeViews: Readonly<Record<SessionId, ReadonlyArray<AutoTreeView>>>;
+  readonly autoClockAt: number;
 };
 
 export const autoViewInitialState: AutoViewState = {
   autoTreeViews: {},
+  autoClockAt: 0,
 };

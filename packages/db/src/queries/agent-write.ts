@@ -287,7 +287,21 @@ export const stopGhostAgents = async ({
       : ` AND provider_run_id NOT IN (${keepRunIds.map(() => '?').join(', ')})`;
   const { rowsAffected } = await db.execute(
     `UPDATE agents SET status = 'stopped', stopped_at = ?, stopped_by = 'app'
-     WHERE status = 'running' AND provider_run_id IS NOT NULL${keep}`,
+     WHERE status = 'running' AND provider_run_id IS NOT NULL${keep}
+       AND NOT EXISTS (
+         SELECT 1 FROM turn_events ask
+         WHERE ask.agent_id = agents.id
+           AND json_extract(ask.payload, '$.kind') = 'permission_request'
+           AND json_extract(ask.payload, '$.runId') = agents.provider_run_id
+           AND NOT EXISTS (
+             SELECT 1 FROM turn_events decision
+             WHERE decision.agent_id = agents.id
+               AND json_extract(decision.payload, '$.kind') = 'permission_decision'
+               AND json_extract(decision.payload, '$.runId') = agents.provider_run_id
+               AND json_extract(decision.payload, '$.toolUseId') =
+                 json_extract(ask.payload, '$.toolUseId')
+           )
+       )`,
     [Date.now(), ...keepRunIds],
   );
   return rowsAffected;

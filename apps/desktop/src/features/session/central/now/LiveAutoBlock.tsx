@@ -46,11 +46,11 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
   const stateSpec = LIVE_TONE.state[group.state];
   const tone = group.state === 'stuck' ? 'danger' : stateSpec.tone;
   const palette = agentKindPalette({ kind: 'auto' });
-  const status =
-    auto.word.includes(' ') && !auto.word.includes(': ')
-      ? { word: stateSpec.word, reason: auto.word }
-      : liveStatusOf({ word: auto.word, detail: null });
-  const isOwn = liveOwnStateOf({ group, word: status.word });
+  const isStateWord = auto.word.includes(' ') && !auto.word.includes(': ');
+  const status = isStateWord
+    ? { word: stateSpec.word, reason: auto.word }
+    : liveStatusOf({ word: auto.word, detail: null });
+  const isOwn = liveOwnStateOf({ group, isStateWord });
   return (
     <section
       aria-label={`${NAMES.runKind.autoAgent}: ${title}`}

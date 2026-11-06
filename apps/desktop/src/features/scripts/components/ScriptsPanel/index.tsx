@@ -17,6 +17,7 @@ import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { scriptsScopeOf } from '../../scriptsScopeOf';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
 import { isService } from '../../classifyScript';
@@ -97,8 +98,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     const drawer = selectOpenDrawer(state);
     return drawer?.kind === 'scriptRun' && drawer.sessionId === sessionId ? drawer.payload : null;
   });
-  const scriptsLensScope = useAppStore((state) => state.scriptsLensScope);
-  const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
+  const scopeProjectId = useAppStore((state) => scriptsScopeOf({ state, sessionId }));
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
   const deleteScript = useAppStore((state) => state.deleteScript);
@@ -116,7 +116,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const [packagesOverrides, setPackagesOverrides] = useState<Readonly<Record<string, boolean>>>(
     () => readPackagesCollapsedOverrides({ workspaceId }),
   );
-  const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
+  const [scopedProjectId] = useState(() => scopeProjectId);
   const [pageError, setPageError] = useState<string | null>(null);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [pickerMountId, setPickerMountId] = useState<MountId | null>(null);
@@ -167,10 +167,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   useEffect(() => {
     void loadScripts(workspaceId);
   }, [loadScripts, workspaceId]);
-
-  useEffect(() => {
-    setScriptsLensScope({ scope: null });
-  }, [setScriptsLensScope]);
 
   const setGroupCollapsed = useCallback(
     ({ mountId, isCollapsed }: { readonly mountId: MountId; readonly isCollapsed: boolean }) => {

@@ -52,16 +52,18 @@ const plan = (status: PlanWithCount['status']): PlanWithCount => ({
 
 type StateParams = {
   readonly plans: ReadonlyArray<PlanWithCount>;
-  readonly openQuestions: number;
+  readonly askedBy: ReadonlyArray<string>;
 };
 
-const stateOf = ({ plans, openQuestions }: StateParams): AppStore =>
+const stateOf = ({ plans, askedBy }: StateParams): AppStore =>
   ({
     sessionPlans: { [SESSION]: plans },
     sessionArtifacts: { [SESSION]: [] },
     sessionPhaseRuns: { [SESSION]: [] },
     autoTreeViews: {},
-    sessionOpenQuestions: { [SESSION]: Array.from({ length: openQuestions }, () => ({})) },
+    sessionOpenQuestions: {
+      [SESSION]: askedBy.map((agentId) => ({ status: 'open', createdByAgentId: agentId })),
+    },
   }) as unknown as AppStore;
 
 describe('search hit action target', () => {
@@ -75,20 +77,20 @@ describe('search hit action target', () => {
     }
   });
 
-  it('reads whether the plan is waiting on an answer from the live store', () => {
+  it('reads whether the plan waits on its own planner answer from the live store', () => {
     expect(
       hitPlanRunning({
         hit: hit({}),
-        state: stateOf({ plans: [plan('active')], openQuestions: 1 }),
+        state: stateOf({ plans: [plan('active')], askedBy: ['agent-planner'] }),
       }),
     ).toBe(true);
     expect(
       hitPlanRunning({
         hit: hit({}),
-        state: stateOf({ plans: [plan('active')], openQuestions: 0 }),
+        state: stateOf({ plans: [plan('active')], askedBy: ['agent-tester'] }),
       }),
     ).toBe(false);
-    expect(hitPlanRunning({ hit: hit({}), state: stateOf({ plans: [], openQuestions: 0 }) })).toBe(
+    expect(hitPlanRunning({ hit: hit({}), state: stateOf({ plans: [], askedBy: [] }) })).toBe(
       false,
     );
   });

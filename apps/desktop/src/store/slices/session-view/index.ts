@@ -38,7 +38,6 @@ export type { LensKind, DiffFocus, SessionCreationId } from './types';
 export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
     ...createInitialSessionViewState({}),
-    setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionViewPrefs: setSessionViewPrefs(set, get),
     markSessionOpened: markSessionOpened(set),

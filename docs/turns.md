@@ -741,6 +741,17 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   settle a scribe, rewriter or resolve attempt, capture file versions, or send
   drift and nudge notices. If Rust already evicted part of the output, a note
   says so; if the run is gone, the agent fails with a retryable error.
+- **A waiting permission survives a load.** A permission ask arrives in the
+  run's final result, so the run is over and its agent row still says
+  `running`. The boot sweep (`reconcileGhostAgents`) keeps every run with an
+  undecided ask, in every workspace, so a reload, a relaunch or another
+  window's boot never stops it. On a workspace load `reconcileLoadedAgent`
+  reads the agent's saved events for that run (`findUndecidedPermissionAsk`).
+  A `permission_request` with no `permission_decision` for its tool call keeps
+  the agent as it was and puts a `blocked` turn state back, so Needs you, the
+  door count and the ask card read as they did before the reload, the
+  relaunch or the workspace switch. A decided ask, or one the load cannot
+  read, stops the agent as before.
 - **A clean exit marks what it cut.** On app exit, and in `restart_prepare`
   before the updater relaunches, Rust writes the live run ids to
   `restart.interrupted_runs` in the settings table and stops sending end and

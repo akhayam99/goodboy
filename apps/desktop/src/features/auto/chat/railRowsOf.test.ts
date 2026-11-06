@@ -1,7 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { autoSpawnedRowsOf } from '../../../app/components/SpawnedPanel/autoSpawnedRowsOf';
 import { aDelegation, aView } from '../testing/autoViewFixtures';
 import { railRowsOf } from './railRowsOf';
+
+const words = vi.hoisted(() => ({ isRenamed: false }));
+
+vi.mock('./settledStatusOf', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./settledStatusOf')>();
+  return {
+    ...actual,
+    settledStatusOf: (params: Parameters<typeof actual.settledStatusOf>[0]) => {
+      const status = actual.settledStatusOf(params);
+      return words.isRenamed ? { ...status, word: `Renamed ${status.word}` } : status;
+    },
+  };
+});
+
+afterEach(() => {
+  words.isRenamed = false;
+});
 
 const DELEGATIONS = [
   aDelegation({
@@ -88,5 +105,37 @@ describe('railRowsOf substeps', () => {
       'agent-tenth',
       'agent-eleventh',
     ]);
+  });
+});
+
+describe('railRowsOf nodes', () => {
+  const settled = (['completed', 'failed', 'timed_out', 'blocked', 'stopped'] as const).map(
+    (outcome) => aDelegation({ key: outcome, role: 'implementer', state: 'settled', outcome }),
+  );
+  const nodesOf = () =>
+    railRowsOf({
+      view: aView({ phase: 'waiting', delegations: settled }),
+      agents: [],
+      rootRouting: ROOT_ROUTING,
+    })
+      .slice(1)
+      .map((row) => [row.agentId, row.node]);
+
+  it('draws each settled outcome with its own node', () => {
+    expect(nodesOf()).toEqual([
+      ['agent-completed', 'done'],
+      ['agent-failed', 'failed'],
+      ['agent-timed_out', 'failed'],
+      ['agent-blocked', 'alert'],
+      ['agent-stopped', 'stopped'],
+    ]);
+  });
+
+  it('keeps every node when the status words are renamed', () => {
+    const before = nodesOf();
+
+    words.isRenamed = true;
+
+    expect(nodesOf()).toEqual(before);
   });
 });

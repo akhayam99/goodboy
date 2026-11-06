@@ -206,8 +206,6 @@ vi.mock('../../../../store', () => {
     discoveredScripts: { [SESSION]: state.discovered },
     discoveredScriptScans: { [SESSION]: state.scans },
     scriptRuns: { [SESSION]: state.runs },
-    scriptsLensScope: null,
-    setScriptsLensScope: vi.fn(),
     loadScripts: vi.fn(async () => undefined),
     loadDiscoveredScripts: vi.fn(async () => undefined),
     refreshDiscoveredScripts: state.refreshDiscoveredScripts,
