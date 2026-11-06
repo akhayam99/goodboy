@@ -1,7 +1,7 @@
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { selectKindRouting } from '../agents/selectKindRouting';
-import { TurnRefused } from '../turn/TurnRefused';
-import { turnRefusalOf } from '../turn/turnRefusalOf';
+import { TurnRefused } from '../turn/refusal/TurnRefused';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { PUSH_FIXER_NAME } from './pushFix/pushFixerName';
 import type { GetFn } from './types';
 

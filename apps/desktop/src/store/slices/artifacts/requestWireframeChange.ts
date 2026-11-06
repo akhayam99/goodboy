@@ -12,7 +12,7 @@ import {
   type WireframeDraftRequest,
 } from '../../../features/wireframes/wireframeDraft';
 import { sessionReads } from '../../runtime/state-writes/sessionReads';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn, SetFn } from './types';
 
 export type RequestWireframeChangeParams = WireframeDraftRequest & {

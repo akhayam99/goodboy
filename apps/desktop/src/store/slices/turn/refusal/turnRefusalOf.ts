@@ -1,4 +1,4 @@
-import type { SendTurnResult, TurnRefusal } from './types';
+import type { SendTurnResult, TurnRefusal } from '../types';
 
 type Params = {
   readonly result: SendTurnResult;

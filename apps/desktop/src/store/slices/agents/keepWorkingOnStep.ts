@@ -1,7 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { notFinishedKindOf } from '@goodboy/core/workflows';
 import { composeStepBoundary } from '../turn/kickoff';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {

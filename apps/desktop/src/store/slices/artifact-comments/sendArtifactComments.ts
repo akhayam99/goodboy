@@ -13,8 +13,8 @@ import { NOT_REVISING, planRevisingOf } from '../../../features/plans/planRevisi
 import { tauriDatabase } from '../../../shared/lib/db';
 import { sessionById } from '../sessions/sessionIndex';
 import { sessionReads } from '../../runtime/state-writes/sessionReads';
-import { turnRefusalMessage } from '../turn/turnRefusalMessage';
-import { turnRefusalOf } from '../turn/turnRefusalOf';
+import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { refreshArtifactComments } from './refresh';
 import { settleAgainstVersions } from './settleSentComments';
 import type { GetFn, SendArtifactCommentsParams, SendArtifactCommentsResult, SetFn } from './types';

@@ -3,7 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { waitTurnSettled } from '../turn/turnSettled';
 import { composeStepBoundary } from '../turn/kickoff';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {

@@ -5,7 +5,7 @@ import {
   type ProviderRunId,
   type SessionId,
 } from '@goodboy/types';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {

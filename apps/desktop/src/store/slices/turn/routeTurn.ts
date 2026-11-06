@@ -24,7 +24,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, WithInput, TurnPhaseValue } from './types';
 import { turnDone, turnReady } from './turnPhase';
 import { NOT_BLOCKED } from './notBlocked';
-import { turnRefusalMessage } from './turnRefusalMessage';
+import { turnRefusalMessage } from './refusal/turnRefusalMessage';
 import type { PreparedTurn } from './prepareTurn';
 
 type Params = Readonly<{

@@ -6,7 +6,7 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { throwIfRefused } from '../../../../store/slices/turn/throwIfRefused';
+import { throwIfRefused } from '../../../../store/slices/turn/refusal/throwIfRefused';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { ChatView } from '../ChatView';

@@ -1,6 +1,6 @@
 import { oncePatternText } from '@goodboy/core/permissions';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn, SetFn } from './types';
 
 type Params = {

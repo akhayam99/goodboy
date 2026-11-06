@@ -3,8 +3,8 @@ import { cancelQuestionDelegates } from './cancelQuestionDelegates';
 import { settleDismissedQuestion } from './dismissOpenQuestion';
 import { isReportedError } from '../notifications/reportedError';
 import type { SendTurnResult } from '../turn/types';
-import { turnRefusalMessage } from '../turn/turnRefusalMessage';
-import { turnRefusalOf } from '../turn/turnRefusalOf';
+import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import type { GetFn, SetFn } from './types';
 
 type Params = {

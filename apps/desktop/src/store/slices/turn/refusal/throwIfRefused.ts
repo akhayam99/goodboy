@@ -1,4 +1,4 @@
-import type { SendTurnResult } from './types';
+import type { SendTurnResult } from '../types';
 import { TurnRefused } from './TurnRefused';
 import { turnRefusalOf } from './turnRefusalOf';
 

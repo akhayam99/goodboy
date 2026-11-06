@@ -1,7 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
-import { turnRefusalMessage } from '../../slices/turn/turnRefusalMessage';
-import { turnRefusalOf } from '../../slices/turn/turnRefusalOf';
+import { turnRefusalMessage } from '../../slices/turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../../slices/turn/refusal/turnRefusalOf';
 import type { DeliveryRun, LookupDeliveryRunParams, TurnExit } from './ports';
 
 const DELIVERED_TURN_POLL_MS = 50;

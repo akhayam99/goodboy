@@ -4,7 +4,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import { withStepBoundary } from './kickoff';
-import { throwIfRefused } from './throwIfRefused';
+import { throwIfRefused } from './refusal/throwIfRefused';
 import type { GetFn, SetFn } from './types';
 
 const CONTINUE_STOPPED_MESSAGE = 'Continue from where you stopped.';

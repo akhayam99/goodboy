@@ -59,7 +59,6 @@ import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAtta
 import { useToast } from '../../../../shared/components/Toast';
 
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { throwIfRefused } from '../../../../store/slices/turn/throwIfRefused';
 import { isTurnThinking } from '../../utils/isTurnThinking';
 import { turnStateOf } from './turnStateOf';
 import { waitingForOf } from './waitingForOf';
@@ -355,14 +354,12 @@ export const ChatView = ({
           provider: source.provider,
           model: model ?? source.model,
         });
-        throwIfRefused({
-          result: await sendTurn({
-            sessionId: session.id,
-            agentId: selectedAgentId,
-            content: source.content,
-            ...(attachments.length > 0 ? { attachments } : {}),
-            ...(override !== undefined ? { override } : {}),
-          }),
+        await sendTurn({
+          sessionId: session.id,
+          agentId: selectedAgentId,
+          content: source.content,
+          ...(attachments.length > 0 ? { attachments } : {}),
+          ...(override !== undefined ? { override } : {}),
         });
       } catch (error) {
         if (!isReportedError(error)) {

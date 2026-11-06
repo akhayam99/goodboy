@@ -1,15 +1,15 @@
 vi.mock('@tauri-apps/api/core', async () =>
-  (await import('../../storyHarness')).tauriCoreModuleMock(),
+  (await import('../../../storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../storyHarness')).tauriEventModuleMock(),
+  (await import('../../../storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
-vi.mock('../../../shared/lib/db', async () =>
-  (await import('../../storyHarness')).dbLibModuleMock(),
+vi.mock('@goodboy/db', async () => (await import('../../../storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../features/permissions/permissions', async () =>
-  (await import('../../storyHarness')).permissionsModuleMock(),
+vi.mock('../../../../features/permissions/permissions', async () =>
+  (await import('../../../storyHarness')).permissionsModuleMock(),
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,8 +20,8 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../storyHarness';
-import type { SendTurnResult } from './types';
+} from '../../../storyHarness';
+import type { SendTurnResult } from '../types';
 import { TurnRefused } from './TurnRefused';
 import { throwIfRefused } from './throwIfRefused';
 

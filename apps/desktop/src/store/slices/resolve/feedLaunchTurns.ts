@@ -3,7 +3,7 @@ import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { dropLaunchTurns, hasLaunchTurns, takeLaunchTurn } from './launchTurns';
 import { launchKeyOf } from './resolveLaunch';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {

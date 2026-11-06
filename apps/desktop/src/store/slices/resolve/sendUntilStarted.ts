@@ -1,5 +1,5 @@
 import type { SendTurnInput } from '../turn/types';
-import { throwIfRefused } from '../turn/throwIfRefused';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {

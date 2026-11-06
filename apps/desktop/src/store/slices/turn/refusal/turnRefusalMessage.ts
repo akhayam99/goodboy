@@ -1,4 +1,4 @@
-import type { TurnRefusal } from './types';
+import type { TurnRefusal } from '../types';
 
 type Params = {
   readonly refusal: TurnRefusal;

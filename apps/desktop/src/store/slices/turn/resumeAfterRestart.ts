@@ -1,7 +1,7 @@
 import type { AgentId, IsoDateTime, ProviderId, ProviderRunId, SessionId } from '@goodboy/types';
 import { planRestartResume, type RestartReason } from './planRestartResume';
 import { withStepBoundary } from './kickoff';
-import { throwIfRefused } from './throwIfRefused';
+import { throwIfRefused } from './refusal/throwIfRefused';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
