@@ -7,6 +7,7 @@ import type {
 } from '@goodboy/types';
 import { pullRequestViewAt } from '../../../store/slices/pull-request-view/pullRequestViewAt';
 import type { AppState } from '../../../store/types';
+import { isFailingConclusion } from '../../integrations/github/checksRollup';
 
 type Params = {
   readonly state: Pick<AppState, 'mountGithub' | 'pullRequestViews'>;
@@ -20,8 +21,6 @@ export type FailingChecks = {
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly allChecks: ReadonlyArray<PrCheckRun>;
 };
-
-const FAILED = ['failure', 'timed_out', 'cancelled'];
 
 export const failingChecksOf = ({
   state,
@@ -47,7 +46,7 @@ export const failingChecksOf = ({
   }
   return {
     pullRequest,
-    checks: checks.filter((check) => FAILED.includes(check.conclusion)),
+    checks: checks.filter((check) => isFailingConclusion({ conclusion: check.conclusion })),
     allChecks: checks,
   };
 };

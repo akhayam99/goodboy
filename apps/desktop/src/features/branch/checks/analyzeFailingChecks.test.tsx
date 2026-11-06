@@ -794,6 +794,35 @@ describe('the branch header step runs the Overview chain on any tab', () => {
     },
   );
 
+  it('counts an action_required check as failing, so Fix checks starts a Debugger on it', async () => {
+    const github = store.getState().mountGithub[seed.repo.mountId];
+    if (github?.detail == null) {
+      throw new Error('The seeded branch is missing');
+    }
+    store.setState({
+      mountGithub: {
+        [seed.repo.mountId]: {
+          ...github,
+          detail: {
+            ...github.detail,
+            checks: github.detail.checks.map((check) =>
+              check.conclusion === 'failure'
+                ? { ...check, conclusion: 'action_required' as const }
+                : check,
+            ),
+          },
+        },
+      },
+    });
+    const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+    showStep();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix checks' }));
+
+    await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+    expect(spawn.mock.calls[0]?.[1].initialPrompt).toContain(seed.check.name);
+  });
+
   it('offers Fix checks again after an empty finding', () => {
     showStep({ phase: 'no-fix' });
 
