@@ -1,5 +1,14 @@
-import type { ArtifactComment, ArtifactId, IsoDateTime } from '@goodboy/types';
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ArtifactComment,
+  type ArtifactId,
+  type ArtifactStatus,
+  type IsoDateTime,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { sceneClock } from '../sceneClock';
 import { SESSION_ID, seedArtifactScene } from './artifactSeed';
 
@@ -46,9 +55,70 @@ const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 
 type SeedParams = {
   readonly hasComments: boolean;
+  readonly hasRun?: boolean;
 };
 
-export const seedPlanCommentsScene = ({ hasComments }: SeedParams) => {
+const RAN_AGENT_ID = brandId<AgentId>({ value: 'mock-plan-comments-agent-implementer' });
+
+const CONSUMED: ArtifactStatus = 'consumed';
+
+const SENT: ArtifactComment['status'] = 'sent';
+
+const RAN_AGENT: Agent = {
+  id: RAN_AGENT_ID,
+  sessionId: SESSION_ID,
+  ordinal: 40,
+  name: 'Implementer',
+  kind: 'implementer',
+  status: 'running',
+  startedAt: NOW,
+};
+
+const SENT_TO_AGENT: SendArtifactCommentsResult = {
+  kind: 'sentToAgent',
+  agentName: RAN_AGENT.name,
+};
+
+const seedRan = () => {
+  useAppStore.setState((state) => ({
+    sessionPlans: {
+      ...state.sessionPlans,
+      [SESSION_ID]: (state.sessionPlans[SESSION_ID] ?? []).map((plan) =>
+        plan.id === PLAN_COMMENTS_ARTIFACT_ID
+          ? {
+              ...plan,
+              status: CONSUMED,
+              consumptionCount: 1,
+              lastConsumer: { agentId: RAN_AGENT_ID, name: RAN_AGENT.name },
+            }
+          : plan,
+      ),
+    },
+    sessionArtifacts: {
+      ...state.sessionArtifacts,
+      [SESSION_ID]: (state.sessionArtifacts[SESSION_ID] ?? []).map((artifact) =>
+        artifact.id === PLAN_COMMENTS_ARTIFACT_ID ? { ...artifact, status: CONSUMED } : artifact,
+      ),
+    },
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      [SESSION_ID]: [...(state.sessionPhaseRuns[SESSION_ID] ?? []), RAN_AGENT],
+    },
+    sendArtifactCommentsToAgent: async () => {
+      useAppStore.setState((current) => ({
+        artifactComments: {
+          ...current.artifactComments,
+          [SESSION_ID]: (current.artifactComments[SESSION_ID] ?? []).map((comment) =>
+            comment.status === 'draft' ? { ...comment, status: SENT } : comment,
+          ),
+        },
+      }));
+      return SENT_TO_AGENT;
+    },
+  }));
+};
+
+export const seedPlanCommentsScene = ({ hasComments, hasRun = false }: SeedParams) => {
   seedArtifactScene({ focusedArtifactId: PLAN_COMMENTS_ARTIFACT_ID, withStates: true });
   useAppStore.setState({
     artifactComments: { [SESSION_ID]: hasComments ? DRAFTS : [] },
@@ -112,4 +182,7 @@ export const seedPlanCommentsScene = ({ hasComments }: SeedParams) => {
       return { kind: 'unchanged' };
     },
   });
+  if (hasRun) {
+    seedRan();
+  }
 };

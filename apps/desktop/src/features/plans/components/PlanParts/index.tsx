@@ -1,7 +1,8 @@
 import { useMemo, type ReactNode } from 'react';
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, Tooltip } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { planPartOrder } from '../../waves/planPartOrder';
+import { planPartsLine } from '../../waves/planPartsLine';
 import type { PlanPartRow as Row } from './planPartRows';
 import { PlanPartRow } from './PlanPartRow';
 import { PlanPartWaves } from './PlanPartWaves';
@@ -15,20 +16,14 @@ type Props = {
   readonly planId: ArtifactId;
   readonly rows: ReadonlyArray<Row>;
   readonly hasRun: boolean;
-  readonly splitSentence: string;
   readonly onOpenPart: (row: Row) => void;
   readonly frameRow?: (params: { readonly row: Row; readonly children: ReactNode }) => ReactNode;
 };
 
-export const PlanParts = ({
-  sessionId,
-  planId,
-  rows,
-  hasRun,
-  splitSentence,
-  onOpenPart,
-  frameRow,
-}: Props) => {
+const PARTS_RULE =
+  'Parts that touch the same files go one after the other; the rest can run together.';
+
+export const PlanParts = ({ sessionId, planId, rows, hasRun, onOpenPart, frameRow }: Props) => {
   const order = useMemo(() => planPartOrder({ rows }), [rows]);
   if (rows.length === 0) {
     return null;
@@ -59,7 +54,13 @@ export const PlanParts = ({
         </h2>
         <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
-      {hasRun ? null : <p className="text-meta text-muted-foreground">{splitSentence}</p>}
+      {hasRun ? null : (
+        <Tooltip content={PARTS_RULE}>
+          <p className="text-meta text-muted-foreground">
+            {planPartsLine({ order, count: rows.length })}
+          </p>
+        </Tooltip>
+      )}
       {order.hasGroups ? (
         <PlanPartWaves order={order} renderRow={renderRow} />
       ) : (

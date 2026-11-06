@@ -51,9 +51,10 @@ export const nextEntries = ({
           ...(primary.requiresConfirm === true
             ? {
                 confirm: {
-                  title: suggestion.title,
-                  description: suggestion.detail ?? `${primary.label} now?`,
-                  confirmLabel: primary.label,
+                  title: primary.confirm?.title ?? suggestion.title,
+                  description:
+                    primary.confirm?.description ?? suggestion.detail ?? `${primary.label} now?`,
+                  confirmLabel: primary.confirm?.confirmLabel ?? primary.label,
                   role: 'alert' as const,
                 },
               }

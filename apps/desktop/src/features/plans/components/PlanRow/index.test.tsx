@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PlanArtifact, PlanWithCount, ProviderRunId, TurnState } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../../../store';
@@ -149,10 +149,28 @@ describe('PlanRow primary for a plan that belongs to a run', () => {
     fireEvent.click(screen.getByTestId('plan-primary'));
 
     expect(approve).not.toHaveBeenCalled();
-    const dialog = screen.getByRole('dialog', { name: '1 comment is not sent. Approve anyway?' });
+    const dialog = screen.getByRole('dialog', { name: 'Approve without your comment?' });
     expect(screen.getByTestId('plan-row').contains(dialog)).toBe(false);
     expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(screen.getByTestId('plan-primary').getAttribute('data-filled')).toBe('false');
+  });
+
+  it('asks before Run plan too, and runs only after Run anyway', async () => {
+    seedPlanDrawer({ run: 'none', drafts: [aPlanDraft()] });
+    const runPlan = vi.fn(async () => ({
+      kind: 'refused' as const,
+      reason: null,
+      workflowRunId: null,
+    }));
+    useAppStore.setState({ runPlan });
+    renderRow();
+
+    fireEvent.click(screen.getByTestId('plan-primary'));
+
+    expect(runPlan).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('dialog', { name: 'Run without your comment?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Run anyway' }));
+    await waitFor(() => expect(runPlan).toHaveBeenCalledTimes(1));
   });
 
   it('is Run plan for a session plan', () => {

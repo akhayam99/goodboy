@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { MetaRow, SectionHeader, Skeleton, cn, PaneShell } from '@goodboy/ui';
+import { MetaRow, SectionHeader, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
@@ -9,6 +9,7 @@ import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuest
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import type { ArtifactGeneration } from '../../artifactCollection';
 import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
+import { ArtifactFollowButton } from './ArtifactFollowButton';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
 
@@ -17,7 +18,7 @@ type Props = {
   readonly generation: ArtifactGeneration;
 };
 
-const SKELETON_WIDTHS = ['w-2/3', 'w-full', 'w-5/6', 'w-3/4'] as const;
+const WRITING_SENTENCE = 'Still writing. It opens here when the agent is done.';
 
 export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
   const sessionQuestions = useSessionOpenQuestions(sessionId);
@@ -39,9 +40,18 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
           title={generation.title}
           chip={null}
           actions={
-            <ArtifactShellActions
-              target={{ kind: 'artifact', sessionId, subject: { kind: 'generation', generation } }}
-            />
+            <span className="flex min-w-0 shrink-0 items-center gap-2">
+              {generation.state === 'generating' ? (
+                <ArtifactFollowButton sessionId={sessionId} agentId={generation.agentId} />
+              ) : null}
+              <ArtifactShellActions
+                target={{
+                  kind: 'artifact',
+                  sessionId,
+                  subject: { kind: 'generation', generation },
+                }}
+              />
+            </span>
           }
           meta={
             <MetaRow
@@ -75,6 +85,11 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
             <OpenQuestionCluster questions={questions} sessionId={sessionId} />
           </div>
         ) : null}
+        {generation.state === 'generating' ? (
+          <p data-testid="artifact-writing" className="text-body text-muted-foreground">
+            {WRITING_SENTENCE}
+          </p>
+        ) : null}
         <div className="flex min-w-0 flex-col gap-2">
           <SectionHeader label="Agents on this run" />
           <ArtifactScouts
@@ -83,13 +98,6 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
             emptyLine="no scout ran for this one, the agent writes it from the session alone"
           />
         </div>
-        {generation.state === 'generating' ? (
-          <div aria-hidden className="flex flex-col gap-3">
-            {SKELETON_WIDTHS.map((width) => (
-              <Skeleton key={width} className={cn('h-2.5 rounded-sm', width)} />
-            ))}
-          </div>
-        ) : null}
       </div>
     </PaneShell>
   );

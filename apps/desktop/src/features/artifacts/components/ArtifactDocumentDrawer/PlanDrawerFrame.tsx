@@ -8,7 +8,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ArtifactActionTarget } from '../../../actions/types';
-import { planPartsProgress, planSplitSentence } from '../../../plans/planSurfaces';
+import { planPartsProgress } from '../../../plans/planSurfaces';
 import { plannerQuestionsOf } from '../../../plans/plannerQuestions';
 import type { PlanModel } from '../../../plans/usePlanModel';
 import { usePlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
@@ -143,12 +143,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
                 plan={plan}
                 rows={rows}
                 hasRun={hasRun}
-                splitSentence={planSplitSentence({
-                  count: rows.length,
-                  plannerName: creator?.name ?? null,
-                })}
                 onSent={onSent}
-                isApproveInBar={false}
                 onOpenPart={(row) => {
                   if (hasRun && row.agentId !== null) {
                     navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });

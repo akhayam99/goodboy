@@ -3,6 +3,7 @@ import { editArtifactComment } from './editArtifactComment';
 import { loadArtifactComments } from './loadArtifactComments';
 import { removeArtifactComment } from './removeArtifactComment';
 import { sendArtifactComments } from './sendArtifactComments';
+import { sendArtifactCommentsToAgent } from './sendArtifactCommentsToAgent';
 import type { SliceDeps } from '../../slice-types';
 
 export { artifactCommentsInitialState } from './state';
@@ -14,5 +15,6 @@ export const createArtifactCommentsSlice = ({ set, get }: SliceDeps) => {
     editArtifactComment: editArtifactComment(set),
     removeArtifactComment: removeArtifactComment(set, get),
     sendArtifactComments: sendArtifactComments(set, get),
+    sendArtifactCommentsToAgent: sendArtifactCommentsToAgent({ set, get }),
   };
 };

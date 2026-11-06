@@ -24,6 +24,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../store/storyHarness')).dbModuleMock({
     listPendingSlackDraftsForSession: async () => [],
+    listArtifactComments: async () => [],
   }),
 );
 vi.mock('../../../../features/chat/turn', async () => {

@@ -49,6 +49,7 @@ const api = (overrides: Partial<PlanCommentsApi> = {}): PlanCommentsApi => ({
   comments: [],
   revision: 1,
   canComment: true,
+  isPlanRan: false,
   composing: null,
   startComposing: vi.fn(),
   cancelComposing: vi.fn(),
@@ -116,6 +117,23 @@ describe('PartCommentFrame', () => {
     expect(value.remove).toHaveBeenCalledWith({ commentId: 'mine' });
   });
 
+  it('tags a draft Not sent once the plan ran', () => {
+    const value = api({
+      isPlanRan: true,
+      comments: [
+        comment({
+          id: 'c-late',
+          anchor: { kind: 'part', index: 2, title: ROW.title },
+          body: 'Limit the backfill',
+        }),
+      ],
+    });
+    render(withApi({ value, children: <Framed>row</Framed> }));
+
+    expect(within(screen.getByTestId('plan-comment')).getByText('Not sent')).toBeDefined();
+    expect(screen.queryByText('Draft')).toBeNull();
+  });
+
   it('labels each state after the send and offers no remove', () => {
     const anchor: ArtifactCommentAnchor = { kind: 'part', index: 2, title: ROW.title };
     const value = api({
@@ -150,6 +168,132 @@ describe('PartCommentFrame', () => {
     await waitFor(() => expect(value.add).toHaveBeenCalledTimes(2));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(value.cancelComposing).toHaveBeenCalled();
+  });
+
+  describe('a comment typed and not added', () => {
+    const composing: PlanCommentsApi['composing'] = {
+      anchor: { kind: 'part', index: 2, title: ROW.title },
+    };
+    const escape = () => fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    it('is kept as a draft when focus leaves the box', async () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      const box = screen.getByLabelText('Comment for the planner');
+      fireEvent.change(box, { target: { value: 'Split in two' } });
+
+      fireEvent.blur(box);
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledWith({ body: 'Split in two' }));
+      expect(value.cancelComposing).not.toHaveBeenCalled();
+    });
+
+    it('is kept as a draft on Esc, and says so', async () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      expect(screen.getByText('Esc keeps it as a draft')).toBeDefined();
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      escape();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledWith({ body: 'Split in two' }));
+      expect(value.cancelComposing).not.toHaveBeenCalled();
+    });
+
+    it('closes on Esc when the box is empty, and saves nothing', () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+
+      escape();
+
+      expect(value.cancelComposing).toHaveBeenCalledTimes(1);
+      expect(value.add).not.toHaveBeenCalled();
+    });
+
+    it('is not saved when focus only moves to a button of the composer', () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      const box = screen.getByLabelText('Comment for the planner');
+      fireEvent.change(box, { target: { value: 'Split in two' } });
+
+      fireEvent.blur(box, { relatedTarget: screen.getByRole('button', { name: 'Cancel' }) });
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Cancel' }));
+      fireEvent.blur(box);
+
+      expect(value.add).not.toHaveBeenCalled();
+    });
+
+    it('is kept as a draft when the page goes away under the box', async () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      view.unmount();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledWith({ body: 'Split in two' }));
+      expect(value.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('is kept as a draft when the window is reloaded, once', async () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      window.dispatchEvent(new Event('pagehide'));
+      view.unmount();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledTimes(1));
+    });
+
+    it('is not saved when the box is closed with Cancel and then goes away', () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      view.unmount();
+
+      expect(value.add).not.toHaveBeenCalled();
+    });
+
+    it('is not saved twice when Esc saved it and the box then goes away', async () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      escape();
+      view.unmount();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledTimes(1));
+    });
+
+    it('stays in the box with the error when the save fails', async () => {
+      const value = api({
+        composing,
+        add: vi.fn(async () => {
+          throw new Error('The database is locked');
+        }),
+      });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      const box = screen.getByLabelText('Comment for the planner');
+      fireEvent.change(box, { target: { value: 'Split in two' } });
+
+      fireEvent.blur(box);
+
+      expect((await screen.findByRole('alert')).textContent).toContain('The database is locked');
+      expect(box).toHaveProperty('value', 'Split in two');
+      expect(value.cancelComposing).not.toHaveBeenCalled();
+    });
   });
 
   it('opens the composer under the part with focus in it, and gives focus back to its Comment button on close', () => {
@@ -386,29 +530,13 @@ describe('PlanProse', () => {
   });
 });
 
-type PlanBarApprove = NonNullable<Parameters<typeof PlanCommentBar>[0]['approve']>;
-
 describe('PlanCommentBar', () => {
   const allowed = { canSend: true, reason: null };
-
-  const approval = (overrides: Partial<PlanBarApprove> = {}): PlanBarApprove => ({
-    press: vi.fn(),
-    isBusy: false,
-    confirm: null,
-    ...overrides,
-  });
 
   it('counts the comments and sends', () => {
     const onSend = vi.fn(async () => undefined);
     render(
-      <PlanCommentBar
-        count={2}
-        guard={allowed}
-        isSending={false}
-        error={null}
-        onSend={onSend}
-        approve={null}
-      />,
+      <PlanCommentBar count={2} guard={allowed} isSending={false} error={null} onSend={onSend} />,
     );
     expect(screen.getByText('2 comments')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
@@ -425,7 +553,6 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={onSend}
-        approve={null}
       />,
     );
     expect(screen.getByText('1 comment')).toBeDefined();
@@ -436,8 +563,7 @@ describe('PlanCommentBar', () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it('makes Send the one filled button and keeps Approve beside it while the run waits', () => {
-    const press = vi.fn();
+  it('makes Send the one filled button', () => {
     render(
       <PlanCommentBar
         count={1}
@@ -445,16 +571,13 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={vi.fn(async () => undefined)}
-        approve={approval({ press })}
       />,
     );
     expect(screen.getByTestId('plan-bar-send').getAttribute('data-filled')).toBe('true');
-    expect(screen.getByTestId('plan-bar-approve').getAttribute('data-filled')).toBe('false');
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    expect(press).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
-  it('stays with Approve alone and a hint when there is no comment yet', () => {
+  it('stays with a hint when there is no comment yet', () => {
     render(
       <PlanCommentBar
         count={0}
@@ -462,54 +585,10 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={vi.fn(async () => undefined)}
-        approve={approval()}
       />,
     );
     expect(screen.getByText('Select text or click a block to comment')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Send to planner' })).toBeNull();
-  });
-
-  it('asks inline about the unsent comments before it approves', () => {
-    const confirm = vi.fn(async () => undefined);
-    const cancel = vi.fn();
-    render(
-      <PlanCommentBar
-        count={3}
-        guard={allowed}
-        isSending={false}
-        error={null}
-        onSend={vi.fn(async () => undefined)}
-        approve={approval({ confirm: { count: 3, confirm, cancel } })}
-      />,
-    );
-    expect(
-      screen.getByRole('group', { name: '3 comments are not sent. Approve anyway?' }),
-    ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Approve anyway' }));
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(cancel).not.toHaveBeenCalled();
-  });
-
-  it('lets the question be cancelled', () => {
-    const confirm = vi.fn(async () => undefined);
-    const cancel = vi.fn();
-    render(
-      <PlanCommentBar
-        count={1}
-        guard={allowed}
-        isSending={false}
-        error={null}
-        onSend={vi.fn(async () => undefined)}
-        approve={approval({ confirm: { count: 1, confirm, cancel } })}
-      />,
-    );
-    expect(
-      screen.getByRole('group', { name: '1 comment is not sent. Approve anyway?' }),
-    ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(cancel).toHaveBeenCalledTimes(1);
-    expect(confirm).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('shows a send failure as an alert', () => {
@@ -520,7 +599,6 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error="Every provider is over its limit. Change a limit or wait for the next period."
         onSend={vi.fn(async () => undefined)}
-        approve={null}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe(

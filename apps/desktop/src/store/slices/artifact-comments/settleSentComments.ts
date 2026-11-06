@@ -1,6 +1,7 @@
 import { setArtifactCommentsStatus, type ArtifactRevision } from '@goodboy/db';
 import type { ArtifactComment, ArtifactId, SessionId } from '@goodboy/types';
 import { loadArtifactRevision } from '../../../features/artifacts/artifacts';
+import { consumerDelivery } from '../../../features/plans/planComments/consumerDelivery';
 import { planVersionOfRevision } from '../../../features/plans/planComments/planVersionOfRevision';
 import {
   settlePlanComments,
@@ -76,7 +77,9 @@ export const settleStaleSentComments = async ({
   const state = get();
   const stale = (state.artifactComments[sessionId] ?? []).filter(
     (comment) =>
-      comment.status === 'sent' && state.artifactCommentSends[comment.artifactId] === undefined,
+      comment.status === 'sent' &&
+      !consumerDelivery.isDelivered({ comment }) &&
+      state.artifactCommentSends[comment.artifactId] === undefined,
   );
   if (stale.length === 0) {
     return;

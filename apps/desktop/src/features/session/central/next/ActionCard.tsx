@@ -106,9 +106,9 @@ export const ActionCard = ({
       <ConfirmPopover
         role={main.confirmRole}
         icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-        title={`${main.ariaLabel ?? main.label}?`}
-        description={card.title}
-        confirmLabel={main.label}
+        title={main.confirm?.title ?? `${main.ariaLabel ?? main.label}?`}
+        description={main.confirm?.description ?? card.title}
+        confirmLabel={main.confirm?.confirmLabel ?? main.label}
         isOpen={isConfirming}
         anchorClassName="flex min-w-0 items-center"
         onConfirm={() => {
