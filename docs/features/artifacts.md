@@ -17,13 +17,19 @@ Keep everything a session made in one list. The tabs **All**, **Plans**, **Repor
 
 Check a plan before it runs. A plan can give each part done-when checks and the files it expects to touch, and **Run plan** turns each part into a sub-agent. Parts that touch the same file never run at the same time. The plan page groups parts into **Runs first** and **Then, in parallel**. It names a shared file and shows each part as a block of its files. On a plan that came from a workflow, the action reads **Approve** and continues that workflow.
 
+One line under **Parts** says how they run. It reads `3 parts, one after the other.` or `3 parts, 2 at once.` A part with no chosen model reads **Default model**. A plan version reads `v3`.
+
 ### Plan beside the planner
 
 Read the plan without leaving the planner. It shows as one row in the planner's chat, and pressing it opens the plan in a drawer on the right, with **Open in Artifacts** and **Edit**. Reports and wireframes open the same way from Activity or from their chip in a transcript.
 
 ### Comment on a plan
 
-Point at a part, a paragraph or a few words and leave a comment. Comments stay drafts until **Send to planner** posts them in plan order and asks for an updated plan. When the new version lands, each comment reads **Addressed** or **Not changed in v2**. While comments wait, **Send to planner** is the one filled button, and **Run plan** or **Approve** asks before it goes on without them. Text you typed and did not add is kept as a draft when you leave the box, press Esc or press a button. After the plan ran, the bar reads **Not sent** with **Send to** the agent and **Copy**. A stopped agent leaves only **Copy**.
+Point at a part, a paragraph or a few words and leave a comment. Comments stay drafts until **Send to planner** posts them in plan order and asks for an updated plan. When the new version lands, each comment reads **Addressed** or **Not changed in v2**.
+
+While comments wait, **Send to planner** is the one filled button. **Run plan** and **Approve** ask before they go on without them. Text you typed and did not add is kept as a draft. It is saved when you leave the box, press Esc or press a button.
+
+After the plan ran, the bar reads **Not sent**, with **Send to** the agent and **Copy**. A stopped agent leaves only **Copy**.
 
 ### Report as a document
 

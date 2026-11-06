@@ -69,7 +69,7 @@ describe('PlanPartDrawer', () => {
     expect(screen.getByText('A contained change in one module')).toBeDefined();
   });
 
-  it('says a part without a proposal runs on Auto', () => {
+  it('says a part without a proposal runs on the default model', () => {
     state.plans = [PLAN];
     render(
       <PlanPartDrawer
@@ -79,7 +79,7 @@ describe('PlanPartDrawer', () => {
         onClose={() => undefined}
       />,
     );
-    expect(screen.getByText('Auto')).toBeDefined();
+    expect(screen.getByText('Default model')).toBeDefined();
   });
 
   it('opens the subagent that carries a part once the plan ran', () => {

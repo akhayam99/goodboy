@@ -14,7 +14,6 @@ type Props = {
   readonly plan: PlanWithCount;
   readonly rows: ReadonlyArray<PlanPartRow>;
   readonly hasRun: boolean;
-  readonly splitSentence: string;
   readonly onOpenPart: (row: PlanPartRow) => void;
   readonly onSent?: (result: SendArtifactCommentsResult) => void;
   readonly measure?: 'reading' | 'full';
@@ -24,7 +23,6 @@ export const ArtifactPlanBody = ({
   plan,
   rows,
   hasRun,
-  splitSentence,
   onOpenPart,
   onSent,
   measure = 'reading',
@@ -47,7 +45,6 @@ export const ArtifactPlanBody = ({
           planId={plan.id}
           rows={rows}
           hasRun={hasRun}
-          splitSentence={splitSentence}
           onOpenPart={onOpenPart}
           frameRow={({ row, children }) => (
             <PartCommentFrame index={row.index} title={row.title}>

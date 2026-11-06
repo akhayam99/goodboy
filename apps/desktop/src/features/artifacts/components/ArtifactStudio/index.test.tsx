@@ -352,7 +352,7 @@ describe('ArtifactStudio shell', () => {
       'Rounding drift in ledger-core postings',
     );
     expect(within(header).getByTestId('artifact-creator').textContent).toBe('Report 1');
-    expect(within(header).getByText('rev 2')).toBeDefined();
+    expect(within(header).getByText('v2')).toBeDefined();
     expect(within(header).getByTestId('artifact-action-edit')).toBeDefined();
     expect(within(header).queryByTestId('artifact-action-runPlan')).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Conversation' })).toBeNull();
@@ -539,7 +539,7 @@ describe('ArtifactStudio plan parts', () => {
     { title: 'Skip settled batches in retries', instructions: 'notify-relay' },
   ];
 
-  it('lists the parts after the goal and says who split the plan', () => {
+  it('lists the parts after the goal and says how they run in one line', () => {
     state.plans = [
       {
         ...plan,
@@ -550,11 +550,7 @@ describe('ArtifactStudio plan parts', () => {
     focus('plan-1');
     renderStudio();
     const parts = screen.getByTestId('plan-parts');
-    expect(
-      within(parts).getByText(
-        'Planner 2 split this plan into 2 parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.',
-      ),
-    ).toBeDefined();
+    expect(within(parts).getByText('2 parts, one after the other.')).toBeDefined();
     expect(within(parts).getByText('Done when: run pnpm test ledger-core')).toBeDefined();
     expect(within(parts).getByText('2 files')).toBeDefined();
     expect(within(parts).getAllByText('Auto')).toHaveLength(2);
