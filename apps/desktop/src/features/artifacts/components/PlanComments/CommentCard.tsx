@@ -9,6 +9,7 @@ type Props = {
   readonly comment: ArtifactComment;
   readonly revision: number;
   readonly isQuoteShown?: boolean;
+  readonly isPlanRan?: boolean;
   readonly onEdit: (params: { readonly commentId: string; readonly body: string }) => Promise<void>;
   readonly onRemove: (params: { readonly commentId: string }) => Promise<void>;
 };
@@ -16,12 +17,18 @@ type Props = {
 const tagOf = ({
   comment,
   revision,
+  isPlanRan,
 }: {
   readonly comment: ArtifactComment;
   readonly revision: number;
+  readonly isPlanRan: boolean;
 }) => {
   if (comment.status === 'draft') {
-    return <Chip tone="neutral" kind="state" label="Draft" />;
+    return isPlanRan ? (
+      <Chip tone="warning" kind="state" label="Not sent" />
+    ) : (
+      <Chip tone="neutral" kind="state" label="Draft" />
+    );
   }
   if (comment.status === 'sent') {
     return <Chip tone="info" kind="state" label="Sent" />;
@@ -51,6 +58,7 @@ export const CommentCard = ({
   comment,
   revision,
   isQuoteShown = true,
+  isPlanRan = false,
   onEdit,
   onRemove,
 }: Props) => {
@@ -70,7 +78,7 @@ export const CommentCard = ({
           className={cn('size-3.5 shrink-0 rounded-full', tintClasses('primary').dot)}
         />
         <span className="text-meta text-foreground">You</span>
-        {tagOf({ comment, revision })}
+        {tagOf({ comment, revision, isPlanRan })}
         <span className="flex-1" />
         {comment.status === 'draft' && !isEditing ? (
           <>

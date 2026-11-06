@@ -7,7 +7,6 @@ import type { ArtifactState } from '../../artifactStateOf';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
-import { useAppStore } from '../../../../store';
 
 import type { ActionControls } from '../../../actions/useActionControls';
 import { useActionControls } from '../../../actions/useActionControls';
@@ -92,8 +91,6 @@ const shownStateOf = ({ row }: ShownStateParams): ArtifactState | null => {
   return row.state;
 };
 
-const RUN_PLAN_ACTION_ID = 'artifact.runPlan';
-
 const RowComponent = ({
   row,
   sessionId,
@@ -103,15 +100,6 @@ const RowComponent = ({
   hasActionColumn,
 }: Props) => {
   const target = useMemo(() => targetOf({ row, sessionId }), [row, sessionId]);
-  const planId =
-    row.target.kind === 'artifact' && row.kind === 'plan' ? row.target.artifactId : null;
-  const hasUnsentComments = useAppStore((state) =>
-    planId === null
-      ? false
-      : (state.artifactComments[sessionId] ?? []).some(
-          (comment) => comment.artifactId === planId && comment.status === 'draft',
-        ),
-  );
   const anchorKey = `artifact-row:${row.id}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const controls = useActionControls({ target, anchorKey });
@@ -123,10 +111,7 @@ const RowComponent = ({
     : null;
   const hasOwnVerb = row.group === 'needs' || row.target.kind === 'generation';
   const primary = hasOwnVerb ? primaryOf({ row, controls }) : null;
-  const isFilled =
-    primary !== null &&
-    primary.slot === 'primary' &&
-    !(primary.id === RUN_PLAN_ACTION_ID && hasUnsentComments);
+  const isFilled = primary !== null && primary.slot === 'primary' && primary.isSecondary !== true;
   const state = shownStateOf({ row });
   const at = row.deletedAt ?? row.at;
   const atTitle =

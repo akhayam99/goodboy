@@ -305,7 +305,8 @@ describe('ArtifactStudio list', () => {
       'Wireframe Settlement review flow, Ready',
       'Report Rounding drift in ledger-core postings, Ready',
     ]);
-    expect(within(list).getByRole('heading', { name: /^Ready 3$/ })).toBeDefined();
+    expect(within(list).getByRole('heading', { name: /^Ready$/ })).toBeDefined();
+    within(list).getByRole('heading', { name: /^To read 2$/ });
     expect(screen.queryByText(/Show finished/)).toBeNull();
   });
 
@@ -436,7 +437,7 @@ describe('ArtifactStudio shell', () => {
       'Rounding drift in ledger-core postings',
     );
     expect(within(header).getByTestId('artifact-creator').textContent).toBe('Report 1');
-    expect(within(header).getByText('rev 2')).toBeDefined();
+    expect(within(header).getByText('v2')).toBeDefined();
     expect(within(header).getByTestId('artifact-action-edit')).toBeDefined();
     expect(within(header).queryByTestId('artifact-action-runPlan')).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Conversation' })).toBeNull();
@@ -629,7 +630,7 @@ describe('ArtifactStudio plan parts', () => {
     { title: 'Skip settled batches in retries', instructions: 'notify-relay' },
   ];
 
-  it('lists the parts after the goal and says who split the plan', () => {
+  it('lists the parts after the goal and says how they run in one line', async () => {
     state.plans = [
       {
         ...plan,
@@ -640,11 +641,11 @@ describe('ArtifactStudio plan parts', () => {
     focus('plan-1');
     renderStudio();
     const parts = screen.getByTestId('plan-parts');
-    expect(
-      within(parts).getByText(
-        'Planner 2 split this plan into 2 parts, each its own subagent. Parts that touch the same files go one after the other; the rest can run together.',
-      ),
-    ).toBeDefined();
+    expect(within(parts).getByText('2 parts, one after the other.')).toBeDefined();
+    fireEvent.mouseEnter(within(parts).getByText('2 parts, one after the other.'));
+    await screen.findByText(
+      'Parts that touch the same files go one after the other; the rest can run together.',
+    );
     expect(within(parts).getByText('Done when: run pnpm test ledger-core')).toBeDefined();
     expect(within(parts).getByText('2 files')).toBeDefined();
     expect(within(parts).getAllByText('Auto')).toHaveLength(2);
@@ -735,10 +736,31 @@ describe('ArtifactStudio generating run', () => {
     });
   });
 
+  it('says in one sentence that it is still writing, with no placeholder bars', () => {
+    renderStudio();
+    openRow(/^Wireframe High fidelity,/);
+
+    expect(screen.getByTestId('artifact-writing').textContent).toBe(
+      'Still writing. It opens here when the agent is done.',
+    );
+    expect(document.querySelector('[aria-hidden][class*="animate"]')).toBeNull();
+  });
+
+  it('follows the agent writing it from a visible Follow button', () => {
+    renderStudio();
+    openRow(/^Wireframe High fidelity,/);
+
+    fireEvent.click(screen.getByTestId('artifact-follow'));
+
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-wireframe-live' },
+    });
+  });
+
   it('goes back to the list on Escape from a run that has no address of its own', async () => {
     renderStudio();
     openRow(/^Wireframe High fidelity,/);
-    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
+    screen.getByTestId('artifact-run-detail');
     fireEvent.keyDown(window, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByTestId('artifact-run-detail')).toBeNull());
     expect(state.up).not.toHaveBeenCalled();

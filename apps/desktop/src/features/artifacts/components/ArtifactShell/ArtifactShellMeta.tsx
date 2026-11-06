@@ -49,7 +49,7 @@ export const ArtifactShellMeta = ({ artifact, plan, agents, state, onOpenAgent }
           </button>
         ),
         model === null ? null : <span key="model">{modelLabel(model)}</span>,
-        artifact.kind === 'wireframe' ? null : <span key="revision">rev {artifact.revision}</span>,
+        artifact.kind === 'wireframe' ? null : <span key="revision">v{artifact.revision}</span>,
         <span key="created" className="tabular-nums">
           <RelativeTime
             iso={artifact.createdAt}

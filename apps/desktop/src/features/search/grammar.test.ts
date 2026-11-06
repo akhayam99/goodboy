@@ -51,6 +51,12 @@ describe('search grammar', () => {
     ]);
   });
 
+  it('names a plan that ran with the one word the Artifacts list uses', () => {
+    expect(run({ text: 'is:consumed ' }).chips).toEqual([
+      { key: 'status', status: 'consumed', label: 'Used' },
+    ]);
+  });
+
   it('leaves unknown values as words', () => {
     expect(run({ text: 'in:nowhere from:mars is:sleepy type:emoji after:soon ' }).chips).toEqual(
       [],

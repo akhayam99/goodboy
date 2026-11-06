@@ -170,6 +170,13 @@ describe('WireframeViewer', () => {
     expect(iframe?.getAttribute('src')).toMatch(/\/stage-1\/screens\/batches\.html$/);
   });
 
+  it('says Flow once on the flow view: the tab, not a heading beneath it', () => {
+    renderViewer();
+
+    expect(screen.queryByRole('heading', { name: 'Flow' })).toBeNull();
+    expect(screen.getAllByText('Flow')).toHaveLength(1);
+  });
+
   it('shows a screen in a sandboxed frame without same origin, with the rail and the notes', async () => {
     renderViewer();
     const iframe = await openScreens();

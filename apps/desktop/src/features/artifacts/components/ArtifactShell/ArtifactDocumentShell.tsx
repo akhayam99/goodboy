@@ -7,10 +7,7 @@ import { usePlanRevising } from '../../../plans/useRevisingPlans';
 import { usePlanRun } from '../../../plans/usePlanRun';
 import { artifactStateOf } from '../../artifactStateOf';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../../../plans/planStateInputs';
-import {
-  planPartsProgress,
-  planSplitSentence,
-} from '../../../plans/components/PlanParts/planPartRows';
+import { planPartsProgress } from '../../../plans/components/PlanParts/planPartRows';
 import { usePlanPartRows } from '../../../plans/components/PlanParts/usePlanPartRows';
 import { useArtifactExport } from '../../hooks/useArtifactExport';
 import { useArtifactSavedCopy } from '../../hooks/useArtifactSavedCopy';
@@ -282,10 +279,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             plan={subject.plan}
             rows={partRows}
             hasRun={hasRun}
-            splitSentence={planSplitSentence({
-              count: partRows.length,
-              plannerName: creator?.name ?? null,
-            })}
             onOpenPart={(row) => {
               if (hasRun && row.agentId !== null) {
                 navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });

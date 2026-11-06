@@ -3,7 +3,7 @@ import type { PlanPartRow } from './planPartRows';
 
 export const partRoutingLabel = ({ row }: { readonly row: PlanPartRow }): string => {
   if (row.model === null) {
-    return 'Auto';
+    return 'Default model';
   }
   const model = modelLabel(row.model);
   return row.effort === null ? model : `${model} · ${EFFORT_LABEL[row.effort]}`;
