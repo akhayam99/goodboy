@@ -33,7 +33,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { insertSession, insertWorkspace } from '@goodboy/db';
-import { aSession } from '@goodboy/types/testing';
+import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   buildStoryWorkspace,
   importStore,
@@ -667,6 +667,64 @@ const showStep = ({ phase = 'failing' }: ShowParams = {}) => {
 const headerStep = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('[data-branch-primary]');
 
+type PortHost = 'gitlab' | 'bitbucket';
+
+const portJobUrl = (host: PortHost, job: number): string =>
+  `https://${host}.example/northwind/payments-api/jobs/${job}`;
+
+type PortViewParams = {
+  readonly host: PortHost;
+  readonly runs: PullRequestView['checks']['runs'];
+};
+
+const seedPortView = ({ host, runs }: PortViewParams): void => {
+  const github = store.getState().mountGithub[seed.repo.mountId];
+  if (github === undefined) {
+    throw new Error('The seeded branch is missing');
+  }
+  const view: PullRequestView = {
+    host,
+    number: seed.pullRequest.number,
+    title: seed.pullRequest.title,
+    body: '',
+    url: `https://${host}.example/northwind/payments-api/pull/${seed.pullRequest.number}`,
+    state: 'open',
+    isDraft: false,
+    author: null,
+    baseBranch: seed.pullRequest.baseBranch,
+    headBranch: seed.pullRequest.headBranch,
+    headSha: null,
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-06T10:00:00Z',
+    mergedAt: null,
+    mergeable: null,
+    reviewDecision: null,
+    reviewers: [],
+    resolves: [],
+    checks: { read: 'ok', error: null, runs },
+    files: { count: 0, first: [] },
+    commits: [],
+    mergeMethods: ['squash'],
+    mergeMethodReasons: {},
+  };
+  store.setState({
+    mountGithub: { [seed.repo.mountId]: { ...github, pr: null, detail: null } },
+    pullRequestViews: withPullRequestViewEntry({
+      views: {},
+      sessionId: seed.sessionId,
+      entry: {
+        prNumber: seed.pullRequest.number,
+        mountId: seed.repo.mountId,
+        view,
+        isLoading: false,
+        error: null,
+        fetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' }),
+        edits: [],
+      },
+    }),
+  });
+};
+
 describe('the branch header step runs the Overview chain on any tab', () => {
   it('starts one Debugger at the first Fix checks and ignores a second press while it starts', async () => {
     const spawn = vi.spyOn(store.getState(), 'spawnAgent');
@@ -722,62 +780,17 @@ describe('the branch header step runs the Overview chain on any tab', () => {
   it.each(['gitlab', 'bitbucket'] as const)(
     'reads the failing checks of a %s pull request and starts one Debugger on them',
     async (host) => {
-      const github = store.getState().mountGithub[seed.repo.mountId];
-      if (github === undefined) {
-        throw new Error('The seeded branch is missing');
-      }
-      const view: PullRequestView = {
+      seedPortView({
         host,
-        number: seed.pullRequest.number,
-        title: seed.pullRequest.title,
-        body: '',
-        url: `https://${host}.example/northwind/payments-api/pull/${seed.pullRequest.number}`,
-        state: 'open',
-        isDraft: false,
-        author: null,
-        baseBranch: seed.pullRequest.baseBranch,
-        headBranch: seed.pullRequest.headBranch,
-        headSha: null,
-        createdAt: '2026-10-01T10:00:00Z',
-        updatedAt: '2026-10-06T10:00:00Z',
-        mergedAt: null,
-        mergeable: null,
-        reviewDecision: null,
-        reviewers: [],
-        resolves: [],
-        checks: {
-          read: 'ok',
-          error: null,
-          runs: [
-            { name: 'unit', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
-            {
-              name: 'lint',
-              conclusion: 'failure',
-              detailsUrl: `https://${host}.example/northwind/payments-api/jobs/7`,
-              durationMs: 12000,
-            },
-          ],
-        },
-        files: { count: 0, first: [] },
-        commits: [],
-        mergeMethods: ['squash'],
-        mergeMethodReasons: {},
-      };
-      store.setState({
-        mountGithub: { [seed.repo.mountId]: { ...github, pr: null, detail: null } },
-        pullRequestViews: withPullRequestViewEntry({
-          views: {},
-          sessionId: seed.sessionId,
-          entry: {
-            prNumber: seed.pullRequest.number,
-            mountId: seed.repo.mountId,
-            view,
-            isLoading: false,
-            error: null,
-            fetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' }),
-            edits: [],
+        runs: [
+          { name: 'unit', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
+          {
+            name: 'lint',
+            conclusion: 'failure',
+            detailsUrl: portJobUrl(host, 7),
+            durationMs: 12000,
           },
-        }),
+        ],
       });
       const spawn = vi.spyOn(store.getState(), 'spawnAgent');
       render(
@@ -793,6 +806,177 @@ describe('the branch header step runs the Overview chain on any tab', () => {
       expect(spawn.mock.calls[0]?.[1].initialPrompt).not.toContain('Check: unit');
     },
   );
+
+  it.each(['gitlab', 'bitbucket'] as const)(
+    'starts the fixer on a %s pull request from the header',
+    async (host) => {
+      seed = checksAnalyzeSeed({ phase: 'proposal' });
+      seedPortView({
+        host,
+        runs: [
+          {
+            name: 'test',
+            conclusion: 'failure',
+            detailsUrl: seed.check.detailsUrl,
+            durationMs: 12000,
+          },
+        ],
+      });
+      const startFollowUp = vi.spyOn(store.getState(), 'startFollowUp');
+      render(
+        <ToastProvider>
+          <StepHeader />
+        </ToastProvider>,
+      );
+
+      expect(headerStep()?.textContent).toBe('Start fix');
+      fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+
+      await waitFor(() => expect(startFollowUp).toHaveBeenCalledTimes(1));
+      expect(startFollowUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceAgentId: seed.agent.id,
+          kind: 'ci-fixer',
+          mountId: seed.repo.mountId,
+          origin: { sourceKind: 'failed_check', sourceCommentUrl: seed.check.detailsUrl },
+        }),
+      );
+      expect(
+        store
+          .getState()
+          .notifications.some((notice) => notice.title === "Couldn't start the Implementer"),
+      ).toBe(false);
+    },
+  );
+
+  it.each(['gitlab', 'bitbucket'] as const)(
+    'pushes the check fix on a %s pull request from the header',
+    async (host) => {
+      seed = checksAnalyzeSeed({ phase: 'proposal' });
+      seedPortView({
+        host,
+        runs: [
+          {
+            name: 'test',
+            conclusion: 'failure',
+            detailsUrl: seed.check.detailsUrl,
+            durationMs: 12000,
+          },
+        ],
+      });
+      const fix = anAgent({
+        sessionId: seed.sessionId,
+        parentAgentId: seed.agent.id,
+        ordinal: 2,
+        status: 'completed',
+        sourceKind: 'failed_check',
+        sourceCommentUrl: seed.check.detailsUrl ?? '',
+      });
+      store.setState({
+        sessionPhaseRuns: { [seed.sessionId]: [seed.agent, fix] },
+        agentTurnState: {
+          ...store.getState().agentTurnState,
+          [fix.id]: { kind: 'ended', endedAt: seed.agent.startedAt ?? seed.events[0]!.at },
+        },
+        checkFixCommits: {
+          [fix.id]: {
+            kind: 'found',
+            sha: 'b24cd5e',
+            subject: 'Guard the retry',
+            count: 1,
+            unpushed: 1,
+          },
+        },
+      });
+      const pushBranch = vi.spyOn(store.getState(), 'pushBranch').mockResolvedValue({ ok: true });
+      const readCheckFixCommit = vi
+        .spyOn(store.getState(), 'readCheckFixCommit')
+        .mockResolvedValue(undefined);
+      render(
+        <ToastProvider>
+          <StepHeader />
+        </ToastProvider>,
+      );
+
+      expect(headerStep()?.textContent).toBe('Push fix');
+      readCheckFixCommit.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'Push fix' }));
+
+      await waitFor(() => expect(pushBranch).toHaveBeenCalledTimes(1));
+      expect(pushBranch).toHaveBeenCalledWith({
+        sessionId: seed.sessionId,
+        mountId: seed.repo.mountId,
+        mode: 'plain',
+      });
+      await waitFor(() =>
+        expect(readCheckFixCommit).toHaveBeenCalledWith({
+          sessionId: seed.sessionId,
+          mountId: seed.repo.mountId,
+          fixAgentId: fix.id,
+        }),
+      );
+    },
+  );
+
+  it('starts the fixer on the check the header shows, not on the latest analyzed one', async () => {
+    seed = checksAnalyzeSeed({ phase: 'proposal' });
+    const github = store.getState().mountGithub[seed.repo.mountId];
+    if (github?.detail == null) {
+      throw new Error('The seeded branch is missing');
+    }
+    const lintUrl = 'https://github.com/harborline/payments-api/actions/runs/31/job/99';
+    const lint = anAgent({
+      sessionId: seed.sessionId,
+      ordinal: 2,
+      status: 'completed',
+      sourceKind: 'failed_check',
+      sourceCommentUrl: lintUrl,
+    });
+    store.setState({
+      sessionPhaseRuns: { [seed.sessionId]: [seed.agent, lint] },
+      agentTurnState: {
+        ...store.getState().agentTurnState,
+        [lint.id]: { kind: 'ended', endedAt: seed.agent.startedAt ?? seed.events[0]!.at },
+      },
+      transcripts: {
+        ...store.getState().transcripts,
+        [lint.id]: seed.events.map((event) =>
+          event.kind === 'user_text'
+            ? { ...event, text: event.text.replaceAll(seed.check.name, 'payments-api / lint') }
+            : event,
+        ),
+      },
+      mountGithub: {
+        [seed.repo.mountId]: {
+          ...github,
+          detail: {
+            ...github.detail,
+            checks: [
+              ...github.detail.checks.filter((check) => check.conclusion === 'failure'),
+              { ...seed.check, name: 'payments-api / lint', detailsUrl: lintUrl },
+            ],
+          },
+        },
+      },
+    });
+    const startFollowUp = vi.spyOn(store.getState(), 'startFollowUp');
+    render(
+      <ToastProvider>
+        <StepHeader />
+      </ToastProvider>,
+    );
+
+    expect(headerStep()?.textContent).toBe('Start fix');
+    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+
+    await waitFor(() => expect(startFollowUp).toHaveBeenCalledTimes(1));
+    expect(startFollowUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceAgentId: seed.agent.id,
+        origin: { sourceKind: 'failed_check', sourceCommentUrl: seed.check.detailsUrl },
+      }),
+    );
+  });
 
   it('counts an action_required check as failing, so Fix checks starts a Debugger on it', async () => {
     const github = store.getState().mountGithub[seed.repo.mountId];

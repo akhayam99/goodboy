@@ -8,8 +8,7 @@ import { modelLabel } from '../../../chat/utils/chat-constants';
 import type { BranchCheckFacts } from '../../branchStepOf';
 import { checkChainActionOf } from '../../checks/checkChainActionOf';
 import { checkRoutingOf } from '../../checks/checkRoutingOf';
-import { checkTargetOf } from '../../checks/checkTargetOf';
-import { failingChecksOf } from '../../checks/failingChecksOf';
+import { checkStepTargetOf } from '../../checks/checkStepTargetOf';
 import { useCheckChain } from '../useCheckChain';
 
 type Params = {
@@ -51,16 +50,7 @@ export const useBranchCheckStep = ({
       if (mountId === null || prNumber === null) {
         return NO_TARGET;
       }
-      const failing = failingChecksOf({ state, sessionId, mountId, prNumber });
-      const check = failing?.checks[0];
-      const found = checkTargetOf({
-        state,
-        sessionId,
-        mountId,
-        failingUrl:
-          check === undefined ? null : (check.detailsUrl ?? failing?.pullRequest.url ?? null),
-        failingName: check?.name ?? null,
-      });
+      const { target: found } = checkStepTargetOf({ state, sessionId, mountId, prNumber });
       return found === null ? NO_TARGET : { url: found.url, name: found.name };
     }),
   );

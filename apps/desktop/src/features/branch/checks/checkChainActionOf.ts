@@ -2,8 +2,9 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { CheckChainState } from '../../../store/slices/agents/selectCheckChain';
 import type { AgentKindRouting } from '../../session/agent-kind';
-import { checkFixTargetOf } from '../../suggestions/checkFixTargetOf';
+import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { analyzeFailingChecks } from './analyzeFailingChecks';
+import { checkStepTargetOf } from './checkStepTargetOf';
 import { failingChecksOf } from './failingChecksOf';
 import { pushCheckFix } from './pushCheckFix';
 import { startCheckFix } from './startCheckFix';
@@ -38,7 +39,12 @@ export const checkChainActionOf = ({
       isAgain: false,
       failureTitle: "Couldn't start the Implementer",
       run: async () => {
-        const target = checkFixTargetOf({ state: useAppStore.getState(), sessionId, mountId });
+        const { target } = checkStepTargetOf({
+          state: useAppStore.getState(),
+          sessionId,
+          mountId,
+          prNumber,
+        });
         if (target === null) {
           throw new Error('Refresh the failing checks and try Start fix again.');
         }
@@ -52,8 +58,13 @@ export const checkChainActionOf = ({
       isAgain: false,
       failureTitle: "Couldn't push the branch",
       run: async () => {
-        const target = checkFixTargetOf({ state: useAppStore.getState(), sessionId, mountId });
-        await pushCheckFix({ sessionId, mountId, fixAgentId: target?.fixAgentId });
+        const state = useAppStore.getState();
+        const { target } = checkStepTargetOf({ state, sessionId, mountId, prNumber });
+        const fixAgentId =
+          target === null
+            ? undefined
+            : selectCheckChain({ state, sessionId, url: target.url }).fix?.id;
+        await pushCheckFix({ sessionId, mountId, fixAgentId });
       },
     };
   }
