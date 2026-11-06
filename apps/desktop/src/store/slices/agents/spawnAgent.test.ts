@@ -200,6 +200,7 @@ function buildHarness(
     sessionPhaseRuns: { [SESSION_ID]: [] },
     sessionPlans: { [SESSION_ID]: plans },
     planConsumptions: {},
+    planStarts: {},
     activeLens: { [SESSION_ID]: 'agents' },
     selectedAgentId: {},
     agentTurnState: {},
@@ -470,6 +471,45 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     await vi.waitFor(() =>
       expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, INSERTED_ID),
     );
+  });
+
+  it('holds the plan as starting until the kickoff started, then frees it', async () => {
+    const { sendTurn, spawn, getState } = buildHarness([makePlan()]);
+    const turn: { start: () => void } = { start: () => undefined };
+    sendTurn.mockImplementationOnce(
+      (arg) =>
+        new Promise((resolve) => {
+          turn.start = () => {
+            arg.onStarted?.();
+            resolve({ blockedOverBudget: false });
+          };
+        }),
+    );
+    const startsOf = () => getState().planStarts;
+
+    await spawn(SESSION_ID, {
+      triggeredPlanId: PLAN_ID,
+      kindOverride: 'implementer',
+      initialPrompt: 'build the ledger-core export',
+    });
+
+    expect(startsOf()[PLAN_ID]).toBe(1);
+    turn.start();
+    await vi.waitFor(() => expect(startsOf()[PLAN_ID]).toBeUndefined());
+  });
+
+  it('frees a starting plan when the kickoff is refused', async () => {
+    const { sendTurn, spawn, getState, reportError } = buildHarness([makePlan()]);
+    sendTurn.mockImplementationOnce(async () => ({ blockedOverBudget: true }));
+
+    await spawn(SESSION_ID, {
+      triggeredPlanId: PLAN_ID,
+      kindOverride: 'implementer',
+      initialPrompt: 'build the ledger-core export',
+    });
+
+    await vi.waitFor(() => expect(reportError).toHaveBeenCalled());
+    expect(getState().planStarts[PLAN_ID]).toBeUndefined();
   });
 
   it('fans out the latest active plan with 2+ clusters (no triggeredPlanId)', async () => {

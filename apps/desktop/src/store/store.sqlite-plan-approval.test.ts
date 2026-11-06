@@ -305,6 +305,44 @@ const approve = (workflowRunId: WorkflowRunId) =>
 
 const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 50));
 
+describe('run a plan on sqlite while its first start is slow', () => {
+  it('starts one implementer when Run plan is pressed twice before the agent starts', async () => {
+    const plan = aPlan({
+      sessionId,
+      agentId: 'agent-planner-gone' as AgentId,
+      title: 'Retry with backoff',
+      bodyMd: '1. Add backoff\n2. Cover it with tests',
+    });
+    useAppStore.setState({ sessionPlans: { [sessionId]: [plan] } });
+    const routingMod = await import('../features/providers/routing');
+    const routed = await routingMod.resolveProviderForTurn({} as never);
+    const gate: { open: (() => void) | null } = { open: null };
+    vi.mocked(routingMod.resolveProviderForTurn).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          gate.open = () => resolve(routed);
+        }),
+    );
+
+    const first = await useAppStore.getState().runPlan(sessionId, plan.id);
+    await vi.waitFor(() => expect(gate.open).not.toBeNull());
+    expect(useAppStore.getState().planStarts[plan.id]).toBe(1);
+    const second = await useAppStore.getState().runPlan(sessionId, plan.id);
+    gate.open?.();
+    await vi.waitFor(() => expect(turns).toHaveLength(1));
+    await vi.waitFor(() => expect(useAppStore.getState().planStarts[plan.id]).toBeUndefined());
+
+    expect(first.kind).toBe('started');
+    expect(second).toEqual({
+      kind: 'refused',
+      reason: 'This plan is already starting',
+      workflowRunId: null,
+    });
+    expect(await statuses()).toHaveLength(1);
+    expect(storySpies.addPlanConsumption).toHaveBeenCalledOnce();
+  });
+});
+
 describe('approve a run plan on sqlite', () => {
   it('starts the step that consumes the plan when the run does not run on its own', async () => {
     const workflowRunId = await heldAutoRunOff();

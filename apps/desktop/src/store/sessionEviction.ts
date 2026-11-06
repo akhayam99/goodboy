@@ -381,6 +381,7 @@ export const NON_SESSION_STATE_KEYS = [
   'taskArrivals',
   'taskNewKeys',
   'endedWork',
+  'planStarts',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

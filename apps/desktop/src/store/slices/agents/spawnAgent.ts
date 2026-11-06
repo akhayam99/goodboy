@@ -21,6 +21,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { rulesOfKickoff } from '../../../features/chat/utils/resolverKickoffParts';
 import { recordPlanConsumption } from './recordPlanConsumption';
+import { planStartLock } from '../plans/planStartLock';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import {
   kindConsumesPlan,
@@ -385,6 +386,17 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       );
       return planUse;
     };
+    let isPlanHeld = kickoffPlan !== null;
+    if (kickoffPlan !== null) {
+      planStartLock.hold({ set, planId: kickoffPlan.id });
+    }
+    const releasePlan = (): void => {
+      if (!isPlanHeld || kickoffPlan === null) {
+        return;
+      }
+      isPlanHeld = false;
+      planStartLock.release({ set, planId: kickoffPlan.id });
+    };
     void get()
       .sendTurn({
         sessionId,
@@ -393,7 +405,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         ...(args.mountId !== undefined && { mountId: args.mountId }),
         onStarted: () => {
           hasStarted = true;
-          void usePlan();
+          void usePlan().finally(releasePlan);
           args.onKickoffAccepted?.();
         },
         handoff:
@@ -419,14 +431,17 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         }
         if (hasStarted || result?.isLaneQueued === true) {
           await usePlan();
+          releasePlan();
           return;
         }
+        releasePlan();
         throwIfRefused({ result });
       })
       .catch(async (error: unknown) => {
         if (hasStarted) {
           await usePlan();
         }
+        releasePlan();
         if (isReportedError(error)) {
           return;
         }

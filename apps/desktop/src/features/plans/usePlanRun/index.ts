@@ -39,21 +39,23 @@ export const usePlanRunToast = (): ((params: AnnounceParams) => void) => {
 export const usePlanRun = ({ sessionId, planId }: Params): PlanRun => {
   const runPlan = useAppStore((s) => s.runPlan);
   const announce = usePlanRunToast();
-  const [isSpawning, setIsSpawning] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const isStarting = useAppStore((s) => (s.planStarts[planId] ?? 0) > 0);
+  const isSpawning = isPressed || isStarting;
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(async () => {
     if (isSpawning) {
       return;
     }
-    setIsSpawning(true);
+    setIsPressed(true);
     setError(null);
     try {
       announce({ result: await runPlan(sessionId, planId), sessionId });
     } catch (cause) {
       setError(formatError(cause));
     } finally {
-      setIsSpawning(false);
+      setIsPressed(false);
     }
   }, [announce, isSpawning, planId, runPlan, sessionId]);
 
