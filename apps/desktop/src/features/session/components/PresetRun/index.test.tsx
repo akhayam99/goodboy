@@ -81,7 +81,7 @@ describe('PresetRunPage load state', () => {
     render(<PresetRunPage session={session} focus={{ runId: RUN_ID, agentId: null }} />);
 
     screen.getByText('This run is no longer in this session');
-    expect(screen.queryByText('This run could not be read')).toBeNull();
+    expect(screen.queryByText("This run couldn't be read")).toBeNull();
   });
 });
 
@@ -120,7 +120,7 @@ describe('PresetRunPage when the run is there and its metadata is not', () => {
   it('says the run could not be read, not that it is gone', () => {
     render(<PresetRunPage session={session} focus={{ runId: RUN_ID, agentId: null }} />);
 
-    screen.getByText('This run could not be read');
+    screen.getByText("This run couldn't be read");
     expect(screen.queryByText('This run is no longer in this session')).toBeNull();
   });
 
@@ -152,6 +152,6 @@ describe('PresetRunPage when the run is there and its metadata is not', () => {
     expect(useAppStore.getState().sessionWorkflows[session.id]?.map(({ id }) => id)).toEqual([
       WORKFLOW_ID,
     ]);
-    expect(screen.queryByText('This run could not be read')).toBeNull();
+    expect(screen.queryByText("This run couldn't be read")).toBeNull();
   });
 });

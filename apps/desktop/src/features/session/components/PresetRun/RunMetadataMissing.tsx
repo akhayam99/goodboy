@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { Button, EmptyState, ICON_SIZE, formatError } from '@goodboy/ui';
+import { Button, EmptyState, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -31,15 +30,14 @@ export const RunMetadataMissing = ({ sessionId, onBack }: Props) => {
     <EmptyState
       size="section"
       icon={CONCEPT_ICONS.workflows}
-      title="This run could not be read"
-      description={error ?? 'The run is still in this session. Its steps did not load.'}
+      title="This run couldn't be read"
+      description={error ?? "The run is still in this session. Its steps didn't load."}
       action={
         <>
           <Button size="sm" variant="secondary" disabled={isPending} onClick={() => void retry()}>
             Retry
           </Button>
           <Button size="sm" variant="ghost" onClick={onBack}>
-            <ArrowLeft size={ICON_SIZE.control} aria-hidden />
             Back
           </Button>
         </>
