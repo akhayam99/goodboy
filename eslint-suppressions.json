@@ -1809,11 +1809,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 25
-    }
-  },
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
