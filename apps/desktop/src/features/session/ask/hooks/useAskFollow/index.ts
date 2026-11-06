@@ -37,6 +37,7 @@ export const useAskFollow = ({ endRef, isActive, contentLength, turnCount }: Par
 
   useEffect(() => {
     isPinnedRef.current = true;
+    lastTopRef.current = 0;
     endRef.current?.scrollIntoView?.({ block: 'end' });
   }, [endRef, turnCount]);
 

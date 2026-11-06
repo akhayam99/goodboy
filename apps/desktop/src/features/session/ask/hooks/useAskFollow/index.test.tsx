@@ -21,11 +21,13 @@ const Host = ({ contentLength, turnCount }: HostProps) => {
 const stubScroller = ({
   scroller,
   top,
+  height = 1000,
 }: {
   readonly scroller: HTMLElement;
   readonly top: number;
+  readonly height?: number;
 }) => {
-  Object.defineProperty(scroller, 'scrollHeight', { value: 1000, configurable: true });
+  Object.defineProperty(scroller, 'scrollHeight', { value: height, configurable: true });
   Object.defineProperty(scroller, 'clientHeight', { value: 300, configurable: true });
   scroller.scrollTop = top;
   scroller.dispatchEvent(new Event('scroll'));
@@ -75,6 +77,21 @@ describe('useAskFollow', () => {
     scrollIntoView.mockClear();
 
     rerender(<Host contentLength={0} turnCount={2} />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps following when sending a question shrinks the content and the scroller clamps to zero', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const { rerender, getByTestId } = render(<Host contentLength={0} turnCount={1} />);
+    const scroller = getByTestId('scroller');
+    stubScroller({ scroller, top: 700 });
+
+    rerender(<Host contentLength={0} turnCount={2} />);
+    stubScroller({ scroller, top: 0, height: 300 });
+    scrollIntoView.mockClear();
+    rerender(<Host contentLength={40} turnCount={2} />);
+
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 });
