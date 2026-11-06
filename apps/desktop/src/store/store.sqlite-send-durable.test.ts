@@ -21,6 +21,8 @@ import {
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { cancelTurnStartWindow, ensureTurnStartWindow } from './slices/turn/turnStartWindow';
+import { handDelivery } from './slices/turn/handDelivery';
+import { markTurnSettled } from './slices/turn/turnSettled';
 import {
   buildStoryWorkspace,
   connectedAnthropicState,
@@ -215,6 +217,19 @@ const rows = () =>
 
 const forgetMemory = () => useAppStore.setState({ agentQueue: {} });
 
+const userTexts = async () =>
+  (
+    await rowsOf<{ count: number }>({
+      sql: "SELECT COUNT(*) AS count FROM turn_events WHERE agent_id = ? AND json_extract(payload, '$.kind') = 'user_text'",
+      params: [agentId],
+    })
+  )[0]?.count ?? 0;
+
+const resetDelivery = () => {
+  handDelivery.release({ deliveryId: 'queue:send-13' });
+  markTurnSettled({ agentId });
+};
+
 const stopAgent = () =>
   useAppStore.setState((state) => ({
     sessionPhaseRuns: {
@@ -305,14 +320,36 @@ describe('Send writes the row, then delivers', () => {
     expect(rows()).toEqual([]);
   });
 
-  it('keeps the row across a reload and sends it once after the load', async () => {
+  it('keeps a held row held across a reload and sends it once on Retry', async () => {
     await routeTo({ reason: 'all-exceeded' });
     await send('send-6');
     forgetMemory();
     await routeTo({ reason: 'preferred' });
 
     await useAppStore.getState().loadAgentQueues(sessionId);
-    expect(rows()).toEqual([{ id: 'send-6', status: 'queued', reason: null }]);
+    expect(rows()).toEqual([{ id: 'send-6', status: 'queued', reason: LIMIT }]);
+    await Promise.all([
+      useAppStore.getState().drainSessionQueues({ sessionId }),
+      useAppStore.getState().drainSessionQueues({ sessionId }),
+    ]);
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+
+    await useAppStore.getState().retryQueuedMessage({ sessionId, agentId, itemId: 'send-6' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+    expect(rows()).toEqual([]);
+    expect(await savedQueue()).toEqual([]);
+  });
+
+  it('sends a saved row that was never held once after the load', async () => {
+    await replaceAgentQueuedMessages(storySqlite(), {
+      agentId,
+      messages: [
+        { id: 'send-10', agentId, content: TEXT, attachments: [], override: null, createdAt: AT },
+      ],
+    });
+
+    await useAppStore.getState().loadAgentQueues(sessionId);
     await Promise.all([
       useAppStore.getState().drainSessionQueues({ sessionId }),
       useAppStore.getState().drainSessionQueues({ sessionId }),
@@ -321,6 +358,69 @@ describe('Send writes the row, then delivers', () => {
     expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
     expect(rows()).toEqual([]);
     expect(await savedQueue()).toEqual([]);
+  });
+
+  it('never drops a message on Retry after a cancelled start', async () => {
+    ensureTurnStartWindow({ agentId });
+    cancelTurnStartWindow({ agentId });
+    await send('send-11');
+
+    const retried = await useAppStore
+      .getState()
+      .retryQueuedMessage({ sessionId, agentId, itemId: 'send-11' });
+
+    expect(retried.isDelivered).toBe(true);
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+    expect(await savedQueue()).toEqual([]);
+  });
+
+  it('never drops a message whose turn failed after its text was written', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    storySpies.invokeAgentUpdateStatus.mockRejectedValueOnce(new Error('database is locked'));
+    await send('send-12');
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(await savedQueue()).toEqual(['send-12']);
+    forgetMemory();
+
+    await useAppStore.getState().loadAgentQueues(sessionId);
+    expect(rows().map((row) => row.status)).toEqual(['queued']);
+    expect(rows()[0]?.reason).not.toBeNull();
+    await useAppStore.getState().retryQueuedMessage({ sessionId, agentId, itemId: 'send-12' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+    expect(await savedQueue()).toEqual([]);
+    expect(logged).toHaveBeenCalledWith('resolvePhaseAgent failed', expect.any(Error));
+    logged.mockRestore();
+  });
+
+  it('sends again after a reload while the turn was still being built', async () => {
+    storySpies.invokeAgentUpdateStatus.mockImplementationOnce(() => new Promise(() => undefined));
+    void send('send-13');
+    await vi.waitFor(async () => expect(await userTexts()).toBe(1));
+    expect(useAppStore.getState().agentQueue[agentId]?.[0]?.isTextShown).toBe(true);
+    forgetMemory();
+    resetDelivery();
+
+    await useAppStore.getState().loadAgentQueues(sessionId);
+    await useAppStore.getState().drainSessionQueues({ sessionId });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+    expect(await savedQueue()).toEqual([]);
+  });
+
+  it('does not leave the agent starting after a cancelled start', async () => {
+    ensureTurnStartWindow({ agentId });
+    cancelTurnStartWindow({ agentId });
+    useAppStore.setState((state) => ({
+      agentTurnState: {
+        ...state.agentTurnState,
+        [agentId]: { kind: 'starting', startedAt: AT },
+      },
+    }));
+
+    await send('send-14');
+
+    expect(useAppStore.getState().agentTurnState[agentId]?.kind).not.toBe('starting');
   });
 
   it('never sends twice when a delivered row comes back after a crash', async () => {
@@ -360,6 +460,6 @@ describe('Send writes the row, then delivers', () => {
     await useAppStore.getState().drainSessionQueues({ sessionId });
 
     expect(storySpies.runTurn).not.toHaveBeenCalled();
-    expect(rows()).toEqual([{ id: 'send-8', status: 'queued', reason: null }]);
+    expect(rows()).toEqual([{ id: 'send-8', status: 'queued', reason: LIMIT }]);
   });
 });

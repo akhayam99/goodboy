@@ -186,6 +186,14 @@ describe('queuedRowsOf', () => {
     ]);
   });
 
+  it('hides a sending message once its text is in the transcript, so it never shows twice', () => {
+    const written = turn('w1', { status: 'sending', isDirect: true, isTextShown: true });
+
+    const rows = queuedRowsOf({ queue: [written], view: null, ...AT_REST, nowMs: SENT_AT + 5000 });
+
+    expect(rows).toEqual([]);
+  });
+
   it('shows a held message at once as Not delivered with its reason and Retry', () => {
     const held = turn('h1', {
       isDirect: true,

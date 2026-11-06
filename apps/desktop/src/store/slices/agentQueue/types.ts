@@ -25,6 +25,8 @@ export type AgentQueuedTurn = AgentQueuedTurnInput &
     createdAt: IsoDateTime;
     isDirect?: boolean;
     hold?: AgentQueueHold;
+    writtenTexts?: number;
+    isTextShown?: boolean;
   }>;
 
 export type AgentQueueItemParams = Readonly<{

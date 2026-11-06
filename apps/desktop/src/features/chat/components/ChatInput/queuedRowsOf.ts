@@ -106,6 +106,13 @@ const isRevealed = ({ turn, nowMs }: ShownParams): boolean => {
   return revealAt === null || nowMs >= revealAt;
 };
 
+type TurnParams = {
+  readonly turn: AgentQueuedTurn;
+};
+
+const isInTranscript = ({ turn }: TurnParams): boolean =>
+  turn.status === 'sending' && turn.isTextShown === true;
+
 type AutoRowsParams = {
   readonly view: AutoTreeView;
 };
@@ -154,7 +161,12 @@ export const queuedRowsOf = ({
   return [
     ...autoRows,
     ...queue
-      .filter((turn) => !isHandedOff({ turn, autoRows, view }) && isRevealed({ turn, nowMs }))
+      .filter(
+        (turn) =>
+          !isHandedOff({ turn, autoRows, view }) &&
+          !isInTranscript({ turn }) &&
+          isRevealed({ turn, nowMs }),
+      )
       .map((turn) => trayRowOf({ turn, isAgentStopped })),
   ];
 };

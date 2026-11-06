@@ -1,4 +1,6 @@
+import type { ProviderRunId } from '@goodboy/types';
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
+import { releaseUnstartedTurn } from './releaseUnstartedTurn';
 import { closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
 import { watchStepEnd } from '../workflows/stepEnd/watchStepEnd';
@@ -30,6 +32,7 @@ import { waitForClusterOverlap } from './clusterOverlap/waitForClusterOverlap';
 
 type DiscardParams = Readonly<{
   error: unknown;
+  runId?: ProviderRunId;
 }>;
 
 type RunOnceParams = Readonly<{
@@ -62,7 +65,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       return leased.result;
     }
     const startCtx = { ...leaseCtx, ...leased.value };
-    const discardUnspawned = async ({ error }: DiscardParams): Promise<never> => {
+    const discardUnspawned = async ({ error, runId }: DiscardParams): Promise<never> => {
+      releaseUnstartedTurn({
+        set,
+        get,
+        sessionId: input.sessionId,
+        agentId: startCtx.activeAgentId,
+        ...(runId !== undefined && { runId }),
+      });
       await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       throw error;
     };
@@ -73,13 +83,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       return started.result;
     }
+    const { runId } = started.value;
     const promptCtx = { ...startCtx, ...started.value };
     const prompt = await buildTurnPrompt({ get, ctx: promptCtx }).catch((error: unknown) =>
-      discardUnspawned({ error }),
+      discardUnspawned({ error, runId }),
     );
     const spawnCtx = { ...promptCtx, ...prompt };
     const spawn = await buildTurnSpawn({ set, get, lease, ctx: spawnCtx }).catch((error: unknown) =>
-      discardUnspawned({ error }),
+      discardUnspawned({ error, runId }),
     );
     const ctx = { ...spawnCtx, ...spawn };
     input.onStarted?.();

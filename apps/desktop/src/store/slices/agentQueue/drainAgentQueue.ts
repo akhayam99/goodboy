@@ -27,15 +27,17 @@ export const drainAgentQueue = (set: SetFn, get: GetFn) => {
     }
     const queue = readAgentQueue({ get, agentId });
     const head = queue[0];
-    if (head === undefined || queue.some((item) => item.status === 'sending')) {
+    if (
+      head === undefined ||
+      head.hold !== undefined ||
+      queue.some((item) => item.status === 'sending')
+    ) {
       return;
     }
     writeAgentQueue({
       set,
       agentId,
-      queue: queue.map((item) =>
-        item.id === head.id ? { ...item, status: 'sending', hold: undefined } : item,
-      ),
+      queue: queue.map((item) => (item.id === head.id ? { ...item, status: 'sending' } : item)),
     });
     await deliverQueuedTurn({ set, get, sessionId, turn: head, sentVia: 'queued' });
   };

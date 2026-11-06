@@ -49,12 +49,27 @@ export const deliverQueuedTurn = async ({
     })();
     return removal;
   };
+  let writtenTexts = turn.writtenTexts ?? 0;
   const hold = async ({ reason }: AgentQueueHold): Promise<void> => {
     const rest = readAgentQueue({ get, agentId }).filter((item) => item.id !== turn.id);
     writeAgentQueue({
       set,
       agentId,
-      queue: [{ ...turn, status: 'queued', hold: { reason } }, ...rest],
+      queue: [
+        { ...turn, status: 'queued', hold: { reason }, writtenTexts, isTextShown: false },
+        ...rest,
+      ],
+    });
+    await persistAgentQueue({ get, agentId });
+  };
+  const markWriting = async (): Promise<void> => {
+    writtenTexts += 1;
+    writeAgentQueue({
+      set,
+      agentId,
+      queue: readAgentQueue({ get, agentId }).map((item) =>
+        item.id === turn.id ? { ...item, writtenTexts, isTextShown: true } : item,
+      ),
     });
     await persistAgentQueue({ get, agentId });
   };
@@ -74,10 +89,11 @@ export const deliverQueuedTurn = async ({
   let isAccepted = false;
   try {
     const delivered = await countUserTextEvents({ db: tauriDatabase, agentId, deliveryId });
-    if (delivered > 0) {
+    if (delivered > writtenTexts) {
       await accept();
       return DELIVERED;
     }
+    writtenTexts = delivered;
   } catch (error) {
     return fail({ error, title: "Couldn't check the queued message" });
   }
@@ -94,6 +110,7 @@ export const deliverQueuedTurn = async ({
       ...(turn.override !== undefined && { override: turn.override }),
       ...(sentVia !== undefined && { sentVia }),
       ...(isForced && { force: true }),
+      onWritingUserText: markWriting,
       onStarted: () => {
         isAccepted = true;
         void accept();

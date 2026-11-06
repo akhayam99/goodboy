@@ -39,6 +39,7 @@ export type SendTurnInput = Readonly<{
   resolveCopyPath?: string;
   resolveThreadIds?: ReadonlyArray<string>;
   onStarted?: () => void;
+  onWritingUserText?: () => Promise<void>;
   confinedRole?: string;
   runId?: ProviderRunId;
   deliveryId?: string;
