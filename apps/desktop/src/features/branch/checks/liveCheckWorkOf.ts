@@ -1,4 +1,5 @@
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
+import { isCheckFixLive } from '../../../store/slices/agents/isCheckFixLive';
 import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import {
   selectCheckMount,
@@ -53,6 +54,12 @@ export const liveCheckWorkOf = ({
     }
     const agent = chain.state === 'fixing' ? chain.fix : chain.debugger;
     if (agent === null) {
+      continue;
+    }
+    if (
+      chain.state === 'fixing' &&
+      !isCheckFixLive({ agent, turn: state.agentTurnState[agent.id] })
+    ) {
       continue;
     }
     const name = analyzedCheckNameOf({
