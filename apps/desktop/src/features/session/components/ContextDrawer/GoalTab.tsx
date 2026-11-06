@@ -60,7 +60,14 @@ export const GoalTab = ({
 
   if (isLoading) {
     return (
-      <ContextSection section="goal" visibility={visibility}>
+      <ContextSection
+        section="goal"
+        visibility={visibility}
+        isLocked
+        historyCount={0}
+        onEdit={() => setIsEditing(true)}
+        onOpenVersions={onOpenVersions}
+      >
         <div role="status" aria-label="Loading goal" className="flex flex-col gap-2">
           <Skeleton className="h-4 w-3/5" />
           <Skeleton className="h-4 w-4/5" />
@@ -71,7 +78,14 @@ export const GoalTab = ({
 
   if (isEditing) {
     return (
-      <ContextSection section="goal" visibility={visibility}>
+      <ContextSection
+        section="goal"
+        visibility={visibility}
+        isLocked
+        historyCount={0}
+        onEdit={() => setIsEditing(true)}
+        onOpenVersions={onOpenVersions}
+      >
         <Textarea
           autoFocus
           disabled={isSaving}
@@ -110,7 +124,14 @@ export const GoalTab = ({
 
   if (value.trim() === '') {
     return (
-      <ContextSection section="goal" visibility={visibility}>
+      <ContextSection
+        section="goal"
+        visibility={visibility}
+        isLocked={isLocked}
+        historyCount={historyCount}
+        onEdit={() => setIsEditing(true)}
+        onOpenVersions={onOpenVersions}
+      >
         <EmptyLine
           className="self-stretch"
           action={
