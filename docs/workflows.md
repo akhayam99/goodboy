@@ -378,10 +378,12 @@ read top to bottom at the conversation measure:
   names, `modelNamesIn`) with **View
   transcript**; the move each of those waits for is the header primary, never a
   second button on the tail, a failed step with **Restart step**, a step blocked
-  on a question with the question inline (what the step agent closed with,
-  `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
-  field with **Answer** as its primary action, **Restart step** as a secondary
-  button and **Open agent chat** next to it. A real open question (phase
+  on a question reads **Not finished** with **Restart step** and **Open agent
+  chat** next to it, an **Answer the step** field with **Keep working**, and no
+  reason: the question (what the step agent closed with, `blockedQuestionOf` on
+  its last reply, as markdown) and the "This step ended without a result" notice
+  show only on the step page (`OrchestratedBlockedStep` `isReasonShown`). A real
+  open question (phase
   `needs-answer`, a preset run's tail too) shows the same card as the transcript
   (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
   recommended one tagged, one pick or many, **Something else** for free text and
@@ -406,8 +408,9 @@ read top to bottom at the conversation measure:
   to continue, and a step that asks again in a later turn replaces its earlier
   blocking questions of that run: they close as "Resolved by the agent" and are
   never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
-  The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
-  secondary **Restart step**, and the restart prompt asks the agent to repeat a
+  The header **Answer** still opens the drawer. A preset run's blocked step reads **Not finished** with a
+  secondary **Restart step** on the run page, and gets the inline question on its
+  own step page. The restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
   send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
@@ -548,11 +551,14 @@ several branches stands in each of them, keyed by group and run, with the chip
 the same run in its next group, and the branch chip opens the Branch page. The
 title and the chips are siblings of the row button (`ListGridRow` `overlays`),
 so a row never nests a button. A click on the title opens the run after the
-double click window (`useTitleClick`), a double click renames in place, and the
+double click window (`useTitleClick`), a double click renames in place (leaving the box on the same text writes nothing, `useInlineRename`), and the
 row's right click is the run's own menu (the `runRow` kind, five rows at most),
 never the session's. On the Branch page the line **On this branch** with **3 runs**
 (`branchRunLinkOf`, `BranchRunsLine`) lands on Runs, By branch, with that group
-open; Back returns to the branch (`Focus.runGroup` on the history entry). The page
+open; Back returns to the branch (`Focus.runGroup` on the history entry) and to the
+row you left, not to the top of the group. The link counts what the group header
+counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
+the runs of all its parts) and is absent at zero. The page
 count stays one per run. Words say state and verbs are verbs: an agent you
 stopped reads **Stopped** and a run that has not started reads **Ready**, and
 the row always shows the real verb its page offers (`SessionRun.verb`):
@@ -668,7 +674,7 @@ tooltip line.
 - **A step** (`RunStepPage`): the step's agent conversation, embedded
   (`AgentDetailPane` with a `runStep` frame), for a preset and an orchestrated
   run alike. The header reads "Step 2 · Implementer" with the provider mark, then
-  the step `⋯` (`RunStepActions`: View transcript, Skip step N). The run's verbs
+  the step `⋯` (`RunStepActions`: View transcript, which opens the transcript of the agent on screen, a helper's own on a helper's page, and Skip step N, which skips the step the helper belongs to). The run's verbs
   leave the head: its next move reads on the quiet line at the end, such as
   "Step 2 done" with **Start step 3**. The agent's own menu stays on the right
   click of the title. No next action card above the conversation and no Start
@@ -679,7 +685,8 @@ tooltip line.
   the end of the content, once: nothing while the step on screen runs (its
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open
   step 2**, "No output for 15 min" with **Ask it to continue**, the open
-  question, a failed or stuck step with **Restart step**, "Paused
+  question, a failed step with **Restart step** (a blocked one reads **Not finished**, one
+  word: its reason is on its step page), "Paused
   at the limit" (a step that never started also reads "Not
   started, the run paused at the limit."), the step that is ready, a stopped
   step with **Continue**, or "Stopped by you" with no verb. A finished run and an
@@ -688,13 +695,18 @@ tooltip line.
   with today's gates, `StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve plan**, or else **Pause
   run** and **Continue**); on a step page the same verb sits on the tail, as a
-  secondary button.
+  secondary button. The moves of an orchestrated run (**Continue**, **Retry**,
+  **Add a hint and continue**, **Decide next step**) stay on its run page: on a step
+  page its tail reads one word, **Stopped**, **Failed**, **Needs you** or **Ready**,
+  with one link, **Open run** (`runTailOf`, `openRun`).
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry, five rows at most (`RunPageActions`): while a run lives
   **Skip step N**, Rename, Step routing, Stop run, Archive run; once it ended
   Rename, View diff, Save as preset, Archive run, Delete run. Everything else
-  stays on the right click of the title (View diff, Save as preset, Copy run
-  summary, Delete run on a live run). Asks you (a `choices` item) is left out of
+  stays on the right click of the title, which takes focus, so Shift+F10 opens
+  it from the keyboard (View diff, Save as preset, Copy run
+  summary, Delete run on a live run). An ended run, also one whose steps are all done
+  but a helper failed, never offers Stop run. Asks you (a `choices` item) is left out of
   the run pages' menus since its chip holds it.
 
 ## How a run advances
@@ -1571,8 +1583,9 @@ two states:
   to continue and Skip.
 
 A step that `watchStepEnd` set to `blocked` reads "This step ended without a result" on
-the run page (`OrchestratedBlockedStep`, the preset `RunTail`) and on the
-agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. It offers
+its step page (`OrchestratedBlockedStep` in `RunTail`, only for the step on screen)
+and on the agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. The run
+page reads only **Not finished** for it, with the answer field and **Restart step**. It offers
 **Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
 which finalizes the step with `force` from the agent's last words and lets the
 run advance). `watchStepEnd` records the end time it set in

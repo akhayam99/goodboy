@@ -97,6 +97,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         ) ?? null)
       : null;
   const isMountBlocked = blockedStep !== null && mountBlock?.agentId === blockedStep.id;
+  const isBlockedStepOnScreen = blockedStep !== null && blockedStep.id === selectedRootId;
   const stop = run.orchestrationStop;
   const isStopped = stop != null && stop.kind !== 'questions';
   const first =
@@ -162,7 +163,11 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
           <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
         ) : (
-          <OrchestratedBlockedStep sessionId={session.id} agentId={blockedStep.id} />
+          <OrchestratedBlockedStep
+            sessionId={session.id}
+            agentId={blockedStep.id}
+            isReasonShown={isBlockedStepOnScreen}
+          />
         )}
       </div>
       {placement === 'after-state' ? questionCluster : null}

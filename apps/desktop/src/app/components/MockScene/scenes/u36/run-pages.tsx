@@ -53,6 +53,7 @@ export const U36_RUN_PAGES_SCENES = {
   'u36-p12-run-done': () => <C08RunScene state="done" selection="overview" />,
   'u36-p12-orch-page': () => <C09OrchestratedScene state="running" page="document" />,
   'u36-p12-orch-step-page': () => <C09OrchestratedScene state="running" page="stepPage" />,
+  'u36-p12-orch-step-blocked': () => <C09OrchestratedScene state="step-blocked" page="stepPage" />,
   'u36-p12-orch-done': () => <C09OrchestratedScene state="done" page="document" />,
   'u36-p14-form-how-open': () => (
     <C08RunScene state="working" selection="list" click="how" extra={seedRunsEmpty} />

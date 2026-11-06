@@ -108,7 +108,11 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         {isMountBlocked ? (
           <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
         ) : tail.blockedAgentId === null ? null : (
-          <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
+          <OrchestratedBlockedStep
+            sessionId={session.id}
+            agentId={tail.blockedAgentId}
+            isReasonShown={false}
+          />
         )}
         {blockedReason === '' ? null : (
           <div data-orchestrated-block="" className="min-w-0 px-2">

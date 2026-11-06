@@ -3,6 +3,7 @@ import type { Agent, AgentId } from '@goodboy/types';
 import type { MountBlockedStep } from '../../store/slices/workflows/runMount/selectMountBlockedStep';
 import type { TailState } from '../live-state/tailFacts';
 import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
+import { NOT_FINISHED } from '../workTreeModel/rowStateCopy';
 import { modelNamesIn } from './modelNamesIn';
 import type { RunPrimary } from './runPrimaryOf';
 
@@ -154,6 +155,7 @@ export const orchestratedTailOf = ({
     if (halted?.status === 'blocked') {
       return {
         ...base,
+        phrase: NOT_FINISHED,
         blockedAgentId: halted.id,
         verbs: [{ kind: 'restartStep' }, { kind: 'openAgentChat', agentId: halted.id }],
       };

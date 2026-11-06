@@ -1208,6 +1208,7 @@ u36-p1-window-close-run
 u36-p1-window-close-stuck
 u36-p12-orch-done
 u36-p12-orch-page
+u36-p12-orch-step-blocked
 u36-p12-orch-step-page
 u36-p12-preset-page
 u36-p12-preset-queued

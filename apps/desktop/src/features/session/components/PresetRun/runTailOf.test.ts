@@ -206,4 +206,80 @@ describe('runTailOf', () => {
       tailOf({ run: aWorkflowRun({ discardedAt: JSON.parse('"2026-10-16T10:00:00.000Z"') }) }),
     ).toBeNull();
   });
+
+  it.each([
+    ['continue', 'Continue', 'stopped', 'Stopped'],
+    ['retry', 'Retry', 'failed', 'Failed'],
+    ['hint', 'Add a hint and continue', 'needsYou', 'Needs you'],
+    ['decide-next', 'Decide next step', 'idle', 'Ready'],
+  ] as const)(
+    'reads %s as a state word with one link to the run on a step page',
+    (kind, label, state, phrase) => {
+      expect(
+        tailOf({
+          agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+          primary: { kind, label },
+          selectedRootId: SCOUT,
+        }),
+      ).toEqual({ state, phrase, stepAgentId: null, verb: { kind: 'openRun' } });
+    },
+  );
+
+  it('leaves the verb of a run kind to the header on the run page itself', () => {
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+        primary: { kind: 'retry', label: 'Retry' },
+      }),
+    ).toMatchObject({
+      phrase: 'Failed',
+      verb: { kind: 'primary', primary: { kind: 'retry' } },
+    });
+  });
+
+  it('reads a blocked step as Not finished and keeps the Restart step door', () => {
+    const step = WORKFLOW.steps[1];
+    if (step === undefined) {
+      throw new Error('no step');
+    }
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'blocked' }),
+        nextAction: {
+          kind: 'recover',
+          subjectAgentId: IMPLEMENTER,
+          step,
+          isBlocked: true,
+          sentence:
+            'Fix stopped without finishing and without asking you anything. Tell it what to do next.',
+          cause: 'The run finishes once this step is done.',
+        },
+      }),
+    ).toEqual({
+      state: 'failed',
+      phrase: 'Not finished',
+      stepAgentId: null,
+      verb: { kind: 'recover' },
+    });
+  });
+
+  it('keeps the sentence of a failed step', () => {
+    const step = WORKFLOW.steps[1];
+    if (step === undefined) {
+      throw new Error('no step');
+    }
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'failed' }),
+        nextAction: {
+          kind: 'recover',
+          subjectAgentId: IMPLEMENTER,
+          step,
+          isBlocked: false,
+          sentence: 'Fix stopped before finishing.',
+          cause: 'The run finishes once this step is done.',
+        },
+      }),
+    ).toMatchObject({ phrase: 'Fix stopped before finishing.', verb: { kind: 'recover' } });
+  });
 });

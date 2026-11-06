@@ -3,6 +3,7 @@ import type { Agent, AgentId, OpenQuestion, Workflow, WorkflowRun } from '@goodb
 import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
 import type { RunPrimary } from '../../../workflows/runPrimaryOf';
+import { NOT_FINISHED } from '../../../workTreeModel/rowStateCopy';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { stepNumberOf } from './stepNumberOf';
 import { stoppedQuestionTailOf } from './stoppedQuestionTailOf';
@@ -15,7 +16,8 @@ export type RunTailVerb =
   | { readonly kind: 'quiet'; readonly agentId: AgentId }
   | { readonly kind: 'openStep'; readonly agentId: AgentId; readonly label: string }
   | { readonly kind: 'continueStep'; readonly agentId: AgentId }
-  | { readonly kind: 'resumeAll'; readonly count: number };
+  | { readonly kind: 'resumeAll'; readonly count: number }
+  | { readonly kind: 'openRun' };
 
 export type RunTail = {
   readonly state: TailState;
@@ -58,6 +60,18 @@ const stepLabelOf = ({ workflow, agent, roleById }: LabelParams): string => {
   const role = roleById.get(agent.id) ?? agent.name;
   return number === null ? role : `Step ${number} · ${role}`;
 };
+
+type DynamicWord = {
+  readonly state: TailState;
+  readonly phrase: string;
+};
+
+const DYNAMIC_WORDS = {
+  continue: { state: 'stopped', phrase: 'Stopped' },
+  retry: { state: 'failed', phrase: 'Failed' },
+  hint: { state: 'needsYou', phrase: NAMES.needsYou },
+  'decide-next': { state: 'idle', phrase: 'Ready' },
+} as const satisfies Readonly<Record<string, DynamicWord>>;
 
 type PrimaryParams = {
   readonly run: WorkflowRun;
@@ -128,6 +142,11 @@ const primaryTailOf = ({
     case 'retry':
     case 'hint':
     case 'decide-next':
+      return {
+        ...DYNAMIC_WORDS[primary.kind],
+        stepAgentId: null,
+        verb: isStepPage ? { kind: 'openRun' } : verb,
+      };
     case 'restore':
       return { state: 'idle', phrase: primary.label, stepAgentId: null, verb };
     default: {
@@ -217,7 +236,7 @@ export const runTailOf = ({
   if (nextAction.kind === 'recover') {
     return {
       state: 'failed',
-      phrase: nextAction.sentence,
+      phrase: nextAction.isBlocked ? NOT_FINISHED : nextAction.sentence,
       stepAgentId: null,
       verb: { kind: 'recover' },
     };

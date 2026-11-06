@@ -23,6 +23,7 @@ import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { useAppStore } from '../../../../../store';
 import { C08RunScene } from '../u25/C08RunScene';
+import { C09OrchestratedScene } from '../u25/C09OrchestratedScene';
 import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
 import { U36_RUN_PAGES_SCENES } from './run-pages';
 
@@ -214,6 +215,45 @@ describe('one run page', () => {
     expect(within(menu).getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
     expect(within(menu).queryByRole('menuitem', { name: 'Stop run' })).toBeNull();
   });
+
+  it('reads the reason of a blocked step on its own page, with Restart step', async () => {
+    await mount('u36-p12-orch-step-blocked');
+
+    const tail = within(nodeOf('[data-run-tail]'));
+    tail.getByText('Not finished');
+    tail.getByRole('button', { name: 'Restart step' });
+    expect(nodeOf('[data-blocked-question]').textContent).toContain(
+      'Should I keep the report in the repo or only attach it to the notes?',
+    );
+  });
+
+  it.each([
+    ['failed', 'Failed'],
+    ['blocked', 'Needs you'],
+  ] as const)(
+    'reads a %s orchestrated run on a step page as one word and one link to the run',
+    async (state, word) => {
+      render(
+        <ToastProvider>
+          <ObjectMenuProvider>
+            <C09OrchestratedScene state={state} page="stepPage" />
+          </ObjectMenuProvider>
+        </ToastProvider>,
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(SETTLE_MS);
+      });
+
+      const tail = nodeOf('[data-run-tail]');
+      expect(tail.getAttribute('data-run-tail')).toBe('openRun');
+      within(tail).getByText(word);
+      expect(
+        within(tail)
+          .getAllByRole('button')
+          .map((button) => button.textContent),
+      ).toEqual(['Open run']);
+    },
+  );
 
   it('opens the run menu from the keyboard on the head title and starts nothing on Enter or Space', async () => {
     await mount('u36-p12-preset-page');
