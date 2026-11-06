@@ -44,11 +44,11 @@ export const QuestionsGrid = ({
     isAnsweredShownByUser ?? (groups.waiting.length > 0 || isSelectedAnswered);
 
   useEffect(() => {
-    if (hasFocusedFirst.current || firstWaitingId === null || selectedId !== null) {
+    if (hasFocusedFirst.current) {
       return;
     }
-    const active = document.activeElement;
-    if (active !== null && active !== document.body) {
+    hasFocusedFirst.current = true;
+    if (firstWaitingId === null || selectedId !== null) {
       return;
     }
     const first = [...document.querySelectorAll<HTMLElement>('[data-list-grid-row]')].find(
@@ -57,7 +57,12 @@ export const QuestionsGrid = ({
     if (first === undefined) {
       return;
     }
-    hasFocusedFirst.current = true;
+    const active = document.activeElement;
+    const layer = first.closest('[data-pane-layer]');
+    const isPaneTitle = active instanceof HTMLHeadingElement && layer?.contains(active) === true;
+    if (active !== null && active !== document.body && !isPaneTitle) {
+      return;
+    }
     first.focus();
   }, [firstWaitingId, selectedId]);
 

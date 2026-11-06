@@ -42,11 +42,13 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/ui')>()),
   PaneShell: (props: { title: string; meta?: string; children: ReactNode }) => (
     <div data-testid="pane-shell" data-title={props.title} data-meta={props.meta}>
+      <h1>{props.title}</h1>
       {props.children}
     </div>
   ),
 }));
 
+import { PaneSwap } from '@goodboy/ui';
 import { questionPlace } from '../../../../../store/slices/navigation/place';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
@@ -147,6 +149,30 @@ const seed = ({
 const setup = (params: SeedParams = {}) => {
   seed(params);
   render(<QuestionsPane session={SESSION} />);
+};
+
+type PaneParams = {
+  readonly isQuestionsOpen: boolean;
+};
+
+const pane = ({ isQuestionsOpen }: PaneParams) => (
+  <PaneSwap
+    activeKey={isQuestionsOpen ? 'questions' : 'overview'}
+    layers={[
+      { key: 'overview', content: <div /> },
+      ...(isQuestionsOpen
+        ? [{ key: 'questions', content: <QuestionsPane session={SESSION} /> }]
+        : []),
+    ]}
+    shouldFocusTitle
+  />
+);
+
+const setupInPaneSwap = (params: SeedParams = {}) => {
+  seed(params);
+  const view = render(pane({ isQuestionsOpen: false }));
+  view.rerender(pane({ isQuestionsOpen: true }));
+  return view;
 };
 
 type DrawerParams = SeedParams & {
@@ -261,6 +287,29 @@ describe('QuestionsPane', () => {
     cleanup();
     setup({ openedId: Q2.id });
     expect(document.activeElement).toBe(document.body);
+  });
+
+  it('moves focus from the pane title to the first waiting row on a normal door', () => {
+    setupInPaneSwap();
+    expect(document.activeElement).toBe(row('Which queue should retries run on?'));
+  });
+
+  it('does not take focus from a field the user is typing in', () => {
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    setupInPaneSwap();
+    expect(document.activeElement).toBe(field);
+    field.remove();
+  });
+
+  it('does not take focus back from a row the user moved to when it rerenders', () => {
+    const { rerender } = setupInPaneSwap();
+    const second = row('Which events should be retried?');
+    act(() => second.focus());
+    seed({ open: [Q2, Q1, Q3] });
+    rerender(pane({ isQuestionsOpen: true }));
+    expect(document.activeElement).toBe(second);
   });
 
   it('reads a row as the question with its answer and the asker on a second line, and the age', () => {
