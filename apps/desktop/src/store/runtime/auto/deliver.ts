@@ -36,6 +36,7 @@ import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
 import { userImagesOf } from './userImagesOf';
+import { userOnceAllowsOf } from './userOnceAllowsOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type DeliverParams = Readonly<{
@@ -349,6 +350,7 @@ export const deliverNext = async ({
       rowIds: rows.map((row) => String(row.id)),
       text,
       images: userImagesOf({ rows }),
+      permissionOnceAllows: userOnceAllowsOf({ rows }),
       onEnded,
     })
     .catch((error: unknown): TurnStartOutcome => ({

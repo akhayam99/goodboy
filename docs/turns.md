@@ -483,8 +483,8 @@ continuation never resumes, because it runs in another directory.
   (`providers/cli_args.rs`, `role_access`) the argument builder forces the
   plan posture whatever the session permission mode says, so
   `bypassPermissions` never widens it: Claude gets `--tools Read,Grep,Glob`,
-  no `--allowedTools`, and a deny list with Bash, the edit tools and the native
-  subagent tools; Codex runs `-s read-only` with no extra roots; Cursor,
+  `--allowedTools` with scoped `Read(...)` grants only (`is_scoped_read_grant`),
+  and a deny list with Bash, the edit tools and the native subagent tools; Codex runs `-s read-only` with no extra roots; Cursor,
   Gemini, Copilot and opencode lose their bypass flags. For `implementer`, `tester` and
   `docs` the session mode stays and Claude loses `Task` and `Agent`. An unknown
   role is read-only. Before the spawn, `providers/cli_probe.rs` reads

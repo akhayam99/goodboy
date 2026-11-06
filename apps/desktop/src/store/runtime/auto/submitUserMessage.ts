@@ -21,6 +21,7 @@ export type SubmitUserMessageParams = Readonly<{
   text: string;
   facts?: Partial<Pick<UserFacts, 'focusArtifactId' | 'attachedArtifacts' | 'explicitChange'>>;
   images?: ReadonlyArray<MessageAttachment>;
+  permissionOnceAllows?: ReadonlyArray<string>;
   deliveryId?: string;
 }>;
 
@@ -78,6 +79,7 @@ export const submitUserMessage = async ({
   text,
   facts,
   images = [],
+  permissionOnceAllows = [],
   deliveryId,
 }: SubmitUserMessageParams): Promise<SubmitUserMessageOutcome> => {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
@@ -116,6 +118,7 @@ export const submitUserMessage = async ({
               text,
               facts: await factsOf({ ctx, tree, given: facts }),
               ...(images.length > 0 && { images }),
+              ...(permissionOnceAllows.length > 0 && { permissionOnceAllows }),
             },
             nowMs: ctx.now(),
           },

@@ -165,6 +165,53 @@ describe('a message typed over the ask of an Auto agent', () => {
     expect(decisionsOf(appendTurnEvent.mock.calls)).toEqual([]);
   });
 
+  it('carries a scoped read grant to the port, and nothing else', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get } = askingAuto();
+
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({
+        content: 'Go on.',
+        permissionOnceAllows: ['Read(//notify-relay/README.md)', 'Bash(pnpm db:migrate)', 'Read'],
+      }),
+    });
+
+    expect(port.mock.calls[0]?.[0]?.permissionOnceAllows).toEqual([
+      'Read(//notify-relay/README.md)',
+    ]);
+  });
+
+  it('reads an unsent allow from the transcript and sends the grant with it', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get } = harness({
+      agents: [autoRow],
+      transcripts: {
+        [AUTO_AGENT]: [
+          AUTO_ASK,
+          {
+            kind: 'permission_decision',
+            runId: ASK_RUN,
+            toolUseId: 'read-outside',
+            decision: 'allow',
+            scope: 'once',
+            ruleId: null,
+            decidedBy: 'user',
+            at: ASKED_AT,
+          },
+        ],
+      },
+    });
+
+    await routeAutoUserTurn({ get, input: inputOf({ origin: 'operator', content: 'Go on.' }) });
+
+    const turn = port.mock.calls[0]?.[0];
+    expect(turn?.text).toContain('Permission for Read is granted for this one call.');
+    expect(turn?.permissionOnceAllows).toEqual(['Read(//notify-relay/README.md)']);
+  });
+
   it('omits the reason of an images only message', async () => {
     registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'queued') });
     const { get, appendTurnEvent } = askingAuto();

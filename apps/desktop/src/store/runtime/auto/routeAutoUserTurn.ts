@@ -10,10 +10,11 @@ import type {
   TurnEvent,
   TurnState,
 } from '@goodboy/types';
-import { askBatchOf } from '../../../features/permissions/askBatchOf';
-import { openPermissionAsksOf } from '../../../features/permissions/openPermissionAsksOf';
 import { askDenialEventOf } from '../../slices/permissions/askDenialEventOf';
 import { deniedPromptOf } from '../../slices/permissions/deniedPromptOf';
+import { heldOnceAllowsOf } from '../../slices/permissions/heldOnceAllowsOf';
+import { resolvedAsksAtWrite } from '../../slices/permissions/resolvedAsksAtWrite';
+import { scopedReadGrantsOf } from '../../slices/permissions/scopedReadGrantsOf';
 import { withHeldAnswers } from '../../slices/permissions/withHeldAnswers';
 import { storeAutoImages } from './storeAutoImages';
 import type { ReportErrorParams } from '../../slices/notifications/reportError';
@@ -76,14 +77,20 @@ type DeniedParams = {
 
 const askDenialOf = ({ get, input, agentId }: DeniedParams) => {
   const { transcripts, agentTurnState } = get();
-  const events = transcripts[agentId] ?? [];
-  const asks =
-    input.origin === 'operator'
-      ? openPermissionAsksOf({ events, turnState: agentTurnState[agentId] })
-      : [];
-  const held = asks.length > 0 ? askBatchOf({ events }).answered : [];
+  const { denied: asks, held } = resolvedAsksAtWrite({
+    events: transcripts[agentId] ?? [],
+    turnState: agentTurnState[agentId],
+    origin: input.origin,
+    given: input.resolvedAsks,
+  });
   const denied = deniedPromptOf({ asks, content: input.content, prompt: input.content });
-  return { asks, text: withHeldAnswers({ held, prompt: denied }) };
+  return {
+    asks,
+    text: withHeldAnswers({ held, prompt: denied }),
+    grants: scopedReadGrantsOf({
+      grants: [...(input.permissionOnceAllows ?? []), ...heldOnceAllowsOf({ held })],
+    }),
+  };
 };
 
 type StoreImages = typeof storeAutoImages;
@@ -154,6 +161,7 @@ export const routeAutoUserTurn = async ({
     workspaceId: session.workspaceId,
     text: denial.text,
     ...(images.length > 0 && { images }),
+    ...(denial.grants.length > 0 && { permissionOnceAllows: denial.grants }),
     ...(input.deliveryId !== undefined && { deliveryId: input.deliveryId }),
     onQueued: ({ rowId, isRepeat = false }) => {
       queued.outboxId = rowId;
