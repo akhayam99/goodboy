@@ -18,7 +18,6 @@ const MIN_DRAWN_ITEMS = 2;
 
 export const QuestionCardMenu = ({ entries }: Props) => {
   const dropdown = useDropdown({
-    align: 'end',
     width: 'min-w-50',
     maxWidth: MENU_MAX_WIDTH,
     expectedHeight: 220,
