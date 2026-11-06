@@ -2,7 +2,9 @@ import type { AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswersDelivered } from '@goodboy/db';
 import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isReportedError } from '../notifications/reportedError';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import type { SendTurnResult } from '../turn/types';
 import { answersInFlight } from './answersInFlight';
 import type { GetFn } from './types';
 
@@ -24,6 +26,10 @@ type DeliverParams = {
 const askingAgentOf = (question: OpenQuestion): AskingAgentId => question.createdByAgentId ?? null;
 
 const NOT_STARTED = 'The agent did not start. Your answers are kept.';
+
+const AFTER_START_FAILURE = 'The agent failed after it got your answers';
+
+const FAILED_AFTER_START: SendTurnResult = { blockedOverBudget: false };
 
 const AGENT_PROVENANCE =
   "  Source: an agent answered this on the user's behalf. Treat it as the user's own answer.";
@@ -57,14 +63,24 @@ const deliverToAgent = async ({
     );
     return marking;
   };
-  const result = await get().sendTurn({
-    sessionId,
-    content: wrapOpenQuestionAnswers(buildBatchPrompt(questions)),
-    agentId: agentId ?? undefined,
-    onStarted: () => {
-      void mark();
-    },
-  });
+  const result = await get()
+    .sendTurn({
+      sessionId,
+      content: wrapOpenQuestionAnswers(buildBatchPrompt(questions)),
+      agentId: agentId ?? undefined,
+      onStarted: () => {
+        void mark();
+      },
+    })
+    .catch((error: unknown) => {
+      if (marking === null) {
+        throw error;
+      }
+      if (!isReportedError(error)) {
+        void get().reportError({ title: AFTER_START_FAILURE, error, sessionId });
+      }
+      return FAILED_AFTER_START;
+    });
   if (marking === null && result.isLaneQueued !== true && result.isAlreadySent !== true) {
     throwIfRefused({ result });
     throw new Error(NOT_STARTED);

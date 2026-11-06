@@ -19,6 +19,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
+import { createTranscriptOwnedTurnError } from '../features/chat/turn-errors';
 import { answersInFlight } from './slices/open-questions/answersInFlight';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -299,6 +300,43 @@ describe('answers commit per agent, after the agent got them', () => {
     await vi.waitFor(() => expect(sendTurn).toHaveBeenCalledTimes(2));
     turnEnd.finish();
     await answering;
+  });
+
+  it('counts answers as delivered when the turn fails after the agent started', async () => {
+    await twoAskingAgents();
+    const sendTurn = vi.fn(async ({ agentId, onStarted }: TurnParams) => {
+      onStarted?.();
+      if (agentId === PLANNER_ID) {
+        throw createTranscriptOwnedTurnError({
+          message: 'The provider dropped the connection.',
+          cause: null,
+        });
+      }
+      return { blockedOverBudget: false };
+    });
+    useAppStore.setState({ sendTurn });
+
+    await useAppStore.getState().answerOpenQuestions(sessionId, pairs, null);
+
+    expect(pending()).toBeUndefined();
+    expect([...deliveredIds()].sort()).toEqual([FIRST_ID, SECOND_ID].sort());
+    expect(await deliveredRows()).toBe(2);
+  });
+
+  it('keeps answers undelivered when the turn fails before the agent started', async () => {
+    await twoAskingAgents();
+    useAppStore.setState({
+      sendTurn: vi.fn(async () => {
+        throw createTranscriptOwnedTurnError({ message: 'The CLI is missing.', cause: null });
+      }),
+    });
+
+    await expect(
+      useAppStore.getState().answerOpenQuestions(sessionId, pairs, null),
+    ).rejects.toThrow('The CLI is missing.');
+
+    expect(await deliveredRows()).toBe(0);
+    expect(pending()?.pairs).toHaveLength(2);
   });
 
   it('keeps answers undelivered when the agent never started', async () => {
