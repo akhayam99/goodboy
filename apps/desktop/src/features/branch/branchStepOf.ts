@@ -32,6 +32,7 @@ export type BranchStepComments = {
 
 export type BranchCheckFacts = {
   readonly isFailing: boolean;
+  readonly isAwaitingRun: boolean;
   readonly chain: CheckChainState;
 };
 
@@ -45,6 +46,7 @@ export type BranchPushFacts = {
 type Params = {
   readonly state: PullRequestPresentationState;
   readonly lifecycle: BranchLifecycleStep;
+  readonly hasConflicts: boolean;
   readonly comments: BranchCommentFacts;
   readonly checks: BranchCheckFacts;
   readonly push: BranchPushFacts;
@@ -62,7 +64,13 @@ const isCheckAgentLive = ({ chain }: Pick<BranchCheckFacts, 'chain'>): boolean =
 
 type OpenParams = Omit<Params, 'state'>;
 
-const openStepOf = ({ lifecycle, comments, checks, push }: OpenParams): BranchStep => {
+const openStepOf = ({
+  lifecycle,
+  hasConflicts,
+  comments,
+  checks,
+  push,
+}: OpenParams): BranchStep => {
   if (push.isInFlight) {
     return 'push';
   }
@@ -90,7 +98,10 @@ const openStepOf = ({ lifecycle, comments, checks, push }: OpenParams): BranchSt
   if (push.replies > 0) {
     return 'publish';
   }
-  if (checks.isFailing) {
+  if (hasConflicts && lifecycle === 'rebase') {
+    return 'rebase';
+  }
+  if (checks.isFailing && !checks.isAwaitingRun) {
     return checks.chain === 'proposal' ? 'startCheckFix' : 'fixChecks';
   }
   return lifecycle;
@@ -109,20 +120,40 @@ const startStepOf = ({ lifecycle, comments, checks }: OpenParams): BranchStep =>
   return comments.fixable > 0 ? 'fixComments' : lifecycle;
 };
 
-export const branchStepOf = ({ state, lifecycle, comments, checks, push }: Params): BranchStep => {
+const queuedStepOf = ({ push }: Pick<OpenParams, 'push'>): BranchStep => {
+  if (push.isInFlight) {
+    return 'push';
+  }
+  if (push.failed > 0) {
+    return 'retryPush';
+  }
+  if (push.canPush) {
+    return 'push';
+  }
+  return push.replies > 0 ? 'publish' : null;
+};
+
+export const branchStepOf = ({
+  state,
+  lifecycle,
+  hasConflicts,
+  comments,
+  checks,
+  push,
+}: Params): BranchStep => {
   switch (state) {
     case 'none':
-      return startStepOf({ lifecycle, comments, checks, push });
+      return startStepOf({ lifecycle, hasConflicts, comments, checks, push });
     case 'merged':
       return null;
     case 'queued':
-      return push.isInFlight || push.canPush ? 'push' : null;
+      return queuedStepOf({ push });
     case 'closed':
       return lifecycle;
     case 'draft':
     case 'open':
     case 'approved':
-      return openStepOf({ lifecycle, comments, checks, push });
+      return openStepOf({ lifecycle, hasConflicts, comments, checks, push });
     default: {
       const unexpected: never = state;
       return unexpected;

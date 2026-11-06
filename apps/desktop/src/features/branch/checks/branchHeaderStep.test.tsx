@@ -457,6 +457,67 @@ describe('the branch header step runs the Overview chain on any tab', () => {
     },
   );
 
+  it('draws no Fix checks while the pushed fix waits for a new run, then reads the new run', () => {
+    seed = checksAnalyzeSeed({ phase: 'proposal' });
+    const fix = anAgent({
+      sessionId: seed.sessionId,
+      parentAgentId: seed.agent.id,
+      ordinal: 2,
+      status: 'completed',
+      sourceKind: 'failed_check',
+      sourceCommentUrl: seed.check.detailsUrl ?? '',
+    });
+    store.setState({
+      sessionPhaseRuns: { [seed.sessionId]: [seed.agent, fix] },
+      agentTurnState: {
+        ...store.getState().agentTurnState,
+        [fix.id]: { kind: 'ended', endedAt: seed.agent.startedAt ?? seed.events[0]!.at },
+      },
+      checkFixCommits: {
+        [fix.id]: {
+          kind: 'found',
+          sha: 'b24cd5e',
+          subject: 'Guard the retry',
+          count: 1,
+          unpushed: 0,
+        },
+      },
+    });
+    vi.spyOn(store.getState(), 'readCheckFixCommit').mockResolvedValue(undefined);
+    const view = render(
+      <ToastProvider>
+        <StepHeader />
+      </ToastProvider>,
+    );
+
+    expect(headerStep()).toBeNull();
+
+    const github = store.getState().mountGithub[seed.repo.mountId];
+    if (github?.detail == null) {
+      throw new Error('The seeded branch is missing');
+    }
+    act(() =>
+      store.setState({
+        mountGithub: {
+          [seed.repo.mountId]: {
+            ...github,
+            detail: {
+              ...github.detail,
+              checks: github.detail.checks.map((check) =>
+                check.conclusion === 'failure'
+                  ? { ...check, detailsUrl: `${check.detailsUrl}/rerun` }
+                  : check,
+              ),
+            },
+          },
+        },
+      }),
+    );
+
+    expect(headerStep()?.textContent).toBe('Fix checks');
+    view.unmount();
+  });
+
   it('starts the fixer on the check the header shows, not on the latest analyzed one', async () => {
     seed = checksAnalyzeSeed({ phase: 'proposal' });
     const github = store.getState().mountGithub[seed.repo.mountId];

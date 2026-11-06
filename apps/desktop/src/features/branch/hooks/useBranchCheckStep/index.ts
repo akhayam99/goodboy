@@ -7,6 +7,7 @@ import { isReportedError } from '../../../../store/slices/notifications/reported
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import type { BranchCheckFacts } from '../../branchStepOf';
 import { checkChainActionOf } from '../../checks/checkChainActionOf';
+import { checkOutcomeOf } from '../../checks/checkOutcomeOf';
 import { checkRoutingOf } from '../../checks/checkRoutingOf';
 import { checkStepTargetOf } from '../../checks/checkStepTargetOf';
 import { liveCheckWorkOf } from '../../checks/liveCheckWorkOf';
@@ -70,9 +71,23 @@ export const useBranchCheckStep = ({
       mountId === null ? null : liveCheckWorkOf({ state, sessionId, mountId }),
     ),
   );
+  const isAwaitingRun = useAppStore((state) => {
+    if (mountId === null || prNumber === null || chain.state !== 'fixed-pushed') {
+      return false;
+    }
+    const { target: found, failing } = checkStepTargetOf({ state, sessionId, mountId, prNumber });
+    return (
+      found !== null &&
+      checkOutcomeOf({
+        checks: failing?.allChecks ?? [],
+        name: found.name,
+        analyzedUrl: found.url,
+      }) === 'running'
+    );
+  });
   const facts = useMemo<BranchCheckFacts>(
-    () => ({ isFailing, chain: live?.chain ?? chain.state }),
-    [chain.state, isFailing, live?.chain],
+    () => ({ isFailing, isAwaitingRun, chain: live?.chain ?? chain.state }),
+    [chain.state, isAwaitingRun, isFailing, live?.chain],
   );
   const liveAgentId = live?.agentId ?? null;
   const liveChain = live?.chain ?? null;

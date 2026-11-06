@@ -41,23 +41,33 @@ disabled. One function picks the step, the same on every tab (`branchStepOf`), i
 already going up; `Answer` when a fix asks something, which opens that comment; no fill while an
 agent works on the branch; `Apply N fixes`; `Retry push`; `Fix N comments`, which opens the Fix
 comments drawer; `Push fix` for a check fix not yet on origin; `Push N commits`; `Publish N
-replies`; `Start fix` once the Debugger proposed one; `Fix checks` while a check fails; then the
-pull request's own step. Comments come before the push so the branch is pushed once, and the checks
-still red come last. Every verb does the work where you stand and never just opens a tab: `Fix
+replies`; `Rebase on main` when the host says the request conflicts and the base moved; `Start fix`
+once the Debugger proposed one; `Fix checks` while a check fails; then the pull request's own step.
+Comments come before the push so the branch is pushed once, a conflict is rebased before the checks
+(a host may not re-run a conflicting request), and the checks still red come last, but not while a
+pushed fix waits for the new run (`isAwaitingRun`: no check step until the check reports on the push).
+Every verb does the work where you stand and never just opens a tab: `Fix
 checks`, `Start fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
 and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
 While a fix run or a check agent works, a line under the tabs says what runs, with `Stop`
-(`BranchWorkLines`; the Comments tab keeps its own run line). A push that runs, a stop that is open
-or a queued request keeps the push in the secondary alone, with no primary beside it. A merged or
+(`BranchWorkLines`; the Comments tab keeps its own run line). One agent works per branch: a check
+agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
+sees it too) draws the work line and no fill, and the other doors that start an agent (row Analyze,
+the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
+the name of what runs. A push that runs, a stop that is open or a queued request keeps the push
+(and a `Retry push` there) in the secondary alone, with no primary beside it; `Publish N replies`
+stays reachable in the queue. A merged or
 closed request has no push, and `Force push` never sits there: while the online copy moved it waits
 in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
 `MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
 `Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
 (`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same
 count. The pull request's own step (`pullRequestNextStepOf`) is `Mark ready for review` on a draft,
-`Request review` while nobody was asked, the merge method (`Squash and merge`) once the pull request
+`Request review` while nobody was asked or once changes were requested and nothing is left to fix,
+the merge method (`Squash and merge`) once the pull request
 is ready, `Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a
-reviewer or a check is still on it, on a queued or merged one, or while a banner holds the next
+reviewer, a check or a comment that needs you is still on it (the comments are counted for the shown
+request only, `pullRequestThreadsOf`, so another mount's threads never hold the merge), on a queued or merged one, or while a banner holds the next
 action (a stopped rebase, someone pushed). One predicate says when a stop is open for the shown branch
 (`hasOpenRebaseStopOf`: the stop the rebase panel shows, read through `rebaseStopOf`, live or
 rebuilt from the session events after a restart, or the worktree is mid rebase, read from the live status or, for the action registry and the

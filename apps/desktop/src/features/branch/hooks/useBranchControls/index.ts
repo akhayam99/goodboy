@@ -40,6 +40,7 @@ type Params = {
   readonly nextStep?: BranchNextStep;
   readonly comments?: BranchStepComments;
   readonly isChecksFailing?: boolean;
+  readonly hasConflicts?: boolean;
   readonly hasOpenRebaseStop?: boolean;
   readonly mergeLabel?: string;
 };
@@ -80,6 +81,7 @@ export const useBranchControls = ({
   nextStep = null,
   comments = NO_COMMENTS,
   isChecksFailing = false,
+  hasConflicts = false,
   hasOpenRebaseStop = false,
   mergeLabel = 'Merge',
 }: Params): BranchControls => {
@@ -188,6 +190,7 @@ export const useBranchControls = ({
         hasPullRequest: pr !== null && !isRequestMerged,
         state,
         nextStep,
+        hasConflicts,
         hasOpenRebaseStop,
         mergeLabel,
       }),
@@ -196,6 +199,7 @@ export const useBranchControls = ({
       checkStep.note,
       comments.facts,
       diffControls.actions,
+      hasConflicts,
       hasOpenRebaseStop,
       isRequestMerged,
       mergeLabel,

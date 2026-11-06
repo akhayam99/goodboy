@@ -11,11 +11,12 @@ import {
 
 const NO_PUSH: BranchPushFacts = { isInFlight: false, failed: 0, canPush: false, replies: 0 };
 
-const NO_CHECK_FACTS: BranchCheckFacts = { isFailing: false, chain: 'none' };
+const NO_CHECK_FACTS: BranchCheckFacts = { isFailing: false, isAwaitingRun: false, chain: 'none' };
 
 type RowParams = {
   readonly state?: Parameters<typeof branchStepOf>[0]['state'];
   readonly lifecycle?: BranchLifecycleStep;
+  readonly hasConflicts?: boolean;
   readonly comments?: Partial<BranchCommentFacts>;
   readonly checks?: Partial<BranchCheckFacts>;
   readonly push?: Partial<BranchPushFacts>;
@@ -24,6 +25,7 @@ type RowParams = {
 const stepOf = ({
   state = 'open',
   lifecycle = null,
+  hasConflicts = false,
   comments = {},
   checks = {},
   push = {},
@@ -31,6 +33,7 @@ const stepOf = ({
   branchStepOf({
     state,
     lifecycle,
+    hasConflicts,
     comments: { ...NO_COMMENT_FACTS, ...comments },
     checks: { ...NO_CHECK_FACTS, ...checks },
     push: { ...NO_PUSH, ...push },
@@ -133,6 +136,42 @@ describe('branchStepOf walks the order table, one row per step', () => {
   });
 });
 
+describe('branchStepOf keeps the order that cannot stick', () => {
+  const redChecks: Partial<BranchCheckFacts> = { isFailing: true, chain: 'none' };
+
+  it('rebases a conflict before it fixes red checks', () => {
+    expect(stepOf({ lifecycle: 'rebase', hasConflicts: true, checks: redChecks })).toBe('rebase');
+  });
+
+  it('still pushes and publishes before it rebases a conflict', () => {
+    expect(
+      stepOf({
+        lifecycle: 'rebase',
+        hasConflicts: true,
+        checks: redChecks,
+        push: { canPush: true },
+      }),
+    ).toBe('push');
+    expect(
+      stepOf({ lifecycle: 'rebase', hasConflicts: true, checks: redChecks, push: { replies: 1 } }),
+    ).toBe('publish');
+  });
+
+  it('fixes red checks when there is no conflict to rebase', () => {
+    expect(stepOf({ lifecycle: 'rebase', checks: redChecks })).toBe('fixChecks');
+    expect(stepOf({ lifecycle: null, hasConflicts: true, checks: redChecks })).toBe('fixChecks');
+  });
+
+  it('draws no check step while the pushed fix waits for a new run, then reads the run', () => {
+    const waiting = { isFailing: true, isAwaitingRun: true, chain: 'fixed-pushed' } as const;
+    expect(stepOf({ lifecycle: null, checks: waiting })).toBeNull();
+    expect(stepOf({ lifecycle: 'requestReview', checks: waiting })).toBe('requestReview');
+    expect(stepOf({ lifecycle: null, checks: { ...waiting, isAwaitingRun: false } })).toBe(
+      'fixChecks',
+    );
+  });
+});
+
 describe('branchStepOf while an agent works', () => {
   it('draws no step while a fix run works on the comments', () => {
     expect(stepOf({ ...EVERYTHING, comments: { isFixRunLive: true, fixable: 4 } })).toBe('working');
@@ -178,9 +217,15 @@ describe('branchStepOf at both ends of a branch', () => {
     expect(stepOf({ ...EVERYTHING, state: 'closed', lifecycle: 'reopen' })).toBe('reopen');
   });
 
-  it('only pushes in the merge queue', () => {
-    expect(stepOf({ ...EVERYTHING, state: 'queued' })).toBe('push');
+  it('only moves commits and replies in the merge queue', () => {
+    expect(stepOf({ ...EVERYTHING, state: 'queued', push: { canPush: true } })).toBe('push');
     expect(stepOf({ state: 'queued', lifecycle: 'merge' })).toBeNull();
+  });
+
+  it('keeps Retry push and Publish reachable as steps in the merge queue', () => {
+    expect(stepOf({ ...EVERYTHING, state: 'queued' })).toBe('retryPush');
+    expect(stepOf({ state: 'queued', lifecycle: 'merge', push: { replies: 2 } })).toBe('publish');
+    expect(stepOf({ state: 'queued', push: { isInFlight: true, failed: 1 } })).toBe('push');
   });
 
   it('leaves a green, pushed branch to the pull request lifecycle', () => {

@@ -61,6 +61,7 @@ type Params = {
   readonly hasPullRequest: boolean;
   readonly state: PullRequestPresentationState;
   readonly nextStep: BranchNextStep;
+  readonly hasConflicts: boolean;
   readonly hasOpenRebaseStop: boolean;
   readonly mergeLabel: string;
 };
@@ -308,12 +309,14 @@ const stepFor = ({
   hasPullRequest,
   state,
   nextStep,
+  hasConflicts,
   hasOpenRebaseStop,
 }: Params): BranchStep => {
   const isPullRequestPush = hasPullRequestPush({ hasPullRequest, state });
   return branchStepOf({
     state: hasPullRequest || state === 'none' ? state : 'merged',
     lifecycle: nextStep,
+    hasConflicts,
     comments,
     checks,
     push: {
@@ -335,7 +338,8 @@ export const branchActionsOf = ({ ...facts }: Params): BranchActions => {
   if (primary === null) {
     return { step, primary: null, secondary: null };
   }
-  if (step === 'push' && hasPullRequestPush(facts)) {
+  const isPushStep = step === 'push' || (step === 'retryPush' && facts.state === 'queued');
+  if (isPushStep && hasPullRequestPush(facts)) {
     return primary.blockedReason !== null || facts.hasOpenRebaseStop || facts.state === 'queued'
       ? { step, primary: null, secondary: primary }
       : { step, primary, secondary: null };
