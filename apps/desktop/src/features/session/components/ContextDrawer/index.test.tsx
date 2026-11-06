@@ -171,7 +171,7 @@ describe('Context drawer', () => {
     expect(numbers.length).toBe(new Set(numbers).size);
     expect(numbers.slice(0, 4)).toEqual(['7', '5', '8', '1']);
     expect(container.querySelector('[data-decision="5"] .line-through')).not.toBeNull();
-    expect(screen.queryByRole('region', { name: 'State' })).toBeNull();
+    screen.getByRole('region', { name: 'State' });
     screen.getByRole('region', { name: 'Next' });
     screen.getByRole('region', { name: 'Learned' });
   });

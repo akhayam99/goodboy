@@ -50,6 +50,16 @@ describe('summaryDisplayBlocks', () => {
     expect(blocks.map((block) => block.body)).toEqual(['', '']);
   });
 
+  it('draws State only when it says more than the first sentence the glance line shows', () => {
+    const short = ['#### State', '- one line only', '', '#### Next', '- later'].join('\n');
+    expect(titlesOf({ text: short })).toEqual(['Next', 'Learned']);
+
+    const long = ['#### State', '- one line', '- and another', '', '#### Next', '- later'].join(
+      '\n',
+    );
+    expect(titlesOf({ text: long })).toEqual(['State', 'Next', 'Learned']);
+  });
+
   it('hides a Problem section an older summary still carries', () => {
     const text = ['#### Problem', 'why', '', '#### State', '- now'].join('\n');
     expect(titlesOf({ text: text })).toEqual(['Next', 'Learned']);

@@ -1,15 +1,13 @@
 import { parseSummaryDocument } from '@goodboy/core/context';
-import { inlineMarkdownText } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { firstSentenceOf } from '../done/firstSentenceOf';
+import { plainStateOf } from './plainStateOf';
 
 const HOUR_MS = 60 * 60 * 1000;
 
 const SUMMARY_STALE_AFTER_MS = 24 * HOUR_MS;
 
 const SUMMARY_BRANCH_GRACE_MS = 5 * 60 * 1000;
-
-const LIST_MARKER = /^\s*(?:[-*+]|\d+[.)])\s+/;
 
 type SummaryStateWhy = 'old' | 'branches';
 
@@ -63,11 +61,7 @@ export const summaryStateOf = ({
   const block = parseSummaryDocument({ text }).blocks.find(
     (candidate) => candidate.sectionKey === 'state',
   );
-  const body = (block?.body ?? '')
-    .split('\n')
-    .map((line) => line.replace(LIST_MARKER, ''))
-    .join('\n');
-  const first = firstSentenceOf({ text: inlineMarkdownText({ text: body }) });
+  const first = firstSentenceOf({ text: plainStateOf({ body: block?.body ?? '' }) });
   if (first === null || first.trim() === '') {
     return null;
   }
