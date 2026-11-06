@@ -65,7 +65,7 @@ const ROUTE: RunRoute = {
   presetName: 'Fix a layout',
   closeness: 'adapt',
   role: null,
-  choice: 'Workflow · Preset Fix a layout · Adapt as it goes',
+  choice: 'Workflow · Preset Fix a layout · May change steps',
   why: 'Your ask matches the preset',
   ask: 'Center the member pages',
 };
@@ -156,7 +156,7 @@ describe('RunKindChip', () => {
       .getAllByRole('tab')
       .filter((tab) => tab.getAttribute('aria-selected') === 'true')
       .map((tab) => tab.textContent);
-    expect(selected).toEqual(['Adapt as it goes']);
+    expect(selected).toEqual(['May change steps']);
     const startAs = within(popover).getByRole('group', { name: 'Start a new run as' });
     expect(
       within(startAs)
@@ -174,10 +174,10 @@ describe('RunKindChip', () => {
     expect(popover.textContent).toContain('Changes this run before its first step.');
   });
 
-  it('switches to Follow it in place and keeps the run', async () => {
+  it('switches to Keep steps in place and keeps the run', async () => {
     const popover = openChip({ phase: 'finished' });
 
-    fireEvent.click(within(popover).getByRole('tab', { name: 'Follow it' }));
+    fireEvent.click(within(popover).getByRole('tab', { name: 'Keep steps' }));
 
     await waitFor(() =>
       expect(

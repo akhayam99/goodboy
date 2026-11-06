@@ -19,7 +19,14 @@ type CountParams = {
 
 export const START_KIND_COPY = {
   question: 'What kind of run?',
+  how: 'How',
   pickLine: 'Auto picks how to run it. Or pick a kind.',
+  kindLine: {
+    auto: 'Picks how to run it from your goal.',
+    agent: 'One role you pick, on the model you pick.',
+    orchestrated: 'Plans each next step as it goes.',
+    preset: 'A saved list of steps, kept or changed as it goes.',
+  },
   kindTab: {
     auto: 'Auto',
     agent: 'Agent',
@@ -70,8 +77,8 @@ export const START_KIND_COPY = {
   presetSteps: 'Preset steps',
   closeness: {
     label: 'With the preset',
-    follow: 'Follow it',
-    adapt: 'Adapt as it goes',
+    follow: 'Keep steps',
+    adapt: 'May change steps',
     followLine: 'The saved steps in order. Auto asks before a change.',
     adaptLine: 'Auto may add, skip or move a step, and says why.',
   },

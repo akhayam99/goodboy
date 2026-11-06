@@ -2171,7 +2171,7 @@ const presetRules = ({
     presetName: 'Fix a layout',
     closeness,
     role: null,
-    choice: `Workflow · Preset Fix a layout · ${closeness === 'follow' ? 'Follow it' : 'Adapt as it goes'}`,
+    choice: `Workflow · Preset Fix a layout · ${closeness === 'follow' ? 'Keep steps' : 'May change steps'}`,
     why: 'you picked it',
   },
   preset: {
@@ -2448,14 +2448,14 @@ describe('resolvePresetChange', () => {
     );
   });
 
-  it('Switch to adapt turns the run to Adapt as it goes', async () => {
+  it('Switch to adapt turns the run to May change steps', async () => {
     const { state, set, get } = askedState();
 
     await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'adapt');
 
     expect(presetRunOf(state).rulesSnapshot?.route).toMatchObject({
       closeness: 'adapt',
-      choice: 'Workflow · Preset Fix a layout · Adapt as it goes',
+      choice: 'Workflow · Preset Fix a layout · May change steps',
     });
   });
 

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { FormActions } from '@goodboy/ui';
 import type { StartFormKind } from './startFormKinds';
 import { StartFailure } from './StartFailure';
-import { StartKindTabs } from './StartKindTabs';
+import { StartHowChip } from './StartHowChip';
 import { StartSettingsRow } from './StartSettingsRow';
 import type { StartSettingItem } from './startSettingsOf';
 
@@ -38,28 +38,28 @@ export const StartForm = ({
   children,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-4">
-    {onKind === null && hint === null ? null : (
-      <div className="flex min-w-0 flex-col gap-2">
-        {onKind === null ? null : (
-          <StartKindTabs
+    {fields}
+    <StartSettingsRow
+      lead={
+        onKind === null ? null : (
+          <StartHowChip
             kind={kind ?? 'auto'}
             hasPresets={hasPresets}
             isDisabled={isDisabled}
             onPick={onKind}
           />
-        )}
-        {hint === null ? null : (
-          <p
-            className="text-meta text-muted-foreground"
-            {...(isRouteHint && { 'data-run-route-line': '' })}
-          >
-            {hint}
-          </p>
-        )}
-      </div>
+        )
+      }
+      items={settings}
+    />
+    {hint === null ? null : (
+      <p
+        className="text-meta text-muted-foreground"
+        {...(isRouteHint && { 'data-run-route-line': '' })}
+      >
+        {hint}
+      </p>
     )}
-    {fields}
-    <StartSettingsRow items={settings} />
     {error === null ? null : <StartFailure error={error} />}
     <FormActions
       leading={

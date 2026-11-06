@@ -87,8 +87,14 @@ type KindParams = {
   readonly name: string;
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement =>
-  within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', { name });
+const kindTab = ({ name }: KindParams): HTMLElement => {
+  if (screen.queryByRole('tablist', { name: 'What kind of run?' }) === null) {
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
+  }
+  return within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', {
+    name: new RegExp(`^${name}`),
+  });
+};
 
 const pickKind = ({ name }: KindParams): void => {
   fireEvent.click(kindTab({ name }));

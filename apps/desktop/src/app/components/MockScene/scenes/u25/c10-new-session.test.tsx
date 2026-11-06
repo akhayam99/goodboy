@@ -96,7 +96,7 @@ describe('the c10 New session scenes', () => {
     await mount({ id: 'c10-start-task' });
 
     expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
-    expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
+    screen.getByRole('button', { name: 'How: Auto' });
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 
