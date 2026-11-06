@@ -70,7 +70,9 @@ describe('the explore changes scenes', () => {
     expect(gone.getAttribute('aria-disabled')).toBe('true');
     expect(screen.queryByRole('treeitem', { name: 'package.json' })).toBeNull();
     expect(screen.getByRole('treeitem', { name: 'schema.sql' })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Changed/ }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'Changed only' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
   });
 
   it('explore-changedempty says nothing changed against main', async () => {

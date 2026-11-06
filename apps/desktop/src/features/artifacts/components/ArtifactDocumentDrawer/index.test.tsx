@@ -125,7 +125,7 @@ describe('plan document drawer header', () => {
     const names = Array.from(titleRow?.querySelectorAll('button') ?? []).map((button) =>
       button.getAttribute('aria-label'),
     );
-    expect(names).toEqual(['Open in Artifacts', 'Copy markdown', 'Close']);
+    expect(names).toEqual(['Copy markdown', 'Open page', 'Close']);
     expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Collapse' })).toBeNull();
     expect(screen.queryByRole('menuitem', { name: 'Expand' })).toBeNull();
@@ -188,7 +188,7 @@ describe('plan document drawer header', () => {
     renderDrawer();
     expect(navigations).toEqual([]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open in Artifacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open page' }));
 
     expect(navigations).toEqual([
       {

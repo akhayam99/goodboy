@@ -8,6 +8,7 @@ import {
   EmptyState,
   formatError,
   ICON_SIZE,
+  IconButton,
   Notice,
   splitErrorMessage,
   useCopyLink,
@@ -667,10 +668,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
         onDiscard={draft.discardAndContinue}
         onCancel={draft.keepEditing}
         trigger={() => (
-          <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
-            <Plus size={ICON_SIZE.row} aria-hidden />
-            New script
-          </Button>
+          <IconButton
+            icon={Plus}
+            label="New script"
+            tooltip="New script"
+            variant="ghost"
+            iconSize={ICON_SIZE.control}
+            onClick={() => openNew({ group: activeGroup })}
+          />
         )}
       />
     );

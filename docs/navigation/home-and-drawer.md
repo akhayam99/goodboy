@@ -193,7 +193,7 @@ stands, without playing the entry again.
 an address, so it draws no breadcrumb. A drawer opened from another drawer shows
 one quiet back row under its header (`DrawerBackLink` from `@goodboy/ui`, the row
 `DrawerFrame`'s `back` draws), naming where it returns: **Back to agents**,
-**Back to files**, **Back to scripts**. The run step drawer has no `DrawerFrame`
+**Back to Explore**, **Back to scripts**. The run step drawer has no `DrawerFrame`
 and draws the same `DrawerBackLink` above its transcript; **Back to agents**
 reopens the Agents drawer on the run it came from.
 
@@ -286,7 +286,7 @@ sits beside it. The same goes for every artifact kind read from its work: a
 report or a wireframe row in Activity, and a report or wireframe chip in a
 transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
-the wireframe stage, with Open in Artifacts as its one header action). **A plan always opens
+the wireframe stage, with Open page as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
 inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
@@ -294,14 +294,14 @@ Artifacts page, where they select the plan. From another session they land on
 that session with the drawer open (`openPlanAnywhere`). Reports and wireframes
 are transit from the palette and from search and keep navigating; the Artifacts
 page stays the library. Going to
-the Artifacts page from a drawer is a command of its own, **Open in Artifacts**
-in the drawer header, and it is the only page change. The `artifact-document` kind
+the Artifacts page from a drawer is a command of its own, **Open page**
+(`DrawerFrame` `page`, tooltip Open in Artifacts) in the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
 drawer in the reader tier: it opens at 720px and you drag its edge from 480
 to 1000 (a double click resets it to 720), so there is no Expand. The body
 stays on the 720 reading measure whatever the width. The header holds the
-title, **Open in Artifacts** and **Copy markdown** as two 28px icon buttons,
+title, **Copy markdown** and **Open page** as two 28px icon buttons,
 and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
 **Run plan**. **Copy markdown** is absent when the plan has no copy action.
 Escape closes it. While the planner

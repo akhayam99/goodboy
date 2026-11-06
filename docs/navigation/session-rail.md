@@ -749,7 +749,7 @@ Folding the rail leaves the column in place.
   closes the pane (`DrawerFrame`).
 - **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
   `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
-  from Explore replaces it and shows **Back to files**; a script output opened
+  from Explore replaces it and shows **Back to Explore**; a script output opened
   from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
   `back`, carried by the payload's `from`); Run on a Service does not open it,
   Run on a Task does. `openExplorePane` takes the

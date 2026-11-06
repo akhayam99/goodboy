@@ -472,7 +472,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.terminal',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   }),
