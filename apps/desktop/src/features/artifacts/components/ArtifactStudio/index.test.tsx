@@ -110,6 +110,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       stopArtifactGeneration: vi.fn(async () => undefined),
       wireframeScoutVerification: {},
       plans: [] as ReadonlyArray<unknown>,
+      planStarts: {} as Record<string, number>,
       get sessionPlans(): Record<string, ReadonlyArray<unknown>> {
         return { 'sess-1': this.plans };
       },
