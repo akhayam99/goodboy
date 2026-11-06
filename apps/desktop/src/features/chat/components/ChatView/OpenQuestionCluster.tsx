@@ -12,6 +12,7 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 type Props = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly sessionId: SessionId;
+  readonly isDocked?: boolean;
 };
 
 type MoveParams = {
@@ -35,7 +36,7 @@ const nextAfter = ({ list, from, isEligible }: NextParams): OpenQuestion | null 
   return null;
 };
 
-export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
+export const OpenQuestionCluster = ({ questions, sessionId, isDocked = false }: Props) => {
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const staged = useOpenQuestions((s) => s.staged);
@@ -115,7 +116,13 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
       {waiting.map((q) => (
-        <LiveQuestionCard key={q.id} question={q} sessionId={sessionId} variant="compact" />
+        <LiveQuestionCard
+          key={q.id}
+          question={q}
+          sessionId={sessionId}
+          variant="compact"
+          isDocked={isDocked}
+        />
       ))}
       {current !== null && (
         <LiveQuestionCard
@@ -123,6 +130,7 @@ export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
           question={current}
           sessionId={sessionId}
           variant="compact"
+          isDocked={isDocked}
           autoFocus={focusId !== null && focusId === current.id}
           pager={pager}
           onAnswered={handleAnswered}

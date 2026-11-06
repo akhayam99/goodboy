@@ -96,8 +96,8 @@ describe('runRowFactsOf plan hold', () => {
     orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
   });
 
-  it('says Plan ready and needs you while nobody revises the plan', () => {
-    expect(waitOf({ run: heldRun })).toMatchObject({ dot: 'needsYou', word: 'Plan ready' });
+  it('says Needs approval and needs you while nobody revises the plan', () => {
+    expect(waitOf({ run: heldRun })).toMatchObject({ dot: 'needsYou', word: 'Needs approval' });
   });
 
   it('says Revising plan, as running, while the planner reworks it', () => {

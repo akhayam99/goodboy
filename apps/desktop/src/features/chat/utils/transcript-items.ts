@@ -150,6 +150,8 @@ export type TranscriptItem =
       scope?: PermissionScope;
       ruleId: PermissionRuleId | null;
       decidedBy: 'engine' | 'user' | 'default';
+      reason?: string;
+      isRecordLine?: boolean;
       at: IsoDateTime;
     };
 
@@ -572,6 +574,7 @@ export const reduceTranscript = (
           ...(event.scope !== undefined && { scope: event.scope }),
           ruleId: event.ruleId,
           decidedBy: event.decidedBy,
+          ...(event.reason !== undefined && { reason: event.reason }),
           at: event.at,
         });
         break;

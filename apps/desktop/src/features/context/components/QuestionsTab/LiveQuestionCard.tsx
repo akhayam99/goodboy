@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { classifyAgent } from '../../../session/agent-kind';
 import { useAnswerQuestion } from '../../hooks/useAnswerQuestion';
 import {
   canSendQuestionAsMessage,
@@ -18,6 +19,7 @@ type Props = {
   readonly question: OpenQuestion;
   readonly sessionId: SessionId;
   readonly variant: 'full' | 'compact';
+  readonly isDocked?: boolean;
   readonly pager?: QuestionPagerModel | null;
   readonly settled?: 'answered' | 'dismissed' | null;
   readonly autoFocus?: boolean;
@@ -33,6 +35,7 @@ export const LiveQuestionCard = ({
   question,
   sessionId,
   variant,
+  isDocked = false,
   pager = null,
   settled = null,
   autoFocus = false,
@@ -61,6 +64,11 @@ export const LiveQuestionCard = ({
     anchorKey: `question-card:${question.id}`,
   });
 
+  const kindOverride = useAppStore((state) =>
+    question.createdByAgentId == null
+      ? null
+      : (state.agentKindOverride?.[question.createdByAgentId] ?? null),
+  );
   const asker =
     question.createdByAgentId == null
       ? null
@@ -120,8 +128,10 @@ export const LiveQuestionCard = ({
       <QuestionCard
         question={question}
         variant={variant}
+        isDocked={isDocked}
         state={state}
         askerName={asker?.name ?? null}
+        askerKind={asker === null ? null : classifyAgent({ agent: asker, override: kindOverride })}
         age={age}
         draft={draft}
         pager={pager}

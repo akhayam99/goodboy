@@ -121,7 +121,7 @@ export const reconcileLoadedAgent = async ({
   return { agent: { ...agent, status: 'stopped', stoppedAt, stoppedBy: 'app' }, waiting: null };
 };
 
-const readBackendRunIds = async (): Promise<ReadonlyArray<string> | null> => {
+export const readBackendRunIds = async (): Promise<ReadonlyArray<string> | null> => {
   try {
     return (await invokeCommand<string[]>('turn_list_live')) ?? [];
   } catch {

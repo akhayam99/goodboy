@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
 import type { ComposerControlSlots } from './composerControlSlots';
 import { ConversationColumn } from '../ConversationColumn';
+import { ConversationDock } from '../ConversationDock';
+import type { ConversationDockSlots } from '../ConversationDock/conversationDockSlots';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
@@ -21,12 +22,12 @@ import { useComposerDataLoad } from './hooks/useComposerDataLoad';
 import { useComposerSend } from './hooks/useComposerSend';
 import { useComposerSuggestions } from './hooks/useComposerSuggestions';
 import { useFirstMessageFocus } from './hooks/useFirstMessageFocus';
-import { useAgentStop } from '../../../../shared/hooks/useAgentStop';
-import { useEscapeStop } from './hooks/useEscapeStop';
+import { useConversationStop } from './hooks/useConversationStop';
 import { composerKeyDown } from './composerKeyDown';
 import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
 import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
+import { ComposerBox } from './parts/ComposerBox';
 import { ComposerCliGate } from './parts/ComposerCliGate';
 import { WriterWaitBand } from '../WriteDestinationControl/WriterWaitBand';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
@@ -36,6 +37,7 @@ import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerTray } from './parts/ComposerTray';
 import { autoTreeOfAgent } from '../../../auto/autoTreeOfAgent';
 import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
+import { useConversationAsks } from '../../../../store/hooks/useConversationAsks';
 
 type Props = {
   readonly session: Session;
@@ -43,6 +45,7 @@ type Props = {
   readonly providerDisconnected?: boolean;
   readonly placeholderOverride?: string;
   readonly controlSlots?: ComposerControlSlots;
+  readonly composerDock?: ConversationDockSlots;
 };
 
 export const ChatInput = ({
@@ -51,6 +54,7 @@ export const ChatInput = ({
   providerDisconnected = false,
   placeholderOverride,
   controlSlots,
+  composerDock: dock,
 }: Props) => {
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session, agentId });
@@ -58,6 +62,8 @@ export const ChatInput = ({
   const isAutoChild =
     selectedAgentId !== null &&
     autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId })?.kind === 'child';
+  const { permissions } = useConversationAsks({ sessionId: session.id, agentId: selectedAgentId });
+  const deniedAgentId = isRunning ? null : (permissions[0]?.agentId ?? null);
 
   const { showToast } = useToast();
 
@@ -86,14 +92,8 @@ export const ChatInput = ({
   useOutputHandoffs({ selectedAgentId, isReady: isRestored, wrapperRef, attachOutputHandoffs });
   useToastLift({ ref: composerRef });
 
-  const {
-    onValueChange,
-    popoverOpen,
-    filteredQuickItems,
-    quickEmptyHint,
-    onQuickActionSelect,
-    dismissPopover,
-  } = useChatPrefix({ session, value, setValue });
+  const prefix = useChatPrefix({ session, value, setValue });
+  const { onValueChange, popoverOpen } = prefix;
 
   const routing = useTurnRouting({ session, agentId: selectedAgentId });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
@@ -143,6 +143,7 @@ export const ChatInput = ({
     session,
     providerDisconnected,
     selectedAgentId,
+    deniedAgentId,
     isRunning,
     value,
     setValue,
@@ -171,7 +172,6 @@ export const ChatInput = ({
     isBlocked,
     isEmpty,
     canSend,
-    showsDeliveryChoice,
     sendDisabledTitle,
     placeholder: defaultPlaceholder,
     shouldFocusFirstMessage,
@@ -190,13 +190,13 @@ export const ChatInput = ({
 
   useFirstMessageFocus({ wrapperRef, selectedAgentId, shouldFocusFirstMessage });
 
-  const agentStop = useAgentStop({ sessionId: session.id, agentId: selectedAgentId });
-  const escapeStop = useEscapeStop({
-    isLive: agentStop.isLive,
-    phase: agentStop.phase,
-    stop: agentStop.stop,
+  const { stop, isArmed, onEscape } = useConversationStop({
+    sessionId: session.id,
+    agentId: selectedAgentId,
+    dock,
+    isRunning,
   });
-  const onKeyDown = composerKeyDown({ popoverOpen, onEscape: escapeStop.onEscape });
+  const onKeyDown = composerKeyDown({ popoverOpen, onEscape });
 
   const hasTray = queued.rows.length > 0 || suggestions.length > 0;
   const insertPrefix = (symbol: string) => {
@@ -215,35 +215,40 @@ export const ChatInput = ({
         />
       )}
       <div className="flex flex-col">
-        {hasTray && <ComposerTray queued={queued} suggestions={suggestions} canEdit={isEmpty} />}
-        <div
-          ref={composerRef}
-          data-drop-composer
-          className={cn(
-            'relative flex flex-col rounded-lg border transition-all',
-            hasTray && 'rounded-t-none',
-            isDragging
-              ? cn(tintClasses('primary').bgSoft, 'border-primary')
-              : cn(
-                  'border-border-soft bg-subtle hover:border-border',
-                  'focus-within:border-border-strong focus-within:shadow-xl',
-                ),
-          )}
-        >
+        {hasTray && (
+          <ComposerTray
+            queued={queued}
+            suggestions={suggestions}
+            canEdit={isEmpty}
+            isDenying={deniedAgentId !== null}
+          />
+        )}
+        <ComposerBox composerRef={composerRef} isDragging={isDragging} hasTray={hasTray}>
           <PromptDropOverlay isDragging={isDragging} />
+          <ConversationDock
+            session={session}
+            agentId={selectedAgentId}
+            lead={dock?.lead}
+            hasAsks={dock?.hasAsks === true}
+            isMessageTyped={!isEmpty && deniedAgentId !== null}
+            live={dock?.live ?? null}
+            stop={stop}
+            isStopArmed={isArmed}
+            failure={dock?.failure ?? null}
+          />
           <ComposerCliGate
             provider={routing.effectiveProvider}
             modelId={routing.effectiveModelId}
           />
           <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
           <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
-          <div className="relative" ref={wrapperRef}>
+          <div className="relative" ref={wrapperRef} data-composer-field="">
             {popoverOpen ? (
               <QuickActionsPopover
-                items={filteredQuickItems}
-                emptyHint={quickEmptyHint}
-                onSelect={onQuickActionSelect}
-                onDismiss={dismissPopover}
+                items={prefix.filteredQuickItems}
+                emptyHint={prefix.quickEmptyHint}
+                onSelect={prefix.onQuickActionSelect}
+                onDismiss={prefix.dismissPopover}
               />
             ) : null}
             <PromptField
@@ -283,21 +288,13 @@ export const ChatInput = ({
             onInsertPrefix={insertPrefix}
             isRunning={isRunning}
             canSend={canSend}
+            isDenying={deniedAgentId !== null}
             sendDisabledTitle={sendDisabledTitle}
             onSend={() => void onSend()}
             onSendNow={() => void onSendNow()}
-            stopPhase={agentStop.phase}
-            isStopArmed={escapeStop.isArmed}
-            onStop={agentStop.stop}
           />
-        </div>
+        </ComposerBox>
       </div>
-      {showsDeliveryChoice ? (
-        <p className="px-1 text-meta text-faint-foreground">
-          Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
-          continues with your message.
-        </p>
-      ) : null}
       <ComposerDispatchError dispatch={dispatch} providerId={routing.effectiveProvider} />
     </ConversationColumn>
   );

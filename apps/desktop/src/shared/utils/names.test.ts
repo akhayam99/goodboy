@@ -68,7 +68,6 @@ describe('names', () => {
     expect(NAMES).toMatchObject({
       start: 'Start',
       fix: 'Fix',
-      approve: 'Approve',
       runPlan: 'Run plan',
       follow: 'Follow',
       pin: 'Pin session',

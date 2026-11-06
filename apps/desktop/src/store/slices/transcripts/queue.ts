@@ -7,6 +7,7 @@ const TEXT_HOLD_MS = 250;
 
 let pendingTurnEventInserts: PendingTurnEventInsert[] = [];
 let turnEventFlushScheduled = false;
+let lastTurnEventBatch: Promise<void> = Promise.resolve();
 const heldText = new Map<AgentId, PendingTurnEventInsert>();
 let heldTextTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -22,7 +23,7 @@ function scheduleTurnEventFlush(): void {
     }
     const batch = pendingTurnEventInserts;
     pendingTurnEventInserts = [];
-    void insertTurnEventsBatch(tauriDatabase, batch).catch((err) => {
+    lastTurnEventBatch = insertTurnEventsBatch(tauriDatabase, batch).catch((err) => {
       if (import.meta.env.DEV) {
         const message = formatError(err);
         console.warn(`[turn-events] batch insert failed (${batch.length} rows): ${message}`);
@@ -72,6 +73,11 @@ const holdText = ({ insert, runId, delta, at }: HoldParams): string => {
   heldText.set(insert.agentId, { ...insert, event: { kind: 'assistant_text', runId, delta, at } });
   heldTextTimer ??= setTimeout(releaseAllHeldText, TEXT_HOLD_MS);
   return insert.id;
+};
+
+export const turnEventsSaved = async (): Promise<void> => {
+  await Promise.resolve();
+  await lastTurnEventBatch;
 };
 
 export const queueTurnEventInsert = (insert: PendingTurnEventInsert): string => {

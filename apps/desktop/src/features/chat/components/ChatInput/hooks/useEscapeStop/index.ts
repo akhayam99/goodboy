@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { transientEscapeLayerCount } from '@goodboy/ui';
-import type { StopPhase } from '../../../../../../shared/hooks/useAgentStop';
 import { isOverlayOpen } from '../../../../../../shared/keyboard/isOverlayOpen';
 import { useShortcut } from '../../../../../../shared/keyboard/useShortcut';
+import type { ConversationStop } from '../../../../../../shared/types/conversationStop';
 
 const ARMED_MS = 3_000;
 
 type Params = {
-  readonly isLive: boolean;
-  readonly phase: StopPhase;
-  readonly stop: () => void;
+  readonly stop: ConversationStop | null;
+  readonly isCovered: boolean;
 };
 
 type Result = Readonly<{
@@ -17,7 +16,10 @@ type Result = Readonly<{
   onEscape: () => boolean;
 }>;
 
-export const useEscapeStop = ({ isLive, phase, stop }: Params): Result => {
+export const useEscapeStop = ({ stop, isCovered }: Params): Result => {
+  const isLive = stop !== null;
+  const phase = stop?.phase ?? 'idle';
+  const press = stop?.stop;
   const [isArmed, setIsArmed] = useState(false);
   const timerRef = useRef<number | null>(null);
 
@@ -37,7 +39,7 @@ export const useEscapeStop = ({ isLive, phase, stop }: Params): Result => {
   }, [disarm, isLive]);
 
   const onEscape = useCallback((): boolean => {
-    if (!isLive || phase === 'stopping') {
+    if (press === undefined || phase === 'stopping') {
       return false;
     }
     if (transientEscapeLayerCount() > 0 || isOverlayOpen({})) {
@@ -49,11 +51,11 @@ export const useEscapeStop = ({ isLive, phase, stop }: Params): Result => {
       return true;
     }
     disarm();
-    stop();
+    press();
     return true;
-  }, [disarm, isArmed, isLive, phase, stop]);
+  }, [disarm, isArmed, phase, press]);
 
-  useShortcut('agent.stop', onEscape, isLive, { canDecline: true });
+  useShortcut('agent.stop', onEscape, isLive && !isCovered, { canDecline: true });
 
   return { isArmed, onEscape };
 };

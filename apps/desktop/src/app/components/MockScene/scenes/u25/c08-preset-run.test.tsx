@@ -124,16 +124,12 @@ describe('the c08 preset run scenes', () => {
       'Step 2 · Implementer',
     );
     expect(document.querySelector('[data-run-tail]')).toBeNull();
-    const conversationTail = document.querySelector<HTMLElement>('[data-conversation-tail]');
-    if (conversationTail === null) {
-      throw new Error('no conversation tail');
+    const line = document.querySelector<HTMLElement>('[data-dock-live]');
+    if (line === null) {
+      throw new Error('no live line');
     }
-    expect(within(conversationTail).queryByRole('button', { name: /^Stop/ })).toBeNull();
-    expect(
-      screen
-        .getAllByRole('button', { name: /^Stop/ })
-        .some((button) => button.closest('[data-conversation-tail]') === null),
-    ).toBe(true);
+    within(line).getByRole('button', { name: 'Stop this reply' });
+    expect(line.textContent).toContain('running step 2');
   });
 
   it('c08-run-working-other points the tail at the step that works', async () => {
@@ -181,7 +177,9 @@ describe('the c08 preset run scenes', () => {
     await mount('c08-run-approval');
 
     expect(within(tail()).getByText('The plan waits for your review')).toBeDefined();
-    within(tail()).getByRole('button', { name: 'Approve plan' });
+    expect(
+      within(tail()).getByRole('button', { name: 'Approve and start Fix the batching' }),
+    ).toBeDefined();
   });
 
   it('c08-run-capped says it paused at the limit and offers to raise it on the quiet line', async () => {

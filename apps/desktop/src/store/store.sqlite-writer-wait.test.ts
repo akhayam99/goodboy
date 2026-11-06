@@ -1,13 +1,14 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace } from '@goodboy/db';
 import { aProject, nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
-import type {
-  AgentId,
-  MountId,
-  ProviderRunId,
-  SessionId,
-  SessionProjectMount,
-  TurnEvent,
+import {
+  brandId,
+  type AgentId,
+  type MountId,
+  type ProviderRunId,
+  type SessionId,
+  type SessionProjectMount,
+  type TurnEvent,
 } from '@goodboy/types';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { writerWaiters } from './slices/turn/writerWaiters';
@@ -55,6 +56,7 @@ const workspace = buildStoryWorkspace({
   slug: 'harborline',
 });
 const SCRATCH = '/tmp/goodboy-root/scratch/harborline';
+const ASK_RUN = brandId<ProviderRunId>({ value: 'run-ledger-ask' });
 
 let useAppStore: StoryStore;
 let first: { readonly sessionId: SessionId; readonly agentId: AgentId };
@@ -334,6 +336,51 @@ describe('inside an Auto tree a second writer on the same folder waits for the f
     expect(storySpies.runTurn).not.toHaveBeenCalled();
     expect(waitOf(first.agentId)).toBeUndefined();
     expect(useAppStore.getState().agentTurnState[first.agentId]?.kind).toBe('draft');
+  });
+
+  it('Send and deny on a busy folder denies the ask once the folder is free', async () => {
+    const ask: TurnEvent = {
+      kind: 'permission_request',
+      runId: ASK_RUN,
+      toolUseId: 'tool-ledger-migrate',
+      toolName: 'Bash',
+      input: { command: 'pnpm db:migrate' },
+      at: TEST_NOW,
+    };
+    useAppStore.setState({
+      transcripts: { [first.agentId]: [ask] },
+      agentTurnState: {
+        [first.agentId]: { kind: 'blocked', runId: ASK_RUN, blockedAt: TEST_NOW },
+      },
+    });
+    const holders = fakeRegistry();
+    holders.set(SCRATCH, 'agent-elsewhere');
+    const turn = useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'Do a dry run first',
+      confinedRole: 'implementer',
+      origin: 'operator',
+    });
+    await vi.waitFor(() => expect(waitOf(first.agentId)).toBeDefined());
+    expect(useAppStore.getState().agentTurnState[first.agentId]?.kind).toBe('starting');
+
+    holders.clear();
+    writerWaiters.wake();
+    await turn;
+
+    const decision = (useAppStore.getState().transcripts[first.agentId] ?? []).find(
+      (event) => event.kind === 'permission_decision',
+    );
+    expect(decision).toMatchObject({
+      decision: 'deny',
+      toolUseId: 'tool-ledger-migrate',
+      runId: ASK_RUN,
+      reason: 'Do a dry run first',
+    });
+    expect(JSON.stringify(storySpies.runTurn.mock.calls.at(-1))).toContain(
+      'Denied Bash. Do a dry run first',
+    );
   });
 
   it('shows the error and leaves the agent idle when the lease call fails', async () => {

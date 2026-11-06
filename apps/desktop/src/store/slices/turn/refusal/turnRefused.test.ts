@@ -122,9 +122,12 @@ describe('a press whose send is refused ends in a result', () => {
   it('Retry tool throws the refusal', async () => {
     refuseWith({ result: { blockedOverBudget: false, isWriterLeaseDenied: true } });
     await expect(
-      useAppStore
-        .getState()
-        .retryBlockedTool({ sessionId: session.id, agentId: blockedStep.id, toolName: 'Edit' }),
+      useAppStore.getState().retryBlockedTool({
+        sessionId: session.id,
+        agentId: blockedStep.id,
+        toolName: 'Edit',
+        toolUseId: 'tu-3',
+      }),
     ).rejects.toThrow(FOLDER);
   });
 

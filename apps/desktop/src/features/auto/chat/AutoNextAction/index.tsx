@@ -11,20 +11,12 @@ type Props = {
   readonly rootAgentId: AgentId;
   readonly action: NextAction;
   readonly untold: string | null;
-  readonly isPlanWaiting: boolean;
   readonly onUntold: (content: string | null) => void;
 };
 
 const TONE = AUTO_STATE_TONE.waitingOnYou;
 
-export const AutoNextAction = ({
-  sessionId,
-  rootAgentId,
-  action,
-  untold,
-  isPlanWaiting,
-  onUntold,
-}: Props) => {
+export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntold }: Props) => {
   const model = useNextAction({ sessionId, rootAgentId, action, untold, onUntold });
   const cardRef = useRef<HTMLElement>(null);
   const hintRef = useRef<HTMLInputElement>(null);
@@ -43,7 +35,7 @@ export const AutoNextAction = ({
       ref={cardRef}
       aria-label="Next step"
       data-next-action={action.delegationId}
-      className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-3 text-meta"
+      className="flex min-w-0 flex-col gap-2 text-meta"
     >
       <div className="flex min-w-0 items-center gap-2">
         <StatusDot tone={TONE} size="sm" />
@@ -124,7 +116,7 @@ export const AutoNextAction = ({
             }
           >
             <Button
-              variant={isPlanWaiting ? 'secondary' : 'primary'}
+              variant="primary"
               size="sm"
               isBusy={model.isBusy}
               busyLabel={isRetry ? 'Retrying' : 'Sending'}

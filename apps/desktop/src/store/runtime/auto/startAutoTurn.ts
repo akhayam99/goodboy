@@ -1,4 +1,5 @@
 import { brandId, type ProviderRunId } from '@goodboy/types';
+import { NO_RESOLVED_ASKS } from '../../slices/permissions/noResolvedAsks';
 import { AUTO_CONFINED_ROLE } from '../../slices/turn/confinedRoleOf';
 import type { StartAutoTurnParams, TurnStartOutcome } from './ports';
 import { startDeliveredTurn, type DeliveredTurnDeps } from './startDeliveredTurn';
@@ -19,6 +20,11 @@ export const makeStartAutoTurn =
         ...(params.images !== undefined &&
           params.images.length > 0 && { storedAttachments: params.images }),
         ...(params.rowIds !== undefined && { outboxIds: params.rowIds }),
+        ...(params.permissionOnceAllows !== undefined &&
+          params.permissionOnceAllows.length > 0 && {
+            permissionOnceAllows: params.permissionOnceAllows,
+          }),
+        resolvedAsks: NO_RESOLVED_ASKS,
         origin: 'delegation',
         confinedRole: AUTO_CONFINED_ROLE,
       },

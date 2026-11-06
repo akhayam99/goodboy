@@ -12,15 +12,23 @@ export type ConversationRow =
     }
   | { readonly kind: 'plan'; readonly key: string; readonly checklist: PlanChecklist };
 
+export type AskDock = Readonly<{
+  openAskIds: ReadonlySet<string>;
+  isAskLapsed: boolean;
+}>;
+
 type Params = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly isLive: boolean;
+  readonly askDock?: AskDock | null;
 };
 
 type SegmentParams = {
   readonly segment: ReadonlyArray<TranscriptItem>;
   readonly isSegmentLive: boolean;
+  readonly isLastSegment: boolean;
   readonly checklist: PlanChecklist | null;
+  readonly askDock: AskDock | null;
   readonly out: Array<ConversationRow>;
 };
 
@@ -72,7 +80,14 @@ const pushItem = ({ out, item }: PushParams) => {
   out.push({ kind: 'item', key: item.key, item });
 };
 
-const pushSegment = ({ segment, isSegmentLive, checklist, out }: SegmentParams) => {
+const pushSegment = ({
+  segment,
+  isSegmentLive,
+  isLastSegment,
+  checklist,
+  askDock,
+  out,
+}: SegmentParams) => {
   const steps = segment.filter((item) => isStep({ item }));
   const lastStepIndex = segment.reduce(
     (last, item, index) => (isStep({ item }) ? index : last),
@@ -108,12 +123,27 @@ const pushSegment = ({ segment, isSegmentLive, checklist, out }: SegmentParams) 
     pushItem({ out, item });
   });
   placePlan();
+  for (const item of segment) {
+    if (item.kind === 'permission_decision' && item.decidedBy === 'user') {
+      pushItem({ out, item: { ...item, isRecordLine: true } });
+    }
+  }
+  if (askDock !== null && (!isLastSegment || askDock.isAskLapsed)) {
+    return;
+  }
   for (const item of pendingPermissions({ segment })) {
+    if (item.kind === 'permission_request' && askDock?.openAskIds.has(item.toolUseId) === true) {
+      continue;
+    }
     pushItem({ out, item });
   }
 };
 
-export const conversationRows = ({ items, isLive }: Params): ReadonlyArray<ConversationRow> => {
+export const conversationRows = ({
+  items,
+  isLive,
+  askDock = null,
+}: Params): ReadonlyArray<ConversationRow> => {
   const checklist = planChecklist({ items });
   const out: Array<ConversationRow> = [];
   let segment: Array<TranscriptItem> = [];
@@ -122,10 +152,17 @@ export const conversationRows = ({ items, isLive }: Params): ReadonlyArray<Conve
       segment.push(item);
       continue;
     }
-    pushSegment({ segment, isSegmentLive: false, checklist, out });
+    pushSegment({
+      segment,
+      isSegmentLive: false,
+      isLastSegment: false,
+      checklist,
+      askDock,
+      out,
+    });
     segment = [];
     pushItem({ out, item });
   }
-  pushSegment({ segment, isSegmentLive: isLive, checklist, out });
+  pushSegment({ segment, isSegmentLive: isLive, isLastSegment: true, checklist, askDock, out });
   return out;
 };

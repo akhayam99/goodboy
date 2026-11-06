@@ -38,38 +38,44 @@ export const RailSessionButton = ({
     target: { kind: 'session', sessionId: session.id },
     anchorKey: `rail-session:${session.id}`,
   });
+  const button = (
+    <button
+      type="button"
+      data-rail-session={session.id}
+      data-slot={isOpenTail ? 'rail-open-tail' : undefined}
+      aria-label={label}
+      aria-current={isCurrent ? 'page' : undefined}
+      aria-haspopup={hasFlyout ? 'dialog' : undefined}
+      onClick={() => {
+        if (isCurrent) {
+          return;
+        }
+        onSelect();
+      }}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onFocus={onEnter}
+      onBlur={onLeave}
+      onKeyDown={(event) => {
+        menu.onKeyDown(event);
+        onKeyDown?.(event);
+      }}
+      onContextMenu={menu.onContextMenu}
+      className={cn(
+        RAIL_NODE_BUTTON,
+        isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE,
+        sign === 'remembered' && 'text-foreground',
+      )}
+    >
+      <StateNode node={node} isUnreadDot />
+    </button>
+  );
+  if (onEnter !== undefined) {
+    return button;
+  }
   return (
     <Tooltip content={label} side="right">
-      <button
-        type="button"
-        data-rail-session={session.id}
-        data-slot={isOpenTail ? 'rail-open-tail' : undefined}
-        aria-label={label}
-        aria-current={isCurrent ? 'page' : undefined}
-        aria-haspopup={hasFlyout ? 'dialog' : undefined}
-        onClick={() => {
-          if (isCurrent) {
-            return;
-          }
-          onSelect();
-        }}
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
-        onFocus={onEnter}
-        onBlur={onLeave}
-        onKeyDown={(event) => {
-          menu.onKeyDown(event);
-          onKeyDown?.(event);
-        }}
-        onContextMenu={menu.onContextMenu}
-        className={cn(
-          RAIL_NODE_BUTTON,
-          isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE,
-          sign === 'remembered' && 'text-foreground',
-        )}
-      >
-        <StateNode node={node} isUnreadDot />
-      </button>
+      {button}
     </Tooltip>
   );
 };

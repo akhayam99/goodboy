@@ -44,8 +44,8 @@ export const ProjectPickList = ({
     </ul>
     {isSearchOpen ? (
       <Input
-        aria-label="Type a folder name"
-        placeholder="Type a folder name"
+        aria-label="Type a project name"
+        placeholder="Type a project name"
         value={query}
         disabled={isDisabled}
         onChange={(event) => onQuery(event.target.value)}

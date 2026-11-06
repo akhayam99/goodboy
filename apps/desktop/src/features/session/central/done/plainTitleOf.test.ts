@@ -53,6 +53,13 @@ describe('plainTitleOf', () => {
     );
   });
 
+  it('drops bold markers, whole or cut', () => {
+    expect(plainTitleOf({ text: '**Fixed** the retry in `ledger-core`' })).toBe(
+      'Fixed the retry in ledger-core',
+    );
+    expect(plainTitleOf({ text: 'Fixed the **retry' })).toBe('Fixed the retry');
+  });
+
   it('caps a long title at a word and ends it with an ellipsis', () => {
     const title = plainTitleOf({
       text: 'double padding on 4 pages in the delivery list because the default page layout wraps every child twice',

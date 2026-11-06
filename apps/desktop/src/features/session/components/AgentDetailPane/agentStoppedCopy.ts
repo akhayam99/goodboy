@@ -1,29 +1,25 @@
 import type { Agent, ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
-import { formatClock } from '../../../../shared/utils/time/formatClock';
+import { stoppedSentenceOf } from '../../glance/stoppedSentenceOf';
 
 const SUMMARY_RESUME_PROVIDERS: ReadonlySet<ProviderId> = new Set(['codex', 'cursor', 'gemini']);
+
+const AUTO_READS = 'Auto reads the result.';
+
+const RUN_PAUSED = 'The run is paused.';
 
 type Params = {
   readonly agent: Agent;
   readonly provider: ProviderId;
   readonly isProviderConnected: boolean;
   readonly isAutoChild: boolean;
+  readonly isRunStep: boolean;
 };
 
 export type AgentStoppedCopy = {
   readonly title: string;
   readonly body: string | null;
   readonly canContinue: boolean;
-  readonly actionLabel: 'Continue' | 'Retry through Auto';
-};
-
-const stoppedTitle = ({ agent }: { readonly agent: Agent }): string => {
-  const clock = agent.stoppedAt == null ? '' : formatClock({ at: agent.stoppedAt });
-  const when = clock === '' ? '' : ` at ${clock}`;
-  const lead =
-    agent.stoppedBy === 'app' ? `Stopped by restart${when}.` : `You stopped this agent${when}.`;
-  return `${lead} What it wrote is kept.`;
 };
 
 export const agentStoppedCopy = ({
@@ -31,26 +27,32 @@ export const agentStoppedCopy = ({
   provider,
   isProviderConnected,
   isAutoChild,
+  isRunStep,
 }: Params): AgentStoppedCopy => {
   const label = PROVIDER_LABEL[provider];
-  const title = stoppedTitle({ agent });
-  if (isAutoChild) {
+  if (isRunStep) {
     return {
-      title,
-      body: 'Auto started this agent, so Auto runs the retry and reads its result.',
-      canContinue: agent.doneAt == null,
-      actionLabel: 'Retry through Auto',
+      title: stoppedSentenceOf({ agent, kept: RUN_PAUSED }),
+      body: null,
+      canContinue: false,
     };
   }
-  const actionLabel = 'Continue';
+  if (isAutoChild) {
+    return {
+      title: stoppedSentenceOf({ agent, kept: AUTO_READS }),
+      body: null,
+      canContinue: agent.doneAt == null,
+    };
+  }
+  const title = stoppedSentenceOf({ agent });
   if (agent.doneAt != null) {
-    return { title, body: null, canContinue: false, actionLabel };
+    return { title, body: null, canContinue: false };
   }
   if (!isProviderConnected) {
-    return { title, body: `Connect ${label} to continue.`, canContinue: false, actionLabel };
+    return { title, body: `Connect ${label} to continue.`, canContinue: false };
   }
   const body = SUMMARY_RESUME_PROVIDERS.has(provider)
     ? `${label} picks up from a summary of this chat, not from the exact step it stopped on.`
     : null;
-  return { title, body, canContinue: true, actionLabel };
+  return { title, body, canContinue: true };
 };

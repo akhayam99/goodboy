@@ -1,7 +1,11 @@
 import { oncePatternText } from '@goodboy/core/permissions';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import { askBatchAfterAnswer } from './askBatchAfterAnswer';
+import { heldOnceAllowsOf } from './heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import type { GetFn, SetFn } from './types';
+import { withHeldAnswers } from './withHeldAnswers';
 
 type Params = {
   sessionId: SessionId;
@@ -38,12 +42,21 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
       decidedBy: 'user',
       at: now,
     });
+    const { isWaiting, held } = askBatchAfterAnswer({
+      transcripts: get().transcripts,
+      agentId,
+      toolUseId,
+    });
+    if (isWaiting) {
+      return;
+    }
     throwIfRefused({
       result: await get().sendTurn({
         sessionId,
         agentId,
-        content: CONTINUE_PROMPT,
-        permissionOnceAllow: oncePatternText({ toolName, input }),
+        content: withHeldAnswers({ held, prompt: CONTINUE_PROMPT }),
+        permissionOnceAllows: [...heldOnceAllowsOf({ held }), oncePatternText({ toolName, input })],
+        resolvedAsks: NO_RESOLVED_ASKS,
       }),
     });
   };

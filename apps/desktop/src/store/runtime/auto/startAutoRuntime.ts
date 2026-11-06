@@ -257,7 +257,16 @@ export const startAutoRuntime = async ({
   };
   registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
   registerAutoUserTurnPort({
-    port: async ({ agentId, sessionId, workspaceId, text, images, deliveryId, onQueued }) => {
+    port: async ({
+      agentId,
+      sessionId,
+      workspaceId,
+      text,
+      images,
+      permissionOnceAllows,
+      deliveryId,
+      onQueued,
+    }) => {
       const started = await startAutoTree({
         ctx: runtime.ctx,
         agent: { agentId, sessionId, workspaceId },
@@ -267,6 +276,7 @@ export const startAutoRuntime = async ({
         treeId: started.tree.id,
         text,
         ...(images !== undefined && { images }),
+        ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
         ...(deliveryId !== undefined && { deliveryId }),
       });
       if (outcome.kind !== 'queued') {

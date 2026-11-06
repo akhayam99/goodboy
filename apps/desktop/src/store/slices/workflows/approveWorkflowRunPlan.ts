@@ -1,7 +1,7 @@
 import { updateWorkflowRunOrchestrationStop, updateWorkflowRunRulesSnapshot } from '@goodboy/db';
-import { classifyWorkflowChain, runsForWorkflowRun } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRules, WorkflowRun, WorkflowRunId } from '@goodboy/types';
+import { nextPendingStepAgentOf } from '../../../features/plans/nextPendingStepAgentOf';
 import { PLAN_REVISING_REASON, planRevisingOf } from '../../../features/plans/planRevising';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isReportedError } from '../notifications/reportedError';
@@ -112,22 +112,11 @@ const nextPendingAgent = ({ get, sessionId, run }: RunParams): Agent | null => {
   if (session == null) {
     return null;
   }
-  const template = (state.phaseTemplates[session.workspaceId] ?? []).find(
-    (candidate) => candidate.id === run.workflowId,
-  );
-  if (template === undefined) {
-    return null;
-  }
-  const stepAgents = runsForWorkflowRun(state.sessionPhaseRuns[sessionId] ?? [], run.id).filter(
-    (agent) => agent.parentAgentId == null && agent.stepId != null,
-  );
-  const chain = classifyWorkflowChain(template, stepAgents);
-  if (chain.kind !== 'step') {
-    return null;
-  }
-  return (
-    stepAgents.find((agent) => agent.stepId === chain.step.id && agent.status === 'pending') ?? null
-  );
+  return nextPendingStepAgentOf({
+    run,
+    templates: state.phaseTemplates[session.workspaceId] ?? [],
+    agents: state.sessionPhaseRuns[sessionId] ?? [],
+  });
 };
 
 type StartParams = {

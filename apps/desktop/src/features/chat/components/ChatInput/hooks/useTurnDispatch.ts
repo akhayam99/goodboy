@@ -19,13 +19,17 @@ export type DispatchTurnParams = {
   readonly atts: ReadonlyArray<PendingAttachment>;
   readonly override: TurnProviderOverride | undefined;
   readonly agentId: AgentId;
+  readonly draftAgentId: AgentId;
   readonly force?: boolean;
 };
 
 export type DispatchOutcome = 'sent' | 'kept' | 'unwritten';
 
+const NOT_DELIVERED = 'The message was not delivered. It is back in the box.';
+
 export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) => {
   const sendAgentMessage = useAppStore((s) => s.sendAgentMessage);
+  const takeQueuedMessage = useAppStore((s) => s.takeQueuedMessage);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +39,7 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
       atts,
       override,
       agentId,
+      draftAgentId,
       force = false,
     }: DispatchTurnParams): Promise<DispatchOutcome> => {
       let attachments: ReadonlyArray<StoredAttachment>;
@@ -44,21 +49,33 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
         setError(formatError(err));
         return 'unwritten';
       }
+      const turnId = crypto.randomUUID();
       const delivery = await sendAgentMessage({
         sessionId,
-        turn: { id: crypto.randomUUID(), agentId, content, attachments, override },
+        turn: { id: turnId, agentId, content, attachments, override },
         isForced: force,
       });
       if (delivery.isDelivered) {
-        cleanupSentAttachments({ atts, agentId });
+        cleanupSentAttachments({ atts, agentId: draftAgentId });
         return 'sent';
       }
       if (delivery.failure !== null) {
         setError(delivery.failure);
       }
-      return delivery.isUnwritten === true ? 'unwritten' : 'kept';
+      if (delivery.isUnwritten === true) {
+        return 'unwritten';
+      }
+      if (agentId === draftAgentId) {
+        return 'kept';
+      }
+      const parked = takeQueuedMessage({ sessionId, agentId, itemId: turnId });
+      if (parked === null) {
+        return 'kept';
+      }
+      setError(delivery.failure ?? parked.hold?.reason ?? NOT_DELIVERED);
+      return 'unwritten';
     },
-    [sendAgentMessage, sessionId, cleanupSentAttachments],
+    [sendAgentMessage, takeQueuedMessage, sessionId, cleanupSentAttachments],
   );
 
   return { dispatchTurn, error, setError };

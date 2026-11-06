@@ -11,6 +11,7 @@ export type AutoUserTurnParams = Readonly<{
   workspaceId: string;
   text: string;
   images?: ReadonlyArray<MessageAttachment>;
+  permissionOnceAllows?: ReadonlyArray<string>;
   deliveryId?: string;
   onQueued?: (queued: AutoUserTurnQueued) => void;
 }>;

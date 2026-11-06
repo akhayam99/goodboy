@@ -119,7 +119,7 @@ describe('autoTreeLive', () => {
       tree: { ...view.tree, blockedReason: AUTO_STALE_DECIDE_TEXT },
     };
     const facts = autoTreeLive({ ...base, view: blocked, rootTurn: null });
-    expect(facts).toMatchObject({ state: 'failed', phrase: `Blocked: ${AUTO_STALE_DECIDE_TEXT}` });
+    expect(facts).toMatchObject({ state: 'failed', phrase: AUTO_STALE_DECIDE_TEXT });
     expect(idsOf(facts)).toEqual(['retry', 'viewTranscript']);
   });
 
@@ -143,7 +143,7 @@ describe('autoTreeLive', () => {
     });
     const blocked = { ...view, tree: { ...view.tree, blockedReason: AUTO_BLOCK_TEXT.budget } };
     expect(autoTreeLive({ ...base, view: blocked, rootTurn: null })?.phrase).toBe(
-      `Blocked: ${AUTO_BLOCK_TEXT.budget} No new agent starts. The 2 agents still running finish their work and can spend past the limit.`,
+      `${AUTO_BLOCK_TEXT.budget} No new agent starts. The 2 agents still running finish their work and can spend past the limit.`,
     );
   });
 
@@ -154,7 +154,7 @@ describe('autoTreeLive', () => {
     });
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
     expect(facts).toMatchObject({ state: 'waiting', phrase: 'Waiting for Implementer' });
-    expect(idsOf(facts)).toEqual(['changeApproach', 'stopAuto']);
+    expect(idsOf(facts)).toEqual(['stopAuto']);
   });
 
   it('says a refused hand over in the user voice while Auto chooses again', () => {
@@ -198,11 +198,42 @@ describe('autoTreeLive', () => {
     expect(autoTreeLive({ ...base, view, rootTurn: null })).toBeNull();
   });
 
+  it('keeps Stop for a plan ask while a sibling agent runs, and none while nothing runs', () => {
+    const planner = aDelegation({
+      key: 'planner',
+      role: 'planner',
+      state: 'settled',
+      outcome: 'completed',
+    });
+    const running = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
+    const withSibling = aView({
+      phase: 'waiting',
+      artifacts: [aPlanRow()],
+      delegations: [planner, running],
+    });
+    expect(idsOf(autoTreeLive({ ...base, view: withSibling, rootTurn: null }))).toEqual([
+      'stopAuto',
+    ]);
+  });
+
+  it('keeps Stop beside Retry for a blocked tree whose agents still run', () => {
+    const view = aView({
+      phase: 'blocked',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+    const blocked = { ...view, tree: { ...view.tree, blockedReason: AUTO_STALE_DECIDE_TEXT } };
+    expect(idsOf(autoTreeLive({ ...base, view: blocked, rootTurn: null }))).toEqual([
+      'retry',
+      'viewTranscript',
+      'stopAuto',
+    ]);
+  });
+
   it('pauses at the limit with Raise limit first', () => {
     const view = aView({ phase: 'waiting', spentUsd: 4.8, reservedUsd: 0.2, capUsd: 5 });
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
     expect(facts?.state).toBe('paused');
-    expect(facts?.phrase).toBe('Paused at the limit: $4.80 spent, $0.20 held of $5.00');
+    expect(facts?.phrase).toBe('At the $5.00 limit. Nothing new starts.');
     expect(idsOf(facts)).toEqual(['raiseLimit', 'changeLimit', 'stopAuto']);
   });
 
@@ -214,7 +245,7 @@ describe('autoTreeLive', () => {
       delegations: [aDelegation({ key: 'a', role: 'implementer', state: 'running' })],
     });
     expect(autoTreeLive({ ...base, view, rootTurn: null })?.phrase).toBe(
-      'Paused at the limit: $4.80 spent, $0.20 held of $5.00. No new agent starts. The agent still running finishes its work and can spend past the limit.',
+      'At the $5.00 limit. No new agent starts. The agent still running finishes its work and can spend past the limit.',
     );
   });
 
@@ -240,7 +271,7 @@ describe('autoTreeLive', () => {
 });
 
 describe('autoChildLive', () => {
-  it('reads Stopped with Retry through Auto for a stopped child, never Continue', () => {
+  it('reads Stopped with Continue through Auto for a stopped child, never Retry', () => {
     const facts = autoChildLive({
       delegation: { state: 'settled', outcome: 'stopped', reason: null },
       turn: RUNNING,
@@ -327,7 +358,7 @@ describe('autoChildLive', () => {
     expect(idsOf(facts)).toEqual(['stopAgent']);
   });
 
-  it('reads a child stopped before Auto settled it as stopped, with Retry through Auto', () => {
+  it('reads a child stopped before Auto settled it as stopped, with Continue through Auto', () => {
     const facts = autoChildLive({
       delegation: { state: 'running', outcome: null, reason: null },
       turn: null,

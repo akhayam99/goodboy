@@ -6,6 +6,7 @@ import {
   cn,
   useEscapeLayer,
   useFloatingPlace,
+  useHoverSurface,
 } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { openGuideChapter } from '../../../settings/openGuideChapter';
@@ -46,6 +47,7 @@ export const SessionHoverCard = ({
   const isShown = session !== null && anchor !== null;
   const cardRef = useRef<HTMLDivElement | null>(null);
   useEscapeLayer(onClose, isShown);
+  useHoverSurface({ isActive: isShown });
   const place = useFloatingPlace({
     anchor,
     clearOf: boundary,
@@ -67,6 +69,7 @@ export const SessionHoverCard = ({
       ref={cardRef}
       role="tooltip"
       data-testid="session-hover-card"
+      data-hover-surface=""
       onMouseEnter={onKeep}
       onMouseLeave={onLeave}
       style={{

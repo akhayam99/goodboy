@@ -18,10 +18,9 @@ import { OperationsCluster } from '../OperationsCluster';
 import { PlanChecklist } from '../PlanChecklist';
 import { TurnSummaryLine } from '../TurnSummaryLine';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
-import type { StopPhase } from '../../../../shared/hooks/useAgentStop';
 import { ThinkingIndicator } from '../ThinkingIndicator';
-import { ConversationTail } from '../ConversationTail';
 import { TranscriptCard } from '../TranscriptCards';
+import type { ErrorDock } from '../TranscriptCards/errorDock';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
 import { NewRowsDivider } from './NewRowsDivider';
@@ -62,12 +61,8 @@ type Props = {
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
   onOpenTranscript?: OpenTranscriptAt;
-  onStop?: () => void;
   isStepsOnly?: boolean;
-  waitingFor?: string | null;
-  stopLabel?: string;
-  stopPhase?: StopPhase;
-  clockStepAgentId?: AgentId;
+  errorDock?: ErrorDock | null;
   newFromKey?: string | null;
 };
 
@@ -108,12 +103,8 @@ export const TranscriptRows = ({
   briefLabel,
   insertions: givenInsertions = [],
   onOpenTranscript,
-  onStop,
   isStepsOnly = false,
-  waitingFor = null,
-  stopLabel,
-  stopPhase,
-  clockStepAgentId,
+  errorDock = null,
   newFromKey = null,
 }: Props) => {
   const { rows, insertions } = placedRowsOf({ rows: givenRows, insertions: givenInsertions });
@@ -322,6 +313,7 @@ export const TranscriptRows = ({
             onOpenDiff={onOpenDiff}
             onRetryRun={onRetryRun}
             retryingRunId={retryingRunId}
+            errorDock={errorDock}
             activeRunId={activeRunId}
             planVersion={
               row.item.kind === 'artifact_block' ? (planVersions.get(row.item.key) ?? null) : null
@@ -380,19 +372,7 @@ export const TranscriptRows = ({
   if (isThinking) {
     out.push(
       <li key="thinking">
-        {onStop === undefined ? (
-          <ThinkingIndicator phrase={thinkingPhrase} startedAt={thinkingStartedAt} />
-        ) : (
-          <ConversationTail
-            phrase={thinkingPhrase}
-            onStop={onStop}
-            startedAt={thinkingStartedAt}
-            waitingFor={waitingFor}
-            {...(stopLabel !== undefined && { stopLabel })}
-            {...(stopPhase !== undefined && { stopPhase })}
-            {...(clockStepAgentId !== undefined && { stepAgentId: clockStepAgentId })}
-          />
-        )}
+        <ThinkingIndicator phrase={thinkingPhrase} startedAt={thinkingStartedAt} />
       </li>,
     );
   }

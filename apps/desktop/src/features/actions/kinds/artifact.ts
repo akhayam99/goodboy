@@ -30,7 +30,7 @@ import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
 import { unsentCommentsConfirmOf } from '../../plans/unsentCommentsConfirmOf';
 import { planRunToast } from '../../plans/planRunToast';
 import { openPlanDrawer } from '../../plans/openPlanDrawer';
-import { NOT_REVISING, type PlanRevising } from '../../plans/planRevising';
+import { NOT_REVISING } from '../../plans/planRevising';
 import { artifactPlanFactsOf } from './artifactPlanFactsOf';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -65,11 +65,12 @@ import type {
   ObjectKindDefinition,
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import type { ArtifactPlanFacts } from './artifactPlanFactsOf';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 
 export const ARTIFACT_EDIT_EVENT = 'goodboy:artifact-edit';
 
-export type ArtifactFacts = {
+export type ArtifactFacts = ArtifactPlanFacts & {
   readonly sessionId: SessionId;
   readonly workspaceSlug: string | null;
   readonly kind: ArtifactKind;
@@ -79,11 +80,6 @@ export type ArtifactFacts = {
   readonly planStatus: ArtifactStatus | null;
   readonly status: ArtifactStatus | null;
   readonly isPlanRunning: boolean;
-  readonly planRevising: PlanRevising;
-  readonly planRun: WorkflowRun | null;
-  readonly planDrafts: ReadonlyArray<ArtifactComment>;
-  readonly plannerQuestionCount: number;
-  readonly isPlanHeldByAuto: boolean;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
@@ -161,6 +157,7 @@ const primaryOf = ({ facts }: FactsOnly): PlanPrimary =>
     isRunning: facts.isPlanRunning,
     plannerQuestionCount: facts.plannerQuestionCount,
     isHeldByAuto: facts.isPlanHeldByAuto,
+    nextStepName: facts.planNextStepName,
   });
 
 const editBlockOf = ({ facts }: FactsOnly): string | null =>
@@ -343,7 +340,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.runPlan',
-    label: ({ facts }) => primaryOf({ facts }).label ?? NAMES.approve,
+    label: ({ facts }) => primaryOf({ facts }).label ?? 'Approve',
     icon: Play,
     group: 'act',
     slot: () => 'primary',
@@ -683,6 +680,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         planDrafts: NO_DRAFTS,
         plannerQuestionCount: 0,
         isPlanHeldByAuto: false,
+        planNextStepName: null,
         generation,
         kickoff: null,
         ports,

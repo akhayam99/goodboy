@@ -1,6 +1,7 @@
 import type { AgentId, SessionId, TurnEvent } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { invokeAgentSetProviderSessionId } from '../../../features/workflows/workflows';
+import { announceAgentTurn } from '../permissions/announceAgentTurn';
 import { purgedAgentIds } from '../sessions/sessionMutators';
 import { bufferTurnEvent } from './buffer';
 import { queueTurnEventInsert } from './queue';
@@ -20,6 +21,9 @@ export const appendTurnEvent = (set: SetFn) => {
     });
     turnEventIds.set(event, storedId);
     bufferTurnEvent({ set, agentId, sessionId, event });
+    if (event.kind === 'permission_decision' && event.decidedBy === 'user') {
+      announceAgentTurn({ sessionId, agentId });
+    }
 
     if (event.kind === 'provider_session_init' && event.provider !== undefined) {
       void invokeAgentSetProviderSessionId({

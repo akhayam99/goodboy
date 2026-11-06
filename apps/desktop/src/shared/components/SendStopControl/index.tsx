@@ -1,13 +1,10 @@
 import { ArrowUp, Square } from 'lucide-react';
-import { Button, cn, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
+import { cn, ICON_SIZE, IconButton, tintClasses } from '@goodboy/ui';
 import { NAMES } from '../../utils/names';
 
 type SendStopControlStop = {
   readonly isStopping: boolean;
   readonly onStop: () => void;
-  readonly isStalled?: boolean;
-  readonly isArmed?: boolean;
-  readonly shortcut?: string;
 };
 
 type Props = {
@@ -28,32 +25,16 @@ const STOP = 'bg-fill text-foreground hover:bg-hover';
 
 export const SendStopControl = ({ canSend, disabledReason, stop, onSend }: Props) => {
   if (stop !== undefined) {
-    if (stop.isStalled === true) {
-      return (
-        <Button variant="danger" size="sm" onClick={stop.onStop}>
-          {NAMES.forceStop}
-        </Button>
-      );
-    }
-
     return (
-      <>
-        {stop.isArmed === true ? (
-          <span role="status" className="whitespace-nowrap text-meta text-muted-foreground">
-            Esc again to stop
-          </span>
-        ) : null}
-        <IconButton
-          icon={Square}
-          iconSize={ICON_SIZE.row}
-          label={stop.isStopping ? NAMES.stopping : NAMES.stop}
-          tooltip={NAMES.stop}
-          shortcut={stop.shortcut}
-          busy={stop.isStopping}
-          onClick={stop.onStop}
-          className={STOP}
-        />
-      </>
+      <IconButton
+        icon={Square}
+        iconSize={ICON_SIZE.row}
+        label={stop.isStopping ? NAMES.stopping : NAMES.stop}
+        tooltip={NAMES.stop}
+        busy={stop.isStopping}
+        onClick={stop.onStop}
+        className={STOP}
+      />
     );
   }
 

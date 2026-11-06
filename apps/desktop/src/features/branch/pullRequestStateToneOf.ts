@@ -30,7 +30,7 @@ const STATE_MARK: Readonly<Record<PullRequestPresentationState, StateMark>> = {
   draft: { icon: GitPullRequestDraft, tone: 'neutral' },
   open: { icon: GitPullRequest, tone: 'info' },
   approved: { icon: GitPullRequest, tone: 'success' },
-  queued: { icon: GitPullRequestArrow, tone: 'primary' },
+  queued: { icon: GitPullRequestArrow, tone: 'neutral' },
   merged: { icon: GitMerge, tone: 'merged' },
   closed: { icon: GitPullRequestClosed, tone: 'neutral' },
 };

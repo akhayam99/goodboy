@@ -118,7 +118,7 @@ describe('the Sessions door and the Now chip count sessions by their stage', () 
     renderShell();
 
     expect(sessionsDoor().getAttribute('aria-label')).toBe(
-      'Sessions, 2 sessions need you: 1 question for you, The plan waits for your approval',
+      'Sessions, 2 sessions need you: 1 question for you, The plan needs approval',
     );
   });
 

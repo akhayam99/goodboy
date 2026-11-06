@@ -35,6 +35,7 @@ import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
+import { userOnceAllowsOf } from '../../slices/permissions/userOnceAllowsOf';
 import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
 
@@ -349,6 +350,7 @@ export const deliverNext = async ({
       rowIds: rows.map((row) => String(row.id)),
       text,
       images: userImagesOf({ rows }),
+      permissionOnceAllows: userOnceAllowsOf({ rows }),
       onEnded,
     })
     .catch((error: unknown): TurnStartOutcome => ({

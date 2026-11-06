@@ -19,6 +19,12 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { askDenialEventOf } from '../permissions/askDenialEventOf';
+import { deniedPromptOf } from '../permissions/deniedPromptOf';
+import { heldOnceAllowsOf } from '../permissions/heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from '../permissions/noResolvedAsks';
+import { resolvedAsksAtWrite } from '../permissions/resolvedAsksAtWrite';
+import { withHeldAnswers } from '../permissions/withHeldAnswers';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
 import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
@@ -103,6 +109,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     return closeCancelled();
   }
 
+  let resolvedAsks = ctx.input.resolvedAsks ?? NO_RESOLVED_ASKS;
   if (retry == null) {
     await ctx.input.onWritingUserText?.();
     const userMessage: Message = {
@@ -115,6 +122,26 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
     };
     await insertMessage(tauriDatabase, userMessage);
+    const atWrite = get();
+    const turnAtWrite = atWrite.agentTurnState[activeAgentId];
+    resolvedAsks = resolvedAsksAtWrite({
+      events: atWrite.transcripts[activeAgentId] ?? [],
+      turnState: turnAtWrite?.kind === 'starting' ? ctx.turnBeforeLease : turnAtWrite,
+      origin: ctx.input.origin,
+      given: ctx.input.resolvedAsks,
+    });
+    for (const ask of resolvedAsks.denied) {
+      get().appendTurnEvent(
+        activeAgentId,
+        sessionId,
+        askDenialEventOf({
+          runId: ask.runId,
+          toolUseId: ask.toolUseId,
+          reason: userTurnText,
+          at: userMessage.createdAt,
+        }),
+      );
+    }
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'user_text',
       runId,
@@ -208,7 +235,33 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
   const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
   await updateSessionState(tauriDatabase, sessionId, derived, now());
-  return turnReady({ value: { runId, isFirstTurn, isHandoffTurn, resolvedAgentId, agentBefore } });
+  return turnReady({
+    value: {
+      runId,
+      isFirstTurn,
+      isHandoffTurn,
+      resolvedAgentId,
+      agentBefore,
+      resolvedAsks,
+      resolvedPrompt: withHeldAnswers({
+        held: resolvedAsks.held,
+        prompt: deniedPromptOf({
+          asks: resolvedAsks.denied,
+          content: userTurnText,
+          prompt: ctx.resolvedPrompt,
+        }),
+      }),
+      input: {
+        ...ctx.input,
+        permissionOnceAllows: [
+          ...new Set([
+            ...(ctx.input.permissionOnceAllows ?? []),
+            ...heldOnceAllowsOf({ held: resolvedAsks.held }),
+          ]),
+        ],
+      },
+    },
+  });
 };
 
 export type StartedTurn = TurnPhaseValue<typeof startTurnRun>;

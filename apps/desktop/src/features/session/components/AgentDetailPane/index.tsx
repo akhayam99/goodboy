@@ -29,13 +29,13 @@ import { AgentHeader } from './AgentHeader';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
+import { AgentDockLead } from './AgentDockLead';
+import { agentHeaderOmitOf } from './agentHeaderOmitOf';
 import { RewriterFinishedNotice } from './RewriterFinishedNotice';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
 import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
 import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
 import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
-import { AutoChildNotice } from '../../../auto/chat/AutoChildNotice';
-import { AutoMarkFinishedButton } from '../../../auto/chat/AutoMarkFinishedButton';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { isTurnStateLive } from '../../agent-lifecycle';
@@ -45,6 +45,7 @@ type RunStepFrame = {
   readonly actions: ReactNode;
   readonly tail: ReactNode;
   readonly stopLabel?: string;
+  readonly liveSentence?: string;
 };
 
 type Props = {
@@ -58,12 +59,6 @@ type Props = {
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
-
-const STOP_VERB = 'agent.stop';
-
-const AUTO_HEADER_VERBS: ReadonlyArray<string> = [STOP_VERB, 'agent.markAutoFinished'];
-
-const HEADER_VERBS: ReadonlyArray<string> = [STOP_VERB];
 
 export const AgentDetailPane = ({
   session,
@@ -175,6 +170,18 @@ export const AgentDetailPane = ({
     anchorKey: `agent-header:${agent.id}`,
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
+  const hasComposer = !isPinned && !isRewriterFinished && adoption === null && !isMoveOpen;
+  const isDocked = hasComposer && session.state.kind !== 'ended';
+  const stoppedNotice =
+    hasNextAction && runStep === undefined ? null : (
+      <AgentStoppedNotice
+        session={session}
+        agent={agent}
+        isAutoChild={isAutoChild}
+        isDocked={isDocked}
+        isRunStep={runStep !== undefined}
+      />
+    );
   const runSettings =
     runStep === undefined ? (
       <AgentRunSettings
@@ -188,9 +195,7 @@ export const AgentDetailPane = ({
   const lead = (
     <>
       {context}
-      {isInWorkflowRun ? null : (
-        <AgentStoppedNotice session={session} agent={agent} isAutoChild={isAutoChild} />
-      )}
+      {isDocked || isInWorkflowRun ? null : stoppedNotice}
       {runStep === undefined ? (
         <AgentNextAction session={session} agent={agent} onShownChange={setHasNextAction} />
       ) : null}
@@ -224,16 +229,13 @@ export const AgentDetailPane = ({
           }
           actions={
             <>
-              {isAutoRoot ? (
-                <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
-              ) : null}
               {runStep === undefined ? (
                 <AgentHeaderActions
                   key={agent.id}
                   agent={agent}
                   sessionId={session.id}
                   hasStateButton={false}
-                  omit={isAutoRoot ? AUTO_HEADER_VERBS : HEADER_VERBS}
+                  omit={agentHeaderOmitOf({ isAutoRoot })}
                   onDeleted={onBack}
                 />
               ) : (
@@ -254,23 +256,26 @@ export const AgentDetailPane = ({
         hasAdvanceRow={runStep === undefined}
         {...(runStep === undefined && { controlSlots: { asks: asksSlot, models: modelsSlot } })}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
+        {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
+        composerStop={autoChat.stop}
+        isFailureOwned={autoChat.isFailureOwned}
         {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
-        hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}
+        hasComposer={hasComposer}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
         }
-        {...(isAutoChild &&
-          autoRootAgentId !== null && {
-            composerLead: (
-              <AutoChildNotice
-                onOpenAuto={() =>
-                  navigateTo({
-                    to: agentPlace({ sessionId: session.id, agentId: autoRootAgentId }),
-                  })
-                }
-              />
-            ),
-          })}
+        composerLead={
+          <AgentDockLead
+            session={session}
+            agent={agent}
+            autoRootAgentId={isAutoChild ? autoRootAgentId : null}
+            autoDock={autoChat.dock}
+            stopped={stoppedNotice}
+            isDocked={isDocked}
+            isRunStep={runStep !== undefined}
+            isTreeAtRest={isAutoRoot ? autoChat.isTreeAtRest : null}
+          />
+        }
         composerNotice={
           isRewriterFinished ? (
             <RewriterFinishedNotice sessionId={session.id} mountId={rewriter.mountId} />
@@ -294,7 +299,6 @@ export const AgentDetailPane = ({
           ) : undefined
         }
         insertions={insertions}
-        {...(autoChat.dock !== undefined && { composerLead: autoChat.dock })}
       />
     </PaneShell>
   );

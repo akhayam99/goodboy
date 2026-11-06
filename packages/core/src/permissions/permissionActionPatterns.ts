@@ -83,6 +83,13 @@ export const commandPrefix = ({ command }: FirstSegmentParams): string => {
 };
 
 export const oncePatternText = ({ toolName, input }: ActionTarget): string => {
+  if (toolName === 'Read') {
+    const path = filePathOf({ input });
+    if (path === '') {
+      return toolName;
+    }
+    return `${toolName}(${path.startsWith('/') ? `/${path}` : path})`;
+  }
   if (toolName === 'Bash') {
     const command = commandOf({ input });
     return command === '' ? toolName : `${toolName}(${command})`;

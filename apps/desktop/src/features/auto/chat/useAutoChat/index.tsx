@@ -4,15 +4,15 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
+import type { ConversationStop } from '../../../../shared/types/conversationStop';
 import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
+import { autoDockStopOf } from '../autoDockStopOf';
+import { isAutoTreeAtRestOf } from '../isAutoTreeAtRestOf';
 import { AutoDock } from '../AutoDock';
-import { AutoProjectAsk } from '../AutoProjectAsk';
-import { AutoTail } from '../AutoTail';
 import { AutoTurnCard } from '../AutoTurnCard';
 import { AutoWorkTime } from '../AutoWorkTime';
 import { mountedLineOf } from '../mountedLineOf';
-import { projectAskOf } from '../projectAskOf';
 import { batchesOf } from '../batchesOf';
 import { mergedBatchesOf } from '../mergedBatchesOf';
 import { composerPlaceholderOf } from '../composerPlaceholderOf';
@@ -28,12 +28,17 @@ export type AutoChat = Readonly<{
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
   dock: ReactNode | undefined;
   composerPlaceholder: string | undefined;
+  stop: ConversationStop | null;
+  isFailureOwned: boolean;
+  isTreeAtRest: boolean;
 }>;
 
 export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const views = useAutoTrees({ sessionId: session.id });
   const agents = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
-  const { openChild, openArtifact } = useAutoTreeActions({ sessionId: session.id });
+  const rootTurn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
+  const actions = useAutoTreeActions({ sessionId: session.id });
+  const { openChild, openArtifact } = actions;
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
 
@@ -61,19 +66,11 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
         ),
       }),
     );
-    const ask = projectAskOf({ view });
     const tail: TranscriptInsertion = {
       key: `auto-tail-${view.tree.id}`,
       beforeMs: null,
       keptEchoIds: view.droppedMessageIds,
-      node:
-        ask === null ? (
-          <AutoWorkTime session={session}>
-            <AutoTail sessionId={session.id} view={view} rootAgent={agent} />
-          </AutoWorkTime>
-        ) : (
-          <AutoProjectAsk sessionId={session.id} rootAgentId={agent.id} ask={ask} />
-        ),
+      node: null,
     };
     const mounted = mountedLineOf({ view });
     const mountedLine: ReadonlyArray<TranscriptInsertion> =
@@ -91,7 +88,18 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
             },
           ];
     return [...lines, ...mountedLine, tail];
-  }, [view, agents, agent, openChild, session]);
+  }, [view, agents, openChild, session]);
+
+  const stop =
+    view === null
+      ? null
+      : autoDockStopOf({
+          view,
+          rootTurn,
+          rootAgent: agent,
+          isStopping: actions.isStopping,
+          stop: () => void actions.stop({ view }),
+        });
 
   const dock =
     view === null ? undefined : (
@@ -100,6 +108,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
         view={view}
         rootAgent={agent}
         onOpenArtifact={openArtifact}
+        actions={actions}
       />
     );
 
@@ -108,5 +117,8 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     insertions,
     dock,
     composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
+    stop,
+    isFailureOwned: view?.tree.phase === 'blocked',
+    isTreeAtRest: view !== null && isAutoTreeAtRestOf({ view }),
   };
 };

@@ -101,17 +101,61 @@ describe('cleanWorkflowRunTitle', () => {
     );
   });
 
-  it('falls back to the first line of the ask when the title is a leaked preamble', () => {
+  it('falls back to the title derived from the goal when the title is a leaked preamble', () => {
     expect(cleanWorkflowRunTitle({ title: 'Title: the user asked for a', goal: GOAL })).toBe(
-      'Move patient settings under /patient/settings with a\u2026',
+      'Move patient settings under /patient/settings with a',
     );
   });
 
+  it.each([
+    'Il titolo \u00e8 in italiano, quindi',
+    'Title generation',
+    'ruolo: title only. task richiede lavoro',
+    'Auto routed to Claude Haiku',
+  ])('treats the phrase "%s" as talk about the title', (title) => {
+    expect(cleanWorkflowRunTitle({ title, goal: GOAL })).toBe(
+      'Move patient settings under /patient/settings with a',
+    );
+  });
+
+  it('keeps a title that only contains the word title later on', () => {
+    expect(cleanWorkflowRunTitle({ title: 'Fix the page title tag', goal: GOAL })).toBe(
+      'Fix the page title tag',
+    );
+  });
+
+  it('falls back to the words of the goal in any language', () => {
+    expect(
+      cleanWorkflowRunTitle({
+        title: 'I will write a title',
+        goal: 'Per favore aggiungi un pulsante di logout',
+      }),
+    ).toBe('Per favore aggiungi un pulsante di logout');
+  });
+
   it('never cuts the fallback in the middle of a word', () => {
-    const goal = `${'ledger '.repeat(20)}end`;
+    const goal = `${'please help me '.repeat(10)}end`;
     const title = cleanWorkflowRunTitle({ title: 'I will write a title', goal });
     expect(title.length).toBeLessThanOrEqual(60);
-    expect(title.endsWith('ledger…')).toBe(true);
+    expect(title).toBe('Please help me please help me please help me please');
+  });
+
+  it("treats l'utente and a stressed titulo as talk", () => {
+    expect(cleanWorkflowRunTitle({ title: "l'utente vuole un export", goal: 'Add export' })).toBe(
+      'Add export',
+    );
+    expect(cleanWorkflowRunTitle({ title: 'título del export', goal: 'Add export' })).toBe(
+      'Add export',
+    );
+  });
+
+  it('keeps a title that mentions title generation later on', () => {
+    expect(cleanWorkflowRunTitle({ title: 'Fix title generation crash', goal: GOAL })).toBe(
+      'Fix title generation crash',
+    );
+    expect(cleanWorkflowRunTitle({ title: 'Fix jobs routed to wrong queue', goal: GOAL })).toBe(
+      'Fix jobs routed to wrong queue',
+    );
   });
 
   it('never cuts a long clean title in the middle of a word', () => {

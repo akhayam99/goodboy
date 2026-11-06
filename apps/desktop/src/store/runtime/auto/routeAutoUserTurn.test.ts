@@ -3,8 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   brandId,
   type AgentId,
+  type IsoDateTime,
   type MessageAttachment,
+  type ProviderRunId,
   type SessionId,
+  type TurnEvent,
+  type TurnState,
   type WorkspaceId,
 } from '@goodboy/types';
 import {
@@ -48,9 +52,23 @@ const autoRow: AgentRow = { id: AUTO_AGENT, kind: 'auto', parentAgentId: undefin
 
 type HarnessParams = {
   readonly agents: ReadonlyArray<AgentRow>;
+  readonly transcripts?: AutoTurnState['transcripts'];
+  readonly agentTurnState?: AutoTurnState['agentTurnState'];
 };
 
-const harness = ({ agents }: HarnessParams) => {
+const ASKED_AT = brandId<IsoDateTime>({ value: '2026-11-06T10:00:00.000Z' });
+const ASK_RUN = brandId<ProviderRunId>({ value: 'run-auto-ask' });
+const AUTO_ASK: TurnEvent = {
+  kind: 'permission_request',
+  runId: ASK_RUN,
+  toolUseId: 'read-outside',
+  toolName: 'Read',
+  input: { file_path: '/notify-relay/README.md' },
+  at: ASKED_AT,
+};
+const HELD: TurnState = { kind: 'blocked', runId: ASK_RUN, blockedAt: ASKED_AT };
+
+const harness = ({ agents, transcripts = {}, agentTurnState = {} }: HarnessParams) => {
   const reportError = vi.fn(async () => undefined);
   const appendTurnEvent = vi.fn<AutoTurnState['appendTurnEvent']>();
   const loadAutoTrees = vi.fn<AutoTurnState['loadAutoTrees']>(async () => undefined);
@@ -58,12 +76,19 @@ const harness = ({ agents }: HarnessParams) => {
     sessions: [{ id: SESSION, workspaceId: WORKSPACE }],
     sessionPhaseRuns: { [SESSION]: agents },
     selectedAgentId: { [SESSION]: AUTO_AGENT },
+    transcripts,
+    agentTurnState,
     reportError,
     appendTurnEvent,
     loadAutoTrees,
   };
   return { reportError, appendTurnEvent, loadAutoTrees, get: () => state };
 };
+
+const isDecision = (event: unknown): boolean =>
+  typeof event === 'object' &&
+  event !== null &&
+  Reflect.get(event, 'kind') === 'permission_decision';
 
 const inputOf = (overrides: Partial<SendTurnInput> = {}): SendTurnInput => ({
   sessionId: SESSION,
@@ -74,6 +99,133 @@ const inputOf = (overrides: Partial<SendTurnInput> = {}): SendTurnInput => ({
 
 afterEach(() => {
   registerAutoUserTurnPort({ port: null });
+});
+
+describe('a message typed over the ask of an Auto agent', () => {
+  const askingAuto = () =>
+    harness({
+      agents: [autoRow],
+      transcripts: { [AUTO_AGENT]: [AUTO_ASK] },
+      agentTurnState: { [AUTO_AGENT]: HELD },
+    });
+
+  const decisionsOf = (calls: ReadonlyArray<ReadonlyArray<unknown>>) =>
+    calls.map((call) => call[2]).filter((event) => isDecision(event));
+
+  it('denies the ask with the text as the reason, and Auto reads the denial', async () => {
+    const texts: Array<string> = [];
+    const port = vi.fn<AutoUserTurnPort>(async ({ text }) => {
+      texts.push(text);
+      return 'queued';
+    });
+    registerAutoUserTurnPort({ port });
+    const { get, appendTurnEvent } = askingAuto();
+
+    await routeAutoUserTurn({ get, input: inputOf({ origin: 'operator' }) });
+
+    expect(texts).toEqual(['Denied Read. Also cover the notify-relay retries']);
+    expect(decisionsOf(appendTurnEvent.mock.calls)).toEqual([
+      expect.objectContaining({
+        decision: 'deny',
+        decidedBy: 'user',
+        toolUseId: 'read-outside',
+        runId: ASK_RUN,
+        reason: 'Also cover the notify-relay retries',
+      }),
+    ]);
+    expect(appendTurnEvent.mock.calls.at(-1)?.[2]).toMatchObject({
+      kind: 'operator_text',
+      text: 'Also cover the notify-relay retries',
+    });
+  });
+
+  it('leaves the ask open when Auto lost the message', async () => {
+    registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'lost') });
+    const { get, appendTurnEvent } = askingAuto();
+
+    await expect(
+      routeAutoUserTurn({ get, input: inputOf({ origin: 'operator' }) }),
+    ).rejects.toThrow(AUTO_MESSAGE_LOST_MESSAGE);
+
+    expect(decisionsOf(appendTurnEvent.mock.calls)).toEqual([]);
+  });
+
+  it('leaves the ask alone for the turn a permission answer starts', async () => {
+    const texts: Array<string> = [];
+    const port = vi.fn<AutoUserTurnPort>(async ({ text }) => {
+      texts.push(text);
+      return 'queued';
+    });
+    registerAutoUserTurnPort({ port });
+    const { get, appendTurnEvent } = askingAuto();
+
+    await routeAutoUserTurn({ get, input: inputOf() });
+
+    expect(texts).toEqual(['Also cover the notify-relay retries']);
+    expect(decisionsOf(appendTurnEvent.mock.calls)).toEqual([]);
+  });
+
+  it('carries a scoped read grant to the port, and nothing else', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get } = askingAuto();
+
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({
+        content: 'Go on.',
+        permissionOnceAllows: ['Read(//notify-relay/README.md)', 'Bash(pnpm db:migrate)', 'Read'],
+      }),
+    });
+
+    expect(port.mock.calls[0]?.[0]?.permissionOnceAllows).toEqual([
+      'Read(//notify-relay/README.md)',
+    ]);
+  });
+
+  it('reads an unsent allow from the transcript and sends the grant with it', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
+    registerAutoUserTurnPort({ port });
+    const { get } = harness({
+      agents: [autoRow],
+      transcripts: {
+        [AUTO_AGENT]: [
+          AUTO_ASK,
+          {
+            kind: 'permission_decision',
+            runId: ASK_RUN,
+            toolUseId: 'read-outside',
+            decision: 'allow',
+            scope: 'once',
+            ruleId: null,
+            decidedBy: 'user',
+            at: ASKED_AT,
+          },
+        ],
+      },
+    });
+
+    await routeAutoUserTurn({ get, input: inputOf({ origin: 'operator', content: 'Go on.' }) });
+
+    const turn = port.mock.calls[0]?.[0];
+    expect(turn?.text).toContain('Permission for Read is granted for this one call.');
+    expect(turn?.permissionOnceAllows).toEqual(['Read(//notify-relay/README.md)']);
+  });
+
+  it('omits the reason of an images only message', async () => {
+    registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'queued') });
+    const { get, appendTurnEvent } = askingAuto();
+
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({ origin: 'operator', content: '' }),
+      storeImages: async () => [BANNER_STORED],
+    });
+
+    const [decision] = decisionsOf(appendTurnEvent.mock.calls);
+    expect(decision).toMatchObject({ decision: 'deny' });
+    expect(decision).not.toHaveProperty('reason');
+  });
 });
 
 describe('a message typed to an Auto agent', () => {

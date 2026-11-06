@@ -143,8 +143,8 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('plan-approval');
     expect(within(header()).getByRole('button', { name: 'Review plan' })).toBeDefined();
     expect(within(tail()).queryByRole('button', { name: 'Review plan' })).toBeNull();
-    expect(within(header()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
+    expect(within(header()).queryByRole('button', { name: 'Approve and continue' })).toBeNull();
+    expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve and continue');
   });
 
   it('approves from the drawer on the run page: the hold lifts, the drawer closes, no toast', async () => {

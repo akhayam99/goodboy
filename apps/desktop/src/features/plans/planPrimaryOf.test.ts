@@ -13,6 +13,7 @@ import {
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { aPlan } from '../../test/planFixtures';
 import { planOwnerOf } from './planOwnerOf';
+import { planNextStepNameOf } from './planNextStepNameOf';
 import { planPrimaryOf } from './planPrimaryOf';
 
 const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;
@@ -43,10 +44,42 @@ describe('planPrimaryOf', () => {
   it('approves the plan a run is held for', () => {
     expect(planPrimaryOf({ plan: aPlan(), run: heldRun, drafts: [] })).toEqual({
       kind: 'approve',
-      label: 'Approve',
+      label: 'Approve and continue',
       reason: null,
       isSecondary: false,
     });
+  });
+
+  it('names the step the approval starts when the run knows it', () => {
+    expect(
+      planPrimaryOf({ plan: aPlan(), run: heldRun, drafts: [], nextStepName: 'Build' }).label,
+    ).toBe('Approve and start Build');
+  });
+
+  it('falls back to the short label when the step name is too long for a button', () => {
+    expect(
+      planPrimaryOf({
+        plan: aPlan(),
+        run: heldRun,
+        drafts: [],
+        nextStepName: 'Migrate the ledger tables to the new schema',
+      }).label,
+    ).toBe('Approve and continue');
+  });
+
+  it('keeps the short label for a dynamic run or a run that goes on alone', () => {
+    const agents = [anAgent({ status: 'pending' })];
+    expect(
+      planNextStepNameOf({
+        run: aWorkflowRun({ executionMode: 'dynamic' }),
+        templates: [],
+        agents,
+      }),
+    ).toBeNull();
+    expect(
+      planNextStepNameOf({ run: aWorkflowRun({ autoRun: true }), templates: [], agents }),
+    ).toBeNull();
+    expect(planNextStepNameOf({ run: null, templates: [], agents })).toBeNull();
   });
 
   it('approves a run plan whose next step consumes it, even when the run is not held', () => {
@@ -74,7 +107,7 @@ describe('planPrimaryOf', () => {
   it('disables the primary with its reason while the planner revises, held or not', () => {
     expect(planPrimaryOf({ plan: aPlan(), run: heldRun, drafts: [], revising })).toEqual({
       kind: 'disabled',
-      label: 'Approve',
+      label: 'Approve and continue',
       reason: 'The planner is revising this plan',
       isSecondary: false,
     });
@@ -127,7 +160,7 @@ describe('planPrimaryOf', () => {
 
     expect(planPrimaryOf({ plan: aPlan(), run: heldRun, drafts })).toEqual({
       kind: 'approve',
-      label: 'Approve',
+      label: 'Approve and continue',
       reason: null,
       isSecondary: true,
     });
@@ -155,7 +188,7 @@ describe('planPrimaryOf', () => {
       planPrimaryOf({ plan: aPlan(), run: heldRun, drafts: [], plannerQuestionCount: 1 }),
     ).toEqual({
       kind: 'disabled',
-      label: 'Approve',
+      label: 'Approve and continue',
       reason: 'The planner asked a question. Answer it first.',
       isSecondary: false,
     });
