@@ -164,15 +164,15 @@ describe('buildArtifactListRows', () => {
 
   it('moves a plan to Needs you only for a question from its own planner', () => {
     const question = (askedBy: string): OpenQuestion => ({
-      id: `question-${askedBy}` as OpenQuestionId,
+      id: brandId<OpenQuestionId>({ value: `question-${askedBy}` }),
       sessionId: SESSION_ID,
-      createdByAgentId: askedBy as AgentId,
+      createdByAgentId: brandId<AgentId>({ value: askedBy }),
       text: 'Should the retries back off?',
       suggestedAnswers: [],
       isBlocking: false,
       userAnswer: null,
       status: 'open',
-      createdAt: '2026-09-14T16:40:00.000Z' as IsoDateTime,
+      createdAt: plan({}).createdAt,
     });
     const [other] = build({ plans: [plan({})], openQuestions: [question('agent-tester')] });
     const [own] = build({ plans: [plan({})], openQuestions: [question('agent-planner')] });

@@ -1,14 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type {
-  Agent,
-  AgentId,
-  ArtifactId,
-  IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
-  PlanWithCount,
-  SessionId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ArtifactId,
+  type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type PlanWithCount,
+  type SessionId,
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
@@ -364,9 +365,9 @@ describe('the list and the document agree', () => {
   });
 
   const question = ({ askedBy }: { readonly askedBy: string }): OpenQuestion => ({
-    id: `question-${askedBy}` as OpenQuestionId,
+    id: brandId<OpenQuestionId>({ value: `question-${askedBy}` }),
     sessionId: SESSION_ID,
-    createdByAgentId: askedBy as AgentId,
+    createdByAgentId: brandId<AgentId>({ value: askedBy }),
     text: 'Should the retries back off?',
     suggestedAnswers: [],
     isBlocking: false,
