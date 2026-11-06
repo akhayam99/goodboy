@@ -56,7 +56,7 @@ export const WindowCloseSheet = ({ initialAsk = null }: Props) => {
       const { stillRunning } = await stopWork({
         getState: useAppStore.getState,
         scope: { kind: 'all' },
-        reason: 'user',
+        reason: 'leave',
       });
       if (stillRunning > 0) {
         setAsk({ count: stillRunning, isStuck: true });

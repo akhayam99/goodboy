@@ -126,7 +126,7 @@ describe('the window close sheet', () => {
     expect(cancelTurnConfirmed).toHaveBeenCalledWith({
       sessionId: session.id,
       agentId: first.id,
-      reason: 'user',
+      reason: 'leave',
     });
     expect(screen.queryByRole('dialog', { name: /did not stop/ })).toBeNull();
   });

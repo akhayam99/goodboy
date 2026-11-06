@@ -19,7 +19,7 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     const { stillRunning } = await stopWork({
       getState: get,
       scope: { kind: 'session', sessionId },
-      reason: 'user',
+      reason: 'leave',
     });
     if (stillRunning > 0) {
       throw new Error(STILL_RUNNING_MESSAGE);
