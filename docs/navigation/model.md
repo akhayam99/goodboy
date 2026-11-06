@@ -69,7 +69,12 @@
   Restore alone (no Archived chip, no New), and the notices, unassigned comments and
   Next are not drawn. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing
-  restores on its own, so a shelved session never spends by itself.
+  restores on its own, so a shelved session never spends by itself. Archive
+  stops the session's live agents first: with live work the button asks once,
+  inline, **Stop 2 agents and archive**, and with none it archives at once with
+  Undo. An agent that does not stop keeps the session where it was. Undo brings
+  the session back with its agents reading Stopped, Continue (`archiveTask`,
+  `archiveConfirmOf`).
 - **Three surfaces, three jobs, no competition.** The top bar is now ("what is
   happening, where am I and what is it costing"). The left column is access and
   presence ("where do I go, what else is going on"): its doors and the sessions

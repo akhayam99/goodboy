@@ -90,6 +90,8 @@ vi.mock('@goodboy/db', async () =>
     listMountOperations: vi.fn(async () => []),
     deleteSession,
     purgeSessionForDelete,
+    listAgentsForSessions: vi.fn(async () => new Map()),
+    listOpenQuestionsForSession: vi.fn(async () => []),
     deleteFileVersionsForSession,
     listMountPullRequestLinks: vi.fn(async () => []),
     upsertMountPullRequestLink: vi.fn(async () => true),

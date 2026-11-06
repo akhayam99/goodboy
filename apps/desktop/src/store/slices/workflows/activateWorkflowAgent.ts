@@ -3,11 +3,7 @@ import type { Agent, AgentId, IsoDateTime, PlanId, SessionId } from '@goodboy/ty
 import { recordArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { selectDefaultArtifactMountIds } from '../../../features/artifacts/artifactMountChoice';
 import { prepareArtifactEvidence } from '../../../features/artifacts/prepareArtifactEvidence';
-import {
-  addPlanConsumption as invokeAddPlanConsumption,
-  listConsumptionsForPlan as invokeListConsumptionsForPlan,
-  listPlansForSession as invokeListPlansForSession,
-} from '../../../features/plans/plans';
+import { recordPlanConsumption } from '../agents/recordPlanConsumption';
 import {
   KIND_TO_ROLE,
   classifyAgent,
@@ -35,7 +31,6 @@ import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActiva
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
-import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import { dispatchWindowEvent } from '../../../shared/lib/dispatchWindowEvent';
 
 export type ActivateWorkflowAgentParams = {
@@ -171,22 +166,17 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         : null;
 
     throwWhenPaused({ get, sessionId, agent });
-    if (consumesPlan && planToConsume) {
-      await invokeAddPlanConsumption(planToConsume.id, agentId);
-      const plansRead = sessionReads.plans({ sessionId });
-      const refreshedPlans = await invokeListPlansForSession(sessionId);
-      const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
-      set((state) => ({
-        ...(plansRead.isCurrent() && {
-          sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
-        }),
-        planConsumptions: { ...state.planConsumptions, [planToConsume.id]: consumptions },
-      }));
-    }
+    const usePlan = async (): Promise<void> => {
+      if (!consumesPlan || planToConsume === null) {
+        return;
+      }
+      await recordPlanConsumption({ set, get, sessionId, planId: planToConsume.id, agentId });
+    };
 
     const clusters =
       fanOutPlan?.clusters && fanOutPlan.clusters.length >= 2 ? fanOutPlan.clusters : undefined;
     if (clusters && clusters.length >= 2) {
+      await usePlan();
       await fanOutClusters(set, get, sessionId, agent, clusters, fanOutPlan!.title);
       return;
     }
@@ -234,19 +224,50 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     );
     const handedPlan = planSection === '' ? null : (explicitPlan ?? latestPlan);
     throwWhenPaused({ get, sessionId, agent });
-    if (kickoff.length > 0) {
-      await get().sendTurn({
+    if (kickoff.length === 0) {
+      await usePlan();
+      return;
+    }
+    let hasStarted = false;
+    let planUse: Promise<unknown> | null = null;
+    const beginPlanUse = (): Promise<unknown> => {
+      planUse ??= usePlan().then(
+        () => null,
+        (error: unknown) => error,
+      );
+      return planUse;
+    };
+    const startPlanUse = async (): Promise<void> => {
+      const failure = await beginPlanUse();
+      if (failure !== null) {
+        throw failure;
+      }
+    };
+    const result = await get()
+      .sendTurn({
         sessionId,
         agentId,
         content: kickoff,
         origin: 'workflow',
-        ...(onStarted !== undefined && { onStarted }),
+        onStarted: () => {
+          hasStarted = true;
+          void beginPlanUse();
+          onStarted?.();
+        },
         handoff: {
           instruction,
           goal: run?.goal ?? template?.goal ?? null,
           plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
         },
+      })
+      .catch(async (error: unknown) => {
+        if (hasStarted) {
+          await startPlanUse();
+        }
+        throw error;
       });
+    if (hasStarted || result.isLaneQueued === true) {
+      await startPlanUse();
     }
   };
 };

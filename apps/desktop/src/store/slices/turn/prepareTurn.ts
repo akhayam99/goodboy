@@ -75,6 +75,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       agentId: launchAgentId,
       content,
       threadIds: input.resolveThreadIds,
+      hasAttachments: (attachments?.length ?? 0) > 0 || (storedAttachments?.length ?? 0) > 0,
     }))
   ) {
     void get().drainResolveQueue({ sessionId });

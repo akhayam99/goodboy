@@ -340,6 +340,7 @@
     "turn_release",
     "turn_spawn",
     "validate_git_repo",
+    "window_close_claim",
     "window_heartbeat",
     "workflow_list",
     "workflows_for_session",

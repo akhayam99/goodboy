@@ -20,13 +20,12 @@ const stepsSentenceOf = ({ doneCount, stepCount, isDynamic }: StepsParams): stri
   return `${doneCount} of ${pluralize(stepCount, 'step')}`;
 };
 
-const PRIMARY_GLANCE: Readonly<Record<RunPrimaryKind, Glance>> = {
+const PRIMARY_GLANCE: Readonly<Record<Exclude<RunPrimaryKind, 'continue'>, Glance>> = {
   'review-plan': glanceOf({ state: 'waiting', sentence: 'The plan needs your OK' }),
   'approve-plan': glanceOf({ state: 'waiting', sentence: 'The plan needs your OK' }),
   answer: glanceOf({ state: 'waiting', sentence: 'A question needs your answer' }),
   'decide-next': glanceOf({ state: 'waiting', sentence: 'Decide what happens next' }),
   resume: glanceOf({ state: 'idle', sentence: 'The run is paused' }),
-  continue: glanceOf({ state: 'idle', sentence: 'Ready for the next step' }),
   'start-step': glanceOf({ state: 'idle', sentence: 'Ready for the next step' }),
   'start-run': glanceOf({ state: 'idle', sentence: 'Ready to start' }),
   retry: glanceOf({ state: 'stuck', sentence: 'A step failed' }),
@@ -49,6 +48,12 @@ export const runGlanceOf = ({
   if (isCompleted) {
     return glanceOf({
       state: 'done',
+      sentence: stepsSentenceOf({ doneCount, stepCount, isDynamic }),
+    });
+  }
+  if (primary === 'continue') {
+    return glanceOf({
+      state: 'stopped',
       sentence: stepsSentenceOf({ doneCount, stepCount, isDynamic }),
     });
   }

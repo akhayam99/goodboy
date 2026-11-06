@@ -67,7 +67,6 @@
   "apps/desktop/src/shared/hooks/useUnhandledRejectionNotice/index.ts": 1,
   "apps/desktop/src/shared/lib/dbBoot.ts": 4,
   "apps/desktop/src/shared/lib/highlight/index.ts": 1,
-  "apps/desktop/src/store/runtime/live-work/stopLiveWork.ts": 1,
   "apps/desktop/src/store/slices/agentQueue/sendQueuedNow.ts": 1,
   "apps/desktop/src/store/slices/agents/deleteAgent.ts": 2,
   "apps/desktop/src/store/slices/agents/forceCloseResolver.ts": 4,

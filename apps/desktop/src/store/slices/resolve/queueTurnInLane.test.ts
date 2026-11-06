@@ -150,6 +150,40 @@ describe('queueTurnInLane', () => {
     });
   });
 
+  it('refuses a message with attachments, since a queued attempt cannot carry them', async () => {
+    await seed([
+      attemptOf({
+        id: 'a-1',
+        agentId: HOLDER,
+        phase: 'running',
+        path: PATH_A,
+        createdAt: 1,
+        threadIds: ['t-1'],
+      }),
+      attemptOf({
+        id: 'a-2',
+        agentId: RETRIER,
+        phase: 'failed',
+        path: PATH_A,
+        createdAt: 2,
+        threadIds: ['t-2'],
+      }),
+    ]);
+
+    await expect(
+      queueTurnInLane({
+        get: getOf({ agents: [resolver({ id: HOLDER }), resolver({ id: RETRIER })] }),
+        sessionId: SESSION,
+        agentId: RETRIER,
+        content: 'try again',
+        threadIds: ['t-2'],
+        hasAttachments: true,
+      }),
+    ).rejects.toThrow('Attachments cannot wait in line');
+
+    expect(recorded).toEqual([]);
+  });
+
   it('lets the agent that holds the lane continue its own run', async () => {
     await seed([
       attemptOf({

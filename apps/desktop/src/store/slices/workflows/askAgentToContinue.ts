@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { waitTurnSettled } from '../turn/turnSettled';
 import { composeStepBoundary } from '../turn/kickoff';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {
@@ -31,18 +32,20 @@ export const askAgentToContinue = (get: GetFn) => {
         await get().cancelCurrentTurn(sessionId, agentId, 'handoff');
         await waitTurnSettled({ agentId });
       }
-      await get().sendTurn({
-        sessionId,
-        agentId,
-        content: continuePrompt({ agentId }),
-        origin: 'workflow',
+      throwIfRefused({
+        result: await get().sendTurn({
+          sessionId,
+          agentId,
+          content: continuePrompt({ agentId }),
+          origin: 'workflow',
+        }),
       });
     } catch (error) {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
         title: "Couldn't ask the agent to continue",
-        body: `${formatError(error)}. You can still skip this step.`,
+        body: `${formatError(error).replace(/\.$/, '')}. You can still skip this step.`,
         sessionId,
       });
     }

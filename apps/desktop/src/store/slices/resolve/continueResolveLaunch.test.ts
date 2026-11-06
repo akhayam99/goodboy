@@ -526,7 +526,7 @@ describe('answerQuestions', () => {
         launchId: LAUNCH_ID,
         answers: [{ threadId: 'PRRT_2', answer: 'Alias it' }],
       }),
-    ).rejects.toThrow('session budget is reached');
+    ).rejects.toThrow('Every provider is over its limit');
 
     expect(h.answered).not.toHaveBeenCalled();
     expect(h.delivered).not.toHaveBeenCalled();

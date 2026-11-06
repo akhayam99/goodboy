@@ -111,6 +111,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       : undefined;
   lease.attemptId = resolveAttemptId;
   const progress: TurnProgress = {
+    hasSpawned: false,
     assistantText: '',
     providerThreadId: activeAgent?.providerSessionId ?? null,
     receivedProviderError: false,

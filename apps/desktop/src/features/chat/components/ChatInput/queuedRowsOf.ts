@@ -6,6 +6,7 @@ import {
 } from '../../../auto/chat/pendingMessageOf';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { AgentQueuedTurn } from '../../../../store/slices/agentQueue/types';
+import { directRevealAtOf } from './directRevealAtOf';
 
 export type QueuedRowStatus = 'queued' | 'sending' | 'waits' | 'notDelivered';
 
@@ -25,11 +26,17 @@ export type QueuedRow = Readonly<{
 type Params = {
   readonly queue: ReadonlyArray<AgentQueuedTurn>;
   readonly view: AutoTreeView | null;
+  readonly isAgentStopped: boolean;
+  readonly nowMs: number;
 };
 
 const AGENT_QUEUED_TEXT = 'Waits for this turn';
 
 const AGENT_SENDING_TEXT = 'Sending now';
+
+const AGENT_HELD_TEXT = 'Not delivered';
+
+const AGENT_STOPPED_TEXT = 'Sends when you Continue';
 
 type AutoImageParams = {
   readonly image: MessageAttachment;
@@ -46,9 +53,30 @@ const autoImageOf = ({ image }: AutoImageParams): AttachmentStripItem => ({
 
 type TrayRowParams = {
   readonly turn: AgentQueuedTurn;
+  readonly isAgentStopped: boolean;
 };
 
-const trayRowOf = ({ turn }: TrayRowParams): QueuedRow => ({
+type TrayLine = Pick<QueuedRow, 'status' | 'statusText' | 'reason' | 'action'>;
+
+const trayLineOf = ({ turn, isAgentStopped }: TrayRowParams): TrayLine => {
+  if (turn.status === 'sending') {
+    return { status: 'sending', statusText: AGENT_SENDING_TEXT, reason: null, action: null };
+  }
+  if (turn.hold !== undefined) {
+    return {
+      status: 'notDelivered',
+      statusText: AGENT_HELD_TEXT,
+      reason: turn.hold.reason,
+      action: 'retry',
+    };
+  }
+  if (isAgentStopped) {
+    return { status: 'queued', statusText: AGENT_STOPPED_TEXT, reason: null, action: 'sendNow' };
+  }
+  return { status: 'queued', statusText: AGENT_QUEUED_TEXT, reason: null, action: 'sendNow' };
+};
+
+const trayRowOf = ({ turn, isAgentStopped }: TrayRowParams): QueuedRow => ({
   id: turn.id,
   source: 'agent',
   content: turn.content,
@@ -65,11 +93,25 @@ const trayRowOf = ({ turn }: TrayRowParams): QueuedRow => ({
     })),
   imageCount: turn.attachments.length,
   override: turn.override,
-  status: turn.status,
-  statusText: turn.status === 'sending' ? AGENT_SENDING_TEXT : AGENT_QUEUED_TEXT,
-  reason: null,
-  action: null,
+  ...trayLineOf({ turn, isAgentStopped }),
 });
+
+type ShownParams = {
+  readonly turn: AgentQueuedTurn;
+  readonly nowMs: number;
+};
+
+const isRevealed = ({ turn, nowMs }: ShownParams): boolean => {
+  const revealAt = directRevealAtOf({ turn });
+  return revealAt === null || nowMs >= revealAt;
+};
+
+type TurnParams = {
+  readonly turn: AgentQueuedTurn;
+};
+
+const isInTranscript = ({ turn }: TurnParams): boolean =>
+  turn.status === 'sending' && turn.isTextShown === true;
 
 type AutoRowsParams = {
   readonly view: AutoTreeView;
@@ -109,12 +151,22 @@ const isHandedOff = ({ turn, autoRows, view }: HandedOffParams): boolean =>
       autoRows.some((row) => row.id === message.rowId),
   );
 
-export const queuedRowsOf = ({ queue, view }: Params): ReadonlyArray<QueuedRow> => {
+export const queuedRowsOf = ({
+  queue,
+  view,
+  isAgentStopped,
+  nowMs,
+}: Params): ReadonlyArray<QueuedRow> => {
   const autoRows = view === null ? [] : autoRowsOf({ view });
   return [
     ...autoRows,
     ...queue
-      .filter((turn) => !isHandedOff({ turn, autoRows, view }))
-      .map((turn) => trayRowOf({ turn })),
+      .filter(
+        (turn) =>
+          !isHandedOff({ turn, autoRows, view }) &&
+          !isInTranscript({ turn }) &&
+          isRevealed({ turn, nowMs }),
+      )
+      .map((turn) => trayRowOf({ turn, isAgentStopped })),
   ];
 };
