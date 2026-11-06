@@ -743,7 +743,7 @@ describe('ScriptsPanel', () => {
     state.runs = {
       [manifestKey({ path: RELAY_PATH, name: 'test' })]: {
         status: 'error',
-        result: { exitCode: 1 },
+        result: { stdout: '', stderr: '', exitCode: 1 },
         runId: 'run-9',
         startedAt: Date.now(),
         mountId: RELAY_MOUNT.mountId,
