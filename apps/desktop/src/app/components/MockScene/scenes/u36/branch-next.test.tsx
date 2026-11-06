@@ -87,4 +87,10 @@ describe('the u36 branch next step scenes', () => {
 
     await waitFor(() => expect(headerStep()?.textContent).toBe('Start fix'));
   });
+
+  it('ends a merged branch with Remove worktree while the folder is there', async () => {
+    mount({ id: 'u36-p16-merged-remove' });
+
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Remove worktree'));
+  });
 });

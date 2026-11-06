@@ -76,7 +76,7 @@ describe('resolve-state scenes', () => {
     const banner = await screen.findByTestId('fix-run-ready');
     within(banner).getByText('Fix run finished: 4 fixes ready for you');
     expect(banner.textContent).toContain('Apply accepts the fix made in 90b1d57.');
-    expect(banner.textContent).toContain('replies to and resolves the 4 threads on GitHub');
+    expect(banner.textContent).toContain('replies to and resolves the 4 comments on GitHub');
     expect(within(banner).queryAllByRole('button')).toHaveLength(0);
     expect(rowLines(comments)).toEqual(Array(4).fill('Fixed in 90b1d57 · Review the fix'));
     expect(within(comments).getAllByRole('button', { name: 'See diff of 90b1d57' })).toHaveLength(

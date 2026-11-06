@@ -121,7 +121,7 @@ describe('a rebase job that stopped', () => {
     [
       'the rewriter stuck',
       { reason: 'stuck', files: ['webhook.ts'] },
-      'History rewriter needs you',
+      'The rebase needs you',
       "It couldn't merge webhook.ts.",
       'Stopped: needs you',
     ],

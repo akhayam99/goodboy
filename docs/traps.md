@@ -151,7 +151,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
   another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
-- The verbs of a stopped rebase (Resolve with Auto, Resolve myself, Keep, Bring them in, Undo rebase, Retry rebase, Fix with agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
+- The verbs of a stopped rebase (Resolve with Auto, Resolve myself, Keep, Bring them in, Undo rebase, Retry rebase, Fix with an agent, Retry push) are built once by `rebaseStopVerbs` and called by `useJobBannerActions` (banner and panel) and `useActionCardActions` (Next rows). A new surface calls the factory; it never rebuilds a verb, because the copy that does drops the start hint or the `adoptRebaseStop` step.
 - There is one push verb, `pushBranch({ sessionId, mountId, mode })` (github slice):
   `plain` pushes the branch, `lease` force pushes with lease, either behind a `confirmed` guard
   (the commits the confirm listed, re-read from origin first) or an `expected` guard (the remote
@@ -969,7 +969,7 @@ A write to a searchable table fires the search triggers, and the full text index
 
 ## A push fix outlives its card, and an install never goes through a link
 
-A card that offers **Let an agent fix the push** can be left, remounted or reloaded while the agent works, so the fix and its result cannot live in a component. `branchPushFixes` and `pushFixOutcomes` hold them in the store and `pushFixMemory` writes both through to browser storage, which a reload keeps. A remembered fix whose agent record is gone, deleted or finished is not working any more (`pushFixStateOf`), so a crash never leaves a branch stuck on "An agent is fixing the push". The result is kept for six hours, and a new fix on the branch clears it.
+A card that offers **Fix with an agent** can be left, remounted or reloaded while the agent works, so the fix and its result cannot live in a component. `branchPushFixes` and `pushFixOutcomes` hold them in the store and `pushFixMemory` writes both through to browser storage, which a reload keeps. A remembered fix whose agent record is gone, deleted or finished is not working any more (`pushFixStateOf`), so a crash never leaves a branch stuck on "An agent is fixing the push". The result is kept for six hours, and a new fix on the branch clears it.
 
 `worktree_deps_unlink` removes a symlinked install folder (`node_modules`, `vendor` or a nested one) only when it resolves outside the worktree, and only the link, never what it points to. The install must not run through such a link: a package manager writes through it into the other checkout. Both `worktree_deps_check` and `worktree_deps_unlink` take the repository path with the worktree path and refuse any folder that the repository does not list as one of its worktrees. Anything else in the worktree is left to the package manager, and nothing is deleted without the person pressing **Reinstall dependencies**.
 

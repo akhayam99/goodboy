@@ -89,7 +89,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 - While the rebase runs, the status line reads it (`Rebasing · 3 of 7 · 1 conflict`), with **Abort**.
 - Once it settles, the panel under the Branch header says what happened and what you can do.
 - **Force push** replaces the online copy only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
-- **Add a hint** under **Fix with agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
+- **Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
 - While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks.
 - When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
 
@@ -130,8 +130,8 @@ On a conflict or a commit hook, the panel does three things.
 
 **The verbs of a stopped rebase**
 
-- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with Auto** or **Fix with agent** therefore applies from whichever place you press the verb.
-- A failed push keeps **Fix with agent**, **Open terminal here** and **Retry push**.
+- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with Auto** or **Fix with an agent** therefore applies from whichever place you press the verb.
+- A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
 - Only the last two of these can **Dismiss**: a result that differs and a failed rebase. **Dismiss** records the stop like Keep. A stop that blocks the branch has no Dismiss.

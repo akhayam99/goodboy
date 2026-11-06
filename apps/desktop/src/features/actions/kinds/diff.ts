@@ -215,7 +215,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     doneLabel: () => 'Worktree removed.',
     confirm: ({ facts }) => ({
       title: 'Remove the worktree?',
-      description: `The folder and the local branch ${facts.branch} go. The pull request and the branch on origin stay, so nothing is lost. Stops and says why if work is uncommitted or unpushed.`,
+      description: 'Its folder goes. The pull request and the origin branch stay.',
       confirmLabel: NAMES.removeWorktree,
       role: 'danger',
     }),

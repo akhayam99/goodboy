@@ -127,7 +127,7 @@ type MergeParams = Pick<
 
 const blockedDetailOf = ({ readiness }: Pick<Params, 'readiness'>): string => {
   if (readiness.labelBlocker === null) {
-    return readiness.word;
+    return readiness.word.replace(/^Blocked: /, '');
   }
   if (readiness.labelBlocker.endsWith('failing') || readiness.labelBlocker.startsWith('checks')) {
     return 'by checks';

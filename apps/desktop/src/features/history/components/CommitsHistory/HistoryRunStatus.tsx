@@ -1,5 +1,6 @@
 import { Button, Notice, cn } from '@goodboy/ui';
 import type { HistoryTrialProgress } from '@goodboy/types';
+import { NAMES } from '../../../../shared/utils/names';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 import type { HistoryRun, HistoryStopReason } from '../../../../store/slices/history/types';
 
@@ -17,7 +18,7 @@ type Props = {
 const STOP_TITLE: Readonly<Record<HistoryStopReason, string>> = {
   conflict: "Nothing was changed: a step doesn't replay cleanly",
   hook: 'Nothing was changed: a hook stopped the temporary copy',
-  stuck: 'History rewriter needs you',
+  stuck: NAMES.rebaseNeedsYou,
   invalid: "Nothing was changed: the plan isn't valid",
   unverified: 'Nothing was changed: the result did not match the plan',
   'origin-moved': 'Someone else pushed to the online copy',

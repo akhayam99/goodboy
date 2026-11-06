@@ -181,7 +181,7 @@ const pushOf = ({
     const isBusy = review.isPushing || review.push.state === 'busy';
     const count = review.push.count;
     return reviewAction({
-      label: `${isBusy ? 'Pushing' : 'Push'} ${count > 0 ? countNoun({ count, one: 'commit', many: 'commits' }) : 'commits'}`,
+      label: `${isBusy ? 'Pushing' : NAMES.push}${count > 0 ? ` ${countNoun({ count, one: 'commit', many: 'commits' })}` : ''}`,
       icon: ArrowUp,
       blockedReason: isBusy ? 'Pushing now.' : null,
       isBusy,

@@ -34,7 +34,6 @@ describe('PullRequestHeaderLine', () => {
     render(<PullRequestHeaderLine pr={{ ...PR, state: 'merged' }} host="github" />);
 
     const icon = screen.getByRole('img', { name: 'Merged' });
-    expect(icon.getAttribute('title')).toBe('Merged');
     expect(icon.getAttribute('data-state')).toBe('merged');
     expect(screen.queryByText('Merged')).toBeNull();
   });

@@ -27,7 +27,7 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
     if (report.stuck !== null) {
       await stopWith({
         reason: 'stuck',
-        message: report.stuck.reason === '' ? 'History rewriter needs you.' : report.stuck.reason,
+        message: report.stuck.reason === '' ? 'The rebase needs you.' : report.stuck.reason,
         files: report.stuck.files,
         sha: report.stuck.from === '' ? null : report.stuck.from,
       });

@@ -77,10 +77,10 @@ describe('the u24 commits scenes', () => {
     expect(document.querySelector('[data-history-count]')?.textContent).toBe(
       `${CTX_COMMITS.length} commits`,
     );
-    expect(screen.getAllByText('Online copy')).toHaveLength(1);
+    expect(screen.getAllByText('On origin')).toHaveLength(1);
     expect(screen.getAllByText('Not pushed')).toHaveLength(CTX_COMMITS.length - pushedCount);
     const rows = screen.getByRole('list', { name: 'Commits' }).textContent ?? '';
-    expect(rows.indexOf('Online copy')).toBeGreaterThan(rows.lastIndexOf('Not pushed'));
+    expect(rows.indexOf('On origin')).toBeGreaterThan(rows.lastIndexOf('Not pushed'));
   });
 
   it('ignores legacy staged edits and keeps the live branch visible', async () => {

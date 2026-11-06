@@ -92,7 +92,7 @@ describe('the u23 comments scenes', () => {
     ).toHaveLength(1);
   });
 
-  it("orders Needs you as Question, Push failed, Fix to review, Open, and never calls a failed push Couldn't fix", async () => {
+  it("orders Needs you as Question, Push failed, Fix ready, Open, and never calls a failed push Couldn't fix", async () => {
     await renderScene({ name: 'comments-groups' });
 
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
@@ -102,9 +102,9 @@ describe('the u23 comments scenes', () => {
     expect(words).toEqual([
       'Question',
       'Push failed',
-      'Fix to review',
-      'Fix to review',
-      'Fix to review',
+      'Fix ready',
+      'Fix ready',
+      'Fix ready',
       'Open',
     ]);
     expect(within(list()).queryByText("Couldn't fix")).toBeNull();
@@ -158,8 +158,8 @@ describe('the u23 comments scenes', () => {
     await renderScene({ name: 'comments-ready-to-push' });
 
     expect(screen.getAllByRole('tab', { name: /^Comments\s*3$/ })).toHaveLength(1);
-    expect(screen.getAllByText('Fixing 1 of 4 threads').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Fixing 4 threads')).toBeNull();
+    expect(screen.getAllByText('Fixing 1 of 4 comments').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Fixing 4 comments')).toBeNull();
     const first = within(list())
       .getByRole('region', { name: 'Done' })
       .querySelector<HTMLElement>('button[data-thread-id]');

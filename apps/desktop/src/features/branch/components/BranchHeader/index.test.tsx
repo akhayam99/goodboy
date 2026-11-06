@@ -427,9 +427,7 @@ describe('BranchHeader actions by state', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove worktree' }));
 
     const confirm = screen.getByText('Remove the worktree?').closest('[role]');
-    expect(confirm?.textContent ?? '').toContain(
-      'The pull request and the branch on origin stay, so nothing is lost',
-    );
+    expect(confirm?.textContent ?? '').toContain('The pull request and the origin branch stay');
   });
 
   it('draws no step while the new pull request form leads, so the push waits in the menu', () => {
@@ -829,7 +827,7 @@ describe('BranchHeader push failure', () => {
     return { fixBranchPushWithAgent, prefillBranchPushTerminal };
   };
 
-  it('offers Let an agent fix the push and Open terminal here beside Retry when a plain push fails', async () => {
+  it('offers Fix with an agent and Open terminal here beside Retry when a plain push fails', async () => {
     withRequest(open);
     status = upstreamAt({ ahead: 2, behind: 0 });
     const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
@@ -841,7 +839,7 @@ describe('BranchHeader push failure', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('pre-push hook declined');
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
     await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledTimes(1));
     expect(fixBranchPushWithAgent).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -875,7 +873,7 @@ describe('BranchHeader push failure', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
       target: { value: 'Keep the pre-push hook as it is.' },
     });
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
 
     await waitFor(() =>
       expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
@@ -897,7 +895,7 @@ describe('BranchHeader push failure', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Force push$/ }));
     const alert = await screen.findByRole('alert');
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
     await waitFor(() =>
       expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
         expect.objectContaining({ isForce: true, message: 'stale info' }),

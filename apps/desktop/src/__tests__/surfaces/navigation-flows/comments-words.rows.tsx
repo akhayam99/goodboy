@@ -315,7 +315,9 @@ export const applyNeedsYou = async ({ count }: ApplyParams): Promise<void> => {
     await click(box);
   }
   const bar = await screen.findByRole('toolbar', { name: 'Selected comments' }, WAIT);
-  await click(within(bar).getByRole('button', { name: `Apply and resolve ${count}` }));
+  await click(
+    within(bar).getByRole('button', { name: count === 1 ? 'Apply fix' : `Apply ${count} fixes` }),
+  );
 };
 
 export const openComments = async (ctx: Ctx): Promise<void> => {
@@ -398,7 +400,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       expect(await screen.findByText('Fix run started', undefined, WAIT)).toBeDefined();
-      expect(screen.getByText(/^3 threads on /)).toBeDefined();
+      expect(screen.getByText(/^3 comments on /)).toBeDefined();
       const follow = screen.getAllByRole('button', { name: 'Follow' });
       expect(follow).toHaveLength(1);
       await clickButton('Follow');

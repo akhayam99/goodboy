@@ -102,7 +102,7 @@ describe('PushFailureCard with stale dependencies', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Reinstall dependencies' }));
 
     await waitFor(() => expect(retryAfterDeps).toHaveBeenCalledOnce());
-    screen.getByRole('button', { name: 'Let an agent fix the push' });
+    screen.getByRole('button', { name: 'Fix with an agent' });
   });
 
   it('does not offer it when the dependencies are in place', async () => {
@@ -111,6 +111,6 @@ describe('PushFailureCard with stale dependencies', () => {
 
     await waitFor(() => expect(storySpies.tauriInvoke).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: 'Reinstall dependencies' })).toBeNull();
-    screen.getByRole('button', { name: 'Let an agent fix the push' });
+    screen.getByRole('button', { name: 'Fix with an agent' });
   });
 });

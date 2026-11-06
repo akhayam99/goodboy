@@ -86,7 +86,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
     'Updating the online copy with a safe force push',
   ],
   done: ['Rebased on main', '7 commits. Your 11 files were not touched. Backup kept for 30 days.'],
-  stuck: ['History rewriter needs you', "It couldn't merge webhook.ts."],
+  stuck: ['The rebase needs you', "It couldn't merge webhook.ts."],
   'origin-moved': ['Rebased here, but', 'Nothing was pushed.'],
   'head-moved': ['The branch moved', 'Nothing was changed.'],
   'push-failed': ['Rebased, but the push failed', 'pre-push hook declined'],

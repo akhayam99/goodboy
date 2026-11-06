@@ -291,7 +291,7 @@ describe('the create form', () => {
     expect(within(alert).getByText(/Unused files \(3\)/).textContent).toContain(
       'settlementExport.ts',
     );
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
 
     expect(fixBranchPushWithAgent).toHaveBeenCalledOnce();
     const call = fixBranchPushWithAgent.mock.calls[0]?.[0];
@@ -346,7 +346,7 @@ describe('the create form', () => {
       await titleField();
       fireEvent.click(screen.getByRole('button', { name: 'Push and create pull request' }));
       const alert = await screen.findByRole('alert', {}, { timeout: 3_000 });
-      fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+      fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
       const resume = async (): Promise<unknown> =>
         fixBranchPushWithAgent.mock.calls[0]?.[0].onSettled?.();
       return { create, resume };

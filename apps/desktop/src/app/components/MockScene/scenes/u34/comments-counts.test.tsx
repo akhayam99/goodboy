@@ -59,7 +59,7 @@ describe('the comments and counts scenes', () => {
     }
   });
 
-  it('draws one header primary and the three groups with Question and Fix to review', async () => {
+  it('draws one header primary and the three groups with Question and Fix ready', async () => {
     mount({ name: 'u34-u39-header' });
 
     const list = await screen.findByRole('navigation', { name: 'Comments' });

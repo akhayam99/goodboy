@@ -6,6 +6,7 @@ import { rebaseConflictOf } from './rebaseConflictOf';
 import { conflictFilesLabelOf } from './rebaseConflictLine';
 import type { RebaseFileStates } from './rebaseFileStatesOf';
 import { countNoun } from '../../shared/utils/countNoun';
+import { NAMES } from '../../shared/utils/names';
 
 export type RebaseJobState =
   | 'choosing'
@@ -403,7 +404,7 @@ const copyOf = ({
     case 'stuck':
       return {
         tone: 'warn',
-        title: 'History rewriter needs you',
+        title: NAMES.rebaseNeedsYou,
         line: `It couldn't merge ${conflictFilesLabelOf({ files: stop?.files ?? [] })}.`,
       };
     case 'no-provider':

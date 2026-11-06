@@ -471,7 +471,7 @@ describe('the job banner', () => {
     });
 
     expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
-      'Fix with agent',
+      'Fix with an agent',
       'Open terminal here',
       'Retry push',
     ]);
@@ -491,7 +491,7 @@ describe('the job banner', () => {
       stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fix with agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
     await settle();
 
     expect(fixPushWithAgent).toHaveBeenCalledTimes(1);
@@ -511,7 +511,7 @@ describe('the job banner', () => {
     });
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(screen.queryByRole('textbox', { name: 'Hint for the Implementer' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Fix with agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
     await settle();
 
     expect(fixPushWithAgent).toHaveBeenCalledWith(
@@ -542,7 +542,7 @@ describe('the job banner', () => {
       pushFix: { agentId: A_REBASE_AGENT_ID },
     });
 
-    expect(screen.queryByRole('button', { name: 'Fix with agent' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry push' })).toBeNull();
     expect(screen.getByRole('button', { name: 'See what it did' })).toBeDefined();
   });

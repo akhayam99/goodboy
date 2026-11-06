@@ -119,7 +119,7 @@ running on one branch never locks another). A rebase that is in progress in the 
 Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
 terminal, Abort rebase. The other states keep the strip (Stash and rebase, Bring them back, Undo rewrite, Retry
 with a note, Open providers, See what it did). A failed push after
-a rebase offers `Fix with agent` (the primary: an Implementer on that worktree briefed with the
+a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
 pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
 transcript), `Open terminal here` (the session terminal drawer at the worktree with the exact
@@ -137,7 +137,7 @@ A push failure keeps its cause. `git_push` returns stdout and stderr with creden
 paths masked (`redact_output`), `pushOutputOf` joins both and bounds them (head plus the git
 verdict), and `pushFailureDigest` reads the failing hook or command and the first findings that
 `PushFailureBlock` shows on the failure card, the Comments banner (`PushBanner`) and the create
-form. The label is `Let an agent fix the push` (`PushFixAgentAction`): it calls
+form. The label is `Fix with an agent` (`PushFixAgentAction`): it calls
 `fixBranchPushWithAgent` with `pending`, the work that waits on the push (the replies of a failed
 publication, `pendingPublicationBrief`, or the text of the pull request being created), which the
 brief tells the agent not to do itself and never to skip a hook. The action tracks the agent

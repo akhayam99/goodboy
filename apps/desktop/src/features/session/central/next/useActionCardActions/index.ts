@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ConfirmRole } from '@goodboy/ui';
 import type { MountId, Session } from '@goodboy/types';
+import { NAMES } from '../../../../../shared/utils/names';
 import {
   EMPTY_ARRAY,
   agentPlace,
@@ -359,7 +360,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       case 'retry-rebase':
         return { label: 'Retry rebase', run: runIt({ task: verbs.retryRebase }) };
       case 'fix-push':
-        return { label: 'Fix with agent', run: runIt({ task: verbs.fixPush }) };
+        return { label: NAMES.fixPushWithAgent, run: runIt({ task: verbs.fixPush }) };
       case 'open':
         return { label: ownerVerbOf({ owner }), run: () => openNeedsYou({ owner }) };
       default: {

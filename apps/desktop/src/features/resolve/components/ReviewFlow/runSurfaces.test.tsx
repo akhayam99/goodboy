@@ -84,7 +84,7 @@ describe('Fix run status line', () => {
     await mount({ threadId: null });
 
     const status = within(screen.getByTestId('resolve-run-status'));
-    expect(status.getByText('Fixing 1 of 4 threads')).toBeDefined();
+    expect(status.getByText('Fixing 1 of 4 comments')).toBeDefined();
     expect(status.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
     expect(status.queryByText('Sonnet 5 · Medium')).toBeNull();
     expect(status.getByRole('button', { name: 'View transcript' })).toBeDefined();
