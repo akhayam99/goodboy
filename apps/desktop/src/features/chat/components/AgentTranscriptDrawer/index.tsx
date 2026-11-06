@@ -6,6 +6,7 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AGENT_KIND_META, classifyAgent } from '../../../session/agent-kind';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { throwIfRefused } from '../../../../store/slices/turn/throwIfRefused';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { ChatView } from '../ChatView';
@@ -90,10 +91,8 @@ export const AgentTranscriptDrawer = ({
     }
     setIsSending(true);
     try {
-      const result = await sendTurn({ sessionId, agentId, content });
-      if (!result.blockedOverBudget) {
-        setAgentDraft(agentId, '');
-      }
+      throwIfRefused({ result: await sendTurn({ sessionId, agentId, content }) });
+      setAgentDraft(agentId, '');
     } catch (error) {
       if (!isReportedError(error)) {
         void reportError({ title: TRANSCRIPT_DRAWER_COPY.sendFailed, error, sessionId });

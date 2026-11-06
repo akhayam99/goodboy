@@ -4,6 +4,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import { withStepBoundary } from './kickoff';
+import { throwIfRefused } from './throwIfRefused';
 import type { GetFn, SetFn } from './types';
 
 const CONTINUE_STOPPED_MESSAGE = 'Continue from where you stopped.';
@@ -43,11 +44,13 @@ export const continueStoppedAgent = (set: SetFn, get: GetFn) => {
       agentId,
     });
     if (autoRoute !== null) {
-      await get().sendTurn({
-        sessionId,
-        agentId: autoRoute.rootAgentId,
-        content: autoRoute.message,
-        origin: 'operator',
+      throwIfRefused({
+        result: await get().sendTurn({
+          sessionId,
+          agentId: autoRoute.rootAgentId,
+          content: autoRoute.message,
+          origin: 'operator',
+        }),
       });
       return;
     }
@@ -59,11 +62,13 @@ export const continueStoppedAgent = (set: SetFn, get: GetFn) => {
       }
     }
     await releaseOperatorStop({ set, get, sessionId, agent });
-    await get().sendTurn({
-      sessionId,
-      agentId,
-      content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
-      origin: 'operator',
+    throwIfRefused({
+      result: await get().sendTurn({
+        sessionId,
+        agentId,
+        content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
+        origin: 'operator',
+      }),
     });
   };
 };

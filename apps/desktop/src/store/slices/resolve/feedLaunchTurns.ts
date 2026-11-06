@@ -3,7 +3,7 @@ import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { dropLaunchTurns, hasLaunchTurns, takeLaunchTurn } from './launchTurns';
 import { launchKeyOf } from './resolveLaunch';
-import { refusalOf } from './sendUntilStarted';
+import { throwIfRefused } from '../turn/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {
@@ -49,22 +49,14 @@ export const feedLaunchTurns = async ({ get, sessionId, attempt }: Params): Prom
       return;
     }
     try {
-      const result = await get().sendTurn({
-        sessionId,
-        agentId: attempt.agentId,
-        content: turn.content,
-        resolveThreadIds: turn.threadIds,
-      });
-      const refusal = refusalOf(result);
-      if (refusal !== null) {
-        void get().reportError({
-          title: "Couldn't continue the fix run",
-          error: new Error(refusal),
+      throwIfRefused({
+        result: await get().sendTurn({
           sessionId,
-        });
-        stop();
-        return;
-      }
+          agentId: attempt.agentId,
+          content: turn.content,
+          resolveThreadIds: turn.threadIds,
+        }),
+      });
     } catch (error) {
       void get().reportError({ title: "Couldn't continue the fix run", error, sessionId });
       stop();

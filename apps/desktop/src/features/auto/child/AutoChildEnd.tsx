@@ -33,6 +33,7 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
   const turn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
+  const reportError = useAppStore((state) => state.reportError);
   const { runningId, rerun } = useChecksRerun();
   const publishing = usePublishAct();
   const decision = useDelegationDecision();
@@ -48,7 +49,10 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
     void decision.decide({ delegationId: delegation.id, decision: choice });
   };
   const handlers: Partial<Record<TailActionId, () => void>> = {
-    retryThroughAuto: () => void continueStoppedAgent({ sessionId, agentId: agent.id }),
+    retryThroughAuto: () =>
+      void continueStoppedAgent({ sessionId, agentId: agent.id }).catch((error: unknown) =>
+        reportError({ title: "Couldn't continue the agent", error, sessionId }),
+      ),
     stopAgent: () => void cancelCurrentTurn(sessionId, agent.id, 'user'),
     confirmDelegation: () => decide({ choice: 'confirm' }),
     declineDelegation: () => decide({ choice: 'decline' }),

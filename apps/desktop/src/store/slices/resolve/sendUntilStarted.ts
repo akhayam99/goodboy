@@ -1,20 +1,11 @@
-import type { SendTurnInput, SendTurnResult } from '../turn/types';
+import type { SendTurnInput } from '../turn/types';
+import { throwIfRefused } from '../turn/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly input: Omit<SendTurnInput, 'onStarted'>;
   readonly onLateError: (error: unknown) => void;
-};
-
-export const refusalOf = (result: SendTurnResult): string | null => {
-  if (result.blockedOverBudget) {
-    return 'The session budget is reached. Raise it to continue the fix run';
-  }
-  if (result.isWriterLeaseDenied === true) {
-    return 'Another agent is writing in this folder. Try again in a moment';
-  }
-  return null;
 };
 
 export const sendUntilStarted = ({ get, input, onLateError }: Params): Promise<boolean> =>
@@ -37,7 +28,8 @@ export const sendUntilStarted = ({ get, input, onLateError }: Params): Promise<b
             resolve(false);
             return;
           }
-          reject(new Error(refusalOf(result) ?? 'The fix run did not start'));
+          throwIfRefused({ result });
+          reject(new Error('The fix run did not start'));
         },
         (error: unknown) => {
           if (isStarted) {
@@ -46,5 +38,6 @@ export const sendUntilStarted = ({ get, input, onLateError }: Params): Promise<b
           }
           reject(error);
         },
-      );
+      )
+      .catch(reject);
   });
