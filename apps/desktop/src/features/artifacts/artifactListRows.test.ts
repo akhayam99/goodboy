@@ -7,6 +7,8 @@ import {
   type AgentId,
   type ArtifactId,
   type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
   type PlanWithCount,
   type SessionArtifact,
   type SessionId,
@@ -89,7 +91,7 @@ const build = (params: {
   readonly artifacts?: ReadonlyArray<SessionArtifact>;
   readonly generations?: ReadonlyArray<ArtifactGeneration>;
   readonly agents?: ReadonlyArray<Agent>;
-  readonly openQuestionCount?: number;
+  readonly openQuestions?: ReadonlyArray<OpenQuestion>;
   readonly revising?: ReadonlyMap<ArtifactId, PlanRevising>;
   readonly runs?: ReadonlyArray<WorkflowRun>;
   readonly autoViews?: ReadonlyArray<AutoTreeView>;
@@ -101,7 +103,7 @@ const build = (params: {
     agents: params.agents ?? AGENTS,
     runs: params.runs ?? [],
     templates: [],
-    openQuestionCount: params.openQuestionCount ?? 0,
+    openQuestions: params.openQuestions ?? [],
     askingAgentIds: NO_ASKING,
     revising: params.revising ?? new Map(),
     autoViews: params.autoViews ?? [],
@@ -160,10 +162,24 @@ describe('buildArtifactListRows', () => {
     expect(row?.group).toBe('ready');
   });
 
-  it('says a plan with open questions needs you', () => {
-    const [row] = build({ plans: [plan({})], openQuestionCount: 2 });
-    expect(row?.state).toMatchObject({ key: 'needs', detail: '2 questions' });
-    expect(row?.isPlanRunning).toBe(true);
+  it('moves a plan to Needs you only for a question from its own planner', () => {
+    const question = (askedBy: string): OpenQuestion => ({
+      id: brandId<OpenQuestionId>({ value: `question-${askedBy}` }),
+      sessionId: SESSION_ID,
+      createdByAgentId: brandId<AgentId>({ value: askedBy }),
+      text: 'Should the retries back off?',
+      suggestedAnswers: [],
+      isBlocking: false,
+      userAnswer: null,
+      status: 'open',
+      createdAt: plan({}).createdAt,
+    });
+    const [other] = build({ plans: [plan({})], openQuestions: [question('agent-tester')] });
+    const [own] = build({ plans: [plan({})], openQuestions: [question('agent-planner')] });
+
+    expect(other?.group).toBe('ready');
+    expect(own?.state).toMatchObject({ key: 'needs', detail: 'waiting for your answer' });
+    expect(own?.isPlanRunning).toBe(true);
   });
 
   it('says a plan the planner is reworking is revising, grouped with what runs', () => {

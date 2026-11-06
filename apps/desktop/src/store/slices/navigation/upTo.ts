@@ -15,6 +15,6 @@ export const upTo = (set: SetFn, get: GetFn) => {
       goHistory({ set, get, delta: -1 });
       return;
     }
-    get().navigate({ to, isExact: true });
+    get().navigate({ to });
   };
 };

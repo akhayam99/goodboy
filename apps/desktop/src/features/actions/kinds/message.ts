@@ -53,7 +53,6 @@ export const MESSAGE_KIND: ObjectKindDefinition<MessageActionTarget, MessageFact
             to: agentPlace({
               sessionId: facts.sessionId,
               agentId: facts.agentId,
-              pane: 'transcript',
             }),
           });
         }

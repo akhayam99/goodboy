@@ -33,7 +33,7 @@ The strip ends with the same controls on every scope.
 - The ports sit next to it.
 - **⋯** holds **Send last output**, **Copy worktree path** and **Open session**. A folder with no session has a quiet **Copy folder path** instead.
 - **Send last output** attaches the end of the tab's scrollback to the session's composer. It is sent only when you send.
-- Selecting text in a terminal shows **Ask the agent about this**. It attaches just the selection the same way.
+- Selecting text in a terminal shows **Send to the agent**. It attaches just the selection the same way.
 - A port a terminal listens on shows as quiet text on a worktree row that is not selected. For the selected worktree it shows as a chip at the right edge of the tab strip, never on a tab. A click opens localhost on it.
 - Port detection runs every 5 seconds and sees TCP only.
 
@@ -116,6 +116,8 @@ Move through Goodboy, change a shortcut and stop an agent without leaving the ke
 - **Esc** closes the dialog or preview in front, listed as Close the dialog or preview.
 - While an agent runs and nothing else is open, **Esc** twice stops it. The first press says "Esc again to stop" beside the Stop square for three seconds. The second stops the agent, listed as Stop the running agent, press twice.
 - A menu, a drawer or a dialog that is open always takes the key first. The key leaves the page only when no turn runs.
+- In a session, **Esc** walks one ladder. In a box with text it leaves the box and keeps your text. Then it closes the panel on the right. Then it does what the back row above the page does, so a step goes to its run and a list goes to the Overview. On the Overview it does nothing.
+- **⌘⌥W** and **⌘⌥P** on a run, a step, an agent or an artifact go to Runs or Artifacts. So do they from Settings or a panel over the list. Pressed on the list itself they stay.
 
 **The Mac menu bar**
 
@@ -144,8 +146,8 @@ Pin the scripts you use and run them from the session.
 - A running service shows its dot and uptime. CPU and memory are two rows in the card you get when you rest on its status.
 - **Run** on a Service starts it in place and leaves the list as it is. The row's last line, uptime and port are the feedback. A click on the row, or Enter, opens its output.
 - A project with more than one Service has **Start all services** on the Services band. It starts the ones that are not running.
-- **Run** on a Command shows the Command's live output in place of the list, with **Run again**, **Copy output**, **Ask the agent about this** and **Back to scripts**.
-- **Ask the agent about this** attaches the log to the session's composer without sending it. The log is titled with the script, the exit code and the worktree. The same verb is in the row's right click menu.
+- **Run** on a Command shows the Command's live output in place of the list, with **Run again**, **Copy output**, **Send to the agent** and **Back to scripts**.
+- **Send to the agent** attaches the log to the session's composer without sending it. The log is titled with the script, the exit code and the worktree. The same verb is in the row's right click menu.
 - A line a program redraws (a progress bar, a spinner) shows as its last frame, one line.
 - A running script takes no input. Its pane says **Output only. Stop ends it.**
 - A running script puts a dot on **Scripts**. A run that failed puts a red one there until you open its output.

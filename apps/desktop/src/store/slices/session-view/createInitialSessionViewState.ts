@@ -2,17 +2,15 @@ type Params = Record<string, never>;
 
 export const createInitialSessionViewState = ({}: Params) => ({
   selectedAgentId: {},
-  scriptsLensScope: null,
   sessionViewPrefs: {},
   activeLens: {},
   focusedArtifactId: {},
   artifactFilter: {},
   artifactConversationAgentId: {},
   awaitedArtifactAgentId: {},
+  focusedRunAgentId: {},
   focusedGithubIssueNumber: {},
   focusedExternalTask: {},
-  agentPane: {},
-  agentTab: {},
   focusedWorkflowRunId: {},
   diffFocus: {},
   diffMountPath: {},

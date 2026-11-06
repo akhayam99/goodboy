@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Button, DrawerFrame, EmptyState } from '@goodboy/ui';
+import { DrawerFrame, EmptyState } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, agentPlace, useAppStore, useTranscript } from '../../store';
 import { briefImagesOf } from '../../features/auto/child/briefImagesOf';
@@ -87,18 +87,13 @@ export const AutoChildPane = ({ sessionId, agentId, onClose }: Props) => {
       icon={CONCEPT_ICONS.agents}
       scroll="self"
       onClose={onClose}
-      action={
-        <Button
-          variant="quiet"
-          size="sm"
-          onClick={() => {
-            onClose();
-            navigate({ to: agentPlace({ sessionId, agentId }) });
-          }}
-        >
-          Open full
-        </Button>
-      }
+      page={{
+        tooltip: 'Open on the agent page',
+        onOpen: () => {
+          onClose();
+          navigate({ to: agentPlace({ sessionId, agentId }) });
+        },
+      }}
     >
       <ChatView
         session={session}

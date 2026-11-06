@@ -298,21 +298,41 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   step list (a saved workflow or Describe steps; `executionMode` not
   `dynamic`) shows the run page in the center and leaves the rail on level 1;
   its spawned agents are in the Agents panel (see The session tools). Esc on
-  the run Overview calls `leaveRunLevel`: the Runs list, a new history entry.
+  the run page does what its back row does and lands on the Runs list, through
+  history when the list is the page below.
   An orchestrated run shows its document with **Orchestrated** selected
   ([The orchestrated document](../workflows.md#the-orchestrated-document)).
 - **An orchestrated run opens from Runs.** Runs stays selected while any run,
   agent or Auto conversation is in the center (the Runs page lists every
   current lens, `pageLensOf` read by `useSessionPageLens` in the open, folded
-  and flyout session levels). Esc on an orchestrated run (`leaveRunLevel`) and
-  going up to Runs from a run (`upTo` clears the run focus when it lands on
-  the Runs list) land on the list. A step row of the document opens the step
+  and flyout session levels). Esc on an orchestrated run and going up to Runs
+  from a run land on the list, because a place with no run is the list.
+- **Esc is one ladder in a session** (`escapeLadder`, the base escape layer of
+  `SessionWorkspace`, the same steps as ⌘W below its studio). A popover or a
+  confirm takes Esc first (its own layer). In a field that holds text, Esc
+  leaves the field and keeps the text; while an agent runs, the composer's Esc
+  arms Stop first and the page stays. An open drawer closes. A page with a back
+  row does what the row does: a step goes to its run, a run or an agent to
+  Runs, a list page to the Overview. The Overview has no row and Esc does
+  nothing there. No page registers an Esc of its own to leave; the artifact
+  run page, which has no address yet, is the one exception. A step row of the document opens the step
   in the pane (drawer kind `run-step`), never the center.
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation with the Agents panel open (`openSpawned`), and Runs stays
   selected on the rail while an Auto agent is in the center. ⌘⌥W and the
-  Agents key (`lens.agents`, ⌘⌥A) both open Runs, and pressed on Runs go back
-  to the Overview.
+  Agents key (`lens.agents`, ⌘⌥A) both open Runs. Pressed below Runs (a run,
+  a step, an agent or an Auto conversation) they land on the Runs list, and
+  pressed on the list they stay: ⌘↑ is the key that leaves. ⌘⌥P does the same
+  for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`). A studio or a
+  drawer open over the list, and a generating artifact page (`focusedRunAgentId`
+  in the store, cleared by the key), count as below the list, so the key lands
+  on it.
+- **A gone object says so.** A run, an agent, an artifact or a plan part that
+  was deleted or moved shows one empty state, "This run is no longer in this
+  session" (`GoneObject`), on its page or in its drawer, with Back on a page;
+  a drawer waits for its collection to load before it says so. A run that is
+  still in the session but whose steps did not load says "This run couldn't be
+  read" with Retry (`RunMetadataMissing`), never that it is gone.
 
 The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
 they open from the session tools column at the right of the content (see The
@@ -521,7 +541,7 @@ placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
 **New session is a draft, not a session.** New, ⌘N (on Chat, Terminal and
-inside Ask the same chord is new chat, new terminal and Reset chat, see
+inside Ask the same chord is new chat, new terminal and New question, see
 [keyboard.md](../keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
@@ -599,10 +619,12 @@ activity yet show the plain overview with its actions.
   agent and a sub sub agent read `Back to {parent agent name}` (`parentPlace`
   walks `parentAgentId` one step; a top level run step keeps its run, a sub
   step reads `Back to {parent step name}`), a run reads `Back
-to runs`, a top level run step `Back to run`, a plan or any artifact `Back to
-artifacts`, a Branch file or thread `Back to branch`, every other lens page
-  and a Branch section `Back to overview`. A product lens keeps its name (`Back
-to GitHub issue`). A click calls `upTo` with the parent place: a real
+to runs`, a top level run step `Back to {run title}` (the run's title, else its
+  workflow's name, else `Back to run`), a plan or any artifact `Back to
+artifacts`, a Branch file or thread `Back to branch`, every other lens page,
+  a GitHub issue, a linked task and a Branch section `Back to overview`. The
+  name comes from `placeTitleOf` (store, navigation), the one name a place has:
+  the back row, the history arrows and their hold menu all read it. A click calls `upTo` with the parent place: a real
   navigation, so a reload or a deep link with no history below still goes
   there; when the entry below is that place it is a Back instead of a push.
   The Overview draws no row (it has no parent), nor does a drawer, which keeps
@@ -615,8 +637,12 @@ to GitHub issue`). A click calls `upTo` with the parent place: a real
   `backOf` or a breadcrumb is drawn; a place that opens a drawer or a side pane
   is named with its reason. It also fails on a back arrow or chevron outside
   the back row, `DrawerFrame` and the history arrows, with a named allowlist
-  for the backs that are not a way up. The history arrow in the top bar reads
-  `Back to {place}` too: a test that wants it takes `[data-nav-arrow="back"]`.
+  for the backs that are not a way up. The history arrows in the top bar are
+  memory, not a way up, so they never say Back: the left one reads
+  `Previous: {place}` and the right one `Forward: {place}` (an agent's name, a
+  run's title, a page), with the session's title on a second line; a hold or a
+  right click opens the History menu with the same names. A test that wants an
+  arrow takes `[data-nav-arrow="back"]`.
 - **The header holds only its page.** `SessionWorkspace` hands no actions
   to the page headers: the session tools live in their column at the right of
   the content (see The session tools), so no header carries a second `⋯` (pinned by
@@ -638,8 +664,8 @@ to GitHub issue`). A click calls `upTo` with the parent place: a real
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
-Context form the reading group; one separator leads to the other tools.
+Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore, Context and
+Ask form the reading group; one separator leads to the other tools.
 Each tool keeps its pane id and shortcut. `SessionToolButton` names every
 tool below its icon in the 9px `text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
@@ -743,20 +769,21 @@ Folding the rail leaves the column in place.
 
 - **One pane at a time.** Every toggle goes through `togglePane`
   (`features/session/panes/`): pressing the open pane's toggle closes it,
-  pressing another replaces it in the one right drawer. `openPaneOf` maps the
-  open drawer to a cluster pane, so an Explore file opened from Explore keeps
+  pressing another replaces it in the one right drawer. `openPaneOf` reads the
+  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so an Explore file opened from Explore keeps
   Explore lit, and a script output opened from Scripts keeps Scripts lit. Esc
   closes the pane (`DrawerFrame`).
 - **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
   `ExplorePane` and `ScriptsPanel` render in a `DrawerFrame`. A file opened
-  from Explore replaces it and shows **Back to files**; a script output opened
+  from Explore replaces it and shows **Back to Explore**; a script output opened
   from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
   `back`, carried by the payload's `from`); Run on a Service does not open it,
   Run on a Task does. `openExplorePane` takes the
   worktree to browse (the mount registry's Browse files passes it),
-  `openScriptsPane` the project to scope to (Open scripts). `openLens` sends
-  the old `explore` and `scripts` lenses to the panes, so the palette, toasts
-  and stored notifications (`open-lens` scripts) still land.
+  `openScriptsPane` the project to scope to (Open scripts). There is no
+  Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts
+  and stored notifications (`open-lens` scripts) open the pane through
+  `openToolPane`, which first goes to the session when another one is shown.
 - **Context signals ride on Context.** A 6px dot in the Context tool's right
   slot (on the folded icon, its corner) marks decisions changed since the last
   look (info), a running summary (info, pulsing) or a failed summary (danger)
@@ -968,7 +995,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
 
 ## The Scripts pane
 
-`ScriptsPanel` is one `DrawerFrame` (`Scripts`, count `N projects · N running`,
+a `Filter scripts` field from nine rows on, that `/` focuses, and an icon `New script`) over one list
 a `Filter scripts` field that `/` focuses and `New script`) over one list
 grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick

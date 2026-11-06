@@ -9,7 +9,6 @@ const { state } = vi.hoisted(() => ({
     sessionArtifacts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     openDrawer: vi.fn(),
     navigate: vi.fn(),
-    setScriptsLensScope: vi.fn(),
   },
 }));
 
@@ -46,7 +45,6 @@ beforeEach(() => {
   state.sessionArtifacts = {};
   state.openDrawer = vi.fn();
   state.navigate = vi.fn();
-  state.setScriptsLensScope = vi.fn();
 });
 
 afterEach(cleanup);

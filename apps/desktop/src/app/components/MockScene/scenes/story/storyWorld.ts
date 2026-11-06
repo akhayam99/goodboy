@@ -199,7 +199,6 @@ export const seedStoryAsking = (): Session | null => {
     sessions: [session],
     currentSessionId: STORY_SESSION_ID,
     selectedAgentId: { [STORY_SESSION_ID]: PLANNER_ID },
-    agentPane: { [STORY_SESSION_ID]: 'transcript' },
     activeLens: { [STORY_SESSION_ID]: null },
     sessionPhaseRuns: { [STORY_SESSION_ID]: plannerAgentsOf({ agents: scene.agents }) },
     autoTreeViews: {

@@ -520,7 +520,7 @@ writing to it reopens it to **Deciding**.
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
   conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
   **Returned to Auto**). A pane opened from the Agents panel shows **Back to
-  agents**. **Open full** puts the child in the center; there the notice reads
+  agents**. **Open page** puts the child in the center; there the notice reads
   the same and **Open Auto** goes back.
 - **Talking to a child.** The pane and the child page carry a composer,
   "Message Implementer", under the line "Started by Auto. Auto sees what you

@@ -121,7 +121,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },
@@ -141,7 +141,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
       expect(useAppStore.getState().appStudio).toBeNull();
     },

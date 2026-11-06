@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import type { OpenDrawer } from '../drawer/state';
 import type { StudioPlace } from './studio';
-import type { Location } from './types';
+import type { Location, SessionTarget } from './types';
 
 type Params = {
   readonly location: Location;
@@ -17,9 +17,13 @@ type StudioParams = {
   readonly studio: StudioPlace | null;
 };
 
+type TargetParams = {
+  readonly target: SessionTarget | null;
+};
+
 const REMOVED_LENSES: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts']);
 
-const REMOVED_RAIL_LEVEL_KEY = 'sidebar-level';
+const REMOVED_TARGETS: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts', 'agent']);
 
 const REMOVED_STUDIOS: ReadonlyMap<string, StudioPlace> = new Map<string, StudioPlace>([
   ['companion', IPHONE_SETTINGS_PLACE],
@@ -47,6 +51,16 @@ const withoutRemovedStudio = ({ location }: Params): Location => {
   return studio === location.studio ? location : { ...location, studio };
 };
 
+const targetStillThere = ({ target }: TargetParams): SessionTarget | null => {
+  if (target === null || REMOVED_TARGETS.has(String(target.kind))) {
+    return null;
+  }
+  if (target.kind === 'thread' && 'pane' in target) {
+    return { kind: 'thread', threadId: target.threadId };
+  }
+  return target;
+};
+
 const withoutRemovedLens = ({ location }: Params): Location => {
   const { place } = location;
   if (place.at !== 'session') {
@@ -55,8 +69,8 @@ const withoutRemovedLens = ({ location }: Params): Location => {
   const { view } = place;
   const lens = String(view.lens);
   const hasRemovedLens = REMOVED_LENSES.has(lens);
-  const hasRemovedTarget = REMOVED_LENSES.has(String(view.target?.kind));
-  if (!hasRemovedLens && !hasRemovedTarget) {
+  const target = hasRemovedLens ? null : targetStillThere({ target: view.target });
+  if (!hasRemovedLens && target === view.target) {
     return location;
   }
   const pane = hasRemovedLens ? paneOfLens({ lens, sessionId: place.sessionId }) : null;
@@ -64,11 +78,7 @@ const withoutRemovedLens = ({ location }: Params): Location => {
     ...location,
     place: {
       ...place,
-      view: {
-        ...view,
-        lens: hasRemovedLens ? null : view.lens,
-        target: hasRemovedLens || hasRemovedTarget ? null : view.target,
-      },
+      view: { ...view, lens: hasRemovedLens ? null : view.lens, target },
     },
     focus: { ...location.focus, drawer: location.focus.drawer ?? pane },
   };
@@ -76,23 +86,20 @@ const withoutRemovedLens = ({ location }: Params): Location => {
 
 const withoutRailLevel = ({ location }: Params): Location => {
   const { place } = location;
-  if (place.at !== 'session') {
+  if (place.at !== 'session' || location.focus.drawer !== null) {
     return location;
   }
-  const { [REMOVED_RAIL_LEVEL_KEY]: picked, ...selection } = location.focus.selection;
   const isRunShown = place.view.target?.kind === 'run';
-  const isAutoShown =
-    place.view.lens === 'auto' && place.view.agentId !== null && picked !== 'session';
-  if (picked === undefined && !isRunShown && !isAutoShown) {
+  const isAutoShown = place.view.lens === 'auto' && place.view.agentId !== null;
+  if (!isRunShown && !isAutoShown) {
     return location;
   }
-  const spawned: OpenDrawer | null =
-    isRunShown || isAutoShown
-      ? { kind: 'spawned', sessionId: place.sessionId, payload: null }
-      : null;
   return {
     ...location,
-    focus: { ...location.focus, selection, drawer: location.focus.drawer ?? spawned },
+    focus: {
+      ...location.focus,
+      drawer: { kind: 'spawned', sessionId: place.sessionId, payload: null },
+    },
   };
 };
 

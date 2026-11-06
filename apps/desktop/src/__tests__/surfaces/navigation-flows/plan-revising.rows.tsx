@@ -119,13 +119,13 @@ const sendInTheDrawerThenOpenTheArtifactsPage = async (ctx: Ctx): Promise<void> 
   seedPlanWithDraft(ctx);
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
-  await visible('button', 'Open in Artifacts');
+  await visible('button', 'Open page');
   await sendToPlanner();
   await waitFor(
     () => expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(REVISING_REASON),
     WAIT,
   );
-  await click(await screen.findByRole('button', { name: 'Open in Artifacts' }, WAIT));
+  await click(await screen.findByRole('button', { name: 'Open page' }, WAIT));
   await settle(6);
 };
 

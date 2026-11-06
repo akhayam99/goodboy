@@ -1,3 +1,5 @@
+import { selectSessionById } from '../sessions/selectSessionById';
+import { switchEpoch } from '../workspaces/switchEpoch';
 import { applyLocation } from './applyLocation';
 import { canonicalLocation } from './canonicalLocation';
 import { currentStack, stackKey } from './currentStack';
@@ -14,22 +16,41 @@ const placeStillThere = ({ get, location }: { readonly get: GetFn } & Params): L
   if (place.at !== 'session') {
     return location;
   }
-  const exists = get().sessions.some((session) => session.id === place.sessionId);
+  const exists = selectSessionById(get(), place.sessionId) !== null;
   return exists
     ? location
     : { ...location, place: { at: 'board' }, focus: { ...location.focus, drawer: null } };
 };
 
+type NeedsArchiveParams = {
+  readonly get: GetFn;
+  readonly location: Location;
+};
+
+const needsArchive = ({ get, location }: NeedsArchiveParams): boolean =>
+  location.place.at === 'session' && selectSessionById(get(), location.place.sessionId) === null;
+
 export const restoreLocation = (set: SetFn, get: GetFn) => {
-  return ({ location }: Params): void => {
+  return async ({ location }: Params): Promise<void> => {
+    const workspaceId = get().currentWorkspaceId;
+    const cleaned = withoutRemovedPages({ location });
+    if (workspaceId !== null && needsArchive({ get, location: cleaned })) {
+      const epoch = switchEpoch.value;
+      await get()
+        .loadArchivedSessions({ workspaceId })
+        .catch((error: unknown) => console.error('read the archived sessions failed', error));
+      if (epoch !== switchEpoch.value) {
+        return;
+      }
+    }
     const state = get();
-    const kept = placeStillThere({ get, location: withoutRemovedPages({ location }) });
+    const kept = placeStillThere({ get, location: cleaned });
     const canonical = canonicalLocation({ state, request: kept.place });
     const next: Location = {
       ...kept,
       place: canonical.place,
       focus: { ...kept.focus, drawer: kept.focus.drawer ?? canonical.drawer },
-      workspaceId: state.currentWorkspaceId,
+      workspaceId,
     };
     const stack = currentStack(state);
     set((current) => ({

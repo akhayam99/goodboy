@@ -8,6 +8,7 @@ import {
   EmptyState,
   formatError,
   ICON_SIZE,
+  IconButton,
   Notice,
   splitErrorMessage,
   useCopyLink,
@@ -16,25 +17,20 @@ import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { scriptsScopeOf } from '../../scriptsScopeOf';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
 import { isService } from '../../classifyScript';
 import { defaultClosedPackageKeys } from '../../defaultClosedPackageKeys';
 import { filterScriptGroups } from '../../filterScriptGroups';
 import { groupScriptsByPackage } from '../../groupScriptsByPackage';
-import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
 import { useScriptKeys } from '../../hooks/useScriptKeys';
 import { useScriptLive } from '../../hooks/useScriptLive';
-import { useScriptPins } from '../../hooks/useScriptPins';
 import { useServiceStarts } from '../../hooks/useServiceStarts';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
-import { scriptPinId } from '../../scriptPinId';
+import { isScriptOpenIn } from '../../isScriptOpenIn';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
-import {
-  readPackagesCollapsedOverrides,
-  writePackagesCollapsedOverrides,
-} from '../../packagesCollapsedStorage';
 import { scriptRunRecordFor } from '../../scriptRunRecordFor';
 import { scriptOutcomeLabel } from '../../scriptOutcomeLabel';
 import { scriptRecordOutput } from '../../scriptRecordOutput';
@@ -46,26 +42,35 @@ import {
 import { workspaceInvocation } from '../../workspaceInvocation';
 import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
-import { SuggestedRow } from '../ScriptRow/SuggestedRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { EndedServicesRow } from './EndedServicesRow';
 import { ScriptBand } from './ScriptBand';
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
+import { SuggestedBand } from './SuggestedBand';
 import { ScriptPinPicker } from './ScriptPinPicker';
 import { StartAllServices } from './StartAllServices';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
 import { UnmountedScriptsNote } from './UnmountedScriptsNote';
 import { packageSectionKey } from './packageSectionKey';
 import { unmountedScriptsOf } from './unmountedScriptsOf';
+import { useScriptCollapse } from './useScriptCollapse';
 import { useScriptDraft } from './useScriptDraft';
+import { useScriptPinActions } from './useScriptPinActions';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId;
   readonly onClose: () => void;
+};
+
+const FILTER_FROM_ROWS = 9;
+
+type SuggestedParams = {
+  readonly group: SessionScriptGroup;
+  readonly hasManifestScripts: boolean;
 };
 
 type RowParams = {
@@ -88,8 +93,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     const drawer = selectOpenDrawer(state);
     return drawer?.kind === 'scriptRun' && drawer.sessionId === sessionId ? drawer.payload : null;
   });
-  const scriptsLensScope = useAppStore((state) => state.scriptsLensScope);
-  const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
+  const scopeProjectId = useAppStore((state) => scriptsScopeOf({ state, sessionId }));
   const loadScripts = useAppStore((state) => state.loadScripts);
   const saveScript = useAppStore((state) => state.saveScript);
   const deleteScript = useAppStore((state) => state.deleteScript);
@@ -97,17 +101,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const refreshDiscoveredScripts = useAppStore((state) => state.refreshDiscoveredScripts);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
-  const toggleScriptPin = useAppStore((state) => state.toggleScriptPin);
-  const reportError = useAppStore((state) => state.reportError);
 
   const [query, setQuery] = useState('');
-  const [collapsed, setCollapsed] = useState<ReadonlySet<MountId>>(() =>
-    readCollapsedGroups({ workspaceId }),
-  );
-  const [packagesOverrides, setPackagesOverrides] = useState<Readonly<Record<string, boolean>>>(
-    () => readPackagesCollapsedOverrides({ workspaceId }),
-  );
-  const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
+  const { collapsed, packagesOverrides, setGroupCollapsed, setPackageCollapsed } =
+    useScriptCollapse({ workspaceId });
+  const [scopedProjectId] = useState(() => scopeProjectId);
   const [pageError, setPageError] = useState<string | null>(null);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const [pickerMountId, setPickerMountId] = useState<MountId | null>(null);
@@ -120,6 +118,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     [allProjects, workspaceId],
   );
   const visibleGroups = useMemo(() => filterScriptGroups({ groups, query }), [groups, query]);
+  const rowCount = groups.reduce(
+    (total, group) => total + group.scripts.length + group.suggested.length,
+    0,
+  );
   const live = useScriptLive({ runs });
   const runningCount = useMemo(
     () => Object.values(runs ?? {}).filter((record) => record.status === 'pending').length,
@@ -130,21 +132,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     () => unmountedScriptsOf({ groups, saved, projects: workspaceProjects }),
     [groups, saved, workspaceProjects],
   );
-  const pins = useScriptPins({ projectIds: groups.map((group) => group.projectId) });
-  const isPinned = ({ group, script }: RowParams): boolean =>
-    (pins[group.projectId] ?? []).includes(scriptPinId(script));
-  const togglePinId = ({
-    group,
-    pinId,
-  }: {
-    readonly group: SessionScriptGroup;
-    readonly pinId: string;
-  }) =>
-    void toggleScriptPin({ projectId: group.projectId, pinId }).catch((error: unknown) =>
-      reportError({ title: "Couldn't pin the script", error }),
-    );
-  const togglePin = ({ group, script }: RowParams) =>
-    togglePinId({ group, pinId: scriptPinId(script) });
+  const { pins, isPinned, togglePinId, togglePin } = useScriptPinActions({ groups });
   const activeGroup =
     groups.find((group) => group.projectId === scopedProjectId) ??
     groups.find((group) => group.projectId === activeProjectId) ??
@@ -154,45 +142,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   useEffect(() => {
     void loadScripts(workspaceId);
   }, [loadScripts, workspaceId]);
-
-  useEffect(() => {
-    setScriptsLensScope({ scope: null });
-  }, [setScriptsLensScope]);
-
-  const setGroupCollapsed = useCallback(
-    ({ mountId, isCollapsed }: { readonly mountId: MountId; readonly isCollapsed: boolean }) => {
-      setCollapsed((current) => {
-        const next = new Set(current);
-        if (isCollapsed) {
-          next.add(mountId);
-        } else {
-          next.delete(mountId);
-        }
-        writeCollapsedGroups({ workspaceId, collapsed: next });
-        return next;
-      });
-    },
-    [workspaceId],
-  );
-
-  const setPackageCollapsed = useCallback(
-    ({
-      mountId,
-      sectionKey,
-      isCollapsed,
-    }: {
-      readonly mountId: MountId;
-      readonly sectionKey: string;
-      readonly isCollapsed: boolean;
-    }) => {
-      setPackagesOverrides((current) => {
-        const next = { ...current, [packageSectionKey({ mountId, sectionKey })]: isCollapsed };
-        writePackagesCollapsedOverrides({ workspaceId, overrides: next });
-        return next;
-      });
-    },
-    [workspaceId],
-  );
 
   const openNew = useCallback(
     ({ group }: { readonly group: SessionScriptGroup }) => {
@@ -468,6 +417,13 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const orderedKeys: string[] = [];
   const rowsByKey = new Map<string, RowParams>();
 
+  const registerRow = ({ group, script }: RowParams): string => {
+    const rowKey = `${group.mountId}:${script.key}`;
+    orderedKeys.push(rowKey);
+    rowsByKey.set(rowKey, { group, script });
+    return rowKey;
+  };
+
   const renderRow = ({ group, script }: RowParams) => {
     const isEditing =
       script.savedId !== null &&
@@ -476,9 +432,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     if (isEditing) {
       return <div key={script.key}>{editorNode}</div>;
     }
-    const rowKey = `${group.mountId}:${script.key}`;
-    orderedKeys.push(rowKey);
-    rowsByKey.set(rowKey, { group, script });
+    const rowKey = registerRow({ group, script });
     const record = scriptRunRecordFor({ runs, group, script });
     const projectId = group.projectId;
     const port =
@@ -500,12 +454,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             : live.holderOf({ port, worktreePath: group.worktreePath })
         }
         facts={facts}
-        isSelected={
-          focusedKey === rowKey ||
-          (openPayload !== null &&
-            openPayload.scriptKey === script.key &&
-            (openPayload.mountId === null || openPayload.mountId === group.mountId))
-        }
+        isSelected={focusedKey === rowKey || isScriptOpenIn({ openPayload, group, script })}
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
         target={targetFor({ group, script })}
         onOpen={() => onOpen({ group, script })}
@@ -591,6 +540,34 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     );
   };
 
+  const renderSuggested = ({ group, hasManifestScripts }: SuggestedParams) => {
+    if (group.suggested.length === 0 || pickerMountId === group.mountId) {
+      return null;
+    }
+    for (const script of group.suggested) {
+      registerRow({ group, script });
+    }
+    return (
+      <SuggestedBand
+        group={group}
+        runs={runs}
+        canPick={hasManifestScripts && group.isReady}
+        isPickerOpen={pickerMountId === group.mountId}
+        onTogglePicker={() =>
+          setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
+        }
+        isScriptSelected={(script) =>
+          focusedKey === `${group.mountId}:${script.key}` ||
+          isScriptOpenIn({ openPayload, group, script })
+        }
+        onOpen={(script) => onOpen({ group, script })}
+        onRun={(script) => onRun({ group, script })}
+        onStop={(script) => onStop({ script })}
+        onPin={(script) => togglePin({ group, script })}
+      />
+    );
+  };
+
   const renderGroupBands = ({ group }: { readonly group: SessionScriptGroup }) => {
     const services = group.scripts.filter((script) => isService({ script }));
     const tasks = group.scripts.filter((script) => !isService({ script }));
@@ -623,38 +600,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
           </ScriptBand>
         )}
-        {group.suggested.length === 0 || pickerMountId === group.mountId ? null : (
-          <ScriptBand
-            label="Suggested"
-            group={group}
-            count={group.suggested.length}
-            hint="Pin the ones you run here."
-            action={
-              hasManifestScripts && group.isReady ? (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  aria-label={`Pin a script of ${group.projectName}`}
-                  aria-expanded={pickerMountId === group.mountId}
-                  onClick={() =>
-                    setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
-                  }
-                >
-                  <Pin size={ICON_SIZE.row} aria-hidden />
-                  Pin a script
-                </Button>
-              ) : null
-            }
-          >
-            {group.suggested.map((script) => (
-              <SuggestedRow
-                key={script.key}
-                script={script}
-                onPin={() => togglePin({ group, script })}
-              />
-            ))}
-          </ScriptBand>
-        )}
+        {renderSuggested({ group, hasManifestScripts })}
       </>
     );
   };
@@ -667,10 +613,14 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
         onDiscard={draft.discardAndContinue}
         onCancel={draft.keepEditing}
         trigger={() => (
-          <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
-            <Plus size={ICON_SIZE.row} aria-hidden />
-            New script
-          </Button>
+          <IconButton
+            icon={Plus}
+            label="New script"
+            tooltip="New script"
+            variant="ghost"
+            iconSize={ICON_SIZE.control}
+            onClick={() => openNew({ group: activeGroup })}
+          />
         )}
       />
     );
@@ -739,7 +689,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
       iconClassName="text-faint-foreground"
       action={newScriptAction}
       toolbar={
-        groups.length === 0 ? null : <ScriptsFilterInput value={query} onChange={setQuery} />
+        rowCount < FILTER_FROM_ROWS && query === '' ? null : (
+          <ScriptsFilterInput value={query} onChange={setQuery} />
+        )
       }
       onClose={onClose}
     >

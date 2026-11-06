@@ -1,10 +1,16 @@
 import { useMemo } from 'react';
 import { DrawerFrame, SegmentedTabs } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useIsSessionCollectionLoaded,
+  useSessionPlans,
+} from '../../../../store';
 import type { ArtifactDrawerTab } from '../../../../store/slices/drawer/state';
 import { planAsArtifact } from '../../../plans/planAsArtifact';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { GoneObject } from '../../../../shared/components/GoneObject';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { ArtifactConversation } from '../ArtifactStudio/ArtifactConversation';
 import { ArtifactShellDetails } from './ArtifactShellDetails';
@@ -29,6 +35,9 @@ export const ArtifactShellDrawer = ({ sessionId, artifactId, tab, onClose }: Pro
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const plans = useSessionPlans(sessionId);
+  const hasArtifacts = useAppStore((s) => s.sessionArtifacts[sessionId] !== undefined);
+  const hasPlans = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
+  const hasLoaded = hasArtifacts && hasPlans;
   const openDrawer = useAppStore((s) => s.openDrawer);
   const artifact = useMemo((): SessionArtifact | null => {
     const stored = artifacts.find((candidate) => candidate.id === artifactId) ?? null;
@@ -36,8 +45,15 @@ export const ArtifactShellDrawer = ({ sessionId, artifactId, tab, onClose }: Pro
     return plan === null ? stored : planAsArtifact({ plan, stored });
   }, [artifacts, plans, artifactId]);
 
-  if (artifact === null) {
+  if (artifact === null && !hasLoaded) {
     return null;
+  }
+  if (artifact === null) {
+    return (
+      <DrawerFrame title="Artifact" icon={CONCEPT_ICONS.plans} onClose={onClose}>
+        <GoneObject noun="artifact" icon={CONCEPT_ICONS.plans} />
+      </DrawerFrame>
+    );
   }
 
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;

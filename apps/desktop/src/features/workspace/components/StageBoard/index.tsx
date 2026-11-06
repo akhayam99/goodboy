@@ -21,6 +21,7 @@ import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm
 import { SetupCard } from '../../../onboarding/SetupCard';
 import { useIsMainWindow } from '../../useIsMainWindow';
 import { BlockedBoard } from './BlockedBoard';
+import { BoardFactsFrame } from './BoardFactsFrame';
 import { BoardSkeleton } from './BoardSkeleton';
 import { BoardEmpty } from './BoardEmpty';
 import { BoardLanes } from './BoardLanes';
@@ -221,18 +222,20 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         )}
 
         {!pending && !empty && (
-          <BoardLanes
-            layout={layout}
-            byStage={byStage}
-            archived={projectArchived}
-            isArchivedLoading={archivedList === undefined}
-            nav={nav}
-            selection={selection}
-            onRestore={onRestore}
-            motionResetKey={motionResetKey}
-            onCardEnter={hover.enter}
-            onCardLeave={hover.leave}
-          />
+          <BoardFactsFrame workspaceId={workspaceId}>
+            <BoardLanes
+              layout={layout}
+              byStage={byStage}
+              archived={projectArchived}
+              isArchivedLoading={archivedList === undefined}
+              nav={nav}
+              selection={selection}
+              onRestore={onRestore}
+              motionResetKey={motionResetKey}
+              onCardEnter={hover.enter}
+              onCardLeave={hover.leave}
+            />
+          </BoardFactsFrame>
         )}
       </div>
 

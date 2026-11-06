@@ -306,8 +306,8 @@ describe('the comment drawer', () => {
     const location = captureWindowLocation({ state: useAppStore.getState() });
     cleanup();
     seedResolveScene({ expandedThreadId: null });
-    act(() => {
-      useAppStore.getState().restoreLocation({ location });
+    await act(async () => {
+      await useAppStore.getState().restoreLocation({ location });
     });
     render(page());
     await settle();

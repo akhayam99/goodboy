@@ -226,7 +226,7 @@ drawer instead of the Terminal page.
      Terminal, Impact, Monitoring, Notifications, Settings), **Create**
      (`create`: New session, New chat, New terminal, New workspace), **App**
      (`action`: Resume setup while setup is unfinished in the main window,
-     Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, Reset chat, the column
+     Theme: dark, Theme: light and Theme: system, Check for updates, Connect a provider, New question, the column
      fold) and **Help** (`help`: Guide, What's new, Keyboard shortcuts, Report a
      bug). New workspace answers to its former names, Open a folder and Start a
      new project (`formerNamesOf` in `shared/utils/names.ts`). Pair an iPhone and one
@@ -302,7 +302,8 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
+**Run** on every row (a Run leaves its last result on the row, a running row swaps Run for **Stop**
+and opens its output, and a row with a result stays after another script is pinned) and a quiet **Pin**. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
@@ -326,16 +327,35 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent and one target
-  (artifact, run, issue, diff focus, Explore project). Its `studio` is the app
+  (artifact, run, issue, diff focus, Branch section, thread). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
-  drawer, selection, scroll and revealed rows. `locationKey` prints the text
+  drawer and the scroll. An address carries only what a screen reads: a window
+  saved by an older build with an agent tab, an Explore folder, the Explore or
+  Scripts lens, a selection or revealed rows still loads, and
+  `withoutRemovedPages` drops those parts (an old lens opens its pane). `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
   `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
-  `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
+  `agentPlace` and `BOARD_PLACE` build the `to`. A move lands exactly where
+  its `to` says: a place with no target is the list (Runs, Artifacts), never
+  the run or artifact shown before, so every caller that means an object
+  passes it as the target, and opening a row is a move that Back undoes
+  (`openArtifactPage`, `openGithubIssue`). The Runs and Artifacts lists write
+  the row they open into `focus.returnRows` (its id) and `focus.scroll` (its
+  index) with `amendFocus` first (`useRowReturn`), so Back scrolls to that row
+  again even when a new row landed above it; the index is only the fallback
+  for a place saved before ids were kept. Runs unfolds Earlier or Archived when
+  the row sits there. A reload keeps a
+  session it can still show, archived ones included (`selectSessionById` in
+  `restoreLocation`). A workspace load empties the archived list, so when the
+  saved session is not among the open ones `restoreLocation` awaits
+  `loadArchivedSessions` first; a reload on an open session reads no archive.
+  The Scripts drawer carries its project in its
+  payload, so a reload keeps that scope too. A write in the background, such as
+  a run starting, never moves the page. The per-session keys the
   surfaces render from (`activeLens`, `selectedAgentId`, the
   focused target) are written only by the slice. A contract test
   (`__tests__/navigation/oneDoor.test.ts`) fails when `features/`, `app/` or

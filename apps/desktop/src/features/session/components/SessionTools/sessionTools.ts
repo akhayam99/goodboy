@@ -32,7 +32,7 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
   },
   {
     pane: 'ask',
-    group: 'work',
+    group: 'read',
     icon: CONCEPT_ICONS.ask,
     label: 'Ask',
     fullLabel: 'Ask this session',

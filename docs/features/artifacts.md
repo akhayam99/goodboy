@@ -4,7 +4,7 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 ### Artifacts
 
-Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you**, **Ready**, **Running**, **Consumed** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card with the state, its detail and what it means.
+Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Ready**, **Running**, **Consumed** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card with the state, its detail and what it means.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
@@ -19,7 +19,7 @@ Check a plan before it runs. A plan can give each part done-when checks and the 
 
 ### Plan beside the planner
 
-Read the plan without leaving the planner. It shows as one row in the planner's chat, and pressing it opens the plan in a drawer on the right, with **Open in Artifacts** and **Edit**. Reports and wireframes open the same way from Activity or from their chip in a transcript.
+Read the plan without leaving the planner. It shows as one row in the planner's chat, and pressing it opens the plan in a drawer on the right, with **Open page** and **Edit**. Reports and wireframes open the same way from Activity or from their chip in a transcript.
 
 ### Comment on a plan
 
@@ -98,3 +98,4 @@ Export a wireframe as a folder of pages, or redraw it at the other fidelity.
 This part is for contributors and agents who change the feature.
 
 - Fact card on a row: `artifactStateCardOf` builds the card that opens on the state of a row.
+- A plan's Needs you: `artifactStateOf` reads only `plannerQuestionCount`, the open questions of the plan's own planner (`plannerQuestionsOf`). The list rows, the reader and the plan model pass the same count, so a question from another agent leaves every plan where it was.

@@ -14,6 +14,7 @@ export const notificationActionClass = ({ kind }: KindParams): NotificationActio
     case 'retry-publication':
     case 'retry-update':
     case 'retry-push':
+    case 'continue-agent':
     case 'update-provider-cli':
       return 'debt';
     case 'open-agent':

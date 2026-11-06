@@ -36,7 +36,7 @@ type ApplyParams = {
 const applyLayout = async ({ get, layout, workspace }: ApplyParams): Promise<void> => {
   await get().setCurrentWorkspace(workspace.id);
   void setWindowTitle(workspace.name);
-  get().restoreLocation({ location: layout.location });
+  await get().restoreLocation({ location: layout.location });
 };
 
 export const restoreLaunchLayout = async ({

@@ -56,9 +56,7 @@ const locationIn = (workspaceId: WorkspaceId, sessionId: string): Location => ({
   studio: null,
   focus: {
     drawer: null,
-    selection: {},
     scroll: { queue: 80 },
-    revealed: [],
   },
 });
 

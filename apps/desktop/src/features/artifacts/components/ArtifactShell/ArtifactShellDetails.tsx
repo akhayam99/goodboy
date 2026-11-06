@@ -8,6 +8,7 @@ import { ArtifactReportProvenance } from '../ArtifactStudio/ArtifactReportProven
 import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
 import { ArtifactWireframeProvenance } from '../ArtifactStudio/ArtifactWireframeProvenance';
 import { useArtifactSavedCopy } from '../../hooks/useArtifactSavedCopy';
+import { openArtifactPage } from '../../openArtifactPage';
 import { ArtifactPlanRuns } from './ArtifactPlanRuns';
 import { ArtifactRevisionsSection } from './ArtifactRevisionsSection';
 import { ArtifactSavedCopy } from './ArtifactSavedCopy';
@@ -20,10 +21,9 @@ type Props = {
 };
 
 export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }: Props) => {
-  const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const navigate = useAppStore((s) => s.navigate);
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
-  const openArtifact = (artifactId: ArtifactId) => setFocusedArtifactId(sessionId, artifactId);
+  const openArtifact = (artifactId: ArtifactId) => openArtifactPage({ sessionId, artifactId });
   const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
 
   return (

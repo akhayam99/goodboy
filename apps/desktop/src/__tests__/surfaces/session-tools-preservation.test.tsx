@@ -26,7 +26,7 @@ import { sessionPlace } from '../../store/slices/navigation/place';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
-import { openLens } from '../../features/session/openLens';
+import { openToolPane } from '../../features/session/panes/openToolPane';
 import { SessionTools } from '../../features/session/components/SessionTools';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 
@@ -137,7 +137,7 @@ describe('session tools rows stay reachable', () => {
 
     act(() => {
       useAppStore.getState().closeDrawer();
-      openLens({ sessionId, lens: 'scripts' });
+      openToolPane({ sessionId, pane: 'scripts' });
     });
     await settle();
     expect(drawerKind()).toBe('scripts');

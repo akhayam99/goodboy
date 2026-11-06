@@ -11,5 +11,5 @@ export const revisionWordOf = ({ card }: Params): string | null => {
   if (card.isOpen) {
     return `revising v${card.reviseVersion}`;
   }
-  return card.status.word === 'Done' ? `v${card.reviseVersion} ready` : null;
+  return card.status.state === 'done' ? `v${card.reviseVersion} ready` : null;
 };

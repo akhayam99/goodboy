@@ -1,7 +1,14 @@
 import { DrawerFrame, Markdown, SectionHeader, TruncatedText } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans, agentPlace } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useIsSessionCollectionLoaded,
+  useSessionPlans,
+  agentPlace,
+} from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { GoneObject } from '../../../../shared/components/GoneObject';
 import { partRoutingLabel } from './partRoutingLabel';
 import { usePlanPartRows } from './usePlanPartRows';
 
@@ -14,6 +21,7 @@ type Props = {
 
 export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => {
   const plans = useSessionPlans(sessionId);
+  const hasPlans = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -22,8 +30,15 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
   const rows = usePlanPartRows({ sessionId, plan, agents });
   const row = rows[index] ?? null;
 
-  if (plan === null || row === null) {
+  if ((plan === null || row === null) && !hasPlans) {
     return null;
+  }
+  if (plan === null || row === null) {
+    return (
+      <DrawerFrame title="Plan part" icon={CONCEPT_ICONS.plan} onClose={onClose}>
+        <GoneObject noun={plan === null ? 'plan' : 'part'} icon={CONCEPT_ICONS.plan} />
+      </DrawerFrame>
+    );
   }
 
   const carrier = agents.find((agent) => agent.id === row.agentId) ?? null;

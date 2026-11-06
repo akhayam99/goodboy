@@ -1,4 +1,5 @@
 import type { Agent, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { claimInterruptedRuns, readInterruptedRuns, type InterruptedRuns } from './restartMarker';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import type { GetFn } from './types';
@@ -56,16 +57,30 @@ export const resumeInterruptedAgents = async ({ get }: Params): Promise<void> =>
   const owned = candidates.filter(({ agent }) => agent.runId != null && claimed.has(agent.runId));
   await Promise.all(
     owned.map(async ({ sessionId, agent }) => {
-      try {
-        await resumeAfterRestart({
-          get,
-          sessionId,
-          agentId: agent.id,
-          reason: marker.reason,
-        });
-      } catch (error) {
-        console.error('resume after restart failed', error);
+      const failure = await resumeAfterRestart({
+        get,
+        sessionId,
+        agentId: agent.id,
+        reason: marker.reason,
+      }).then(
+        (result) => (result === 'unresumable' ? '' : null),
+        (error: unknown) => formatError(error),
+      );
+      if (failure === null) {
+        return;
       }
+      await get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Couldn't resume ${agent.name} after the restart`,
+        body:
+          failure === ''
+            ? 'It stays stopped. Continue picks up where it was cut.'
+            : `It stays stopped: ${failure}. Continue picks up where it was cut.`,
+        sessionId,
+        coalesceKey: `resume-failed:${agent.id}`,
+        action: { kind: 'continue-agent', sessionId, agentId: agent.id },
+      });
     }),
   );
 };

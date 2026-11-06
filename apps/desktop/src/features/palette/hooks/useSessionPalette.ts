@@ -23,6 +23,7 @@ import { paletteTierOf, type PaletteTier } from '../paletteTiers';
 import { pickLiveAgent } from '../sources/liveAgentEntries';
 import { nextEntries, type NextItem } from '../sources/nextEntries';
 import { pickRun, type PaletteRun } from '../sources/runEntries';
+import { runOnScreenOf } from '../sources/runOnScreenOf';
 import type { PaletteEntry } from '../types';
 
 type Params = {
@@ -111,7 +112,10 @@ export const useSessionPalette = ({ session }: Params): SessionPalette => {
       }),
     [session.workflowRuns, sessionId, agents, openQuestions, turningIds, sessionWorkflows],
   );
-  const picked = pickRun({ candidates: runFacts, focusedRunId });
+  const picked = pickRun({
+    candidates: runFacts,
+    focusedRunId: runOnScreenOf({ focusedRunId, selectedAgentId, agents }),
+  });
   const run: PaletteRun | null =
     picked === null
       ? null

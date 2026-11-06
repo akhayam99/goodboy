@@ -27,7 +27,7 @@ const hasDir = (sessionDir: string | null): sessionDir is string =>
   sessionDir !== null && sessionDir.trim() !== '';
 
 const initialListing = ({ sessionDir }: Params): ExploreListing =>
-  hasDir(sessionDir)
+  hasDir(sessionDir) || sessionDir === null
     ? { entriesByPath: {}, loadingByPath: { [EXPLORE_ROOT_PATH]: true }, errorByPath: {} }
     : {
         entriesByPath: {},

@@ -1,9 +1,8 @@
-import type { Session } from '@goodboy/types';
 import type { NavigationLocation } from '../../../../store';
-import { LENS_LABEL } from '../../../../features/session/lens-labels';
-import { NAMES } from '../../../../shared/utils/names';
+import type { AppState } from '../../../../store/types';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
+import { placeTitleOf } from '../../../../store/slices/navigation/placeTitleOf';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 export type HistoryLabel = {
@@ -13,24 +12,18 @@ export type HistoryLabel = {
 
 type Params = {
   readonly location: NavigationLocation;
-  readonly sessions: ReadonlyArray<Session>;
+  readonly state: AppState;
 };
 
-export const historyLabel = ({ location, sessions }: Params): HistoryLabel => {
+export const historyLabel = ({ location, state }: Params): HistoryLabel => {
   if (location.studio !== null) {
     return { label: STUDIO_META[location.studio.kind].title, context: null };
   }
   const { place } = location;
-  if (place.at === 'board') {
-    return { label: 'Board', context: null };
+  const { title } = placeTitleOf({ state, place });
+  if (place.at !== 'session') {
+    return { label: title, context: null };
   }
-  if (place.at === 'session-draft') {
-    return { label: 'New session', context: null };
-  }
-  const session = sessionById(sessions, place.sessionId) ?? null;
-  const lens = place.view.lens;
-  return {
-    label: lens === null ? NAMES.overview : LENS_LABEL[lens],
-    context: session === null ? null : sessionTitle({ session }),
-  };
+  const session = sessionById(state.sessions, place.sessionId) ?? null;
+  return { label: title, context: session === null ? null : sessionTitle({ session }) };
 };

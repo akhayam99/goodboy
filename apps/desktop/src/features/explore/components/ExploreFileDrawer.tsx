@@ -104,7 +104,7 @@ export const ExploreFileDrawer = ({
     void exploreOpen.run({ entry, isReveal: false }).then(setOpenFailure);
   };
 
-  const openInFiles = () => {
+  const openOnPage = () => {
     openMountDiff(sessionId, sessionDir);
     setDiffFocus(sessionId, { kind: 'branch', path: entry.relPath });
   };
@@ -120,7 +120,6 @@ export const ExploreFileDrawer = ({
     onReveal: () => {
       void exploreOpen.run({ entry, isReveal: true }).then(setOpenFailure);
     },
-    onOpenInFiles: hasChanges ? openInFiles : null,
   });
 
   return (
@@ -129,6 +128,9 @@ export const ExploreFileDrawer = ({
       icon={fileGlyphOf({ name: entry.name })}
       iconClassName="text-muted-foreground"
       {...(back !== undefined && { back })}
+      {...(hasChanges && {
+        page: { tooltip: 'Open on the Branch page. Leaves this session', onOpen: openOnPage },
+      })}
       onClose={onClose}
       scroll="self"
       action={
