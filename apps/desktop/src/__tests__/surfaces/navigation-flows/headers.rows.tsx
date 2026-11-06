@@ -92,10 +92,13 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'headers: Push leads the header, opening it yields the primary, and the confirm pushes once',
+    name: 'headers: Push leads the header once no comment waits, opening it yields the primary, and the confirm pushes once',
     covers: ['navigate'],
     open: async (ctx) => {
-      installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
+      installComments({
+        sessionId: ctx.sessionId,
+        seeds: SEEDS.filter((seed) => seed.stage !== 'asking'),
+      });
       publish.mockClear();
       useAppStore.setState({
         publishConversations: publish,

@@ -52,6 +52,13 @@ import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintSco
 import { analyzeFailingChecks } from './analyzeFailingChecks';
 import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
 import { useSuggestionActions } from '../../suggestions/useSuggestionActions';
+import { brandId, type IsoDateTime, type PullRequestView } from '@goodboy/types';
+import { withPullRequestViewEntry } from '../../../store/slices/pull-request-view/pullRequestViewAt';
+import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
+import type { BranchReviewCounts } from '../branchPrimary';
+import { BranchCheckWorkLine } from '../components/BranchCheckWorkLine';
+import { BranchHeader } from '../components/BranchHeader';
+import { useBranchControls } from '../hooks/useBranchControls';
 
 let store: StoryStore;
 let seed: ReturnType<typeof checksAnalyzeSeed>;
@@ -579,5 +586,241 @@ describe('Analyze with the real store and SQLite', () => {
     expect(prompt).toContain('ledger-core / cancelled');
     expect(prompt).not.toContain('Check: lint');
     expect(spawn.mock.calls[0]?.[1].effort).toBe('high');
+  });
+});
+
+const STEP_REVIEW: BranchReviewCounts = {
+  accepted: 0,
+  replies: 0,
+  failed: 0,
+  isPushing: false,
+  push: { state: 'idle', count: 0 },
+};
+
+const stepDiff = (): SessionDiff => ({
+  files: [],
+  patch: '',
+  loading: false,
+  isRefreshing: false,
+  bodies: null,
+  error: null,
+  view: { kind: 'branch' },
+  setView: vi.fn(),
+  alternate: null,
+  commits: [],
+  status: null,
+  metaError: null,
+  refresh: vi.fn(),
+  viewed: { stateOf: () => 'none', onToggle: vi.fn() },
+  focusPath: null,
+  focusThreadId: null,
+  clearFocus: vi.fn(),
+});
+
+const StepHeader = () => {
+  const controls = useBranchControls({
+    sessionId: seed.sessionId,
+    worktreePath: seed.repo.worktreePath,
+    pr: seed.pullRequest,
+    diff: stepDiff(),
+    review: STEP_REVIEW,
+    isChecksFailing: true,
+    mergeLabel: 'Squash and merge',
+  });
+  return (
+    <>
+      <BranchHeader
+        sessionId={seed.sessionId}
+        pr={seed.pullRequest}
+        fallbackTitle={seed.repo.branch}
+        controls={controls}
+        isPushBusy={false}
+        isPrimaryYielding={false}
+        tab="files"
+        canEditTitle={false}
+        onMutated={() => undefined}
+      />
+      {controls.checkWork.agentId === null ? null : (
+        <BranchCheckWorkLine
+          sessionId={seed.sessionId}
+          agentId={controls.checkWork.agentId}
+          isFixing={controls.checkWork.chain === 'fixing'}
+          checkName={controls.checkWork.checkName}
+        />
+      )}
+      <span data-testid="step-note">{controls.primary?.note ?? ''}</span>
+    </>
+  );
+};
+
+const showStep = ({ phase = 'failing' }: ShowParams = {}) => {
+  if (phase !== 'failing') {
+    seed = checksAnalyzeSeed({ phase });
+  }
+  return render(
+    <ToastProvider>
+      <StepHeader />
+    </ToastProvider>,
+  );
+};
+
+const headerStep = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>('[data-branch-primary]');
+
+describe('the branch header step runs the Overview chain on any tab', () => {
+  it('starts one Debugger at the first Fix checks and ignores a second press while it starts', async () => {
+    const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+    showStep();
+    expect(headerStep()?.textContent).toBe('Fix checks');
+    expect(screen.getByTestId('step-note').textContent).toMatch(
+      /^Starts a Debugger on the failing checks with .+ at \w+ effort$/,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix checks' }));
+    fireEvent.click(headerStep() ?? document.body);
+
+    await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+    expect(spawn).toHaveBeenCalledWith(
+      seed.sessionId,
+      expect.objectContaining({ kindOverride: 'ci-debugger', sourceKind: 'failed_check' }),
+    );
+  });
+
+  it('names a failed start, keeps the agents, and starts on the next press', async () => {
+    injectDbFault({ match: /INSERT INTO agents/, message: 'Could not create the Debugger' });
+    showStep();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fix checks' }));
+
+    await waitFor(() =>
+      expect(
+        store
+          .getState()
+          .notifications.some((notice) => notice.title === "Couldn't start the Debugger"),
+      ).toBe(true),
+    );
+    expect(store.getState().sessionPhaseRuns[seed.sessionId]).toEqual([]);
+    await waitFor(() => expect(headerStep()?.hasAttribute('disabled')).toBe(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix checks' }));
+    await waitFor(() => expect(store.getState().sessionPhaseRuns[seed.sessionId]?.length).toBe(1));
+  });
+
+  it('moves on to Start fix once the Debugger proposed one, and starts the fixer', async () => {
+    showStep({ phase: 'proposal' });
+    const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+
+    expect(headerStep()?.textContent).toBe('Start fix');
+    fireEvent.click(screen.getByRole('button', { name: 'Start fix' }));
+
+    await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+    expect(spawn).toHaveBeenCalledWith(
+      seed.sessionId,
+      expect.objectContaining({ kindOverride: 'ci-fixer' }),
+    );
+  });
+
+  it.each(['gitlab', 'bitbucket'] as const)(
+    'reads the failing checks of a %s pull request and starts one Debugger on them',
+    async (host) => {
+      const github = store.getState().mountGithub[seed.repo.mountId];
+      if (github === undefined) {
+        throw new Error('The seeded branch is missing');
+      }
+      const view: PullRequestView = {
+        host,
+        number: seed.pullRequest.number,
+        title: seed.pullRequest.title,
+        body: '',
+        url: `https://${host}.example/northwind/payments-api/pull/${seed.pullRequest.number}`,
+        state: 'open',
+        isDraft: false,
+        author: null,
+        baseBranch: seed.pullRequest.baseBranch,
+        headBranch: seed.pullRequest.headBranch,
+        headSha: null,
+        createdAt: '2026-10-01T10:00:00Z',
+        updatedAt: '2026-10-06T10:00:00Z',
+        mergedAt: null,
+        mergeable: null,
+        reviewDecision: null,
+        reviewers: [],
+        resolves: [],
+        checks: {
+          read: 'ok',
+          error: null,
+          runs: [
+            { name: 'unit', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
+            {
+              name: 'lint',
+              conclusion: 'failure',
+              detailsUrl: `https://${host}.example/northwind/payments-api/jobs/7`,
+              durationMs: 12000,
+            },
+          ],
+        },
+        files: { count: 0, first: [] },
+        commits: [],
+        mergeMethods: ['squash'],
+        mergeMethodReasons: {},
+      };
+      store.setState({
+        mountGithub: { [seed.repo.mountId]: { ...github, pr: null, detail: null } },
+        pullRequestViews: withPullRequestViewEntry({
+          views: {},
+          sessionId: seed.sessionId,
+          entry: {
+            prNumber: seed.pullRequest.number,
+            mountId: seed.repo.mountId,
+            view,
+            isLoading: false,
+            error: null,
+            fetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' }),
+            edits: [],
+          },
+        }),
+      });
+      const spawn = vi.spyOn(store.getState(), 'spawnAgent');
+      render(
+        <ToastProvider>
+          <StepHeader />
+        </ToastProvider>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Fix checks' }));
+
+      await waitFor(() => expect(spawn).toHaveBeenCalledTimes(1));
+      expect(spawn.mock.calls[0]?.[1].initialPrompt).toContain('lint');
+      expect(spawn.mock.calls[0]?.[1].initialPrompt).not.toContain('Check: unit');
+    },
+  );
+
+  it('offers Fix checks again after an empty finding', () => {
+    showStep({ phase: 'no-fix' });
+
+    expect(headerStep()?.textContent).toBe('Fix checks');
+  });
+
+  it('draws no fill while the Debugger works, and a line under the tabs stops it', () => {
+    const cancelCurrentTurn = vi
+      .spyOn(store.getState(), 'cancelCurrentTurn')
+      .mockResolvedValue(undefined);
+    showStep({ phase: 'running' });
+
+    expect(headerStep()).toBeNull();
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+    expect(screen.getByTestId('branch-check-work').textContent).toContain(
+      `Analyzing ${seed.check.name}`,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+
+    expect(cancelCurrentTurn).toHaveBeenCalledWith(seed.sessionId, seed.agent.id, 'user');
+    act(() =>
+      store.setState({
+        agentTurnState: {
+          [seed.agent.id]: { kind: 'ended', endedAt: seed.agent.startedAt ?? seed.events[0]!.at },
+        },
+      }),
+    );
   });
 });

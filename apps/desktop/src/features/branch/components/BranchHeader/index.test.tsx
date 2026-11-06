@@ -386,16 +386,6 @@ describe('BranchHeader actions by state', () => {
     expect(primaries()[0]?.textContent).toBe('Squash and merge');
   });
 
-  it('opens the tab that holds the fix for Fix checks and Fix comments', () => {
-    const open: PullRequestState = { ...PR, isDraft: false };
-    withRequest(open);
-    status = statusOf({});
-    renderHeader({ pr: open, nextStep: 'fixChecks' });
-
-    expect(primaries()[0]?.getAttribute('data-branch-primary')).toBe('tab.checks');
-    expect(primaries()[0]?.textContent).toBe('Fix checks');
-  });
-
   it('offers Reopen as the one primary of a closed pull request and no Merge', () => {
     const closed: PullRequestState = { ...PR, isDraft: false, state: 'closed' };
     withRequest(closed);
@@ -472,21 +462,22 @@ describe('BranchHeader actions by state', () => {
     expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
   });
 
-  it('publishes replies with no commit to push, then retries a failed push', () => {
+  it('retries a failed push before it publishes replies, then publishes them', () => {
     withMountPr();
     status = statusOf({});
     renderHeader({
       pr: PR,
       review: { accepted: 0, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
     });
-    screen.getByRole('button', { name: /Publish 2 replies/ });
+    screen.getByRole('button', { name: 'Retry push' });
+    expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
     cleanup();
 
     renderHeader({
       pr: PR,
-      review: { accepted: 0, replies: 0, failed: 1, isPushing: false, push: IDLE_PUSH },
+      review: { accepted: 0, replies: 2, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
-    screen.getByRole('button', { name: 'Retry push' });
+    screen.getByRole('button', { name: /Publish 2 replies/ });
   });
 
   it('leads with the push over a pull request ready to merge', () => {

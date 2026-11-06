@@ -3,20 +3,13 @@ import type { MergeReadinessFacts, PrMergeReadiness } from '../review/prMergeRea
 import { mergeIsClear } from '../review/prMergeReadiness';
 
 export type PullRequestNextStep =
-  | 'markReady'
-  | 'requestReview'
-  | 'fixComments'
-  | 'fixChecks'
-  | 'rebase'
-  | 'merge'
-  | 'reopen'
-  | null;
+  'markReady' | 'requestReview' | 'rebase' | 'merge' | 'reopen' | null;
 
 type Params = {
   readonly state: PullRequestPresentationState;
   readonly facts: Pick<
     MergeReadinessFacts,
-    'checks' | 'review' | 'hasConflicts' | 'commentsNeedYou' | 'isFixRunLive'
+    'checks' | 'review' | 'hasConflicts' | 'commentsNeedYou'
   >;
   readonly readiness: PrMergeReadiness;
   readonly hasReviewer: boolean;
@@ -39,11 +32,12 @@ const openStepOf = ({
   if (facts.hasConflicts) {
     return behind > 0 ? 'rebase' : null;
   }
-  if (facts.checks === 'failing') {
-    return 'fixChecks';
-  }
-  if (facts.review === 'changes_requested' || facts.commentsNeedYou > 0) {
-    return facts.isFixRunLive ? null : 'fixComments';
+  if (
+    facts.checks === 'failing' ||
+    facts.review === 'changes_requested' ||
+    facts.commentsNeedYou > 0
+  ) {
+    return null;
   }
   if (mergeIsClear({ readiness })) {
     return 'merge';

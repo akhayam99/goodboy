@@ -336,7 +336,7 @@ const sidebarNamesTheBranches = (): void => {
 
 export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'comments: accepting two reads two on the group, the banner, the Push button and the sidebar',
+    name: 'comments: accepting two reads two on the group, the push line and the sidebar, and the question still leads',
     covers: ['navigate'],
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
@@ -349,7 +349,8 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await waitFor(() => expect(nodeText(group('Done'))).toContain('Done 2'), WAIT);
       expect(rowCount(group('Needs you'))).toBe(1);
-      expect(screen.getAllByRole('button', { name: /^Push 2/ })).toHaveLength(1);
+      expect(screen.getByTestId('review-push-line').textContent).toContain('2 commits not pushed');
+      expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer');
       sidebarNamesTheBranches();
     },
   },
@@ -360,13 +361,11 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
       await openComments(ctx);
       await applyNeedsYou({ count: 2 });
-      const headerPush = screen
-        .getAllByRole('button', { name: /^Push 2/ })
-        .find((button) => !list().contains(button));
-      if (headerPush === undefined) {
-        throw new Error('the header has no Push button');
-      }
-      await click(headerPush);
+      await click(
+        within(await screen.findByTestId('review-push-line', undefined, WAIT)).getByRole('button', {
+          name: 'Push these',
+        }),
+      );
       await settle();
     },
     lands: async () => {
@@ -393,7 +392,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       });
       await openComments(ctx);
 
-      await click(await screen.findByRole('button', { name: 'Fix 3 threads' }));
+      await click(await screen.findByRole('button', { name: 'Fix 3 comments' }));
       const drawer = await screen.findByRole('region', { name: 'Fix comments' }, WAIT);
       await click(within(drawer).getByRole('button', { name: 'Start fix for 3' }));
       await settle();

@@ -225,8 +225,9 @@ describe('the pull request page scenes', () => {
     await waitFor(() =>
       expect(
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
-      ).toBe('tab.checks'),
+      ).toBe('step.checks'),
     );
+    expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Fix checks');
     expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
     expect(screen.getByRole('menuitem', { name: /Merge/ }).getAttribute('aria-disabled')).toBe(

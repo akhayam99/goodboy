@@ -36,7 +36,6 @@ type Props = {
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
-  readonly pageAction?: ReactNode;
   readonly line?: ReactNode;
   readonly onMutated: () => void;
 };
@@ -58,7 +57,6 @@ export const BranchHeader = ({
   tab,
   isActive = true,
   canEditTitle,
-  pageAction = null,
   line = null,
   onMutated,
 }: Props) => {
@@ -133,7 +131,6 @@ export const BranchHeader = ({
         }
         actions={
           <div className="flex min-w-0 items-center gap-2">
-            {pageAction}
             <HeaderActions
               secondary={
                 secondary === null

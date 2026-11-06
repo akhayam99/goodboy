@@ -270,7 +270,6 @@
     "apps/desktop/src/features/backup/components/BackupPage/ImportPreviewSection.tsx": 1,
     "apps/desktop/src/features/backup/components/BackupPage/LeftOutFindings.tsx": 1,
     "apps/desktop/src/features/bootstrap/PublishPanel/index.tsx": 1,
-    "apps/desktop/src/features/branch/branchPrimary.ts": 2,
     "apps/desktop/src/features/branch/branchTabs.ts": 2,
     "apps/desktop/src/features/branch/checksViewOf.ts": 1,
     "apps/desktop/src/features/branch/components/BranchPage/index.tsx": 1,

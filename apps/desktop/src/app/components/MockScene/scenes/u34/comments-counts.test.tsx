@@ -67,21 +67,18 @@ describe('the comments and counts scenes', () => {
       .getAllByRole('region')
       .map((region) => region.getAttribute('aria-label'));
     expect(titles).toEqual(['Needs you', 'Working', 'Done', 'Left open on GitHub']);
-    expect(
-      screen.getAllByRole('button', {
-        name: /^(Fix|Fixing|Apply) (\d+ of )?\d+ (threads?|fixes)$/,
-      }),
-    ).toHaveLength(1);
+    await waitFor(() => expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1));
   });
 
-  it('reads the same number on the header primary and the Needs you group', async () => {
+  it('points the header Answer at the question waiting in Needs you', async () => {
     mount({ name: 'u34-u39-header' });
 
-    const primary = await screen.findByRole('button', { name: /^(Fix|Fixing|Apply) \d+ / });
     const list = await screen.findByRole('navigation', { name: 'Comments' });
+    await waitFor(() =>
+      expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer'),
+    );
     const group = within(list).getByRole('region', { name: 'Needs you' });
-    const shown = Number(/\d+/.exec(primary.textContent ?? '')?.[0]);
-    expect(group.textContent).toContain(String(shown));
+    expect(within(group).getAllByText('Question').length).toBeGreaterThan(0);
   });
 
   it('keeps a fix on the branch under Done as Fixed', async () => {

@@ -16,13 +16,19 @@ import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
 import {
+  BRANCH_STEP_ID,
   branchActionsOf,
   type BranchPrimary,
   type BranchNextStep,
   type BranchReviewCounts,
 } from '../../branchPrimary';
-import type { BranchTab } from '../../../../store/slices/navigation/types';
+import { NO_COMMENT_FACTS, type BranchStep, type BranchStepComments } from '../../branchStepOf';
 import type { PullRequestPresentationState } from '../../../../shared/utils/pullRequestPresentation';
+import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
+import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { openReviewComment } from '../../../resolve/openReviewComment';
+import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../../resolve/reviewBulkCopy';
+import { useBranchCheckStep, type BranchCheckWork } from '../useBranchCheckStep';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -32,14 +38,27 @@ type Params = {
   readonly review: BranchReviewCounts;
   readonly remoteHost?: PullRequestHost;
   readonly nextStep?: BranchNextStep;
+  readonly comments?: BranchStepComments;
+  readonly isChecksFailing?: boolean;
   readonly hasOpenRebaseStop?: boolean;
   readonly mergeLabel?: string;
-  readonly onOpenTab?: (tab: BranchTab) => void;
+};
+
+const NO_COMMENTS: BranchStepComments = { facts: NO_COMMENT_FACTS, readyThreadIds: [] };
+
+type ApplyParams = {
+  readonly threadIds: ReadonlyArray<string>;
+};
+
+type RunStepParams = {
+  readonly actionId: string;
 };
 
 export type BranchControls = {
   readonly diffControls: ActionControls;
   readonly pullRequestControls: ActionControls;
+  readonly step: BranchStep;
+  readonly checkWork: BranchCheckWork;
   readonly primary: BranchPrimary | null;
   readonly secondary: BranchPrimary | null;
   readonly press: (action: BranchPrimary) => void;
@@ -59,9 +78,10 @@ export const useBranchControls = ({
   review,
   remoteHost,
   nextStep = null,
+  comments = NO_COMMENTS,
+  isChecksFailing = false,
   hasOpenRebaseStop = false,
   mergeLabel = 'Merge',
-  onOpenTab,
 }: Params): BranchControls => {
   const state: PullRequestPresentationState =
     pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
@@ -144,12 +164,27 @@ export const useBranchControls = ({
     (s) => projectById(s.projects, projectId)?.baseBranch ?? null,
   );
 
-  const { primary, secondary } = useMemo(
+  const checkStep = useBranchCheckStep({
+    sessionId,
+    mountId,
+    prNumber: pr?.number ?? null,
+    isFailing: isChecksFailing,
+  });
+  const navigate = useAppStore((s) => s.navigate);
+  const openDrawer = useAppStore((s) => s.openDrawer);
+  const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
+  const reportError = useAppStore((s) => s.reportError);
+  const [busyStepId, setBusyStepId] = useState<string | null>(null);
+
+  const actions = useMemo(
     () =>
       branchActionsOf({
         diff: diffControls.actions,
         pullRequest: pullRequestControls.actions,
         review,
+        comments: comments.facts,
+        checks: checkStep.facts,
+        checkNote: checkStep.note,
         hasPullRequest: pr !== null && !isRequestMerged,
         state,
         nextStep,
@@ -157,6 +192,9 @@ export const useBranchControls = ({
         mergeLabel,
       }),
     [
+      checkStep.facts,
+      checkStep.note,
+      comments.facts,
       diffControls.actions,
       hasOpenRebaseStop,
       isRequestMerged,
@@ -168,10 +206,15 @@ export const useBranchControls = ({
       state,
     ],
   );
+  const primary =
+    actions.primary !== null && actions.primary.actionId === busyStepId
+      ? { ...actions.primary, isBusy: true }
+      : actions.primary;
+  const { secondary, step } = actions;
 
   const controlsOf = useCallback(
     (action: BranchPrimary): ActionControls | null => {
-      if (action.source === 'review' || action.source === 'tab') {
+      if (action.source === 'review' || action.source === 'step') {
         return null;
       }
       return action.source === 'diff' ? diffControls : pullRequestControls;
@@ -179,15 +222,71 @@ export const useBranchControls = ({
     [diffControls, pullRequestControls],
   );
 
+  const applyFixes = useCallback(
+    async ({ threadIds }: ApplyParams): Promise<void> => {
+      try {
+        const result = await acceptReviewComments({ sessionId, threadIds });
+        const [first] = result.failures;
+        if (first !== undefined) {
+          void reportError({
+            title: REVIEW_BULK_LABEL.acceptFailed,
+            error: new Error(
+              bulkAcceptFailureLine({ count: result.failures.length, message: first.message }),
+            ),
+            sessionId,
+          });
+        }
+      } catch (error: unknown) {
+        if (!isReportedError(error)) {
+          void reportError({ title: REVIEW_BULK_LABEL.acceptFailed, error, sessionId });
+        }
+      }
+    },
+    [acceptReviewComments, reportError, sessionId],
+  );
+
+  const runStep = useCallback(
+    async ({ actionId }: RunStepParams): Promise<void> => {
+      if (actionId === BRANCH_STEP_ID.answer) {
+        const threadId = comments.facts.questionThreadId;
+        if (threadId !== null) {
+          openReviewComment({ navigate, sessionId, threadId });
+        }
+        return;
+      }
+      if (actionId === BRANCH_STEP_ID.fixComments) {
+        openFixComments({ openDrawer, sessionId, mountId });
+        return;
+      }
+      if (actionId === BRANCH_STEP_ID.apply) {
+        await applyFixes({ threadIds: comments.readyThreadIds });
+        return;
+      }
+      await checkStep.run();
+    },
+    [
+      applyFixes,
+      checkStep,
+      comments.facts.questionThreadId,
+      comments.readyThreadIds,
+      mountId,
+      navigate,
+      openDrawer,
+      sessionId,
+    ],
+  );
+
   const press = useCallback(
     (action: BranchPrimary) => {
       if (action.blockedReason !== null) {
         return;
       }
-      if (action.source === 'tab') {
-        if (action.tab !== null) {
-          onOpenTab?.(action.tab);
+      if (action.source === 'step') {
+        if (busyStepId !== null) {
+          return;
         }
+        setBusyStepId(action.actionId);
+        void runStep({ actionId: action.actionId }).finally(() => setBusyStepId(null));
         return;
       }
       if (action.source === 'review') {
@@ -201,12 +300,14 @@ export const useBranchControls = ({
       const controls = action.source === 'diff' ? diffControls : pullRequestControls;
       controls.trigger({ actionId: action.actionId });
     },
-    [diffControls, onOpenTab, pullRequestControls, sessionId],
+    [busyStepId, diffControls, pullRequestControls, runStep, sessionId],
   );
 
   return {
     diffControls,
     pullRequestControls,
+    step,
+    checkWork: checkStep.work,
     primary,
     secondary,
     press,

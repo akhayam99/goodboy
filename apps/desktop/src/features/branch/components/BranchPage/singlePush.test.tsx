@@ -53,8 +53,19 @@ const settle = async (): Promise<void> => {
   });
 };
 
+const keepPushable = (): void => {
+  const queue = (useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? []).filter(
+    (entry) => entry.item.approvalState === 'accepted',
+  );
+  useAppStore.setState({
+    sessionResolveQueueItems: { [SESSION.id]: queue },
+    sessionResolveThreads: { [SESSION.id]: queue.map((entry) => entry.thread) },
+  });
+};
+
 const mount = async ({ threadId }: { readonly threadId: string | null }): Promise<void> => {
   seedResolveScene({ expandedThreadId: threadId });
+  keepPushable();
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
@@ -81,6 +92,7 @@ const mountReady = async (): Promise<void> => {
       handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
   );
   seedCommentsScene({ variant: 'ready-to-push' });
+  keepPushable();
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
@@ -282,7 +294,7 @@ describe('one Push at a time', () => {
     const ready = within(list()).getByRole('region', { name: 'Done' });
     const count = Number(/(\d+)/.exec(ready.textContent ?? '')?.[1] ?? 0);
     expect(label).toBe('Push 3 commits');
-    expect(count).toBe(3);
+    expect(count).toBe(2);
 
     fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());

@@ -63,8 +63,27 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const mount = async ({ stage }: { readonly stage: BulkStage }): Promise<void> => {
+const withoutQuestions = (): void => {
+  const queue = (useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? []).filter(
+    (entry) => entry.thread.stage !== 'asking',
+  );
+  useAppStore.setState({
+    sessionResolveQueueItems: { [SESSION.id]: queue },
+    sessionResolveThreads: { [SESSION.id]: queue.map((entry) => entry.thread) },
+  });
+};
+
+const mount = async ({
+  stage,
+  isAsking = true,
+}: {
+  readonly stage: BulkStage;
+  readonly isAsking?: boolean;
+}): Promise<void> => {
   seedBulkScene({ stage });
+  if (!isAsking) {
+    withoutQuestions();
+  }
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
@@ -115,12 +134,15 @@ describe('the fixable set', () => {
 });
 
 describe('Fix comments', () => {
-  it('puts one Fix comments with the count in the section header and starts nothing', async () => {
+  it('puts one Fix comments with the count in the page header and starts nothing', async () => {
     const { spawnAgent, createResolveBatch } = stubAgents();
-    await mount({ stage: 'launch' });
+    await mount({ stage: 'launch', isAsking: false });
 
-    const header = screen.getByRole('button', { name: 'Fix 9 threads' });
-    expect(screen.getAllByRole('button', { name: /^Fix \d+ threads?$/ })).toHaveLength(1);
+    const header = screen.getByRole('button', { name: 'Fix 9 comments' });
+    expect(header.getAttribute('data-branch-primary')).toBe('step.fixComments');
+    expect(
+      screen.getAllByRole('button', { name: /^Fix \d+ (?:threads?|comments?)$/ }),
+    ).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Fix \d+ open comments?/ })).toBeNull();
     fireEvent.click(header);
 

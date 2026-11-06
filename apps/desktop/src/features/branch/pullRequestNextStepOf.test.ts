@@ -49,9 +49,9 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     { name: 'open, nobody asked', row: {}, step: 'requestReview' },
     { name: 'waiting on a reviewer', row: { hasReviewer: true }, step: null },
     {
-      name: 'changes requested',
+      name: 'changes requested, the comment steps own it',
       row: { hasReviewer: true, facts: { review: 'changes_requested' as const } },
-      step: 'fixComments',
+      step: null,
     },
     {
       name: 'checks running',
@@ -59,14 +59,14 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
       step: null,
     },
     {
-      name: 'checks failing',
+      name: 'checks failing, the check steps own it',
       row: { hasReviewer: true, facts: { checks: 'failing' as const, failingChecks: ['e2e'] } },
-      step: 'fixChecks',
+      step: null,
     },
     {
-      name: 'comments need you while the branch is behind',
+      name: 'comments need you while the branch is behind, no rebase first',
       row: { hasReviewer: true, behind: 7, facts: { review: null, commentsNeedYou: 1 } },
-      step: 'fixComments',
+      step: null,
     },
     {
       name: 'conflicts in a rebase',
@@ -110,7 +110,7 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     expect(stepOf({ hasReviewer: true, behind: 0, facts: { hasConflicts: true } })).toBeNull();
   });
 
-  it('waits while a fix run is live on the comments', () => {
+  it('offers no lifecycle step while comments need a fix', () => {
     expect(
       stepOf({
         hasReviewer: true,

@@ -223,7 +223,7 @@ const hasFixComments = async (count: number): Promise<void> => {
     () =>
       expect(
         screen.getByRole('button', {
-          name: `Fix ${count} ${count === 1 ? 'thread' : 'threads'}`,
+          name: `Fix ${count} ${count === 1 ? 'comment' : 'comments'}`,
         }),
       ).toBeDefined(),
     WAIT,
@@ -253,7 +253,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
       await hasFixComments(2);
-      await clickButton('Fix 2 threads');
+      await clickButton('Fix 2 comments');
       await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('fix-comments'), WAIT);
       useAppStore.getState().closeDrawer();
       expect(
@@ -262,7 +262,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       expect(screen.getAllByText(/Log the duplicate once/).length).toBeGreaterThan(0);
       expect(screen.queryByText('No pull request yet')).toBeNull();
       expect(screen.queryByRole('tab', { name: /^On GitHub/ })).toBeNull();
-      expect(screen.getByRole('button', { name: /^Fix \d+ threads?$/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
     },
   },
   {

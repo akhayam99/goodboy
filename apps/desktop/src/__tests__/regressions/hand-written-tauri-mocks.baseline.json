@@ -310,7 +310,6 @@
   "apps/desktop/src/features/providers/components/InlineTerminal.replay.test.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderAttentionNotice.test.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/index.test.tsx": 1,
-  "apps/desktop/src/features/resolve/components/FixCommentsButton.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/index.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixCommentsDrawer/triage.test.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixRunSummary/FixRunLead.test.tsx": 1,

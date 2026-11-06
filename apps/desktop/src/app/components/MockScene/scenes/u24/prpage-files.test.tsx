@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -155,6 +155,8 @@ describe('the u24 prpage files scenes', () => {
     expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^On GitHub/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Resolved' })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Fix \d+ threads?$/ })).toBeDefined();
+    await waitFor(() =>
+      expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Fix 4 comments'),
+    );
   });
 });

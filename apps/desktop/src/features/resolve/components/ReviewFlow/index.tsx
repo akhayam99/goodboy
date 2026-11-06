@@ -37,8 +37,6 @@ import { useReviewCommentDrawerSlot } from '../../hooks/useReviewCommentDrawerSl
 import { openReviewComment } from '../../openReviewComment';
 import { reviewCommentDrawerSlot } from '../../reviewCommentDrawerSlot';
 import { ReviewCommentDrawer } from '../ReviewCommentDrawer';
-import { FixCommentsButton } from '../FixCommentsButton';
-import { TabActions } from '../../../../shared/components/TabActions';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { isUndoableAccept } from '../../bulkAccept';
 import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../reviewBulkCopy';
@@ -68,8 +66,6 @@ type Props = {
   readonly mountId?: MountId | null;
   readonly push: ReviewPush;
   readonly pushCount?: number;
-  readonly isPushInHeader?: boolean;
-  readonly onRequestReview?: (() => void) | null;
 };
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
@@ -107,14 +103,7 @@ const focusedRowId = (): string | null =>
 
 const DOCK_BOTTOM_OFFSET = 24;
 
-export const ReviewFlow = ({
-  session,
-  mountId = null,
-  push,
-  pushCount = 0,
-  isPushInHeader = false,
-  onRequestReview = null,
-}: Props) => {
+export const ReviewFlow = ({ session, mountId = null, push, pushCount = 0 }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const {
@@ -683,18 +672,6 @@ export const ReviewFlow = ({
             body={acceptError}
           />
         )}
-        <TabActions>
-          <FixCommentsButton
-            sessionId={sessionId}
-            mountId={source?.mountId ?? null}
-            liveRun={isRunLive ? run : null}
-            waitingFixes={fixRunReady?.threadIds.length ?? 0}
-            unpushedCommits={pushCount}
-            onApply={fixRunReady === null ? null : () => void acceptMany(fixRunReady.threadIds)}
-            onPush={isPushInHeader ? null : () => void push.press({ isRetry: false })}
-            onRequestReview={onRequestReview}
-          />
-        </TabActions>
         <ReviewScopeBar
           scope={scope}
           onScope={setScope}

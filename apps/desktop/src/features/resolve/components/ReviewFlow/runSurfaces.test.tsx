@@ -129,7 +129,8 @@ describe('Question from the fix run', () => {
     expect(options).toHaveLength(QUESTION_OPTIONS.length);
     expect(options[0]?.getAttribute('aria-checked')).toBe('true');
     expect(card.getByRole('textbox', { name: 'Or tell it something else' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    const answers = screen.getAllByRole('button', { name: 'Answer' });
+    expect(answers.filter((button) => !button.hasAttribute('data-branch-primary'))).toHaveLength(1);
     expect(card.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
   });
 
