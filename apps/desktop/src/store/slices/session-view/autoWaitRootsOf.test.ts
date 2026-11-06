@@ -5,6 +5,7 @@ import { anAgent, aSession } from '@goodboy/types/testing';
 import {
   aDelegation,
   aView,
+  FIXTURE_NOW,
   FIXTURE_ROOT,
   FIXTURE_SESSION,
 } from '../../../features/auto/testing/autoViewFixtures';
@@ -35,11 +36,16 @@ const FIXER = anAgent({
 
 type WaitParams = {
   readonly view: AutoTreeView;
+  readonly clockAt?: number;
 };
 
-const waitsOf = ({ view }: WaitParams) =>
+const waitsOf = ({ view, clockAt = 0 }: WaitParams) =>
   autoWaitRootsOf({
-    state: { agentTurnState: {}, autoTreeViews: { [FIXTURE_SESSION]: [view] } },
+    state: {
+      agentTurnState: {},
+      autoTreeViews: { [FIXTURE_SESSION]: [view] },
+      autoClockAt: clockAt,
+    },
     session: SESSION,
     agents: [ROOT, FIXER],
   }).map((root) => root.id);
@@ -66,6 +72,16 @@ describe('autoWaitRootsOf', () => {
     });
 
     expect(waitsOf({ view })).toEqual([FIXTURE_ROOT]);
+  });
+
+  it('reads the real clock: a child that never started counts as stuck after a minute', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [aDelegation({ key: 'fixer', role: 'implementer', state: 'accepted' })],
+    });
+
+    expect(waitsOf({ view, clockAt: FIXTURE_NOW + 30_000 })).toEqual([]);
+    expect(waitsOf({ view, clockAt: FIXTURE_NOW + 60_000 })).toEqual([FIXTURE_ROOT]);
   });
 
   it('keeps every count when the state words are renamed', () => {
