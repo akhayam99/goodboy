@@ -8,6 +8,8 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { agentPlace, branchPlace, questionPlace, sessionPlace } from '../../store';
+import { partitionDelegatedQuestions } from '../context/questionDelegate';
+import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { selectOpenQuestions } from './components/SessionOverviewPane/lib';
 import { branchLandingTabOf } from '../branch/branchLandingTab';
 import { isTurnStatePermissionBlocked } from './agent-lifecycle';
@@ -85,7 +87,11 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
       : agentPlace({ sessionId, agentId: root.id });
   }
   if (reason === 'open-question') {
-    const waiting = selectOpenQuestions(state.sessionOpenQuestions?.[sessionId] ?? [])[0];
+    const { staged } = useOpenQuestions.getState();
+    const waiting = partitionDelegatedQuestions({
+      questions: selectOpenQuestions(state.sessionOpenQuestions?.[sessionId] ?? []),
+      agents: state.sessionPhaseRuns[sessionId] ?? [],
+    }).answerable.find((question) => !staged.includes(question.id));
     return waiting === undefined
       ? sessionPlace({ sessionId, lens: 'questions' })
       : questionPlace({ sessionId, questionId: waiting.id });

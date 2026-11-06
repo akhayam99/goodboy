@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   brandId,
   type Agent,
@@ -17,6 +17,8 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
+import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { aView } from '../auto/testing/autoViewFixtures';
 import { attentionPlace } from './attentionPlace';
 
@@ -86,7 +88,49 @@ type DestinationParams = {
 const destination = ({ reason }: DestinationParams) =>
   attentionPlace({ state, sessionId: SESSION_ID, reason });
 
+const questionOf = (id: string): OpenQuestion => ({
+  id: id as OpenQuestionId,
+  sessionId: SESSION_ID,
+  text: 'Which ledger?',
+  suggestedAnswers: [],
+  isBlocking: false,
+  userAnswer: null,
+  status: 'open',
+  createdAt: AT,
+});
+
+const delegateOf = (questionId: string): Agent => ({
+  ...agent({ id: 'agent-delegate' as AgentId, ordinal: 3, status: 'running' }),
+  sourceKind: 'open_question',
+  sourceThreadId: questionId,
+});
+
+const questionDestination = (agents: ReadonlyArray<Agent>) =>
+  attentionPlace({
+    state: {
+      ...state,
+      sessionPhaseRuns: { [SESSION_ID]: agents },
+      sessionOpenQuestions: { [SESSION_ID]: [questionOf('q1'), questionOf('q2')] },
+    },
+    sessionId: SESSION_ID,
+    reason: 'open-question',
+  });
+
+afterEach(() => {
+  useOpenQuestions.setState({ staged: [] });
+});
+
 describe('attentionPlace', () => {
+  it('skips a delegated question and a staged one when it picks the question to open', () => {
+    expect(questionDestination([delegateOf('q1')])).toMatchObject({
+      view: { target: { kind: 'question', questionId: 'q2' } },
+    });
+    useOpenQuestions.setState({ staged: ['q2' as OpenQuestionId] });
+    expect(questionDestination([delegateOf('q1')])).toMatchObject({
+      view: { lens: 'questions', target: null },
+    });
+  });
+
   it('opens the questions lens for an open question', () => {
     expect(destination({ reason: 'open-question' })).toMatchObject({
       at: 'session',
