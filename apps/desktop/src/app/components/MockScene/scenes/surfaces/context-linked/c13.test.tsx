@@ -46,7 +46,7 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
       if (name.startsWith('u36-p19-')) {
         const drawer = await screen.findByRole('region', { name: 'Context' });
         within(drawer).getByRole('heading', { name: 'Goal' });
-        expect(within(drawer).queryByRole('region', { name: 'State' })).toBeNull();
+        within(drawer).getByRole('region', { name: 'State' });
         if (name === 'u36-p19-read') {
           expect(within(drawer).queryByText('Added')).toBeNull();
         }
@@ -79,7 +79,8 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
         return;
       }
       const linked = await screen.findByRole('list', { name: 'Linked work' });
-      within(linked).getByRole('button', { name: 'Open in Tasks' });
+      within(linked).getByRole('button', { name: 'Open PAYMENTS-42 in Tasks' });
+      within(linked).getByRole('button', { name: 'Open HBL-97 on hl/surface-retry-state' });
       expect(screen.queryByText('Confirm the earlier retry rollout')).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Show history (1)' }));
       screen.getByText('Confirm the earlier retry rollout');

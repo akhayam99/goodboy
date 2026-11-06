@@ -90,10 +90,17 @@ export const LevelLinked = ({ session, isActive }: Props) => {
       : null,
   );
   const isOverview = useAppStore((s) => (s.activeLens[sessionId] ?? null) === null);
+  const mountBranches = groups.flatMap((group) =>
+    [...group.rows, ...group.finishedRows].map((row) => ({
+      branch: row.branch,
+      state: row.request?.state ?? null,
+    })),
+  );
   const workItems = buildWorkItems({
     tasks: externalTasks,
     currentBranch,
     branchPrs: branchRequests({ prs: branchPrs, mr, branch: currentBranch }),
+    mountBranches,
   });
   const currentKeys = new Set(workItems.current.map(({ task }) => taskIdentityKey({ task })));
   const allTasks = [...distinctTasks({ tasks: externalTasks })].sort(

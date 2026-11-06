@@ -86,6 +86,41 @@ describe('buildWorkItems', () => {
     expect(history[0]?.isCompleted).toBe(true);
   });
 
+  it('keeps an issue stamped on another branch of the session among the current work', () => {
+    const onOtherMount = makeTask({ overrides: { branch: 'ak/second-mount' } });
+
+    const { current, history } = buildWorkItems({
+      tasks: [onOtherMount],
+      currentBranch: 'ak/current',
+      branchPrs: [makePr({})],
+      mountBranches: [
+        { branch: 'ak/current', state: 'open' },
+        { branch: 'ak/second-mount', state: 'open' },
+      ],
+    });
+
+    expect(history).toEqual([]);
+    expect(current[0]?.isOnCurrentBranch).toBe(true);
+    expect(current[0]?.prs).toEqual([]);
+  });
+
+  it('moves an issue to the history once the pull request of its own mount merged', () => {
+    const onOtherMount = makeTask({ overrides: { branch: 'ak/second-mount' } });
+
+    const { current, history } = buildWorkItems({
+      tasks: [onOtherMount],
+      currentBranch: 'ak/current',
+      branchPrs: [makePr({})],
+      mountBranches: [
+        { branch: 'ak/current', state: 'open' },
+        { branch: 'ak/second-mount', state: 'merged' },
+      ],
+    });
+
+    expect(current).toEqual([]);
+    expect(history[0]?.isCompleted).toBe(true);
+  });
+
   it('keeps an unstamped link on the current branch instead of hiding it', () => {
     const { current, history } = buildWorkItems({
       tasks: [makeTask({})],

@@ -30,6 +30,17 @@ export const seedLinkedWork = ({ isDisconnected = false }: Params) => {
     },
     {
       sessionId: SESSION_ID,
+      provider: 'linear',
+      externalId: 'HBL-97',
+      identifier: 'HBL-97',
+      title: 'Retry window for the webhook worker',
+      url: 'https://linear.app/harborline/issue/HBL-97',
+      branch: 'hl/surface-retry-state',
+      scope: 'branch',
+      createdAt,
+    },
+    {
+      sessionId: SESSION_ID,
       provider: 'slack',
       externalId: 'harborline-thread',
       identifier: '#payments',
