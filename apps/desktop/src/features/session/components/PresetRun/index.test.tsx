@@ -136,9 +136,7 @@ describe('PresetRunPage when the run is there and its metadata is not', () => {
     await flush();
 
     screen.getByText(/The workflow read failed/);
-    expect((screen.getByRole('button', { name: 'Retry' }) as HTMLButtonElement).disabled).toBe(
-      false,
-    );
+    expect(screen.getByRole('button', { name: 'Retry' }).hasAttribute('disabled')).toBe(false);
     expect(useAppStore.getState().sessionWorkflows[session.id]).toEqual([]);
   });
 

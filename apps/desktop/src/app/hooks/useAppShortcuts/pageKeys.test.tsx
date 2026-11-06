@@ -12,7 +12,7 @@ vi.mock('../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import type { AgentId, ArtifactId } from '@goodboy/types';
 import { aSession, aWorkspace } from '@goodboy/types/testing';
 import {
@@ -78,7 +78,7 @@ const showList = ({ lens }: { readonly lens: 'workflows' | 'plans' }) =>
 
 const press = ({ id }: { readonly id: 'lens.workflows' | 'lens.plans' }) => {
   render(<Harness />);
-  act(() => pressShortcut({ id }));
+  pressShortcut({ id });
 };
 
 describe.each([

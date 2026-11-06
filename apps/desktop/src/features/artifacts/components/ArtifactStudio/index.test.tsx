@@ -92,7 +92,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
           notify();
         },
       ),
-      focusedRunAgentId: {} as Record<string, string | null>,
+      focusedRunAgentId: {},
       setFocusedRunAgent: vi.fn(
         ({
           sessionId,
