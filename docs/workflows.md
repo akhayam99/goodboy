@@ -1220,6 +1220,11 @@ it does not recognize. `isRunPaused` is the one admission check:
 before it starts, before it consumes a plan and again right before the turn,
 so a pause that lands while an activation is in flight starts nothing. The
 check ignores `bypassGate`, which still means only "skip the question gate".
+
+The operator stop of a run that went on its own is stored as the kind
+`operator:auto-run` in the same column and reads back as `operator` with
+`wasAutoRun`, so Continue turns auto run back on after a reload, and the fact
+goes when the stop goes.
 `orchestrateNextStep` returns at once on a paused run and drops a decision
 that comes back after the pause, `maybeAutoAdvanceWorkflow` leaves paused
 runs out, a read-now hint stays queued, and a skip marks the step but starts
