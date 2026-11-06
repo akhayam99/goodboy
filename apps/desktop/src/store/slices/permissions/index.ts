@@ -4,6 +4,7 @@ import { allowAndContinue } from './allowAndContinue';
 import { allowWithRule } from './allowWithRule';
 import { denyWithReason } from './denyWithReason';
 import { neverAllowTool } from './neverAllowTool';
+import { refreshAgentAsks } from './refreshAgentAsks';
 import type { SliceDeps } from '../../slice-types';
 
 export const createPermissionsSlice = ({ set, get }: SliceDeps) => {
@@ -14,5 +15,6 @@ export const createPermissionsSlice = ({ set, get }: SliceDeps) => {
     allowWithRule: allowWithRule({ get }),
     denyWithReason: denyWithReason(get),
     neverAllowTool: neverAllowTool({ get }),
+    refreshAgentAsks: refreshAgentAsks({ set, get }),
   };
 };

@@ -30,12 +30,19 @@ const isAskHoldingQueue = async ({ get, sessionId, agentId }: AskHoldParams): Pr
         get().reportError({ title: "Couldn't read the agent's chat", error, sessionId }),
       );
   }
-  const { transcripts, agentTurnState } = get();
-  const events = transcripts[agentId];
-  return (
-    events === undefined ||
-    openPermissionAsksOf({ events, turnState: agentTurnState[agentId] }).length > 0
-  );
+  const hasOpenAsk = (): boolean => {
+    const { transcripts, agentTurnState } = get();
+    const events = transcripts[agentId];
+    return (
+      events === undefined ||
+      openPermissionAsksOf({ events, turnState: agentTurnState[agentId] }).length > 0
+    );
+  };
+  if (!hasOpenAsk()) {
+    return false;
+  }
+  await get().refreshAgentAsks({ sessionId, agentId });
+  return hasOpenAsk();
 };
 
 export const drainAgentQueue = (set: SetFn, get: GetFn) => {

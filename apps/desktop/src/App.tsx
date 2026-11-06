@@ -31,7 +31,7 @@ import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { openRunningScript } from './features/scripts/openRunningScript';
 import { listenOrphansSwept } from './features/monitoring/listenOrphansSwept';
-import { listenSettingChanges } from './features/settings/listenSettingChanges';
+import { listenWindowFacts } from './app/listenWindowFacts';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
@@ -191,7 +191,7 @@ export const App = () => {
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
   useAsyncSubscription({ start: listenOrphansSwept });
-  useAsyncSubscription({ start: listenSettingChanges });
+  useAsyncSubscription({ start: listenWindowFacts });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
   useAsyncSubscription({ start: listenMountCommands });
   useAsyncSubscription({ start: startAutoRuntime });
