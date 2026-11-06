@@ -34,7 +34,7 @@ export const retryWorkspaceFacts = ({ set, get }: Params) => {
         return;
       }
       set((current) => ({
-        ...workspaceFactsPatchOf({ state: current, facts }),
+        ...workspaceFactsPatchOf({ state: current, facts, now: Date.now() }),
         workspaceFactsError: facts.error,
       }));
     } catch (error) {

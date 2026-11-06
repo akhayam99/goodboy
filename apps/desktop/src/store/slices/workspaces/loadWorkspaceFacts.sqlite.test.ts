@@ -127,7 +127,7 @@ describe('loadWorkspaceFacts', () => {
       kindOverride: {},
     });
 
-    expect(facts.autoTreeViews).toEqual({});
+    expect(facts.autoTreeViews).toEqual({ [sessionIdOf(3)]: [] });
     expect(facts.error).toBeNull();
     expect(selects).toHaveBeenCalledTimes(3);
   });
@@ -166,7 +166,9 @@ describe('loadWorkspaceFacts', () => {
     });
 
     expect(selects).toHaveBeenCalledTimes(withoutResting);
-    expect(Object.keys(facts.autoTreeViews ?? {}).sort()).toEqual([...moving].sort());
+    expect(Object.keys(facts.autoTreeViews ?? {}).sort()).toEqual([...moving, ...resting].sort());
+    expect(facts.autoTreeViews?.[resting[0] ?? sessionIdOf(10)]).toEqual([]);
+    expect(facts.autoTreeViews?.[resting[1] ?? sessionIdOf(11)]).toEqual([]);
     expect(facts.autoTreeViews?.[sessionIdOf(0)]?.map((view) => view.tree.phase)).toEqual([
       'delegating',
     ]);
@@ -200,6 +202,21 @@ describe('loadWorkspaceFacts', () => {
       'merge-pr:payments-api:318',
     ]);
     expect(Object.keys(facts.autoTreeViews ?? {})).toEqual([healthy]);
+  });
+
+  it('answers an empty view for a tree that came to rest, so a cached blocked view is replaced', async () => {
+    const db = await seeded();
+    const settled = sessionIdOf(5);
+    await seedTree({ db, sessionId: settled, phase: 'finished' });
+
+    const facts = await loadWorkspaceFacts({
+      db,
+      sessionIds: SESSION_IDS,
+      sessionPhaseRuns: autoRunsOf({ sessionIds: [settled] }),
+      kindOverride: {},
+    });
+
+    expect(facts.autoTreeViews?.[settled]).toEqual([]);
   });
 
   it('keeps the Auto trees when the questions cannot be read', async () => {

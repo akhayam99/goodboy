@@ -490,7 +490,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,
-        ...(facts === null ? {} : workspaceFactsPatchOf({ state, facts })),
+        ...(facts === null ? {} : workspaceFactsPatchOf({ state, facts, now: Date.now() })),
         workspaceFactsError: factsError,
         boardReady: true,
       }));

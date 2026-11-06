@@ -55,10 +55,14 @@ const readMovingAutoViews = async ({
     ),
   );
   const failed = settled.find((result) => result.status === 'rejected');
+  const resting = sessionIds
+    .filter((sessionId) => !moving.has(sessionId))
+    .map((sessionId) => [sessionId, [] as ReadonlyArray<AutoTreeView>] as const);
   return {
-    views: Object.fromEntries(
-      settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : [])),
-    ),
+    views: Object.fromEntries([
+      ...resting,
+      ...settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : [])),
+    ]),
     failure: failed === undefined ? null : failed.reason,
   };
 };
