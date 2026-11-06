@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
 import { agentDisplayName, isAutoResolverName } from '../../../../shared/utils/agentDisplayName';
 import { agentObjectKey } from '../../../actions/agentObjectKey';
-import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
 import { agentHeadingOf } from './agentHeadingOf';

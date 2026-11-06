@@ -971,7 +971,6 @@
     "apps/desktop/src/features/workflows/guidanceRoles.ts": 3,
     "apps/desktop/src/features/workflows/hooks/useSaveAsStep/index.ts": 1,
     "apps/desktop/src/features/workflows/hooks/useStepDeleteUndo/index.ts": 1,
-    "apps/desktop/src/features/workflows/hooks/useWorkflowRunTitleRename/index.ts": 1,
     "apps/desktop/src/features/workflows/isImportableWorkflow.ts": 1,
     "apps/desktop/src/features/workflows/isPresetWorkflow.ts": 1,
     "apps/desktop/src/features/workflows/quietSignal.ts": 3,

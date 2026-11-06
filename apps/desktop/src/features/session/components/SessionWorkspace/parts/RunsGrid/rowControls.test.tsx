@@ -30,7 +30,7 @@ import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { backOf } from '../../../../../../store/slices/navigation/backOf';
 import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
 import { openBranchRuns } from '../../../../openBranchRuns';
-import { RENAME_REQUEST_EVENT } from '../../../../../actions/renameRequest';
+import { RENAME_REQUEST_EVENT } from '../../../../../../shared/utils/renameRequest';
 import { RunsGrid } from './index';
 
 const session = aSession({ id: NOW_SESSION });

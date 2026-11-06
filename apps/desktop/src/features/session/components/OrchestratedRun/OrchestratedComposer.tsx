@@ -38,7 +38,7 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
     <div data-orchestrated-composer="" className="relative flex min-w-0 flex-col">
       {isQueueOut && queuedCount > 0 ? (
         <p
-          data-hint-queue-line=""
+          data-hint-queue-line="over-the-input"
           className="absolute bottom-full left-0 flex min-h-6 items-center gap-1 rounded-md bg-background px-2 text-ui text-muted-foreground"
         >
           {ORCHESTRATED_COPY.queuedHintsLine({ count: queuedCount })}

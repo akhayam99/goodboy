@@ -7,7 +7,7 @@ import { chatSelectionTarget } from '../../../actions/chatSelectionTarget';
 import { chatObjectKey } from '../../../actions/kinds/chat';
 import type { ObjectTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { StateNode } from '../../../../shared/components/StateNode';
 import { chatNodeOf } from '../../chatNodeOf';
 import { useChatSessionMarker } from '../../hooks/useChatSessionMarker';

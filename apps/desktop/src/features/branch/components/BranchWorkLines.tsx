@@ -1,4 +1,4 @@
-import type { MountId, Session } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { FixRunSection } from '../../resolve/components/ReviewFlow/FixRunSection';
 import type { FixRun } from '../../resolve/fixRun';
 import type { LaneStatus } from '../../resolve/laneStatus';
@@ -8,8 +8,6 @@ import { BranchRunsLine } from './BranchRunsLine';
 
 type Props = {
   readonly session: Session;
-  readonly mountId: MountId | null;
-  readonly mountPath: string | null;
   readonly checkWork: BranchCheckWork;
   readonly run: FixRun | null;
   readonly lane: LaneStatus | null;
@@ -19,8 +17,6 @@ type Props = {
 
 export const BranchWorkLines = ({
   session,
-  mountId,
-  mountPath,
   checkWork,
   run,
   lane,
@@ -28,9 +24,7 @@ export const BranchWorkLines = ({
   onOpenComments,
 }: Props) => (
   <>
-    {mountId === null ? null : (
-      <BranchRunsLine session={session} mountId={mountId} mountPath={mountPath} />
-    )}
+    <BranchRunsLine session={session} />
     {checkWork.agentId === null ? null : (
       <BranchCheckWorkLine
         sessionId={session.id}

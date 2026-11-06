@@ -10,7 +10,7 @@ import type { BoardNavigation } from '../useBoardNavigation';
 import { useAttentionAction } from './useAttentionAction';
 import { useDynamicActions } from './useDynamicActions';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
-import { useRenameRequest } from '../../../../actions/useRenameRequest';
+import { useRenameRequest } from '../../../../../shared/hooks/useRenameRequest';
 import { useSelectRequest } from '../../../../actions/useSelectRequest';
 import { useSessionRowFacts } from '../../../hooks/useSessionRowFacts';
 import { sessionObjectKey } from '../../../../actions/kinds/session';

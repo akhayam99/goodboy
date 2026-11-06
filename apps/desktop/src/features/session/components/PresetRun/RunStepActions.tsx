@@ -1,5 +1,5 @@
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
-import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import { ObjectOverflowMenu } from '../../../actions/ObjectOverflowMenu';
 
 type Props = {
   readonly sessionId: SessionId;

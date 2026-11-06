@@ -1,7 +1,7 @@
 import { Mail, MailOpen, Pencil, Pin, PinOff } from 'lucide-react';
 import type { ChatId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { requestRename } from '../renameRequest';
+import { requestRename } from '../../../shared/utils/renameRequest';
 import type { ChatActionTarget, ObjectKindDefinition } from '../types';
 
 export type ChatFacts = {

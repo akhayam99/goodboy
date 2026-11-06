@@ -3,8 +3,8 @@ import type { Session } from '@goodboy/types';
 import type { AgentId } from '@goodboy/types';
 import { runObjectKey, runTitleAnchorKey } from '../../../actions/runObjectKey';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { useRenameRequest } from '../../../actions/useRenameRequest';
-import { useWorkflowRunTitleRename } from '../../../workflows/hooks/useWorkflowRunTitleRename';
+import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
+import { useRunTitleRename } from '../../hooks/useRunTitleRename';
 import type { RunView } from '../AgentTree/useRunView';
 
 type Props = {
@@ -22,7 +22,7 @@ export const RunTitle = ({ session, view, stepAgentId }: Props) => {
     anchorKey,
     viewing: { kind: 'workflowRun', id: runId },
   });
-  const rename = useWorkflowRunTitleRename({
+  const rename = useRunTitleRename({
     sessionId,
     workflowRunId: runId,
     currentTitle: view.name,

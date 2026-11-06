@@ -1,29 +1,16 @@
-import { useMemo } from 'react';
 import { Button } from '@goodboy/ui';
-import type { MountId, Session } from '@goodboy/types';
-import { branchRunLinkOf } from '../../session/branchRunLinkOf';
-import { useSessionRuns } from '../../session/hooks/useSessionRuns';
+import type { Session } from '@goodboy/types';
+import { useBranchRunLink } from '../../session/hooks/useBranchRunLink';
 import { openBranchRuns } from '../../session/openBranchRuns';
-import { useMountRows } from '../../session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useBranchIdentity } from '../hooks/useBranchIdentity';
 
 type Props = {
   readonly session: Session;
-  readonly mountId: MountId;
-  readonly mountPath: string | null;
 };
 
-export const BranchRunsLine = ({ session, mountId, mountPath }: Props) => {
-  const runs = useSessionRuns({ session });
-  const mountGroups = useMountRows({ sessionId: session.id });
-  const link = useMemo(
-    () =>
-      branchRunLinkOf({
-        runs,
-        mounts: mountGroups.flatMap((group) => [...group.rows, ...group.finishedRows]),
-        mountId,
-      }),
-    [runs, mountGroups, mountId],
-  );
+export const BranchRunsLine = ({ session }: Props) => {
+  const { mount, mountPath } = useBranchIdentity({ sessionId: session.id });
+  const link = useBranchRunLink({ session, mountId: mount?.mountId ?? null });
   if (link === null) {
     return null;
   }

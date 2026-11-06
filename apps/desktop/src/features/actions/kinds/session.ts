@@ -37,7 +37,7 @@ import { stopAllRunningAgents } from '../../session/stopAllRunningAgents';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 import { refreshSession } from '../../session/refreshSession';
 import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
-import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
+import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
 import { requestSelect } from '../selectRequest';
 import { ALL_CHOICES_ID } from '../types';
 import type {

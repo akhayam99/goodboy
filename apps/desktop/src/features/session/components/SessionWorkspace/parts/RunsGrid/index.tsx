@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { Agent, AgentId, MountId, Session } from '@goodboy/types';
 import { ListGrid } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../../store';
@@ -6,15 +6,11 @@ import { useNow } from '../../../../../../shared/hooks/useNow';
 import { GroupBySwitch } from '../../../../../../shared/components/GroupBySwitch';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
 import { branchPlace } from '../../../../../../store/slices/navigation/place';
-import type { GroupBy } from '../../../../../../store/slices/session-grouping/state';
 import { useGroupBy } from '../../../../../../store/slices/session-grouping/selectors';
-import { runGroupFocusOf } from '../../../../../../store/slices/navigation/runGroupFocusOf';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
-import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
 import { NAMES } from '../../../../../../shared/utils/names';
-import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
-import { branchGroupsOf, type BranchGroup } from '../../../../branchGroupsOf';
+import { branchGroupsOf } from '../../../../branchGroupsOf';
 import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { useMountRows } from '../../../SessionOverviewPane/ProjectMountRows/useMountRows';
@@ -24,9 +20,9 @@ import { RunsByState } from './RunsByState';
 import { RunsGridAgentRow } from './RunsGridAgentRow';
 import { RunsGridRow } from './RunsGridRow';
 import { StopAllAction } from './StopAllAction';
-import { archivedFoldKeyOf } from './branchGroupRunsOf';
 import { RUNS_GRID_COLUMNS } from './runsGridColumns';
 import { useRunVerbPress } from './useRunVerbPress';
+import { useRunsFolds } from './useRunsFolds';
 
 type Props = {
   readonly session: Session;
@@ -42,17 +38,8 @@ type RenderParams = RowParams & {
   readonly titleSuffix: ReactNode;
 };
 
-type GroupParams = {
-  readonly key: string;
-};
-
 type MountParams = {
   readonly mountId: MountId;
-};
-
-type RevealParams = {
-  readonly run: SessionRun;
-  readonly fromGroupKey: string;
 };
 
 type AgentParams = {
@@ -61,33 +48,6 @@ type AgentParams = {
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
-
-type ReturnFoldParams = {
-  readonly groupBy: GroupBy;
-  readonly returnRowId: string | null;
-  readonly branchGroups: ReadonlyArray<BranchGroup>;
-};
-
-const foldKeyOfReturnRow = ({
-  groupBy,
-  returnRowId,
-  branchGroups,
-}: ReturnFoldParams): string | undefined => {
-  if (groupBy !== 'branch' || returnRowId === null) {
-    return undefined;
-  }
-  for (const group of branchGroups) {
-    const run = group.runs.find((candidate) => `${group.key}/${candidate.id}` === returnRowId);
-    if (run === undefined) {
-      continue;
-    }
-    if (run.isArchived) {
-      return archivedFoldKeyOf({ groupKey: group.key });
-    }
-    return run.isFinished ? group.key : undefined;
-  }
-  return undefined;
-};
 
 const agentOf = ({ agents, agentId }: AgentParams): Agent | null =>
   agents.find((candidate) => candidate.id === agentId) ?? null;
@@ -110,99 +70,14 @@ export const RunsGrid = ({ session, runs }: Props) => {
     [runs],
   );
   const groupBy = useGroupBy({ sessionId, branchCount });
-  const [isEarlierShown, setIsEarlierShown] = useState(false);
-  const [isArchivedShown, setIsArchivedShown] = useState(false);
-  const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(() => new Set());
   const stateGroups = useMemo(() => runGroupsOf({ runs }), [runs]);
   const branchGroups = useMemo(() => branchGroupsOf({ runs, mounts }), [runs, mounts]);
-  const finished = runs.filter((run) => run.isFinished && !run.isArchived);
-  const archived = runs.filter((run) => run.isArchived);
-  const rowIds = useMemo(
-    () =>
-      groupBy === 'branch'
-        ? branchGroups.flatMap((group) => group.runs.map((run) => `${group.key}/${run.id}`))
-        : runs.map((run) => run.id),
-    [groupBy, branchGroups, runs],
-  );
-  const rowReturn = useRowReturn({ listKey: 'runs', rowIds, rowAttribute: 'data-row-key' });
-  const { returnRowId } = rowReturn;
-  const isReturnEarlier =
-    groupBy === 'state' &&
-    returnRowId !== null &&
-    finished.slice(VISIBLE_FINISHED_COUNT).some((run) => run.id === returnRowId);
-  const isReturnArchived =
-    groupBy === 'state' && returnRowId !== null && archived.some((run) => run.id === returnRowId);
-  const foldKeyOfReturn = foldKeyOfReturnRow({ groupBy, returnRowId, branchGroups });
-  const unfoldedFor = useRef<string | null>(null);
-  const [revealRowKey, setRevealRowKey] = useState<string | null>(null);
-  const arrivedGroupKey = useAppStore((state) => runGroupFocusOf({ state })?.groupKey ?? null);
-
-  useEffect(() => {
-    if (returnRowId === null || unfoldedFor.current === returnRowId) {
-      return;
-    }
-    if (isReturnEarlier) {
-      unfoldedFor.current = returnRowId;
-      setIsEarlierShown(true);
-    }
-    if (isReturnArchived) {
-      unfoldedFor.current = returnRowId;
-      setIsArchivedShown(true);
-    }
-    if (foldKeyOfReturn !== undefined) {
-      unfoldedFor.current = returnRowId;
-      setOpenGroups((open) => new Set([...open, foldKeyOfReturn]));
-    }
-  }, [returnRowId, isReturnEarlier, isReturnArchived, foldKeyOfReturn]);
-
-  useEffect(() => {
-    if (revealRowKey === null) {
-      return;
-    }
-    const row = document.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(revealRowKey)}"]`);
-    if (row === null) {
-      return;
-    }
-    setRevealRowKey(null);
-    row.scrollIntoView?.({ block: 'center' });
-    row.focus();
-  }, [revealRowKey]);
-
-  useEffect(() => {
-    if (arrivedGroupKey === null) {
-      return;
-    }
-    setOpenGroups((open) => new Set([...open, arrivedGroupKey]));
-    const firstRun = branchGroups.find((group) => group.key === arrivedGroupKey)?.runs[0];
-    if (firstRun !== undefined) {
-      setRevealRowKey(`${arrivedGroupKey}/${firstRun.id}`);
-    }
-  }, [arrivedGroupKey]);
-
-  const toggleGroup = useCallback(({ key }: GroupParams) => {
-    setOpenGroups((open) => {
-      const next = new Set(open);
-      next.delete(key);
-      return open.has(key) ? next : new Set([...open, key]);
-    });
-  }, []);
+  const folds = useRunsFolds({ groupBy, runs, branchGroups });
+  const { rowReturn, revealRun } = folds;
 
   const openBranch = ({ mountId }: MountParams) => {
     const mount = mounts.find((candidate) => candidate.mountId === mountId);
     navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
-  };
-
-  const revealRun = ({ run, fromGroupKey }: RevealParams) => {
-    const groupKeys = branchGroups
-      .filter((group) => group.runs.some((candidate) => candidate.id === run.id))
-      .map((group) => group.key);
-    const nextIndex = (groupKeys.indexOf(fromGroupKey) + 1) % groupKeys.length;
-    const groupKey = groupKeys[nextIndex];
-    if (groupKey === undefined || groupKey === fromGroupKey) {
-      return;
-    }
-    setOpenGroups((open) => new Set([...open, groupKey, archivedFoldKeyOf({ groupKey })]));
-    setRevealRowKey(`${groupKey}/${run.id}`);
   };
 
   const open = ({ run, rowKey }: RowParams) => {
@@ -286,8 +161,8 @@ export const RunsGrid = ({ session, runs }: Props) => {
           <RunsByBranch
             groups={branchGroups}
             mounts={mounts}
-            openGroups={openGroups}
-            onToggleGroup={toggleGroup}
+            openGroups={folds.openGroups}
+            onToggleGroup={folds.toggleGroup}
             onOpenBranch={openBranch}
             onRevealRun={revealRun}
             renderRow={renderRow}
@@ -295,10 +170,10 @@ export const RunsGrid = ({ session, runs }: Props) => {
         ) : (
           <RunsByState
             groups={stateGroups}
-            isEarlierShown={isEarlierShown}
-            isArchivedShown={isArchivedShown}
-            onToggleEarlier={() => setIsEarlierShown((isShown) => !isShown)}
-            onToggleArchived={() => setIsArchivedShown((isShown) => !isShown)}
+            isEarlierShown={folds.isEarlierShown}
+            isArchivedShown={folds.isArchivedShown}
+            onToggleEarlier={folds.toggleEarlier}
+            onToggleArchived={folds.toggleArchived}
             onOpenBranch={openBranch}
             renderRow={renderRow}
           />

@@ -41,7 +41,7 @@ import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
 import { openQuestion } from '../../session/openQuestion';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
-import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
+import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
 import { runObjectKey, runTitleAnchorKey } from '../runObjectKey';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 

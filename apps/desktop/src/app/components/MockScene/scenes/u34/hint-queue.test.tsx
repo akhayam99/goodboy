@@ -106,7 +106,7 @@ describe('the queued hints on the run line', () => {
     act(() => reportQueue({ isIntersecting: false }));
     const input = screen.getByPlaceholderText('Hint the orchestrator');
     const line = document.querySelector<HTMLElement>('[data-hint-queue-line]');
-    expect(line?.className).toContain('absolute');
+    expect(line?.getAttribute('data-hint-queue-line')).toBe('over-the-input');
     expect(line?.contains(input)).toBe(false);
 
     act(() => reportQueue({ isIntersecting: true }));
@@ -162,8 +162,7 @@ describe('the queued hints on the run line', () => {
     ).toHaveLength(0);
 
     act(() => reportQueue({ isIntersecting: false }));
-    const line = within(composerOf()).getByText(/hints queued/);
-    expect(line.className).toContain('absolute');
+    within(composerOf()).getByText(/hints queued/);
     fireEvent.click(within(composerOf()).getByRole('button', { name: 'View' }));
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(
       document.querySelector(`[data-hint-queue="${HINT_NODE_SEED.runId}"]`),

@@ -9,12 +9,12 @@ type Params = {
   readonly currentTitle: string;
 };
 
-export const useWorkflowRunTitleRename = ({ sessionId, workflowRunId, currentTitle }: Params) => {
+export const useRunTitleRename = ({ sessionId, workflowRunId, currentTitle }: Params) => {
   const renameWorkflowRun = useAppStore((s) => s.renameWorkflowRun);
 
   return useInlineRename({
     value: currentTitle,
     maxLength: MAX_WORKFLOW_TITLE_LENGTH,
-    onCommit: (next) => renameWorkflowRun(sessionId, workflowRunId, next),
+    onCommit: renameWorkflowRun.bind(null, sessionId, workflowRunId),
   });
 };

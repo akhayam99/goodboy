@@ -1,18 +1,21 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { brandId, type IsoDateTime } from '@goodboy/types';
 import { aWorkflowRun } from '@goodboy/types/testing';
 import { hintQueueOf } from './hintQueueOf';
+
+const AT = brandId<IsoDateTime>({ value: '2026-11-01T10:00:00.000Z' });
 
 const run = aWorkflowRun({
   orchestratorHints: [
     {
       id: 'read',
       text: 'Read',
-      createdAt: '2026-11-01T10:00:00.000Z',
-      consumedAt: '2026-11-01T10:05:00.000Z',
+      createdAt: AT,
+      consumedAt: AT,
     },
-    { id: 'reading', text: 'Reading', createdAt: '2026-11-01T10:01:00.000Z' },
-    { id: 'queued', text: 'Queued', createdAt: '2026-11-01T10:02:00.000Z' },
+    { id: 'reading', text: 'Reading', createdAt: AT },
+    { id: 'queued', text: 'Queued', createdAt: AT },
   ],
 });
 

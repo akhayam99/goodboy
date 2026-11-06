@@ -3,7 +3,7 @@ import { useAppStore } from '../../../../../../../store';
 import { useInlineRename } from '../../../../../../../shared/hooks/useInlineRename';
 import { agentObjectKey } from '../../../../../../actions/agentObjectKey';
 import { runObjectKey } from '../../../../../../actions/runObjectKey';
-import { useRenameRequest } from '../../../../../../actions/useRenameRequest';
+import { useRenameRequest } from '../../../../../../../shared/hooks/useRenameRequest';
 import { MAX_WORKFLOW_TITLE_LENGTH } from '../../../../../../../store/slices/workflows/titleLimit';
 import type { SessionRun } from '../../../../../sessionRunsOf';
 
