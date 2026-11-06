@@ -37,27 +37,35 @@ the new branch form (`forkMount` lands on the new worktree on its landing tab);
 a folder project cannot fork and shows none.
 
 The header holds at most one secondary and one primary (`branchActionsOf`), and the primary is never
-disabled. A push that applies leads: `Push N fixes` (every accepted thread) or `Push N commits` while
-the branch is level with origin is the primary and the step below waits in `⋯`. While it runs, while
-a stop is open or on a queued request it sits in the secondary alone, with no primary beside it. A
-merged or closed request has none, and `Force push` never sits there: while the online copy moved it
-waits in `⋯` behind its confirm. With no push the secondary is `Publish N replies` (the fix is
-already on origin) or `Retry N`. Commits not on origin block the merge (`unpushed` in
+disabled. One function picks the step, the same on every tab (`branchStepOf`), in this order: a push
+already going up; `Answer` when a fix asks something, which opens that comment; no fill while an
+agent works on the branch; `Apply N fixes`; `Retry push`; `Fix N comments`, which opens the Fix
+comments drawer; `Push fix` for a check fix not yet on origin; `Push N commits`; `Publish N
+replies`; `Start fix` once the Debugger proposed one; `Fix checks` while a check fails; then the
+pull request's own step. Comments come before the push so the branch is pushed once, and the checks
+still red come last. Every verb does the work where you stand and never just opens a tab: `Fix
+checks`, `Start fix` and `Push fix` run the same chain as the Overview row (`checkChainActionOf`),
+and `Fix checks` starts one Debugger at the first press, its tooltip naming the model and effort.
+While a fix run or a check agent works, a line under the tabs says what runs, with `Stop`
+(`BranchWorkLines`; the Comments tab keeps its own run line). A push that runs, a stop that is open
+or a queued request keeps the push in the secondary alone, with no primary beside it. A merged or
+closed request has no push, and `Force push` never sits there: while the online copy moved it waits
+in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
 `MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
 `Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
-(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same count. Otherwise the primary is the page's next
-step (`pullRequestNextStepOf`): `Mark ready for review` on a draft, `Request review` while nobody was
-asked, `Fix comments` while changes are requested or comments need you, `Fix checks` while a check
-fails (both open their tab), the merge method (`Squash and merge`) once the pull request is ready,
-`Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a reviewer or a
-check is still on it, on a queued or merged one, or while a banner holds the next action (a stopped
-rebase, someone pushed). One predicate says when a stop is open for the shown branch
+(`subscribe`), so a push opens the merge again without a reload. The companion merge reads the same
+count. The pull request's own step (`pullRequestNextStepOf`) is `Mark ready for review` on a draft,
+`Request review` while nobody was asked, the merge method (`Squash and merge`) once the pull request
+is ready, `Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a
+reviewer or a check is still on it, on a queued or merged one, or while a banner holds the next
+action (a stopped rebase, someone pushed). One predicate says when a stop is open for the shown branch
 (`hasOpenRebaseStopOf`: the stop the rebase panel shows, read through `rebaseStopOf`, live or
 rebuilt from the session events after a restart, or the worktree is mid rebase, read from the live status or, for the action registry and the
 palette, from the status cache of the mount: a palette target that names no mount reads the write
 destination's); while it holds
 the header draws no primary and no push, with or without a pull request, so nothing sits next
-to the stop panel. Without a pull request the branch's next step decides (`branchNextStepOf`):
+to the stop panel. Without a pull request the comment steps come first (notes to answer, apply or
+fix), then the branch's next step decides (`branchNextStepOf`):
 `Push N commits` while commits are not on origin, `Rebase on main` while the branch is behind, and
 none once it is pushed and up to date, where the create form's `Create pull request` is the one
 primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Mark ready` or
