@@ -23,6 +23,7 @@ import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
 import {
   BRANCH_STEP_ID,
   branchActionsOf,
+  isReviewPushLeading,
   type BranchPrimary,
   type BranchNextStep,
   type BranchReviewCounts,
@@ -78,6 +79,7 @@ export type BranchControls = {
   readonly primary: BranchPrimary | null;
   readonly secondary: BranchPrimary | null;
   readonly press: (action: BranchPrimary) => void;
+  readonly pushFromMenu: () => void;
   readonly merge: () => void;
   readonly controlsOf: (action: BranchPrimary) => ActionControls | null;
   readonly hasOpenRebaseStop: boolean;
@@ -352,6 +354,19 @@ export const useBranchControls = ({
     [busyStepId, controlsOf, runStep, sessionId],
   );
 
+  const hasPullRequest = pr !== null && !isRequestMerged;
+  const pushFromMenu = useCallback(() => {
+    if (isReviewPushLeading({ review, hasPullRequest, state })) {
+      requestReview({
+        getState: useAppStore.getState,
+        sessionId,
+        request: { kind: 'push' },
+      });
+      return;
+    }
+    diffControls.trigger({ actionId: 'diff.push' });
+  }, [diffControls, hasPullRequest, review, sessionId, state]);
+
   const merge = useCallback(
     () => pullRequestControls.trigger({ actionId: 'pullRequest.merge' }),
     [pullRequestControls],
@@ -367,6 +382,7 @@ export const useBranchControls = ({
     primary,
     secondary,
     press,
+    pushFromMenu,
     controlsOf,
     hasOpenRebaseStop,
     isChangingBase,

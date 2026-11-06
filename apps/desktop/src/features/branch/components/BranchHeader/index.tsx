@@ -159,6 +159,7 @@ export const BranchHeader = ({
                   pullRequestControls={controls.pullRequestControls}
                   shownIds={shownIds}
                   isRebaseStopOpen={controls.hasOpenRebaseStop}
+                  onPush={controls.pushFromMenu}
                 />
               }
             />

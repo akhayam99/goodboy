@@ -29,6 +29,7 @@ import {
 import type { MountGithubState } from '../../../../store/types';
 import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
 import type { BranchReviewCounts } from '../../branchPrimary';
+import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
 import { NO_COMMENT_FACTS, type BranchStepComments } from '../../branchStepOf';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { BranchHeader } from './index';
@@ -241,6 +242,40 @@ describe('the branch menu keeps the push the header does not show', () => {
 
     expect(primaries().map((button) => button.textContent)).toEqual(['Push 2 commits']);
     expect(menuLabels().some((label) => label.startsWith('Push'))).toBe(false);
+  });
+
+  it('sends the menu push through the review push while an accepted fix waits', () => {
+    const requests: Array<string> = [];
+    const listener = (event: Event): void => {
+      if (isReviewRequest(event)) {
+        requests.push(event.detail.request.kind);
+        event.preventDefault();
+      }
+    };
+    window.addEventListener(REVIEW_REQUEST_EVENT, listener);
+    renderHeader({
+      review: { ...NO_REVIEW, accepted: 1, push: { state: 'idle', count: 2 } },
+      comments: {
+        facts: { ...NO_COMMENT_FACTS, questionThreadId: 'thread-ledger', fixable: 2 },
+        readyThreadIds: [],
+        fixableThreadIds: [],
+      },
+      status: UNPUSHED,
+    });
+
+    expect(primaries().map((button) => button.textContent)).toEqual(['Answer']);
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+    fireEvent.click(
+      screen.getAllByRole('menuitem').find((item) => (item.textContent ?? '').startsWith('Push')) ??
+        document.body,
+    );
+    window.removeEventListener(REVIEW_REQUEST_EVENT, listener);
+
+    expect(requests).toEqual(['push']);
+    const pushCommands = storySpies.tauriInvoke.mock.calls.filter(([command]) =>
+      String(command).includes('push'),
+    );
+    expect(pushCommands).toEqual([]);
   });
 
   it('holds five rows at most on the fullest pull request', () => {

@@ -20,6 +20,7 @@ type Props = {
   readonly pullRequestControls: ActionControls;
   readonly shownIds: ReadonlyArray<string>;
   readonly isRebaseStopOpen: boolean;
+  readonly onPush: () => void;
 };
 
 const MENU_LABEL = 'Branch actions';
@@ -37,6 +38,7 @@ export const BranchOverflow = ({
   pullRequestControls,
   shownIds,
   isRebaseStopOpen,
+  onPush,
 }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
@@ -74,6 +76,10 @@ export const BranchOverflow = ({
             actions,
             env,
             run: async ({ actionId, choice }) => {
+              if (actionId === PUSH_ID) {
+                onPush();
+                return;
+              }
               if (HEADER_RUN.has(actionId)) {
                 controls.trigger({ actionId });
                 return;
@@ -87,7 +93,7 @@ export const BranchOverflow = ({
         ? [{ kind: 'separator' as const, key: `separator-${index}` }, ...group]
         : group,
     );
-  }, [diffControls, env, isRebaseStopOpen, pullRequestControls, shownIds]);
+  }, [diffControls, env, isRebaseStopOpen, onPush, pullRequestControls, shownIds]);
 
   if (entries.filter((entry) => entry.kind === 'item').length < MIN_DRAWN_ENTRIES) {
     return null;

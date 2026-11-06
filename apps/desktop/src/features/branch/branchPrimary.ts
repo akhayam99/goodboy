@@ -169,6 +169,16 @@ const hasPullRequestPush = ({ hasPullRequest, state }: HostParams): boolean =>
 const isReviewPushInFlight = ({ review }: Pick<Params, 'review'>): boolean =>
   review.isPushing || review.push.state !== 'idle';
 
+type ReviewPushLeadParams = HostParams & Pick<Params, 'review'>;
+
+export const isReviewPushLeading = ({
+  review,
+  hasPullRequest,
+  state,
+}: ReviewPushLeadParams): boolean =>
+  hasPullRequestPush({ hasPullRequest, state }) &&
+  (review.accepted > 0 || isReviewPushInFlight({ review }));
+
 const pushOf = ({
   diff,
   review,
@@ -179,7 +189,7 @@ const pushOf = ({
   if (!hasPullRequestPush({ hasPullRequest, state })) {
     return null;
   }
-  if (review.accepted > 0 || isReviewPushInFlight({ review })) {
+  if (isReviewPushLeading({ review, hasPullRequest, state })) {
     const isBusy = review.isPushing || review.push.state === 'busy';
     const count = review.push.count;
     return reviewAction({
