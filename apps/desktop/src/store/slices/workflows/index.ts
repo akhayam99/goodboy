@@ -18,6 +18,7 @@ import { suggestWorkflowTitle } from './suggestWorkflowTitle';
 import { loadPhaseRunsForSession } from './loadPhaseRunsForSession';
 import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
+import { reloadSessionWorkflows } from './reloadSessionWorkflows';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { continueWithHint } from './continueWithHint';
@@ -54,6 +55,7 @@ import type { SliceDeps } from '../../slice-types';
 export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadPhaseTemplates: loadPhaseTemplates(set),
+    reloadSessionWorkflows: reloadSessionWorkflows({ set }),
     copyWorkflowsFromWorkspaces: copyWorkflowsFromWorkspaces({ set }),
     savePhaseTemplate: savePhaseTemplate(set),
     saveRunAsPreset: saveRunAsPreset(get),
