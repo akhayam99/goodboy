@@ -21,7 +21,7 @@ export const AgentHeader = ({ title, actions, meta = null, below = null, rootRef
             data-testid="agent-header-lead"
             className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-1"
           >
-            <h1 className="flex min-h-8 min-w-48 flex-1 items-center text-title text-foreground">
+            <h1 className="flex min-h-8 min-w-0 flex-1 items-center text-title text-foreground">
               {title}
             </h1>
           </div>

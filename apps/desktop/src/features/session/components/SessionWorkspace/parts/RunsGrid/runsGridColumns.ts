@@ -59,6 +59,7 @@ export const RUNS_GRID_COLUMNS = [
     width: 56,
     align: 'end',
     isNumeric: true,
+    shouldHideWhenEmpty: true,
     hideBelow: narrowHideBelowOf({ key: 'cost' }),
   },
   {
