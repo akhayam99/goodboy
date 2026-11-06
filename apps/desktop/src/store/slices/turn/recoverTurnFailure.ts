@@ -51,7 +51,7 @@ type Params = Readonly<{
 }>;
 
 export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }: Params) => {
-  const { sessionId, content, attachments, override, force, origin, retry } = ctx.input;
+  const { sessionId, content, attachments, override, force, origin, retry, onStarted } = ctx.input;
   const {
     session,
     turnTarget,
@@ -74,6 +74,9 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
   } = ctx;
   const { assistantText } = progress;
   const isAlreadySent = err instanceof CommandError && err.kind === 'delivery_duplicate';
+  if (isAlreadySent) {
+    onStarted?.();
+  }
   const rawMessage = isAlreadySent ? ALREADY_SENT_MESSAGE : formatError(err);
   const maxModeFailure =
     provider === 'cursor' ? matchCursorMaxModeFailure({ message: rawMessage }) : null;
@@ -206,6 +209,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         ...(origin !== undefined && { origin }),
         ...(turnTarget !== null && { mountTarget: turnTarget }),
         ...(copyPath !== null && { resolveCopyPath: copyPath }),
+        ...(onStarted !== undefined && !progress.hasSpawned && { onStarted }),
         retry: {
           attempt: (retry?.attempt ?? 0) + 1,
           provider: fallbackPlan.provider,
@@ -273,11 +277,12 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     finishedAt: now(),
     error: rawMessage,
   });
+  const isRetriedFromItsRow = ctx.input.onWritingUserText !== undefined && !progress.hasSpawned;
   get().appendTurnEvent(activeAgentId, sessionId, {
     kind: 'error',
     runId,
     message,
-    retryable: !isAlreadySent,
+    retryable: !isAlreadySent && !isRetriedFromItsRow,
     at: now(),
   });
   if (resolvedAgentId) {

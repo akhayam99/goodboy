@@ -1,5 +1,6 @@
-import type { ProviderRunId } from '@goodboy/types';
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
+import { cancelledRunIds } from '../sessions/sessionMutators';
+import { closeUnspawnedRun } from './unstartedTurn/closeUnspawnedRun';
 import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
@@ -24,7 +25,7 @@ import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
 import { noticeAutoOfChildTurn } from '../../runtime/auto/noticeAutoOfChildTurn';
 import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
-import { lookupDeliveryRun } from '../../../features/chat/turn';
+import { cancelTurn, lookupDeliveryRun } from '../../../features/chat/turn';
 import { stopLingeringTurn } from '../../../features/chat/stopLingeringTurn';
 import { handDelivery } from './handDelivery';
 import { workspaceVerification } from '../project-mounts/verify/workspaceVerification';
@@ -32,7 +33,6 @@ import { waitForClusterOverlap } from './clusterOverlap/waitForClusterOverlap';
 
 type DiscardParams = Readonly<{
   error: unknown;
-  runId?: ProviderRunId;
 }>;
 
 type RunOnceParams = Readonly<{
@@ -65,13 +65,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       return leased.result;
     }
     const startCtx = { ...leaseCtx, ...leased.value };
-    const discardUnspawned = async ({ error, runId }: DiscardParams): Promise<never> => {
+    const discardUnspawned = async ({ error }: DiscardParams): Promise<never> => {
       releaseUnstartedTurn({
         set,
         get,
         sessionId: input.sessionId,
         agentId: startCtx.activeAgentId,
-        ...(runId !== undefined && { runId }),
       });
       await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       throw error;
@@ -83,19 +82,49 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       return started.result;
     }
-    const { runId } = started.value;
+    const { runId, resolvedAgentId, agentBefore } = started.value;
+    const closeThenDiscard = async ({ error }: DiscardParams): Promise<never> => {
+      await closeUnspawnedRun({
+        set,
+        get,
+        sessionId: input.sessionId,
+        agentId: startCtx.activeAgentId,
+        resolvedAgentId,
+        agentBefore,
+        runId,
+        error,
+      }).catch((closeError: unknown) =>
+        get().reportError({
+          title: "Couldn't close the turn that never started",
+          error: closeError,
+          sessionId: input.sessionId,
+        }),
+      );
+      return discardUnspawned({ error });
+    };
     const promptCtx = { ...startCtx, ...started.value };
     const prompt = await buildTurnPrompt({ get, ctx: promptCtx }).catch((error: unknown) =>
-      discardUnspawned({ error, runId }),
+      closeThenDiscard({ error }),
     );
     const spawnCtx = { ...promptCtx, ...prompt };
     const spawn = await buildTurnSpawn({ set, get, lease, ctx: spawnCtx }).catch((error: unknown) =>
-      discardUnspawned({ error, runId }),
+      closeThenDiscard({ error }),
     );
     const ctx = { ...spawnCtx, ...spawn };
-    input.onStarted?.();
+    const onSpawned = (): void => {
+      if (cancelledRunIds.has(runId)) {
+        void cancelTurn(runId).catch((error: unknown) =>
+          console.warn('stopping the run that spawned after its stop failed', error),
+        );
+        return;
+      }
+      ctx.progress.hasSpawned = true;
+      input.onStarted?.();
+    };
     try {
-      await readTurnStream({ set, get, ctx });
+      if (!cancelledRunIds.has(runId)) {
+        await readTurnStream({ set, get, ctx, onSpawned });
+      }
       await finalizeTurnStream({ set, get, ctx });
     } catch (err) {
       const recovered = await recoverTurnFailure({ set, get, lease, ctx, err, runOnce });

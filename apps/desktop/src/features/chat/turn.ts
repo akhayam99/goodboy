@@ -150,6 +150,7 @@ type TurnAttachSnapshot = {
 
 export type RunTurnHooks = {
   readonly onProviderLimits?: (limits: ProviderLimits) => void;
+  readonly onSpawned?: () => void;
   readonly owner?: TurnOwner;
 };
 
@@ -463,6 +464,7 @@ export const runTurn = (
     resumeFrom: null,
     begin: async () => {
       await invokeCommand<string>('turn_spawn', { args });
+      hooks.onSpawned?.();
     },
   });
 

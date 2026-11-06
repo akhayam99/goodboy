@@ -76,6 +76,7 @@ export type TurnLease = {
 };
 
 export type TurnProgress = {
+  hasSpawned: boolean;
   assistantText: string;
   providerThreadId: string | null;
   receivedProviderError: boolean;

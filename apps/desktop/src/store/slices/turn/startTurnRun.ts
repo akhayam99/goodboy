@@ -137,12 +137,15 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   }
 
   let resolvedAgentId: AgentId | null = null;
+  let agentBefore: Agent | null =
+    (get().sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === activeAgentId) ?? null;
   if (phaseDefinition) {
     const runsForSession = get().sessionPhaseRuns[sessionId] ?? [];
     const scopedRuns = phaseWorkflowRunId
       ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
       : runsForSession;
     const reusable = findReusableAgent(scopedRuns, phaseDefinition.id);
+    agentBefore = reusable;
     let resolved: Agent | null = null;
     try {
       resolved =
@@ -205,7 +208,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
   nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
   const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
   await updateSessionState(tauriDatabase, sessionId, derived, now());
-  return turnReady({ value: { runId, isFirstTurn, isHandoffTurn, resolvedAgentId } });
+  return turnReady({ value: { runId, isFirstTurn, isHandoffTurn, resolvedAgentId, agentBefore } });
 };
 
 export type StartedTurn = TurnPhaseValue<typeof startTurnRun>;

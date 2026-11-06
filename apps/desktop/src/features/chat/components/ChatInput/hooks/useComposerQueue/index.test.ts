@@ -10,7 +10,13 @@ vi.mock('@tauri-apps/api/event', async () =>
 import { createRef } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
-import { brandId, type AgentId, type AgentStatus, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type AgentStatus,
+  type IsoDateTime,
+  type SessionId,
+} from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -50,8 +56,9 @@ const statusLineOf = ({ status }: StatusParams): string | undefined => {
           agentId: AGENT,
           content: 'Replay the webhook on notify-relay',
           attachments: [],
+          override: undefined,
           status: 'queued',
-          createdAt: '2026-11-06T09:00:00.000Z',
+          createdAt: brandId<IsoDateTime>({ value: '2026-11-06T09:00:00.000Z' }),
         },
       ],
     },

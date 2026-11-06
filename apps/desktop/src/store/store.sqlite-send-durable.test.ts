@@ -19,6 +19,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
+import { CommandError } from '../shared/lib/invokeCommand';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { cancelTurnStartWindow, ensureTurnStartWindow } from './slices/turn/turnStartWindow';
 import { handDelivery } from './slices/turn/handDelivery';
@@ -26,6 +27,7 @@ import { markTurnSettled } from './slices/turn/turnSettled';
 import {
   buildStoryWorkspace,
   connectedAnthropicState,
+  emptyTurnStream,
   importStore,
   openStorySqlite,
   resetStoryStore,
@@ -541,5 +543,205 @@ describe('Send writes the row, then delivers', () => {
     await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(1));
     await vi.waitFor(async () => expect(await savedQueue()).toEqual([]));
     expect(rows()).toEqual([]);
+  });
+});
+
+const DID_NOT_START = 'The agent did not start. Your message is safe here.';
+
+const retry = (itemId: string) =>
+  useAppStore.getState().retryQueuedMessage({ sessionId, agentId, itemId });
+
+const stopTheAgent = () =>
+  useAppStore.getState().cancelTurnConfirmed({ sessionId, agentId, reason: 'user' });
+
+const agentRow = async () =>
+  (
+    await rowsOf<{ status: string; started_at: number | null }>({
+      sql: 'SELECT status, started_at FROM agents WHERE id = ?',
+      params: [agentId],
+    })
+  )[0];
+
+const runStatuses = async () =>
+  (
+    await rowsOf<{ status_kind: string }>({
+      sql: 'SELECT status_kind FROM provider_runs WHERE session_id = ?',
+      params: [sessionId],
+    })
+  ).map((row) => row.status_kind);
+
+const sessionKind = async () =>
+  (
+    await rowsOf<{ state_kind: string }>({
+      sql: 'SELECT state_kind FROM sessions WHERE id = ?',
+      params: [sessionId],
+    })
+  )[0]?.state_kind;
+
+const sendCounting = () => {
+  const onStarted = vi.fn();
+  const sending = useAppStore.getState().sendTurn({
+    sessionId,
+    agentId,
+    content: TEXT,
+    origin: 'operator',
+    onStarted,
+  });
+  return { onStarted, sending };
+};
+
+describe('Started means the process runs', () => {
+  it('keeps the row when the process fails to start, and Retry delivers it once', async () => {
+    storySpies.turnSpawn.mockRejectedValue(new Error('claude: command not found'));
+
+    const delivery = await send('send-21');
+
+    expect(delivery.isDelivered).toBe(false);
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(await savedQueue()).toEqual(['send-21']);
+    expect(rows()).toEqual([
+      { id: 'send-21', status: 'queued', reason: 'claude: command not found' },
+    ]);
+    expect(
+      (useAppStore.getState().transcripts[agentId] ?? []).find((event) => event.kind === 'error'),
+    ).toMatchObject({ retryable: false });
+
+    storySpies.turnSpawn.mockResolvedValue('started');
+    const retried = await retry('send-21');
+
+    expect(retried.isDelivered).toBe(true);
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+    expect(await savedQueue()).toEqual([]);
+  });
+
+  it('never fires the start when the process fails to start', async () => {
+    storySpies.turnSpawn.mockRejectedValue(new Error('claude: command not found'));
+
+    const { onStarted, sending } = sendCounting();
+
+    await expect(sending).rejects.toThrow('claude: command not found');
+    expect(onStarted).not.toHaveBeenCalled();
+  });
+
+  it('drops the row when another run already holds its delivery id', async () => {
+    storySpies.turnSpawn.mockRejectedValueOnce(
+      new CommandError({ kind: 'delivery_duplicate', message: 'already sent' }),
+    );
+
+    const delivery = await send('send-22');
+
+    expect(delivery).toEqual({ isDelivered: true, failure: null });
+    expect(await savedQueue()).toEqual([]);
+  });
+
+  it('fires the start once on the fallback when the first spawn failed', async () => {
+    storySpies.turnSpawn.mockRejectedValueOnce(new Error('429 rate limit exceeded'));
+
+    const { onStarted, sending } = sendCounting();
+    await sending;
+
+    expect(storySpies.turnSpawn).toHaveBeenCalledTimes(2);
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires the start once when a started turn fails and falls back', async () => {
+    storySpies.runTurn.mockImplementationOnce(() =>
+      (async function* stream(): AsyncIterable<TurnEvent> {
+        yield* [];
+        throw new Error('429 rate limit exceeded');
+      })(),
+    );
+
+    const { onStarted, sending } = sendCounting();
+    await sending;
+
+    expect(storySpies.turnSpawn).toHaveBeenCalledTimes(2);
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  it('spawns nothing and holds the row when Stop lands while the prompt builds', async () => {
+    const load = useAppStore.getState().loadGoalAttachments;
+    useAppStore.setState({
+      loadGoalAttachments: async (params) => {
+        await stopTheAgent();
+        return load(params);
+      },
+    });
+
+    const delivery = await send('send-23');
+
+    expect(delivery.isDelivered).toBe(false);
+    expect(storySpies.turnSpawn).not.toHaveBeenCalled();
+    expect(rows()).toEqual([{ id: 'send-23', status: 'queued', reason: DID_NOT_START }]);
+    expect((await agentRow())?.status).toBe('stopped');
+    expect(await runStatuses()).not.toContain('streaming');
+    useAppStore.setState({ loadGoalAttachments: load });
+
+    const retried = await retry('send-23');
+
+    expect(retried.isDelivered).toBe(true);
+    expect(storySpies.turnSpawn).toHaveBeenCalledTimes(1);
+  });
+
+  it('kills the process and holds the row when Stop lands during the spawn', async () => {
+    storySpies.runTurn.mockImplementation(() => emptyTurnStream());
+    storySpies.turnSpawn.mockImplementationOnce(async () => {
+      await stopTheAgent();
+      return 'started';
+    });
+
+    const delivery = await send('send-24');
+
+    expect(delivery.isDelivered).toBe(false);
+    expect(storySpies.cancelTurn).toHaveBeenCalledTimes(2);
+    expect(rows()).toEqual([{ id: 'send-24', status: 'queued', reason: DID_NOT_START }]);
+  });
+
+  it('writes the agent, the run and the session back when the build fails', async () => {
+    const load = useAppStore.getState().loadGoalAttachments;
+    const startedBefore = (await agentRow())?.started_at;
+    const recordAgentHandoff = vi.fn(async () => undefined);
+    useAppStore.setState({
+      recordAgentHandoff,
+      loadGoalAttachments: async () => {
+        throw new Error('the goal attachments could not be read');
+      },
+    });
+
+    const delivery = await send('send-25');
+
+    expect(delivery.isDelivered).toBe(false);
+    expect(await agentRow()).toEqual({ status: 'pending', started_at: startedBefore });
+    expect(await runStatuses()).toEqual(['failed']);
+    expect(await sessionKind()).toBe('idle');
+    expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
+    expect(useAppStore.getState().agentRunHistory[agentId] ?? []).toEqual([]);
+    expect(
+      (useAppStore.getState().sessionPhaseRuns[sessionId] ?? []).find(
+        (agent) => agent.id === agentId,
+      )?.status,
+    ).toBe('pending');
+    useAppStore.setState({ loadGoalAttachments: load });
+
+    const retried = await retry('send-25');
+
+    expect(retried.isDelivered).toBe(true);
+    expect(recordAgentHandoff).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the stop in place when the build fails after a Stop', async () => {
+    const load = useAppStore.getState().loadGoalAttachments;
+    useAppStore.setState({
+      loadGoalAttachments: async () => {
+        await stopTheAgent();
+        throw new Error('the goal attachments could not be read');
+      },
+    });
+
+    await send('send-26');
+
+    expect((await agentRow())?.status).toBe('stopped');
+    expect(await runStatuses()).toEqual(['cancelled']);
+    useAppStore.setState({ loadGoalAttachments: load });
   });
 });

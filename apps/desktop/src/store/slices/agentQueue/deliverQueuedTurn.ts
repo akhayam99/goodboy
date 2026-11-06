@@ -135,7 +135,7 @@ export const deliverQueuedTurn = async ({
     await hold({ reason: NOT_STARTED });
     return { isDelivered: false, failure: null };
   } catch (error) {
-    if (isTranscriptOwnedTurnError({ error }) || isAccepted) {
+    if (isAccepted) {
       if (!isTranscriptOwnedTurnError({ error })) {
         void get().reportError({ title: "Couldn't send the queued message", error, sessionId });
       }

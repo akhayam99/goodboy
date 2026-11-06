@@ -39,8 +39,21 @@ export const onboardingStoreModuleMock = () => ({
   hydrateOnboardingFromDb: vi.fn(async () => undefined),
 });
 
+type StoryTurnParams = {
+  readonly args: unknown;
+  readonly hooks: { readonly onSpawned?: () => void } | undefined;
+};
+
+const storyTurn = async function* ({ args, hooks }: StoryTurnParams): AsyncIterable<unknown> {
+  await storySpies.turnSpawn(args);
+  hooks?.onSpawned?.();
+  yield* storySpies.runTurn(args);
+};
+
+type StoryTurnHooks = StoryTurnParams['hooks'];
+
 export const turnModuleMock = () => ({
-  runTurn: (args: unknown) => storySpies.runTurn(args),
+  runTurn: (args: unknown, _now?: unknown, hooks?: StoryTurnHooks) => storyTurn({ args, hooks }),
   cancelTurn: (runId: unknown) => storySpies.cancelTurn(runId),
   listLiveRunIds: storySpies.listLiveRunIds,
   probeLiveRunIds: async () => {
