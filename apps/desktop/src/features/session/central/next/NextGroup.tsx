@@ -52,8 +52,11 @@ export const NextGroup = ({
     return run !== undefined && (run.phase === 'running' || run.phase === 'handing');
   });
   const updateAll = useAppStore((state) => state.updateAll);
-  const shown = group.rows.map((card) => ({ card, actions: actionsFor({ card, isNarrow }) }));
   const isQuietAt = ({ index }: IndexParams): boolean => isFlat && !(isLead && index === 0);
+  const shown = group.rows.map((card, index) => ({
+    card,
+    actions: actionsFor({ card, isNarrow: isNarrow || isQuietAt({ index }) }),
+  }));
   const hasOverflowColumn = shown.some(
     ({ actions }, index) =>
       !isQuietAt({ index }) && (actions.menu !== null || actions.foldedTarget !== null),
