@@ -1,12 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type StepId, type WorkflowRunId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { runOnScreenOf } from './runOnScreenOf';
 
-const step = anAgent({ id: 'agent-step' as AgentId, workflowRunId: 'run-b', stepId: 'step-1' });
-const child = anAgent({ id: 'agent-child' as AgentId, parentAgentId: step.id });
-const loose = anAgent({ id: 'agent-loose' as AgentId });
+const step = anAgent({
+  id: brandId<AgentId>({ value: 'agent-step' }),
+  workflowRunId: brandId<WorkflowRunId>({ value: 'run-b' }),
+  stepId: brandId<StepId>({ value: 'step-1' }),
+});
+const child = anAgent({ id: brandId<AgentId>({ value: 'agent-child' }), parentAgentId: step.id });
+const loose = anAgent({ id: brandId<AgentId>({ value: 'agent-loose' }) });
 
 describe('runOnScreenOf', () => {
   it('keeps the focused run', () => {
