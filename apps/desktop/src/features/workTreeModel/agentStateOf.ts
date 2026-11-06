@@ -4,7 +4,7 @@ import { NAMES } from '../../shared/utils/names';
 import { isAgentClosedByUser, isTurnStatePermissionBlocked } from '../session/agent-lifecycle';
 import { describeAgentStatus } from '../session/agent-status';
 import { resolveAgentRowState, type RowState } from './rowState';
-import { rowStateNode, type RowNode } from './rowStateCopy';
+import { NOT_FINISHED, rowStateNode, type RowNode } from './rowStateCopy';
 
 export type AgentState = Readonly<{
   row: RowState;
@@ -29,8 +29,6 @@ type StatusParams = {
 };
 
 const STOPPED_CONTINUE_WORD = 'Stopped, Continue';
-
-const NOT_FINISHED_WORD = 'Not finished';
 
 export const NEEDS_PERMISSION_WORD = 'Needs permission';
 
@@ -120,7 +118,9 @@ const wordOf = ({ row, status, isClosed }: WordParams): string => {
     return NEEDS_PERMISSION_WORD;
   }
   if (status === 'stopped') {
-    return row.reason?.kind === 'notFinished' ? NOT_FINISHED_WORD : STOPPED_CONTINUE_WORD;
+    return row.reason?.kind === 'agentStopped' && row.reason.isCutStep === true
+      ? NOT_FINISHED
+      : STOPPED_CONTINUE_WORD;
   }
   return describeAgentStatus({ status }).label;
 };

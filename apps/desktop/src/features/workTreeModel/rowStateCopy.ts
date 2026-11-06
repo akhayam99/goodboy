@@ -23,6 +23,8 @@ export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   skipped: 'Skipped',
 };
 
+export const NOT_FINISHED = 'Not finished';
+
 type ReasonParams = {
   readonly reason: RowStateReason;
 };
@@ -76,6 +78,9 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'stopped':
       return 'Stopped by you';
     case 'agentStopped':
+      if (reason.isCutStep === true) {
+        return NOT_FINISHED;
+      }
       return reason.by === 'app' ? 'Stopped by restart' : 'Stopped by you';
     case 'stepStopped':
       return reason.stepLabel == null
@@ -92,7 +97,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'skipped':
       return 'Skipped';
     case 'notFinished':
-      return 'Not finished';
+      return NOT_FINISHED;
     case 'didNotStart':
       return 'Did not start';
     case 'without':
@@ -135,8 +140,9 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Plan ready';
     case 'orchestratorFailed':
       return 'Orchestrator failed';
-    case 'stopped':
     case 'agentStopped':
+      return reason.isCutStep === true ? NOT_FINISHED : 'Stopped';
+    case 'stopped':
     case 'stepStopped':
       return 'Stopped';
     case 'deciding':
@@ -309,6 +315,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
     return { state: node, label: 'Stopped by restart' };
+  }
+  if (state.reason?.kind === 'agentStopped' && state.reason.isCutStep === true) {
+    return { state: node, label: NOT_FINISHED };
   }
   return { state: node, label: ROW_NODE_LABEL[node] };
 };

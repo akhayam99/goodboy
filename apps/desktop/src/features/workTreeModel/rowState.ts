@@ -21,7 +21,7 @@ export type RowStateReason =
   | { readonly kind: 'stepBlocked'; readonly stepLabel: string | null }
   | { readonly kind: 'orchestratorFailed' }
   | { readonly kind: 'stopped' }
-  | { readonly kind: 'agentStopped'; readonly by: AgentStoppedBy }
+  | { readonly kind: 'agentStopped'; readonly by: AgentStoppedBy; readonly isCutStep?: boolean }
   | { readonly kind: 'stepStopped'; readonly stepLabel: string | null }
   | { readonly kind: 'deciding' }
   | { readonly kind: 'briefing' }
@@ -144,9 +144,11 @@ export const resolveAgentRowState = ({
     case 'stopped':
       return {
         phase: 'waiting',
-        reason: isCutStep({ agent })
-          ? { kind: 'notFinished' }
-          : { kind: 'agentStopped', by: agent.stoppedBy ?? 'you' },
+        reason: {
+          kind: 'agentStopped',
+          by: agent.stoppedBy ?? 'you',
+          ...(isCutStep({ agent }) && { isCutStep: true }),
+        },
         ask: { kind: 'continue', agent },
       };
     default: {
