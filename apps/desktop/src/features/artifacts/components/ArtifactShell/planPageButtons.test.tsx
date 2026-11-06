@@ -2,7 +2,6 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { useAppStore } from '../../../../store';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { PLAN_FIXTURE_SESSION } from '../../../../test/planFixtures';
 import {
@@ -14,11 +13,10 @@ import { ArtifactDocumentShell } from './ArtifactDocumentShell';
 
 const renderPage = (seed: PlanDrawerSeed) => {
   const { plan, stored } = seedPlanDrawer(seed);
-  const agents = useAppStore.getState().sessionPhaseRuns[PLAN_FIXTURE_SESSION] ?? [];
   const subject = { kind: 'plan', plan, artifact: stored } as const;
   return render(
     <ToastProvider>
-      <ArtifactDocumentShell sessionId={PLAN_FIXTURE_SESSION} subject={subject} agents={agents} />
+      <ArtifactDocumentShell sessionId={PLAN_FIXTURE_SESSION} subject={subject} agents={[]} />
     </ToastProvider>,
   );
 };

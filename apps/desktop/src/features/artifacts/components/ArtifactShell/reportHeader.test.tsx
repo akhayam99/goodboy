@@ -26,12 +26,14 @@ describe('ArtifactShellHeader', () => {
   it('draws the kind glyph before a title it shows', () => {
     renderHeader({ isTitleInDocument: false });
 
-    expect(screen.getByTestId('artifact-shell-header').querySelector('svg')).not.toBeNull();
+    const header = screen.getByTestId('artifact-shell-header');
+    expect(header.querySelector('svg')).not.toBeNull();
   });
 
   it('draws no lone glyph when the title is in the document below', () => {
     renderHeader({ isTitleInDocument: true });
 
-    expect(screen.getByTestId('artifact-shell-header').querySelector('svg')).toBeNull();
+    const header = screen.getByTestId('artifact-shell-header');
+    expect(header.querySelector('svg')).toBeNull();
   });
 });

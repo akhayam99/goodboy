@@ -9,7 +9,7 @@ const OPENINGS = {
 const CLOSINGS = {
   revise:
     'Write the full updated plan as one plan block, never a patch. Keep every part and every sentence these comments did not touch.',
-  read: 'Take them into account in the work that is left. Do not rewrite the plan.',
+  read: "Take them into account in the work that is left. Don't rewrite the plan.",
 } as const;
 
 const QUOTE_LIMIT = 400;

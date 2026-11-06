@@ -6,8 +6,9 @@ import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 export type PlanCommentBarRan = Readonly<{
   agentName: string;
   canSend: boolean;
+  isSending: boolean;
   onSend: () => Promise<unknown>;
-  onCopy: () => Promise<unknown>;
+  onCopy: () => void;
 }>;
 
 type Props = {
@@ -26,7 +27,7 @@ type CountParams = {
   readonly count: number;
 };
 
-const countOf = ({ count }: CountParams): string =>
+const commentsLabelOf = ({ count }: CountParams): string =>
   count === 1 ? '1 comment' : `${count} comments`;
 
 type NoteParams = {
@@ -34,11 +35,11 @@ type NoteParams = {
   readonly ran: PlanCommentBarRan | null;
 };
 
-const noteOf = ({ guard, ran }: NoteParams): string | null => {
+const barNoteOf = ({ guard, ran }: NoteParams): string | null => {
   if (ran !== null) {
     return ran.canSend
       ? `${ran.agentName} can still read them.`
-      : `${ran.agentName} is not running. Copy them instead.`;
+      : `${ran.agentName} isn't running. Copy them instead.`;
   }
   return guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason;
 };
@@ -53,7 +54,7 @@ export const PlanCommentBar = ({
   status = null,
 }: Props) => {
   const hasDrafts = count > 0;
-  const note = error ?? noteOf({ guard, ran });
+  const note = error ?? barNoteOf({ guard, ran });
 
   return (
     <div
@@ -64,7 +65,7 @@ export const PlanCommentBar = ({
         {hasDrafts ? (
           <div className="flex min-w-0 flex-col">
             <span className="text-meta text-muted-foreground">
-              {ran === null ? countOf({ count }) : `${countOf({ count })} not sent`}
+              {ran === null ? commentsLabelOf({ count }) : `${commentsLabelOf({ count })} not sent`}
             </span>
             {note === null ? null : (
               <span
@@ -95,7 +96,7 @@ export const PlanCommentBar = ({
               <Button
                 variant={ran.canSend ? 'ghost' : 'primary'}
                 size="sm"
-                onClick={() => void ran.onCopy()}
+                onClick={ran.onCopy}
                 data-testid="plan-bar-copy"
               >
                 Copy
@@ -104,7 +105,7 @@ export const PlanCommentBar = ({
                 <Button
                   variant="primary"
                   size="sm"
-                  isBusy={isSending}
+                  isBusy={ran.isSending}
                   onClick={() => void ran.onSend()}
                   data-testid="plan-bar-send-agent"
                   data-filled="true"

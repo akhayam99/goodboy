@@ -25,6 +25,7 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
   const action = usePlanPrimaryAction({ sessionId, plan, revising, isRunning: false });
   const copyText = useCopyText();
   const [status, setStatus] = useState<string | null>(null);
+  const [isSendingToAgent, setIsSendingToAgent] = useState(false);
   const { send, sendToAgent, target, requestText, isPlanRan } = model;
   const { run, primary } = action;
   const hasQuestion = plannerQuestionsOf({ questions, plan }).length > 0;
@@ -45,19 +46,24 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
     return {
       agentName: target.name,
       canSend: target.canReceive,
+      isSending: isSendingToAgent,
       onSend: async () => {
-        const result = await sendToAgent();
-        if (result.kind === 'sentToAgent') {
-          setStatus(`Sent to ${result.agentName}.`);
+        setIsSendingToAgent(true);
+        try {
+          const result = await sendToAgent();
+          if (result.kind === 'sentToAgent') {
+            setStatus(`Sent to ${result.agentName}.`);
+          }
+          return result;
+        } finally {
+          setIsSendingToAgent(false);
         }
-        return result;
       },
-      onCopy: async () => {
-        await copyText({ text: requestText });
-        setStatus(null);
+      onCopy: () => {
+        void copyText({ text: requestText });
       },
     };
-  }, [copyText, isPlanRan, requestText, sendToAgent, target]);
+  }, [copyText, isPlanRan, isSendingToAgent, requestText, sendToAgent, target]);
 
   useEffect(() => {
     if (model.drafts.length > 0) {

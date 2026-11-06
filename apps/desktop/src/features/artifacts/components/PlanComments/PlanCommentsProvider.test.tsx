@@ -56,7 +56,7 @@ describe('PlanCommentsProvider', () => {
 
     const bar = screen.getByTestId('plan-comment-bar');
     expect(within(bar).queryByRole('button')).toBeNull();
-    expect(within(bar).getByText('Select text or click a block to comment')).toBeDefined();
+    within(bar).getByText('Select text or click a block to comment');
   });
 
   it('never draws Approve in the bar, with comments or without', () => {
@@ -119,10 +119,10 @@ describe('PlanCommentsProvider', () => {
       });
 
       const bar = screen.getByTestId('plan-comment-bar');
-      expect(within(bar).getByText('1 comment not sent')).toBeDefined();
-      expect(within(bar).getByText('Implement can still read them.')).toBeDefined();
-      expect(within(bar).getByRole('button', { name: 'Copy' })).toBeDefined();
-      expect(within(bar).getByRole('button', { name: 'Send to Implement' })).toBeDefined();
+      within(bar).getByText('1 comment not sent');
+      within(bar).getByText('Implement can still read them.');
+      within(bar).getByRole('button', { name: 'Copy' });
+      within(bar).getByRole('button', { name: 'Send to Implement' });
       expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
     });
 
@@ -156,9 +156,7 @@ describe('PlanCommentsProvider', () => {
       }));
 
       const bar = screen.getByTestId('plan-comment-bar');
-      expect(
-        await within(bar).findByText('Implement is not running. Copy them instead.'),
-      ).toBeDefined();
+      await within(bar).findByText("Implement isn't running. Copy them instead.");
       expect(within(bar).queryByRole('button', { name: 'Send to Implement' })).toBeNull();
       expect(within(bar).getByRole('button', { name: 'Copy' }).getAttribute('data-variant')).toBe(
         'primary',
@@ -196,7 +194,7 @@ describe('PlanCommentsProvider', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
 
       expect((await screen.findByRole('alert')).textContent).toBe('The agent did not answer');
-      expect(screen.getByRole('button', { name: 'Send to Implement' })).toBeDefined();
+      screen.getByRole('button', { name: 'Send to Implement' });
     });
   });
 

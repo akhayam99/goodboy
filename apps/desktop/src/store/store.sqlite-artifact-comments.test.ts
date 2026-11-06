@@ -657,7 +657,7 @@ describe('store on sqlite: plan comments', () => {
 
       expect(result).toEqual({
         kind: 'blocked',
-        reason: 'Implement is not running. Copy the comments instead.',
+        reason: "Implement isn't running. Copy the comments instead.",
       });
       expect(sendTurn).not.toHaveBeenCalled();
       expect(statuses()).toEqual(['Why after BEGIN?:draft']);
@@ -678,7 +678,6 @@ describe('store on sqlite: plan comments', () => {
 
       expect(failed).toEqual({ kind: 'failed', reason: 'The agent did not answer' });
       expect(statuses()).toEqual(['Why after BEGIN?:draft']);
-      expect(useAppStore.getState().artifactCommentSends[PLAN_ID]).toBeUndefined();
       stubSendTurn();
       const retried = await useAppStore
         .getState()

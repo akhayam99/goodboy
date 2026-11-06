@@ -559,7 +559,7 @@
     "apps/desktop/src/features/plans/components/PlanParts/index.tsx": 1,
     "apps/desktop/src/features/plans/components/PlanParts/partRoutingLabel.ts": 1,
     "apps/desktop/src/features/plans/components/PlanParts/PlanPartRow.tsx": 1,
-    "apps/desktop/src/features/plans/components/PlanParts/planPartRows.ts": 6,
+    "apps/desktop/src/features/plans/components/PlanParts/planPartRows.ts": 5,
     "apps/desktop/src/features/plans/dropPartsSection.ts": 1,
     "apps/desktop/src/features/plans/isPlanChangeRequest.ts": 2,
     "apps/desktop/src/features/plans/planAsArtifact.ts": 1,

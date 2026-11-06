@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { cn, ICON_SIZE, TruncatedText } from '@goodboy/ui';
+import { cn, ICON_SIZE, SelectableRow, TruncatedText } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import type { ArtifactScoutRow, ArtifactScoutState } from '../../artifactScoutRoster';
 
@@ -106,15 +106,15 @@ export const ArtifactScoutList = ({ rows, emptyLine, onOpen }: Props) => {
             {onOpen === undefined || agentId === null ? (
               <span className={LINE_CLASS}>{summary}</span>
             ) : (
-              <button
-                type="button"
-                aria-label={`Open ${sentenceCase({ text: row.name })}`}
-                className={cn(LINE_CLASS, 'rounded-sm text-left hover:text-foreground')}
+              <SelectableRow
+                selected={false}
+                ariaLabel={`Open ${sentenceCase({ text: row.name })}`}
+                className={LINE_CLASS}
                 onClick={() => onOpen({ agentId })}
               >
                 {summary}
                 <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0 self-center" />
-              </button>
+              </SelectableRow>
             )}
             {row.reason === null ? null : (
               <TruncatedText data-testid="artifact-scout-reason" className="min-w-0 truncate pl-4">

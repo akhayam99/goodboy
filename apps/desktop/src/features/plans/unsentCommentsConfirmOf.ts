@@ -23,10 +23,13 @@ export const unsentCommentsConfirmOf = ({
     return null;
   }
   const verb = VERBS[primary.kind];
+  const starts = STARTS[primary.kind];
   const isOne = count === 1;
   return {
-    title: `${verb} without ${isOne ? 'your comment' : `your ${count} comments`}?`,
-    description: `${STARTS[primary.kind]} without ${isOne ? 'it' : 'them'}. ${isOne ? 'It stays' : 'They stay'} on the plan as Not sent.`,
+    title: isOne ? `${verb} without your comment?` : `${verb} without your ${count} comments?`,
+    description: isOne
+      ? `${starts} without it. It stays on the plan as Not sent.`
+      : `${starts} without them. They stay on the plan as Not sent.`,
     confirmLabel: `${verb} anyway`,
   };
 };

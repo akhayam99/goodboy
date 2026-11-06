@@ -1,17 +1,42 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { useAppStore } from '../../../../store';
+import {
+  importStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import type { RunPlanResult } from '../../../../store/slices/plans/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { ArtifactPlanCommentsScene } from './ArtifactPlanCommentsScene';
 
-const Scene = () => (
+type SceneProps = {
+  readonly hasComments?: boolean;
+  readonly hasRun?: boolean;
+};
+
+const Scene = ({ hasComments = true, hasRun = false }: SceneProps) => (
   <ToastProvider>
-    <ArtifactPlanCommentsScene />
+    <ArtifactPlanCommentsScene hasComments={hasComments} hasRun={hasRun} />
   </ToastProvider>
 );
+
+let useAppStore: StoryStore;
+
+const stubRunPlan = () => {
+  const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
+    kind: 'refused',
+    reason: null,
+    workflowRunId: null,
+  }));
+  useAppStore.setState({ runPlan });
+  return runPlan;
+};
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 afterEach(cleanup);
 
@@ -26,11 +51,11 @@ describe('ArtifactPlanCommentsScene', () => {
     ]);
     const frames = screen.getAllByTestId('plan-part-comments');
     expect(frames).toHaveLength(3);
-    expect(within(frames[1] as HTMLElement).getByText(/Split the charge path/)).toBeDefined();
+    within(frames[1] as HTMLElement).getByText(/Split the charge path/);
     expect(within(frames[0] as HTMLElement).queryByTestId('plan-comment')).toBeNull();
     expect(screen.getByText('idempotency keys').tagName).toBe('Q');
     const bar = screen.getByTestId('plan-comment-bar');
-    expect(within(bar).getByText('2 comments')).toBeDefined();
+    within(bar).getByText('2 comments');
     const send = within(bar).getByRole('button', { name: 'Send to planner' });
     expect((send as HTMLButtonElement).disabled).toBe(false);
   });
@@ -46,35 +71,21 @@ describe('ArtifactPlanCommentsScene', () => {
   });
 
   it('asks before Run while comments wait, and Run anyway runs once', async () => {
-    const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
-      kind: 'refused',
-      reason: null,
-      workflowRunId: null,
-    }));
-    useAppStore.setState({ runPlan });
+    const runPlan = stubRunPlan();
     render(<Scene />);
     await screen.findAllByTestId('plan-comment');
 
     fireEvent.click(screen.getByTestId('artifact-action-runPlan'));
 
     expect(runPlan).not.toHaveBeenCalled();
-    expect(await screen.findByText('Run without your 2 comments?')).toBeDefined();
+    await screen.findByText('Run without your 2 comments?');
     fireEvent.click(screen.getByRole('button', { name: 'Run anyway' }));
     await waitFor(() => expect(runPlan).toHaveBeenCalledTimes(1));
   });
 
   it('saves the half typed text before Run and asks first, as for any comment', async () => {
-    const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
-      kind: 'refused',
-      reason: null,
-      workflowRunId: null,
-    }));
-    useAppStore.setState({ runPlan });
-    render(
-      <ToastProvider>
-        <ArtifactPlanCommentsScene hasComments={false} />
-      </ToastProvider>,
-    );
+    const runPlan = stubRunPlan();
+    render(<Scene hasComments={false} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Comment on part 1' }));
     const box = await screen.findByLabelText('Comment for the planner');
     fireEvent.change(box, { target: { value: 'Name the header that carries the key.' } });
@@ -82,37 +93,29 @@ describe('ArtifactPlanCommentsScene', () => {
     fireEvent.blur(box);
     fireEvent.click(screen.getByTestId('artifact-action-runPlan'));
 
-    expect(await screen.findByText('Run without your comment?')).toBeDefined();
+    await screen.findByText('Run without your comment?');
     expect(runPlan).not.toHaveBeenCalled();
-    expect(screen.getByText('Name the header that carries the key.')).toBeDefined();
+    screen.getByText('Name the header that carries the key.');
     expect(useAppStore.getState().artifactComments).toMatchObject({
       'mock-artifact-session-ledger': [{ status: 'draft' }],
     });
   });
 
   it('runs at once with no comment to lose, and Run takes the fill back', async () => {
-    render(
-      <ToastProvider>
-        <ArtifactPlanCommentsScene hasComments={false} />
-      </ToastProvider>,
-    );
+    render(<Scene hasComments={false} />);
     const run = await screen.findByTestId('artifact-action-runPlan');
     expect(run.getAttribute('data-variant')).toBe('primary');
   });
 
   it('tells the story of a plan that ran: not sent, Copy, Send to the agent', async () => {
-    render(
-      <ToastProvider>
-        <ArtifactPlanCommentsScene hasRun />
-      </ToastProvider>,
-    );
+    render(<Scene hasRun />);
 
     const bar = await screen.findByTestId('plan-comment-bar');
-    expect(within(bar).getByText('2 comments not sent')).toBeDefined();
-    expect(within(bar).getByText('Implementer can still read them.')).toBeDefined();
-    expect(within(bar).getByRole('button', { name: 'Copy' })).toBeDefined();
+    within(bar).getByText('2 comments not sent');
+    within(bar).getByText('Implementer can still read them.');
+    within(bar).getByRole('button', { name: 'Copy' });
     fireEvent.click(within(bar).getByRole('button', { name: 'Send to Implementer' }));
-    expect(await screen.findByText('Sent to Implementer.')).toBeDefined();
+    await screen.findByText('Sent to Implementer.');
     expect(screen.getAllByText('Sent')).toHaveLength(2);
   });
 
