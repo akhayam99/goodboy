@@ -332,8 +332,8 @@ writing to it reopens it to **Deciding**.
   refused: the session limit comes first. A tree is only created with a number; NULL
   comes only from this choice.
 - **The page.** The header is the goal as the title and the provider mark, with
-  no role, Experimental or state chip; **Mark finished** shows there as a
-  word only while Auto rests and its own turn is not running (the registry verb
+  no role, Experimental or state chip; **Mark finished** sits in its menu
+  while Auto rests and its own turn is not running (the registry verb
   `agent.markAutoFinished`, left out of the `⋯` then so it is said once), next
   to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
 - **Delegation lines.** Each delegation is in the conversation
@@ -367,11 +367,17 @@ writing to it reopens it to **Deciding**.
   plan is revised it reads "Plan v1 · changes asked". A plan a writer took
   reads "Plan v1 used", and at the level **Never** it reads
   "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
-  Without a plan the dock folds to the live row (`AutoDockLive`): the state
-  sentence with **Change approach** or **Stop**, quiet. It does not hide.
-  Where the sentence stays on the glance line (paused at the limit, a budget
-  block, a project ask) the dock keeps **Stop** alone, so Auto can always be
-  stopped from the chat.
+  Without a plan the dock folds to the live row (`DockLiveLine`): what runs,
+  as in **Implementer running, Tester queued**, its clock and one quiet Stop
+  that names its scope, **Stop Auto and 2 agents** (`autoDockStopOf`). Esc twice
+  presses the same button. The live row sits outside the scroll of the dock, so
+  a long ask never pushes Stop away. At the limit, Stop sits in the row of the
+  limit. The dock shows one ask: an open permission or question hides the plan
+  row, a next step that revises the plan hides **Approve**, and a project ask
+  waits behind a plan. **Comments not sent** reads "2 comments on plan v1 not
+  sent to the Planner" with a filled **Send to planner**; **Approve anyway** and
+  **Discard my comments** sit in its menu (`AutoDockPlanComments`, the rule comes
+  from `planPrimaryOf`). Once the tree rests, "Plan v1 approved" leaves the dock.
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
@@ -471,14 +477,13 @@ writing to it reopens it to **Deciding**.
   that settles after the reply, the open one last), and the approval text comes
   from `approvedPlanReply`. A message you write yourself stays a bubble.
   **What Auto was told** shows once, on the first delivery.
-- **The tail.** Auto's state is said once, in the dock and on the tail at the end of the
-  conversation (`AutoDock`, `AutoTail`, phrases from `autoTreeLive`): **Waiting for
-  Implementer and Tester** in the dock with **Change approach** (it stops the tree and
-  focuses the composer, so the dock has no second Stop there), **Starting agents**, **Reading the results**, **Deciding what to do
-  next**, a refused hand over in the user voice, **Paused at the limit: $4.80
-  of $5.00** with **Raise to $10**, **Change limit** (opens the Limit chip's
-  popover on the Auto page) and **Stop**, plus a line on the agents still
-  running when there are any, **Blocked: <reason>** with **Retry** and **View
+- **The state.** Auto's state is said once, in the dock (`AutoDock`,
+  `AutoDockAttention`, phrases from `autoTreeLive`), never at the end of the chat:
+  **Implementer running, Tester queued**, **Starting agents**, **Reading the results**, **Deciding what to do
+  next**, a refused hand over in the user voice, **At the $5.00 limit. Nothing new
+  starts.** with a filled **Raise to $10**, **Change limit** (opens the Limit chip's
+  popover on the Auto page) and **Stop Auto**, plus a line on the agents still
+  running when there are any, the block reason with a filled **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
   and **Stop** instead, one at the time limit only **View transcript**). The
   reason is never cut to one line: the phrase wraps to two lines and, when it is
@@ -486,7 +491,7 @@ writing to it reopens it to **Deciding**.
   (`TailLine` with `TruncatedText` `lines={2}` and `isFocusable`). Only `deciding` reads
   **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
-  **Mark finished** is in the header. A Stop that fails says why in the dock and a Retry on the
+  **Mark finished** is in the header menu. A Stop that fails says why in the dock and a Retry on the
   tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
   thinking line of the conversation speaks instead. There is no separate strip
@@ -520,7 +525,7 @@ writing to it reopens it to **Deciding**.
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
-  conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
+  conversation above), **Failed: ...** or **Stopped** with **Continue**, or
   **Returned to Auto**). A pane opened from the Agents panel shows **Back to
   agents**. **Open page** puts the child in the center; there the notice reads
   the same and **Open Auto** goes back.
@@ -537,7 +542,7 @@ writing to it reopens it to **Deciding**.
   one, and a send or a Queue or Send now reaches the child (a stopped or done
   one takes the turn through the normal resume path). The store's selected
   agent of the session is Auto's root and is not the drawer's target.
-  **Retry through Auto** asks Auto to continue
+  **Continue** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it
   (`docs/turns.md`, resume rules).
@@ -1182,18 +1187,18 @@ the refusal comes from a `mount` block, or from a writer delegate whose `mount` 
 of the workspace that is not added yet (`refusalMountNote`), and the project is known, the ask is one inline step:
 "To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
 main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
-runs, a failure keeps the card with the reason), then **Another folder...**, **No folder, just
-answer** and **Discard request**. The screens say "add", never "mount" (the `jargon-copy` guard
+runs, a failure keeps the card with the reason), then **Add project**, **Answer without a
+project** and **Discard request**. The screens say "add", never "mount" (the `jargon-copy` guard
 bans it); the block, the port and the code keep `mount`. The click mounts on the named branch and
 sends Auto "Added payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
 retyped. A mount done at once (Never, or After the plan inside the allowance) draws one line,
 "Added payments-api on ak/feat-new-explore" (`mountedLineOf`), until Auto's next turn takes the row. Otherwise
-"Where should the Implementer work?" lists the session's projects with their branch, **Another
-folder...** opens a filter over the workspace's other projects ("Not in this session. A worktree
-is created from main."), and the primary follows the choice (**Choose a folder** disabled, **Use
-payments-api**, **Use both**, **Use 3 folders**) next to **No folder, just answer**, one
+"Where should the Implementer work?" lists the session's projects with their branch, **Add
+project** opens a filter over the workspace's other projects ("Not in this session. A worktree
+is created from main."), and the primary follows the choice (**Use this project** disabled, **Use
+payments-api**, **Use both**, **Use 3 projects**) next to **Answer without a project**, one
 action row under the list, with **Discard request** as a quiet verb (the `projectAsk` kind of
-the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a folder, or write
+the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a project, or write
 to Auto", so a reply in the chat answers too. The answer is a message to Auto through
 `sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
 in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for

@@ -25,6 +25,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.needsYou,
   },
   { id: 'approve-plan', pattern: /\bApprove plan\b/, use: 'Approve and continue' },
+  { id: 'change-approach', pattern: /\bChange approach\b/, use: NAMES.stop },
   { id: 'dev-project', pattern: /\b[Dd]ev project\b/, use: NAMES.gitRepository },
   { id: 'link-existing', pattern: /\bLink existing\b/i, use: NAMES.addExisting },
   {

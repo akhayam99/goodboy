@@ -2,6 +2,7 @@ import { notFinishedKindOf } from '@goodboy/core/workflows';
 import type { Agent, TurnState } from '@goodboy/types';
 import { effectiveAgentStatusOf } from '../../workTreeModel/agentStateOf';
 import { glanceOf, type Glance } from './glanceOf';
+import { stoppedSentenceOf } from './stoppedSentenceOf';
 
 type Params = {
   readonly agent: Agent;
@@ -38,13 +39,7 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
     return glanceOf({ state: 'stuck', sentence: 'The agent failed' });
   }
   if (status === 'stopped') {
-    return glanceOf({
-      state: 'stopped',
-      sentence:
-        agent.stoppedBy === 'app'
-          ? 'Stopped by a restart of the app. What it wrote is kept.'
-          : 'Stopped by you. What it wrote is kept.',
-    });
+    return glanceOf({ state: 'stopped', sentence: stoppedSentenceOf({ agent }) });
   }
   if (status === 'completed') {
     return glanceOf({ state: 'idle', sentence: '' });

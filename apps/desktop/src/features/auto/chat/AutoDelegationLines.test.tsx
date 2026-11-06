@@ -314,15 +314,14 @@ const renderAsking = () =>
     }),
   });
 
-describe('the next step card of a delegation that waits for an OK', () => {
+describe('a delegation that waits for an OK', () => {
   afterEach(() => registerDelegationDecisionPort({ port: null }));
 
-  it('replaces the Confirm row and names the revision it would start', () => {
+  it('leaves the next step to the dock, nothing in the card needs you', () => {
     renderAsking();
 
-    screen.getByRole('region', { name: 'Next step' });
+    expect(screen.queryByRole('region', { name: 'Next step' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Confirm this work' })).toBeNull();
-    screen.getByRole('option', { name: /Revise Retry-safe credit retries to v3/ });
     expect(screen.queryByRole('button', { name: 'Confirm' })).toBeNull();
   });
 });

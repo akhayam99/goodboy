@@ -61,10 +61,10 @@ describe('the u24 composer scene', () => {
       const fill = container.querySelector('[data-slot="pane-fill"]') as HTMLElement;
       expect(fill.contains(composer)).toBe(true);
       expect(screen.queryByText('First lap') !== null).toBe(hasFirstLap);
-      expect(container.querySelector('[data-agent-stopped]') !== null).toBe(hasStopped);
+      expect(container.querySelector('[data-dock-line="stopped"]') !== null).toBe(hasStopped);
       expect(screen.queryByTestId('next-action-strip') !== null).toBe(hasNext);
       const leadSlot = container.querySelector('[data-slot="pane-lead"]');
-      if (hasStopped || hasNext || hasFirstLap) {
+      if (hasNext || hasFirstLap) {
         expect(leadSlot).not.toBeNull();
         expect(leadSlot?.contains(composer)).toBe(false);
       }
@@ -75,7 +75,7 @@ describe('the u24 composer scene', () => {
     const { container } = renderScene(null);
 
     await screen.findByRole('textbox', undefined, WAIT);
-    expect(container.querySelector('[data-agent-stopped]')).toBeNull();
+    expect(container.querySelector('[data-dock-line="stopped"]')).toBeNull();
     expect(screen.getByTestId('next-action-strip')).toBeDefined();
     expect(screen.getByText('First lap')).toBeDefined();
   });

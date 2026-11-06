@@ -8,6 +8,7 @@ import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
+import { runningRoleNouns } from '../runningRoleNouns';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -81,7 +82,13 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   }
   const nouns = openRoleNouns({ delegations: view.delegations });
   if (phase === 'waiting' && nouns.length > 0) {
-    return glanceOf({ state: 'working', sentence: `Waiting for ${joinNouns({ nouns })}` });
+    const running = runningRoleNouns({ delegations: view.delegations });
+    const queued = nouns.filter((noun) => !running.includes(noun));
+    const sentence = [
+      ...(running.length === 0 ? [] : [`${joinNouns({ nouns: running })} running`]),
+      ...(queued.length === 0 ? [] : [`${joinNouns({ nouns: queued })} queued`]),
+    ].join(', ');
+    return glanceOf({ state: 'working', sentence });
   }
   if (phase === 'delegating') {
     return glanceOf({ state: 'working', sentence: 'Starting agents' });

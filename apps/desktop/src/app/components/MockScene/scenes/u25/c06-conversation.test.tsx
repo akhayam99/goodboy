@@ -106,17 +106,17 @@ describe('the c06 conversation scenes', () => {
     ]);
   });
 
-  it('c06-agent-working carries one Stop, the composer square, and a visible Send now', async () => {
+  it('c06-agent-working carries one Stop, in the dock, and no send control on an empty box', async () => {
     await mount({ name: 'c06-agent-working' });
     const cancel = vi.fn(async () => undefined);
     act(() => useAppStore.setState({ cancelCurrentTurn: cancel }));
 
     const stops = screen.getAllByRole('button', { name: 'Stop' });
     expect(stops).toHaveLength(1);
-    expect(stops[0]!.closest('[data-conversation-tail]')).toBeNull();
+    expect(stops[0]!.closest('[data-dock-live]')).not.toBeNull();
     fireEvent.click(stops[0]!);
     expect(cancel).toHaveBeenCalledWith(C06_SESSION_ID, C06_AGENT_ID, 'user');
-    expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: /^Send now/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Interrupt/ })).toBeNull();
   });
 
@@ -150,14 +150,13 @@ describe('the c06 conversation scenes', () => {
     );
   });
 
-  it('c06-agent-failed offers View transcript next to Retry and opens the drawer on the failing call', async () => {
+  it('c06-agent-failed puts Retry in the dock, and Failed here opens the drawer on the failing call', async () => {
     await mount({ name: 'c06-agent-failed' });
 
-    const actions = screen.getByRole('button', { name: /^Retry/ }).parentElement;
-    if (actions === null) {
-      throw new Error('no actions row');
-    }
-    fireEvent.click(within(actions).getByRole('button', { name: 'View transcript' }));
+    const retry = screen.getByRole('button', { name: /^Retry/ });
+    expect(retry.closest('[data-conversation-dock]')).not.toBeNull();
+    expect(retry.getAttribute('data-variant')).toBe('primary');
+    fireEvent.click(screen.getByRole('button', { name: 'Failed here' }));
     const drawer = useAppStore.getState().drawer;
     expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(C06_AGENT_ID);
     expect(typeof (drawer?.kind === 'transcript' ? drawer.payload.toolUseId : null)).toBe('string');
@@ -256,14 +255,14 @@ describe('the c06 conversation scenes', () => {
     expect(chip.textContent).toContain('Sonnet 5.5');
     expect(chip.textContent).not.toMatch(/^Model/);
     expect(screen.queryByRole('button', { name: 'Reset routing override' })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Queue/ })).toBeNull();
   });
 
-  it('c06-agent-working tail speaks in sentence case', async () => {
+  it('c06-agent-working dock line speaks in sentence case', async () => {
     await mount({ name: 'c06-agent-working' });
 
-    const tail = document.querySelector<HTMLElement>('[data-conversation-tail]')!;
-    expect(tail.textContent).toMatch(/^[A-Z]/);
+    const line = document.querySelector<HTMLElement>('[data-dock-live]')!;
+    expect(line.textContent).toMatch(/^[A-Z]/);
   });
 
   it('c06-agent-finished folds the brief to one Asked line after the first answer', async () => {

@@ -1,4 +1,3 @@
-import type { RetryRunParams } from '../../retryRun';
 import {
   useCallback,
   useDeferredValue,
@@ -6,7 +5,6 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
   type ReactNode,
 } from 'react';
 import type { AgentId, OpenQuestion, ProviderRunId, Session } from '@goodboy/types';
@@ -23,7 +21,6 @@ import {
 import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { conversationRows } from '../../utils/conversationRows';
-import { useAgentStop } from '../../../../shared/hooks/useAgentStop';
 import { livePhraseOf } from '../../utils/livePhraseOf';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
@@ -47,24 +44,21 @@ import { revealPacer } from '../../reveal/revealPacer';
 import { TRANSCRIPT_FLOOR_PX, useScrollPin } from './useScrollPin';
 import { anchorKeyOf } from './anchorKeyOf';
 import { listenUserInput } from './listenUserInput';
-import { findRetrySource } from './findRetrySource';
-import { buildRetryOverride } from './buildRetryOverride';
 import { useAskDock } from './useAskDock';
 import { useTranscriptAnchor } from './useTranscriptAnchor';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceStack } from './parts/WorkflowAdvanceStack';
 import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
-import { useToast } from '../../../../shared/components/Toast';
-
-import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { useDockFailure } from './useDockFailure';
+import { useRetryRun } from './useRetryRun';
 import { isTurnThinking } from '../../utils/isTurnThinking';
 import { turnStateOf } from './turnStateOf';
 import { waitingForOf } from './waitingForOf';
 import { useTurnEndAnnouncement } from './useTurnEndAnnouncement';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import type { ComposerControlSlots } from '../ChatInput/composerControlSlots';
+import type { ConversationStop } from '../../../../shared/types/conversationStop';
 
 type Props = {
   readonly session: Session;
@@ -82,6 +76,9 @@ type Props = {
   readonly onOpenTranscript?: OpenTranscriptAt;
   readonly hasAdvanceRow?: boolean;
   readonly stopLabel?: string;
+  readonly liveSentence?: string;
+  readonly composerStop?: ConversationStop | null;
+  readonly isFailureOwned?: boolean;
   readonly clockStepAgentId?: AgentId;
 };
 
@@ -103,16 +100,15 @@ export const ChatView = ({
   onOpenTranscript,
   hasAdvanceRow = true,
   stopLabel,
+  liveSentence,
+  composerStop = null,
+  isFailureOwned = false,
   clockStepAgentId,
 }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
-  const sendTurn = useAppStore((s) => s.sendTurn);
-  const reportError = useAppStore((s) => s.reportError);
-  const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
-  const [retryingRunId, setRetryingRunId] = useState<ProviderRunId | null>(null);
   const taggedItems = useMemo(
     () => ({ agentId: selectedAgentId, items }),
     [selectedAgentId, items],
@@ -254,7 +250,6 @@ export const ChatView = ({
           permission: permissionFor({ items: lastRow.items, toolUseId: i.toolUseId }),
         }) === 'running',
     );
-  const agentStop = useAgentStop({ sessionId: session.id, agentId: selectedAgentId });
   const canStop = hasComposer && !isEnded && selectedAgentId != null;
   const isThinking =
     isConversation || canStop
@@ -323,46 +318,19 @@ export const ChatView = ({
   const handleRefreshAuth = useCallback(() => {
     void refreshProviders();
   }, [refreshProviders]);
-  const handleRetryRun = useCallback(
-    async ({ runId, model }: RetryRunParams) => {
-      if (selectedAgentId == null) {
-        return;
-      }
-      const source = findRetrySource({ events, runId });
-      if (source == null) {
-        return;
-      }
-      setRetryingRunId(runId);
-      try {
-        const { inputs: attachments, missing } = await readRetryAttachments({
-          worktreePath,
-          attachments: source.attachments,
-        });
-        if (missing.length > 0) {
-          showToast({ kind: 'warning', message: missingAttachmentsMessage({ missing }) });
-        }
-        const override = buildRetryOverride({
-          provider: source.provider,
-          model: model ?? source.model,
-        });
-        await sendTurn({
-          sessionId: session.id,
-          agentId: selectedAgentId,
-          content: source.content,
-          ...(attachments.length > 0 ? { attachments } : {}),
-          ...(override !== undefined ? { override } : {}),
-        });
-      } catch (error) {
-        if (!isReportedError(error)) {
-          void reportError({ title: "Couldn't retry the turn", error, sessionId: session.id });
-        }
-      } finally {
-        setRetryingRunId(null);
-      }
-    },
-    [events, reportError, selectedAgentId, sendTurn, session.id, showToast, worktreePath],
-  );
-
+  const { retryingRunId, retryRun } = useRetryRun({
+    sessionId: session.id,
+    agentId: selectedAgentId,
+    events,
+    worktreePath,
+  });
+  const { failure: dockFailure, errorDock } = useDockFailure({
+    items,
+    isInDock: isAskInDock,
+    hasFailed: !isFailureOwned && (agentKind === 'error' || selectedRun?.status === 'failed'),
+    retryingRunId,
+    retry: retryRun,
+  });
   const mountProposals = useTranscriptMountProposals({ session });
   const mountProposalActions = useMountProposalActions({ sessionId: session.id });
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
@@ -558,10 +526,10 @@ export const ChatView = ({
                       workingDir={worktreePath}
                       onRefreshAuth={handleRefreshAuth}
                       onOpenDiff={handleOpenDiff}
-                      isThinking={isThinking}
+                      isThinking={isThinking && !canStop}
                       thinkingPhrase={thinkingPhrase}
                       thinkingStartedAt={thinkingStartedAt}
-                      onRetryRun={(params) => void handleRetryRun(params)}
+                      onRetryRun={(params) => void retryRun(params)}
                       retryingRunId={retryingRunId}
                       mountSuggestionsByRun={mountSuggestionsByRun}
                       activeRunId={activeRunId}
@@ -570,11 +538,7 @@ export const ChatView = ({
                       {...(insertions !== undefined && { insertions })}
                       {...(onOpenTranscript !== undefined && { onOpenTranscript })}
                       isStepsOnly={mode === 'steps'}
-                      waitingFor={waitingFor}
-                      {...(stopLabel !== undefined && { stopLabel })}
-                      {...(clockStepAgentId !== undefined && { clockStepAgentId })}
-                      stopPhase={agentStop.phase}
-                      {...(canStop && { onStop: agentStop.stop })}
+                      errorDock={errorDock}
                     />
                   </ChatImageLoaderProvider>
                 </ul>
@@ -632,8 +596,20 @@ export const ChatView = ({
           agentId={agentId}
           providerDisconnected={isProviderDisconnected}
           placeholderOverride={composerPlaceholder}
-          dockLead={composerLead}
-          hasDockAsks={isAskInDock}
+          composerDock={{
+            lead: composerLead,
+            hasAsks: isAskInDock,
+            live: {
+              phrase: thinkingPhrase,
+              startedAt: thinkingStartedAt,
+              waitingFor,
+              stepAgentId: clockStepAgentId ?? null,
+            },
+            stop: composerStop,
+            stopLabel: stopLabel ?? null,
+            liveSentence: liveSentence ?? null,
+            failure: dockFailure,
+          }}
           {...(controlSlots !== undefined && { controlSlots })}
         />
       ) : null}

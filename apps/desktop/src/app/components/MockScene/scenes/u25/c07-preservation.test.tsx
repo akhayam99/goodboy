@@ -99,19 +99,19 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
-  it('Auto phase words and Change approach: the dock of the Auto chat', async () => {
+  it('Auto phase words and the one Stop: the dock of the Auto chat', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     const dock = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-dock]');
-      expect(found?.textContent).toContain('Waiting for Implementer and Tester');
+      const found = document.querySelector<HTMLElement>('[data-dock-live]');
+      expect(found?.textContent).toContain('Implementer');
       return found;
     }, WAIT);
     if (dock === null) {
       throw new Error('no dock');
     }
-    expect(within(dock).getByRole('button', { name: 'Change approach' })).toBeDefined();
-    expect(within(dock).queryByRole('button', { name: /^Stop/ })).toBeNull();
+    expect(within(dock).getByRole('button', { name: /^Stop Auto/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
   it('Composer placeholder by state: Message Auto while Auto waits', async () => {

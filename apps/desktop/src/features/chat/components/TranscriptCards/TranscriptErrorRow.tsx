@@ -1,4 +1,4 @@
-import { Button, Notice } from '@goodboy/ui';
+import { Button, Notice, StatusDot } from '@goodboy/ui';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
@@ -13,6 +13,8 @@ type Props = {
   readonly failedToolUseId?: string | null;
   readonly onRetry?: () => void;
   readonly isRetrying?: boolean;
+  readonly dockRunId?: ProviderRunId | null;
+  readonly isRecordOnly?: boolean;
 };
 
 export const TranscriptErrorRow = ({
@@ -23,6 +25,8 @@ export const TranscriptErrorRow = ({
   failedToolUseId = null,
   onRetry,
   isRetrying = false,
+  dockRunId = null,
+  isRecordOnly = false,
 }: Props) => {
   const { body, detail } = formatErrorForHumans({ message });
   const hasLimitStop = useAppStore(
@@ -45,6 +49,21 @@ export const TranscriptErrorRow = ({
       payload: { agentId, ...(failedToolUseId !== null && { toolUseId: failedToolUseId }) },
     });
   };
+
+  if (isRecordOnly && (!hasLimitStop || runId === dockRunId)) {
+    return (
+      <Button
+        variant="quiet"
+        size="xs"
+        data-failed-here=""
+        disabled={!canViewTranscript}
+        onClick={viewTranscript}
+      >
+        <StatusDot tone="danger" size="sm" />
+        Failed here
+      </Button>
+    );
+  }
 
   return (
     <Notice

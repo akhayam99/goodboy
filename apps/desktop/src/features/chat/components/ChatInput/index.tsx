@@ -1,8 +1,9 @@
-import { useRef, type ReactNode } from 'react';
+import { useRef } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import type { ComposerControlSlots } from './composerControlSlots';
 import { ConversationColumn } from '../ConversationColumn';
 import { ConversationDock } from '../ConversationDock';
+import type { ConversationDockSlots } from '../ConversationDock/conversationDockSlots';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
@@ -21,8 +22,7 @@ import { useComposerDataLoad } from './hooks/useComposerDataLoad';
 import { useComposerSend } from './hooks/useComposerSend';
 import { useComposerSuggestions } from './hooks/useComposerSuggestions';
 import { useFirstMessageFocus } from './hooks/useFirstMessageFocus';
-import { useAgentStop } from '../../../../shared/hooks/useAgentStop';
-import { useEscapeStop } from './hooks/useEscapeStop';
+import { useConversationStop } from './hooks/useConversationStop';
 import { composerKeyDown } from './composerKeyDown';
 import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
@@ -45,8 +45,7 @@ type Props = {
   readonly providerDisconnected?: boolean;
   readonly placeholderOverride?: string;
   readonly controlSlots?: ComposerControlSlots;
-  readonly dockLead?: ReactNode;
-  readonly hasDockAsks?: boolean;
+  readonly composerDock?: ConversationDockSlots;
 };
 
 export const ChatInput = ({
@@ -55,8 +54,7 @@ export const ChatInput = ({
   providerDisconnected = false,
   placeholderOverride,
   controlSlots,
-  dockLead,
-  hasDockAsks = false,
+  composerDock: dock,
 }: Props) => {
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session, agentId });
@@ -174,7 +172,6 @@ export const ChatInput = ({
     isBlocked,
     isEmpty,
     canSend,
-    showsDeliveryChoice,
     sendDisabledTitle,
     placeholder: defaultPlaceholder,
     shouldFocusFirstMessage,
@@ -193,13 +190,13 @@ export const ChatInput = ({
 
   useFirstMessageFocus({ wrapperRef, selectedAgentId, shouldFocusFirstMessage });
 
-  const agentStop = useAgentStop({ sessionId: session.id, agentId: selectedAgentId });
-  const escapeStop = useEscapeStop({
-    isLive: agentStop.isLive,
-    phase: agentStop.phase,
-    stop: agentStop.stop,
+  const { stop, isArmed, onEscape } = useConversationStop({
+    sessionId: session.id,
+    agentId: selectedAgentId,
+    dock,
+    isRunning,
   });
-  const onKeyDown = composerKeyDown({ popoverOpen, onEscape: escapeStop.onEscape });
+  const onKeyDown = composerKeyDown({ popoverOpen, onEscape });
 
   const hasTray = queued.rows.length > 0 || suggestions.length > 0;
   const insertPrefix = (symbol: string) => {
@@ -218,15 +215,26 @@ export const ChatInput = ({
         />
       )}
       <div className="flex flex-col">
-        {hasTray && <ComposerTray queued={queued} suggestions={suggestions} canEdit={isEmpty} />}
+        {hasTray && (
+          <ComposerTray
+            queued={queued}
+            suggestions={suggestions}
+            canEdit={isEmpty}
+            isDenying={deniedAgentId !== null}
+          />
+        )}
         <ComposerBox composerRef={composerRef} isDragging={isDragging} hasTray={hasTray}>
           <PromptDropOverlay isDragging={isDragging} />
           <ConversationDock
             session={session}
             agentId={selectedAgentId}
-            lead={dockLead}
-            hasAsks={hasDockAsks}
+            lead={dock?.lead}
+            hasAsks={dock?.hasAsks === true}
             isMessageTyped={!isEmpty && deniedAgentId !== null}
+            live={dock?.live ?? null}
+            stop={stop}
+            isStopArmed={isArmed}
+            failure={dock?.failure ?? null}
           />
           <ComposerCliGate
             provider={routing.effectiveProvider}
@@ -284,18 +292,9 @@ export const ChatInput = ({
             sendDisabledTitle={sendDisabledTitle}
             onSend={() => void onSend()}
             onSendNow={() => void onSendNow()}
-            stopPhase={agentStop.phase}
-            isStopArmed={escapeStop.isArmed}
-            onStop={agentStop.stop}
           />
         </ComposerBox>
       </div>
-      {showsDeliveryChoice ? (
-        <p className="px-1 text-meta text-faint-foreground">
-          Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
-          continues with your message.
-        </p>
-      ) : null}
       <ComposerDispatchError dispatch={dispatch} providerId={routing.effectiveProvider} />
     </ConversationColumn>
   );

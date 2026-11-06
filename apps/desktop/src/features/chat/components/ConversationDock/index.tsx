@@ -1,9 +1,13 @@
 import { useRef, type ReactNode } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
+import type { ConversationLive, ConversationStop } from '../../../../shared/types/conversationStop';
 import { useConversationAsks } from '../../../../store/hooks/useConversationAsks';
 import { ConversationDockAsk } from './ConversationDockAsk';
 import { ConversationDockLine } from './ConversationDockLine';
+import type { DockFailure } from './dockFailureOf';
+import { DockFailureLine } from './DockFailureLine';
+import { DockLiveLine } from './DockLiveLine';
 import { useDockAskFocus } from './useDockAskFocus';
 
 type Props = {
@@ -12,9 +16,23 @@ type Props = {
   readonly lead: ReactNode;
   readonly hasAsks: boolean;
   readonly isMessageTyped: boolean;
+  readonly live: ConversationLive | null;
+  readonly stop: ConversationStop | null;
+  readonly isStopArmed: boolean;
+  readonly failure: DockFailure | null;
 };
 
-export const ConversationDock = ({ session, agentId, lead, hasAsks, isMessageTyped }: Props) => {
+export const ConversationDock = ({
+  session,
+  agentId,
+  lead,
+  hasAsks,
+  isMessageTyped,
+  live,
+  stop,
+  isStopArmed,
+  failure,
+}: Props) => {
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
   useDockAskFocus({ dockRef, askCount: hasAsks ? permissions.length + questions.length : 0 });
@@ -27,7 +45,7 @@ export const ConversationDock = ({ session, agentId, lead, hasAsks, isMessageTyp
       <ScrollFade
         className="max-h-80"
         fadeSize="h-6"
-        viewportClassName="flex min-w-0 flex-col gap-2 px-3 py-2"
+        viewportClassName="flex min-w-0 flex-col gap-2 px-3 pt-2 has-[[data-dock-row]:not(:empty)]:pb-2"
       >
         {hasAsks && agentId !== null ? (
           <ConversationDockAsk
@@ -37,10 +55,14 @@ export const ConversationDock = ({ session, agentId, lead, hasAsks, isMessageTyp
           />
         ) : null}
         {lead}
-        {hasAsks && agentId !== null ? (
+        {failure === null ? null : <DockFailureLine failure={failure} />}
+        {hasAsks && agentId !== null && failure === null ? (
           <ConversationDockLine sessionId={session.id} agentId={agentId} />
         ) : null}
       </ScrollFade>
+      {live === null || stop === null || !stop.isLineShown ? null : (
+        <DockLiveLine live={live} stop={stop} isStopArmed={isStopArmed} />
+      )}
     </div>
   );
 };

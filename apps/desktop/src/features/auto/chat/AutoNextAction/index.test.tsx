@@ -17,8 +17,9 @@ import {
   registerDelegationDecisionPort,
   type DelegationDecisionPort,
 } from '../../delegationDecisionPort';
+import { anAgent } from '@goodboy/types/testing';
 import { aDelegation, aView, FIXTURE_ROOT, FIXTURE_SESSION } from '../../testing/autoViewFixtures';
-import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoDockUnderTest } from '../../testing/AutoDockUnderTest';
 
 const SENT = { blockedOverBudget: false };
 
@@ -53,12 +54,10 @@ const renderCard = () => {
   const view = aView({ phase: 'waiting', delegations: [PROPOSAL] });
   useAppStore.setState({ autoTreeViews: { [FIXTURE_SESSION]: [view] } });
   return render(
-    <AutoDelegationLines
-      sessionId={FIXTURE_SESSION}
+    <AutoDockUnderTest
       view={view}
-      delegations={view.delegations}
-      agents={[]}
-      onOpenChild={vi.fn()}
+      rootAgent={anAgent({ id: FIXTURE_ROOT })}
+      onOpenArtifact={vi.fn()}
     />,
   );
 };

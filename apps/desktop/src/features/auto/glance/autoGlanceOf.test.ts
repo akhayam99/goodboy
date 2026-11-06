@@ -59,7 +59,7 @@ describe('autoGlanceOf', () => {
         phase: 'waiting',
         delegations: [
           aDelegation({ key: 'impl', role: 'implementer', state: 'running' }),
-          aDelegation({ key: 'test', role: 'tester', state: 'running' }),
+          aDelegation({ key: 'test', role: 'tester', state: 'accepted' }),
         ],
       }),
       rootTurn: null,
@@ -67,7 +67,7 @@ describe('autoGlanceOf', () => {
 
     expect(glance).toMatchObject({
       state: 'working',
-      sentence: 'Waiting for Implementer and Tester',
+      sentence: 'Implementer running, Tester queued',
       isLive: true,
     });
   });

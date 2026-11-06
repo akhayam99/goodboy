@@ -1884,7 +1884,7 @@ session up again in Goodboy.
   (`brief`, `normal`, `verbose`) and the directive sent to the provider do not
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
-- **Stop** is the one name for ending a running turn: the square in the composer, the line at the end of the conversation, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. Only Auto labels that name an object other than the open agent keep it (**Stop Auto and its agents**, **Stop step**).
+- **Stop** is the one name for ending a running turn: the labeled button in the dock, the right click menu and the palette all say it, and the agent header has none. While the process exits it reads **Stopping**, and after 5 seconds **Still stopping** with **Force stop**. A button that stops more or less than the open agent names its scope (**Stop Auto and 2 agents**, **Stop this reply** on a step page).
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word

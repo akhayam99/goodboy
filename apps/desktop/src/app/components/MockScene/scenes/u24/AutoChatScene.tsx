@@ -112,7 +112,12 @@ export const AutoChatScene = ({
     if (mountAct !== undefined) {
       const clicker = window.setTimeout(() => {
         const buttons = Array.from(document.querySelectorAll('button'));
-        buttons.find((button) => (button.textContent ?? '').startsWith('Add '))?.click();
+        buttons
+          .find((button) => {
+            const label = button.textContent ?? '';
+            return label.startsWith('Add ') && label !== 'Add project';
+          })
+          ?.click();
       }, MOUNT_CLICK_DELAY_MS);
       return () => window.clearTimeout(clicker);
     }

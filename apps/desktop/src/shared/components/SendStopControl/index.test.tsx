@@ -82,30 +82,4 @@ describe('SendStopControl', () => {
     expect(screen.queryByRole('button', { name: NAMES.stop })).toBeNull();
     expect(onStop).not.toHaveBeenCalled();
   });
-
-  it('offers Force stop once the stop is stalled, and it asks again', () => {
-    const onStop = vi.fn();
-    render(
-      <SendStopControl
-        canSend
-        stop={{ isStopping: true, isStalled: true, onStop }}
-        onSend={() => undefined}
-      />,
-    );
-
-    expect(screen.queryByRole('button', { name: NAMES.stop })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: NAMES.forceStop }));
-
-    expect(onStop).toHaveBeenCalledOnce();
-  });
-
-  it('shows Esc again to stop only while the first Esc is armed', () => {
-    const stop = { isStopping: false, onStop: () => undefined };
-    render(<SendStopControl canSend stop={stop} onSend={() => undefined} />);
-    expect(screen.queryByText('Esc again to stop')).toBeNull();
-    cleanup();
-    render(<SendStopControl canSend stop={{ ...stop, isArmed: true }} onSend={() => undefined} />);
-
-    screen.getByText('Esc again to stop');
-  });
 });

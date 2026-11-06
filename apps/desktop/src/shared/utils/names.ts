@@ -18,6 +18,8 @@ export const NAMES = {
   send: 'Send',
   sendAndDeny: 'Send and deny',
   stopping: 'Stopping',
+  stopReply: 'Stop this reply',
+  stopAuto: 'Stop Auto',
   forceStop: 'Force stop',
   continue: 'Continue',
   continueAll: 'Continue all',

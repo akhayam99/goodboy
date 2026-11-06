@@ -80,8 +80,8 @@ describe('the mount card scenes', () => {
       await screen.findByText('A worktree on ak/feat-new-explore is created from main.'),
     ).toBeDefined();
     expect(await screen.findByRole('button', { name: 'Add notify-relay' })).toBeDefined();
-    expect(await screen.findByRole('button', { name: 'Another folder…' })).toBeDefined();
-    expect(await screen.findByRole('button', { name: 'No folder, just answer' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Answer without a project' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Projects' })).toBeNull();
   });
 

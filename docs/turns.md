@@ -467,8 +467,8 @@ continuation never resumes, because it runs in another directory.
   and says so (`refuseWorkspaceSwitch`, Retry on the failed switch stops
   again). Every user Stop is also recorded in
   `stopRequests.ts` (agent, run, instant) until the exit is confirmed, and
-  `useAgentStop` (`shared/hooks/`) turns it into the phase the square, the
-  header chip and the tail read: `stopping` at once, `stalled` after 5 s
+  `useAgentStop` (`shared/hooks/`) turns it into the phase the dock Stop and the
+  header chip read: `stopping` at once, `stalled` after 5 s
   (**Still stopping** with **Force stop**, the same call again). A request for
   an earlier run never counts. A refused cancel for a run that is already
   gone counts as `exited`. `cancelCurrentTurn` with
@@ -828,7 +828,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   is already resuming, and reports a failure only after trying the rest.
 - **An Auto child never gets a plain turn.** Continue and Continue all
   on an agent Auto started go through Auto (`autoRetryRouteOf`): the stopped
-  notice offers **Retry through Auto**, which sends Auto "Continue the
+  notice offers **Continue**, which sends Auto "Continue the
   Implementer that stopped (delegation <id>) from where it left off: <task>"
   so the tree continues the same agent with `retryOf` and reads its result. `resumeStoppedAgents` skips Auto children: the tree recovers its
   own work after a restart. The child is found from the tree view, or from its
@@ -887,7 +887,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   step (a run step). An Auto child card has no Stop: it is in the card's menu. `stopping` is its own tail
   state (a ring, a clock that keeps counting, no shimmer): the phrase reads
   Stopping with a busy Stop, then Still stopping with Force stop.
-- A stopped or failed Auto child offers Retry through Auto, never Continue.
+- A stopped Auto child offers Continue, never Retry. Continue still goes through Auto.
 - An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline on its own pane (the chat shows the Next step card), one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
 - A finished turn draws no tail: it is read from its summary line.
 
@@ -1412,15 +1412,19 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   28px, the `composer.send` shortcut in its tooltip) while idle, the same button
   the Ask and Chat composers use, and Send now/Queue
   (Queue primary, both disabled until there is something to deliver) for as
-  long as a turn runs. The same `SendStopControl` sits before them as the Stop square
-  (`stop={{ isStopping, isStalled, isArmed, shortcut, onStop }}`), busy
-  as Stopping while the process exits and Force stop once it stalls; Esc
-  twice does the same (`useEscapeStop`, id `agent.stop`): the first press
+  long as a turn runs and the box holds a draft: an empty running box shows no
+  send control, and nothing rises under it on the first key. Stop is one labeled
+  button in the dock (`DockLiveLine`, `DockStopButton`), outside the dock's scroll,
+  fed by `useConversationStop`: Auto hands in `autoDockStopOf`, which stops the tree;
+  anything else stops the agent, and a step page labels it **Stop this reply**. It
+  is busy as Stopping while the process exits and Force stop once it stalls. Esc
+  twice presses the same button (`useEscapeStop`, id `agent.stop`): the first press
   shows "Esc again to stop" for 3 s, the second stops, and any open menu,
   drawer or dialog (`transientEscapeLayerCount`, `isOverlayOpen`) takes the
   key first. The session's Esc ladder (`escapeLadder`) is a base layer: it
   does not count, and the escape stack asks it last, after every other layer,
-  whatever order they mounted in. The conversation tail (`ConversationTail`) carries the same Stop.
+  whatever order they mounted in. The chat has no live tail where a composer stands, and
+  no global Esc while a drawer covers the page.
   The agent header has none.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and

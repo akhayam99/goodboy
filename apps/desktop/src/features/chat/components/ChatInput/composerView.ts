@@ -37,7 +37,6 @@ export const composerView = ({
   const isBlocked = providerDisconnected || isArchived;
   const isEmpty = value.trim().length === 0 && attachmentCount === 0;
   const canSend = !isBlocked && !isEmpty;
-  const showsDeliveryChoice = isRunning && canSend;
   const sendDisabledTitle = isArchived
     ? ARCHIVED_SESSION_REASON
     : providerDisconnected
@@ -61,7 +60,6 @@ export const composerView = ({
     isBlocked,
     isEmpty,
     canSend,
-    showsDeliveryChoice,
     sendDisabledTitle,
     placeholder,
     shouldFocusFirstMessage,

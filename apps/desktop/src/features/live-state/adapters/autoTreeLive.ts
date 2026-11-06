@@ -64,12 +64,11 @@ const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
   if (Math.round(budget.remainingUsd * 100) > 0) {
     return null;
   }
-  const used = formatUsd(budget.spentUsd + budget.reservedUsd);
-  const lead = `Paused at the limit: ${used} of ${formatUsd(budget.capUsd)}`;
+  const lead = `At the ${formatUsd(budget.capUsd)} limit.`;
   const running = stillRunningOf({ view });
   return {
     state: 'paused',
-    phrase: running === null ? lead : `${lead}. ${running}`,
+    phrase: `${lead} ${running ?? 'Nothing new starts.'}`,
     startedAt: null,
     actions: AT_LIMIT,
   };
@@ -81,7 +80,7 @@ const blocked = ({ view }: ViewParams): TailFacts => {
     const running = stillRunningOf({ view });
     return {
       state: 'failed',
-      phrase: running === null ? `Blocked: ${reason}` : `Blocked: ${reason} ${running}`,
+      phrase: running === null ? reason : `${reason} ${running}`,
       startedAt: null,
       actions: AT_LIMIT,
     };
@@ -89,14 +88,14 @@ const blocked = ({ view }: ViewParams): TailFacts => {
   if (reason === AUTO_BLOCK_TEXT.limit_wall_clock) {
     return {
       state: 'failed',
-      phrase: `Blocked: ${reason}`,
+      phrase: reason,
       startedAt: null,
       actions: [TAIL_ACTION.viewTranscript],
     };
   }
   return {
     state: 'failed',
-    phrase: reason === null || reason === '' ? 'Blocked' : `Blocked: ${reason}`,
+    phrase: reason === null || reason === '' ? 'Auto is blocked' : reason,
     startedAt: null,
     actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript],
   };
@@ -162,7 +161,7 @@ export const autoTreeLive = ({
       state: 'waiting',
       phrase: nouns.length === 0 ? 'Reading the results' : `Waiting for ${joinNouns({ nouns })}`,
       startedAt: null,
-      actions: [TAIL_ACTION.changeApproach, TAIL_ACTION.stopAuto],
+      actions: STOP,
     };
   }
   if (phase === 'finished') {

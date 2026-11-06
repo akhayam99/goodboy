@@ -76,7 +76,7 @@ describe('agent rows stay reachable from the one conversation', () => {
     }
   });
 
-  it('Stop: one Stop on screen, the composer square, and none in the header menu', async () => {
+  it('Stop: one Stop on screen, in the dock, and none in the header menu', async () => {
     await mount({ name: 'c06-agent-working' });
 
     expect(screen.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
@@ -127,17 +127,22 @@ describe('agent rows stay reachable from the one conversation', () => {
     expect(screen.getAllByRole('button', { name: 'Turn detail' }).length).toBeGreaterThan(0);
   });
 
-  it('Enter queues and Send now reads now: both words are in the composer while a turn runs', async () => {
+  it('Enter queues and Send now reads now: both words come with a draft while a turn runs', async () => {
     await mount({ name: 'c06-agent-working' });
 
+    expect(screen.queryByRole('button', { name: /^Queue/ })).toBeNull();
+    await act(async () => {
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'keep the flag' } });
+      await vi.advanceTimersByTimeAsync(50);
+    });
     expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Send now/ })).toBeDefined();
   });
 
-  it('The turn failed with Retry: a failed turn keeps its Retry and says failed', async () => {
+  it('Failed with Retry: a failed turn keeps its Retry in the dock and says failed here', async () => {
     await mount({ name: 'c06-agent-failed' });
 
-    expect(screen.getByText('The turn failed')).toBeDefined();
+    expect(screen.getByText('Failed here')).toBeDefined();
     expect(screen.queryByText('The turn stopped')).toBeNull();
     expect(screen.getByRole('button', { name: /^Retry/ })).toBeDefined();
   });

@@ -48,6 +48,10 @@ const renderDock = ({ hasAsks = true }: { readonly hasAsks?: boolean } = {}) =>
       lead={<p data-dock-row="">Started by Auto.</p>}
       hasAsks={hasAsks}
       isMessageTyped={false}
+      live={null}
+      stop={null}
+      isStopArmed={false}
+      failure={null}
     />,
   );
 
@@ -60,10 +64,40 @@ describe('ConversationDock', () => {
         lead={undefined}
         hasAsks
         isMessageTyped={false}
+        live={null}
+        stop={null}
+        isStopArmed={false}
+        failure={null}
       />,
     );
 
     expect(container.querySelector('[data-dock-row]')).toBeNull();
+  });
+
+  it('keeps Stop outside the scroll, so a long ask never pushes it away', () => {
+    render(
+      <ConversationDock
+        session={session}
+        agentId={AGENT_ID}
+        lead={<p data-dock-row="">A long ask.</p>}
+        hasAsks={false}
+        isMessageTyped={false}
+        live={{ phrase: 'Thinking', startedAt: null, waitingFor: null, stepAgentId: null }}
+        stop={{
+          label: 'Stop',
+          phase: 'idle',
+          sentence: null,
+          isLineShown: true,
+          stop: () => undefined,
+        }}
+        isStopArmed={false}
+        failure={null}
+      />,
+    );
+
+    const ask = screen.getByText('A long ask.');
+    const stop = screen.getByRole('button', { name: 'Stop' });
+    expect(ask.parentElement?.contains(stop)).toBe(false);
   });
 
   it('keeps the lead in the dock', () => {
