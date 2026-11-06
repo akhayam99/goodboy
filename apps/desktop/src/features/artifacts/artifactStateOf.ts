@@ -34,7 +34,7 @@ type ArtifactStateKey =
   | 'deleted'
   | 'new';
 
-export type ArtifactGroup = 'needs' | 'ready' | 'running' | 'consumed' | 'deleted';
+export type ArtifactGroup = 'needs' | 'running' | 'ready' | 'read' | 'consumed' | 'deleted';
 
 export type ArtifactState = StatePresentation & {
   readonly key: ArtifactStateKey;
@@ -56,7 +56,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   ready: {
     key: 'ready',
     label: 'Ready to run',
-    reason: 'Approved, waiting for Run plan',
+    reason: 'Waiting for Run plan',
     tone: 'info',
     icon: CirclePlay,
     group: 'ready',
@@ -123,7 +123,7 @@ const ARTIFACT_STATE_PRESENTATION = {
     reason: 'Nothing waits on you, open it to read it',
     tone: 'neutral',
     icon: Circle,
-    group: 'ready',
+    group: 'read',
   },
   replaced: {
     key: 'replaced',
@@ -143,11 +143,11 @@ const ARTIFACT_STATE_PRESENTATION = {
   },
   new: {
     key: 'new',
-    label: 'New',
+    label: 'Unread',
     reason: "You haven't opened it yet",
     tone: 'primary',
     icon: Dot,
-    group: 'ready',
+    group: 'read',
   },
 } as const satisfies Record<ArtifactStateKey, Base>;
 

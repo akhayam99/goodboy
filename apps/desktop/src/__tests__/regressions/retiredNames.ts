@@ -8,6 +8,7 @@ type RetiredName = {
 
 export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'cancel-turn', pattern: /\bCancel turn\b/i, use: NAMES.stop },
+  { id: 'artifact-group-consumed', pattern: /^Consumed$/, use: 'Used' },
   { id: 'verbose', pattern: /\bVerbose\b/, use: NAMES.long },
   { id: 'spend-limit', pattern: /\b[Ss]pend limit\b/i, use: NAMES.spendCap },
   { id: 'spend-cap', pattern: /\bspend cap\b/i, use: NAMES.spendCap },

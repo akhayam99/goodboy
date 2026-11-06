@@ -218,17 +218,19 @@ describe('artifactStateOf', () => {
     expect(state?.label).toBe('Ran');
   });
 
-  it('shows New for a report or wireframe nobody opened, then Ready', () => {
+  it('shows Unread for a report or wireframe nobody opened, then Ready, both under To read', () => {
     expect(stored({ kind: 'report', status: 'active', isNew: true })).toMatchObject({
       key: 'new',
+      label: 'Unread',
       detail: 'Report',
+      group: 'read',
     });
     expect(stored({ kind: 'wireframe', status: 'active', isNew: true })?.detail).toBe('Wireframe');
     expect(stored({ kind: 'report', status: 'active', isNew: false })).toMatchObject({
       key: 'available',
       label: 'Ready',
       detail: 'Report',
-      group: 'ready',
+      group: 'read',
     });
     expect(stored({ kind: 'wireframe', status: 'consumed', isNew: false })?.label).toBe('Ready');
   });
@@ -272,7 +274,7 @@ describe('artifactStateOf', () => {
         'Ran',
         'Replaced',
         'Deleted',
-        'New',
+        'Unread',
         'Needs you',
         'Running',
         'Partly ran',

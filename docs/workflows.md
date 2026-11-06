@@ -1144,7 +1144,7 @@ own **Open in Artifacts**.
 - **A plan Auto holds.** `planHandoffOf` reads `auto-approved` when the
   plan's `auto_artifacts` row is `approved` and no step consumed it. The chip
   reads **Approved** with "Auto works from this plan", the Artifacts list files
-  it under Consumed, and there is no Run plan. A held plan still waiting on
+  it under Used, and there is no Run plan. A held plan still waiting on
   approval keeps its state.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not

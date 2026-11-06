@@ -191,17 +191,18 @@ const showTrash = () =>
   within(screen.getByTestId('artifact-group-deleted')).getByRole('button', { name: 'Show' });
 
 describe('artifact list rows', () => {
-  it('groups by state under plain labels, a run plan under Consumed and in view', async () => {
+  it('groups by state under plain labels, a run plan under Used and in view', async () => {
     mountList();
     await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
-    expect(groupHeading(/^Ready 3$/)).toBeDefined();
-    expect(groupHeading(/^Consumed$/)).toBeDefined();
+    expect(groupHeading(/^Ready$/)).toBeDefined();
+    expect(groupHeading(/^To read 2$/)).toBeDefined();
+    expect(groupHeading(/^Used$/)).toBeDefined();
     expect(screen.queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Consumed\b/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Used\b/ })).toBeNull();
     expect(rowOf(RAN_PLAN)).not.toBeNull();
   });
 
-  it('files a plan Auto approved under Consumed as Approved, not Ready to run', async () => {
+  it('files a plan Auto approved under Used as Approved, not Ready to run', async () => {
     const approved = aPlanRow({ approvalState: 'approved', approvedRevision: 1 });
     useAppStore.setState({
       autoTreeViews: {
@@ -222,11 +223,11 @@ describe('artifact list rows', () => {
     expect(row.getAttribute('aria-label') ?? row.textContent).toContain('Approved');
   });
 
-  it('shows a state only where the group does not say it, with New on a fresh unopened wireframe', async () => {
+  it('shows a state only where the group does not say it, with Unread on a fresh unopened wireframe', async () => {
     mountList();
     await waitFor(() => expect(rowOf(WIREFRAME)).not.toBeNull());
     const states = screen.getAllByTestId('artifact-row-state').map((node) => node.textContent);
-    expect(states).toEqual(expect.arrayContaining(['New', 'Ready to run']));
+    expect(states).toEqual(expect.arrayContaining(['Unread', 'Ready to run']));
     expect(states).not.toContain('Ready');
     expect(states).not.toContain('Ran');
   });
@@ -240,7 +241,7 @@ describe('artifact list rows', () => {
     expect(within(frame).getByTestId('artifact-row-state').textContent).toBe('Ready to run');
   });
 
-  it('does not flag an old unopened artifact as New on the real database', async () => {
+  it('does not flag an old unopened artifact as Unread on the real database', async () => {
     await seedArtifact({ id: OLD_REPORT, kind: 'report' });
     await storySqlite().execute('UPDATE session_artifacts SET created_at = ? WHERE id = ?', [
       Date.now() - 5 * 24 * 60 * 60 * 1000,
@@ -254,7 +255,7 @@ describe('artifact list rows', () => {
         ?.closest('[data-testid="artifact-row-frame"]')
         ?.querySelector('[data-testid="artifact-row-state"]')?.textContent;
     expect(stateOf(OLD_REPORT)).toBeUndefined();
-    expect(stateOf(WIREFRAME)).toBe('New');
+    expect(stateOf(WIREFRAME)).toBe('Unread');
   });
 
   it('deletes a report from its row, then Undo puts the row back', async () => {

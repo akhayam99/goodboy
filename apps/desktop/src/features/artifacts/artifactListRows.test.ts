@@ -244,15 +244,16 @@ describe('buildArtifactListRows', () => {
     expect(gone?.state).toMatchObject({ key: 'ran', label: 'Ran' });
   });
 
-  it('marks a fresh report nobody opened as New, and every other report as Ready', () => {
+  it('marks a fresh report nobody opened as Unread, and every other report as Ready', () => {
     const [fresh] = build({ artifacts: [report({ openedAt: null })] });
     const [opened] = build({ artifacts: [report({})] });
-    expect(fresh?.state).toMatchObject({ key: 'new', label: 'New', detail: 'Report' });
+    expect(fresh?.state).toMatchObject({ key: 'new', label: 'Unread', detail: 'Report' });
+    expect(fresh?.group).toBe('read');
     expect(opened?.state).toMatchObject({ key: 'available', label: 'Ready', detail: 'Report' });
-    expect(opened?.group).toBe('ready');
+    expect(opened?.group).toBe('read');
   });
 
-  it('does not call an old artifact New just because it was never opened', () => {
+  it('does not call an old artifact Unread just because it was never opened', () => {
     const old = new Date(NOW - 3 * DAY_MS).toISOString() as IsoDateTime;
     const justUnder = new Date(NOW - DAY_MS + 60_000).toISOString() as IsoDateTime;
     const [stale, recent] = build({
@@ -261,7 +262,7 @@ describe('buildArtifactListRows', () => {
         report({ id: 'recent' as ArtifactId, openedAt: null, createdAt: justUnder }),
       ],
     });
-    expect([stale, recent].map((row) => row?.state?.label).sort()).toEqual(['New', 'Ready']);
+    expect([stale, recent].map((row) => row?.state?.label).sort()).toEqual(['Ready', 'Unread']);
   });
 
   it('sends a deleted artifact of any kind to Recently deleted, most recent first', () => {
