@@ -225,6 +225,58 @@ describe('PartCommentFrame', () => {
       expect(value.add).not.toHaveBeenCalled();
     });
 
+    it('is kept as a draft when the page goes away under the box', async () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      view.unmount();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledWith({ body: 'Split in two' }));
+      expect(value.add).toHaveBeenCalledTimes(1);
+    });
+
+    it('is kept as a draft when the window is reloaded, once', async () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      window.dispatchEvent(new Event('pagehide'));
+      view.unmount();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledTimes(1));
+    });
+
+    it('is not saved when the box is closed with Cancel and then goes away', () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      view.unmount();
+
+      expect(value.add).not.toHaveBeenCalled();
+    });
+
+    it('is not saved twice when Esc saved it and the box then goes away', async () => {
+      const value = api({ composing });
+      const view = render(withApi({ value, children: <Framed>row</Framed> }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      escape();
+      view.unmount();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledTimes(1));
+    });
+
     it('stays in the box with the error when the save fails', async () => {
       const value = api({
         composing,

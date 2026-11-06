@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -14,6 +15,7 @@ import {
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
 import { trackDraftSave } from '../../../plans/planComments/trackDraftSave';
+import { PartCommentFrame } from './PartCommentFrame';
 import { PlanCommentsProvider } from './PlanCommentsProvider';
 
 type Stubs = Partial<
@@ -28,11 +30,13 @@ const renderProvider = ({
   stubs = {},
   onSent,
   planOverrides = {},
+  children = <p>the plan</p>,
 }: {
   readonly seed: PlanDrawerSeed;
   readonly stubs?: Stubs;
   readonly onSent?: Parameters<typeof PlanCommentsProvider>[0]['onSent'];
   readonly planOverrides?: Partial<PlanWithCount>;
+  readonly children?: ReactNode;
 }) => {
   const { plan } = seedPlanDrawer(seed);
   useAppStore.setState(stubs);
@@ -43,7 +47,7 @@ const renderProvider = ({
         plan={{ ...aPlan(), ...plan, ...planOverrides }}
         onSent={onSent}
       >
-        <p>the plan</p>
+        {children}
       </PlanCommentsProvider>
     </ToastProvider>,
   );
@@ -197,6 +201,31 @@ describe('PlanCommentsProvider', () => {
       expect((await screen.findByRole('alert')).textContent).toBe('The agent did not answer');
       screen.getByRole('button', { name: 'Send to Implement' });
     });
+  });
+
+  it('saves a typed comment once when its own Comment button is pressed again', async () => {
+    const add = vi.fn(async () => undefined);
+    useAppStore.setState({ addArtifactComment: add });
+    renderProvider({
+      seed: { run: 'held' },
+      children: (
+        <PartCommentFrame index={0} title="Backfill the ledger">
+          row
+        </PartCommentFrame>
+      ),
+    });
+    const button = screen.getByRole('button', { name: 'Comment on part 1' });
+    fireEvent.click(button);
+    const box = screen.getByLabelText('Comment for the planner');
+    fireEvent.change(box, { target: { value: 'Split in two' } });
+
+    fireEvent.pointerDown(button);
+    fireEvent.blur(box, { relatedTarget: button });
+    fireEvent.click(button);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByLabelText('Comment for the planner')).toBeNull());
+    expect(add).toHaveBeenCalledTimes(1);
   });
 
   describe('with a comment still being saved', () => {

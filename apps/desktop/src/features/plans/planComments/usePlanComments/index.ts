@@ -13,6 +13,7 @@ import type { SendArtifactCommentsResult } from '../../../../store/slices/artifa
 import { planCommentGuard, type PlanCommentGuard } from '../planCommentGuard';
 import { usePlanRevising } from '../../useRevisingPlans';
 import { buildPlanCommentRequest } from '../buildPlanCommentRequest';
+import { isSameAnchor } from '../planCommentAnchors';
 import { planCommentsTargetOf, type PlanCommentsTarget } from '../planCommentsTargetOf';
 import { trackDraftSave } from '../trackDraftSave';
 import type { ComposingTarget, PlanCommentsApi } from '../planCommentsContext';
@@ -90,7 +91,12 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
   );
 
   const startComposing = useCallback(
-    ({ anchor }: { readonly anchor: ArtifactCommentAnchor }) => setComposing({ anchor }),
+    ({ anchor }: { readonly anchor: ArtifactCommentAnchor }) =>
+      setComposing((current) =>
+        current !== null && isSameAnchor({ left: current.anchor, right: anchor })
+          ? current
+          : { anchor },
+      ),
     [],
   );
   const cancelComposing = useCallback(() => setComposing(null), []);

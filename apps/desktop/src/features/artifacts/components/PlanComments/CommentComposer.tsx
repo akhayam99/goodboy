@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import {
   CommentComposer as SharedCommentComposer,
@@ -13,6 +13,8 @@ type Props = {
   readonly onCancel: () => void;
 };
 
+type ChangeParams = Readonly<{ next: string }>;
+
 export const CommentComposer = ({
   quote,
   initialBody = '',
@@ -22,12 +24,44 @@ export const CommentComposer = ({
 }: Props) => {
   const [body, setBody] = useState(initialBody);
   const [error, setError] = useState<string | null>(null);
+  const typed = useRef(initialBody);
+  const isHandled = useRef(false);
+  const latest = useRef({ onSubmit, canKeep: initialBody === '' });
+  latest.current = { onSubmit, canKeep: initialBody === '' };
+
+  useEffect(() => {
+    const flush = (): void => {
+      const text = typed.current.trim();
+      if (isHandled.current || !latest.current.canKeep || text === '') {
+        return;
+      }
+      isHandled.current = true;
+      void latest.current.onSubmit({ body: text }).catch(() => undefined);
+    };
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+  }, []);
+
+  const change = ({ next }: ChangeParams): void => {
+    typed.current = next;
+    setBody(next);
+  };
+
+  const cancel = (): void => {
+    isHandled.current = true;
+    onCancel();
+  };
 
   const save = async ({ body: text }: CommentComposerBody): Promise<void> => {
     setError(null);
+    isHandled.current = true;
     try {
       await onSubmit({ body: text });
     } catch (cause) {
+      isHandled.current = false;
       setError(formatError(cause));
     }
   };
@@ -39,10 +73,10 @@ export const CommentComposer = ({
       placeholder="Write a comment for the planner"
       submitLabel={submitLabel}
       value={body}
-      onChange={setBody}
+      onChange={(next) => change({ next })}
       onSubmit={save}
       onKeep={initialBody === '' ? save : undefined}
-      onCancel={onCancel}
+      onCancel={cancel}
       error={error}
       lead={
         quote === null ? null : (
