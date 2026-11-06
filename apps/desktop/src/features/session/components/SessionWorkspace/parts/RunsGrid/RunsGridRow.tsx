@@ -1,4 +1,13 @@
-import { formatUsd, ICON_SIZE, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import {
+  formatUsd,
+  ICON_SIZE,
+  ListGridRow,
+  StateDot,
+  TruncatedText,
+  UNREAD_TITLE,
+  cn,
+} from '@goodboy/ui';
 import { NAMES } from '../../../../../../shared/utils/names';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLine';
@@ -8,12 +17,15 @@ import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { formatSpan } from '../../../../../../shared/utils/time/formatSpan';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
+import { RunRowVerb } from './RunRowVerb';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly run: SessionRun;
+  readonly rowKey: string;
   readonly modelLine: ModelLine | null;
   readonly costUsd: number | null;
+  readonly titleSuffix: ReactNode;
   readonly now: number;
   readonly onOpen: () => void;
 };
@@ -47,7 +59,16 @@ const timeCellOf = ({ run, now }: TimeParams): string => {
   return run.startedAt === 0 ? '' : formatAge({ from: new Date(run.startedAt).toISOString(), now });
 };
 
-export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }: Props) => {
+export const RunsGridRow = ({
+  sessionId,
+  run,
+  rowKey,
+  modelLine,
+  costUsd,
+  titleSuffix,
+  now,
+  onOpen,
+}: Props) => {
   const agentId = menuAgentOf({ run });
   const menu = useObjectMenuTrigger({
     target:
@@ -59,7 +80,8 @@ export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }:
     <ListGridRow
       ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
-      rowKey={run.id}
+      rowKey={rowKey}
+      aside={run.verb === null ? undefined : <RunRowVerb sessionId={sessionId} verb={run.verb} />}
       {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
       cells={[
         <StateDot state={run.dot} label={run.stateWord} isLive={run.dot === 'running'} />,
@@ -68,14 +90,12 @@ export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }:
           aria-label={SHAPE_LABEL[run.shape]}
           className="text-muted-foreground"
         />,
-        run.isUnread ? (
-          <>
-            <StateDot state="unread" label="Unread" />
-            <TruncatedText className="min-w-0">{run.title}</TruncatedText>
-          </>
-        ) : (
-          run.title
-        ),
+        <>
+          <TruncatedText className={cn('min-w-0 shrink', run.isUnread && UNREAD_TITLE)}>
+            {run.title}
+          </TruncatedText>
+          {titleSuffix}
+        </>,
         run.origin,
         modelLine === null ? '' : <AgentModelLine line={modelLine} />,
         run.stateWord,

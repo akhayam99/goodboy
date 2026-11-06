@@ -7,7 +7,7 @@ import type {
   TurnState,
   WorkflowRunId,
 } from '@goodboy/types';
-import { agentStateOf } from '../workTreeModel/agentStateOf';
+import { agentStateOf, STOPPED_WORD } from '../workTreeModel/agentStateOf';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
@@ -40,6 +40,11 @@ type SessionRunOpen = Readonly<
   | { kind: 'agent'; agentId: AgentId }
 >;
 
+export type SessionRunVerb = Readonly<{
+  kind: 'continue' | 'start';
+  agentId: AgentId;
+}>;
+
 export type SessionRun = Readonly<{
   id: string;
   kind: SessionRunKind;
@@ -59,6 +64,7 @@ export type SessionRun = Readonly<{
   revisingSince: number | null;
   agentIds: ReadonlyArray<AgentId>;
   open: SessionRunOpen;
+  verb: SessionRunVerb | null;
   branches: ReadonlyArray<WorkBranch>;
 }>;
 
@@ -129,6 +135,17 @@ type UnreadParams = {
 const isUnreadOf = ({ agents, agentIds }: UnreadParams): boolean =>
   agents.some((agent) => agentIds.includes(agent.id) && agentHasUnread(agent, false));
 
+type StartParams = {
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+const startVerbOf = ({ agents }: StartParams): SessionRunVerb | null => {
+  const next = agents
+    .filter((agent) => agent.status === 'pending' && agent.parentAgentId == null)
+    .sort((left, right) => left.ordinal - right.ordinal)[0];
+  return next === undefined ? null : { kind: 'start', agentId: next.id };
+};
+
 type WorkflowRowsParams = Pick<
   Params,
   'attachedRuns' | 'agents' | 'orchestrating' | 'questions' | 'revisingStarts'
@@ -184,6 +201,7 @@ const workflowRowsOf = ({
       revisingSince: revisingStarts[run.id] ?? null,
       agentIds,
       open: { kind: 'run', runId: run.id },
+      verb: facts.isStartable ? startVerbOf({ agents: stepAgents }) : null,
     };
   });
 };
@@ -250,6 +268,7 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
     revisingSince: null,
     agentIds,
     open: { kind: 'auto', agentId: root.id },
+    verb: null,
   };
 };
 
@@ -289,6 +308,10 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     revisingSince: null,
     agentIds,
     open: { kind: 'agent', agentId: agent.id },
+    verb:
+      state.word === STOPPED_WORD && agent.status === 'stopped' && agent.doneAt == null
+        ? { kind: 'continue', agentId: agent.id }
+        : null,
   };
 };
 

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { RUNS_GRID_COLUMNS } from './runsGridColumns';
+import { RUNS_GRID_COLUMNS, RUNS_GRID_TITLE_FLOOR } from './runsGridColumns';
 
 const css = readFileSync(join(__dirname, '..', '..', '..', '..', '..', '..', 'styles.css'), 'utf8');
 
@@ -34,7 +34,7 @@ const titleWidthAt = ({ gridWidth }: WidthParams): number => {
 };
 
 type KeyParams = {
-  readonly key: 'origin' | 'model';
+  readonly key: 'origin' | 'model' | 'cost' | 'progress' | 'age';
 };
 
 const hideBelowOf = ({ key }: KeyParams): number => {
@@ -60,5 +60,23 @@ describe('the Runs grid columns', () => {
     expect(titleWidthAt({ gridWidth: at - 1 })).toBeLessThan(
       MODEL_TITLE_MIN_PX + TRACK_GAP_PX + 152,
     );
+  });
+
+  it('drops cost, then step, then age before the title is cut', () => {
+    expect(hideBelowOf({ key: 'cost' })).toBeGreaterThan(hideBelowOf({ key: 'progress' }));
+    expect(hideBelowOf({ key: 'progress' })).toBeGreaterThan(hideBelowOf({ key: 'age' }));
+    expect(hideBelowOf({ key: 'cost' })).toBeLessThan(hideBelowOf({ key: 'model' }));
+  });
+
+  it('keeps the title readable at every width from the drawer open width up to the model', () => {
+    const drawerOpenWidth = hideBelowOf({ key: 'age' });
+    const widths = Array.from(
+      { length: hideBelowOf({ key: 'model' }) - drawerOpenWidth },
+      (_, index) => drawerOpenWidth + index,
+    );
+
+    expect(
+      widths.filter((gridWidth) => titleWidthAt({ gridWidth }) < RUNS_GRID_TITLE_FLOOR),
+    ).toEqual([]);
   });
 });

@@ -561,8 +561,8 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     const rows = within(list).getAllByRole('button', { name: /, Agent, / });
     expect(rows).toHaveLength(2);
-    expect(within(list).getByText('Idle')).toBeDefined();
-    expect(within(list).getByText('Done')).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Agent, Idle$/ })).toBeDefined();
+    expect(within(list).getByRole('button', { name: /, Agent, Done$/ })).toBeDefined();
     expect(levelStack().dataset.levelStack).toBe('session');
 
     fireEvent.click(rows[0] ?? list);
@@ -573,6 +573,7 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-start starts Auto from the Start a run field on the Runs page, with no Auto form', async () => {
     mount({ id: 'c07-auto-start' });
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a run' }, WAIT));
     expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Start an auto' })).toBeNull();

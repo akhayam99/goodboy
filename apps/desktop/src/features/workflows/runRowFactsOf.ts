@@ -6,6 +6,8 @@ import { isRunPaused } from './isRunPaused';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
+export const READY_WORD = 'Ready';
+
 export type RunWait = 'stopped' | 'limit' | 'go';
 
 export type RunRowFacts = {
@@ -15,14 +17,10 @@ export type RunRowFacts = {
   readonly isWordRead: boolean;
   readonly progress: string;
   readonly isActive: boolean;
+  readonly isStartable: boolean;
 };
 
-const DOT_ONLY_WORDS: ReadonlySet<string> = new Set([
-  'Running',
-  'Done',
-  'Archived',
-  'Waits to start',
-]);
+const DOT_ONLY_WORDS: ReadonlySet<string> = new Set(['Running', 'Done', 'Archived', READY_WORD]);
 
 type Params = {
   readonly run: WorkflowRun;
@@ -130,7 +128,7 @@ const stateOf = ({
     return { dot: 'idle', word: `After ${predecessorName}` };
   }
   if (agents.every((agent) => agent.status === 'pending')) {
-    return { dot: 'idle', word: 'Waits to start' };
+    return { dot: 'idle', word: READY_WORD };
   }
   return { dot: 'needsYou', word: 'Waits for you', wait: 'go' };
 };
@@ -158,6 +156,7 @@ export const runRowFactsOf = ({
     wait,
     isWordRead: !DOT_ONLY_WORDS.has(state.word),
     progress: progressOf({ run, workflow, agents }),
+    isStartable: state.word === READY_WORD && run.executionMode !== 'dynamic',
     isActive:
       run.discardedAt == null &&
       !isWorkflowRunClosedByUser({ run }) &&

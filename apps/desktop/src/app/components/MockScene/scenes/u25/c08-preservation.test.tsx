@@ -205,12 +205,13 @@ const QUESTION: OpenQuestion = {
 };
 
 describe('run rows stay reachable from the preset run level', () => {
-  it('Runs list: a group carries its count from two rows', async () => {
+  it('Runs list: a group carries a count only from two rows', async () => {
     await mount('c08-runs');
     const grid = within(screen.getByRole('list', { name: 'Runs' }));
     const countOf = (label: string) =>
       grid.getByRole('heading', { name: label }).nextElementSibling?.textContent;
-    expect(countOf('In progress')).toBe('2');
+    expect(countOf('Running')).toBeUndefined();
+    expect(countOf('Idle')).toBeUndefined();
     expect(countOf('Finished')).toBeUndefined();
     expect(countOf('Archived')).toBeUndefined();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();

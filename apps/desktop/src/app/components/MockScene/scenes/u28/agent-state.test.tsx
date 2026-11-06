@@ -32,7 +32,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('u28 agent state scene', () => {
-  it('lists what needs you first and keeps stopped agents in progress', async () => {
+  it('lists what needs you first and files stopped agents under Idle', async () => {
     const Scene = U28_AGENT_STATE_SCENES['u28-agent-state-runs'];
     if (Scene === undefined) {
       throw new Error('no scene');
@@ -43,8 +43,12 @@ describe('u28 agent state scene', () => {
       </ToastProvider>,
     );
 
-    const group = await screen.findByRole('list', { name: 'In progress' }, WAIT);
-    const labels = within(group)
+    const needsYou = await screen.findByRole('list', { name: 'Needs you' }, WAIT);
+    const idle = screen.getByRole('list', { name: 'Idle' });
+    const labels = within(needsYou)
+      .getAllByRole('button')
+      .map((row) => row.getAttribute('aria-label'));
+    const idleLabels = within(idle)
       .getAllByRole('button')
       .map((row) => row.getAttribute('aria-label'));
 
@@ -52,7 +56,7 @@ describe('u28 agent state scene', () => {
       /^Open Run the settlement suite in ledger-core, Agent, Needs permission/,
     );
     expect(labels[1]).toMatch(/^Open Tidy the Cascadia fixtures, Agent, Blocked/);
-    expect(labels.filter((label) => label?.includes('Stopped, Continue') === true)).toHaveLength(2);
+    expect(idleLabels.filter((label) => label?.endsWith(', Stopped') === true)).toHaveLength(2);
     screen.getByRole('button', { name: 'Continue all' });
   });
 });

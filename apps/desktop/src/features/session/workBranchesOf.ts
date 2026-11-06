@@ -6,6 +6,7 @@ export type WorkBranch = Readonly<{
   projectId: ProjectId;
   projectName: string;
   branch: string;
+  worktreePath: string | null;
 }>;
 
 export type WorkBranchProject = Readonly<{
@@ -54,6 +55,7 @@ export const workBranchesOf = ({
       projectId: mount.projectId,
       projectName: project?.name ?? mount.mountName,
       branch: mount.branch,
+      worktreePath: mount.worktreePath,
     });
   }
   return [...found.values()];

@@ -101,7 +101,8 @@ describe('the c08 preset run scenes', () => {
     expect(levelOf()).toBe('session');
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     const grid = screen.getByRole('list', { name: 'Runs' });
-    expect(within(grid).getByRole('heading', { name: 'In progress' })).toBeDefined();
+    expect(within(grid).getByRole('heading', { name: 'Running' })).toBeDefined();
+    expect(within(grid).getByRole('heading', { name: 'Idle' })).toBeDefined();
     expect(within(grid).getByRole('heading', { name: 'Finished' })).toBeDefined();
     expect(within(grid).getByRole('heading', { name: 'Archived' })).toBeDefined();
     expect(
@@ -111,7 +112,7 @@ describe('the c08 preset run scenes', () => {
     ).toBeDefined();
     expect(
       within(grid).getByRole('button', {
-        name: 'Open Document the export batching, Workflow, Waits to start',
+        name: 'Open Document the export batching, Workflow, Ready',
       }),
     ).toBeDefined();
     expect(within(grid).queryByText('First try at the flaky export tests')).toBeNull();

@@ -44,6 +44,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionActiveMount', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountCleanupProposals', keyedBy: 'session', evictOn: 'delete' },
   { key: 'prSeries', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'groupBySession', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionLanguageAnchor', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionActiveProject', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionBranches', keyedBy: 'session', evictOn: 'archive' },

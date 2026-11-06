@@ -430,7 +430,7 @@ describe('the Runs grid order and the states it files', () => {
     ]);
   });
 
-  it('keeps an agent a restart stopped in progress with a Continue word', () => {
+  it('keeps an agent a restart stopped as Stopped, with Continue as its verb', () => {
     const stopped = aNowAgent({
       key: 'stopped',
       name: 'Stopped by restart',
@@ -442,10 +442,11 @@ describe('the Runs grid order and the states it files', () => {
 
     expect(row).toMatchObject({
       dot: 'stopped',
-      stateWord: 'Stopped, Continue',
+      stateWord: 'Stopped',
       isFinished: false,
       isInProgress: false,
       isRestartStopped: true,
+      verb: { kind: 'continue', agentId: stopped.id },
     });
   });
 

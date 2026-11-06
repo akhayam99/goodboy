@@ -40,6 +40,7 @@ describe('workBranchesOf', () => {
         projectId: PAYMENTS.id,
         projectName: 'payments-api',
         branch: 'fix/duplicate-credit',
+        worktreePath: DUP.worktreePath,
       },
     ]);
   });
