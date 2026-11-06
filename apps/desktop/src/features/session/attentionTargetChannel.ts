@@ -2,17 +2,20 @@ import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   brandId,
   type AgentId,
+  type MountId,
   type SessionAttentionReason,
   type SessionId,
   type WorkspaceId,
 } from '@goodboy/types';
 import { isTauriRuntime } from '../../shared/lib/isTauriRuntime';
-import type { AttentionTarget } from './attentionTarget';
+import type { AttentionExactPlace, AttentionTarget } from './attentionTarget';
+import type { NotificationPlaceReason } from './notificationPlaceReason';
 import { ATTENTION_REASON_META } from './session-stage';
 
 const TARGET_EVENT = 'goodboy:attention-target';
 const PENDING_KEY = 'goodboy:attention-target';
 const PENDING_TTL_MS = 30_000;
+const PLACE_ONLY_REASONS = ['pr-opened', 'history-stopped'] as const;
 
 type Pending = Readonly<{
   target: AttentionTarget;
@@ -43,6 +46,26 @@ const attentionReasonOf = ({ value }: ValueParams): SessionAttentionReason | nul
   Object.keys(ATTENTION_REASON_META).find((key): key is SessionAttentionReason => key === value) ??
   null;
 
+const placeReasonOf = ({ value }: ValueParams): NotificationPlaceReason | null =>
+  attentionReasonOf({ value }) ?? PLACE_ONLY_REASONS.find((reason) => reason === value) ?? null;
+
+const storedPlaceOf = ({ value }: ValueParams): AttentionExactPlace | null => {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+  const reason = 'reason' in value ? placeReasonOf({ value: value.reason }) : null;
+  if (reason === null) {
+    return null;
+  }
+  const mountId = 'mountId' in value ? filledTextOf({ value: value.mountId }) : null;
+  const subject = 'subject' in value ? value.subject : null;
+  return {
+    reason,
+    mountId: mountId === null ? null : brandId<MountId>({ value: mountId }),
+    ...(subject === 'note' || subject === 'comment' ? { subject } : {}),
+  };
+};
+
 const storedTargetOf = ({ value }: ValueParams): AttentionTarget | null => {
   if (typeof value !== 'object' || value === null) {
     return null;
@@ -53,11 +76,13 @@ const storedTargetOf = ({ value }: ValueParams): AttentionTarget | null => {
   }
   const workspaceId = 'workspaceId' in value ? filledTextOf({ value: value.workspaceId }) : null;
   const agentId = 'agentId' in value ? filledTextOf({ value: value.agentId }) : null;
+  const place = 'place' in value ? storedPlaceOf({ value: value.place }) : null;
   return {
     workspaceId: workspaceId === null ? null : brandId<WorkspaceId>({ value: workspaceId }),
     sessionId: brandId<SessionId>({ value: sessionId }),
     reason: 'reason' in value ? attentionReasonOf({ value: value.reason }) : null,
     agentId: agentId === null ? null : brandId<AgentId>({ value: agentId }),
+    ...(place === null ? {} : { place }),
   };
 };
 

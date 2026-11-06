@@ -67,6 +67,7 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
   const limit = useAppStore((state) => state.sessionBudgets[sessionId] ?? null);
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
+  const reportError = useAppStore((state) => state.reportError);
   const dropdown = useDropdown({
     align: 'start',
     expectedHeight: 480,
@@ -109,8 +110,10 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
   }, [spend.totalUsd]);
 
   useEffect(() => {
-    void loadSessionBudget(sessionId);
-  }, [loadSessionBudget, sessionId]);
+    loadSessionBudget(sessionId).catch((error: unknown) => {
+      void reportError({ title: "Couldn't read the session limit", error, sessionId });
+    });
+  }, [loadSessionBudget, reportError, sessionId]);
 
   useEffect(() => {
     if (!open) {

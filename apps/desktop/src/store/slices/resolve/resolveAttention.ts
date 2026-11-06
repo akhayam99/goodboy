@@ -1,4 +1,4 @@
-import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
+import type { MountId, ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { causeOfAttempt } from '../../../features/resolve/failureSentence';
 import type { EmitNotificationParams } from '../notifications/emitNotification';
 
@@ -11,7 +11,34 @@ export type ResolveAttention = {
 };
 
 type AttentionThread = Pick<ResolveThread, 'state' | 'stateReason' | 'activeAttemptId'> &
-  Partial<Pick<ResolveThread, 'originKind'>>;
+  Partial<Pick<ResolveThread, 'originKind' | 'projectId'>>;
+
+export type PushFailuresByMount = ReadonlyMap<MountId | null, number>;
+
+type MountOfParams = {
+  readonly thread: AttentionThread;
+};
+
+export type MountOfThread = (params: MountOfParams) => MountId | null;
+
+type PushFailuresParams = {
+  readonly threads: ReadonlyArray<AttentionThread>;
+  readonly mountOf: MountOfThread;
+};
+
+type PushNoticesParams = {
+  readonly before: PushFailuresByMount;
+  readonly after: PushFailuresByMount;
+  readonly sessionId: NonNullable<EmitNotificationParams['sessionId']>;
+};
+
+type AttentionNoticesParams = {
+  readonly before: ResolveAttention;
+  readonly after: ResolveAttention;
+  readonly sessionId: NonNullable<EmitNotificationParams['sessionId']>;
+  readonly pushBefore?: PushFailuresByMount;
+  readonly pushAfter?: PushFailuresByMount;
+};
 type AttentionAttempt = Pick<ResolveAttempt, 'id' | 'failureCause' | 'phase'>;
 
 const isPushFailure = ({ thread }: { readonly thread: AttentionThread }): boolean =>
@@ -63,15 +90,55 @@ export const resolveAttentionOf = ({
   return { needsYou, couldntFix, pushFailed, notesNeedYou, notesCouldntFix };
 };
 
+export const pushFailuresByMountOf = ({
+  threads,
+  mountOf,
+}: PushFailuresParams): PushFailuresByMount => {
+  const counts = new Map<MountId | null, number>();
+  for (const thread of threads) {
+    if (thread.state !== 'failed' || !isPushFailure({ thread })) {
+      continue;
+    }
+    if (thread.originKind === 'diff_comment') {
+      continue;
+    }
+    const mountId = mountOf({ thread });
+    counts.set(mountId, (counts.get(mountId) ?? 0) + 1);
+  }
+  return counts;
+};
+
+const pushFailedNotices = ({
+  before,
+  after,
+  sessionId,
+}: PushNoticesParams): ReadonlyArray<EmitNotificationParams> => {
+  const notices: Array<EmitNotificationParams> = [];
+  for (const [mountId, count] of after) {
+    if (count <= (before.get(mountId) ?? 0)) {
+      continue;
+    }
+    notices.push({
+      kind: 'error',
+      severity: 'error',
+      title: 'Push failed',
+      body: 'Nothing was sent. Retry from the Comments tab.',
+      sessionId,
+      action: { kind: 'open-place', sessionId, reason: 'push-failed', mountId, subject: 'comment' },
+      coalesceKey:
+        mountId === null ? `push-failed:${sessionId}` : `push-failed:${sessionId}:${mountId}`,
+    });
+  }
+  return notices;
+};
+
 export const resolveAttentionNotices = ({
   before,
   after,
   sessionId,
-}: {
-  readonly before: ResolveAttention;
-  readonly after: ResolveAttention;
-  readonly sessionId: NonNullable<EmitNotificationParams['sessionId']>;
-}): ReadonlyArray<EmitNotificationParams> => [
+  pushBefore = new Map<MountId | null, number>([[null, before.pushFailed]]),
+  pushAfter = new Map<MountId | null, number>([[null, after.pushFailed]]),
+}: AttentionNoticesParams): ReadonlyArray<EmitNotificationParams> => [
   ...(after.needsYou > before.needsYou
     ? [
         {
@@ -80,7 +147,13 @@ export const resolveAttentionNotices = ({
           title: 'A fix run needs you',
           body: `${after.needsYou === 1 ? '1 comment waits' : `${after.needsYou} comments wait`} for your answer.`,
           sessionId,
-          action: { kind: 'open-activity', sessionId },
+          action: {
+            kind: 'open-place',
+            sessionId,
+            reason: 'fix-needs-you',
+            mountId: null,
+            subject: 'comment',
+          },
           coalesceKey: `fix-run-needs-you:${sessionId}`,
         } satisfies EmitNotificationParams,
       ]
@@ -93,24 +166,18 @@ export const resolveAttentionNotices = ({
           title: `A fix run couldn't fix ${after.couldntFix === 1 ? 'a comment' : `${after.couldntFix} comments`}`,
           body: 'Retry it in the run or start over from the Comments tab.',
           sessionId,
-          action: { kind: 'open-activity', sessionId },
+          action: {
+            kind: 'open-place',
+            sessionId,
+            reason: 'fix-couldnt-fix',
+            mountId: null,
+            subject: 'comment',
+          },
           coalesceKey: `fix-run-couldnt-fix:${sessionId}`,
         } satisfies EmitNotificationParams,
       ]
     : []),
-  ...(after.pushFailed > before.pushFailed
-    ? [
-        {
-          kind: 'error',
-          severity: 'error',
-          title: 'Push failed',
-          body: 'Nothing was sent. Retry from the Comments tab.',
-          sessionId,
-          action: { kind: 'open-activity', sessionId },
-          coalesceKey: `push-failed:${sessionId}`,
-        } satisfies EmitNotificationParams,
-      ]
-    : []),
+  ...pushFailedNotices({ before: pushBefore, after: pushAfter, sessionId }),
   ...(after.notesNeedYou > before.notesNeedYou
     ? [
         {
@@ -119,7 +186,13 @@ export const resolveAttentionNotices = ({
           title: 'A fix run needs you',
           body: `${after.notesNeedYou === 1 ? '1 note waits' : `${after.notesNeedYou} notes wait`} for your answer.`,
           sessionId,
-          action: { kind: 'open-activity', sessionId },
+          action: {
+            kind: 'open-place',
+            sessionId,
+            reason: 'fix-needs-you',
+            mountId: null,
+            subject: 'note',
+          },
           coalesceKey: `fix-run-note-needs-you:${sessionId}`,
         } satisfies EmitNotificationParams,
       ]
@@ -132,7 +205,13 @@ export const resolveAttentionNotices = ({
           title: `A fix run couldn't fix ${after.notesCouldntFix === 1 ? 'a note' : `${after.notesCouldntFix} notes`}`,
           body: 'Retry it in the run or start over from your notes.',
           sessionId,
-          action: { kind: 'open-activity', sessionId },
+          action: {
+            kind: 'open-place',
+            sessionId,
+            reason: 'fix-couldnt-fix',
+            mountId: null,
+            subject: 'note',
+          },
           coalesceKey: `fix-run-note-couldnt-fix:${sessionId}`,
         } satisfies EmitNotificationParams,
       ]

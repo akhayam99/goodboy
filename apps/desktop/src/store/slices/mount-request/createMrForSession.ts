@@ -207,6 +207,7 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
         : `Merge request created for ${context.goal}`,
       sessionId,
       workspaceId: context.workspaceId,
+      action: { kind: 'open-place', sessionId, reason: 'pr-opened', mountId: mount.id },
     });
     return { number: created.iid, url: created.webUrl };
   };

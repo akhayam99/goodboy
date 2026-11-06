@@ -241,7 +241,9 @@ drawer instead of the Terminal page.
      (`PALETTE_MIN_HEIGHT_PX`), and a key chip with a minimum width so a glyph
      like the Terminal one is never clipped.
      On the Board the first section is **Needs you**: the sessions the
-     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The session pages (Open Overview,
+     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The bell, the toast and the
+     Notifications page open through it too: a notification keeps a reason and a mount in its stored action
+     (`open-place`, no migration), and a build that does not know the kind reads no action. The session pages (Open Overview,
      Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
      of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:

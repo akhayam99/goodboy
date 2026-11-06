@@ -60,7 +60,7 @@ afterEach(() => {
 });
 
 describe('landAttentionTarget', () => {
-  it('lands on the open question while the question still waits', () => {
+  it('lands on the open question while the question still waits', async () => {
     useAppStore.setState({
       sessionOpenQuestions: {
         [SESSION]: [
@@ -78,14 +78,14 @@ describe('landAttentionTarget', () => {
       },
     });
 
-    expect(landAttentionTarget({ target: TARGET })).toBe('landed');
+    expect(await landAttentionTarget({ target: TARGET })).toBe('landed');
     expect(handled).not.toHaveBeenCalled();
   });
 
-  it('says Already handled and opens the session once the question was answered', () => {
+  it('says Already handled and opens the session once the question was answered', async () => {
     useAppStore.setState({ sessionOpenQuestions: { [SESSION]: [] } });
 
-    expect(landAttentionTarget({ target: TARGET })).toBe('handled');
+    expect(await landAttentionTarget({ target: TARGET })).toBe('handled');
     expect(handled).toHaveBeenCalledOnce();
     expect(useAppStore.getState().currentSessionId).toBe(SESSION);
   });

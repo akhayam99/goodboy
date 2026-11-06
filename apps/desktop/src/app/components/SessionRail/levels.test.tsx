@@ -594,6 +594,26 @@ describe('the session rail top row and its menu', () => {
     expect(within(rail()).queryByText(/database is locked/)).toBeNull();
   });
 
+  it('reports a failed read of the session limit and leaves the menu working', async () => {
+    seed();
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({
+      loadSessionBudget: async () => {
+        throw new Error('database is locked');
+      },
+      reportError,
+    });
+
+    await act(async () => {
+      mountColumn();
+    });
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't read the session limit", sessionId: openId }),
+    );
+    expect(openSessionMenu()).toBeDefined();
+  });
+
   it('holds Archive and Delete in the session menu, Delete as the danger entry', () => {
     seed();
     mountColumn();
@@ -604,6 +624,22 @@ describe('the session rail top row and its menu', () => {
       .map((item) => item.textContent ?? '');
     expect(labels.some((label) => label.startsWith('Archive'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Delete'))).toBe(true);
+  });
+
+  it('holds five rows at most, with no row that has a control beside it, and shows the values', () => {
+    seed();
+    mountColumn();
+
+    const labels = within(openSessionMenu())
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent ?? '');
+    expect(labels.length).toBeLessThanOrEqual(5);
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) {
+      expect(label).toMatch(/^(Limit: |Autopilot: |Stop running|Archive|Delete)/);
+    }
+    expect(labels.some((label) => /^(Pin|Unpin|Refresh|Rename)/.test(label))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Limit: none'))).toBe(true);
   });
 
   it('keeps Delete behind its confirm', async () => {

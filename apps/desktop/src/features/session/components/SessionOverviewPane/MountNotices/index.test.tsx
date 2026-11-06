@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { brandId, type SessionId, type WorktreeStatus } from '@goodboy/types';
 import { aMountRow } from '../../../central/branches/testing/aMountRow';
+import type { RemoteBranchState } from '../../../../worktree/worktree';
 
 vi.mock('../../../../actions/useActionControls', () => ({
   useActionControls: () => ({ failure: null, trigger: vi.fn() }),
@@ -50,12 +51,43 @@ const statusOf = (inProgress: WorktreeStatus['inProgress']): WorktreeStatus => (
   inProgress,
 });
 
-const renderNotices = (inProgress: WorktreeStatus['inProgress']) =>
-  render(<MountNotices sessionId={SESSION_ID} row={ROW} status={statusOf(inProgress)} />);
+const STRANDED: RemoteBranchState = {
+  remoteAhead: 2,
+  localOwn: 0,
+  remoteContainsLocal: true,
+  remoteSha: 'bbbbbbb',
+  localSha: 'aaaaaaa',
+};
+
+type RenderParams = {
+  readonly inProgress: WorktreeStatus['inProgress'];
+  readonly foreign?: RemoteBranchState | null;
+};
+
+const renderNotices = ({ inProgress, foreign = null }: RenderParams) =>
+  render(
+    <MountNotices
+      sessionId={SESSION_ID}
+      row={ROW}
+      status={statusOf(inProgress)}
+      foreign={foreign}
+      isMismatchDismissed={false}
+      onDismissMismatch={vi.fn()}
+    />,
+  );
 
 describe('MountNotices', () => {
+  it('draws the stranded branch notice only when its state is found', () => {
+    const { unmount } = renderNotices({ inProgress: null });
+    expect(screen.queryByText('foreign commits')).toBeNull();
+    unmount();
+
+    renderNotices({ inProgress: null, foreign: STRANDED });
+    screen.getByText('foreign commits');
+  });
+
   it('draws only the stopped rebase when one is open', () => {
-    renderNotices('rebase');
+    renderNotices({ inProgress: 'rebase', foreign: STRANDED });
 
     screen.getByText('rebase stopped');
     expect(screen.queryByText('foreign commits')).toBeNull();
@@ -63,7 +95,7 @@ describe('MountNotices', () => {
   });
 
   it('draws the other notices when no rebase is open', () => {
-    renderNotices(null);
+    renderNotices({ inProgress: null });
 
     expect(screen.queryByText('rebase stopped')).toBeNull();
     expect(screen.queryByText('setup offer')).toBeNull();

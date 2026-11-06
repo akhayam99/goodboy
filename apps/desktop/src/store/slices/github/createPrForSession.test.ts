@@ -302,6 +302,24 @@ describe('createPrForSession, issue references', () => {
     });
   });
 
+  it('keeps the branch of the new pull request in its notification, so the bell lands on it', async () => {
+    const state = buildState({});
+
+    await buildCreate(state)({ sessionId: SESSION_ID });
+
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'pr-created',
+        action: {
+          kind: 'open-place',
+          sessionId: SESSION_ID,
+          reason: 'pr-opened',
+          mountId: MOUNT_ID,
+        },
+      }),
+    );
+  });
+
   it('names the cause when the reference patch fails instead of dropping it', async () => {
     const created = { number: 7, body: 'Generated from the commits.' } as PullRequestState;
     const state = buildState({
