@@ -1,5 +1,6 @@
 import { parseAutoDelegationRole } from '@goodboy/core/auto';
-import type { AutoDelegation } from '@goodboy/db';
+import type { AutoDelegation, AutoOutcome } from '@goodboy/db';
+import { settledStatusOf } from './settledStatusOf';
 
 export type AutoCardHead = Readonly<{
   name: string;
@@ -12,7 +13,28 @@ type Params = {
   readonly delegations: ReadonlyArray<AutoDelegation>;
 };
 
+type WordParams = Params & {
+  readonly isOpen: boolean;
+};
+
 const BUILDING_ROLES: ReadonlySet<string> = new Set(['implementer', 'tester', 'rewriter']);
+
+const NEEDS_YOU_STATES: ReadonlySet<string> = new Set(['awaiting_confirm', 'paused']);
+
+const WORST_FIRST: ReadonlyArray<AutoOutcome> = ['failed', 'timed_out', 'blocked', 'stopped'];
+
+const wordOf = ({ delegations, isOpen }: WordParams): string => {
+  if (delegations.some((delegation) => NEEDS_YOU_STATES.has(delegation.state))) {
+    return 'Needs you';
+  }
+  if (isOpen) {
+    return 'Running';
+  }
+  const worst = WORST_FIRST.find((outcome) =>
+    delegations.some((delegation) => delegation.outcome === outcome),
+  );
+  return settledStatusOf({ outcome: worst ?? 'completed' }).word;
+};
 
 export const autoCardHeadOf = ({ delegations }: Params): AutoCardHead => {
   const roles = delegations.map((delegation) => parseAutoDelegationRole({ role: delegation.role }));
@@ -23,7 +45,7 @@ export const autoCardHeadOf = ({ delegations }: Params): AutoCardHead => {
   return {
     name: isPlanning ? 'Planning' : isBuilding ? 'Building' : 'Working',
     meta: count === 1 ? '1 agent' : `${count} agents`,
-    word: isOpen ? 'Running' : 'Done',
+    word: wordOf({ delegations, isOpen }),
     isOpen,
   };
 };
