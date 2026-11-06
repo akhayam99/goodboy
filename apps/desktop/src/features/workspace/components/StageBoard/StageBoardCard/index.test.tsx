@@ -179,6 +179,15 @@ const cardTitle = () => screen.getByRole('button', { name: session.goal });
 
 const signalSlot = () => screen.getByRole('article').querySelector('[data-slot="card-signal"]');
 
+type ElementOfParams = { readonly node: Element | null };
+
+const elementOf = ({ node }: ElementOfParams): Element => {
+  if (node === null) {
+    throw new Error('expected the element to be drawn');
+  }
+  return node;
+};
+
 const reservedSlot = () =>
   screen.getByRole('article').querySelector('[data-slot="card-signal-reserve"]');
 
@@ -498,7 +507,7 @@ describe('StageBoardCard actions', () => {
       />,
     );
     const group = screen.getByRole('group', { name: 'Session quick actions' });
-    const slot = group.parentElement as HTMLElement;
+    const slot = elementOf({ node: group.parentElement });
 
     fireEvent.mouseEnter(slot);
     expect(onHoverLeave).toHaveBeenCalledTimes(1);
@@ -514,7 +523,7 @@ describe('StageBoardCard actions', () => {
     const onHoverLeave = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
 
-    fireEvent.mouseEnter(signalSlot() as HTMLElement);
+    fireEvent.mouseEnter(elementOf({ node: signalSlot() }));
 
     expect(onHoverLeave).toHaveBeenCalledTimes(1);
   });
@@ -524,7 +533,7 @@ describe('StageBoardCard actions', () => {
     const onHoverLeave = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
 
-    fireEvent.mouseEnter(signalSlot() as HTMLElement);
+    fireEvent.mouseEnter(elementOf({ node: signalSlot() }));
 
     expect(onHoverLeave).not.toHaveBeenCalled();
   });
