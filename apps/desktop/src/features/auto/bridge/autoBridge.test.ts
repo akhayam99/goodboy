@@ -214,7 +214,7 @@ describe('Auto in a window without the runtime', () => {
       kind: 'done',
       rows: [
         { delegationId: 'delegation-a', state: 'pushed', message: null },
-        { delegationId: 'delegation-b', state: 'failed', message: 'The online copy changed.' },
+        { delegationId: 'delegation-b', state: 'failed', message: 'Origin changed.' },
       ],
     });
     const client = await windows({ bus: memoryBus(), ports: main.ports });

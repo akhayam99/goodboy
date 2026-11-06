@@ -103,7 +103,7 @@ const pushFailureLine = ({ reason, message }: PushFailureLineParams): string => 
   }
   return historyStopCause({ reason, message }) === 'hook stopped the push'
     ? 'A pre-push hook stopped it.'
-    : 'The online copy was not updated.';
+    : 'Origin was not updated.';
 };
 
 type DirtyTitleOfParams = {
@@ -387,7 +387,7 @@ const copyOf = ({
       return {
         tone: 'info',
         title: running,
-        line: 'Updating the online copy with a safe force push',
+        line: 'Updating origin with a safe force push',
       };
     case 'done':
       return {

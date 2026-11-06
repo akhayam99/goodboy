@@ -15,6 +15,10 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text })).toContain('inbox-door');
   });
 
+  it.each(['Online copy', 'Replace the online copy?'])('flags %s for On origin', (text) => {
+    expect(retiredIdsIn({ text })).toContain('online-copy');
+  });
+
   it('flags a lowercase worktree name', () => {
     expect(retiredIdsIn({ text: 'close worktree' })).toContain('close-worktree');
   });

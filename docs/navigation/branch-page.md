@@ -71,7 +71,7 @@ agents run, with an Undo toast otherwise. While the new pull request form leads
 before a request exists, the header draws no push: it waits in `⋯`, so the unpushed count is said once,
 in the line under the title. A selection of comments takes the one fill and the header step steps
 down to secondary until the selection is cleared. A closed
-request has no push, and `Force push` never sits there: while the online copy moved it waits
+request has no push, and `Force push` never sits there: while origin moved it waits
 in `⋯` behind its confirm. Commits not on origin block the merge (`unpushed` in
 `MergeReadinessFacts`, read from the same status as the push): the Merge cell reads
 `Blocked: 3 commits not pushed` and `⋯` shows the reason. `useSessionDiff` follows the status cache
@@ -136,8 +136,8 @@ push (`PushFailureActions`, shown when the failed action's error is a push failu
 agent is `fixBranchPushWithAgent`, its finish runs `settleBranchPushFix` (plain push, or force push
 with the lease read before the agent started and the commits the confirm named), and the terminal
 is `prefillBranchPushTerminal` (`git push`, or `--force-with-lease` pinned to the remote sha the
-confirm showed, `PushFailedError.confirmedRemoteSha`; when the online copy moved since, nothing is
-typed and the header says `The online copy changed. Check again before force pushing.`, and a
+confirm showed, `PushFailedError.confirmedRemoteSha`; when origin moved since, nothing is
+typed and the header says `Origin changed. Check again before force pushing.`, and a
 prefill always opens a new terminal tab). A retry that pushed clears the failure line
 (`settledBranchPushes`).
 A push failure keeps its cause. `git_push` returns stdout and stderr with credentials and home
@@ -534,8 +534,8 @@ is no row of fact chips over it: the graph already says how many commits are
 yours, how far main moved and what is online. At rest the section is one
 column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): one row
 per commit (title, then sha, author and age in
-`text-meta`, a faint `Not pushed` chip only on a commit that is not on the
-online copy, the grip a faint mark of a row that drags), then the base row.
+`text-meta`, a faint `Not pushed` chip only on a commit that is not on
+origin, the grip a faint mark of a row that drags), then the base row.
 
 **The base row** (`HistoryBaseRow`) only says where the branch starts: `Based on main 9d4b1f7`, the
 merge base subject and its age. The rebase lives in the Commits head (`HistoryRebaseHead`), a split:

@@ -21,7 +21,7 @@ const STOP_TITLE: Readonly<Record<HistoryStopReason, string>> = {
   stuck: NAMES.rebaseNeedsYou,
   invalid: "Nothing was changed: the plan isn't valid",
   unverified: 'Nothing was changed: the result did not match the plan',
-  'origin-moved': 'Someone else pushed to the online copy',
+  'origin-moved': 'Someone else pushed to origin',
   'head-moved': 'Nothing was changed: the branch moved',
   blocked: 'Nothing was changed yet',
   dirty: 'Nothing was changed yet',
@@ -137,7 +137,7 @@ export const HistoryRunStatus = ({
         : run.phase === 'waiting'
           ? `${run.holder ?? 'An agent'} is writing here. Apply waits for it`
           : run.phase === 'pushing'
-            ? 'Updating the online copy'
+            ? 'Updating origin'
             : run.phase === 'rewriting'
               ? 'History rewriter is merging the conflict on a temporary copy'
               : 'Checking the plan';

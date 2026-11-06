@@ -128,7 +128,7 @@ describe('pushMount', () => {
   it('throws the refusal so the user sees it', async () => {
     const pushBranch = vi.fn<PushFn>(async () => ({
       ok: false,
-      error: 'The online copy changed. Check again before force pushing.',
+      error: 'Origin changed. Check again before force pushing.',
       reason: 'moved',
     }));
 
@@ -142,6 +142,6 @@ describe('pushMount', () => {
         isForce: true,
         confirmedOnlyOnline: [],
       }),
-    ).rejects.toThrow('The online copy changed. Check again before force pushing.');
+    ).rejects.toThrow('Origin changed. Check again before force pushing.');
   });
 });

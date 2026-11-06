@@ -223,7 +223,7 @@ describe('diff, the rebase label', () => {
     );
     expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.label).toBe('Push 2 commits');
     expect(push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } })?.description).toBe(
-      'Your branch and the online copy differ. Force push replaces the online copy (with lease).',
+      'Your branch and origin differ. Force push replaces the branch on origin (with lease).',
     );
     expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.description).toBeNull();
   });
@@ -237,17 +237,16 @@ describe('diff, the rebase label', () => {
     const forced = push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } });
     expect(forced?.blockedReason).toBeNull();
     expect(forced?.confirm).toEqual({
-      title: 'Replace the online copy?',
-      description:
-        'This machine has not checked the online copy yet. Anything pushed there since is lost.',
+      title: 'Replace the branch on origin?',
+      description: 'This machine has not checked origin yet. Anything pushed there since is lost.',
       confirmLabel: 'Force push',
       role: 'danger',
     });
     expect(
       push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true, onlyOnline: [] } })?.confirm,
     ).toEqual({
-      title: 'Replace the online copy?',
-      description: 'The online copy has no commits you lack. Nothing online is lost.',
+      title: 'Replace the branch on origin?',
+      description: 'Origin has no commits you lack. Nothing there is lost.',
       confirmLabel: 'Force push',
       role: 'danger',
     });
@@ -263,7 +262,7 @@ describe('diff, the rebase label', () => {
         },
       })?.confirm,
     ).toEqual({
-      title: 'Replace the online copy and drop 5 commits?',
+      title: 'Replace the branch on origin and drop 5 commits?',
       description: 'These exist only online and are lost if you force push.',
       notes: ['Fix rounding', 'Add retry', 'Drop flag', 'and 2 more'],
       confirmLabel: 'Force push anyway',
@@ -278,7 +277,7 @@ describe('diff, the rebase label', () => {
           onlyOnline: [{ sha: 'sha-0', subject: 'Fix rounding' }],
         },
       })?.confirm?.title,
-    ).toBe('Replace the online copy and drop 1 commit?');
+    ).toBe('Replace the branch on origin and drop 1 commit?');
     expect(push({ overrides: { ahead: 0, unpushed: 2, isDiverged: true } })?.blockedReason).toBe(
       'Origin has a commit this branch lacks. Rebase on it first.',
     );

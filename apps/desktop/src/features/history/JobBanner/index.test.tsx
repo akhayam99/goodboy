@@ -264,7 +264,7 @@ describe('the job banner', () => {
     [
       { phase: 'pushing' },
       'Rebasing payments-api on main',
-      'Updating the online copy with a safe force push',
+      'Updating origin with a safe force push',
     ],
   ] satisfies ReadonlyArray<readonly [Partial<HistoryRun>, string, string]>)(
     'leaves a run in its %j phase to the worktree status line, no card on the page',

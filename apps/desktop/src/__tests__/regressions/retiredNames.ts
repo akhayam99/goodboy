@@ -106,7 +106,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'push-these', pattern: /\bPush these\b/, use: NAMES.push },
   { id: 'apply-and-resolve', pattern: /\bApply and resolve\b/, use: NAMES.applyFix },
   { id: 'fix-to-review', pattern: /^Fix to review$/, use: NAMES.fixReady },
-  { id: 'online-copy', pattern: /\bOnline copy\b/, use: NAMES.onOrigin },
+  { id: 'online-copy', pattern: /\bonline copy\b/i, use: NAMES.onOrigin },
   {
     id: 'let-agent-fix-push',
     pattern: /\bLet an agent fix the push\b/,
