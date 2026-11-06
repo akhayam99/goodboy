@@ -3,7 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore, useAttentionElsewhere, useCurrentWorkspace } from '../../../../store';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
-import { attentionPlace } from '../../../session/attentionPlace';
+import { openAttentionTarget } from '../../../session/openAttentionTarget';
 import {
   focusWindow,
   currentWindowLabel,
@@ -38,16 +38,25 @@ type OpenTapParams = {
 };
 
 const openTap = ({ tap, workspaceId }: OpenTapParams): void => {
+  const { sessionId } = tap;
+  if (sessionId === null) {
+    return;
+  }
+  const target = { workspaceId: tap.workspaceId, sessionId, reason: tap.reason, agentId: null };
   if (tap.workspaceId !== workspaceId) {
+    const isShown = Object.values(useAppStore.getState().windowPresence).includes(tap.workspaceId);
+    if (isShown || !isMainWindow()) {
+      return;
+    }
+    openAttentionTarget({ target }).catch((error: unknown) =>
+      reportOnce({ title: "Couldn't open this banner", error }),
+    );
     return;
   }
   void focusWindow(currentWindowLabel());
-  const state = useAppStore.getState();
-  const { sessionId } = tap;
-  if (sessionId === null || !state.sessions.some((session) => session.id === sessionId)) {
-    return;
-  }
-  state.navigate({ to: attentionPlace({ state, sessionId, reason: tap.reason }) });
+  openAttentionTarget({ target }).catch((error: unknown) =>
+    reportOnce({ title: "Couldn't open this banner", error }),
+  );
 };
 
 type DeliverParams = {

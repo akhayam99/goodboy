@@ -1,5 +1,6 @@
 import type { Notification } from '@goodboy/db';
-import { agentPlace, sessionPlace, useAppStore } from '../../store';
+import { useAppStore } from '../../store';
+import { openAttentionTarget } from '../session/openAttentionTarget';
 
 type OpenNotificationSessionParams = {
   readonly notification: Notification;
@@ -14,24 +15,9 @@ export const openNotificationSession = ({
   }
   const agentId =
     notification.action?.kind === 'retry-step-summary' ? notification.action.agentId : null;
-  void (async () => {
-    const store = useAppStore.getState();
-    if (workspaceId != null && workspaceId !== store.currentWorkspaceId) {
-      const workspace = store.workspaces.find((candidate) => candidate.id === workspaceId);
-      await store.openWorkspace({
-        id: workspaceId,
-        title: workspace?.name ?? '',
-        onRunning: 'new-window',
-      });
-    }
-    const state = useAppStore.getState();
-    if (!state.sessions.some((candidate) => candidate.id === sessionId)) {
-      return;
-    }
-    state.navigate({
-      to: agentId == null ? sessionPlace({ sessionId }) : agentPlace({ sessionId, agentId }),
-    });
-  })().catch((error: unknown) => {
+  openAttentionTarget({
+    target: { workspaceId: workspaceId ?? null, sessionId, reason: null, agentId },
+  }).catch((error: unknown) => {
     void useAppStore.getState().reportError({ title: "Couldn't open this notification", error });
   });
   return true;
