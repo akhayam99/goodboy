@@ -516,7 +516,11 @@ describe('one hover on a rail node shows one thing', () => {
       },
     });
     render(railOf());
-    fireEvent.mouseEnter(document.querySelector(`[data-rail-session="${unread.id}"]`) as Element);
+    const node = document.querySelector(`[data-rail-session="${unread.id}"]`);
+    if (node === null) {
+      throw new Error('expected the rail node to be drawn');
+    }
+    fireEvent.mouseEnter(node);
     wait(600);
 
     const card = screen.getByTestId('session-hover-card');
