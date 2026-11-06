@@ -745,8 +745,8 @@ Folding the rail leaves the column in place.
 
 - **One pane at a time.** Every toggle goes through `togglePane`
   (`features/session/panes/`): pressing the open pane's toggle closes it,
-  pressing another replaces it in the one right drawer. `openPaneOf` maps the
-  open drawer to a cluster pane, so an Explore file opened from Explore keeps
+  pressing another replaces it in the one right drawer. `openPaneOf` reads the
+  open drawer's row in `DRAWER_KINDS` (its pane, or the pane that opened it), so an Explore file opened from Explore keeps
   Explore lit, and a script output opened from Scripts keeps Scripts lit. Esc
   closes the pane (`DrawerFrame`).
 - **Explore and Scripts are drawer kinds** (`explore`, `scripts`), not lenses.
