@@ -19,7 +19,9 @@ const takeAndLand = ({ isFreshOpen }: TakeParams): void => {
   if (target === null) {
     return;
   }
-  landAttentionTarget({ target, isFreshOpen });
+  landAttentionTarget({ target, isFreshOpen }).catch((error: unknown) => {
+    void useAppStore.getState().reportError({ title: "Couldn't open this notification", error });
+  });
 };
 
 export const useAttentionTargets = (): void => {

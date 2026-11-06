@@ -1623,7 +1623,7 @@
     "apps/desktop/src/store/slices/resolve/releaseResolveCopy.ts": 2,
     "apps/desktop/src/store/slices/resolve/remoteMovedError.ts": 4,
     "apps/desktop/src/store/slices/resolve/reopenResolveQueueItem.ts": 1,
-    "apps/desktop/src/store/slices/resolve/resolveAttention.ts": 3,
+    "apps/desktop/src/store/slices/resolve/resolveAttention.ts": 2,
     "apps/desktop/src/store/slices/resolve/resolveFailure.ts": 2,
     "apps/desktop/src/store/slices/resolve/resolveLane.ts": 5,
     "apps/desktop/src/store/slices/resolve/resolveLaunch.ts": 2,

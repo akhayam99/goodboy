@@ -33,12 +33,15 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   `ActionStatusLine`),
   **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
   the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
-  the `session` registry kind), which holds **Limit**
-  (`session.spend`), **Archive** and **Delete** with the rest of the session's
-  verbs. Autopilot has no rail control: Turn on Autopilot and Turn off
-  Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
-  click menu and the palette. An archived session shows only the `⋯`, with
-  **Restore** and **Delete**. The rail has no foot: **Limit** and
+  the `session` registry kind), which holds five rows at most:
+  **Limit: none** or **Limit: $5.00** (`session.spend`), **Autopilot: on** or
+  **Autopilot: off** (`session.autopilotOn` / `Off`, a press flips it),
+  **Stop running (2)** while agents run, **Archive** and **Delete**
+  (`sessionMenuOf`). A row that has a control beside it (Pin, Refresh, the
+  title for Rename, the rail entries for the lenses and the log) is not in
+  this menu. The sidebar row's right click menu and the palette keep the full
+  set. An archived session shows only the `⋯`, with **Restore** and
+  **Delete**. The rail has no foot: **Limit** and
   **Raise limit** on a paused run open the session spend popover from the edit
   host in `SessionFrame` (`SessionCostChip` with `placement="editHost"`,
   `requestSessionSpendLimitEdit`, `sessionSpendLines`). **Limit** on

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pin } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
@@ -11,6 +11,7 @@ import { NAMES } from '../../../../shared/utils/names';
 import type { ActionControls } from '../../../../features/actions/useActionControls';
 import { useSessionRefresh } from '../../../../features/session/hooks/useSessionRefresh';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
+import { sessionMenuOf } from './sessionMenuOf';
 
 type Props = {
   readonly session: Session;
@@ -25,6 +26,17 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
   const isRefreshing = useAppStore((state) => state.sessionSyncing[sessionId] === true);
   const pin = controls.actions.find((action) => PIN_IDS.has(action.id)) ?? null;
   const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
+  const limitUsd = useAppStore((state) => state.sessionBudgets[sessionId]?.softCapUsd ?? null);
+  const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
+  const reportError = useAppStore((state) => state.reportError);
+  const { only, relabel } = useMemo(() => sessionMenuOf({ limitUsd }), [limitUsd]);
+
+  useEffect(() => {
+    loadSessionBudget(sessionId).catch((error: unknown) => {
+      void reportError({ title: "Couldn't read the session limit", error, sessionId });
+    });
+  }, [loadSessionBudget, reportError, sessionId]);
+
   const menu = (
     <ArmedActionPopover
       armed={
@@ -38,6 +50,8 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
           target={target}
           label="More session actions"
           size="control"
+          only={only}
+          relabel={relabel}
           onArm={({ action }) => controls.trigger({ actionId: action.id })}
         />
       )}

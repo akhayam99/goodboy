@@ -20,6 +20,7 @@ type Props = {
   readonly worktreePath: string | null;
   readonly observation: MountBranchObservation;
   readonly holder: MountBranchHolder | null;
+  readonly onDismiss: () => void;
 };
 
 type ResolveParams = {
@@ -34,10 +35,10 @@ export const MountBranchDecision = ({
   worktreePath,
   observation,
   holder,
+  onDismiss,
 }: Props) => {
   const resolveMountBranchMismatch = useAppStore((state) => state.resolveMountBranchMismatch);
   const reportError = useAppStore((state) => state.reportError);
-  const [isDismissed, setIsDismissed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [resolvedHolder, setResolvedHolder] = useState<MountBranchHolder | 'checking' | null>(
     holder ?? 'checking',
@@ -79,7 +80,7 @@ export const MountBranchDecision = ({
 
   const decision = buildBranchDecision({ observation, projectName, holder: resolvedHolder });
 
-  if (isDismissed || decision === null) {
+  if (decision === null) {
     return null;
   }
 
@@ -89,7 +90,7 @@ export const MountBranchDecision = ({
     setIsBusy(true);
     try {
       await resolveMountBranchMismatch({ sessionId, mountId, resolution });
-      setIsDismissed(true);
+      onDismiss();
     } catch (error) {
       void reportError({ title: "Couldn't settle the branch mismatch", error, sessionId });
     } finally {
@@ -130,12 +131,7 @@ export const MountBranchDecision = ({
               {alt.label}
             </Button>
           )}
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={isBusy}
-            onClick={() => setIsDismissed(true)}
-          >
+          <Button variant="secondary" size="sm" disabled={isBusy} onClick={onDismiss}>
             Not now
           </Button>
         </>
