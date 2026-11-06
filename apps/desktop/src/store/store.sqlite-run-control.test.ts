@@ -341,6 +341,40 @@ describe('store on sqlite: pausing a run', () => {
   });
 });
 
+describe('store on sqlite: archiving a run in the middle of a decision', () => {
+  const archivedRun = (workflowRunId: WorkflowRunId) =>
+    (useAppStore.getState().archivedSessions[WORKSPACE_ID] ?? [])
+      .find((candidate) => candidate.id === sessionId)
+      ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+
+  it('keeps the stop in the archive, so the run comes back stopped with auto off', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    useAppStore.setState({ orchestratingWorkflowRuns: { [workflowRunId]: true } });
+
+    await useAppStore.getState().archiveTask(sessionId);
+
+    expect(archivedRun(workflowRunId)?.autoRun).toBe(false);
+    expect(archivedRun(workflowRunId)?.orchestrationStop?.kind).toBe('operator');
+  });
+
+  it('keeps the stop on the board when the archive itself fails', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    useAppStore.setState({ orchestratingWorkflowRuns: { [workflowRunId]: true } });
+    await storySqlite().execute(
+      `CREATE TRIGGER refuse_archive BEFORE UPDATE OF archived_at ON sessions
+       BEGIN SELECT RAISE(ABORT, 'the database is busy'); END`,
+    );
+
+    await expect(useAppStore.getState().archiveTask(sessionId)).rejects.toThrow(
+      'the database is busy',
+    );
+
+    expect(runOf(workflowRunId)?.autoRun).toBe(false);
+    expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('operator');
+    await storySqlite().execute('DROP TRIGGER refuse_archive');
+  });
+});
+
 describe('store on sqlite: pause and resume guards', () => {
   it('pause: a run you already stopped stays stopped', async () => {
     const workflowRunId = await attachRun({ autoRun: true });

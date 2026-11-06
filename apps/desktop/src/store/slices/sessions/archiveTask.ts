@@ -12,8 +12,7 @@ const STILL_RUNNING_MESSAGE =
 
 export const archiveTask = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
-    const prev = sessionById(get().sessions, sessionId);
-    if (!prev) {
+    if (sessionById(get().sessions, sessionId) === undefined) {
       return;
     }
     const { stillRunning } = await stopWork({
@@ -23,6 +22,10 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     });
     if (stillRunning > 0) {
       throw new Error(STILL_RUNNING_MESSAGE);
+    }
+    const prev = sessionById(get().sessions, sessionId);
+    if (prev === undefined) {
+      return;
     }
     const nowIso = new Date().toISOString() as IsoDateTime;
     const archived: Session = { ...prev, archivedAt: nowIso };
