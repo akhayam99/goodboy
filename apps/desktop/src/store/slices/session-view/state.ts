@@ -31,6 +31,7 @@ export type SessionViewState = {
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
+  readonly focusedRunAgentId: Readonly<Record<SessionId, AgentId | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly exploreExpanded: Readonly<

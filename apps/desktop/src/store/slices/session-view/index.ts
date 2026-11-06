@@ -25,6 +25,7 @@ import {
 } from './workSurface';
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
+import { setFocusedRunAgent } from './setFocusedRunAgent';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import type { SessionViewSlice } from './types';
 import type { SliceDeps } from '../../slice-types';
@@ -53,6 +54,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     closeArtifactConversation: closeArtifactConversation(set),
     openArtifactCreation: openArtifactCreation(set, get),
     awaitArtifactAgent: awaitArtifactAgent(set),
+    setFocusedRunAgent: setFocusedRunAgent({ set }),
     setFocusedGithubIssueNumber: setFocusedGithubIssueNumber(set),
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),

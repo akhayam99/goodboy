@@ -1,4 +1,5 @@
 import { useAppStore } from '../../store';
+import { isOverlayOpen } from '../../shared/keyboard/isOverlayOpen';
 import { isTextEntryTarget } from '../../shared/keyboard/isTypingTarget';
 import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
 import { captureLocation } from '../../store/slices/navigation/captureLocation';
@@ -8,7 +9,22 @@ type FieldParams = {
   readonly element: HTMLElement;
 };
 
+const VALUE_ONLY_INPUTS: ReadonlySet<string> = new Set([
+  'button',
+  'checkbox',
+  'color',
+  'file',
+  'image',
+  'radio',
+  'range',
+  'reset',
+  'submit',
+]);
+
 const hasText = ({ element }: FieldParams): boolean => {
+  if (element instanceof HTMLInputElement && VALUE_ONLY_INPUTS.has(element.type)) {
+    return false;
+  }
   if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     return element.value.trim() !== '';
   }
@@ -18,6 +34,9 @@ const hasText = ({ element }: FieldParams): boolean => {
 type Params = Record<never, never>;
 
 export const escapeLadder = ({}: Params): void => {
+  if (isOverlayOpen({})) {
+    return;
+  }
   const focused = document.activeElement;
   if (
     focused instanceof HTMLElement &&

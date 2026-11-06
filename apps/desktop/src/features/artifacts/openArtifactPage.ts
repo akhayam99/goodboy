@@ -13,7 +13,9 @@ export const openArtifactPage = ({ sessionId, artifactId, isArrival = false }: P
   const isOnList =
     state.currentSessionId === sessionId &&
     state.activeLens[sessionId] === 'plans' &&
-    (state.focusedArtifactId[sessionId] ?? null) === null;
+    (state.focusedArtifactId[sessionId] ?? null) === null &&
+    state.appStudio == null &&
+    state.drawer == null;
   if (isArrival && !isOnList) {
     return;
   }
