@@ -55,6 +55,18 @@ describe('resolveScriptTarget', () => {
     expect(target?.group.branch).toBe('nw/settlement');
   });
 
+  it('finds a suggested script that is not pinned', () => {
+    const suggested = { ...SAVED, key: 'suggested-test', kind: 'manifest', savedId: null } as const;
+    const target = resolveScriptTarget({
+      groups: [{ ...SETTLEMENT, scripts: [], suggested: [suggested] }],
+      scriptKey: 'suggested-test',
+      mountId: 'mount-a' as MountId,
+    });
+
+    expect(target?.script.key).toBe('suggested-test');
+    expect(target?.group.branch).toBe('nw/settlement');
+  });
+
   it('returns nothing for a script that left the session', () => {
     expect(
       resolveScriptTarget({ groups: [SETTLEMENT], scriptKey: 'gone', mountId: null }),
