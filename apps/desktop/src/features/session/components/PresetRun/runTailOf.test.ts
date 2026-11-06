@@ -194,41 +194,11 @@ describe('runTailOf', () => {
     });
   });
 
-  it('ends a finished or a stopped run without a verb, the rail Add step is its home', () => {
-    expect(tailOf({ isCompleted: true })).toMatchObject({
-      phrase: 'Run finished',
-      verb: null,
-    });
+  it('draws no tail on a finished run and no verb on a stopped one', () => {
+    expect(tailOf({ isCompleted: true })).toBeNull();
     expect(
       tailOf({ run: aWorkflowRun({ orchestrationStop: { kind: 'closed', message: 'Closed' } }) }),
     ).toMatchObject({ phrase: 'Stopped by you', verb: null });
-  });
-
-  it('ends a finished run with a step not finished as finished with a gap, never plain done', () => {
-    const agents: ReadonlyArray<Agent> = [
-      anAgent({
-        id: SCOUT,
-        stepId: STEP_ONE,
-        status: 'skipped',
-        ordinal: 0,
-        outputSummary: 'the notify-relay token is missing',
-      }),
-      anAgent({ id: IMPLEMENTER, stepId: STEP_TWO, status: 'completed', ordinal: 1 }),
-    ];
-
-    const tail = tailOf({ isCompleted: true, agents });
-
-    expect(tail).toMatchObject({ phrase: 'Finished, 1 step not finished', verb: null });
-    expect(JSON.stringify(tail)).not.toContain('notify-relay token');
-  });
-
-  it('keeps Run finished when the user skipped the step', () => {
-    expect(
-      tailOf({
-        isCompleted: true,
-        agents: agentsOf({ scout: 'skipped', implementer: 'completed' }),
-      }),
-    ).toMatchObject({ phrase: 'Run finished' });
   });
 
   it('draws no tail on an archived run, whose Restore is in the header', () => {

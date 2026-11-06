@@ -6,21 +6,13 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly workflowRunId: WorkflowRunId;
   readonly stepCount: number;
-  readonly isTriggerHidden?: boolean;
 };
 
-export const RunAddStep = ({
-  sessionId,
-  workspaceId,
-  workflowRunId,
-  stepCount,
-  isTriggerHidden = false,
-}: Props) => (
+export const RunAddStep = ({ sessionId, workspaceId, workflowRunId, stepCount }: Props) => (
   <WorkflowAddStep
     sessionId={sessionId}
     workspaceId={workspaceId}
     workflowRunId={workflowRunId}
     stepCount={stepCount}
-    isTriggerHidden={isTriggerHidden}
   />
 );

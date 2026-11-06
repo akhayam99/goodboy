@@ -66,7 +66,7 @@ const CLICK_DELAY_MS = 200;
 
 const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
-  addStep: '[data-spawned-panel] [data-run-add-step] button',
+  addStep: '[data-run-overview] [data-run-add-step] button',
   startRun: '[data-start-run-row] button',
 };
 

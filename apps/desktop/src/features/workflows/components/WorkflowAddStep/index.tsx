@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { GhostActionButton } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { RUN_ADD_STEP_EVENT, isRunAddStepRequest } from '../../requestRunAddStep';
 import { RunStepDraft } from './RunStepDraft';
 
 type Props = {
@@ -11,30 +10,13 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly workflowRunId: WorkflowRunId;
   readonly stepCount: number;
-  readonly isTriggerHidden?: boolean;
 };
 
-export const WorkflowAddStep = ({
-  sessionId,
-  workspaceId,
-  workflowRunId,
-  stepCount,
-  isTriggerHidden = false,
-}: Props) => {
+export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCount }: Props) => {
   const isOrchestrating = useAppStore(
     (state) => state.orchestratingWorkflowRuns?.[workflowRunId] === true,
   );
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const open = (event: Event) => {
-      if (isRunAddStepRequest({ event, runId: workflowRunId })) {
-        setIsOpen(true);
-      }
-    };
-    window.addEventListener(RUN_ADD_STEP_EVENT, open);
-    return () => window.removeEventListener(RUN_ADD_STEP_EVENT, open);
-  }, [workflowRunId]);
 
   if (isOpen) {
     return (
@@ -47,10 +29,6 @@ export const WorkflowAddStep = ({
         onClose={() => setIsOpen(false)}
       />
     );
-  }
-
-  if (isTriggerHidden) {
-    return null;
   }
 
   return (

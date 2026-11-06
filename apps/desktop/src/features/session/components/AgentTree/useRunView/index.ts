@@ -1,4 +1,4 @@
-import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core/workflows';
+import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import type {
   Agent,
   OpenQuestion,
@@ -26,6 +26,7 @@ import {
   type RunPlanHold,
   type RunPrimary,
 } from '../../../../workflows/runPrimaryOf';
+import { runStepCountOf } from '../../../../workflows/runStepCountOf';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import {
   useOrchestratorState,
@@ -128,7 +129,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
   const view = viewWorkflowAdvance({ state: advance.state });
   const isDiscarded = run.discardedAt != null;
   const stepCount = workflow.steps.length;
-  const doneCount = agents.filter((agent) => isAgentStatusSettled({ status: agent.status })).length;
+  const doneCount = runStepCountOf({ run, workflow, agents }).done;
   const isClosed = isWorkflowRunClosedByUser({ run });
   const isCompleted =
     !isDiscarded &&

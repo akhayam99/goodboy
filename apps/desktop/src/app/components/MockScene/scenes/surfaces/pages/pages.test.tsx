@@ -105,7 +105,7 @@ describe('the u31 pages scenes', () => {
   it('u31-runs groups the runs under level 2 headings, one title and the facts after it', async () => {
     const { container } = mount({ name: 'u31-runs' });
 
-    await screen.findByRole('heading', { level: 2, name: 'In progress' }, WAIT);
+    await screen.findByRole('heading', { level: 2, name: 'Running' }, WAIT);
     screen.getByRole('heading', { level: 2, name: 'Finished' });
     const rows = [...container.querySelectorAll<HTMLElement>('[data-list-grid-row]')];
     expect(rows.length).toBeGreaterThan(0);
@@ -118,7 +118,7 @@ describe('the u31 pages scenes', () => {
   it('u31-runs leads with one lede line under the title', async () => {
     const { container } = mount({ name: 'u31-runs' });
 
-    await screen.findByRole('heading', { level: 2, name: 'In progress' }, WAIT);
+    await screen.findByRole('heading', { level: 2, name: 'Running' }, WAIT);
     const intro = container.querySelector<HTMLElement>('[data-slot="session-page-intro"]');
     expect([...(intro?.querySelectorAll('p') ?? [])].map((line) => line.textContent)).toEqual([
       ...SESSION_PAGE_INTRO.runs,

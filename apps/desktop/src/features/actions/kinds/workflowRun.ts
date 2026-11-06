@@ -6,6 +6,7 @@ import {
   Pencil,
   Play,
   RotateCcw,
+  ScrollText,
   SkipForward,
   SlidersHorizontal,
   Square,
@@ -64,6 +65,7 @@ export type WorkflowRunFacts = {
   readonly summary: string;
   readonly skipStep: SkipStepFacts | null;
   readonly autonomy: WorkflowAutonomy;
+  readonly stepAgentId: AgentId | null;
 };
 
 type SkipStepFacts = {
@@ -246,6 +248,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
             stepAgentId: target.stepAgentId ?? null,
           }),
       autonomy: runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key,
+      stepAgentId: target.stepAgentId ?? null,
     };
   },
   actions: [
@@ -395,6 +398,23 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         await env.getState().skipStuckStepAndAdvance(facts.sessionId, facts.run.id, {
           force: true,
           agentId: facts.skipStep.agent.id,
+        });
+      },
+    },
+    {
+      id: 'workflowRun.stepTranscript',
+      label: 'View transcript',
+      icon: ScrollText,
+      group: 'open',
+      when: ({ facts }) => facts.stepAgentId !== null,
+      run: ({ facts, env }) => {
+        if (facts.stepAgentId === null) {
+          return;
+        }
+        env.getState().openDrawer({
+          kind: 'transcript',
+          sessionId: facts.sessionId,
+          payload: { agentId: facts.stepAgentId },
         });
       },
     },

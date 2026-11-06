@@ -306,7 +306,9 @@ describe('the step a hint was read at', () => {
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('opens the step in the drawer when its row is not on screen', async () => {
+  it('opens the page of the step when its row is not on screen', async () => {
+    const navigate = vi.fn();
+    useAppStore.setState({ navigate });
     const view = mount({ hints: [hintOf({ id: 'h1', step: 2 })] });
     const link = await screen.findByRole('button', { name: 'Read at step 2' });
     const query = Element.prototype.querySelector;
@@ -319,9 +321,14 @@ describe('the step a hint was read at', () => {
 
     fireEvent.click(link);
 
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'run-step',
-      payload: { runId: view.seeded.run.id, agentId: view.seeded.agents[1]?.id },
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate.mock.calls[0]?.[0]).toMatchObject({
+      to: {
+        view: {
+          agentId: view.seeded.agents[1]?.id,
+          target: { kind: 'run', runId: view.seeded.run.id },
+        },
+      },
     });
   });
 

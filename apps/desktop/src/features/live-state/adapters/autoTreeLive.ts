@@ -64,8 +64,12 @@ const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
   if (Math.round(budget.remainingUsd * 100) > 0) {
     return null;
   }
-  const used = formatUsd(budget.spentUsd + budget.reservedUsd);
-  const lead = `Paused at the limit: ${used} of ${formatUsd(budget.capUsd)}`;
+  const spent = formatUsd(budget.spentUsd);
+  const cap = formatUsd(budget.capUsd);
+  const lead =
+    Math.round(budget.reservedUsd * 100) > 0
+      ? `Paused at the limit: ${spent} spent, ${formatUsd(budget.reservedUsd)} held of ${cap}`
+      : `Paused at the limit: ${spent} of ${cap}`;
   const running = stillRunningOf({ view });
   return {
     state: 'paused',

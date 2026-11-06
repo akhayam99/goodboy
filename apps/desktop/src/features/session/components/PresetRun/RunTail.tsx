@@ -81,6 +81,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   if (tail === null) {
     return <RunPendingDelivery sessionId={session.id} />;
   }
+  const isStepPage = selectedAgentId !== null;
   const selectedRoot =
     selectedRootId === null
       ? null
@@ -146,12 +147,12 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
             }}
             onAction={() => undefined}
             verbs={
-              tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
+              tail.verb === null || (!isStepPage && HEADER_VERBS.has(tail.verb.kind)) ? null : (
                 <RunTailVerb
                   session={session}
                   view={view}
                   verb={tail.verb}
-                  isSecondary={blockedStep !== null}
+                  isSecondary={isStepPage || blockedStep !== null}
                 />
               )
             }

@@ -157,7 +157,7 @@ const patchRun = ({ patch }: RunPatch): void => {
   });
 };
 
-const menuOrder = ['Skip step 2', 'Copy run summary', 'Stop run', 'Archive run', 'Delete run'];
+const menuOrder = ['Skip step 2', 'Rename', 'Stop run', 'Archive run'];
 
 const openMenu = async (): Promise<HTMLElement> => {
   await press(screen.getByRole('button', { name: /run actions$/ }));
@@ -238,8 +238,8 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(runLevel().getByRole('textbox', { name: 'Run name' })).toBeDefined();
   });
 
-  it('Pause run is the one header button; Stop run with its confirm and Skip step N sit in the run menu', async () => {
-    await mount('c08-run-working');
+  it('Pause run is the one header button; Stop run with its confirm sits in the run menu', async () => {
+    await mount('c08-run-overview');
     const live = within(
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
     );
@@ -256,7 +256,7 @@ describe('run rows stay reachable from the preset run level', () => {
 
   it('Pause run in the header: a failed write keeps the run live, and pressing again pauses it', async () => {
     mockSceneIpc(() => null);
-    await mount('c08-run-working');
+    await mount('c08-run-overview');
     const live = () =>
       within(document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body);
     const runStop = () =>
@@ -279,7 +279,7 @@ describe('run rows stay reachable from the preset run level', () => {
 
   it('Continue takes the place of Pause run: a failed write keeps it paused, pressing again resumes', async () => {
     mockSceneIpc(() => null);
-    await mount('c08-run-working');
+    await mount('c08-run-overview');
     const live = () =>
       within(document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body);
     const runStop = () =>
@@ -321,20 +321,18 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
-  it('Pause run and Resume: the tail says the run is paused, Continue lives only in the header', async () => {
+  it('Pause run and Resume: the head of the run and the quiet line of the step say Continue', async () => {
     await mount('c08-run-ready');
     patchRun({ patch: { orchestrationStop: { kind: 'paused', message: 'Paused by you.' } } });
     await settle();
     expect(tail().getByText('Paused by you')).toBeDefined();
-    expect(tail().queryByRole('button', { name: 'Continue' })).toBeNull();
-    const live = within(nodeOf('[data-run-live-verbs]'));
-    expect(live.getByRole('button', { name: 'Continue' })).toBeDefined();
+    tail().getByRole('button', { name: 'Continue' });
   });
 
-  it('Next step: Start step 3 is the header primary once step 2 is done', async () => {
+  it('Next step: Start step 3 is one quiet verb on the step page once step 2 is done', async () => {
     await mount('c08-run-ready');
-    expect(header().getByRole('button', { name: 'Start step 3' })).toBeDefined();
-    expect(tail().queryByRole('button', { name: 'Start step 3' })).toBeNull();
+    expect(document.querySelector('[data-run-header-actions]')).toBeNull();
+    tail().getByRole('button', { name: 'Start step 3' });
   });
 
   it('Sub agents sit under their step in the Agents panel', async () => {
@@ -392,19 +390,18 @@ describe('run rows stay reachable from the preset run level', () => {
     expect(screen.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });
 
-  it('Plan approval is the header primary', async () => {
+  it('Plan approval is one quiet verb on the step page', async () => {
     await mount('c08-run-approval');
-    expect(header().getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    tail().getByRole('button', { name: 'Approve plan' });
   });
 
-  it('Answer a step question from the header or the card', async () => {
+  it('Answer a step question from the quiet line or the card', async () => {
     await mount('c08-run-ready');
     act(() => {
       useAppStore.setState({ sessionOpenQuestions: { [C08_SESSION_ID]: [QUESTION] } });
     });
     await settle();
-    expect(header().getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(tail().getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(tail().getAllByRole('button', { name: 'Answer' }).length).toBeGreaterThan(0);
   });
 
   it('Step model sits in the step footer of the embedded conversation', async () => {

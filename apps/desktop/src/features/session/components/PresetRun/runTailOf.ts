@@ -4,8 +4,6 @@ import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
 import type { RunPrimary } from '../../../workflows/runPrimaryOf';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
-import { finishedWithGapsPhrase } from '../../../workflows/finishedWithGapsPhrase';
-import { notFinishedStepsOf } from '../../../workflows/notFinishedStepsOf';
 import { stepNumberOf } from './stepNumberOf';
 import { stoppedQuestionTailOf } from './stoppedQuestionTailOf';
 
@@ -67,6 +65,7 @@ type PrimaryParams = {
   readonly agents: ReadonlyArray<Agent>;
   readonly primary: RunPrimary;
   readonly predecessorName: string;
+  readonly isStepPage: boolean;
 };
 
 const primaryTailOf = ({
@@ -75,6 +74,7 @@ const primaryTailOf = ({
   agents,
   primary,
   predecessorName,
+  isStepPage,
 }: PrimaryParams): RunTail => {
   const verb: RunTailVerb = { kind: 'primary', primary };
   switch (primary.kind) {
@@ -84,9 +84,15 @@ const primaryTailOf = ({
         .map((agent) => stepNumberOf({ workflow, agent }))
         .filter((number): number is number => number !== null);
       const last = done.length === 0 ? null : Math.max(...done);
+      const doneWords = `Step ${last} done`;
       return {
         state: 'idle',
-        phrase: last === null ? 'Ready to start' : `Step ${last} done · ready to continue`,
+        phrase:
+          last === null
+            ? 'Ready to start'
+            : isStepPage
+              ? doneWords
+              : `${doneWords} · ready to continue`,
         stepAgentId: null,
         verb,
       };
@@ -100,7 +106,12 @@ const primaryTailOf = ({
         verb,
       };
     case 'resume':
-      return { state: 'stopped', phrase: 'Paused by you', stepAgentId: null, verb: null };
+      return {
+        state: 'stopped',
+        phrase: 'Paused by you',
+        stepAgentId: null,
+        verb: isStepPage ? verb : null,
+      };
     case 'raise-cap':
       return { state: 'paused', phrase: 'Paused at the limit', stepAgentId: null, verb };
     case 'review-plan':
@@ -147,16 +158,7 @@ export const runTailOf = ({
     return { state: 'stopped', phrase: 'Stopped by you', stepAgentId: null, verb: null };
   }
   if (isCompleted) {
-    const notFinished = notFinishedStepsOf({ agents });
-    return {
-      state: 'idle',
-      phrase:
-        notFinished.length === 0
-          ? 'Run finished'
-          : finishedWithGapsPhrase({ count: notFinished.length }),
-      stepAgentId: null,
-      verb: null,
-    };
+    return null;
   }
   const steps = agents.filter((agent) => agent.parentAgentId == null);
   if (quiet !== null) {
@@ -232,7 +234,14 @@ export const runTailOf = ({
     };
   }
   if (primary !== null) {
-    return primaryTailOf({ run, workflow, agents, primary, predecessorName });
+    return primaryTailOf({
+      run,
+      workflow,
+      agents,
+      primary,
+      predecessorName,
+      isStepPage: selectedRootId !== null,
+    });
   }
   const stopped = steps.find((agent) => agent.status === 'stopped') ?? null;
   if (stopped !== null) {

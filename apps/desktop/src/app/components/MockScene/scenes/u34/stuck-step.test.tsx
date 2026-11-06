@@ -76,7 +76,7 @@ describe('u34 stuck step scenes', () => {
     renderScene({ id: 'u34-p25-finished' });
 
     await screen.findByText('Finished, 1 step not finished', undefined, WAIT);
-    screen.getByRole('button', { name: /Go to step/ });
+    screen.getByRole('button', { name: /Open step/ });
     expect(screen.queryByText(/without saying why/)).toBeNull();
   });
 });

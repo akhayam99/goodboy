@@ -202,7 +202,7 @@ describe('autoTreeLive', () => {
     const view = aView({ phase: 'waiting', spentUsd: 4.8, reservedUsd: 0.2, capUsd: 5 });
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
     expect(facts?.state).toBe('paused');
-    expect(facts?.phrase).toBe('Paused at the limit: $5.00 of $5.00');
+    expect(facts?.phrase).toBe('Paused at the limit: $4.80 spent, $0.20 held of $5.00');
     expect(idsOf(facts)).toEqual(['raiseLimit', 'changeLimit', 'stopAuto']);
   });
 
@@ -214,7 +214,7 @@ describe('autoTreeLive', () => {
       delegations: [aDelegation({ key: 'a', role: 'implementer', state: 'running' })],
     });
     expect(autoTreeLive({ ...base, view, rootTurn: null })?.phrase).toBe(
-      'Paused at the limit: $5.00 of $5.00. No new agent starts. The agent still running finishes its work and can spend past the limit.',
+      'Paused at the limit: $4.80 spent, $0.20 held of $5.00. No new agent starts. The agent still running finishes its work and can spend past the limit.',
     );
   });
 

@@ -5,6 +5,7 @@ import { workflowRunOpenQuestions } from '../context/openQuestionsGate';
 import { isRunPaused } from './isRunPaused';
 import { isRunQueuedManual } from './isRunQueuedManual';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
+import { runStepCountOf, runStepCountWordOf } from './runStepCountOf';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
 export const READY_WORD = 'Ready';
@@ -62,20 +63,8 @@ const isRunDone = ({ run, workflow, agents }: RunParams): boolean => {
 };
 
 const progressOf = ({ run, workflow, agents }: RunParams): string => {
-  const steps = stepAgentsOf({ agents });
-  const started = steps.filter((agent) => agent.status !== 'pending').length;
-  if (started === 0) {
-    return '';
-  }
-  if (run.executionMode === 'dynamic') {
-    return `${started} ${started === 1 ? 'step' : 'steps'}`;
-  }
-  const total = workflow.steps.length;
-  const settled = steps.filter((agent) => isAgentStatusSettled({ status: agent.status })).length;
-  if (settled >= total) {
-    return `${total} ${total === 1 ? 'step' : 'steps'}`;
-  }
-  return `Step ${Math.min(settled + 1, total)} of ${total}`;
+  const hasStarted = stepAgentsOf({ agents }).some((agent) => agent.status !== 'pending');
+  return hasStarted ? runStepCountWordOf(runStepCountOf({ run, workflow, agents })) : '';
 };
 
 const stateOf = ({

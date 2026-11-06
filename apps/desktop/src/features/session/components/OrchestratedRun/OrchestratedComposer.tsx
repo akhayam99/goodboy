@@ -1,10 +1,12 @@
-import type { Agent, OrchestratorHint, SessionId, WorkflowRun } from '@goodboy/types';
+import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { OrchestratorHintComposer } from '../../../workflows/components/OrchestratorStrip/OrchestratorHintComposer';
 import { OrchestratorRoutingRow } from '../../../workflows/components/OrchestratorStrip/OrchestratorRoutingRow';
+import { hintQueueOf } from '../../../workflows/hintQueueOf';
 import { isRunPaused } from '../../../workflows/isRunPaused';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
+import { useIsQueueOutOfView } from './useIsQueueOutOfView';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -12,7 +14,7 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-const NO_HINTS: ReadonlyArray<OrchestratorHint> = [];
+const NO_READING: ReadonlyArray<string> = [];
 
 export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   const addWorkflowOrchestratorHint = useAppStore((state) => state.addWorkflowOrchestratorHint);
@@ -23,9 +25,9 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   const draft = useAppStore((state) => state.orchestratorHintDrafts[run.id] ?? '');
   const setOrchestratorHintDraft = useAppStore((state) => state.setOrchestratorHintDraft);
   const restoreOrchestratorHintDraft = useAppStore((state) => state.restoreOrchestratorHintDraft);
-  const waitingCount = (run.orchestratorHints ?? NO_HINTS).filter(
-    (hint) => hint.consumedAt == null,
-  ).length;
+  const readingIds = useAppStore((state) => state.orchestratorReadingHints[run.id] ?? NO_READING);
+  const { waiting, queuedCount } = hintQueueOf({ run, readingIds });
+  const isQueueOut = useIsQueueOutOfView({ runId: run.id, isWatched: waiting.length > 0 });
   const isStepRunning = agents.some((agent) => agent.status === 'running');
 
   const viewQueue = () => {
@@ -33,13 +35,13 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
   };
 
   return (
-    <div data-orchestrated-composer="" className="flex min-w-0 flex-col gap-2">
-      {waitingCount > 0 ? (
+    <div data-orchestrated-composer="" className="relative flex min-w-0 flex-col">
+      {isQueueOut && queuedCount > 0 ? (
         <p
           data-hint-queue-line=""
-          className="flex min-h-6 items-center gap-1 px-2 text-ui text-muted-foreground"
+          className="absolute bottom-full left-0 flex min-h-6 items-center gap-1 rounded-md bg-background px-2 text-ui text-muted-foreground"
         >
-          {ORCHESTRATED_COPY.queuedHintsLine({ count: waitingCount })}
+          {ORCHESTRATED_COPY.queuedHintsLine({ count: queuedCount })}
           <Button variant="quiet" size="xs" onClick={viewQueue}>
             {ORCHESTRATED_COPY.queuedHintsView}
           </Button>

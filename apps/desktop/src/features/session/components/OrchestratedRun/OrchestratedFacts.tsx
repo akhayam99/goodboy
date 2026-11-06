@@ -74,7 +74,7 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
               id={run.id}
               glance={glance}
               spend={spendTextOf({ spentUsd })}
-              settings={chips}
+              settings={isOpen ? chips : null}
             />
           )}
           kind={

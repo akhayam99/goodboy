@@ -53,19 +53,15 @@ describe('openAsker', () => {
     expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
-  it('opens the orchestrated run with the step that asked in the pane', () => {
+  it('opens the page of the step that asked in an orchestrated run', () => {
     const state = stateOf();
     const asker = anAgent({ sessionId: session.id, workflowRunId: ORCHESTRATED_RUN_ID });
 
     openAsker({ state, sessionId: session.id, asker, questionId: QUESTION_ID });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: runPlace({ sessionId: session.id, runId: ORCHESTRATED_RUN_ID }),
+      to: runPlace({ sessionId: session.id, runId: ORCHESTRATED_RUN_ID, agentId: asker.id }),
     });
-    expect(state.openDrawer).toHaveBeenCalledWith({
-      kind: 'run-step',
-      sessionId: session.id,
-      payload: { runId: ORCHESTRATED_RUN_ID, agentId: asker.id },
-    });
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 });

@@ -5,8 +5,8 @@ import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 import { RunStepMenu } from '../../actions/RunStepMenu';
-import { decisionEntries } from '../../workflows/decisionEntries';
 import { ORCHESTRATED_COPY } from '../../workflows/orchestratedCopy';
+import { stepReasonOf } from '../../workflows/stepReasonOf';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../agent-kind';
 import { stepHeadingOf } from './PresetRun/stepHeadingOf';
 import { AgentDetailPane } from './AgentDetailPane';
@@ -58,10 +58,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
   }
 
   const stepAgent = resolveRootAgent({ agents, agentId: agent.id });
-  const latest = decisionEntries({ run, steps: workflow.steps }).decisions[0] ?? null;
-  const ownReason =
-    workflow.steps.find((step) => step.id === stepAgent?.stepId)?.orchestratorReason?.trim() ?? '';
-  const reason = latest !== null && latest.stepId === stepAgent?.stepId ? '' : ownReason;
+  const reason = stepReasonOf({ run, workflow, agent, stepAgent });
   const role = agentKindPalette({
     kind: classifyAgent({ agent, override: kindOverride[agent.id] ?? null }),
   }).label;
