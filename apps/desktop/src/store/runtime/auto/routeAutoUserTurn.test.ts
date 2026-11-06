@@ -114,6 +114,25 @@ describe('a message typed to an Auto agent', () => {
     );
   });
 
+  it('hands the queue delivery id to Auto and writes no second echo for a repeat', async () => {
+    const port = vi.fn<AutoUserTurnPort>(async ({ onQueued }) => {
+      onQueued?.({ rowId: 'outbox-row-7', isRepeat: true });
+      return 'queued';
+    });
+    registerAutoUserTurnPort({ port });
+    const { get, appendTurnEvent } = harness({ agents: [autoRow] });
+    const onStarted = vi.fn();
+
+    await routeAutoUserTurn({
+      get,
+      input: inputOf({ deliveryId: 'queue:send-auto-1', onStarted }),
+    });
+
+    expect(port).toHaveBeenCalledWith(expect.objectContaining({ deliveryId: 'queue:send-auto-1' }));
+    expect(appendTurnEvent).not.toHaveBeenCalled();
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
   it('reads the trees again before the composer tray lets go of the message', async () => {
     registerAutoUserTurnPort({ port: vi.fn<AutoUserTurnPort>(async () => 'queued') });
     const { get, loadAutoTrees } = harness({ agents: [autoRow] });

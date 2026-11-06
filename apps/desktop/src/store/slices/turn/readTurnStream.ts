@@ -28,9 +28,10 @@ type Params = Readonly<{
   set: SetFn;
   get: GetFn;
   ctx: TurnContext;
+  onSpawned: () => void;
 }>;
 
-export const readTurnStream = async ({ set, get, ctx }: Params) => {
+export const readTurnStream = async ({ set, get, ctx, onSpawned }: Params) => {
   const { sessionId } = ctx.input;
   const {
     session,
@@ -96,6 +97,7 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
     now,
     {
       onProviderLimits: (limits) => void get().recordProviderLimits({ limits }),
+      onSpawned,
       owner: {
         agentId: turnSpanBase.agentId,
         sessionId: turnSpanBase.sessionId,

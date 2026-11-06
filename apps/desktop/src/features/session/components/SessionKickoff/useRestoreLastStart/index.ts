@@ -15,6 +15,10 @@ export const useRestoreLastStart = ({ workspaceId }: Params): void => {
   );
 
   useEffect(() => {
+    useAppStore.getState().hydrateSessionDraft({ workspaceId });
+  }, [workspaceId]);
+
+  useEffect(() => {
     if (hasChosenStart) {
       return;
     }

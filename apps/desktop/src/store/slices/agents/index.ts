@@ -4,6 +4,7 @@ import { clearAgentDone } from './clearAgentDone';
 import { clearAgentDraft } from './clearAgentDraft';
 import { deleteAgent } from './deleteAgent';
 import { forceCloseResolver } from './forceCloseResolver';
+import { hydrateAgentDraft } from './hydrateAgentDraft';
 import { keepWorkingOnStep } from './keepWorkingOnStep';
 import { markAgentSeen } from './markAgentSeen';
 import { markAgentUnviewed } from './markAgentUnviewed';
@@ -26,6 +27,7 @@ export const createAgentsSlice = ({ set, get }: SliceDeps) => {
     setAgentEffortOverride: setAgentEffortOverride(set),
     setAgentDraft: setAgentDraft(set),
     clearAgentDraft: clearAgentDraft(set),
+    hydrateAgentDraft: hydrateAgentDraft({ set, get }),
     setAgentAttachments: setAgentAttachments(set),
     clearAgentAttachments: clearAgentAttachments(set),
     selectAgent: selectAgent(set, get),

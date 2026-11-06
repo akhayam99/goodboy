@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { brandId, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -31,9 +31,14 @@ const loads = {
   events: vi.fn(async () => undefined),
   artifacts: vi.fn(async () => undefined),
   context: vi.fn(async () => undefined),
+  open: vi.fn(async () => undefined),
   answered: vi.fn(async () => undefined),
   dismissed: vi.fn(async () => undefined),
 };
+
+const flagUndeliveredAnswers = vi.fn(() => undefined);
+
+const settle = () => act(async () => undefined);
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -44,12 +49,16 @@ beforeEach(async () => {
   for (const load of Object.values(loads)) {
     load.mockClear();
   }
+  flagUndeliveredAnswers.mockClear();
   useAppStore.setState({
     loadSessionEvents: loads.events,
     loadSessionArtifacts: loads.artifacts,
     loadSessionContextItems: loads.context,
+    loadSessionOpenQuestions: loads.open,
     loadSessionAnsweredQuestions: loads.answered,
     loadSessionDismissedQuestions: loads.dismissed,
+    flagUndeliveredAnswers,
+    sessionPhaseRuns: { [FIRST]: [] },
   });
 });
 
@@ -90,5 +99,67 @@ describe('useSessionWorkLoads', () => {
     renderHook(() => useSessionWorkLoads({ sessionId: FIRST }));
 
     expect(loads.events).toHaveBeenCalledTimes(1);
+  });
+
+  it('flags undelivered answers once, after the open questions landed too', async () => {
+    let finishOpen: () => void = () => undefined;
+    loads.open.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finishOpen = () => resolve(undefined);
+        }),
+    );
+
+    renderHook(() => useSessionWorkLoads({ sessionId: FIRST }));
+    await settle();
+    expect(flagUndeliveredAnswers).not.toHaveBeenCalled();
+
+    finishOpen();
+    await settle();
+
+    expect(flagUndeliveredAnswers).toHaveBeenCalledExactlyOnceWith({ sessionId: FIRST });
+  });
+
+  it('waits for the asking agents when they land after the questions', async () => {
+    useAppStore.setState({ sessionPhaseRuns: {} });
+
+    renderHook(() => useSessionWorkLoads({ sessionId: FIRST }));
+    await settle();
+    expect(flagUndeliveredAnswers).not.toHaveBeenCalled();
+
+    act(() => useAppStore.setState({ sessionPhaseRuns: { [FIRST]: [] } }));
+
+    expect(flagUndeliveredAnswers).toHaveBeenCalledExactlyOnceWith({ sessionId: FIRST });
+  });
+
+  it('keeps open questions that are already in the store', async () => {
+    useAppStore.setState({ sessionOpenQuestions: { [FIRST]: [] } });
+
+    renderHook(() => useSessionWorkLoads({ sessionId: FIRST }));
+    await settle();
+
+    expect(loads.open).not.toHaveBeenCalled();
+    expect(flagUndeliveredAnswers).toHaveBeenCalledOnce();
+  });
+
+  it('drops the late load of a session the page has left', async () => {
+    let finishAnswered: () => void = () => undefined;
+    loads.answered.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finishAnswered = () => resolve(undefined);
+        }),
+    );
+    useAppStore.setState({ sessionPhaseRuns: { [FIRST]: [], [SECOND]: [] } });
+    const page = renderHook(({ sessionId }) => useSessionWorkLoads({ sessionId }), {
+      initialProps: { sessionId: FIRST },
+    });
+
+    page.rerender({ sessionId: SECOND });
+    await settle();
+    finishAnswered();
+    await settle();
+
+    expect(flagUndeliveredAnswers).toHaveBeenCalledExactlyOnceWith({ sessionId: SECOND });
   });
 });

@@ -51,6 +51,7 @@ type Spies = {
   readonly editQueued: Mock<IdFn>;
   readonly removeQueued: Mock<IdFn>;
   readonly sendQueued: Mock<IdFn>;
+  readonly retryQueued: Mock<IdFn>;
   readonly setValue: Mock<(next: string) => void>;
   readonly setAttachments: Mock<(next: ReadonlyArray<PendingAttachment>) => void>;
 };
@@ -60,6 +61,7 @@ const mountRows = (): { readonly spies: Spies; readonly current: () => QueuedRow
     editQueued: vi.fn<IdFn>(),
     removeQueued: vi.fn<IdFn>(),
     sendQueued: vi.fn<IdFn>(),
+    retryQueued: vi.fn<IdFn>(),
     setValue: vi.fn<(next: string) => void>(),
     setAttachments: vi.fn<(next: ReadonlyArray<PendingAttachment>) => void>(),
   };
@@ -68,6 +70,7 @@ const mountRows = (): { readonly spies: Spies; readonly current: () => QueuedRow
       sessionId: SESSION,
       queue: [],
       view: VIEW,
+      isAgentStopped: false,
       wrapperRef: { current: null },
       ...spies,
     }),

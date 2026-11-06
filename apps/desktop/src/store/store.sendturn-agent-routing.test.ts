@@ -2793,7 +2793,7 @@ describe('sendTurn, budget routing notice', () => {
       .filter((event) => event.kind === 'error')
       .map((event) => ('message' in event ? event.message : ''));
     expect(messages).toContain(
-      'All providers have exceeded their limit. Adjust the limits or wait for the next billing period.',
+      'Every provider is over its limit. Change a limit or wait for the next period.',
     );
   });
 

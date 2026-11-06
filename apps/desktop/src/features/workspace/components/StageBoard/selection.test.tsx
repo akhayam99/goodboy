@@ -298,7 +298,7 @@ describe('StageBoard selection bar', () => {
     expect(bar).toEqual(menu);
   });
 
-  it('asks once above the bar before archiving, naming the count and the running agents', () => {
+  it('asks once above the bar before archiving, naming the agents it stops', () => {
     const sessions = sessionsOf(GOALS);
     const [first, second] = sessions;
     if (first === undefined || second === undefined) {
@@ -317,38 +317,46 @@ describe('StageBoard selection bar', () => {
 
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 3 sessions' }));
 
-    const confirm = screen.getByRole('group', { name: 'Archive 3 sessions?' });
-    expect(screen.getAllByRole('group', { name: /^Archive/ })).toHaveLength(1);
-    expect(confirm.textContent).toContain(
-      '2 agents are still running in these sessions and keep running after you archive them.',
-    );
+    const confirm = screen.getByRole('group', { name: 'Stop 2 agents and archive?' });
+    expect(screen.getAllByRole('group', { name: /^Stop/ })).toHaveLength(1);
+    expect(confirm.textContent).toContain('Archive stops them first and keeps what they wrote.');
     expect(confirm.textContent).toContain('Restore brings them back');
-    expect(within(confirm).getByRole('button', { name: 'Archive 3 sessions' })).toBeDefined();
+    expect(
+      within(confirm).getByRole('button', { name: 'Stop 2 agents and archive' }),
+    ).toBeDefined();
     expect(document.activeElement).toBe(within(confirm).getByRole('button', { name: 'Cancel' }));
   });
 
   it('archives nothing on Cancel and keeps the selection', async () => {
     const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>();
-    mountBoard(sessionsOf(GOALS));
-    useAppStore.setState({ bulkArchiveTask });
+    const sessions = sessionsOf(GOALS);
+    const [first] = sessions;
+    if (first === undefined) {
+      throw new Error('sessions missing');
+    }
+    mountBoard(sessions);
+    useAppStore.setState({
+      bulkArchiveTask,
+      sessionPhaseRuns: { [first.id]: [anAgent({ sessionId: first.id, status: 'running' })] },
+    });
     tick(GOALS[0] ?? '');
     tick(GOALS[1] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
 
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'Archive 2 sessions?' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'Stop 1 agent and archive?' })).getByRole('button', {
         name: 'Cancel',
       }),
     );
 
     await waitFor(() =>
-      expect(screen.queryByRole('group', { name: 'Archive 2 sessions?' })).toBeNull(),
+      expect(screen.queryByRole('group', { name: 'Stop 1 agent and archive?' })).toBeNull(),
     );
     expect(bulkArchiveTask).not.toHaveBeenCalled();
     expect(within(toolbar()).getByText('2 selected')).toBeDefined();
   });
 
-  it('archives every selected session once confirmed, and Undo restores them all', async () => {
+  it('archives every selected idle session with no confirm, and Undo restores them all', async () => {
     const sessions = sessionsOf(GOALS);
     const picked = [sessions[0]?.id, sessions[2]?.id];
     const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async (ids) => ({
@@ -365,12 +373,7 @@ describe('StageBoard selection bar', () => {
     tick(GOALS[2] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
 
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Archive 2 sessions?' })).getByRole('button', {
-        name: 'Archive 2 sessions',
-      }),
-    );
-
+    expect(screen.queryByRole('group', { name: /archive\?$/ })).toBeNull();
     await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith(picked));
     expect(bulkArchiveTask).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
@@ -408,12 +411,6 @@ describe('StageBoard selection bar', () => {
     tick(GOALS[0] ?? '');
     tick(GOALS[1] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
-
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Archive 2 sessions?' })).getByRole('button', {
-        name: 'Archive 2 sessions',
-      }),
-    );
 
     const note = await screen.findByRole('alert');
     expect(note.textContent).toContain(

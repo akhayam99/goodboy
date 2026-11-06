@@ -21,6 +21,8 @@ export type SendTurnResult = Readonly<{
   isAlreadySent?: boolean;
 }>;
 
+export type TurnRefusal = 'provider_limit' | 'folder_busy';
+
 type TurnSettledInfo = Readonly<{
   runId: ProviderRunId;
   assistantText: string;
@@ -37,6 +39,7 @@ export type SendTurnInput = Readonly<{
   resolveCopyPath?: string;
   resolveThreadIds?: ReadonlyArray<string>;
   onStarted?: () => void;
+  onWritingUserText?: () => Promise<void>;
   confinedRole?: string;
   runId?: ProviderRunId;
   deliveryId?: string;
@@ -73,6 +76,7 @@ export type TurnLease = {
 };
 
 export type TurnProgress = {
+  hasSpawned: boolean;
   assistantText: string;
   providerThreadId: string | null;
   receivedProviderError: boolean;

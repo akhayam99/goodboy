@@ -1,4 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
+import { storedSessionDraftText } from './storedSessionDraftText';
 import type { GetFn, SetFn } from './types';
 
 export type DiscardSessionDraftParams = {
@@ -7,6 +8,7 @@ export type DiscardSessionDraftParams = {
 
 export const discardSessionDraft = (set: SetFn, get: GetFn) => {
   return ({ workspaceId }: DiscardSessionDraftParams): void => {
+    storedSessionDraftText.forget({ workspaceId });
     set((state) => {
       if (state.sessionDrafts[workspaceId] === undefined) {
         return {};

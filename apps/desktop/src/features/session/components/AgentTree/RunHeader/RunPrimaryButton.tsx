@@ -5,6 +5,7 @@ import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../../store';
 import { openPlanDrawer } from '../../../../plans/openPlanDrawer';
+import { cutStepIdOf } from '../../../../workflows/cutStepIdOf';
 import type { RunPrimaryKind } from '../../../../workflows/runPrimaryOf';
 import { useAnswerQuestion } from '../../../../workflows/useAnswerQuestion';
 import { useApproveRunPlan } from '../../../../workflows/useApproveRunPlan';
@@ -38,6 +39,10 @@ export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props)
   const resumeWorkflowRun = useAppStore((state) => state.resumeWorkflowRun);
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const orchestrateNextStep = useAppStore((state) => state.orchestrateNextStep);
+  const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
+  const cutStepId = useAppStore((state) =>
+    cutStepIdOf({ agents: state.sessionPhaseRuns[sessionId] ?? [], workflowRunId: runId }),
+  );
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
   const question = view.answerQuestion;
   const planId = view.plan?.id ?? null;
@@ -84,9 +89,15 @@ export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props)
     },
     continue: {
       icon: Play,
-      hint: 'Clear the stop and ask for the next step',
+      hint:
+        cutStepId === null
+          ? 'Clear the stop and ask for the next step'
+          : 'Pick up the step you stopped, with what it wrote',
       failure: "Couldn't continue the run",
-      run: () => retryWorkflowOrchestration(sessionId, runId),
+      run: () =>
+        cutStepId === null
+          ? retryWorkflowOrchestration(sessionId, runId)
+          : continueStoppedAgent({ sessionId, agentId: cutStepId }),
     },
     retry: {
       icon: RotateCcw,

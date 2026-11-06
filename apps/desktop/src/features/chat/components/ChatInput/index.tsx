@@ -98,7 +98,7 @@ export const ChatInput = ({
   const routing = useTurnRouting({ session, agentId: selectedAgentId });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
 
-  const { enqueue, sendNow, queued } = useComposerQueue({
+  const { enqueue, sendNow, queued, sendHeldAnyway } = useComposerQueue({
     sessionId: session.id,
     agentId: selectedAgentId,
     views: autoViews,
@@ -211,7 +211,7 @@ export const ChatInput = ({
           sessionPreference={session.providerPreference}
           turnOverride={routing.routingOverride}
           connectedProviders={routing.connectedProviderIds}
-          onSendAnyway={canSend ? () => void onSendAnyway() : undefined}
+          onSendAnyway={canSend ? () => void onSendAnyway() : (sendHeldAnyway ?? undefined)}
         />
       )}
       <div className="flex flex-col">

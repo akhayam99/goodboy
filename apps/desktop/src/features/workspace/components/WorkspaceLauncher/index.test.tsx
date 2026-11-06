@@ -234,6 +234,26 @@ describe('Home', () => {
     });
   });
 
+  it('says why when a disconnect is refused', async () => {
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+    disconnectWorkspace.mockRejectedValueOnce(new Error('An agent did not stop.'));
+    renderHome();
+
+    fireEvent.click(screen.getByLabelText('Disconnect Harborline'));
+    const dialogNode = screen.getByRole('dialog', { name: 'Disconnect Harborline?' });
+    fireEvent.click(within(dialogNode).getByRole('button', { name: 'Disconnect workspace' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't disconnect the workspace",
+          workspaceId: HARBORLINE.id,
+        }),
+      ),
+    );
+  });
+
   it('disconnects a workspace only after the confirm, and Cancel keeps it', () => {
     renderHome();
 

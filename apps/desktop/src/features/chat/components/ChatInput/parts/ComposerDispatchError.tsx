@@ -8,30 +8,8 @@ type Props = {
 };
 
 export const ComposerDispatchError = ({ dispatch, providerId }: Props) => {
-  if (!dispatch.error) {
+  if (dispatch.error === null) {
     return null;
   }
-  return (
-    <ComposerErrorNotice
-      message={dispatch.error}
-      providerId={providerId}
-      onRetry={
-        dispatch.lastFailedTurn != null
-          ? () => {
-              const failed = dispatch.lastFailedTurn;
-              if (failed == null) {
-                return;
-              }
-              dispatch.setError(null);
-              void dispatch.dispatchTurn({
-                content: failed.content,
-                atts: failed.attachments,
-                override: failed.override,
-                agentId: failed.agentId,
-              });
-            }
-          : undefined
-      }
-    />
-  );
+  return <ComposerErrorNotice message={dispatch.error} providerId={providerId} />;
 };

@@ -118,14 +118,14 @@ describe('answerBlockedStep', () => {
     expect(sendTurn).not.toHaveBeenCalled();
   });
 
-  it('refuses the answer when the session budget stopped the turn, so the text stays with the caller', async () => {
+  it('refuses the answer when every provider is over its limit, so the text stays with the caller', async () => {
     sendTurn.mockResolvedValueOnce({ blockedOverBudget: true });
 
     await expect(
       useAppStore
         .getState()
         .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
-    ).rejects.toThrow('session budget is reached');
+    ).rejects.toThrow('Every provider is over its limit');
   });
 
   it('refuses the answer when another agent holds the folder, so the text stays with the caller', async () => {

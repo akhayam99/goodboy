@@ -597,10 +597,12 @@ describe('PlanCommentBar', () => {
         count={1}
         guard={allowed}
         isSending={false}
-        error="The session budget is reached."
+        error="Every provider is over its limit. Change a limit or wait for the next period."
         onSend={vi.fn(async () => undefined)}
       />,
     );
-    expect(screen.getByRole('alert').textContent).toBe('The session budget is reached.');
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Every provider is over its limit. Change a limit or wait for the next period.',
+    );
   });
 });

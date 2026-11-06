@@ -283,7 +283,14 @@ isShortened }`, never an empty block with nothing said. When a turn moves to
   bound to their run), so a started agent with no seed, plan or step prompt sits in Pending until you
   type. A seed fills the kickoff only when no `initialPrompt` or step prompt
   does, and unlike `initialPrompt` it does not stop an implementer from
-  fanning a clustered plan out.
+  fanning a clustered plan out. A plan the kickoff carries is marked used
+  (`recordPlanConsumption`) only once that turn started or was lane queued,
+  in `spawnAgent` and `activateWorkflowAgent` alike; a refused kickoff keeps
+  the plan active and reports "The agent didn't start". Until then the plan
+  reads starting (`planStarts`, held by `runPlan` and by the kickoff through
+  `planStartLock`): Run plan reads busy and a second press is refused with
+  "This plan is already starting", in this window only. A fan-out still
+  marks the plan before its children start.
 - A child of another agent counts as a fan-out child only by its shape
   (`fanOutChildKind`): an implementer under an implementer is a cluster part, a
   scout under a wireframe or report is an artifact scout, and a child of the
@@ -442,7 +449,22 @@ continuation never resumes, because it runs in another directory.
   (`stoppingAgents.ts`). When the kill is refused and the process lives, or the
   live list cannot be read, the turn and the agent stay running with nothing
   marked stopped, the error shows, the queue drains again when the turn ends,
-  and pressing Stop again retries. Every user Stop is also recorded in
+  and pressing Stop again retries. Leaving everything (a workspace switch,
+  a disconnect, the window close sheet: `stopWork` with reason `leave` and
+  scope `all`) skips a `blocked` agent whose run already left
+  `turn_list_live`: there is no process to stop, and marking it stopped would
+  kill a permission ask the next load can still show. A wait whose process is
+  alive is stopped, and archiving a session (scope `session`) stops the ask
+  too. `endedWaitingRunsOf` is the one read: a failed live list keeps nothing,
+  so Stop never leaves a live agent. `stopPlanOf` is the one list of what a
+  stop reaches (agents, runs without an agent, deciding runs, minus the kept
+  asks); the close sheet's number (`liveWorkCountOf`) reads it and closes on
+  zero. `stopWork` counts a deciding run that did not stop as still running.
+  Anything still running keeps every caller where it is, since leaving would
+  drop the turn state a later Stop needs: archive keeps the session, a
+  disconnect keeps the workspace and rejects, a switch stays in the workspace
+  and says so (`refuseWorkspaceSwitch`, Retry on the failed switch stops
+  again). Every user Stop is also recorded in
   `stopRequests.ts` (agent, run, instant) until the exit is confirmed, and
   `useAgentStop` (`shared/hooks/`) turns it into the phase the square, the
   header chip and the tail read: `stopping` at once, `stalled` after 5 s
@@ -708,16 +730,36 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   same message twice gives the same id (the queue sends `queue:<id>`). The
   registry forgets every id when the app restarts, so the saved `user_text`
   event carries the `deliveryId` too, and `deliverQueuedTurn` asks
-  `countUserTextEvents` for that id before it sends: a queued message whose turn is already
-  saved is removed from the queue, never sent again. If that check fails the
-  message stays queued and the error shows. A second
+  `countUserTextEvents` for that id before it sends. `startTurnRun` writes the
+  `user_text` only after a first start cancel check, and just before it the
+  row saves `writtenTexts`, the count of its texts no start followed; the
+  message counts as delivered only when more texts exist than that, so a text
+  left by a cancel or a throw before the start never removes the row. If that
+  save fails, the send stops before the text and the row is held. The row
+  leaves on `onStarted`, which `sendTurn` fires after `turn_spawn` resolved
+  (`onSpawned` on `runTurn`), once across a fallback, and also on
+  `delivery_duplicate`, since that run has the message. A failed spawn fires
+  nothing, so the row stays Not delivered and its transcript error offers no
+  second Retry. If the check fails the message stays queued and the
+  error shows. Every exit before the start resets a `starting` or own
+  `running` state (`releaseUnstartedTurn`), and a throw in the prompt or spawn
+  build also writes back the agent row, the provider run and the session and
+  forgets the run id (`closeUnspawnedRun`), so Stop has nothing to chase and
+  Retry keeps the handoff. A Stop that lands in the build finds no process,
+  so `sendTurn` checks `cancelledRunIds` right before the spawn and goes
+  through the cancelled path without one. A Stop that lands during
+  `turn_spawn` kills the process once it exists. Neither fires `onStarted`.
+  A second
   send of a known id never starts a run: `sendTurn` first asks
   `turn_delivery_lookup` and keeps the ids it is sending in this window, and
   answers `isAlreadySent` without a second user message. When the backend
   still refuses the spawn with `delivery_duplicate` (another window won), the
   transcript says "This message was already sent." and no fallback starts. No
   outbox table: a crash ends as "Stopped by restart" with Continue. Auto sends
-  its own ids, and Auto is switched off.
+  its own ids, and Auto is switched off. A queued message to Auto hands its
+  `queue:<id>` to the Auto outbox as the join key (`user:<delivery id>`,
+  unique per tree), so a resend after a crash finds the row already there and
+  writes no second echo.
   A turn started for Auto passes `SendTurnInput.origin: 'delegation'` with the
   planned `runId`, the `deliveryId` (the outbox row id of an Auto turn, the
   attempt id of a child), and `onSettled`, which
@@ -1385,6 +1427,26 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   idle or running, and `Message the agent` when the role is unknown. While a
   turn runs, Queue (Enter) is the primary and Send now (⌘Enter) a quiet word
   beside it. No prefix syntax appears in it.
+- Send to an idle agent is durable: `sendAgentMessage` saves the row first
+  (status `sending`, `isDirect`), then `deliverQueuedTurn` sends it with
+  `queue:<id>`, so the dedup above covers it. A row that could not be saved
+  is taken back and sends nothing: `isUnwritten` tells the composer and the
+  transcript drawer to keep the text in the box. A refusal, a cancelled writer
+  wait or an error puts the row back as `queued` with `hold.reason`; the hold
+  and `writtenTexts` are saved inside `override_json` under `queueState`, so a
+  reload keeps them. The row owns Retry (`retryQueuedMessage`), and
+  RoutingIndicator's Send anyway forces the held row when the box is empty.
+  `drainAgentQueue` sends nothing while any row of the agent is `sending`,
+  while the head row is held, or for a stopped or skipped step
+  (`isQueueParked`, which also picks the tray's Sends when you Continue); a
+  step cut keeps the agent stopping until its cut status is read back.
+  Deleting or editing a row drains again, so the rows behind a held head move
+  on. A resolver row with attachments is refused in a busy lane, since a
+  queued attempt holds text only. A sending row
+  hides from the tray once its text is in the transcript. The transcript
+  drawer sends through `sendAgentMessage` too. A refusal the caller must see is
+  raised with `throwIfRefused` (`TurnRefused`); `turnRefusalMessage` is the
+  only owner of its words, `routeTurn` included.
 - Queued messages and the agent's own suggestion sit in a tray attached above
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)

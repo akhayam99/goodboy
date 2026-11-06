@@ -40,6 +40,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
       label: tauri.label,
       isFocused: async () => tauri.isFocused,
       unminimize: async () => undefined,
+      isVisible: async () => true,
       setFocus: tauri.setFocus,
     },
   ],

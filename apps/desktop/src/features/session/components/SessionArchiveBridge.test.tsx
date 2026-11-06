@@ -80,22 +80,39 @@ const installArchiveMocks = (): ArchiveMocks => {
 };
 
 describe('the archive shortcut', () => {
-  it('asks first, and Cancel archives nothing', async () => {
+  it('archives at once with no confirm when nothing is live, and Undo restores', async () => {
     seedColumn({ store: useAppStore, sessions: [live], currentSessionId: live.id });
+    const { bulkArchiveTask, bulkUnarchiveTask } = installArchiveMocks();
+    mountBridge();
+
+    await press();
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(bulkArchiveTask).toHaveBeenCalledWith([live.id]);
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    });
+    expect(bulkUnarchiveTask).toHaveBeenCalledWith([live.id]);
+  });
+
+  it('with a live agent asks once, names what it stops, and Cancel archives nothing', async () => {
+    seedColumn({ store: useAppStore, sessions: [live], currentSessionId: live.id });
+    useAppStore.setState({
+      sessionPhaseRuns: { [live.id]: [anAgent({ sessionId: live.id, status: 'running' })] },
+    });
     const { bulkArchiveTask } = installArchiveMocks();
     mountBridge();
 
     await press();
-    const dialog = await screen.findByRole('dialog', { name: 'Archive session?' });
+    const dialog = await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' });
     await act(async () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     });
 
     expect(bulkArchiveTask).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog', { name: 'Archive session?' })).toBeNull();
   });
 
-  it('archives on confirm, says how many agents run, and Undo restores', async () => {
+  it('with a live agent archives on confirm, and Undo restores', async () => {
     seedColumn({ store: useAppStore, sessions: [live], currentSessionId: live.id });
     useAppStore.setState({
       sessionPhaseRuns: { [live.id]: [anAgent({ sessionId: live.id, status: 'running' })] },
@@ -104,10 +121,9 @@ describe('the archive shortcut', () => {
     mountBridge();
 
     await press();
-    const dialog = await screen.findByRole('dialog', { name: 'Archive session?' });
-    expect(within(dialog).getByText(/1 agent is still running/)).toBeDefined();
+    const dialog = await screen.findByRole('dialog', { name: 'Stop 1 agent and archive?' });
     await act(async () => {
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Archive session' }));
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Stop 1 agent and archive' }));
     });
     expect(bulkArchiveTask).toHaveBeenCalledWith([live.id]);
 

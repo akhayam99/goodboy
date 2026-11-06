@@ -112,7 +112,7 @@ Under the task sits [one start form](#one-start-form).
 - After a start, if the new worktree reads its dependencies from another folder, a warning says to reinstall before the agent runs checks. The Branch page keeps its own notice.
 - Start sends the kind you pressed, so the router does not guess. The run's line says "you picked it".
 
-**Start blank** sits in the page header, and **Discard** sits next to Start once you wrote something. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text.
+**Start blank** sits in the page header, and **Discard** sits next to Start once you wrote something. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. The text you typed survives a reload too.
 
 **Projects** is optional. Search it by name, even with 50 folders in the workspace.
 
