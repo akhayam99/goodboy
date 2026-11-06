@@ -193,7 +193,7 @@ const LENS_OF = {
   restored: 'files',
   added: 'files',
   overview: null,
-  chat: 'agents',
+  chat: 'workflows',
 } as const satisfies Record<ChangesSceneView, LensKind | null>;
 
 type FindParams = Readonly<{ label: string }>;

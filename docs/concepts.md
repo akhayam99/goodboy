@@ -177,7 +177,7 @@ the app data band (`savedVersionsBytes`, summed in Rust).
 A session that edits a plain folder in place shows the face where it works:
 the rail's **Folder** card names the folder and what agents do there
 ("Documents · edits in place", "No git yet · edits in place"), the Overview
-opens on a folder card (where agents write, what is saved before each turn,
+has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
 chat ends in a card with Review changes and Restore turn
@@ -487,13 +487,13 @@ interrupted restore; a restored marker prevents applying it twice if cleanup
 was interrupted. A pending intent with no stash is rolled back, never kept. `pending_stash` and `write_journal` own this contract.
 
 The recovery, on the banner: `Undo rewrite`
-for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
-into the plan` when the online copy moved, `Retry rebase` when the branch moved,
+for a rewrite, `Retry with a note` when The rebase needs you, `Bring them
+into the plan` when origin moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
 `Change the plan` and `Discard plan` for a stopped plan, `Reset branch to this
 version` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
-of the engine points at the row with `Open in Activity`, so closing it loses
-nothing.
+of the engine points at the branch's Commits with `Open branch`, so closing it
+loses nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
@@ -1212,7 +1212,7 @@ the Fix comments drawer in its place, with **Back to the comment** at its top
 (the launch request carries `fromThreadId`). They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
-opens the panel for the fixable pick and `Apply and resolve 3` applies the pick to review, and
+opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` in the drawer header also offers Stop drafting, Resolve, Open in Files, Agent
@@ -1307,7 +1307,7 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
   where each question has its recommended option chosen, `Drop` leaves one in
   Needs you, and `Continue with N answers` calls `answerQuestions` once for the
   launch (the same agent, no new one); `Retry N that couldn't fix` calls
-  `retryCouldntFix` with every could-not-fix comment of the launch. `Apply and resolve N`
+  `retryCouldntFix` with every could-not-fix comment of the launch. `Apply N fixes`
   in the selection bar (group labels carry no verbs) calls
   `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
   through the same accept as the single `Accept` (`acceptReviewItem`), skips
@@ -1958,13 +1958,24 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the **Fix comments** button (**Fix 3 threads**). The drawer's own button, **Start fix for 3**, stays.
+  the Branch header step (**Fix 3 comments**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
 - **Push**: sends commits (**Push 2 commits**, **Retry push** after a failure).
   **Publish 2 replies** sends replies without a push. **Sync and try again** is
   about the remote branch that moved, not the base.
+- **Apply**: accepts the fixes a run made (**Apply 3 fixes**, **Apply fix** for one),
+  in the Branch header and in the selection bar. The old **Apply and resolve** is retired.
+- **Comment**: the one noun for what a reviewer wrote, in counts too (**3 comments to
+  fix**, **Fixing 2 of 4 comments**). **Fix ready** is a comment whose fix waits for
+  you (it was Fix to review).
+- **On origin**: the copy of a branch on the remote (it was Online copy).
+- **Fix with an agent**: the one verb that hands a failed push to an agent (it was
+  Let an agent fix the push and Fix with agent).
+- **The rebase needs you**: a rebase job that stopped (it was History rewriter needs you).
+- **Blocked**: the Merge cell says **Blocked**, then the reason on its own line
+  (**3 commits not pushed**), never the word twice.
 - **Rebase on main**: brings the base in, with the base branch's own name.
   **Update 2** is for local clones only.
 - **Branch**: the one noun for a line of work on a project. **New branch**

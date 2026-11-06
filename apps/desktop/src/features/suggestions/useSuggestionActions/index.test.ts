@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { agentPlace, branchPlace } from '../../../store/slices/navigation/place';
+import { agentPlace, branchPlace, questionPlace } from '../../../store/slices/navigation/place';
 import { renderHook } from '@testing-library/react';
 import type {
   Agent,
@@ -16,8 +16,10 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { RunPlanResult } from '../../../store/slices/plans/types';
+import type { BranchPushResult } from '../../../store/slices/github/branchPushResult';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
 import { brandId, type PrSeriesId } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
 import { aTrackerMove } from '../../../store/slices/tracker-moves/testing/aTrackerMove';
 
 const { storeState, spies, fixable } = vi.hoisted(() => {
@@ -39,13 +41,9 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   );
   const navigate = vi.fn();
   const rebaseRun = vi.fn(async () => undefined);
-  const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
-    kind: 'started',
-    agentId: 'agent-implementer' as AgentId,
-    scope: 'workflow',
-  }));
+  const runPlan = vi.fn<() => Promise<RunPlanResult>>();
   const showToast = vi.fn();
-  const pushBranch = vi.fn(async () => ({ ok: true as const }));
+  const pushBranch = vi.fn(async (): Promise<BranchPushResult> => ({ ok: true }));
   const openRewriteHistory = vi.fn();
   const createPrForSession = vi.fn(async () => undefined);
   const markPrReady = vi.fn(async () => undefined);
@@ -70,33 +68,38 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   const openMountTerminal = vi.fn();
   const readWorktreeStatus = vi.fn(async (_params: unknown) => null);
   const phaseRuns: Record<string, ReadonlyArray<unknown>> = {};
+  const record = <T>(): Record<string, T> => ({});
+  const list = <T>(): ReadonlyArray<T> => [];
+  const shared = {
+    ensureProjectMounted,
+    recordSessionEvent,
+    setSessionActiveProject,
+    emitNotification,
+    reportError,
+    spawnAgent,
+    navigate,
+    runPlan,
+    pushBranch,
+    openRewriteHistory,
+    createPrForSession,
+    markPrReady,
+    mergePr,
+    resolveMountCleanup,
+    mergeSeriesInOrder,
+    moveTrackerItem,
+    undoTrackerMove,
+    attachWorkflowToSession,
+    resumeStoppedAgents,
+    openMountTerminal,
+    requestReviewLaunch,
+  };
   return {
-    fixable: { ids: [] as ReadonlyArray<string> },
+    fixable: { ids: list<string>() },
     spies: {
-      requestReviewLaunch,
-      openMountTerminal,
+      ...shared,
       readWorktreeStatus,
-      ensureProjectMounted,
-      recordSessionEvent,
-      setSessionActiveProject,
-      emitNotification,
-      reportError,
       advanceAgent: vi.fn(async () => undefined),
-      spawnAgent,
-      navigate,
       rebaseRun,
-      runPlan,
-      pushBranch,
-      openRewriteHistory,
-      createPrForSession,
-      markPrReady,
-      mergePr,
-      resolveMountCleanup,
-      mergeSeriesInOrder,
-      moveTrackerItem,
-      undoTrackerMove,
-      attachWorkflowToSession,
-      resumeStoppedAgents,
       archiveSessions,
       showToast,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
@@ -108,40 +111,21 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       })),
     },
     storeState: {
-      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      ...shared,
+      sessionProjectMounts: record<ReadonlyArray<unknown>>(),
       rebaseAllRuns: noRebaseAllRuns,
       sessionPhaseRuns: phaseRuns,
-      mountGithub: {} as Record<string, unknown>,
-      mountRequests: {} as Record<string, unknown>,
-      projects: [] as ReadonlyArray<unknown>,
-      ensureProjectMounted,
-      recordSessionEvent,
-      setSessionActiveProject,
-      emitNotification,
-      reportError,
-      spawnAgent,
-      runPlan,
-      navigate,
-      pushBranch,
-      openRewriteHistory,
-      createPrForSession,
-      markPrReady,
-      mergePr,
-      resolveMountCleanup,
-      mergeSeriesInOrder,
-      moveTrackerItem,
-      undoTrackerMove,
-      attachWorkflowToSession,
-      resumeStoppedAgents,
+      mountGithub: record<unknown>(),
+      mountRequests: record<unknown>(),
+      projects: list<unknown>(),
+      artifactComments: record<ReadonlyArray<unknown>>(),
       bulkArchiveTask,
       bulkUnarchiveTask,
-      openMountTerminal,
       requestOpenQuestionScroll: vi.fn(),
-      requestReviewLaunch,
-      currentSessionId: 'session-elsewhere' as string,
-      activeLens: {} as Record<string, string>,
-      branchTab: {} as Record<string, string>,
-      branchThreadId: {} as Record<string, string | null>,
+      currentSessionId: 'session-elsewhere',
+      activeLens: record<string>(),
+      branchTab: record<string>(),
+      branchThreadId: record<string | null>(),
     },
   };
 });
@@ -192,25 +176,26 @@ import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/dif
 import { everySuggestionKind } from './testing/everySuggestionKind';
 import { useSuggestionActions } from './index';
 
-const SESSION_ID = 'session-1' as SessionId;
-const RUN_ID = 'run-1' as WorkflowRunId;
-const STEP_ID = 'step-1' as StepId;
-const WEB_ID = 'project-web' as ProjectId;
-const WEB_MOUNT_ID = 'mount-web' as MountId;
-const WEB_SECOND_MOUNT_ID = 'mount-web-second' as MountId;
-const AGENT_ID = 'agent-1' as AgentId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const RUN_ID = brandId<WorkflowRunId>({ value: 'run-1' });
+const STEP_ID = brandId<StepId>({ value: 'step-1' });
+const WEB_ID = brandId<ProjectId>({ value: 'project-web' });
+const WEB_MOUNT_ID = brandId<MountId>({ value: 'mount-web' });
+const WEB_SECOND_MOUNT_ID = brandId<MountId>({ value: 'mount-web-second' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
 
-const SESSION = { id: SESSION_ID, workspaceId: 'workspace-1', goal: 'Ship the thing' } as Session;
+const SESSION = aSession({ id: SESSION_ID, goal: 'Ship the thing' });
 
-const PENDING_AGENT = {
+const PENDING_AGENT = anAgent({
   id: AGENT_ID,
   sessionId: SESSION_ID,
   workflowRunId: RUN_ID,
   stepId: STEP_ID,
-  status: 'pending',
-} as unknown as Agent;
+});
 
 const onSelectQuestions = vi.fn();
+
+spies.runPlan.mockResolvedValue({ kind: 'started', agentId: AGENT_ID, scope: 'workflow' });
 
 const actionsFor = ({ suggestion }: { readonly suggestion: SessionSuggestion }) => {
   const { result } = renderHook(() =>
@@ -527,14 +512,14 @@ describe('useSuggestionActions', () => {
         ...suggestionBase,
         id: 'plan-ready:plan-1',
         kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
+        payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
       },
     });
 
     expect(actions.primary?.label).toBe('Start implementer');
     actions.primary?.run();
 
-    expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
+    await vi.waitFor(() => expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1'));
     await vi.waitFor(() => expect(spies.showToast).toHaveBeenCalledOnce());
     expect(spies.showToast).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -544,18 +529,34 @@ describe('useSuggestionActions', () => {
     );
   });
 
+  it('asks before starting the implementer only while a comment on the plan is unsent', () => {
+    const suggestion: SessionSuggestion = {
+      ...suggestionBase,
+      id: 'plan-ready:plan-1',
+      kind: 'plan-ready',
+      payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
+    };
+    const clean = actionsFor({ suggestion }).primary;
+    storeState.artifactComments = { [SESSION_ID]: [{ artifactId: 'plan-1', status: 'draft' }] };
+    const unsent = actionsFor({ suggestion }).primary;
+    storeState.artifactComments = {};
+
+    expect(clean?.confirm).toBeUndefined();
+    expect(unsent?.confirm?.title).toBe('Run without your comment?');
+  });
+
   it('says why when the plan cannot run, with a link to the run, instead of announcing a start', async () => {
     spies.runPlan.mockResolvedValueOnce({
       kind: 'refused',
       reason: 'The next step (Review) does not run plans',
-      workflowRunId: 'run-1' as WorkflowRunId,
+      workflowRunId: brandId<WorkflowRunId>({ value: 'run-1' }),
     });
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
         id: 'plan-ready:plan-1',
         kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
+        payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
       },
     });
 
@@ -580,7 +581,7 @@ describe('useSuggestionActions', () => {
         ...suggestionBase,
         id: 'plan-ready:plan-1',
         kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
+        payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
       },
     });
 
@@ -591,7 +592,7 @@ describe('useSuggestionActions', () => {
     expect(spies.showToast).not.toHaveBeenCalled();
   });
 
-  it('hands the questions lens the answer action', () => {
+  it('opens the first question on its address even when several are open', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -599,7 +600,10 @@ describe('useSuggestionActions', () => {
         kind: 'answer-questions',
         payload: {
           count: 2,
-          firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+          firstQuestion: {
+            id: brandId<OpenQuestionId>({ value: 'question-1' }),
+            createdByAgentId: AGENT_ID,
+          },
           rootAgentId: null,
         },
       },
@@ -608,10 +612,32 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Answer');
     actions.primary?.run();
 
+    expect(onSelectQuestions).not.toHaveBeenCalled();
+    expect(spies.navigate).toHaveBeenCalledWith({
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'question-1' }),
+      }),
+      mode: 'push',
+    });
+  });
+
+  it('hands the questions lens the answer action when no question is known', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'answer-questions:session-1',
+        kind: 'answer-questions',
+        payload: { count: 2, firstQuestion: null, rootAgentId: null },
+      },
+    });
+
+    void actions.primary?.run();
+
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);
   });
 
-  it('jumps to the agent that asked when one question is out of view', () => {
+  it('opens the question on its address when one question is out of view', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -619,7 +645,10 @@ describe('useSuggestionActions', () => {
         kind: 'answer-questions',
         payload: {
           count: 1,
-          firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+          firstQuestion: {
+            id: brandId<OpenQuestionId>({ value: 'question-1' }),
+            createdByAgentId: AGENT_ID,
+          },
           rootAgentId: null,
         },
       },
@@ -629,11 +658,11 @@ describe('useSuggestionActions', () => {
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
-    });
-    expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
-      agentId: AGENT_ID,
-      questionId: 'question-1',
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'question-1' }),
+      }),
+      mode: 'push',
     });
   });
 
@@ -648,7 +677,7 @@ describe('useSuggestionActions', () => {
           projectName: 'web',
           reason: 'needs the router',
           agentId: AGENT_ID,
-          eventId: 'event-1' as SessionEventId,
+          eventId: brandId<SessionEventId>({ value: 'event-1' }),
         },
       },
     });
@@ -674,7 +703,7 @@ describe('useSuggestionActions', () => {
           projectName: 'web',
           reason: 'needs the router',
           agentId: AGENT_ID,
-          eventId: 'event-1' as SessionEventId,
+          eventId: brandId<SessionEventId>({ value: 'event-1' }),
         },
       },
     });
@@ -729,8 +758,12 @@ describe('useSuggestionActions', () => {
     actions.primary?.run();
 
     expect(listener).toHaveBeenCalledTimes(1);
-    const event = listener.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ scope: 'providers', provider: 'anthropic', action: 'login' });
+    const [event] = listener.mock.calls[0] ?? [];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
+      scope: 'providers',
+      provider: 'anthropic',
+      action: 'login',
+    });
     window.removeEventListener('goodboy:open-settings', listener);
   });
 
@@ -992,7 +1025,10 @@ describe('useSuggestionActions', () => {
         id: 'continue-with-workflow:agent-1',
         kind: 'continue-with-workflow',
         band: 3,
-        payload: { workflowId: 'workflow-1' as WorkflowId, workflowName: 'Plan and ship' },
+        payload: {
+          workflowId: brandId<WorkflowId>({ value: 'workflow-1' }),
+          workflowName: 'Plan and ship',
+        },
       },
     });
 
@@ -1065,7 +1101,7 @@ describe('every suggestion kind', () => {
       ok: false,
       error: 'rejected',
       reason: 'failed',
-    } as never);
+    });
     const actions = actionsFor({ suggestion: EVERY_KIND['push-branch'] });
 
     await expect(actions.primary?.run()).rejects.toThrow('rejected');

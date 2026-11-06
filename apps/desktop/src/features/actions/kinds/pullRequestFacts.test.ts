@@ -1,8 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { PrCheckRun, PullRequestState, SessionId } from '@goodboy/types';
+import type {
+  PrCheckRun,
+  ProjectId,
+  PullRequestState,
+  ResolveThread,
+  SessionId,
+} from '@goodboy/types';
 import { queueRowAt } from '../../resolve/testing/queueRow';
-import { fixSignalsOf, pullRequestFacts } from './pullRequestFacts';
+import { fixSignalsOf, pullRequestFacts, pullRequestThreadsOf } from './pullRequestFacts';
 
 const SESSION = 'session-harborline' as SessionId;
 
@@ -83,5 +89,32 @@ describe('fixSignalsOf', () => {
     ];
 
     expect(fixSignalsOf({ threads: rows.map((row) => row.thread) }).commentsNeedYou).toBe(4);
+  });
+});
+
+describe('pullRequestThreadsOf', () => {
+  const PROJECT_A: ProjectId = JSON.parse('"project-ledger-core"');
+  const PROJECT_B: ProjectId = JSON.parse('"project-notify-relay"');
+  const threadOf = (patch: Partial<ResolveThread>): ResolveThread => ({
+    ...queueRowAt({ stage: 'proposed' }).thread,
+    ...patch,
+  });
+
+  it('keeps the threads of this pull request, so another mount cannot hold the merge', () => {
+    const own = threadOf({ threadId: 'PRRT_own', projectId: PROJECT_A, prNumber: 318 });
+    const otherMount = threadOf({ threadId: 'PRRT_other', projectId: PROJECT_B, prNumber: 41 });
+    const sameNumberElsewhere = threadOf({
+      threadId: 'PRRT_same',
+      projectId: PROJECT_B,
+      prNumber: 318,
+    });
+    const note = threadOf({ threadId: 'note', projectId: null, prNumber: null });
+    const threads = [own, otherMount, sameNumberElsewhere, note];
+
+    const scoped = pullRequestThreadsOf({ threads, projectId: PROJECT_A, prNumber: 318 });
+
+    expect(scoped).toEqual([own, note]);
+    expect(fixSignalsOf({ threads: scoped }).commentsNeedYou).toBe(2);
+    expect(fixSignalsOf({ threads }).commentsNeedYou).toBe(4);
   });
 });

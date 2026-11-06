@@ -75,7 +75,6 @@ const questionProps = {
   variant: 'compact' as const,
   state: 'open' as const,
   askerName: 'implementer',
-  askerKind: 'implementer' as const,
   age: '4m ago',
   draft: {
     selectedSuggestions: ['cache only a resolved lookup'],

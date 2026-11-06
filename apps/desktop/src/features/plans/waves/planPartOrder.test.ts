@@ -11,6 +11,7 @@ import {
 } from '@goodboy/types';
 import { planPartRows } from '../components/PlanParts/planPartRows';
 import { planPartOrder } from './planPartOrder';
+import { planPartsLine } from './planPartsLine';
 import { waveLabel } from './waveLabel';
 
 const NOW = brandId<IsoDateTime>({ value: '2026-10-28T09:00:00.000Z' });
@@ -48,6 +49,37 @@ describe('waveLabel', () => {
     expect(waveLabel({ index: 0, size: 2 })).toBe('Runs first, in parallel');
     expect(waveLabel({ index: 1, size: 1 })).toBe('Then');
     expect(waveLabel({ index: 2, size: 3 })).toBe('Then, in parallel');
+  });
+});
+
+describe('planPartsLine', () => {
+  const lineOf = (clusters: ReadonlyArray<ImplementationCluster>) =>
+    planPartsLine({ order: orderOf(clusters), count: clusters.length });
+
+  it('says one part in two words', () => {
+    expect(lineOf([part({ title: 'Routes', extra: { touches: ['src/routes.ts'] } })])).toBe(
+      '1 part.',
+    );
+  });
+
+  it('says the parts go one after the other when each waits for the last', () => {
+    expect(
+      lineOf([
+        part({ title: 'Routes', extra: { id: 'routes', touches: ['src/routes.ts'] } }),
+        part({ title: 'Home', extra: { id: 'home', after: ['routes'], touches: ['src/home'] } }),
+        part({ title: 'Chat', extra: { id: 'chat', after: ['home'], touches: ['src/chat'] } }),
+      ]),
+    ).toBe('3 parts, one after the other.');
+  });
+
+  it('says how many run at once when two share nothing', () => {
+    expect(
+      lineOf([
+        part({ title: 'Routes', extra: { id: 'routes', touches: ['src/routes.ts'] } }),
+        part({ title: 'Home', extra: { id: 'home', after: ['routes'], touches: ['src/home'] } }),
+        part({ title: 'Chat', extra: { id: 'chat', after: ['routes'], touches: ['src/chat'] } }),
+      ]),
+    ).toBe('3 parts, 2 at once.');
   });
 });
 

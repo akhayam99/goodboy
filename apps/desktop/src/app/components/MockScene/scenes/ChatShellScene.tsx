@@ -341,7 +341,7 @@ export const ChatShellScene = () => {
         'mock-chat-session-pagination': 'hl/reconcile-settlement-export',
       },
       telemetryAt: at(38),
-      lens: 'agents',
+      lens: 'workflows',
     });
     useAppStore.setState({
       selectedAgentId: { [SESSION_ID]: AGENT_ID },

@@ -15,7 +15,7 @@ vi.mock('../../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { brandId, type IsoDateTime } from '@goodboy/types';
+import { brandId, type IsoDateTime, type OpenQuestion, type OpenQuestionId } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -150,6 +150,28 @@ describe('useBoardNavigation', () => {
     const { result } = renderHook(() => useBoardNavigation());
     act(() => result.current[action](session));
     expect(useAppStore.getState().activeLens[SESSION_ID]).toBe(lens);
+  });
+
+  it('openQuestions opens the first answerable question on its address', () => {
+    const question: OpenQuestion = {
+      id: brandId<OpenQuestionId>({ value: 'question-1' }),
+      sessionId: SESSION_ID,
+      text: 'Which ledger?',
+      suggestedAnswers: [],
+      isBlocking: false,
+      userAnswer: null,
+      status: 'open',
+      createdAt: STAMP,
+    };
+    act(() => {
+      useAppStore.setState({ sessionOpenQuestions: { [SESSION_ID]: [question] } });
+    });
+    const { result } = renderHook(() => useBoardNavigation());
+    act(() => result.current.openQuestions(session));
+    expect(landedAt()).toMatchObject({
+      sessionId: SESSION_ID,
+      view: { lens: 'questions', target: { kind: 'question', questionId: question.id } },
+    });
   });
 
   it('openIDE opens the first worktree path in the default editor', async () => {

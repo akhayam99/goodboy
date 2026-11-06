@@ -487,7 +487,7 @@ describe('a stopped rebase in Next', () => {
     ],
     [
       { reason: 'push-failed', message: 'remote unreachable', files: [], sha: null },
-      'Fix with agent',
+      'Fix with an agent',
       'Rebased, but the push failed.',
     ],
   ] satisfies ReadonlyArray<readonly [HistoryStop, string, string]>)(
@@ -545,7 +545,7 @@ describe('a stopped rebase in Next', () => {
     await act(async () => {
       fireEvent.click(
         within(stopCard()).getByRole('button', {
-          name: 'Fix with agent on hl/feat-center-members-page',
+          name: 'Fix with an agent on hl/feat-center-members-page',
         }),
       );
     });

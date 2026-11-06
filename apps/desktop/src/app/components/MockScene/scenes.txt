@@ -189,6 +189,7 @@ c04-worktree-files-narrow
 c04-worktree-folded
 c04-worktree-menu
 c04-worktree-no-pr
+c04-worktree-no-pr-fix
 c04-worktree-pr-behind
 c04-worktree-pr-draft
 c04-worktree-rebasing
@@ -1208,6 +1209,15 @@ u36-p14-runs-by-state
 u36-p14-runs-drawer-open
 u36-p14-runs-empty
 u36-p14-runs-start-open
+u36-p15-needs-you-dark
+u36-p15-needs-you-light
+u36-p15-next-only-dark
+u36-p15-next-only-light
+u36-p16-checks-working
+u36-p16-fix-checks
+u36-p16-merged-archive
+u36-p16-merged-remove
+u36-p16-start-fix
 u36-p18-ask-answer
 u36-p18-explore-changed
 u36-p18-explore-empty
@@ -1225,6 +1235,11 @@ u36-p6-gone-run-dark
 u36-p6-gone-run-light
 u36-p6-step-back-dark
 u36-p6-step-back-light
+u36-p7-tools-stay-dark
+u36-p7-tools-stay-light
+u36-p8-question-dark
+u36-p8-question-light
+u36-plan-ran
 update-card
 update-card-long-version
 update-card-narrow

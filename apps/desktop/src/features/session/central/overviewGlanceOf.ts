@@ -2,7 +2,7 @@ import type { Tone } from '@goodboy/ui';
 import type { Glance } from '../glance/glanceOf';
 import type { OverviewCardModel } from './overviewCardsOf';
 
-export type OverviewGlanceState = 'waiting' | 'stuck' | 'working' | 'clear';
+export type OverviewGlanceState = 'waiting' | 'stuck' | 'working' | 'next' | 'clear';
 
 export type OverviewGlance = Readonly<{
   state: OverviewGlanceState;
@@ -14,6 +14,7 @@ type Params = {
   readonly cards: ReadonlyArray<OverviewCardModel>;
   readonly stuckCount: number;
   readonly autoGlances: ReadonlyArray<Glance>;
+  readonly nextTitle: string | null;
 };
 
 type CountParams = {
@@ -24,7 +25,12 @@ type CountParams = {
 const cardCountOf = ({ cards, id }: CountParams): number =>
   cards.find((card) => card.id === id)?.count ?? 0;
 
-export const overviewGlanceOf = ({ cards, stuckCount, autoGlances }: Params): OverviewGlance => {
+export const overviewGlanceOf = ({
+  cards,
+  stuckCount,
+  autoGlances,
+  nextTitle,
+}: Params): OverviewGlance => {
   const needs = cardCountOf({ cards, id: 'needs-you' });
   const running = cardCountOf({ cards, id: 'running' });
   const autoWaiting = autoGlances.find((glance) => glance.state === 'waiting') ?? null;
@@ -44,6 +50,9 @@ export const overviewGlanceOf = ({ cards, stuckCount, autoGlances }: Params): Ov
   }
   if (running > 0) {
     return { state: 'working', tone: 'info', sentence: parts.join(', ') };
+  }
+  if (nextTitle !== null) {
+    return { state: 'next', tone: 'info', sentence: `Next: ${nextTitle}` };
   }
   return { state: 'clear', tone: 'success', sentence: 'Nothing needs you' };
 };

@@ -1,7 +1,6 @@
 {
   "deepImportsByPair": {
     "actions -> artifacts": 1,
-    "actions -> context": 1,
     "actions -> session": 1,
     "artifacts -> actions": 1,
     "artifacts -> attachments": 2,
@@ -53,7 +52,6 @@
     "review -> diff": 2,
     "review -> integrations": 2,
     "scripts -> session": 2,
-    "search -> context": 1,
     "search -> inbox": 1,
     "search -> integrations": 1,
     "search -> palette": 1,

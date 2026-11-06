@@ -10,12 +10,14 @@ The Overview is titled with the session's name, with its linked issue key in gra
 
 It reads top to bottom:
 
-- The goal.
+- The goal, then one status block: a line that says what is happening and, under it, one sentence of where the work stands. A chat the session came from sits under them.
 - No setup line: a new worktree's setup (**Run** and **Not now**) is offered on the Branch page.
-- Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.
+- **Needs you** comes first. It holds what a branch needs you to decide. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published. Each of these counts as an item in the header and in the line under the title. The notices sit in one place above the cards and keep their state when the count changes. A closed worktree shows a notice with **Reopen** too. It does not count, because you closed it on purpose. A stopped rebase is the only notice a worktree draws while it lasts.
 - Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
-- One line under the goal says what is happening: how many things wait for you (amber), how many agents work (blue), what is stuck (red), or **Nothing needs you** (green). It reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
-- One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order.
+- The line under the goal says what is happening. It counts what waits for you (amber), what works (blue) and what is stuck (red). With only **Next** rows left it reads **Next:** and the step. It says **Nothing needs you** (green) only when nothing is left to press.
+- The line reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
+- One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order. **Next** is one heading over the steps in **Branches**. A folder card sits under **Branches**.
+- A session with no agent, no run, no branch and no card shows the start form and nothing else.
 
 An empty card is not drawn. An archived session keeps only **Done**.
 
@@ -190,13 +192,13 @@ Each branch, pull request or Auto plan shows once per kind of work.
 - That row says "and 1 more" in its sentence and puts the others in its **⋯** menu.
 - A stuck agent reads by its role and state, as in "The tester timed out. It ran out of time." It never quotes the request Auto sent it.
 - A row's title is its subject. A plan that waits on your OK is titled by the plan's name. Its sentence reads "Plan v3 waits on your OK. The run covers 4 branches." These are the branches its agents work on.
-- A **Fix** row on a known branch is titled by the branch and its open pull request, as in "hl/feat-center-home-page · #9995". One sentence sits under it, such as "4 review conversations wait for a fix."
+- A **Fix** row on a known branch is titled by the branch and its open pull request, as in "hl/feat-center-home-page · #9995". One sentence sits under it, such as "4 comments to fix."
 - Rows in **Update** and **Ship** keep their verb titles, except a stopped rebase.
 
 **A stopped rebase**
 
 - Its row is titled by its branch. It says in one sentence what stopped ("2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.").
-- It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with agent**.
+- It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with an agent**.
 - **Resolve myself**, **Keep branch as it was**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
 - A click on its title opens the branch with the rebase panel.
 - A diverged card of the same branch folds into that row, and its verb goes into the **⋯** menu. It never shows as "and 1 more".
@@ -249,14 +251,14 @@ See and undo what agents changed in a session without a branch.
 - Each restore first saves the text you have now, so **Undo restore** puts it back.
 - A restore over text that changed after the turn asks in place before it writes. It names the other agent when a later turn of one wrote the same file (**Scout wrote there after turn 3.**).
 - The rail's **Folder** group names the folder and what agents do there.
-- The Overview opens on a card that says where agents write and what is saved.
+- The Overview has a card that says where agents write and what is saved. It sits under **Branches**.
 - Each writing turn in the chat ends in a card with **Review changes** and **Restore turn**.
 - Versions are kept until 30 days after the session ends. The cap per folder is 1 GB or the folder's own size, whichever is larger.
 - The page shows how much they use and what was left out: files over 15 MB, links that leave the folder, dependencies and build output.
 - Storage shows their size under **Saved versions**.
 - A session that still works in an older session folder keeps its list of file versions under the same page.
 
-Finished rows never repeat a needs-you count. An open question stays on its Needs you card, with See result linking to the finished work.
+Finished rows never repeat a needs-you count. An open question stays on its Needs you card until you answer it.
 
 ## Under the hood
 
@@ -267,7 +269,11 @@ This part is for contributors and agents who change the feature.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
 - Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause. `liveOwnStateOf` marks a row in the part's own state, and `LiveStateWord` then draws nothing. Child rows of a working row follow it. `useWhereOf` returns no branch under two branches. `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
-- `useActionCardActions` offers See result for an open question whose run or agent finished.
+- Status block: `overviewGlanceOf` words the line, `nextLeadTitleOf` names the step it reads for **Next:**, and `OverviewStatusBlock` draws it with the summary line.
+- Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the last card before **Done**.
+- Notices: `overviewNoticesOf` counts them for `overviewCardsOf`. A closed notice is not counted.
+- `useOverviewNotices` holds the dismissals, keyed by `mismatchDismissalKeyOf` so a new mismatch shows again, and the stranded-branch check. A dismissal expires when its observation clears (`liveDismissalsOf`). Unchanged polls stay dismissed. `CentralColumn` draws the notices in one place above the cards.
+- `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.
 - Needs you card: `waitingGroupsOf` takes the live groups `liveSectionIdOf` calls waiting, and `NeedsYouCard` draws them above the Decide and Fix rows. `liveSectionsOf` keeps only Running and Stopped.
 - Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
 - Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.

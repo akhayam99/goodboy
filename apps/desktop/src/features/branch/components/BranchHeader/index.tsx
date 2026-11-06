@@ -10,7 +10,7 @@ import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
 import type { BranchControls } from '../../hooks/useBranchControls';
-import type { BranchPrimary } from '../../branchPrimary';
+import { branchShownIdsOf, type BranchPrimary } from '../../branchPrimary';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
 import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
@@ -33,10 +33,10 @@ type Props = {
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
   readonly isPrimaryYielding: boolean;
+  readonly isStepHidden?: boolean;
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
-  readonly pageAction?: ReactNode;
   readonly line?: ReactNode;
   readonly onMutated: () => void;
 };
@@ -55,14 +55,15 @@ export const BranchHeader = ({
   controls,
   isPushBusy,
   isPrimaryYielding,
+  isStepHidden = false,
   tab,
   isActive = true,
   canEditTitle,
-  pageAction = null,
   line = null,
   onMutated,
 }: Props) => {
-  const { primary, secondary } = controls;
+  const primary = isStepHidden ? null : controls.primary;
+  const secondary = isStepHidden ? null : controls.secondary;
   const titleEdit = usePullRequestTitleEdit({
     sessionId,
     pr,
@@ -111,9 +112,17 @@ export const BranchHeader = ({
     );
   };
 
-  const primaryId = primary?.actionId ?? null;
-  const shownIds = useMemo(() => (primaryId === null ? [] : [primaryId]), [primaryId]);
-  const primaryVariant = isPrimaryYielding ? 'secondary' : 'primary';
+  const { step } = controls;
+  const shownIds = useMemo(
+    () => branchShownIdsOf({ primary, secondary, step }),
+    [primary, secondary, step],
+  );
+  const isYielding =
+    isPrimaryYielding ||
+    controls.diffControls.confirming !== null ||
+    controls.pullRequestControls.confirming !== null ||
+    controls.sessionControls.confirming !== null;
+  const primaryVariant = isYielding ? 'secondary' : 'primary';
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
       <HeaderBand
@@ -133,7 +142,6 @@ export const BranchHeader = ({
         }
         actions={
           <div className="flex min-w-0 items-center gap-2">
-            {pageAction}
             <HeaderActions
               secondary={
                 secondary === null
@@ -150,6 +158,8 @@ export const BranchHeader = ({
                   diffControls={controls.diffControls}
                   pullRequestControls={controls.pullRequestControls}
                   shownIds={shownIds}
+                  isRebaseStopOpen={controls.hasOpenRebaseStop}
+                  onPush={controls.pushFromMenu}
                 />
               }
             />
@@ -223,6 +233,8 @@ export const BranchHeader = ({
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.pullRequestControls} />
+      <ActionStatusLine controls={controls.sessionControls} showReasons={false} />
+      <ActionConfirmPanel controls={controls.sessionControls} />
     </div>
   );
 };

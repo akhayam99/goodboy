@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
@@ -26,6 +27,8 @@ type Props = {
   readonly click?: C08Click;
   readonly isFolded?: boolean;
   readonly extra?: () => void;
+  readonly isToolOpen?: boolean;
+  readonly theme?: 'light' | 'dark';
 };
 
 const noop = () => undefined;
@@ -73,6 +76,8 @@ export const C08RunScene = ({
   click = 'none',
   isFolded = false,
   extra,
+  isToolOpen = false,
+  theme,
 }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C08_SESSION_ID);
@@ -81,15 +86,18 @@ export const C08RunScene = ({
   useSceneRailFold({ isFolded });
 
   useEffect(() => {
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seedC08({ state, selection });
     extra?.();
-    if (selection !== 'list') {
+    if (selection !== 'list' || isToolOpen) {
       useAppStore
         .getState()
         .openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
     }
     setIsSeeded(true);
-  }, [state, selection, extra]);
+  }, [state, selection, extra, isToolOpen, theme]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {

@@ -337,7 +337,7 @@ const HELP: PaletteEntry = {
 };
 
 const PAGE: PaletteEntry = {
-  key: 'lens:agents',
+  key: 'lens:spawned',
   label: 'Open Agents',
   kind: 'page',
   group: 'action',

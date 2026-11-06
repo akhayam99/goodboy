@@ -29,7 +29,7 @@ import {
   fixRunTranscript,
   sessionPlace,
 } from './place';
-import { EMPTY_FOCUS, HISTORY_LIMIT } from './types';
+import { EMPTY_FOCUS, HISTORY_LIMIT, type Location } from './types';
 import { captureWindowLocation } from './captureWindowLocation';
 import { parseLocation } from '../../../features/workspace/windowLayout';
 
@@ -184,22 +184,20 @@ describe('restoring a saved window location', () => {
     expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ plans: 320 });
   });
 
-  it.each(['orchestrated', 'agents', 'auto'] as const)(
-    'opens Runs for a saved %s address',
-    async (lens) => {
-      const store = makeStore();
-      await store.getState().restoreLocation({
-        location: {
-          workspaceId: WS,
-          place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
-          studio: null,
-          focus: EMPTY_FOCUS,
-        },
-      });
+  it.each(['orchestrated', 'agents', 'auto'])('opens Runs for a saved %s address', async (lens) => {
+    const store = makeStore();
+    const location: Location = JSON.parse(
+      JSON.stringify({
+        workspaceId: WS,
+        place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
+        studio: null,
+        focus: EMPTY_FOCUS,
+      }),
+    );
+    await store.getState().restoreLocation({ location });
 
-      expect(store.getState().activeLens[S1]).toBe('workflows');
-    },
-  );
+    expect(store.getState().activeLens[S1]).toBe('workflows');
+  });
 
   it('falls back to the board when the saved session is gone', async () => {
     const store = makeStore();
@@ -334,7 +332,7 @@ describe('navigation slice', () => {
 
   it('truncates the forward entries on a new push', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'plans' }) });
     store.getState().back();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'files' }) });
@@ -373,7 +371,7 @@ describe('navigation slice', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     store.getState().amendFocus({ patch: { scroll: { queue: 120 } } });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     const stack = store.getState().navigation[WS];
     expect(stack?.entries[stack.index]?.focus.scroll).toEqual({});
 
@@ -385,7 +383,7 @@ describe('navigation slice', () => {
   it('replaces the top voice in replace mode', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().navigate({
       to: sessionPlace({ sessionId: S1, lens: 'plans' }),
       mode: 'replace',
@@ -558,7 +556,7 @@ describe('navigation slice', () => {
     const store = makeStore();
     withAttempt(store);
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     expect(store.getState().drawer).toBeNull();
 
     store.getState().back();
@@ -580,7 +578,7 @@ describe('navigation slice', () => {
 
   it('goes up with a back when the previous voice is the parent', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().amendFocus({ patch: { scroll: { list: 300 } } });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     store.getState().up();
@@ -720,7 +718,7 @@ describe('navigation slice', () => {
   it('closes the studio on a forward move and finds it again on back', () => {
     const store = makeStore();
     store.getState().openStudio({ studio: { kind: 'notifications' } });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     expect(store.getState().appStudio).toBeNull();
 
     store.getState().back();
@@ -728,16 +726,13 @@ describe('navigation slice', () => {
     expect(store.getState().currentSessionId).toBeNull();
   });
 
-  it.each(['orchestrated', 'agents', 'auto'] as const)(
-    'opens Runs for the old %s address and keeps one history key',
-    (lens) => {
-      const store = makeStore();
-      store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens }) });
+  it('opens Runs for the old orchestrated address and keeps one history key', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'orchestrated' }) });
 
-      expect(store.getState().activeLens[S1]).toBe('workflows');
-      expect(keyOf(store)).toBe(`s/${S1}/workflows`);
-    },
-  );
+    expect(store.getState().activeLens[S1]).toBe('workflows');
+    expect(keyOf(store)).toBe(`s/${S1}/workflows`);
+  });
 
   it('goes up from a run to the Runs list, not back into the run', () => {
     const store = makeStore();
@@ -760,7 +755,7 @@ describe('navigation slice', () => {
 
   it('goes up out of an app studio before it leaves the page', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().openStudio({ studio: { kind: 'changelog' } });
     store.getState().up();
     expect(store.getState().appStudio).toBeNull();
@@ -800,7 +795,7 @@ describe('navigation slice', () => {
   it('closes Ask when you leave its session, and Back brings it back', () => {
     const store = makeStore();
     const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().openDrawer(ask);
 
     store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
@@ -825,7 +820,7 @@ describe('navigation slice', () => {
 
   it('closes the drawer when an agent opens and restores it on back', () => {
     const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().openDrawer(DRAFTS);
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     expect(store.getState().drawer).toBeNull();
@@ -1043,15 +1038,15 @@ describe('Branch page', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('sends Up to the crumb on the left, one level at a time', () => {
+  it('sends Up to the crumb on the left, and an open thread is not a level of its own', () => {
     const store = makeStore();
     store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store
-      .getState()
-      .navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT, threadId: 'thread-9' }) });
-    store.getState().up();
-    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: null });
+    store.getState().navigate({
+      to: branchPlace({ sessionId: S1, mountPath: MOUNT, threadId: 'thread-9' }),
+      drawer: { kind: 'conversation', sessionId: S1, payload: { threadId: 'thread-9' } },
+    });
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: 'thread-9' });
     store.getState().up();
     expect(store.getState().activeLens[S1]).toBeNull();
   });

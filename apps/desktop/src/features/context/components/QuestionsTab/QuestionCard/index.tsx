@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
 import { cn } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 
-import type { AgentKind } from '../../../../session/agent-kind';
 import type { QuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
 import { AnswerSubmitButton } from '../AnswerSubmitButton';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
@@ -17,6 +16,7 @@ import { QuestionCardHead } from './QuestionCardHead';
 import { inputModeOf } from './inputModeOf';
 import type { QuestionPagerModel } from './QuestionPager';
 import { questionDoneLabel } from './questionDoneLabel';
+import { questionMenuOf } from './questionMenuOf';
 import { RESOLVED_BY_AGENT } from './resolvedByAgent';
 
 export type QuestionCardState = 'open' | 'staged' | 'answered' | 'dismissed';
@@ -26,7 +26,6 @@ type Props = {
   readonly variant: 'full' | 'compact';
   readonly state: QuestionCardState;
   readonly askerName: string | null;
-  readonly askerKind: AgentKind | null;
   readonly age: string;
   readonly draft: QuestionDraft | undefined;
   readonly pager: QuestionPagerModel | null;
@@ -50,7 +49,6 @@ export const QuestionCard = ({
   variant,
   state,
   askerName,
-  askerKind,
   age,
   draft,
   pager,
@@ -98,7 +96,21 @@ export const QuestionCard = ({
     state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
 
   const dismiss = isOpen && !question.isBlocking && !isWaiting ? onDismiss : null;
+  const menuEntries =
+    isCompact || !isOpen || isWaiting
+      ? []
+      : questionMenuOf({
+          delegateState: delegate.delegateState,
+          onChooseDelegate: delegate.onChooseDelegate,
+          onSendAsMessage: isHandedOff ? null : onSendAsMessage,
+          isSendReady: canAnswer,
+          onDismiss: dismiss,
+        });
+  const hasMenu = menuEntries.length > 1;
   const isDelegateInFooter = isCompact && !isHandedOff;
+  const isDelegateOnlyInMenu =
+    !hasMenu && menuEntries.some((entry) => entry.kind === 'item' && entry.key === 'delegate');
+  const isDelegateRowShown = isCompact || isHandedOff || isDelegateOnlyInMenu;
   const delegateRow = (
     <DelegateAnswerRow
       state={delegate.delegateState}
@@ -151,6 +163,9 @@ export const QuestionCard = ({
       return;
     }
     event.preventDefault();
+    if (event.repeat) {
+      return;
+    }
     submit();
   };
 
@@ -173,11 +188,10 @@ export const QuestionCard = ({
         parts={parts}
         isCompact={isCompact}
         isBlocking={isBlockingNow}
-        askerName={askerName}
-        askerKind={askerKind}
         age={age}
         pager={pager}
-        onDismiss={dismiss}
+        menu={hasMenu ? menuEntries : null}
+        onDismiss={hasMenu ? null : dismiss}
       />
       {isLive && isWaiting && (
         <DelegateWaitingRow
@@ -206,7 +220,7 @@ export const QuestionCard = ({
       )}
       {isOpen && !isWaiting && (
         <>
-          {isDelegateInFooter ? null : delegateRow}
+          {isDelegateInFooter || !isDelegateRowShown ? null : delegateRow}
           <AnswerSubmitButton
             lead={isDelegateInFooter ? delegateRow : undefined}
             inputMode={inputMode}
@@ -215,7 +229,7 @@ export const QuestionCard = ({
             isHandOff={isHandedOff}
             onAnswer={submit}
             onSkip={onSkip}
-            onSendAsMessage={onSendAsMessage}
+            onSendAsMessage={hasMenu ? null : onSendAsMessage}
           />
         </>
       )}

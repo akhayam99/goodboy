@@ -11,7 +11,7 @@ const surface: {
   readonly activeLens: Record<SessionId, LensKind | null>;
   readonly selectedAgentId: Record<SessionId, AgentId | null>;
 } = {
-  activeLens: { [SESSION_ID]: 'agents' },
+  activeLens: { [SESSION_ID]: 'workflows' },
   selectedAgentId: { [SESSION_ID]: AGENT_ID },
 };
 
@@ -36,7 +36,7 @@ describe('workSurfaceFocus', () => {
     });
 
     expect(next.selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
-    expect(next.activeLens[SESSION_ID]).toBe('agents');
+    expect(next.activeLens[SESSION_ID]).toBe('workflows');
   });
 
   it('seeds the lens and selects the first agent on creation', () => {

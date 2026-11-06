@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { applyAndResolveLabel } from './commentProjection';
+import { applyFixesLabel } from './commentProjection';
 import { fixRunReadyBody, fixRunReadyTitle } from './fixRunReadyCopy';
 
 describe('fix run ready copy', () => {
@@ -17,11 +17,11 @@ describe('fix run ready copy', () => {
         canResolve: true,
       }),
     ).toBe(
-      'Apply accepts the fix made in 90b1d57. The next push sends it and replies to and resolves the 2 threads on GitHub.',
+      'Apply accepts the fix made in 90b1d57. The next push sends it and replies to and resolves the 2 comments on GitHub.',
     );
   });
 
-  it('does not promise a resolve where the host cannot, and skips threads for notes', () => {
+  it('does not promise a resolve where the host cannot, and skips comments for notes', () => {
     expect(
       fixRunReadyBody({
         ready: { threadIds: ['a'], commits: ['90b1d57', 'a1b2c3d'], hostThreadCount: 1 },
@@ -29,7 +29,7 @@ describe('fix run ready copy', () => {
         canResolve: false,
       }),
     ).toBe(
-      'Apply accepts the fixes made in 2 commits. The next push sends it and replies to the thread on Bitbucket.',
+      'Apply accepts the fixes made in 2 commits. The next push sends it and replies to the comment on Bitbucket.',
     );
     expect(
       fixRunReadyBody({
@@ -40,7 +40,8 @@ describe('fix run ready copy', () => {
     ).toBe('Apply accepts the fix made in 90b1d57. The next push sends it.');
   });
 
-  it('labels the button with the count', () => {
-    expect(applyAndResolveLabel({ count: 4 })).toBe('Apply and resolve 4');
+  it('labels the Apply step with the count', () => {
+    expect(applyFixesLabel({ count: 4 })).toBe('Apply 4 fixes');
+    expect(applyFixesLabel({ count: 1 })).toBe('Apply fix');
   });
 });

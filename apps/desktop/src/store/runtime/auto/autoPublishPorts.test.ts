@@ -189,7 +189,7 @@ describe('the push port of Auto', () => {
 
     expect(outcome).toEqual({
       kind: 'stale',
-      message: 'The online copy changed. Check again before force pushing.',
+      message: 'Origin changed. Check again before force pushing.',
     });
     expect(state.refreshSessionPr).not.toHaveBeenCalled();
   });

@@ -1,4 +1,4 @@
-import { Ellipsis } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import { AnchoredPopover, IconButton, Kbd, SelectableRow, useDropdown } from '@goodboy/ui';
 import { openGuideChapter } from '../../../settings/openGuideChapter';
 import { HISTORY_KEYS } from './useHistoryKeys/historyKeys';
@@ -13,7 +13,7 @@ export const HistoryKeysHint = () => {
       className="flex flex-col gap-3 p-3"
       trigger={
         <IconButton
-          icon={Ellipsis}
+          icon={CircleHelp}
           label="Commits help"
           tooltip="How to edit commits"
           aria-haspopup="dialog"

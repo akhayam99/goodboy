@@ -34,6 +34,7 @@ export const CommentThread = ({ comments, isComposing, label }: Props) => {
           comment={comment}
           isQuoteShown={quoteTextOf({ comment }) !== quoteTextOf({ comment: comments[index - 1] })}
           revision={api.revision}
+          isPlanRan={api.isPlanRan}
           onEdit={api.edit}
           onRemove={api.remove}
         />
@@ -41,6 +42,7 @@ export const CommentThread = ({ comments, isComposing, label }: Props) => {
       {composing === null ? null : (
         <CommentComposer
           quote={composing.anchor.kind === 'quote' ? quoteOf({ anchor: composing.anchor }) : null}
+          seed={composing.body}
           onSubmit={api.add}
           onCancel={api.cancelComposing}
         />

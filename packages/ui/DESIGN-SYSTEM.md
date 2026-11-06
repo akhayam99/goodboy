@@ -775,8 +775,8 @@ accessible name.
 When any step of the run, at any depth, waits on an open question,
 `runOpenQuestion` picks the oldest one. The run row then takes the question
 node, says "Needs your answer in step 4.2" in the warning tone, and shows a
-visible Answer as a neutral secondary button. Answer calls `focusQuestion` and
-opens the questions lens on that exact question. Every Answer on the feed
+visible Answer as a neutral secondary button. Answer calls `openQuestion` and
+opens the questions page on that exact question. Every Answer on the feed
 (agent and run rows) is the same action.
 
 One waiting launch is marked once. The agent or run row keeps the amber

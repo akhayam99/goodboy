@@ -4,8 +4,6 @@ import type { Place, SessionTarget, SessionView } from './types';
 
 const LENS_ADDRESS: Record<LensKind, string> = {
   questions: 'questions',
-  agents: 'agents',
-  auto: 'auto',
   workflows: 'workflows',
   orchestrated: 'orchestrated',
   review: 'review',
@@ -55,6 +53,8 @@ const targetAddress = ({ target }: TargetParams): string => {
     }
     case 'thread':
       return `t/${target.threadId}`;
+    case 'question':
+      return `q/${target.questionId}`;
     default: {
       const unreachable: never = target;
       return unreachable;

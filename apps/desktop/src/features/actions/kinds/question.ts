@@ -2,6 +2,7 @@ import { PanelRight } from 'lucide-react';
 import type { Agent, OpenQuestionId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openAsker } from '../../session/openAsker';
+import { openQuestion } from '../../session/openQuestion';
 import type { ObjectKindDefinition, QuestionActionTarget } from '../types';
 
 export type QuestionFacts = {
@@ -30,10 +31,10 @@ export const QUESTION_KIND: ObjectKindDefinition<QuestionActionTarget, QuestionF
       group: 'open',
       when: () => true,
       run: ({ facts, env }) =>
-        env.getState().openDrawer({
-          kind: 'question',
+        openQuestion({
+          state: env.getState(),
           sessionId: facts.sessionId,
-          payload: { questionId: facts.questionId },
+          questionId: facts.questionId,
         }),
     },
     {

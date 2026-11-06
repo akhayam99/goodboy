@@ -24,7 +24,7 @@ const threadsPart = ({
   provider,
   canResolve,
 }: CountParams & Pick<BodyParams, 'provider' | 'canResolve'>): string => {
-  const threads = count === 1 ? 'the thread' : `the ${count} threads`;
+  const threads = count === 1 ? 'the comment' : `the ${count} comments`;
   return `replies to ${canResolve ? 'and resolves ' : ''}${threads} on ${provider}`;
 };
 

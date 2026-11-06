@@ -11,7 +11,6 @@ import { useGroupBy } from '../../../../../../store/slices/session-grouping/sele
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
-import { openSpawned } from '../../../../openSpawned';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import { branchGroupsOf, type BranchGroup } from '../../../../branchGroupsOf';
@@ -168,7 +167,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
         navigate({ to: runPlace({ sessionId, runId: run.open.runId }) });
         return;
       case 'auto':
-        openSpawned({ sessionId, target: { kind: 'agent', agentId: run.open.agentId } });
+        navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });
         return;
       case 'agent':
         navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });

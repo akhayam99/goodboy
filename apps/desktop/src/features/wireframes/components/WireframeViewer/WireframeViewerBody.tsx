@@ -6,7 +6,7 @@ import {
   type WireframeNode,
   type WireframeScreen,
 } from '@goodboy/core/artifacts';
-import { Button, cn, Eyebrow, Notice, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
+import { Button, cn, Notice, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';
 import { useFrameMessages } from '../../hooks/useFrameMessages';
@@ -280,9 +280,6 @@ export const WireframeViewerBody = ({
       {view === 'flow' ? (
         <>
           <section aria-label="Flow" className="flex min-w-0 flex-col gap-2">
-            <h2>
-              <Eyebrow label="Flow" />
-            </h2>
             <WireframeFlowOverview
               document={document}
               index={index}

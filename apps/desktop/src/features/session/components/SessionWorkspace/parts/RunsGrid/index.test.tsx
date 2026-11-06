@@ -233,6 +233,26 @@ describe('RunsGrid', () => {
     expect(row.textContent).not.toContain('sonnet-5.5');
   });
 
+  it('opens an Auto row on its page and opens no tool beside it', async () => {
+    const agents = [aNowAgent({ key: 'auto', name: 'Add the retry banner', status: 'running' })];
+    useAppStore.setState({
+      sessionPhaseRuns: { [NOW_SESSION]: agents },
+      currentSessionId: NOW_SESSION,
+      drawer: null,
+    });
+    const runs = runsOf({ agents }).map((run) =>
+      run.open.kind === 'agent' ? { ...run, open: { ...run.open, kind: 'auto' as const } } : run,
+    );
+
+    renderGrid({ runs });
+    fireEvent.click(screen.getByRole('button', { name: /^Open Add the retry banner/ }));
+
+    await waitFor(() =>
+      expect(useAppStore.getState().selectedAgentId[NOW_SESSION]).toBe(agents[0]?.id),
+    );
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
+
   it('unfolds Earlier and scrolls Back to a row the page was left from below the cap', async () => {
     const agents = Array.from({ length: VISIBLE_FINISHED_COUNT + 2 }, (_, index) =>
       aNowAgent({ key: `done-${index}`, name: `Done ${index}`, status: 'completed' }),

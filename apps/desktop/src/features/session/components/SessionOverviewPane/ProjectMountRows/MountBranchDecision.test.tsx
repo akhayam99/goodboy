@@ -6,7 +6,10 @@ import type { IsoDateTime, MountBranchObservation, MountId, SessionId } from '@g
 
 const h = vi.hoisted(() => ({
   invoke: vi.fn(async (): Promise<string | null> => null),
-  store: { resolveMountBranchMismatch: vi.fn(async () => undefined) },
+  store: {
+    resolveMountBranchMismatch: vi.fn(async (_params?: unknown) => undefined),
+    reportError: vi.fn(async (_params?: unknown) => undefined),
+  },
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -38,6 +41,8 @@ type RenderParams = {
   readonly holder?: MountBranchHolder | null;
 };
 
+const onDismiss = vi.fn();
+
 const renderDecision = ({ next = {}, holder = null }: RenderParams = {}) =>
   render(
     <MountBranchDecision
@@ -48,6 +53,7 @@ const renderDecision = ({ next = {}, holder = null }: RenderParams = {}) =>
       worktreePath="/worktrees/part-one"
       observation={{ ...observation, ...next }}
       holder={holder}
+      onDismiss={onDismiss}
     />,
   );
 
@@ -206,13 +212,43 @@ describe('MountBranchDecision', () => {
     );
   });
 
-  it('dismisses itself without resolving anything', () => {
+  it('hands the dismissal to its parent without resolving anything', () => {
     renderDecision();
 
     fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
 
-    expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(h.store.resolveMountBranchMismatch).not.toHaveBeenCalled();
+  });
+
+  it('hands the dismissal to its parent only after the branch is settled', async () => {
+    renderDecision();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Use this branch here' }).hasAttribute('disabled'),
+      ).toBe(false),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use this branch here' }));
+
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledTimes(1));
+    expect(h.store.resolveMountBranchMismatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps itself on screen and does not dismiss when settling the branch fails', async () => {
+    h.store.resolveMountBranchMismatch.mockRejectedValueOnce(new Error('git said no'));
+    renderDecision();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Use this branch here' }).hasAttribute('disabled'),
+      ).toBe(false),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use this branch here' }));
+
+    await waitFor(() => expect(h.store.reportError).toHaveBeenCalledTimes(1));
+    expect(onDismiss).not.toHaveBeenCalled();
+    screen.getByRole('button', { name: 'Use this branch here' });
   });
 
   it('drops adoption when another repository worktree holds the branch', async () => {

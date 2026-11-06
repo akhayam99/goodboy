@@ -164,7 +164,6 @@ describe('the session Ask scene', () => {
     expect(useOpenQuestions.getState().drafts[questionId ?? '']?.customAnswer).toBe(
       'Stop after 5 attempts, then move the message to the dead-letter queue.',
     );
-    expect(useOpenQuestions.getState().focusedQuestionId).toBeNull();
     expect(
       await screen.findByDisplayValue(
         'Stop after 5 attempts, then move the message to the dead-letter queue.',

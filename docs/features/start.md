@@ -144,23 +144,23 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 **Tools beside the page**
 
-The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put on every page of the session.
+The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put on every page of the session, and an open tool stays open when you move to another page.
 
 | Tool         | Key |
 | ------------ | --- |
 | **Explore**  | ⌘⌥X |
 | **Context**  | ⌘⌥C |
 | **Ask**      | ⌘L  |
-| **Agents**   | ⌘⌥L |
+| **Agents**   | ⌘⌥A |
 | **Scripts**  | ⌘⌥S |
 | **Terminal** | ⌘⌥T |
 
 - Hover one to read its name and key. The active tool shows its name below its icon.
 - **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.
-- The tree follows the run or Auto you have open, or shows every launch of the session when nothing is open.
+- The tree follows the run or Auto you have open, or shows only what is live when nothing is open. **All runs** goes to the Runs page.
 - Click an agent, or press Enter on it, to read it in the page beside the tree. The tree stays open with that agent selected.
 - **j** and **k** with focus on a row open the next and the previous agent.
-- A session without agents says "No agents in this session yet".
+- A session with nothing live says "Nothing live right now".
 - On a narrow window the panel lies over the page, and Esc closes it.
 
 **Runs**

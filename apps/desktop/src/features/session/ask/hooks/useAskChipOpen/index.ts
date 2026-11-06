@@ -54,8 +54,7 @@ export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
           });
           return;
         case 'question':
-          focusQuestionAnswer({ questionId: target.questionId });
-          navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
+          focusQuestionAnswer({ sessionId, questionId: target.questionId });
           return;
         case 'comment':
           if (noteIdOfThread({ threadId: target.threadId }) !== null) {

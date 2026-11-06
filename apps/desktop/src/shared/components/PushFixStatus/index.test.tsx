@@ -354,6 +354,6 @@ describe('the push fix across a leave and return, through the real store', () =>
     );
 
     expect(screen.getByRole('alert').textContent).toBe('The provider is offline.');
-    screen.getByRole('button', { name: 'Let an agent fix the push' });
+    screen.getByRole('button', { name: 'Fix with an agent' });
   });
 });

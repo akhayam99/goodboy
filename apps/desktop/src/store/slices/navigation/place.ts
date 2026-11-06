@@ -1,4 +1,4 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import type { DiffFocus, LensKind } from '../session-view/types';
 import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 import type { OpenDrawer } from '../drawer/state';
@@ -52,6 +52,14 @@ export const branchPlace = ({
     lens: 'branch',
     target: { kind: 'branch', mountPath, tab, threadId, focus },
   });
+
+type QuestionPlaceParams = {
+  readonly sessionId: SessionId;
+  readonly questionId: OpenQuestionId;
+};
+
+export const questionPlace = ({ sessionId, questionId }: QuestionPlaceParams): Place =>
+  sessionPlace({ sessionId, lens: 'questions', target: { kind: 'question', questionId } });
 
 export const agentPlace = ({ sessionId, agentId }: AgentPlaceParams): PlaceRequest => ({
   at: 'agent',

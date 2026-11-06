@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react';
-import { Button, Notice, EmptyState, PageColumn, ScrollFade, SkeletonRow } from '@goodboy/ui';
+import { Button, Notice, EmptyState, ScrollFade, SkeletonRow } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import { HistoryActions } from './HistoryActions';
 import { HistoryDragGhost } from './HistoryDragGhost';
 import { HistoryKeysHint } from './HistoryKeysHint';
+import { HistoryNoMount } from './HistoryNoMount';
 import { HistoryNowColumn } from './HistoryNowColumn';
+import { HistoryRebaseHead } from './HistoryRebaseHead';
 import { HistoryStatusSlot } from './HistoryStatusSlot';
 import { HistoryVersionsLink } from './HistoryVersionsLink';
 import { buildHistoryRowRenderer } from './buildHistoryRowRenderer';
@@ -126,17 +128,7 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
   });
 
   if (mountId === null || mount === null || flow === null) {
-    return (
-      <PageColumn>
-        <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.history}
-          icon={CONCEPT_ICONS.history}
-          title="This branch isn't in the session"
-          description="Pick a branch from the trail to see its commits."
-        />
-      </PageColumn>
-    );
+    return <HistoryNoMount />;
   }
 
   const baseBranch = chosenBase ?? graph?.baseRef.replace(/^origin[/]/, '') ?? 'its base branch';
@@ -236,9 +228,6 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
           <div ref={stage.ref} className="grid grid-cols-1 items-start">
             <HistoryNowColumn
               sessionId={sessionId}
-              repoPath={mount.repoRoot}
-              ownBranch={mount.branch}
-              onRebase={flow.rebaseOnto}
               view={view}
               isDone={isDone}
               rows={rows}
@@ -248,7 +237,6 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
               graph={graph}
               baseSha={draft?.baseSha ?? ''}
               baseBranch={baseBranch}
-              isInteractive={isInteractive}
               dropTarget={drag.drag?.target ?? null}
               nowMs={nowMs}
               renderRow={renderRow}
@@ -272,6 +260,17 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
     <>
       <TabActions>
         {actions}
+        {isDone || isReadOnly ? null : (
+          <HistoryRebaseHead
+            sessionId={sessionId}
+            repoPath={mount.repoRoot}
+            ownBranch={mount.branch}
+            baseBranch={baseBranch}
+            behind={graph?.behind ?? 0}
+            isInteractive={isInteractive}
+            onRebase={flow.rebaseOnto}
+          />
+        )}
         {isInteractive && !isDone ? <HistoryKeysHint /> : null}
       </TabActions>
       <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">

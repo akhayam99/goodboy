@@ -27,6 +27,7 @@ export type SendArtifactCommentsParams = Readonly<{
 }>;
 
 export type SendArtifactCommentsResult =
+  | Readonly<{ kind: 'sentToAgent'; agentName: string }>
   | Readonly<{ kind: 'revised'; revision: number; addressed: number; open: number }>
   | Readonly<{ kind: 'unchanged' }>
   | Readonly<{ kind: 'empty' }>

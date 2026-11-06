@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -31,7 +31,9 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as never[],
-  useAppStore: (selector: (s: unknown) => unknown) => selector(store.state),
+  useAppStore: Object.assign((selector: (s: unknown) => unknown) => selector(store.state), {
+    getState: () => store.state,
+  }),
   useSessionOpenQuestions: () => store.open,
   useSessionAnsweredQuestions: () => store.answered,
 }));
@@ -45,6 +47,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ),
 }));
 
+import { questionPlace } from '../../../../../store/slices/navigation/place';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { QuestionDrawer } from '../../QuestionDrawer';
@@ -151,7 +154,7 @@ type DrawerParams = SeedParams & {
 };
 
 const setupDrawer = ({ questionId, ...params }: DrawerParams) => {
-  seed(params);
+  seed({ openedId: questionId, ...params });
   return render(
     <QuestionDrawer sessionId={SESSION_ID} questionId={questionId} from={null} onClose={vi.fn()} />,
   );
@@ -175,7 +178,6 @@ beforeEach(() => {
     drafts: {},
     staged: [],
     pendingUndo: null,
-    focusedQuestionId: null,
   });
 });
 
@@ -250,13 +252,21 @@ describe('QuestionsPane', () => {
     expect(within(quiet).queryByRole('img', { name: 'Blocking' })).toBeNull();
   });
 
-  it('opens the question in the drawer from its row, naming the question', () => {
+  it('opens the question from its row on its address, one step after the list', () => {
     setup();
     fireEvent.click(row('Keep the old dispatch path?'));
-    expect(actions.openDrawer).toHaveBeenCalledWith({
-      kind: 'question',
-      sessionId: SESSION_ID,
-      payload: { questionId: Q3.id },
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q3.id }),
+      mode: 'push',
+    });
+  });
+
+  it('switches to another question from its row in place, so Close still leaves the list', () => {
+    setup({ openedId: Q2.id });
+    fireEvent.click(row('Keep the old dispatch path?'));
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q3.id }),
+      mode: 'replace',
     });
   });
 
@@ -264,17 +274,6 @@ describe('QuestionsPane', () => {
     setup({ openedId: Q2.id });
     expect(row('Which events should be retried?').getAttribute('aria-current')).toBe('true');
     expect(row('Keep the old dispatch path?').getAttribute('aria-current')).toBeNull();
-  });
-
-  it('opens the question another surface asked to focus in the drawer', () => {
-    useOpenQuestions.setState({ focusedQuestionId: Q3.id });
-    setup();
-    expect(actions.openDrawer).toHaveBeenCalledWith({
-      kind: 'question',
-      sessionId: SESSION_ID,
-      payload: { questionId: Q3.id },
-    });
-    expect(useOpenQuestions.getState().focusedQuestionId).toBeNull();
   });
 
   it('keeps a question an agent is answering under Needs you, saying so in gray', () => {
@@ -294,13 +293,42 @@ describe('QuestionsPane', () => {
 });
 
 describe('QuestionDrawer', () => {
-  it('shows the question card, with the asker in the card and the question as the title', () => {
+  it('names the asker once, in the head, and the card carries the question', () => {
     setupDrawer({ questionId: Q1.id });
     const card = screen.getByRole('article');
-    expect(within(card).getAllByText('Planner').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Planner')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Open the agent: Planner' }).textContent).toBe(
+      'Planner',
+    );
+    expect(within(card).queryByText('Planner')).toBeNull();
     expect(screen.getAllByText('Which queue should retries run on?').length).toBeGreaterThanOrEqual(
       1,
     );
+  });
+
+  it('starts with the Recommended answer picked, so Enter sends it', () => {
+    const recommended = question('q-rec', 'Which queue should retries run on?', 'planner', {
+      suggestedAnswers: ['Retry queue', 'Main queue'],
+      recommendedAnswer: 'Main queue',
+    });
+    setupDrawer({ questionId: recommended.id, open: [recommended, Q2] });
+
+    expect(screen.getByRole('radio', { name: 'Main queue' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(screen.getByRole('article'), { key: 'Enter' });
+
+    expect(useOpenQuestions.getState().staged).toEqual([recommended.id]);
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q2.id }),
+      mode: 'replace',
+    });
+  });
+
+  it('leaves a question with no Recommended answer unpicked', () => {
+    setupDrawer({ questionId: Q1.id });
+
+    expect(screen.getByRole('button', { name: 'Answer' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('stages an answer and moves the drawer to the next waiting question', () => {
@@ -309,11 +337,30 @@ describe('QuestionDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
     expect(useOpenQuestions.getState().staged).toEqual([Q1.id]);
     expect(actions.answerOpenQuestions).not.toHaveBeenCalled();
-    expect(actions.openDrawer).toHaveBeenCalledWith({
-      kind: 'question',
-      sessionId: SESSION_ID,
-      payload: { questionId: Q2.id },
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: questionPlace({ sessionId: SESSION_ID, questionId: Q2.id }),
+      mode: 'replace',
     });
+  });
+
+  it('does not pull the user back when Send as message finishes after the drawer is gone', async () => {
+    let finish: (isSent: boolean) => void = () => undefined;
+    setupDrawer({ questionId: Q1.id });
+    store.state = {
+      ...store.state,
+      sendQuestionAsMessage: () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    };
+    fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Send as message' }));
+    store.state = { ...store.state, drawer: null };
+    await act(async () => {
+      finish(true);
+    });
+    expect(actions.navigate).not.toHaveBeenCalled();
   });
 
   it('keeps Undo on a staged answer when its question is opened again', () => {
@@ -350,7 +397,8 @@ describe('QuestionDrawer', () => {
 
   it('dismisses a question and offers Undo in the drawer', async () => {
     const view = setupDrawer({ questionId: Q3.id });
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Dismiss question' }));
     await waitFor(() => expect(actions.dismissOpenQuestion).toHaveBeenCalledWith(SESSION_ID, Q3));
     view.unmount();
     setupDrawer({ questionId: Q3.id, open: [Q1, Q2] });

@@ -13,6 +13,26 @@ export const PROSE_ORDER_BASE: Readonly<Record<ProseSection, number>> = {
 const anchorOrder = ({ anchor }: { readonly anchor: ArtifactCommentAnchor }): number =>
   anchor.kind === 'part' ? PARTS_ORDER_BASE + anchor.index : anchor.order;
 
+type SameAnchorParams = Readonly<{
+  left: ArtifactCommentAnchor;
+  right: ArtifactCommentAnchor;
+}>;
+
+export const isSameAnchor = ({ left, right }: SameAnchorParams): boolean => {
+  if (left.kind === 'part') {
+    return right.kind === 'part' && left.index === right.index;
+  }
+  if (left.kind === 'block') {
+    return right.kind === 'block' && left.order === right.order && left.text === right.text;
+  }
+  return (
+    right.kind === 'quote' &&
+    left.order === right.order &&
+    left.text === right.text &&
+    left.blockText === right.blockText
+  );
+};
+
 export const sortByAnchor = ({
   comments,
 }: {

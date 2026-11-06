@@ -14,7 +14,7 @@ export type ConnectedLensTools = Readonly<Record<LensTool, boolean>>;
 const DESTINATIONS = [
   { lens: null, shortcut: 'lens.overview' },
   { lens: 'workflows', shortcut: 'lens.workflows' },
-  { lens: 'agents', shortcut: 'lens.agents' },
+  { pane: 'spawned', shortcut: 'session.spawned' },
   { lens: 'questions', shortcut: 'lens.questions' },
   { lens: 'plans', shortcut: 'lens.plans' },
   { lens: 'review', shortcut: 'lens.review' },
@@ -46,7 +46,7 @@ type DestinationParams = Params & {
 
 const isReachable = ({ destination, isBranchless, connectedTools }: DestinationParams): boolean => {
   if (destination.pane !== undefined) {
-    return destination.pane === 'explore' || !isBranchless;
+    return destination.pane !== 'scripts' || !isBranchless;
   }
   const lens = destination.lens ?? null;
   if (lens === null) {

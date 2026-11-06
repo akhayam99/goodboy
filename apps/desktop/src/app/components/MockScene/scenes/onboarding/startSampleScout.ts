@@ -166,7 +166,7 @@ export const startSampleScout = async ({
     providerOverride: 'anthropic',
     modelOverride: SCOUT_MODEL,
   };
-  seedShellChrome({ session, siblings: [], branches: {}, telemetryAt: at, lens: 'agents' });
+  seedShellChrome({ session, siblings: [], branches: {}, telemetryAt: at, lens: 'workflows' });
   useAppStore.setState({
     selectedAgentId: { [sessionId]: agentId },
     sessionPhaseRuns: { [sessionId]: [scout] },

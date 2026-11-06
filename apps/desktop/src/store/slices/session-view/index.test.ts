@@ -304,14 +304,14 @@ describe('store contract', () => {
       store.getState().setFocusedArtifactId(SESSION_ID, 'artifact-report' as ArtifactId);
       store.getState().setActiveLens(SESSION_ID, 'plans');
       expect(store.getState().focusedArtifactId[SESSION_ID]).toBe('artifact-report');
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
     });
 
     it('setActiveLens clears the selected agent (foreground reconciliation)', async () => {
       const store = useAppStore;
       store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
     });
 
@@ -326,7 +326,7 @@ describe('store contract', () => {
         sha: 'abc1234',
         path: 'src/a.ts',
       });
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
     });
 
@@ -335,13 +335,13 @@ describe('store contract', () => {
       store.getState().setFocusedGithubIssueNumber(SESSION_ID, 9);
       store.getState().setActiveLens(SESSION_ID, 'github_issue');
       expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBe(9);
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       expect(store.getState().focusedGithubIssueNumber[SESSION_ID]).toBeNull();
     });
 
     it('openDiffLens lands on the files lens with the commit focus still set', async () => {
       const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       store.getState().openDiffLens(SESSION_ID, { kind: 'commit', sha: 'abc1234', path: null });
       expect(store.getState().activeLens[SESSION_ID]).toBe('branch');
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({
@@ -401,7 +401,7 @@ describe('store contract', () => {
       async (provider, lens) => {
         const store = useAppStore;
         store.getState().openExternalTaskLens(SESSION_ID, buildExternalTask({ provider }));
-        store.getState().setActiveLens(SESSION_ID, 'agents');
+        store.getState().setActiveLens(SESSION_ID, 'workflows');
         expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
         store.getState().setActiveLens(SESSION_ID, lens);
         expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
@@ -411,7 +411,7 @@ describe('store contract', () => {
     it('openExternalTaskLens sends a sentry issue to the inbox scoped to its session', async () => {
       const store = useAppStore;
       store.setState({ sessions: [buildSession()] } as never);
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       const detail = vi.fn();
       const listener = (event: Event) => {
         detail(event instanceof CustomEvent ? event.detail : null);
@@ -432,7 +432,7 @@ describe('store contract', () => {
         recordKey: 'sentry:error:12345',
         sessionId: SESSION_ID,
       });
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('workflows');
       expect(store.getState().focusedExternalTask[SESSION_ID]).toBeNull();
     });
 
@@ -451,7 +451,7 @@ describe('store contract', () => {
 
     it('openMountDiff selects the mount and leaves the focus null so the lens lands on the branch default', async () => {
       const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       store.getState().setDiffFocus(SESSION_ID, { kind: 'working', path: null });
       store.getState().openMountDiff(SESSION_ID, '/wt/api');
 
@@ -471,11 +471,11 @@ describe('store contract', () => {
 
     it('openMountTerminal opens a terminal drawer on the row worktree without leaving the lens', async () => {
       const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'workflows');
       store.getState().openMountTerminal(SESSION_ID, '/wt/api');
 
       const tabs = store.getState().terminalTabs[SESSION_ID] ?? [];
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      expect(store.getState().activeLens[SESSION_ID]).toBe('workflows');
       expect(tabs).toHaveLength(1);
       expect(tabs[0]?.cwd).toBe('/wt/api');
       expect(store.getState().drawer).toEqual({

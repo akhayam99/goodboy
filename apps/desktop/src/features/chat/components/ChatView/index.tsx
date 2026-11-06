@@ -607,7 +607,6 @@ export const ChatView = ({
       otherAgentQuestionCount > 0 ? (
         <OtherAgentQuestionButton
           sessionId={session.id}
-          agentId={otherAgentId}
           agentName={otherAgentName}
           questionId={otherAgentQuestion.id}
           count={otherAgentQuestionCount}

@@ -49,6 +49,7 @@ const NOTIFICATIONS: ReadonlyArray<Notification> = [
     title: 'Pull request opened',
     body: 'payments-api #318 Stop retried webhooks posting a second credit',
     severity: 'success',
+    action: { kind: 'open-place', sessionId: SESSION_ID, reason: 'pr-opened', mountId: null },
   }),
   notificationOf({
     id: 'mock-notification-budget',

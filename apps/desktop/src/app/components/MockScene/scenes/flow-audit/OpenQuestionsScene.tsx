@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { OpenQuestionId } from '@goodboy/types';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
-import { useAppStore } from '../../../../../store';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
+import { questionPlace, useAppStore } from '../../../../../store';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import {
   ANSWERED_QUESTIONS,
@@ -15,12 +16,16 @@ import { seedChatSurfaces } from './seeds';
 
 type Props = {
   readonly drawerQuestionId?: OpenQuestionId | null;
+  readonly theme?: 'light' | 'dark';
 };
 
-export const OpenQuestionsScene = ({ drawerQuestionId = null }: Props) => {
+export const OpenQuestionsScene = ({ drawerQuestionId = null, theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seedChatSurfaces();
     seedShellChrome({
       session: CHAT_SESSION,
@@ -41,14 +46,14 @@ export const OpenQuestionsScene = ({ drawerQuestionId = null }: Props) => {
       loadSessionDismissedQuestions: async () => undefined,
     });
     if (drawerQuestionId !== null) {
-      useAppStore.getState().openDrawer({
-        kind: 'question',
-        sessionId: CHAT_SESSION_ID,
-        payload: { questionId: drawerQuestionId },
+      const { navigate } = useAppStore.getInitialState();
+      useAppStore.setState({ navigate });
+      navigate({
+        to: questionPlace({ sessionId: CHAT_SESSION_ID, questionId: drawerQuestionId }),
       });
     }
     setIsReady(true);
-  }, [drawerQuestionId]);
+  }, [drawerQuestionId, theme]);
 
   if (!isReady) {
     return null;
