@@ -11,6 +11,7 @@ export type WorkspacesState = {
   readonly currentWorkspaceId: WorkspaceId | null;
   readonly switchingToWorkspaceId: WorkspaceId | null;
   readonly workspaceSwitchError: WorkspaceSwitchError | null;
+  readonly workspaceFactsError: string | null;
 };
 
 export const workspacesInitialState: WorkspacesState = {
@@ -19,4 +20,5 @@ export const workspacesInitialState: WorkspacesState = {
   currentWorkspaceId: null,
   switchingToWorkspaceId: null,
   workspaceSwitchError: null,
+  workspaceFactsError: null,
 };

@@ -30,6 +30,7 @@ const STAGE_INPUT_KEYS = [
   'sessionWorkflows',
   'agentKindOverride',
   'autoTreeViews',
+  'autoClockAt',
   'sessionSlackDrafts',
   'sessionDismissedNextSteps',
   'sessionArtifacts',

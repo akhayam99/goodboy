@@ -1724,7 +1724,7 @@
     "apps/desktop/src/store/slices/session-view/stageInfoOf.ts": 3,
     "apps/desktop/src/store/slices/session-view/storage.ts": 5,
     "apps/desktop/src/store/slices/session-view/toggleSessionGroup.ts": 1,
-    "apps/desktop/src/store/slices/session-view/types.ts": 12,
+    "apps/desktop/src/store/slices/session-view/types.ts": 11,
     "apps/desktop/src/store/slices/session-view/workSurface.ts": 11,
     "apps/desktop/src/store/slices/sessionDraft/closeSessionDraft.ts": 1,
     "apps/desktop/src/store/slices/sessionDraft/discardSessionDraft.ts": 1,

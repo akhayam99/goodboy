@@ -47,8 +47,6 @@ const scriptsClock = sceneClock({ anchor: '2026-09-16T11:24:00.000Z' });
 const reviewClock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 const artifactClock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
-const noop = () => undefined;
-
 const STUB_RUN_RESULT = { stdout: '', stderr: '', exitCode: 0 };
 
 const OVERRIDES = {
@@ -634,7 +632,6 @@ const seedScriptsScene = (): void => {
         [PAYMENTS_WORKTREE]: READY_SCAN,
       },
     },
-    scriptsLensScope: null,
     loadScripts: async () => undefined,
     saveScript: async () => undefined,
     deleteScript: async () => undefined,
@@ -643,7 +640,6 @@ const seedScriptsScene = (): void => {
     loadDiscoveredScripts: async () => undefined,
     refreshDiscoveredScripts: async () => undefined,
     runDiscoveredScript: async () => STUB_RUN_RESULT,
-    setScriptsLensScope: noop,
     navigate: () => undefined,
   });
 };

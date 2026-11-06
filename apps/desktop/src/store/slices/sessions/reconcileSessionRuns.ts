@@ -1,5 +1,10 @@
 import type { Agent, IsoDateTime, ProviderRunId, Session, TurnState } from '@goodboy/types';
-import { recordAgentStatus, stopGhostAgents, updateSessionState } from '@goodboy/db';
+import {
+  findUndecidedPermissionAsk,
+  recordAgentStatus,
+  stopGhostAgents,
+  updateSessionState,
+} from '@goodboy/db';
 import { cancelTurn, isTurnStreamActive } from '../../../features/chat/turn';
 import {
   listTurnCursorRunIds,
@@ -64,21 +69,48 @@ export const reconcileLoadedSessions = async ({
   );
 };
 
+export type ReconciledAgent = Readonly<{
+  agent: Agent;
+  waiting: TurnState | null;
+}>;
+
+type WaitingParams = Readonly<{
+  agent: Agent;
+  runId: ProviderRunId;
+}>;
+
+const waitingPermissionOf = async ({ agent, runId }: WaitingParams): Promise<TurnState | null> => {
+  const ask = await findUndecidedPermissionAsk({
+    db: tauriDatabase,
+    agentId: agent.id,
+    runId,
+  }).catch((error: unknown) => {
+    console.error('read the waiting permission failed', error);
+    return null;
+  });
+  return ask === null ? null : { kind: 'blocked', runId: ask.runId, blockedAt: ask.at };
+};
+
 export const reconcileLoadedAgent = async ({
   agent,
   liveRunIds,
-}: ReconcileLoadedAgentParams): Promise<Agent> => {
+}: ReconcileLoadedAgentParams): Promise<ReconciledAgent> => {
   if (agent.status !== 'running') {
-    return agent;
+    return { agent, waiting: null };
   }
   const isOwnedHere =
     agent.runId != null &&
     (isTurnStreamActive({ runId: agent.runId }) || reattachableTurn({ agent }) !== null);
   if (isOwnedHere) {
-    return agent;
+    return { agent, waiting: null };
   }
   if (agent.runId != null && liveRunIds.has(agent.runId)) {
     await cancelTurn(agent.runId).catch(() => undefined);
+  }
+  const waiting =
+    agent.runId == null ? null : await waitingPermissionOf({ agent, runId: agent.runId });
+  if (waiting !== null) {
+    return { agent, waiting };
   }
   const stoppedAt = new Date().toISOString() as IsoDateTime;
   await recordAgentStatus(tauriDatabase, agent.id, {
@@ -86,7 +118,7 @@ export const reconcileLoadedAgent = async ({
     stoppedAt,
     stoppedBy: 'app',
   }).catch(() => undefined);
-  return { ...agent, status: 'stopped', stoppedAt, stoppedBy: 'app' };
+  return { agent: { ...agent, status: 'stopped', stoppedAt, stoppedBy: 'app' }, waiting: null };
 };
 
 const readBackendRunIds = async (): Promise<ReadonlyArray<string> | null> => {

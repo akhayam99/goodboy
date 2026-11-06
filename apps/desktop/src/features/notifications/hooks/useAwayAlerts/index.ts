@@ -3,7 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore, useAttentionElsewhere, useCurrentWorkspace } from '../../../../store';
 import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
-import { attentionPlace } from '../../../session/attentionPlace';
+import { openAttentionTarget } from '../../../session/openAttentionTarget';
 import {
   focusWindow,
   currentWindowLabel,
@@ -37,17 +37,22 @@ type OpenTapParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-const openTap = ({ tap, workspaceId }: OpenTapParams): void => {
-  if (tap.workspaceId !== workspaceId) {
-    return;
-  }
-  void focusWindow(currentWindowLabel());
-  const state = useAppStore.getState();
+const openTap = async ({ tap, workspaceId }: OpenTapParams): Promise<void> => {
   const { sessionId } = tap;
-  if (sessionId === null || !state.sessions.some((session) => session.id === sessionId)) {
+  if (sessionId === null) {
     return;
   }
-  state.navigate({ to: attentionPlace({ state, sessionId, reason: tap.reason }) });
+  const target = { workspaceId: tap.workspaceId, sessionId, reason: tap.reason, agentId: null };
+  if (tap.workspaceId !== workspaceId) {
+    const isShown = Object.values(useAppStore.getState().windowPresence).includes(tap.workspaceId);
+    if (isShown || !isMainWindow()) {
+      return;
+    }
+  }
+  await focusWindow(currentWindowLabel()).catch(() => false);
+  await openAttentionTarget({ target }).catch((error: unknown) =>
+    reportOnce({ title: "Couldn't open this banner", error }),
+  );
 };
 
 type DeliverParams = {
@@ -94,7 +99,7 @@ export const useAwayAlerts = (): void => {
     }
     let off: () => void = () => undefined;
     let isLive = true;
-    listenBannerTaps({ onTap: ({ tap }) => openTap({ tap, workspaceId }) })
+    listenBannerTaps({ onTap: ({ tap }) => void openTap({ tap, workspaceId }) })
       .then((unlisten) => {
         if (!isLive) {
           unlisten();

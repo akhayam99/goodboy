@@ -50,6 +50,7 @@ export type PlaceRequest =
 export type Focus = {
   readonly drawer: OpenDrawer | null;
   readonly scroll: Readonly<Record<string, number>>;
+  readonly returnRows?: Readonly<Record<string, string>>;
 };
 
 export type Location = {

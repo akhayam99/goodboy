@@ -1198,6 +1198,10 @@ u35-agent-chain-sub-sub
 u35-auto-plan-used
 u35-branch-setup-offer
 u35-preset-run-glance
+u36-p3-board-facts-failed-dark
+u36-p3-board-facts-failed-light
+u36-p3-plans-tester-question-dark
+u36-p3-plans-tester-question-light
 u36-p6-gone-run-dark
 u36-p6-gone-run-light
 u36-p6-step-back-dark

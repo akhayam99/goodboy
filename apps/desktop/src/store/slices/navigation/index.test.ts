@@ -29,7 +29,7 @@ import {
   fixRunTranscript,
   sessionPlace,
 } from './place';
-import { EMPTY_FOCUS, HISTORY_LIMIT, type Location } from './types';
+import { EMPTY_FOCUS, HISTORY_LIMIT } from './types';
 import { captureWindowLocation } from './captureWindowLocation';
 import { parseLocation } from '../../../features/workspace/windowLayout';
 
@@ -140,6 +140,7 @@ const makeStore = () =>
     selectAgent: async (sessionId: SessionId, agentId: AgentId) => {
       set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
     },
+    loadArchivedSessions: async () => undefined,
     ...createNavigationSlice({ set, get }),
     ...createDrawerSlice({ set, get }),
   }));
@@ -152,7 +153,7 @@ const keyOf = (store: ReturnType<typeof makeStore>): string => {
 };
 
 describe('restoring a saved window location', () => {
-  it('brings back the lens, target, drawer and scroll a reload or relaunch saved', () => {
+  it('brings back the lens, target, drawer and scroll a reload or relaunch saved', async () => {
     const before = makeStore();
     before.getState().navigate({
       to: sessionPlace({
@@ -172,7 +173,7 @@ describe('restoring a saved window location', () => {
     });
 
     const after = makeStore();
-    after.getState().restoreLocation({ location: saved! });
+    await after.getState().restoreLocation({ location: saved! });
 
     const state = after.getState();
     expect(state.currentSessionId).toBe(S1);
@@ -183,24 +184,26 @@ describe('restoring a saved window location', () => {
     expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ plans: 320 });
   });
 
-  it.each(['orchestrated', 'agents', 'auto'])('opens Runs for a saved %s address', (lens) => {
-    const store = makeStore();
-    const location: Location = JSON.parse(
-      JSON.stringify({
-        workspaceId: WS,
-        place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
-        studio: null,
-        focus: EMPTY_FOCUS,
-      }),
-    );
-    store.getState().restoreLocation({ location });
+  it.each(['orchestrated', 'agents', 'auto'] as const)(
+    'opens Runs for a saved %s address',
+    async (lens) => {
+      const store = makeStore();
+      await store.getState().restoreLocation({
+        location: {
+          workspaceId: WS,
+          place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
+          studio: null,
+          focus: EMPTY_FOCUS,
+        },
+      });
 
-    expect(store.getState().activeLens[S1]).toBe('workflows');
-  });
+      expect(store.getState().activeLens[S1]).toBe('workflows');
+    },
+  );
 
-  it('falls back to the board when the saved session is gone', () => {
+  it('falls back to the board when the saved session is gone', async () => {
     const store = makeStore();
-    store.getState().restoreLocation({
+    await store.getState().restoreLocation({
       location: {
         workspaceId: WS,
         place: {
@@ -216,7 +219,7 @@ describe('restoring a saved window location', () => {
     expect(keyOf(store)).toBe('board');
   });
 
-  it('lands a saved session terminal page on the session overview', () => {
+  it('lands a saved session terminal page on the session overview', async () => {
     const store = makeStore();
     const saved = parseLocation({
       value: JSON.parse(
@@ -239,13 +242,13 @@ describe('restoring a saved window location', () => {
     if (saved === null) {
       throw new Error('the saved location did not parse');
     }
-    store.getState().restoreLocation({ location: saved });
+    await store.getState().restoreLocation({ location: saved });
     expect(store.getState().currentSessionId).toBe(S1);
     expect(store.getState().activeLens[S1] ?? null).toBeNull();
     expect(keyOf(store)).toBe(`s/${S1}`);
   });
 
-  it('restores a window saved on the old pairing studio to Settings, iPhone', () => {
+  it('restores a window saved on the old pairing studio to Settings, iPhone', async () => {
     const store = makeStore();
     const saved = parseLocation({
       value: JSON.parse(
@@ -260,7 +263,7 @@ describe('restoring a saved window location', () => {
     if (saved === null) {
       throw new Error('the saved location did not parse');
     }
-    store.getState().restoreLocation({ location: saved });
+    await store.getState().restoreLocation({ location: saved });
 
     expect(store.getState().appStudio).toEqual({
       kind: 'settings',
@@ -485,10 +488,10 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
-  it('restores an old fix run address from history onto Comments with the drawer open', () => {
+  it('restores an old fix run address from history onto Comments with the drawer open', async () => {
     const store = makeStore();
     withAttempt(store);
-    store.getState().restoreLocation({
+    await store.getState().restoreLocation({
       location: {
         workspaceId: WS,
         place: sessionPlace({
@@ -513,7 +516,7 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/workflows/agent/${AGENT}`);
   });
 
-  it('brings the agent back after a window restore', () => {
+  it('brings the agent back after a window restore', async () => {
     const before = makeStore();
     before.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     const saved = parseLocation({
@@ -521,13 +524,13 @@ describe('navigation slice', () => {
     });
 
     const after = makeStore();
-    after.getState().restoreLocation({ location: saved! });
+    await after.getState().restoreLocation({ location: saved! });
 
     expect(after.getState().selectedAgentId[S1]).toBe(AGENT);
     expect(keyOf(after)).toBe(`s/${S1}/workflows/agent/${AGENT}`);
   });
 
-  it('lands a window saved on an agent tab by an older build on the agent page', () => {
+  it('lands a window saved on an agent tab by an older build on the agent page', async () => {
     const store = makeStore();
     const saved = parseLocation({
       value: {
@@ -545,7 +548,7 @@ describe('navigation slice', () => {
         focus: { drawer: null, selection: { thread: 't1' }, scroll: {}, revealed: ['step-2'] },
       },
     });
-    store.getState().restoreLocation({ location: saved! });
+    await store.getState().restoreLocation({ location: saved! });
 
     expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
     expect(keyOf(store)).toBe(`s/${S1}/workflows/agent/${AGENT}`);
@@ -1080,9 +1083,9 @@ describe('Branch page', () => {
     expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: null });
   });
 
-  it('restores a saved place that still names a former lens at the Branch address', () => {
+  it('restores a saved place that still names a former lens at the Branch address', async () => {
     const store = makeStore();
-    store.getState().restoreLocation({
+    await store.getState().restoreLocation({
       location: {
         workspaceId: WS,
         place: sessionPlace({ sessionId: S1, lens: 'review' }),

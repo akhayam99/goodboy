@@ -4,7 +4,10 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { projectAskOf } from './chat/projectAskOf';
 
+export type AutoTreeState = 'stopped' | 'done' | 'blocked' | 'idle' | 'asking' | 'running';
+
 export type AutoTreeWord = Readonly<{
+  state: AutoTreeState;
   word: string;
   node: WorkNodeState;
   isLive: boolean;
@@ -15,8 +18,13 @@ type Params = {
   readonly rootTurn: TurnState | null;
 };
 
-const NEEDS_YOU: AutoTreeWord = { word: 'Needs you', node: 'approval', isLive: false };
-const RUNNING: AutoTreeWord = { word: 'Running', node: 'running', isLive: true };
+const NEEDS_YOU: AutoTreeWord = {
+  state: 'asking',
+  word: 'Needs you',
+  node: 'approval',
+  isLive: false,
+};
+const RUNNING: AutoTreeWord = { state: 'running', word: 'Running', node: 'running', isLive: true };
 
 type ViewParams = {
   readonly view: AutoTreeView;
@@ -33,17 +41,19 @@ const isPausedAtLimit = ({ view }: ViewParams): boolean => {
 export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   const phase = view.tree.phase;
   if (phase === 'stopped') {
-    return { word: 'Stopped', node: 'stopped', isLive: false };
+    return { state: 'stopped', word: 'Stopped', node: 'stopped', isLive: false };
   }
   if (phase === 'finished') {
-    return { word: 'Done', node: 'done', isLive: false };
+    return { state: 'done', word: 'Done', node: 'done', isLive: false };
   }
   if (phase === 'blocked') {
-    return { word: 'Needs you', node: 'alert', isLive: false };
+    return { state: 'blocked', word: 'Needs you', node: 'alert', isLive: false };
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
   if (phase === 'done' || phase === 'answering') {
-    return isRootTurnLive ? RUNNING : { word: 'Idle', node: 'queued', isLive: false };
+    return isRootTurnLive
+      ? RUNNING
+      : { state: 'idle', word: 'Idle', node: 'queued', isLive: false };
   }
   if (projectAskOf({ view }) !== null || isAutoPlanAwaitingApproval({ view })) {
     return NEEDS_YOU;

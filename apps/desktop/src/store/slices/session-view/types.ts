@@ -190,7 +190,6 @@ export type SessionCreation = {
 };
 
 type SessionViewSliceState = {
-  readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
@@ -240,7 +239,6 @@ type SessionViewSliceActions = {
     readonly sessionId: SessionId;
     readonly mountPath: string | null;
   }): void;
-  setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionViewPrefs(params: SetSessionViewPrefsParams): void;
   markSessionOpened(params: { readonly sessionId: SessionId }): void;

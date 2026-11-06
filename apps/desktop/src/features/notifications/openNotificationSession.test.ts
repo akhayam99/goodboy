@@ -1,12 +1,15 @@
-// @vitest-environment node
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Notification } from '@goodboy/db';
-import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { agentPlace, sessionPlace } from '../../store/slices/navigation/place';
 
 const { state } = vi.hoisted(() => ({
   state: {
     sessions: [] as ReadonlyArray<{ readonly id: string }>,
+    archivedSessions: Object.fromEntries(
+      Array.of<[string, ReadonlyArray<{ readonly id: string }>]>(),
+    ),
     workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
     currentWorkspaceId: 'ws-1' as string | null,
     currentSessionId: null as string | null,
@@ -22,7 +25,12 @@ vi.mock('../../store', async () => {
   return { ...(await import('../../store/slices/navigation/place')), useAppStore };
 });
 
+import { ATTENTION_HANDLED_EVENT } from '../session/attentionHandledEvent';
+import { attentionTargetChannel } from '../session/attentionTargetChannel';
 import { openNotificationSession } from './openNotificationSession';
+
+const HARBORLINE = brandId<WorkspaceId>({ value: 'ws-1' });
+const SESSION_ONE = brandId<SessionId>({ value: 'session-1' });
 
 const buildNotification = (overrides: Partial<Notification> = {}): Notification =>
   ({
@@ -42,12 +50,14 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
 
 beforeEach(() => {
   state.sessions = [];
+  state.archivedSessions = {};
   state.workspaces = [];
   state.currentWorkspaceId = 'ws-1';
   state.currentSessionId = null;
   state.navigate.mockClear();
   state.reportError.mockClear();
-  state.openWorkspace.mockClear();
+  state.openWorkspace.mockReset();
+  attentionTargetChannel.take({ workspaceId: 'ws-2', now: Date.now() });
 });
 
 describe('openNotificationSession', () => {
@@ -109,7 +119,7 @@ describe('openNotificationSession', () => {
     );
   });
 
-  it('does nothing more when openWorkspace opens another window instead of switching here', async () => {
+  it('leaves the place for the window that shows the other workspace, never navigates here', async () => {
     state.workspaces = [{ id: 'ws-2', name: 'Northwind' }];
     state.sessions = [];
     openNotificationSession({
@@ -124,5 +134,36 @@ describe('openNotificationSession', () => {
       }),
     );
     expect(state.navigate).not.toHaveBeenCalled();
+    expect(attentionTargetChannel.take({ workspaceId: 'ws-2', now: Date.now() })).toEqual({
+      workspaceId: 'ws-2',
+      sessionId: 'session-1',
+      reason: null,
+      agentId: null,
+    });
+  });
+
+  it('says Already handled and opens an archived session', async () => {
+    state.archivedSessions = { 'ws-1': [{ id: 'session-1' }] };
+    const handled = vi.fn();
+    globalThis.addEventListener(ATTENTION_HANDLED_EVENT, handled);
+    openNotificationSession({ notification: buildNotification({ workspaceId: HARBORLINE }) });
+
+    await vi.waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SESSION_ONE }),
+      }),
+    );
+    expect(handled).toHaveBeenCalledOnce();
+    globalThis.removeEventListener(ATTENTION_HANDLED_EVENT, handled);
+  });
+
+  it('says Already handled and moves nowhere when the session is gone', async () => {
+    const handled = vi.fn();
+    globalThis.addEventListener(ATTENTION_HANDLED_EVENT, handled);
+    openNotificationSession({ notification: buildNotification({ workspaceId: HARBORLINE }) });
+
+    await vi.waitFor(() => expect(handled).toHaveBeenCalledOnce());
+    expect(state.navigate).not.toHaveBeenCalled();
+    globalThis.removeEventListener(ATTENTION_HANDLED_EVENT, handled);
   });
 });

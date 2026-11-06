@@ -42,6 +42,7 @@ export const onboardingStoreModuleMock = () => ({
 export const turnModuleMock = () => ({
   runTurn: (args: unknown) => storySpies.runTurn(args),
   cancelTurn: (runId: unknown) => storySpies.cancelTurn(runId),
+  isTurnStreamActive: () => false,
   listLiveRunIds: storySpies.listLiveRunIds,
   listQuietRuns: storySpies.listQuietRuns,
   lookupDeliveryRun: vi.fn(async () => null),
