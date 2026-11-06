@@ -1416,7 +1416,9 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   send control, and nothing rises under it on the first key. Stop is one labeled
   button in the dock (`DockLiveLine`, `DockStopButton`), outside the dock's scroll,
   fed by `useConversationStop`: Auto hands in `autoDockStopOf`, which stops the tree;
-  anything else stops the agent, and a step page labels it **Stop this reply**. It
+  anything else stops the agent, a turn that waits on a permission ask included
+  (`useAgentStop` reads a blocked turn as live, the stop leaves the ask undecided),
+  and a step page labels it **Stop this reply**. It
   is busy as Stopping while the process exits and Force stop once it stalls. Esc
   twice presses the same button (`useEscapeStop`, id `agent.stop`): the first press
   shows "Esc again to stop" for 3 s, the second stops, and any open menu,

@@ -1,15 +1,14 @@
 import { useMemo, type ReactNode } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
-import { isAutoPlanAwaitingApproval } from '../../isAutoPlanAwaitingApproval';
 import { useAutoTrees } from '../../useAutoTrees';
 import type { ConversationStop } from '../../../../shared/types/conversationStop';
 import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
 import { autoDockStopOf } from '../autoDockStopOf';
+import { isAutoTreeAtRestOf } from '../isAutoTreeAtRestOf';
 import { AutoDock } from '../AutoDock';
 import { AutoTurnCard } from '../AutoTurnCard';
 import { AutoWorkTime } from '../AutoWorkTime';
@@ -33,12 +32,6 @@ export type AutoChat = Readonly<{
   isFailureOwned: boolean;
   isTreeAtRest: boolean;
 }>;
-
-const AT_REST: ReadonlySet<AutoTreeView['tree']['phase']> = new Set([
-  'answering',
-  'done',
-  'finished',
-]);
 
 export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const views = useAutoTrees({ sessionId: session.id });
@@ -116,7 +109,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
         rootAgent={agent}
         onOpenArtifact={openArtifact}
         actions={actions}
-        stop={stop}
       />
     );
 
@@ -127,7 +119,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
     stop,
     isFailureOwned: view?.tree.phase === 'blocked',
-    isTreeAtRest:
-      view !== null && AT_REST.has(view.tree.phase) && !isAutoPlanAwaitingApproval({ view }),
+    isTreeAtRest: view !== null && isAutoTreeAtRestOf({ view }),
   };
 };

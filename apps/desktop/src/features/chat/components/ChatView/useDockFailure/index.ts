@@ -27,13 +27,16 @@ export const useDockFailure = ({
   retry,
 }: Params): Result => {
   const item = useMemo(() => (isInDock ? lastFailureOf({ items }) : null), [isInDock, items]);
-  const runId = item?.runId ?? null;
-  const errorDock = useMemo(() => (isInDock ? { runId } : null), [isInDock, runId]);
   const failure = dockFailureOf({
     item,
     hasFailed,
-    isRetrying: retryingRunId !== null && retryingRunId === runId,
+    isRetrying: retryingRunId !== null && retryingRunId === (item?.runId ?? null),
     onRetry: ({ runId: failedRunId, model }) => void retry({ runId: failedRunId, model }),
   });
+  const ownedRunId = failure?.runId ?? null;
+  const errorDock = useMemo(
+    () => (isInDock ? { runId: ownedRunId } : null),
+    [isInDock, ownedRunId],
+  );
   return { failure, errorDock };
 };

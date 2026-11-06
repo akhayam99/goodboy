@@ -5,7 +5,6 @@ export type ConversationStop = Readonly<{
   label: string;
   phase: StopPhase;
   sentence: string | null;
-  isLineShown: boolean;
   stop: () => void;
 }>;
 

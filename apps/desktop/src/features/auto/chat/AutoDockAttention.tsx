@@ -4,8 +4,6 @@ import { Button, formatUsd, type Tone } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { DockStateLine } from '../../../shared/components/DockStateLine';
-import { DockStopButton } from '../../../shared/components/DockStopButton';
-import type { ConversationStop } from '../../../shared/types/conversationStop';
 import type { TailAction, TailActionId, TailFacts } from '../../live-state/tailFacts';
 import { autoLimitOpenEvent } from './autoLimitOpenEvent';
 import { raisedCapOf } from './raisedCapOf';
@@ -19,7 +17,6 @@ type Props = {
   readonly facts: TailFacts;
   readonly tone: Tone;
   readonly actions: AutoTreeActions;
-  readonly stop: ConversationStop | null;
 };
 
 type LabelParams = {
@@ -32,15 +29,7 @@ const moveLabelOf = ({ action, raisedTo }: LabelParams): string =>
     ? `Raise to ${formatUsd(raisedTo)}`
     : action.label;
 
-export const AutoDockAttention = ({
-  sessionId,
-  view,
-  rootAgent,
-  facts,
-  tone,
-  actions,
-  stop,
-}: Props) => {
+export const AutoDockAttention = ({ sessionId, view, rootAgent, facts, tone, actions }: Props) => {
   const openDrawer = useAppStore((state) => state.openDrawer);
   const reportError = useAppStore((state) => state.reportError);
   const saveCap = useAutoTreeCap({ sessionId, treeId: view.tree.id });
@@ -76,7 +65,6 @@ export const AutoDockAttention = ({
       openDrawer({ kind: 'transcript', sessionId, payload: { agentId: rootAgent.id } }),
   };
   const moves = facts.actions.filter((action) => action.id !== 'stopAuto');
-  const canStop = stop !== null && facts.actions.some((action) => action.id === 'stopAuto');
   const filled = moves.filter(({ id }) => id === 'retry' || id === 'raiseLimit');
   const quiet = moves.filter((action) => !filled.includes(action));
 
@@ -87,7 +75,6 @@ export const AutoDockAttention = ({
           {moveLabelOf({ action, raisedTo })}
         </Button>
       ))}
-      {canStop ? <DockStopButton stop={stop} /> : null}
       {filled.map((action) => (
         <Button key={action.id} variant="primary" size="sm" onClick={() => handlers[action.id]?.()}>
           {moveLabelOf({ action, raisedTo })}

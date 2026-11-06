@@ -175,11 +175,12 @@ describe('the c06 conversation scenes', () => {
     expect(pane.querySelector('[data-turn-heading="1"]')).not.toBeNull();
   });
 
-  it('c06-agent-permission shows the waiting permission inline and no tail', async () => {
+  it('c06-agent-permission shows the waiting permission inline with Stop beside it', async () => {
     await mount({ name: 'c06-agent-permission' });
 
     expect(screen.getAllByText(/rm -rf node_modules/).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+    screen.getByRole('button', { name: 'Stop' });
+    screen.getByText('Asking you');
   });
 
   it('c06-agent-delegating writes one line per child and opens the child in the pane', async () => {

@@ -60,7 +60,7 @@ export const ConversationDock = ({
           <ConversationDockLine sessionId={session.id} agentId={agentId} />
         ) : null}
       </ScrollFade>
-      {live === null || stop === null || !stop.isLineShown ? null : (
+      {live === null || stop === null ? null : (
         <DockLiveLine live={live} stop={stop} isStopArmed={isStopArmed} />
       )}
     </div>

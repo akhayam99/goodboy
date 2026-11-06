@@ -29,7 +29,7 @@ type HookParams = {
 };
 
 const stopOf = ({ isLive = true, phase = 'idle' }: HookParams) =>
-  isLive ? { label: 'Stop', phase, sentence: null, isLineShown: true, stop: stopMock } : null;
+  isLive ? { label: 'Stop', phase, sentence: null, stop: stopMock } : null;
 
 const hook = (params: HookParams = {}) =>
   renderHook(() => useEscapeStop({ stop: stopOf(params), isCovered: false }));

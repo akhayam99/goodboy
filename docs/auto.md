@@ -371,13 +371,19 @@ writing to it reopens it to **Deciding**.
   as in **Implementer running, Tester queued**, its clock and one quiet Stop
   that names its scope, **Stop Auto and 2 agents** (`autoDockStopOf`). Esc twice
   presses the same button. The live row sits outside the scroll of the dock, so
-  a long ask never pushes Stop away. At the limit, Stop sits in the row of the
-  limit. The dock shows one ask: an open permission or question hides the plan
+  a long ask never pushes Stop away, and **Esc again to stop** sits beside it:
+  at the limit and on a failed tree too, Stop stays in the live row and the row
+  of the limit keeps only the moves. Auto offers Stop whenever a delegation is
+  open, a plan that waits for approval and a blocked tree included
+  (`openDelegationCountOf`). A tree stopped while the root agent was idle reads
+  **Stopped by you** in the dock (`AutoDockLive`). The dock shows one ask: an open permission or question hides the plan
   row, a next step that revises the plan hides **Approve**, and a project ask
   waits behind a plan. **Comments not sent** reads "2 comments on plan v1 not
   sent to the Planner" with a filled **Send to planner**; **Approve anyway** and
   **Discard my comments** sit in its menu (`AutoDockPlanComments`, the rule comes
-  from `planPrimaryOf`). Once the tree rests, "Plan v1 approved" leaves the dock.
+  from `planPrimaryOf`); Discard asks first inside the menu and names a failure.
+  Review changes stays out while a project ask, a next step or a plan waits
+  (`isAutoTreeAtRestOf`). Once the tree rests, "Plan v1 approved" leaves the dock.
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it

@@ -25,9 +25,19 @@ export const AutoDockPlanComments = ({
 }: Props) => {
   const model = usePlanComments({ sessionId, plan });
   const removeArtifactComment = useAppStore((state) => state.removeArtifactComment);
-  const discard = () => {
-    for (const draft of model.drafts) {
-      void removeArtifactComment({ sessionId, commentId: draft.id });
+  const reportError = useAppStore((state) => state.reportError);
+  const count = pluralize(model.drafts.length, 'comment');
+  const discard = async () => {
+    const results = await Promise.allSettled(
+      model.drafts.map((draft) => removeArtifactComment({ sessionId, commentId: draft.id })),
+    );
+    const failed = results.find((result) => result.status === 'rejected');
+    if (failed !== undefined) {
+      await reportError({
+        title: "Couldn't discard the comments",
+        error: failed.reason,
+        sessionId,
+      });
     }
   };
   return (
@@ -40,7 +50,7 @@ export const AutoDockPlanComments = ({
         aria-live="polite"
         className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
       >
-        {`${pluralize(model.drafts.length, 'comment')} on plan v${version} not sent to the Planner`}
+        {`${count} on plan v${version} not sent to the Planner`}
       </span>
       {model.sendError === null ? null : (
         <span role="alert" className="text-danger">
@@ -64,6 +74,13 @@ export const AutoDockPlanComments = ({
             kind: 'item',
             key: 'discard-comments',
             label: 'Discard my comments',
+            isDestructive: true,
+            confirm: {
+              title: `Discard ${count}?`,
+              description: 'They are removed from the plan and nothing is sent to the Planner.',
+              confirmLabel: 'Discard',
+              role: 'danger',
+            },
             onSelect: discard,
           },
         ]}

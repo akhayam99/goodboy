@@ -5,6 +5,7 @@ import { NAMES } from '../../../shared/utils/names';
 import type { ConversationStop } from '../../../shared/types/conversationStop';
 import { autoTreeLive } from '../../live-state/adapters/autoTreeLive';
 import { autoGlanceOf } from '../glance/autoGlanceOf';
+import { openDelegationCountOf } from './openDelegationCountOf';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -18,15 +19,8 @@ type ViewParams = {
   readonly view: AutoTreeView;
 };
 
-const NOT_YET_RUNNING: ReadonlySet<AutoTreeView['delegations'][number]['state']> = new Set([
-  'awaiting_confirm',
-  'settled',
-]);
-
 const stopAutoLabelOf = ({ view }: ViewParams): string => {
-  const count = view.delegations.filter(
-    (delegation) => !NOT_YET_RUNNING.has(delegation.state),
-  ).length;
+  const count = openDelegationCountOf({ view });
   return count === 0 ? NAMES.stopAuto : `${NAMES.stopAuto} and ${pluralize(count, 'agent')}`;
 };
 
@@ -44,11 +38,11 @@ export const autoDockStopOf = ({
   }
   const glance = autoGlanceOf({ view, rootTurn });
   const isRootLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
+  const isAttention = facts?.state === 'paused' || facts?.state === 'failed';
   return {
     label: stopAutoLabelOf({ view }),
     phase: isTreeStopping ? 'stopping' : 'idle',
-    sentence: glance.isLive || isRootLive ? glance.sentence : '',
-    isLineShown: isRootLive || (facts?.state !== 'paused' && facts?.state !== 'failed'),
+    sentence: isRootLive || (glance.isLive && !isAttention) ? glance.sentence : '',
     stop,
   };
 };

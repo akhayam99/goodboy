@@ -28,27 +28,54 @@ const targetOf = (agentId: AgentId, rootAgentId: AgentId = ROOT): AutoActionTarg
   canRetry: false,
 });
 
+const OPENS = () => true;
+
 const cardsOf = (targets: ReadonlyArray<AutoActionTarget>) =>
   actionCardsOf({ owners: [], suggestions: [], autoTargets: targets });
 
 describe('dockNextOf', () => {
   it('names nothing when the session has nothing else', () => {
-    expect(dockNextOf({ cards: [], agentId: HERE })).toBeNull();
+    expect(dockNextOf({ cards: [], agentId: HERE, canOpen: OPENS })).toBeNull();
   });
 
   it('skips the ask of this conversation, the dock already shows it', () => {
     const cards = cardsOf([targetOf(HERE)]);
 
-    expect(dockNextOf({ cards, agentId: HERE })).toBeNull();
-    expect(dockNextOf({ cards, agentId: ROOT })).toBeNull();
+    expect(dockNextOf({ cards, agentId: HERE, canOpen: OPENS })).toBeNull();
+    expect(dockNextOf({ cards, agentId: ROOT, canOpen: OPENS })).toBeNull();
   });
 
   it('offers what waits elsewhere, from the same cards as the Overview', () => {
     const other = brandId<AgentId>({ value: 'agent-other' });
     const cards = cardsOf([targetOf(other)]);
 
-    expect(dockNextOf({ cards, agentId: HERE })?.card.id).toBe(cards[0]?.id);
-    expect(dockNextOf({ cards, agentId: HERE })?.moreCount).toBe(0);
+    expect(dockNextOf({ cards, agentId: HERE, canOpen: OPENS })?.card.id).toBe(cards[0]?.id);
+    expect(dockNextOf({ cards, agentId: HERE, canOpen: OPENS })?.moreCount).toBe(0);
+  });
+
+  it('leads with the first card that has a door, even when a card without one comes first', () => {
+    const first = brandId<AgentId>({ value: 'agent-first' });
+    const second = brandId<AgentId>({ value: 'agent-second' });
+    const cards = cardsOf([targetOf(first, first), targetOf(second, second)]);
+    const rows = dockNextOf({ cards, agentId: HERE, canOpen: OPENS });
+    const leading = rows?.card;
+    const result = dockNextOf({
+      cards,
+      agentId: HERE,
+      canOpen: ({ card }) => card.id !== leading?.id,
+    });
+
+    expect(cards).toHaveLength(2);
+    expect(leading?.id).toBe(cards[0]?.id);
+    expect(result?.card.id).toBe(cards[1]?.id);
+    expect(result?.moreCount).toBe(0);
+  });
+
+  it('names nothing when no card has a door', () => {
+    const other = brandId<AgentId>({ value: 'agent-other' });
+    const cards = cardsOf([targetOf(other)]);
+
+    expect(dockNextOf({ cards, agentId: HERE, canOpen: () => false })).toBeNull();
   });
 });
 

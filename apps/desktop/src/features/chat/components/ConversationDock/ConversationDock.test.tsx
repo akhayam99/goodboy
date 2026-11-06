@@ -87,7 +87,6 @@ describe('ConversationDock', () => {
           label: 'Stop',
           phase: 'idle',
           sentence: null,
-          isLineShown: true,
           stop: () => undefined,
         }}
         isStopArmed={false}

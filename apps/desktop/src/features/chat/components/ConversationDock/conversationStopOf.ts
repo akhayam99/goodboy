@@ -2,9 +2,12 @@ import type { StopPhase } from '../../../../shared/hooks/useAgentStop';
 import { NAMES } from '../../../../shared/utils/names';
 import type { ConversationStop } from '../../../../shared/types/conversationStop';
 
+const ASKING_YOU = 'Asking you';
+
 type AgentStop = Readonly<{
   phase: StopPhase;
   isLive: boolean;
+  isBlocked: boolean;
   stop: () => void;
 }>;
 
@@ -32,8 +35,7 @@ export const conversationStopOf = ({
   return {
     label: stopLabel ?? NAMES.stop,
     phase: agentStop.phase,
-    sentence,
-    isLineShown: true,
+    sentence: sentence ?? (agentStop.isBlocked ? ASKING_YOU : null),
     stop: agentStop.stop,
   };
 };
