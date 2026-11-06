@@ -32,6 +32,11 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
   const openLabel =
     task.provider === 'sentry' ? `Open ${task.identifier} in Tasks` : `Open ${task.identifier}`;
   const placement = branches.length === 0 ? null : taskPlacementLabel({ branches });
+  const titleParts = [
+    `${task.identifier} ${task.title}`,
+    ...(placement === null ? [] : [placement]),
+    ...(task.provider === 'sentry' ? ['Opens in Tasks'] : []),
+  ];
 
   return (
     <ObjectMenuArea target={target} anchorKey={taskKeyOf(target)}>
@@ -42,20 +47,13 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
           ariaLabel={
             placement === null ? openLabel : `${openLabel} ${placement.replace('On ', 'on ')}`
           }
-          title={
-            placement === null
-              ? `${task.identifier} ${task.title}`
-              : `${task.identifier} ${task.title}. ${placement}`
-          }
+          title={titleParts.join('. ')}
           onClick={() => openExternalTaskLens(sessionId, task)}
           className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
         >
           <IntegrationGlyph provider={task.provider} size="xs" className="shrink-0" />
           <LinkedKey identifier={task.identifier} />
           <span className="min-w-0 flex-1 truncate">{task.title}</span>
-          {task.provider === 'sentry' ? (
-            <span className="shrink-0 text-meta text-muted-foreground">Open in Tasks</span>
-          ) : null}
         </SelectableRow>
       </div>
     </ObjectMenuArea>

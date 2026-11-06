@@ -65,7 +65,7 @@ describe('Linked work row', () => {
       }),
     );
     if (provider === 'sentry') {
-      screen.getByText('Open in Tasks');
+      expect(screen.queryByText('Open in Tasks')).toBeNull();
       expect(opened).toHaveBeenCalledOnce();
     }
     if (provider !== 'sentry' && provider !== 'github' && provider !== 'bitbucket') {
