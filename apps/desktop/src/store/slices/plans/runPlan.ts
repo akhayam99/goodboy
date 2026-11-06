@@ -5,7 +5,8 @@ import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate'
 import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';
 import { PLAN_REVISING_REASON, planRevisingOf } from '../../../features/plans/planRevising';
 import { activateWorkflowAgentOrNotify } from '../workflows/activateWorkflowAgentOrNotify';
-import type { GetFn, RunPlanResult } from './types';
+import type { GetFn, RunPlanResult, SetFn } from './types';
+import { planStartLock } from './planStartLock';
 import { sessionById } from '../sessions/sessionIndex';
 
 const refused = ({
@@ -16,8 +17,15 @@ const refused = ({
   readonly workflowRunId?: WorkflowRunId | null;
 }): RunPlanResult => ({ kind: 'refused', reason, workflowRunId });
 
-export const runPlan = (get: GetFn) => {
-  return async (sessionId: SessionId, planId: PlanId): Promise<RunPlanResult> => {
+type RunParams = Readonly<{
+  sessionId: SessionId;
+  planId: PlanId;
+}>;
+
+const PLAN_STARTING_REASON = 'This plan is already starting';
+
+export const runPlan = (set: SetFn, get: GetFn) => {
+  const runOnce = async ({ sessionId, planId }: RunParams): Promise<RunPlanResult> => {
     const state = get();
 
     const spawnImplementer = () =>
@@ -113,5 +121,16 @@ export const runPlan = (get: GetFn) => {
     return activated
       ? { kind: 'started', agentId: stepAgent.id, scope: 'workflow' }
       : refused({ reason: null, workflowRunId: creatorRun.id });
+  };
+  return async (sessionId: SessionId, planId: PlanId): Promise<RunPlanResult> => {
+    if ((get().planStarts[planId] ?? 0) > 0) {
+      return refused({ reason: PLAN_STARTING_REASON });
+    }
+    planStartLock.hold({ set, planId });
+    try {
+      return await runOnce({ sessionId, planId });
+    } finally {
+      planStartLock.release({ set, planId });
+    }
   };
 };

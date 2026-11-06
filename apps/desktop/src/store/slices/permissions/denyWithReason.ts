@@ -5,6 +5,7 @@ import {
   type ProviderRunId,
   type SessionId,
 } from '@goodboy/types';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {
@@ -49,10 +50,12 @@ export const denyWithReason = (get: GetFn) => {
     if (get().agentTurnState[agentId]?.kind === 'running') {
       return;
     }
-    await get().sendTurn({
-      sessionId,
-      agentId,
-      content: noticeOf({ toolName, reason: reason.trim() }),
+    throwIfRefused({
+      result: await get().sendTurn({
+        sessionId,
+        agentId,
+        content: noticeOf({ toolName, reason: reason.trim() }),
+      }),
     });
   };
 };

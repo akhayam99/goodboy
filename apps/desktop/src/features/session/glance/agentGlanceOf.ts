@@ -1,3 +1,4 @@
+import { notFinishedKindOf } from '@goodboy/core/workflows';
 import type { Agent, TurnState } from '@goodboy/types';
 import { effectiveAgentStatusOf } from '../../workTreeModel/agentStateOf';
 import { glanceOf, type Glance } from './glanceOf';
@@ -5,6 +6,17 @@ import { glanceOf, type Glance } from './glanceOf';
 type Params = {
   readonly agent: Agent;
   readonly turnState: TurnState | null;
+};
+
+type SkippedParams = Pick<Params, 'agent'>;
+
+const skippedSentenceOf = ({ agent }: SkippedParams): string => {
+  const notFinished = notFinishedKindOf({ agent });
+  const hasRun = agent.runId !== undefined || agent.startedAt !== undefined;
+  if (notFinished === 'stuck' || (notFinished === null && hasRun)) {
+    return 'Skipped while it ran, what it wrote is kept';
+  }
+  return 'Nothing ran for this step';
 };
 
 export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
@@ -28,8 +40,11 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
   if (status === 'stopped') {
     return glanceOf({ state: 'stopped', sentence: 'You stopped it, nothing is running' });
   }
-  if (status === 'completed' || status === 'skipped') {
+  if (status === 'completed') {
     return glanceOf({ state: 'idle', sentence: 'Finished, write to continue' });
+  }
+  if (status === 'skipped') {
+    return glanceOf({ state: 'idle', sentence: skippedSentenceOf({ agent }) });
   }
   if (status === 'pending') {
     return glanceOf({ state: 'idle', sentence: 'Queued' });

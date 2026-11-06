@@ -12,6 +12,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { AgentId, ChatId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import type { SessionTitleRef } from '@goodboy/db';
+import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -232,21 +233,40 @@ describe('PaletteOverlay, the commands mode', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('asks before Archive and archives only after the confirm', async () => {
+  it('archives an idle session at once', async () => {
     const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async () => ({
       succeeded: [],
       failed: [],
     }));
-    useAppStore.setState({ bulkArchiveTask });
+    useAppStore.setState({ bulkArchiveTask, sessionPhaseRuns: { [PAYOUT]: [] } });
+    const { input } = openIn(PAYOUT);
+    type(input, 'archive');
+
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' });
+    });
+
+    expect(bulkArchiveTask).toHaveBeenCalledWith([PAYOUT]);
+  });
+
+  it('with a live agent asks before Archive and archives only after the confirm', async () => {
+    const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async () => ({
+      succeeded: [],
+      failed: [],
+    }));
+    useAppStore.setState({
+      bulkArchiveTask,
+      sessionPhaseRuns: { [PAYOUT]: [anAgent({ sessionId: PAYOUT, status: 'running' })] },
+    });
     const { input } = openIn(PAYOUT);
     type(input, 'archive');
 
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(screen.getByText('Archive session?')).toBeDefined();
+    screen.getByText('Stop 1 agent and archive?');
     expect(bulkArchiveTask).not.toHaveBeenCalled();
 
     fireEvent.keyDown(input, { key: 'Escape' });
-    expect(screen.queryByText('Archive session?')).toBeNull();
+    expect(screen.queryByText('Stop 1 agent and archive?')).toBeNull();
     expect(bulkArchiveTask).not.toHaveBeenCalled();
 
     fireEvent.keyDown(input, { key: 'Enter' });

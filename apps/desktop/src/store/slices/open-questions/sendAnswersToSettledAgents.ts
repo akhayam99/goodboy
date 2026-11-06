@@ -1,7 +1,11 @@
-import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswersDelivered } from '@goodboy/db';
 import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isReportedError } from '../notifications/reportedError';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import type { SendTurnResult } from '../turn/types';
+import { answersInFlight } from './answersInFlight';
 import type { GetFn } from './types';
 
 export type AskingAgentId = AgentId | null;
@@ -12,7 +16,20 @@ type SendAnswersToSettledAgentsParams = {
   readonly askingAgentIds: ReadonlySet<AskingAgentId>;
 };
 
+type DeliverParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly agentId: AskingAgentId;
+  readonly questions: ReadonlyArray<OpenQuestion>;
+};
+
 const askingAgentOf = (question: OpenQuestion): AskingAgentId => question.createdByAgentId ?? null;
+
+const NOT_STARTED = 'The agent did not start. Your answers are kept.';
+
+const AFTER_START_FAILURE = 'The agent failed after it got your answers';
+
+const FAILED_AFTER_START: SendTurnResult = { blockedOverBudget: false };
 
 const AGENT_PROVENANCE =
   "  Source: an agent answered this on the user's behalf. Treat it as the user's own answer.";
@@ -29,6 +46,51 @@ const buildBatchPrompt = (questions: ReadonlyArray<OpenQuestion>): string => {
   return lines.join('\n');
 };
 
+const deliverToAgent = async ({
+  get,
+  sessionId,
+  agentId,
+  questions,
+}: DeliverParams): Promise<void> => {
+  let marking: Promise<unknown> | null = null;
+  const mark = (): Promise<unknown> => {
+    marking ??= markOpenQuestionAnswersDelivered({
+      db: tauriDatabase,
+      ids: questions.map((question) => question.id),
+    }).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    return marking;
+  };
+  const result = await get()
+    .sendTurn({
+      sessionId,
+      content: wrapOpenQuestionAnswers(buildBatchPrompt(questions)),
+      agentId: agentId ?? undefined,
+      onStarted: () => {
+        void mark();
+      },
+    })
+    .catch((error: unknown) => {
+      if (marking === null) {
+        throw error;
+      }
+      if (!isReportedError(error)) {
+        void get().reportError({ title: AFTER_START_FAILURE, error, sessionId });
+      }
+      return FAILED_AFTER_START;
+    });
+  if (marking === null && result.isLaneQueued !== true && result.isAlreadySent !== true) {
+    throwIfRefused({ result });
+    throw new Error(NOT_STARTED);
+  }
+  const failure = await mark();
+  if (failure !== null) {
+    throw failure;
+  }
+};
+
 export const sendAnswersToSettledAgents = async ({
   get,
   sessionId,
@@ -36,33 +98,39 @@ export const sendAnswersToSettledAgents = async ({
 }: SendAnswersToSettledAgentsParams): Promise<void> => {
   const stillOpen = get().sessionOpenQuestions[sessionId] ?? [];
   const answered = get().sessionAnsweredQuestions[sessionId] ?? [];
-  const delivered: OpenQuestionId[] = [];
-
-  for (const agentId of askingAgentIds) {
-    const hasOpenLeft = stillOpen.some((question) => askingAgentOf(question) === agentId);
-    if (hasOpenLeft) {
-      continue;
+  const failures: unknown[] = [];
+  let hasDelivered = false;
+  answersInFlight.begin({ sessionId });
+  try {
+    for (const agentId of askingAgentIds) {
+      const hasOpenLeft = stillOpen.some((question) => askingAgentOf(question) === agentId);
+      if (hasOpenLeft) {
+        continue;
+      }
+      const undelivered = answered.filter(
+        (question) =>
+          askingAgentOf(question) === agentId &&
+          question.answerDeliveredAt === undefined &&
+          question.userAnswer !== null,
+      );
+      if (undelivered.length === 0) {
+        continue;
+      }
+      try {
+        await deliverToAgent({ get, sessionId, agentId, questions: undelivered });
+        hasDelivered = true;
+      } catch (error) {
+        failures.push(error);
+      }
     }
-    const undelivered = answered.filter(
-      (question) =>
-        askingAgentOf(question) === agentId &&
-        question.answerDeliveredAt === undefined &&
-        question.userAnswer !== null,
-    );
-    if (undelivered.length === 0) {
-      continue;
+    if (hasDelivered) {
+      await get().loadSessionAnsweredQuestions(sessionId);
     }
-    await get().sendTurn({
-      sessionId,
-      content: wrapOpenQuestionAnswers(buildBatchPrompt(undelivered)),
-      agentId: agentId ?? undefined,
-    });
-    delivered.push(...undelivered.map((question) => question.id));
+  } finally {
+    answersInFlight.end({ sessionId });
   }
-
-  if (delivered.length === 0) {
-    return;
+  const [failure] = failures;
+  if (failure !== undefined) {
+    throw failure;
   }
-  await markOpenQuestionAnswersDelivered({ db: tauriDatabase, ids: delivered });
-  await get().loadSessionAnsweredQuestions(sessionId);
 };

@@ -51,6 +51,8 @@ const toRecord = (turn: AgentQueuedTurn): AgentQueuedMessageRecord => ({
   attachments: turn.attachments,
   override: turn.override ?? null,
   createdAt: turn.createdAt,
+  holdReason: turn.hold?.reason ?? null,
+  writtenTexts: turn.writtenTexts ?? 0,
 });
 
 const persistQueue = createKeyedQueue();
@@ -124,6 +126,8 @@ const fromQueuedRecord = (record: AgentQueuedMessageRecord): AgentQueuedTurn => 
   override: toOverride(record.override),
   status: 'queued',
   createdAt: record.createdAt,
+  ...(record.holdReason != null && { hold: { reason: record.holdReason } }),
+  ...((record.writtenTexts ?? 0) > 0 && { writtenTexts: record.writtenTexts }),
 });
 
 export const readPersistedQueues = async (

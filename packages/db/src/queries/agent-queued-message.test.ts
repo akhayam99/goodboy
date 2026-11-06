@@ -70,6 +70,43 @@ describe('agent queued messages', () => {
     ]);
   });
 
+  it('keeps a hold and the written texts beside the override, and reads them back apart', async () => {
+    const db = await seed();
+
+    await replaceAgentQueuedMessages(db, {
+      agentId: AGENT,
+      messages: [
+        message('held', {
+          override: { providerId: 'codex', model: 'gpt-5.6-sol' },
+          holdReason: 'The agent did not start. Your message is safe here.',
+          writtenTexts: 1,
+        }),
+        message('plain'),
+      ],
+    });
+
+    const [held, plain] = await listAgentQueuedMessages(db, [AGENT]);
+    expect(held?.override).toEqual({ providerId: 'codex', model: 'gpt-5.6-sol' });
+    expect(held?.holdReason).toBe('The agent did not start. Your message is safe here.');
+    expect(held?.writtenTexts).toBe(1);
+    expect(plain?.override).toBeNull();
+    expect(plain?.holdReason).toBeNull();
+    expect(plain?.writtenTexts).toBe(0);
+  });
+
+  it('reads a hold without an override as no override', async () => {
+    const db = await seed();
+
+    await replaceAgentQueuedMessages(db, {
+      agentId: AGENT,
+      messages: [message('held', { holdReason: 'Over the limit', writtenTexts: 0 })],
+    });
+
+    const [held] = await listAgentQueuedMessages(db, [AGENT]);
+    expect(held?.override).toBeNull();
+    expect(held?.holdReason).toBe('Over the limit');
+  });
+
   it('reads nothing for no agents', async () => {
     const db = await seed();
 

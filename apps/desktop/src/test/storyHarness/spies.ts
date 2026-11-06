@@ -456,6 +456,7 @@ export const storySpies = {
   invokeAuditRetryUpdate: vi.fn<PermissionsModule['invokeAuditRetryUpdate']>(async () => undefined),
   invokeAuditRetryDelete: vi.fn<PermissionsModule['invokeAuditRetryDelete']>(async () => undefined),
   runTurn: vi.fn(),
+  turnSpawn: vi.fn(async (_args: unknown): Promise<unknown> => 'started'),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
   writeAttachment: vi.fn<typeof writeAttachment>(async () => '.goodboy/attachments/spec.pdf'),
   deleteAttachment: vi.fn(async () => undefined),

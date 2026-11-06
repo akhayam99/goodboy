@@ -147,7 +147,7 @@ describe('detaching a branch an unfinished run still writes to', () => {
   });
 
   it('stops every run that uses the branch when Stop run first is pressed', async () => {
-    const stopWorkflowRunNow = vi.fn(async () => undefined);
+    const stopWorkflowRunNow = vi.fn(async () => 'stopped' as const);
     useAppStore.setState({ stopWorkflowRunNow });
     const stop = MOUNT_KIND.actions.find((action) => action.id === 'mount.stopPinnedRun');
 

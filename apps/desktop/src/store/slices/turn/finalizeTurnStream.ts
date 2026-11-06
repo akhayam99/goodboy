@@ -65,7 +65,7 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now() };
     const derived = applyAgentTurnState(set, sessionId, activeAgentId, idleState, now());
     await updateSessionState(tauriDatabase, sessionId, derived, now());
-    if (assistantText.length === 0 && !receivedProviderError) {
+    if (assistantText.length === 0 && !receivedProviderError && !cancelledRunIds.has(runId)) {
       get().appendTurnEvent(activeAgentId, sessionId, {
         kind: 'error',
         runId,

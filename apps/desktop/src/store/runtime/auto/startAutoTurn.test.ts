@@ -144,12 +144,15 @@ describe('starting the turn of Auto through the store', () => {
     expect(state.ended).toHaveLength(0);
   });
 
-  it('refuses a turn blocked by the budget', async () => {
+  it('refuses a turn when every provider is over its limit', async () => {
     const state = harness({ lookups: [null], send: async () => ({ blockedOverBudget: true }) });
 
     const outcome = await state.start(state.params);
 
-    expect(outcome).toMatchObject({ kind: 'refused', message: expect.stringContaining('budget') });
+    expect(outcome).toMatchObject({
+      kind: 'refused',
+      message: expect.stringContaining('over its limit'),
+    });
   });
 
   it('answers duplicate when the registry holds another run for the delivery, and watches nothing', async () => {

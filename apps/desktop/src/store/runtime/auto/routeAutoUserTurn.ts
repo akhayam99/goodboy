@@ -117,15 +117,20 @@ export const routeAutoUserTurn = async ({
     return refuse({ get, input, message: AUTO_ATTACHMENTS_MESSAGE });
   }
   const images = await keptImages({ get, input, storeImages });
-  const queued: { outboxId: string | null } = { outboxId: null };
+  const queued: { outboxId: string | null; isRepeat: boolean } = {
+    outboxId: null,
+    isRepeat: false,
+  };
   const result = await port({
     agentId,
     sessionId: input.sessionId,
     workspaceId: session.workspaceId,
     text: input.content,
     ...(images.length > 0 && { images }),
-    onQueued: ({ rowId }) => {
+    ...(input.deliveryId !== undefined && { deliveryId: input.deliveryId }),
+    onQueued: ({ rowId, isRepeat = false }) => {
       queued.outboxId = rowId;
+      queued.isRepeat = isRepeat;
     },
   });
   if (result === 'lost') {
@@ -138,14 +143,16 @@ export const routeAutoUserTurn = async ({
       sessionId: input.sessionId,
     }),
   );
-  state.appendTurnEvent(agentId, input.sessionId, {
-    kind: 'operator_text',
-    runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),
-    text: input.content,
-    ...(images.length > 0 && { attachments: images }),
-    ...(queued.outboxId !== null && { outboxId: queued.outboxId }),
-    at: brandId<IsoDateTime>({ value: new Date().toISOString() }),
-  });
+  if (!queued.isRepeat) {
+    state.appendTurnEvent(agentId, input.sessionId, {
+      kind: 'operator_text',
+      runId: brandId<ProviderRunId>({ value: `operator-${crypto.randomUUID()}` }),
+      text: input.content,
+      ...(images.length > 0 && { attachments: images }),
+      ...(queued.outboxId !== null && { outboxId: queued.outboxId }),
+      at: brandId<IsoDateTime>({ value: new Date().toISOString() }),
+    });
+  }
   input.onStarted?.();
   return QUEUED;
 };

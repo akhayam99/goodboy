@@ -27,7 +27,23 @@ const deliverNow = async ({ set, get, sessionId, workflowRunId }: DeliverParams)
     workflowRunId,
   ).some((agent) => agent.status === 'running');
   if (hasRunningStep) {
-    await cancelRunningSteps({ set, get, sessionId, workflowRunId });
+    const { stillRunning } = await cancelRunningSteps({
+      set,
+      get,
+      sessionId,
+      workflowRunId,
+      cut: 'skipped',
+    });
+    if (stillRunning.length > 0) {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: "The step didn't stop",
+        body: 'It is still running, so your hint waits in the queue. Try again in a moment.',
+        sessionId,
+      });
+      return;
+    }
   }
   await get().continueWorkflowRun(sessionId, workflowRunId);
 };

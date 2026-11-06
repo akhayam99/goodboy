@@ -111,17 +111,15 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     },
   })),
   {
-    name: 'palette verb: Archive asks first, then archives',
-    covers: ['palette:Archive…'],
+    name: 'palette verb: Archive archives an idle session at once',
+    covers: ['palette:Archive'],
     open: async () => {
       useAppStore.setState({ archiveTask: async () => undefined } as never);
-      await openPalette(/^Archive…$/, 'archive');
+      await openPalette(/^Archive$/, 'archive');
     },
     lands: async () => {
-      expect(await screen.findByText('Archive session?', {}, WAIT)).toBeDefined();
-      const input = await screen.findByRole('combobox', { name: /search/i });
-      fireEvent.keyDown(input, { key: 'Enter' });
       expect(await screen.findByText('Session archived', {}, WAIT)).toBeDefined();
+      expect(screen.queryByText('Archive session?')).toBeNull();
     },
   },
   {

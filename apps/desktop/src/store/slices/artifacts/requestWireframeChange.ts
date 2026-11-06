@@ -12,6 +12,7 @@ import {
   type WireframeDraftRequest,
 } from '../../../features/wireframes/wireframeDraft';
 import { sessionReads } from '../../runtime/state-writes/sessionReads';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn, SetFn } from './types';
 
 export type RequestWireframeChangeParams = WireframeDraftRequest & {
@@ -77,7 +78,9 @@ export const requestWireframeChange = (set: SetFn, get: GetFn) => {
       sourceText: artifact.sourceText,
     });
     try {
-      await get().sendTurn({ sessionId, agentId: artifact.agentId, content });
+      throwIfRefused({
+        result: await get().sendTurn({ sessionId, agentId: artifact.agentId, content }),
+      });
     } catch (cause) {
       putDraft({
         set,

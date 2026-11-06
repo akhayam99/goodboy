@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Agent } from '@goodboy/types';
 import { brandId, type StepId } from '@goodboy/types';
-import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import {
   FIXTURE_ROOT,
@@ -58,7 +58,10 @@ describe('continueStoppedAgent on an Auto child', () => {
       views: [aView({ phase: 'stopped', delegations: [CHILD] })],
     });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledOnce();
     expect(sendTurn).toHaveBeenCalledWith({
@@ -72,7 +75,10 @@ describe('continueStoppedAgent on an Auto child', () => {
   it('still reaches Auto through the parent when the tree view has not loaded', async () => {
     const { get, sendTurn } = buildGet({ agents: [ROOT_AGENT, CHILD_AGENT], views: [] });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -85,7 +91,10 @@ describe('continueStoppedAgent on an Auto child', () => {
   it('keeps the plain continue for an agent outside any Auto tree', async () => {
     const { get, sendTurn } = buildGet({ agents: [PLAIN_AGENT], views: [] });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: PLAIN_AGENT.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: PLAIN_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -110,6 +119,82 @@ describe('resumeStoppedAgents after a restart', () => {
   });
 });
 
+describe('continueStoppedAgent on a run you stopped', () => {
+  const run = aWorkflowRun({
+    autoRun: false,
+    orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+  });
+  const stepAgent = anAgent({
+    status: 'stopped',
+    stoppedBy: 'you',
+    stepId: brandId<StepId>({ value: 'step-implement' }),
+    workflowRunId: run.id,
+  });
+
+  type StopParams = {
+    readonly sendTurn: AppStore['sendTurn'];
+    readonly wasAutoRun?: boolean;
+  };
+
+  const continueStep = ({ sendTurn, wasAutoRun = false }: StopParams) => {
+    const stoppedRun = wasAutoRun
+      ? {
+          ...run,
+          orchestrationStop: {
+            kind: 'operator' as const,
+            message: 'You stopped this run.',
+            wasAutoRun: true,
+          },
+        }
+      : run;
+    useAppStore.setState({
+      sessions: [aSession({ id: FIXTURE_SESSION, workflowRuns: [stoppedRun] })],
+    });
+    const setWorkflowRunAutoRun = vi.fn<AppStore['setWorkflowRunAutoRun']>(async () => undefined);
+    const get = () => ({
+      ...useAppStore.getState(),
+      sessionPhaseRuns: { [FIXTURE_SESSION]: [stepAgent] },
+      autoTreeViews: {},
+      sendTurn,
+      setWorkflowRunAutoRun,
+    });
+    const continuing = continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
+    return { continuing, setWorkflowRunAutoRun };
+  };
+
+  const stopOf = () =>
+    useAppStore.getState().sessions.find((session) => session.id === FIXTURE_SESSION)
+      ?.workflowRuns[0]?.orchestrationStop?.kind;
+
+  it('keeps the run stopped when Continue is refused', async () => {
+    const { continuing, setWorkflowRunAutoRun } = continueStep({
+      sendTurn: vi.fn(async () => ({ blockedOverBudget: true })),
+    });
+
+    await expect(continuing).rejects.toThrow('over its limit');
+
+    expect(stopOf()).toBe('operator');
+    expect(setWorkflowRunAutoRun).not.toHaveBeenCalled();
+  });
+
+  it('turns the run back on its own once the step started, when Stop run turned it off', async () => {
+    const { continuing, setWorkflowRunAutoRun } = continueStep({
+      wasAutoRun: true,
+      sendTurn: vi.fn(async ({ onStarted }) => {
+        onStarted?.();
+        return { blockedOverBudget: false };
+      }),
+    });
+
+    await continuing;
+
+    expect(setWorkflowRunAutoRun).toHaveBeenCalledWith(FIXTURE_SESSION, run.id, true);
+  });
+});
+
 describe('continueStoppedAgent on a workflow step', () => {
   it('repeats the step-done instruction so the resumed turn can still close the step', async () => {
     const stepAgent = anAgent({
@@ -120,7 +205,10 @@ describe('continueStoppedAgent on a workflow step', () => {
     });
     const { get, sendTurn } = buildGet({ agents: [stepAgent], views: [] });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
 
     const content = sendTurn.mock.calls[0]?.[0].content ?? '';
     expect(content).toContain('Continue from where you stopped.');

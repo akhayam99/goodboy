@@ -21,7 +21,7 @@ export type RowStateReason =
   | { readonly kind: 'stepBlocked'; readonly stepLabel: string | null }
   | { readonly kind: 'orchestratorFailed' }
   | { readonly kind: 'stopped' }
-  | { readonly kind: 'agentStopped'; readonly by: AgentStoppedBy }
+  | { readonly kind: 'agentStopped'; readonly by: AgentStoppedBy; readonly isCutStep?: boolean }
   | { readonly kind: 'stepStopped'; readonly stepLabel: string | null }
   | { readonly kind: 'deciding' }
   | { readonly kind: 'briefing' }
@@ -85,6 +85,13 @@ const isAwaitingFirstMessage = ({ agent }: { readonly agent: Agent }): boolean =
   agent.lastFinishedAt == null &&
   agent.kind !== 'resolver';
 
+type CutStepParams = {
+  readonly agent: Agent;
+};
+
+const isCutStep = ({ agent }: CutStepParams): boolean =>
+  agent.stepId != null && agent.workflowRunId != null && agent.stoppedBy !== 'app';
+
 export const resolveAgentRowState = ({
   agent,
   isAsking,
@@ -137,7 +144,11 @@ export const resolveAgentRowState = ({
     case 'stopped':
       return {
         phase: 'waiting',
-        reason: { kind: 'agentStopped', by: agent.stoppedBy ?? 'you' },
+        reason: {
+          kind: 'agentStopped',
+          by: agent.stoppedBy ?? 'you',
+          ...(isCutStep({ agent }) && { isCutStep: true }),
+        },
         ask: { kind: 'continue', agent },
       };
     default: {

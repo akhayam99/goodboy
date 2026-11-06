@@ -13,6 +13,8 @@ import { NOT_REVISING, planRevisingOf } from '../../../features/plans/planRevisi
 import { tauriDatabase } from '../../../shared/lib/db';
 import { sessionById } from '../sessions/sessionIndex';
 import { sessionReads } from '../../runtime/state-writes/sessionReads';
+import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { refreshArtifactComments } from './refresh';
 import { settleAgainstVersions } from './settleSentComments';
 import type { GetFn, SendArtifactCommentsParams, SendArtifactCommentsResult, SetFn } from './types';
@@ -113,11 +115,9 @@ export const sendArtifactComments = (set: SetFn, get: GetFn) => {
     } catch (cause) {
       return await revert(formatError(cause));
     }
-    if (result.blockedOverBudget) {
-      return await revert('The session budget is reached. Raise it to send these comments.');
-    }
-    if (result.isWriterLeaseDenied === true) {
-      return await revert('Another agent is writing in this folder. Try again in a moment.');
+    const refusal = turnRefusalOf({ result });
+    if (refusal !== null) {
+      return await revert(turnRefusalMessage({ refusal }));
     }
     const sentTurnId = sentTurnIdOf({ events: get().transcripts[plan.agentId] ?? [], content });
     await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent', sentTurnId });

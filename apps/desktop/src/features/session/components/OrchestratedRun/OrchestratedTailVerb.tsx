@@ -64,7 +64,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           role="danger"
           icon={<CircleStop size={ICON_SIZE.control} aria-hidden />}
           title={`Stop ${verb.agent.name}?`}
-          description="The step is cancelled and marked Skipped. What it wrote is kept."
+          description={`Step ${verb.number} stops. What it wrote is kept, and Continue picks it up.`}
           confirmLabel={`Stop step ${verb.number}`}
           onConfirm={() =>
             void press({
@@ -73,8 +73,14 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             })
           }
           trigger={({ arm }) => (
-            <button type="button" className={QUIET_VERB} onClick={arm}>
-              {`Stop step ${verb.number}`}
+            <button
+              type="button"
+              className={QUIET_VERB}
+              onClick={arm}
+              disabled={isBusy}
+              aria-busy={isBusy}
+            >
+              {isBusy ? NAMES.stopping : `Stop step ${verb.number}`}
             </button>
           )}
         />

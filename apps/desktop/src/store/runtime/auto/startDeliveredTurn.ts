@@ -1,5 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
+import { turnRefusalMessage } from '../../slices/turn/refusal/turnRefusalMessage';
+import { turnRefusalOf } from '../../slices/turn/refusal/turnRefusalOf';
 import type { DeliveryRun, LookupDeliveryRunParams, TurnExit } from './ports';
 
 const DELIVERED_TURN_POLL_MS = 50;
@@ -138,16 +140,11 @@ export const startDeliveredTurn = async ({
       },
     })
     .then((result) => {
-      if (result.blockedOverBudget) {
+      const refusal = turnRefusalOf({ result });
+      if (refusal !== null) {
         held.refusal = {
-          message: 'The budget of this conversation does not cover another turn.',
-          isLeaseDenied: false,
-        };
-      }
-      if (result.isWriterLeaseDenied === true) {
-        held.refusal = {
-          message: 'The writer lease stayed busy for too long.',
-          isLeaseDenied: true,
+          message: turnRefusalMessage({ refusal }),
+          isLeaseDenied: refusal === 'folder_busy',
         };
       }
     })

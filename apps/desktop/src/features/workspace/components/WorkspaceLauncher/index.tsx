@@ -51,6 +51,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnectWorkspace = useAppStore((s) => s.disconnectWorkspace);
+  const reportError = useAppStore((s) => s.reportError);
   const isReopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
   const home = useHomeFolder();
   const isInMainWindow = useIsMainWindow();
@@ -142,7 +143,15 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
                 home={home}
                 onOpen={() => open(workspace)}
                 onOpenNewWindow={() => openNewWindow(workspace)}
-                onDisconnect={() => void disconnectWorkspace(workspace.id)}
+                onDisconnect={() => {
+                  disconnectWorkspace(workspace.id).catch((error: unknown) => {
+                    void reportError({
+                      title: "Couldn't disconnect the workspace",
+                      error,
+                      workspaceId: workspace.id,
+                    });
+                  });
+                }}
               />
             ))}
           </ul>

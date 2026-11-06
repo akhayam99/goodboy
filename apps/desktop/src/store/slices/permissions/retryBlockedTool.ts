@@ -1,6 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 
 type Params = {
   sessionId: SessionId;
@@ -23,6 +24,12 @@ export const retryBlockedTool = (get: GetFn) => {
     if (get().agentTurnState[agentId]?.kind === 'running') {
       return;
     }
-    await get().sendTurn({ sessionId, agentId, content: composeRetryPrompt({ toolName }) });
+    throwIfRefused({
+      result: await get().sendTurn({
+        sessionId,
+        agentId,
+        content: composeRetryPrompt({ toolName }),
+      }),
+    });
   };
 };

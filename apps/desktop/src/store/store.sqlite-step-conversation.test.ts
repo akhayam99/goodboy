@@ -446,7 +446,7 @@ describe('store on sqlite: a reply to a question that is not an answer', () => {
   });
 
   it.each([
-    ['the session budget blocks the turn', { blockedOverBudget: true }, 'budget'],
+    ['every provider is over its limit', { blockedOverBudget: true }, 'over its limit'],
     [
       'another agent holds the folder',
       { blockedOverBudget: false, isWriterLeaseDenied: true },

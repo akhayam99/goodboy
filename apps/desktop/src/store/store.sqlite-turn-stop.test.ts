@@ -342,6 +342,28 @@ describe('a Stop inside a scout fan-out', () => {
     await pending;
   });
 
+  it('archiving stops a child without waking the parent synthesis', async () => {
+    const hold = gate();
+    const live = new Set<string>();
+    storySpies.listLiveRunIds.mockImplementation(async () => live);
+    const tree = await seedScoutTree();
+    const { pending } = await startStreaming(hold.opened, tree.stopped);
+    live.add(runningRunId(tree.stopped));
+    await settleSibling(tree.sibling);
+    const synthesis = spyOnSynthesis();
+
+    const archiving = useAppStore.getState().archiveTask(sessionId);
+    await vi.waitFor(() => expect(storySpies.cancelTurn).toHaveBeenCalled());
+    live.clear();
+    hold.open();
+    await archiving;
+    await pending;
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
+
+    expect(await agentStatus(tree.stopped)).toBe('stopped');
+    expect(synthesis).not.toHaveBeenCalled();
+  });
+
   it('keeps the child running and the parent waiting when the cancel fails', async () => {
     const hold = gate();
     const live = new Set<string>();
