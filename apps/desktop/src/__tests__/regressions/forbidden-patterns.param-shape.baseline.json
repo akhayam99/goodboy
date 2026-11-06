@@ -365,7 +365,7 @@
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/index.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/QuestionAnswerInput.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/QuestionPager.tsx": 1,
-    "apps/desktop/src/features/context/components/QuestionsTab/useOpenQuestions.ts": 13,
+    "apps/desktop/src/features/context/components/QuestionsTab/useOpenQuestions.ts": 12,
     "apps/desktop/src/features/context/hooks/useSendQuestionAsMessage/index.ts": 1,
     "apps/desktop/src/features/context/openQuestionsGate.ts": 1,
     "apps/desktop/src/features/context/questionDelegate.ts": 2,

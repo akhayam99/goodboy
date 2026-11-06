@@ -1,3 +1,4 @@
+import { resolveRootAgent } from '../../../features/session/agent-kind';
 import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
 import { sessionPlace } from './place';
@@ -19,7 +20,9 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   const { sessionId, view } = place;
   if (view.target?.kind === 'branch') {
     const { target } = view;
-    if (target.threadId !== null) {
+    const isItemOpen =
+      state.drawer?.kind === 'conversation' && state.drawer.sessionId === sessionId;
+    if (target.threadId !== null && !isItemOpen) {
       return { ...place, view: { ...view, target: { ...target, threadId: null } } };
     }
     if (target.tab === 'files' && target.focus?.path != null) {
@@ -59,18 +62,20 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     ) {
       return sessionPlace({ sessionId, lens: home, agentId: parentAgentId });
     }
-    const runId =
-      home === 'workflows'
-        ? ((state.sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === view.agentId)
-            ?.workflowRunId ?? null)
-        : null;
+    const root = resolveRootAgent({ agents, agentId: view.agentId });
+    const isRunHome = root?.workflowRunId != null && root.stepId != null;
+    const runId = isRunHome ? (agent?.workflowRunId ?? null) : null;
     return sessionPlace({
       sessionId,
       lens: home,
       target: runId === null ? null : { kind: 'run', runId },
     });
   }
-  if (view.target?.kind === 'github-issue' || view.target?.kind === 'external-task') {
+  if (
+    view.target?.kind === 'github-issue' ||
+    view.target?.kind === 'external-task' ||
+    view.target?.kind === 'question'
+  ) {
     return sessionPlace({ sessionId });
   }
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {

@@ -285,14 +285,14 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'answer-questions') {
-      const { count, firstQuestion } = suggestion.payload;
+      const { firstQuestion } = suggestion.payload;
       return {
         primary: {
           label: 'Answer',
           isDisabled: false,
           failureTitle: "Couldn't open the questions",
           run: async () => {
-            if (count === 1 && firstQuestion != null) {
+            if (firstQuestion != null) {
               openAgentQuestion({ question: firstQuestion });
               return;
             }

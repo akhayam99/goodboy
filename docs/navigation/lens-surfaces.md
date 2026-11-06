@@ -31,8 +31,15 @@
   Needs you and says so in gray). A row reads the question with its answer in gray on a
   second line (`You:` or `Agent:`), then the asker's role and the age; there is no answer
   column. A blocking ask is one warning dot in the leading cell. The row
-  opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), titled with
-  the asker's role and the age (`questionMetaOf`, the same function as the row) while the
+  opens the question on its address: Questions with that question open, the `question`
+  target of the session address (`questionPlace`, one function for every door: a run row's
+  Answer, a Needs you row, the run menu, a search hit, an Ask chip, the board, the
+  banner and the Now chip all go through `openQuestion`). The address carries the id, so a
+  reload or a saved window reopens that question, and the drawer (`question` drawer kind,
+  `QuestionDrawer`) is derived from it. Opening another question while one is open replaces
+  the entry, so **Close** (the X and Esc, `closeQuestion`) goes back to where you came from, the
+  Overview or the list or Ask, never to an empty list. The drawer is titled with
+  the asker's role and "asks" (`questionMetaOf`, the same function as the row) while the
   card carries the question itself. The role in that title is a link to the asker
   (`openAsker`, `features/session/openAsker.ts`): an agent you started opens its
   conversation scrolled to the question, a step of a preset run opens that step on
@@ -40,8 +47,12 @@
   pane (drawer `run-step`). A deleted asker keeps its role with no link. A row's
   right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
   **Open question** and **Open the agent** (the same `openAsker`, hidden for a
-  deleted asker); the card answers, skips, dismisses and undoes; answering moves the drawer to the next
-  waiting question. Opened from Ask (a question chip, **Answer: {the question}**), the drawer
+  deleted asker); the card in the drawer (variant `full`) names no asker, the head does,
+  starts with the Recommended answer picked (`LiveQuestionCard`), so Enter sends it, and
+  keeps one filled button: the footer holds Skip and Answer, and **More** at the top of the
+  card holds **Let an agent decide**, **Send as message** and **Dismiss question**
+  (`questionMenuOf`, three rows at most). The compact card in the chat keeps its footer.
+  Answering moves the drawer to the next waiting question. Opened from Ask (a question chip, **Answer: {the question}**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question
   (a top row holds Blocking as a dot and a word on the left and the pager on the right; the question starts on its own line below at the left edge). That card is one subtle surface
@@ -144,7 +155,7 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   action row at the end); the mode lives in the store per session and drops
   back when the page closes.
 - **The resolver stays on its comment.** A resolver exists for one comment, so its
-  home is that comment, never the Agents lens, and it has no page of its own.
+  home is that comment, never the Runs page, and it has no page of its own.
   The comment shows its agent in one line from the first paint (model, age, the
   state word, and while it drafts the last thing it said). Its transcript opens
   as a drawer of kind `transcript` on the Comments tab of its Branch, in the

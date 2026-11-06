@@ -35,7 +35,6 @@
   "session -> actions": 20,
   "session -> auto": 10,
   "session -> bootstrap": 1,
-  "session -> context": 1,
   "session -> file-versions": 6,
   "session -> history": 5,
   "session -> inbox": 3,

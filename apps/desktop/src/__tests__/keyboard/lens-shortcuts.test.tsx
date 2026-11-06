@@ -208,6 +208,7 @@ beforeEach(() => {
   state.focusedArtifactId = {};
   state.workspaceIntegrations = {};
   state.navigate.mockClear();
+  state.openDrawer.mockClear();
   state.back.mockClear();
   state.forward.mockClear();
   reload.mockClear();
@@ -227,14 +228,27 @@ describe('App lens shortcuts off darwin', () => {
     platform.current = 'linux';
   });
 
-  it('jumps to the agents lens on ctrl shift alt, where the command key does not exist', () => {
+  it('jumps to the questions lens on ctrl shift alt, where the command key does not exist', () => {
+    render(<App />);
+
+    press({ code: 'KeyQ', key: 'Q', ctrlKey: true, shiftKey: true, altKey: true });
+
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+    });
+  });
+
+  it('opens the Agents tool on ctrl shift alt A and moves no page', () => {
     render(<App />);
 
     press({ code: 'KeyA', key: 'A', ctrlKey: true, shiftKey: true, altKey: true });
 
-    expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'agents' }),
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'spawned',
+      sessionId: 'session-1',
+      payload: null,
     });
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('walks to the previous session on ctrl', () => {
@@ -267,13 +281,13 @@ describe('App lens shortcuts off darwin', () => {
 });
 
 describe('App lens shortcuts on darwin', () => {
-  it('jumps to the agents lens on the lens plane modifier', () => {
+  it('jumps to the questions lens on the lens plane modifier', () => {
     render(<App />);
 
-    press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
+    press({ code: 'KeyQ', key: 'q', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'agents' }),
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
     });
   });
 
@@ -286,10 +300,10 @@ describe('App lens shortcuts on darwin', () => {
   });
 
   it('stays on the Runs list when its chord is pressed there, since the up key is the one that leaves', () => {
-    state.activeLens = { 'session-1': 'auto' };
+    state.activeLens = { 'session-1': 'workflows' };
     render(<App />);
 
-    press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
+    press({ code: 'KeyW', key: 'w', metaKey: true, altKey: true });
 
     expect(state.navigate).not.toHaveBeenCalled();
   });
@@ -309,15 +323,27 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('opens Runs from the Agents chord, where every agent now lives', () => {
-    state.activeLens = { 'session-1': null };
+  it('opens the Agents tool from its chord and leaves the page where it is', () => {
+    state.activeLens = { 'session-1': 'workflows' };
     render(<App />);
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
-    expect(state.navigate).toHaveBeenCalledWith({
-      to: expect.objectContaining({ view: expect.objectContaining({ lens: 'workflows' }) }),
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'spawned',
+      sessionId: 'session-1',
+      payload: null,
     });
+    expect(state.navigate).not.toHaveBeenCalled();
+  });
+
+  it('leaves the old Agents tool chord free', () => {
+    render(<App />);
+
+    press({ code: 'KeyL', key: 'l', metaKey: true, altKey: true });
+
+    expect(state.openDrawer).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('toggles the Context drawer on the page where you are, on the tab each chord names', () => {

@@ -5140,7 +5140,7 @@
   },
   "apps/desktop/src/features/session/agentDoors.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     },
     "@typescript-eslint/no-floating-promises": {
       "count": 1
@@ -5194,11 +5194,6 @@
   "apps/desktop/src/features/session/ask/runAskTurn.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 6
-    }
-  },
-  "apps/desktop/src/features/session/attentionPlace.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
     }
   },
   "apps/desktop/src/features/session/branchRequests.test.ts": {
@@ -7146,9 +7141,6 @@
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }

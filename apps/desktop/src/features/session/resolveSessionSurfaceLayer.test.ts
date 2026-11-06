@@ -10,7 +10,7 @@ describe('resolveSessionSurfaceLayer', () => {
   it('overlays the lens when an agent is selected from anywhere else', () => {
     expect(
       resolveSessionSurfaceLayer({
-        lens: 'agents',
+        lens: 'workflows',
         selectedAgentId: AGENT,
         artifactConversationAgentId: null,
       }),
@@ -40,7 +40,7 @@ describe('resolveSessionSurfaceLayer', () => {
   it('does not let a stale artifact host suppress the overlay from another lens', () => {
     expect(
       resolveSessionSurfaceLayer({
-        lens: 'agents',
+        lens: 'workflows',
         selectedAgentId: AGENT,
         artifactConversationAgentId: AGENT,
       }),

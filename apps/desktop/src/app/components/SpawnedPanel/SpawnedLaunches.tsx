@@ -20,7 +20,7 @@ export const SpawnedLaunches = ({ session, selectedAgentId }: Props) => {
   const runs = useSessionRuns({ session });
   const launches = useMemo(() => launchesOf({ runs, attached }), [runs, attached]);
   if (launches.length === 0) {
-    return <EmptyLine className="px-2">No agents in this session yet</EmptyLine>;
+    return <EmptyLine className="px-2">Nothing live right now</EmptyLine>;
   }
   return (
     <SpawnedTree label="Launches">

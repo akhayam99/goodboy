@@ -1,8 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { classifyAgent } from '../../../session/agent-kind';
 import { useAnswerQuestion } from '../../hooks/useAnswerQuestion';
 import {
   canSendQuestionAsMessage,
@@ -44,11 +43,6 @@ export const LiveQuestionCard = ({
 }: Props) => {
   const now = useNow(30_000);
   const agents = useAppStore((state) => state.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
-  const kindOverride = useAppStore((state) =>
-    question.createdByAgentId == null
-      ? null
-      : (state.agentKindOverride?.[question.createdByAgentId] ?? null),
-  );
   const draft = useOpenQuestions((state) => state.drafts[question.id]);
   const isStaged = useOpenQuestions((state) => state.staged.includes(question.id));
   const toggleSuggestion = useOpenQuestions((state) => state.toggleSuggestion);
@@ -77,6 +71,19 @@ export const LiveQuestionCard = ({
       : (agents.find((agent) => agent.id === question.answeredByAgentId)?.name ?? null);
   const mode = question.selectMode ?? 'one';
   const state: QuestionCardState = settled ?? (isStaged ? 'staged' : 'open');
+  const recommended = question.recommendedAnswer?.trim() ?? '';
+  const shouldPickRecommended =
+    variant === 'full' &&
+    state === 'open' &&
+    mode === 'one' &&
+    recommended !== '' &&
+    draft === undefined;
+
+  useEffect(() => {
+    if (shouldPickRecommended) {
+      toggleSuggestion(question.id, recommended, mode);
+    }
+  }, [mode, question.id, recommended, shouldPickRecommended, toggleSuggestion]);
   const age = formatAge({
     from: state === 'answered' ? (question.answeredAt ?? question.createdAt) : question.createdAt,
     now,
@@ -115,7 +122,6 @@ export const LiveQuestionCard = ({
         variant={variant}
         state={state}
         askerName={asker?.name ?? null}
-        askerKind={asker === null ? null : classifyAgent({ agent: asker, override: kindOverride })}
         age={age}
         draft={draft}
         pager={pager}

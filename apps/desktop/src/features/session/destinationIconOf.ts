@@ -9,7 +9,7 @@ type Params = {
 
 export const destinationIconOf = ({ destination }: Params): LucideIcon => {
   if (destination.pane !== undefined) {
-    return CONCEPT_ICONS[destination.pane];
+    return destination.pane === 'spawned' ? CONCEPT_ICONS.agents : CONCEPT_ICONS[destination.pane];
   }
   const lens = destination.lens ?? null;
   return lens === null ? CONCEPT_ICONS.sessions : LENS_ICON[lens];

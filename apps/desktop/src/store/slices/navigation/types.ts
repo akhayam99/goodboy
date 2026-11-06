@@ -1,4 +1,4 @@
-import type { AgentId, ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, ArtifactId, OpenQuestionId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { DiffFocus, FocusedExternalTask, LensKind } from '../session-view/types';
 import type { OpenDrawer } from '../drawer/state';
 import type { StudioPlace } from './studio';
@@ -25,7 +25,8 @@ export type SessionTarget =
       readonly threadId: string | null;
       readonly focus: DiffFocus | null;
     }
-  | { readonly kind: 'thread'; readonly threadId: string };
+  | { readonly kind: 'thread'; readonly threadId: string }
+  | { readonly kind: 'question'; readonly questionId: OpenQuestionId };
 
 export type SessionView = {
   readonly lens: LensKind | null;

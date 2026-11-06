@@ -1,13 +1,17 @@
 import type {
   Agent,
   MountId,
+  OpenQuestion,
   ResolveAttempt,
   ResolveThread,
   Session,
   SessionAttentionReason,
   SessionId,
 } from '@goodboy/types';
-import { agentPlace, branchPlace, sessionPlace } from '../../store';
+import { agentPlace, branchPlace, questionPlace, sessionPlace } from '../../store';
+import { partitionDelegatedQuestions } from '../context/questionDelegate';
+import { stagedQuestionIds } from '../context/stagedQuestionIds';
+import { selectOpenQuestions } from './components/SessionOverviewPane/lib';
 import type { NotificationPlaceReason } from './notificationPlaceReason';
 import { branchLandingTabOf } from '../branch/branchLandingTab';
 import { isTurnStatePermissionBlocked } from './agent-lifecycle';
@@ -30,6 +34,7 @@ type State = AutoWaitState &
   RunWaitState & {
     readonly sessions: ReadonlyArray<Session>;
     readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
+    readonly sessionOpenQuestions?: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
     readonly sessionResolveThreads?: Readonly<Record<string, ReadonlyArray<ResolveThread>>>;
     readonly sessionResolveAttempts?: Readonly<Record<string, ReadonlyArray<ResolveAttempt>>>;
     readonly sessionProjectMounts?: Readonly<
@@ -119,7 +124,14 @@ export const attentionPlace = ({
       : agentPlace({ sessionId, agentId: root.id });
   }
   if (reason === 'open-question') {
-    return sessionPlace({ sessionId, lens: 'questions' });
+    const staged = stagedQuestionIds();
+    const waiting = partitionDelegatedQuestions({
+      questions: selectOpenQuestions(state.sessionOpenQuestions?.[sessionId] ?? []),
+      agents: state.sessionPhaseRuns[sessionId] ?? [],
+    }).answerable.find((question) => !staged.includes(question.id));
+    return waiting === undefined
+      ? sessionPlace({ sessionId, lens: 'questions' })
+      : questionPlace({ sessionId, questionId: waiting.id });
   }
   if (reason === 'plan-approval') {
     const heldRun = state.sessions

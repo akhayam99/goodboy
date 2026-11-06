@@ -5,7 +5,7 @@ import { LevelsScene } from './c02LevelsScene';
 
 const WORKSPACE = { place: 'board', branches: 3 } as const;
 const SESSION = { isBusy: true } as const;
-const AGENTS = { isBusy: true, lens: 'agents' } as const;
+const AGENTS = { isBusy: true, lens: 'workflows' } as const;
 const BRANCHLESS = { branches: 0 } as const;
 const MAIN_FOLDED = { isBusy: true, isMainFolded: true } as const;
 const FOLDED = { isBusy: true, isRailFolded: true } as const;

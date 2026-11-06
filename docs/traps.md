@@ -33,12 +33,12 @@ The Rust files with the most comments lost them in one pass. What a reader would
 
 - The Storage verdict for a worktree folder has two owners on purpose. Rust decides `safe`, `dirty`, `writing`, `operation`, `not-tracked` and `unavailable` (`folder_verdict`); the live terminals are the store's `terminalTabs`, which Rust cannot see, so `storageFolderStatus` turns a `safe` verdict into `terminal-open` when `terminalsInFolder` finds a live shell. Do not recompute the Rust half from `reasons` in TypeScript, and do not add the terminal half to Rust. Every count of safe folders goes through `summarizeStorage` with the same terminal map.
 
-- `navigate` closes the open drawer (only Ask survives, `keepAskDrawer`),
-  because the drawer belongs to the history entry. A row of the Agents panel
-  that opens a page in the center must pass the panel as `drawer`
-  (`openSpawned`), or the panel closes under the click. Do not make the panel
-  survive every navigation: then it would also stay over pages that have
-  nothing to do with the run or Auto it showed.
+- `navigate` closes the open drawer unless it is a tool of the session it
+  stays in (`keepToolDrawer` reads the `tool` rows of `DRAWER_KINDS` that light a
+  pane), because the drawer belongs to the history entry. A reader, an item or a
+  form never survives a move. The Agents tool keeps no revealed agent through a
+  move: it follows the page. A row never opens a tool: the tool is open already
+  or the user did not ask for it.
 
 - The macOS menu bar and the web view share every ⌘ key, and the web view sees
   the key first: a `preventDefault` in a shortcut handler stops the native menu

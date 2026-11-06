@@ -411,7 +411,7 @@ export const BrandSlackScene = () => {
       siblings: SIBLINGS,
       branches: BRANCHES,
       telemetryAt: at(56),
-      lens: 'agents',
+      lens: 'workflows',
     });
     useAppStore.setState({
       selectedAgentId: { [SESSION_ID]: AGENT_ID },

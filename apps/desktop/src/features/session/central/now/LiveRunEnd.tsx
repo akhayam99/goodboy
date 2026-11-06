@@ -7,6 +7,7 @@ import { RaiseCapPrimary } from '../../components/AgentTree/RunHeader/RaiseCapPr
 import { RunPrimaryAction } from '../../components/AgentTree/RunHeader/RunPrimaryAction';
 import { useRunView } from '../../components/AgentTree/useRunView';
 import { runHeaderPrimaryOf } from '../../components/PresetRun/runHeaderPrimaryOf';
+import { openQuestion } from '../../openQuestion';
 import { runOpenQuestion } from '../../timeline/runOpenQuestion';
 import type { LiveRunGroup } from './liveGroupsOf';
 
@@ -21,7 +22,6 @@ const QuestionIcon = CONCEPT_ICONS.questions;
 
 export const LiveRunEnd = ({ session, group, fallback, isLead }: Props) => {
   const view = useRunView({ session, run: group.entry.run, workflow: group.entry.workflow });
-  const openDrawer = useAppStore((state) => state.openDrawer);
   const variant = isLead ? 'primary' : 'secondary';
   const pageHeader = runHeaderPrimaryOf({ view });
   const entryQuestion = runOpenQuestion({ entry: group.entry })?.question ?? null;
@@ -48,10 +48,10 @@ export const LiveRunEnd = ({ session, group, fallback, isLead }: Props) => {
           variant={variant}
           data-live-cta="answer"
           onClick={() =>
-            openDrawer({
-              kind: 'question',
+            openQuestion({
+              state: useAppStore.getState(),
               sessionId: session.id,
-              payload: { questionId: header.question.id },
+              questionId: header.question.id,
             })
           }
         >

@@ -171,7 +171,7 @@ describe('WorkflowFollowToastBridge', () => {
 
   it('stays quiet when that agent is already selected', () => {
     useAppStore.setState({
-      activeLens: { [SESSION_ID]: 'agents' },
+      activeLens: { [SESSION_ID]: 'workflows' },
       selectedAgentId: { [SESSION_ID]: AGENT_ID },
     });
     renderBridge();
