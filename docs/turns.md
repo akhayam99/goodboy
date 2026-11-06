@@ -1442,7 +1442,9 @@ access`, `Model routing: ..., pinned`). The main composer keeps every label at
   reload keeps them. The row owns Retry (`retryQueuedMessage`), and
   RoutingIndicator's Send anyway forces the held row when the box is empty.
   `drainAgentQueue` sends nothing while any row of the agent is `sending`,
-  while the head row is held, or for a stopped or skipped step
+  while the head row is held, while a permission ask is open (reloaded agents
+  read their transcript first, and a failed read keeps the row), or for a
+  stopped or skipped step
   (`isQueueParked`, which also picks the tray's Sends when you Continue); a
   step cut keeps the agent stopping until its cut status is read back.
   Deleting or editing a row drains again, so the rows behind a held head move

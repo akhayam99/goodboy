@@ -1,6 +1,13 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -39,6 +46,7 @@ vi.mock('@tauri-apps/api/core', async () =>
 const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
 const IDLE_SINCE = brandId<IsoDateTime>({ value: '2026-11-02T14:00:00.000Z' });
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-1' });
 
 const SAVED_MESSAGE = {
   id: 'q1',
@@ -95,6 +103,104 @@ beforeEach(async () => {
     },
     sendTurn,
     reportError,
+  });
+});
+
+describe('drainAgentQueue while a permission ask is open', () => {
+  const askEvent: TurnEvent = {
+    kind: 'permission_request',
+    runId: RUN_ID,
+    toolUseId: 'tool-1',
+    toolName: 'Bash',
+    input: { command: 'pnpm db:migrate' },
+    at: IDLE_SINCE,
+  };
+  const decision: TurnEvent = {
+    kind: 'permission_decision',
+    runId: RUN_ID,
+    toolUseId: 'tool-1',
+    decision: 'allow',
+    ruleId: null,
+    decidedBy: 'user',
+    at: IDLE_SINCE,
+  };
+  const hold = (events: ReadonlyArray<TurnEvent>): void => {
+    store.setState({
+      transcripts: { [AGENT_ID]: events },
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: IDLE_SINCE } },
+    });
+  };
+  const drain = () =>
+    store.getState().drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+  it('keeps the queued message in the tray, not sending it over the ask', async () => {
+    await restartWithSavedMessage();
+    hold([askEvent]);
+
+    await drain();
+
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(store.getState().agentQueue[AGENT_ID]?.[0]).toMatchObject({
+      id: 'q1',
+      status: 'queued',
+    });
+    expect(store.getState().agentQueue[AGENT_ID]?.[0]?.hold).toBeUndefined();
+  });
+
+  it('goes on once the ask is answered', async () => {
+    await restartWithSavedMessage();
+    hold([askEvent]);
+    await drain();
+
+    hold([askEvent, decision]);
+    await drain();
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes on when the agent stopped and the ask lapsed', async () => {
+    await restartWithSavedMessage();
+    hold([askEvent]);
+    await drain();
+
+    store.setState({
+      agentTurnState: { [AGENT_ID]: { kind: 'idle', lastActivityAt: IDLE_SINCE } },
+    });
+    await drain();
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the transcript of a reloaded agent before it decides', async () => {
+    await restartWithSavedMessage();
+    const loadAgentTranscript = vi.fn(async () => {
+      store.setState({ transcripts: { [AGENT_ID]: [askEvent] } });
+    });
+    store.setState({
+      loadAgentTranscript,
+      transcripts: {},
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: IDLE_SINCE } },
+    });
+
+    await drain();
+
+    expect(loadAgentTranscript).toHaveBeenCalledWith(SESSION_ID, AGENT_ID, { isSelecting: false });
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('keeps the message when the transcript cannot be read', async () => {
+    await restartWithSavedMessage();
+    store.setState({
+      loadAgentTranscript: vi.fn(async () => {
+        throw new Error('the database is busy');
+      }),
+      transcripts: {},
+      agentTurnState: { [AGENT_ID]: { kind: 'blocked', runId: RUN_ID, blockedAt: IDLE_SINCE } },
+    });
+
+    await drain();
+
+    expect(sendTurn).not.toHaveBeenCalled();
   });
 });
 
