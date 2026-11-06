@@ -148,7 +148,6 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
                   plannerName: creator?.name ?? null,
                 })}
                 onSent={onSent}
-                isApproveInBar={false}
                 onOpenPart={(row) => {
                   if (hasRun && row.agentId !== null) {
                     navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });

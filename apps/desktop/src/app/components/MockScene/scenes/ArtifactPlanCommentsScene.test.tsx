@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useAppStore } from '../../../../store';
+import type { RunPlanResult } from '../../../../store/slices/plans/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { ArtifactPlanCommentsScene } from './ArtifactPlanCommentsScene';
 
@@ -31,6 +33,44 @@ describe('ArtifactPlanCommentsScene', () => {
     expect(within(bar).getByText('2 comments')).toBeDefined();
     const send = within(bar).getByRole('button', { name: 'Send to planner' });
     expect((send as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('keeps one filled button while comments wait: Send is filled, Run is not', async () => {
+    render(<Scene />);
+    const run = await screen.findByTestId('artifact-action-runPlan');
+    expect(run.getAttribute('data-variant')).toBe('secondary');
+    expect(screen.getByTestId('plan-bar-send').getAttribute('data-variant')).toBe('primary');
+    const filled = Array.from(document.querySelectorAll('[data-variant="primary"]'));
+    expect(filled).toHaveLength(1);
+    expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
+  });
+
+  it('asks before Run while comments wait, and Run anyway runs once', async () => {
+    const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
+      kind: 'refused',
+      reason: null,
+      workflowRunId: null,
+    }));
+    useAppStore.setState({ runPlan });
+    render(<Scene />);
+    await screen.findAllByTestId('plan-comment');
+
+    fireEvent.click(screen.getByTestId('artifact-action-runPlan'));
+
+    expect(runPlan).not.toHaveBeenCalled();
+    expect(await screen.findByText('Run without your 2 comments?')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Run anyway' }));
+    await waitFor(() => expect(runPlan).toHaveBeenCalledTimes(1));
+  });
+
+  it('runs at once with no comment to lose, and Run takes the fill back', async () => {
+    render(
+      <ToastProvider>
+        <ArtifactPlanCommentsScene hasComments={false} />
+      </ToastProvider>,
+    );
+    const run = await screen.findByTestId('artifact-action-runPlan');
+    expect(run.getAttribute('data-variant')).toBe('primary');
   });
 
   it('marks the comments sent and drops the bar after Send', async () => {

@@ -298,7 +298,7 @@ describe('the primary plan action follows the one rule', () => {
     seed({ run: heldRun });
     useAppStore.setState({ artifactComments: { [PLAN_FIXTURE_SESSION]: [aDraft('draft-1')] } });
     expect(resolved()?.confirm).toMatchObject({
-      title: '1 comment is not sent. Approve anyway?',
+      title: 'Approve without your comment?',
       confirmLabel: 'Approve anyway',
       role: 'alert',
     });
@@ -306,17 +306,26 @@ describe('the primary plan action follows the one rule', () => {
     useAppStore.setState({
       artifactComments: { [PLAN_FIXTURE_SESSION]: [aDraft('draft-1'), aDraft('draft-2')] },
     });
-    expect(resolved()?.confirm?.title).toBe('2 comments are not sent. Approve anyway?');
+    expect(resolved()?.confirm?.title).toBe('Approve without your 2 comments?');
 
     useAppStore.setState({ artifactComments: {} });
     expect(resolved()?.confirm).toBeNull();
   });
 
-  it('does not ask before running a plan no run holds', () => {
+  it('asks before running a plan no run holds, and fills nothing while comments wait', () => {
     seed({ run: null });
     useAppStore.setState({ artifactComments: { [PLAN_FIXTURE_SESSION]: [aDraft('draft-1')] } });
 
+    expect(resolved()?.confirm).toMatchObject({
+      title: 'Run without your comment?',
+      confirmLabel: 'Run anyway',
+      role: 'alert',
+    });
+    expect(resolved()?.isSecondary).toBe(true);
+
+    useAppStore.setState({ artifactComments: {} });
     expect(resolved()?.confirm).toBeNull();
+    expect(resolved()?.isSecondary).toBe(false);
   });
 
   it('is Approve for the plan a run is held for and Run plan for a session plan', () => {

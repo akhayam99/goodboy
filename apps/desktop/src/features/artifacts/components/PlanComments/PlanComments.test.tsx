@@ -386,29 +386,13 @@ describe('PlanProse', () => {
   });
 });
 
-type PlanBarApprove = NonNullable<Parameters<typeof PlanCommentBar>[0]['approve']>;
-
 describe('PlanCommentBar', () => {
   const allowed = { canSend: true, reason: null };
-
-  const approval = (overrides: Partial<PlanBarApprove> = {}): PlanBarApprove => ({
-    press: vi.fn(),
-    isBusy: false,
-    confirm: null,
-    ...overrides,
-  });
 
   it('counts the comments and sends', () => {
     const onSend = vi.fn(async () => undefined);
     render(
-      <PlanCommentBar
-        count={2}
-        guard={allowed}
-        isSending={false}
-        error={null}
-        onSend={onSend}
-        approve={null}
-      />,
+      <PlanCommentBar count={2} guard={allowed} isSending={false} error={null} onSend={onSend} />,
     );
     expect(screen.getByText('2 comments')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
@@ -425,7 +409,6 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={onSend}
-        approve={null}
       />,
     );
     expect(screen.getByText('1 comment')).toBeDefined();
@@ -436,8 +419,7 @@ describe('PlanCommentBar', () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it('makes Send the one filled button and keeps Approve beside it while the run waits', () => {
-    const press = vi.fn();
+  it('makes Send the one filled button', () => {
     render(
       <PlanCommentBar
         count={1}
@@ -445,16 +427,13 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={vi.fn(async () => undefined)}
-        approve={approval({ press })}
       />,
     );
     expect(screen.getByTestId('plan-bar-send').getAttribute('data-filled')).toBe('true');
-    expect(screen.getByTestId('plan-bar-approve').getAttribute('data-filled')).toBe('false');
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    expect(press).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
-  it('stays with Approve alone and a hint when there is no comment yet', () => {
+  it('stays with a hint when there is no comment yet', () => {
     render(
       <PlanCommentBar
         count={0}
@@ -462,54 +441,10 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={vi.fn(async () => undefined)}
-        approve={approval()}
       />,
     );
     expect(screen.getByText('Select text or click a block to comment')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Send to planner' })).toBeNull();
-  });
-
-  it('asks inline about the unsent comments before it approves', () => {
-    const confirm = vi.fn(async () => undefined);
-    const cancel = vi.fn();
-    render(
-      <PlanCommentBar
-        count={3}
-        guard={allowed}
-        isSending={false}
-        error={null}
-        onSend={vi.fn(async () => undefined)}
-        approve={approval({ confirm: { count: 3, confirm, cancel } })}
-      />,
-    );
-    expect(
-      screen.getByRole('group', { name: '3 comments are not sent. Approve anyway?' }),
-    ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Approve anyway' }));
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(cancel).not.toHaveBeenCalled();
-  });
-
-  it('lets the question be cancelled', () => {
-    const confirm = vi.fn(async () => undefined);
-    const cancel = vi.fn();
-    render(
-      <PlanCommentBar
-        count={1}
-        guard={allowed}
-        isSending={false}
-        error={null}
-        onSend={vi.fn(async () => undefined)}
-        approve={approval({ confirm: { count: 1, confirm, cancel } })}
-      />,
-    );
-    expect(
-      screen.getByRole('group', { name: '1 comment is not sent. Approve anyway?' }),
-    ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(cancel).toHaveBeenCalledTimes(1);
-    expect(confirm).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('shows a send failure as an alert', () => {
@@ -520,7 +455,6 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error="The session budget is reached."
         onSend={vi.fn(async () => undefined)}
-        approve={null}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('The session budget is reached.');

@@ -17,6 +17,7 @@ import { planApprovedFollowOf } from '../planApprovedFollow';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
 import type { PlanRevising } from '../planRevising';
+import { unsentCommentsConfirmOf, type UnsentCommentsConfirm } from '../unsentCommentsConfirmOf';
 import { usePlanOwner } from '../usePlanOwner';
 import { usePlanRun, usePlanRunToast } from '../usePlanRun';
 
@@ -36,7 +37,7 @@ type Params = Readonly<{
 }>;
 
 export type PlanApproveConfirm = Readonly<{
-  count: number;
+  prompt: UnsentCommentsConfirm;
   confirm: () => Promise<void>;
   cancel: () => void;
 }>;
@@ -191,33 +192,42 @@ export const usePlanPrimaryAction = ({
     }
   }, [approveHeld, approveThroughRun, isApproving, reportError, run, sessionId]);
 
-  const press = useCallback(() => {
+  const start = useCallback(async () => {
     if (primary.kind === 'approve') {
-      if (drafts.length > 0) {
-        setIsConfirming(true);
-        return;
-      }
-      void approve();
+      await approve();
       return;
     }
     if (primary.kind === 'run') {
-      void planRun.run();
+      await planRun.run();
     }
-  }, [approve, drafts.length, planRun, primary.kind]);
+  }, [approve, planRun, primary.kind]);
+
+  const prompt = useMemo(
+    () => unsentCommentsConfirmOf({ primary, count: drafts.length }),
+    [drafts.length, primary],
+  );
+
+  const press = useCallback(() => {
+    if (prompt !== null) {
+      setIsConfirming(true);
+      return;
+    }
+    void start();
+  }, [prompt, start]);
 
   const confirm = useMemo<PlanApproveConfirm | null>(() => {
-    if (!isConfirming || primary.kind !== 'approve' || drafts.length === 0) {
+    if (!isConfirming || prompt === null) {
       return null;
     }
     return {
-      count: drafts.length,
+      prompt,
       confirm: async () => {
-        await approve();
+        await start();
         setIsConfirming(false);
       },
       cancel: () => setIsConfirming(false),
     };
-  }, [approve, drafts.length, isConfirming, primary.kind]);
+  }, [isConfirming, prompt, start]);
 
   return {
     primary,

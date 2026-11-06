@@ -1,12 +1,7 @@
-import { Check } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
-import { PlanApproveConfirm } from '../../../plans/planSurfaces';
-import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
 import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
-
-type PlanBarApprove = Pick<PlanPrimaryAction, 'press' | 'isBusy' | 'confirm'>;
 
 type Props = {
   readonly count: number;
@@ -14,12 +9,11 @@ type Props = {
   readonly isSending: boolean;
   readonly error: string | null;
   readonly onSend: () => Promise<unknown>;
-  readonly approve: PlanBarApprove | null;
 };
 
 const CommentIcon = CONCEPT_ICONS.comments;
 
-export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve }: Props) => {
+export const PlanCommentBar = ({ count, guard, isSending, error, onSend }: Props) => {
   const note = error ?? (guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason);
   const hasDrafts = count > 0;
 
@@ -55,24 +49,6 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve
           </span>
         )}
         <div className="flex shrink-0 items-center gap-2">
-          {approve === null ? null : (
-            <PlanApproveConfirm
-              confirm={approve.confirm}
-              trigger={() => (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  isBusy={approve.isBusy}
-                  onClick={approve.press}
-                  data-testid="plan-bar-approve"
-                  data-filled="false"
-                >
-                  <Check size={ICON_SIZE.row} aria-hidden />
-                  Approve
-                </Button>
-              )}
-            />
-          )}
           {hasDrafts ? (
             <Button
               variant="primary"

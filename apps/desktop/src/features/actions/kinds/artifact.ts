@@ -29,7 +29,7 @@ import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planEditBlockOf } from '../../plans/planEditBlock';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
-import { unsentCommentsQuestion } from '../../plans/unsentCommentsQuestion';
+import { unsentCommentsConfirmOf } from '../../plans/unsentCommentsConfirmOf';
 import { planRunToast } from '../../plans/planRunToast';
 import { openPlanDrawer } from '../../plans/openPlanDrawer';
 import { NOT_REVISING, type PlanRevising } from '../../plans/planRevising';
@@ -379,15 +379,14 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
       planIn({ facts, statuses: ['active'] }) && primaryOf({ facts }).kind !== 'none',
     blockedReason: ({ facts }) =>
       portBlocked({ facts, id: 'runPlan' }) ?? primaryOf({ facts }).reason,
-    confirm: ({ facts }) =>
-      primaryOf({ facts }).kind === 'approve' && facts.planDrafts.length > 0
-        ? {
-            title: unsentCommentsQuestion({ count: facts.planDrafts.length }),
-            description: 'Approving starts the run without them. They stay on the plan as drafts.',
-            confirmLabel: 'Approve anyway',
-            role: 'alert',
-          }
-        : null,
+    isSecondary: ({ facts }) => primaryOf({ facts }).isSecondary,
+    confirm: ({ facts }) => {
+      const prompt = unsentCommentsConfirmOf({
+        primary: primaryOf({ facts }),
+        count: facts.planDrafts.length,
+      });
+      return prompt === null ? null : { ...prompt, role: 'alert' };
+    },
     isBusy: ({ facts }) => portBusy({ facts, id: 'runPlan' }),
     run: runPlanAction,
   },

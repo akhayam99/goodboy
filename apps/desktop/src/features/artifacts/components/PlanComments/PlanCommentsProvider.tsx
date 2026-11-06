@@ -14,17 +14,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly plan: PlanWithCount;
   readonly onSent?: (result: SendArtifactCommentsResult) => void;
-  readonly isApproveInBar?: boolean;
   readonly children: ReactNode;
 };
 
-export const PlanCommentsProvider = ({
-  sessionId,
-  plan,
-  onSent,
-  isApproveInBar = true,
-  children,
-}: Props) => {
+export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Props) => {
   const model = usePlanComments({ sessionId, plan });
   const revising = usePlanRevising({ sessionId, planId: plan.id });
   const questions = useSessionOpenQuestions(sessionId);
@@ -53,7 +46,6 @@ export const PlanCommentsProvider = ({
           isSending={model.isSending}
           error={model.sendError}
           onSend={sendAndTell}
-          approve={waitsOnPlan && isApproveInBar ? action : null}
         />
       )}
     </PlanCommentsContext.Provider>

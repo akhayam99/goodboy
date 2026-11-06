@@ -7,7 +7,6 @@ import { useAppStore } from '../../../../store';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION, aPlan } from '../../../../test/planFixtures';
 import {
-  PLAN_RUN_ID,
   aPlanDraft,
   aPlannerQuestion,
   seedPlanDrawer,
@@ -15,9 +14,7 @@ import {
 } from '../../../../test/planDrawerFixtures';
 import { PlanCommentsProvider } from './PlanCommentsProvider';
 
-type Stubs = Partial<
-  Pick<ReturnType<typeof useAppStore.getState>, 'approveWorkflowRunPlan' | 'sendArtifactComments'>
->;
+type Stubs = Partial<Pick<ReturnType<typeof useAppStore.getState>, 'sendArtifactComments'>>;
 
 const renderProvider = ({
   seed,
@@ -46,12 +43,19 @@ const renderProvider = ({
 afterEach(cleanup);
 
 describe('PlanCommentsProvider', () => {
-  it('shows Approve in the bar with no comment when the run waits on the plan', () => {
+  it('shows a hint and no button in the bar when the run waits and nobody commented', () => {
     renderProvider({ seed: { run: 'held' } });
 
     const bar = screen.getByTestId('plan-comment-bar');
-    expect(within(bar).getByRole('button', { name: 'Approve' })).toBeDefined();
-    expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
+    expect(within(bar).queryByRole('button')).toBeNull();
+    expect(within(bar).getByText('Select text or click a block to comment')).toBeDefined();
+  });
+
+  it('never draws Approve in the bar, with comments or without', () => {
+    renderProvider({ seed: { run: 'held', drafts: [aPlanDraft()] } });
+
+    expect(screen.queryByRole('button', { name: /Approve/ })).toBeNull();
+    expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
   it('shows no bar for a plan nothing waits on and nobody commented', () => {
@@ -75,38 +79,6 @@ describe('PlanCommentsProvider', () => {
     });
 
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-  });
-
-  it('approves the held run from the bar without asking when nothing is unsent', async () => {
-    const approve = vi.fn(async () => ({
-      kind: 'approved' as const,
-      next: 'continues' as const,
-      agentId: null,
-    }));
-    renderProvider({ seed: { run: 'held' }, stubs: { approveWorkflowRunPlan: approve } });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
-
-    await waitFor(() => expect(approve).toHaveBeenCalledWith(PLAN_FIXTURE_SESSION, PLAN_RUN_ID));
-    expect(await screen.findByText('Plan approved')).toBeDefined();
-  });
-
-  it('asks first when comments are unsent, and approves once confirmed', async () => {
-    const approve = vi.fn(async () => ({
-      kind: 'approved' as const,
-      next: 'continues' as const,
-      agentId: null,
-    }));
-    renderProvider({
-      seed: { run: 'held', drafts: [aPlanDraft()] },
-      stubs: { approveWorkflowRunPlan: approve },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    expect(approve).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Approve anyway' }));
-
-    await waitFor(() => expect(approve).toHaveBeenCalledTimes(1));
   });
 
   it('tells the page what the planner did after Send', async () => {

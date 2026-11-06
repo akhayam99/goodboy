@@ -74,7 +74,7 @@ export const ArtifactShellActions = ({ target, details = null }: Props) => {
       <HeaderActions
         secondary={details}
         button={secondary === null ? null : buttonOf(secondary, false)}
-        primary={primary === null ? null : buttonOf(primary, true)}
+        primary={primary === null ? null : buttonOf(primary, primary.isSecondary !== true)}
         overflow={
           actions.length > 0 ? (
             <ArmedActionPopover
