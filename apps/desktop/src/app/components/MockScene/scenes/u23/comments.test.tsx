@@ -127,7 +127,7 @@ describe('the u23 comments scenes', () => {
     expect(within(rail).queryByRole('button', { name: /^Commits/ })).toBeNull();
   });
 
-  it('shows the fixed comments under Done with their count, Answer leading and the push under the list', async () => {
+  it('shows the fixed comments under Done with their count, Answer leading and no second push line under the list', async () => {
     const handlers = prPageHandlers({ behind: 0, unpushed: 3 });
     vi.mocked(invoke).mockImplementation(
       async (command: string) =>
@@ -137,9 +137,7 @@ describe('the u23 comments scenes', () => {
 
     const ready = within(list()).getByRole('region', { name: 'Done' });
     expect(within(ready).getByRole('heading', { name: 'Done 3' })).toBeDefined();
-    expect((await screen.findByTestId('review-push-line')).textContent).toContain(
-      '3 commits not pushed',
-    );
+    expect(screen.queryByTestId('review-push-line')).toBeNull();
     expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer');
     expect(within(ready).queryByRole('button', { name: 'Push 3 commits' })).toBeNull();
     expect(within(ready).getAllByRole('listitem')).toHaveLength(3);

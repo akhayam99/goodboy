@@ -54,7 +54,6 @@ import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewSc
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewList } from './ReviewList';
-import { ReviewPushLine } from './ReviewPushLine';
 import { ReviewSkeleton } from './ReviewSkeleton';
 import { ReviewTargetNotices } from './ReviewTargetNotices';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
@@ -65,7 +64,6 @@ type Props = {
   readonly session: Session;
   readonly mountId?: MountId | null;
   readonly push: ReviewPush;
-  readonly pushCount?: number;
 };
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
@@ -103,7 +101,7 @@ const focusedRowId = (): string | null =>
 
 const DOCK_BOTTOM_OFFSET = 24;
 
-export const ReviewFlow = ({ session, mountId = null, push, pushCount = 0 }: Props) => {
+export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const {
@@ -584,18 +582,11 @@ export const ReviewFlow = ({ session, mountId = null, push, pushCount = 0 }: Pro
                     agentId={run.agentId}
                     ready={fixRunReady}
                     sourceKind={source?.kind ?? null}
-                    isBusy={isAccepting}
-                    onApply={() => void acceptMany(fixRunReady.threadIds)}
                   />
                 )
               }
             />
           </div>
-          <ReviewPushLine
-            count={pushCount}
-            isBusy={isAccepting}
-            onPush={() => void push.press({ isRetry: false })}
-          />
           <div
             aria-hidden
             data-testid="review-list-clearance"

@@ -349,7 +349,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await waitFor(() => expect(nodeText(group('Done'))).toContain('Done 2'), WAIT);
       expect(rowCount(group('Needs you'))).toBe(1);
-      expect(screen.getByTestId('review-push-line').textContent).toContain('2 commits not pushed');
+      expect(screen.queryByTestId('review-push-line')).toBeNull();
       expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer');
       sidebarNamesTheBranches();
     },
@@ -358,14 +358,13 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
     name: "comments: a push that fails reads Push failed in Needs you, never Couldn't fix, and the session mark goes red",
     covers: ['navigate'],
     open: async (ctx) => {
-      installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
+      installComments({
+        sessionId: ctx.sessionId,
+        seeds: SEEDS.filter((seed) => seed.stage !== 'asking'),
+      });
       await openComments(ctx);
       await applyNeedsYou({ count: 2 });
-      await click(
-        within(await screen.findByTestId('review-push-line', undefined, WAIT)).getByRole('button', {
-          name: 'Push these',
-        }),
-      );
+      await click(await screen.findByRole('button', { name: 'Push 2 commits' }, WAIT));
       await settle();
     },
     lands: async () => {

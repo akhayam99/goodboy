@@ -285,6 +285,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     push.phase.kind === 'confirm' ||
     push.phase.kind === 'pushing' ||
     push.phase.kind === 'sync_confirm' ||
+    (tab === 'comments' && branchReview.isSelecting) ||
     controls.diffControls.confirming !== null ||
     controls.pullRequestControls.confirming !== null;
 
@@ -386,7 +387,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     const visit = {
       mountId: historyMountId,
       push,
-      pushCount: push.phase.kind === 'idle' ? pushCount : 0,
       isVisible: isActive,
     };
     return <ReviewFlowVisit session={session} {...visit} />;

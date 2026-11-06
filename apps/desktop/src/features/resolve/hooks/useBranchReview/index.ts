@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import type { BranchStepComments } from '../../../branch/branchStepOf';
 import type { FixRun } from '../../fixRun';
 import type { LaneStatus } from '../../laneStatus';
@@ -23,6 +24,7 @@ type BranchReview = {
   readonly comments: BranchStepComments;
   readonly run: FixRun | null;
   readonly lane: LaneStatus | null;
+  readonly isSelecting: boolean;
 };
 
 const NO_GROUPS: ReadonlyArray<ReviewGroup> = [];
@@ -38,6 +40,7 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
     entries: branchEntries,
     groups: NO_GROUPS,
   });
+  const selectedCount = useAppStore((s) => s.reviewSelection[sessionId]?.length ?? 0);
   const questionThreadId =
     branchEntries.find((entry) => entry.resolveWord === 'question')?.threadId ?? null;
   const fixableThreadIds = useMemo(
@@ -58,5 +61,5 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
     }),
     [fixableThreadIds, isRunLive, questionThreadId, readyThreadIds],
   );
-  return { entries, push, comments, run, lane };
+  return { entries, push, comments, run, lane, isSelecting: selectedCount > 0 };
 };

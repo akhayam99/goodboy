@@ -77,7 +77,7 @@ describe('resolve-state scenes', () => {
     within(banner).getByText('Fix run finished: 4 fixes ready for you');
     expect(banner.textContent).toContain('Apply accepts the fix made in 90b1d57.');
     expect(banner.textContent).toContain('replies to and resolves the 4 threads on GitHub');
-    within(banner).getByRole('button', { name: 'Apply and resolve 4' });
+    expect(within(banner).queryAllByRole('button')).toHaveLength(0);
     expect(rowLines(comments)).toEqual(Array(4).fill('Fixed in 90b1d57 · Review the fix'));
     expect(within(comments).getAllByRole('button', { name: 'See diff of 90b1d57' })).toHaveLength(
       4,
@@ -87,23 +87,6 @@ describe('resolve-state scenes', () => {
     expect(group.querySelectorAll('[data-thread-id]')).toHaveLength(4);
     expect(screen.queryByText(/Checks were skipped/)).toBeNull();
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
-  });
-
-  it('ready: Apply and resolve accepts the four fixes of the run in one call', async () => {
-    const accept = vi.fn(async () => ({ acceptedCount: 4, failures: [] }));
-    show({ name: 'resolve-state-ready' });
-    const banner = await screen.findByTestId('fix-run-ready');
-    act(() => {
-      useAppStore.setState({ acceptReviewComments: accept });
-    });
-
-    fireEvent.click(within(banner).getByRole('button', { name: 'Apply and resolve 4' }));
-
-    await waitFor(() => expect(accept).toHaveBeenCalledTimes(1));
-    expect(accept).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      threadIds: ['PRRT_bulk_r1', 'PRRT_bulk_r2', 'PRRT_bulk_r3', 'PRRT_bulk_r4'],
-    });
   });
 
   it('ready: See diff opens the files of the branch on the fix commit', async () => {
@@ -175,7 +158,7 @@ describe('resolve-state scenes', () => {
       ].sort(),
     );
     screen.getByText('Fix run finished: 2 fixes ready for you');
-    screen.getByRole('button', { name: 'Apply and resolve 2' });
+    expect(within(screen.getByTestId('fix-run-ready')).queryAllByRole('button')).toHaveLength(0);
   });
 
   it.each(Object.keys(U28_B_RESOLVE_STATE_SCENES))(

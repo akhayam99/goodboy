@@ -304,6 +304,26 @@ describe('one Push at a time', () => {
     });
   });
 
+  it('steps the header Push down while comments are selected and back when they are cleared', async () => {
+    stubPush({ preview: CLEAN, publish: async () => DONE });
+    await mountReady();
+
+    expect(headerPush(/^Push 3 commits$/).getAttribute('data-variant')).toBe('primary');
+    const threadId = list().querySelector<HTMLElement>('button[data-thread-id]')?.dataset.threadId;
+    expect(threadId).toBeDefined();
+    act(() =>
+      useAppStore
+        .getState()
+        .toggleReviewSelection({ sessionId: SESSION.id, threadId: threadId ?? '' }),
+    );
+    await settle();
+    expect(headerPush(/^Push 3 commits$/).getAttribute('data-variant')).toBe('secondary');
+
+    act(() => useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id }));
+    await settle();
+    expect(headerPush(/^Push 3 commits$/).getAttribute('data-variant')).toBe('primary');
+  });
+
   it('pushes only the selected comment from its own detail', async () => {
     const { prepare } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mountReady();
