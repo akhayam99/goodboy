@@ -175,6 +175,15 @@ describe('Overview capabilities from the session Overview', () => {
     notices().getByRole('button', { name: 'Keep both branches' });
   });
 
+  it('keeps the notices in the column, never inside the Needs you card', async () => {
+    await mountScene({ name: 'c05-overview-notices' });
+
+    const section = screen.getByRole('region', { name: 'Notices' });
+    const card = document.querySelector<HTMLElement>('[data-overview-card="needs-you"]');
+    expect(card === null || !card.contains(section)).toBe(true);
+    expect(section.closest('[data-central-column]')).not.toBeNull();
+  });
+
   it('keeps Restore branch and Remove for a deleted branch in the notices slot', async () => {
     await mountScene({ name: 'c05-overview-notices' });
 

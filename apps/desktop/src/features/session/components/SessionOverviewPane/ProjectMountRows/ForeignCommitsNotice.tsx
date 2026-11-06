@@ -3,24 +3,20 @@ import { Button, Notice, formatError } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
+import type { RemoteBranchState } from '../../../../worktree/worktree';
 import { foreignCommitsBody, isWorktreeClean } from './foreignCommits';
-import { useForeignCommits } from './useForeignCommits';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly row: MountRowView;
-  readonly status: WorktreeStatus | null;
+  readonly status: WorktreeStatus;
+  readonly state: RemoteBranchState;
 };
 
-export const ForeignCommitsNotice = ({ sessionId, row, status }: Props) => {
-  const moveMountToRemoteCommits = useAppStore((state) => state.moveMountToRemoteCommits);
-  const state = useForeignCommits({ row, status });
+export const ForeignCommitsNotice = ({ sessionId, row, status, state }: Props) => {
+  const moveMountToRemoteCommits = useAppStore((store) => store.moveMountToRemoteCommits);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (state === null || status === null) {
-    return null;
-  }
 
   const isClean = isWorktreeClean({ status });
   const move = async () => {

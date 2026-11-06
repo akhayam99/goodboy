@@ -345,6 +345,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
         : `Pull request created for ${session.goal}`,
       sessionId,
       workspaceId: workspace.id,
+      action: { kind: 'open-place', sessionId, reason: 'pr-opened', mountId: mount.id },
     });
     const isNumbered = number !== null && Number.isInteger(number);
     return {

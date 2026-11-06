@@ -61,8 +61,7 @@ describe('the small flows scenes', () => {
     const needsYou = screen.getByRole('region', { name: 'Needs you' });
     expect(within(needsYou).getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
-    fireEvent.click(within(needsYou).getByRole('button', { name: 'See result' }));
-    expect(done.contains(document.activeElement)).toBe(true);
+    expect(within(needsYou).queryByRole('button', { name: 'See result' })).toBeNull();
   });
 
   it('draws one mark per row, an empty slot at rest, and a bold title when unread', () => {

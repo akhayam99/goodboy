@@ -27,6 +27,7 @@ type Params = {
   readonly branchCount: number;
   readonly doneCount: number;
   readonly isArchived: boolean;
+  readonly noticeCount?: number;
 };
 
 export const overviewCardsOf = ({
@@ -37,6 +38,7 @@ export const overviewCardsOf = ({
   branchCount,
   doneCount,
   isArchived,
+  noticeCount = 0,
 }: Params): ReadonlyArray<OverviewCardModel> => {
   if (isArchived) {
     return doneCount > 0 ? [{ id: 'done', title: TITLE.done, count: doneCount }] : [];
@@ -44,7 +46,7 @@ export const overviewCardsOf = ({
   const nextSteps = nextRowCountOf({ cards, card: 'branches' });
   const hasBranchesCard = branchCount >= MIN_BRANCHES_FOR_CARD || nextSteps > 0;
   const counts: ReadonlyArray<readonly [OverviewCardId, boolean, number]> = [
-    ['needs-you', true, waitingCount + nextRowCountOf({ cards, card: 'needs-you' })],
+    ['needs-you', true, waitingCount + noticeCount + nextRowCountOf({ cards, card: 'needs-you' })],
     ['running', runningCount > 0 || stuckCount > 0, runningCount],
     ['branches', hasBranchesCard, branchCount],
     ['done', doneCount > 0, doneCount],

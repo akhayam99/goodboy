@@ -796,7 +796,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
       checkMountBranchGone: async () =>
         variant === 'gone-branch' || variant === 'gone-branch-restore',
       mountCleanupProposals: { [SESSION_ID]: [] },
-      prSeries: { [SESSION_ID]: [SERIES] },
+      prSeries: { [SESSION_ID]: variant === 'blank' ? [] : [SERIES] },
       mountGithub: {
         [ROUNDING_MOUNT]: mountGithubEntry({
           mountId: ROUNDING_MOUNT,
@@ -860,7 +860,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
         },
       },
       sessionPhaseRuns: { [SESSION_ID]: [] },
-      sessionPlans: { [SESSION_ID]: PLANS },
+      sessionPlans: { [SESSION_ID]: variant === 'blank' ? [] : PLANS },
       sessionWorkflows: { [SESSION_ID]: [] },
       phaseTemplates: { [WORKSPACE_ID]: [] },
       sessionTelemetry: { [SESSION_ID]: [] },

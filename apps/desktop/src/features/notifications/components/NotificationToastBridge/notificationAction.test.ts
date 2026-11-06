@@ -1,10 +1,41 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NotificationAction } from '@goodboy/db';
-import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+// @vitest-environment happy-dom
 
-const SESSION_ID = 'session-1' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const RUN_ID = 'run-1' as WorkflowRunId;
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Notification, NotificationAction } from '@goodboy/db';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type SessionId,
+  type WorkflowRunId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
+const RUN_ID = brandId<WorkflowRunId>({ value: 'run-1' });
+
+const openNotificationSessionSpy = vi.hoisted(() => vi.fn(() => true));
+
+vi.mock('../../openNotificationSession', () => ({
+  openNotificationSession: openNotificationSessionSpy,
+}));
 
 import { mapNotificationAction } from './';
 
@@ -19,37 +50,41 @@ const retryPublicationSpy = vi.fn(async () => ({
   localHead: 'abc',
   remoteHead: null,
   requiresPush: false,
+  frozenAt: 1,
   commits: [],
+  unapproved: [],
   replies: [],
+  notes: [],
   excluded: [],
+  drift: [],
   blocker: null,
 }));
 const publishConversationsSpy = vi.fn(async () => ({
   kind: 'done' as const,
   pushed: false,
+  pushedHead: null,
+  total: 1,
+  replies: 1,
+  replied: 1,
+  closed: 0,
   resolved: 1,
-  commented: 0,
+  leftOpen: 0,
   failed: 0,
+  error: null,
 }));
 const navigateSpy = vi.fn();
 const emitNotificationSpy = vi.fn(async () => undefined);
 
-type FakeStore = {
-  summarizerStatus: Record<
-    string,
-    { lastAttempt?: { turnInput: string; turnOutput: string } } | undefined
-  >;
-  retrySummarizer: typeof retrySummarizerSpy;
-  retryStepSummary: typeof retryStepSummarySpy;
-  orchestrateNextStep: typeof orchestrateNextStepSpy;
-  retryPublication: typeof retryPublicationSpy;
-  publishConversations: typeof publishConversationsSpy;
-  navigate: typeof navigateSpy;
-  emitNotification: typeof emitNotificationSpy;
-};
+type Store = ReturnType<StoryStore['getState']>;
 
-function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
-  return {
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+const buildStore = (overrides: Partial<Store> = {}): Store => {
+  useAppStore.setState({
     summarizerStatus: {},
     retrySummarizer: retrySummarizerSpy,
     retryStepSummary: retryStepSummarySpy,
@@ -59,15 +94,47 @@ function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
     navigate: navigateSpy,
     emitNotification: emitNotificationSpy,
     ...overrides,
-  };
-}
+  });
+  return useAppStore.getState();
+};
 
-const mapAction = (action: NotificationAction, store: FakeStore) =>
-  mapNotificationAction(action, store as never);
+const notificationOf = (action: NotificationAction): Notification => ({
+  id: 'n-other-workspace',
+  ts: brandId<IsoDateTime>({ value: '2026-11-06T09:00:00.000Z' }),
+  kind: 'error',
+  title: 'Checks failed',
+  body: null,
+  severity: 'warning',
+  sessionId: SESSION_ID,
+  workspaceId: brandId<WorkspaceId>({ value: 'ws-northwind' }),
+  read: false,
+  action,
+  coalesceKey: null,
+  actedAt: null,
+});
+
+const mapAction = (action: NotificationAction, store: Store) =>
+  mapNotificationAction(action, store, notificationOf(action));
 
 describe('mapNotificationAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('open-place: opens the notification through its own workspace, as the bell row does', () => {
+    const action: NotificationAction = {
+      kind: 'open-place',
+      sessionId: SESSION_ID,
+      reason: 'ci-failed',
+      mountId: null,
+    };
+
+    mapAction(action, buildStore())?.onClick();
+
+    expect(openNotificationSessionSpy).toHaveBeenCalledWith({
+      notification: notificationOf(action),
+    });
+    expect(navigateSpy).not.toHaveBeenCalled();
   });
 
   it('retry-orchestrator: asks the orchestrator again for that run, past the gate', () => {
@@ -85,23 +152,25 @@ describe('mapNotificationAction', () => {
 
   it('retry-summarizer: returns undefined when lastAttempt is missing', () => {
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
-    const store = buildStore({ summarizerStatus: { [SESSION_ID]: undefined } });
+    const store = buildStore({ summarizerStatus: {} });
     const result = mapAction(action, store);
     expect(result).toBeUndefined();
   });
 
   it('retry-summarizer: returns action with Retry label when lastAttempt exists', () => {
-    const lastAttempt = { turnInput: 'user prompt', turnOutput: 'agent reply' };
+    const lastAttempt = { turnInput: 'user prompt', turnOutput: 'agent reply', workingDir: null };
+    const status = { status: 'error', lastUpdate: null, error: null, lastUsage: null } as const;
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
-    const store = buildStore({ summarizerStatus: { [SESSION_ID]: { lastAttempt } } });
+    const store = buildStore({ summarizerStatus: { [SESSION_ID]: { ...status, lastAttempt } } });
     const toastAction = mapAction(action, store);
     expect(toastAction?.label).toBe('Retry');
   });
 
   it('retry-summarizer: onClick calls retrySummarizer with sessionId', () => {
-    const lastAttempt = { turnInput: 'user prompt', turnOutput: 'agent reply' };
+    const lastAttempt = { turnInput: 'user prompt', turnOutput: 'agent reply', workingDir: null };
+    const status = { status: 'error', lastUpdate: null, error: null, lastUsage: null } as const;
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
-    const store = buildStore({ summarizerStatus: { [SESSION_ID]: { lastAttempt } } });
+    const store = buildStore({ summarizerStatus: { [SESSION_ID]: { ...status, lastAttempt } } });
     const toastAction = mapAction(action, store);
     toastAction?.onClick();
     expect(retrySummarizerSpy).toHaveBeenCalledWith(SESSION_ID);
@@ -128,6 +197,28 @@ describe('mapNotificationAction', () => {
     const toastAction = mapAction(action, store);
     toastAction?.onClick();
     expect(retryStepSummarySpy).toHaveBeenCalledWith({ sessionId: SESSION_ID, agentId: AGENT_ID });
+  });
+
+  it.each([
+    ['ci-failed', 'Open Checks'],
+    ['push-failed', 'Open Comments'],
+    ['pr-opened', 'Open pull request'],
+    ['history-stopped', 'Open branch'],
+  ] as const)('open-place: names the place for %s in the button', (reason, label) => {
+    const action: NotificationAction = {
+      kind: 'open-place',
+      sessionId: SESSION_ID,
+      reason,
+      mountId: null,
+    };
+
+    expect(mapAction(action, buildStore())?.label).toBe(label);
+  });
+
+  it('open-activity: names the session, not a page that does not exist', () => {
+    const action: NotificationAction = { kind: 'open-activity', sessionId: SESSION_ID };
+
+    expect(mapAction(action, buildStore())?.label).toBe('Open session');
   });
 
   it('open-agent: returns action with Open agent label', () => {
@@ -189,7 +280,7 @@ describe('mapNotificationAction', () => {
     const store = buildStore({
       retryPublication: vi.fn(async () => {
         throw new Error('the pull request could not be read');
-      }) as unknown as typeof retryPublicationSpy,
+      }),
     });
 
     const toastAction = mapAction(action, store);
@@ -216,7 +307,7 @@ describe('mapNotificationAction', () => {
     const store = buildStore({
       publishConversations: vi.fn(async () => {
         throw new Error('github refused the reply');
-      }) as unknown as typeof publishConversationsSpy,
+      }),
     });
 
     const toastAction = mapAction(action, store);

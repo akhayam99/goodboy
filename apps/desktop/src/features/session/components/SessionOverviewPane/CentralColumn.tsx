@@ -33,8 +33,18 @@ import { waitingGroupsOf } from '../../central/now/waitingGroupsOf';
 import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
 import { overviewGlanceOf } from '../../central/overviewGlanceOf';
-import { OverviewGlanceLine } from '../../central/summary/OverviewGlanceLine';
+import { overviewHasContentOf } from '../../central/overviewHasContentOf';
+import { nextLeadTitleOf } from '../../central/next/nextLeadTitleOf';
 import { useSessionWorkModel } from '../../central/useSessionWorkModel';
+import { inPlaceFoldersOf } from '../../../../store/slices/project-mounts/inPlaceFoldersOf';
+import { useBranchNotes } from '../../../resolve/notes/useBranchNotes';
+import { EmptySessionStart } from './EmptySessionStart';
+import { FolderCard } from './FolderCard';
+import { OverviewNotices } from './OverviewNotices';
+import { OverviewStatusBlock } from './OverviewStatusBlock';
+import { UnassignedNotes } from './UnassignedNotes';
+import { useIsEmptySession } from './useIsEmptySession';
+import { useOverviewNotices } from './useOverviewNotices';
 
 type Props = {
   readonly session: Session;
@@ -108,6 +118,9 @@ export const CentralColumn = ({ session }: Props) => {
     () => autoGlancesBesideCardsOf({ views: model.autoTrees, rootTurns, cards: nextCards }),
     [model.autoTrees, nextCards, rootTurns],
   );
+  const noticesView = useOverviewNotices({ sessionId, isEnabled: !isArchived });
+  const noticeCount = noticesView.notices.length;
+  const noticesNode = isArchived ? null : <OverviewNotices session={session} view={noticesView} />;
   const shown = overviewCardsOf({
     cards: nextCards,
     waitingCount: waiting.length,
@@ -116,9 +129,33 @@ export const CentralColumn = ({ session }: Props) => {
     branchCount: liveEntries.length,
     doneCount: summary.count,
     isArchived,
+    noticeCount,
   });
   const hasNeedsYouRows = nextRowCountOf({ cards: nextCards, card: 'needs-you' }) > 0;
   const leadRunId = hasNeedsYouRows ? null : runLeadOf({ groups });
+  const seenSubjects = useAppStore((state) => state.nextSeenSubjects[sessionId] ?? EMPTY_ARRAY);
+  const glance = overviewGlanceOf({
+    cards: shown,
+    stuckCount,
+    autoGlances,
+    nextTitle: nextLeadTitleOf({
+      cards: nextCards,
+      seen: seenSubjects,
+      branchFor,
+      stopRowFor,
+    }),
+  });
+  const hasFolders = useAppStore((state) => inPlaceFoldersOf({ state, sessionId }).length > 0);
+  const { unassigned } = useBranchNotes({ sessionId });
+  const hasContent = overviewHasContentOf({
+    shown,
+    entries: [...branches.live, ...branches.finished],
+    hasFolders,
+    hasUnassignedNotes: unassigned.length > 0,
+    hasClosedWorktree: noticesView.rows.some((row) => !row.isAttached),
+  });
+  const isEmpty = useIsEmptySession({ session, hasContent });
+  const folderAfter = [...shown].reverse().find((card) => card.id !== 'done')?.id ?? null;
 
   const cardViewOf = ({ card }: CardViewParams) => {
     switch (card.id) {
@@ -187,9 +224,10 @@ export const CentralColumn = ({ session }: Props) => {
 
   return (
     <div data-central-column className={PANE_RHYTHM.groups}>
-      {isArchived ? null : (
-        <OverviewGlanceLine glance={overviewGlanceOf({ cards: shown, stuckCount, autoGlances })} />
-      )}
+      <OverviewStatusBlock session={session} glance={isArchived || isEmpty ? null : glance} />
+      {noticesNode}
+      {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
+      {isEmpty ? <EmptySessionStart session={session} /> : null}
       {shown.map((card) => (
         <Fragment key={card.id}>
           {card.id === 'needs-you' ? (
@@ -200,6 +238,7 @@ export const CentralColumn = ({ session }: Props) => {
           {card.id === 'needs-you' ? (
             <NewSinceCard sessionId={sessionId} latest={latest} entries={model.entries} />
           ) : null}
+          {card.id === folderAfter && !isArchived ? <FolderCard sessionId={sessionId} /> : null}
         </Fragment>
       ))}
     </div>

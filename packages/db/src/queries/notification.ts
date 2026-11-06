@@ -4,6 +4,7 @@ import {
   type IsoDateTime,
   type MountId,
   type ProviderId,
+  type SessionAttentionReason,
   type SessionId,
   type WorkflowRunId,
   type WorkspaceId,
@@ -32,6 +33,8 @@ export type NotificationKind =
   | 'orphan-worktrees'
   | 'storage-reclaimable'
   | 'error';
+
+type NotificationPlaceReason = SessionAttentionReason | 'pr-opened' | 'history-stopped';
 
 export type NotificationAction =
   | { readonly kind: 'retry-summarizer'; readonly sessionId: SessionId }
@@ -67,6 +70,13 @@ export type NotificationAction =
   | { readonly kind: 'update-provider-cli'; readonly providerId: ProviderId }
   | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' }
   | { readonly kind: 'open-activity'; readonly sessionId: SessionId }
+  | {
+      readonly kind: 'open-place';
+      readonly sessionId: SessionId;
+      readonly reason: NotificationPlaceReason;
+      readonly mountId: MountId | null;
+      readonly subject?: 'note' | 'comment';
+    }
   | {
       readonly kind: 'open-settings';
       readonly scope: 'app' | 'workspace' | 'providers' | 'tools';
@@ -124,6 +134,7 @@ const NOTIFICATION_ACTION_KINDS = {
   'update-provider-cli': true,
   'open-lens': true,
   'open-activity': true,
+  'open-place': true,
   'open-settings': true,
   'reveal-path': true,
   'retry-push': true,

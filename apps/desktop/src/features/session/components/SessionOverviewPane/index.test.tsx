@@ -17,9 +17,6 @@ vi.mock('./HeaderBand', () => ({ HeaderBand: () => <p>Overview goal</p> }));
 vi.mock('./ArchivedRestore', () => ({
   ArchivedRestore: () => <button type="button">Restore</button>,
 }));
-vi.mock('./OverviewNotices', () => ({
-  OverviewNotices: () => <section aria-label="Notices" />,
-}));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => <button type="button">New</button> }));
 vi.mock('./CentralColumn', () => ({
   CentralColumn: () => <section aria-label="Overview cards" data-central-column="" />,
@@ -84,15 +81,19 @@ const renderPane = ({ session = SESSION }: PaneParams = {}) =>
   );
 
 describe('SessionOverviewPane', () => {
-  it('stacks the notices and then the overview cards as body sections in that order', () => {
+  it('stacks the goal band and then the one overview column as body children', () => {
     const { container } = renderPane();
 
     const body = container.querySelector('[data-slot="pane-body"]');
     const header = container.querySelector('[data-slot="pane-header"]');
-    const names = ['Notices', 'Start a run', 'Overview cards'];
-    const sections = names.map((name) => screen.getByRole('region', { name }));
-    sections.forEach((section) => expect(section.parentElement).toBe(body));
-    expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual(sections);
+    const column = screen.getByRole('region', { name: 'Overview cards' });
+    expect(column.parentElement).toBe(body);
+    expect(Array.from(body?.children ?? []).map((child) => child.textContent)).toEqual([
+      'Overview goal',
+      '',
+    ]);
+    expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual([column]);
+    expect(screen.queryByRole('region', { name: 'Notices' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
     expect(header?.getAttribute('data-rhythm')).toBe('section');
   });

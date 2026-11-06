@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolveAttempt, ResolveThread, SessionId } from '@goodboy/types';
-import { resolveAttentionNotices, resolveAttentionOf } from './resolveAttention';
+import {
+  brandId,
+  type MountId,
+  type ProjectId,
+  type ResolveAttempt,
+  type ResolveThread,
+  type SessionId,
+} from '@goodboy/types';
+import {
+  pushFailuresByMountOf,
+  resolveAttentionNotices,
+  resolveAttentionOf,
+} from './resolveAttention';
 
-const SESSION = 'session-1' as SessionId;
+const SESSION = brandId<SessionId>({ value: 'session-1' });
 
 type Thread = Pick<ResolveThread, 'state' | 'stateReason' | 'activeAttemptId' | 'originKind'>;
 type Attempt = Pick<ResolveAttempt, 'id' | 'failureCause' | 'phase'>;
@@ -121,7 +132,7 @@ describe('resolveAttentionNotices', () => {
       title: 'A fix run needs you',
       body: '1 comment waits for your answer.',
       sessionId: SESSION,
-      action: { kind: 'open-activity', sessionId: SESSION },
+      action: { kind: 'open-place', sessionId: SESSION, reason: 'fix-needs-you', mountId: null },
     });
   });
 
@@ -164,7 +175,7 @@ describe('resolveAttentionNotices', () => {
       severity: 'error',
       title: 'Push failed',
       body: 'Nothing was sent. Retry from the Comments tab.',
-      action: { kind: 'open-activity', sessionId: SESSION },
+      action: { kind: 'open-place', sessionId: SESSION, reason: 'push-failed', mountId: null },
       coalesceKey: `push-failed:${SESSION}`,
     });
     expect(
@@ -191,5 +202,72 @@ describe('resolveAttentionNotices', () => {
         sessionId: SESSION,
       }),
     ).toEqual([]);
+  });
+});
+
+describe('resolveAttentionNotices keep what the notice is about', () => {
+  const NONE = { needsYou: 0, couldntFix: 0, pushFailed: 0, notesNeedYou: 0, notesCouldntFix: 0 };
+  const MOUNT_A = brandId<MountId>({ value: 'mount-ledger-core' });
+  const MOUNT_B = brandId<MountId>({ value: 'mount-notify-relay' });
+  const PROJECT_A = brandId<ProjectId>({ value: 'project-ledger-core' });
+  const PROJECT_B = brandId<ProjectId>({ value: 'project-notify-relay' });
+
+  it('says note on a note notice and comment on a comment notice', () => {
+    const notices = resolveAttentionNotices({
+      before: NONE,
+      after: { ...NONE, needsYou: 1, notesNeedYou: 1, couldntFix: 1, notesCouldntFix: 1 },
+      sessionId: SESSION,
+    });
+
+    expect(notices.map((notice) => notice.action)).toMatchObject([
+      { reason: 'fix-needs-you', subject: 'comment' },
+      { reason: 'fix-couldnt-fix', subject: 'comment' },
+      { reason: 'fix-needs-you', subject: 'note' },
+      { reason: 'fix-couldnt-fix', subject: 'note' },
+    ]);
+  });
+
+  it('names the mount whose push failed, one notice per mount', () => {
+    const mountOf = ({ thread }: { readonly thread: { readonly projectId?: ProjectId | null } }) =>
+      thread.projectId === PROJECT_B ? MOUNT_B : MOUNT_A;
+    const failed = (projectId: ProjectId) => ({
+      ...thread({ state: 'failed', attemptId: 'a1', stateReason: 'publication_failed:{}' }),
+      projectId,
+    });
+    const pushBefore = pushFailuresByMountOf({ threads: [failed(PROJECT_A)], mountOf });
+    const pushAfter = pushFailuresByMountOf({
+      threads: [failed(PROJECT_A), failed(PROJECT_B)],
+      mountOf,
+    });
+
+    const notices = resolveAttentionNotices({
+      before: { ...NONE, pushFailed: 1 },
+      after: { ...NONE, pushFailed: 2 },
+      sessionId: SESSION,
+      pushBefore,
+      pushAfter,
+    });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toMatchObject({
+      action: { kind: 'open-place', reason: 'push-failed', mountId: MOUNT_B },
+      coalesceKey: `push-failed:${SESSION}:${MOUNT_B}`,
+    });
+  });
+
+  it('counts a note push failure under no mount', () => {
+    expect(
+      pushFailuresByMountOf({
+        threads: [
+          thread({
+            state: 'failed',
+            attemptId: 'a1',
+            stateReason: 'publication_failed:{}',
+            originKind: 'diff_comment',
+          }),
+        ],
+        mountOf: () => MOUNT_A,
+      }).size,
+    ).toBe(0);
   });
 });

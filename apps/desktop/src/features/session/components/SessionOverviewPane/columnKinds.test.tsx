@@ -267,6 +267,41 @@ describe('the central column, kind by kind', () => {
   });
 });
 
+describe('the status block under the title', () => {
+  it('holds the glance and the summary in one block, before the first card', async () => {
+    await showColumn({ kind: 'mid' });
+
+    const blocks = document.querySelectorAll('[data-overview-status]');
+    expect(blocks).toHaveLength(1);
+    const block = blocks[0];
+    expect(block?.querySelectorAll('[data-overview-glance]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-overview-glance]')).toHaveLength(1);
+    expect(block?.querySelector('[data-summary-state]')).not.toBeNull();
+    const firstCard = document.querySelector('[data-overview-card]');
+    if (block === undefined || firstCard === null) {
+      throw new Error('The column must draw its status block and a card');
+    }
+    expect(
+      block.compareDocumentPosition(firstCard) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeGreaterThan(0);
+  });
+
+  it('names the next step when only Next rows wait, never Nothing needs you above a filled row', async () => {
+    await showColumn({ kind: 'finished' });
+
+    const glance = document.querySelector('[data-overview-glance]');
+    expect(glance?.getAttribute('data-overview-glance')).toBe('next');
+    expect(glance?.textContent).toBe('Next: Mark #309 ready for review');
+    expect(document.body.textContent).not.toContain('Nothing needs you');
+  });
+
+  it('draws no See result button beside a question', async () => {
+    await showColumn({ kind: 'mid' });
+
+    expect(screen.queryByRole('button', { name: 'See result' })).toBeNull();
+  });
+});
+
 const STUCK_TITLE = 'Fix the two doc mismatches in ledger-core';
 const RETRY_NAME = `Retry "${STUCK_TITLE}"`;
 
