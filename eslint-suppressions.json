@@ -1578,11 +1578,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/actions/kinds/pullRequest.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/actions/kinds/pullRequestFacts.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

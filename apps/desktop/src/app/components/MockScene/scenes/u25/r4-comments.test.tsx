@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -75,14 +75,16 @@ describe('the r4 comments scenes', () => {
     }
   });
 
-  it('shows one list with no drawer, no detail bar and Fix comments in the header', async () => {
+  it('shows one list with no drawer, no detail bar and the next step in the header', async () => {
     await renderScene({ name: 'r4-comments-list' });
 
     screen.getByRole('navigation', { name: 'Comments' });
     expect(drawer()).toBeNull();
     expect(screen.queryByRole('toolbar', { name: 'Comment actions' })).toBeNull();
-    const fix = screen.getByRole('button', { name: /^(Fix|Fixing) (\d+ of )?\d+ threads?$/ });
-    expect(fix.closest('[data-slot="branch-tab-actions"]')).not.toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Answer'),
+    );
+    expect(document.querySelector('[data-slot="branch-tab-actions"] button')).toBeNull();
     expect(screen.queryByRole('article', { name: 'Comment' })).toBeNull();
   });
 

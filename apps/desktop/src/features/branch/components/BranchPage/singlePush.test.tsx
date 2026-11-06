@@ -53,8 +53,19 @@ const settle = async (): Promise<void> => {
   });
 };
 
+const keepPushable = (): void => {
+  const queue = (useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? []).filter(
+    (entry) => entry.item.approvalState === 'accepted',
+  );
+  useAppStore.setState({
+    sessionResolveQueueItems: { [SESSION.id]: queue },
+    sessionResolveThreads: { [SESSION.id]: queue.map((entry) => entry.thread) },
+  });
+};
+
 const mount = async ({ threadId }: { readonly threadId: string | null }): Promise<void> => {
   seedResolveScene({ expandedThreadId: threadId });
+  keepPushable();
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
@@ -81,6 +92,7 @@ const mountReady = async (): Promise<void> => {
       handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
   );
   seedCommentsScene({ variant: 'ready-to-push' });
+  keepPushable();
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
@@ -203,13 +215,13 @@ describe('one Push at a time', () => {
     const { prepare, publish } = stubPush({ preview: CLEAN, publish: () => gate.promise });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
 
     await waitFor(() => expect(publish).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenCalledOnce();
     expect(publish).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: PUBLICATION_ID });
     expect(screen.queryByRole('group', { name: /^Push \d+ commits? to/ })).toBeNull();
-    const busy = headerPush(/^Pushing commits$/);
+    const busy = headerPush(/^Pushing(?: \d+ commits?)?$/);
     expect(busy.getAttribute('aria-busy')).toBe('true');
 
     await act(async () => gate.resolve(DONE));
@@ -226,7 +238,7 @@ describe('one Push at a time', () => {
     const { publish, cancel } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mount({ threadId: null });
 
-    const header = headerPush(/^Push(?: \d+)? commits?$/);
+    const header = headerPush(/^Push(?: \d+ commits?)?$/);
     expect(header.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(header);
 
@@ -235,23 +247,23 @@ describe('one Push at a time', () => {
     });
     within(panel).getByText('Not a fix');
     expect(within(panel).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
-    expect(headerPush(/^Push(?: \d+)? commits?$/).getAttribute('aria-expanded')).toBe('true');
+    expect(headerPush(/^Push(?: \d+ commits?)?$/).getAttribute('aria-expanded')).toBe('true');
     expect(publish).not.toHaveBeenCalled();
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: /^Push 2 commits to/ })).toBeNull(),
     );
     expect(publish).not.toHaveBeenCalled();
     expect(cancel).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: PUBLICATION_ID });
-    expect(headerPush(/^Push(?: \d+)? commits?$/).getAttribute('aria-expanded')).toBe('false');
+    expect(headerPush(/^Push(?: \d+ commits?)?$/).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('pushes once from the panel Push', async () => {
     const { publish } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
     const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
@@ -264,7 +276,7 @@ describe('one Push at a time', () => {
     const { prepare, publish } = stubPush({ preview: CLEAN, publish: () => gate.promise });
     await mount({ threadId: null });
 
-    const header = headerPush(/^Push(?: \d+)? commits?$/);
+    const header = headerPush(/^Push(?: \d+ commits?)?$/);
     fireEvent.click(header);
     fireEvent.click(header);
     await settle();
@@ -278,18 +290,38 @@ describe('one Push at a time', () => {
     const { prepare } = stubPush({ preview: CLEAN, publish: async () => DONE });
     await mountReady();
 
-    const label = headerPush(/^Push(?: \d+)? commits?$/).textContent ?? '';
+    const label = headerPush(/^Push(?: \d+ commits?)?$/).textContent ?? '';
     const ready = within(list()).getByRole('region', { name: 'Done' });
     const count = Number(/(\d+)/.exec(ready.textContent ?? '')?.[1] ?? 0);
     expect(label).toBe('Push 3 commits');
-    expect(count).toBe(3);
+    expect(count).toBe(2);
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenLastCalledWith({
       sessionId: SESSION.id,
       mountId: expect.any(String),
     });
+  });
+
+  it('steps the header Push down while comments are selected and back when they are cleared', async () => {
+    stubPush({ preview: CLEAN, publish: async () => DONE });
+    await mountReady();
+
+    expect(headerPush(/^Push 3 commits$/).getAttribute('data-variant')).toBe('primary');
+    const threadId = list().querySelector<HTMLElement>('button[data-thread-id]')?.dataset.threadId;
+    expect(threadId).toBeDefined();
+    act(() =>
+      useAppStore
+        .getState()
+        .toggleReviewSelection({ sessionId: SESSION.id, threadId: threadId ?? '' }),
+    );
+    await settle();
+    expect(headerPush(/^Push 3 commits$/).getAttribute('data-variant')).toBe('secondary');
+
+    act(() => useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id }));
+    await settle();
+    expect(headerPush(/^Push 3 commits$/).getAttribute('data-variant')).toBe('primary');
   });
 
   it('pushes only the selected comment from its own detail', async () => {
@@ -318,7 +350,7 @@ describe('one Push at a time', () => {
     const { publish, cancel } = stubPush({ preview: DIRTY, publish: async () => DONE });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
     await screen.findByRole('group', { name: /^Push 2 commits to/ });
     cleanup();
 
@@ -331,7 +363,7 @@ describe('one Push at a time', () => {
     const { cancel } = stubPush({ preview: DIRTY, publish: async () => ({ kind: 'missing' }) });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
     const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 
@@ -351,7 +383,7 @@ describe('one Push at a time', () => {
     });
     await mount({ threadId: null });
 
-    fireEvent.click(headerPush(/^Push(?: \d+)? commits?$/));
+    fireEvent.click(headerPush(/^Push(?: \d+ commits?)?$/));
     const panel = await screen.findByRole('group', { name: /^Push 2 commits to/ });
     fireEvent.click(within(panel).getByRole('button', { name: 'Push' }));
 

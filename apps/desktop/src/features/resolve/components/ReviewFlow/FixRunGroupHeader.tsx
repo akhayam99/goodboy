@@ -9,18 +9,9 @@ type Props = {
   readonly agentId: AgentId;
   readonly ready: FixRunReady;
   readonly sourceKind: PullRequestHost | null;
-  readonly isBusy: boolean;
-  readonly onApply: () => void;
 };
 
-export const FixRunGroupHeader = ({
-  sessionId,
-  agentId,
-  ready,
-  sourceKind,
-  isBusy,
-  onApply,
-}: Props) => {
+export const FixRunGroupHeader = ({ sessionId, agentId, ready, sourceKind }: Props) => {
   const kind = sourceKind ?? 'github';
   return (
     <div className="flex min-w-0 flex-col gap-2">
@@ -28,8 +19,6 @@ export const FixRunGroupHeader = ({
         ready={ready}
         provider={REVIEW_SOURCE_LABEL[kind]}
         canResolve={REVIEW_SOURCE_CAPABILITIES[kind].canResolve}
-        isBusy={isBusy}
-        onApply={onApply}
       />
       <FixRunChecks sessionId={sessionId} agentId={agentId} />
     </div>

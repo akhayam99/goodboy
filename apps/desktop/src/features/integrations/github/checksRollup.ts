@@ -44,6 +44,9 @@ const groupOf = ({ conclusion }: GroupParams): ChecksGroup => {
   }
 };
 
+export const isFailingConclusion = ({ conclusion }: GroupParams): boolean =>
+  groupOf({ conclusion }) === 'failing';
+
 type Params = {
   readonly checks: ReadonlyArray<PrCheckRun>;
 };

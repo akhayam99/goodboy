@@ -196,6 +196,7 @@ const renderDrawer = ({ drawer, isReading, closeDrawer, openDrawer }: RenderPara
         <FixCommentsDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
+          mountId={drawer.payload.mountId}
           focusThreadId={drawer.payload.focusThreadId ?? null}
           threadIds={drawer.payload.threadIds ?? null}
           fromThreadId={drawer.payload.fromThreadId ?? null}

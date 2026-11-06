@@ -192,13 +192,13 @@ Each branch, pull request or Auto plan shows once per kind of work.
 - That row says "and 1 more" in its sentence and puts the others in its **⋯** menu.
 - A stuck agent reads by its role and state, as in "The tester timed out. It ran out of time." It never quotes the request Auto sent it.
 - A row's title is its subject. A plan that waits on your OK is titled by the plan's name. Its sentence reads "Plan v3 waits on your OK. The run covers 4 branches." These are the branches its agents work on.
-- A **Fix** row on a known branch is titled by the branch and its open pull request, as in "hl/feat-center-home-page · #9995". One sentence sits under it, such as "4 review conversations wait for a fix."
+- A **Fix** row on a known branch is titled by the branch and its open pull request, as in "hl/feat-center-home-page · #9995". One sentence sits under it, such as "4 comments to fix."
 - Rows in **Update** and **Ship** keep their verb titles, except a stopped rebase.
 
 **A stopped rebase**
 
 - Its row is titled by its branch. It says in one sentence what stopped ("2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.").
-- It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with agent**.
+- It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with an agent**.
 - **Resolve myself**, **Keep branch as it was**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
 - A click on its title opens the branch with the rebase panel.
 - A diverged card of the same branch folds into that row, and its verb goes into the **⋯** menu. It never shows as "and 1 more".

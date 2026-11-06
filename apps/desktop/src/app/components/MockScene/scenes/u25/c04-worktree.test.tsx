@@ -8,12 +8,13 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
@@ -42,8 +43,10 @@ class NarrowBranchPane {
 
 type SceneName = keyof typeof U25_C04_WORKTREE_SCENES;
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -113,8 +116,10 @@ describe('the c04 worktree level scenes', () => {
   it('c04-worktree-pr-draft reads Draft in the entry and the State property', async () => {
     await mount('c04-worktree-pr-draft');
 
-    expect(stripTab({ name: /^Pull request/ }).textContent).toContain('Draft');
-    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
+    expect(stripTab({ name: /^Pull request/ }).textContent).toBe('Pull request');
+    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
+      'Draft',
+    );
   });
 
   it('c04-worktree-no-pr leaves the entry slot empty and offers the create form', async () => {
@@ -122,6 +127,18 @@ describe('the c04 worktree level scenes', () => {
 
     expect(stripTab({ name: /^Pull request/ }).textContent).toBe('Pull request');
     expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
+  });
+
+  it('c04-worktree-no-pr-fix keeps one fill when a fixable note comes with the create form', async () => {
+    await mount('c04-worktree-no-pr-fix');
+
+    const step = document.querySelector('[data-branch-primary]');
+    expect(step?.textContent).toMatch(/^Fix 1 comment/);
+    fireEvent.click(step ?? document.body);
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind === 'fix-comments' ? drawer.payload.threadIds : []).toHaveLength(1);
+    expect(step?.getAttribute('data-variant')).toBe('secondary');
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('c04-worktree-files selects Files and docks the file list on the right of the diff', async () => {

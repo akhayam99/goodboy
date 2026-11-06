@@ -4,7 +4,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 ### Shape the history
 
-Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on the online copy are marked **Not pushed**.
+Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on origin are marked **Not pushed**.
 
 Commits use one line, grouped by Today, Yesterday or date. Your author label is hidden when it matches the repository's configured git name; if that name cannot be read, all authors show. An open editor or a history mark gives the row more room.
 
@@ -52,7 +52,7 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Push with lease and restore
 
-**Force push** updates the online branch separately after a local edit. It is one verb, whichever button started it. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the pushed event and the pull request description. While the branch is behind main it sits in **Branch actions**. It checks the online copy with a lease so a teammate's newer push is never overwritten. Undo and Redo remain local, and leaving the page clears their stack while keeping the backup refs.
+**Force push** updates the online branch separately after a local edit. It is one verb, whichever button started it. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the pushed event and the pull request description. While the branch is behind main it sits in **Branch actions**. It checks origin with a lease so a teammate's newer push is never overwritten. Undo and Redo remain local, and leaving the page clears their stack while keeping the backup refs.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-dark.webp">
@@ -88,8 +88,8 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 - If your uncommitted files are in the way, Goodboy asks once to set them aside. It brings them back after the move.
 - While the rebase runs, the status line reads it (`Rebasing · 3 of 7 · 1 conflict`), with **Abort**.
 - Once it settles, the panel under the Branch header says what happened and what you can do.
-- **Force push** replaces the online copy only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
-- **Add a hint** under **Fix with agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
+- **Force push** replaces the branch on origin only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions.
+- **Add a hint** under **Fix with an agent** and under **Rewrite with an agent** passes your words to the agent. A failed start keeps them.
 - While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks.
 - When it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**). It stays until you dismiss it or start the next action.
 
@@ -130,8 +130,8 @@ On a conflict or a commit hook, the panel does three things.
 
 **The verbs of a stopped rebase**
 
-- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with Auto** or **Fix with agent** therefore applies from whichever place you press the verb.
-- A failed push keeps **Fix with agent**, **Open terminal here** and **Retry push**.
+- The verbs are one set. The banner, the panel and the Next row run the same ones. A hint typed under **Resolve with Auto** or **Fix with an agent** therefore applies from whichever place you press the verb.
+- A failed push keeps **Fix with an agent**, **Open terminal here** and **Retry push**.
 - It reads **Stopped: hook stopped the push** only when its error names `pre-push`. A remote `pre-receive hook declined` reads **Stopped: push failed**. The Local checks cell uses the same test.
 - A dirty tree, a moved branch, a blocked move, a result that differs and a failed rebase offer **Retry rebase** and **Open terminal**.
 - Only the last two of these can **Dismiss**: a result that differs and a failed rebase. **Dismiss** records the stop like Keep. A stop that blocks the branch has no Dismiss.

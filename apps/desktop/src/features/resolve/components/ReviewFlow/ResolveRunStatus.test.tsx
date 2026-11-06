@@ -78,7 +78,7 @@ describe('ResolveRunStatus', () => {
     renderStatus({});
 
     const line = within(screen.getByTestId('resolve-run-status'));
-    expect(line.getByText('Fixing 2 of 8 threads')).toBeDefined();
+    expect(line.getByText('Fixing 2 of 8 comments')).toBeDefined();
     expect(line.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
     expect(line.queryByText('Sonnet 5.5 · Medium')).toBeNull();
     expect(document.querySelector('[data-tail]')).not.toBeNull();
@@ -106,7 +106,7 @@ describe('ResolveRunStatus', () => {
     const { unmount } = renderStatus({ words: ['ready', 'couldnt_fix'] });
 
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
-    expect(screen.getByText('Fix run · 2 threads')).toBeDefined();
+    expect(screen.getByText('Fix run · 2 comments')).toBeDefined();
     unmount();
 
     renderStatus({ words: ['working', 'ready'] });

@@ -3,21 +3,14 @@ import type { MergeReadinessFacts, PrMergeReadiness } from '../review/prMergeRea
 import { mergeIsClear } from '../review/prMergeReadiness';
 
 export type PullRequestNextStep =
-  | 'markReady'
-  | 'requestReview'
-  | 'fixComments'
-  | 'fixChecks'
-  | 'rebase'
-  | 'merge'
-  | 'reopen'
-  | null;
+  'markReady' | 'requestReview' | 'review' | 'rebase' | 'merge' | 'reopen' | null;
 
 type Params = {
   readonly state: PullRequestPresentationState;
   readonly facts: Pick<
     MergeReadinessFacts,
-    'checks' | 'review' | 'hasConflicts' | 'commentsNeedYou' | 'isFixRunLive'
-  >;
+    'checks' | 'review' | 'hasConflicts' | 'commentsNeedYou'
+  > & { readonly isOwn?: boolean };
   readonly readiness: PrMergeReadiness;
   readonly hasReviewer: boolean;
   readonly behind: number;
@@ -33,17 +26,20 @@ const openStepOf = ({
   behind,
   isStopOpen,
 }: OpenParams): PullRequestNextStep => {
+  if (facts.isOwn === false) {
+    return 'review';
+  }
   if (isStopOpen) {
     return null;
   }
   if (facts.hasConflicts) {
     return behind > 0 ? 'rebase' : null;
   }
-  if (facts.checks === 'failing') {
-    return 'fixChecks';
+  if (facts.checks === 'failing' || facts.commentsNeedYou > 0) {
+    return null;
   }
-  if (facts.review === 'changes_requested' || facts.commentsNeedYou > 0) {
-    return facts.isFixRunLive ? null : 'fixComments';
+  if (facts.review === 'changes_requested') {
+    return 'requestReview';
   }
   if (mergeIsClear({ readiness })) {
     return 'merge';

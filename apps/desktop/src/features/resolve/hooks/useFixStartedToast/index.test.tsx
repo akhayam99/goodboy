@@ -60,7 +60,7 @@ describe('useFixStartedToast', () => {
     act(() => announce({ sessionId: SESSION.id, started: started('batch-1'), count: 3 }));
 
     expect(screen.getByText('Fix run started')).toBeDefined();
-    expect(screen.getByText('3 threads on payments-api')).toBeDefined();
+    expect(screen.getByText('3 comments on payments-api')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Follow' })).toHaveLength(1);
   });
 
@@ -80,7 +80,7 @@ describe('useFixStartedToast', () => {
     act(() => announce({ sessionId: SESSION.id, started: started('batch-2'), count: 1 }));
 
     expect(screen.getByText('Fix queued after the current fix')).toBeDefined();
-    expect(screen.getByText('1 thread on payments-api')).toBeDefined();
+    expect(screen.getByText('1 comment on payments-api')).toBeDefined();
   });
 
   it('opens the transcript of the fix run on the Comments tab when you press Follow', () => {

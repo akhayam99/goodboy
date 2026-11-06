@@ -64,13 +64,7 @@ const STATES: ReadonlyArray<{
   {
     name: 'On origin, PR open',
     facts: facts({}),
-    expected: [
-      ...TOOLS,
-      'diff.rewriteHistory secondary',
-      'diff.changeBase menu',
-      'diff.restoreBackup menu',
-      ...COPIES,
-    ],
+    expected: [...TOOLS, 'diff.rewriteHistory secondary', 'diff.restoreBackup menu', ...COPIES],
   },
   {
     name: '3 not pushed, no PR',
@@ -92,7 +86,6 @@ const STATES: ReadonlyArray<{
       ...TOOLS,
       'diff.push primary',
       'diff.rewriteHistory secondary',
-      'diff.changeBase menu',
       'diff.restoreBackup menu',
       ...COPIES,
     ],
@@ -104,7 +97,6 @@ const STATES: ReadonlyArray<{
       ...TOOLS,
       'diff.rebase primary',
       'diff.rewriteHistory secondary',
-      'diff.changeBase menu',
       'diff.restoreBackup menu',
       ...COPIES,
     ],
@@ -116,7 +108,6 @@ const STATES: ReadonlyArray<{
       ...TOOLS,
       `diff.rebase primary (${DIRTY_2})`,
       `diff.rewriteHistory secondary (${DIRTY_2})`,
-      'diff.changeBase menu',
       `diff.restoreBackup menu (${DIRTY_2})`,
       ...COPIES,
     ],
@@ -128,7 +119,6 @@ const STATES: ReadonlyArray<{
       ...TOOLS,
       'diff.push menu',
       'diff.rewriteHistory secondary',
-      'diff.changeBase menu',
       'diff.restoreBackup menu',
       ...COPIES,
     ],
@@ -146,6 +136,33 @@ const STATES: ReadonlyArray<{
     ],
   },
   {
+    name: 'Merged',
+    facts: facts({ pr: 'merged', requestLabel: 'PR #318' }),
+    expected: [
+      ...TOOLS,
+      'diff.restoreBackup menu',
+      ...COPIES,
+      'diff.removeWorktree primary',
+      'diff.archiveSession menu',
+    ],
+  },
+  {
+    name: 'Merged and removed',
+    facts: facts({ pr: 'merged', isClosed: true, worktreePath: null }),
+    expected: [...TOOLS, 'diff.restoreBackup menu', ...COPIES, 'diff.archiveSession primary'],
+  },
+  {
+    name: 'Merged with uncommitted work',
+    facts: facts({ pr: 'merged', blockers: ['Uncommitted work in payments-api.'] }),
+    expected: [
+      ...TOOLS,
+      'diff.restoreBackup menu',
+      ...COPIES,
+      'diff.removeWorktree primary (Uncommitted work in payments-api.)',
+      'diff.archiveSession menu',
+    ],
+  },
+  {
     name: 'No changes',
     facts: facts({ ...NO_PR, ahead: 0, patch: '' }),
     expected: [...TOOLS, 'diff.changeBase menu', 'diff.copyBranch menu'],
@@ -153,6 +170,19 @@ const STATES: ReadonlyArray<{
 ];
 
 const definitions = DIFF_KIND.actions;
+
+describe('diff.removeWorktree confirm', () => {
+  const removal = resolveActions({
+    definitions,
+    facts: facts({ pr: 'merged', requestLabel: 'PR #318' }),
+  }).find((action) => action.id === 'diff.removeWorktree');
+
+  it('names the local branch and never promises the origin branch stays', () => {
+    expect(removal?.confirm?.goes).toBe('Its folder and the local branch hl/fix-duplicate-credit');
+    expect(removal?.confirm?.stays).toContain('unless your after-merge setting removes it');
+    expect(removal?.confirm?.description).not.toMatch(/origin branch/);
+  });
+});
 
 describe.each(STATES)('diff, $name', ({ facts: state, expected }) => {
   it('offers exactly the planned actions', () => {
@@ -193,7 +223,7 @@ describe('diff, the rebase label', () => {
     );
     expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.label).toBe('Push 2 commits');
     expect(push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } })?.description).toBe(
-      'Your branch and the online copy differ. Force push replaces the online copy (with lease).',
+      'Your branch and origin differ. Force push replaces the branch on origin (with lease).',
     );
     expect(push({ overrides: { ahead: 6, unpushed: 2 } })?.description).toBeNull();
   });
@@ -207,17 +237,16 @@ describe('diff, the rebase label', () => {
     const forced = push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true } });
     expect(forced?.blockedReason).toBeNull();
     expect(forced?.confirm).toEqual({
-      title: 'Replace the online copy?',
-      description:
-        'This machine has not checked the online copy yet. Anything pushed there since is lost.',
+      title: 'Replace the branch on origin?',
+      description: 'This machine has not checked origin yet. Anything pushed there since is lost.',
       confirmLabel: 'Force push',
       role: 'danger',
     });
     expect(
       push({ overrides: { ahead: 5, unpushed: 83, isDiverged: true, onlyOnline: [] } })?.confirm,
     ).toEqual({
-      title: 'Replace the online copy?',
-      description: 'The online copy has no commits you lack. Nothing online is lost.',
+      title: 'Replace the branch on origin?',
+      description: 'Origin has no commits you lack. Nothing there is lost.',
       confirmLabel: 'Force push',
       role: 'danger',
     });
@@ -233,7 +262,7 @@ describe('diff, the rebase label', () => {
         },
       })?.confirm,
     ).toEqual({
-      title: 'Replace the online copy and drop 5 commits?',
+      title: 'Replace the branch on origin and drop 5 commits?',
       description: 'These exist only online and are lost if you force push.',
       notes: ['Fix rounding', 'Add retry', 'Drop flag', 'and 2 more'],
       confirmLabel: 'Force push anyway',
@@ -248,7 +277,7 @@ describe('diff, the rebase label', () => {
           onlyOnline: [{ sha: 'sha-0', subject: 'Fix rounding' }],
         },
       })?.confirm?.title,
-    ).toBe('Replace the online copy and drop 1 commit?');
+    ).toBe('Replace the branch on origin and drop 1 commit?');
     expect(push({ overrides: { ahead: 0, unpushed: 2, isDiverged: true } })?.blockedReason).toBe(
       'Origin has a commit this branch lacks. Rebase on it first.',
     );

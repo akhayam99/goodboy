@@ -33,8 +33,8 @@ describe('design-comments', () => {
     expect(within(list).getByRole('heading', { name: 'Needs you 5' })).toBeDefined();
     expect(within(list).getByRole('heading', { name: 'Working 2' })).toBeDefined();
     screen.getByRole('toolbar', { name: 'Comment actions' });
-    expect(
-      within(list).getAllByText('Fix to review', { selector: '[data-row-state]' }),
-    ).toHaveLength(2);
+    expect(within(list).getAllByText('Fix ready', { selector: '[data-row-state]' })).toHaveLength(
+      2,
+    );
   });
 });

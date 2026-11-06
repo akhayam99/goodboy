@@ -238,7 +238,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
         ];
       case 'push-failed':
         return [
-          { key: 'fix-push', label: 'Fix with agent', variant: 'primary', run: actions.fixPush },
+          { key: 'fix-push', label: 'Fix with an agent', variant: 'primary', run: actions.fixPush },
           {
             key: 'push-terminal',
             label: 'Open terminal here',

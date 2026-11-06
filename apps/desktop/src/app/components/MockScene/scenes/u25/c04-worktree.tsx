@@ -14,6 +14,12 @@ const PR_BEHIND: WorktreeSceneConfig = {
 };
 const PR_DRAFT: WorktreeSceneConfig = { variant: 'draft', level: 'worktree', tab: 'pr' };
 const NO_PR: WorktreeSceneConfig = { variant: 'none', level: 'worktree', tab: 'pr' };
+const NO_PR_FIX: WorktreeSceneConfig = {
+  variant: 'none',
+  level: 'worktree',
+  tab: 'pr',
+  hasFixableNote: true,
+};
 const FILES: WorktreeSceneConfig = { variant: 'github', level: 'worktree', tab: 'files' };
 const FILES_FOLDED: WorktreeSceneConfig = {
   variant: 'github',
@@ -53,6 +59,7 @@ export const U25_C04_WORKTREE_SCENES = {
   'c04-worktree-pr-behind': () => <WorktreeScene config={PR_BEHIND} />,
   'c04-worktree-pr-draft': () => <WorktreeScene config={PR_DRAFT} />,
   'c04-worktree-no-pr': () => <WorktreeScene config={NO_PR} />,
+  'c04-worktree-no-pr-fix': () => <WorktreeScene config={NO_PR_FIX} />,
   'c04-worktree-files': () => <WorktreeScene config={FILES} />,
   'c04-worktree-files-folded': () => <WorktreeScene config={FILES_FOLDED} />,
   'c04-worktree-files-narrow': () => <WorktreeScene config={FILES_NARROW} />,

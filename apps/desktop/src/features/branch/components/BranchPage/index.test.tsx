@@ -538,7 +538,7 @@ describe('Branch page counts', () => {
     }
   });
 
-  it('fills each slot as the data arrives, the commits not pushed as an arrow', async () => {
+  it('badges the comments that need you and leaves the file and commit counts to their pages', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     withCommits({ remoteSha: 'c'.repeat(40) });
@@ -549,8 +549,8 @@ describe('Branch page counts', () => {
     );
     await settle();
 
-    expect(countOf(/^Files/)).toBe('2');
-    expect(countOf(/^Commits/)).toBe('↑3');
+    expect(countOf(/^Files/)).toBe('');
+    expect(countOf(/^Commits/)).toBe('');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
 });
@@ -559,7 +559,7 @@ describe('Branch page counts before any visit', () => {
   const countOf = (name: RegExp): string =>
     railRow(name).textContent?.replace(/^[A-Za-z]+/, '') ?? '';
 
-  it('loads the commit history once when the page opens, and shows all three counts without a visit', async () => {
+  it('loads the commit history once when the page opens, and badges only the comments without a visit', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     const loadHistoryDraft = vi.fn(async () => {
@@ -576,8 +576,8 @@ describe('Branch page counts before any visit', () => {
     expect(loadHistoryDraft).toHaveBeenCalledTimes(1);
     expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
-    expect(countOf(/^Files/)).toBe('2');
-    expect(countOf(/^Commits/)).toBe('↑3');
+    expect(countOf(/^Files/)).toBe('');
+    expect(countOf(/^Commits/)).toBe('');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
 
@@ -595,7 +595,7 @@ describe('Branch page counts before any visit', () => {
     await settle();
 
     expect(loadHistoryDraft).not.toHaveBeenCalled();
-    expect(countOf(/^Commits/)).toBe('↑3');
+    expect(countOf(/^Commits/)).toBe('');
   });
 });
 
@@ -747,13 +747,13 @@ describe('Branch page entries in the sidebar', () => {
   const fileRail = (): HTMLElement | null =>
     document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
 
-  it('keeps Files a plain entry with its count and puts the file list on the right of the page', async () => {
+  it('keeps Files a plain entry with no count and puts the file list on the right of the page', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedShownPullRequest();
     await mountFiles();
     expect(fileRail()).toBeNull();
     expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
-    expect(railRow(/^Files/).textContent).toMatch(/^Files\d+/);
+    expect(railRow(/^Files/).textContent).toBe('Files');
 
     await visit(/^Files/);
     const rail = fileRail();

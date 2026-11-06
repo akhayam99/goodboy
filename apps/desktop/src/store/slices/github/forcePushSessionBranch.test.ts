@@ -274,7 +274,7 @@ describe('forcePushSessionBranch', () => {
 
     expect(result).toEqual({
       ok: false,
-      error: 'The online copy changed. Check again before force pushing.',
+      error: 'Origin changed. Check again before force pushing.',
     });
     expect(h.pushWithLease).not.toHaveBeenCalled();
   });
@@ -292,7 +292,7 @@ describe('forcePushSessionBranch', () => {
 
     expect(result).toEqual({
       ok: false,
-      error: 'The online copy changed. Check again before force pushing.',
+      error: 'Origin changed. Check again before force pushing.',
     });
     expect(h.pushWithLease).not.toHaveBeenCalled();
   });
@@ -365,7 +365,7 @@ describe('forcePushSessionBranch', () => {
     });
     expect(lossy).toEqual({
       ok: false,
-      error: 'The online copy changed. Check again before force pushing.',
+      error: 'Origin changed. Check again before force pushing.',
     });
     expect(h.pushWithLease).not.toHaveBeenCalled();
   });

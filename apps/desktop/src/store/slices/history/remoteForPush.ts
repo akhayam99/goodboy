@@ -52,7 +52,7 @@ export const remoteForPush = async ({
       stop: {
         reason: 'origin-moved',
         message:
-          'The online copy has commits this rewrite does not include. Nothing was changed. Bring them into the plan first.',
+          'Origin has commits this rewrite does not include. Nothing was changed. Bring them into the plan first.',
         files: [],
         sha: lease.sha,
       },
@@ -64,7 +64,7 @@ export const remoteForPush = async ({
       sha: null,
       stop: {
         reason: 'failed',
-        message: `Couldn't read the online copy, so nothing was changed. ${lease.reason}`.trim(),
+        message: `Couldn't read origin, so nothing was changed. ${lease.reason}`.trim(),
         files: [],
         sha: null,
       },

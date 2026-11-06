@@ -60,7 +60,10 @@ import type {
 import {
   ALL_MERGE_METHODS,
   fixSignalsOf,
+  pullRequestChecksOf,
+  pullRequestThreadsOf,
   pullRequestFacts,
+  pullRequestViewerOf,
   type PullRequestFacts,
 } from './pullRequestFacts';
 
@@ -557,7 +560,6 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
               (view) => state.mountGithub[view.id]?.detail ?? null,
             ),
           ].find((candidate) => candidate !== null && candidate.prNumber === pr.number) ?? null);
-    const detailMatches = detail !== null;
     const repo = resolveSessionRepo({
       state,
       sessionId: target.sessionId,
@@ -568,7 +570,11 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
         ? null
         : selectPrWrite({ state, target: { projectId: repo.projectId, prNumber: pr.number } });
     const signals = fixSignalsOf({
-      threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
+      threads: pullRequestThreadsOf({
+        threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
+        projectId: repo?.projectId ?? null,
+        prNumber: pr?.number ?? null,
+      }),
     });
     const view =
       pullRequestViewOf({
@@ -577,21 +583,15 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
         mountId,
         prNumber: pr?.number ?? null,
       })?.view ?? null;
-    const portChecks = host !== 'github' && view !== null ? view.checks : null;
     return pullRequestFacts({
       sessionId: target.sessionId,
       mountId,
       host,
       pr,
-      checks: detailMatches ? detail.checks : portChecks === null ? null : portChecks.runs,
-      checksRead: detailMatches
-        ? (detail.checksRead ?? 'ok')
-        : portChecks === null || portChecks.read === 'unsupported'
-          ? null
-          : portChecks.read,
-      comments: detailMatches ? detail.comments : [],
-      reviews: detailMatches ? detail.reviews : [],
-      viewer: host === 'github' ? (state.githubStatus?.user ?? null) : null,
+      ...pullRequestChecksOf({ host, detail, view }),
+      comments: detail?.comments ?? [],
+      reviews: detail?.reviews ?? [],
+      viewer: pullRequestViewerOf({ host, state }),
       writeInFlight:
         claim === null || pr === null
           ? null

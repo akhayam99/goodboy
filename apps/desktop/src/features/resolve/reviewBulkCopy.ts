@@ -1,5 +1,5 @@
 import { countNoun } from '../../shared/utils/countNoun';
-import { applyAndResolveLabel } from './commentProjection';
+import { applyFixesLabel } from './commentProjection';
 
 export const REVIEW_BULK_LABEL = {
   runActions: 'Fix run actions',
@@ -28,7 +28,7 @@ export const answersContinueLabel = ({ count }: { readonly count: number }): str
   `Continue with ${countNoun({ count, one: 'answer', many: 'answers' })}`;
 
 export const acceptCountLabel = ({ count }: { readonly count: number }): string =>
-  applyAndResolveLabel({ count });
+  applyFixesLabel({ count });
 
 export const acceptedLine = ({ count }: { readonly count: number }): string => `${count} accepted`;
 

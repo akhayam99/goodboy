@@ -6,6 +6,7 @@ import {
   FOCUS_RING,
   HeaderActions,
   ICON_SIZE,
+  Tooltip,
   TruncatedText,
   cn,
   tintClasses,
@@ -39,19 +40,26 @@ type VerbButtonParams = {
   readonly onClick: () => void;
 };
 
-const verbButton = ({ verb, variant, isPickerOpen, onClick }: VerbButtonParams) => (
-  <Button
-    size="sm"
-    variant={variant}
-    aria-label={verb.ariaLabel}
-    aria-expanded={verb.hasPicker ? isPickerOpen : undefined}
-    disabled={verb.isDisabled}
-    isBusy={verb.isBusy}
-    onClick={onClick}
-  >
-    {verb.label}
-  </Button>
-);
+const verbButton = ({ verb, variant, isPickerOpen, onClick }: VerbButtonParams) => {
+  const button = (
+    <Button
+      size="sm"
+      variant={variant}
+      aria-label={verb.ariaLabel}
+      aria-expanded={verb.hasPicker ? isPickerOpen : undefined}
+      disabled={verb.isDisabled}
+      isBusy={verb.isBusy}
+      onClick={onClick}
+    >
+      {verb.label}
+    </Button>
+  );
+  return verb.blockedReason === undefined ? (
+    button
+  ) : (
+    <Tooltip content={verb.blockedReason}>{button}</Tooltip>
+  );
+};
 
 export const ActionCard = ({
   card,

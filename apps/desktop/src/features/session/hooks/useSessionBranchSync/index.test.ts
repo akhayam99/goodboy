@@ -121,7 +121,7 @@ describe('useSessionBranchSync', () => {
 
     await waitFor(() =>
       expect(h.reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't check the online copy", severity: 'warning' }),
+        expect.objectContaining({ title: "Couldn't check origin", severity: 'warning' }),
       ),
     );
   });

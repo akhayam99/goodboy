@@ -24,7 +24,6 @@ import {
 import { fixCommentsSeed } from '../../../../app/components/MockScene/scenes/u24/fixCommentsSeed';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { draftRoutingOf } from '../../draftRouting';
-import { FixCommentsButton } from '../FixCommentsButton';
 import { FixCommentsDrawer } from '.';
 
 type StoreState = ReturnType<StoryStore['getState']>;
@@ -299,27 +298,5 @@ describe('the Fix comments hint', () => {
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(within(drawer()).queryByRole('textbox', { name: HINT_LABEL })).toBeNull();
     expect(onClose).not.toHaveBeenCalled();
-  });
-});
-
-describe('the Fix comments button', () => {
-  it('shows the count of open comments and opens the drawer on click', async () => {
-    seedBulkScene({ stage: 'launch' });
-    render(<FixCommentsButton sessionId={SESSION.id} mountId={null} />);
-
-    fireEvent.click(
-      await screen.findByRole('button', { name: `Fix ${BULK_LAUNCH_THREAD_IDS.length} threads` }),
-    );
-
-    expect(useAppStore.getState().drawer?.kind).toBe('fix-comments');
-  });
-
-  it('hides when no comment is open', async () => {
-    seedBulkScene({ stage: 'launch' });
-    useAppStore.setState({ sessionResolveQueueItems: { [SESSION.id]: [] } });
-    render(<FixCommentsButton sessionId={SESSION.id} mountId={null} />);
-    await settle();
-
-    expect(screen.queryByRole('button', { name: /^Fix comments/ })).toBeNull();
   });
 });

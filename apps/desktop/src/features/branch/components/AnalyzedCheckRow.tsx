@@ -20,6 +20,7 @@ import { modelLabel } from '../../chat/utils/chat-constants';
 import { analyzeFailingChecks } from '../checks/analyzeFailingChecks';
 import { checkRoutingOf } from '../checks/checkRoutingOf';
 import { useCheckChain } from '../hooks/useCheckChain';
+import { useCheckWorkLock } from '../hooks/useCheckWorkLock';
 import { CheckAnalysisHint } from './CheckAnalysisHint';
 
 type Props = {
@@ -67,6 +68,7 @@ const LIVE: ReadonlySet<ChainState> = new Set<ChainState>(['analyzing', 'fixing'
 export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, renderRow }: Props) => {
   const url = check.detailsUrl ?? pullRequest.url;
   const { chain } = useCheckChain({ sessionId, mountId, url });
+  const lock = useCheckWorkLock({ sessionId, mountId });
   const routing = useAppStore(useShallow((state) => checkRoutingOf({ state, sessionId, mountId })));
   const reportError = useAppStore((state) => state.reportError);
   const openDrawer = useAppStore((state) => state.openDrawer);
@@ -132,9 +134,17 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
       ),
     action: canAnalyze ? (
       <Tooltip
-        content={`Start a Debugger on this failure with ${modelLabel(routing.model, routing.provider)} at ${routing.effort} effort`}
+        content={
+          lock ??
+          `Start a Debugger on this failure with ${modelLabel(routing.model, routing.provider)} at ${routing.effort} effort`
+        }
       >
-        <Button variant="ghost" size="sm" disabled={isStarting} onClick={() => void analyze()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isStarting || lock !== null}
+          onClick={() => void analyze()}
+        >
           <AgentsIcon size={ICON_SIZE.row} aria-hidden />
           {chain.state === 'none' ? 'Analyze' : 'Analyze again'}
         </Button>

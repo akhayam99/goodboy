@@ -94,7 +94,7 @@ describe('answering a push from the card', () => {
         {
           delegationId: 'delegation-b',
           state: 'failed',
-          message: 'The online copy changed. Check again before force pushing.',
+          message: 'Origin changed. Check again before force pushing.',
         },
       ],
     }));

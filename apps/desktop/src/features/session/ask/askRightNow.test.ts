@@ -36,7 +36,7 @@ describe('askRightNow', () => {
       }),
     );
     expect(askRightNowText(lines)).toEqual([
-      'Fixing 9 comments on #318 · 5 fix to review · 1 question · 1 failed · 2 fixing',
+      'Fixing 9 comments on #318 · 5 fix ready · 1 question · 1 failed · 2 fixing',
       'Implementer is running · 12 min',
       '1 open question from Planner',
       '$3.42 in this session',
