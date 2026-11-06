@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -50,7 +51,9 @@ const mount = async (name: SceneName): Promise<void> => {
   const Scene = U36_RUN_PAGES_SCENES[name];
   render(
     <ToastProvider>
-      <Scene />
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
   await act(async () => {
@@ -128,6 +131,26 @@ describe('one run page', () => {
     fireEvent.doubleClick(within(headOf()).getByText('Fix flaky tests in the ledger export'));
 
     within(headOf()).getByRole('textbox', { name: 'Rename run' });
+  });
+
+  it('opens the run menu from the keyboard on the head title and starts nothing on Enter or Space', async () => {
+    await mount('u36-p12-preset-page');
+
+    const title = within(headOf()).getByText('Fix flaky tests in the ledger export');
+    expect(title.getAttribute('tabindex')).toBe('0');
+    fireEvent.keyDown(title, { key: 'Enter' });
+    fireEvent.keyDown(title, { key: ' ' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(within(headOf()).queryByRole('textbox')).toBeNull();
+
+    fireEvent.keyDown(title, { key: 'F10', shiftKey: true });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    const menu = screen.getByRole('menu');
+    within(menu).getByRole('menuitem', { name: 'Pause run' });
+    within(menu).getByRole('menuitem', { name: 'Copy run summary' });
   });
 
   it.each(['u36-p12-step-page', 'u36-p12-orch-step-page'] as const)(

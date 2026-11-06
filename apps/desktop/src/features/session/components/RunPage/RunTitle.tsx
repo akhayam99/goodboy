@@ -1,4 +1,4 @@
-import { Tooltip, TruncatedText, cn } from '@goodboy/ui';
+import { FOCUS_RING, Tooltip, TruncatedText, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import type { AgentId } from '@goodboy/types';
 import { runObjectKey, runTitleAnchorKey } from '../../../actions/runObjectKey';
@@ -56,7 +56,9 @@ export const RunTitle = ({ session, view, stepAgentId }: Props) => {
 
   return (
     <TruncatedText
-      className="min-w-0 truncate"
+      isFocusable
+      tabIndex={0}
+      className={cn('min-w-0 truncate rounded-sm', FOCUS_RING)}
       onDoubleClick={rename.start}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
