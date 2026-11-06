@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, FormActions } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { endedWaitingRunsOf } from '../../../../store/runtime/live-work/endedWaitingRunsOf';
 import { liveAgentCountOf } from '../../../../store/runtime/live-work/liveAgentCountOf';
 import { stopWork } from '../../../../store/runtime/live-work/stopWork';
 import { currentPlatform } from '../../../../shared/platform';
@@ -29,7 +30,8 @@ export const WindowCloseSheet = ({ initialAsk = null }: Props) => {
           if (isMainWindow() && currentPlatform() === 'darwin') {
             return 'hide';
           }
-          const count = liveAgentCountOf({ state: useAppStore.getState() });
+          const keptRuns = await endedWaitingRunsOf({ state: useAppStore.getState() });
+          const count = liveAgentCountOf({ state: useAppStore.getState(), keptRuns });
           if (count === 0) {
             return 'close';
           }

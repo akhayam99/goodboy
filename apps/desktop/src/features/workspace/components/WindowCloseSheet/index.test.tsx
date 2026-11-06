@@ -134,7 +134,7 @@ describe('the window close sheet', () => {
     expect(screen.queryByRole('dialog', { name: /did not stop/ })).toBeNull();
   });
 
-  it('keeps a permission ask whose run ended and still closes the window', async () => {
+  it('counts only what the press stops, and keeps a permission ask whose run ended', async () => {
     const { cancelTurnConfirmed } = seedLive({
       cancel: async () => ({ outcome: 'exited', exitedAt: AT }),
       liveRuns: ['run-first'],
@@ -143,7 +143,7 @@ describe('the window close sheet', () => {
     await requestClose();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Stop 2 agents' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Stop 1 agent' }));
     });
 
     expect(cancelTurnConfirmed).toHaveBeenCalledTimes(1);
@@ -153,6 +153,35 @@ describe('the window close sheet', () => {
       reason: 'leave',
     });
     expect(screen.queryByRole('dialog', { name: /did not stop/ })).toBeNull();
+  });
+
+  it('closes without asking when the only live agent is an ask whose run ended', async () => {
+    seedLive({ cancel: async () => ({ outcome: 'exited', exitedAt: AT }), liveRuns: [] });
+    useAppStore.setState({
+      sessionPhaseRuns: { [session.id]: [{ ...second, status: 'pending' }] },
+      agentTurnState: {
+        [second.id]: {
+          kind: 'blocked',
+          runId: brandId<ProviderRunId>({ value: 'run-second' }),
+          blockedAt: AT,
+        },
+      },
+    });
+    render(<WindowCloseSheet />);
+
+    await requestClose();
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('counts every agent when the live list cannot be read', async () => {
+    seedLive({ cancel: async () => ({ outcome: 'exited', exitedAt: AT }) });
+    stubStoryInvoke({ turn_list_live: () => Promise.reject(new Error('the app is busy')) });
+    render(<WindowCloseSheet />);
+
+    await requestClose();
+
+    screen.getByRole('button', { name: 'Stop 2 agents' });
   });
 
   it('says which agents did not stop and offers Close anyway, never a false stop', async () => {
