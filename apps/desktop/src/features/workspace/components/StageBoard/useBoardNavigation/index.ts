@@ -67,7 +67,14 @@ export const useBoardNavigation = (): BoardNavigation => {
       selectCard,
       openUnreadReply,
       openIDE,
-      openQuestions: (session) => openLens({ session, lens: 'questions' }),
+      openQuestions: (session) =>
+        navigate({
+          to: attentionPlace({
+            state: useAppStore.getState(),
+            sessionId: session.id as SessionId,
+            reason: 'open-question',
+          }),
+        }),
       openWorkflows: (session) => openLens({ session, lens: 'workflows' }),
       openPullRequest: (session) => openLens({ session, lens: 'pr' }),
       openReview: openReviewOf,
