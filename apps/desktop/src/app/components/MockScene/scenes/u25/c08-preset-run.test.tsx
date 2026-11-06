@@ -187,7 +187,9 @@ describe('the c08 preset run scenes', () => {
     await mount('c08-run-approval');
 
     expect(within(tail()).getByText('The plan waits for your review')).toBeDefined();
-    expect(within(header()).getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(
+      within(header()).getByRole('button', { name: 'Approve and start Fix the batching' }),
+    ).toBeDefined();
   });
 
   it('c08-run-capped says it paused at the limit, offers to raise it in the header and shows the foot', async () => {

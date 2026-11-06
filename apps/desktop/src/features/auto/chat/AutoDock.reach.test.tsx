@@ -118,10 +118,10 @@ describe('the Auto dock when Auto was not told', () => {
     });
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
     const tell = await screen.findByRole('button', { name: 'Tell Auto' });
     screen.getByText('Plan v1 approved, Auto did not hear it');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
     fireEvent.click(tell);
 
     await waitFor(() =>
@@ -147,7 +147,7 @@ describe('the Auto dock when Auto was not told', () => {
     });
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Tell Auto' }));
 
     await waitFor(() =>

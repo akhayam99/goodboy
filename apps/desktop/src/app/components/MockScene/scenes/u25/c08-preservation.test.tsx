@@ -393,7 +393,9 @@ describe('run rows stay reachable from the preset run level', () => {
 
   it('Plan approval is the header primary', async () => {
     await mount('c08-run-approval');
-    expect(header().getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(
+      header().getByRole('button', { name: 'Approve and start Fix the batching' }),
+    ).toBeDefined();
   });
 
   it('Answer a step question from the header or the card', async () => {

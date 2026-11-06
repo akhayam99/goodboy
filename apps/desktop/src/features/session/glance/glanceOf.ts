@@ -15,6 +15,7 @@ export type Glance = Readonly<{
 type Params = {
   readonly state: GlanceState;
   readonly sentence: string;
+  readonly word?: string;
 };
 
 const WORD: Record<GlanceState, string> = {
@@ -37,9 +38,9 @@ const TONE: Record<GlanceState, Tone> = {
   idle: AUTO_STATE_TONE.idle,
 };
 
-export const glanceOf = ({ state, sentence }: Params): Glance => ({
+export const glanceOf = ({ state, sentence, word = WORD[state] }: Params): Glance => ({
   state,
-  word: WORD[state],
+  word,
   tone: TONE[state],
   sentence,
   isLive: state === 'planning' || state === 'working',

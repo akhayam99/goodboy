@@ -62,7 +62,7 @@ describe('the primary of a plan row follows the plan rule', () => {
   it('is Approve, filled, for a plan its run holds for', () => {
     renderRow({ run: 'held' });
 
-    expect(primary('Approve').getAttribute('data-filled')).toBe('true');
+    expect(primary('Approve and start Implement').getAttribute('data-filled')).toBe('true');
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
   });
 
@@ -75,7 +75,7 @@ describe('the primary of a plan row follows the plan rule', () => {
   it('turns secondary while the plan has unsent comments', () => {
     renderRow({ run: 'held', drafts: [aPlanDraft()] });
 
-    expect(primary('Approve').getAttribute('data-filled')).toBe('false');
+    expect(primary('Approve and start Implement').getAttribute('data-filled')).toBe('false');
   });
 
   it('is off, with its reason, while the planner revises', () => {
@@ -84,7 +84,7 @@ describe('the primary of a plan row follows the plan rule', () => {
       turn: { kind: 'running', runId: 'run-2' as ProviderRunId, startedAt: PLAN_FIXTURE_AT },
     });
 
-    const button = primary('Approve');
+    const button = primary('Approve and start Implement');
     expect(button.hasAttribute('disabled')).toBe(true);
     expect(button.getAttribute('title')).toBe('The planner is revising this plan');
   });
@@ -98,7 +98,7 @@ describe('the primary of a plan row follows the plan rule', () => {
   it('has no primary for a plan that already ran', () => {
     renderRow({ status: 'consumed' });
 
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Implement' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
   });
 });
@@ -113,7 +113,10 @@ describe('an artifact row shows one action', () => {
   it('shows the open control and the state-driven primary, no icon wall and no overflow', () => {
     renderRow({ run: 'held' });
 
-    expect(visibleButtons()).toEqual([expect.stringMatching(/^Plan /), 'Approve']);
+    expect(visibleButtons()).toEqual([
+      expect.stringMatching(/^Plan /),
+      'Approve and start Implement',
+    ]);
   });
 
   it('has no Delete button on the row', () => {
@@ -144,7 +147,7 @@ describe('an artifact row asks beside its button', () => {
     const childCount = frame.children.length;
     const height = frame.getBoundingClientRect().height;
 
-    fireEvent.click(primary('Approve'));
+    fireEvent.click(primary('Approve and start Implement'));
 
     const dialog = screen.getByRole('dialog', { name: unsentCommentsQuestion({ count: 1 }) });
     expect(frame.contains(dialog)).toBe(false);
@@ -156,7 +159,7 @@ describe('an artifact row asks beside its button', () => {
 
   it('closes on Escape and gives focus back to the row button', async () => {
     renderRow({ run: 'held', drafts: [aPlanDraft()] });
-    const approve = primary('Approve');
+    const approve = primary('Approve and start Implement');
     approve.focus();
 
     fireEvent.click(approve);

@@ -138,7 +138,7 @@ describe('runPrimaryOf edges', () => {
     ).toBeNull();
   });
 
-  it('offers Approve plan only when a held run has no plan to read', () => {
+  it('offers the approve label only when a held run has no plan to read', () => {
     const primary = live({
       hold: 'without-plan',
       flow: dynamic({ phase: 'plan-approval' }),
@@ -155,7 +155,7 @@ describe('runPrimaryOf edges', () => {
 
   it.each([
     ['a plan is waiting', 'with-plan', { kind: 'review-plan', label: 'Review plan' }],
-    ['no plan exists', 'without-plan', { kind: 'approve-plan', label: 'Approve plan' }],
+    ['no plan exists', 'without-plan', { kind: 'approve-plan', label: 'Approve and continue' }],
   ] as const)('puts the plan first on a static run when %s', (_name, hold, expected) => {
     const primary = live({
       hold,

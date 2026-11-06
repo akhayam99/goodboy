@@ -1,5 +1,6 @@
 import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
 import { Button, tintClasses } from '@goodboy/ui';
+import { AUTO_PLAN_APPROVE_LABEL } from '../plan/autoPlanApproveLabel';
 import { useAutoPlanApproval } from '../plan/useAutoPlanApproval';
 import { AUTO_STATE_TONE } from './autoStateTone';
 import { focusAgentComposer } from './focusAgentComposer';
@@ -76,7 +77,7 @@ export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) =>
           aria-live="polite"
           className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
         >
-          Plan v{model.version} waits for your OK
+          Plan v{model.version} needs approval
         </span>
         <span className="flex-1" />
         <Button
@@ -96,7 +97,7 @@ export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) =>
           disabled={model.isBusy}
           onClick={() => void model.approve()}
         >
-          Approve plan
+          {AUTO_PLAN_APPROVE_LABEL}
         </Button>
       </div>
     );

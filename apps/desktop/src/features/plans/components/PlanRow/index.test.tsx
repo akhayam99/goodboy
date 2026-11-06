@@ -133,7 +133,8 @@ describe('PlanRow primary for a plan that belongs to a run', () => {
     renderRow();
 
     const primary = screen.getByTestId('plan-primary');
-    expect(primary.textContent).toBe('Approve');
+    expect(primary.textContent).toBe('Approve and start Implement');
+    expect(primary.querySelector('.lucide-play')).not.toBeNull();
     expect(primary.getAttribute('data-filled')).toBe('true');
     fireEvent.click(primary);
 

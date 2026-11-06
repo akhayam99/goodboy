@@ -100,7 +100,7 @@ export const NAMES = {
   letAutoTakeIt: 'Let Auto take it from here',
   fix: 'Fix',
   waitingForPermission: 'Waiting for your permission',
-  approve: 'Approve',
+  needsApproval: 'Needs approval',
   runPlan: 'Run plan',
   follow: 'Follow',
   pin: 'Pin session',

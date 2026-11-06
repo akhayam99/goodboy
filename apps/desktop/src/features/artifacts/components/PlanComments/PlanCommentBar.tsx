@@ -6,7 +6,7 @@ import { PlanApproveConfirm } from '../../../plans/planSurfaces';
 import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
 import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 
-type PlanBarApprove = Pick<PlanPrimaryAction, 'press' | 'isBusy' | 'confirm'>;
+type PlanBarApprove = Pick<PlanPrimaryAction, 'primary' | 'press' | 'isBusy' | 'confirm'>;
 
 type Props = {
   readonly count: number;
@@ -68,7 +68,7 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend, approve
                   data-filled="false"
                 >
                   <Check size={ICON_SIZE.row} aria-hidden />
-                  Approve
+                  {approve.primary.label}
                 </Button>
               )}
             />

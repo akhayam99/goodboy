@@ -15,9 +15,9 @@ describe('autoGlanceOf', () => {
 
     expect(glance).toMatchObject({
       state: 'waiting',
-      word: 'Needs you',
+      word: 'Needs approval',
       tone: 'warning',
-      sentence: 'Plan v1 needs your OK',
+      sentence: 'Plan v1 needs approval',
       isLive: false,
     });
   });
@@ -33,7 +33,7 @@ describe('autoGlanceOf', () => {
       rootTurn: null,
     });
 
-    expect(glance.sentence).toBe('Plan v2 needs your OK');
+    expect(glance.sentence).toBe('Plan v2 needs approval');
   });
 
   it('says Planning while the Planner revises the plan', () => {

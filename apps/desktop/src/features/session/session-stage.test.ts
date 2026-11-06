@@ -116,7 +116,7 @@ describe('the reason table', () => {
     ['open-question', '?', 'warning', '1 question for you'],
     ['fix-needs-you', '?', 'warning', '1 comment needs you'],
     ['needs-approval', 'approval', 'warning', 'Waiting for your permission'],
-    ['plan-approval', 'approval', 'warning', 'The plan waits for your approval'],
+    ['plan-approval', 'approval', 'warning', 'The plan needs approval'],
     ['changes-requested', '!', 'warning', 'Changes requested'],
     ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],
     ['pr-approved', 'approved', 'success', 'Approved, ready to merge'],
@@ -158,7 +158,7 @@ describe('attentionWordsOf', () => {
     expect(attentionWordsOf({ reason: 'plan-approval', planVersion: 2 })).toBe(
       'Plan v2 waits for your approval',
     );
-    expect(attentionWordsOf({ reason: 'plan-approval' })).toBe('The plan waits for your approval');
+    expect(attentionWordsOf({ reason: 'plan-approval' })).toBe('The plan needs approval');
   });
 });
 

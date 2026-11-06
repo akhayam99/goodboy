@@ -58,15 +58,15 @@ const renderDock = ({ view, onOpenArtifact = vi.fn() }: RenderParams) => {
 };
 
 describe('AutoDock', () => {
-  it('asks for the plan with one primary, Approve plan, and two quiet buttons', () => {
+  it('asks for the plan with one primary, the approve label, and two quiet buttons', () => {
     const onOpenArtifact = vi.fn();
     renderDock({
       view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }),
       onOpenArtifact,
     });
 
-    screen.getByText('Plan v1 waits for your OK');
-    screen.getByRole('button', { name: 'Approve plan' });
+    screen.getByText('Plan v1 needs approval');
+    screen.getByRole('button', { name: 'Approve and start Build' });
     screen.getByRole('button', { name: 'Ask for changes' });
     fireEvent.click(screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }));
     expect(onOpenArtifact).toHaveBeenCalledWith('artifact-plan');
@@ -86,8 +86,8 @@ describe('AutoDock', () => {
     } as const;
     renderDock({ view: aView({ phase: 'waiting', artifacts: [waiting, used] }) });
 
-    screen.getByText('Plan v2 waits for your OK');
-    screen.getByRole('button', { name: 'Approve plan' });
+    screen.getByText('Plan v2 needs approval');
+    screen.getByRole('button', { name: 'Approve and start Build' });
     expect(screen.queryByText('Plan v1 used')).toBeNull();
   });
 
@@ -100,7 +100,7 @@ describe('AutoDock', () => {
     });
 
     screen.getByText('Plan v1 · changes asked');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
     screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' });
   });
 
@@ -113,7 +113,7 @@ describe('AutoDock', () => {
     });
 
     expect(screen.getByText('Plan v1 approved').getAttribute('data-tone')).toBe('merged');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
   });
 
   it('says used once a writer took the plan', () => {
@@ -122,7 +122,7 @@ describe('AutoDock', () => {
     });
 
     screen.getByText('Plan v1 used');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
   });
 
   it('says no approval needed when Auto asks you nothing', () => {
@@ -131,7 +131,7 @@ describe('AutoDock', () => {
     });
 
     screen.getByText('Plan v1 · no approval needed');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
   });
 
   it('folds to one live row with its verb when there is no plan', () => {

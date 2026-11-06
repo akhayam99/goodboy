@@ -321,7 +321,7 @@ describe('the primary plan action follows the one rule', () => {
 
   it('is Approve for the plan a run is held for and Run plan for a session plan', () => {
     seed({ run: heldRun });
-    expect(resolved()?.label).toBe('Approve');
+    expect(resolved()?.label).toBe('Approve and start Implement');
 
     seed({ run: null });
     expect(resolved()?.label).toBe('Run plan');
@@ -330,14 +330,14 @@ describe('the primary plan action follows the one rule', () => {
   it('is Approve for a run plan whose next step consumes it, held or not', () => {
     seed({ run: liveRun });
 
-    expect(resolved()?.label).toBe('Approve');
+    expect(resolved()?.label).toBe('Approve and start Implement');
   });
 
   it('says why it waits while the planner revises, and keeps its label', () => {
     seed({ run: heldRun, isRevising: true });
 
     expect(resolved()).toMatchObject({
-      label: 'Approve',
+      label: 'Approve and start Implement',
       blockedReason: 'The planner is revising this plan',
     });
   });

@@ -248,15 +248,15 @@ describe('c07 Auto scenes', () => {
     }
   });
 
-  it('c07-auto-plan pins the plan ask in the dock with Approve plan as the one primary', async () => {
+  it('c07-auto-plan pins the plan ask in the dock with the approve label as the one primary', async () => {
     mount({ id: 'c07-auto-plan' });
 
-    await screen.findByText('Plan v1 waits for your OK', undefined, WAIT);
+    await screen.findByText('Plan v1 needs approval', undefined, WAIT);
     const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
     if (dock === null) {
       throw new Error('no dock');
     }
-    const approve = within(dock).getByRole('button', { name: 'Approve plan' });
+    const approve = within(dock).getByRole('button', { name: 'Approve and start Build' });
     expect(within(dock).getByRole('button', { name: /^Open plan / }).textContent).toBe('Open plan');
     expect(within(dock).getByRole('button', { name: 'Ask for changes' })).toBeDefined();
     expect(screen.queryByText('View plan')).toBeNull();

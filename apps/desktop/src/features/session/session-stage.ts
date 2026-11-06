@@ -64,7 +64,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'plan',
     tone: 'warning',
     mark: 'approval',
-    words: 'The plan waits for your approval',
+    words: 'The plan needs approval',
   }),
   'changes-requested': entryOf({
     icon: 'review',

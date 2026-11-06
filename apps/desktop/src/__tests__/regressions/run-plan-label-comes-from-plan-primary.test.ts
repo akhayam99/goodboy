@@ -9,6 +9,10 @@ const PRODUCERS = new Set(['shared/utils/names.ts', 'features/plans/planPrimaryO
 
 const RUN_PLAN_NAME = /NAMES\.runPlan|['"`]Run plan['"`]/;
 
+const APPROVE_LABEL = /['"`]Approve and (?:start|continue)/;
+
+const APPROVE_PRODUCER = 'features/plans/planApproveLabelOf.ts';
+
 const isSource = (entry: string): boolean =>
   /\.tsx?$/.test(entry) && !/\.(test|rows|runner)\.tsx?$/.test(entry);
 
@@ -46,6 +50,27 @@ describe('the Run plan label', () => {
     expect(
       offenders,
       `Run plan is a plan primary. Ask planPrimaryOf for the label instead of writing it:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('says what the approval starts from planApproveLabelOf and nowhere else', () => {
+    const offenders: string[] = [];
+    for (const file of listSourceFiles(DESKTOP_SRC)) {
+      const name = relative(DESKTOP_SRC, file);
+      if (name === APPROVE_PRODUCER || name.includes('/scenes/')) {
+        continue;
+      }
+      readFileSync(file, 'utf8')
+        .split('\n')
+        .forEach((line, index) => {
+          if (APPROVE_LABEL.test(line)) {
+            offenders.push(`${name}:${index + 1} ${line.trim()}`);
+          }
+        });
+    }
+    expect(
+      offenders,
+      `The approve button says what it starts. Ask planApproveLabelOf:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 });

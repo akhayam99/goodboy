@@ -392,6 +392,7 @@ describe('PlanCommentBar', () => {
   const allowed = { canSend: true, reason: null };
 
   const approval = (overrides: Partial<PlanBarApprove> = {}): PlanBarApprove => ({
+    primary: { kind: 'approve', label: 'Approve and continue', reason: null, isSecondary: true },
     press: vi.fn(),
     isBusy: false,
     confirm: null,
@@ -413,7 +414,7 @@ describe('PlanCommentBar', () => {
     expect(screen.getByText('2 comments')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
     expect(onSend).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and continue' })).toBeNull();
   });
 
   it('says why Send is off', () => {
@@ -450,7 +451,7 @@ describe('PlanCommentBar', () => {
     );
     expect(screen.getByTestId('plan-bar-send').getAttribute('data-filled')).toBe('true');
     expect(screen.getByTestId('plan-bar-approve').getAttribute('data-filled')).toBe('false');
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and continue' }));
     expect(press).toHaveBeenCalledTimes(1);
   });
 
@@ -466,7 +467,7 @@ describe('PlanCommentBar', () => {
       />,
     );
     expect(screen.getByText('Select text or click a block to comment')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve and continue' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Send to planner' })).toBeNull();
   });
 

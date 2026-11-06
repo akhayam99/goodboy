@@ -50,7 +50,7 @@ describe('PlanCommentsProvider', () => {
     renderProvider({ seed: { run: 'held' } });
 
     const bar = screen.getByTestId('plan-comment-bar');
-    expect(within(bar).getByRole('button', { name: 'Approve' })).toBeDefined();
+    expect(within(bar).getByRole('button', { name: 'Approve and start Implement' })).toBeDefined();
     expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe('PlanCommentsProvider', () => {
       },
     });
 
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Implement' })).toBeNull();
   });
 
   it('approves the held run from the bar without asking when nothing is unsent', async () => {
@@ -85,7 +85,7 @@ describe('PlanCommentsProvider', () => {
     }));
     renderProvider({ seed: { run: 'held' }, stubs: { approveWorkflowRunPlan: approve } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Implement' }));
 
     await waitFor(() => expect(approve).toHaveBeenCalledWith(PLAN_FIXTURE_SESSION, PLAN_RUN_ID));
     expect(await screen.findByText('Plan approved')).toBeDefined();
@@ -102,7 +102,7 @@ describe('PlanCommentsProvider', () => {
       stubs: { approveWorkflowRunPlan: approve },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Implement' }));
     expect(approve).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Approve anyway' }));
 

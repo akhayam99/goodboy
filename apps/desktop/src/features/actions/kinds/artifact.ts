@@ -28,6 +28,7 @@ import type {
 import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planEditBlockOf } from '../../plans/planEditBlock';
+import { planApproveLabelOf } from '../../plans/planApproveLabelOf';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
 import { unsentCommentsQuestion } from '../../plans/unsentCommentsQuestion';
 import { planRunToast } from '../../plans/planRunToast';
@@ -84,6 +85,7 @@ export type ArtifactFacts = {
   readonly planDrafts: ReadonlyArray<ArtifactComment>;
   readonly plannerQuestionCount: number;
   readonly isPlanHeldByAuto: boolean;
+  readonly planNextStepName: string | null;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
@@ -161,6 +163,7 @@ const primaryOf = ({ facts }: FactsOnly): PlanPrimary =>
     isRunning: facts.isPlanRunning,
     plannerQuestionCount: facts.plannerQuestionCount,
     isHeldByAuto: facts.isPlanHeldByAuto,
+    nextStepName: facts.planNextStepName,
   });
 
 const editBlockOf = ({ facts }: FactsOnly): string | null =>
@@ -371,7 +374,8 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.runPlan',
-    label: ({ facts }) => primaryOf({ facts }).label ?? NAMES.approve,
+    label: ({ facts }) =>
+      primaryOf({ facts }).label ?? planApproveLabelOf({ nextStepName: facts.planNextStepName }),
     icon: Play,
     group: 'act',
     slot: () => 'primary',
@@ -712,6 +716,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         planDrafts: NO_DRAFTS,
         plannerQuestionCount: 0,
         isPlanHeldByAuto: false,
+        planNextStepName: null,
         generation,
         kickoff: null,
         ports,

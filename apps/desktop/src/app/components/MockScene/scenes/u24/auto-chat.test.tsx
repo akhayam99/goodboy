@@ -132,7 +132,7 @@ describe('the Auto chat scenes', () => {
 
     const toolbar = await screen.findByTestId('auto-plan-toolbar', undefined, WAIT);
     expect(within(toolbar).getByText('Needs approval')).toBeDefined();
-    expect(within(toolbar).getByRole('button', { name: /Approve plan/ })).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: /Approve and start Build/ })).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: /Ask for changes/ })).toBeDefined();
     const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
     expect(sidebar.childElementCount).toBe(0);
@@ -360,7 +360,7 @@ describe('the Auto chat scenes', () => {
     expect(dock?.querySelector('[data-dock-plan]')?.getAttribute('data-dock-plan')).toBe('used');
     expect(dock?.textContent).toContain('Plan v1 used');
     expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
   });
 
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {

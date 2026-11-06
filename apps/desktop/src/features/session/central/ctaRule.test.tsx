@@ -212,7 +212,8 @@ describe('the CTA rule of the central column', () => {
     const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
 
     expect(
-      within(dock ?? document.body).getByRole('button', { name: 'Approve plan' }).dataset.variant,
+      within(dock ?? document.body).getByRole('button', { name: 'Approve and start Build' }).dataset
+        .variant,
     ).toBe('primary');
     expect(card.querySelectorAll('[data-variant="primary"]')).toHaveLength(0);
     expect(within(card).getByRole('button', { name: 'Continue' }).dataset.variant).toBe(

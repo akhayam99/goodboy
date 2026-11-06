@@ -11,6 +11,7 @@ import type {
 } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { planNextStepNameOf } from '../../../store/slices/workflows/planNextStepNameOf';
 import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
 import { plannerQuestionsOf } from '../../plans/plannerQuestions';
 import { planOwnerOf } from '../../plans/planOwnerOf';
@@ -22,6 +23,7 @@ export type ArtifactPlanFacts = Readonly<{
   planDrafts: ReadonlyArray<ArtifactComment>;
   plannerQuestionCount: number;
   isPlanHeldByAuto: boolean;
+  planNextStepName: string | null;
 }>;
 
 type Params = {
@@ -52,34 +54,36 @@ export const artifactPlanFactsOf = ({
   artifactId,
   plan,
   isPlan,
-}: Params): ArtifactPlanFacts => ({
-  planRevising:
-    artifact === null || artifact.kind !== 'plan'
-      ? NOT_REVISING
-      : planRevisingOf({ artifact, turn: state.agentTurnState[artifact.agentId] }),
-  planRun:
+}: Params): ArtifactPlanFacts => {
+  const agents = state.sessionPhaseRuns[sessionId] ?? NO_AGENTS;
+  const templates =
+    session === null ? NO_TEMPLATES : (state.phaseTemplates[session.workspaceId] ?? NO_TEMPLATES);
+  const planRun =
     plan === null || session === null
       ? null
-      : planOwnerOf({
-          plan,
-          agents: state.sessionPhaseRuns[sessionId] ?? NO_AGENTS,
-          runs: session.workflowRuns,
-          templates: state.phaseTemplates[session.workspaceId] ?? NO_TEMPLATES,
-        }),
-  planDrafts: isPlan
-    ? (state.artifactComments[sessionId] ?? NO_DRAFTS).filter(
-        (comment) => comment.artifactId === artifactId && comment.status === 'draft',
-      )
-    : NO_DRAFTS,
-  plannerQuestionCount:
-    plan === null
-      ? 0
-      : plannerQuestionsOf({
-          questions: state.sessionOpenQuestions[sessionId] ?? NO_QUESTIONS,
-          plan,
-        }).length,
-  isPlanHeldByAuto: isPlanHeldByAuto({
-    views: state.autoTreeViews[sessionId] ?? NO_VIEWS,
-    planId: artifactId,
-  }),
-});
+      : planOwnerOf({ plan, agents, runs: session.workflowRuns, templates });
+  return {
+    planRevising:
+      artifact === null || artifact.kind !== 'plan'
+        ? NOT_REVISING
+        : planRevisingOf({ artifact, turn: state.agentTurnState[artifact.agentId] }),
+    planRun,
+    planDrafts: isPlan
+      ? (state.artifactComments[sessionId] ?? NO_DRAFTS).filter(
+          (comment) => comment.artifactId === artifactId && comment.status === 'draft',
+        )
+      : NO_DRAFTS,
+    plannerQuestionCount:
+      plan === null
+        ? 0
+        : plannerQuestionsOf({
+            questions: state.sessionOpenQuestions[sessionId] ?? NO_QUESTIONS,
+            plan,
+          }).length,
+    isPlanHeldByAuto: isPlanHeldByAuto({
+      views: state.autoTreeViews[sessionId] ?? NO_VIEWS,
+      planId: artifactId,
+    }),
+    planNextStepName: planNextStepNameOf({ run: planRun, templates, agents }),
+  };
+};

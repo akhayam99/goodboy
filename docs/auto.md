@@ -351,10 +351,11 @@ writing to it reopens it to **Deciding**.
   the same lines. A child that waits for an OK carries the **Next step** card
   (see **Confirming**). The plan is not a row of the transcript: it lives in
   the **dock**, pinned above the message field (`AutoDock`, `AutoDockPlan`),
-  one line per state. A plan that waits reads "Plan v1 waits for your OK" with
-  **Approve plan** as the only primary of the page, **Ask for changes** (it
+  one line per state. A plan that waits reads "Plan v1 needs approval" with
+  **Approve and start Build** as the only primary of the page, **Ask for changes** (it
   opens the Auto page and focuses the composer) and **Open plan**, both quiet.
-  **Approve plan** uses `useAutoPlanApproval`, the same as the plan view;
+  The label comes from `planApproveLabelOf`, the same function the run plan button
+  reads. The button uses `useAutoPlanApproval`, the same as the plan view;
   approving sends the approval to the Auto root, so the run stays inside Auto.
   If the approval is saved but Auto was not told, the plan view keeps open with
   **Tell Auto**, and the dock that approved it reads "Plan v1 approved, Auto did
@@ -494,7 +495,7 @@ writing to it reopens it to **Deciding**.
   the dock speaks (a live row, or a plan that waits) it keeps the state word,
   the spend and **Settings** only (`isAutoDockSpeaking`); on Stuck, Done and
   Stopped it keeps its sentence. While a plan waits the dock owns the one
-  filled button (**Approve plan**) and the next step card's **Continue** is
+  filled button (**Approve and start Build**) and the next step card's **Continue** is
   secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
   A delegation line's **Open** reveals that child in Agents without
@@ -547,7 +548,7 @@ writing to it reopens it to **Deciding**.
 
 The plan a Planner writes opens in the right drawer. Its second row shows
 **Needs approval**, **Approved** or **Revising to v2**, the version, **Ask for
-changes** and **Approve plan**. Approval belongs to a revision: **Approve plan**
+changes** and **Approve and start Build**. Approval belongs to a revision: the button
 is a compare and swap on the version the drawer shows, then Auto is told once
 ("Approved plan v1."). A newer version, a revise in progress, a used plan or a
 discarded one refuse it with a sentence and the drawer stays open. A second
