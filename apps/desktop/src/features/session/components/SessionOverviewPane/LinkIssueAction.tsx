@@ -15,6 +15,7 @@ import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 
 import { LevelAddTrigger } from '../../../../shared/components/LevelAddTrigger';
 import { LinkWorkPanel } from './LinkWorkPanel';
+import { linkDetailOf } from './linkDetailOf';
 
 type Props = {
   readonly session: Session;
@@ -34,6 +35,7 @@ export const LinkIssueAction = ({
   look = 'chip',
 }: Props) => {
   const [initialQuery, setInitialQuery] = useState('');
+  const [eventSource, setEventSource] = useState<SessionExternalTaskProvider | null>(null);
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 440,
@@ -42,24 +44,25 @@ export const LinkIssueAction = ({
     openEvent: linkIssueEventName({ sessionId: session.id }),
   });
   const { open: isOpen, toggle } = dropdown;
+  const shownSource = eventSource ?? initialSource;
   useEffect(() => {
     const name = linkIssueEventName({ sessionId: session.id });
     const prefill = (event: Event) => {
-      const detail: unknown = event instanceof CustomEvent ? event.detail : null;
-      if (
-        typeof detail === 'object' &&
-        detail !== null &&
-        'query' in detail &&
-        typeof detail.query === 'string'
-      ) {
-        setInitialQuery(detail.query);
-        return;
-      }
-      setInitialQuery('');
+      const { query, source } = linkDetailOf({
+        detail: event instanceof CustomEvent ? event.detail : null,
+      });
+      setInitialQuery(query);
+      setEventSource(source);
     };
     window.addEventListener(name, prefill);
     return () => window.removeEventListener(name, prefill);
   }, [session.id]);
+
+  const openFresh = () => {
+    setInitialQuery('');
+    setEventSource(null);
+    toggle();
+  };
 
   useShortcut(
     'session.linkWork',
@@ -67,15 +70,10 @@ export const LinkIssueAction = ({
       if (event.repeat) {
         return;
       }
-      toggle();
+      openFresh();
     },
     isShortcutOn && !isOpen,
   );
-
-  const openFresh = () => {
-    setInitialQuery('');
-    toggle();
-  };
 
   return (
     <AnchoredPopover
@@ -111,9 +109,9 @@ export const LinkIssueAction = ({
     >
       {isOpen ? (
         <LinkWorkPanel
-          key={initialQuery}
+          key={`${eventSource ?? ''}:${initialQuery}`}
           initialQuery={initialQuery}
-          {...(initialSource !== undefined ? { initialSource } : {})}
+          {...(shownSource !== undefined ? { initialSource: shownSource } : {})}
           session={session}
           onLinked={dropdown.close}
           onClose={dropdown.close}
