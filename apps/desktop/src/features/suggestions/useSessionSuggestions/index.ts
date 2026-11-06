@@ -29,8 +29,7 @@ import {
   type CheckChainState,
 } from '../../../store/slices/agents/selectCheckChain';
 import { checkOutcomeOf, type CheckOutcome } from '../../branch/checks/checkOutcomeOf';
-import { checkTargetOf } from '../../branch/checks/checkTargetOf';
-import { failingChecksOf } from '../../branch/checks/failingChecksOf';
+import { checkStepTargetOf } from '../../branch/checks/checkStepTargetOf';
 import {
   useCheckFixCommitSync,
   type CheckFixTarget,
@@ -231,24 +230,11 @@ export const useSessionSuggestionsFrom = ({
   const chainRowsJson = useAppStore((state) =>
     JSON.stringify(
       rebaseMounts.flatMap((mount): ReadonlyArray<ChainRow> => {
-        const pr = state.mountGithub[mount.mountId]?.pr;
-        const failing =
-          pr == null
-            ? null
-            : failingChecksOf({
-                state,
-                sessionId,
-                mountId: mount.mountId,
-                prNumber: pr.number,
-              });
-        const check = failing?.checks[0];
-        const target = checkTargetOf({
+        const { target, failing } = checkStepTargetOf({
           state,
           sessionId,
           mountId: mount.mountId,
-          failingUrl:
-            check === undefined ? null : (check.detailsUrl ?? failing?.pullRequest.url ?? null),
-          failingName: check?.name ?? null,
+          prNumber: state.mountGithub[mount.mountId]?.pr?.number ?? null,
         });
         if (target === null) {
           return [];

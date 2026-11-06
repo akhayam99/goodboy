@@ -1,4 +1,5 @@
 import type { ResolveAttempt } from '@goodboy/types';
+import { NAMES } from '../../shared/utils/names';
 import type { RemoteView } from './reviewRemote';
 import type { ReviewCommentState } from './reviewCommentState';
 import { causeOfAttempt, failureSentence } from './failureSentence';
@@ -23,7 +24,7 @@ export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
   working: 'Fixing',
   question: 'Question',
-  to_review: 'Fix to review',
+  to_review: NAMES.fixReady,
   push_failed: 'Push failed',
   couldnt_fix: 'Failed',
   ready: 'Fixed',
@@ -33,7 +34,7 @@ export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
 };
 
 export const RESOLVE_VOCAB = {
-  applyFix: 'Apply fix',
+  applyFix: NAMES.applyFix,
   applied: 'Applied',
   replied: 'Replied',
   wontFix: "Won't fix",
@@ -45,9 +46,6 @@ type CountParams = {
 
 export const applyFixesLabel = ({ count }: CountParams): string =>
   count === 1 ? RESOLVE_VOCAB.applyFix : `Apply ${count} fixes`;
-
-export const applyAndResolveLabel = ({ count }: CountParams): string =>
-  `Apply and resolve ${count}`;
 
 export const RESOLVE_GROUP_LABEL: Readonly<Record<Exclude<ResolveGroup, 'left_open'>, string>> = {
   needs_you: 'Needs you',

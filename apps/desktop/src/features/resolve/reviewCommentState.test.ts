@@ -18,13 +18,13 @@ describe('review comment words', () => {
     );
     expect(
       reviewCommentWord({ state: reviewCommentStateOf({ row: proposed }), row: proposed }),
-    ).toBe('Fix to review');
+    ).toBe('Fix ready');
   });
 
   it('keeps To review for an edited reply and says Question for an asking thread', () => {
     const proposed = queueRowAt({ stage: 'proposed' });
     expect(reviewCommentStateOf({ row: proposed, isEdited: true })).toBe('edited');
-    expect(reviewCommentWord({ state: 'edited', row: proposed })).toBe('Fix to review');
+    expect(reviewCommentWord({ state: 'edited', row: proposed })).toBe('Fix ready');
     const asking = queueRowAt({ stage: 'asking' });
     expect(reviewCommentWord({ state: reviewCommentStateOf({ row: asking }), row: asking })).toBe(
       'Question',

@@ -39,6 +39,8 @@ import type { SessionFacts } from './session';
 const SESSION_ID = brandId<SessionId>({ value: 'session-harborline' });
 const MOUNT_ID = brandId<MountId>({ value: 'mount-payments' });
 
+type StoreState = ReturnType<StoryStore['getState']>;
+
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -168,6 +170,103 @@ describe('mount.cleanUp', () => {
       expectedBranch: 'hl/fix-duplicate-credit',
       mergedHeadSha: 'sha-merged',
       isRequested: true,
+    });
+  });
+
+  describe('Undo after a clean up', () => {
+    const DELETED: AfterMergeOutcome = {
+      kind: 'deleted',
+      deleted: {
+        id: 'deleted-1',
+        workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+        projectId: brandId<ProjectId>({ value: 'project-payments' }),
+        sessionId: SESSION_ID,
+        repoRoot: '/repos/payments-api',
+        branch: 'hl/fix-duplicate-credit',
+        sha: 'sha-tip',
+        keepRef: 'refs/goodboy/deleted/hl/fix-duplicate-credit',
+        onOrigin: true,
+        deletedAt: brandId<IsoDateTime>({ value: '2026-10-28T10:00:00.000Z' }),
+        restoredAt: null,
+      },
+    };
+
+    type UndoParams = {
+      readonly attachMount: StoreState['attachMount'];
+    };
+
+    const cleanUpThenUndo = async ({ attachMount }: UndoParams) => {
+      const restoreDeletedBranch = vi.fn<StoreState['restoreDeletedBranch']>(async () => undefined);
+      const reportError = vi.fn<StoreState['reportError']>(async () => undefined);
+      useAppStore.setState({ restoreDeletedBranch, attachMount, reportError });
+      await runCleanUp({ outcome: DELETED }).result;
+      await useAppStore.getState().undoLastOperation();
+      return { restoreDeletedBranch, reportError };
+    };
+
+    const ATTACHED: Awaited<ReturnType<StoreState['attachMount']>> = {
+      id: MOUNT_ID,
+      sessionId: SESSION_ID,
+      projectId: brandId<ProjectId>({ value: 'project-payments' }),
+      worktreePath: '/work/payments-api',
+      lastWorktreePath: '/work/payments-api',
+      branch: 'hl/fix-duplicate-credit',
+      baseBranch: null,
+      parallelIndex: 0,
+      mountName: 'payments-api',
+      repoSlug: null,
+      repoRoot: '/repos/payments-api',
+      isAttached: true,
+      diskState: 'present',
+      revision: 3,
+      createdAt: brandId<IsoDateTime>({ value: '2026-10-28T10:00:00.000Z' }),
+      updatedAt: brandId<IsoDateTime>({ value: '2026-10-28T10:00:00.000Z' }),
+    };
+
+    it('brings the branch back, then its folder, on the same mount', async () => {
+      const attachMount = vi.fn<StoreState['attachMount']>(async () => ATTACHED);
+      const { restoreDeletedBranch } = await cleanUpThenUndo({ attachMount });
+
+      expect(restoreDeletedBranch).toHaveBeenCalledWith({ id: 'deleted-1' });
+      expect(restoreDeletedBranch.mock.invocationCallOrder[0]).toBeLessThan(
+        attachMount.mock.invocationCallOrder[0] ?? 0,
+      );
+      expect(attachMount).toHaveBeenCalledWith({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+    });
+
+    it('offers Undo in the toast and says the folder is fresh', async () => {
+      const showToast = vi.fn<ActionEnv['showToast']>();
+      useAppStore.setState({
+        runAfterMergeCleanup: vi.fn(async () => DELETED),
+      });
+
+      await cleanUpDefinition().run({
+        facts: mountFacts({}),
+        env: { ...env, showToast },
+        choice: null,
+      });
+
+      const [toast] = showToast.mock.calls[0] ?? [];
+      expect(toast?.action?.label).toBe('Undo');
+      expect(toast?.message).toContain('fresh folder');
+    });
+
+    it('says the undo failed and keeps it for a second press', async () => {
+      const attachMount = vi
+        .fn<StoreState['attachMount']>()
+        .mockRejectedValueOnce(new Error('could not recreate the worktree'))
+        .mockResolvedValueOnce(ATTACHED);
+      const { reportError } = await cleanUpThenUndo({ attachMount });
+
+      expect(reportError).toHaveBeenCalledOnce();
+      await expect(useAppStore.getState().undoLastOperation()).resolves.toBe(true);
+      expect(attachMount).toHaveBeenCalledTimes(2);
+    });
+
+    it('leaves nothing to undo after a refusal', async () => {
+      await runCleanUp({ outcome: { kind: 'skipped' } }).result.catch(() => undefined);
+
+      expect(useAppStore.getState().undoStack).toEqual([]);
     });
   });
 

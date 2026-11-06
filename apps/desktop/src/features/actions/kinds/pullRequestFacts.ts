@@ -2,9 +2,11 @@ import type {
   MountId,
   PrCheckRun,
   PrComment,
+  PrDetail,
   PrDetailRead,
   PrMergeMethod,
   PrReview,
+  ProjectId,
   PullRequestHost,
   PullRequestState,
   PullRequestView,
@@ -12,7 +14,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
-import type { SessionGithubState } from '../../../store/types';
+import type { AppState, SessionGithubState } from '../../../store/types';
 import { reviewCounts } from '../../resolve/reviewCounts';
 import { checksCountsOf, checksGroupsOf } from '../../integrations/github/checksRollup';
 
@@ -70,6 +72,23 @@ export const fixSignalsOf = ({
     ),
   };
 };
+
+type PullRequestThreadsParams = {
+  readonly threads: ReadonlyArray<ResolveThread>;
+  readonly projectId: ProjectId | null;
+  readonly prNumber: number | null;
+};
+
+export const pullRequestThreadsOf = ({
+  threads,
+  projectId,
+  prNumber,
+}: PullRequestThreadsParams): ReadonlyArray<ResolveThread> =>
+  threads.filter(
+    (thread) =>
+      (thread.prNumber === null || prNumber === null || thread.prNumber === prNumber) &&
+      (thread.projectId === null || projectId === null || thread.projectId === projectId),
+  );
 
 export const ALL_MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
 
@@ -210,11 +229,46 @@ export const pullRequestFacts = ({
   };
 };
 
+type PullRequestChecksParams = {
+  readonly host: PullRequestHost;
+  readonly detail: Pick<PrDetail, 'checks' | 'checksRead'> | null;
+  readonly view: PullRequestView | null;
+};
+
+type PullRequestChecks = {
+  readonly checks: ReadonlyArray<PrCheckRun> | null;
+  readonly checksRead: PrDetailRead | null;
+};
+
+export const pullRequestChecksOf = ({
+  host,
+  detail,
+  view,
+}: PullRequestChecksParams): PullRequestChecks => {
+  if (detail !== null) {
+    return { checks: detail.checks, checksRead: detail.checksRead ?? 'ok' };
+  }
+  const port = host === 'github' ? null : (view?.checks ?? null);
+  if (port === null || port.read === 'unsupported') {
+    return { checks: null, checksRead: null };
+  }
+  return { checks: port.runs, checksRead: port.read };
+};
+
+type PullRequestViewerParams = {
+  readonly host: PullRequestHost;
+  readonly state: Pick<AppState, 'githubStatus'>;
+};
+
+export const pullRequestViewerOf = ({ host, state }: PullRequestViewerParams): string | null =>
+  host === 'github' ? (state.githubStatus?.user ?? null) : null;
+
 type SessionMergeParams = {
   readonly sessionId: SessionId;
   readonly host?: PullRequestHost;
   readonly github: Pick<SessionGithubState, 'pr' | 'detail'> | null;
   readonly threads: ReadonlyArray<ResolveThread>;
+  readonly viewer?: string | null;
   readonly mergeView?: PullRequestView | null;
   readonly isRebaseStopOpen?: boolean;
   readonly unpushed?: number;
@@ -225,6 +279,7 @@ export const sessionMergeFacts = ({
   host = 'github',
   github,
   threads,
+  viewer = null,
   mergeView = null,
   isRebaseStopOpen = false,
   unpushed = 0,
@@ -236,11 +291,10 @@ export const sessionMergeFacts = ({
     sessionId,
     host,
     pr,
-    checks: detail?.checks ?? null,
-    checksRead: detail?.checksRead ?? null,
+    ...pullRequestChecksOf({ host, detail, view: mergeView }),
     comments: detail?.comments ?? [],
     reviews: detail?.reviews ?? [],
-    viewer: null,
+    viewer,
     writeInFlight: null,
     isScribeWriting: false,
     isRebaseStopOpen,

@@ -265,8 +265,10 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
   it('shows a declined pull request as closed with no Reopen, Close or Merge', async () => {
     await show('declined');
 
-    expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Closed');
-    expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('aria-label')).toBe(
+      'Closed',
+    );
+    expect(screen.queryByRole('button', { name: /^Merge(?!:)/ })).toBeNull();
     await openOverflow();
     const menu = await screen.findByRole('menu', { name: 'Branch actions' });
     const labels = within(menu)

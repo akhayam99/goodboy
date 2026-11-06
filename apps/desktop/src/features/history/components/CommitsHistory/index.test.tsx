@@ -314,9 +314,9 @@ describe('the base row', () => {
   it('rebases onto another base picked from the chip', async () => {
     const actions = setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
 
-    fireEvent.click(await screen.findByRole('combobox', { name: 'Rebase onto branch' }));
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Rebase on another branch' }));
     fireEvent.click(await screen.findByRole('option', { name: /release\/2\.4/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Rebase onto release/2.4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase on release/2.4' }));
     const dialog = screen.getByRole('dialog', { name: 'Rebase onto release/2.4?' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Rebase' }));
 
@@ -328,7 +328,7 @@ describe('the base row', () => {
   });
 
   it('scrolls to the base row and focuses the Rebase of the status line when asked', () => {
-    setup();
+    setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
     const railRebase = document.createElement('button');
     railRebase.setAttribute('data-worktree-verb', 'mount.rebase');
     document.body.append(railRebase);
@@ -344,6 +344,30 @@ describe('the base row', () => {
     expect(scroll).toHaveBeenCalled();
     expect(document.activeElement).toBe(railRebase);
     railRebase.remove();
+  });
+});
+
+describe('the rebase split in the commits head', () => {
+  it('offers Rebase on the base while the branch is behind and focuses it when asked', () => {
+    setup();
+    Element.prototype.scrollIntoView = vi.fn();
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(diffEventName({ name: HISTORY_FOCUS_BASE_EVENT, sessionId: SESSION_ID })),
+      );
+    });
+
+    const rebase = screen.getByRole('button', { name: 'Rebase on main' });
+    expect(document.activeElement).toBe(rebase);
+    expect(screen.queryByText('Other base')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Commits help' })).not.toBeNull();
+  });
+
+  it('draws no Rebase in the head once the branch is up to date with its base', () => {
+    setup({ graph: { ...LEDGER_GRAPH, behind: 0, mainCommits: [] } });
+
+    expect(screen.queryByRole('button', { name: 'Rebase on main' })).toBeNull();
   });
 });
 
@@ -395,7 +419,11 @@ describe('CommitsHistory', () => {
   it('keeps rebase off the list, never as a planned change', () => {
     const actions = setup();
     expect(screen.queryByText(/is here now/)).toBeNull();
-    expect(screen.queryByRole('button', { name: /Rebase on main/ })).toBeNull();
+    expect(
+      within(screen.getByRole('list', { name: 'Commits' })).queryByRole('button', {
+        name: /Rebase on main/,
+      }),
+    ).toBeNull();
     expect(screen.queryAllByRole('button', { name: 'Rebase onto latest' })).toHaveLength(0);
     expect(actions.changeLiveHistory).not.toHaveBeenCalled();
   });

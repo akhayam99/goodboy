@@ -17,9 +17,8 @@ import { useGithubConnection } from '../../../integrations/github/useGithubConne
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewFlowVisit } from '../../../resolve/components/ReviewFlow/ReviewFlowVisit';
-import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
-import { useReviewPush } from '../../../resolve/components/ReviewFlow/useReviewPush';
 import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
+import { useBranchReview } from '../../../resolve/hooks/useBranchReview';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
 import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
@@ -28,6 +27,7 @@ import { useBranchIdentity } from '../../hooks/useBranchIdentity';
 import { useBranchStart } from '../../hooks/useBranchStart';
 import { usePullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { pullRequestNextStepOf } from '../../pullRequestNextStepOf';
+import { pushPhaseYieldsOf } from '../../pushPhaseYieldsOf';
 import { hasOpenRebaseStopOf } from '../../hasOpenRebaseStopOf';
 import { MERGE_METHOD_LABEL } from '../../../actions/kinds/pullRequest';
 import { useBranchTab } from '../../hooks/useBranchTab';
@@ -47,6 +47,7 @@ import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
 import { BranchStartLine } from '../BranchStartLine';
 import { BranchTabStrip } from '../BranchTabStrip';
+import { BranchWorkLines } from '../BranchWorkLines';
 import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
 import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
@@ -105,8 +106,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     sessionId,
     mountId: historyMountId,
   });
-  const { entries } = useReviewEntries({ sessionId, mountId: historyMountId });
-  const push = useReviewPush({ sessionId, mountId: historyMountId });
+  const branchReview = useBranchReview({ sessionId, mountId: historyMountId });
+  const { entries, push } = branchReview;
   const diff = useSessionDiff({
     sessionId,
     worktreePath: identity.mountPath,
@@ -183,16 +184,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
   const nextStep = isBranchStart
     ? start.step.header
-    : pr === null
-      ? null
-      : pullRequestNextStepOf({
-          state: scope.state,
-          facts: prReadiness.facts,
-          readiness: prReadiness.readiness,
-          hasReviewer: prReadiness.reviewers.people.length > 0,
-          behind: start.step.behind ?? 0,
-          isStopOpen: hasOpenRebaseStop,
-        });
+    : pullRequestNextStepOf({
+        state: scope.state,
+        facts: prReadiness.facts,
+        readiness: prReadiness.readiness,
+        hasReviewer: prReadiness.reviewers.people.length > 0,
+        behind: start.step.behind ?? 0,
+        isStopOpen: hasOpenRebaseStop,
+      });
 
   const selectTab = useCallback(
     (next: BranchTab): void => {
@@ -215,9 +214,10 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     review,
     remoteHost: host,
     nextStep,
+    comments: branchReview.comments,
+    facts: prReadiness.facts,
     hasOpenRebaseStop,
     mergeLabel: mergeWord,
-    onOpenTab: selectTab,
   });
 
   useEffect(() => {
@@ -281,11 +281,8 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     (sources.length > 0 || repo !== null);
   const isPrimaryYielding =
     isFormLeading ||
-    push.phase.kind === 'confirm' ||
-    push.phase.kind === 'pushing' ||
-    push.phase.kind === 'sync_confirm' ||
-    controls.diffControls.confirming !== null ||
-    controls.pullRequestControls.confirming !== null;
+    pushPhaseYieldsOf({ kind: push.phase.kind }) ||
+    (tab === 'comments' && branchReview.isSelecting);
 
   const hasEditAction = controls.pullRequestControls.actions.some(
     (action) => action.id === 'pullRequest.editDetails',
@@ -349,6 +346,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               onConnected={() => void githubConnection.refresh()}
               onReload={reloadPullRequestView}
               onSelectTab={selectTab}
+              onMerge={controls.merge}
             />
           </PageColumn>
         </BranchScroll>
@@ -385,13 +383,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     const visit = {
       mountId: historyMountId,
       push,
-      pushCount: push.phase.kind === 'idle' ? pushCount : 0,
-      isPushInHeader: (controls.primary ?? controls.secondary)?.label.startsWith('Push ') === true,
       isVisible: isActive,
-      onRequestReview:
-        request.kind === 'allowed'
-          ? () => controls.pullRequestControls.trigger({ actionId: 'pullRequest.requestReview' })
-          : null,
     };
     return <ReviewFlowVisit session={session} {...visit} />;
   };
@@ -434,16 +426,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   });
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
-  const tabActionsSlotNode = (
-    <div
-      ref={setTabActionsSlot}
-      data-slot="branch-tab-actions"
-      className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
-    />
-  );
-
-  const startLine = isBranchStart ? <BranchStartLine start={start} /> : null;
-
   const detail = (
     <BranchDetail>
       <PaneShell
@@ -457,33 +439,40 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               pr={pr}
               fallbackTitle={identity.label}
               line={
-                startLine ??
-                (pr === null ? null : (
-                  <PullRequestHeaderLine
-                    pr={pr}
-                    host={host}
-                    view={pullRequestView.view}
-                    readiness={prReadiness}
-                    isThreadsShown={tab === 'comments'}
-                  />
-                ))
+                isBranchStart ? (
+                  <BranchStartLine start={start} />
+                ) : pr === null ? null : (
+                  <PullRequestHeaderLine pr={pr} host={host} />
+                )
               }
               controls={controls}
               isPushBusy={isPushBusy}
               isPrimaryYielding={isPrimaryYielding}
+              isStepHidden={isFormLeading && controls.step === 'push'}
               tab={tab}
               isActive={isActive}
               canEditTitle={canEditTitle}
-              pageAction={tab === 'comments' ? tabActionsSlotNode : null}
               onMutated={onMutated}
             />
             <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
+            <BranchWorkLines
+              sessionId={sessionId}
+              checkWork={controls.checkWork}
+              run={branchReview.run}
+              lane={branchReview.lane}
+              isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
+              onOpenComments={() => selectTab('comments')}
+            />
             <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
             {baseRow}
             <div data-rebase-flow-hook="" className="flex min-w-0 flex-col empty:hidden">
               <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
             </div>
-            {tab === 'comments' ? null : tabActionsSlotNode}
+            <div
+              ref={setTabActionsSlot}
+              data-slot="branch-tab-actions"
+              className="flex min-w-0 shrink-0 items-center justify-end gap-2 empty:hidden"
+            />
           </div>
         }
       >

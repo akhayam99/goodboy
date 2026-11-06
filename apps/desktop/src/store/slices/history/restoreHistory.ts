@@ -245,8 +245,8 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
         reason: remote.stop.reason,
         message:
           remote.stop.reason === 'origin-moved'
-            ? 'Restored here. The online copy has newer commits than this backup, so nothing was pushed.'
-            : `Restored here, but the online copy could not be checked, so nothing was pushed.`,
+            ? 'Restored here. Origin has newer commits than this backup, so nothing was pushed.'
+            : `Restored here, but origin could not be checked, so nothing was pushed.`,
         files: [],
         sha: remote.stop.sha,
       });

@@ -68,10 +68,7 @@ describe('nextRowCopyOf', () => {
       branch: { branch: 'hl/feat-center-about-page', request: null },
     });
 
-    expect([row.title, row.detail]).toEqual([
-      'hl/feat-center-about-page',
-      '4 review conversations wait for a fix.',
-    ]);
+    expect([row.title, row.detail]).toEqual(['hl/feat-center-about-page', '4 comments to fix']);
   });
 
   it('keeps the row as it is outside Fix or without a known branch', () => {

@@ -13,12 +13,14 @@ import { runObjectAction } from '../../../actions/registry';
 import { toMenuEntries } from '../../../actions/toMenuEntries';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import type { ActionControls } from '../../../actions/useActionControls';
-import { BRANCH_MENU_DIFF, BRANCH_MENU_PULL_REQUEST } from '../../branchPrimary';
+import { BRANCH_MENU_DIFF, BRANCH_MENU_PULL_REQUEST, branchMenuRowsOf } from '../../branchPrimary';
 
 type Props = {
   readonly diffControls: ActionControls;
   readonly pullRequestControls: ActionControls;
   readonly shownIds: ReadonlyArray<string>;
+  readonly isRebaseStopOpen: boolean;
+  readonly onPush: () => void;
 };
 
 const MENU_LABEL = 'Branch actions';
@@ -31,7 +33,13 @@ const HEADER_RUN: ReadonlySet<string> = new Set([
 ]);
 const MIN_DRAWN_ENTRIES = 2;
 
-export const BranchOverflow = ({ diffControls, pullRequestControls, shownIds }: Props) => {
+export const BranchOverflow = ({
+  diffControls,
+  pullRequestControls,
+  shownIds,
+  isRebaseStopOpen,
+  onPush,
+}: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     width: 'min-w-[200px]',
@@ -42,27 +50,36 @@ export const BranchOverflow = ({ diffControls, pullRequestControls, shownIds }: 
   const env = useActionEnv({ origin: 'overflow' });
 
   const entries = useMemo((): ReadonlyArray<MenuEntry> => {
-    const groups = [
+    const listed = [
       { controls: pullRequestControls, ids: BRANCH_MENU_PULL_REQUEST },
       { controls: diffControls, ids: BRANCH_MENU_DIFF },
-    ].map(({ controls, ids }) => {
+    ].map(({ controls, ids }) => ({
+      controls,
+      actions: controls.actions.filter(
+        (action) =>
+          ids.includes(action.id) &&
+          !shownIds.includes(action.id) &&
+          (action.id !== PUSH_ID || action.slot === 'menu' || !isRebaseStopOpen),
+      ),
+    }));
+    const rows = branchMenuRowsOf({
+      ids: listed.flatMap(({ actions }) => actions.map((action) => action.id)),
+    });
+    const groups = listed.map(({ controls, actions: candidates }) => {
       const { target } = controls;
-      const actions = ids.flatMap((id) => {
-        const action = controls.actions.find((candidate) => candidate.id === id);
-        if (action === undefined || shownIds.includes(id)) {
-          return [];
-        }
-        if (id === PUSH_ID && action.slot !== 'menu') {
-          return [];
-        }
-        return HEADER_RUN.has(id) ? [{ ...action, confirm: null }] : [action];
-      });
+      const actions = candidates
+        .filter((action) => rows.has(action.id))
+        .map((action) => (HEADER_RUN.has(action.id) ? { ...action, confirm: null } : action));
       return target === null
         ? []
         : toMenuEntries({
             actions,
             env,
             run: async ({ actionId, choice }) => {
+              if (actionId === PUSH_ID) {
+                onPush();
+                return;
+              }
               if (HEADER_RUN.has(actionId)) {
                 controls.trigger({ actionId });
                 return;
@@ -76,7 +93,7 @@ export const BranchOverflow = ({ diffControls, pullRequestControls, shownIds }: 
         ? [{ kind: 'separator' as const, key: `separator-${index}` }, ...group]
         : group,
     );
-  }, [diffControls, env, pullRequestControls, shownIds]);
+  }, [diffControls, env, isRebaseStopOpen, onPush, pullRequestControls, shownIds]);
 
   if (entries.filter((entry) => entry.kind === 'item').length < MIN_DRAWN_ENTRIES) {
     return null;

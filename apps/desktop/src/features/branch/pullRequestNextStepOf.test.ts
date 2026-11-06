@@ -22,6 +22,7 @@ type RowParams = {
   readonly hasReviewer?: boolean;
   readonly behind?: number;
   readonly isStopOpen?: boolean;
+  readonly isOwn?: boolean;
 };
 
 const stepOf = ({
@@ -30,11 +31,12 @@ const stepOf = ({
   hasReviewer = false,
   behind = 0,
   isStopOpen = false,
+  isOwn = true,
 }: RowParams) => {
   const merged = { ...OPEN, ...facts };
   return pullRequestNextStepOf({
     state,
-    facts: merged,
+    facts: { ...merged, isOwn },
     readiness: evaluatePrMergeReadiness({ facts: merged }),
     hasReviewer,
     behind,
@@ -49,9 +51,17 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     { name: 'open, nobody asked', row: {}, step: 'requestReview' },
     { name: 'waiting on a reviewer', row: { hasReviewer: true }, step: null },
     {
-      name: 'changes requested',
+      name: 'changes requested and nothing left to fix, ask for a new look',
       row: { hasReviewer: true, facts: { review: 'changes_requested' as const } },
-      step: 'fixComments',
+      step: 'requestReview',
+    },
+    {
+      name: 'changes requested while comments still need you, the comment steps own it',
+      row: {
+        hasReviewer: true,
+        facts: { review: 'changes_requested' as const, commentsNeedYou: 2 },
+      },
+      step: null,
     },
     {
       name: 'checks running',
@@ -59,14 +69,14 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
       step: null,
     },
     {
-      name: 'checks failing',
+      name: 'checks failing, the check steps own it',
       row: { hasReviewer: true, facts: { checks: 'failing' as const, failingChecks: ['e2e'] } },
-      step: 'fixChecks',
+      step: null,
     },
     {
-      name: 'comments need you while the branch is behind',
+      name: 'comments need you while the branch is behind, no rebase first',
       row: { hasReviewer: true, behind: 7, facts: { review: null, commentsNeedYou: 1 } },
-      step: 'fixComments',
+      step: null,
     },
     {
       name: 'conflicts in a rebase',
@@ -90,6 +100,13 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     { name: 'in merge queue', row: { state: 'queued' as const }, step: null },
     { name: 'merged', row: { state: 'merged' as const }, step: null },
     { name: 'closed', row: { state: 'closed' as const }, step: 'reopen' },
+    { name: 'open, not yours', row: { isOwn: false }, step: 'review' },
+    {
+      name: 'approved, not yours',
+      row: { state: 'approved' as const, isOwn: false },
+      step: 'review',
+    },
+    { name: 'draft, not yours', row: { state: 'draft' as const, isOwn: false }, step: 'markReady' },
   ])('$name', ({ row, step }) => {
     expect(stepOf(row)).toBe(step);
   });
@@ -110,11 +127,11 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     expect(stepOf({ hasReviewer: true, behind: 0, facts: { hasConflicts: true } })).toBeNull();
   });
 
-  it('waits while a fix run is live on the comments', () => {
+  it('offers no lifecycle step while comments need a fix', () => {
     expect(
       stepOf({
         hasReviewer: true,
-        facts: { review: 'changes_requested', isFixRunLive: true },
+        facts: { review: 'changes_requested', commentsNeedYou: 1, isFixRunLive: true },
       }),
     ).toBeNull();
   });

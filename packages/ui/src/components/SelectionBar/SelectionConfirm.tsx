@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { InlineConfirm, type ConfirmAltAction, type ConfirmRole } from '../InlineConfirm';
 import { cn } from '../../cn';
 import { FLOATING_SURFACE } from '../../floatingSurface';
+import { ConfirmGoesStays } from './ConfirmGoesStays';
 
 const SHOWN_ITEMS = 3;
 
@@ -36,22 +37,7 @@ export const SelectionConfirm = ({
   const more = items.length - shown.length;
   return (
     <InlineConfirm {...rest} className={cn(FLOATING_SURFACE, 'w-full max-w-sm', className)}>
-      {goes === undefined && stays === undefined ? null : (
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-muted-foreground">
-          {goes === undefined ? null : (
-            <>
-              <dt className="text-eyebrow text-faint-foreground">Goes</dt>
-              <dd>{goes}</dd>
-            </>
-          )}
-          {stays === undefined ? null : (
-            <>
-              <dt className="text-eyebrow text-faint-foreground">Stays</dt>
-              <dd>{stays}</dd>
-            </>
-          )}
-        </dl>
-      )}
+      <ConfirmGoesStays goes={goes} stays={stays} />
       {shown.length === 0 ? null : (
         <ul className="flex min-w-0 flex-col gap-0.5 text-foreground">
           {shown.map((item, index) => (

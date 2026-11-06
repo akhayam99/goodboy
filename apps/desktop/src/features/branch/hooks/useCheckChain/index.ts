@@ -13,7 +13,7 @@ const NO_TARGETS: ReadonlyArray<CheckFixTarget> = [];
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly mountId: MountId;
+  readonly mountId: MountId | null;
   readonly url: string;
 };
 
@@ -56,7 +56,7 @@ export const useCheckChain = ({ sessionId, mountId, url }: Params) => {
   ]);
   const syncTargets = useMemo(
     () =>
-      fixId === undefined || fixStatus !== 'completed'
+      mountId === null || fixId === undefined || fixStatus !== 'completed'
         ? NO_TARGETS
         : [{ mountId, fixAgentId: fixId }],
     [fixId, fixStatus, mountId],
