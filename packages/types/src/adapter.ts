@@ -164,6 +164,7 @@ export type TurnEvent =
       scope?: PermissionScope;
       ruleId: PermissionRuleId | null;
       decidedBy: 'engine' | 'user' | 'default';
+      reason?: string;
       at: IsoDateTime;
     }
   | {

@@ -1497,6 +1497,10 @@ specific rule that fits wins.
   Bash, the whole tool for an edit) and resume the blocked call the same way,
   with no second click; only when the turn could not be resumed does the
   decision card say "Stopped before your answer." and offer **Continue**
+- A message sent while the ask is open denies it, with the text as the reason
+  (`startTurnRun`, right before the user text), and the agent reads
+  `Denied Bash. <text>`. It works only for a message you typed
+  (origin `operator`), and a send that never starts leaves the ask open
 - **Deny** answers this call only: it records a once decision, writes no rule
   and tells the agent the call is denied so it carries on another way. The
   session-wide ban is a separate item in the card's overflow, **Never allow

@@ -12,6 +12,7 @@ import {
   type AgentId,
   type ProviderRunId,
   type SessionId,
+  type TurnEvent,
   type WorkspaceId,
 } from '@goodboy/types';
 import {
@@ -27,6 +28,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
+import { openPermissionAsksOf } from '../features/permissions/openPermissionAsksOf';
 import { writeReloadIntent } from '../features/workspace/windowView';
 import { stageInfosOf } from './slices/session-view/stageInfosOf';
 import { cancelledRunIds } from './slices/sessions/sessionMutators';
@@ -71,6 +73,8 @@ const RUN_ID = brandId<ProviderRunId>({ value: 'run-ledger-ask' });
 const TOOL_USE_ID = 'tool-ledger-migrate';
 
 let useAppStore: StoryStore;
+
+async function* endedStream(): AsyncIterable<TurnEvent> {}
 
 const prepareReload = (): void => {
   stubStoryInvoke({ turn_list_live: () => [] });
@@ -177,6 +181,88 @@ describe('store on sqlite: a waiting permission across a reload', () => {
         await findUndecidedPermissionAsk({ db: storySqlite(), agentId: AGENT_ID, runId: RUN_ID }),
       ).toBeNull();
     });
+  });
+
+  const readAsks = () =>
+    openPermissionAsksOf({
+      events: useAppStore.getState().transcripts[AGENT_ID] ?? [],
+      turnState: useAppStore.getState().agentTurnState[AGENT_ID],
+    });
+
+  const hydrateWithAsk = async (): Promise<void> => {
+    storySpies.runTurn.mockImplementation(() => endedStream());
+    await useAppStore.getState().hydrate();
+    await vi.waitFor(() => {
+      expect(readAsks().map((ask) => ask.toolUseId)).toEqual([TOOL_USE_ID]);
+    });
+  };
+
+  it('offers the ask again after a reload, and a message denies it with the text as the reason', async () => {
+    await hydrateWithAsk();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      content: 'Do a dry run first',
+      origin: 'operator',
+    });
+    flushTurnEvents();
+
+    const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    const decision = events.findIndex((event) => event.kind === 'permission_decision');
+    const message = events.findIndex((event) => event.kind === 'user_text');
+    expect(events[decision]).toMatchObject({
+      decision: 'deny',
+      decidedBy: 'user',
+      toolUseId: TOOL_USE_ID,
+      runId: RUN_ID,
+      reason: 'Do a dry run first',
+    });
+    expect(decision).toBeLessThan(message);
+    expect(events[message]).toMatchObject({ text: 'Do a dry run first' });
+    expect(readAsks()).toEqual([]);
+    expect(JSON.stringify(storySpies.runTurn.mock.calls.at(-1))).toContain(
+      'Denied Bash. Do a dry run first',
+    );
+    await vi.waitFor(async () => {
+      expect(
+        await findUndecidedPermissionAsk({ db: storySqlite(), agentId: AGENT_ID, runId: RUN_ID }),
+      ).toBeNull();
+    });
+  });
+
+  it('keeps the ask open when the message was never written', async () => {
+    await hydrateWithAsk();
+
+    await expect(
+      useAppStore.getState().sendTurn({
+        sessionId: LEDGER_ID,
+        agentId: AGENT_ID,
+        content: 'Do a dry run first',
+        origin: 'operator',
+        onWritingUserText: async () => {
+          throw new Error('The queue could not be saved.');
+        },
+      }),
+    ).rejects.toThrow('The queue could not be saved.');
+
+    const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    expect(events.some((event) => event.kind === 'permission_decision')).toBe(false);
+  });
+
+  it('leaves the ask alone for a turn nobody typed', async () => {
+    await hydrateWithAsk();
+
+    await useAppStore.getState().sendTurn({
+      sessionId: LEDGER_ID,
+      agentId: AGENT_ID,
+      content: 'Run the next step',
+      origin: 'workflow',
+    });
+    flushTurnEvents();
+
+    const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    expect(events.some((event) => event.kind === 'permission_decision')).toBe(false);
   });
 
   it('survives leaving the workspace, the return and a reload, and the card still answers', async () => {

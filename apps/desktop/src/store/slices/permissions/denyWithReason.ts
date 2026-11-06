@@ -6,6 +6,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import { denialNoticeOf } from './denialNoticeOf';
 import type { GetFn } from './types';
 
 type Params = {
@@ -17,16 +18,6 @@ type Params = {
   reason: string;
 };
 
-type NoticeParams = {
-  readonly toolName: string;
-  readonly reason: string;
-};
-
-const noticeOf = ({ toolName, reason }: NoticeParams): string =>
-  reason === ''
-    ? `Denied ${toolName} for this one call. Do not run it; carry on another way, or say what you need.`
-    : `Denied ${toolName}. ${reason}`;
-
 export const denyWithReason = (get: GetFn) => {
   return async ({
     sessionId,
@@ -37,6 +28,7 @@ export const denyWithReason = (get: GetFn) => {
     reason,
   }: Params): Promise<void> => {
     const now = brandId<IsoDateTime>({ value: new Date().toISOString() });
+    const trimmed = reason.trim();
     get().appendTurnEvent(agentId, sessionId, {
       kind: 'permission_decision',
       runId,
@@ -45,6 +37,7 @@ export const denyWithReason = (get: GetFn) => {
       scope: 'once',
       ruleId: null,
       decidedBy: 'user',
+      ...(trimmed !== '' && { reason: trimmed }),
       at: now,
     });
     if (get().agentTurnState[agentId]?.kind === 'running') {
@@ -54,7 +47,7 @@ export const denyWithReason = (get: GetFn) => {
       result: await get().sendTurn({
         sessionId,
         agentId,
-        content: noticeOf({ toolName, reason: reason.trim() }),
+        content: denialNoticeOf({ toolName, reason: trimmed }),
       }),
     });
   };

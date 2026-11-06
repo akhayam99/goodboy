@@ -44,6 +44,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     activeAgentId,
     activeAgent,
     userTurnText,
+    deniedAsks,
     attachmentRefs,
     phaseDefinition,
     phaseWorkflowRunId,
@@ -115,6 +116,19 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
     };
     await insertMessage(tauriDatabase, userMessage);
+    for (const ask of deniedAsks) {
+      get().appendTurnEvent(activeAgentId, sessionId, {
+        kind: 'permission_decision',
+        runId: ask.runId,
+        toolUseId: ask.toolUseId,
+        decision: 'deny',
+        scope: 'once',
+        ruleId: null,
+        decidedBy: 'user',
+        reason: userTurnText.trim(),
+        at: userMessage.createdAt,
+      });
+    }
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'user_text',
       runId,
