@@ -1,4 +1,4 @@
-import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import type { Database } from '../client';
 import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
@@ -333,6 +333,46 @@ export const readFirstUserText = async ({
   );
   const text = rows[0]?.text;
   return typeof text === 'string' ? text : null;
+};
+
+type PermissionAskParams = {
+  readonly db: Database;
+  readonly agentId: AgentId;
+  readonly runId: ProviderRunId;
+};
+
+export type UndecidedPermissionAsk = {
+  readonly runId: ProviderRunId;
+  readonly toolUseId: string;
+  readonly at: IsoDateTime;
+};
+
+export const findUndecidedPermissionAsk = async ({
+  db,
+  agentId,
+  runId,
+}: PermissionAskParams): Promise<UndecidedPermissionAsk | null> => {
+  const rows = await db.select<TurnEventRow>(
+    `SELECT * FROM turn_events
+     WHERE agent_id = ?
+       AND json_extract(payload, '$.runId') = ?
+       AND json_extract(payload, '$.kind') IN ('permission_request', 'permission_decision')
+     ORDER BY created_at ASC, rowid ASC`,
+    [agentId, runId],
+  );
+  const decided = new Set<string>();
+  const asks: Array<UndecidedPermissionAsk> = [];
+  for (const row of rows) {
+    const event = rowToEvent(row);
+    if (event?.kind === 'permission_decision') {
+      decided.add(event.toolUseId);
+      continue;
+    }
+    if (event?.kind === 'permission_request') {
+      asks.push({ runId: event.runId, toolUseId: event.toolUseId, at: event.at });
+    }
+  }
+  return asks.filter((ask) => !decided.has(ask.toolUseId)).at(-1) ?? null;
 };
 
 type SessionScopedTurnEventParams = {

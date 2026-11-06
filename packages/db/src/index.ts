@@ -192,6 +192,7 @@ export {
   insertTurnEventsBatch,
   countUserTextEvents,
   readFirstUserText,
+  findUndecidedPermissionAsk,
   listTurnEventsForAgent,
   listTurnEventEntriesForAgent,
   listTurnEventsForSession,
@@ -201,6 +202,7 @@ export {
   type PendingTurnEventInsert,
   type StoredTurnEvent,
   type TurnEventStorageStats,
+  type UndecidedPermissionAsk,
 } from './queries/turn-event';
 export { getDatabaseSizeBytes } from './queries/storage';
 export {

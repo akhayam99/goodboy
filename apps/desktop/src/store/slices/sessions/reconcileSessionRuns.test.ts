@@ -1,17 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { UndecidedPermissionAsk } from '@goodboy/db';
 import type { Agent, IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-const { cancelTurn, isTurnStreamActive, recordAgentStatus, updateSessionState } = vi.hoisted(
-  () => ({
-    isTurnStreamActive: vi.fn((_params: { readonly runId: string }) => false),
-    cancelTurn: vi.fn(async () => undefined),
-    recordAgentStatus: vi.fn(async () => undefined),
-    updateSessionState: vi.fn(async () => undefined),
-  }),
-);
+const {
+  cancelTurn,
+  findUndecidedPermissionAsk,
+  isTurnStreamActive,
+  recordAgentStatus,
+  updateSessionState,
+} = vi.hoisted(() => ({
+  isTurnStreamActive: vi.fn((_params: { readonly runId: string }) => false),
+  cancelTurn: vi.fn(async () => undefined),
+  findUndecidedPermissionAsk: vi.fn(
+    async (_params: {
+      readonly agentId: string;
+      readonly runId: string;
+    }): Promise<UndecidedPermissionAsk | null> => null,
+  ),
+  recordAgentStatus: vi.fn(async () => undefined),
+  updateSessionState: vi.fn(async () => undefined),
+}));
 
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({ recordAgentStatus, updateSessionState }),
+  (await import('../../../test/dbMock')).createDbMock({
+    findUndecidedPermissionAsk,
+    recordAgentStatus,
+    updateSessionState,
+  }),
 );
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn, isTurnStreamActive }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -107,7 +122,10 @@ describe('loaded run reconciliation', () => {
   it('persists a running agent as stopped by the app', async () => {
     const agent = buildAgent({ status: 'running' });
 
-    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) });
+    const { agent: reconciled } = await reconcileLoadedAgent({
+      agent,
+      liveRunIds: new Set([RUN_ID]),
+    });
 
     expect(cancelTurn).toHaveBeenCalledWith(RUN_ID);
     expect(recordAgentStatus).toHaveBeenCalledWith({}, agent.id, {
@@ -119,11 +137,56 @@ describe('loaded run reconciliation', () => {
     expect(reconciled.stoppedBy).toBe('app');
   });
 
+  it('keeps an agent whose saved ask has no answer waiting for you, never stopped', async () => {
+    const agent = buildAgent({ status: 'running' });
+    findUndecidedPermissionAsk.mockResolvedValueOnce({
+      runId: RUN_ID,
+      toolUseId: 'tool-1',
+      at: NOW,
+    });
+
+    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
+
+    expect(findUndecidedPermissionAsk).toHaveBeenCalledWith({
+      db: {},
+      agentId: agent.id,
+      runId: RUN_ID,
+    });
+    expect(reconciled).toEqual({
+      agent,
+      waiting: { kind: 'blocked', runId: RUN_ID, blockedAt: NOW },
+    });
+    expect(recordAgentStatus).not.toHaveBeenCalled();
+  });
+
+  it('stops an agent whose ask was decided, as a restart did', async () => {
+    const agent = buildAgent({ status: 'running' });
+
+    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
+
+    expect(findUndecidedPermissionAsk).toHaveBeenCalledOnce();
+    expect(reconciled.waiting).toBeNull();
+    expect(reconciled.agent).toMatchObject({ status: 'stopped', stoppedBy: 'app' });
+  });
+
+  it('stops the agent when the saved ask cannot be read, never a guess', async () => {
+    const agent = buildAgent({ status: 'running' });
+    findUndecidedPermissionAsk.mockRejectedValueOnce(new Error('database is locked'));
+
+    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
+
+    expect(reconciled.waiting).toBeNull();
+    expect(reconciled.agent.status).toBe('stopped');
+  });
+
   it('keeps a running agent this window was streaming before it reloaded', async () => {
     const agent = buildAgent({ status: 'running' });
     writeTurnCursor({ runId: RUN_ID, cursor: { seq: 3, index: 0, owner: OWNER } });
 
-    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) });
+    const { agent: reconciled } = await reconcileLoadedAgent({
+      agent,
+      liveRunIds: new Set([RUN_ID]),
+    });
     const [session] = await reconcileLoadedSessions({
       sessions: [buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } })],
       liveRunIds: new Set([RUN_ID]),
@@ -151,7 +214,9 @@ describe('loaded run reconciliation', () => {
     writeTurnCursor({ runId: RUN_ID, cursor: { seq: 3, index: 0, owner: OWNER } });
     isTurnStreamActive.mockReturnValue(true);
     expect(reattachableTurn({ agent })).toBeNull();
-    expect(await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) })).toBe(agent);
+    expect((await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) })).agent).toBe(
+      agent,
+    );
     isTurnStreamActive.mockReturnValue(false);
   });
 
@@ -164,7 +229,7 @@ describe('loaded run reconciliation', () => {
       liveRunIds: new Set(),
       now: NOW,
     });
-    const reconciledAgent = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
+    const { agent: reconciledAgent } = await reconcileLoadedAgent({ agent, liveRunIds: new Set() });
 
     expect(reconciledSession).toBe(session);
     expect(reconciledAgent).toBe(agent);

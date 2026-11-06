@@ -4,6 +4,7 @@ import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   countUserTextEvents,
+  findUndecidedPermissionAsk,
   insertTurnEvent,
   listTurnEventEntriesForAgent,
   listTurnEventsForAgent,
@@ -193,6 +194,49 @@ describe('turn event queries', () => {
     expect(events[0]).toMatchObject({ deliveredBy: 'auto' });
     expect(events[2]).toMatchObject({ deliveredBy: 'auto' });
     await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
+  });
+
+  it('finds the ask of a run that nobody decided, and none once it was decided', async () => {
+    const ask = (toolUseId: string, id: string) =>
+      insertTurnEvent(db, {
+        id,
+        sessionId,
+        agentId,
+        event: {
+          kind: 'permission_request',
+          runId,
+          toolUseId,
+          toolName: 'Bash',
+          input: { command: 'pnpm test' },
+          at,
+        },
+      });
+    await ask('tool-1', 'event-ask-1');
+    await insertTurnEvent(db, {
+      id: 'event-decision-1',
+      sessionId,
+      agentId,
+      event: {
+        kind: 'permission_decision',
+        runId,
+        toolUseId: 'tool-1',
+        decision: 'allow',
+        ruleId: null,
+        decidedBy: 'user',
+        at,
+      },
+    });
+
+    expect(await findUndecidedPermissionAsk({ db, agentId, runId })).toBeNull();
+
+    await ask('tool-2', 'event-ask-2');
+
+    expect(await findUndecidedPermissionAsk({ db, agentId, runId })).toEqual({
+      runId,
+      toolUseId: 'tool-2',
+      at,
+    });
+    expect(await findUndecidedPermissionAsk({ db, agentId: otherAgentId, runId })).toBeNull();
   });
 
   it('lists the stored id with each event of one agent, oldest first', async () => {

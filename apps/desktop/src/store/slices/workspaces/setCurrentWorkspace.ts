@@ -7,6 +7,7 @@ import type {
   Session,
   SessionExternalTask,
   SessionId,
+  TurnState,
   Workflow,
   WorkspaceId,
 } from '@goodboy/types';
@@ -87,6 +88,7 @@ type WorkspaceSnapshot = MountRecords & {
   readonly sessions: ReadonlyArray<Session>;
   readonly worktreesBySession: ReadonlyMap<SessionId, ReadonlyArray<SessionWorktree>>;
   readonly sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  readonly waitingTurns: Record<string, TurnState>;
   readonly kindOverridesFromDb: Record<string, AgentKind>;
   readonly sessionExternalTasks: Record<string, SessionExternalTask[]>;
 };
@@ -326,6 +328,7 @@ const loadWorkspaceSnapshot = async ({
     sessionBranches: {},
   };
   const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
+  const waitingTurns: Record<string, TurnState> = {};
   const kindOverridesFromDb: Record<string, AgentKind> = {};
   const hydratedSessions: Array<Session> = [];
   for (const s of sessions) {
@@ -336,9 +339,15 @@ const loadWorkspaceSnapshot = async ({
     });
     writeHydration({ records, sessionId: s.id, hydration });
     hydratedSessions.push(sessionAfterHydration({ session: s, hydration }));
-    const runs = await Promise.all(
+    const reconciled = await Promise.all(
       (agentsBySession.get(s.id) ?? []).map((agent) => reconcileLoadedAgent({ agent, liveRunIds })),
     );
+    const runs = reconciled.map(({ agent }) => agent);
+    for (const { agent, waiting } of reconciled) {
+      if (waiting !== null) {
+        waitingTurns[agent.id] = waiting;
+      }
+    }
     sessionPhaseRuns[s.id] = runs;
     for (const run of runs) {
       if (run.kind) {
@@ -364,6 +373,7 @@ const loadWorkspaceSnapshot = async ({
     worktreesBySession,
     ...records,
     sessionPhaseRuns,
+    waitingTurns,
     kindOverridesFromDb,
     sessionExternalTasks,
   };
@@ -439,6 +449,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        waitingTurns,
         kindOverridesFromDb,
         sessionExternalTasks,
         worktreesBySession,
@@ -461,6 +472,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,
         boardReady: true,

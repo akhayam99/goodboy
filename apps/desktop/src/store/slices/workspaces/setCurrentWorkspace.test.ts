@@ -1,14 +1,16 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  IsoDateTime,
-  MountId,
-  Project,
-  ProjectId,
-  ProviderRunId,
-  Session,
-  SessionId,
-  WorkspaceId,
+import {
+  brandId,
+  type IsoDateTime,
+  type MountId,
+  type Project,
+  type ProjectId,
+  type ProviderRunId,
+  type Session,
+  type SessionId,
+  type TurnState,
+  type WorkspaceId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import { aSession, aWorkflowRun, aWorkspace, anAgent } from '@goodboy/types/testing';
@@ -62,6 +64,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowsForSession: vi.fn(async () => []),
 }));
 vi.mock('../sessions/reconcileSessionRuns', () => ({
+  reattachableTurn: vi.fn(() => null),
   reconcileLoadedAgent: vi.fn(),
   reconcileLoadedSessions: vi.fn(async ({ sessions }: ReconcileParams) => sessions),
 }));
@@ -74,8 +77,8 @@ vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { verifyWorkspaceWorktrees } from '../project-mounts/verify/verifyWorkspaceWorktrees';
-import { listSessionsForWorkspace } from '@goodboy/db';
-import { reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
+import { listAgentsForSessions, listSessionsForWorkspace } from '@goodboy/db';
+import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -267,6 +270,24 @@ describe('setCurrentWorkspace run recovery', () => {
       expect.objectContaining({ sessions: h.sessions, liveRunIds }),
     );
     expect(store.state.sessions.map((stored) => stored.state.kind)).toEqual(['idle']);
+  });
+
+  it('keeps an agent that waits for permission blocked on the board after a reload', async () => {
+    const RUN_ID = brandId<ProviderRunId>({ value: 'run-ask' });
+    const asking = anAgent({ sessionId: RESTORED_SESSION_ID, status: 'running', runId: RUN_ID });
+    const waiting: TurnState = { kind: 'blocked', runId: RUN_ID, blockedAt: NOW };
+    h.sessions = [session({ id: RESTORED_SESSION_ID })];
+    vi.mocked(listAgentsForSessions).mockResolvedValueOnce(
+      new Map([[RESTORED_SESSION_ID, [asking]]]),
+    );
+    vi.mocked(reconcileLoadedAgent).mockResolvedValueOnce({ agent: asking, waiting });
+    const store = harness();
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(store.state.sessionPhaseRuns[RESTORED_SESSION_ID]).toEqual([asking]);
+    expect(store.state.agentTurnState[asking.id]).toEqual(waiting);
+    expect(store.state.boardReady).toBe(true);
   });
 });
 
