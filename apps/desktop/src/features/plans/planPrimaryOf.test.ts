@@ -13,7 +13,7 @@ import {
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { aPlan } from '../../test/planFixtures';
 import { planOwnerOf } from './planOwnerOf';
-import { planNextStepNameOf } from '../../store/slices/workflows/planNextStepNameOf';
+import { planNextStepNameOf } from './planNextStepNameOf';
 import { planPrimaryOf } from './planPrimaryOf';
 
 const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;

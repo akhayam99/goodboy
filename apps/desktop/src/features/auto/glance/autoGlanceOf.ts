@@ -36,8 +36,11 @@ const stepsSentenceOf = ({ view }: ViewParams): string => {
 
 export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   const phase = view.tree.phase;
-  if (phase === 'stopped' || phase === 'stopping') {
-    return glanceOf({ state: 'stopped', sentence: 'You stopped Auto, nothing is running' });
+  if (phase === 'stopping') {
+    return glanceOf({ state: 'stopped', sentence: 'Stopping' });
+  }
+  if (phase === 'stopped') {
+    return glanceOf({ state: 'stopped', sentence: 'Stopped by you. What they wrote is kept.' });
   }
   if (phase === 'finished') {
     return glanceOf({ state: 'done', sentence: stepsSentenceOf({ view }) });

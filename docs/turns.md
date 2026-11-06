@@ -416,8 +416,9 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   `conversationRows`) keeps per turn the user message, one summary line for the
   turn's tools (`turnSummary`, steps open inline), the final answer, app
   notices and the turn footer. Narration before the last tool call, the live
-  turn and plan updates leave the center; a pending permission request stays
-  inline. The task list a `TodoWrite`, `update_plan` or `write_todos` call
+  turn and plan updates leave the center; a pending permission request moves to
+  the dock (`isAskInDock`), and stays inline only where no dock can show it, and an
+  answer you gave leaves one quiet line (`PermissionRecordLine`). The task list a `TodoWrite`, `update_plan` or `write_todos` call
   writes is one checklist (`planChecklist`) in the turn that first wrote it.
   `mode="record"` (the transcript drawer) keeps today's full rows.
 
@@ -905,7 +906,11 @@ behavior beyond rendering:
   lands.
 - `permission_decision` carries the chosen `PermissionScope`, which decides
   whether a retry is offered: an `allow` at session scope or wider is, a
-  one-use approval is not, because it cannot carry into a new run.
+  one-use approval is not, because it cannot carry into a new run. Its `reason`
+  holds the text of a denial, so the record line survives a reload.
+- An ask is open (`openPermissionAsksOf`) while the turn is `blocked`, it has no
+  decision, no `tool_call_end` came after it and no `user_text` followed. The
+  denied tool's own `tool_call_end` comes before the ask, so the order matters.
 - `user_text` with `deliveredBy: 'auto'` is text the app built for an agent
   (Auto's deliveries and a child's first brief, origin `delegation`). Every
   reader of the transcript still sees it (resume, the preamble, retry send it

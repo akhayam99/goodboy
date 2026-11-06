@@ -38,10 +38,16 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
     return glanceOf({ state: 'stuck', sentence: 'The agent failed' });
   }
   if (status === 'stopped') {
-    return glanceOf({ state: 'stopped', sentence: 'You stopped it, nothing is running' });
+    return glanceOf({
+      state: 'stopped',
+      sentence:
+        agent.stoppedBy === 'app'
+          ? 'Stopped by a restart of the app. What it wrote is kept.'
+          : 'Stopped by you. What it wrote is kept.',
+    });
   }
   if (status === 'completed') {
-    return glanceOf({ state: 'idle', sentence: 'Finished, write to continue' });
+    return glanceOf({ state: 'idle', sentence: '' });
   }
   if (status === 'skipped') {
     return glanceOf({ state: 'idle', sentence: skippedSentenceOf({ agent }) });
@@ -49,5 +55,5 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
   if (status === 'pending') {
     return glanceOf({ state: 'idle', sentence: 'Queued' });
   }
-  return glanceOf({ state: 'idle', sentence: 'Write to continue' });
+  return glanceOf({ state: 'idle', sentence: '' });
 };

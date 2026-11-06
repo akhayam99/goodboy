@@ -1220,6 +1220,10 @@ u36-p6-gone-run-dark
 u36-p6-gone-run-light
 u36-p6-step-back-dark
 u36-p6-step-back-light
+u36-p9-auto-asks
+u36-p9-permission
+u36-p9-permission-typed
+u36-p9-question
 update-card
 update-card-long-version
 update-card-narrow

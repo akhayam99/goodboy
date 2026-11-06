@@ -88,7 +88,7 @@ describe('autoGlanceOf', () => {
   it('says Stopped, Done and Idle for the resting phases', () => {
     expect(glanceOf('stopped')).toMatchObject({
       state: 'stopped',
-      sentence: 'You stopped Auto, nothing is running',
+      sentence: 'Stopped by you. What they wrote is kept.',
     });
     expect(glanceOf('finished')).toMatchObject({ state: 'done', word: 'Done' });
     expect(glanceOf('done')).toMatchObject({ state: 'idle', word: 'Idle' });

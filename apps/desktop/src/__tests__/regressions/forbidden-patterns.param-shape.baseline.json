@@ -548,7 +548,6 @@
     "apps/desktop/src/features/palette/sources/sessionEntries.ts": 2,
     "apps/desktop/src/features/palette/sources/verbEntries.ts": 1,
     "apps/desktop/src/features/permissions/components/PermissionModePicker/index.tsx": 2,
-    "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 2,
     "apps/desktop/src/features/permissions/components/PermissionsSettings/index.tsx": 4,
     "apps/desktop/src/features/permissions/components/PermissionsSettings/ProviderSupportTable.tsx": 2,
     "apps/desktop/src/features/permissions/components/PermissionsSettings/RecentDecisions.tsx": 2,

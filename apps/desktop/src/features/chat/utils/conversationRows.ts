@@ -15,12 +15,14 @@ export type ConversationRow =
 type Params = {
   readonly items: ReadonlyArray<TranscriptItem>;
   readonly isLive: boolean;
+  readonly isAskInDock?: boolean;
 };
 
 type SegmentParams = {
   readonly segment: ReadonlyArray<TranscriptItem>;
   readonly isSegmentLive: boolean;
   readonly checklist: PlanChecklist | null;
+  readonly isAskInDock: boolean;
   readonly out: Array<ConversationRow>;
 };
 
@@ -72,7 +74,7 @@ const pushItem = ({ out, item }: PushParams) => {
   out.push({ kind: 'item', key: item.key, item });
 };
 
-const pushSegment = ({ segment, isSegmentLive, checklist, out }: SegmentParams) => {
+const pushSegment = ({ segment, isSegmentLive, checklist, isAskInDock, out }: SegmentParams) => {
   const steps = segment.filter((item) => isStep({ item }));
   const lastStepIndex = segment.reduce(
     (last, item, index) => (isStep({ item }) ? index : last),
@@ -108,12 +110,24 @@ const pushSegment = ({ segment, isSegmentLive, checklist, out }: SegmentParams) 
     pushItem({ out, item });
   });
   placePlan();
+  for (const item of segment) {
+    if (item.kind === 'permission_decision' && item.decidedBy === 'user') {
+      pushItem({ out, item: { ...item, isRecordLine: true } });
+    }
+  }
+  if (isAskInDock) {
+    return;
+  }
   for (const item of pendingPermissions({ segment })) {
     pushItem({ out, item });
   }
 };
 
-export const conversationRows = ({ items, isLive }: Params): ReadonlyArray<ConversationRow> => {
+export const conversationRows = ({
+  items,
+  isLive,
+  isAskInDock = false,
+}: Params): ReadonlyArray<ConversationRow> => {
   const checklist = planChecklist({ items });
   const out: Array<ConversationRow> = [];
   let segment: Array<TranscriptItem> = [];
@@ -122,10 +136,10 @@ export const conversationRows = ({ items, isLive }: Params): ReadonlyArray<Conve
       segment.push(item);
       continue;
     }
-    pushSegment({ segment, isSegmentLive: false, checklist, out });
+    pushSegment({ segment, isSegmentLive: false, checklist, isAskInDock, out });
     segment = [];
     pushItem({ out, item });
   }
-  pushSegment({ segment, isSegmentLive: isLive, checklist, out });
+  pushSegment({ segment, isSegmentLive: isLive, checklist, isAskInDock, out });
   return out;
 };

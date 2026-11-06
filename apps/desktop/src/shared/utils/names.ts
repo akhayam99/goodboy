@@ -16,6 +16,7 @@ export const NAMES = {
   long: 'Long',
   stop: 'Stop',
   send: 'Send',
+  sendAndDeny: 'Send and deny',
   stopping: 'Stopping',
   forceStop: 'Force stop',
   continue: 'Continue',

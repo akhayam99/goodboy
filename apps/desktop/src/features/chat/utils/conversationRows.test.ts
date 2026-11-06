@@ -85,6 +85,56 @@ describe('conversationRows', () => {
     ]);
   });
 
+  describe('with the dock', () => {
+    const asked: TranscriptItem = {
+      kind: 'permission_request',
+      key: 'p1',
+      toolUseId: 't1',
+      toolName: 'Bash',
+      runId: RUN,
+      input: {},
+      at: AT,
+    };
+    const decided: TranscriptItem = {
+      kind: 'permission_decision',
+      key: 'd1',
+      toolUseId: 't1',
+      toolName: 'Bash',
+      runId: RUN,
+      subject: 'rm -rf node_modules',
+      decision: 'deny',
+      scope: 'once',
+      ruleId: null,
+      decidedBy: 'user',
+      reason: 'Do a dry run first',
+      at: AT,
+    };
+
+    it('leaves a waiting permission to the dock', () => {
+      expect(
+        conversationRows({ items: [asked], isLive: false, isAskInDock: true }).some(
+          (row) => row.kind === 'item' && row.item.kind === 'permission_request',
+        ),
+      ).toBe(false);
+    });
+
+    it('keeps one record row for an answer the person gave', () => {
+      const rows = conversationRows({ items: [asked, decided], isLive: false, isAskInDock: true });
+
+      expect(rows.at(-1)).toMatchObject({ kind: 'item', key: 'd1' });
+    });
+
+    it('keeps no row for an answer a rule gave', () => {
+      const rows = conversationRows({
+        items: [{ ...decided, decidedBy: 'engine' }],
+        isLive: false,
+        isAskInDock: true,
+      });
+
+      expect(rows.some((row) => row.key === 'd1')).toBe(false);
+    });
+  });
+
   it('shows nothing of the live turn but its pending permission', () => {
     const items: ReadonlyArray<TranscriptItem> = [
       user({ key: 'u1' }),

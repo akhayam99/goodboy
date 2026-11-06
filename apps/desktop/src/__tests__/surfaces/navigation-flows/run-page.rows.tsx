@@ -181,7 +181,7 @@ const reviewThenApproveFromTheDrawer = async (ctx: Ctx): Promise<void> => {
   );
   expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows');
   const approve = await screen.findByTestId('plan-primary', {}, WAIT);
-  expect(approve.textContent).toBe('Approve and continue');
+  expect(approve.textContent).toBe('Approve and start Implement');
   await act(async () => {
     fireEvent.click(approve);
   });

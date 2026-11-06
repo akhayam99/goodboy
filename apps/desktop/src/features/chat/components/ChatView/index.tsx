@@ -221,12 +221,13 @@ export const ChatView = ({
   const turnFooters = useMemo(() => turnFootersFor({ items, activeRunId }), [items, activeRunId]);
   const isConversation = mode === 'conversation';
   const isTurnLive = activeRunId !== null;
+  const isAskInDock = isConversation && hasComposer && !isEnded && selectedAgentId != null;
   const rows = useMemo(
     () =>
       isConversation
-        ? conversationRows({ items: deferredItems, isLive: isTurnLive })
+        ? conversationRows({ items: deferredItems, isLive: isTurnLive, isAskInDock })
         : clusterOperations(deferredItems),
-    [deferredItems, isConversation, isTurnLive],
+    [deferredItems, isAskInDock, isConversation, isTurnLive],
   );
   const unseenSince = useAppStore((state) =>
     selectedAgentId == null ? null : (state.agentUnseenSince[selectedAgentId] ?? null),
@@ -414,7 +415,7 @@ export const ChatView = ({
   const oqByTurnOrdinal = useMemo(() => {
     const map = new Map<number | null, OpenQuestion[]>();
     for (const q of [...openQuestions, ...answeredQuestions]) {
-      if (q.createdByAgentId !== selectedAgentId) {
+      if (q.createdByAgentId !== selectedAgentId || (isAskInDock && q.status === 'open')) {
         continue;
       }
       const ordinal = q.turnOrdinal ?? null;
@@ -429,7 +430,7 @@ export const ChatView = ({
       bucket.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     }
     return map;
-  }, [openQuestions, answeredQuestions, selectedAgentId]);
+  }, [openQuestions, answeredQuestions, selectedAgentId, isAskInDock]);
 
   const waitingHere = useMemo(
     () =>
@@ -589,11 +590,11 @@ export const ChatView = ({
             )}
           </ConversationColumn>
         </ScrollFade>
-        {!pinned && waitingHere[0] !== undefined && (
+        {!isAskInDock && !pinned && waitingHere[0] !== undefined && (
           <QuestionWaitingPill count={waitingHere.length} questionId={waitingHere[0].id} />
         )}
         <JumpToLatest
-          isVisible={isBehind && waitingHere.length === 0}
+          isVisible={isBehind && (isAskInDock || waitingHere.length === 0)}
           onJump={() => {
             suspendAnchor();
             jumpToLatest();
@@ -616,9 +617,6 @@ export const ChatView = ({
       {hasAdvanceRow && hasComposer && !isEnded && selectedAgentId != null ? (
         <WorkflowAdvanceStack session={session} />
       ) : null}
-      {hasComposer && !isEnded && selectedAgentId != null && composerLead !== undefined ? (
-        <ConversationColumn className="py-1">{composerLead}</ConversationColumn>
-      ) : null}
       {!hasComposer ? (
         composerNotice === undefined ? null : (
           <ConversationColumn className="py-3">{composerNotice}</ConversationColumn>
@@ -636,6 +634,8 @@ export const ChatView = ({
           agentId={agentId}
           providerDisconnected={isProviderDisconnected}
           placeholderOverride={composerPlaceholder}
+          dockLead={composerLead}
+          hasDockAsks={isAskInDock}
           {...(controlSlots !== undefined && { controlSlots })}
         />
       ) : null}

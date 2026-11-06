@@ -10,13 +10,13 @@ import type {
 } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { planNextStepNameOf } from '../../../store/slices/workflows/planNextStepNameOf';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 import { useFollowToast } from '../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../shared/lib/userStarts';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
 import { planApprovedFollowOf } from '../planApprovedFollow';
+import { planNextStepNameOf } from '../planNextStepNameOf';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
 import type { PlanRevising } from '../planRevising';

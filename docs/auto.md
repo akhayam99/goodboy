@@ -350,7 +350,7 @@ writing to it reopens it to **Deciding**.
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A child that waits for an OK carries the **Next step** card
   (see **Confirming**). The plan is not a row of the transcript: it lives in
-  the **dock**, pinned above the message field (`AutoDock`, `AutoDockPlan`),
+  the **dock**, the top of the message box (`ConversationDock`, filled by `AutoDock` and `AutoDockPlan`),
   one line per state. A plan that waits reads "Plan v1 needs approval" with
   **Approve and start Build** as the only primary of the page, **Ask for changes** (it
   opens the Auto page and focuses the composer) and **Open plan**, both quiet.
@@ -491,10 +491,11 @@ writing to it reopens it to **Deciding**.
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
   thinking line of the conversation speaks instead. There is no separate strip
   of running children: the running rows of the cards, the rail and the dock
-  already say it. The glance line under the title says a sentence once: while
-  the dock speaks (a live row, or a plan that waits) it keeps the state word,
-  the spend and **Settings** only (`isAutoDockSpeaking`); on Stuck, Done and
-  Stopped it keeps its sentence. While a plan waits the dock owns the one
+  already say it. The glance line under the title holds the state word, the
+  spend and **Settings** only; the dock and the tail say the sentence, and both
+  read one glance (`useConversationGlance`, `conversationAskOf`), so the word
+  and the sentence never disagree. A permission a subagent asks reaches Auto's
+  dock, named, oldest first, with `1 of 2` and **Open Implementer**. While a plan waits the dock owns the one
   filled button (**Approve and start Build**) and the next step card's **Continue** is
   secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).

@@ -11,9 +11,9 @@ import type {
 } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import { planNextStepNameOf } from '../../../store/slices/workflows/planNextStepNameOf';
 import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
 import { plannerQuestionsOf } from '../../plans/plannerQuestions';
+import { planNextStepNameOf } from '../../plans/planNextStepNameOf';
 import { planOwnerOf } from '../../plans/planOwnerOf';
 import { NOT_REVISING, planRevisingOf, type PlanRevising } from '../../plans/planRevising';
 

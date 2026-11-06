@@ -96,10 +96,11 @@ describe('OpenQuestionInlineCard', () => {
 
     render(<OpenQuestionInlineCard question={answered} sessionId={'sess-1' as never} />);
 
-    screen.getByText('Use Postgres or SQLite?');
-    expect(screen.queryByText('Postgres, because the migration path is shorter')).toBeNull();
-    fireEvent.click(screen.getByRole('button'));
+    screen.getByText('You answered');
     screen.getByText('Postgres, because the migration path is shorter');
+    expect(screen.queryByText('Use Postgres or SQLite?')).toBeNull();
+    fireEvent.click(screen.getByRole('button'));
+    screen.getByText('Use Postgres or SQLite?');
   });
 
   it('says an answer came from an agent rather than from the person', () => {

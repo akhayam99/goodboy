@@ -16,10 +16,11 @@ export const AutoDockLive = ({ sessionId, view, rootAgent }: Props) => {
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
   const actions = useAutoTreeActions({ sessionId });
   const glance = autoGlanceOf({ view, rootTurn });
-  const isSpeaking = glance.state === 'working' || glance.state === 'planning';
+  const isLive = glance.state === 'working' || glance.state === 'planning';
+  const isSpeaking = isLive || (glance.state === 'done' && glance.sentence !== '');
   const facts = autoTreeLive({ view, rootTurn, rootAgent, lastTool: null, project: null });
   const ids = facts?.actions.map((action) => action.id) ?? [];
-  const canChange = isSpeaking && ids.includes('changeApproach');
+  const canChange = isLive && ids.includes('changeApproach');
   const canStop = ids.includes('stopAuto') && !canChange;
   if (!isSpeaking && !canStop) {
     return null;
@@ -32,7 +33,8 @@ export const AutoDockLive = ({ sessionId, view, rootAgent }: Props) => {
             <span
               aria-hidden="true"
               className={cn(
-                'inline-block size-1.5 shrink-0 rounded-full motion-safe:animate-soft-pulse',
+                'inline-block size-1.5 shrink-0 rounded-full',
+                isLive && 'motion-safe:animate-soft-pulse',
                 tintClasses(glance.tone).dot,
               )}
             />

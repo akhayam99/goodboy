@@ -73,6 +73,12 @@ Write to an agent the same way everywhere. Every message and document field take
 
 Each agent row shows its model by name with the effort, muted. It hides when the panel is too narrow to keep the title whole.
 
+### One dock
+
+Everything that needs you sits in one block joined to the box you type in. The header keeps the state word, the spend and **Settings**, and the dock says the sentence. A permission asks there, with **Allow and continue**, **Always allow**, **Deny** and a `⋯` for the rarer answers. One line stays in the chat for each answer, such as "Allowed rm -rf node_modules". A question asks there too, with its pager, and the chat keeps "You answered". On Auto, a subagent's permission reaches the same dock, names the agent, and waits behind `1 of 2` when two ask at once. **Open Implementer** goes to its page.
+
+A message you send while a permission waits denies it, and your text is the reason the agent reads. The box says so first: **Your message will deny this, with your text as the reason**, and Send reads **Send and deny**. On Auto the message goes to the agent that asks. If the message can't be sent, the ask stays open.
+
 ### Stop and Continue
 
 Stop an agent without losing its work. While a turn runs, a **Stop** square sits in the message box beside **Send now** and **Queue**, and the line at the end of the conversation says what the agent does now. The agent header has no **Stop** and no state word. The palette and the right click menu say **Stop** too. **Esc** twice stops it too, when no menu, drawer or dialog is open. Stopping keeps what the agent wrote and offers **Continue**. **Stop** waits until the process has exited: the square and the line read **Stopping** and stay busy, and when the exit takes more than 5 seconds they read **Still stopping** with **Force stop**, which asks again. One word halts each thing: **Stop** an agent, **Stop step 3** a step, **Stop run** a run (it asks first), and **Pause run** exists on the run page only. One word picks it up: **Continue** an agent, a step or a run, and **Continue all** several. If Goodboy cannot stop the agent, the agent stays running with the error shown. **Stop all running agents (N)** in the session menu and the palette, and **Stop all (N)** in the **In progress** header of Runs, stop every running agent of the session without asking, one waiting for your permission included, since **Continue** brings each back with its work kept, and report "Stopped 4, 1 still running". An agent that was working when you restart or update Goodboy picks up where it stopped, and **Continue all** brings back every one a restart stopped.
@@ -208,7 +214,7 @@ This part is for contributors and agents who change the feature.
 - Anchoring: `useScrollPin` anchors the last `[data-turn]` at `ANCHOR_TOP_PX` when `anchorKeyOf` gives a new key, and `TRANSCRIPT_FLOOR_PX` is the 48 px tail. The `u31-chat-anchoring` scene shows a message just sent.
 - Speaker: `TurnFooter` takes a `previousRunId` and names the model only on a change. The `u31-chat-reading` scene shows a long Auto exchange.
 - Agent states: `agentStateOf` words an agent for the grid, the page count, the Running card and the Agents tree.
-- Auto's header glance: `isAutoDockSpeaking` decides when the sentence leaves the line; `useAutoTreeActions` names the child in the Agents drawer payload.
+- Header glance and dock: `useConversationGlance` and `conversationAskOf` give both one word, `useConversationAsks` lists what asks; `useAutoTreeActions` names the child in the Agents drawer payload.
 - Next step card: `AutoNextAction` renders `nextActionOf`; `useNextAction` owns pick, hint, retry and the decline-then-message order. `ChoiceChips` draws the options.
 - Next step scenes: the `c2-next-step.test.tsx` scene test proves the card mounts with no Confirm row. The `u31-next-step` scene test holds its height.
 - Image strip: `AttachmentStrip` is the one strip for a message (`UserText`), a goal (`GoalAttachmentsStrip`) and a hint (`OrchestratedHintRow`). It lives in `features/attachments/AttachmentStrip/`, outside `components/` and `hooks/`, so other features import it without growing the cross-feature count.

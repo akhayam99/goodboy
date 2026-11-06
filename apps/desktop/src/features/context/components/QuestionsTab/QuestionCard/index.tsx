@@ -24,6 +24,7 @@ export type QuestionCardState = 'open' | 'staged' | 'answered' | 'dismissed';
 type Props = {
   readonly question: OpenQuestion;
   readonly variant: 'full' | 'compact';
+  readonly isDocked?: boolean;
   readonly state: QuestionCardState;
   readonly askerName: string | null;
   readonly askerKind: AgentKind | null;
@@ -48,6 +49,7 @@ const BLOCKING_DESCRIPTION = 'This answer is required before the agent can go on
 export const QuestionCard = ({
   question,
   variant,
+  isDocked = false,
   state,
   askerName,
   askerKind,
@@ -166,12 +168,14 @@ export const QuestionCard = ({
       style={{ outline: 'none' }}
       className={cn(
         '@container flex min-w-0 flex-col outline-none motion-safe:animate-fade-in',
-        isCompact ? 'gap-2 rounded-lg bg-subtle p-3' : 'gap-4',
+        isCompact && !isDocked && 'rounded-lg bg-subtle p-3',
+        isCompact ? 'gap-2' : 'gap-4',
       )}
     >
       <QuestionCardHead
         parts={parts}
         isCompact={isCompact}
+        isDocked={isDocked}
         isBlocking={isBlockingNow}
         askerName={askerName}
         askerKind={askerKind}

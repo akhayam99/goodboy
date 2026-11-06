@@ -1,12 +1,15 @@
+import { Button } from '@goodboy/ui';
 import { DeliveryActions } from '../../../../../shared/components/DeliveryActions';
 import { SendStopControl } from '../../../../../shared/components/SendStopControl';
 
 import type { StopPhase } from '../../../../../shared/hooks/useAgentStop';
 import { formatCombo, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../../shared/utils/names';
 
 type Props = {
   readonly isRunning: boolean;
   readonly canSend: boolean;
+  readonly isDenying?: boolean;
   readonly sendDisabledTitle?: string;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
@@ -18,6 +21,7 @@ type Props = {
 export const SendControl = ({
   isRunning,
   canSend,
+  isDenying = false,
   sendDisabledTitle,
   onSend,
   onSendNow,
@@ -51,6 +55,14 @@ export const SendControl = ({
           onReadNow={onSendNow}
         />
       </>
+    );
+  }
+
+  if (isDenying && canSend) {
+    return (
+      <Button variant="primary" size="sm" onClick={onSend}>
+        {NAMES.sendAndDeny}
+      </Button>
     );
   }
 

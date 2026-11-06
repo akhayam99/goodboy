@@ -22,6 +22,7 @@ type Props = {
   readonly onInsertPrefix: (symbol: string) => void;
   readonly isRunning: boolean;
   readonly canSend: boolean;
+  readonly isDenying: boolean;
   readonly sendDisabledTitle: string | undefined;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
@@ -42,6 +43,7 @@ export const ComposerToolbar = ({
   onInsertPrefix,
   isRunning,
   canSend,
+  isDenying,
   sendDisabledTitle,
   onSend,
   onSendNow,
@@ -85,6 +87,7 @@ export const ComposerToolbar = ({
           <SendControl
             isRunning={isRunning}
             canSend={canSend}
+            isDenying={isDenying}
             sendDisabledTitle={sendDisabledTitle}
             onSend={onSend}
             onSendNow={onSendNow}

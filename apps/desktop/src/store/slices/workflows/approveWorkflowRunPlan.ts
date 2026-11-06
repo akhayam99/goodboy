@@ -1,12 +1,12 @@
 import { updateWorkflowRunOrchestrationStop, updateWorkflowRunRulesSnapshot } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRules, WorkflowRun, WorkflowRunId } from '@goodboy/types';
+import { nextPendingStepAgentOf } from '../../../features/plans/nextPendingStepAgentOf';
 import { PLAN_REVISING_REASON, planRevisingOf } from '../../../features/plans/planRevising';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isReportedError } from '../notifications/reportedError';
 import { sessionById } from '../sessions/sessionIndex';
 import { findWorkflowRun } from './findWorkflowRun';
-import { nextPendingStepAgentOf } from './nextPendingStepAgentOf';
 import { notifyWorkflowGateBlock } from './notifyWorkflowGateBlock';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { ApprovePlanResult, GetFn, SetFn } from './types';

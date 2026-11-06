@@ -13,8 +13,11 @@ import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
 import { HandoffBlock } from '../HandoffBlock';
-import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
-import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
+import {
+  PermissionDecisionCard,
+  PermissionRecordLine,
+  PermissionRequestCard,
+} from '../../../permissions/permissionSurfaces';
 import { ToolCallCard } from '../ToolCallCard';
 import { TurnChangesCard } from '../TurnChangesCard';
 import { TurnFooter } from '../TurnFooter';
@@ -208,7 +211,11 @@ const TranscriptCardImpl = ({
     case 'permission_request':
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
-      return <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />;
+      return item.isRecordLine === true ? (
+        <PermissionRecordLine item={item} />
+      ) : (
+        <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />
+      );
     default: {
       const exhaustive: never = item;
       return exhaustive;

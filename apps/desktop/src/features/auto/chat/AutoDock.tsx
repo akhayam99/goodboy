@@ -14,10 +14,7 @@ type Props = {
 export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact }: Props) => {
   const plan = dockPlanRowOf({ view });
   return (
-    <div
-      data-auto-dock=""
-      className="flex min-w-0 flex-col gap-1 rounded-lg bg-subtle px-3 py-2 empty:hidden"
-    >
+    <div data-auto-dock="" data-dock-row="" className="flex min-w-0 flex-col gap-1 empty:hidden">
       {plan === null ? null : (
         <AutoDockPlan
           sessionId={sessionId}

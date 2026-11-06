@@ -28,12 +28,11 @@ import type {
 import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planEditBlockOf } from '../../plans/planEditBlock';
-import { planApproveLabelOf } from '../../plans/planApproveLabelOf';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
 import { unsentCommentsQuestion } from '../../plans/unsentCommentsQuestion';
 import { planRunToast } from '../../plans/planRunToast';
 import { openPlanDrawer } from '../../plans/openPlanDrawer';
-import { NOT_REVISING, type PlanRevising } from '../../plans/planRevising';
+import { NOT_REVISING } from '../../plans/planRevising';
 import { artifactPlanFactsOf } from './artifactPlanFactsOf';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -66,11 +65,12 @@ import type {
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import type { AppStore } from '../../../store/store';
+import type { ArtifactPlanFacts } from './artifactPlanFactsOf';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 
 export const ARTIFACT_EDIT_EVENT = 'goodboy:artifact-edit';
 
-export type ArtifactFacts = {
+export type ArtifactFacts = ArtifactPlanFacts & {
   readonly sessionId: SessionId;
   readonly workspaceSlug: string | null;
   readonly kind: ArtifactKind;
@@ -80,12 +80,6 @@ export type ArtifactFacts = {
   readonly planStatus: ArtifactStatus | null;
   readonly status: ArtifactStatus | null;
   readonly isPlanRunning: boolean;
-  readonly planRevising: PlanRevising;
-  readonly planRun: WorkflowRun | null;
-  readonly planDrafts: ReadonlyArray<ArtifactComment>;
-  readonly plannerQuestionCount: number;
-  readonly isPlanHeldByAuto: boolean;
-  readonly planNextStepName: string | null;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
@@ -374,8 +368,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.runPlan',
-    label: ({ facts }) =>
-      primaryOf({ facts }).label ?? planApproveLabelOf({ nextStepName: facts.planNextStepName }),
+    label: ({ facts }) => primaryOf({ facts }).label ?? 'Approve',
     icon: Play,
     group: 'act',
     slot: () => 'primary',

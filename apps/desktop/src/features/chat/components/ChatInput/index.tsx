@@ -1,8 +1,8 @@
-import { useRef } from 'react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { useRef, type ReactNode } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import type { ComposerControlSlots } from './composerControlSlots';
 import { ConversationColumn } from '../ConversationColumn';
+import { ConversationDock } from '../ConversationDock';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
@@ -27,6 +27,7 @@ import { composerKeyDown } from './composerKeyDown';
 import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
 import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
+import { ComposerBox } from './parts/ComposerBox';
 import { ComposerCliGate } from './parts/ComposerCliGate';
 import { WriterWaitBand } from '../WriteDestinationControl/WriterWaitBand';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
@@ -36,6 +37,7 @@ import { ComposerToolbar } from './parts/ComposerToolbar';
 import { ComposerTray } from './parts/ComposerTray';
 import { autoTreeOfAgent } from '../../../auto/autoTreeOfAgent';
 import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
+import { useConversationAsks } from '../../../../store/hooks/useConversationAsks';
 
 type Props = {
   readonly session: Session;
@@ -43,6 +45,8 @@ type Props = {
   readonly providerDisconnected?: boolean;
   readonly placeholderOverride?: string;
   readonly controlSlots?: ComposerControlSlots;
+  readonly dockLead?: ReactNode;
+  readonly hasDockAsks?: boolean;
 };
 
 export const ChatInput = ({
@@ -51,6 +55,8 @@ export const ChatInput = ({
   providerDisconnected = false,
   placeholderOverride,
   controlSlots,
+  dockLead,
+  hasDockAsks = false,
 }: Props) => {
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session, agentId });
@@ -58,6 +64,8 @@ export const ChatInput = ({
   const isAutoChild =
     selectedAgentId !== null &&
     autoTreeOfAgent({ views: autoViews, agentId: selectedAgentId })?.kind === 'child';
+  const { permissions } = useConversationAsks({ sessionId: session.id, agentId: selectedAgentId });
+  const deniedAgentId = isRunning ? null : (permissions[0]?.agentId ?? null);
 
   const { showToast } = useToast();
 
@@ -86,14 +94,8 @@ export const ChatInput = ({
   useOutputHandoffs({ selectedAgentId, isReady: isRestored, wrapperRef, attachOutputHandoffs });
   useToastLift({ ref: composerRef });
 
-  const {
-    onValueChange,
-    popoverOpen,
-    filteredQuickItems,
-    quickEmptyHint,
-    onQuickActionSelect,
-    dismissPopover,
-  } = useChatPrefix({ session, value, setValue });
+  const prefix = useChatPrefix({ session, value, setValue });
+  const { onValueChange, popoverOpen } = prefix;
 
   const routing = useTurnRouting({ session, agentId: selectedAgentId });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
@@ -143,6 +145,7 @@ export const ChatInput = ({
     session,
     providerDisconnected,
     selectedAgentId,
+    deniedAgentId,
     isRunning,
     value,
     setValue,
@@ -216,21 +219,15 @@ export const ChatInput = ({
       )}
       <div className="flex flex-col">
         {hasTray && <ComposerTray queued={queued} suggestions={suggestions} canEdit={isEmpty} />}
-        <div
-          ref={composerRef}
-          data-drop-composer
-          className={cn(
-            'relative flex flex-col rounded-lg border transition-all',
-            hasTray && 'rounded-t-none',
-            isDragging
-              ? cn(tintClasses('primary').bgSoft, 'border-primary')
-              : cn(
-                  'border-border-soft bg-subtle hover:border-border',
-                  'focus-within:border-border-strong focus-within:shadow-xl',
-                ),
-          )}
-        >
+        <ComposerBox composerRef={composerRef} isDragging={isDragging} hasTray={hasTray}>
           <PromptDropOverlay isDragging={isDragging} />
+          <ConversationDock
+            session={session}
+            agentId={selectedAgentId}
+            lead={dockLead}
+            hasAsks={hasDockAsks}
+            isMessageTyped={!isEmpty && deniedAgentId !== null}
+          />
           <ComposerCliGate
             provider={routing.effectiveProvider}
             modelId={routing.effectiveModelId}
@@ -240,10 +237,10 @@ export const ChatInput = ({
           <div className="relative" ref={wrapperRef}>
             {popoverOpen ? (
               <QuickActionsPopover
-                items={filteredQuickItems}
-                emptyHint={quickEmptyHint}
-                onSelect={onQuickActionSelect}
-                onDismiss={dismissPopover}
+                items={prefix.filteredQuickItems}
+                emptyHint={prefix.quickEmptyHint}
+                onSelect={prefix.onQuickActionSelect}
+                onDismiss={prefix.dismissPopover}
               />
             ) : null}
             <PromptField
@@ -283,6 +280,7 @@ export const ChatInput = ({
             onInsertPrefix={insertPrefix}
             isRunning={isRunning}
             canSend={canSend}
+            isDenying={deniedAgentId !== null}
             sendDisabledTitle={sendDisabledTitle}
             onSend={() => void onSend()}
             onSendNow={() => void onSendNow()}
@@ -290,7 +288,7 @@ export const ChatInput = ({
             isStopArmed={escapeStop.isArmed}
             onStop={agentStop.stop}
           />
-        </div>
+        </ComposerBox>
       </div>
       {showsDeliveryChoice ? (
         <p className="px-1 text-meta text-faint-foreground">

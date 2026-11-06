@@ -19,6 +19,7 @@ type Props = {
   readonly question: OpenQuestion;
   readonly sessionId: SessionId;
   readonly variant: 'full' | 'compact';
+  readonly isDocked?: boolean;
   readonly pager?: QuestionPagerModel | null;
   readonly settled?: 'answered' | 'dismissed' | null;
   readonly autoFocus?: boolean;
@@ -34,6 +35,7 @@ export const LiveQuestionCard = ({
   question,
   sessionId,
   variant,
+  isDocked = false,
   pager = null,
   settled = null,
   autoFocus = false,
@@ -113,6 +115,7 @@ export const LiveQuestionCard = ({
       <QuestionCard
         question={question}
         variant={variant}
+        isDocked={isDocked}
         state={state}
         askerName={asker?.name ?? null}
         askerKind={asker === null ? null : classifyAgent({ agent: asker, override: kindOverride })}
