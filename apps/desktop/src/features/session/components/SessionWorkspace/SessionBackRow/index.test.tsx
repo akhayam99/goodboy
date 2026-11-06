@@ -187,6 +187,14 @@ describe('SessionBackRow', () => {
     expect(currentStack(useAppStore.getState()).index).toBe(index - 1);
   });
 
+  it('cuts a long title inside the row instead of overflowing it', () => {
+    walk({ places: [STEP_PLACE] });
+    render(<SessionBackRow sessionId={S1} />);
+
+    const label = backButton('Back to run').querySelector(':scope > span');
+    expect(label?.textContent).toBe('Back to run');
+  });
+
   it('draws no breadcrumb trail', () => {
     walk({ places: [OVERVIEW, STEP_PLACE] });
     render(<SessionBackRow sessionId={S1} />);
