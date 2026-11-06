@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ArrowUpRight, Copy } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { cn, DrawerFrame, ICON_SIZE, IconButton, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
@@ -182,33 +182,27 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
       icon={CONCEPT_ICONS.plans}
       iconClassName="text-muted-foreground"
       onClose={onClose}
+      page={{
+        tooltip: 'Open in Artifacts',
+        onOpen: () =>
+          navigate({
+            to: sessionPlace({
+              sessionId,
+              lens: 'plans',
+              target: { kind: 'artifact', artifactId: plan.id },
+            }),
+          }),
+      }}
       action={
-        <span className="flex min-w-0 items-center gap-1">
+        copyAction === null ? null : (
           <IconButton
-            icon={ArrowUpRight}
+            icon={Copy}
             iconSize={ICON_SIZE.row}
-            label="Open in Artifacts"
+            label="Copy markdown"
             variant="ghost"
-            onClick={() =>
-              navigate({
-                to: sessionPlace({
-                  sessionId,
-                  lens: 'plans',
-                  target: { kind: 'artifact', artifactId: plan.id },
-                }),
-              })
-            }
+            onClick={() => void run({ actionId: COPY_ACTION_ID })}
           />
-          {copyAction === null ? null : (
-            <IconButton
-              icon={Copy}
-              iconSize={ICON_SIZE.row}
-              label="Copy markdown"
-              variant="ghost"
-              onClick={() => void run({ actionId: COPY_ACTION_ID })}
-            />
-          )}
-        </span>
+        )
       }
       toolbar={
         <>

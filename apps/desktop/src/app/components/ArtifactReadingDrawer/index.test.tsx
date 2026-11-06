@@ -123,7 +123,7 @@ describe('a report or wireframe opened from its work', () => {
     open(id);
     render(<DrawerHost />);
 
-    expect(screen.getAllByRole('button', { name: 'Open in Artifacts' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Open page' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Collapse' })).toBeNull();
   });
@@ -135,7 +135,7 @@ describe('a report or wireframe opened from its work', () => {
     open(REPORT);
     render(<DrawerHost />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open in Artifacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open page' }));
 
     expect(navigate).toHaveBeenCalledWith({
       to: {

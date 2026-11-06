@@ -5,6 +5,7 @@ import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { useOpenSession } from '../useOpenSession';
 import { isLiveSession } from '../../utils/isLiveSession';
 import { sessionTitle } from '../../utils/sessionTitle';
+import { NAMES } from '../../utils/names';
 import { outputHandoffOf } from '../../utils/outputHandoff';
 
 type HandOffParams = {
@@ -26,7 +27,7 @@ export type HandOutputToAgent = {
   readonly handOff: (params: HandOffParams) => void;
 };
 
-const ASK_AGENT_LABEL = 'Ask the agent about this';
+const ASK_AGENT_LABEL = NAMES.sendToTheAgent;
 
 export const NO_OUTPUT_REASON = 'No output yet';
 
@@ -57,7 +58,7 @@ export const useHandOutputToAgent = ({
   const askLabel =
     isOnScreen || session === undefined
       ? ASK_AGENT_LABEL
-      : `Ask the agent in ${sessionTitle({ session })} about this`;
+      : `${NAMES.sendToTheAgent} in ${sessionTitle({ session })}`;
 
   const handOff = useCallback(
     (params: HandOffParams) => {

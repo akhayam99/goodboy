@@ -30,7 +30,11 @@ const askActionFactsOf = ({ state, sessionId }: FactsParams): AskButtonFacts => 
       ).length
     : 0;
   return {
-    openQuestions: open.map((question, index) => ({ id: question.id, number: index + 1 })),
+    openQuestions: open.map((question, index) => ({
+      id: question.id,
+      number: index + 1,
+      text: question.text,
+    })),
     messageableAgents: agents
       .filter(
         (agent) =>
