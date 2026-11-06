@@ -2,7 +2,7 @@ import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionDismissed } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { storedQuestionDrafts } from '../../../features/context/components/QuestionsTab/storedQuestionDrafts';
+import { storedQuestionDrafts } from '../../../features/context/storedQuestionDrafts';
 import type { GetFn, SetFn } from './types';
 
 export const BLOCKING_DISMISSAL_REFUSAL =

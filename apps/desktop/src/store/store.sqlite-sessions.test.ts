@@ -8,7 +8,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { storedQuestionDrafts } from '../features/context/components/QuestionsTab/storedQuestionDrafts';
+import { storedQuestionDrafts } from '../features/context/storedQuestionDrafts';
 import { storedAgentDraft } from './slices/agents/storedAgentDraft';
 import {
   buildStoryProject,

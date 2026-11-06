@@ -18,7 +18,7 @@ import {
   type MountDetachment,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { storedQuestionDrafts } from '../../../features/context/components/QuestionsTab/storedQuestionDrafts';
+import { storedQuestionDrafts } from '../../../features/context/storedQuestionDrafts';
 import { storedAgentDraft } from '../agents/storedAgentDraft';
 import { cancelTurn } from '../../../features/chat/turn';
 import {

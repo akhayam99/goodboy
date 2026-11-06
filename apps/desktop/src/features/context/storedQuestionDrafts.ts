@@ -1,9 +1,9 @@
 import { PROVIDER_IDS } from '@goodboy/types';
 import { isRecord } from '@goodboy/types/helpers';
-import { EFFORT_LEVELS } from '../../../chat/utils/chat-constants';
-import { STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
-import { storedText } from '../../../../shared/lib/storedText';
-import type { AnswerIntent, QuestionDraft } from './useOpenQuestions';
+import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
+import { STORAGE_PREFIXES } from '../../shared/lib/storage-keys';
+import { storedText } from '../../shared/lib/storedText';
+import type { AnswerIntent, QuestionDraft } from './components/QuestionsTab/useOpenQuestions';
 
 type Drafts = Readonly<Record<string, QuestionDraft>>;
 

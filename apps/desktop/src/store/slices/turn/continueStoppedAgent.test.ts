@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Agent } from '@goodboy/types';
 import { brandId, type StepId } from '@goodboy/types';
 import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
-import { stoppedAutoRuns } from '../workflows/stoppedAutoRuns';
+import { stoppedAutoRuns } from '../workflows/runState/stoppedAutoRuns';
 import { useAppStore, type AppStore } from '../../store';
 import {
   FIXTURE_ROOT,

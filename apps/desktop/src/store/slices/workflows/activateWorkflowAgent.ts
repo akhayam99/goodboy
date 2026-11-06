@@ -229,10 +229,19 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       return;
     }
     let hasStarted = false;
-    let planUse: Promise<void> | null = null;
-    const startPlanUse = (): Promise<void> => {
-      planUse ??= usePlan();
+    let planUse: Promise<unknown> | null = null;
+    const beginPlanUse = (): Promise<unknown> => {
+      planUse ??= usePlan().then(
+        () => null,
+        (error: unknown) => error,
+      );
       return planUse;
+    };
+    const startPlanUse = async (): Promise<void> => {
+      const failure = await beginPlanUse();
+      if (failure !== null) {
+        throw failure;
+      }
     };
     const result = await get()
       .sendTurn({
@@ -242,7 +251,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         origin: 'workflow',
         onStarted: () => {
           hasStarted = true;
-          startPlanUse().catch(() => undefined);
+          void beginPlanUse();
           onStarted?.();
         },
         handoff: {

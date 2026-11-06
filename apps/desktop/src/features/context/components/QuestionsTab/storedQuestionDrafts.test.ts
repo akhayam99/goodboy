@@ -41,7 +41,7 @@ describe('a question draft', () => {
 
   it('is gone after the question was dismissed, even when another draft changes later', async () => {
     const before = await freshStore();
-    const { storedQuestionDrafts } = await import('./storedQuestionDrafts');
+    const { storedQuestionDrafts } = await import('../../storedQuestionDrafts');
     before.getState().setCustomAnswer(QUESTION, 'Alias the export in ledger-core');
 
     storedQuestionDrafts.forget({ questionIds: [QUESTION] });

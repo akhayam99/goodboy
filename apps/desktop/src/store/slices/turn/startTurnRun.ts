@@ -21,7 +21,7 @@ import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
-import { releaseUnstartedTurn } from './releaseUnstartedTurn';
+import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { hasOwnTurnRun } from './hasOwnTurnRun';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
 import type { GetFn, SetFn, WithInput, TurnPhaseValue } from './types';

@@ -6,7 +6,7 @@ import type {
   OpenQuestionSelectMode,
   ProviderId,
 } from '@goodboy/types';
-import { storedQuestionDrafts } from './storedQuestionDrafts';
+import { storedQuestionDrafts } from '../../storedQuestionDrafts';
 
 const UNDO_TTL_MS = 5_000;
 

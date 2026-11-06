@@ -67,7 +67,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 import type { CancelOutcome } from '../turn/cancelTurnConfirmed';
 import { clearAgentStopping, isAgentStopping, markAgentStopping } from '../turn/stoppingAgents';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
-import { stoppedAutoRuns } from './stoppedAutoRuns';
+import { stoppedAutoRuns } from './runState/stoppedAutoRuns';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;

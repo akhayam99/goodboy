@@ -163,7 +163,7 @@ describe('the session composer when a send is refused', () => {
 
     expect(within(row).getByText(DRAFT).closest('button')?.disabled).toBe(true);
     expect(box.value).toBe('and check notify-relay too');
-    expect(screen.getByTestId('queued-message-row')).toBeDefined();
+    screen.getByTestId('queued-message-row');
   });
 
   it('keeps the row for a fresh composer of the same agent', async () => {

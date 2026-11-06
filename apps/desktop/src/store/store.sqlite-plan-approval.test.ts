@@ -315,7 +315,12 @@ describe('run a plan on sqlite while its first start is slow', () => {
     });
     useAppStore.setState({ sessionPlans: { [sessionId]: [plan] } });
     const routingMod = await import('../features/providers/routing');
-    const routed = await routingMod.resolveProviderForTurn({} as never);
+    const routed: Awaited<ReturnType<typeof routingMod.resolveProviderForTurn>> = {
+      selectedProvider: 'anthropic',
+      selectedModel: 'claude-sonnet-4-5',
+      reason: 'preferred',
+      fallbackUsed: false,
+    };
     const gate: { open: (() => void) | null } = { open: null };
     vi.mocked(routingMod.resolveProviderForTurn).mockImplementationOnce(
       () =>

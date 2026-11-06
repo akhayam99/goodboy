@@ -1,7 +1,7 @@
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
 import { sessionById } from '../sessions/sessionIndex';
-import { stoppedAutoRuns } from '../workflows/stoppedAutoRuns';
+import { stoppedAutoRuns } from '../workflows/runState/stoppedAutoRuns';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import { withStepBoundary } from './kickoff';

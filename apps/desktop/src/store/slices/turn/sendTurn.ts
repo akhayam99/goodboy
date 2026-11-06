@@ -1,6 +1,6 @@
 import type { ProviderRunId } from '@goodboy/types';
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
-import { releaseUnstartedTurn } from './releaseUnstartedTurn';
+import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled, waitTurnSettledFor } from './turnSettled';
 import { watchStepEnd } from '../workflows/stepEnd/watchStepEnd';
