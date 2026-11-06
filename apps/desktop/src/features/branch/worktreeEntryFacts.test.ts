@@ -55,6 +55,7 @@ describe('the facts of the worktree entries', () => {
       tooltip: '12 files · +652 -99',
       diff: { additions: 652, deletions: 99 },
       notPushed: null,
+      countWord: '12 files',
     });
     expect(
       worktreeEntryFactsOf({ ...BASE, files: null, diff: { additions: 4, deletions: 0 } }).files,
@@ -107,6 +108,7 @@ describe('the facts of the worktree entries', () => {
       tooltip: '3 not pushed',
       diff: null,
       notPushed: 3,
+      countWord: '11 commits',
     });
     expect(worktreeEntryFactsOf({ ...BASE, commits: 11, notPushed: 0 }).commits).toMatchObject({
       text: '11',
@@ -149,6 +151,16 @@ describe('the tab badges of the branch page', () => {
     });
     expect(facts.commits.tooltip).toBe('11 commits · 3 not pushed');
     expect(facts.pr.tooltip).toBe('Draft');
+  });
+
+  it('says one file and one commit in the singular', () => {
+    const facts = quiet({ files: 1, commits: 1, notPushed: 1 });
+
+    expect(facts.files.tooltip).toBe('1 file');
+    expect(facts.commits.tooltip).toBe('1 commit · 1 not pushed');
+    expect(quiet({ files: 1, diff: { additions: 2, deletions: 0 } }).files.tooltip).toBe(
+      '1 file · +2 -0',
+    );
   });
 
   it('keeps running checks to the tooltip and says nothing when nothing is known', () => {

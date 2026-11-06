@@ -30,7 +30,8 @@ export const HistoryBaseRow = ({
         return;
       }
       heading.scrollIntoView({ block: 'center' });
-      const own = document.querySelector<HTMLElement>('[data-base-rebase]');
+      const page = heading.closest('[data-branch-pane]') ?? document;
+      const own = page.querySelector<HTMLElement>('[data-base-rebase]');
       const rail = document.querySelector<HTMLElement>('[data-worktree-verb="mount.rebase"]');
       (own ?? rail)?.focus();
     };

@@ -184,16 +184,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
   const nextStep = isBranchStart
     ? start.step.header
-    : pr === null
-      ? null
-      : pullRequestNextStepOf({
-          state: scope.state,
-          facts: prReadiness.facts,
-          readiness: prReadiness.readiness,
-          hasReviewer: prReadiness.reviewers.people.length > 0,
-          behind: start.step.behind ?? 0,
-          isStopOpen: hasOpenRebaseStop,
-        });
+    : pullRequestNextStepOf({
+        state: scope.state,
+        facts: prReadiness.facts,
+        readiness: prReadiness.readiness,
+        hasReviewer: prReadiness.reviewers.people.length > 0,
+        behind: start.step.behind ?? 0,
+        isStopOpen: hasOpenRebaseStop,
+      });
 
   const selectTab = useCallback(
     (next: BranchTab): void => {
@@ -282,6 +280,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     !bitbucketRemote.isBitbucket &&
     (sources.length > 0 || repo !== null);
   const isPrimaryYielding =
+    isFormLeading ||
     pushPhaseYieldsOf({ kind: push.phase.kind }) ||
     (tab === 'comments' && branchReview.isSelecting);
 

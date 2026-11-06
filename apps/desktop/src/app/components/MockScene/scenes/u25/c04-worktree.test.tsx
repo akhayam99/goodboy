@@ -7,6 +7,25 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+const review = vi.hoisted(() => ({ fixable: 0 }));
+
+vi.mock('../../../../../features/resolve/hooks/useBranchReview', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../../../../features/resolve/hooks/useBranchReview')>();
+  return {
+    useBranchReview: (params: Parameters<typeof actual.useBranchReview>[0]) => {
+      const branch = actual.useBranchReview(params);
+      return {
+        ...branch,
+        comments: {
+          ...branch.comments,
+          facts: { ...branch.comments.facts, fixable: review.fixable },
+        },
+      };
+    },
+  };
+});
+
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
@@ -53,6 +72,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  review.fixable = 0;
   vi.unstubAllGlobals();
   vi.useRealTimers();
   cleanup();
@@ -124,6 +144,16 @@ describe('the c04 worktree level scenes', () => {
 
     expect(stripTab({ name: /^Pull request/ }).textContent).toBe('Pull request');
     expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
+  });
+
+  it('c04-worktree-no-pr keeps one fill when a comment step comes with the create form', async () => {
+    review.fixable = 1;
+    await mount('c04-worktree-no-pr');
+
+    const step = document.querySelector('[data-branch-primary]');
+    expect(step?.textContent).toMatch(/^Fix 1 comment/);
+    expect(step?.getAttribute('data-variant')).toBe('secondary');
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('c04-worktree-files selects Files and docks the file list on the right of the diff', async () => {

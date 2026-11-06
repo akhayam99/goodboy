@@ -300,7 +300,7 @@ lists the other commits, never a `fixup!`, `squash!` or `amend!` one and never t
 headline already says, and `Closes HL-1372` for a Linear issue). `Into` starts on the base of the mount (`defaultBase`) and the host's default only fills it when that is empty. The form works on the branch on screen: it
 reads that mount's status and base branches and opens the pull request from it,
 never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
-and prefill and hands the mount to `createMrForSession`. Its submit is the one primary of the tab, also as `Push and create pull request` while commits are not on origin, and the header's `Push N commits` steps down to secondary there (`isFormLeading`); on every other tab the header's push stays primary. While the branch is behind, the header's Rebase leads and the submit is secondary. On a diverged branch the submit reads `Force push and create pull request`: it opens
+and prefill and hands the mount to `createMrForSession`. Its submit is the one primary of the tab, also as `Push and create pull request` while commits are not on origin, and while it leads the header's push waits in `⋯` and any other header step steps down to secondary (`isFormLeading`); on every other tab the header's push stays primary. While the branch is behind, the header's Rebase leads and the submit is secondary. On a diverged branch the submit reads `Force push and create pull request`: it opens
 the same confirm as the Push action (`forcePushConfirm`, which also lists the commits that
 exist only online) and only then force pushes with lease and opens the request
 (`createPrForSession` with `forcePush`); a plain push is never tried on a diverged branch. While a rebase is stopped the form waits and the
