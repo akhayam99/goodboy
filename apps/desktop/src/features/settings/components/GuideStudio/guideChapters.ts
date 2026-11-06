@@ -272,7 +272,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents panel',
-        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, lists every agent, run or Auto or yours, in a tree. An agent opens beside it; j and k hop.`,
+        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, shows the open run or Auto as a tree, else what is live. An agent opens beside it; j and k hop.`,
       },
       {
         term: 'Session tools',
@@ -528,7 +528,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One list',
-        desc: 'All, Plans, Reports and Wireframes filter one list grouped as Needs you, Ready, Running, Consumed and Recently deleted. Each row shows one action, such as Run plan or Approve.',
+        desc: 'All, Plans, Reports and Wireframes filter one list grouped as Needs you, Running, Ready, To read, Used and Recently deleted. Each row shows one action, such as Run plan or Approve.',
       },
       {
         term: 'Plans',

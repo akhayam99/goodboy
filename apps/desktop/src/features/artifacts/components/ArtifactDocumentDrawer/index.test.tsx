@@ -308,7 +308,7 @@ describe('approving from the drawer', () => {
 
     expect(approve).not.toHaveBeenCalled();
     const question = screen.getByRole('group', {
-      name: '2 comments are not sent. Approve anyway?',
+      name: 'Approve without your 2 comments?',
     });
     fireEvent.click(within(question).getByRole('button', { name: 'Approve anyway' }));
     await waitFor(() => expect(approve).toHaveBeenCalledWith(PLAN_FIXTURE_SESSION, PLAN_RUN_ID));

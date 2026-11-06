@@ -291,7 +291,7 @@ describe('the create form', () => {
     expect(within(alert).getByText(/Unused files \(3\)/).textContent).toContain(
       'settlementExport.ts',
     );
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
 
     expect(fixBranchPushWithAgent).toHaveBeenCalledOnce();
     const call = fixBranchPushWithAgent.mock.calls[0]?.[0];
@@ -346,7 +346,7 @@ describe('the create form', () => {
       await titleField();
       fireEvent.click(screen.getByRole('button', { name: 'Push and create pull request' }));
       const alert = await screen.findByRole('alert', {}, { timeout: 3_000 });
-      fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+      fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
       const resume = async (): Promise<unknown> =>
         fixBranchPushWithAgent.mock.calls[0]?.[0].onSettled?.();
       return { create, resume };
@@ -776,7 +776,7 @@ describe('the create form on a diverged branch', () => {
     );
 
     const confirm = await screen.findByRole('group', {
-      name: 'Replace the online copy and drop 1 commit?',
+      name: 'Replace the branch on origin and drop 1 commit?',
     });
     within(confirm).getByText('Hotfix the relay timeout');
     expect(create).not.toHaveBeenCalled();
@@ -789,7 +789,7 @@ describe('the create form on a diverged branch', () => {
       await screen.findByRole('button', { name: 'Force push and create pull request' }),
     );
     const confirm = await screen.findByRole('group', {
-      name: 'Replace the online copy and drop 1 commit?',
+      name: 'Replace the branch on origin and drop 1 commit?',
     });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Force push anyway' }));
 
@@ -806,11 +806,11 @@ describe('the create form on a diverged branch', () => {
       await screen.findByRole('button', { name: 'Force push and create pull request' }),
     );
     const confirm = await screen.findByRole('group', {
-      name: 'Replace the online copy and drop 1 commit?',
+      name: 'Replace the branch on origin and drop 1 commit?',
     });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByRole('group', { name: /Replace the online copy/ })).toBeNull();
+    expect(screen.queryByRole('group', { name: /Replace the branch on origin/ })).toBeNull();
     expect(create).not.toHaveBeenCalled();
     expect(valueOf(await titleField())).toBe('Goal');
   });

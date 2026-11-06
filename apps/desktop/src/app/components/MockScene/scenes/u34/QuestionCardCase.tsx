@@ -44,7 +44,6 @@ export const QuestionCardCase = ({ entry }: Props) => (
       variant={entry.variant}
       state={entry.state}
       askerName="Implementer"
-      askerKind="planner"
       age="2m"
       draft={entry.draft}
       pager={pagerOf({ size: entry.pagerSize })}

@@ -113,7 +113,7 @@ describe('PushFailureActions', () => {
   it('offers the agent and the terminal while no fix runs', async () => {
     render(actions());
 
-    screen.getByRole('button', { name: 'Let an agent fix the push' });
+    screen.getByRole('button', { name: 'Fix with an agent' });
     screen.getByRole('button', { name: 'Open terminal here' });
   });
 
@@ -127,7 +127,7 @@ describe('PushFailureActions', () => {
 
     screen.getByText('An agent is fixing the push');
     screen.getByRole('button', { name: 'Open the agent' });
-    expect(screen.queryByRole('button', { name: 'Let an agent fix the push' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
   });
 
   it('says why the agent stopped and offers another try', () => {
@@ -144,7 +144,7 @@ describe('PushFailureActions', () => {
     render(actions());
 
     expect(screen.getByRole('alert').textContent).toBe('The agent was stopped before it finished.');
-    screen.getByRole('button', { name: 'Let an agent fix the push' });
+    screen.getByRole('button', { name: 'Fix with an agent' });
   });
 
   it('clears the failure once the fix pushed while the line was not on screen', () => {
@@ -160,7 +160,7 @@ describe('PushFailureActions', () => {
     world.check = { ...READY, state: 'missing' };
     render(actions());
 
-    await screen.findByRole('button', { name: 'Let an agent fix the push' });
+    await screen.findByRole('button', { name: 'Fix with an agent' });
 
     expect(screen.queryByRole('button', { name: 'Reinstall dependencies' })).toBeNull();
   });
@@ -171,7 +171,7 @@ describe('PushFailureActions', () => {
     render(actions());
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Let an agent fix the push' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
     });
 
     expect(fixBranchPushWithAgent).toHaveBeenCalledWith(

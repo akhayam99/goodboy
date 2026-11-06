@@ -65,7 +65,7 @@ export const NotificationRow = ({
   );
   const action =
     latest.action != null
-      ? mapNotificationAction(latest.action, useAppStore.getState())
+      ? mapNotificationAction(latest.action, useAppStore.getState(), latest)
       : undefined;
   const otherWorkspaces = workspaces.filter((workspace) => workspace.id !== currentWorkspaceId);
   const context = notificationContext(latest, sessions, otherWorkspaces) ?? null;

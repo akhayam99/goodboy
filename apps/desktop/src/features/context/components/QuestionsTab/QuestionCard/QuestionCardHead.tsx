@@ -1,4 +1,4 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, type MenuEntry } from '@goodboy/ui';
 import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
 import type { QuestionParts } from '../questionParts';
 import { QuestionBlockingMark } from './QuestionBlockingMark';
@@ -12,10 +12,10 @@ type Props = {
   readonly isCompact: boolean;
   readonly isDocked: boolean;
   readonly isBlocking: boolean;
-  readonly askerName: string | null;
   readonly askerKind: AgentKind | null;
   readonly age: string;
   readonly pager: QuestionPagerModel | null;
+  readonly menu: ReadonlyArray<MenuEntry> | null;
   readonly onDismiss: (() => void) | null;
 };
 
@@ -24,23 +24,22 @@ export const QuestionCardHead = ({
   isCompact,
   isDocked,
   isBlocking,
-  askerName,
   askerKind,
   age,
   pager,
+  menu,
   onDismiss,
 }: Props) => {
-  const hasControls = pager !== null || onDismiss !== null;
+  const hasControls = pager !== null || onDismiss !== null || menu !== null;
   const hasCompactTop = isCompact && (isDocked || isBlocking || hasControls);
   return (
     <>
       {isCompact ? null : (
         <QuestionCardTop
-          askerName={askerName}
-          askerKind={askerKind}
           age={age}
           isBlocking={isBlocking}
           pager={pager}
+          menu={menu}
           onDismiss={onDismiss}
         />
       )}
@@ -58,7 +57,9 @@ export const QuestionCardHead = ({
             </span>
           ) : null}
           {isBlocking ? <QuestionBlockingMark /> : null}
-          {hasControls ? <QuestionCardControls pager={pager} onDismiss={onDismiss} /> : null}
+          {hasControls ? (
+            <QuestionCardControls pager={pager} menu={menu} onDismiss={onDismiss} />
+          ) : null}
         </div>
       ) : null}
       <QuestionCardText parts={parts} isCompact={isCompact} />

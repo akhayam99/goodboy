@@ -22,6 +22,7 @@ const { state } = vi.hoisted(() => ({
     setNotificationScope: vi.fn(async () => undefined),
     markNotificationRead: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
+    markNotificationsActed: vi.fn(async () => undefined),
     dismissNotificationGroup: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     clearNotifications: vi.fn(async () => undefined),
@@ -31,10 +32,26 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => {
+const { openNotificationSessionSpy } = vi.hoisted(() => ({
+  openNotificationSessionSpy: vi.fn(() => true),
+}));
+
+vi.mock('../../openNotificationSession', () => ({
+  openNotificationSession: openNotificationSessionSpy,
+}));
+
+vi.mock('../../../../store', async () => {
+  const place = await vi.importActual<typeof import('../../../../store/slices/navigation/place')>(
+    '../../../../store/slices/navigation/place',
+  );
   const useAppStore = <T,>(selector: (store: typeof state) => T) => selector(state);
   Object.assign(useAppStore, { getState: () => state, subscribe: () => () => undefined });
-  return { useAppStore };
+  return {
+    useAppStore,
+    agentPlace: place.agentPlace,
+    branchPlace: place.branchPlace,
+    sessionPlace: place.sessionPlace,
+  };
 });
 
 import { NotificationsStudio } from './index';
@@ -185,6 +202,60 @@ describe('NotificationsStudio', () => {
     expect(screen.getByRole('list', { name: 'Earlier in this group' })).toBeDefined();
     expect(screen.getByRole('button', { name: /report this/i })).toBeDefined();
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
+  });
+
+  it('names the place in the verb of an opened row, and a row with no place has no verb', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({
+          id: 'checks',
+          title: 'Checks failed on payments-api',
+          sessionId: deserialize({ value: '"session-1"' }),
+          action: {
+            kind: 'open-place',
+            sessionId: deserialize({ value: '"session-1"' }),
+            reason: 'ci-failed',
+            mountId: null,
+          },
+        }),
+        buildNotification({ id: 'old', title: 'Pull request opened', coalesceKey: 'old' }),
+      ],
+    });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Checks failed on payments-api' }));
+    screen.getByRole('button', { name: 'Open Checks' });
+    fireEvent.click(screen.getByRole('button', { name: 'Pull request opened' }));
+    expect(screen.queryByRole('button', { name: 'Open Checks' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /^Open (Comments|pull request|branch)/ }),
+    ).toBeNull();
+  });
+
+  it('opens a place through the one owner, from the row verb and from Enter', () => {
+    const checks = buildNotification({
+      id: 'checks',
+      title: 'Checks failed on payments-api',
+      sessionId: deserialize({ value: '"session-1"' }),
+      workspaceId: deserialize({ value: '"ws-2"' }),
+      action: {
+        kind: 'open-place',
+        sessionId: deserialize({ value: '"session-1"' }),
+        reason: 'ci-failed',
+        mountId: null,
+      },
+    });
+    seedNotifications({ notifications: [checks] });
+    renderStudio();
+    openNotificationSessionSpy.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Checks failed on payments-api' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Checks' }));
+    expect(openNotificationSessionSpy).toHaveBeenLastCalledWith({ notification: checks });
+
+    openNotificationSessionSpy.mockClear();
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(openNotificationSessionSpy).toHaveBeenLastCalledWith({ notification: checks });
   });
 
   it('counts every facet and filters by severity from the rail', () => {

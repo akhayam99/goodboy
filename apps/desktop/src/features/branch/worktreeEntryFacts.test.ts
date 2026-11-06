@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun } from '@goodboy/types';
-import { worktreeEntryFactsOf } from './worktreeEntryFacts';
+import { wantsYouFactsOf, worktreeEntryFactsOf } from './worktreeEntryFacts';
 
 const run = (conclusion: PrCheckRun['conclusion']): PrCheckRun => ({
   name: 'lint',
@@ -55,6 +55,7 @@ describe('the facts of the worktree entries', () => {
       tooltip: '12 files · +652 -99',
       diff: { additions: 652, deletions: 99 },
       notPushed: null,
+      countWord: '12 files',
     });
     expect(
       worktreeEntryFactsOf({ ...BASE, files: null, diff: { additions: 4, deletions: 0 } }).files,
@@ -107,10 +108,72 @@ describe('the facts of the worktree entries', () => {
       tooltip: '3 not pushed',
       diff: null,
       notPushed: 3,
+      countWord: '11 commits',
     });
     expect(worktreeEntryFactsOf({ ...BASE, commits: 11, notPushed: 0 }).commits).toMatchObject({
       text: '11',
       notPushed: null,
     });
+  });
+});
+
+describe('the tab badges of the branch page', () => {
+  const quiet = (overrides: Partial<typeof BASE>) =>
+    wantsYouFactsOf({ facts: worktreeEntryFactsOf({ ...BASE, ...overrides }) });
+
+  it('badge only the comments that need you and the checks that fail', () => {
+    const facts = quiet({
+      pullRequestState: 'merged',
+      commentsNeedYou: 3,
+      commits: 4,
+      notPushed: 1,
+      checks: [run('failure')],
+    });
+    const badged = Object.entries(facts)
+      .filter(([, fact]) => fact.text !== null)
+      .map(([tab]) => tab);
+    expect(badged).toEqual(['comments', 'checks']);
+    expect(facts.comments).toEqual(worktreeEntryFactsOf({ ...BASE, commentsNeedYou: 3 }).comments);
+  });
+
+  it('keeps the counts, the diff and the pushed state in the tooltip of a quiet tab', () => {
+    const facts = quiet({
+      commits: 11,
+      notPushed: 3,
+      diff: { additions: 652, deletions: 99 },
+    });
+    expect(facts.files).toEqual({
+      text: null,
+      tone: null,
+      tooltip: '12 files · +652 -99',
+      diff: null,
+      notPushed: null,
+    });
+    expect(facts.commits.tooltip).toBe('11 commits · 3 not pushed');
+    expect(facts.pr.tooltip).toBe('Draft');
+  });
+
+  it('says one file and one commit in the singular', () => {
+    const facts = quiet({ files: 1, commits: 1, notPushed: 1 });
+
+    expect(facts.files.tooltip).toBe('1 file');
+    expect(facts.commits.tooltip).toBe('1 commit · 1 not pushed');
+    expect(quiet({ files: 1, diff: { additions: 2, deletions: 0 } }).files.tooltip).toBe(
+      '1 file · +2 -0',
+    );
+  });
+
+  it('keeps running checks to the tooltip and says nothing when nothing is known', () => {
+    expect(quiet({ checks: [run('pending')] }).checks).toEqual({
+      text: null,
+      tone: null,
+      tooltip: '1 running',
+      diff: null,
+      notPushed: null,
+    });
+    expect(
+      quiet({ files: null, commits: null, pullRequestState: 'open' }).files.tooltip,
+    ).toBeNull();
+    expect(quiet({ pullRequestState: 'open' }).pr.tooltip).toBeNull();
   });
 });

@@ -146,9 +146,7 @@ describe('the u27 Next list scenes', () => {
     ).toHaveLength(1);
     expect(texts.some((text) => text.startsWith('Auto is stuck'))).toBe(false);
     expect(texts.some((text) => text.includes('hl/feat-center-contact-page'))).toBe(false);
-    expect(
-      texts.filter((text) => text.includes('4 review conversations wait for a fix.')),
-    ).toHaveLength(1);
+    expect(texts.filter((text) => text.includes('4 comments to fix'))).toHaveLength(1);
     expect(filledOf({ stack: fix })).toEqual([]);
     expect(cardsOf({ stack })).toHaveLength(13);
   });

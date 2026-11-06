@@ -77,8 +77,14 @@ export const BranchSceneShell = ({
     if (lane !== undefined) {
       applyResolveLaneSeed({ variant: lane });
     }
+    const queue = useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? [];
+    const pushable = queue.filter((entry) => entry.item.approvalState === 'accepted');
     useAppStore.setState({
       preparePublication: async () => PUSH_PREVIEW,
+      ...(openPush && {
+        sessionResolveQueueItems: { [SESSION.id]: pushable },
+        sessionResolveThreads: { [SESSION.id]: pushable.map((entry) => entry.thread) },
+      }),
     });
     setIsReady(true);
   }, []);

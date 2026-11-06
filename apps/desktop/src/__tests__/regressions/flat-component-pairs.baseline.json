@@ -116,7 +116,6 @@
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/PinnedCount.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/ProviderAttentionNotice.tsx": 1,
-  "apps/desktop/src/features/resolve/components/FixCommentsButton.tsx": 1,
   "apps/desktop/src/features/resolve/components/FixRunSummary/FixRunLead.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/PushBanner.tsx": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.tsx": 1,

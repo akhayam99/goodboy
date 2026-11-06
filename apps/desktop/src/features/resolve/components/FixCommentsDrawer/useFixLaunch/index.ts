@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { ResolveCommitStyle, ResolveLaunchMode, SessionId } from '@goodboy/types';
+import type { MountId, ResolveCommitStyle, ResolveLaunchMode, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
 import { sessionResolveStyle } from '../../../../../store/sessionReplySettings';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
 import type { AgentKindRouting } from '../../../../session/agent-kind';
+import { checkWorkLockOf } from '../../../../branch/checks/checkWorkLockOf';
 import { launchChoiceOf } from '../../../launchChoice';
 import { parentResolverOf } from '../../../parentResolverOf';
 import { startBatch } from '../../../startBatch';
@@ -14,6 +15,7 @@ import { fixCommentsAgentName } from '../fixCommentsCopy';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly routing: AgentKindRouting;
   readonly threadIds: ReadonlyArray<string>;
   readonly hint: string;
@@ -21,8 +23,9 @@ type Params = {
   readonly onStarted: () => void;
 };
 
-type FixLaunch = {
+export type FixLaunch = {
   readonly isStarting: boolean;
+  readonly blockedReason: string | null;
   readonly startedMode: ResolveLaunchMode | null;
   readonly error: string | null;
   readonly start: (mode: ResolveLaunchMode) => Promise<void>;
@@ -40,6 +43,7 @@ const storedCommitStyle = ({
 
 export const useFixLaunch = ({
   sessionId,
+  mountId = null,
   routing,
   threadIds,
   hint,
@@ -50,12 +54,18 @@ export const useFixLaunch = ({
   const [startedMode, setStartedMode] = useState<ResolveLaunchMode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const count = threadIds.length;
+  const blockedReason = useAppStore((state) => checkWorkLockOf({ state, sessionId, mountId }));
 
   const start = async (mode: ResolveLaunchMode): Promise<void> => {
     if (startedMode !== null || count === 0) {
       return;
     }
     const state = useAppStore.getState();
+    const lock = checkWorkLockOf({ state, sessionId, mountId });
+    if (lock !== null) {
+      setError(lock);
+      return;
+    }
     const capture =
       hintScope === undefined ? null : captureStartHint({ state, sessionId, scope: hintScope });
     setStartedMode(mode);
@@ -93,5 +103,5 @@ export const useFixLaunch = ({
     }
   };
 
-  return { isStarting: startedMode !== null, startedMode, error, start };
+  return { isStarting: startedMode !== null, blockedReason, startedMode, error, start };
 };

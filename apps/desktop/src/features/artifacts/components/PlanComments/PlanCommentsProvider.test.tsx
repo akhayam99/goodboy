@@ -1,32 +1,48 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { ProviderRunId } from '@goodboy/types';
+import type { ReactNode } from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION, aPlan } from '../../../../test/planFixtures';
 import {
-  PLAN_RUN_ID,
+  PLAN_FIXTURE_AT,
+  PLAN_FIXTURE_ID,
+  PLAN_FIXTURE_SESSION,
+  aPlan,
+} from '../../../../test/planFixtures';
+import {
+  PLAN_IMPLEMENTER,
   aPlanDraft,
   aPlannerQuestion,
   seedPlanDrawer,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
+import { heldDraftStore } from '../../../plans/planComments/heldDraftStore';
+import { trackDraftSave } from '../../../plans/planComments/trackDraftSave';
+import { PartCommentFrame } from './PartCommentFrame';
 import { PlanCommentsProvider } from './PlanCommentsProvider';
 
 type Stubs = Partial<
-  Pick<ReturnType<typeof useAppStore.getState>, 'approveWorkflowRunPlan' | 'sendArtifactComments'>
+  Pick<
+    ReturnType<typeof useAppStore.getState>,
+    'sendArtifactComments' | 'sendArtifactCommentsToAgent'
+  >
 >;
 
 const renderProvider = ({
   seed,
   stubs = {},
   onSent,
+  planOverrides = {},
+  children = <p>the plan</p>,
 }: {
   readonly seed: PlanDrawerSeed;
   readonly stubs?: Stubs;
   readonly onSent?: Parameters<typeof PlanCommentsProvider>[0]['onSent'];
+  readonly planOverrides?: Partial<PlanWithCount>;
+  readonly children?: ReactNode;
 }) => {
   const { plan } = seedPlanDrawer(seed);
   useAppStore.setState(stubs);
@@ -34,24 +50,44 @@ const renderProvider = ({
     <ToastProvider>
       <PlanCommentsProvider
         sessionId={PLAN_FIXTURE_SESSION}
-        plan={{ ...aPlan(), ...plan }}
+        plan={{ ...aPlan(), ...plan, ...planOverrides }}
         onSent={onSent}
       >
-        <p>the plan</p>
+        {children}
       </PlanCommentsProvider>
     </ToastProvider>,
   );
 };
 
-afterEach(cleanup);
+const HELD_PART = { kind: 'part', index: 0, title: 'Backfill the ledger' } as const;
+
+const heldDraftOf = ({ body = 'Split in two' }: { readonly body?: string } = {}) => ({
+  sessionId: PLAN_FIXTURE_SESSION,
+  artifactId: PLAN_FIXTURE_ID,
+  revision: 2,
+  anchor: HELD_PART,
+  body,
+});
+
+afterEach(() => {
+  cleanup();
+  heldDraftStore.clear();
+});
 
 describe('PlanCommentsProvider', () => {
-  it('shows Approve in the bar with no comment when the run waits on the plan', () => {
+  it('shows a hint and no button in the bar when the run waits and nobody commented', () => {
     renderProvider({ seed: { run: 'held' } });
 
     const bar = screen.getByTestId('plan-comment-bar');
-    expect(within(bar).getByRole('button', { name: 'Approve and start Implement' })).toBeDefined();
-    expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
+    expect(within(bar).queryByRole('button')).toBeNull();
+    within(bar).getByText('Select text or click a block to comment');
+  });
+
+  it('never draws Approve in the bar, with comments or without', () => {
+    renderProvider({ seed: { run: 'held', drafts: [aPlanDraft()] } });
+
+    expect(screen.queryByRole('button', { name: /Approve/ })).toBeNull();
+    expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
   it('shows no bar for a plan nothing waits on and nobody commented', () => {
@@ -77,38 +113,6 @@ describe('PlanCommentsProvider', () => {
     expect(screen.queryByRole('button', { name: 'Approve and start Implement' })).toBeNull();
   });
 
-  it('approves the held run from the bar without asking when nothing is unsent', async () => {
-    const approve = vi.fn(async () => ({
-      kind: 'approved' as const,
-      next: 'continues' as const,
-      agentId: null,
-    }));
-    renderProvider({ seed: { run: 'held' }, stubs: { approveWorkflowRunPlan: approve } });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Implement' }));
-
-    await waitFor(() => expect(approve).toHaveBeenCalledWith(PLAN_FIXTURE_SESSION, PLAN_RUN_ID));
-    expect(await screen.findByText('Plan approved')).toBeDefined();
-  });
-
-  it('asks first when comments are unsent, and approves once confirmed', async () => {
-    const approve = vi.fn(async () => ({
-      kind: 'approved' as const,
-      next: 'continues' as const,
-      agentId: null,
-    }));
-    renderProvider({
-      seed: { run: 'held', drafts: [aPlanDraft()] },
-      stubs: { approveWorkflowRunPlan: approve },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Approve and start Implement' }));
-    expect(approve).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Approve anyway' }));
-
-    await waitFor(() => expect(approve).toHaveBeenCalledTimes(1));
-  });
-
   it('tells the page what the planner did after Send', async () => {
     const onSent = vi.fn();
     renderProvider({
@@ -120,6 +124,312 @@ describe('PlanCommentsProvider', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
 
     await waitFor(() => expect(onSent).toHaveBeenCalledWith({ kind: 'unchanged' }));
+  });
+
+  describe('after the plan ran', () => {
+    const RAN: Partial<PlanWithCount> = {
+      status: 'consumed',
+      consumptionCount: 1,
+      lastConsumer: { agentId: PLAN_IMPLEMENTER, name: 'Implement' },
+    };
+
+    const sentToAgent = () =>
+      vi.fn(async () => ({ kind: 'sentToAgent' as const, agentName: 'Implement' }));
+
+    it('reads not sent, with Copy and Send to the agent that can still read them', () => {
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        planOverrides: RAN,
+      });
+
+      const bar = screen.getByTestId('plan-comment-bar');
+      within(bar).getByText('1 comment not sent');
+      within(bar).getByText('Implement can still read them.');
+      within(bar).getByRole('button', { name: 'Copy' });
+      within(bar).getByRole('button', { name: 'Send to Implement' });
+      expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
+    });
+
+    it('sends to the agent and says where they went', async () => {
+      const send = sentToAgent();
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactCommentsToAgent: send },
+        planOverrides: RAN,
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId: PLAN_FIXTURE_SESSION }),
+      );
+    });
+
+    it('falls back to a filled Copy when the agent is stopped', async () => {
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        planOverrides: RAN,
+      });
+      useAppStore.setState((state) => ({
+        sessionPhaseRuns: {
+          [PLAN_FIXTURE_SESSION]: (state.sessionPhaseRuns[PLAN_FIXTURE_SESSION] ?? []).map(
+            (agent) => (agent.id === PLAN_IMPLEMENTER ? { ...agent, status: 'stopped' } : agent),
+          ),
+        },
+      }));
+
+      const bar = screen.getByTestId('plan-comment-bar');
+      await within(bar).findByText("Implement isn't running. Copy them instead.");
+      expect(within(bar).queryByRole('button', { name: 'Send to Implement' })).toBeNull();
+      expect(within(bar).getByRole('button', { name: 'Copy' }).getAttribute('data-variant')).toBe(
+        'primary',
+      );
+    });
+
+    it('copies the comments as one request to read', async () => {
+      const copied: Array<string> = [];
+      const writeText = vi.fn(async (text: string) => {
+        copied.push(text);
+      });
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        planOverrides: RAN,
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      expect(copied[0]).toContain('The owner left these comments');
+    });
+
+    it('shows the failure and keeps the comments when the send fails', async () => {
+      const failed = vi.fn(async () => ({
+        kind: 'failed' as const,
+        reason: 'The agent did not answer',
+      }));
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactCommentsToAgent: failed },
+        planOverrides: RAN,
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+
+      expect((await screen.findByRole('alert')).textContent).toBe('The agent did not answer');
+      screen.getByRole('button', { name: 'Send to Implement' });
+    });
+  });
+
+  it('saves a typed comment once when its own Comment button is pressed again', async () => {
+    const add = vi.fn(async () => null);
+    useAppStore.setState({ addArtifactComment: add });
+    renderProvider({
+      seed: { run: 'held' },
+      children: (
+        <PartCommentFrame index={0} title="Backfill the ledger">
+          row
+        </PartCommentFrame>
+      ),
+    });
+    const button = screen.getByRole('button', { name: 'Comment on part 1' });
+    fireEvent.click(button);
+    const box = screen.getByLabelText('Comment for the planner');
+    fireEvent.change(box, { target: { value: 'Split in two' } });
+
+    fireEvent.pointerDown(button);
+    fireEvent.blur(box, { relatedTarget: button });
+    fireEvent.click(button);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByLabelText('Comment for the planner')).toBeNull());
+    expect(add).toHaveBeenCalledTimes(1);
+  });
+
+  describe('with a comment still being saved', () => {
+    const RAN_AGENT: Partial<PlanWithCount> = {
+      status: 'consumed',
+      consumptionCount: 1,
+      lastConsumer: { agentId: PLAN_IMPLEMENTER, name: 'Implement' },
+    };
+
+    const pendingSave = () => {
+      let settle: (outcome: 'saved' | 'failed') => void = () => undefined;
+      const save = new Promise<void>((resolve, reject) => {
+        settle = (outcome) => (outcome === 'saved' ? resolve() : reject(new Error('Locked')));
+      });
+      trackDraftSave({ save, draft: heldDraftOf() });
+      return { settle, save };
+    };
+
+    it('sends to the planner only after the save', async () => {
+      const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
+      renderProvider({
+        seed: { run: 'held', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactComments: send },
+      });
+      const pending = pendingSave();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      await act(async () => undefined);
+      expect(send).not.toHaveBeenCalled();
+      pending.settle('saved');
+
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    });
+
+    it('does not send to the planner when the save failed', async () => {
+      vi.useFakeTimers();
+      try {
+        const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
+        renderProvider({
+          seed: { run: 'held', drafts: [aPlanDraft()] },
+          stubs: { sendArtifactComments: send },
+        });
+        const pending = pendingSave();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+        pending.settle('failed');
+        await vi.advanceTimersByTimeAsync(50);
+
+        expect(send).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('sends to the agent only after the save', async () => {
+      const send = vi.fn(async () => ({ kind: 'sentToAgent' as const, agentName: 'Implement' }));
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactCommentsToAgent: send },
+        planOverrides: RAN_AGENT,
+      });
+      const pending = pendingSave();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+      await act(async () => undefined);
+      expect(send).not.toHaveBeenCalled();
+      pending.settle('saved');
+
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    });
+
+    it('copies only after the save', async () => {
+      const writeText = vi.fn(async () => undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        planOverrides: RAN_AGENT,
+      });
+      const pending = pendingSave();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+      await act(async () => undefined);
+      expect(writeText).not.toHaveBeenCalled();
+      pending.settle('saved');
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  describe('a comment that could not be saved', () => {
+    const failingAdd = () => vi.fn(async () => Promise.reject(new Error('The database is locked')));
+
+    const partFrame = (
+      <PartCommentFrame index={0} title="Backfill the ledger">
+        row
+      </PartCommentFrame>
+    );
+
+    it('keeps its text, plan, revision and anchor after the box went away, and brings it back', async () => {
+      useAppStore.setState({ addArtifactComment: failingAdd() });
+      const view = renderProvider({ seed: { run: 'held' }, children: partFrame });
+      fireEvent.click(screen.getByRole('button', { name: 'Comment on part 1' }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      view.unmount();
+
+      await waitFor(() =>
+        expect(heldDraftStore.allFor({ artifactId: PLAN_FIXTURE_ID })).toEqual([heldDraftOf()]),
+      );
+      const add = vi.fn(async () => null);
+      useAppStore.setState({ addArtifactComment: add });
+      renderProvider({ seed: { run: 'held' }, children: partFrame });
+
+      const box = await screen.findByLabelText('Comment for the planner');
+      expect(box).toHaveProperty('value', 'Split in two');
+      fireEvent.blur(box);
+
+      await waitFor(() =>
+        expect(add).toHaveBeenCalledWith(
+          expect.objectContaining({
+            artifactId: PLAN_FIXTURE_ID,
+            revision: 2,
+            anchor: HELD_PART,
+            body: 'Split in two',
+          }),
+        ),
+      );
+      await waitFor(() =>
+        expect(heldDraftStore.hasFor({ artifactId: PLAN_FIXTURE_ID })).toBe(false),
+      );
+      await waitFor(() => expect(screen.queryByLabelText('Comment for the planner')).toBeNull());
+    });
+
+    it('is dropped with Cancel and no longer blocks the plan', async () => {
+      useAppStore.setState({ addArtifactComment: failingAdd() });
+      const view = renderProvider({ seed: { run: 'held' }, children: partFrame });
+      fireEvent.click(screen.getByRole('button', { name: 'Comment on part 1' }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+      view.unmount();
+      await waitFor(() =>
+        expect(heldDraftStore.hasFor({ artifactId: PLAN_FIXTURE_ID })).toBe(true),
+      );
+      renderProvider({ seed: { run: 'held' }, children: partFrame });
+      await screen.findByLabelText('Comment for the planner');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(heldDraftStore.hasFor({ artifactId: PLAN_FIXTURE_ID })).toBe(false);
+      await waitFor(() => expect(screen.queryByLabelText('Comment for the planner')).toBeNull());
+    });
+
+    it('still blocks Send to planner on the next press', async () => {
+      const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
+      renderProvider({
+        seed: { run: 'held', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactComments: send },
+      });
+      heldDraftStore.hold({ draft: heldDraftOf() });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      await act(async () => undefined);
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      await act(async () => undefined);
+
+      expect(send).not.toHaveBeenCalled();
+    });
+  });
+
+  it('offers only Copy for a plan that ran with no agent to send to', () => {
+    renderProvider({
+      seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+      planOverrides: { status: 'consumed', consumptionCount: 1, lastConsumer: null },
+    });
+
+    const bar = screen.getByTestId('plan-comment-bar');
+    within(bar).getByText('1 comment not sent');
+    within(bar).getByText('No agent to send them to. Copy them instead.');
+    expect(within(bar).getByRole('button', { name: 'Copy' }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
+    expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
   });
 
   it('makes Send wait while the planner has a question open', () => {

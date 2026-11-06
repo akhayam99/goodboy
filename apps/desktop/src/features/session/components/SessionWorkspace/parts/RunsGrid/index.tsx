@@ -7,7 +7,6 @@ import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentRe
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
-import { openSpawned } from '../../../../openSpawned';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import type { SessionRun } from '../../../../sessionRunsOf';
@@ -84,7 +83,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
         navigate({ to: runPlace({ sessionId, runId: run.open.runId }) });
         return;
       case 'auto':
-        openSpawned({ sessionId, target: { kind: 'agent', agentId: run.open.agentId } });
+        navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });
         return;
       case 'agent':
         navigate({ to: agentPlace({ sessionId, agentId: run.open.agentId }) });

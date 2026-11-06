@@ -1,13 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { AgentId, OpenQuestionId, SearchHit, SessionId } from '@goodboy/types';
+import type { AgentId, SearchHit, SessionId } from '@goodboy/types';
 import { TEST_NOW, anAgent, aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store/store';
 import { AGENT_KIND } from '../actions/kinds/agent';
 import { MESSAGE_KIND } from '../actions/kinds/message';
 import type { ActionEnv } from '../actions/types';
-import { useOpenAgentQuestion } from '../context/hooks/useOpenAgentQuestion';
 import { openNotificationSession } from '../notifications/openNotificationSession';
 import { openSearchHit } from '../search/openSearchHit';
 import { useBoardNavigation } from '../workspace/components/StageBoard/useBoardNavigation';
@@ -27,7 +26,6 @@ vi.mock('../../shared/lib/db', async () =>
 const SESSION = 'session-ledger-core' as SessionId;
 const BUILDER = 'agent-builder' as AgentId;
 const REVIEWER = 'agent-reviewer' as AgentId;
-const QUESTION = 'question-1' as OpenQuestionId;
 
 const env: ActionEnv = {
   getState: () => useAppStore.getState(),
@@ -133,13 +131,6 @@ const DOORS: ReadonlyArray<Door> = [
     open: async (agentId) => {
       openNotificationSession({ notification: notificationFor(agentId) });
       await vi.waitFor(() => expect(useAppStore.getState().selectedAgentId[SESSION]).toBe(agentId));
-    },
-  },
-  {
-    name: 'a question the agent asked',
-    open: (agentId) => {
-      const { result } = renderHook(() => useOpenAgentQuestion({ sessionId: SESSION }));
-      result.current({ question: { id: QUESTION, createdByAgentId: agentId } });
     },
   },
   {

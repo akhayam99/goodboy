@@ -70,7 +70,7 @@ describe('a rebase job while it runs', () => {
 
   it('moves the branch, then updates the online copy', () => {
     expect(job({ phase: 'applying' })?.line).toBe('Moving the branch. A backup is saved first.');
-    expect(job({ phase: 'pushing' })?.line).toBe('Updating the online copy with a safe force push');
+    expect(job({ phase: 'pushing' })?.line).toBe('Updating origin with a safe force push');
   });
 
   it('says who it waits for', () => {
@@ -121,7 +121,7 @@ describe('a rebase job that stopped', () => {
     [
       'the rewriter stuck',
       { reason: 'stuck', files: ['webhook.ts'] },
-      'History rewriter needs you',
+      'The rebase needs you',
       "It couldn't merge webhook.ts.",
       'Stopped: needs you',
     ],
@@ -178,7 +178,7 @@ describe('a rebase job that stopped', () => {
         message: 'To github.com:acme/payments-api.git (pre-receive hook declined)',
       },
       'Rebased, but the push failed',
-      'The online copy was not updated.',
+      'Origin was not updated.',
       'Stopped: push failed',
     ],
     [
@@ -203,7 +203,7 @@ describe('a rebase job that stopped', () => {
       'a push with no output',
       { reason: 'push-failed', message: '' },
       'Rebased, but the push failed',
-      'The online copy was not updated.',
+      'Origin was not updated.',
       'Stopped: push failed',
     ],
   ];

@@ -390,7 +390,7 @@ describe('settleBranchPushFix', () => {
     expect(read().reportError).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Couldn't push the fix.",
-        error: 'The online copy changed. Check again before force pushing.',
+        error: 'Origin changed. Check again before force pushing.',
         recovery: { clause: 'work-kept' },
       }),
     );
@@ -731,7 +731,7 @@ describe('prefillBranchPushTerminal', () => {
         ...input({ isForce: true }),
         confirmedRemoteSha: 'remote-sha',
       }),
-    ).rejects.toThrow('The online copy changed. Check again before force pushing.');
+    ).rejects.toThrow('Origin changed. Check again before force pushing.');
     expect(addTerminalTab).not.toHaveBeenCalled();
   });
 
@@ -751,7 +751,7 @@ describe('prefillBranchPushTerminal', () => {
         confirmedOnlyOnline: ['early-commit'],
         confirmedRemoteSha: 'remote-sha',
       }),
-    ).rejects.toThrow('The online copy changed. Check again before force pushing.');
+    ).rejects.toThrow('Origin changed. Check again before force pushing.');
     expect(addTerminalTab).not.toHaveBeenCalled();
   });
 });

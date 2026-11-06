@@ -1118,20 +1118,23 @@ own **Open in Artifacts**.
   filled **Approve**, `run` a filled **Run plan**, `disabled` the same button
   off with its reason printed beside it, `none` no button (the chip says
   Approved or Running). With unsent comments the kind stays, the button turns
-  secondary and the comment bar's **Send to planner** is the one filled
-  button; pressing **Approve** then asks inline "3 comments are not sent.
-  Approve anyway?". In the drawer the header primary is the only **Approve**:
-  the comment bar holds **Send to planner** and, with no comment, the hint
-  "Select text or click a block to comment". The Artifacts page keeps a
-  secondary **Approve** in its bar (`isApproveInBar`), because its header
-  scrolls away. An open question the planner asked turns the primary off with
+  secondary, in the drawer and on the Artifacts page alike (the action carries
+  `isSecondary`), and the comment bar's **Send to planner** is the one filled
+  button; pressing **Approve** or **Run plan** then asks inline "Approve without
+  your 3 comments?" or "Run without your 3 comments?", with **Approve anyway**
+  or **Run anyway**. One function, `unsentCommentsConfirmOf`, writes that
+  question for the primary button, for `artifact.runPlan` and for the **Start
+  implementer** next step (`SuggestionAction.confirm`). The header
+  primary is the only **Approve** on either surface: the comment bar holds
+  **Send to planner** and, with no comment, the hint "Select text or click a
+  block to comment". An open question the planner asked turns the primary off with
   "The planner asked a question. Answer it first." (`plannerQuestionCount` in
   `planPrimaryOf`); the chip then reads **Needs you** with "waiting for your
   answer", never "Revising", because the planner is not writing (a revising
   turn is a running turn, a question is an open one). The palette, the menu and
   the Artifacts page run the same rule: `artifact.runPlan` reads
   `plannerQuestionCount` from its facts for the same off reason, and asks the
-  same "N comments are not sent. Approve anyway?" before it approves.
+  same unsent-comments question before it approves or runs.
   **Run plan** on a session plan is `usePlanRun` and its own toast. A plan a
   live run owns is never offered as **Run plan**, **Start implementer** or a chat
   nudge by any surface: the primary, the Overview Next card
@@ -1149,7 +1152,7 @@ own **Open in Artifacts**.
 - **A plan Auto holds.** `planHandoffOf` reads `auto-approved` when the
   plan's `auto_artifacts` row is `approved` and no step consumed it. The chip
   reads **Approved** with "Auto works from this plan", the Artifacts list files
-  it under Consumed, and there is no Run plan. A held plan still waiting on
+  it under Used, and there is no Run plan. A held plan still waiting on
   approval keeps its state.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not

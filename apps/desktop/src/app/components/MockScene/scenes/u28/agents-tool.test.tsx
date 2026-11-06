@@ -67,33 +67,32 @@ const labelsOf = async (): Promise<ReadonlyArray<string>> => {
     .map((item) => item.getAttribute('aria-label') ?? '');
 };
 
-describe('the Agents tool lists every agent', () => {
-  it('shows three loose agents with their state words, newest first', async () => {
+describe('the Agents tool lists what is live', () => {
+  it('shows the loose agents still at work and leaves the finished one to Runs', async () => {
     mount('u28-agents-tool-loose');
 
     const labels = await labelsOf();
 
-    expect(labels).toHaveLength(3);
+    expect(labels).toHaveLength(2);
     expect(labels[0]).toMatch(/Trace the retried webhook in payments-api, Running$/);
     expect(labels[1]).toMatch(/Tidy the Cascadia fixtures, Blocked$/);
-    expect(labels[2]).toMatch(/Review the notify-relay backoff change, Done$/);
-    expect(screen.queryByText('No agents in this session yet')).toBeNull();
+    expect(screen.queryByText('Nothing live right now')).toBeNull();
+    expect(screen.queryByText(/Review the notify-relay backoff change/)).toBeNull();
   });
 
-  it('says plainly that the session has no agents yet', async () => {
+  it('says plainly that nothing is live', async () => {
     mount('u28-agents-tool-empty');
 
-    await screen.findByText('No agents in this session yet', undefined, WAIT);
-    expect(screen.queryByText('Nothing launched yet')).toBeNull();
+    await screen.findByText('Nothing live right now', undefined, WAIT);
     expect(screen.queryByRole('tree', { name: 'Launches' })).toBeNull();
   });
 
-  it('keeps the selected row selected when its state changes', async () => {
+  it('drops a row from the list when its agent finishes', async () => {
     mount('u28-agents-tool-loose');
     await labelsOf();
     const runnerRow = () =>
       screen
-        .getAllByRole('treeitem')
+        .queryAllByRole('treeitem')
         .find((item) => (item.getAttribute('aria-label') ?? '').includes('Trace the retried'));
 
     expect(runnerRow()?.getAttribute('aria-selected')).toBe('true');
@@ -114,8 +113,7 @@ describe('the Agents tool lists every agent', () => {
       });
     });
 
-    expect(runnerRow()?.getAttribute('aria-selected')).toBe('true');
-    expect(runnerRow()?.getAttribute('aria-label')).toMatch(/, Done$/);
+    expect(runnerRow()).toBeUndefined();
   });
 
   it('opens a loose agent in the center and keeps the panel open', async () => {
@@ -123,14 +121,20 @@ describe('the Agents tool lists every agent', () => {
     await labelsOf();
     const row = screen
       .getAllByRole('treeitem')
-      .find((item) => (item.getAttribute('aria-label') ?? '').includes('Review the notify-relay'));
+      .find((item) => (item.getAttribute('aria-label') ?? '').includes('Tidy the Cascadia'));
     if (row === undefined) {
-      throw new Error('no reviewer row');
+      throw new Error('no blocked row');
     }
 
     fireEvent.click(row);
 
     expect(store.getState().drawer?.kind).toBe('spawned');
-    expect(store.getState().selectedAgentId[AGENTS_TOOL_SESSION_ID]).toBe(AGENTS_TOOL_REVIEWER_ID);
+    expect(store.getState().selectedAgentId[AGENTS_TOOL_SESSION_ID]).not.toBe(
+      AGENTS_TOOL_RUNNER_ID,
+    );
+    expect(store.getState().selectedAgentId[AGENTS_TOOL_SESSION_ID]).not.toBe(
+      AGENTS_TOOL_REVIEWER_ID,
+    );
+    expect(store.getState().selectedAgentId[AGENTS_TOOL_SESSION_ID]).not.toBeNull();
   });
 });

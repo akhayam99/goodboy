@@ -109,7 +109,7 @@ describe('AgentTitle', () => {
       />,
     );
 
-    expect(screen.getByText('Fix run · #318 · 3 threads')).toBeDefined();
+    expect(screen.getByText('Fix run · #318 · 3 comments')).toBeDefined();
     expect(screen.queryByText(/^Resolve:/)).toBeNull();
   });
 

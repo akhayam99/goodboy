@@ -131,19 +131,19 @@ describe('agentHomeLens', () => {
     ).toBe('workflows');
   });
 
-  it('routes a cluster child without a step binding to agents', () => {
+  it('routes a cluster child without a step binding to the Runs page', () => {
     expect(agentHomeLens({ agent: agentOf({ workflowRunId: WF }), kind: 'implementer' })).toBe(
-      'agents',
+      'workflows',
     );
   });
 
-  it('routes a scout sub-agent without a step binding to agents', () => {
+  it('routes a scout sub-agent without a step binding to the Runs page', () => {
     expect(
       agentHomeLens({
         agent: agentOf({ workflowRunId: WF, parentAgentId: 'p1' as AgentId }),
         kind: 'scout',
       }),
-    ).toBe('agents');
+    ).toBe('workflows');
   });
 
   it('routes a resolver without a step binding to resolve', () => {
@@ -156,17 +156,17 @@ describe('agentHomeLens', () => {
     expect(agentHomeLens({ agent: agentOf({}), kind: 'resolver' })).toBe('review');
   });
 
-  it('routes a hand-spawned agent (no workflowRunId, non-resolver) to agents', () => {
-    expect(agentHomeLens({ agent: agentOf({}), kind: 'generic' })).toBe('agents');
-    expect(agentHomeLens({ agent: agentOf({}), kind: 'scout' })).toBe('agents');
+  it('routes a hand-spawned agent (no workflowRunId, non-resolver) to the Runs page', () => {
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'generic' })).toBe('workflows');
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'scout' })).toBe('workflows');
   });
 
-  it('routes an Auto agent to Auto agents, never to Agents', () => {
-    expect(agentHomeLens({ agent: agentOf({}), kind: 'auto' })).toBe('auto');
+  it('routes an Auto agent to the Runs page, where Auto lives', () => {
+    expect(agentHomeLens({ agent: agentOf({}), kind: 'auto' })).toBe('workflows');
   });
 
-  it('does not route to workflows on stepId alone when workflowRunId is absent', () => {
-    expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'generic' })).toBe('agents');
+  it('routes a resolver with only a stepId to review, and any other agent to Runs', () => {
+    expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'generic' })).toBe('workflows');
     expect(agentHomeLens({ agent: agentOf({ stepId: STEP }), kind: 'resolver' })).toBe('review');
   });
 });

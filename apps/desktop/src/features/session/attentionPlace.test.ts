@@ -1,12 +1,14 @@
 // @vitest-environment node
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   brandId,
   type Agent,
   type AgentId,
   type IsoDateTime,
+  type MountId,
   type ProviderRunId,
+  type ResolveThread,
   type SessionAttentionReason,
   type SessionId,
   type StepId,
@@ -17,13 +19,17 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
+import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
 import { aView } from '../auto/testing/autoViewFixtures';
 import { attentionPlace } from './attentionPlace';
+import type { NotificationPlaceReason } from './notificationPlaceReason';
 
-const SESSION_ID = 'session-now' as SessionId;
-const EARLIER = 'agent-earlier' as AgentId;
-const LATEST = 'agent-latest' as AgentId;
-const AT = '2026-10-04T08:00:00.000Z' as IsoDateTime;
+const SESSION_ID = brandId<SessionId>({ value: 'session-now' });
+const EARLIER = brandId<AgentId>({ value: 'agent-earlier' });
+const LATEST = brandId<AgentId>({ value: 'agent-latest' });
+const AT = brandId<IsoDateTime>({ value: '2026-10-04T08:00:00.000Z' });
+const LEDGER_MOUNT = brandId<MountId>({ value: 'mount-ledger-core' });
 
 type BlockedViewParams = {
   readonly rootAgentId: AgentId;
@@ -52,15 +58,15 @@ const AGENTS: ReadonlyArray<Agent> = [
 ];
 
 const HELD = aWorkflowRun({
-  id: 'run-held' as WorkflowRunId,
+  id: brandId<WorkflowRunId>({ value: 'run-held' }),
   orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
 });
 const DISCARDED = aWorkflowRun({
-  id: 'run-discarded' as WorkflowRunId,
+  id: brandId<WorkflowRunId>({ value: 'run-discarded' }),
   orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
   discardedAt: AT,
 });
-const RUNNING = aWorkflowRun({ id: 'run-going' as WorkflowRunId });
+const RUNNING = aWorkflowRun({ id: brandId<WorkflowRunId>({ value: 'run-going' }) });
 
 const state = {
   sessions: [aSession({ id: SESSION_ID, workflowRuns: [DISCARDED, RUNNING, HELD] })],
@@ -68,12 +74,12 @@ const state = {
   agentTurnState: {
     [EARLIER]: {
       kind: 'blocked',
-      runId: 'run-earlier' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-earlier' }),
       blockedAt: AT,
     } satisfies TurnState,
     [LATEST]: {
       kind: 'blocked',
-      runId: 'run-latest' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-latest' }),
       blockedAt: AT,
     } satisfies TurnState,
   },
@@ -86,7 +92,84 @@ type DestinationParams = {
 const destination = ({ reason }: DestinationParams) =>
   attentionPlace({ state, sessionId: SESSION_ID, reason });
 
+const questionOf = (id: string): OpenQuestion => ({
+  id: brandId<OpenQuestionId>({ value: id }),
+  sessionId: SESSION_ID,
+  text: 'Which ledger?',
+  suggestedAnswers: [],
+  isBlocking: false,
+  userAnswer: null,
+  status: 'open',
+  createdAt: AT,
+});
+
+const delegateOf = (questionId: string): Agent => ({
+  ...agent({ id: brandId<AgentId>({ value: 'agent-delegate' }), ordinal: 3, status: 'running' }),
+  sourceKind: 'open_question',
+  sourceThreadId: questionId,
+});
+
+const questionDestination = (agents: ReadonlyArray<Agent>) =>
+  attentionPlace({
+    state: {
+      ...state,
+      sessionPhaseRuns: { [SESSION_ID]: agents },
+      sessionOpenQuestions: { [SESSION_ID]: [questionOf('q1'), questionOf('q2')] },
+    },
+    sessionId: SESSION_ID,
+    reason: 'open-question',
+  });
+
+afterEach(() => {
+  useOpenQuestions.setState({ staged: [] });
+});
+
+type WaitingParams = {
+  readonly id: string;
+  readonly originKind: ResolveThread['originKind'];
+};
+
+const waitingThread = ({ id, originKind }: WaitingParams): ResolveThread => ({
+  id,
+  sessionId: SESSION_ID,
+  projectId: null,
+  prNumber: null,
+  threadId: id,
+  originKind,
+  diffCommentId: null,
+  state: 'needs_answer',
+  stage: 'asking',
+  stateReason: null,
+  revision: 1,
+  generation: 1,
+  reopenedFromThreadId: null,
+  activeAttemptId: null,
+  disposition: null,
+  replyDraft: null,
+  commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
+  question: null,
+  replyPostedAt: null,
+  replyId: null,
+  githubResolved: null,
+  closedAt: null,
+  closedSource: null,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
 describe('attentionPlace', () => {
+  it('skips a delegated question and a staged one when it picks the question to open', () => {
+    expect(questionDestination([delegateOf('q1')])).toMatchObject({
+      view: { target: { kind: 'question', questionId: 'q2' } },
+    });
+    useOpenQuestions.setState({ staged: [brandId<OpenQuestionId>({ value: 'q2' })] });
+    expect(questionDestination([delegateOf('q1')])).toMatchObject({
+      view: { lens: 'questions', target: null },
+    });
+  });
+
   it('opens the questions lens for an open question', () => {
     expect(destination({ reason: 'open-question' })).toMatchObject({
       at: 'session',
@@ -109,6 +192,78 @@ describe('attentionPlace', () => {
       });
     },
   );
+
+  it.each([
+    ['ci-failed', 'checks'],
+    ['push-failed', 'comments'],
+    ['fix-needs-you', 'comments'],
+    ['pr-approved', 'pr'],
+    ['pr-opened', 'pr'],
+    ['history-stopped', 'commits'],
+  ] satisfies ReadonlyArray<readonly [NotificationPlaceReason, string]>)(
+    'names the branch of a mount for %s',
+    (reason, tab) => {
+      const mounted = {
+        ...state,
+        sessionProjectMounts: {
+          [SESSION_ID]: [
+            {
+              mountId: LEDGER_MOUNT,
+              worktreePath: null,
+              lastWorktreePath: '/work/ledger-core',
+            },
+          ],
+        },
+      };
+
+      expect(
+        attentionPlace({
+          state: mounted,
+          sessionId: SESSION_ID,
+          reason,
+          mountId: LEDGER_MOUNT,
+        }),
+      ).toMatchObject({
+        at: 'session',
+        view: { lens: 'branch', target: { kind: 'branch', mountPath: '/work/ledger-core', tab } },
+      });
+    },
+  );
+
+  it.each([
+    ['note', 'files'],
+    ['comment', 'comments'],
+  ] as const)(
+    'lands a fix notice about a %s on %s even when the other kind needs you too',
+    (subject, tab) => {
+      const mixed = {
+        ...state,
+        sessionResolveThreads: {
+          [SESSION_ID]: [
+            waitingThread({ id: 'thread-comment', originKind: 'review_comment' }),
+            waitingThread({ id: 'thread-note', originKind: 'diff_comment' }),
+          ],
+        },
+      };
+
+      expect(
+        attentionPlace({ state: mixed, sessionId: SESSION_ID, reason: 'fix-needs-you', subject }),
+      ).toMatchObject({ view: { lens: 'branch', target: { kind: 'branch', tab } } });
+    },
+  );
+
+  it('opens the branch with no path when the mount is gone', () => {
+    expect(
+      attentionPlace({
+        state,
+        sessionId: SESSION_ID,
+        reason: 'ci-failed',
+        mountId: brandId<MountId>({ value: 'mount-removed' }),
+      }),
+    ).toMatchObject({
+      view: { lens: 'branch', target: { kind: 'branch', mountPath: null, tab: 'checks' } },
+    });
+  });
 
   it('opens the page of the run that holds the plan, skipping a discarded one', () => {
     expect(destination({ reason: 'plan-approval' })).toMatchObject({

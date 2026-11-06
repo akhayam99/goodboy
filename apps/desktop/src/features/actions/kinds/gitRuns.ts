@@ -59,7 +59,7 @@ export const forcePushConfirm = ({ onlyOnline }: ForceConfirmParams): ActionConf
   const lost = onlyOnline ?? [];
   if (lost.length > 0) {
     return {
-      title: `Replace the online copy and drop ${countNoun({ count: lost.length, one: 'commit', many: 'commits' })}?`,
+      title: `Replace the branch on origin and drop ${countNoun({ count: lost.length, one: 'commit', many: 'commits' })}?`,
       description: 'These exist only online and are lost if you force push.',
       notes: lostCommitsNotes({ subjects: lost.map((commit) => commit.subject) }),
       confirmLabel: 'Force push anyway',
@@ -67,11 +67,11 @@ export const forcePushConfirm = ({ onlyOnline }: ForceConfirmParams): ActionConf
     };
   }
   return {
-    title: 'Replace the online copy?',
+    title: 'Replace the branch on origin?',
     description:
       onlyOnline === null
-        ? 'This machine has not checked the online copy yet. Anything pushed there since is lost.'
-        : 'The online copy has no commits you lack. Nothing online is lost.',
+        ? 'This machine has not checked origin yet. Anything pushed there since is lost.'
+        : 'Origin has no commits you lack. Nothing there is lost.',
     confirmLabel: 'Force push',
     role: 'danger',
   };
@@ -94,7 +94,7 @@ export const pushDoneLabel = ({ facts }: PushParams): string => {
 
 export const pushDescription = ({ facts }: PushParams): string | null =>
   facts.isDiverged
-    ? 'Your branch and the online copy differ. Force push replaces the online copy (with lease).'
+    ? 'Your branch and origin differ. Force push replaces the branch on origin (with lease).'
     : null;
 
 const refreshWorktreeStatus = async ({ worktreePath, baseBranch }: StatusParams): Promise<void> => {

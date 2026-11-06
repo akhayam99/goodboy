@@ -1,10 +1,13 @@
+import type { UnsentCommentsConfirm } from '../../../../plans/unsentCommentsConfirmOf';
 import { useCallback, useRef, useState } from 'react';
 import type { ConfirmRole } from '@goodboy/ui';
 import type { MountId, Session } from '@goodboy/types';
+import { NAMES } from '../../../../../shared/utils/names';
 import {
   EMPTY_ARRAY,
   agentPlace,
   branchPlace,
+  questionPlace,
   sessionPlace,
   useAppStore,
 } from '../../../../../store';
@@ -34,7 +37,6 @@ import { foldSecondVerb } from '../foldSecondVerb';
 import { foldVerbs } from '../foldVerbs';
 import { foldedVerbOf } from '../foldedVerbOf';
 import { suggestionPlaceOf } from '../suggestionPlaceOf';
-import { isRunEntryFinished } from '../../done/outcomeLineOf';
 import { useOpenNeedsYou } from '../useOpenNeedsYou';
 
 type Params = {
@@ -45,8 +47,10 @@ export type CardVerb = {
   readonly label: string;
   readonly ariaLabel: string | undefined;
   readonly isDisabled: boolean;
+  readonly blockedReason?: string;
   readonly isBusy: boolean;
   readonly confirmRole: ConfirmRole | null;
+  readonly confirm: UnsentCommentsConfirm | null;
   readonly hasPicker: boolean;
   readonly run: () => void;
 };
@@ -113,7 +117,9 @@ type VerbParams = {
   readonly run: () => void;
   readonly isBusy?: boolean;
   readonly isDisabled?: boolean;
+  readonly blockedReason?: string;
   readonly confirmRole?: ConfirmRole | null;
+  readonly confirm?: UnsentCommentsConfirm | null;
   readonly hasPicker?: boolean;
 };
 
@@ -185,14 +191,18 @@ const verbOf = ({
   run,
   isBusy = false,
   isDisabled = false,
+  blockedReason,
   confirmRole = null,
+  confirm = null,
   hasPicker = false,
 }: VerbParams): CardVerb => ({
   label,
   ariaLabel,
   isDisabled,
+  ...(blockedReason !== undefined && { blockedReason }),
   isBusy,
   confirmRole,
+  confirm,
   hasPicker,
   run,
 });
@@ -201,7 +211,6 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const navigate = useAppStore((s) => s.navigate);
-  const openDrawer = useAppStore((state) => state.openDrawer);
   const loadAutoTrees = useAppStore((s) => s.loadAutoTrees);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const isAutoOn = useIsAutoOn();
@@ -289,40 +298,12 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   const openAuto = ({ target }: AutoParams) =>
     navigate({ to: agentPlace({ sessionId, agentId: target.rootAgentId }) });
 
-  const resultVerbOf = ({ owner }: OwnerParams): CardVerb | null => {
-    const entry = owner.item?.entry;
-    if (owner.question === null || entry == null) {
-      return null;
-    }
-    const isFinished =
-      entry.kind === 'run'
-        ? isRunEntryFinished({ entry })
-        : entry.kind === 'agent' && entry.agent.status === 'completed';
-    if (!isFinished) {
-      return null;
-    }
-    return verbOf({
-      label: 'See result',
-      run: () => {
-        const row = [...document.querySelectorAll<HTMLElement>('[data-done-latest]')].find(
-          (candidate) => candidate.dataset.doneLatest === entry.id,
-        );
-        if (row !== undefined) {
-          row.scrollIntoView({ block: 'nearest' });
-          row.querySelector<HTMLElement>('button')?.focus();
-          return;
-        }
-        openDrawer({ kind: 'session-log', sessionId, payload: { focusEntryId: entry.id } });
-      },
-    });
-  };
-
   const ownerActions = ({ owner }: OwnerParams): CardActions => ({
     main: verbOf({
       label: ownerVerbOf({ owner }),
       run: () => openNeedsYou({ owner }),
     }),
-    second: resultVerbOf({ owner }),
+    second: null,
     failure: null,
     isBusy: false,
     agentKind: null,
@@ -355,7 +336,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       case 'retry-rebase':
         return { label: 'Retry rebase', run: runIt({ task: verbs.retryRebase }) };
       case 'fix-push':
-        return { label: 'Fix with agent', run: runIt({ task: verbs.fixPush }) };
+        return { label: NAMES.fixPushWithAgent, run: runIt({ task: verbs.fixPush }) };
       case 'open':
         return { label: ownerVerbOf({ owner }), run: () => openNeedsYou({ owner }) };
       default: {
@@ -508,11 +489,13 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
                     ? undefined
                     : primary.label,
               isDisabled: primary.isDisabled || (isChoicePending && !isPending),
+              blockedReason: primary.blockedReason,
               isBusy: isPending,
               confirmRole:
                 primary.requiresConfirm === true
                   ? (CONFIRM_ROLE[suggestion.kind] ?? 'primary')
                   : null,
+              confirm: primary.confirm ?? null,
               hasPicker: primary.shouldOpenPicker === true,
               run: () => {
                 clearFailure({ key: suggestion.id });
@@ -605,7 +588,9 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       navigate({
         to:
           place.kind === 'questions'
-            ? sessionPlace({ sessionId, lens: 'questions' })
+            ? place.questionId === null
+              ? sessionPlace({ sessionId, lens: 'questions' })
+              : questionPlace({ sessionId, questionId: place.questionId })
             : branchPlace({ sessionId, mountPath, tab: place.tab }),
       });
     };

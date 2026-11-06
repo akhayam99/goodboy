@@ -96,7 +96,7 @@ describe('launchesOf', () => {
     expect(launches).toEqual([]);
   });
 
-  it('shows the 30 newest finished launches and every one still in progress', () => {
+  it('lists only what is live and leaves finished work to the Runs page', () => {
     const finished = Array.from({ length: 33 }, (_, index) =>
       entryOf({
         open: openAgent({ id: `agent-done-${index}` }),
@@ -111,9 +111,6 @@ describe('launchesOf', () => {
 
     const ids = idsOf(launchesOf({ runs: [...finished, live], attached: [] }));
 
-    expect(ids).toHaveLength(31);
-    expect(ids).toContain('agent:agent-live');
-    expect(ids).toContain('agent:agent-done-32');
-    expect(ids).not.toContain('agent:agent-done-2');
+    expect(ids).toEqual(['agent:agent-live']);
   });
 });

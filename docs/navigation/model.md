@@ -246,7 +246,9 @@ drawer instead of the Terminal page.
      (`PALETTE_MIN_HEIGHT_PX`), and a key chip with a minimum width so a glyph
      like the Terminal one is never clipped.
      On the Board the first section is **Needs you**: the sessions the
-     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The session pages (Open Overview,
+     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The bell, the toast and the
+     Notifications page open through it too: a notification keeps a reason and a mount in its stored action
+     (`open-place`, no migration), and a build that does not know the kind reads no action. The session pages (Open Overview,
      Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
      of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
@@ -341,7 +343,16 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
-  `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
+  `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open),
+  `s/{session}/questions/q/{question}` (a question open over Questions).
+- **An open item is named by the address, and the panel is not a second holder.**
+  A question (`question` target, `questionPlace`) and a thread (the `threadId` of the
+  Branch target) are items: the address names them while their panel is open, and
+  `captureLocation` reads that from the one open drawer, so closing it with Esc, the X
+  or ⌘W, or pressing a tool over it, clears the address too and a reload or a saved
+  window reopens the same item. An item is not depth: Up from an open thread or
+  question leaves the page, it does not stop on the list first. Close on a question
+  goes back through the history to where it was opened from (`closeQuestion`).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. A move lands exactly where

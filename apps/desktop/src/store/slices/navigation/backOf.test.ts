@@ -103,7 +103,11 @@ describe('backOf', () => {
     ['the board', BOARD_PLACE, null],
     ['the Overview', sessionPlace({ sessionId: S1 }), null],
     ['a list page', sessionPlace({ sessionId: S1, lens: 'questions' }), 'Back to overview'],
-    ['an old Agents address', sessionPlace({ sessionId: S1, lens: 'agents' }), 'Back to overview'],
+    [
+      'an old Orchestrated address',
+      sessionPlace({ sessionId: S1, lens: 'orchestrated' }),
+      'Back to overview',
+    ],
     ['a main agent', agentAt({ agentId: MAIN }), 'Back to runs'],
     ['a sub agent', agentAt({ agentId: CHILD }), 'Back to planner'],
     ['a sub sub agent', agentAt({ agentId: GRANDCHILD }), 'Back to scout'],

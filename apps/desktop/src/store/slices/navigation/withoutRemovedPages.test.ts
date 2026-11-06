@@ -49,7 +49,7 @@ describe('withoutRemovedPages', () => {
 
   it('opens Settings, iPhone in place of a stored pairing studio', () => {
     const stored: Location = JSON.parse(
-      JSON.stringify({ ...storedAt({ lens: 'agents' }), studio: { kind: 'companion' } }),
+      JSON.stringify({ ...storedAt({ lens: 'questions' }), studio: { kind: 'companion' } }),
     );
 
     const next = withoutRemovedPages({ location: stored });
@@ -59,13 +59,13 @@ describe('withoutRemovedPages', () => {
   });
 
   it('keeps a live studio as it was', () => {
-    const location: Location = { ...storedAt({ lens: 'agents' }), studio: { kind: 'guide' } };
+    const location: Location = { ...storedAt({ lens: 'questions' }), studio: { kind: 'guide' } };
 
     expect(withoutRemovedPages({ location })).toBe(location);
   });
 
   it('keeps a live page as it was', () => {
-    const location = storedAt({ lens: 'agents' });
+    const location = storedAt({ lens: 'questions' });
 
     expect(withoutRemovedPages({ location })).toBe(location);
   });
@@ -97,10 +97,8 @@ const storedLevel = ({
   return stored;
 };
 
-const PANEL = { kind: 'spawned', sessionId: SESSION_ID, payload: null };
-
 describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
-  it('lands a stored Auto level on the Auto agent with the Agents panel open and drops the level key', () => {
+  it('lands a stored Auto level on the Auto agent and opens no panel', () => {
     const next = withoutRemovedPages({
       location: storedLevel({
         lens: 'auto',
@@ -110,11 +108,25 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
       }),
     });
 
-    expect(next.place).toMatchObject({ view: { lens: 'auto', agentId: 'agent-auto-root' } });
-    expect(next.focus.drawer).toEqual(PANEL);
+    expect(next.place).toMatchObject({ view: { lens: 'workflows', agentId: 'agent-auto-root' } });
+    expect(next.focus.drawer).toBeNull();
   });
 
-  it('lands a stored run on the run page with the Agents panel open', () => {
+  it('lands a stored Agents page on the Runs page, keeping its agent', () => {
+    const next = withoutRemovedPages({
+      location: storedLevel({
+        lens: 'agents',
+        agentId: 'agent-implementer',
+        target: null,
+        selection: {},
+      }),
+    });
+
+    expect(next.place).toMatchObject({ view: { lens: 'workflows', agentId: 'agent-implementer' } });
+    expect(next.focus.drawer).toBeNull();
+  });
+
+  it('lands a stored run on the run page and opens no panel', () => {
     const next = withoutRemovedPages({
       location: storedLevel({
         lens: 'workflows',
@@ -127,10 +139,10 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
     expect(next.place).toMatchObject({
       view: { target: { kind: 'run', runId: 'run-ledger-core' } },
     });
-    expect(next.focus.drawer).toEqual(PANEL);
+    expect(next.focus.drawer).toBeNull();
   });
 
-  it('keeps the drawer the run had open instead of the panel', () => {
+  it('keeps the tool a stored run had open', () => {
     const drawer = { kind: 'scripts', sessionId: SESSION_ID, payload: null };
     const next = withoutRemovedPages({
       location: storedLevel({

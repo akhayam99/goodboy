@@ -406,7 +406,7 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeDefined();
     expect(screen.getByText(`${SHORTCUT_ROW_COUNT} shortcuts`)).toBeDefined();
     expect(screen.getByText('Command palette')).toBeDefined();
-    expect(screen.getByText(shortcutGlyphs('lens.agents'))).toBeDefined();
+    expect(screen.getByText(shortcutGlyphs('session.spawned'))).toBeDefined();
     expect(screen.getAllByRole('button', { name: /keyboard shortcuts/i })).toHaveLength(1);
   });
 

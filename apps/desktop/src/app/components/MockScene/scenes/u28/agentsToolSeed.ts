@@ -89,6 +89,7 @@ export const seedAgentsTool = ({ isEmpty, selectedAgentId }: Params): void => {
     sessionOpenQuestions: { [FLOW_SESSION_ID]: [] },
     selectedAgentId: selectedAgentId === null ? {} : { [FLOW_SESSION_ID]: selectedAgentId },
     agentTurnState: {},
+    drawer: { kind: 'spawned', sessionId: FLOW_SESSION_ID, payload: null },
   });
   useAppStore.setState({ currentSessionId: FLOW_SESSION_ID });
 };

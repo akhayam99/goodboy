@@ -1,7 +1,13 @@
 import { NAMES } from '../../../shared/utils/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, ProviderId, Session, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  ArtifactComment,
+  ProviderId,
+  Session,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
@@ -9,6 +15,7 @@ import { startRebaseTarget } from '../startRebaseTarget';
 import { REBASE_ALL_MIN_BRANCHES } from '../../history/behindBranchesOf';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
+import type { UnsentCommentsConfirm } from '../../plans/unsentCommentsConfirmOf';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
@@ -26,8 +33,10 @@ import { continueWithRole } from '../../session/startRun/continueWithRole';
 import { openSettings } from '../../settings/openSettings';
 import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { archiveSessionAction } from './archiveSessionAction';
+import { checkWorkLockOf } from '../../branch/checks/checkWorkLockOf';
 import { fixChecksActions } from './fixChecksActions';
 import { mergeSeriesAction } from './mergeSeriesAction';
+import { planReadyAction } from './planReadyAction';
 import { moveTrackerAction } from './moveTrackerAction';
 
 const REVIEW_THE_CHANGES = 'Review the changes';
@@ -46,10 +55,12 @@ type SuggestionAction = {
   readonly shortLabel?: string;
   readonly agentKind?: AgentKind;
   readonly isDisabled: boolean;
+  readonly blockedReason?: string;
   readonly isBusy?: boolean;
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
   readonly requiresConfirm?: boolean;
+  readonly confirm?: UnsentCommentsConfirm;
   readonly runsOn?: SuggestionRunsOn;
   readonly shouldOpenPicker?: boolean;
 };
@@ -67,6 +78,8 @@ export type SuggestionActions = {
 export type SuggestionActionResolver = (params: {
   readonly suggestion: SessionSuggestion;
 }) => SuggestionActions;
+
+const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
 
@@ -113,6 +126,7 @@ export const useSuggestionActions = ({
   const showToast = useShowToast();
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
   const announcePlanRun = usePlanRunToast();
+  const sessionComments = useAppStore((state) => state.artifactComments[sessionId]) ?? NO_COMMENTS;
 
   const rebaseMounts = useMemo(
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
@@ -149,6 +163,16 @@ export const useSuggestionActions = ({
   );
 
   const threadIds = useFixableThreadIds({ sessionId });
+  const checkLocks = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        mounts.map((mount) => [
+          mount.mountId,
+          checkWorkLockOf({ state, sessionId, mountId: mount.mountId }),
+        ]),
+      ),
+    ),
+  );
 
   const openFixPanel = async (): Promise<void> => {
     if (threadIds.length === 0) {
@@ -248,31 +272,27 @@ export const useSuggestionActions = ({
     }
     if (suggestion.kind === 'plan-ready') {
       return {
-        primary: {
-          label: 'Start implementer',
-          shortLabel: 'Start',
-          agentKind: 'implementer',
-          isDisabled: false,
-          failureTitle: "Couldn't start the implementer",
-          run: async () => {
-            announcePlanRun({
-              result: await runPlan(sessionId, suggestion.payload.planId),
-              sessionId,
-            });
-          },
-        },
+        primary: planReadyAction({
+          sessionId,
+          planId: suggestion.payload.planId,
+          comments: sessionComments,
+          readComments: () => useAppStore.getState().artifactComments[sessionId] ?? NO_COMMENTS,
+          runPlan,
+          announcePlanRun,
+          showToast,
+        }),
         onDismiss: null,
       };
     }
     if (suggestion.kind === 'answer-questions') {
-      const { count, firstQuestion } = suggestion.payload;
+      const { firstQuestion } = suggestion.payload;
       return {
         primary: {
           label: 'Answer',
           isDisabled: false,
           failureTitle: "Couldn't open the questions",
           run: async () => {
-            if (count === 1 && firstQuestion != null) {
+            if (firstQuestion != null) {
               openAgentQuestion({ question: firstQuestion });
               return;
             }
@@ -383,7 +403,11 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      return fixChecksActions({ sessionId, payload: suggestion.payload });
+      return fixChecksActions({
+        sessionId,
+        payload: suggestion.payload,
+        lock: checkLocks[suggestion.payload.mountId] ?? null,
+      });
     }
     if (suggestion.kind === 'push-branch' && suggestion.payload.state === 'diverged') {
       return {

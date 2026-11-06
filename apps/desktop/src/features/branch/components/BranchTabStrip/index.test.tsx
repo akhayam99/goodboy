@@ -32,21 +32,37 @@ const draw = ({ notPushed }: DrawParams) =>
 describe('the facts on the branch tabs', () => {
   afterEach(cleanup);
 
-  it('shows the file count and the lines added and removed on Files', () => {
+  it('draws no count on Files, the file count lives in the page', () => {
     draw({ notPushed: 0 });
 
-    expect(screen.getByRole('tab', { name: /^Files/ }).textContent).toBe('Files64+1240-318');
+    expect(screen.getByRole('tab', { name: /^Files/ }).textContent).toBe('Files');
   });
 
-  it('shows the commit count and how many are not pushed on Commits', () => {
+  it('draws no count and no arrow on Commits, however many are not pushed', () => {
     draw({ notPushed: 3 });
 
-    expect(screen.getByRole('tab', { name: /^Commits/ }).textContent).toBe('Commits11↑3');
+    expect(screen.getByRole('tab', { name: /^Commits/ }).textContent).toBe('Commits');
   });
 
-  it('drops the arrow once everything is pushed', () => {
-    draw({ notPushed: 0 });
+  it('draws a badge only on a page that wants you', () => {
+    render(
+      <BranchTabStrip
+        tabs={[BRANCH_TAB_REGISTRY.pr, BRANCH_TAB_REGISTRY.files]}
+        value="pr"
+        onSelect={() => undefined}
+        facts={worktreeEntryFactsOf({
+          pullRequestState: 'merged',
+          commentsNeedYou: 0,
+          files: 64,
+          diff: null,
+          commits: 11,
+          notPushed: 3,
+          checks: null,
+          checksUnreadReason: null,
+        })}
+      />,
+    );
 
-    expect(screen.getByRole('tab', { name: /^Commits/ }).textContent).toBe('Commits11');
+    expect(document.querySelectorAll('[data-tab-count]')).toHaveLength(0);
   });
 });

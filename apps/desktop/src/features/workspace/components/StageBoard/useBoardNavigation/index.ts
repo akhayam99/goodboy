@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Session, SessionId } from '@goodboy/types';
+import { brandId, type Session, type SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { lensPlace } from '../../../../../store/slices/navigation/canonicalLocation';
 import { openInConfiguredEditor } from '../../../../../shared/lib/editorSettings';
@@ -22,6 +22,13 @@ type OpenLensParams = {
   readonly lens: LensKind | null;
 };
 
+type SessionParams = {
+  readonly session: Session;
+};
+
+const sessionIdOf = ({ session }: SessionParams): SessionId =>
+  brandId<SessionId>({ value: session.id });
+
 export const useBoardNavigation = (): BoardNavigation => {
   const navigate = useAppStore((s) => s.navigate);
 
@@ -30,7 +37,7 @@ export const useBoardNavigation = (): BoardNavigation => {
       navigate({
         to: lensPlace({
           state: useAppStore.getState(),
-          sessionId: session.id as SessionId,
+          sessionId: sessionIdOf({ session }),
           lens,
         }),
       });
@@ -44,7 +51,7 @@ export const useBoardNavigation = (): BoardNavigation => {
       navigate({
         to: attentionPlace({
           state: useAppStore.getState(),
-          sessionId: session.id as SessionId,
+          sessionId: sessionIdOf({ session }),
           reason: 'unread-reply',
         }),
       });
@@ -60,14 +67,21 @@ export const useBoardNavigation = (): BoardNavigation => {
     };
 
     const openReviewOf = (session: Session): void => {
-      void openReview({ sessionId: session.id as SessionId });
+      void openReview({ sessionId: sessionIdOf({ session }) });
     };
 
     return {
       selectCard,
       openUnreadReply,
       openIDE,
-      openQuestions: (session) => openLens({ session, lens: 'questions' }),
+      openQuestions: (session) =>
+        navigate({
+          to: attentionPlace({
+            state: useAppStore.getState(),
+            sessionId: sessionIdOf({ session }),
+            reason: 'open-question',
+          }),
+        }),
       openWorkflows: (session) => openLens({ session, lens: 'workflows' }),
       openPullRequest: (session) => openLens({ session, lens: 'pr' }),
       openReview: openReviewOf,

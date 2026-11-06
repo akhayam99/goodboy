@@ -339,7 +339,7 @@ describe('the fix run summary', () => {
     await mount({ agentId: WORKING });
 
     const rows = within(screen.getByRole('list')).getAllByRole('button');
-    const words = ['Fix to review', 'Open', 'Question'];
+    const words = ['Fix ready', 'Open', 'Question'];
     for (const row of rows) {
       expect(words.some((word) => (row.textContent ?? '').startsWith(word))).toBe(true);
     }

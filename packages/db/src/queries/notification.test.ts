@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type MountId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   NOTIFICATION_LIST_LIMIT,
@@ -276,6 +283,34 @@ describe('notification queries', () => {
         }),
       ]),
     );
+  });
+
+  it('keeps the reason and the mount of an open-place action in the action column', async () => {
+    const db = await seed({});
+    const action = {
+      kind: 'open-place',
+      sessionId: SESSION_B,
+      reason: 'ci-failed',
+      mountId: brandId<MountId>({ value: 'mount-payments-api' }),
+    } as const;
+    await insertNotification(db, buildNotification({ id: 'p1', sessionId: SESSION_B, action }));
+
+    const [stored] = await listNotifications({ db, workspaceId: null });
+
+    expect(stored?.action).toEqual(action);
+  });
+
+  it('reads an action kind it does not know as no action, the way back for an older build', async () => {
+    const db = await seed({});
+    await insertNotification(db, buildNotification({ id: 'p2' }));
+    await db.execute('UPDATE notifications SET action = ? WHERE id = ?', [
+      JSON.stringify({ kind: 'open-teleport', sessionId: SESSION_B }),
+      'p2',
+    ]);
+
+    const [stored] = await listNotifications({ db, workspaceId: null });
+
+    expect(stored?.action).toBeNull();
   });
 
   it('splits the buckets by the kind of action and by whether it was acted on', async () => {

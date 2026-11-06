@@ -68,6 +68,15 @@ describe('overviewCardsOf', () => {
     expect(shown.filter((card) => card.id === 'needs-you').map((card) => card.count)).toEqual([3]);
   });
 
+  it('counts a notice in Needs you, so a closed branch or a mismatch is never a clear page', () => {
+    const shown = overviewCardsOf({ ...NONE, cards: CARDS, waitingCount: 1, noticeCount: 2 });
+
+    expect(shown.filter((card) => card.id === 'needs-you').map((card) => card.count)).toEqual([4]);
+    expect(
+      overviewCardsOf({ ...NONE, noticeCount: 1 }).map((card) => [card.id, card.count]),
+    ).toEqual([['needs-you', 1]]);
+  });
+
   it('keeps the running card for stopped work and counts only what runs', () => {
     const shown = overviewCardsOf({ ...NONE, stuckCount: 1 });
 
