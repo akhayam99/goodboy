@@ -5,7 +5,6 @@ import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { WorkTimeProvider } from '../../../features/workTreeModel/components/WorkTimeProvider';
 import { SpawnedFocusBody } from './SpawnedFocusBody';
-import { SpawnedFocusFoot } from './SpawnedFocusFoot';
 import { SpawnedLaunches } from './SpawnedLaunches';
 import { SpawnedRunsLink } from './SpawnedRunsLink';
 import { useSpawnedFocus } from './useSpawnedFocus';
@@ -38,10 +37,7 @@ export const SpawnedPanel = ({ sessionId, onClose }: Props) => {
           {focus === null ? (
             <SpawnedLaunches session={session} selectedAgentId={selectedAgentId} />
           ) : (
-            <>
-              <SpawnedFocusBody session={session} focus={focus} selectedAgentId={selectedAgentId} />
-              <SpawnedFocusFoot session={session} focus={focus} />
-            </>
+            <SpawnedFocusBody session={session} focus={focus} selectedAgentId={selectedAgentId} />
           )}
           <SpawnedRunsLink sessionId={sessionId} />
         </div>

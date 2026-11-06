@@ -25,7 +25,7 @@ describe('spawnedRailOf', () => {
     const rail = spawnedRailOf({ nodes: NODES });
 
     expect(rail.railById.get('root')?.joins.map((join) => [join.kind, join.laneColumn])).toEqual([
-      ['branch', 1],
+      ['fork', 1],
     ]);
     expect(
       rail.railById.get('implementer')?.joins.map((join) => [join.spineColumn, join.laneColumn]),
@@ -33,7 +33,7 @@ describe('spawnedRailOf', () => {
     expect(rail.railById.get('planner')?.joins).toEqual([]);
   });
 
-  it('runs the spine through every row and dashes the lane up to a queued child', () => {
+  it('runs the spine through every row and dashes the lane down to a queued child', () => {
     const rail = spawnedRailOf({ nodes: NODES });
 
     for (const node of NODES) {

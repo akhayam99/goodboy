@@ -1,4 +1,5 @@
 import type { Tone, WorkNodeState } from '@goodboy/ui';
+import { helpersWordOf } from './helpersWordOf';
 import type { SpawnedRow } from './spawnedRow';
 
 export type HelperUrgency = Readonly<{
@@ -55,8 +56,12 @@ export const helperUrgencyOf = ({ rows }: Params): HelperUrgency | null => {
   if (best === null) {
     return null;
   }
+  const failedCount = rows.filter((row) => row.node === 'failed').length;
   return {
-    word: best.word,
+    word:
+      bestRank === FAILED_RANK
+        ? `${failedCount} of ${helpersWordOf({ count: rows.length })} failed`
+        : best.word,
     tone: TONE_BY_RANK[bestRank] ?? 'neutral',
     isNeedsYou: bestRank === NEEDS_YOU_RANK,
   };

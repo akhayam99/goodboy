@@ -35,7 +35,7 @@ const laneIdOf = ({ parentId }: LaneParams): string | null =>
 
 export const spawnedRailOf = ({ nodes }: Params): SpawnedRail => {
   const parentById = parentIdsOf({ nodes });
-  const rows = [...nodes].reverse().map((node): RailRowInput => ({
+  const rows = nodes.map((node): RailRowInput => ({
     id: node.id,
     height: ROW_HEIGHT,
     topY: 0,
@@ -49,7 +49,7 @@ export const spawnedRailOf = ({ nodes }: Params): SpawnedRail => {
   const groups = [...parents].map((parentId): RailGroupInput => ({
     id: `lane:${parentId}`,
     parentGroupId: laneIdOf({ parentId: parentById.get(parentId) ?? null }),
-    direction: 'up',
+    direction: 'down',
     identityIndex: null,
     isMuted: false,
     originRowId: parentId,

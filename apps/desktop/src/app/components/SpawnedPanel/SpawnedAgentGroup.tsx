@@ -50,7 +50,7 @@ export const SpawnedAgentGroup = ({ sessionId, agentId, selectedAgentId }: Props
     return null;
   }
   return (
-    <div data-spawned-launch="" className="flex min-w-0 flex-col-reverse">
+    <div data-spawned-launch="" className="flex min-w-0 flex-col">
       <ObjectMenuArea
         target={{ kind: 'agent', sessionId, agentId }}
         anchorKey={`spawned:${agentId}`}
