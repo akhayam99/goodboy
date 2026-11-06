@@ -152,6 +152,78 @@ describe('PartCommentFrame', () => {
     expect(value.cancelComposing).toHaveBeenCalled();
   });
 
+  describe('a comment typed and not added', () => {
+    const composing = { anchor: { kind: 'part', index: 2, title: ROW.title } } as const;
+    const escape = () => fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    it('is kept as a draft when focus leaves the box', async () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      const box = screen.getByLabelText('Comment for the planner');
+      fireEvent.change(box, { target: { value: 'Split in two' } });
+
+      fireEvent.blur(box);
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledWith({ body: 'Split in two' }));
+      expect(value.cancelComposing).not.toHaveBeenCalled();
+    });
+
+    it('is kept as a draft on Esc, and says so', async () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      expect(screen.getByText('Esc keeps it as a draft')).toBeDefined();
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      escape();
+
+      await waitFor(() => expect(value.add).toHaveBeenCalledWith({ body: 'Split in two' }));
+      expect(value.cancelComposing).not.toHaveBeenCalled();
+    });
+
+    it('closes on Esc when the box is empty, and saves nothing', () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+
+      escape();
+
+      expect(value.cancelComposing).toHaveBeenCalledTimes(1);
+      expect(value.add).not.toHaveBeenCalled();
+    });
+
+    it('is not saved when focus only moves to a button of the composer', () => {
+      const value = api({ composing });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      const box = screen.getByLabelText('Comment for the planner');
+      fireEvent.change(box, { target: { value: 'Split in two' } });
+
+      fireEvent.blur(box, { relatedTarget: screen.getByRole('button', { name: 'Cancel' }) });
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Cancel' }));
+      fireEvent.blur(box);
+
+      expect(value.add).not.toHaveBeenCalled();
+    });
+
+    it('stays in the box with the error when the save fails', async () => {
+      const value = api({
+        composing,
+        add: vi.fn(async () => {
+          throw new Error('The database is locked');
+        }),
+      });
+      render(withApi({ value, children: <Framed>row</Framed> }));
+      const box = screen.getByLabelText('Comment for the planner');
+      fireEvent.change(box, { target: { value: 'Split in two' } });
+
+      fireEvent.blur(box);
+
+      expect((await screen.findByRole('alert')).textContent).toContain('The database is locked');
+      expect((box as HTMLTextAreaElement).value).toBe('Split in two');
+      expect(value.cancelComposing).not.toHaveBeenCalled();
+    });
+  });
+
   it('opens the composer under the part with focus in it, and gives focus back to its Comment button on close', () => {
     const Harness = () => {
       const [composing, setComposing] = useState<PlanCommentsApi['composing']>(null);

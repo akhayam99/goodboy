@@ -12,6 +12,7 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { planCommentGuard, type PlanCommentGuard } from '../planCommentGuard';
 import { usePlanRevising } from '../../useRevisingPlans';
+import { trackDraftSave } from '../trackDraftSave';
 import type { ComposingTarget, PlanCommentsApi } from '../planCommentsContext';
 
 const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
@@ -91,14 +92,16 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
       if (composing === null) {
         return;
       }
-      await addArtifactComment({
+      const save = addArtifactComment({
         sessionId,
         artifactId: plan.id,
         revision,
         anchor: composing.anchor,
         body,
       });
-      setComposing(null);
+      trackDraftSave({ save });
+      await save;
+      setComposing((current) => (current === composing ? null : current));
     },
     [addArtifactComment, composing, plan.id, revision, sessionId],
   );

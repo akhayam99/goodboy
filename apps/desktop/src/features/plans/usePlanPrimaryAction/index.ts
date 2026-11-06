@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type {
   Agent,
   AgentId,
@@ -13,6 +13,7 @@ import { useFollowToast } from '../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../shared/lib/userStarts';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
+import { afterDraftSaves } from '../planComments/afterDraftSaves';
 import { planApprovedFollowOf } from '../planApprovedFollow';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
@@ -207,13 +208,20 @@ export const usePlanPrimaryAction = ({
     [drafts.length, primary],
   );
 
+  const latest = useRef({ prompt, start });
+  latest.current = { prompt, start };
+
   const press = useCallback(() => {
-    if (prompt !== null) {
-      setIsConfirming(true);
-      return;
-    }
-    void start();
-  }, [prompt, start]);
+    afterDraftSaves({
+      run: () => {
+        if (latest.current.prompt !== null) {
+          setIsConfirming(true);
+          return;
+        }
+        void latest.current.start();
+      },
+    });
+  }, []);
 
   const confirm = useMemo<PlanApproveConfirm | null>(() => {
     if (!isConfirming || prompt === null) {

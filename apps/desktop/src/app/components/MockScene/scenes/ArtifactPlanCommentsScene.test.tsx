@@ -63,6 +63,33 @@ describe('ArtifactPlanCommentsScene', () => {
     await waitFor(() => expect(runPlan).toHaveBeenCalledTimes(1));
   });
 
+  it('saves the half typed text before Run and asks first, as for any comment', async () => {
+    const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
+      kind: 'refused',
+      reason: null,
+      workflowRunId: null,
+    }));
+    useAppStore.setState({ runPlan });
+    render(
+      <ToastProvider>
+        <ArtifactPlanCommentsScene hasComments={false} />
+      </ToastProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Comment on part 1' }));
+    const box = await screen.findByLabelText('Comment for the planner');
+    fireEvent.change(box, { target: { value: 'Name the header that carries the key.' } });
+
+    fireEvent.blur(box);
+    fireEvent.click(screen.getByTestId('artifact-action-runPlan'));
+
+    expect(await screen.findByText('Run without your comment?')).toBeDefined();
+    expect(runPlan).not.toHaveBeenCalled();
+    expect(screen.getByText('Name the header that carries the key.')).toBeDefined();
+    expect(useAppStore.getState().artifactComments).toMatchObject({
+      'mock-artifact-session-ledger': [{ status: 'draft' }],
+    });
+  });
+
   it('runs at once with no comment to lose, and Run takes the fill back', async () => {
     render(
       <ToastProvider>

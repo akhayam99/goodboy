@@ -1,7 +1,8 @@
-import { useContext, useEffect, useState, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, HeaderActions, ICON_SIZE } from '@goodboy/ui';
 
 import { useActionEnv } from '../../../actions/useActionEnv';
+import { afterDraftSaves } from '../../../plans/planComments/afterDraftSaves';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/ArmedActionPopover';
 import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
@@ -17,6 +18,10 @@ type Props = {
 type Armed = {
   readonly armed: ArmedAction;
   readonly origin: string;
+};
+
+type PressParams = {
+  readonly shown: ResolvedAction;
 };
 
 const MENU_ORIGIN = 'menu';
@@ -38,6 +43,24 @@ export const ArtifactShellActions = ({ target, details = null }: Props) => {
   const disarm = () => setArmed(null);
   const armedFor = (origin: string) => (armed?.origin === origin ? armed.armed : null);
 
+  const latest = useRef(actions);
+  latest.current = actions;
+
+  const press = ({ shown }: PressParams) =>
+    afterDraftSaves({
+      run: () => {
+        const action = latest.current.find((candidate) => candidate.id === shown.id) ?? shown;
+        if (action.confirm !== null) {
+          setArmed({
+            armed: { action, run: () => run({ actionId: action.id }) },
+            origin: action.id,
+          });
+          return;
+        }
+        void run({ actionId: action.id });
+      },
+    });
+
   const buttonOf = (action: ResolvedAction, isFilled: boolean) => (
     <ArmedActionPopover
       key={action.id}
@@ -47,16 +70,7 @@ export const ArtifactShellActions = ({ target, details = null }: Props) => {
         <Button
           variant={isFilled ? 'primary' : 'secondary'}
           size="sm"
-          onClick={() => {
-            if (action.confirm !== null) {
-              setArmed({
-                armed: { action, run: () => run({ actionId: action.id }) },
-                origin: action.id,
-              });
-              return;
-            }
-            void run({ actionId: action.id });
-          }}
+          onClick={() => press({ shown: action })}
           disabled={action.blockedReason !== null || action.isBusy}
           isBusy={action.isBusy}
           title={action.blockedReason ?? action.description ?? undefined}

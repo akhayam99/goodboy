@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatError } from '@goodboy/ui';
 import {
   CommentComposer as SharedCommentComposer,
   type CommentComposerBody,
@@ -20,6 +21,16 @@ export const CommentComposer = ({
   onCancel,
 }: Props) => {
   const [body, setBody] = useState(initialBody);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async ({ body: text }: CommentComposerBody): Promise<void> => {
+    setError(null);
+    try {
+      await onSubmit({ body: text });
+    } catch (cause) {
+      setError(formatError(cause));
+    }
+  };
 
   return (
     <SharedCommentComposer
@@ -29,8 +40,10 @@ export const CommentComposer = ({
       submitLabel={submitLabel}
       value={body}
       onChange={setBody}
-      onSubmit={onSubmit}
+      onSubmit={save}
+      onKeep={initialBody === '' ? save : undefined}
       onCancel={onCancel}
+      error={error}
       lead={
         quote === null ? null : (
           <q className="block text-meta italic text-muted-foreground">{quote}</q>
