@@ -212,6 +212,7 @@ const stubSendTurn = ({
         ],
       },
     });
+    input.onStarted?.();
     await onSend?.(input.content);
     return { blockedOverBudget: false };
   });
@@ -633,7 +634,7 @@ describe('store on sqlite: plan comments', () => {
 
     it('sends one turn to that agent as comments to read, then marks them sent', async () => {
       await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
-      withImplementer({ status: 'running' });
+      withImplementer({ status: 'completed' });
       const sendTurn = stubSendTurn();
 
       const result = await useAppStore
@@ -648,6 +649,61 @@ describe('store on sqlite: plan comments', () => {
       expect(input?.content).toContain('Why after BEGIN?');
       expect(input?.content).not.toContain('Write the full updated plan');
       expect(statuses()).toEqual(['Why after BEGIN?:sent']);
+    });
+
+    it('queues behind a running agent instead of starting a second turn', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'running' });
+      const sendTurn = stubSendTurn();
+
+      const result = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(result).toEqual({ kind: 'sentToAgent', agentName: 'Implement' });
+      expect(sendTurn).not.toHaveBeenCalled();
+      const queued = useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? [];
+      expect(queued).toHaveLength(1);
+      expect(queued[0]?.content).toContain('Why after BEGIN?');
+      expect(statuses()).toEqual(['Why after BEGIN?:sent']);
+    });
+
+    it('marks the comments sent when the turn starts, before it ends', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'completed' });
+      let seenAtStart: ReadonlyArray<string> = [];
+      const turnEnd = Promise.withResolvers<void>();
+      useAppStore.setState({
+        sendTurn: vi.fn(async (input: SendTurnInput): Promise<SendTurnResult> => {
+          input.onStarted?.();
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          seenAtStart = statuses();
+          await turnEnd.promise;
+          return { blockedOverBudget: false };
+        }),
+      });
+
+      const pending = useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+      await vi.waitFor(() => expect(seenAtStart).toEqual(['Why after BEGIN?:sent']));
+      turnEnd.resolve();
+      await expect(pending).resolves.toMatchObject({ kind: 'sentToAgent' });
+    });
+
+    it('keeps the comments as drafts when the start was cancelled', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'completed' });
+      useAppStore.setState({
+        sendTurn: vi.fn(async (): Promise<SendTurnResult> => ({ blockedOverBudget: false })),
+      });
+
+      const result = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(result).toMatchObject({ kind: 'failed' });
+      expect(statuses()).toEqual(['Why after BEGIN?:draft']);
     });
 
     it('refuses a stopped agent and keeps the comments as drafts', async () => {
@@ -669,7 +725,7 @@ describe('store on sqlite: plan comments', () => {
 
     it('keeps the comments as drafts when the turn fails, and lets a retry through', async () => {
       await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
-      withImplementer({ status: 'running' });
+      withImplementer({ status: 'completed' });
       useAppStore.setState({
         sendTurn: vi.fn(async () => {
           throw new Error('The agent did not answer');

@@ -1,6 +1,6 @@
 import { setArtifactCommentsStatus } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
-import type { ArtifactId } from '@goodboy/types';
+import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { buildPlanCommentRequest } from '../../../features/plans/planComments/buildPlanCommentRequest';
 import { sortByAnchor } from '../../../features/plans/planComments/planCommentAnchors';
 import { planCommentsTargetOf } from '../../../features/plans/planComments/planCommentsTargetOf';
@@ -12,6 +12,21 @@ type Deps = Readonly<{
   set: SetFn;
   get: GetFn;
 }>;
+
+type BusyParams = Readonly<{
+  get: GetFn;
+  agentId: AgentId;
+  sessionId: SessionId;
+}>;
+
+const isAgentBusy = ({ get, agentId, sessionId }: BusyParams): boolean => {
+  const state = get().agentTurnState[agentId];
+  if (state === undefined) {
+    const agent = (get().sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId);
+    return agent?.status === 'running';
+  }
+  return state.kind === 'starting' || state.kind === 'running';
+};
 
 const IN_FLIGHT = new Set<ArtifactId>();
 
@@ -48,8 +63,42 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
       purpose: 'read',
     });
     IN_FLIGHT.add(plan.id);
+    let flip: Promise<void> | undefined;
+    const markSent = (): Promise<void> => {
+      flip ??= (async () => {
+        await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
+        await refreshArtifactComments({ set, sessionId });
+      })();
+      return flip;
+    };
     try {
-      const result = await get().sendTurn({ sessionId, agentId: target.agentId, content });
+      if (isAgentBusy({ get, agentId: target.agentId, sessionId })) {
+        const turn = {
+          id: crypto.randomUUID(),
+          agentId: target.agentId,
+          content,
+          attachments: [],
+          override: undefined,
+        };
+        await get().enqueueAgentMessage({ turn });
+        const isQueued = (get().agentQueue[target.agentId] ?? []).some(
+          (item) => item.id === turn.id,
+        );
+        if (!isQueued) {
+          return { kind: 'failed', reason: "The message couldn't be queued. Try again." };
+        }
+        await markSent();
+        return { kind: 'sentToAgent', agentName: target.name };
+      }
+      const result = await get().sendTurn({
+        sessionId,
+        agentId: target.agentId,
+        content,
+        origin: 'operator',
+        onStarted: () => {
+          void markSent().catch(() => undefined);
+        },
+      });
       if (result.blockedOverBudget) {
         return {
           kind: 'failed',
@@ -62,10 +111,21 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
           reason: 'Another agent is writing in this folder. Try again in a moment.',
         };
       }
-      await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
-      await refreshArtifactComments({ set, sessionId });
+      if (flip === undefined && result.isLaneQueued !== true && result.isAlreadySent !== true) {
+        return { kind: 'failed', reason: "The agent didn't take the message. Try again." };
+      }
+      await markSent();
       return { kind: 'sentToAgent', agentName: target.name };
     } catch (cause) {
+      if (flip !== undefined) {
+        const isFlipped = await flip.then(
+          () => true,
+          () => false,
+        );
+        if (isFlipped) {
+          return { kind: 'sentToAgent', agentName: target.name };
+        }
+      }
       return { kind: 'failed', reason: formatError(cause) };
     } finally {
       IN_FLIGHT.delete(plan.id);
