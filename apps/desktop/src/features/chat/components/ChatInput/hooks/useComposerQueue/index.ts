@@ -20,7 +20,10 @@ type Params = {
   readonly views: ReadonlyArray<AutoTreeView>;
   readonly setValue: (next: string) => void;
   readonly setAttachments: (next: ReadonlyArray<PendingAttachment>) => void;
-  readonly routing: ReturnType<typeof useTurnRouting>;
+  readonly routing: Pick<
+    ReturnType<typeof useTurnRouting>,
+    'setSelectedProviderState' | 'setSelectedModelState' | 'setEffortState'
+  >;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 

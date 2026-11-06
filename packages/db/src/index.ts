@@ -301,7 +301,6 @@ export {
   setAgentVerbosity,
   stopGhostAgents,
   updateWorkflowNodeRouting,
-  type AgentBatchInput,
   type AgentBatchOutcome,
   type AgentInsertInput,
   type AgentStatusFields,

@@ -25,16 +25,12 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../../../store/storyHarness';
-import type { useTurnRouting } from '../useTurnRouting';
 import { useComposerQueue } from '.';
 
 const SESSION = brandId<SessionId>({ value: 'session-harborline' });
 const AGENT = brandId<AgentId>({ value: 'agent-harborline' });
 
-type RoutingParams = Parameters<typeof useComposerQueue>[0]['routing'];
-
-const routingStub = (): RoutingParams => ({
-  ...({} as ReturnType<typeof useTurnRouting>),
+const routingStub = () => ({
   setSelectedProviderState: vi.fn(),
   setSelectedModelState: vi.fn(),
   setEffortState: vi.fn(),

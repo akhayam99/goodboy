@@ -75,7 +75,7 @@ afterEach(() => {
 
 describe('runTurn', () => {
   it('says the process spawned only after turn_spawn resolved', async () => {
-    const runId = 'spawned-run' as ProviderRunId;
+    const runId = brandId<ProviderRunId>({ value: 'spawned-run' });
     const order: Array<string> = [];
     invokeMock.mockImplementation(async (command: string) => {
       if (command === 'turn_spawn') {
@@ -103,7 +103,7 @@ describe('runTurn', () => {
   });
 
   it('never says the process spawned when turn_spawn fails', async () => {
-    const runId = 'unspawned-run' as ProviderRunId;
+    const runId = brandId<ProviderRunId>({ value: 'unspawned-run' });
     const onSpawned = vi.fn();
     invokeMock.mockImplementation(async (command: string) => {
       if (command === 'turn_spawn') {

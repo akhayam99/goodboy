@@ -19,21 +19,6 @@ type Params = Readonly<{
   error: unknown;
 }>;
 
-type ForgetParams = Pick<Params, 'set' | 'agentId' | 'runId'>;
-
-const forgetRun = ({ set, agentId, runId }: ForgetParams): void => {
-  set((state) => {
-    const { [runId]: _forgotten, ...routes } = state.runRouting[agentId] ?? {};
-    return {
-      agentRunHistory: {
-        ...state.agentRunHistory,
-        [agentId]: (state.agentRunHistory[agentId] ?? []).filter((id) => id !== runId),
-      },
-      runRouting: { ...state.runRouting, [agentId]: routes },
-    };
-  });
-};
-
 export const closeUnspawnedRun = async ({
   set,
   get,
@@ -46,7 +31,6 @@ export const closeUnspawnedRun = async ({
 }: Params): Promise<void> => {
   const wasCancelled = cancelledRunIds.delete(runId);
   const derived = releaseUnstartedTurn({ set, get, sessionId, agentId, runId });
-  forgetRun({ set, agentId, runId });
   const at = nowIso({});
   if (derived !== null) {
     await updateSessionState(tauriDatabase, sessionId, derived, at);
@@ -58,12 +42,19 @@ export const closeUnspawnedRun = async ({
       ? { kind: 'cancelled', finishedAt: at }
       : { kind: 'failed', finishedAt: at, error: formatError(error) },
   );
-  if (resolvedAgentId === null) {
-    return;
+  if (resolvedAgentId !== null) {
+    await revertAgentStart({ db: tauriDatabase, agentId: resolvedAgentId, runId, agentBefore });
   }
-  await revertAgentStart({ db: tauriDatabase, agentId: resolvedAgentId, runId, agentBefore });
   const refreshedRuns = await invokeAgentList(sessionId);
-  set((state) => ({
-    sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-  }));
+  set((state) => {
+    const { [runId]: _forgotten, ...routes } = state.runRouting[agentId] ?? {};
+    return {
+      sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+      agentRunHistory: {
+        ...state.agentRunHistory,
+        [agentId]: (state.agentRunHistory[agentId] ?? []).filter((id) => id !== runId),
+      },
+      runRouting: { ...state.runRouting, [agentId]: routes },
+    };
+  });
 };

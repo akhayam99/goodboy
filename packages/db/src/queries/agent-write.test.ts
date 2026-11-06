@@ -344,7 +344,7 @@ describe('agent writes', () => {
     it('puts a start that never spawned back as it was, stopped fields included', async () => {
       const id = await seedAgent('a3', 'running');
       const before = await recordAgentStatus(db, id, { status: 'stopped', stoppedBy: 'app' });
-      const runId = 'run-unspawned' as ProviderRunId;
+      const runId = brandId<ProviderRunId>({ value: 'run-unspawned' });
       await recordAgentStatus(db, id, {
         status: 'running',
         startedAt: STOPPED_AT,
@@ -363,7 +363,7 @@ describe('agent writes', () => {
 
     it('puts a fresh row back to pending with no start', async () => {
       const id = await seedAgent('a3', 'pending');
-      const runId = 'run-unspawned' as ProviderRunId;
+      const runId = brandId<ProviderRunId>({ value: 'run-unspawned' });
       await recordAgentStatus(db, id, {
         status: 'running',
         startedAt: STOPPED_AT,
@@ -380,7 +380,7 @@ describe('agent writes', () => {
     it('leaves a row a stop or a newer run already moved on', async () => {
       const id = await seedAgent('a3', 'pending');
       const before = await getAgentById(db, id);
-      const runId = 'run-unspawned' as ProviderRunId;
+      const runId = brandId<ProviderRunId>({ value: 'run-unspawned' });
       await recordAgentStatus(db, id, {
         status: 'running',
         startedAt: STOPPED_AT,
@@ -393,7 +393,7 @@ describe('agent writes', () => {
 
       await recordAgentStatus(db, id, {
         status: 'running',
-        providerRunId: 'run-newer' as ProviderRunId,
+        providerRunId: brandId<ProviderRunId>({ value: 'run-newer' }),
       });
       await revertAgentStart({ db, agentId: id, runId, agentBefore: before });
       expect((await getAgentById(db, id))?.status).toBe('running');

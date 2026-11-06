@@ -23,6 +23,7 @@ import { PURGED_QUESTION_TEXTS_INDEX, agentPurgeStatements } from './agent';
 import { cleanWorkflowRunTitle } from './workflow-run-title';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 import { serializeProviderPool, toProviderPool } from './provider-pool-column';
+import { stopKindColumnOf, withAutoRunFlag } from './workflowStopCodec';
 
 export type SessionWorkflowRow = {
   workflow_run_id: string;
@@ -78,30 +79,10 @@ type StopColumns = {
   readonly kind: string;
 };
 
-const OPERATOR_STOP_OF_AUTO_RUN = 'operator:auto-run';
-
-const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | null => {
-  if (message == null || message === '') {
-    return null;
-  }
-  if (kind === OPERATOR_STOP_OF_AUTO_RUN) {
-    return { kind: 'operator', message, wasAutoRun: true };
-  }
-  return { kind: kind as WorkflowOrchestrationStopKind, message };
-};
-
-type StopKindParams = {
-  readonly stop: WorkflowOrchestrationStop | null;
-};
-
-const stopKindColumnOf = ({ stop }: StopKindParams): string => {
-  if (stop === null) {
-    return 'failure';
-  }
-  return stop.kind === 'operator' && stop.wasAutoRun === true
-    ? OPERATOR_STOP_OF_AUTO_RUN
-    : stop.kind;
-};
+const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | null =>
+  message == null || message === ''
+    ? null
+    : withAutoRunFlag({ stop: { kind: kind as WorkflowOrchestrationStopKind, message } });
 
 export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   const orchestrationStop = toStop({

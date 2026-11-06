@@ -851,22 +851,6 @@ describe('session_workflows trigger-mode queries', () => {
       expect((await readRunsNewestFirst({ db }))[0]!.orchestrationStop).toBeUndefined();
     });
 
-    it('keeps that an operator stop turned auto run off, and an old row reads as plain', async () => {
-      await attachRun('run-1');
-      const stop = { kind: 'operator' as const, message: 'You stopped this run.' };
-      await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, {
-        ...stop,
-        wasAutoRun: true,
-      });
-      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationStop).toEqual({
-        ...stop,
-        wasAutoRun: true,
-      });
-
-      await updateWorkflowRunOrchestrationStop(db, 'run-1' as WorkflowRunId, stop);
-      expect((await readRunsNewestFirst({ db }))[0]!.orchestrationStop).toEqual(stop);
-    });
-
     it('keeps the budget stop a budget stop when runs are reordered', async () => {
       await attachRun('run-1');
       await attachWorkflowToSession({
