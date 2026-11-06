@@ -4,6 +4,8 @@ import {
   brandId,
   type IsoDateTime,
   type MountId,
+  type OpenQuestion,
+  type OpenQuestionId,
   type Project,
   type ProjectId,
   type ProviderRunId,
@@ -36,6 +38,8 @@ vi.mock('@goodboy/db', async () =>
   (await import('../../../test/dbMock')).createDbMock({
     getSetting: vi.fn(async () => null),
     listAgentsForSessions: vi.fn(async () => new Map()),
+    listDecidedNudgeEventsForSessions: vi.fn(async () => []),
+    listOpenQuestionsForSessions: vi.fn(async () => []),
     listExternalTasksForWorkspace: vi.fn(async () => []),
     listProjectsForWorkspace: vi.fn(async () => h.projects),
     listSessionsForWorkspace: vi.fn(async () => h.sessions),
@@ -77,8 +81,13 @@ vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { verifyWorkspaceWorktrees } from '../project-mounts/verify/verifyWorkspaceWorktrees';
-import { listAgentsForSessions, listSessionsForWorkspace } from '@goodboy/db';
+import {
+  listAgentsForSessions,
+  listOpenQuestionsForSessions,
+  listSessionsForWorkspace,
+} from '@goodboy/db';
 import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
+import { retryWorkspaceFacts } from './retryWorkspaceFacts';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -172,6 +181,9 @@ const harness = (initial: Partial<AppStore> = {}): Harness => {
     workspaces: [{ id: WORKSPACE_ID, lastAccessedAt: NOW }],
     sessions: [],
     sessionPhaseRuns: {},
+    sessionOpenQuestions: {},
+    sessionDismissedNextSteps: {},
+    autoTreeViews: {},
     agentTurnState: {},
     orchestratingWorkflowRuns: {},
     stopWorkflowRunNow: vi.fn(async () => undefined),
@@ -288,6 +300,72 @@ describe('setCurrentWorkspace run recovery', () => {
     expect(store.state.sessionPhaseRuns[RESTORED_SESSION_ID]).toEqual([asking]);
     expect(store.state.agentTurnState[asking.id]).toEqual(waiting);
     expect(store.state.boardReady).toBe(true);
+  });
+});
+
+describe('setCurrentWorkspace facts before the board', () => {
+  const question = {
+    id: brandId<OpenQuestionId>({ value: 'question-backoff' }),
+    sessionId: RESTORED_SESSION_ID,
+    text: 'Should the retries back off?',
+    suggestedAnswers: [],
+    isBlocking: false,
+    userAnswer: null,
+    status: 'open',
+    createdAt: NOW,
+  } satisfies OpenQuestion;
+
+  it('reads the open questions while the skeleton shows and draws the lanes with them', async () => {
+    const store = harness();
+    const switching: Array<WorkspaceId | null> = [];
+    vi.mocked(listOpenQuestionsForSessions).mockImplementationOnce(async () => {
+      switching.push(store.state.switchingToWorkspaceId);
+      return [question];
+    });
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(switching).toEqual([WORKSPACE_ID]);
+    expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toEqual([question]);
+    expect(store.state.sessionOpenQuestions[UNSELECTED_SESSION_ID]).toEqual([]);
+    expect(store.state.workspaceFactsError).toBeNull();
+    expect(store.state.boardReady).toBe(true);
+  });
+
+  it('draws the board with one line and Retry when the facts cannot be read, then Retry fills them', async () => {
+    const store = harness();
+    vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('database is locked'));
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(store.state.boardReady).toBe(true);
+    expect(store.state.workspaceFactsError).toBe('database is locked');
+    expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toBeUndefined();
+
+    vi.mocked(listOpenQuestionsForSessions).mockResolvedValueOnce([question]);
+    await retryWorkspaceFacts(store)({ workspaceId: WORKSPACE_ID });
+
+    expect(store.state.workspaceFactsError).toBeNull();
+    expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toEqual([question]);
+  });
+
+  it('keeps the error when Retry fails again, and drops a Retry for a workspace left behind', async () => {
+    const store = harness();
+    vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('database is locked'));
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    vi.mocked(listOpenQuestionsForSessions).mockRejectedValueOnce(new Error('disk I/O error'));
+    await retryWorkspaceFacts(store)({ workspaceId: WORKSPACE_ID });
+
+    expect(store.state.workspaceFactsError).toBe('disk I/O error');
+
+    vi.mocked(listOpenQuestionsForSessions).mockResolvedValueOnce([question]);
+    await retryWorkspaceFacts(store)({
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-2' }),
+    });
+
+    expect(store.state.workspaceFactsError).toBe('disk I/O error');
+    expect(store.state.sessionOpenQuestions[RESTORED_SESSION_ID]).toBeUndefined();
   });
 });
 

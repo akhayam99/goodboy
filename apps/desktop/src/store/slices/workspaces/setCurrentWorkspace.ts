@@ -58,6 +58,8 @@ import { workspaceVerification } from '../project-mounts/verify/workspaceVerific
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import { beginWorkspaceSwitch } from './beginWorkspaceSwitch';
 import { failWorkspaceSwitch } from './failWorkspaceSwitch';
+import { loadWorkspaceFacts, type WorkspaceFacts } from './loadWorkspaceFacts';
+import { workspaceFactsPatchOf } from './workspaceFactsPatchOf';
 import { switchEpoch } from './switchEpoch';
 import type { GetFn, SetFn } from './types';
 
@@ -91,6 +93,8 @@ type WorkspaceSnapshot = MountRecords & {
   readonly waitingTurns: Record<string, TurnState>;
   readonly kindOverridesFromDb: Record<string, AgentKind>;
   readonly sessionExternalTasks: Record<string, SessionExternalTask[]>;
+  readonly facts: WorkspaceFacts | null;
+  readonly factsError: string | null;
 };
 
 type SessionMountHydration = {
@@ -362,6 +366,14 @@ const loadWorkspaceSnapshot = async ({
   for (const s of sessions) {
     sessionExternalTasks[s.id] = sessionExternalTasks[s.id] ?? [];
   }
+  const factsRead = await loadWorkspaceFacts({
+    db: tauriDatabase,
+    sessionIds,
+    sessionPhaseRuns,
+    kindOverride: { ...get().agentKindOverride, ...kindOverridesFromDb },
+  })
+    .then((facts) => ({ facts, factsError: null }))
+    .catch((error: unknown) => ({ facts: null, factsError: formatError(error) }));
   if (!isCurrent()) {
     return null;
   }
@@ -376,6 +388,7 @@ const loadWorkspaceSnapshot = async ({
     waitingTurns,
     kindOverridesFromDb,
     sessionExternalTasks,
+    ...factsRead,
   };
 };
 
@@ -453,6 +466,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         kindOverridesFromDb,
         sessionExternalTasks,
         worktreesBySession,
+        facts,
+        factsError,
       } = snapshot;
       clearPendingTurnEvents();
       set((state) => ({
@@ -475,6 +490,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,
+        ...(facts === null ? {} : workspaceFactsPatchOf({ state, facts })),
+        workspaceFactsError: factsError,
         boardReady: true,
       }));
       for (const runs of Object.values(sessionPhaseRuns)) {

@@ -447,6 +447,7 @@ export { listThreadReads, markThreadsRead, type ThreadRead } from './queries/thr
 export {
   deleteNudgeEvent,
   insertNudgeEvent,
+  listDecidedNudgeEventsForSessions,
   listNudgeEvents,
   updateNudgeEventOutcome,
   type ListNudgeEventsOptions,
@@ -553,6 +554,7 @@ export {
   insertOpenQuestion,
   getOpenQuestionById,
   listOpenQuestionsForSession,
+  listOpenQuestionsForSessions,
   listResolvedQuestionTextsForSession,
   markOpenQuestionAnswered,
   markOpenQuestionAnswersDelivered,

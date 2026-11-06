@@ -94,6 +94,30 @@ const hydrate = ({ row }: { readonly row: Row }): NudgeEvent => ({
   outcomeTs: row.outcomeTs == null ? null : (new Date(row.outcomeTs).toISOString() as IsoDateTime),
 });
 
+type SessionsParams = {
+  readonly db: Database;
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
+export const listDecidedNudgeEventsForSessions = async ({
+  db,
+  sessionIds,
+}: SessionsParams): Promise<ReadonlyArray<NudgeEvent>> => {
+  if (sessionIds.length === 0) {
+    return [];
+  }
+  const placeholders = sessionIds.map(() => '?').join(', ');
+  const rows = await db.select<Row>(
+    `SELECT id, session_id AS sessionId, created_at AS ts, kind, context_json AS contextJson,
+       outcome, outcome_ts AS outcomeTs
+     FROM nudge_events
+     WHERE session_id IN (${placeholders}) AND outcome IS NOT NULL AND context_json IS NOT NULL
+     ORDER BY created_at, rowid`,
+    sessionIds,
+  );
+  return rows.map((row) => hydrate({ row }));
+};
+
 export const listNudgeEvents = async ({
   db,
   sessionId,

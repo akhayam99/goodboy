@@ -220,6 +220,7 @@ export const NON_SESSION_STATE_KEYS = [
   'currentWorkspaceId',
   'switchingToWorkspaceId',
   'workspaceSwitchError',
+  'workspaceFactsError',
   'windowPresence',
   'hostReachability',
   'hostAnsweredAt',

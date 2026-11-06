@@ -984,3 +984,7 @@ The wizard has more than one host in a window (`AppOverlayRouter` mounts it in t
 ## A kit block closer can arrive with one bracket too many
 
 Models sometimes write `<<</decision>>`. `stripHtml` in `parseMarkdown.ts` would read `</decision>` as an html tag and drop it, and every block after it would nest. It reads a run of `<` before `/` as `<<`, so keep any new tag stripping behind that branch.
+
+## A board fact read after the first paint moves cards
+
+`stageInfoOf` reads only what is in memory. A fact that loads when a session opens (open questions, Not now, Auto trees) used to be empty at launch, so a session jumped lanes when you opened it. `loadWorkspaceFacts` now reads those facts for every session inside `loadWorkspaceSnapshot`, in the same `set` as `boardReady`. A new input of `stageInfoOf` that only a session open loads moves cards again: read it there too, one query for all sessions (`listOpenQuestionsForSessions` is the pattern), and count it in `loadWorkspaceFacts.sqlite.test.ts`. Resolve threads, Slack drafts and session artifacts still load on open.

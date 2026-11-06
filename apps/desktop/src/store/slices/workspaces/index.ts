@@ -9,6 +9,7 @@ import { reconnectMovedProject } from './reconnectMovedProject';
 import { reconnectWorkspaceById } from './reconnectWorkspaceById';
 import { renameWorkspace } from './renameWorkspace';
 import { reloadWorkspace } from './reloadWorkspace';
+import { retryWorkspaceFacts } from './retryWorkspaceFacts';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { setWorkspacePermissionDefault } from './setWorkspacePermissionDefault';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
@@ -34,6 +35,7 @@ export const createWorkspacesSlice = ({ set, get, initialState }: WorkspacesDeps
     renameWorkspace: renameWorkspace(set, get),
     updateWorkspaceProfile: updateWorkspaceProfile(set, get),
     reloadWorkspace: reloadWorkspace({ set, get }),
+    retryWorkspaceFacts: retryWorkspaceFacts({ set, get }),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
     setWorkspacePermissionDefault: setWorkspacePermissionDefault(set, get),
     wipeLocalDatabase: wipeLocalDatabase(set, get, initialState),
