@@ -570,6 +570,37 @@ export const installPrPageIpc = ({ behind, unpushed, isRebasing }: StatusParams)
   mockSceneIpc(prPageIpc({ behind, unpushed, isRebasing }));
 };
 
+export const applyRemovedMountSeed = (): void => {
+  useAppStore.setState({
+    sessionProjectMounts: { [SESSION_ID]: [] },
+    sessionActiveMount: {},
+    diffMountPath: {},
+    sessionWorktreeRecords: {},
+    sessionMounts: {
+      [SESSION_ID]: [
+        {
+          id: MOUNT_ID,
+          sessionId: SESSION_ID,
+          projectId: MOUNT.projectId,
+          worktreePath: null,
+          lastWorktreePath: PR_PAGE_WORKTREE,
+          branch: MOUNT.branch,
+          baseBranch: null,
+          parallelIndex: 0,
+          mountName: MOUNT.mountName,
+          repoSlug: null,
+          repoRoot: MOUNT.repoRoot,
+          isAttached: false,
+          diskState: 'removed',
+          revision: 2,
+          createdAt: NOW_ISO,
+          updatedAt: NOW_ISO,
+        },
+      ],
+    },
+  });
+};
+
 export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }): void => {
   seedResolveScene({ expandedThreadId: null });
   const shape = shapeOf({ variant });

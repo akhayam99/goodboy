@@ -154,6 +154,7 @@ export type {
   SelectionBarProps,
   SelectionVerb,
 } from './components/SelectionBar';
+export { ConfirmGoesStays } from './components/SelectionBar/ConfirmGoesStays';
 export { SelectionConfirm } from './components/SelectionBar/SelectionConfirm';
 export type { SelectionConfirmProps } from './components/SelectionBar/SelectionConfirm';
 export type { CheckboxProps } from './components/Checkbox';

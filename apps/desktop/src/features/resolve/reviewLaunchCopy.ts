@@ -13,7 +13,7 @@ type CountParams = {
 export const fixLabel = ({ count }: CountParams): string => `Fix ${count}`;
 
 export const threadCountText = ({ count }: CountParams): string =>
-  count === 1 ? '1 thread' : `${count} threads`;
+  count === 1 ? '1 comment' : `${count} comments`;
 
 export type FixingCount = {
   readonly working: number;
@@ -24,6 +24,3 @@ export const fixingCountText = ({ working, total }: FixingCount): string =>
   working >= total
     ? `Fixing ${threadCountText({ count: total })}`
     : `Fixing ${working} of ${threadCountText({ count: total })}`;
-
-export const commitCountText = ({ count }: CountParams): string =>
-  count === 1 ? '1 commit' : `${count} commits`;

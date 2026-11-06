@@ -17,10 +17,8 @@ import {
 import { PullRequestHeaderLine } from '../../../../features/branch/components/PullRequestTab/PullRequestHeaderLine';
 import { EXPANDED_THREAD_ID, RESOLVE_SCENE_PR, SESSION_ID, seedResolveScene } from './resolveSeed';
 
-let store: Awaited<ReturnType<typeof importStore>>;
-
 beforeAll(async () => {
-  store = await importStore();
+  await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -30,21 +28,13 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('the resolve scene pull request', () => {
-  it('reads the byline with its author and commit count', async () => {
+  it('reads the byline with its number, branches and author', () => {
     seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
-    const entries = Object.values(store.getState().pullRequestViews[SESSION_ID] ?? {});
-    const view = entries[0]?.view ?? null;
 
-    render(
-      <PullRequestHeaderLine
-        pr={RESOLVE_SCENE_PR}
-        host="github"
-        view={view}
-        readiness={{ facts: { commentsUnresolved: 0 }, commentsNeedYou: 0, commentsUnread: 0 }}
-        isThreadsShown={false}
-      />,
-    );
+    render(<PullRequestHeaderLine pr={RESOLVE_SCENE_PR} host="github" />);
 
-    screen.getByText('nadia-p wants to merge 2 commits into');
+    screen.getByText('by nadia-p');
+    screen.getByText(RESOLVE_SCENE_PR.baseBranch);
+    screen.getByText(RESOLVE_SCENE_PR.headBranch);
   });
 });

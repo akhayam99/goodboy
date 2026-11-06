@@ -69,7 +69,7 @@ export const useSessionBranchSync = ({ session }: Params): void => {
           projectId,
         }).catch((error: unknown) =>
           reportError({
-            title: "Couldn't check the online copy",
+            title: "Couldn't check origin",
             error,
             severity: 'warning',
             sessionId,

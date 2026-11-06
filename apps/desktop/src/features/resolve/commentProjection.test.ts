@@ -44,9 +44,9 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
 describe('projectResolveComment', () => {
   it.each<[ReviewCommentState, boolean, string, string, string]>([
     ['needs', false, 'question', 'Question', 'needs_you'],
-    ['ready', false, 'to_review', 'Fix to review', 'needs_you'],
-    ['edited', false, 'to_review', 'Fix to review', 'needs_you'],
-    ['outdated', false, 'to_review', 'Fix to review', 'needs_you'],
+    ['ready', false, 'to_review', 'Fix ready', 'needs_you'],
+    ['edited', false, 'to_review', 'Fix ready', 'needs_you'],
+    ['outdated', false, 'to_review', 'Fix ready', 'needs_you'],
     ['failed', true, 'push_failed', 'Push failed', 'needs_you'],
     ['failed', false, 'couldnt_fix', 'Failed', 'needs_you'],
     ['drafting', false, 'working', 'Fixing', 'working'],
@@ -199,7 +199,7 @@ describe('projectResolveComment', () => {
     );
     expect(projection).toMatchObject({
       word: 'to_review',
-      label: 'Fix to review',
+      label: 'Fix ready',
       isChanged: true,
     });
     expect(projection.chips).toEqual(['Comment changed', 'Still needed', 'Checks failed']);
@@ -228,7 +228,7 @@ describe('projectResolveComment', () => {
 
 describe('resolveLabelOfState', () => {
   it('names a state by its word', () => {
-    expect(resolveLabelOfState({ state: 'edited' })).toBe('Fix to review');
+    expect(resolveLabelOfState({ state: 'edited' })).toBe('Fix ready');
     expect(resolveLabelOfState({ state: 'drafting' })).toBe('Fixing');
     expect(resolveLabelOfState({ state: 'failed' })).toBe('Failed');
     expect(resolveLabelOfState({ state: 'failed', isPushFailure: true })).toBe('Push failed');

@@ -147,4 +147,40 @@ describe('pullRequestCellsOf', () => {
     expect(checks?.word).toBe(`Running, ${counts.passed + counts.skipped} of ${runs.length}`);
     expect(checks?.opens).toBe('checks');
   });
+
+  it('gives every cell somewhere to go', () => {
+    const blocked = cellsOf({});
+    expect(blocked.map((cell) => cell.opens)).toEqual([
+      'checks',
+      'comments',
+      'comments',
+      'commits',
+    ]);
+
+    const failing = cellsOf({
+      runs: [...PASSING, run({ name: 'e2e member flows', conclusion: 'failure' })],
+      facts: { checks: 'failing', failingChecks: ['e2e member flows'] },
+    });
+    expect(failing[2]?.opens).toBe('checks');
+
+    expect(cellsOf({ facts: { hasConflicts: true } })[2]?.opens).toBe('files');
+    expect(cellsOf({ facts: { review: 'approved' } })[2]?.opens).toBe('merge');
+  });
+
+  it('opens the commits behind a merged, closed or queued request', () => {
+    const base = {
+      pr: { baseBranch: 'main', reviewDecision: null },
+      runs: PASSING,
+      isChecksUnread: false,
+      people: [],
+      readiness: evaluatePrMergeReadiness({ facts: FACTS }),
+      hasConflicts: false,
+      mergeWord: 'Squash and merge',
+      queueLine: null,
+      branch: { ahead: 4, behind: 0, onlineAhead: 0, isRebasing: false },
+    } as const;
+    (['merged', 'closed', 'queued', 'draft'] as const).forEach((state) => {
+      expect(pullRequestCellsOf({ ...base, state })[2]?.opens).toBe('commits');
+    });
+  });
 });

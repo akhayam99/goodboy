@@ -1,24 +1,24 @@
 import { Button, FormActions } from '@goodboy/ui';
-import type { ResolveLaunchMode } from '@goodboy/types';
 import { FIX_COMMENTS_LABEL, startFixLabel } from './fixCommentsCopy';
+import type { FixLaunch } from './useFixLaunch';
 
 type Props = {
   readonly count: number;
-  readonly startedMode: ResolveLaunchMode | null;
-  readonly error: string | null;
-  readonly onStart: (mode: ResolveLaunchMode) => void;
+  readonly launch: FixLaunch;
 };
 
-export const FixCommentsLaunchRow = ({ count, startedMode, error, onStart }: Props) => {
-  const isStarting = startedMode !== null;
+export const FixCommentsLaunchRow = ({ count, launch }: Props) => {
+  const { blockedReason, startedMode, error } = launch;
+  const isHeld = count === 0 || startedMode !== null || blockedReason !== null;
+  const reason = blockedReason ?? (count === 0 ? FIX_COMMENTS_LABEL.nothingSelected : null);
   return (
-    <FormActions error={error} reason={count === 0 ? FIX_COMMENTS_LABEL.nothingSelected : null}>
+    <FormActions error={error} reason={reason}>
       <Button
         size="sm"
         variant="ghost"
         isBusy={startedMode === 'propose'}
-        disabled={count === 0 || isStarting}
-        onClick={() => onStart('propose')}
+        disabled={isHeld}
+        onClick={() => void launch.start('propose')}
       >
         {FIX_COMMENTS_LABEL.analyze}
       </Button>
@@ -27,8 +27,8 @@ export const FixCommentsLaunchRow = ({ count, startedMode, error, onStart }: Pro
         variant="primary"
         data-demo-anchor="resolve-start"
         isBusy={startedMode === 'apply'}
-        disabled={count === 0 || isStarting}
-        onClick={() => onStart('apply')}
+        disabled={isHeld}
+        onClick={() => void launch.start('apply')}
       >
         {startFixLabel({ count })}
       </Button>

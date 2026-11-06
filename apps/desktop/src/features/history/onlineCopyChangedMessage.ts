@@ -1,2 +1,1 @@
-export const ONLINE_COPY_CHANGED_MESSAGE =
-  'The online copy changed. Check again before force pushing.';
+export const ONLINE_COPY_CHANGED_MESSAGE = 'Origin changed. Check again before force pushing.';

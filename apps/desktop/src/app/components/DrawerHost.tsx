@@ -203,6 +203,7 @@ const renderDrawer = ({
         <FixCommentsDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
+          mountId={drawer.payload.mountId}
           focusThreadId={drawer.payload.focusThreadId ?? null}
           threadIds={drawer.payload.threadIds ?? null}
           fromThreadId={drawer.payload.fromThreadId ?? null}

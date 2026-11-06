@@ -222,7 +222,7 @@ describe('PushBanner', () => {
 
     screen.getByText('pre-push: yarn knip --cache failed');
     expect(screen.getByText(/Unused files \(15\)/).textContent).toContain('ledgerExport.ts');
-    fireEvent.click(screen.getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
 
     expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -260,7 +260,7 @@ describe('PushBanner', () => {
         })}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
     await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledOnce());
     const onSettled = fixBranchPushWithAgent.mock.calls[0]?.[0].onSettled;
 
@@ -336,7 +336,7 @@ describe('PushBanner', () => {
     );
 
     screen.getByText('An agent is fixing the push');
-    expect(screen.queryByRole('button', { name: 'Let an agent fix the push' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(retryAfterFix).not.toHaveBeenCalled();
     act(() => {
       store.setState({

@@ -4,6 +4,8 @@ import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain'
 import { selectKindRouting } from '../../../store/slices/agents/selectKindRouting';
 import { withOperatorNotes } from '../../chat/utils/withOperatorNotes';
 import { checkAnalysisOf } from './checkAnalysisOf';
+import { checkWorkReasonOf } from './checkWorkReasonOf';
+import { liveCheckWorkOf } from './liveCheckWorkOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -29,6 +31,10 @@ export const startCheckFix = ({
   const chain = selectCheckChain({ state, sessionId, url });
   if (chain.debugger === null || chain.proposal === null) {
     return Promise.reject(new Error('The proposal is no longer available. Analyze again.'));
+  }
+  const live = liveCheckWorkOf({ state, sessionId, mountId, exceptUrl: url });
+  if (live !== null) {
+    return Promise.reject(new Error(checkWorkReasonOf({ work: live })));
   }
   const { finding, options } = checkAnalysisOf({
     agent: chain.debugger,

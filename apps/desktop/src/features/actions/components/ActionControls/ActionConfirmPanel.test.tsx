@@ -117,6 +117,28 @@ describe('ActionConfirmPanel with a choice', () => {
     expect(confirm).toHaveBeenCalledWith({ choice: 'squash' });
   });
 
+  it('says what goes and what stays when the action names them', () => {
+    const confirming: ResolvedAction = {
+      ...MERGE,
+      confirm: {
+        title: 'Remove the worktree?',
+        description: 'Stops and says why if work is uncommitted or unpushed.',
+        confirmLabel: 'Remove worktree',
+        role: 'danger',
+        goes: 'Its folder and the local branch hl/fix-duplicate-credit',
+        stays: 'The pull request',
+      },
+    };
+    render(
+      <ActionConfirmPanel
+        controls={controlsOf({ confirming, confirm: vi.fn(async () => undefined) })}
+      />,
+    );
+
+    screen.getByText('Its folder and the local branch hl/fix-duplicate-credit');
+    screen.getByText('The pull request');
+  });
+
   it('draws nothing while no action is confirming', () => {
     render(
       <ActionConfirmPanel

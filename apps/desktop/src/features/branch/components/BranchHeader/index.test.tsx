@@ -189,6 +189,7 @@ type HarnessProps = {
   readonly canEditTitle?: boolean;
   readonly isActive?: boolean;
   readonly isPrimaryYielding?: boolean;
+  readonly isStepHidden?: boolean;
   readonly nextStep?: BranchNextStep;
   readonly hasOpenRebaseStop?: boolean;
   readonly onMutated?: () => void;
@@ -220,6 +221,7 @@ const Harness = ({
   canEditTitle = false,
   isActive = true,
   isPrimaryYielding = false,
+  isStepHidden = false,
   nextStep = null,
   hasOpenRebaseStop = false,
   onMutated,
@@ -242,6 +244,7 @@ const Harness = ({
       controls={controls}
       isPushBusy={false}
       isPrimaryYielding={isPrimaryYielding}
+      isStepHidden={isStepHidden}
       tab="pr"
       isActive={isActive}
       canEditTitle={canEditTitle}
@@ -256,6 +259,7 @@ const renderHeader = ({
   canEditTitle,
   isActive,
   isPrimaryYielding,
+  isStepHidden,
   nextStep,
   hasOpenRebaseStop,
   onMutated,
@@ -268,6 +272,7 @@ const renderHeader = ({
         canEditTitle={canEditTitle}
         isActive={isActive}
         isPrimaryYielding={isPrimaryYielding}
+        isStepHidden={isStepHidden}
         nextStep={nextStep}
         hasOpenRebaseStop={hasOpenRebaseStop}
         onMutated={onMutated}
@@ -386,16 +391,6 @@ describe('BranchHeader actions by state', () => {
     expect(primaries()[0]?.textContent).toBe('Squash and merge');
   });
 
-  it('opens the tab that holds the fix for Fix checks and Fix comments', () => {
-    const open: PullRequestState = { ...PR, isDraft: false };
-    withRequest(open);
-    status = statusOf({});
-    renderHeader({ pr: open, nextStep: 'fixChecks' });
-
-    expect(primaries()[0]?.getAttribute('data-branch-primary')).toBe('tab.checks');
-    expect(primaries()[0]?.textContent).toBe('Fix checks');
-  });
-
   it('offers Reopen as the one primary of a closed pull request and no Merge', () => {
     const closed: PullRequestState = { ...PR, isDraft: false, state: 'closed' };
     withRequest(closed);
@@ -409,7 +404,7 @@ describe('BranchHeader actions by state', () => {
     expect(screen.queryByRole('menuitem', { name: /Reopen/ })).toBeNull();
   });
 
-  it('draws no primary and no push for a merged pull request', () => {
+  it('draws Remove worktree and no push for a merged pull request', () => {
     const merged: PullRequestState = { ...PR, isDraft: false, state: 'merged' };
     withRequest(merged);
     status = statusOf({});
@@ -418,9 +413,55 @@ describe('BranchHeader actions by state', () => {
       review: { accepted: 2, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
 
+    expect(primaries().map((button) => button.textContent)).toEqual(['Remove worktree']);
+    expect(secondaries()).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /^Push/ })).toBeNull();
+  });
+
+  it('asks before it removes the worktree and says what stays', () => {
+    const merged: PullRequestState = { ...PR, isDraft: false, state: 'merged' };
+    withRequest(merged);
+    status = statusOf({});
+    renderHeader({ pr: merged });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove worktree' }));
+
+    const confirm = screen.getByText('Remove the worktree?').closest('[role]');
+    expect(confirm?.textContent ?? '').toContain('Its folder and the local branch feat/export');
+    expect(confirm?.textContent ?? '').toContain('unless your after-merge setting removes it');
+  });
+
+  it('draws no step while the new pull request form leads, so the push waits in the menu', () => {
+    withMountPr();
+    status = statusOf({});
+    renderHeader({
+      pr: PR,
+      isStepHidden: true,
+      review: {
+        accepted: 1,
+        replies: 0,
+        failed: 0,
+        isPushing: false,
+        push: { state: 'idle', count: 3 },
+      },
+    });
+
     expect(primaries()).toHaveLength(0);
     expect(secondaries()).toHaveLength(0);
-    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /^Push 3 commits$/ })).toBeNull();
+  });
+
+  it('keeps Change base branch out of the menu once a pull request exists', () => {
+    withMountPr();
+    status = statusOf({ changed: 3 });
+    renderHeader({ pr: PR });
+
+    const more = screen.queryByRole('button', { name: 'Branch actions' });
+    if (more !== null) {
+      fireEvent.click(more);
+    }
+    const labels = screen.queryAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.some((label) => label.startsWith('Change base branch'))).toBe(false);
   });
 
   it('draws no primary for a queued pull request and leaves the queue to the property block', () => {
@@ -472,21 +513,22 @@ describe('BranchHeader actions by state', () => {
     expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
   });
 
-  it('publishes replies with no commit to push, then retries a failed push', () => {
+  it('retries a failed push before it publishes replies, then publishes them', () => {
     withMountPr();
     status = statusOf({});
     renderHeader({
       pr: PR,
       review: { accepted: 0, replies: 2, failed: 1, isPushing: false, push: IDLE_PUSH },
     });
-    screen.getByRole('button', { name: /Publish 2 replies/ });
+    screen.getByRole('button', { name: 'Retry push' });
+    expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
     cleanup();
 
     renderHeader({
       pr: PR,
-      review: { accepted: 0, replies: 0, failed: 1, isPushing: false, push: IDLE_PUSH },
+      review: { accepted: 0, replies: 2, failed: 0, isPushing: false, push: IDLE_PUSH },
     });
-    screen.getByRole('button', { name: 'Retry push' });
+    screen.getByRole('button', { name: /Publish 2 replies/ });
   });
 
   it('leads with the push over a pull request ready to merge', () => {
@@ -640,6 +682,7 @@ describe('BranchHeader overflow', () => {
       'diff.rebase',
       'diff.changeBase',
       'diff.copyPatch',
+      'diff.archiveSession',
     ]);
     withMountPr();
     status = statusOf({ changed: 3 });
@@ -786,7 +829,7 @@ describe('BranchHeader push failure', () => {
     return { fixBranchPushWithAgent, prefillBranchPushTerminal };
   };
 
-  it('offers Let an agent fix the push and Open terminal here beside Retry when a plain push fails', async () => {
+  it('offers Fix with an agent and Open terminal here beside Retry when a plain push fails', async () => {
     withRequest(open);
     status = upstreamAt({ ahead: 2, behind: 0 });
     const { fixBranchPushWithAgent, prefillBranchPushTerminal } = failPushWith({
@@ -798,7 +841,7 @@ describe('BranchHeader push failure', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('pre-push hook declined');
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
     await waitFor(() => expect(fixBranchPushWithAgent).toHaveBeenCalledTimes(1));
     expect(fixBranchPushWithAgent).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -832,7 +875,7 @@ describe('BranchHeader push failure', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Hint for the Implementer' }), {
       target: { value: 'Keep the pre-push hook as it is.' },
     });
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
 
     await waitFor(() =>
       expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
@@ -854,7 +897,7 @@ describe('BranchHeader push failure', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Force push$/ }));
     const alert = await screen.findByRole('alert');
 
-    fireEvent.click(within(alert).getByRole('button', { name: 'Let an agent fix the push' }));
+    fireEvent.click(within(alert).getByRole('button', { name: 'Fix with an agent' }));
     await waitFor(() =>
       expect(fixBranchPushWithAgent).toHaveBeenCalledWith(
         expect.objectContaining({ isForce: true, message: 'stale info' }),

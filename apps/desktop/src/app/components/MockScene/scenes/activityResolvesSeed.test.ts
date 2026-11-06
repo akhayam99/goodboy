@@ -121,7 +121,7 @@ describe('activity resolves scene', () => {
 
     expect(rows).toHaveLength(1);
     const reason = rows[0]?.kind === 'row' ? rows[0].rowState.reason : null;
-    expect(reason?.kind === 'review' ? reason.runTitle : null).toBe('Fix run · #318 · 10 threads');
+    expect(reason?.kind === 'review' ? reason.runTitle : null).toBe('Fix run · #318 · 10 comments');
     expect(reason?.kind === 'review' ? reason.word : null).toBe('4 need you · 4 working');
   });
 

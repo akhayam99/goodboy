@@ -1,7 +1,8 @@
-import type { Agent, SessionId, TurnState } from '@goodboy/types';
+import type { Agent, SessionId } from '@goodboy/types';
 import { checkAnalysisOf } from '../../../features/branch/checks/checkAnalysisOf';
 import { commitOf } from '../../../features/branch/checks/commitOf';
 import type { AppState } from '../../types';
+import { isCheckFixLive } from './isCheckFixLive';
 import { selectCheckAnalysis } from './selectCheckAnalysis';
 
 export type CheckChainState =
@@ -39,13 +40,6 @@ export type CheckChain = {
 
 const NO_EVENTS = [] as const;
 
-const isFixLive = (agent: Agent, turn: TurnState | undefined): boolean =>
-  turn?.kind === 'starting' ||
-  turn?.kind === 'running' ||
-  turn?.kind === 'blocked' ||
-  ((turn === undefined || turn.kind === 'idle') &&
-    (agent.status === 'running' || agent.status === 'pending'));
-
 export const selectCheckChain = ({ state, sessionId, url }: Params): CheckChain => {
   const analyst = selectCheckAnalysis({ state, sessionId, url });
   if (analyst === null) {
@@ -80,7 +74,7 @@ export const selectCheckChain = ({ state, sessionId, url }: Params): CheckChain 
   if (fix !== null) {
     const events = state.transcripts[fix.id];
     const fact = state.checkFixCommits[fix.id];
-    if (isFixLive(fix, state.agentTurnState[fix.id])) {
+    if (isCheckFixLive({ agent: fix, turn: state.agentTurnState[fix.id] })) {
       return { ...base, state: 'fixing', commit: null, commitCount: 0 };
     }
     if (fix.status !== 'completed') {

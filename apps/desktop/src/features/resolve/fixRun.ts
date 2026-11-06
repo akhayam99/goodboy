@@ -125,13 +125,13 @@ export const fixRunNameOf = ({
   });
 };
 
-export type FixRunCount = Pick<FixRun, 'total' | 'tally'>;
+type FixRunCount = Pick<FixRun, 'total' | 'tally'>;
 
 type FixingParams = {
   readonly run: FixRunCount;
 };
 
-export const fixingOf = ({ run }: FixingParams): FixingCount => ({
+const fixingOf = ({ run }: FixingParams): FixingCount => ({
   working: run.tally.working,
   total: run.total,
 });

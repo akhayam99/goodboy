@@ -12,8 +12,9 @@ import { useSceneFileRailFold } from '../useSceneFileRailFold';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { CTX_COMMITS, CTX_STATUS } from '../brand/contextBranch';
 import { handlersFor } from '../brand/DiffStage';
-import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
+import { APPLY_WEBHOOK_PATH, BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { NOTE_IDS, resolveNotesFor, type NotePlace } from '../resolveNotesSeed';
 import { SESSION, SESSION_ID } from '../resolveSeed';
 import {
   PR_PAGE_WORKTREE,
@@ -77,6 +78,7 @@ export type WorktreeSceneConfig = {
   readonly tab?: BranchTab;
   readonly gitState?: 'level' | 'behind' | 'rebasing';
   readonly hasMoreProjects?: boolean;
+  readonly hasFixableNote?: boolean;
   readonly isMenuOpen?: boolean;
   readonly isFolded?: boolean;
   readonly fileRail?: 'docked' | 'folded' | 'overlay';
@@ -164,6 +166,38 @@ const addProjects = (): void => {
   });
 };
 
+const NOTE_PLACE: NotePlace = { filePath: APPLY_WEBHOOK_PATH, line: 26 };
+
+const seedFixableNote = (): void => {
+  const [mount] = useAppStore.getState().sessionProjectMounts[SESSION_ID] ?? [];
+  if (mount === undefined) {
+    throw new Error('the pull request seed has no mount to hold a note');
+  }
+  const seeded = resolveNotesFor({
+    sessionId: SESSION_ID,
+    places: {
+      open: NOTE_PLACE,
+      openSecond: NOTE_PLACE,
+      working: NOTE_PLACE,
+      needs: NOTE_PLACE,
+      ready: NOTE_PLACE,
+      failed: NOTE_PLACE,
+      done: NOTE_PLACE,
+    },
+  });
+  const notes = seeded.notes
+    .filter((note) => note.id === NOTE_IDS.open)
+    .map((note) => ({ ...note, projectId: mount.projectId, branch: mount.branch }));
+  const entries = seeded.entries.filter((entry) => entry.thread.diffCommentId === NOTE_IDS.open);
+  useAppStore.setState({
+    diffComments: { [SESSION_ID]: notes },
+    sessionResolveQueueItems: { [SESSION_ID]: entries },
+    sessionResolveAttempts: { [SESSION_ID]: [] },
+    loadDiffComments: async () => undefined,
+    loadResolveSession: async () => undefined,
+  });
+};
+
 const MENU_SELECTOR = '[data-worktree-open] [data-worktree-actions] button[aria-haspopup="menu"]';
 
 const MENU_POLL_MS = 100;
@@ -215,6 +249,9 @@ export const WorktreeScene = ({ config, children = null }: Props) => {
     installIpc({ gitState: config.gitState ?? 'level' });
     if (config.hasMoreProjects === true) {
       addProjects();
+    }
+    if (config.hasFixableNote === true) {
+      seedFixableNote();
     }
     const state = useAppStore.getState();
     state.navigate({

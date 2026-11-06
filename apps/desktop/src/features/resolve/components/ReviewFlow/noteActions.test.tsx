@@ -129,14 +129,15 @@ describe('a note in Comments', () => {
     );
   });
 
-  it('puts the age on each row, no kind chip when every row is a note, and one Fix button', async () => {
+  it('puts the age on each row, no kind chip when every row is a note, and one header step', async () => {
     await mount();
 
     const list = screen.getByRole('navigation', { name: 'Comments' });
     expect(within(list).queryAllByText('Note')).toHaveLength(0);
     expect(list.querySelectorAll('[data-row-author]')).toHaveLength(NOTES.length);
+    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
     expect(
-      screen.getAllByRole('button', { name: /^(Fix|Fixing) (\d+ of )?\d+ threads?$/ }),
-    ).toHaveLength(1);
+      screen.queryAllByRole('button', { name: /^(Fix|Fixing) (\d+ of )?\d+ threads?$/ }),
+    ).toHaveLength(0);
   });
 });
