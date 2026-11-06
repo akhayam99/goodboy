@@ -1,11 +1,14 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  AgentId,
-  IsoDateTime,
-  MountId,
-  ProjectId,
-  SessionId,
-  WorkspaceId,
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type MountId,
+  type ProjectId,
+  type ProviderRunId,
+  type SessionId,
+  type TurnEvent,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { parseUsageLimitResetAt } from '../features/chat/parseUsageLimitResetAt';
 import {
@@ -49,10 +52,10 @@ vi.mock('../features/worktree/worktree', async () =>
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-const SESSION_ID = 'session-fallback-1' as SessionId;
-const AGENT_A = 'agent-fallback-a' as AgentId;
-const WORKSPACE_ID = 'workspace-fallback' as WorkspaceId;
-const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
+const SESSION_ID = brandId<SessionId>({ value: 'session-fallback-1' });
+const AGENT_A = brandId<AgentId>({ value: 'agent-fallback-a' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-fallback' });
+const NOW = brandId<IsoDateTime>({ value: '2026-07-30T00:00:00.000Z' });
 
 let useAppStore: StoryStore;
 
@@ -68,12 +71,12 @@ describe('sendTurn, provider failure fallback', () => {
       stdout: JSON.stringify({ result: JSON.stringify({ upserts: [] }) }),
       stderr: '',
       exitCode: 0,
-    } as never);
+    });
     const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
+    vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValue({
       selectedProvider: 'anthropic',
       selectedModel: 'claude-sonnet-4-5',
-      reason: 'preference',
+      reason: 'preferred',
       fallbackUsed: false,
     });
   });
@@ -81,6 +84,9 @@ describe('sendTurn, provider failure fallback', () => {
   afterEach(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
+
+  const USAGE_LIMIT_MESSAGE =
+    "You've hit your usage limit. Upgrade to Pro (https://openai.com/chatgpt/pricing) or try again at 3:10 PM.";
 
   const setup = () => {
     useAppStore.setState({
@@ -97,12 +103,12 @@ describe('sendTurn, provider failure fallback', () => {
       sessionProjectMounts: {
         [SESSION_ID]: [
           {
-            projectId: 'project-turn' as ProjectId,
+            projectId: brandId<ProjectId>({ value: 'project-turn' }),
             mountName: 'repo',
             worktreePath: '/tmp/wt',
             repoRoot: '/tmp/repo',
             branch: 'goodboy/turn',
-            mountId: 'mount-fixture-1' as MountId,
+            mountId: brandId<MountId>({ value: 'mount-fixture-1' }),
             sessionId: SESSION_ID,
             lastWorktreePath: null,
             baseBranch: null,
@@ -153,6 +159,101 @@ describe('sendTurn, provider failure fallback', () => {
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).not.toBe('error');
   });
 
+  describe('over a permission ask', () => {
+    const ASK_RUN = brandId<ProviderRunId>({ value: 'run-ledger-ask' });
+    const asked = ({
+      toolUseId,
+      toolName,
+      input,
+    }: {
+      readonly toolUseId: string;
+      readonly toolName: string;
+      readonly input: unknown;
+    }): TurnEvent => ({
+      kind: 'permission_request',
+      runId: ASK_RUN,
+      toolUseId,
+      toolName,
+      input,
+      at: NOW,
+    });
+    const allowedOnce: TurnEvent = {
+      kind: 'permission_decision',
+      runId: ASK_RUN,
+      toolUseId: 'tool-seed',
+      decision: 'allow',
+      scope: 'once',
+      ruleId: null,
+      decidedBy: 'user',
+      at: NOW,
+    };
+    const hold = (): void => {
+      useAppStore.setState({
+        transcripts: {
+          [AGENT_A]: [
+            asked({
+              toolUseId: 'tool-seed',
+              toolName: 'Bash',
+              input: { command: 'pnpm db:seed' },
+            }),
+            allowedOnce,
+            asked({
+              toolUseId: 'tool-migrate',
+              toolName: 'Edit',
+              input: { file_path: 'ledger-core/migrate.sql' },
+            }),
+          ],
+        },
+        agentTurnState: { [AGENT_A]: { kind: 'blocked', runId: ASK_RUN, blockedAt: NOW } },
+      });
+    };
+    const sendAndDeny = () =>
+      useAppStore.getState().sendTurn({
+        sessionId: SESSION_ID,
+        agentId: AGENT_A,
+        content: 'Leave the seed alone',
+        origin: 'operator',
+      });
+
+    it('carries the denial and the once grants to the attempt after a failure', async () => {
+      setup();
+      hold();
+      storySpies.runTurn.mockImplementationOnce(async function* () {
+        throw new Error('rate limit exceeded for this account');
+      });
+
+      await sendAndDeny();
+
+      expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+      const retried = storySpies.runTurn.mock.calls[1]?.[0];
+      expect(retried?.prompt).toContain('Denied Edit. Leave the seed alone');
+      expect(retried?.prompt).toContain('Permission for Bash is granted for this one call.');
+      expect(JSON.stringify(retried)).toContain('Bash(pnpm db:seed)');
+      const decisions = (useAppStore.getState().transcripts[AGENT_A] ?? []).filter(
+        (event) => event.kind === 'permission_decision',
+      );
+      expect(decisions).toHaveLength(2);
+    });
+
+    it('keeps them on the input a usage limit stop will resend', async () => {
+      setup();
+      hold();
+      useAppStore.setState({ providerCooldowns: {}, limitStops: {} });
+      storySpies.runTurn.mockImplementation(async function* () {
+        throw new Error(USAGE_LIMIT_MESSAGE);
+      });
+
+      await expect(sendAndDeny()).rejects.toThrow('usage limit');
+
+      const [stop] = Object.values(useAppStore.getState().limitStops);
+      expect(stop?.input.permissionOnceAllows).toEqual(['Bash(pnpm db:seed)']);
+      expect(stop?.input.resolvedAsks?.denied.map((ask) => ask.toolUseId)).toEqual([
+        'tool-migrate',
+      ]);
+      expect(stop?.input.resolvedAsks?.held.map((ask) => ask.toolUseId)).toEqual(['tool-seed']);
+    });
+  });
+
   it('reuses the attachments of the first attempt instead of writing them again', async () => {
     setup();
     storySpies.runTurn.mockImplementationOnce(async function* () {
@@ -169,7 +270,7 @@ describe('sendTurn, provider failure fallback', () => {
           fileName: 'spec.pdf',
           mimeType: 'application/pdf',
           dataBase64: 'ZmFrZQ==',
-        } as never,
+        },
       ],
     });
 
@@ -201,20 +302,14 @@ describe('sendTurn, provider failure fallback', () => {
     expect(stopped).toMatchObject({ retryable: true });
   });
 
-  const USAGE_LIMIT_MESSAGE =
-    "You've hit your usage limit. Upgrade to Pro (https://openai.com/chatgpt/pricing) or try again at 3:10 PM.";
-
   it('cools the provider down and offers to continue when a usage limit leaves no alternative', async () => {
     setup();
     useAppStore.setState({ providerCooldowns: {}, limitStops: {} });
     const scheduled: number[] = [];
-    const timerSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation(((
-      _handler: () => void,
-      delay?: number,
-    ) => {
+    vi.stubGlobal('setTimeout', (_handler: () => void, delay?: number) => {
       scheduled.push(delay ?? 0);
       return 0;
-    }) as never);
+    });
     storySpies.runTurn.mockImplementation(async function* () {
       throw new Error(USAGE_LIMIT_MESSAGE);
     });
@@ -249,7 +344,7 @@ describe('sendTurn, provider failure fallback', () => {
       isScheduled: false,
     });
     expect(stops[0]?.input.content).toBe('go');
-    timerSpy.mockRestore();
+    vi.unstubAllGlobals();
   });
 
   it('offers no continue button when the turn moves to another provider', async () => {

@@ -6,6 +6,7 @@ import { isReportedError } from '../../../../../store/slices/notifications/repor
 import type { RetryRunParams } from '../../../retryRun';
 import { buildRetryOverride } from '../buildRetryOverride';
 import { findRetrySource } from '../findRetrySource';
+import { retryAsksOf } from '../retryAsksOf';
 import { missingAttachmentsMessage, readRetryAttachments } from '../readRetryAttachments';
 
 type Params = {
@@ -51,6 +52,7 @@ export const useRetryRun = ({ sessionId, agentId, events, worktreePath }: Params
           sessionId,
           agentId,
           content: source.content,
+          resolvedAsks: retryAsksOf({ events, runId }),
           ...(attachments.length > 0 ? { attachments } : {}),
           ...(override !== undefined ? { override } : {}),
         });

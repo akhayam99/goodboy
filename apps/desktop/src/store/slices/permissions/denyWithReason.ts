@@ -10,6 +10,7 @@ import { askBatchAfterAnswer } from './askBatchAfterAnswer';
 import { askDenialEventOf } from './askDenialEventOf';
 import { denialNoticeOf } from './denialNoticeOf';
 import { heldOnceAllowsOf } from './heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import type { GetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
 
@@ -55,6 +56,7 @@ export const denyWithReason = (get: GetFn) => {
         sessionId,
         agentId,
         content: withHeldAnswers({ held, prompt }),
+        resolvedAsks: NO_RESOLVED_ASKS,
         ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });

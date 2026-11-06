@@ -3,6 +3,7 @@ import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import { askBatchAfterAnswer } from './askBatchAfterAnswer';
 import { denialNoticeOf } from './denialNoticeOf';
 import { heldOnceAllowsOf } from './heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import type { GetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
 
@@ -55,6 +56,7 @@ export const neverAllowTool = ({ get }: Deps) => {
         agentId,
         content: withHeldAnswers({ held, prompt: denialNoticeOf({ toolName, reason: '' }) }),
         permissionOnceAllows: heldOnceAllowsOf({ held }),
+        resolvedAsks: NO_RESOLVED_ASKS,
       }),
     });
   };

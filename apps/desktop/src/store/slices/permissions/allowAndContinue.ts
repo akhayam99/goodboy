@@ -3,6 +3,7 @@ import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/ty
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import { askBatchAfterAnswer } from './askBatchAfterAnswer';
 import { heldOnceAllowsOf } from './heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import type { GetFn, SetFn } from './types';
 import { withHeldAnswers } from './withHeldAnswers';
 
@@ -55,6 +56,7 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
         agentId,
         content: withHeldAnswers({ held, prompt: CONTINUE_PROMPT }),
         permissionOnceAllows: [...heldOnceAllowsOf({ held }), oncePatternText({ toolName, input })],
+        resolvedAsks: NO_RESOLVED_ASKS,
       }),
     });
   };

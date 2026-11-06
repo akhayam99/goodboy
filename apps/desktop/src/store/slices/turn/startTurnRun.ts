@@ -16,17 +16,14 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { askBatchOf, type AnsweredAsk } from '../../../features/permissions/askBatchOf';
-import {
-  openPermissionAsksOf,
-  type OpenPermissionAsk,
-} from '../../../features/permissions/openPermissionAsksOf';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { askDenialEventOf } from '../permissions/askDenialEventOf';
 import { deniedPromptOf } from '../permissions/deniedPromptOf';
 import { heldOnceAllowsOf } from '../permissions/heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from '../permissions/noResolvedAsks';
+import { resolvedAsksAtWrite } from '../permissions/resolvedAsksAtWrite';
 import { withHeldAnswers } from '../permissions/withHeldAnswers';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
@@ -112,8 +109,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     return closeCancelled();
   }
 
-  let deniedAsks: ReadonlyArray<OpenPermissionAsk> = [];
-  let heldAnswers: ReadonlyArray<AnsweredAsk> = [];
+  let resolvedAsks = ctx.input.resolvedAsks ?? NO_RESOLVED_ASKS;
   if (retry == null) {
     await ctx.input.onWritingUserText?.();
     const userMessage: Message = {
@@ -126,16 +122,15 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       ...(resolvedOverride !== undefined ? { providerOverride: resolvedOverride } : {}),
     };
     await insertMessage(tauriDatabase, userMessage);
-    if (ctx.input.origin === 'operator') {
-      const atWrite = get();
-      const events = atWrite.transcripts[activeAgentId] ?? [];
-      deniedAsks = openPermissionAsksOf({
-        events,
-        turnState: atWrite.agentTurnState[activeAgentId],
-      });
-      heldAnswers = deniedAsks.length > 0 ? askBatchOf({ events }).answered : [];
-    }
-    for (const ask of deniedAsks) {
+    const atWrite = get();
+    const turnAtWrite = atWrite.agentTurnState[activeAgentId];
+    resolvedAsks = resolvedAsksAtWrite({
+      events: atWrite.transcripts[activeAgentId] ?? [],
+      turnState: turnAtWrite?.kind === 'starting' ? ctx.turnBeforeLease : turnAtWrite,
+      origin: ctx.input.origin,
+      given: ctx.input.resolvedAsks,
+    });
+    for (const ask of resolvedAsks.denied) {
       get().appendTurnEvent(
         activeAgentId,
         sessionId,
@@ -247,10 +242,11 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       isHandoffTurn,
       resolvedAgentId,
       agentBefore,
+      resolvedAsks,
       resolvedPrompt: withHeldAnswers({
-        held: heldAnswers,
+        held: resolvedAsks.held,
         prompt: deniedPromptOf({
-          asks: deniedAsks,
+          asks: resolvedAsks.denied,
           content: userTurnText,
           prompt: ctx.resolvedPrompt,
         }),
@@ -258,8 +254,10 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       input: {
         ...ctx.input,
         permissionOnceAllows: [
-          ...(ctx.input.permissionOnceAllows ?? []),
-          ...heldOnceAllowsOf({ held: heldAnswers }),
+          ...new Set([
+            ...(ctx.input.permissionOnceAllows ?? []),
+            ...heldOnceAllowsOf({ held: resolvedAsks.held }),
+          ]),
         ],
       },
     },

@@ -325,9 +325,12 @@ describe('sendTurn, permission proxy integration', () => {
       },
     });
 
-    await useAppStore
-      .getState()
-      .retryBlockedTool({ sessionId: SESSION_ID, agentId: AGENT_ID, toolName: 'Bash' });
+    await useAppStore.getState().retryBlockedTool({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolName: 'Bash',
+      toolUseId: 'tool-blocked',
+    });
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -346,9 +349,12 @@ describe('sendTurn, permission proxy integration', () => {
       },
     });
 
-    await useAppStore
-      .getState()
-      .retryBlockedTool({ sessionId: SESSION_ID, agentId: AGENT_ID, toolName: 'Bash' });
+    await useAppStore.getState().retryBlockedTool({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      toolName: 'Bash',
+      toolUseId: 'tool-blocked',
+    });
 
     expect(runTurnSpy).not.toHaveBeenCalled();
   });

@@ -8,9 +8,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly toolName: string;
+  readonly toolUseId: string;
 };
 
-export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
+export const RetryButton = ({ sessionId, agentId, toolName, toolUseId }: Props) => {
   const retryBlockedTool = useAppStore((s) => s.retryBlockedTool);
   const isRunning = useAppStore((s) => s.agentTurnState[agentId]?.kind === 'running');
   const reportError = useAppStore((s) => s.reportError);
@@ -23,7 +24,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
     }
     setIsBusy(true);
     try {
-      await retryBlockedTool({ sessionId, agentId, toolName });
+      await retryBlockedTool({ sessionId, agentId, toolName, toolUseId });
       setHasSent(true);
     } catch (err) {
       void reportError({ title: `Couldn't continue after ${toolName}`, error: err, sessionId });

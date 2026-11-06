@@ -127,6 +127,7 @@ describe('PermissionDecisionCard', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       toolName: 'Bash',
+      toolUseId: 'tu-7',
     });
     screen.getByText('Continuing');
   });

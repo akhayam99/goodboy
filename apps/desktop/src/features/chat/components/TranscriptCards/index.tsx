@@ -217,7 +217,7 @@ const TranscriptCardImpl = ({
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
       return item.isRecordLine === true ? (
-        <PermissionRecordLine item={item} />
+        <PermissionRecordLine item={item} sessionId={sessionId} agentId={agentId} />
       ) : (
         <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />
       );

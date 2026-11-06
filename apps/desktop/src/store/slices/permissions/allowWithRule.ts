@@ -41,7 +41,7 @@ export const allowWithRule = ({ get }: Deps) => {
       scope,
       pattern,
     });
-    const { isWaiting, held } = askBatchAfterAnswer({
+    const { isWaiting } = askBatchAfterAnswer({
       transcripts: get().transcripts,
       agentId,
       toolUseId,
@@ -49,6 +49,6 @@ export const allowWithRule = ({ get }: Deps) => {
     if (isWaiting) {
       return;
     }
-    await get().retryBlockedTool({ sessionId, agentId, toolName, held });
+    await get().retryBlockedTool({ sessionId, agentId, toolName, toolUseId });
   };
 };
