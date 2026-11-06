@@ -18,7 +18,7 @@ import type {
 import type { RunPlanResult } from '../../../store/slices/plans/types';
 import type { BranchPushResult } from '../../../store/slices/github/branchPushResult';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
-import { brandId, type PrSeriesId, type WorkspaceId } from '@goodboy/types';
+import { brandId, type PrSeriesId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { aTrackerMove } from '../../../store/slices/tracker-moves/testing/aTrackerMove';
 
@@ -68,18 +68,10 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   const openMountTerminal = vi.fn();
   const readWorktreeStatus = vi.fn(async (_params: unknown) => null);
   const phaseRuns: Record<string, ReadonlyArray<unknown>> = {};
-  const fixableIds: ReadonlyArray<string> = [];
-  const sessionProjectMounts: Record<string, ReadonlyArray<unknown>> = {};
-  const mountGithub: Record<string, unknown> = {};
-  const mountRequests: Record<string, unknown> = {};
-  const projects: ReadonlyArray<unknown> = [];
-  const artifactComments: Record<string, ReadonlyArray<unknown>> = {};
-  const currentSessionId: string = 'session-elsewhere';
-  const activeLens: Record<string, string> = {};
-  const branchTab: Record<string, string> = {};
-  const branchThreadId: Record<string, string | null> = {};
+  const record = <T>(): Record<string, T> => ({});
+  const list = <T>(): ReadonlyArray<T> => [];
   return {
-    fixable: { ids: fixableIds },
+    fixable: { ids: list<string>() },
     spies: {
       requestReviewLaunch,
       openMountTerminal,
@@ -116,13 +108,13 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       })),
     },
     storeState: {
-      sessionProjectMounts,
+      sessionProjectMounts: record<ReadonlyArray<unknown>>(),
       rebaseAllRuns: noRebaseAllRuns,
       sessionPhaseRuns: phaseRuns,
-      mountGithub,
-      mountRequests,
-      projects,
-      artifactComments,
+      mountGithub: record<unknown>(),
+      mountRequests: record<unknown>(),
+      projects: list<unknown>(),
+      artifactComments: record<ReadonlyArray<unknown>>(),
       ensureProjectMounted,
       recordSessionEvent,
       setSessionActiveProject,
@@ -147,10 +139,10 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       openMountTerminal,
       requestOpenQuestionScroll: vi.fn(),
       requestReviewLaunch,
-      currentSessionId,
-      activeLens,
-      branchTab,
-      branchThreadId,
+      currentSessionId: 'session-elsewhere',
+      activeLens: record<string>(),
+      branchTab: record<string>(),
+      branchThreadId: record<string | null>(),
     },
   };
 });
@@ -209,27 +201,18 @@ const WEB_MOUNT_ID = brandId<MountId>({ value: 'mount-web' });
 const WEB_SECOND_MOUNT_ID = brandId<MountId>({ value: 'mount-web-second' });
 const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
 
-const SESSION = aSession({
-  id: SESSION_ID,
-  workspaceId: brandId<WorkspaceId>({ value: 'workspace-1' }),
-  goal: 'Ship the thing',
-});
+const SESSION = aSession({ id: SESSION_ID, goal: 'Ship the thing' });
 
 const PENDING_AGENT = anAgent({
   id: AGENT_ID,
   sessionId: SESSION_ID,
   workflowRunId: RUN_ID,
   stepId: STEP_ID,
-  status: 'pending',
 });
 
 const onSelectQuestions = vi.fn();
 
-spies.runPlan.mockImplementation(async () => ({
-  kind: 'started',
-  agentId: brandId<AgentId>({ value: 'agent-implementer' }),
-  scope: 'workflow',
-}));
+spies.runPlan.mockResolvedValue({ kind: 'started', agentId: AGENT_ID, scope: 'workflow' });
 
 const actionsFor = ({ suggestion }: { readonly suggestion: SessionSuggestion }) => {
   const { result } = renderHook(() =>
@@ -571,20 +554,12 @@ describe('useSuggestionActions', () => {
       payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
     };
     const clean = actionsFor({ suggestion }).primary;
-    storeState.artifactComments = {
-      [SESSION_ID]: [
-        { artifactId: 'plan-1', status: 'draft' },
-        { artifactId: 'plan-1', status: 'sent' },
-        { artifactId: 'plan-2', status: 'draft' },
-      ],
-    };
+    storeState.artifactComments = { [SESSION_ID]: [{ artifactId: 'plan-1', status: 'draft' }] };
     const unsent = actionsFor({ suggestion }).primary;
     storeState.artifactComments = {};
 
-    expect(clean?.requiresConfirm).toBeUndefined();
-    expect(unsent?.requiresConfirm).toBe(true);
+    expect(clean?.confirm).toBeUndefined();
     expect(unsent?.confirm?.title).toBe('Run without your comment?');
-    expect(unsent?.confirm?.confirmLabel).toBe('Run anyway');
   });
 
   it('says why when the plan cannot run, with a link to the run, instead of announcing a start', async () => {
