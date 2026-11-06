@@ -1,0 +1,293 @@
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { insertWorkspace } from '@goodboy/db';
+import { nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
+import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
+import { summarizerQueues } from '../../slices/turn/turnHelpers';
+import {
+  buildStoryWorkspace,
+  connectedAnthropicState,
+  emptyTurnStream,
+  importStore,
+  openStorySqlite,
+  resetStoryStore,
+  rowsOf,
+  STORE_IMPORT_TIMEOUT_MS,
+  storySpies,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../storyHarness';
+import { stopWork } from './stopWork';
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).sqliteDbLibModuleMock(),
+);
+vi.mock('../../../features/chat/turn', async () =>
+  (await import('../../storyHarness')).turnModuleMock(),
+);
+vi.mock('../../../features/permissions/permissions', async () =>
+  (await import('../../storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../../../features/providers/providers', async () =>
+  (await import('../../storyHarness')).providersModuleMock(),
+);
+vi.mock('../../../features/providers/routing', async () =>
+  (await import('../../storyHarness')).routingModuleMock(),
+);
+vi.mock('../../../features/budget/budget', async () =>
+  (await import('../../storyHarness')).budgetModuleMock(),
+);
+vi.mock('../../../features/worktree/worktree', async () =>
+  (await import('../../storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../../../shared/lib/repo', async () =>
+  (await import('../../storyHarness')).repoModuleMock(),
+);
+vi.mock('../../../features/plans/plans', async () =>
+  (await import('../../storyHarness')).plansModuleMock(),
+);
+
+const workspace = buildStoryWorkspace({
+  id: nextWorkspaceId(),
+  name: 'Harborline',
+  slug: 'harborline',
+});
+
+let useAppStore: StoryStore;
+let sessionId: SessionId;
+let agentId: AgentId;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+type GateHandle = Readonly<{
+  opened: Promise<void>;
+  open: () => void;
+}>;
+
+const gate = (): GateHandle => {
+  let open: () => void = () => undefined;
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { opened, open };
+};
+
+type StreamParams = Readonly<{
+  runId: ProviderRunId;
+  hold: Promise<void>;
+}>;
+
+const heldStream = ({ runId, hold }: StreamParams) =>
+  (async function* stream(): AsyncIterable<TurnEvent> {
+    yield { kind: 'assistant_text', runId, delta: 'Reading the ledger-core export', at: TEST_NOW };
+    await hold;
+  })();
+
+const agentStatus = async (): Promise<string | undefined> =>
+  (
+    await rowsOf<{ status: string }>({
+      sql: 'SELECT status FROM agents WHERE id = ?',
+      params: [agentId],
+    })
+  )[0]?.status;
+
+const errorTitles = async (): Promise<ReadonlyArray<string>> =>
+  (
+    await rowsOf<{ title: string }>({ sql: "SELECT title FROM notifications WHERE kind = 'error'" })
+  ).map((row) => row.title);
+
+const runningRunId = (): ProviderRunId => {
+  const turn = useAppStore.getState().agentTurnState[agentId];
+  if (turn?.kind !== 'running') {
+    throw new Error('the agent is not running');
+  }
+  return turn.runId;
+};
+
+type RunArgs = Readonly<{
+  runId: ProviderRunId;
+}>;
+
+type StartParams = Readonly<{
+  hold: Promise<void>;
+}>;
+
+type Streaming = Readonly<{
+  pending: Promise<unknown>;
+}>;
+
+const startStreaming = async ({ hold }: StartParams): Promise<Streaming> => {
+  storySpies.runTurn.mockImplementation(({ runId }: RunArgs) => heldStream({ runId, hold }));
+  const pending = useAppStore.getState().sendTurn({
+    sessionId,
+    agentId,
+    content: 'Reconcile the Harborline ledger export',
+  });
+  await vi.waitFor(() =>
+    expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('running'),
+  );
+  return { pending };
+};
+
+const stopSession = () =>
+  stopWork({
+    getState: useAppStore.getState,
+    scope: { kind: 'session', sessionId },
+    reason: 'user',
+  });
+
+beforeEach(async () => {
+  await resetStoryStore();
+  await insertWorkspace({ db: await openStorySqlite(), workspace });
+  useAppStore.setState({
+    workspaces: [workspace],
+    currentWorkspaceId: workspace.id,
+    projects: [],
+    sessions: [],
+    archivedSessions: {},
+    ...connectedAnthropicState(),
+  });
+  const routingMod = await import('../../../features/providers/routing');
+  vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValue({
+    selectedProvider: 'anthropic',
+    selectedModel: 'claude-sonnet-4-5',
+    reason: 'preferred',
+    fallbackUsed: false,
+  });
+  storySpies.scratchDirPrepare.mockResolvedValue('/tmp/goodboy-root/scratch/harborline');
+  stubStoryInvoke({ workspaces_with_unread: [] });
+  storySpies.cancelTurn.mockResolvedValue(undefined);
+  storySpies.listLiveRunIds.mockResolvedValue(new Set<string>());
+  storySpies.runTurn.mockImplementation(() => emptyTurnStream());
+  const { session } = await useAppStore.getState().createSession({
+    workspaceId: workspace.id,
+    goal: 'Reconcile the Harborline ledger export',
+    firstAgentKind: 'generic',
+  });
+  sessionId = session.id;
+  const [agent] = useAppStore.getState().sessionPhaseRuns[sessionId] ?? [];
+  if (agent === undefined) {
+    throw new Error('createSession left no agent');
+  }
+  agentId = agent.id;
+});
+
+afterEach(async () => {
+  vi.useRealTimers();
+  await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
+});
+
+describe('stopWork', () => {
+  it('stops a running turn, waits for the process, and counts it', async () => {
+    const hold = gate();
+    const live = new Set<string>();
+    storySpies.listLiveRunIds.mockImplementation(async () => live);
+    storySpies.cancelTurn.mockImplementation(async () => {
+      live.clear();
+      hold.open();
+    });
+    const { pending } = await startStreaming({ hold: hold.opened });
+    live.add(runningRunId());
+
+    const result = await stopSession();
+
+    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(await agentStatus()).toBe('stopped');
+    expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
+    await pending;
+  });
+
+  it('stops a permission wait: the agent reads stopped and idle, and the count holds it', async () => {
+    useAppStore.setState({
+      agentTurnState: {
+        [agentId]: {
+          kind: 'blocked',
+          runId: 'run-permission' as ProviderRunId,
+          blockedAt: TEST_NOW,
+        },
+      },
+    });
+
+    const result = await stopSession();
+
+    expect(storySpies.cancelTurn).toHaveBeenCalledWith('run-permission');
+    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(await agentStatus()).toBe('stopped');
+    expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('idle');
+  });
+
+  it('keeps a failed cancel running, reports it, and never counts it as stopped', async () => {
+    const hold = gate();
+    const live = new Set<string>();
+    storySpies.listLiveRunIds.mockImplementation(async () => live);
+    storySpies.cancelTurn.mockRejectedValue(new Error('kill refused'));
+    const { pending } = await startStreaming({ hold: hold.opened });
+    const runId = runningRunId();
+    live.add(runId);
+
+    const result = await stopSession();
+
+    expect(result).toEqual({ stopped: 0, stillRunning: 1 });
+    expect(useAppStore.getState().agentTurnState[agentId]).toEqual(
+      expect.objectContaining({ kind: 'running', runId }),
+    );
+    expect(await agentStatus()).toBe('running');
+    expect(await errorTitles()).toEqual(["Couldn't stop the agent"]);
+    hold.open();
+    await pending;
+  });
+
+  it('counts a process that outlives the wait as still running', async () => {
+    const hold = gate();
+    const { pending } = await startStreaming({ hold: hold.opened });
+    const runId = runningRunId();
+    storySpies.listLiveRunIds.mockResolvedValue(new Set([runId]));
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+
+    const stopping = stopSession();
+    await vi.advanceTimersByTimeAsync(5000);
+    const result = await stopping;
+    vi.useRealTimers();
+
+    expect(result).toEqual({ stopped: 0, stillRunning: 1 });
+    expect(useAppStore.getState().agentTurnState[agentId]).toEqual(
+      expect.objectContaining({ kind: 'running', runId }),
+    );
+    hold.open();
+    await pending;
+  });
+
+  it('leaves another session alone when the scope is one session', async () => {
+    const other = await useAppStore.getState().createSession({
+      workspaceId: workspace.id,
+      goal: 'Retry the notify-relay webhook',
+      firstAgentKind: 'generic',
+    });
+    const [otherAgent] = useAppStore.getState().sessionPhaseRuns[other.session.id] ?? [];
+    if (otherAgent === undefined) {
+      throw new Error('createSession left no agent');
+    }
+    useAppStore.setState({
+      agentTurnState: {
+        [otherAgent.id]: {
+          kind: 'blocked',
+          runId: 'run-elsewhere' as ProviderRunId,
+          blockedAt: TEST_NOW,
+        },
+      },
+    });
+
+    const result = await stopSession();
+
+    expect(result).toEqual({ stopped: 0, stillRunning: 0 });
+    expect(storySpies.cancelTurn).not.toHaveBeenCalled();
+    expect(useAppStore.getState().agentTurnState[otherAgent.id]?.kind).toBe('blocked');
+  });
+});
