@@ -34,6 +34,8 @@ import { rowAlignFailures, rowAlignProbe } from './validateScenesRowAlign.mjs';
 import { runTailFitFailures } from './validateScenesRunTailFit.mjs';
 import { releaseImageShapeFailures } from './validateScenesReleaseImageShape.mjs';
 import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
+import { drawerRevealFailures } from './validateScenesDrawerReveal.mjs';
+import { readingHoldFailures } from './validateScenesReadingHold.mjs';
 import {
   COLUMN_ROW_SELECTOR,
   columnDriftFailures,
@@ -1080,6 +1082,58 @@ describe('drawerComposerFailures', () => {
       drawerComposerFailures({ scene: 'fixture', width: 1440, measured: null })[0]?.check,
       'the drawer shows a composer toolbar',
     );
+  });
+});
+
+describe('drawerRevealFailures', () => {
+  const still = { block: 'center', top: 0, left: 0 };
+
+  it('passes a card that every reveal leaves at the top left', () => {
+    const measured = { rows: 3, scrolls: [still, { ...still, block: 'nearest' }] };
+    assert.deepEqual(drawerRevealFailures({ scene: 'fixture', width: 1440, measured }), []);
+  });
+
+  it('fails a card that a reveal scrolled', () => {
+    const measured = { rows: 3, scrolls: [still, { block: 'nearest', top: 3354, left: 0 }] };
+    const [failure] = drawerRevealFailures({ scene: 'fixture', width: 1440, measured });
+    assert.equal(failure?.check, 'a reveal inside the drawer never scrolls the drawer card');
+    assert.equal(failure?.top, 3354);
+  });
+
+  it('fails a scene whose drawer holds no spawned agent row', () => {
+    for (const measured of [null, { rows: 0, scrolls: [] }]) {
+      assert.equal(
+        drawerRevealFailures({ scene: 'fixture', width: 1440, measured })[0]?.check,
+        'the drawer card holds spawned agent rows',
+      );
+    }
+  });
+});
+
+describe('readingHoldFailures', () => {
+  it('passes a reading that stays put when Settings opens and closes', () => {
+    const measured = { isReadable: true, opened: 0.2, closed: 0 };
+    assert.deepEqual(readingHoldFailures({ scene: 'fixture', width: 1100, measured }), []);
+  });
+
+  it('fails a reading that moved on open and one that did not come back', () => {
+    const measured = { isReadable: true, opened: 48, closed: -48 };
+    const checks = readingHoldFailures({ scene: 'fixture', width: 1100, measured }).map(
+      (failure) => failure.check,
+    );
+    assert.deepEqual(checks, [
+      'opening Settings does not move the text being read',
+      'closing Settings puts the text being read back',
+    ]);
+  });
+
+  it('fails a scene with nothing to read or no Settings toggle', () => {
+    for (const measured of [null, { isReadable: false }]) {
+      assert.equal(
+        readingHoldFailures({ scene: 'fixture', width: 1100, measured })[0]?.check,
+        'the agent page has a transcript to read and a Settings toggle',
+      );
+    }
   });
 });
 

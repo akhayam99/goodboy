@@ -1,5 +1,6 @@
 import type { Agent, SessionId } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { dockPlanRowOf } from '../dockPlanRowOf';
 import { AutoDockLive } from './AutoDockLive';
 import { AutoDockPlan } from './AutoDockPlan';
 
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact }: Props) => {
-  const plan = view.artifacts.filter((row) => row.artifact.kind === 'plan').at(-1) ?? null;
+  const plan = dockPlanRowOf({ view });
   return (
     <div
       data-auto-dock=""

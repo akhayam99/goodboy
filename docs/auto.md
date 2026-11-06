@@ -357,7 +357,10 @@ writing to it reopens it to **Deciding**.
   **Approve plan** uses `useAutoPlanApproval`, the same as the plan view;
   approving sends the approval to the Auto root, so the run stays inside Auto.
   If the approval is saved but Auto was not told, the plan view keeps open with
-  **Tell Auto**, which sends "Approved plan v1." again. An approved plan is the
+  **Tell Auto**, and the dock that approved it reads "Plan v1 approved, Auto did
+  not hear it" with the same **Tell Auto**: it sends "Approved plan v1." again.
+  When two plans exist the dock shows the one that waits for your OK, else the
+  newest (`dockPlanRowOf`). An approved plan is the
   artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the line does
   not unmount: it settles to "Plan v1 approved" with **Open plan**. While the
   plan is revised it reads "Plan v1 · changes asked". A plan a writer took
@@ -365,6 +368,9 @@ writing to it reopens it to **Deciding**.
   "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
   Without a plan the dock folds to the live row (`AutoDockLive`): the state
   sentence with **Change approach** or **Stop**, quiet. It does not hide.
+  Where the sentence stays on the glance line (paused at the limit, a budget
+  block, a project ask) the dock keeps **Stop** alone, so Auto can always be
+  stopped from the chat.
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it

@@ -37,13 +37,45 @@ export const AutoDockPlan = ({ sessionId, artifactId, title, onOpen }: Props) =>
       Open plan
     </Button>
   );
+  if (model.isToldFailed) {
+    return (
+      <div
+        data-dock-plan="told_failed"
+        className="flex min-h-7 min-w-0 flex-wrap items-center gap-2 text-meta"
+      >
+        <span
+          role="status"
+          aria-live="polite"
+          className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
+        >
+          Plan v{model.version} approved, Auto did not hear it
+        </span>
+        <span className="flex-1" />
+        {openPlan}
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={model.isBusy}
+          isBusy={model.isBusy}
+          busyLabel="Telling Auto"
+          onClick={() => void model.tellAuto()}
+        >
+          Tell Auto
+        </Button>
+      </div>
+    );
+  }
   if (state === 'needs_approval') {
     return (
       <div
         data-dock-plan={state}
         className="flex min-h-7 min-w-0 flex-wrap items-center gap-2 text-meta"
       >
-        <span className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}>
+        <span
+          role="status"
+          aria-live="polite"
+          className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
+        >
           Plan v{model.version} waits for your OK
         </span>
         <span className="flex-1" />

@@ -130,7 +130,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'finished',
     facts: {
-      cards: ['needs-you', 'new-since', 'branches', 'done'],
+      cards: ['new-since', 'branches', 'done'],
       primary: 'Mark ready',
       done: null,
     },
@@ -146,7 +146,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'orchestrated',
     facts: {
-      cards: ['needs-you', 'running', 'done'],
+      cards: ['running', 'done'],
       primary: null,
       done: null,
     },
