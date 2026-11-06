@@ -1496,7 +1496,8 @@ specific rule that fits wins.
   (this workspace, everywhere, this session) write a rule (command-prefix for
   Bash, the whole tool for an edit) and resume the blocked call the same way,
   with no second click; only when the turn could not be resumed does the
-  decision card say "Stopped before your answer." and offer **Continue**
+  decision card say "Stopped before your answer." and the dock offer a filled
+  **Continue** (`stoppedAnswerOf`), held while another ask of the batch is open
 - A message sent while the ask is open denies it, with the text as the reason
   (`startTurnRun`, right before the user text, which reads the asks again so an
   ask you answered during the writer wait stays answered; `turnBeforeLease`

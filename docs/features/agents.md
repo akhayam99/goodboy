@@ -79,6 +79,8 @@ Everything that needs you sits in one block joined to the box you type in. The h
 
 A failed turn reads its reason there with a filled **Retry**, and the chat keeps one **Failed here** line that opens the step. A stopped agent reads **Stopped by you. What it wrote is kept.** with a filled **Continue**, and a stopped subagent offers **Continue**, never **Retry**. Auto's limit, failure and project ask sit there too: **Raise to $20.00**, **Retry**, **Use payments-api**. When a run ends with changes, the dock reads **2 files changed on hl/reinstall-deps** with **Review changes**, and nothing when nothing changed. When this conversation asks nothing and the session waits on you elsewhere, it offers the next item from the Overview, as in **Next: Tester asks · 1 more**. A next step Auto proposes waits there too.
 
+An **Always allow** that could not resume reads **Stopped before your answer** with a filled **Continue**.
+
 A message you send while a permission waits denies it, and your text is the reason the agent reads. The box says so first: **Your message will deny this, with your text as the reason**, and Send reads **Send and deny**, and so does Retry on a **Not delivered** row. On Auto the message goes to the agent that asks, and if that agent can't take it the message comes back to the box with the reason. If the message can't be sent, the ask stays open. A message you queued during the turn waits in the tray while a permission is open, and you can still edit it. It goes on once you answer.
 
 ### Stop and Continue
