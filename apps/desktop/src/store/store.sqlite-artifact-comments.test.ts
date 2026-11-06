@@ -746,6 +746,15 @@ describe('store on sqlite: plan comments', () => {
     });
   });
 
+  it('loads the drafts when the session opens, with no plan body mounted', async () => {
+    await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+    useAppStore.setState({ artifactComments: {} });
+
+    await useAppStore.getState().loadSessionArtifacts(SESSION_ID);
+
+    expect(statuses()).toEqual(['Why after BEGIN?:draft']);
+  });
+
   it('leaves sent comments alone while the planner still runs', async () => {
     await add({ anchor: part({ index: 2 }), body: 'Limit the backfill' });
     await storySqlite().execute("UPDATE artifact_comments SET status = 'sent'");
