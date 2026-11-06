@@ -89,6 +89,31 @@ describe('the Esc ladder', () => {
     expect(keyNow()).toBe(`s/${SESSION}/workflows`);
   });
 
+  it('treats a focused checkbox as an empty field and goes on to the back row', () => {
+    useAppStore.getState().navigate({ to: RUN });
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    document.body.append(box);
+    box.focus();
+
+    escapeLadder({});
+
+    expect(keyNow()).toBe(`s/${SESSION}/workflows`);
+  });
+
+  it('leaves the page and the drawer alone while a menu or dialog is open', () => {
+    useAppStore.getState().navigate({ to: RUN });
+    useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    document.body.append(dialog);
+
+    escapeLadder({});
+
+    expect(useAppStore.getState().drawer).not.toBeNull();
+    expect(keyNow()).toBe(`s/${SESSION}/workflows/${RUN_ID}`);
+  });
+
   it('closes an open drawer before it moves the page', () => {
     useAppStore.getState().navigate({ to: RUNS });
     useAppStore.getState().openDrawer({ kind: 'ask', sessionId: SESSION, payload: null });
