@@ -30,7 +30,11 @@ export const autoWaitRootsOf = ({ state, session, agents }: Params): ReadonlyArr
     if (view === undefined) {
       return false;
     }
-    const { word } = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
-    return word === 'Needs you' || autoGroupOf({ view, agents, now: NO_CLOCK })?.isStuck === true;
+    const tree = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
+    return (
+      tree.state === 'asking' ||
+      tree.state === 'blocked' ||
+      autoGroupOf({ view, agents, now: NO_CLOCK })?.isStuck === true
+    );
   });
 };

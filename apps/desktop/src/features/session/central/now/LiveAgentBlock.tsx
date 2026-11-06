@@ -24,11 +24,12 @@ export const LiveAgentBlock = ({ sessionId, group, where }: Props) => {
   const noun = AGENT_KIND_META[agentKind].noun;
   const stateSpec = LIVE_TONE.state[group.state];
   const palette = agentKindPalette({ kind: agentKind });
+  const short = rowStateShortSentence({ state: group.rowState });
   const status = liveStatusOf({
-    word: rowStateShortSentence({ state: group.rowState }) ?? stateSpec.word,
+    word: short ?? stateSpec.word,
     detail: group.state === 'working' ? null : rowStateSentence({ state: group.rowState }),
   });
-  const isOwn = liveOwnStateOf({ group, word: status.word });
+  const isOwn = liveOwnStateOf({ group, isStateWord: short === null });
   return (
     <section
       aria-label={`${noun}: ${group.title}`}

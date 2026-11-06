@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   brandId,
   type Agent,
@@ -28,6 +28,23 @@ import { buildTimelineStream } from './timeline/buildTimelineStream';
 import { runSpawnedRowsOf } from '../../app/components/SpawnedPanel/runSpawnedRowsOf';
 import { sessionRunCountsOf } from './sessionRunCountsOf';
 import { sessionRunsOf } from './sessionRunsOf';
+
+const words = vi.hoisted(() => ({ isRenamed: false }));
+
+vi.mock('../auto/autoTreeWordOf', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../auto/autoTreeWordOf')>();
+  return {
+    ...actual,
+    autoTreeWordOf: (params: Parameters<typeof actual.autoTreeWordOf>[0]) => {
+      const tree = actual.autoTreeWordOf(params);
+      return words.isRenamed ? { ...tree, word: `Renamed ${tree.word}` } : tree;
+    },
+  };
+});
+
+afterEach(() => {
+  words.isRenamed = false;
+});
 
 type WorldParams = {
   readonly runs?: ReadonlyArray<AttachedRun>;
@@ -437,5 +454,24 @@ describe('the Runs grid order and the states it files', () => {
     });
 
     expect(row).toMatchObject({ dot: 'needsYou', stateWord: 'Blocked', isWaiting: true });
+  });
+});
+
+describe('sessionRunsOf auto dot', () => {
+  const dotsOf = () =>
+    (['blocked', 'deciding', 'finished', 'stopped', 'done'] as const).map(
+      (phase) =>
+        runsOf({ agents: [autoRoot({ status: 'running' })], autoViews: [aView({ phase })] }).find(
+          (run) => run.kind === 'auto',
+        )?.dot,
+    );
+
+  it('keeps every dot when the Auto words are renamed', () => {
+    const before = dotsOf();
+
+    words.isRenamed = true;
+
+    expect(before).toEqual(['needsYou', 'running', 'done', 'stopped', 'idle']);
+    expect(dotsOf()).toEqual(before);
   });
 });
