@@ -63,6 +63,7 @@ export type AutoSceneState =
   | 'working'
   | 'revising'
   | 'confirm'
+  | 'planUsed'
   | 'refused'
   | 'mount-ask'
   | 'mount-done'
@@ -665,7 +666,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
           spentUsd: 0.2,
           reservedUsd: 0.75,
         }),
-        agents: [root('running'), planner('completed')],
+        agents: [root('completed', '12:07:30'), planner('completed')],
         events: [
           ...first,
           ...second,
@@ -675,7 +676,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
             run: RUN_THREE,
           }),
         ],
-        rootTurn: { kind: 'running', runId: RUN_THREE, startedAt: at({ time: '12:07:00' }) },
+        rootTurn: IDLE,
         hasPlanArtifact: true,
       };
     case 'refused':
@@ -788,6 +789,14 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         rootTurn: IDLE,
         hasPlanArtifact: true,
       };
+    case 'planUsed': {
+      const working = autoSceneOf({ state: 'working' });
+      const used = { ...PLAN_APPROVED, status: 'consumed' as const };
+      return {
+        ...working,
+        view: { ...working.view, level: 'run', artifacts: [used] },
+      };
+    }
     case 'finished': {
       const resting = autoSceneOf({ state: 'done' });
       return {

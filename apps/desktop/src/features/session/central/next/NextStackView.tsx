@@ -30,6 +30,7 @@ type Props = {
   readonly washedIds?: ReadonlySet<string>;
   readonly hasHeader?: boolean;
   readonly canLead?: boolean;
+  readonly isFlat?: boolean;
 };
 
 export const NextStackView = ({
@@ -44,6 +45,7 @@ export const NextStackView = ({
   washedIds,
   hasHeader = true,
   canLead = true,
+  isFlat = false,
 }: Props) => {
   const { ref: observe, width: observedWidth } = useElementWidth();
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
@@ -93,7 +95,7 @@ export const NextStackView = ({
     return null;
   }
   const leadId = canLead ? (groups[0]?.id ?? null) : null;
-  const hasLabels = groups.length > 1;
+  const hasLabels = groups.length > 1 && !isFlat;
   const total = groups.reduce((sum, group) => sum + group.rows.length, 0);
   return (
     <section
@@ -117,6 +119,7 @@ export const NextStackView = ({
             hasLabel={hasLabels}
             isLead={group.id === leadId}
             isNarrow={isNarrow}
+            isFlat={isFlat}
             washedIds={washedIds}
             actionsFor={actionsFor}
             openFor={openFor}

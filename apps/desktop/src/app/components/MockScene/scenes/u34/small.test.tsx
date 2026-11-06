@@ -100,14 +100,12 @@ describe('the small flows scenes', () => {
     expect(rows.some((text) => text.includes('harborline/'))).toBe(false);
   });
 
-  it('starts the step trail after the session while the column is open', async () => {
+  it('names the list on the step back row and draws no trail', async () => {
     mount({ name: 'u34-u56-step' });
-    const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' });
-    const labels = [...trail.querySelectorAll('[data-trail-piece]')].map(
-      (piece) => piece.textContent,
+    await waitFor(() =>
+      expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to runs'),
     );
-    expect(labels[0]).toBe('Runs');
-    expect(labels.at(-1)).not.toBe('Agent');
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 
   it('offers provider recovery above Retry', () => {

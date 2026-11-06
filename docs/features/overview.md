@@ -11,9 +11,11 @@ The Overview is titled with the session's name, with its linked issue key in gra
 It reads top to bottom:
 
 - The goal.
+- No setup line: a new worktree's setup (**Run** and **Not now**) is offered on the Branch page.
 - Anything a branch needs you to decide: a closed worktree with **Reopen**, a failed action with **Retry**, a stopped rebase, a branch that moved. A stopped rebase is the only notice a worktree draws while it lasts.
 - Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
-- One card per job, in the order of who acts: **Needs you** (you must), **Running** (agents are), **Next** (you may), **Branches** (where each branch stands) and **Done** (finished).
+- One line under the goal says what is happening: how many things wait for you (amber), how many agents work (blue), what is stuck (red), or **Nothing needs you** (green). It reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
+- One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order.
 
 An empty card is not drawn. An archived session keeps only **Done**.
 
@@ -63,20 +65,23 @@ See what needs you, what runs, what is next, where each branch stands and what f
 **Needs you**
 
 - It is the one card for everything that waits for you. First come runs and agents that paused for an answer, oldest first.
-- Then come the **Decide** and **Fix** rows: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations.
-- Its header counts them all. With nothing waiting it shrinks to one line: **Nothing needs you**.
-- With both kinds present, each kind has a quiet label with its count (**Decide 2**, **Fix 1**), no bar and no chevron. With one kind, the rows sit right under the header with no label.
+- Then come the rows that ask a decision or a fix: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
+- Its header counts the rows drawn. With nothing waiting the card is gone and the line under the goal says **Nothing needs you**.
+- The first row holds the one filled button. Every other row has one quiet verb and no **⋯** at rest; the rest of its moves sit in the right click menu.
+- A run or agent that waits is not drawn again when a row above already asks the same thing.
+- Auto shows as one row with a button such as **2 agents**. It opens the list of its agents; the full tree stays in the Auto chat.
 
 **Running**
 
 - It groups the agents and runs in two parts. **Running** works or decides, **Stopped** failed or was stopped by you, and keeps its **Continue**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
+- The Auto agent row says **Auto agent** once and shows what it waits for under its title, so a long sentence is never cut in the state column. A right click on it opens the same menu as the agent.
 - Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to, only when the session has two or more branches. It is blank when the run writes nowhere. It shows the project only across two projects.
 - A row that is working shows its time and nothing else: the part already says Running. A word with one colored dot shows only when it differs from the part, such as **Failed**, **Deciding** or **Needs you**. A row can also carry the run's own next move. Its time sits in a right column that lines up for child agents too. The cause, such as "Origin moved" or "Waits for your go on step 2", sits on a second muted line only for a row that waits or stopped.
 - A run shows its steps as a bar. Done steps are grey, the running step is the accent color and pulses, a step that waits for your go is amber and a failed step is red. The role never colors the bar. A run of two steps or fewer shows a count instead, such as **1/2**.
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
-- The agents a run, an agent or Auto started hang under it on one thin line.
+- The agents a run or an agent started hang under it on one thin line. Auto shows one row with a button such as **2 agents**, which opens its agents.
 - When an agent Auto started is stuck, the Auto row says **Stuck**. One line under it offers **Answer** and **Stop**. **Retry** is on the **Needs you** card, once.
 - **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 

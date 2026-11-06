@@ -130,7 +130,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'finished',
     facts: {
-      cards: ['needs-you', 'new-since', 'branches', 'done'],
+      cards: ['new-since', 'branches', 'done'],
       primary: 'Mark ready',
       done: null,
     },
@@ -146,7 +146,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'orchestrated',
     facts: {
-      cards: ['needs-you', 'running', 'done'],
+      cards: ['running', 'done'],
       primary: null,
       done: null,
     },
@@ -209,7 +209,7 @@ describe('the central column, kind by kind', () => {
     const wheres = () =>
       [
         ...document.querySelectorAll(
-          '[data-overview-card="running"] [data-live-group] > [data-live-row]',
+          '[data-overview-card="running"] [data-live-group] > [data-live-row], [data-overview-card="running"] [data-live-group] > .contents > [data-live-row]',
         ),
       ].map((row) =>
         [...row.querySelectorAll('[data-live-where]')].map((cell) => cell.textContent),

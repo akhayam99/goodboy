@@ -25,7 +25,7 @@ vi.mock('../../../shared/hooks/useElementWidth', async () => {
 
 import type { ComponentType } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
   importStore,
@@ -35,9 +35,11 @@ import {
 } from '../../../store/storyHarness';
 import { sceneInvoke, clearSceneInvoke } from '../../../test/sceneInvoke';
 import { U26_CENTRAL_NEXT_SCENES } from '../../../app/components/MockScene/scenes/u26/central-next';
+import { U24_AUTO_CHAT_SCENES } from '../../../app/components/MockScene/scenes/u24/auto-chat';
 import { U26_CENTRAL_SCENES } from '../../../app/components/MockScene/scenes/u26/central';
+import { U33_OVERVIEW_NEEDS_YOU_SCENES } from '../../../app/components/MockScene/scenes/surfaces/overview-needs-you/overview-needs-you';
 
-const COLUMN_SCENES = [U26_CENTRAL_NEXT_SCENES, U26_CENTRAL_SCENES];
+const COLUMN_SCENES = [U26_CENTRAL_NEXT_SCENES, U26_CENTRAL_SCENES, U33_OVERVIEW_NEEDS_YOU_SCENES];
 
 const ALLOWED_VARIANTS: ReadonlySet<string> = new Set(['primary', 'secondary', 'quiet']);
 const NARROW_SCENE = 'u26-central-next-narrow-light';
@@ -144,6 +146,15 @@ describe('the CTA rule of the central column', () => {
     },
   );
 
+  it.each(cases)('$name: a Needs you row after the first holds at most one verb', (params) => {
+    const { container } = show(params);
+
+    const rows = container.querySelectorAll('[data-overview-card="needs-you"] [data-action-card]');
+    for (const card of [...rows].slice(1)) {
+      expect(card.querySelectorAll('button').length).toBeLessThanOrEqual(1);
+    }
+  });
+
   it.each(cases)('$name: every card holds at most two secondary buttons', (params) => {
     const { container } = show(params);
 
@@ -192,6 +203,21 @@ describe('the CTA rule of the central column', () => {
     );
     screen.getByRole('menuitem', { name: 'Open check' });
     expect(container.querySelectorAll('[data-variant="primary"]')).toHaveLength(1);
+  });
+
+  it('leaves the one primary of the Auto chat to the dock while a plan waits', async () => {
+    show({ scenes: U24_AUTO_CHAT_SCENES, name: 'auto-chat-confirm' });
+
+    const card = await screen.findByRole('region', { name: 'Next step' }, { timeout: 15_000 });
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
+
+    expect(
+      within(dock ?? document.body).getByRole('button', { name: 'Approve plan' }).dataset.variant,
+    ).toBe('primary');
+    expect(card.querySelectorAll('[data-variant="primary"]')).toHaveLength(0);
+    expect(within(card).getByRole('button', { name: 'Continue' }).dataset.variant).toBe(
+      'secondary',
+    );
   });
 
   it('keeps the second secondary visible at 560 px and up', () => {

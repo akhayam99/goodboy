@@ -6,7 +6,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -38,7 +39,9 @@ const mount = ({ id }: { readonly id: string }): void => {
   }
   render(
     <ToastProvider>
-      <Scene />
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
 };
@@ -73,6 +76,7 @@ describe('the Auto chat scenes', () => {
       'u34-p27-auto-done',
       'u34-p28-both-queues',
       'u34-p28-not-delivered',
+      'u35-auto-plan-used',
     ]);
     for (const [id, Scene] of Object.entries(U24_AUTO_CHAT_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -103,11 +107,24 @@ describe('the Auto chat scenes', () => {
     expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(2);
     expect(railLabels().some((label) => label.endsWith('Starting'))).toBe(true);
     expect(screen.queryByRole('article')).toBeNull();
-    const tail = screen.getByText('Starting agents').closest('[role="status"]');
-    if (!(tail instanceof HTMLElement)) {
-      throw new Error('no tail');
+    const dock = document.querySelector('[data-dock-live]');
+    if (!(dock instanceof HTMLElement)) {
+      throw new Error('no dock');
     }
-    expect(within(tail).getByRole('button', { name: /^Stop/ })).toBeDefined();
+    expect(within(dock).getByText('Starting agents')).toBeDefined();
+    expect(within(dock).getByRole('button', { name: /^Stop/ })).toBeDefined();
+  });
+
+  it('auto-chat-working keeps the approval as a quiet You line inside its card, no bubble', async () => {
+    mount({ id: 'auto-chat-working' });
+
+    await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const lines = [...document.querySelectorAll('[data-card-reply]')];
+    expect(lines.map((line) => line.textContent?.replace(/\d{1,2}:\d{2}.*$/, ''))).toEqual([
+      'YouApproved plan v1',
+    ]);
+    expect(lines[0]?.closest('[data-soft-card]')).not.toBeNull();
+    expect(screen.queryByText('Approved plan v1.')).toBeNull();
   });
 
   it('auto-chat-plan asks for approval in the reader pane and folds the rail beside it', async () => {
@@ -134,9 +151,10 @@ describe('the Auto chat scenes', () => {
     const work = rail();
     expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
-    expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
+    expect(screen.getAllByText('Waiting for Implementer and Tester')).toHaveLength(1);
+    expect(document.querySelector('[data-glance]')?.textContent).toContain('$0.27');
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
-    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 of \$10\.00/);
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$10\.00/);
     expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
   });
 
@@ -222,7 +240,7 @@ describe('the Auto chat scenes', () => {
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
     expect(limitChip().getAttribute('aria-label')).toBe('Limit: none');
-    expect(document.querySelector('[data-setting-spent]')?.textContent).toBe('$0.27 spent');
+    expect(document.querySelector('[data-glance]')?.textContent).toContain('$0.27');
     expect(limitChip().textContent).not.toMatch(/left/);
   });
 
@@ -264,7 +282,7 @@ describe('the Auto chat scenes', () => {
     expect(rail().querySelectorAll('[data-agent-id]')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open (?!plan )/ })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
-    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$10\.00/);
   });
 
   it('auto-chat-done says Idle in the rail with no tail, and Mark finished in the header once', async () => {
@@ -304,9 +322,45 @@ describe('the Auto chat scenes', () => {
     const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
     expect(within(running).getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(within(running).getAllByRole('button', { name: 'Open Auto chat' })).toHaveLength(1);
-    expect(running.textContent).toContain(
-      'Post one credit per retry in postCredit and applyCredit',
+  });
+
+  it('auto-overview-row says Auto agent once, keeps the sentence whole and opens a menu on right click', async () => {
+    mount({ id: 'auto-overview-row' });
+
+    const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
+    const row = running.querySelector<HTMLElement>('[data-live-row]');
+    expect(row?.textContent?.match(/Auto agent/g)).toHaveLength(1);
+    expect(row?.querySelector('[data-live-reason]')?.textContent).toBe(
+      'Waiting for Implementer and Tester',
     );
+
+    fireEvent.contextMenu(row ?? running);
+
+    const menu = await screen.findByRole('menu', undefined, WAIT);
+    expect(within(menu).queryByRole('menuitem', { name: 'Mount a project' })).toBeNull();
+    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0);
+  });
+
+  it('auto-chat-child shows a finished agent a plain composer, no Stop, Send now or Queue', async () => {
+    mount({ id: 'auto-chat-child' });
+
+    await screen.findAllByRole('textbox', undefined, WAIT);
+    expect(screen.queryByRole('button', { name: /^Send now/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Queue/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
+  });
+
+  it('u35-auto-plan-used says the plan was used and offers no Review or approval', async () => {
+    mount({ id: 'u35-auto-plan-used' });
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-auto-dock] [data-dock-plan]')).not.toBeNull();
+    }, WAIT);
+    const dock = document.querySelector('[data-auto-dock]');
+    expect(dock?.querySelector('[data-dock-plan]')?.getAttribute('data-dock-plan')).toBe('used');
+    expect(dock?.textContent).toContain('Plan v1 used');
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
   });
 
   it('u34-p27-auto-done leaves no approval, no Start and no Continue behind', async () => {

@@ -1,12 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
+import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
+import { AutoDock } from '../AutoDock';
 import { AutoProjectAsk } from '../AutoProjectAsk';
 import { AutoTail } from '../AutoTail';
+import { AutoTurnCard } from '../AutoTurnCard';
 import { AutoWorkTime } from '../AutoWorkTime';
 import { mountedLineOf } from '../mountedLineOf';
 import { projectAskOf } from '../projectAskOf';
@@ -23,6 +26,7 @@ type Params = {
 export type AutoChat = Readonly<{
   tree: AutoTreeOfAgent | null;
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
+  dock: ReactNode | undefined;
   composerPlaceholder: string | undefined;
 }>;
 
@@ -41,16 +45,18 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
       (batch): TranscriptInsertion => ({
         key: batch.key,
         beforeMs: batch.beforeMs,
-        node: (
+        claimsReply: ({ text }) => approvedPlanLabelOf({ text }) !== null,
+        node: ({ replies }) => (
           <AutoWorkTime session={session}>
-            <AutoDelegationLines
-              sessionId={session.id}
-              view={view}
-              delegations={batch.delegations}
-              agents={agents}
-              onOpenChild={openChild}
-              onOpenArtifact={openArtifact}
-            />
+            <AutoTurnCard delegations={batch.delegations} replies={replies}>
+              <AutoDelegationLines
+                sessionId={session.id}
+                view={view}
+                delegations={batch.delegations}
+                agents={agents}
+                onOpenChild={openChild}
+              />
+            </AutoTurnCard>
           </AutoWorkTime>
         ),
       }),
@@ -85,11 +91,22 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
             },
           ];
     return [...lines, ...mountedLine, tail];
-  }, [view, agents, agent, openChild, openArtifact, session]);
+  }, [view, agents, agent, openChild, session]);
+
+  const dock =
+    view === null ? undefined : (
+      <AutoDock
+        sessionId={session.id}
+        view={view}
+        rootAgent={agent}
+        onOpenArtifact={openArtifact}
+      />
+    );
 
   return {
     tree,
     insertions,
+    dock,
     composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
   };
 };

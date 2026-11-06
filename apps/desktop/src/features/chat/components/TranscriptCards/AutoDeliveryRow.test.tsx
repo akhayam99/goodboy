@@ -24,6 +24,23 @@ const renderRow = () =>
   );
 
 describe('AutoDeliveryRow', () => {
+  it('draws no fold again for a later delivery', () => {
+    render(
+      <TranscriptCard
+        item={{
+          isRepeat: true,
+          kind: 'auto_delivery',
+          key: 'auto-delivery-1',
+          runId: brandId<ProviderRunId>({ value: 'run-auto-2' }),
+          text: DELIVERY,
+          at: brandId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' }),
+        }}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'What Auto was told' })).toBeNull();
+  });
+
   it('keeps the text built for Auto out of the transcript until it is asked for', () => {
     renderRow();
 

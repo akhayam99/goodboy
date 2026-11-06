@@ -12,7 +12,7 @@ const unused = () => {
 };
 
 describe('the Needs you card', () => {
-  it('says Nothing needs you in one 32px line when nothing waits', () => {
+  it('draws nothing when nothing waits, the glance line says so', () => {
     render(
       <NeedsYouCard
         session={aSession()}
@@ -29,8 +29,6 @@ describe('the Needs you card', () => {
       />,
     );
 
-    const line = screen.getByRole('region', { name: 'Needs you' });
-    expect(line.textContent).toBe('Nothing needs you');
-    expect(line.hasAttribute('data-needs-you-empty')).toBe(true);
+    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 });

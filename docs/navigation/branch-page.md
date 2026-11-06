@@ -149,6 +149,10 @@ resolves outside the worktree (`outside`; the usual case is `node_modules` linke
 checkout, so the push hook and the checks read that checkout's code). `StaleDepsNotice` shows it
 above the push surfaces (the Comments page through `LaneNotices`, the Branch header when Push is
 next, the create form) and `StaleDepsAction` sits beside Retry on the push failure cards.
+The Branch header also holds the worktree setup line (`BranchSetupOffer` around
+`WorktreeSetupOffer`): **Run** and **Not now** while it is offered, **Running** while it
+works and, on a failure, the last line of the error with **Retry**. A setup that ran fine
+shows no line.
 **Reinstall dependencies** (`reinstallWorktreeDeps`, `ReinstallDepsAction`) runs the install of
 the lockfile in that worktree as the script `deps-install:<mount>` (progress and result stay on
 `scriptRuns`, so a card that comes back still shows the install running), checks again, and then

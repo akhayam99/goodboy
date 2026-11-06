@@ -7,7 +7,7 @@ import { pushEntry, replaceTop } from './history';
 import { EMPTY_FOCUS, type GetFn, type Location, type NavigateParams, type SetFn } from './types';
 
 export const navigate = (set: SetFn, get: GetFn) => {
-  return ({ to, mode = 'push', drawer = null }: NavigateParams): void => {
+  return ({ to, mode = 'push', drawer = null, isExact = false }: NavigateParams): void => {
     const state = get();
     const canonical = canonicalLocation({ state, request: to });
     const landing = placeWithThread({
@@ -23,6 +23,6 @@ export const navigate = (set: SetFn, get: GetFn) => {
     };
     const updated = mode === 'replace' ? replaceTop({ stack, next }) : pushEntry({ stack, next });
     set((current) => ({ navigation: { ...current.navigation, [stackKey(current)]: updated } }));
-    applyLocation({ set, get, location: next, isRestore: false });
+    applyLocation({ set, get, location: next, isRestore: isExact });
   };
 };

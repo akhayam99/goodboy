@@ -1,7 +1,7 @@
 import { formatError, formatUsd, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/utils/names';
-import { useAppStore, useSessionCost } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import type { SettingWords } from '../../../../shared/components/SettingChip/settingWords';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 import { LimitAmountForm } from '../../../../shared/components/SettingChip/LimitAmountForm';
@@ -13,7 +13,6 @@ type Props = {
 
 type WordsParams = {
   readonly capUsd: number | null;
-  readonly spentUsd: number;
 };
 
 type ApplyParams = {
@@ -23,19 +22,16 @@ type ApplyParams = {
 const HELP =
   'What this session may spend, every agent and run in it. Applies when you press Enter or close.';
 
-const CENT = 0.005;
-
-const wordsOf = ({ capUsd, spentUsd }: WordsParams): SettingWords => {
+const wordsOf = ({ capUsd }: WordsParams): SettingWords => {
   if (capUsd === null) {
     return {
       value: 'none',
-      ...(spentUsd >= CENT && { spentText: `${formatUsd(spentUsd)} spent` }),
       source: '',
       chain: 'Session none. Nothing stops this agent.',
     };
   }
   return {
-    value: `${formatUsd(spentUsd)} of ${formatUsd(capUsd)}`,
+    value: formatUsd(capUsd),
     source: 'from session',
     chain: `Session ${formatUsd(capUsd)}. It counts everything this session spends.`,
   };
@@ -46,7 +42,6 @@ export const SessionLimitSetting = ({ sessionId }: Props) => {
   const budget = useAppStore((state) => state.sessionBudgets[sessionId] ?? null);
   const setSessionBudget = useAppStore((state) => state.setSessionBudget);
   const clearSessionBudget = useAppStore((state) => state.clearSessionBudget);
-  const spentUsd = useSessionCost(sessionId);
   const capUsd = budget?.softCapUsd ?? null;
 
   const apply = async ({ usd }: ApplyParams): Promise<string | null> => {
@@ -74,7 +69,7 @@ export const SessionLimitSetting = ({ sessionId }: Props) => {
     <SettingChip
       dropdown={dropdown}
       label={NAMES.spendCap}
-      words={wordsOf({ capUsd, spentUsd })}
+      words={wordsOf({ capUsd })}
       help={HELP}
       error={draft.error}
     >

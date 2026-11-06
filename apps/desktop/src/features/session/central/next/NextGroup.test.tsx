@@ -13,7 +13,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { Place } from '../../../../store/slices/navigation/types';
-import { upTrailOf } from '../../../../store/slices/navigation/upTrailOf';
+import { backOf } from '../../../../store/slices/navigation/backOf';
 import {
   FIXTURE_ROOT,
   FIXTURE_SESSION,
@@ -317,6 +317,75 @@ const BRANCH_CHECKS: Place = {
   },
 };
 
+type CardActions = ReturnType<ReturnType<typeof useActionCardActions>['actionsFor']>;
+
+const checksOf = ({
+  mountId,
+  prNumber,
+}: {
+  readonly mountId: MountId;
+  readonly prNumber: number;
+}) =>
+  ({
+    id: `fix-checks:${mountId}`,
+    kind: 'fix-checks',
+    priority: 20,
+    band: 1,
+    title: `Fix failing checks on #${prNumber}`,
+    sessionId: FIXTURE_SESSION,
+    fingerprint: `fix-checks:${mountId}`,
+    targetKey: `pr:${mountId}`,
+    payload: { mountId, projectName: 'harbor-portal', prNumber },
+  }) satisfies SessionSuggestion;
+
+describe('a flat group keeps the second verb of its quiet rows', () => {
+  it('folds Open check into the menu of the quiet row only', () => {
+    const asked = new Map<string, CardActions>();
+    const group = groupOf({
+      suggestions: [
+        checksOf({ mountId: HOME, prNumber: 11 }),
+        checksOf({ mountId: BILLING, prNumber: 12 }),
+      ],
+    });
+    const Flat = () => {
+      const { actionsFor, openFor } = useActionCardActions({ session: SESSION });
+      return (
+        <NextGroup
+          group={group}
+          hasLabel={false}
+          isLead
+          isFlat
+          isNarrow={false}
+          actionsFor={(params) => {
+            const actions = actionsFor(params);
+            asked.set(params.card.id, actions);
+            return actions;
+          }}
+          openFor={openFor}
+        />
+      );
+    };
+    render(
+      <ToastProvider>
+        <Flat />
+      </ToastProvider>,
+    );
+
+    const [lead, quiet] = group.rows;
+    if (lead === undefined || quiet === undefined) {
+      throw new Error('Expected two rows');
+    }
+    const foldedOf = ({ actions }: { readonly actions: CardActions | undefined }) =>
+      (actions?.menu?.target.foldedVerbs ?? actions?.foldedTarget?.verbs ?? []).map(
+        (verb) => verb.label,
+      );
+
+    expect(foldedOf({ actions: asked.get(quiet.id) })).toEqual(['Open check']);
+    expect(foldedOf({ actions: asked.get(lead.id) })).toEqual([]);
+    expect(asked.get(quiet.id)?.second).toBeNull();
+  });
+});
+
 describe('a row click opens its place', () => {
   it('opens the stuck agent and the branch checks, under the session in the trail', () => {
     const checks: SessionSuggestion = {
@@ -342,11 +411,9 @@ describe('a row click opens its place', () => {
       { at: 'agent', sessionId: FIXTURE_SESSION, agentId: BILLING_CHILD.agentId },
       BRANCH_CHECKS,
     ]);
-    expect(
-      upTrailOf({ state: useAppStore.getState(), place: BRANCH_CHECKS, onUp: () => undefined }).map(
-        (segment) => segment.label,
-      ),
-    ).toEqual([SESSION.goal, 'Branch']);
+    expect(backOf({ state: useAppStore.getState(), place: BRANCH_CHECKS })?.label).toBe(
+      'Back to overview',
+    );
   });
 
   it('opens the place from the keyboard once', () => {

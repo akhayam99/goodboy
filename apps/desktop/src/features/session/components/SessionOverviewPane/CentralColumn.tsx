@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { autoRetryTargetsOf } from '../../../auto/autoRetryTargetsOf';
+import { autoGlancesBesideCardsOf } from '../../central/autoGlancesBesideCardsOf';
 import { BranchChip } from '../../central/branches/BranchChip';
 import { branchEntriesOf } from '../../central/branches/branchStoryOf';
 import { useBranchDetails } from '../../central/branches/useBranchDetails';
@@ -31,6 +32,8 @@ import { runLeadOf } from '../../central/now/runLeadOf';
 import { waitingGroupsOf } from '../../central/now/waitingGroupsOf';
 import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
+import { overviewGlanceOf } from '../../central/overviewGlanceOf';
+import { OverviewGlanceLine } from '../../central/summary/OverviewGlanceLine';
 import { useSessionWorkModel } from '../../central/useSessionWorkModel';
 
 type Props = {
@@ -94,12 +97,22 @@ export const CentralColumn = ({ session }: Props) => {
     [branchNameOf],
   );
   const stopRowFor = useRebaseStopRows({ sessionId });
-  const waiting = useMemo(() => waitingGroupsOf({ groups }), [groups]);
+  const waiting = useMemo(() => waitingGroupsOf({ groups, cards: nextCards }), [groups, nextCards]);
+  const stuckCount = groups.filter((group) => liveSectionIdOf({ group }) === 'stopped').length;
+  const rootTurns = useAppStore(
+    useShallow((state) =>
+      model.autoTrees.map((view) => state.agentTurnState[view.tree.rootAgentId]),
+    ),
+  );
+  const autoGlances = useMemo(
+    () => autoGlancesBesideCardsOf({ views: model.autoTrees, rootTurns, cards: nextCards }),
+    [model.autoTrees, nextCards, rootTurns],
+  );
   const shown = overviewCardsOf({
     cards: nextCards,
     waitingCount: waiting.length,
     runningCount: groups.filter((group) => liveSectionIdOf({ group }) === 'running').length,
-    stuckCount: groups.filter((group) => liveSectionIdOf({ group }) === 'stopped').length,
+    stuckCount,
     branchCount: liveEntries.length,
     doneCount: summary.count,
     isArchived,
@@ -174,6 +187,9 @@ export const CentralColumn = ({ session }: Props) => {
 
   return (
     <div data-central-column className={PANE_RHYTHM.groups}>
+      {isArchived ? null : (
+        <OverviewGlanceLine glance={overviewGlanceOf({ cards: shown, stuckCount, autoGlances })} />
+      )}
       {shown.map((card) => (
         <Fragment key={card.id}>
           {card.id === 'needs-you' ? (

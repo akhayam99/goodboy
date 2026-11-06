@@ -79,11 +79,12 @@ const TranscriptCardImpl = ({
         />
       );
     case 'auto_delivery':
-      return sessionId === null ? (
-        <AutoDeliveryRow text={item.text} />
-      ) : (
+      if (sessionId === null) {
+        return item.isRepeat === true ? null : <AutoDeliveryRow text={item.text} />;
+      }
+      return (
         <div className="flex min-w-0 flex-col gap-3">
-          <AutoDeliveryRow text={item.text} />
+          {item.isRepeat === true ? null : <AutoDeliveryRow text={item.text} />}
           <AutoDeliveryResults sessionId={sessionId} runId={item.runId} />
         </div>
       );

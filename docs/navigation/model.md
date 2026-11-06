@@ -386,10 +386,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
   Otherwise it pushes the parent (`upTo({ to })`, which `up()` and every crumb
   call). Closing an app studio is Back to the entry below it, so Up from a
-  studio and Close land in the same place. `upTrailOf` walks `parentPlace`
-  from a place up to its session and `crumbOf` names each step: the session
-  title, the page, then the item's kind (Run, Agent, Artifact, Issue, Branch,
-  File, Thread).
+  studio and Close land in the same place. `backOf` reads `parentPlace` once
+  and names that one parent for the back row (`Back to runs`, `Back to
+{parent agent name}`, `Back to artifacts`, `Back to branch`, `Back to
+overview`); a sub agent's parent is the agent that spawned it.
 - **Dead entries fall out.** An archived or deleted session removes its
   entries and collapses the duplicates left behind. An agent that is gone
   falls back to its home lens.

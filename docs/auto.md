@@ -302,7 +302,7 @@ writing to it reopens it to **Deciding**.
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
   **Stopped**; the Auto agents list reads the same words.
 - **Changing the limit.** The Auto page's settings line (`AgentSettingsLine`)
-  holds **Limit** "$0.85 of $5.00 from Harborline" (`autoLimitWordsOf`: the
+  holds **Limit** "$5.00 from Harborline" (`autoLimitWordsOf`: the
   source names the winner, "this Auto" once you set its own, and the popover's
   last line reads the chain, "This Auto $5.00, then session $8.00, then
   Harborline $5.00. $5.00 comes first."). Its popover takes an amount and applies
@@ -349,19 +349,28 @@ writing to it reopens it to **Deciding**.
   ready". Its reason and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A child that waits for an OK carries the **Next step** card
-  (see **Confirming**), and a plan that waits for approval carries the
-  ask **Plan v1 needs your approval** with the plan title, the first four steps
-  and the step, file and risk counts (`autoPlanOutlineOf`), and one action,
-  **View plan** (`AutoPlanAsk`). **Approve plan** and **Ask for changes** sit
-  top right in the plan view, which uses the same `useAutoPlanApproval`;
+  (see **Confirming**). The plan is not a row of the transcript: it lives in
+  the **dock**, pinned above the message field (`AutoDock`, `AutoDockPlan`),
+  one line per state. A plan that waits reads "Plan v1 waits for your OK" with
+  **Approve plan** as the only primary of the page, **Ask for changes** (it
+  opens the Auto page and focuses the composer) and **Open plan**, both quiet.
+  **Approve plan** uses `useAutoPlanApproval`, the same as the plan view;
   approving sends the approval to the Auto root, so the run stays inside Auto.
-  If the approval is saved but Auto was not told, the view keeps open with
-  **Tell Auto**, which sends "Approved plan v1." again. An approved plan is the
-  artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the ask does not
-  unmount: it settles to "Plan v1 approved" with **View plan**. While the plan is
-  revised the ask settles to one quiet line, "Plan v1 · changes asked". A plan a
-  writer took reads "Plan v1 used", and at the level **Never** it reads
+  If the approval is saved but Auto was not told, the plan view keeps open with
+  **Tell Auto**, and the dock that approved it reads "Plan v1 approved, Auto did
+  not hear it" with the same **Tell Auto**: it sends "Approved plan v1." again.
+  When two plans exist the dock shows the one that waits for your OK, else the
+  newest (`dockPlanRowOf`). An approved plan is the
+  artifact colour (`AUTO_STATE_TONE.artifact`), never green, and the line does
+  not unmount: it settles to "Plan v1 approved" with **Open plan**. While the
+  plan is revised it reads "Plan v1 · changes asked". A plan a writer took
+  reads "Plan v1 used", and at the level **Never** it reads
   "Plan v1 · no approval needed" (`planAwaitsYou`): neither is an ask.
+  Without a plan the dock folds to the live row (`AutoDockLive`): the state
+  sentence with **Change approach** or **Stop**, quiet. It does not hide.
+  Where the sentence stays on the glance line (paused at the limit, a budget
+  block, a project ask) the dock keeps **Stop** alone, so Auto can always be
+  stopped from the chat.
   An artifact that needs no approval has no row on its line: it shows once, on the
   result card (see **What the agents reported**).
 - **Where a line sits.** A batch goes before the first message sent after it
@@ -445,10 +454,26 @@ writing to it reopens it to **Deciding**.
   result whose delivery row is not in the transcript is not drawn, never moved
   to the end, so a late result stays with the turn that read it; a reload and a
   second window read the same rows.
-- **The tail.** Auto's state is said once, on the tail at the end of the
-  conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
-  Implementer and Tester** with **Change approach** (it stops the tree and
-  focuses the composer, so the tail has no second Stop there), **Starting agents**, **Reading the results**, **Deciding what to do
+- **The glance line and the cards.** The Auto page header keeps the back row, the title
+  and the menu, then one glance line, the same component for every run kind
+  (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
+  you**, **Planning**, **Working**, **Stuck**, **Stopped**, **Done**,
+  **Idle**), one sentence, the spend of the limit and **Settings**
+  (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the others, all
+  through `glanceOf`). **Settings** unfolds the unchanged chip row
+  inline, never a popover; the row stays mounted so the asks and model slots
+  keep their portals. Each cluster of agents is one soft card (`AutoTurnCard`,
+  head `autoCardHeadOf`): name, agent count and a state word, then flat rows.
+  Your plan approval is a quiet line at the head of the card that follows it,
+  **You · Approved plan v1**, never a right aligned bubble: an insertion that sets
+  `claimsReply` receives the replies `claimedRepliesOf` gives it (the first card
+  that settles after the reply, the open one last), and the approval text comes
+  from `approvedPlanReply`. A message you write yourself stays a bubble.
+  **What Auto was told** shows once, on the first delivery.
+- **The tail.** Auto's state is said once, in the dock and on the tail at the end of the
+  conversation (`AutoDock`, `AutoTail`, phrases from `autoTreeLive`): **Waiting for
+  Implementer and Tester** in the dock with **Change approach** (it stops the tree and
+  focuses the composer, so the dock has no second Stop there), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
   of $5.00** with **Raise to $10**, **Change limit** (opens the Limit chip's
   popover on the Auto page) and **Stop**, plus a line on the agents still
@@ -460,18 +485,21 @@ writing to it reopens it to **Deciding**.
   (`TailLine` with `TruncatedText` `lines={2}` and `isFocusable`). Only `deciding` reads
   **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
-  **Mark finished** is in the header. A Stop or a Retry that fails says why on the
+  **Mark finished** is in the header. A Stop that fails says why in the dock and a Retry on the
   tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
   agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
-  thinking line of the conversation speaks instead. The **Working now** strip
-  (`AutoWorkingNow`) remains above the message field while children start or run,
-  newest first, even during Auto's own turn, and hidden while the Agents drawer
-  is open, which holds the full tree. Each chip shows the short task title,
+  thinking line of the conversation speaks instead. There is no separate strip
+  of running children: the running rows of the cards, the rail and the dock
+  already say it. The glance line under the title says a sentence once: while
+  the dock speaks (a live row, or a plan that waits) it keeps the state word,
+  the spend and **Settings** only (`isAutoDockSpeaking`); on Stuck, Done and
+  Stopped it keeps its sentence. While a plan waits the dock owns the one
+  filled button (**Approve plan**) and the next step card's **Continue** is
+  secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
-  A chip or a delegation line's **Open** reveals that child in Agents without
+  A delegation line's **Open** reveals that child in Agents without
   changing the main agent or its draft (`useAutoTreeActions`, the `spawned` drawer
-  payload and `useSpawnedFocus`). Settled children leave the strip even if their
-  turn state arrives late. While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
+  payload and `useSpawnedFocus`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
 - **A child preview opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)

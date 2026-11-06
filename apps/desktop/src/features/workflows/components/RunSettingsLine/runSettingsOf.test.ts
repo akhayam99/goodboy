@@ -43,7 +43,7 @@ describe('runSettingsOf', () => {
   it('counts the run against its own limit when that limit comes first', () => {
     const own = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 5 } }).limit;
     expect(own).toEqual({
-      value: '$0.92 of $5.00',
+      value: '$5.00',
       source: 'this run',
       chain: 'This run $5.00, then session $8.00. $5.00 comes first.',
     });
@@ -89,14 +89,14 @@ describe('runSettingsOf', () => {
   it('counts the whole session against the session cap when that cap comes first', () => {
     const session = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 12 } }).limit;
     expect(session).toEqual({
-      value: '$3.40 of $8.00',
+      value: '$8.00',
       source: 'from session',
       chain:
         'This run $12.00, then session $8.00. $8.00 comes first, counted over the whole session: $3.40 spent, $0.92 of it this run.',
     });
   });
 
-  it('reads 17 of 20 for a run that spent 2 inside a session that spent 17', () => {
+  it('reads the limit alone for a run that spent 2 inside a session that spent 17', () => {
     const { limit } = runSettingsOf({
       ...BASE,
       sessionCapUsd: 20,
@@ -104,7 +104,7 @@ describe('runSettingsOf', () => {
       spentUsd: 2,
     });
 
-    expect(limit.value).toBe('$17.00 of $20.00');
+    expect(limit.value).toBe('$20.00');
     expect(limit.source).toBe('from session');
     expect(limit.chain).toContain('$2.00 of it this run');
   });
@@ -112,7 +112,7 @@ describe('runSettingsOf', () => {
   it('counts the session when the run has no limit of its own', () => {
     const { limit } = runSettingsOf({ ...BASE, sessionCapUsd: 8 });
 
-    expect(limit.value).toBe('$3.40 of $8.00');
+    expect(limit.value).toBe('$8.00');
     expect(limit.chain).toBe(
       'This run none, then session $8.00. $8.00 comes first, counted over the whole session: $3.40 spent, $0.92 of it this run.',
     );
@@ -121,14 +121,14 @@ describe('runSettingsOf', () => {
   it('keeps the run spend when both limits are the same amount', () => {
     const { limit } = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 8 } });
 
-    expect(limit.value).toBe('$0.92 of $8.00');
+    expect(limit.value).toBe('$8.00');
     expect(limit.source).toBe('this run');
   });
 
   it('says nothing stops a run with no limit anywhere', () => {
     const { limit } = runSettingsOf({ ...BASE, sessionCapUsd: null });
 
-    expect(limit.value).toBe('$0.92 spent');
+    expect(limit.value).toBe('none');
     expect(limit.chain).toBe('This run none, then session none. Nothing stops this run.');
   });
 

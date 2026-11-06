@@ -160,7 +160,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/RebaseStoppedNotice.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/UnassignedNotes.tsx": 1,
-  "apps/desktop/src/features/session/components/SessionWorkspace/SessionTrail.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/AgentOverlay.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/FilesPane.tsx": 1,
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/FocusedTaskBody.tsx": 1,

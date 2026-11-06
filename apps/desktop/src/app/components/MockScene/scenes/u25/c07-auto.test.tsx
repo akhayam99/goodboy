@@ -100,7 +100,7 @@ describe('c07 Auto scenes', () => {
     expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(3);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
     expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Limit: \$0\.27 of \$10\.00/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Limit: \$10\.00/ })).toBeDefined();
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -180,16 +180,43 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('u34-p20-auto-narrow keeps the title in its own wrapping lead with the settings and no provider mark', async () => {
+  it('u34-p20-auto-narrow keeps the title in its own wrapping lead, the glance below it and no provider mark', async () => {
     mount({ id: 'u34-p20-auto-narrow' });
 
     const row = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
     const lead = within(row).getByTestId('agent-header-lead');
     within(lead).getByRole('heading', { level: 1 });
-    expect(within(lead).getByTestId('agent-header-settings')).toBeDefined();
+    expect(within(lead).queryByTestId('agent-header-settings')).toBeNull();
+    expect(document.querySelector('[data-glance]')).not.toBeNull();
     expect(within(lead).queryByRole('button', { name: 'More agent actions' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByTestId('agent-header-provider')).toBeNull();
+  });
+
+  it('c07-auto-working shows one glance line and Settings opens the same chips inline', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    await waitFor(() => expect(document.querySelector('[data-glance]')).not.toBeNull(), WAIT);
+    const glance = document.querySelector<HTMLElement>('[data-glance]');
+    if (glance === null) {
+      throw new Error('no glance line');
+    }
+    expect(glance.dataset.glance).toBe('working');
+    expect(within(glance).getByRole('status').textContent).not.toContain('Waiting for');
+    expect(glance.textContent).not.toContain('Waiting for');
+    expect(
+      document.querySelector('[data-auto-dock]')?.textContent?.match(/Waiting for/g),
+    ).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
+    const toggle = within(glance).getByRole('button', { name: 'Run settings' });
+    const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+    expect(region?.dataset.open).toBe('false');
+    expect(region?.querySelector('[data-agent-settings]')).not.toBeNull();
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(region?.dataset.open).toBe('true');
   });
 
   it('c07-auto-working keeps the center lean: no role chip, live cards for running children, one tail', async () => {
@@ -204,21 +231,38 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByText('Delegated to')).toBeNull();
     expect(document.querySelectorAll('[data-auto-child-card]').length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
-    const tail = document.querySelector<HTMLElement>('[data-auto-tail]');
-    expect(tail?.textContent).toContain('Waiting for Implementer and Tester');
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
+    expect(dock?.textContent).toContain('Waiting for Implementer and Tester');
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
-  it('c07-auto-plan asks for the plan approval in the stream with View plan as the one primary', async () => {
+  it('c07-auto-substep groups each turn of agents in one soft card with a head and a state word', async () => {
+    mount({ id: 'c07-auto-substep' });
+
+    await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-soft-card]'));
+    expect(cards.length).toBeGreaterThan(0);
+    for (const card of cards) {
+      expect(card.querySelector('ul[aria-label="Delegations"]')).not.toBeNull();
+      expect(card.textContent).toMatch(/Running|Done/);
+    }
+  });
+
+  it('c07-auto-plan pins the plan ask in the dock with Approve plan as the one primary', async () => {
     mount({ id: 'c07-auto-plan' });
 
-    await screen.findByText('Plan v1 needs your approval', undefined, WAIT);
-    const viewPlan = screen.getByRole('button', { name: /^Open plan / });
-    expect(viewPlan.textContent).toBe('View plan');
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    await screen.findByText('Plan v1 waits for your OK', undefined, WAIT);
+    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
+    if (dock === null) {
+      throw new Error('no dock');
+    }
+    const approve = within(dock).getByRole('button', { name: 'Approve plan' });
+    expect(within(dock).getByRole('button', { name: /^Open plan / }).textContent).toBe('Open plan');
+    expect(within(dock).getByRole('button', { name: 'Ask for changes' })).toBeDefined();
+    expect(screen.queryByText('View plan')).toBeNull();
+    expect(screen.queryByText('Plan v1 needs your approval')).toBeNull();
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
-    fireEvent.click(viewPlan);
-    expect(await screen.findByRole('button', { name: 'Approve plan' }, WAIT)).toBeDefined();
+    expect(approve).toBeDefined();
   });
 
   it('c07-auto-idle offers Mark finished in the header and draws no tail', async () => {
@@ -421,7 +465,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-session-level' });
 
     await waitFor(() => expect(levelStack().dataset.levelStack).toBe('session'), WAIT);
-    expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
+    expect(screen.getAllByText('Waiting for Implementer and Tester').length).toBeGreaterThan(0);
   });
 
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
@@ -499,12 +543,12 @@ describe('c07 Auto scenes', () => {
     expect(alert?.textContent).toContain('This conversation reached its time limit.');
   });
 
-  it('c07-auto-stop-failed shows the failed Stop inline on the tail', async () => {
+  it('c07-auto-stop-failed shows the failed Stop inline in the dock', async () => {
     mount({ id: 'c07-auto-stop-failed' });
 
     const title = await screen.findByText("Couldn't stop the Auto agents", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
-    expect(alert?.closest('[data-auto-tail]')).not.toBeNull();
+    expect(alert?.closest('[data-auto-dock]')).not.toBeNull();
     expect(alert?.textContent).toContain('Auto is not running yet. Stop it again in a moment.');
   });
 

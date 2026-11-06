@@ -1,4 +1,6 @@
-import type { AgentId, Session } from '@goodboy/types';
+import { brandId, type Agent, type AgentId, type Session } from '@goodboy/types';
+import { setupOfferKey } from '../../../../../../features/worktree/newWorktreeSettings';
+import { useAppStore } from '../../../../../../store';
 import {
   agentPlace,
   branchPlace,
@@ -22,7 +24,8 @@ import {
 } from '../../flow-audit/fixtures';
 import { seedChatSurfaces, seedWorkflowRun } from '../../flow-audit/seeds';
 
-export type BreadcrumbPlaceId = 'run' | 'step' | 'agent' | 'artifact' | 'branchFile';
+export type BreadcrumbPlaceId =
+  'run' | 'step' | 'agent' | 'artifact' | 'branchFile' | 'branchSetup' | 'chain';
 
 export type BreadcrumbPlace = {
   readonly session: Session;
@@ -44,7 +47,68 @@ const FIRST_ARTIFACT_ID = CHAT_ARTIFACTS[0]?.id ?? null;
 const STANDALONE_AGENT_ID: AgentId =
   CHAT_AGENTS.find((agent) => agent.id !== CHAT_AGENT_RESOLVER_ID)?.id ?? CHAT_AGENT_RESOLVER_ID;
 
+const CHAIN_GRANDCHILD_ID = brandId<AgentId>({ value: 'mock-u35-agent-chain-grandchild' });
+
+const seedChain = (): void => {
+  seedChatSurfaces();
+  const [triage, backoff] = CHAT_AGENTS;
+  if (triage === undefined || backoff === undefined) {
+    return;
+  }
+  const grandchild: Agent = {
+    ...triage,
+    id: CHAIN_GRANDCHILD_ID,
+    ordinal: CHAT_AGENTS.length,
+    name: 'Check what the console reads',
+    parentAgentId: triage.id,
+  };
+  useAppStore.setState({
+    sessionPhaseRuns: {
+      [CHAT_SESSION_ID]: [
+        { ...backoff },
+        { ...triage, parentAgentId: backoff.id },
+        grandchild,
+        ...CHAT_AGENTS.slice(2),
+      ],
+    },
+  });
+};
+
+const SETUP_OFFER = JSON.stringify({
+  command: 'pnpm install',
+  carried: 2,
+  skipped: 1,
+  state: 'offered',
+});
+
+const seedBranchSetup = (): void => {
+  seedWorkflowRun();
+  const mountId = FLOW_MOUNTS[0]?.mountId;
+  if (mountId === undefined) {
+    return;
+  }
+  useAppStore.setState((state) => ({
+    settings: { ...state.settings, [setupOfferKey({ mountId })]: SETUP_OFFER },
+  }));
+};
+
 export const BREADCRUMB_PLACES: Readonly<Record<BreadcrumbPlaceId, BreadcrumbPlace>> = {
+  chain: {
+    session: CHAT_SESSION,
+    seed: seedChain,
+    to: agentPlace({ sessionId: CHAT_SESSION_ID, agentId: CHAIN_GRANDCHILD_ID }),
+    handlers: null,
+  },
+  branchSetup: {
+    session: FLOW_SESSION,
+    seed: seedBranchSetup,
+    to: branchPlace({ sessionId: FLOW_SESSION_ID, mountPath: FIRST_MOUNT_PATH, tab: 'comments' }),
+    handlers: {
+      ...handlersFor(BRANCH_FILES_PATCH),
+      db_select: () => [],
+      session_budget_get: () => null,
+    },
+  },
   run: {
     session: FLOW_SESSION,
     seed: seedWorkflowRun,

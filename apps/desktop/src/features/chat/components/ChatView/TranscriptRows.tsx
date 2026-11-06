@@ -38,7 +38,7 @@ import { rowHeightCache } from './rowHeightCache';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { InsertionRow } from './InsertionRow';
-import { rowsByDeliveryOf } from './rowsByDeliveryOf';
+import { placedRowsOf } from './placedRowsOf';
 import { dueInsertionsOf } from './dueInsertionsOf';
 import { isTurnStartRow } from './isTurnStartRow';
 
@@ -106,7 +106,7 @@ export const TranscriptRows = ({
   activeRunId,
   turnFooters,
   briefLabel,
-  insertions = [],
+  insertions: givenInsertions = [],
   onOpenTranscript,
   onStop,
   isStepsOnly = false,
@@ -116,7 +116,7 @@ export const TranscriptRows = ({
   clockStepAgentId,
   newFromKey = null,
 }: Props) => {
-  const rows = rowsByDeliveryOf({ rows: givenRows, insertions });
+  const { rows, insertions } = placedRowsOf({ rows: givenRows, insertions: givenInsertions });
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });

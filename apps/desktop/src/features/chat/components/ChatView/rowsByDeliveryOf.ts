@@ -35,6 +35,20 @@ const isDeliveryOf = ({ echo, delivery }: IsDeliveryOfParams): boolean => {
   );
 };
 
+const repeatsMarkedOf = ({ rows }: Pick<Params, 'rows'>): ReadonlyArray<ConversationRow> => {
+  let isFirstDelivery = true;
+  return rows.map((row) => {
+    if (row.kind !== 'item' || row.item.kind !== 'auto_delivery') {
+      return row;
+    }
+    if (isFirstDelivery) {
+      isFirstDelivery = false;
+      return row;
+    }
+    return { ...row, item: { ...row.item, isRepeat: true } };
+  });
+};
+
 export const rowsByDeliveryOf = ({
   rows,
   insertions = [],
@@ -56,10 +70,11 @@ export const rowsByDeliveryOf = ({
       unreadKeys.add(row.key);
     }
   });
-  return rows.flatMap((row) => {
+  const placed = rows.flatMap((row) => {
     if (movedKeys.has(row.key) || unreadKeys.has(row.key)) {
       return [];
     }
     return [...(movedBefore.get(row.key) ?? []), row];
   });
+  return repeatsMarkedOf({ rows: placed });
 };

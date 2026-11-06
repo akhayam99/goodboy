@@ -69,18 +69,40 @@ describe('the u33 overview needs you scene', () => {
     expect(frame?.style.padding).toBe('');
   });
 
-  it('shows two Decide rows and one Fix row, then the rows that wait for you', async () => {
+  it('is one list with no Decide or Fix header and no subject twice', async () => {
     const { container } = mount();
 
     const needsYou = await screen.findByRole('region', { name: 'Needs you' }, WAIT);
-    expect(
-      [...needsYou.querySelectorAll('[data-next-group-head]')].map((head) => head.textContent),
-    ).toEqual(['Decide2', 'Fix1']);
+    expect(needsYou.querySelectorAll('[data-next-group-head] [class*="text-meta"]')).toHaveLength(
+      0,
+    );
     const cards = [...needsYou.querySelectorAll('[data-action-card]')];
-    expect(cards).toHaveLength(3);
-    expect(new Set(cards.map((card) => card.textContent)).size).toBe(3);
-    expect(needsYou.querySelectorAll('[data-needs-you-live] [data-live-row]')).toHaveLength(2);
+    const live = [...needsYou.querySelectorAll('[data-needs-you-live] [data-live-row]')];
+    expect(new Set(cards.map((card) => card.textContent)).size).toBe(cards.length);
     expect(container.querySelector('[data-live-section="needs-you"]')).toBeNull();
+    const count = needsYou.querySelector('[data-overview-count]')?.textContent;
+    expect(count).toBe(String(cards.length + live.length));
+  });
+
+  it('holds one primary and gives the other rows no second verb and no overflow at rest', async () => {
+    const { container } = mount();
+
+    const needsYou = await screen.findByRole('region', { name: 'Needs you' }, WAIT);
+    expect(container.querySelectorAll('[data-variant="primary"]').length).toBeLessThanOrEqual(1);
+    const cards = [...needsYou.querySelectorAll('[data-action-card]')];
+    for (const card of cards.slice(1)) {
+      expect(card.querySelectorAll('button').length).toBeLessThanOrEqual(1);
+      expect(card.querySelector('[data-slot="header-actions-overflow"]')).toBeNull();
+    }
+  });
+
+  it('says what is happening in one glance line fed by the card counts', async () => {
+    const { container } = mount();
+
+    await screen.findByRole('region', { name: 'Needs you' }, WAIT);
+    const glance = container.querySelector('[data-overview-glance]');
+    expect(glance?.getAttribute('data-overview-glance')).toBe('waiting');
+    expect(glance?.textContent).toContain('waiting for you');
   });
 
   it('has no accessibility violations', async () => {

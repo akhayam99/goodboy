@@ -53,7 +53,6 @@ export const autoLimitWordsOf = ({
   if (limits.length === 0) {
     return {
       value: 'none',
-      ...(facts.spentUsd >= CENT && { spentText: `${formatUsd(facts.spentUsd)} spent` }),
       source: '',
       chain: `${chain} Nothing stops this Auto.`,
     };
@@ -61,7 +60,7 @@ export const autoLimitWordsOf = ({
   const first = Math.min(...limits);
   const source = sourceOf({ cap, sessionCapUsd, workspaceLimitUsd, workspaceName });
   return {
-    value: `${formatUsd(facts.spentUsd)} of ${formatUsd(first)}`,
+    value: formatUsd(first),
     source,
     ...(source === `from ${workspaceName}` && { isFromWorkspace: true }),
     chain: `${chain} ${formatUsd(first)} comes first.`,

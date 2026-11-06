@@ -74,7 +74,7 @@ describe('the chat reading scene', () => {
     const { container } = mount();
 
     await screen.findByText('Fixed: one credit per retry', undefined, WAIT);
-    expect(container.querySelectorAll('[data-turn]')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-turn]')).toHaveLength(2);
     expect(screen.getAllByTestId('outcome-line').map((line) => line.textContent)).toEqual([
       'Planning first, because the change touches ledger code',
       'Plan v1 approved, the Implementer is starting',

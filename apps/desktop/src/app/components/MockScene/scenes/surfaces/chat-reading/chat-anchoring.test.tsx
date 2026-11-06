@@ -78,7 +78,7 @@ describe('the chat anchoring scene', () => {
 
     await screen.findByText(SENT_QUESTION, undefined, WAIT);
     const turns = container.querySelectorAll('[data-turn]');
-    expect(turns).toHaveLength(4);
+    expect(turns).toHaveLength(3);
     expect(turns[turns.length - 1]?.textContent).toContain(SENT_QUESTION);
     expect(turns[turns.length - 1]?.textContent).toContain('Writing the answer');
   });

@@ -124,7 +124,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(
       within(settings).getByRole('button', { name: /^Models: Auto on Claude, Codex/ }),
     ).toBeDefined();
-    expect(within(settings).getByRole('button', { name: /^Limit: .* of \$3\.00/ })).toBeDefined();
+    expect(within(settings).getByRole('button', { name: /^Limit: \$3\.00/ })).toBeDefined();
     const rows = within(checklist());
     expect(rows.getByText('Step 3')).toBeDefined();
     expect(rows.getByText('Run the 12k export benchmark')).toBeDefined();

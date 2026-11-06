@@ -127,7 +127,7 @@ describe('the Auto limit chip under a session budget', () => {
     withSessionBudget({ onExceed: 'warn' });
     const chip = show({ capUsd: 4 });
 
-    expect(chip.getAttribute('aria-label')).toBe('Limit: $0.85 of $4.00, this Auto');
+    expect(chip.getAttribute('aria-label')).toBe('Limit: $4.00, this Auto');
     fireEvent.click(chip);
     const popover = await enter({ amount: '8' });
 
@@ -140,7 +140,7 @@ describe('the Auto limit chip under a session budget', () => {
     await capTreeAt({ capUsd: 2 });
     const chip = show({ capUsd: 2 });
 
-    expect(chip.getAttribute('aria-label')).toBe('Limit: $0.85 of $2.00, from session');
+    expect(chip.getAttribute('aria-label')).toBe('Limit: $2.00, from session');
     fireEvent.click(chip);
     const popover = await enter({ amount: '8' });
 

@@ -199,7 +199,10 @@ checks the pushing card ends 8px inside the aside and the overlay card ends on
 the column edge. A pushing card grows from the window's right edge: the aside
 eases its width with its right edge fixed (`justify-end`, `overflow-clip`, so a
 field focused while it opens cannot scroll the track), the card follows it with
-its border and corners in view, and the content keeps its final width
+its border and corners in view (the card clips with `overflow-clip` too: a
+`scrollIntoView` inside, such as `useSpawnedReveal` in the Agents drawer, would
+scroll an `overflow-hidden` card out of reach, and `pnpm validate:scenes --only
+drawer-reveal` fails when any reveal moves the card), and the content keeps its final width
 (`--goodboy-drawer-track` minus the 18px of handle gutter, inset and border)
 pinned to the right edge and fades in once there is room (`drawer-content-in`).
 Closing, the card keeps a copy of its content for `DURATION_BASE_MS` (220ms) while the
@@ -241,7 +244,7 @@ Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
 Workflows, Tasks detail, settings pages, agent and pull request detail. The
-header, the trail band (the `Session` crumbs and the Ask button), the body and
+header, the back row (`Back to X` and the Ask button), the body and
 the footer share the same column edges, so moving from Overview to Runs to
 Agents to a settings page never shifts the first letter. The Ask button is the
 last item of the trail's `PageColumn`: its right edge is the column's right

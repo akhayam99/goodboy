@@ -8,11 +8,13 @@ import { useScrollAnchor } from '.';
 type Layout = {
   heights: number[];
   scrollTop: number;
+  viewportTop?: number;
 };
 
 type HarnessProps = {
   readonly layout: Layout;
   readonly shouldHold?: () => boolean;
+  readonly isTopTracked?: boolean;
   readonly onRowMeasured?: (params: { readonly key: string; readonly px: number }) => void;
   readonly onSuspend?: (suspend: () => void) => void;
 };
@@ -58,7 +60,7 @@ type ScrollParams = {
 const rectOf = ({ top, height }: RectParams): DOMRect =>
   DOMRect.fromRect({ x: 0, y: top, width: 0, height });
 
-const Harness = ({ layout, shouldHold, onRowMeasured, onSuspend }: HarnessProps) => {
+const Harness = ({ layout, shouldHold, isTopTracked, onRowMeasured, onSuspend }: HarnessProps) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const setViewport = (node: HTMLDivElement | null) => {
     viewportRef.current = node;
@@ -72,7 +74,8 @@ const Harness = ({ layout, shouldHold, onRowMeasured, onSuspend }: HarnessProps)
         layout.scrollTop = value;
       },
     });
-    node.getBoundingClientRect = () => rectOf({ top: 0, height: VIEWPORT_HEIGHT });
+    node.getBoundingClientRect = () =>
+      rectOf({ top: layout.viewportTop ?? 0, height: VIEWPORT_HEIGHT });
   };
   const setRow =
     ({ index }: RowParams) =>
@@ -82,13 +85,17 @@ const Harness = ({ layout, shouldHold, onRowMeasured, onSuspend }: HarnessProps)
       }
       node.getBoundingClientRect = () => {
         const top = layout.heights.slice(0, index).reduce((sum, height) => sum + height, 0);
-        return rectOf({ top: top - layout.scrollTop, height: layout.heights[index] ?? 0 });
+        return rectOf({
+          top: (layout.viewportTop ?? 0) + top - layout.scrollTop,
+          height: layout.heights[index] ?? 0,
+        });
       };
     };
   const { suspend } = useScrollAnchor({
     viewportRef,
     rowSelector: '[data-rows] > li',
     ...(shouldHold !== undefined && { shouldHold }),
+    ...(isTopTracked !== undefined && { isTopTracked }),
     ...(onRowMeasured !== undefined && { onRowMeasured }),
   });
   onSuspend?.(suspend);
@@ -234,6 +241,53 @@ describe('useScrollAnchor', () => {
     layout.heights[0] = 170;
     resizeRows({ entries: [container.querySelectorAll('li')[0]!] });
     expect(layout.scrollTop).toBe(300);
+  });
+
+  it('keeps the text still when the box above pushes the viewport down', () => {
+    const layout = { heights: [100, 100, 100, 100], scrollTop: 120, viewportTop: 160 };
+    const { getByTestId, container } = render(<Harness layout={layout} isTopTracked />);
+    const viewport = getByTestId('viewport');
+    const row = container.querySelectorAll('li')[2]!;
+    scroll({ viewport });
+    const readAt = row.getBoundingClientRect().top;
+
+    layout.viewportTop = 208;
+    resizeRows({ entries: [viewport] });
+
+    expect(layout.scrollTop).toBe(168);
+    expect(row.getBoundingClientRect().top).toBe(readAt);
+
+    layout.viewportTop = 160;
+    resizeRows({ entries: [viewport] });
+
+    expect(layout.scrollTop).toBe(120);
+    expect(row.getBoundingClientRect().top).toBe(readAt);
+  });
+
+  it('leaves a viewport that moved alone unless its top is tracked', () => {
+    const layout = { heights: [100, 100, 100, 100], scrollTop: 120, viewportTop: 160 };
+    const { getByTestId } = render(<Harness layout={layout} />);
+    const viewport = getByTestId('viewport');
+    scroll({ viewport });
+
+    layout.viewportTop = 208;
+    resizeRows({ entries: [viewport] });
+
+    expect(layout.scrollTop).toBe(120);
+  });
+
+  it('lets the bottom pin follow the latest when the viewport moves', () => {
+    const layout = { heights: [100, 100, 100, 100], scrollTop: 120, viewportTop: 160 };
+    const { getByTestId } = render(
+      <Harness layout={layout} isTopTracked shouldHold={() => true} />,
+    );
+    const viewport = getByTestId('viewport');
+    scroll({ viewport });
+
+    layout.viewportTop = 208;
+    resizeRows({ entries: [viewport] });
+
+    expect(layout.scrollTop).toBe(120);
   });
 
   it('watches a row that arrives after mount, once per frame', async () => {

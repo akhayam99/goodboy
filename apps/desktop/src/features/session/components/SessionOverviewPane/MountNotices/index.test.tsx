@@ -25,9 +25,6 @@ vi.mock('../ProjectMountRows/MountBranchDecision', () => ({
 vi.mock('../ProjectMountRows/RebaseStoppedNotice', () => ({
   RebaseStoppedNotice: () => <p>rebase stopped</p>,
 }));
-vi.mock('../ProjectMountRows/WorktreeSetupOffer', () => ({
-  WorktreeSetupOffer: () => <p>setup offer</p>,
-}));
 
 import { MountNotices } from '.';
 
@@ -61,7 +58,6 @@ describe('MountNotices', () => {
     renderNotices('rebase');
 
     screen.getByText('rebase stopped');
-    expect(screen.queryByText('setup offer')).toBeNull();
     expect(screen.queryByText('foreign commits')).toBeNull();
     expect(screen.queryByText('also in')).toBeNull();
   });
@@ -70,7 +66,7 @@ describe('MountNotices', () => {
     renderNotices(null);
 
     expect(screen.queryByText('rebase stopped')).toBeNull();
-    screen.getByText('setup offer');
+    expect(screen.queryByText('setup offer')).toBeNull();
     screen.getByText('also in');
   });
 });

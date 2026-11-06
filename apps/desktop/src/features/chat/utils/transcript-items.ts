@@ -50,6 +50,7 @@ export type TranscriptItem =
       runId: ProviderRunId;
       text: string;
       outboxIds?: ReadonlyArray<string>;
+      isRepeat?: boolean;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; key: string; text: string; runId?: ProviderRunId | null }
@@ -320,6 +321,9 @@ export const reduceTranscript = (
       reduceTranscriptTrace.processed += 1;
     }
     if (event.kind === 'assistant_text') {
+      if (textKey !== null && textRunId !== event.runId) {
+        flushText();
+      }
       if (textKey === null) {
         textKey = `text-${i}`;
         textRunId = event.runId;

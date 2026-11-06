@@ -1,6 +1,6 @@
 # The session rail and its tools
 
-> **Read this when** you change the rail of a session, its breadcrumbs, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
+> **Read this when** you change the rail of a session, its back row, the tools beside the page or the Scripts pane. **Not for** spacing, scroll and overlay mechanics ([styling.md](../styling.md)) or design intent and tone ([DESIGN.md](../../DESIGN.md)). The other pages are listed in [navigation.md](../navigation.md).
 
 ## Session rail
 
@@ -99,8 +99,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   `orchestrated`, `agents` and `auto` lenses fold into `workflows`
   (`foldedLensOf`, applied by `sessionPlace`, `canonicalLocation`,
   `applyLocation` and the workspace), so an old address, a saved window or a
-  door that still names them lands on Runs, and the trail of an old agent or
-  run reads Session, Runs, then the agent or run. A row never carries a native
+  door that still names them lands on Runs, and the back row of an old agent or
+  run reads `Back to runs`. A row never carries a native
   `title`. The Runs page opens on the Start a run field (`StartRun`), and
   **Start a run** in the New menu (`newForm.startRun`), in a session's ⌘K
   verbs (`session.startRun`) and ⌘K **Start from** a preset
@@ -525,8 +525,8 @@ inside Ask the same chord is new chat, new terminal and Reset chat, see
 [keyboard.md](../keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
-the board. The trail and the title say `New session`, the title is faint and
-cannot be renamed, and there is no `⋯` and no chip. The
+the board. The title says `New session`, the page draws no back row, the
+title is faint and cannot be renamed, and there is no `⋯` and no chip. The
 column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
 leaving it keeps it intact, New brings it back, and the button shows a primary
@@ -559,9 +559,7 @@ header. Where is a searchable multiple `Listbox` in two groups
 (`projectPickerOptions`): "Suggested" holds at most five (the most recently
 used, then starred ones) and "All projects" lists the rest by name. The draft
 keeps the picks as `projectIds`; the first is the session's project and the
-rest are added with it (`additionalProjectIds`). The page has no visible
-title, the trail names it (a screen reader heading stays, drawn by
-`PaneTitleRow` inside `sr-only`).
+rest are added with it (`additionalProjectIds`).
 
 A task comes in from Tasks: **Start** on an issue calls `pickIssue`, which puts
 the issue in the draft's `pickedIssues` and fills the field with the issue goal
@@ -587,30 +585,38 @@ inline above the primary. A session that exists always has a real title, so
 its header never has an empty state. Sessions created elsewhere with no
 activity yet show the plain overview with its actions.
 
-## Breadcrumbs
+## Back row
 
-- **Every session page below the Overview draws one trail above its title.**
-  `SessionWorkspace` hands `<SessionTrail>` to the visible layer through
-  `PageTrailContext` (`@goodboy/ui`), and `PageHeader` draws it as a 24px line
-  at the head of the header, above the title row, in the same gap; `PaneShell`
-  clears the context for its body, so a nested header never repeats it. The
-  trail comes from `upTrailOf`: the page and its parents, ending in the
-  agent's display name (`Runs › Run › Implementer`). `SessionTrail` retains
-  the session title first when `SessionRailFoldContext` says the column is folded. Every crumb but the
-  last is a link that calls `upTo` (Back when the entry below is that place,
-  else a push); the parent crumb's tooltip reads `Go up to Run (⌘↑)`. The
-  Overview draws no trail (its title names the session), nor does a drawer,
-  which keeps its `DrawerFrame` back. The Branch page reads the same context
-  through `BranchDetail`, which drops it when a studio band claims the top.
-  Each page still opens with one header row from `PaneShell`: the page title,
-  then the page actions and at most one `⋯`, the page menu. A crumb carries no
-  menu (decision 6 of the breadcrumbs plan).
+- **Every session page below the Overview draws one `‹ Back to X` row above its title.**
+  No trail: one entry, the real parent. `SessionWorkspace` hands
+  `<SessionBackRow>` to the visible layer through `PageTrailContext`
+  (`@goodboy/ui`, the slot above the title that studio trails share), and
+  `PageHeader` draws it as a 24px line at the head of the header, above the
+  title row, in the same gap; `PaneShell` clears the context for its body, so a
+  nested header never repeats it. The row is a quiet `xs` button with a
+  `ChevronLeft`; its `aria-label` is its text. `backOf` (store, navigation)
+  names the parent from `parentPlace`: a main agent reads `Back to runs`, a sub
+  agent and a sub sub agent read `Back to {parent agent name}` (`parentPlace`
+  walks `parentAgentId` one step; a top level run step keeps its run, a sub
+  step reads `Back to {parent step name}`), a run reads `Back
+to runs`, a top level run step `Back to run`, a plan or any artifact `Back to
+artifacts`, a Branch file or thread `Back to branch`, every other lens page
+  and a Branch section `Back to overview`. A product lens keeps its name (`Back
+to GitHub issue`). A click calls `upTo` with the parent place: a real
+  navigation, so a reload or a deep link with no history below still goes
+  there; when the entry below is that place it is a Back instead of a push.
+  The Overview draws no row (it has no parent), nor does a drawer, which keeps
+  its `DrawerFrame` back. The Branch page reads the same context through
+  `BranchDetail`, which drops it when a studio band claims the top. Each page
+  still opens with one header row from `PaneShell`: the page title, then the
+  page actions and at most one `⋯`, the page menu.
   `every-place-has-a-way-up.test.tsx` walks one place per lens and per target
-  kind, renders `SessionWorkspace` and fails when the drawn trail differs from
-  `upTrailOf`; a place that opens a drawer or a side pane is named with its
-  reason. It also fails on a back arrow or chevron outside `Trail`,
-  `DrawerFrame` and the history arrows, with a named allowlist for the backs
-  that are not a way up.
+  kind, renders `SessionWorkspace` and fails when the drawn row differs from
+  `backOf` or a breadcrumb is drawn; a place that opens a drawer or a side pane
+  is named with its reason. It also fails on a back arrow or chevron outside
+  the back row, `DrawerFrame` and the history arrows, with a named allowlist
+  for the backs that are not a way up. The history arrow in the top bar reads
+  `Back to {place}` too: a test that wants it takes `[data-nav-arrow="back"]`.
 - **The header holds only its page.** `SessionWorkspace` hands no actions
   to the page headers: the session tools live in their column at the right of
   the content (see The session tools), so no header carries a second `⋯` (pinned by
@@ -694,8 +700,7 @@ Folding the rail leaves the column in place.
   selected agent is revealed when the panel opens or the selection changes:
   a fold hiding it opens and the row scrolls to the middle, later changes
   scroll only as far as needed, and an agent missing from the tree changes
-  nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's **Working now** chips
-  and chat **Open** actions set the Agents drawer's child target without
+  nothing (`useSpawnedReveal`, `foldAncestorsOf`). Auto's chat **Open** actions set the Agents drawer's child target without
   navigating the center. The target takes precedence over the main selection
   (`useSpawnedFocus`); **All runs** still works, and another reveal returns
   to the target's launch. An Auto
@@ -795,21 +800,16 @@ Folding the rail leaves the column in place.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
-  `Workflows > Ship a fix` with its save state and actions), so the app has one
-  breadcrumb. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
+  `Workflows > Ship a fix` with its save state and actions). A session page has
+  no trail, only its back row. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
   is the first child of the detail beside the page rail, not a bar across the rail, so
   the crumb, the title and the body share one x ([frame map](../styling.md#the-frame-map)).
-- **The parent crumb is Up, and the last crumb names the kind.** No crumb
-  carries a back glyph and `Trail` has no lead slot, so a page never draws its
-  own back link above its content. The last crumb of a run, an artifact, an
-  artifact being created and a selected agent reads `Run`, `Artifact`,
-  `New artifact` and `Agent`; the page title holds the name.
+- **The parent crumb is Up, and the last crumb names the kind.** A studio
+  trail only: no crumb carries a back glyph and `Trail` has no lead slot.
   `no-back-glyph-in-trail.test.tsx` fails on a chevron or arrow to the left
   inside a trail.
-- **Every crumb has an icon, and depth compacts the trail.** Agents carry the
-  agent glyph in their kind's colour, runs the run glyph, artifacts, questions
-  and pull request modes their own. The last crumb and its parent always stay
-  full. The first crumb (the session title on a page, the studio in a band)
+- **Every crumb has an icon, and depth compacts the trail.** The last crumb and
+  its parent always stay full. The first crumb (the studio in a band)
   keeps its name through five crumbs. From five every other
   ancestor but the parent becomes an icon, and from six the first crumb does too.
   When the band still has no room, ancestors turn
@@ -819,13 +819,8 @@ Folding the rail leaves the column in place.
   the pure rule; the label closes with a 220ms width transition (120ms fade),
   and a new crumb enters from the right 60ms later. Under reduced motion only
   the opacity changes.
-- **The session trail starts after the session when the column is open.**
-  The column already names it. Folded or narrow, the first crumb names the
-  session (`crumbOf`, through `sessionTitle`) and follows `compactTrail`.
-- The last crumb is the current location and is never clickable. A list view
-  never fills in a crumb for an item the user has not opened yet.
-- **A crumb carries no status dot.** The trail is structure, movement rather than
-  state. An agent's state is drawn once in the row node and once in the chip of
+- **A crumb or a back row carries no status dot.** Navigation is structure,
+  movement rather than state. An agent's state is drawn once in the row node and once in the chip of
   the agent header, and the chip's tooltip (`stateDescription`) is the one place
   that explains the state words. Elapsed time shows only in the header. The Brief's
   Now band keeps the label and the "much longer" note.
@@ -834,13 +829,12 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   for another reviewer, `Resolve: 3 review comments` for a group. Rows saved with
   the lowercase `resolve: ` prefix are shown without it (`agentDisplayName` in
   `shared/utils`), so old and new rows read the same.
-- **An integration trail hangs off its own tool.** It uses the name the sidebar
-  uses (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any other
-  lens. A studio belongs under its own tool, never under another tool's lens.
-- **Opening a child extends the trail and keeps every ancestor**:
-  `{HomeLens} › {agent name}`. Selecting a sibling changes only the last
-  crumb and the child region.
-- **The trail shows the structure of the app, not the history of the
+- **An integration page hangs off its own tool.** Its back row uses the name
+  the sidebar uses (GitHub, GitLab, Jira, Linear, Slack). A studio belongs under its own tool, never under another tool's lens.
+- **Opening a child changes the back row to its parent**: a sub agent reads
+  `Back to {parent agent name}`. Selecting a sibling changes only the child
+  region.
+- **The back row shows the structure of the app, not the history of the
   session.** A parent comes from the object that is open, never from the
   surface the jump came from. Selecting an agent leaves the active lens where it
   was, so that lens only ever records where the user came from. The activity
@@ -856,12 +850,11 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
 still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   over the section body
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A section switch and a
-  thread selection replace the entry, so Back never walks them; the trail is
-  the way back to the section. The trail is
-  `{session} › Branch › Thread` or `{session} › Branch › File`, the same from
-  every door and always reading `Branch`, never the branch or pull request name
-  (the header names it); Up is the crumb to the left of the open one. The
-  Branch crumb has no menu; the branch switcher is `project · head ▾` in the
+  thread selection replace the entry, so Back never walks them; the back row is
+  the way back to the section. A thread or a file reads `Back to branch`, the
+  same from every door and always reading `branch`, never the branch or pull
+  request name (the header names it); a section reads `Back to overview`. The
+  branch switcher is `project · head ▾` in the
   header. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
   rewritten to the Branch address by `canonicalLocation`, so the palette, the
@@ -873,9 +866,8 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment on the Branch (`s/{session}/review/t/{thread}/agent`). Back returns where
-  you were, while the trail says where you are.
-- **Segment menus.** The session trail carries none for now: a crumb is a
-  link. `CrumbMenu` stays in the `Trail` primitive (`@goodboy/ui`) and comes
+  you were, while the back row names the parent.
+- **Segment menus.** The back row carries none: it is one link. `CrumbMenu` stays in the `Trail` primitive (`@goodboy/ui`) and comes
   back per segment where a switch is missed, under one rule: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
   to that thing. A segment whose menu would hold fewer than two entries, rows plus
@@ -943,8 +935,8 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   drawer is keyed by worktree and word, so a late answer for an old word is
   dropped. The commit view has no peek, because its lines are not the working
   tree's.
-- **A fix run has no segment of its own.** Its transcript is a drawer on the
-  Comments tab, so the trail reads Session, Branch, Comments.
+- **A fix run has no page of its own.** Its transcript is a drawer on the
+  Comments tab, so the Branch page behind it keeps its own back row.
 - **Settings draws no band in the column.** On Home, where it covers the
   window, it claims its studio band with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers and

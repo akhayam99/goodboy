@@ -135,7 +135,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/bootstrap/MoveReport/index.tsx',
     ],
   },
-  SessionTrail: { kind: 'helper', files: [] },
+  SessionBackRow: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
   LinkIssueAction: { kind: 'helper', files: [] },
   EmptyState: { kind: 'helper', files: [] },

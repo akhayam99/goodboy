@@ -13,6 +13,7 @@ import {
   branchTab,
   click,
   clickButton,
+  findBackArrow,
   openWorktreeEntry,
   heading,
   lens,
@@ -249,9 +250,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     covers: ['goToHistory'],
     open: async () => {
       await openBranchFiles();
-      fireEvent.contextMenu(
-        await screen.findByRole('button', { name: /^Back(?! to Sessions$| to session )/ }),
-      );
+      fireEvent.contextMenu(await findBackArrow());
       await settle();
       const entries = await screen.findAllByRole('menuitemradio');
       const target = entries.find((entry) => entry.getAttribute('aria-checked') !== 'true');

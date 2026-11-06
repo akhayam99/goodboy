@@ -1,7 +1,13 @@
-import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import type { PlacedInsertion } from './placedRowsOf';
 
 type Props = {
-  readonly insertion: TranscriptInsertion;
+  readonly insertion: PlacedInsertion;
 };
 
-export const InsertionRow = ({ insertion }: Props) => <li>{insertion.node}</li>;
+export const InsertionRow = ({ insertion }: Props) => (
+  <li>
+    {typeof insertion.node === 'function'
+      ? insertion.node({ replies: insertion.replies })
+      : insertion.node}
+  </li>
+);

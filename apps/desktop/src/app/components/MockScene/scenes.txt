@@ -374,8 +374,6 @@ drawer-split-plan
 drawer-split-plan-1280
 drawer-split-tasks
 drawer-wide-push
-e2-working-now-one
-e2-working-now-two
 explore
 explore-changedempty
 explore-changedfilter
@@ -1196,6 +1194,10 @@ u34-u5-question
 u34-u53-palette
 u34-u55-topbar-running
 u34-u56-step
+u35-agent-chain-sub-sub
+u35-auto-plan-used
+u35-branch-setup-offer
+u35-preset-run-glance
 update-card
 update-card-long-version
 update-card-narrow

@@ -274,6 +274,19 @@ describe('reduceTranscript incremental resume', () => {
     ]);
   });
 
+  it('keeps the reply of a later run apart from the reply of the run before', () => {
+    const later = brandId<ProviderRunId>({ value: 'run-2' });
+    const items = reduceTranscript([
+      assistantText({ delta: 'Then I start a Tester.' }),
+      { ...assistantText({ delta: 'The Planner finished.' }), runId: later },
+    ]);
+
+    expect(items.map((item) => (item.kind === 'assistant_text' ? item.text : null))).toEqual([
+      'Then I start a Tester.',
+      'The Planner finished.',
+    ]);
+  });
+
   it('flushes an open buffer once a later chunk brings a non-text event', () => {
     const events = [
       assistantText({ delta: 'par' }),

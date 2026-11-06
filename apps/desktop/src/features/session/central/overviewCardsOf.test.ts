@@ -45,7 +45,7 @@ const NONE = {
 } as const;
 
 describe('overviewCardsOf', () => {
-  it('orders the cards by who acts: you must, agents are, branches, finished', () => {
+  it('orders the cards as the prototype does: do, moving, branches, finished', () => {
     const shown = overviewCardsOf({
       ...NONE,
       cards: CARDS,

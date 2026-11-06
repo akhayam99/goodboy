@@ -3,7 +3,7 @@
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { clearMocks } from '@tauri-apps/api/mocks';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -53,7 +53,11 @@ describe('the new worktree scenes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Run' }));
 
-    await screen.findByText('Setup finished: pnpm install.', undefined, WAIT);
+    await waitFor(
+      () => expect(screen.queryByText('Worktree payments-api/retry-webhook is ready.')).toBeNull(),
+      WAIT,
+    );
+    expect(screen.queryByText(/Setup finished/)).toBeNull();
   });
 
   it('p25-worktree-carry lists the ignored paths with the secret marked and the setup prefilled', async () => {

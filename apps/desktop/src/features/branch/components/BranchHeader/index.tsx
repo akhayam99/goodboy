@@ -23,6 +23,7 @@ import { selectActiveMountId } from '../../../../store/slices/project-mounts/sel
 import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
 import { requestNounLabel } from '../../requestNounLabel';
 import { BranchOverflow } from './BranchOverflow';
+import { BranchSetupOffer } from './BranchSetupOffer';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -181,6 +182,7 @@ export const BranchHeader = ({
           {...(pushFailure === null ? {} : { onInstalled: controls.diffControls.retry })}
         />
       )}
+      {activeMountId !== null && <BranchSetupOffer sessionId={sessionId} mountId={activeMountId} />}
       {pushFailure === null && activeMountId !== null && (
         <PushFixStatus sessionId={sessionId} mountId={activeMountId} />
       )}

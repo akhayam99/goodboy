@@ -3,6 +3,7 @@ import { getAutoArtifact, type Database } from '@goodboy/db';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { approveArtifact } from '../../../store/runtime/auto/approveArtifact';
 import { PLAN_REVISING_REASON } from '../../plans/planRevising';
+import { approvedPlanTextOf } from './approvedPlanReply';
 
 export type AutoPlanApproval =
   | Readonly<{ kind: 'approved'; revision: number }>
@@ -59,7 +60,11 @@ export const approveAutoPlan = async ({
     return { kind: 'already_approved', revision: outcome.revision };
   }
   try {
-    await send({ sessionId, agentId: rootAgentId, content: `Approved plan v${outcome.revision}.` });
+    await send({
+      sessionId,
+      agentId: rootAgentId,
+      content: approvedPlanTextOf({ revision: outcome.revision }),
+    });
   } catch (error) {
     return { kind: 'told_failed', revision: outcome.revision, error };
   }

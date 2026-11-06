@@ -70,20 +70,20 @@ const limitOf = ({
   })}${monthText === '' ? '' : `, then ${monthText}`}.`;
   if (first === null) {
     return {
-      value: spentUsd === 0 ? 'none' : `${formatUsd(spentUsd)} spent`,
+      value: 'none',
       source: '',
       chain: `${chain} ${monthText === '' ? 'Nothing stops this run.' : 'Only the month limit stops this run.'}`,
     };
   }
   if (first === runLimit) {
     return {
-      value: `${formatUsd(spentUsd)} of ${formatUsd(first)}`,
+      value: formatUsd(first),
       source: runLimitSourceOf({ run }) ?? 'this run',
       chain: `${chain} ${formatUsd(first)} comes first.`,
     };
   }
   return {
-    value: `${formatUsd(sessionSpentUsd)} of ${formatUsd(first)}`,
+    value: formatUsd(first),
     source: 'from session',
     chain: `${chain} ${formatUsd(first)} comes first, counted over the whole session: ${formatUsd(sessionSpentUsd)} spent, ${formatUsd(spentUsd)} of it this run.`,
   };

@@ -2,6 +2,9 @@ import { useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { RunSettingsLine } from '../../../workflows/components/RunSettingsLine';
+import { runGlanceOf } from '../../glance/runGlanceOf';
+import { spendTextOf } from '../../glance/spendTextOf';
+import { RunGlanceLine } from '../RunGlanceLine';
 import { RunTimeLeftLabel } from '../../../workflows/components/RunTimeLeftLabel';
 import { useRunTimeLeft } from '../../../workflows/hooks/useRunTimeLeft';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
@@ -19,6 +22,14 @@ type Props = {
 export const OrchestratedFacts = ({ session, view }: Props) => {
   const { run, workflow, agents } = view;
   const roleModels = useSessionRoleModels({ sessionId: session.id });
+  const glance = runGlanceOf({
+    isDiscarded: view.isDiscarded,
+    isCompleted: view.isCompleted,
+    isDynamic: view.isDynamic,
+    doneCount: view.doneCount,
+    stepCount: view.stepCount,
+    primary: view.primary?.kind ?? null,
+  });
   const timeLeft = useRunTimeLeft({
     run,
     steps: workflow.steps,
@@ -58,6 +69,14 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
           session={session}
           run={run}
           isOpen={isOpen}
+          frame={({ spentUsd, chips }) => (
+            <RunGlanceLine
+              id={run.id}
+              glance={glance}
+              spend={spendTextOf({ spentUsd })}
+              settings={chips}
+            />
+          )}
           kind={
             <>
               {route === undefined ? null : (

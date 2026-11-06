@@ -54,21 +54,4 @@ describe('SettingChip', () => {
         .hasAttribute('data-setting-changed'),
     ).toBe(true);
   });
-
-  it('shows spend beside the chip as plain text, never as the chip value', () => {
-    const { container } = render(
-      <Harness
-        words={{
-          value: 'none',
-          source: '',
-          chain: 'Nothing stops this agent.',
-          spentText: '$0.24 spent',
-        }}
-      />,
-    );
-
-    const trigger = screen.getByRole('button', { name: 'Edits: none' });
-    expect(trigger.textContent).toBe('Edits:none');
-    expect(container.querySelector('[data-setting-spent]')?.textContent).toBe('$0.24 spent');
-  });
 });

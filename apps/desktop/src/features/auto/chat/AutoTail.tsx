@@ -10,7 +10,6 @@ import { autoLimitOpenEvent } from './autoLimitOpenEvent';
 import { raisedCapOf } from './raisedCapOf';
 import { useAutoTreeActions } from './useAutoTreeActions';
 import { useAutoTreeCap } from './useAutoTreeCap';
-import { AutoWorkingNow } from './AutoWorkingNow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,10 +38,17 @@ type StopParams = {
   readonly facts: TailFacts;
 };
 
-const withoutStop = ({ facts }: StopParams): TailFacts =>
-  facts.actions.some((action) => action.id === 'changeApproach')
-    ? { ...facts, actions: facts.actions.filter((action) => action.id !== 'stopAuto') }
-    : facts;
+const withoutDockActions = ({ facts }: StopParams): TailFacts => ({
+  ...facts,
+  actions: facts.actions.filter(
+    (action) => action.id !== 'stopAuto' && action.id !== 'changeApproach',
+  ),
+});
+
+const isDockLine = ({ facts }: StopParams): boolean =>
+  (facts.state === 'working' || facts.state === 'waiting') &&
+  facts.actions.length > 0 &&
+  withoutDockActions({ facts }).actions.length === 0;
 
 export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const rootTurn = useAppStore((state) => state.agentTurnState[rootAgent.id] ?? null);
@@ -52,13 +58,14 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const saveCap = useAutoTreeCap({ sessionId, treeId: view.tree.id });
   const isRaisingRef = useRef(false);
   if (rootTurn?.kind === 'running' || rootTurn?.kind === 'starting') {
-    return <AutoWorkingNow sessionId={sessionId} view={view} />;
+    return null;
   }
   const live = autoTreeLive({ view, rootTurn, rootAgent, lastTool: null, project: null });
   if (live === null || live.state === 'idle') {
-    return <AutoWorkingNow sessionId={sessionId} view={view} />;
+    return null;
   }
-  const facts = withoutStop({ facts: live });
+  const facts = withoutDockActions({ facts: live });
+  const isLineInDock = isDockLine({ facts: live });
   const capUsd = view.budget?.capUsd ?? null;
   const raisedTo = capUsd === null ? null : raisedCapOf({ capUsd });
 
@@ -95,9 +102,11 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
 
   return (
     <div data-auto-tail="" className="flex flex-col gap-2">
-      <div role="status" aria-live="polite">
-        <TailLine facts={withRaiseLabel({ facts, raisedTo })} onAction={onAction} />
-      </div>
+      {isLineInDock ? null : (
+        <div role="status" aria-live="polite">
+          <TailLine facts={withRaiseLabel({ facts, raisedTo })} onAction={onAction} />
+        </div>
+      )}
       {actions.failure === null ? null : (
         <Notice
           tone="danger"
@@ -107,7 +116,6 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
           body={actions.failure.message}
         />
       )}
-      <AutoWorkingNow sessionId={sessionId} view={view} />
     </div>
   );
 };

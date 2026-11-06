@@ -7,6 +7,7 @@ import {
   both,
   branchTab,
   click,
+  clickBackArrow,
   clickButton,
   openWorktreeMenu,
   heading,
@@ -117,7 +118,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['back'],
     open: async () => {
       await openBranchFiles();
-      await clickButton(/^Back(?! to Sessions$| to session )/);
+      await clickBackArrow();
     },
     lands: lens(null),
   },
@@ -126,7 +127,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['back', 'forward'],
     open: async () => {
       await openBranchFiles();
-      await clickButton(/^Back(?! to Sessions$| to session )/);
+      await clickBackArrow();
       await clickButton(/^Forward/);
     },
     lands: branchTab('files'),
