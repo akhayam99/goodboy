@@ -601,10 +601,12 @@ activity yet show the plain overview with its actions.
   agent and a sub sub agent read `Back to {parent agent name}` (`parentPlace`
   walks `parentAgentId` one step; a top level run step keeps its run, a sub
   step reads `Back to {parent step name}`), a run reads `Back
-to runs`, a top level run step `Back to run`, a plan or any artifact `Back to
-artifacts`, a Branch file or thread `Back to branch`, every other lens page
-  and a Branch section `Back to overview`. A product lens keeps its name (`Back
-to GitHub issue`). A click calls `upTo` with the parent place: a real
+to runs`, a top level run step `Back to {run title}` (the run's title, else its
+  workflow's name, else `Back to run`), a plan or any artifact `Back to
+artifacts`, a Branch file or thread `Back to branch`, every other lens page,
+  a GitHub issue, a linked task and a Branch section `Back to overview`. The
+  name comes from `placeTitleOf` (store, navigation), the one name a place has:
+  the back row, the history arrows and their hold menu all read it. A click calls `upTo` with the parent place: a real
   navigation, so a reload or a deep link with no history below still goes
   there; when the entry below is that place it is a Back instead of a push.
   The Overview draws no row (it has no parent), nor does a drawer, which keeps
@@ -617,8 +619,12 @@ to GitHub issue`). A click calls `upTo` with the parent place: a real
   `backOf` or a breadcrumb is drawn; a place that opens a drawer or a side pane
   is named with its reason. It also fails on a back arrow or chevron outside
   the back row, `DrawerFrame` and the history arrows, with a named allowlist
-  for the backs that are not a way up. The history arrow in the top bar reads
-  `Back to {place}` too: a test that wants it takes `[data-nav-arrow="back"]`.
+  for the backs that are not a way up. The history arrows in the top bar are
+  memory, not a way up, so they never say Back: the left one reads
+  `Previous: {place}` and the right one `Forward: {place}` (an agent's name, a
+  run's title, a page), with the session's title on a second line; a hold or a
+  right click opens the History menu with the same names. A test that wants an
+  arrow takes `[data-nav-arrow="back"]`.
 - **The header holds only its page.** `SessionWorkspace` hands no actions
   to the page headers: the session tools live in their column at the right of
   the content (see The session tools), so no header carries a second `⋯` (pinned by

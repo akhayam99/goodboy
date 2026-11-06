@@ -168,11 +168,11 @@ describe('SessionBackRow', () => {
     expect(screen.queryByRole('button', { name: 'Back to artifacts' })).toBeNull();
   });
 
-  it('closes the issue on a deep link and lands on the list', () => {
+  it('closes the issue on a deep link and lands on the Overview', () => {
     walk({ places: [ISSUE_PLACE] });
     render(<SessionBackRow sessionId={S1} />);
 
-    fireEvent.click(backButton('Back to GitHub issue'));
+    fireEvent.click(backButton('Back to overview'));
 
     expect(useAppStore.getState().focusedGithubIssueNumber[S1]).toBeNull();
   });
