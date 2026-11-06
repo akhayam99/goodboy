@@ -69,7 +69,6 @@ export type NavigateParams = {
   readonly to: PlaceRequest;
   readonly mode?: NavigateMode;
   readonly drawer?: OpenDrawer | null;
-  readonly isExact?: boolean;
 };
 
 export type CanonicalPlace = {

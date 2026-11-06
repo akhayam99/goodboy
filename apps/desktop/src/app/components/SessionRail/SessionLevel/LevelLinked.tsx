@@ -7,7 +7,7 @@ import { distinctTasks } from '../../../../shared/utils/distinctTasks';
 import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
 import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
 import { LinkIssueAction } from '../../../../features/session/components/SessionOverviewPane/LinkIssueAction';
-import { openLens } from '../../../../features/session/openLens';
+import { openGithubIssue } from '../../../../features/session/openGithubIssue';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { githubRefOf } from './githubRefOf';
 import { countSlotText } from '../../../../shared/utils/countSlotText';
@@ -79,7 +79,6 @@ export const LevelLinked = ({ session, isActive }: Props) => {
       ? (s.focusedGithubIssueNumber[sessionId] ?? null)
       : null,
   );
-  const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const isOverview = useAppStore((s) => (s.activeLens[sessionId] ?? null) === null);
   const tasks = [...distinctTasks({ tasks: externalTasks })].sort(
     (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
@@ -117,10 +116,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
                   ariaCurrent={isShown ? 'page' : undefined}
                   ariaLabel={`Open issue #${issue.number}`}
                   {...(issue.title !== undefined && issue.title !== null && { title: issue.title })}
-                  onClick={() => {
-                    setFocusedGithubIssueNumber(sessionId, issue.number);
-                    openLens({ sessionId, lens: 'github_issue' });
-                  }}
+                  onClick={() => openGithubIssue({ sessionId, issueNumber: issue.number })}
                   className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
                 >
                   <IntegrationGlyph provider="github" size="xs" className="shrink-0" />

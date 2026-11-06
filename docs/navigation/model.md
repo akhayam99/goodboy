@@ -338,7 +338,12 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
-  `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
+  `agentPlace` and `BOARD_PLACE` build the `to`. A move lands exactly where
+  its `to` says: a place with no target is the list (Runs, Artifacts), never
+  the run or artifact shown before, so every caller that means an object
+  passes it as the target, and opening a row is a move that Back undoes
+  (`openArtifactPage`, `openGithubIssue`). A write in the background, such as
+  a run starting, never moves the page. The per-session keys the
   surfaces render from (`activeLens`, `selectedAgentId`, the
   focused target) are written only by the slice. A contract test
   (`__tests__/navigation/oneDoor.test.ts`) fails when `features/`, `app/` or

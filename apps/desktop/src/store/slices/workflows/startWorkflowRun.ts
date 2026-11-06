@@ -39,8 +39,6 @@ export const startWorkflowRun = (set: SetFn, get: GetFn) => {
       ),
     }));
 
-    get().setFocusedWorkflowRun(sessionId, workflowRunId);
-
     if (run.autoRun) {
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;

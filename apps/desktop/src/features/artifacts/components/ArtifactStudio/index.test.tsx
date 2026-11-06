@@ -41,7 +41,29 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       runPlan: vi.fn(async () => 'agent-impl'),
       spawnReportAgent: vi.fn(async () => 'agent-report-3'),
       spawnWireframeAgent: vi.fn(async () => 'agent-wireframe-3'),
-      navigate: vi.fn(),
+      navigate: vi.fn(
+        ({
+          to,
+        }: {
+          readonly to: {
+            readonly at: string;
+            readonly view?: { readonly target: { kind: string; artifactId?: string } | null };
+          };
+        }) => {
+          const target = to.view?.target ?? null;
+          if (to.at === 'session' && target?.kind === 'artifact') {
+            state.focusedArtifactId = {
+              ...state.focusedArtifactId,
+              'sess-1': target.artifactId ?? null,
+            };
+            notify();
+          }
+        },
+      ),
+      up: vi.fn(() => {
+        state.focusedArtifactId = { ...state.focusedArtifactId, 'sess-1': null };
+        notify();
+      }),
       loadAgentTranscript: vi.fn(async () => undefined),
       openDrawer: vi.fn(),
       toggleDrawer: vi.fn(),
@@ -217,6 +239,8 @@ beforeEach(() => {
 afterEach(cleanup);
 
 import { ArtifactStudio } from './index';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
 
 const renderStudio = () => render(<ArtifactStudio sessionId={'sess-1' as never} />);
 
@@ -325,7 +349,14 @@ describe('ArtifactStudio list', () => {
     expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
     state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
     rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-report');
+    expect(state.navigate).toHaveBeenLastCalledWith({
+      to: sessionPlace({
+        sessionId: brandId<SessionId>({ value: 'sess-1' }),
+        lens: 'plans',
+        target: { kind: 'artifact', artifactId: brandId<ArtifactId>({ value: 'artifact-report' }) },
+      }),
+      mode: 'replace',
+    });
     expect(state.awaitArtifactAgent).toHaveBeenLastCalledWith({
       sessionId: 'sess-1',
       agentId: null,
@@ -337,7 +368,14 @@ describe('ArtifactStudio list', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
     renderStudio();
     openRow(/^Plan Backfill the settled batches/);
-    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'plan-1');
+    expect(state.navigate).toHaveBeenLastCalledWith({
+      to: sessionPlace({
+        sessionId: brandId<SessionId>({ value: 'sess-1' }),
+        lens: 'plans',
+        target: { kind: 'artifact', artifactId: brandId<ArtifactId>({ value: 'plan-1' }) },
+      }),
+      mode: 'push',
+    });
     expect(screen.getByTestId('artifact-shell').getAttribute('data-artifact-kind')).toBe('plan');
   });
 });
@@ -483,13 +521,11 @@ describe('ArtifactStudio shell', () => {
     const { rerender } = renderStudio();
     fireEvent.keyDown(window, { key: 'Escape' });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
+    expect(state.up).not.toHaveBeenCalled();
     state.drawer = null;
     rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
     fireEvent.keyDown(window, { key: 'Escape' });
-    await waitFor(() =>
-      expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', null),
-    );
+    await waitFor(() => expect(state.up).toHaveBeenCalledTimes(1));
   });
 
   it('opens a wireframe on its flow, with Open in browser as the secondary and the variant under More', () => {
@@ -650,6 +686,6 @@ describe('ArtifactStudio generating run', () => {
     openRow(/^Wireframe High fidelity,/);
     state.sessionArtifacts = { 'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }] };
     rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
+    expect(state.focusedArtifactId['sess-1']).toBe('artifact-wireframe');
   });
 });

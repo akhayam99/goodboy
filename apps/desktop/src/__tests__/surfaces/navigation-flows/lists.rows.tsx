@@ -10,8 +10,10 @@ import {
   clickButton,
   heading,
   openCrumb,
+  settle,
   useAppStore,
 } from './harness';
+import { pressShortcut } from '../../helpers/pressKey';
 
 const REPORT_AT: IsoDateTime = JSON.parse(JSON.stringify('2026-09-14T16:27:00.000Z'));
 const REPORT_ID: ArtifactId = JSON.parse(JSON.stringify('lists-journey-report'));
@@ -108,6 +110,36 @@ export const LISTS_ROWS: ReadonlyArray<Row> = [
       await waitFor(() => expect(rowTitled(REPORT_TITLE)).toBeNull(), WAIT);
 
       await clickButton('Undo');
+      await waitFor(() => expect(rowTitled(REPORT_TITLE)).not.toBeNull(), WAIT);
+    },
+  },
+  {
+    name: 'opening an artifact row is a move: Back comes back to the Artifacts list',
+    covers: ['navigate', 'back'],
+    open: async (ctx) => {
+      const sessionArtifacts = useAppStore.getState().sessionArtifacts;
+      useAppStore.setState({
+        sessionArtifacts: { ...sessionArtifacts, [ctx.sessionId]: [reportOf(ctx)] },
+      });
+      await openCrumb(/^Artifacts/);
+      await heading('Artifacts');
+      await click(
+        await screen.findByRole('button', { name: new RegExp(`^Report ${REPORT_TITLE}`) }, WAIT),
+      );
+      await waitFor(
+        () => expect(useAppStore.getState().focusedArtifactId[ctx.sessionId]).toBe(REPORT_ID),
+        WAIT,
+      );
+      pressShortcut({ id: 'nav.back' });
+      await settle();
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().focusedArtifactId[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
+      expect(useAppStore.getState().activeLens[ctx.sessionId]).toBe('plans');
+      await heading('Artifacts');
       await waitFor(() => expect(rowTitled(REPORT_TITLE)).not.toBeNull(), WAIT);
     },
   },

@@ -25,6 +25,7 @@ import {
 } from '../../artifactListRows';
 import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact';
 import { useEscapeToList } from '../../hooks/useEscapeToList';
+import { openArtifactPage } from '../../openArtifactPage';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
@@ -48,8 +49,8 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const openQuestions = useSessionOpenQuestions(sessionId);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
-  const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const navigate = useAppStore((s) => s.navigate);
+  const up = useAppStore((s) => s.up);
   const filter = useAppStore((s) => s.artifactFilter[sessionId] ?? 'all');
   const setArtifactFilter = useAppStore((s) => s.setArtifactFilter);
   const awaitedAgentId = useAppStore((s) => s.awaitedArtifactAgentId[sessionId] ?? null);
@@ -97,7 +98,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     }
     awaitArtifactAgent({ sessionId, agentId: null });
     if (focusedArtifactId === null && selectedAgentId === null) {
-      setFocusedArtifactId(sessionId, arrived.id);
+      openArtifactPage({ sessionId, artifactId: arrived.id, isArrival: true });
     }
   }, [
     artifacts,
@@ -106,7 +107,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     focusedArtifactId,
     selectedAgentId,
     sessionId,
-    setFocusedArtifactId,
   ]);
 
   const generations = useMemo(
@@ -135,9 +135,9 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     const produced = artifacts.find((artifact) => artifact.agentId === focusedRunAgentId) ?? null;
     setFocusedRunAgentId(null);
     if (produced !== null) {
-      setFocusedArtifactId(sessionId, produced.id);
+      openArtifactPage({ sessionId, artifactId: produced.id, isArrival: true });
     }
-  }, [focusedRunAgentId, generations, artifacts, sessionId, setFocusedArtifactId]);
+  }, [focusedRunAgentId, generations, artifacts, sessionId]);
 
   const subject = useMemo((): ArtifactShellSubject | null => {
     if (focusedArtifactId !== null) {
@@ -204,7 +204,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const openRow = useCallback(
     (row: ArtifactListRow) => {
       if (row.target.kind === 'artifact') {
-        setFocusedArtifactId(sessionId, row.target.artifactId);
+        openArtifactPage({ sessionId, artifactId: row.target.artifactId });
         return;
       }
       const { generation } = row.target;
@@ -212,18 +212,18 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
         navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) });
         return;
       }
-      if (focusedArtifactId !== null) {
-        setFocusedArtifactId(sessionId, null);
-      }
       setFocusedRunAgentId(generation.agentId);
     },
-    [focusedArtifactId, navigate, sessionId, setFocusedArtifactId],
+    [navigate, sessionId],
   );
 
   const backToList = useCallback(() => {
-    setFocusedRunAgentId(null);
-    setFocusedArtifactId(sessionId, null);
-  }, [sessionId, setFocusedArtifactId]);
+    if (focusedRunAgentId !== null) {
+      setFocusedRunAgentId(null);
+      return;
+    }
+    up();
+  }, [focusedRunAgentId, up]);
 
   useEscapeToList({
     isActive: subject !== null && !isArtifactDrawerOpen,
@@ -243,7 +243,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       filter={filter}
       onFilterChange={(next) => setArtifactFilter({ sessionId, filter: next })}
       onOpen={openRow}
-      onImported={(artifactId) => setFocusedArtifactId(sessionId, artifactId)}
+      onImported={(artifactId) => openArtifactPage({ sessionId, artifactId })}
     />
   );
 };
