@@ -22,7 +22,7 @@ vi.mock('@goodboy/db', async () =>
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 const { cancelRunningStepsSpy } = vi.hoisted(() => ({
-  cancelRunningStepsSpy: vi.fn(async () => true),
+  cancelRunningStepsSpy: vi.fn(async () => ({ stillRunning: [] })),
 }));
 
 vi.mock('./cancelRunningSteps', () => ({ cancelRunningSteps: cancelRunningStepsSpy }));

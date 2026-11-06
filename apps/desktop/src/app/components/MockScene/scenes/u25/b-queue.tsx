@@ -3,7 +3,13 @@ import type { Session, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
-import { FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from '../flow-audit/fixtures';
+import {
+  AGENT_BACKFILL_ID,
+  FLOW_SESSION,
+  FLOW_SESSION_ID,
+  NOW,
+  SESSIONS,
+} from '../flow-audit/fixtures';
 import { seedWorkflowRun, seedWorkflowRunFinished } from '../flow-audit/seeds';
 import { FINISHED_SESSION } from '../flow-audit/finishedRun';
 import { seedRecentBackfillOutput } from '../flow-audit/runControl';
@@ -42,6 +48,18 @@ const seedFinished = ({}: SeedParams): Session => {
 
 const seedStopped = ({}: SeedParams): Session => {
   seedWorkflowRun();
+  const state = useAppStore.getState();
+  useAppStore.setState({
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      [FLOW_SESSION_ID]: (state.sessionPhaseRuns[FLOW_SESSION_ID] ?? []).map((agent) =>
+        agent.id === AGENT_BACKFILL_ID
+          ? { ...agent, status: 'stopped' as const, stoppedBy: 'you' as const, stoppedAt: NOW }
+          : agent,
+      ),
+    },
+    agentTurnState: { [AGENT_BACKFILL_ID]: { kind: 'idle', lastActivityAt: NOW } },
+  });
   return patchRun({
     base: FLOW_SESSION,
     patch: (run) => ({
@@ -49,7 +67,7 @@ const seedStopped = ({}: SeedParams): Session => {
       autoRun: false,
       orchestrationStop: {
         kind: 'operator',
-        message: 'You stopped this run. The step in flight was skipped.',
+        message: 'You stopped this run. What the step wrote is kept, and Continue picks it up.',
       },
     }),
   });

@@ -85,6 +85,13 @@ const isAwaitingFirstMessage = ({ agent }: { readonly agent: Agent }): boolean =
   agent.lastFinishedAt == null &&
   agent.kind !== 'resolver';
 
+type CutStepParams = {
+  readonly agent: Agent;
+};
+
+const isCutStep = ({ agent }: CutStepParams): boolean =>
+  agent.stepId != null && agent.workflowRunId != null && agent.stoppedBy !== 'app';
+
 export const resolveAgentRowState = ({
   agent,
   isAsking,
@@ -137,7 +144,9 @@ export const resolveAgentRowState = ({
     case 'stopped':
       return {
         phase: 'waiting',
-        reason: { kind: 'agentStopped', by: agent.stoppedBy ?? 'you' },
+        reason: isCutStep({ agent })
+          ? { kind: 'notFinished' }
+          : { kind: 'agentStopped', by: agent.stoppedBy ?? 'you' },
         ask: { kind: 'continue', agent },
       };
     default: {

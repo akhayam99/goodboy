@@ -414,3 +414,66 @@ describe('store on sqlite: skipping a live step', () => {
     expect((await statuses()).map((row) => row.status)).toEqual(['skipped', 'pending', 'pending']);
   });
 });
+
+describe('store on sqlite: Stop step waits, and Continue picks the cut step up', () => {
+  it('lands the cut step stopped by you, holds the run, and Continue resumes that same step', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    const review = await startStep('Review');
+
+    const outcome = await useAppStore.getState().stopWorkflowRunNow(sessionId, workflowRunId);
+    await review.finished;
+
+    expect(outcome).toBe('stopped');
+    expect((await statuses()).map((row) => row.status)).toEqual(['stopped', 'pending', 'pending']);
+    expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('operator');
+    expect(useAppStore.getState().agentTurnState[agentIdOf('Review')]?.kind).toBe('idle');
+
+    const resumed = useAppStore
+      .getState()
+      .continueStoppedAgent({ sessionId, agentId: agentIdOf('Review') });
+
+    await vi.waitFor(() => expect(startedNames()).toEqual(['Review', 'Review']));
+    expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+    turns[1]?.finish();
+    await resumed;
+  });
+
+  it('keeps a step whose cancel failed running, gives the run back, and never marks it', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    const review = await startStep('Review');
+    const reviewRun = turns[0]?.runId;
+    storySpies.cancelTurn.mockRejectedValueOnce(new Error('kill refused'));
+    storySpies.listLiveRunIds.mockResolvedValue(
+      new Set(reviewRun === undefined ? [] : [reviewRun]),
+    );
+
+    const outcome = await useAppStore.getState().stopWorkflowRunNow(sessionId, workflowRunId);
+
+    expect(outcome).toBe('still_running');
+    expect((await statuses()).map((row) => row.status)).toEqual(['running', 'pending', 'pending']);
+    expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+    expect(runOf(workflowRunId)?.autoRun).toBe(true);
+    storySpies.listLiveRunIds.mockResolvedValue(new Set<string>());
+    turns[0]?.finish();
+    await review.finished;
+  });
+
+  it('Stop run keeps the run open when its step did not stop', async () => {
+    const workflowRunId = await attachRun({ autoRun: true });
+    const review = await startStep('Review');
+    const reviewRun = turns[0]?.runId;
+    storySpies.cancelTurn.mockRejectedValueOnce(new Error('kill refused'));
+    storySpies.listLiveRunIds.mockResolvedValue(
+      new Set(reviewRun === undefined ? [] : [reviewRun]),
+    );
+
+    const outcome = await useAppStore.getState().closeWorkflowRun(sessionId, workflowRunId);
+
+    expect(outcome).toBe('failed');
+    expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+    expect((await statuses()).map((row) => row.status)).toEqual(['running', 'pending', 'pending']);
+    storySpies.listLiveRunIds.mockResolvedValue(new Set<string>());
+    turns[0]?.finish();
+    await review.finished;
+  });
+});

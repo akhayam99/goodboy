@@ -52,7 +52,7 @@ const STOP_CASES: ReadonlyArray<StopCase> = [
   {
     name: 'operator',
     stop: { kind: 'operator', message: 'Stopped from the run page' },
-    phrase: 'Stopped by you · the step in flight was skipped',
+    phrase: 'Stopped by you · what the steps wrote is kept',
   },
   {
     name: 'closed',

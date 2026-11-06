@@ -12,6 +12,8 @@ import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_CLOSED_MESSAGE = 'Closed by you';
 
+const STILL_RUNNING_MESSAGE = 'A step did not stop and is still running. Press Stop run again.';
+
 export type CloseWorkflowRunOutcome = 'closed' | 'failed';
 
 type Params = {
@@ -78,13 +80,24 @@ const runClose = async ({ set, get, sessionId, workflowRunId }: Params): Promise
   if (isWorkflowRunClosedByUser({ run })) {
     return;
   }
+  const previousStop = run.orchestrationStop ?? null;
   await persistOrchestrationStop({
     set,
     sessionId,
     workflowRunId,
     stop: { kind: 'closed', message: WORKFLOW_CLOSED_MESSAGE },
   });
-  await cancelRunningSteps({ set, get, sessionId, workflowRunId });
+  const { stillRunning } = await cancelRunningSteps({
+    set,
+    get,
+    sessionId,
+    workflowRunId,
+    cut: 'skipped',
+  });
+  if (stillRunning.length > 0) {
+    await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: previousStop });
+    throw new Error(STILL_RUNNING_MESSAGE);
+  }
   await skipPendingAgents({ set, get, sessionId, workflowRunId });
   await persistOrchestrationOutcome({ set, sessionId, workflowRunId, outcome: 'done', reason: '' });
   await holdChainedRuns({ set, get, sessionId, workflowRunId });

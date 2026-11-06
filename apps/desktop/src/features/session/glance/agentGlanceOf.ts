@@ -27,8 +27,11 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
   if (status === 'stopped') {
     return glanceOf({ state: 'stopped', sentence: 'You stopped it, nothing is running' });
   }
-  if (status === 'completed' || status === 'skipped') {
+  if (status === 'completed') {
     return glanceOf({ state: 'idle', sentence: 'Finished, write to continue' });
+  }
+  if (status === 'skipped') {
+    return glanceOf({ state: 'idle', sentence: 'Nothing ran for this step' });
   }
   if (status === 'pending') {
     return glanceOf({ state: 'idle', sentence: 'Queued' });

@@ -58,7 +58,10 @@ describe('continueStoppedAgent on an Auto child', () => {
       views: [aView({ phase: 'stopped', delegations: [CHILD] })],
     });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledOnce();
     expect(sendTurn).toHaveBeenCalledWith({
@@ -72,7 +75,10 @@ describe('continueStoppedAgent on an Auto child', () => {
   it('still reaches Auto through the parent when the tree view has not loaded', async () => {
     const { get, sendTurn } = buildGet({ agents: [ROOT_AGENT, CHILD_AGENT], views: [] });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -85,7 +91,10 @@ describe('continueStoppedAgent on an Auto child', () => {
   it('keeps the plain continue for an agent outside any Auto tree', async () => {
     const { get, sendTurn } = buildGet({ agents: [PLAIN_AGENT], views: [] });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: PLAIN_AGENT.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: PLAIN_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -120,7 +129,10 @@ describe('continueStoppedAgent on a workflow step', () => {
     });
     const { get, sendTurn } = buildGet({ agents: [stepAgent], views: [] });
 
-    await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
+    await continueStoppedAgent(
+      useAppStore.setState,
+      get,
+    )({ sessionId: FIXTURE_SESSION, agentId: stepAgent.id });
 
     const content = sendTurn.mock.calls[0]?.[0].content ?? '';
     expect(content).toContain('Continue from where you stopped.');

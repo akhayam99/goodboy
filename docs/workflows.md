@@ -835,7 +835,8 @@ of. It sits as a word in the run header, next to **Pause run**, and in the
 menu of the run row in the activity feed. Goodboy asks you to confirm first. Steps that have
 not run are marked skipped, the step in flight stops and is marked skipped,
 and a failed step stays failed, because it did fail. Everything already written
-is kept.
+is kept. The close waits for the step's process to exit; if it does not, the
+run stays open and running, and a warning asks you to press **Stop run** again.
 
 A closed run reads **Closed by you**, never complete: its node is the neutral
 check, its lane ends on its newest node with no dash to NOW, and it offers no
@@ -877,7 +878,7 @@ the session.
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
 - **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Continue** starts where the run left off, static or orchestrated, and never changes when to ask
-- **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the run header ends the run ([Closing a workflow](#closing-a-workflow))
+- **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The run reads **Stopping** until the step's process has exited, then **Stopped**; the cut step reads **Not finished** and **Continue** picks that same step up, with everything it already wrote kept. If the process does not exit, the run stays running, a warning says the step did not stop, and **Stop step N** is there again (`stopWorkflowRunNow`, `cancelRunningSteps`). **Stop run** in the run header ends the run ([Closing a workflow](#closing-a-workflow))
 - **Continue** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
