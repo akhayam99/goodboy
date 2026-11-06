@@ -427,7 +427,8 @@ describe('BranchHeader actions by state', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove worktree' }));
 
     const confirm = screen.getByText('Remove the worktree?').closest('[role]');
-    expect(confirm?.textContent ?? '').toContain('The pull request and the origin branch stay');
+    expect(confirm?.textContent ?? '').toContain('Its folder and the local branch feat/export');
+    expect(confirm?.textContent ?? '').toContain('unless your after-merge setting removes it');
   });
 
   it('draws no step while the new pull request form leads, so the push waits in the menu', () => {

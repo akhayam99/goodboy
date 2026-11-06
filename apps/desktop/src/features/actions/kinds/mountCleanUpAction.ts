@@ -2,6 +2,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ActionDefinition } from '../types';
 import { cleanUpRefusalOf } from './cleanUpRefusalOf';
 import type { MountFacts } from './mountFacts';
+import { mountCleanUpWordsOf } from './mountCleanUpWordsOf';
 
 export const MOUNT_CLEAN_UP_ACTION: ActionDefinition<MountFacts> = {
   id: 'mount.cleanUp',
@@ -16,8 +17,7 @@ export const MOUNT_CLEAN_UP_ACTION: ActionDefinition<MountFacts> = {
     description: 'Stops and says why if work is uncommitted or unpushed.',
     confirmLabel: 'Clean up',
     role: 'danger',
-    goes: `Its folder and the local branch ${facts.branch}`,
-    stays: 'The pull request, and the remote branch unless your after-merge setting removes it',
+    ...mountCleanUpWordsOf({ facts }),
   }),
   run: async ({ facts, env }) => {
     const outcome = await env.getState().runAfterMergeCleanup({

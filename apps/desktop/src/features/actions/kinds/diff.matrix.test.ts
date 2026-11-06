@@ -171,6 +171,19 @@ const STATES: ReadonlyArray<{
 
 const definitions = DIFF_KIND.actions;
 
+describe('diff.removeWorktree confirm', () => {
+  const removal = resolveActions({
+    definitions,
+    facts: facts({ pr: 'merged', requestLabel: 'PR #318' }),
+  }).find((action) => action.id === 'diff.removeWorktree');
+
+  it('names the local branch and never promises the origin branch stays', () => {
+    expect(removal?.confirm?.goes).toBe('Its folder and the local branch hl/fix-duplicate-credit');
+    expect(removal?.confirm?.stays).toContain('unless your after-merge setting removes it');
+    expect(removal?.confirm?.description).not.toMatch(/origin branch/);
+  });
+});
+
 describe.each(STATES)('diff, $name', ({ facts: state, expected }) => {
   it('offers exactly the planned actions', () => {
     expect(matrixOf({ definitions, facts: state })).toEqual(expected);

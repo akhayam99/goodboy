@@ -27,6 +27,7 @@ import { abortRebase, rebaseMount, settleRequest } from './gitRuns';
 import { mountFactsFor } from './mount';
 import type { MountFacts } from './mountFacts';
 import { MOUNT_CLEAN_UP_ACTION } from './mountCleanUpAction';
+import { mountCleanUpWordsOf } from './mountCleanUpWordsOf';
 import { pushAction } from './pushAction';
 
 export type DiffFacts = MountFacts & {
@@ -215,9 +216,10 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     doneLabel: () => 'Worktree removed.',
     confirm: ({ facts }) => ({
       title: 'Remove the worktree?',
-      description: 'Its folder goes. The pull request and the origin branch stay.',
+      description: 'Stops and says why if work is uncommitted or unpushed.',
       confirmLabel: NAMES.removeWorktree,
       role: 'danger',
+      ...mountCleanUpWordsOf({ facts }),
     }),
   },
   {
