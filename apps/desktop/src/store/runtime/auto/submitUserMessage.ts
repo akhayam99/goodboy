@@ -36,6 +36,7 @@ const joinKeyOf = ({ rowId, deliveryId }: JoinKeyParams): string => `user:${deli
 
 const MAX_ATTEMPTS = 3;
 const ABORT_GENERATION = 'submit_generation';
+const ABORT_ALREADY_SAVED = 'submit_already_saved';
 
 type FactsParams = {
   readonly ctx: AgentVerbContext;
@@ -119,6 +120,12 @@ export const submitUserMessage = async ({
             nowMs: ctx.now(),
           },
         }),
+        {
+          sql: 'SELECT 1 FROM auto_outbox WHERE id = ?',
+          params: [rowId],
+          abortWhen: 'noRows',
+          abortCode: ABORT_ALREADY_SAVED,
+        },
       ],
     });
     if (outcome.status === 'committed') {
