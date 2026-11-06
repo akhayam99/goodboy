@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { notify, state, showToast, subscribers } = vi.hoisted(() => {
   const listeners = new Set<() => void>();
+  const nothing = (): unknown => null;
   return {
     subscribers: listeners,
     notify: () => {
@@ -17,6 +18,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       currentSessionId: 'sess-1',
       activeLens: { 'sess-1': 'plans' } as Record<string, string | null>,
       drawer: null as unknown,
+      appStudio: nothing(),
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
       phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
       autoTreeViews: {},
@@ -128,6 +130,7 @@ vi.mock('../../../../store', async () => {
     EMPTY_ARRAY: [] as readonly never[],
     useAppStore,
     useSessionPlans: () => state.plans,
+    useIsSessionCollectionLoaded: () => true,
     useSessionOpenQuestions: () => state.openQuestions,
   };
 });
@@ -227,6 +230,8 @@ beforeEach(() => {
   state.agentTurnState = {};
   state.transcripts = {};
   state.drawer = null;
+  state.appStudio = null;
+  state.activeLens = { 'sess-1': 'plans' };
   state.plans = [];
   state.openQuestions = [];
   state.focusedArtifactId = {};
@@ -357,6 +362,23 @@ describe('ArtifactStudio list', () => {
       }),
       mode: 'replace',
     });
+    expect(state.awaitArtifactAgent).toHaveBeenLastCalledWith({
+      sessionId: 'sess-1',
+      agentId: null,
+    });
+  });
+
+  it.each([
+    ['Settings', { appStudio: { kind: 'settings' }, drawer: null }],
+    ['a drawer', { appStudio: null, drawer: { kind: 'new', sessionId: 'sess-1' } }],
+  ])('leaves %s open when the awaited artifact arrives', (_name, over) => {
+    state.awaitedArtifactAgentId = { 'sess-1': 'agent-report-2' };
+    state.appStudio = over.appStudio;
+    state.drawer = over.drawer;
+    const { rerender } = renderStudio();
+    state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
+    rerender(<ArtifactStudio sessionId={brandId<SessionId>({ value: 'sess-1' })} />);
+    expect(state.navigate).not.toHaveBeenCalled();
     expect(state.awaitArtifactAgent).toHaveBeenLastCalledWith({
       sessionId: 'sess-1',
       agentId: null,
@@ -520,6 +542,22 @@ describe('ArtifactStudio shell', () => {
     screen.getByTestId('artifact-shell');
   });
 
+  it('says an artifact is gone when its address no longer matches one, instead of the list', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    focus('artifact-deleted');
+    renderStudio();
+    expect(screen.queryByText('This artifact is no longer in this session')).not.toBeNull();
+    expect(screen.queryByTestId('artifact-list')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(state.up).toHaveBeenCalled();
+  });
+
+  it('waits for the artifacts to load before it calls an address gone', () => {
+    focus('artifact-report');
+    renderStudio();
+    expect(screen.queryByText('This artifact is no longer in this session')).toBeNull();
+  });
+
   it('opens a wireframe on its flow, with Open in browser as the secondary and the variant under More', () => {
     state.sessionArtifacts = { 'sess-1': [wireframe] };
     focus('artifact-wireframe');
@@ -680,6 +718,15 @@ describe('ArtifactStudio generating run', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByTestId('artifact-run-detail')).toBeNull());
     expect(state.up).not.toHaveBeenCalled();
+  });
+
+  it('leaves Escape to the session ladder once the page is no longer the one on screen', () => {
+    renderStudio();
+    openRow(/^Wireframe High fidelity,/);
+    state.activeLens = { 'sess-1': 'workflows' };
+    act(() => notify());
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByTestId('artifact-run-detail')).not.toBeNull();
   });
 
   it('follows the run to the artifact it produced', () => {

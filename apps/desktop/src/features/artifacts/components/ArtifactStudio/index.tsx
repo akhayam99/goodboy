@@ -4,6 +4,7 @@ import type { Agent, AgentId, SessionId, Workflow, WorkflowRun } from '@goodboy/
 import {
   EMPTY_ARRAY,
   useAppStore,
+  useIsSessionCollectionLoaded,
   useSessionOpenQuestions,
   useSessionPlans,
   agentPlace,
@@ -24,7 +25,9 @@ import {
   type ArtifactListRow,
 } from '../../artifactListRows';
 import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact';
-import { useEscapeLayer } from '@goodboy/ui';
+import { PaneShell, useEscapeLayer } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { GoneObject } from '../../../../shared/components/GoneObject';
 import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { openArtifactPage } from '../../openArtifactPage';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -51,6 +54,12 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
   const navigate = useAppStore((s) => s.navigate);
+  const up = useAppStore((s) => s.up);
+  const isShown = useAppStore(
+    (s) => s.currentSessionId === sessionId && s.activeLens[sessionId] === 'plans',
+  );
+  const hasArtifacts = useAppStore((s) => s.sessionArtifacts[sessionId] !== undefined);
+  const hasPlans = useIsSessionCollectionLoaded({ sessionId, collection: 'plans' });
   const filter = useAppStore((s) => s.artifactFilter[sessionId] ?? 'all');
   const setArtifactFilter = useAppStore((s) => s.setArtifactFilter);
   const awaitedAgentId = useAppStore((s) => s.awaitedArtifactAgentId[sessionId] ?? null);
@@ -224,8 +233,16 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       }
       setFocusedRunAgentId(null);
     },
-    subject?.kind === 'generation' && !isArtifactDrawerOpen,
+    isShown && selectedAgentId === null && subject?.kind === 'generation' && !isArtifactDrawerOpen,
   );
+
+  if (subject === null && focusedArtifactId !== null && hasArtifacts && hasPlans) {
+    return (
+      <PaneShell page="artifacts" title="Artifact">
+        <GoneObject noun="artifact" icon={CONCEPT_ICONS.plans} onBack={up} />
+      </PaneShell>
+    );
+  }
 
   if (subject !== null) {
     const key = subject.kind === 'generation' ? subject.generation.agentId : subject.artifact.id;
