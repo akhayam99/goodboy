@@ -86,6 +86,32 @@ describe('the one Stop of Auto', () => {
     screen.getByRole('button', { name: 'Stop Auto' });
   });
 
+  it('keeps Stop in the live line at the limit, so Esc again to stop can sit beside it', () => {
+    renderDock({
+      view: aView({
+        phase: 'waiting',
+        spentUsd: 10,
+        capUsd: 10,
+        delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+      }),
+    });
+
+    const stop = screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
+    expect(stop.closest('[data-auto-dock]')).toBeNull();
+  });
+
+  it('names the stop of a failed tree while its agents still run', () => {
+    const base = aView({
+      phase: 'blocked',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+    renderDock({
+      view: { ...base, tree: { ...base.tree, blockedReason: 'The provider failed.' } },
+    });
+
+    screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
+  });
+
   it('shows Stopping while the tree exits, and the failure stays on screen', async () => {
     registerTreeStopPort({ port: vi.fn(async () => 'stuck' as const) });
     renderDock({ view: aView({ phase: 'deciding' }) });

@@ -259,6 +259,99 @@ describe('AutoDock', () => {
     screen.getByRole('region', { name: 'Next step' });
   });
 
+  it('says Stopped by you when the tree was stopped while the root agent was idle', () => {
+    renderDock({ view: aView({ phase: 'stopped' }) });
+
+    screen.getByText('Stopped by you. What they wrote is kept.');
+    expect(document.querySelector('[data-dock-line="stopped"]')).not.toBeNull();
+  });
+
+  it('leaves the stopped sentence to the agent notice once the root agent is stopped', () => {
+    const stoppedRoot = anAgent({ id: ROOT.id, status: 'stopped' });
+    const view = aView({ phase: 'stopped' });
+    useAppStore.setState({ autoTreeViews: { [FIXTURE_SESSION]: [view] } });
+    render(<AutoDockUnderTest view={view} rootAgent={stoppedRoot} onOpenArtifact={vi.fn()} />);
+
+    expect(document.querySelector('[data-dock-line="stopped"]')).toBeNull();
+  });
+
+  it('keeps Stop for a plan that waits while a sibling agent runs', () => {
+    renderDock({
+      view: aView({
+        phase: 'waiting',
+        artifacts: [aPlanRow()],
+        delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+      }),
+    });
+
+    screen.getByRole('button', { name: 'Stop Auto and 1 agent' });
+  });
+
+  it('asks before it discards the comments, then removes each one', async () => {
+    const plan = aPlan({
+      id: brandId<ArtifactId>({ value: 'artifact-plan' }),
+      sessionId: FIXTURE_SESSION,
+    });
+    const remove = vi.fn(async () => true);
+    useAppStore.setState({
+      sessionPlans: { [FIXTURE_SESSION]: [plan] },
+      artifactComments: {
+        [FIXTURE_SESSION]: [
+          aPlanDraft({ id: 'draft-1', artifactId: plan.id, sessionId: FIXTURE_SESSION }),
+          aPlanDraft({ id: 'draft-2', artifactId: plan.id, sessionId: FIXTURE_SESSION }),
+        ],
+      },
+      loadArtifactComments: async () => undefined,
+      removeArtifactComment: remove,
+    });
+    renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard my comments' }));
+    expect(remove).not.toHaveBeenCalled();
+    screen.getByText('Discard 2 comments?');
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    await waitFor(() => expect(remove).toHaveBeenCalledTimes(2));
+    expect(remove).toHaveBeenCalledWith({ sessionId: FIXTURE_SESSION, commentId: 'draft-1' });
+  });
+
+  it('reports a comment that could not be discarded', async () => {
+    const plan = aPlan({
+      id: brandId<ArtifactId>({ value: 'artifact-plan' }),
+      sessionId: FIXTURE_SESSION,
+    });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({
+      sessionPlans: { [FIXTURE_SESSION]: [plan] },
+      artifactComments: {
+        [FIXTURE_SESSION]: [
+          aPlanDraft({ id: 'draft-1', artifactId: plan.id, sessionId: FIXTURE_SESSION }),
+          aPlanDraft({ id: 'draft-2', artifactId: plan.id, sessionId: FIXTURE_SESSION }),
+        ],
+      },
+      loadArtifactComments: async () => undefined,
+      removeArtifactComment: vi.fn(async () => {
+        throw new Error('database is locked');
+      }),
+      reportError,
+    });
+    renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard my comments' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Couldn't discard the comments",
+          sessionId: FIXTURE_SESSION,
+        }),
+      ),
+    );
+  });
+
   it('draws nothing when no plan exists and nothing runs', () => {
     renderDock({ view: aView({ phase: 'done' }) });
 

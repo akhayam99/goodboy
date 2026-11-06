@@ -3,7 +3,6 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { useConversationAsks } from '../../../store/hooks/useConversationAsks';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
-import type { ConversationStop } from '../../../shared/types/conversationStop';
 import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { AutoDockLive } from './AutoDockLive';
@@ -20,7 +19,6 @@ type Props = {
   readonly rootAgent: Agent;
   readonly onOpenArtifact: (artifactId: string) => void;
   readonly actions: AutoTreeActions;
-  readonly stop: ConversationStop | null;
 };
 
 const AT_REST: ReadonlySet<AutoTreeView['tree']['phase']> = new Set([
@@ -29,7 +27,7 @@ const AT_REST: ReadonlySet<AutoTreeView['tree']['phase']> = new Set([
   'finished',
 ]);
 
-export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions, stop }: Props) => {
+export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions }: Props) => {
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const { permissions, questions } = useConversationAsks({ sessionId, agentId: rootAgent.id });
   const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
@@ -71,13 +69,7 @@ export const AutoDock = ({ sessionId, view, rootAgent, onOpenArtifact, actions, 
       {projectAsk === null ? null : (
         <AutoProjectAsk sessionId={sessionId} rootAgentId={rootAgent.id} ask={projectAsk} />
       )}
-      <AutoDockLive
-        sessionId={sessionId}
-        view={view}
-        rootAgent={rootAgent}
-        actions={actions}
-        stop={stop}
-      />
+      <AutoDockLive sessionId={sessionId} view={view} rootAgent={rootAgent} actions={actions} />
     </div>
   );
 };

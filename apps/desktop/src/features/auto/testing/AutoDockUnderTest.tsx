@@ -31,9 +31,8 @@ export const AutoDockUnderTest = ({ view, rootAgent, onOpenArtifact }: Props) =>
         rootAgent={rootAgent}
         onOpenArtifact={onOpenArtifact}
         actions={actions}
-        stop={stop}
       />
-      {stop === null || !stop.isLineShown ? null : (
+      {stop === null ? null : (
         <>
           <p role="status">{stop.sentence}</p>
           <DockStopButton stop={stop} />

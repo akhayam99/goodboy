@@ -19,7 +19,6 @@ const stopOf = (overrides: Partial<ConversationStop> = {}): ConversationStop => 
   label: 'Stop',
   phase: 'idle',
   sentence: null,
-  isLineShown: true,
   stop: vi.fn(),
   ...overrides,
 });
@@ -79,7 +78,7 @@ describe('DockLiveLine', () => {
 });
 
 describe('conversationStopOf', () => {
-  const agentStop = { phase: 'idle' as const, isLive: true, stop: vi.fn() };
+  const agentStop = { phase: 'idle' as const, isLive: true, isBlocked: false, stop: vi.fn() };
 
   it('prefers the scope the conversation names', () => {
     const scoped = stopOf({ label: 'Stop Auto' });
@@ -112,6 +111,20 @@ describe('conversationStopOf', () => {
 
     expect(stop?.label).toBe('Stop this reply');
     expect(stop?.sentence).toBe('Implementer running step 2');
+    expect(stop?.stop).toBe(agentStop.stop);
+  });
+
+  it('keeps Stop beside a permission ask, saying what the agent waits for', () => {
+    const stop = conversationStopOf({
+      agentStop: { ...agentStop, isBlocked: true },
+      scoped: null,
+      stopLabel: null,
+      isRunning: false,
+      sentence: null,
+    });
+
+    expect(stop?.label).toBe('Stop');
+    expect(stop?.sentence).toBe('Asking you');
     expect(stop?.stop).toBe(agentStop.stop);
   });
 

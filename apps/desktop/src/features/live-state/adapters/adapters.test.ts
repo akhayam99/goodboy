@@ -198,6 +198,37 @@ describe('autoTreeLive', () => {
     expect(autoTreeLive({ ...base, view, rootTurn: null })).toBeNull();
   });
 
+  it('keeps Stop for a plan ask while a sibling agent runs, and none while nothing runs', () => {
+    const planner = aDelegation({
+      key: 'planner',
+      role: 'planner',
+      state: 'settled',
+      outcome: 'completed',
+    });
+    const running = aDelegation({ key: 'impl', role: 'implementer', state: 'running' });
+    const withSibling = aView({
+      phase: 'waiting',
+      artifacts: [aPlanRow()],
+      delegations: [planner, running],
+    });
+    expect(idsOf(autoTreeLive({ ...base, view: withSibling, rootTurn: null }))).toEqual([
+      'stopAuto',
+    ]);
+  });
+
+  it('keeps Stop beside Retry for a blocked tree whose agents still run', () => {
+    const view = aView({
+      phase: 'blocked',
+      delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+    });
+    const blocked = { ...view, tree: { ...view.tree, blockedReason: AUTO_STALE_DECIDE_TEXT } };
+    expect(idsOf(autoTreeLive({ ...base, view: blocked, rootTurn: null }))).toEqual([
+      'retry',
+      'viewTranscript',
+      'stopAuto',
+    ]);
+  });
+
   it('pauses at the limit with Raise limit first', () => {
     const view = aView({ phase: 'waiting', spentUsd: 4.8, reservedUsd: 0.2, capUsd: 5 });
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
