@@ -72,15 +72,13 @@ describe('the u26 p10 scenes', () => {
     }
   });
 
-  it('u26-board-archive-confirm asks once for the three sessions and says the agent keeps running', async () => {
+  it('u26-board-archive-confirm asks once for the three sessions and names the agent it stops', async () => {
     await mount('u26-board-archive-confirm');
 
-    const confirm = screen.getByRole('group', { name: 'Archive 3 sessions?' });
-    expect(screen.getAllByRole('group', { name: /^Archive/ })).toHaveLength(1);
-    expect(confirm.textContent).toContain(
-      '1 agent is still running in these sessions and keeps running after you archive them.',
-    );
-    expect(within(confirm).getByRole('button', { name: 'Archive 3 sessions' })).toBeDefined();
+    const confirm = screen.getByRole('group', { name: 'Stop 1 agent and archive?' });
+    expect(screen.getAllByRole('group', { name: /^Stop/ })).toHaveLength(1);
+    expect(confirm.textContent).toContain('Archive stops it first and keeps what it wrote.');
+    expect(within(confirm).getByRole('button', { name: 'Stop 1 agent and archive' })).toBeDefined();
     expect(within(screen.getByRole('toolbar')).getByText('3 selected')).toBeDefined();
   });
 

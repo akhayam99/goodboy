@@ -1198,6 +1198,11 @@ u35-agent-chain-sub-sub
 u35-auto-plan-used
 u35-branch-setup-offer
 u35-preset-run-glance
+u36-p1-run-stopped
+u36-p1-run-stopping
+u36-p1-window-close
+u36-p1-window-close-run
+u36-p1-window-close-stuck
 u36-p15-needs-you-dark
 u36-p15-needs-you-light
 u36-p15-next-only-dark
@@ -1209,6 +1214,8 @@ u36-p18-explore-head
 u36-p18-scripts-suggested
 u36-p18-terminal-head
 u36-p18-tools-column
+u36-p2-send-held
+u36-p2-send-stopped
 u36-p3-board-facts-failed-dark
 u36-p3-board-facts-failed-light
 u36-p3-plans-tester-question-dark

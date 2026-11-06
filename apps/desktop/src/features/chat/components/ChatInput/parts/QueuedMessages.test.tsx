@@ -34,7 +34,7 @@ const row = (id: string, overrides: Partial<QueuedRow> = {}): QueuedRow => ({
   status: 'queued',
   statusText: 'Waits for this turn',
   reason: null,
-  action: null,
+  action: 'sendNow',
   ...overrides,
 });
 

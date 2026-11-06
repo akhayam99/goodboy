@@ -28,13 +28,20 @@ const now = (): IsoDateTime => nowIso({});
 
 const FAILED: CancelOutcome = { outcome: 'failed', exitedAt: null };
 
+type ReasonParams = Readonly<{
+  reason: CancelTurnReason;
+}>;
+
+const isStopByYou = ({ reason }: ReasonParams): boolean => reason === 'user' || reason === 'leave';
+
 export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
   const stop = async ({ sessionId, agentId, reason }: Params): Promise<CancelOutcome> => {
     const agentState = get().agentTurnState[agentId];
-    if (agentState?.kind !== 'running') {
+    if (agentState?.kind !== 'running' && agentState?.kind !== 'blocked') {
       cancelTurnStartWindow({ agentId });
       return { outcome: 'exited', exitedAt: now() };
     }
+    const isReported = isStopByYou({ reason });
     const { runId } = agentState;
     stopRequests.request({ agentId, runId, at: Date.now() });
     cancelledRunIds.add(runId);
@@ -51,7 +58,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       }
       if (isAlive) {
         cancelledRunIds.delete(runId);
-        if (reason === 'user') {
+        if (isReported) {
           void get().reportError({ title: "Couldn't stop the agent", error: cause, sessionId });
         }
         return FAILED;
@@ -62,13 +69,13 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       hasStopped = await awaitRunStopped({ runId });
     } catch (waitError) {
       cancelledRunIds.delete(runId);
-      if (reason === 'user') {
+      if (isReported) {
         void get().reportError({ title: "Couldn't stop the agent", error: waitError, sessionId });
       }
       return FAILED;
     }
     if (!hasStopped) {
-      if (reason === 'user') {
+      if (isReported) {
         void get().reportError({
           title: "The agent hasn't stopped yet",
           error: new Error('The process is still running. Press Stop again to retry.'),
@@ -92,15 +99,17 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
         sessionId,
       });
     }
-    if (reason === 'user') {
+    if (isReported) {
       await markStoppedByUser({ set, get, sessionId, agentId, at: exitedAt });
+    }
+    if (reason === 'user') {
       void get().joinFanOutParent({ sessionId, agentId });
     }
     return { outcome: 'exited', exitedAt };
   };
 
   return async (params: Params): Promise<CancelOutcome> => {
-    const { sessionId, agentId } = params;
+    const { sessionId, agentId, reason } = params;
     markAgentStopping({ agentId });
     let outcome: CancelOutcome = FAILED;
     try {
@@ -108,7 +117,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       return outcome;
     } finally {
       clearAgentStopping({ agentId });
-      if (outcome.outcome !== 'exited') {
+      if (outcome.outcome !== 'exited' && reason !== 'leave') {
         void get().drainAgentQueue({ sessionId, agentId });
       }
     }

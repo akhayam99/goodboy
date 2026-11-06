@@ -1,5 +1,6 @@
 import { oncePatternText } from '@goodboy/core/permissions';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -37,11 +38,13 @@ export const allowAndContinue = (set: SetFn, get: GetFn) => {
       decidedBy: 'user',
       at: now,
     });
-    await get().sendTurn({
-      sessionId,
-      agentId,
-      content: CONTINUE_PROMPT,
-      permissionOnceAllow: oncePatternText({ toolName, input }),
+    throwIfRefused({
+      result: await get().sendTurn({
+        sessionId,
+        agentId,
+        content: CONTINUE_PROMPT,
+        permissionOnceAllow: oncePatternText({ toolName, input }),
+      }),
     });
   };
 };

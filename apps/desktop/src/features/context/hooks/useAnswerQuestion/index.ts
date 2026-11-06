@@ -107,6 +107,10 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
           void reportError({ title: "Couldn't send your answers", error: cause, sessionId });
           return;
         }
+        for (const pair of pairs) {
+          clearDraft(pair.id);
+        }
+        return;
       }
       flashAnswered(pairs.map((pair) => pair.id));
     },

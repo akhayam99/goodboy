@@ -150,6 +150,7 @@ type TurnAttachSnapshot = {
 
 export type RunTurnHooks = {
   readonly onProviderLimits?: (limits: ProviderLimits) => void;
+  readonly onSpawned?: () => void;
   readonly owner?: TurnOwner;
 };
 
@@ -463,6 +464,7 @@ export const runTurn = (
     resumeFrom: null,
     begin: async () => {
       await invokeCommand<string>('turn_spawn', { args });
+      hooks.onSpawned?.();
     },
   });
 
@@ -521,14 +523,17 @@ export const lookupDeliveryRun = ({
 }: LookupDeliveryRunParams): Promise<DeliveryRun | null> =>
   invokeCommand<DeliveryRun | null>('turn_delivery_lookup', { deliveryId });
 
-export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
+export const probeLiveRunIds = async (): Promise<ReadonlySet<string> | null> => {
   try {
     const ids = await invokeCommand<string[]>('turn_list_live');
     return new Set(ids ?? []);
   } catch {
-    return new Set();
+    return null;
   }
 };
+
+export const listLiveRunIds = async (): Promise<ReadonlySet<string>> =>
+  (await probeLiveRunIds()) ?? new Set();
 
 export type QuietRun = {
   readonly runId: string;

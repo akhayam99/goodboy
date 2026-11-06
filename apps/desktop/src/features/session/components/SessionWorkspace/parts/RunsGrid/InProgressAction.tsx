@@ -5,7 +5,7 @@ import { useToast } from '../../../../../../shared/components/Toast';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { needsYouText } from '../../../../../../shared/utils/needsYouText';
 import { useAppStore } from '../../../../../../store';
-import { runningAgentCountOf } from '../../../../../../store/runtime/live-work/runningAgentCountOf';
+import { liveAgentsOf } from '../../../../../../store/runtime/live-work/liveAgentsOf';
 import { stopAllMessageOf } from '../../../../stopAllMessageOf';
 import { stopAllRunningAgents } from '../../../../stopAllRunningAgents';
 import type { SessionRun } from '../../../../sessionRunsOf';
@@ -22,7 +22,7 @@ const STOP_ALL_FLOOR = 2;
 export const InProgressAction = ({ sessionId, runs }: Props) => {
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const reportError = useAppStore((state) => state.reportError);
-  const runningCount = useAppStore((state) => runningAgentCountOf({ state, sessionId }));
+  const runningCount = useAppStore((state) => liveAgentsOf({ state, sessionId }).length);
   const { showToast } = useToast();
   const [isResuming, setIsResuming] = useState(false);
   const [isStopping, setIsStopping] = useState(false);

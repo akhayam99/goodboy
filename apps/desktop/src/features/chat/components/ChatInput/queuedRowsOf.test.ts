@@ -9,6 +9,8 @@ const AGENT = brandId<AgentId>({ value: 'agent-auto' });
 
 const SENT_AT = Date.UTC(2026, 9, 20, 12, 10, 0);
 
+const AT_REST = { isAgentStopped: false, nowMs: SENT_AT + 60_000 };
+
 const turn = (id: string, overrides: Partial<AgentQueuedTurn> = {}): AgentQueuedTurn => ({
   id,
   agentId: AGENT,
@@ -47,7 +49,7 @@ describe('queuedRowsOf', () => {
       pendingMessages: [message('b', 2_000), message('a', 1_000)],
     });
 
-    const rows = queuedRowsOf({ queue: [turn('t1'), turn('t2')], view });
+    const rows = queuedRowsOf({ queue: [turn('t1'), turn('t2')], view, ...AT_REST });
 
     expect(rows.map((row) => `${row.source}:${row.id}`)).toEqual([
       'auto:a',
@@ -64,8 +66,8 @@ describe('queuedRowsOf', () => {
     });
     const stopped = aView({ phase: 'stopped', pendingMessages: [message('a', 0)] });
 
-    const [retry] = queuedRowsOf({ queue: [], view: blocked });
-    const [none] = queuedRowsOf({ queue: [], view: stopped });
+    const [retry] = queuedRowsOf({ queue: [], view: blocked, ...AT_REST });
+    const [none] = queuedRowsOf({ queue: [], view: stopped, ...AT_REST });
 
     expect(retry).toMatchObject({
       statusText: 'Not delivered',
@@ -90,14 +92,14 @@ describe('queuedRowsOf', () => {
       pendingMessages: [message('a', 0)],
     });
 
-    expect(queuedRowsOf({ queue: [], view: budget })[0]?.action).toBe('raiseLimit');
-    expect(queuedRowsOf({ queue: [], view: clock })[0]?.action).toBeNull();
+    expect(queuedRowsOf({ queue: [], view: budget, ...AT_REST })[0]?.action).toBe('raiseLimit');
+    expect(queuedRowsOf({ queue: [], view: clock, ...AT_REST })[0]?.action).toBeNull();
   });
 
   it('says Waits for this turn when the tree takes a turn and no child runs', () => {
     const view = aView({ phase: 'deciding', pendingMessages: [message('a', 0)] });
 
-    expect(queuedRowsOf({ queue: [], view })[0]).toMatchObject({
+    expect(queuedRowsOf({ queue: [], view, ...AT_REST })[0]).toMatchObject({
       statusText: 'Waits for this turn',
       action: null,
     });
@@ -110,8 +112,12 @@ describe('queuedRowsOf', () => {
       pendingMessages: [message('outbox-1', 400, 'tray t1')],
     });
 
-    const during = queuedRowsOf({ queue: [turn('t1', { status: 'sending' }), turn('t2')], view });
-    const after = queuedRowsOf({ queue: [turn('t2')], view });
+    const during = queuedRowsOf({
+      queue: [turn('t1', { status: 'sending' }), turn('t2')],
+      view,
+      ...AT_REST,
+    });
+    const after = queuedRowsOf({ queue: [turn('t2')], view, ...AT_REST });
 
     expect(during.map((row) => row.id)).toEqual(['outbox-1', 't2']);
     expect(after.map((row) => row.id)).toEqual(['outbox-1', 't2']);
@@ -120,7 +126,7 @@ describe('queuedRowsOf', () => {
   it('keeps a sending tray row until its outbox row is read', () => {
     const view = aView({ phase: 'waiting', delegations: [RUNNING], pendingMessages: [] });
 
-    const rows = queuedRowsOf({ queue: [turn('t1', { status: 'sending' })], view });
+    const rows = queuedRowsOf({ queue: [turn('t1', { status: 'sending' })], view, ...AT_REST });
 
     expect(rows.map((row) => row.id)).toEqual(['t1']);
   });
@@ -132,7 +138,7 @@ describe('queuedRowsOf', () => {
       pendingMessages: [message('old', -60_000, 'tray t1')],
     });
 
-    const rows = queuedRowsOf({ queue: [turn('t1', { status: 'sending' })], view });
+    const rows = queuedRowsOf({ queue: [turn('t1', { status: 'sending' })], view, ...AT_REST });
 
     expect(rows.map((row) => row.id)).toEqual(['old', 't1']);
   });
@@ -159,7 +165,7 @@ describe('queuedRowsOf', () => {
       relPath: null,
     };
 
-    const rows = queuedRowsOf({ queue: [turn('t1', { attachments: [stored] })], view });
+    const rows = queuedRowsOf({ queue: [turn('t1', { attachments: [stored] })], view, ...AT_REST });
 
     expect(rows[0]?.images.map((item) => [item.id, item.workingDir])).toEqual([
       ['image-1', '/scratch/session-harborline'],
@@ -168,8 +174,55 @@ describe('queuedRowsOf', () => {
     expect(rows[1]?.images[0]).toMatchObject({ id: 'stored-1', previewSrc: stored.dataUrl });
   });
 
+  it('hides a message sent to an idle agent for its first half second', () => {
+    const direct = turn('d1', { status: 'sending', isDirect: true });
+
+    const early = queuedRowsOf({ queue: [direct], view: null, ...AT_REST, nowMs: SENT_AT + 200 });
+    const late = queuedRowsOf({ queue: [direct], view: null, ...AT_REST, nowMs: SENT_AT + 600 });
+
+    expect(early).toEqual([]);
+    expect(late.map((row) => [row.id, row.statusText, row.action])).toEqual([
+      ['d1', 'Sending now', null],
+    ]);
+  });
+
+  it('hides a sending message once its text is in the transcript, so it never shows twice', () => {
+    const written = turn('w1', { status: 'sending', isDirect: true, isTextShown: true });
+
+    const rows = queuedRowsOf({ queue: [written], view: null, ...AT_REST, nowMs: SENT_AT + 5000 });
+
+    expect(rows).toEqual([]);
+  });
+
+  it('shows a held message at once as Not delivered with its reason and Retry', () => {
+    const held = turn('h1', {
+      isDirect: true,
+      hold: { reason: 'Every provider is over its limit.' },
+    });
+
+    const [row] = queuedRowsOf({ queue: [held], view: null, ...AT_REST, nowMs: SENT_AT });
+
+    expect(row).toMatchObject({
+      status: 'notDelivered',
+      statusText: 'Not delivered',
+      reason: 'Every provider is over its limit.',
+      action: 'retry',
+    });
+  });
+
+  it('says a message for a stopped agent sends when you Continue', () => {
+    const [row] = queuedRowsOf({
+      queue: [turn('s1')],
+      view: null,
+      ...AT_REST,
+      isAgentStopped: true,
+    });
+
+    expect(row).toMatchObject({ statusText: 'Sends when you Continue', action: 'sendNow' });
+  });
+
   it('draws only the tray when the agent is not the root of an Auto tree', () => {
-    const rows = queuedRowsOf({ queue: [turn('t1')], view: null });
+    const rows = queuedRowsOf({ queue: [turn('t1')], view: null, ...AT_REST });
 
     expect(rows.map((row) => row.source)).toEqual(['agent']);
   });

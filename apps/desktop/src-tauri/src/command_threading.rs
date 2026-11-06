@@ -20,6 +20,7 @@ const IN_MEMORY_SYNC_COMMANDS: &[&str] = &[
     "summarize.rs::summarize_cancel",
     "terminal.rs::terminal_resize",
     "terminal.rs::terminal_write",
+    "window_close.rs::window_close_claim",
     "worktree_writer.rs::worktree_writer_abandon",
     "worktree_writer.rs::worktree_writer_acquire",
     "worktree_writer.rs::worktree_writer_cancel",

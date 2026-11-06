@@ -23,6 +23,7 @@ import { PURGED_QUESTION_TEXTS_INDEX, agentPurgeStatements } from './agent';
 import { cleanWorkflowRunTitle } from './workflow-run-title';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 import { serializeProviderPool, toProviderPool } from './provider-pool-column';
+import { stopKindColumnOf, withAutoRunFlag } from './workflowStopCodec';
 
 export type SessionWorkflowRow = {
   workflow_run_id: string;
@@ -78,12 +79,10 @@ type StopColumns = {
   readonly kind: string;
 };
 
-const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | null => {
-  if (message == null || message === '') {
-    return null;
-  }
-  return { kind: kind as WorkflowOrchestrationStopKind, message };
-};
+const toStop = ({ message, kind }: StopColumns): WorkflowOrchestrationStop | null =>
+  message == null || message === ''
+    ? null
+    : withAutoRunFlag({ stop: { kind: kind as WorkflowOrchestrationStopKind, message } });
 
 export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
   const orchestrationStop = toStop({
@@ -498,7 +497,7 @@ export const updateWorkflowRunOrchestrationStop = async (
 ): Promise<void> => {
   await db.execute(
     'UPDATE session_workflows SET orchestration_error = ?, orchestration_stop_kind = ? WHERE workflow_run_id = ?',
-    [stop?.message ?? null, stop?.kind ?? 'failure', workflowRunId],
+    [stop?.message ?? null, stopKindColumnOf({ stop }), workflowRunId],
   );
 };
 

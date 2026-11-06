@@ -1,8 +1,11 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
+import { sessionById } from '../sessions/sessionIndex';
 import { autoRetryRouteOf } from './autoRetryRouteOf';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import { withStepBoundary } from './kickoff';
-import type { GetFn } from './types';
+import { throwIfRefused } from './refusal/throwIfRefused';
+import type { GetFn, SetFn } from './types';
 
 const CONTINUE_STOPPED_MESSAGE = 'Continue from where you stopped.';
 
@@ -11,7 +14,32 @@ type Params = Readonly<{
   agentId: AgentId;
 }>;
 
-export const continueStoppedAgent = (get: GetFn) => {
+type ReleaseParams = Readonly<{
+  set: SetFn;
+  get: GetFn;
+  sessionId: SessionId;
+  agent: Agent | undefined;
+}>;
+
+const releaseOperatorStop = async ({ set, get, sessionId, agent }: ReleaseParams) => {
+  const workflowRunId = agent?.workflowRunId ?? null;
+  if (workflowRunId === null) {
+    return;
+  }
+  const run = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+    (candidate) => candidate.id === workflowRunId,
+  );
+  if (run?.orchestrationStop?.kind !== 'operator') {
+    return;
+  }
+  if (run.orchestrationStop.wasAutoRun === true) {
+    await get().setWorkflowRunAutoRun(sessionId, workflowRunId, true);
+    return;
+  }
+  await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
+};
+
+export const continueStoppedAgent = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId }: Params): Promise<void> => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const autoRoute = autoRetryRouteOf({
@@ -20,11 +48,13 @@ export const continueStoppedAgent = (get: GetFn) => {
       agentId,
     });
     if (autoRoute !== null) {
-      await get().sendTurn({
-        sessionId,
-        agentId: autoRoute.rootAgentId,
-        content: autoRoute.message,
-        origin: 'operator',
+      throwIfRefused({
+        result: await get().sendTurn({
+          sessionId,
+          agentId: autoRoute.rootAgentId,
+          content: autoRoute.message,
+          origin: 'operator',
+        }),
       });
       return;
     }
@@ -35,11 +65,30 @@ export const continueStoppedAgent = (get: GetFn) => {
         return;
       }
     }
-    await get().sendTurn({
+    let release: Promise<unknown> | null = null;
+    const releaseOnce = (): Promise<unknown> => {
+      release ??= releaseOperatorStop({ set, get, sessionId, agent }).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      return release;
+    };
+    const result = await get().sendTurn({
       sessionId,
       agentId,
       content: withStepBoundary({ agent, text: CONTINUE_STOPPED_MESSAGE }),
       origin: 'operator',
+      onStarted: () => {
+        void releaseOnce();
+      },
     });
+    if (release === null && result.isLaneQueued !== true && result.isAlreadySent !== true) {
+      throwIfRefused({ result });
+      return;
+    }
+    const failure = await releaseOnce();
+    if (failure !== null) {
+      throw failure;
+    }
   };
 };

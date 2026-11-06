@@ -17,7 +17,11 @@ type Params = {
   readonly agentId: AgentId;
   readonly content: string;
   readonly threadIds: ReadonlyArray<string> | undefined;
+  readonly hasAttachments?: boolean;
 };
+
+const ATTACHMENTS_REFUSED =
+  'Attachments cannot wait in line. Send this again when the agent ahead has finished.';
 
 export const queueTurnInLane = async ({
   get,
@@ -25,6 +29,7 @@ export const queueTurnInLane = async ({
   agentId,
   content,
   threadIds,
+  hasAttachments = false,
 }: Params): Promise<boolean> => {
   const state = get();
   const agents = state.sessionPhaseRuns[sessionId] ?? [];
@@ -45,6 +50,9 @@ export const queueTurnInLane = async ({
   const holder = laneHolderOf({ attempts, agents, worktreePath });
   if (holder === null || holder.agentId === agentId) {
     return false;
+  }
+  if (hasAttachments) {
+    throw new Error(ATTACHMENTS_REFUSED);
   }
   const waiting = latest.phase === 'queued' ? latest : null;
   const claimed =
