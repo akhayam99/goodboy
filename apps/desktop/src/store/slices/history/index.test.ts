@@ -747,7 +747,7 @@ describe('rebase on main', () => {
         payload: expect.objectContaining({ reason: 'origin-moved', planId: 'plan-1' }),
       }),
     );
-    const open = { action: { kind: 'open-activity', sessionId: SESSION_ID } };
+    const open = { action: expect.objectContaining({ kind: 'open-place', mountId: MOUNT_ID }) };
     expect(read().reportError).toHaveBeenCalledWith(expect.objectContaining({ recovery: open }));
   });
 });

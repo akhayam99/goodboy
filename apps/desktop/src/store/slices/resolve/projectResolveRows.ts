@@ -4,7 +4,12 @@ import type {
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
-import { resolveAttentionNotices, resolveAttentionOf } from './resolveAttention';
+import {
+  pushFailuresByMountOf,
+  resolveAttentionNotices,
+  resolveAttentionOf,
+  type MountOfThread,
+} from './resolveAttention';
 import type { SliceParams } from './types';
 
 type Params = SliceParams & {
@@ -34,6 +39,12 @@ const withFreshThreads = ({
 
 export const projectResolveRows = ({ set, get, sessionId, rows, attempts }: Params): void => {
   const known = get().sessionResolveThreads[sessionId];
+  const mounts = get().sessionProjectMounts?.[sessionId] ?? [];
+  const mountOf: MountOfThread = ({ thread }) => {
+    const owned = mounts.filter((mount) => mount.projectId === thread.projectId);
+    return owned.length === 1 ? (owned[0]?.mountId ?? null) : null;
+  };
+  const pushBefore = pushFailuresByMountOf({ threads: known ?? [], mountOf });
   const before =
     known === undefined
       ? null
@@ -58,7 +69,14 @@ export const projectResolveRows = ({ set, get, sessionId, rows, attempts }: Para
     return;
   }
   const after = resolveAttentionOf({ threads: rows, attempts });
-  for (const notice of resolveAttentionNotices({ before, after, sessionId })) {
+  const pushAfter = pushFailuresByMountOf({ threads: rows, mountOf });
+  for (const notice of resolveAttentionNotices({
+    before,
+    after,
+    sessionId,
+    pushBefore,
+    pushAfter,
+  })) {
     void get().emitNotification(notice);
   }
 };

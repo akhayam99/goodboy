@@ -117,11 +117,11 @@ export const NotificationsStudio = ({ onClose }: Props) => {
     onDismiss: dismissGroup,
     onActivate: (key) => {
       markGroupRead(key);
-      const action = groupByKey(key)?.[0]?.action;
-      if (action == null) {
+      const latest = groupByKey(key)?.[0];
+      if (latest?.action == null) {
         return;
       }
-      mapNotificationAction(action, useAppStore.getState())?.onClick();
+      mapNotificationAction(latest.action, useAppStore.getState(), latest)?.onClick();
     },
   });
 

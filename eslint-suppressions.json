@@ -4013,11 +4013,6 @@
       "count": 10
     }
   },
-  "apps/desktop/src/features/notifications/components/NotificationToastBridge/notificationAction.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
   "apps/desktop/src/features/notifications/facets.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -4029,11 +4024,6 @@
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/notifications/openNotificationSession.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
     }
   },
   "apps/desktop/src/features/onboarding/OnboardingWizard/hostFromRemote.ts": {
@@ -9652,11 +9642,6 @@
     },
     "@typescript-eslint/naming-convention": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/store/slices/resolve/resolveAttention.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "apps/desktop/src/store/slices/resolve/resolveCandidateMode.test.ts": {

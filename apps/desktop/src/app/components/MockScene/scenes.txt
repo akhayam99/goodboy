@@ -1203,6 +1203,10 @@ u36-p1-run-stopping
 u36-p1-window-close
 u36-p1-window-close-run
 u36-p1-window-close-stuck
+u36-p15-needs-you-dark
+u36-p15-needs-you-light
+u36-p15-next-only-dark
+u36-p15-next-only-light
 u36-p16-checks-working
 u36-p16-fix-checks
 u36-p16-merged-archive

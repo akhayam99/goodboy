@@ -31,4 +31,25 @@ describe('the Needs you card', () => {
 
     expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
+
+  it('counts the notices in its header, the notices stay in the column above', () => {
+    render(
+      <NeedsYouCard
+        session={aSession()}
+        card={{ id: 'needs-you', title: 'Needs you', count: 1 }}
+        waiting={[]}
+        leadRunId={null}
+        cards={[]}
+        whereOf={unused}
+        actionsFor={unused}
+        openFor={unused}
+        chipFor={unused}
+        branchFor={unused}
+        stopRowFor={unused}
+      />,
+    );
+
+    const card = screen.getByRole('region', { name: 'Needs you' });
+    expect(card.querySelector('[data-overview-count]')?.textContent).toBe('1');
+  });
 });

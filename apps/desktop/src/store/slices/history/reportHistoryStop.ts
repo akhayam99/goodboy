@@ -49,6 +49,13 @@ export const reportHistoryStop = async ({
     error: stop.message,
     severity: 'warning',
     sessionId: target.sessionId,
-    recovery: { action: { kind: 'open-activity', sessionId: target.sessionId } },
+    recovery: {
+      action: {
+        kind: 'open-place',
+        sessionId: target.sessionId,
+        reason: 'history-stopped',
+        mountId: target.mountId,
+      },
+    },
   });
 };

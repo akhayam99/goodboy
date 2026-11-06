@@ -177,7 +177,7 @@ the app data band (`savedVersionsBytes`, summed in Rust).
 A session that edits a plain folder in place shows the face where it works:
 the rail's **Folder** card names the folder and what agents do there
 ("Documents · edits in place", "No git yet · edits in place"), the Overview
-opens on a folder card (where agents write, what is saved before each turn,
+has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
 chat ends in a card with Review changes and Restore turn
@@ -492,8 +492,8 @@ into the plan` when origin moved, `Retry rebase` when the branch moved,
 `Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
 `Change the plan` and `Discard plan` for a stopped plan, `Reset branch to this
 version` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
-of the engine points at the row with `Open in Activity`, so closing it loses
-nothing.
+of the engine points at the branch's Commits with `Open branch`, so closing it
+loses nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
