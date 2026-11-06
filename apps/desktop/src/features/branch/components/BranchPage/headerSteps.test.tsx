@@ -1,20 +1,25 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { cleanup, render, waitFor } from '@testing-library/react';
 import type { PullRequestState } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
+import { clearSceneInvoke, sceneInvoke } from '../../../../test/sceneInvoke';
 import { SESSION, seedResolveScene } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from './index';
 
@@ -25,16 +30,18 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  installFakeResizeObserver();
   await resetStoryStore();
+  clearSceneInvoke();
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (typeof command !== 'string') {
+      throw new Error('The scene command must be a string.');
+    }
+    return sceneInvoke({ command, args });
+  });
 });
 
 afterEach(cleanup);
-
-const settle = async (): Promise<void> => {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
-};
 
 type SeedParams = {
   readonly patch: Partial<PullRequestState>;
@@ -66,7 +73,7 @@ const openPage = async (): Promise<void> => {
       <BranchPage session={SESSION} workingDir={null} />
     </ToastProvider>,
   );
-  await settle();
+  await waitFor(() => expect(document.querySelector('[data-branch-pane]')).not.toBeNull());
 };
 
 const primaryId = (): string | null =>
@@ -78,7 +85,7 @@ describe('Branch header on a pull request somebody else wrote', () => {
 
     await openPage();
 
-    expect(primaryId()).toBe('pullRequest.writeReview');
+    await waitFor(() => expect(primaryId()).toBe('pullRequest.writeReview'));
     expect(document.querySelector('[data-branch-primary]')?.textContent).toBe('Review');
   });
 
