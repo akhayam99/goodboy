@@ -1198,6 +1198,9 @@ u35-agent-chain-sub-sub
 u35-auto-plan-used
 u35-branch-setup-offer
 u35-preset-run-glance
+u36-p16-checks-working
+u36-p16-fix-checks
+u36-p16-start-fix
 update-card
 update-card-long-version
 update-card-narrow
