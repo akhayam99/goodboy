@@ -1,6 +1,7 @@
 import type { TurnState } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { NAMES } from '../../../shared/utils/names';
+import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
 import { dockPlanRowOf } from '../dockPlanRowOf';
@@ -63,7 +64,7 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
     return glanceOf({
       state: 'waiting',
       word: NAMES.needsApproval,
-      sentence: `Plan v${plan?.revision ?? 1} needs approval`,
+      sentence: planNeedsApprovalOf({ version: plan?.revision ?? 1 }),
     });
   }
   if (projectAskOf({ view }) !== null) {
