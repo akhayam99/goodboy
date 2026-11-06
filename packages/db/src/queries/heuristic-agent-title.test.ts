@@ -25,6 +25,19 @@ describe('heuristicAgentTitle', () => {
     );
   });
 
+  it('stops at a full width clause end with no space after it', () => {
+    expect(heuristicAgentTitle({ prompt: '修复登录。添加回归测试。' })).toBe('修复登录');
+  });
+
+  it('drops a list marker before the first clause', () => {
+    expect(heuristicAgentTitle({ prompt: '1. Fix the login redirect' })).toBe(
+      'Fix the login redirect',
+    );
+    expect(heuristicAgentTitle({ prompt: '- fix the login redirect' })).toBe(
+      'Fix the login redirect',
+    );
+  });
+
   it('keeps a dot inside a word', () => {
     expect(heuristicAgentTitle({ prompt: 'Bump payments-api to v1.2 today' })).toBe(
       'Bump payments-api to v1.2 today',

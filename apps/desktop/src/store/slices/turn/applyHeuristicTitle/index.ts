@@ -132,7 +132,21 @@ export const applyHeuristicTitle = async ({
           ),
         }));
         try {
-          await renameSessionInDb(tauriDatabase, sessionId, heuristicTitle, titleNow, false);
+          const isWritten = await renameSessionInDb(
+            tauriDatabase,
+            sessionId,
+            heuristicTitle,
+            titleNow,
+            false,
+          );
+          if (!isWritten) {
+            revertGoalIfStillOptimistic({
+              set,
+              sessionId,
+              optimisticGoal: heuristicTitle,
+              previousGoal,
+            });
+          }
         } catch (err) {
           console.error('failed to persist heuristic session title', err);
           revertGoalIfStillOptimistic({
@@ -208,7 +222,21 @@ export const applyHeuristicTitle = async ({
         ),
       }));
       try {
-        await renameSessionInDb(tauriDatabase, sessionId, generatedTitle, generatedAt, false);
+        const isWritten = await renameSessionInDb(
+          tauriDatabase,
+          sessionId,
+          generatedTitle,
+          generatedAt,
+          false,
+        );
+        if (!isWritten) {
+          revertGoalIfStillOptimistic({
+            set,
+            sessionId,
+            optimisticGoal: generatedTitle,
+            previousGoal,
+          });
+        }
       } catch (err) {
         console.error('failed to persist generated session title', err);
         revertGoalIfStillOptimistic({

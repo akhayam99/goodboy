@@ -121,8 +121,9 @@ describe('renameSession by a generated title', () => {
 
   it('never replaces a name the user chose', async () => {
     await renameSession(db, sessionId, 'Ledger cleanup', NOW);
-    await renameSession(db, sessionId, 'Block double credits', NOW, false);
+    const isWritten = await renameSession(db, sessionId, 'Block double credits', NOW, false);
 
+    expect(isWritten).toBe(false);
     const stored = await getSessionById(db, sessionId);
     expect(stored?.goal).toBe('Ledger cleanup');
     expect(stored?.titleUserEdited).toBe(true);

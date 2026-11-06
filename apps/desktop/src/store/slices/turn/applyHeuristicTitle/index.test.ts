@@ -7,7 +7,7 @@ import { applyHeuristicTitle } from './index';
 
 const { invokeMock, renameSessionMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
-  renameSessionMock: vi.fn(async () => undefined),
+  renameSessionMock: vi.fn(async () => true),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
@@ -277,6 +277,21 @@ describe('applyHeuristicTitle', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('reverts the title when the store skipped the write, a name was chosen elsewhere', async () => {
+    renameSessionMock.mockResolvedValueOnce(false);
+    invokeMock.mockRejectedValue(new Error('offline'));
+    const harness = createHarness();
+
+    await applyHeuristicTitle({
+      ...harness,
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      prompt: 'Implement a secure authentication flow',
+    });
+
+    expect(harness.read().sessions[0]?.goal).toBe('original goal');
+  });
+
   it('reverts the generated title when persisting it fails, so the ui never lies', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     invokeMock.mockResolvedValue({
@@ -284,7 +299,7 @@ describe('applyHeuristicTitle', () => {
       stderr: '',
       exitCode: 0,
     });
-    renameSessionMock.mockResolvedValueOnce(undefined);
+    renameSessionMock.mockResolvedValueOnce(true);
     renameSessionMock.mockRejectedValueOnce(new Error('db locked'));
     const harness = createHarness();
 
@@ -336,7 +351,7 @@ describe('applyHeuristicTitle', () => {
       exitCode: 0,
     });
     const harness = createHarness();
-    renameSessionMock.mockResolvedValueOnce(undefined);
+    renameSessionMock.mockResolvedValueOnce(true);
     renameSessionMock.mockImplementationOnce(async () => {
       harness.set((state) => ({
         sessions: state.sessions.map((s) =>

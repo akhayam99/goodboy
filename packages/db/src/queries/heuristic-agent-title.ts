@@ -4,7 +4,9 @@ const MAX_TITLE_WORDS = 10;
 
 const MAX_TITLE_LENGTH = 60;
 
-const CLAUSE_END = /[.,;:!?](?:\s|$)/;
+const CLAUSE_END = /[.,;:!?](?:\s|$)|[。．！？；：，、]/;
+
+const LIST_MARKER = /^(?:\d+[.)]|[-+])\s+/;
 
 type PromptParams = {
   readonly prompt: string;
@@ -25,7 +27,7 @@ const firstLineOf = ({ prompt }: PromptParams): string => {
     .replace(/https?:\/\/\S+/g, ' ')
     .replace(/[*_#>\[\]]/g, ' ')
     .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, ' ').trim());
+    .map((line) => line.replace(/\s+/g, ' ').trim().replace(LIST_MARKER, ''));
   return lines.find((line) => line.length > 0) ?? '';
 };
 
