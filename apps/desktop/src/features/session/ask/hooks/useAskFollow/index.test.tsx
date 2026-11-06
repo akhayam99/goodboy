@@ -50,6 +50,23 @@ describe('useAskFollow', () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
+  it('stays put after a short scroll up inside the pin slack', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const { rerender, getByTestId } = render(<Host contentLength={0} turnCount={1} />);
+    const scroller = getByTestId('scroller');
+
+    stubScroller({ scroller, top: 700 });
+    stubScroller({ scroller, top: 680 });
+    scrollIntoView.mockClear();
+    rerender(<Host contentLength={40} turnCount={1} />);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    stubScroller({ scroller, top: 700 });
+    rerender(<Host contentLength={80} turnCount={1} />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
   it('follows again when a new question is sent', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
