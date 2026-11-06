@@ -38,6 +38,7 @@ import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { isRunPaused } from '../../workflows/isRunPaused';
 import { STEP_ROUTING_REQUEST_EVENT, requestStepRouting } from '../../workflows/requestStepRouting';
 import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
+import { resolveRootAgent } from '../../session/agent-kind';
 import { openQuestion } from '../../session/openQuestion';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
@@ -82,7 +83,7 @@ type SkipParams = {
 };
 
 const skipStepOf = ({ run, agents, steps, stepAgentId }: SkipParams): SkipStepFacts | null => {
-  const agent = agents.find((candidate) => candidate.id === stepAgentId) ?? null;
+  const agent = stepAgentId === null ? null : resolveRootAgent({ agents, agentId: stepAgentId });
   if (
     agent === null ||
     agent.parentAgentId != null ||

@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { brandId, type AgentId } from '@goodboy/types';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -20,6 +21,9 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { useAppStore } from '../../../../../store';
+import { C08RunScene } from '../u25/C08RunScene';
+import { C08_IMPLEMENTER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
 import { U36_RUN_PAGES_SCENES } from './run-pages';
 
 const SETTLE_MS = 2_000;
@@ -58,6 +62,35 @@ const mount = async (name: SceneName): Promise<void> => {
   );
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
+  });
+};
+
+const HELPER_ID = brandId<AgentId>({ value: 'mock-c08-helper' });
+
+const openHelperPage = (): void => {
+  const state = useAppStore.getState();
+  const parent = (state.sessionPhaseRuns[C08_SESSION_ID] ?? []).find(
+    (agent) => agent.id === C08_IMPLEMENTER_ID,
+  );
+  if (parent === undefined) {
+    return;
+  }
+  useAppStore.setState({
+    sessionPhaseRuns: {
+      ...state.sessionPhaseRuns,
+      [C08_SESSION_ID]: [
+        ...(state.sessionPhaseRuns[C08_SESSION_ID] ?? []),
+        {
+          ...parent,
+          id: HELPER_ID,
+          name: 'Read the batch writer',
+          parentAgentId: parent.id,
+          stepId: undefined,
+          ordinal: 9,
+        },
+      ],
+    },
+    selectedAgentId: { ...state.selectedAgentId, [C08_SESSION_ID]: HELPER_ID },
   });
 };
 
@@ -151,6 +184,35 @@ describe('one run page', () => {
     const menu = screen.getByRole('menu');
     within(menu).getByRole('menuitem', { name: 'Pause run' });
     within(menu).getByRole('menuitem', { name: 'Copy run summary' });
+  });
+
+  it('opens the transcript of a subagent from its own page, not the one of its step', async () => {
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <C08RunScene state="working" selection="implementer" extra={openHelperPage} />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    fireEvent.click(within(headOf()).getByRole('button', { name: 'Step actions' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    fireEvent.click(
+      within(screen.getByRole('menu')).getByRole('menuitem', { name: 'View transcript' }),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'transcript',
+      payload: { agentId: HELPER_ID },
+    });
   });
 
   it.each(['u36-p12-step-page', 'u36-p12-orch-step-page'] as const)(
