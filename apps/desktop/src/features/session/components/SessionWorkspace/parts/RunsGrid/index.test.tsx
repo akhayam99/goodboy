@@ -610,10 +610,11 @@ describe('RunsGrid by branch', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'By state' }));
 
     const item = screen.getByRole('button', { name: /^Open Move the backfill/ }).closest('li');
-    expect(within(item as HTMLElement).getByTestId('run-branch').textContent).toBe(
-      'fix/duplicate-credit',
-    );
-    expect(item?.querySelector('[data-run-branch-more]')?.textContent).toBe('+1');
+    if (item === null) {
+      throw new Error('no row');
+    }
+    expect(within(item).getByTestId('run-branch').textContent).toBe('fix/duplicate-credit');
+    expect(item.querySelector('[data-run-branch-more]')?.textContent).toBe('+1');
   });
 
   it('shows Stop all and Continue all in the page action row of the By branch view', () => {

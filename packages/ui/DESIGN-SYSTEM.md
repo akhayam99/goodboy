@@ -229,6 +229,11 @@ state is a `StateDot` or a glyph in a 16px column.
   pixels, so the title keeps room and no row runs past the list edge. Runs hides
   the model below 920 and the origin below 928, both inside the 960 page column.
   `validate-scenes` checks in a browser that no list row ends past its list.
+- `overlays` on `ListGridRow` draws controls as siblings of the row button, each
+  in its named column over the row, so a row never nests a button. Only the
+  controls take the pointer; the rest of the cell still lands on the row, and the
+  row keeps its hover while one is under the pointer. Runs draws the title, the
+  branch chips and the row verb this way.
 - `yieldsTo` on a column names another column; while that one is shown the first
   is dropped, so two optional columns never share a list that holds only one.
   Runs sets it on the origin, which gives its track to the model.
