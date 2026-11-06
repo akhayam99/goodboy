@@ -130,11 +130,12 @@ workspace folder) and, in a session with worktrees, `Open <repo · branch> in te
   the rebase banners (`openMountTerminal`), the session row menu, ⌘K `Open <repo · branch> in
 terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active worktree) all go
   through it. The header holds the project name, the short worktree chip (it truncates before the
-  buttons), two icon buttons (`Open on Terminal page` and `Close`, the text in the tooltip and the
-  `aria-label`) and the same tab strip as the page: drawer and page show the same tabs of the same
-  worktree. Closing the drawer never kills the shell: the tabs stay in the Terminal list under the
+  buttons), two icon buttons (`Open page`, whose tooltip says it leaves the session, and `Close`)
+  and the same tab strip as the page: drawer and page show the same tabs of the same
+  worktree. The head repeats no name: the folder picker stands where the title would be. Closing
+  the drawer never kills the shell: the tabs stay in the Terminal list under the
   session's group, and the drawer closes by itself when its worktree has no terminal left.
-  `Open on Terminal page` closes the drawer and selects the same tab on the page; the pane
+  `Open page` closes the drawer and selects the same tab on the page; the pane
   remounts on the same pty and replays its scrollback. The page group title is the session title,
   cut at the end, never in the middle; the group's `aria-label` keeps the full
   title.

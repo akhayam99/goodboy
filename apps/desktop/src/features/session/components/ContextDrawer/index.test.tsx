@@ -266,11 +266,9 @@ describe('ContextDrawer', () => {
   it('says when an explanation arrives on an empty Explanations card', () => {
     renderDrawer('learned');
 
-    expect(
-      screen.getByText(
-        'No explanations yet. An agent adds one when it explains a topic you follow.',
-      ).tagName,
-    ).toBe('P');
+    expect(screen.getByText('Nothing yet. Agents explain the topics you follow.').tagName).toBe(
+      'P',
+    );
   });
 
   it('still shows Visible to when a retired context.roleMap value of false is stored', () => {

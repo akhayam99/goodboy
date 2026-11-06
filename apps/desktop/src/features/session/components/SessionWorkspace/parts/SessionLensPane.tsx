@@ -125,7 +125,7 @@ export const SessionLensPane = ({ session, target, isShown }: Props) => {
           icon={CONCEPT_ICONS.github}
           tone={CONCEPT_TONE.github}
           title="No GitHub issue linked"
-          description="Link a GitHub issue to this session to see it here."
+          description="Link an issue this work belongs to."
           action={<LinkIssueAction session={session} initialSource="github" />}
         />
       </PaneShell>

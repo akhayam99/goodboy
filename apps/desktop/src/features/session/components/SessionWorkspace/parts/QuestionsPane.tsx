@@ -67,7 +67,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
           size="page"
           icon={CONCEPT_ICONS.questions}
           title="No questions yet"
-          description="Agents ask you here when they need a decision."
+          description="Agents bring you the choices they can't make."
         />
       </PaneShell>
     );

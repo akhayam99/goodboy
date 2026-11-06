@@ -66,7 +66,7 @@ const renderDrawer = ({
           line={drawer.payload.line}
           {...(drawer.payload.from === 'explore' && {
             back: {
-              label: 'Back to files',
+              label: 'Back to Explore',
               onBack: () =>
                 openDrawer({ kind: 'explore', sessionId: drawer.sessionId, payload: null }),
             },

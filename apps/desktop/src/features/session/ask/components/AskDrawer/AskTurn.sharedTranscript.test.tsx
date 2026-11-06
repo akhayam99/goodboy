@@ -101,14 +101,26 @@ describe('Ask turn shares the Chat transcript parts', () => {
   it('offers one Start work from chat action on a finished answer', () => {
     const started: ChatMessageId[] = [];
     mount({ reply: REPLY, onStartWork: (messageId) => started.push(messageId) });
-    const buttons = screen.getAllByRole('button', { name: NAMES.startWorkFromChat });
+    const buttons = screen.getAllByRole('button', { name: NAMES.startWorkFromAsk });
     expect(buttons).toHaveLength(1);
     fireEvent.click(buttons[0]!);
     expect(started).toEqual([REPLY.id]);
   });
 
+  it('folds a raw provider error behind Details and keeps one plain sentence', () => {
+    const raw = 'spawn claude ENOENT\n    at ChildProcess._handle.onexit (node:internal/x:1:1)';
+    mount({ reply: { ...REPLY, content: '', status: 'failed', error: raw } });
+
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain('No answer');
+    expect(alert.textContent).toContain('The provider stopped without an answer.');
+    expect(screen.queryByText(/ENOENT/u)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Details/u }));
+    expect(screen.getByText(/ENOENT/u).textContent).toContain('spawn claude');
+  });
+
   it('hides Start work while the answer is still streaming', () => {
     mount({ reply: { ...REPLY, status: 'streaming' } });
-    expect(screen.queryByRole('button', { name: NAMES.startWorkFromChat })).toBeNull();
+    expect(screen.queryByRole('button', { name: NAMES.startWorkFromAsk })).toBeNull();
   });
 });

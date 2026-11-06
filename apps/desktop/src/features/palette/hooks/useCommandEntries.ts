@@ -176,8 +176,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (isAskOpen && !isAskReplying && sessionId !== null) {
       out.push({
         key: 'action:ask-reset',
-        label: 'Reset chat',
-        secondary: ['Reset Ask', 'New Ask chat'],
+        label: NAMES.newQuestion,
+        secondary: [...formerNamesOf(NAMES.newQuestion), 'Reset Ask', 'New Ask chat'],
         kind: 'action',
         group: 'action',
         icon: RotateCcw,

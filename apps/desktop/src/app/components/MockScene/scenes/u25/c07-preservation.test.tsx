@@ -149,14 +149,10 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(await screen.findAllByText('Approve plan', undefined, WAIT)).not.toHaveLength(0);
   });
 
-  it('Child page notice with Open Auto, after Open full', async () => {
+  it('Child page notice with Open Auto, after Open page', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child'] });
 
-    const openFull = (await screen.findByText('Open full', undefined, WAIT)).closest('button');
-    if (openFull === null) {
-      throw new Error('no Open full');
-    }
-    fireEvent.click(openFull);
+    fireEvent.click(await screen.findByRole('button', { name: 'Open page' }, WAIT));
 
     expect(await screen.findByText('Open Auto', undefined, WAIT)).toBeDefined();
     expect(screen.getByText('Started by Auto. Auto sees what you tell it.')).toBeDefined();

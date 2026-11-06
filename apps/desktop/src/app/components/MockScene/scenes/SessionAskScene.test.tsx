@@ -57,10 +57,19 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).getByText('Read only')).toBeDefined();
   });
 
-  it('opens the drawer already scoped to the session, with its own glyph and tooltip name', async () => {
+  it('opens the drawer with no scope chip, with its own glyph and tooltip name', async () => {
     const trigger = await renderState('rightnow');
-    expect(within(askDrawer()).getByTestId('ask-scope').textContent).toContain('Scope: ');
+    expect(within(askDrawer()).queryByTestId('ask-scope')).toBeNull();
     expect(trigger.getAttribute('aria-label')).toBe('Ask this session');
+  });
+
+  it('says what Ask is above the questions to try, and drops it once a turn exists', async () => {
+    await renderState('rightnow');
+    await within(askDrawer()).findByRole('heading', { name: 'Ask this session' });
+    within(askDrawer()).getByText('What it did, what it found, what waits on you.');
+    cleanup();
+    await renderState('answer');
+    expect(within(askDrawer()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();
   });
 
   it('closes and reopens from the trail button', async () => {
@@ -108,7 +117,7 @@ describe('the session Ask scene', () => {
       ['Cost', '$0.04'],
       ['Read', '2 files'],
     ]);
-    expect(within(screen.getByTestId('ask-actions')).getByText('Answer question 1')).toBeDefined();
+    expect(within(screen.getByTestId('ask-actions')).getByText(/^Answer: /)).toBeDefined();
   });
 
   it('moves the page beside it when a chip is clicked, and the question keeps Back to Ask', async () => {
@@ -140,9 +149,9 @@ describe('the session Ask scene', () => {
     expect(askDrawer()).toBeDefined();
   });
 
-  it('prefills the answer field from Answer question 1 and never sends it', async () => {
+  it('prefills the answer field from the Answer button and never sends it', async () => {
     await renderState('answer');
-    const button = within(await screen.findByTestId('ask-actions')).getByText('Answer question 1');
+    const button = within(await screen.findByTestId('ask-actions')).getByText(/^Answer: /);
     const questionId = useAppStore
       .getState()
       .sessionOpenQuestions[SESSION.id]?.find((question) => question.status === 'open')?.id;
@@ -195,13 +204,13 @@ describe('the session Ask scene', () => {
     expect(screen.queryByRole('region', { name: 'Try asking' })).toBeNull();
   });
 
-  it('disables Reset chat while a reply streams and enables it once idle', async () => {
+  it('disables New question while a reply streams and enables it once idle', async () => {
     await renderState('streaming');
-    const resetButton = within(askDrawer()).getByRole('button', { name: 'Reset chat' });
+    const resetButton = within(askDrawer()).getByRole('button', { name: 'New question' });
     expect((resetButton as HTMLButtonElement).disabled).toBe(true);
     cleanup();
     await renderState('answer');
-    const idleButton = within(askDrawer()).getByRole('button', { name: 'Reset chat' });
+    const idleButton = within(askDrawer()).getByRole('button', { name: 'New question' });
     expect((idleButton as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -210,14 +219,14 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).queryByRole('button', { name: /^New$/ })).toBeNull();
   });
 
-  it('Reset chat empties the transcript and keeps the old chat under Earlier', async () => {
+  it('New question empties the transcript and keeps the old chat under Earlier', async () => {
     await renderState('followup');
     await screen.findAllByTestId('ask-turn');
     const before = useAppStore.getState().askThreadId[SESSION.id];
     expect(before).not.toBeNull();
 
     act(() => {
-      fireEvent.click(within(askDrawer()).getByRole('button', { name: 'Reset chat' }));
+      fireEvent.click(within(askDrawer()).getByRole('button', { name: 'New question' }));
     });
 
     expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
@@ -228,7 +237,7 @@ describe('the session Ask scene', () => {
     ).toBe(true);
   });
 
-  it('Reset chat answers the chord from inside the panel, and only there', async () => {
+  it('New question answers the chord from inside the panel, and only there', async () => {
     await renderState('followup');
     await screen.findAllByTestId('ask-turn');
     const newSession = vi.fn();

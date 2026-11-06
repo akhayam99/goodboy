@@ -50,13 +50,13 @@ describe('the secondary Explore scenes', () => {
     expect(MOCK_SCENES['u26s-explore-rows']).toBe(U26S_EXPLORE_SCENES['u26s-explore-rows']);
   });
 
-  it('u26s-explore-rows shows the page header with the counts and the files', async () => {
+  it('u26s-explore-rows shows the frame head with no count of the root and the files', async () => {
     mount({ id: 'u26s-explore-rows' });
 
     await screen.findByRole('treeitem', { name: 'README.md' }, WAIT);
-    expect(screen.getByRole('heading', { level: 1, name: 'Explore' })).toBeDefined();
-    expect(screen.getByText('3 folders · 4 files')).toBeDefined();
-    const header = document.querySelector<HTMLElement>('[data-page-header]');
+    expect(screen.getByRole('heading', { level: 2, name: 'Explore' })).toBeDefined();
+    expect(screen.queryByText('3 folders · 4 files')).toBeNull();
+    const header = document.querySelector<HTMLElement>('[data-drawer-header]');
     expect(header).not.toBeNull();
     expect(within(header ?? document.body).getByRole('button', { name: 'Close' })).toBeDefined();
   });
@@ -65,7 +65,7 @@ describe('the secondary Explore scenes', () => {
     mount({ id: 'u26s-explore-drawer' });
 
     await screen.findByRole('treeitem', { name: 'README.md' }, WAIT);
-    expect(screen.getByRole('heading', { level: 1, name: 'Explore' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Explore' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Refresh the files' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
   });
@@ -73,12 +73,8 @@ describe('the secondary Explore scenes', () => {
   it('u26s-explore-empty teaches what fills an empty folder', async () => {
     mount({ id: 'u26s-explore-empty' });
 
-    expect(
-      await screen.findByRole('heading', { name: 'This folder is empty' }, WAIT),
-    ).toBeDefined();
-    expect(
-      screen.getByText('Files that agents write here show up as soon as they are saved.'),
-    ).toBeDefined();
+    expect(await screen.findByRole('heading', { name: 'Nothing here yet' }, WAIT)).toBeDefined();
+    expect(screen.getByText('Agents write files as they work.')).toBeDefined();
   });
 
   it('u26s-explore-nomount offers the one action', async () => {

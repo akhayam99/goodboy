@@ -1,7 +1,7 @@
 import { DrawerContentContext } from '../drawerContentContext';
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { X } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
@@ -16,6 +16,11 @@ export type DrawerBack = {
   readonly onBack: () => void;
 };
 
+export type DrawerPage = {
+  readonly tooltip?: string;
+  readonly onOpen: () => void;
+};
+
 export type DrawerFrameProps = {
   readonly title: string;
   readonly titleContent?: ReactNode;
@@ -25,6 +30,7 @@ export type DrawerFrameProps = {
   readonly meta?: ReactNode;
   readonly action?: ReactNode;
   readonly menu?: ReactNode;
+  readonly page?: DrawerPage;
   readonly toolbar?: ReactNode;
   readonly back?: DrawerBack;
   readonly closeLabel?: string;
@@ -76,6 +82,7 @@ export const DrawerFrame = ({
   meta,
   action,
   menu,
+  page,
   toolbar,
   back,
   closeLabel = 'Close',
@@ -155,6 +162,16 @@ export const DrawerFrame = ({
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
         {menu}
+        {page === undefined ? null : (
+          <IconButton
+            icon={ArrowUpRight}
+            label="Open page"
+            tooltip={page.tooltip ?? 'Open page'}
+            variant="ghost"
+            iconSize={ICON_SIZE.control}
+            onClick={page.onOpen}
+          />
+        )}
         <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
       </div>
     </>

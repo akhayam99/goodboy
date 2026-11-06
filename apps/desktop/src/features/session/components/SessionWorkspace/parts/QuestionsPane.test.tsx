@@ -195,7 +195,7 @@ describe('QuestionsPane', () => {
   it('shows the shared empty state only when nothing was ever asked', () => {
     setup({ open: [] });
     screen.getByRole('heading', { level: 2, name: 'No questions yet' });
-    screen.getByText('Agents ask you here when they need a decision.');
+    screen.getByText("Agents bring you the choices they can't make.");
   });
 
   it('lists Needs you then Answered on one grid, each counted from two', () => {

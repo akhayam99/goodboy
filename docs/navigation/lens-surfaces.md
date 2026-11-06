@@ -52,7 +52,7 @@
   keeps one filled button: the footer holds Skip and Answer, and **More** at the top of the
   card holds **Let an agent decide**, **Send as message** and **Dismiss question**
   (`questionMenuOf`, three rows at most). The compact card in the chat keeps its footer.
-  Answering moves the drawer to the next waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
+  Answering moves the drawer to the next waiting question. Opened from Ask (a question chip, **Answer: {the question}**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question
   (a top row holds Blocking as a dot and a word on the left and the pager on the right; the question starts on its own line below at the left edge). That card is one subtle surface
@@ -270,13 +270,14 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   tooltip "3 changed files"; an open folder shows none. The mark comes from
   `useExploreChanges`, which shares one request per mount and revision with
   `useMountDiffStats` (same 30s tick, turn finished and focus signals, no second
-  timer). The header's `All files | Changed 7` tabs show only for a mount whose
-  git answers and that has changes (or while you are in Changed). Changed
+  timer). The frame head says `7 changed` and never counts the root; its
+  Changed only switch shows only for a mount whose
+  git answers and that has changes (or while you are in Changed only). Changed only
   filters the same tree to the changed paths and their folders, all open, with
   deleted files as faint struck rows that do not open; with nothing left it
   says "No changes against main". A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
-  presentation with a ghost Open in Files that opens the Files tab on the file. The folders you opened
+  presentation with the head's Open page (tooltip Open in Changes) that opens the Files tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
   keyed by session, mount path and folder) and open again when you come back,
   and a file opened from elsewhere opens the folders above it. The file drawer

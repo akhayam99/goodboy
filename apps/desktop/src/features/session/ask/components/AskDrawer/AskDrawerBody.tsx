@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { NAMES } from '../../../../../shared/utils/names';
+import { useAskFollow } from '../../hooks/useAskFollow';
 import { RotateCcw } from 'lucide-react';
-import { DrawerFrame, IconButton } from '@goodboy/ui';
+import { DrawerFrame, EmptyState, IconButton } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, ChatMessageId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
@@ -16,7 +18,6 @@ import { useAskRightNow } from '../../hooks/useAskRightNow';
 import { AskComposer } from './AskComposer';
 import { AskEarlier } from './AskEarlier';
 import { AskPlanView } from './AskPlanView';
-import { AskScope } from './AskScope';
 import { AskSuggestions } from './AskSuggestions';
 import { AskTurn } from './AskTurn';
 
@@ -33,6 +34,9 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   const threads = useAppStore((state) => state.askThreads[sessionId]);
   const messages = useAppStore((state) =>
     threadId === null ? NO_MESSAGES : (state.askMessages[threadId] ?? NO_MESSAGES),
+  );
+  const isLoaded = useAppStore(
+    (state) => threadId === null || state.askMessages[threadId] !== undefined,
   );
   const stream = useAppStore((state) =>
     threadId === null ? undefined : state.askStreams[threadId],
@@ -61,9 +65,12 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
     void loadAskThreads({ sessionId });
   }, [loadAskThreads, sessionId]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: 'end' });
-  }, [lastContent, turns.length]);
+  useAskFollow({
+    endRef,
+    isActive: insideId === null,
+    contentLength: lastContent,
+    turnCount: turns.length,
+  });
 
   const ask = useCallback(
     (question: string) => sendAskQuestion({ sessionId, question, rightNow: rightNow.text }),
@@ -124,7 +131,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       action={
         <IconButton
           icon={RotateCcw}
-          label="Reset chat"
+          label={NAMES.newQuestion}
           shortcut="ask.reset"
           disabled={isAnyStreaming}
           onClick={reset}
@@ -136,7 +143,15 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
       ) : (
         <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
-          <AskScope session={session} />
+          {isLoaded && turns.length === 0 ? (
+            <EmptyState
+              size="section"
+              headingLevel={3}
+              icon={CONCEPT_ICONS.ask}
+              title="Ask this session"
+              description="What it did, what it found, what waits on you."
+            />
+          ) : null}
           {turns.length === 0 && rightNow.suggestions.length > 0 ? (
             <AskSuggestions
               suggestions={rightNow.suggestions}

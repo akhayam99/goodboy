@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { ArrowUpRight } from 'lucide-react';
-import { Button, DrawerFrame, ErrorStrip, formatError, ICON_SIZE, Skeleton } from '@goodboy/ui';
+import { DrawerFrame, ErrorStrip, formatError, Skeleton } from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { FileDiffSource } from '../../../../store/slices/drawer/state';
@@ -117,14 +116,9 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
       iconClassName="text-muted-foreground"
       onClose={onClose}
       scroll="self"
-      action={
-        openInDiff === null ? null : (
-          <Button variant="ghost" size="sm" onClick={openInDiff}>
-            Open in Files
-            <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-          </Button>
-        )
-      }
+      {...(openInDiff !== null && {
+        page: { tooltip: 'Open in Changes', onOpen: openInDiff },
+      })}
     >
       {diff.loading ? (
         <div role="status" className="flex flex-col gap-2 p-3" aria-label="Loading diff">

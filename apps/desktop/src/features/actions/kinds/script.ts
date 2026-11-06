@@ -11,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { NAMES } from '../../../shared/utils/names';
 import type { ObjectKindDefinition, ScriptActionTarget } from '../types';
 
 type ScriptPinFacts = {
@@ -55,7 +56,7 @@ export const SCRIPT_KIND: ObjectKindDefinition<ScriptActionTarget, ScriptFacts> 
     },
     {
       id: 'script.askAgent',
-      label: ({ facts }) => facts.ask?.label ?? 'Ask the agent about this',
+      label: ({ facts }) => facts.ask?.label ?? NAMES.sendToTheAgent,
       shortLabel: () => 'Ask',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
