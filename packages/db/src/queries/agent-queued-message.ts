@@ -9,6 +9,8 @@ export type AgentQueuedMessageRecord = Readonly<{
   attachments: ReadonlyArray<unknown>;
   override: Readonly<Record<string, unknown>> | null;
   createdAt: IsoDateTime;
+  holdReason?: string | null;
+  writtenTexts?: number;
 }>;
 
 type Row = {
@@ -20,17 +22,90 @@ type Row = {
   readonly created_at: number;
 };
 
+type QueueState = Readonly<{
+  holdReason: string | null;
+  writtenTexts: number;
+}>;
+
+type SplitOverride = Readonly<{
+  override: Readonly<Record<string, unknown>> | null;
+  state: QueueState;
+}>;
+
+type ValueParams = Readonly<{
+  value: unknown;
+}>;
+
+type ColumnParams = Readonly<{
+  value: string | null;
+}>;
+
+type MessageParams = Readonly<{
+  message: AgentQueuedMessageRecord;
+}>;
+
+const QUEUE_STATE_KEY = 'queueState';
+
+const NO_STATE: QueueState = { holdReason: null, writtenTexts: 0 };
+
 const isOverride = (value: unknown): value is Readonly<Record<string, unknown>> | null =>
   value === null || isJsonRecord(value);
 
-const toRecord = (row: Row): AgentQueuedMessageRecord => ({
-  id: row.id,
-  agentId: row.agent_id as AgentId,
-  content: row.content,
-  attachments: parseJsonColumn({ value: row.attachments_json, isValid: isJsonArray, fallback: [] }),
-  override: parseJsonColumn({ value: row.override_json, isValid: isOverride, fallback: null }),
-  createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-});
+const queueStateOf = ({ value }: ValueParams): QueueState => {
+  if (!isJsonRecord(value)) {
+    return NO_STATE;
+  }
+  const { holdReason, writtenTexts } = value;
+  return {
+    holdReason: typeof holdReason === 'string' ? holdReason : null,
+    writtenTexts:
+      typeof writtenTexts === 'number' && Number.isInteger(writtenTexts) && writtenTexts > 0
+        ? writtenTexts
+        : 0,
+  };
+};
+
+const splitOverride = ({ value }: ColumnParams): SplitOverride => {
+  const parsed = parseJsonColumn({ value, isValid: isOverride, fallback: null });
+  if (parsed === null || !(QUEUE_STATE_KEY in parsed)) {
+    return { override: parsed, state: NO_STATE };
+  }
+  const { [QUEUE_STATE_KEY]: state, ...rest } = parsed;
+  return {
+    override: Object.keys(rest).length > 0 ? rest : null,
+    state: queueStateOf({ value: state }),
+  };
+};
+
+const overrideColumnOf = ({ message }: MessageParams): string | null => {
+  const holdReason = message.holdReason ?? null;
+  const writtenTexts = message.writtenTexts ?? 0;
+  if (holdReason === null && writtenTexts === 0) {
+    return message.override === null ? null : JSON.stringify(message.override);
+  }
+  return JSON.stringify({
+    ...message.override,
+    [QUEUE_STATE_KEY]: { holdReason, writtenTexts },
+  });
+};
+
+const toRecord = (row: Row): AgentQueuedMessageRecord => {
+  const { override, state } = splitOverride({ value: row.override_json });
+  return {
+    id: row.id,
+    agentId: row.agent_id as AgentId,
+    content: row.content,
+    attachments: parseJsonColumn({
+      value: row.attachments_json,
+      isValid: isJsonArray,
+      fallback: [],
+    }),
+    override,
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    holdReason: state.holdReason,
+    writtenTexts: state.writtenTexts,
+  };
+};
 
 export const listAgentQueuedMessages = async (
   db: Database,
@@ -72,7 +147,7 @@ export const replaceAgentQueuedMessages = async (
           position,
           message.content,
           JSON.stringify(message.attachments),
-          message.override === null ? null : JSON.stringify(message.override),
+          overrideColumnOf({ message }),
           Date.parse(message.createdAt),
         ],
       })),
