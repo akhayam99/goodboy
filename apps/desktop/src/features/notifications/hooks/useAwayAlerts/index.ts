@@ -37,7 +37,7 @@ type OpenTapParams = {
   readonly workspaceId: WorkspaceId;
 };
 
-const openTap = ({ tap, workspaceId }: OpenTapParams): void => {
+const openTap = async ({ tap, workspaceId }: OpenTapParams): Promise<void> => {
   const { sessionId } = tap;
   if (sessionId === null) {
     return;
@@ -48,13 +48,9 @@ const openTap = ({ tap, workspaceId }: OpenTapParams): void => {
     if (isShown || !isMainWindow()) {
       return;
     }
-    openAttentionTarget({ target }).catch((error: unknown) =>
-      reportOnce({ title: "Couldn't open this banner", error }),
-    );
-    return;
   }
-  void focusWindow(currentWindowLabel());
-  openAttentionTarget({ target }).catch((error: unknown) =>
+  await focusWindow(currentWindowLabel()).catch(() => false);
+  await openAttentionTarget({ target }).catch((error: unknown) =>
     reportOnce({ title: "Couldn't open this banner", error }),
   );
 };
@@ -103,7 +99,7 @@ export const useAwayAlerts = (): void => {
     }
     let off: () => void = () => undefined;
     let isLive = true;
-    listenBannerTaps({ onTap: ({ tap }) => openTap({ tap, workspaceId }) })
+    listenBannerTaps({ onTap: ({ tap }) => void openTap({ tap, workspaceId }) })
       .then((unlisten) => {
         if (!isLive) {
           unlisten();
