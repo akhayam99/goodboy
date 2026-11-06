@@ -82,12 +82,12 @@ describe('the u24 prpage frame scenes', () => {
     }
   });
 
-  it('draws Overview, Files and Commits and no Comments or Checks with no pull request', async () => {
+  it('draws Overview, Changes and Commits and no Comments or Checks with no pull request', async () => {
     renderScene({ name: 'branch-nopr' });
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Changes', 'Commits']);
     expect(sectionRow(/^Pull request/).textContent).toBe('Pull request');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
   });
@@ -97,7 +97,7 @@ describe('the u24 prpage frame scenes', () => {
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits']);
     expect(
       within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', {
         name: /^Comments/,
@@ -110,7 +110,7 @@ describe('the u24 prpage frame scenes', () => {
     await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
     expect(chip().getAttribute('aria-label')).toBe('Draft');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: /Mark ready for review/ })).toBeDefined();

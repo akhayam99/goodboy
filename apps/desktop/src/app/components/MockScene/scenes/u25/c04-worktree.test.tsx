@@ -108,7 +108,7 @@ describe('the c04 worktree level scenes', () => {
     expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
     expect(level.queryByRole('status')).toBeNull();
     expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
-    expect(stripNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
+    expect(stripNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
     expect(screen.getByRole('group', { name: 'Status' }).textContent).toContain('6 behind main');
   });
@@ -141,10 +141,10 @@ describe('the c04 worktree level scenes', () => {
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
-  it('c04-worktree-files selects Files and docks the file list on the right of the diff', async () => {
+  it('c04-worktree-files selects Changes and docks the file list on the right of the diff', async () => {
     await mount('c04-worktree-files');
 
-    expect(stripTab({ name: /^Files/ }).getAttribute('aria-selected')).toBe('true');
+    expect(stripTab({ name: /^Changes/ }).getAttribute('aria-selected')).toBe('true');
     expect(within(worktreeLayer()).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     const rail = screen.getByRole('complementary', { name: 'Files' });
     expect(rail.getAttribute('data-file-rail')).toBe('docked');

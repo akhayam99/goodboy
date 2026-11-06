@@ -1226,6 +1226,8 @@ u36-p19-read
 u36-p19-summary
 u36-p19b-disconnected
 u36-p19b-linked
+u36-p19b-questions-answered
+u36-p19b-questions-waiting
 u36-p2-send-held
 u36-p2-send-stopped
 u36-p3-board-facts-failed-dark

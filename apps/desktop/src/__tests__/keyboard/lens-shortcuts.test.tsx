@@ -261,7 +261,10 @@ describe('App lens shortcuts off darwin', () => {
     press({ code: 'KeyQ', key: 'Q', ctrlKey: true, shiftKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+      to: sessionPlace({
+        sessionId: brandId<SessionId>({ value: 'session-1' }),
+        lens: 'questions',
+      }),
     });
   });
 

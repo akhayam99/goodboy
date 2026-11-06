@@ -31,12 +31,12 @@ describe('attentionPlaceLabelOf', () => {
     );
   });
 
-  it('names Files when a fix row lands on the Files tab, Comments otherwise', () => {
+  it('names Changes when a fix row lands on the Changes tab, Comments otherwise', () => {
     const files = branchPlace({ sessionId: SESSION_ID, tab: 'files' });
     const comments = branchPlace({ sessionId: SESSION_ID, tab: 'comments' });
 
-    expect(attentionPlaceLabelOf({ reason: 'fix-needs-you', place: files })).toBe('Open Files');
-    expect(attentionPlaceLabelOf({ reason: 'fix-couldnt-fix', place: files })).toBe('Open Files');
+    expect(attentionPlaceLabelOf({ reason: 'fix-needs-you', place: files })).toBe('Open Changes');
+    expect(attentionPlaceLabelOf({ reason: 'fix-couldnt-fix', place: files })).toBe('Open Changes');
     expect(attentionPlaceLabelOf({ reason: 'fix-needs-you', place: comments })).toBe(
       'Open Comments',
     );

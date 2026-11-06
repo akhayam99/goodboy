@@ -28,9 +28,13 @@
 - **Questions is a list, like Artifacts.** One `ListGrid` (`parts/QuestionsGrid`) with two
   groups, **Needs you** then **Answered**, each counted from two; the grouping is
   `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
-  Needs you and says so in gray). A row reads the question with its answer in gray on a
-  second line (`You:` or `Agent:`), then the asker's role and the age; there is no answer
-  column. A blocking ask is one warning dot in the leading cell. The row
+  Needs you and says so in gray). A row reads the question with a gray second line that
+  names the run: the answer (`You:` or `Agent:`) when there is one, then the asker's role
+  and its agent name (`questionRunLine`; the name is left out when it only repeats the
+  role), and the age; there is no answer or asker column. Answered folds behind its count
+  (Show and Hide on its heading) once nothing waits, and stays open while something does or
+  while the open question is one of its rows. The first Needs you row takes keyboard focus
+  when the page opens, once, and only when nothing else has focus and no question is open. A blocking ask is one warning dot in the leading cell. The row
   opens the question on its address: Questions with that question open, the `question`
   target of the session address (`questionPlace`, one function for every door: a run row's
   Answer, a Needs you row, the run menu, a search hit, an Ask chip, the board, the
@@ -219,7 +223,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
-  lands on the first note (`noteLandingPlace`): the Files section at its card,
+  lands on the first note (`noteLandingPlace`): the Changes section at its card,
   scrolled to it, when the branch has no pull request, and its thread in
   Comments when it has one. No drawer opens. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
@@ -260,7 +264,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px.
   A 16px slot before the size carries the change marks. Changed means what the
-  Files tab means: against the base branch, with uncommitted and untracked
+  Changes tab means: against the base branch, with uncommitted and untracked
   work (`worktree_changed_files`, whose `entries` give each path a status:
   added, modified, deleted or renamed, untracked files count as added). A
   changed file shows the diff's letter (`M`, `A`, `R`; `D` in the Changed
@@ -278,7 +282,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   deleted files as faint struck rows that do not open; with nothing left it
   says "No changes against main". A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
-  presentation with the head's Open page (tooltip Open in Changes) that opens the Files tab on the file. The folders you opened
+  presentation with the head's Open page (tooltip Open in Changes) that opens the Changes tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
   keyed by session, mount path and folder) and open again when you come back,
   and a file opened from elsewhere opens the folders above it. The file drawer

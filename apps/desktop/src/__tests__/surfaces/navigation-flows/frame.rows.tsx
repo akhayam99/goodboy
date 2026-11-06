@@ -148,7 +148,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       await branchTab('pr')(ctx);
       await waitFor(() => expectOnGrid({ page: 'branch', isStudio: false }), WAIT);
-      for (const name of [/^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+      for (const name of [/^Comments/, /^Changes/, /^Commits/, /^Checks/]) {
         await click(getSection(name));
         await waitFor(() => expectOnGrid({ page: 'branch', isStudio: false }), WAIT);
       }

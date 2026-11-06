@@ -18,7 +18,7 @@ const LENS_LABELS: Readonly<Record<string, string>> = {
   terminal: 'Terminal',
   context: 'Context',
   pr: NAMES.pullRequest,
-  diff: NAMES.files,
+  diff: NAMES.changes,
   explore: 'Explore',
   linear: 'Linear',
   gitlab: 'GitLab',

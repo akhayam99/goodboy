@@ -179,7 +179,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
   {
     name: 'worktree level: the Files entry opens the branch diff',
     covers: ['lens:branch'],
-    open: () => openWorktreeEntry(/^Files/),
+    open: () => openWorktreeEntry(/^Changes/),
     lands: branchTab('files'),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({

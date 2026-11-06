@@ -45,7 +45,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   review: 'On the Comments tab',
   commits: 'On the Commits tab',
   pullRequest: 'On the Pull request tab',
-  diff: 'On the Files tab',
+  diff: 'On the Changes tab',
   terminal: 'In the terminal',
   composer: 'Where a chat composer is open',
   ask: 'In the Ask panel',
@@ -536,7 +536,7 @@ export const SHORTCUTS = {
   'lens.files': {
     combo: 'cmd+alt+KeyF',
     offMacCombo: 'ctrl+shift+alt+KeyF',
-    label: NAMES.files,
+    label: NAMES.changes,
     plane: 'lens',
     group: 'views',
     scope: 'codeSession',

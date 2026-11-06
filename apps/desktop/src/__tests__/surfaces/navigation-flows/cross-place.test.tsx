@@ -852,9 +852,11 @@ describe('moving across every place keeps one frame', () => {
     }
 
     await openPage('Branch');
-    for (const tab of ['Files', 'Comments'] as const) {
+    for (const tab of ['Changes', 'Comments'] as const) {
       await click(getSection(new RegExp(`^${tab}`)));
-      expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
+      expect(useAppStore.getState().branchTab[sessionId]).toBe(
+        tab === 'Changes' ? 'files' : 'comments',
+      );
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
     }
 

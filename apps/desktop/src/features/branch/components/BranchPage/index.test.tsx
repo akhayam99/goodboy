@@ -268,13 +268,13 @@ const aNote = (): DiffComment => ({
 });
 
 describe('Branch page header and sections', () => {
-  it('names the pull request and lists Overview, Comments, Files, Commits and Checks in the rail', async () => {
+  it('names the pull request and lists Overview, Comments, Changes, Commits and Checks in the rail', async () => {
     await mount();
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       useAppStore.getState().sessionGithub[SESSION.id]?.pr?.title,
     );
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
   });
 
@@ -286,7 +286,7 @@ describe('Branch page header and sections', () => {
     expect(tabs.map((tab) => (tab.textContent ?? '').replace(/[^A-Za-z ]/g, '').trim())).toEqual([
       'Pull request',
       'Comments',
-      'Files',
+      'Changes',
       'Commits',
       'Checks',
     ]);
@@ -295,7 +295,7 @@ describe('Branch page header and sections', () => {
         .getByRole('tab', { name: /^Comments/ })
         .getAttribute('aria-selected'),
     ).toBe('true');
-    for (const name of [/^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+    for (const name of [/^Comments/, /^Changes/, /^Commits/, /^Checks/]) {
       const count = (text: string | null): string => (text ?? '').replace(/^[A-Za-z ]+/, '').trim();
       expect(count(within(strip).getByRole('tab', { name }).textContent)).toBe(
         count(railRow(name).textContent),
@@ -328,12 +328,12 @@ describe('Branch page header and sections', () => {
 });
 
 describe('Branch page sections by state', () => {
-  it('keeps Overview, Files and Commits with no pull request and no comment, and no Checks', async () => {
+  it('keeps Overview, Changes and Commits with no pull request and no comment, and no Checks', async () => {
     await mount();
     dropRequest();
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Changes', 'Commits']);
   });
 
   it('adds Comments to a branch with no pull request once one local note exists', async () => {
@@ -344,7 +344,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits']);
     expect(railRow(/^Comments/).textContent).toBe('Comments');
   });
 
@@ -355,11 +355,11 @@ describe('Branch page sections by state', () => {
       patchRequest({ state, isDraft: state === 'draft' });
       await settle();
 
-      expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
+      expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
     },
   );
 
-  it('falls back to Files when the section in the address does not exist in the state', async () => {
+  it('falls back to Changes when the section in the address does not exist in the state', async () => {
     await mount();
     dropRequest();
     act(() => {
@@ -367,7 +367,7 @@ describe('Branch page sections by state', () => {
     });
     await settle();
 
-    expect(railRow(/^Files/).getAttribute('aria-selected')).toBe('true');
+    expect(railRow(/^Changes/).getAttribute('aria-selected')).toBe('true');
   });
 
   it('puts no primary in the header of a merged pull request and says its state once, under the title', async () => {
@@ -450,10 +450,10 @@ const headerColumn = (): string | null =>
     ?.getAttribute('data-width') ?? null;
 
 describe('Branch page column', () => {
-  it('keeps the header and the body of Comments, Files and Commits on the column at every section', async () => {
+  it('keeps the header and the body of Comments, Changes and Commits on the column at every section', async () => {
     await mount();
 
-    for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+    for (const name of [/^Comments/, /^Changes/, /^Commits/]) {
       await visit(name);
 
       expect(headerColumn()).toBe('column');
@@ -473,7 +473,7 @@ describe('Branch page column', () => {
     );
     await settle();
 
-    for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+    for (const name of [/^Comments/, /^Changes/, /^Commits/]) {
       await visit(name);
 
       expect(headerColumn()).toBe('column');
@@ -490,10 +490,10 @@ describe('Branch page column', () => {
     for (const name of [
       /^Pull request/,
       /^Comments/,
-      /^Files/,
+      /^Changes/,
       /^Commits/,
       /^Checks/,
-      /^Files/,
+      /^Changes/,
       /^Pull request/,
     ]) {
       await visit(name);
@@ -531,7 +531,7 @@ describe('Branch page counts', () => {
     );
     await settle();
 
-    for (const name of [/^Files/, /^Commits/, /^Checks/]) {
+    for (const name of [/^Changes/, /^Commits/, /^Checks/]) {
       const row = railRow(name);
       expect(row.querySelector('[data-entry-slot]')).toBeNull();
       expect(row.textContent).not.toMatch(/[0-]/);
@@ -549,7 +549,7 @@ describe('Branch page counts', () => {
     );
     await settle();
 
-    expect(countOf(/^Files/)).toBe('');
+    expect(countOf(/^Changes/)).toBe('');
     expect(countOf(/^Commits/)).toBe('');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
@@ -576,7 +576,7 @@ describe('Branch page counts before any visit', () => {
     expect(loadHistoryDraft).toHaveBeenCalledTimes(1);
     expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
     expect(railRow(/^Comments/).getAttribute('aria-selected')).toBe('true');
-    expect(countOf(/^Files/)).toBe('');
+    expect(countOf(/^Changes/)).toBe('');
     expect(countOf(/^Commits/)).toBe('');
     expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
   });
@@ -698,7 +698,7 @@ describe('Branch page Comments', () => {
   });
 });
 
-describe('Branch page Checks and Files', () => {
+describe('Branch page Checks and Changes', () => {
   it('lists the checks of the pull request on its own section', async () => {
     await mount();
 
@@ -716,16 +716,16 @@ describe('Branch page Checks and Files', () => {
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
 
-    await visit(/^Files/);
+    await visit(/^Changes/);
 
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
-    expect(railRow(/^Files/).getAttribute('aria-selected')).toBe('true');
+    expect(railRow(/^Changes/).getAttribute('aria-selected')).toBe('true');
   });
 
   it('explains there is no diff when the session has no worktree', async () => {
     await mount();
 
-    await visit(/^Files/);
+    await visit(/^Changes/);
 
     expect(screen.getByText('No worktree for this session')).toBeDefined();
   });
@@ -747,21 +747,21 @@ describe('Branch page entries in the sidebar', () => {
   const fileRail = (): HTMLElement | null =>
     document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
 
-  it('keeps Files a plain entry with no count and puts the file list on the right of the page', async () => {
+  it('keeps Changes a plain entry with no count and puts the file list on the right of the page', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedShownPullRequest();
     await mountFiles();
     expect(fileRail()).toBeNull();
-    expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
-    expect(railRow(/^Files/).textContent).toBe('Files');
+    expect(railRow(/^Changes/).hasAttribute('aria-expanded')).toBe(false);
+    expect(railRow(/^Changes/).textContent).toBe('Changes');
 
-    await visit(/^Files/);
+    await visit(/^Changes/);
     const rail = fileRail();
     if (rail === null) {
-      throw new Error('the Files entry opens no file rail');
+      throw new Error('the Changes entry opens no file rail');
     }
-    expect(railRow(/^Files/).getAttribute('aria-selected')).toBe('true');
-    expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);
+    expect(railRow(/^Changes/).getAttribute('aria-selected')).toBe('true');
+    expect(railRow(/^Changes/).hasAttribute('aria-expanded')).toBe(false);
     expect(railOf().contains(rail)).toBe(false);
     expect(document.querySelector('[data-branch-pane]')?.lastElementChild?.contains(rail)).toBe(
       true,

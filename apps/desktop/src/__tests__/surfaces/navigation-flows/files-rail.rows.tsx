@@ -73,7 +73,7 @@ const expectCursorOnThirdRow = (): void => {
 };
 
 const visit = async ({ ctx, tab }: { readonly ctx: Ctx; readonly tab: 'comments' | 'files' }) => {
-  await click(await findSection(tab === 'files' ? /^Files/ : /^Comments/));
+  await click(await findSection(tab === 'files' ? /^Changes/ : /^Comments/));
   await branchTab(tab)(ctx);
 };
 

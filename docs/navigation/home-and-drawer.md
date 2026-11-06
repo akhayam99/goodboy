@@ -356,65 +356,67 @@ sends with `sendTurn` to that agent and keeps its draft in `agentDraft`. A
 resolver's transcript always opens here, on the Comments tab of its Branch
 (see The resolver stays on its comment).
 
-The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
-`summary`, in that order, and `view` is `current` or `versions` (the old
-versions of that slot, inside the same drawer, with Restore; Escape and the
-header's **Back to current** leave the view before the drawer). The **Context** tool in the session tools toggles it
-on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
-Decisions and Summary. The first open shows Summary, later ones the last tab
-used in that session. The chip carries a quiet dot, never a count, when the
-decisions ledger changed since the drawer was last seen
+The `context` kind carries `{ section, view }`: `section` is `goal`, `decisions`,
+`summary` or `explanations` and says which card the pane scrolls to, and `view` is
+`current` or `versions` (the old versions of that slot, inside the same drawer,
+with Restore; Escape and the header's **Back to current** leave the view before the
+drawer). The **Context** tool in the session tools toggles it on any page of the
+session, and so does ⌘⌥C, the only chord left for it. The drawer opens on Goal,
+every time, unless the caller names a section (the Activity row of a decision
+change opens Decisions). The chip carries a quiet dot, never a count, while the
+decisions ledger holds a change you have not marked as read
 (`sessions.context_seen_at`, compared with the ledger rows in
 `decisionChangesSince`: added, removed and reworded rows, leaving out what you
-did yourself and what came and went unseen), and opens on Decisions then. The
-drawer marks it seen when it opens, on any tab, and again when it closes. A
+did yourself and what came and went unseen). Opening or closing the drawer does
+not mark anything as read: only **Mark as read** does (`markContextRead`). A
 session never looked at starts its baseline the first time it loads, so the
 rows it already had never read as new. The chip shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's **Context updates** row. The old addresses `s/{session}/context`
-and `context/goal`, `context/decisions`, `context/summary` resolve in
-`canonicalLocation` to the overview with this drawer open on the matching tab.
+and `context/goal`, `context/decisions`, `context/summary`, and a saved drawer that
+carries `tab` instead of `section` (`learned` reads `explanations`), are mapped by
+`withoutRemovedPages` to the overview with this drawer open on the matching section;
+the four lens kinds `context`, `goal`, `decisions` and `last_output_summary` no longer exist.
 The drawer header has one action, **Copy context**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
 The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
-**Context updates** (`ContextUpdates`, a `Collapsible`) sits above the tabs:
-closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
-open, it lists the last round (`summarizerRounds`: when, how many turns or a
-full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers, Models, scrolled to
-Step summaries) and **Update now**. Update now queues a consolidation pass
-through `requestContextUpdate`, behind any pass in flight and never beside it;
-`summarizerPending` holds the turns waiting and whether a requested update is
-queued, and the row reads only that queue state, as the pane's first gray line
-(no label). The pane is one scroll with Goal, Decisions, Summary and Learned as
-sections (`ContextSection`, no tabs); opening it on a section scrolls there. The
-count lives on the Active group and the change signal on its own group.
+The pane is one scroll with Goal, Decisions, Summary and Explanations as
+sections (`ContextSection`, no tabs); opening it on a section scrolls there. Each
+card has one `⋯` menu, **Edit**, **Versions** and **Who reads this**
+(`SlotSourceActions`), and no eye or second button. **Context updates**
+(`ContextUpdates`, a `Collapsible`) sits above the cards and says `Updated 2 min ago`,
+`Queued`, `Updating…` or `Couldn't update`; open, it lists the last round
+(`summarizerRounds`: when, how many turns or a full pass, model and effort, tokens
+and cost, what changed as a comma list of links to the cards, every value on the same
+column), **Change model** (Settings, Providers, Models, scrolled to Step summaries)
+and **Update now**. Update now queues a consolidation pass through
+`requestContextUpdate`, behind any pass in flight and never beside it;
+`summarizerPending` holds the turns waiting and whether a requested update is queued.
+Summary drops its State block: the glance line on the Overview says it (`summaryStateOf`).
 
-Every section reads as labelled blocks (`ContextBlock`: a flat group with an
+Every card reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
 folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
 body into items, one per top-level bullet with its sub-bullets, or one per
-sentence for prose. Summary shows State, Next, Open questions (the session's
-open questions, read only) and Learned, then any section the summarizer did not
-name. Goal is one block with Edit and Versions in its header. Decisions shows
-the changes block, then Active, then the folded Replaced and removed group,
-split into Removed by you and Replaced with a search across both.
+sentence for prose. Summary shows Next and Learned, then any section the
+summarizer did not name; State and Open questions are left out because the glance
+line and Needs you already say them, and **Edit** on the card still shows the whole
+document. Goal is one block with the card menu in its header.
 
-The Decisions tab reads the decisions ledger ([turns.md](../turns.md#the-decisions-ledger)).
-When something changed since the previous look (`sessionDecisionsBaseline`,
-the `context_seen_at` captured when the drawer opened), it starts with
-**Changed since you last looked**: one line per row, `+` added, `−` removed
-(`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
-the row and highlights it. The label never wraps: when label, count and action do not fit
-the drawer width, **Mark as read** drops to its own right-aligned line (`ContextBlock`). **Mark as read** in its header fades the block, moves
-the marker to the moment of the click (`markContextRead`, saved before the state changes) and clears the
-tab dot; a later change brings the block back. Then **Active**, with its count: active decisions
-newest first, each with its number, at most two lines of
+The Decisions card reads the decisions ledger ([turns.md](../turns.md#the-decisions-ledger))
+as one list. A row that changed since you last read (`sessionDecisionsBaseline`, the
+`context_seen_at` captured when the drawer opened) sorts first and carries its own
+mark: `Added`, `Replaced by 7`, `Withdrawn` or `Reworded` (`decisionChangeLabelOf`),
+and a replaced or withdrawn row stays struck through until you read it. **Mark as
+read** in the card header (`MarkContextRead`) moves the marker to the moment of the
+click (`markContextRead`, saved before the state changes, so a failure keeps the marks
+and reports the error) and clears the marks and the tool dot; a later change brings
+them back. Active decisions sort newest first, each with its number, at most two lines of
 text, its why as one muted line under the text when the row has one (clamped
 to two lines, **Show more** when longer; older rows show nothing), and who
 settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
-`replaces 5`). An added row also carries `New` until the next open. A row the summarizer reworded says `Reworded by Goodboy` with
+`replaces 5`). A row the summarizer reworded says `Goodboy` and its age with
 **Show previous**. Clicking a row opens it (**Show more** on the text when it
 was clamped, same toggle), revealing Edit (a reword of yours) and Remove.
 Remove withdraws at once, with no confirm, so agents see it retired, but the
@@ -501,7 +503,7 @@ right branch.
 page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
-the Open page arrow, which opens the Files tab of the Branch page on that mount with the file in
+the Open page arrow, which opens the Changes tab of the Branch page on that mount with the file in
 focus. A changed file in the Explore drawer offers the same arrow, and its `⋯` menu no longer
 holds `Open in Files`.
 `identifier-peek` (payload `{ worktreePath, word, selected }`, reader width) is

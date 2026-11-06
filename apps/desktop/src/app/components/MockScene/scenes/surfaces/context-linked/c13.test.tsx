@@ -56,11 +56,25 @@ describe.each(['light', 'dark'])('u36 Context and linked work in %s', (theme) =>
         }
         return;
       }
+      if (name === 'u36-p19b-questions-waiting') {
+        const list = await screen.findByRole('list', { name: 'Questions' });
+        const first = within(list).getAllByRole('button')[0];
+        expect(document.activeElement).toBe(first);
+        expect(first?.getAttribute('aria-label')).toContain(' · ');
+        return;
+      }
+      if (name === 'u36-p19b-questions-answered') {
+        const list = await screen.findByRole('list', { name: 'Questions' });
+        expect(within(list).queryAllByRole('button', { name: /^(Hide|Show)$/ })).toHaveLength(1);
+        fireEvent.click(within(list).getByRole('button', { name: 'Show' }));
+        expect(within(list).getAllByRole('button').length).toBeGreaterThan(1);
+        return;
+      }
       if (name === 'u36-p19b-disconnected') {
         await screen.findByText(
           'Connection lost. Open the record in its provider or reconnect in Settings.',
         );
-        screen.getByRole('button', { name: 'More actions for HAR-142' });
+        screen.getByRole('button', { name: 'More actions for HBL-142' });
         screen.getByRole('button', { name: 'Back to overview' });
         return;
       }

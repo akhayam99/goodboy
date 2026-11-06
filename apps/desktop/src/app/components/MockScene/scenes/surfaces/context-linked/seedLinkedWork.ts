@@ -13,10 +13,10 @@ export const seedLinkedWork = ({ isDisconnected = false }: Params) => {
     {
       sessionId: SESSION_ID,
       provider: 'linear',
-      externalId: 'HAR-142',
-      identifier: 'HAR-142',
+      externalId: 'HBL-142',
+      identifier: 'HBL-142',
       title: 'Keep webhook retries idempotent',
-      url: 'https://linear.app/harborline/issue/HAR-142',
+      url: 'https://linear.app/harborline/issue/HBL-142',
       createdAt,
     },
     {

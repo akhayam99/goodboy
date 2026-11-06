@@ -11,7 +11,7 @@ export const LENS_LABEL: Record<LensKind, string> = {
   plans: NAMES.artifacts,
   pr: NAMES.pullRequest,
   branch: NAMES.branch,
-  files: NAMES.files,
+  files: NAMES.changes,
   linear: 'Linear',
   gitlab_issues: 'GitLab',
   jira_issues: 'Jira',

@@ -935,7 +935,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the branch lists and in the Branch header alike
-  (`isMountRequestMerged`). The Files tab opened without a branch lands on the active mount.
+  (`isMountRequestMerged`). The Changes tab opened without a branch lands on the active mount.
 - **Files can reveal unchanged context.** Each hidden range offers the next 20
   lines beside either hunk, or all of its lines. Small ranges use one action.
   The file's final range stays uncounted until its sides load. Expansion stays

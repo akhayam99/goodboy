@@ -270,7 +270,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.diff',
-    label: NAMES.files,
+    label: NAMES.changes,
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',

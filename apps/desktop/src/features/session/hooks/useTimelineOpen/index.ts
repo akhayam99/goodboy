@@ -19,11 +19,11 @@ type EventTarget = {
 };
 
 const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
-  worktree_created: { lens: 'files', label: 'Open files' },
-  branch_created: { lens: 'files', label: 'Open files' },
-  branch_switched: { lens: 'files', label: 'Open files' },
+  worktree_created: { lens: 'files', label: 'Open changes' },
+  branch_created: { lens: 'files', label: 'Open changes' },
+  branch_switched: { lens: 'files', label: 'Open changes' },
   branch_deleted: null,
-  branch_restored: { lens: 'files', label: 'Open files' },
+  branch_restored: { lens: 'files', label: 'Open changes' },
   issue_linked: { lens: null, label: 'Open overview' },
   issue_unlinked: { lens: null, label: 'Re-link' },
   pr_created: { lens: 'pr', label: 'Open PR' },
@@ -38,7 +38,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   workflow_closed: { lens: 'workflows', label: 'Open runs' },
   workflow_deleted: { lens: 'workflows', label: 'Open runs' },
   decisions_changed: { lens: null, label: 'Open decisions' },
-  project_materialized: { lens: 'files', label: 'Open files' },
+  project_materialized: { lens: 'files', label: 'Open changes' },
   project_materialization_refused: { lens: null, label: 'Open overview' },
   project_materialization_proposed: { lens: null, label: 'Open overview' },
   project_materialization_dismissed: null,
@@ -47,7 +47,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   rebase_requested: { lens: 'workflows', label: 'Open runs' },
   session_archived: null,
   session_restored: null,
-  write_destination_changed: { lens: 'files', label: 'Open files' },
+  write_destination_changed: { lens: 'files', label: 'Open changes' },
   question_dismissed: { lens: 'questions', label: 'Open questions' },
   question_restored: { lens: 'questions', label: 'Open questions' },
   history_rewritten: { lens: 'branch', label: 'Open commits' },
@@ -187,7 +187,7 @@ export const useTimelineOpen = ({
       }
       if (entry.kind === 'branch') {
         return {
-          label: 'Open files',
+          label: 'Open changes',
           open: () => store.navigate({ to: lensPlace({ state: store, sessionId, lens: 'files' }) }),
         };
       }
