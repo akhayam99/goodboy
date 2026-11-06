@@ -16,8 +16,10 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { RunPlanResult } from '../../../store/slices/plans/types';
+import type { BranchPushResult } from '../../../store/slices/github/branchPushResult';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
-import { brandId, type PrSeriesId } from '@goodboy/types';
+import { brandId, type PrSeriesId, type WorkspaceId } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
 import { aTrackerMove } from '../../../store/slices/tracker-moves/testing/aTrackerMove';
 
 const { storeState, spies, fixable } = vi.hoisted(() => {
@@ -39,13 +41,9 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   );
   const navigate = vi.fn();
   const rebaseRun = vi.fn(async () => undefined);
-  const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
-    kind: 'started',
-    agentId: 'agent-implementer' as AgentId,
-    scope: 'workflow',
-  }));
+  const runPlan = vi.fn<() => Promise<RunPlanResult>>();
   const showToast = vi.fn();
-  const pushBranch = vi.fn(async () => ({ ok: true as const }));
+  const pushBranch = vi.fn(async (): Promise<BranchPushResult> => ({ ok: true }));
   const openRewriteHistory = vi.fn();
   const createPrForSession = vi.fn(async () => undefined);
   const markPrReady = vi.fn(async () => undefined);
@@ -70,8 +68,18 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
   const openMountTerminal = vi.fn();
   const readWorktreeStatus = vi.fn(async (_params: unknown) => null);
   const phaseRuns: Record<string, ReadonlyArray<unknown>> = {};
+  const fixableIds: ReadonlyArray<string> = [];
+  const sessionProjectMounts: Record<string, ReadonlyArray<unknown>> = {};
+  const mountGithub: Record<string, unknown> = {};
+  const mountRequests: Record<string, unknown> = {};
+  const projects: ReadonlyArray<unknown> = [];
+  const artifactComments: Record<string, ReadonlyArray<unknown>> = {};
+  const currentSessionId: string = 'session-elsewhere';
+  const activeLens: Record<string, string> = {};
+  const branchTab: Record<string, string> = {};
+  const branchThreadId: Record<string, string | null> = {};
   return {
-    fixable: { ids: [] as ReadonlyArray<string> },
+    fixable: { ids: fixableIds },
     spies: {
       requestReviewLaunch,
       openMountTerminal,
@@ -108,13 +116,13 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       })),
     },
     storeState: {
-      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionProjectMounts,
       rebaseAllRuns: noRebaseAllRuns,
       sessionPhaseRuns: phaseRuns,
-      mountGithub: {} as Record<string, unknown>,
-      mountRequests: {} as Record<string, unknown>,
-      projects: [] as ReadonlyArray<unknown>,
-      artifactComments: {} as Record<string, ReadonlyArray<unknown>>,
+      mountGithub,
+      mountRequests,
+      projects,
+      artifactComments,
       ensureProjectMounted,
       recordSessionEvent,
       setSessionActiveProject,
@@ -139,10 +147,10 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       openMountTerminal,
       requestOpenQuestionScroll: vi.fn(),
       requestReviewLaunch,
-      currentSessionId: 'session-elsewhere' as string,
-      activeLens: {} as Record<string, string>,
-      branchTab: {} as Record<string, string>,
-      branchThreadId: {} as Record<string, string | null>,
+      currentSessionId,
+      activeLens,
+      branchTab,
+      branchThreadId,
     },
   };
 });
@@ -193,25 +201,35 @@ import { HISTORY_FOCUS_BASE_EVENT, diffEventName } from '../../actions/kinds/dif
 import { everySuggestionKind } from './testing/everySuggestionKind';
 import { useSuggestionActions } from './index';
 
-const SESSION_ID = 'session-1' as SessionId;
-const RUN_ID = 'run-1' as WorkflowRunId;
-const STEP_ID = 'step-1' as StepId;
-const WEB_ID = 'project-web' as ProjectId;
-const WEB_MOUNT_ID = 'mount-web' as MountId;
-const WEB_SECOND_MOUNT_ID = 'mount-web-second' as MountId;
-const AGENT_ID = 'agent-1' as AgentId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const RUN_ID = brandId<WorkflowRunId>({ value: 'run-1' });
+const STEP_ID = brandId<StepId>({ value: 'step-1' });
+const WEB_ID = brandId<ProjectId>({ value: 'project-web' });
+const WEB_MOUNT_ID = brandId<MountId>({ value: 'mount-web' });
+const WEB_SECOND_MOUNT_ID = brandId<MountId>({ value: 'mount-web-second' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
 
-const SESSION = { id: SESSION_ID, workspaceId: 'workspace-1', goal: 'Ship the thing' } as Session;
+const SESSION = aSession({
+  id: SESSION_ID,
+  workspaceId: brandId<WorkspaceId>({ value: 'workspace-1' }),
+  goal: 'Ship the thing',
+});
 
-const PENDING_AGENT = {
+const PENDING_AGENT = anAgent({
   id: AGENT_ID,
   sessionId: SESSION_ID,
   workflowRunId: RUN_ID,
   stepId: STEP_ID,
   status: 'pending',
-} as unknown as Agent;
+});
 
 const onSelectQuestions = vi.fn();
+
+spies.runPlan.mockImplementation(async () => ({
+  kind: 'started',
+  agentId: brandId<AgentId>({ value: 'agent-implementer' }),
+  scope: 'workflow',
+}));
 
 const actionsFor = ({ suggestion }: { readonly suggestion: SessionSuggestion }) => {
   const { result } = renderHook(() =>
@@ -528,7 +546,7 @@ describe('useSuggestionActions', () => {
         ...suggestionBase,
         id: 'plan-ready:plan-1',
         kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
+        payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
       },
     });
 
@@ -550,7 +568,7 @@ describe('useSuggestionActions', () => {
       ...suggestionBase,
       id: 'plan-ready:plan-1',
       kind: 'plan-ready',
-      payload: { planId: 'plan-1' as PlanId },
+      payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
     };
     const clean = actionsFor({ suggestion }).primary;
     storeState.artifactComments = {
@@ -573,14 +591,14 @@ describe('useSuggestionActions', () => {
     spies.runPlan.mockResolvedValueOnce({
       kind: 'refused',
       reason: 'The next step (Review) does not run plans',
-      workflowRunId: 'run-1' as WorkflowRunId,
+      workflowRunId: brandId<WorkflowRunId>({ value: 'run-1' }),
     });
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
         id: 'plan-ready:plan-1',
         kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
+        payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
       },
     });
 
@@ -605,7 +623,7 @@ describe('useSuggestionActions', () => {
         ...suggestionBase,
         id: 'plan-ready:plan-1',
         kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
+        payload: { planId: brandId<PlanId>({ value: 'plan-1' }) },
       },
     });
 
@@ -624,7 +642,10 @@ describe('useSuggestionActions', () => {
         kind: 'answer-questions',
         payload: {
           count: 2,
-          firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+          firstQuestion: {
+            id: brandId<OpenQuestionId>({ value: 'question-1' }),
+            createdByAgentId: AGENT_ID,
+          },
           rootAgentId: null,
         },
       },
@@ -644,7 +665,10 @@ describe('useSuggestionActions', () => {
         kind: 'answer-questions',
         payload: {
           count: 1,
-          firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+          firstQuestion: {
+            id: brandId<OpenQuestionId>({ value: 'question-1' }),
+            createdByAgentId: AGENT_ID,
+          },
           rootAgentId: null,
         },
       },
@@ -673,7 +697,7 @@ describe('useSuggestionActions', () => {
           projectName: 'web',
           reason: 'needs the router',
           agentId: AGENT_ID,
-          eventId: 'event-1' as SessionEventId,
+          eventId: brandId<SessionEventId>({ value: 'event-1' }),
         },
       },
     });
@@ -699,7 +723,7 @@ describe('useSuggestionActions', () => {
           projectName: 'web',
           reason: 'needs the router',
           agentId: AGENT_ID,
-          eventId: 'event-1' as SessionEventId,
+          eventId: brandId<SessionEventId>({ value: 'event-1' }),
         },
       },
     });
@@ -754,8 +778,12 @@ describe('useSuggestionActions', () => {
     actions.primary?.run();
 
     expect(listener).toHaveBeenCalledTimes(1);
-    const event = listener.mock.calls[0]?.[0] as CustomEvent;
-    expect(event.detail).toEqual({ scope: 'providers', provider: 'anthropic', action: 'login' });
+    const [event] = listener.mock.calls[0] ?? [];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
+      scope: 'providers',
+      provider: 'anthropic',
+      action: 'login',
+    });
     window.removeEventListener('goodboy:open-settings', listener);
   });
 
@@ -1017,7 +1045,10 @@ describe('useSuggestionActions', () => {
         id: 'continue-with-workflow:agent-1',
         kind: 'continue-with-workflow',
         band: 3,
-        payload: { workflowId: 'workflow-1' as WorkflowId, workflowName: 'Plan and ship' },
+        payload: {
+          workflowId: brandId<WorkflowId>({ value: 'workflow-1' }),
+          workflowName: 'Plan and ship',
+        },
       },
     });
 
@@ -1090,7 +1121,7 @@ describe('every suggestion kind', () => {
       ok: false,
       error: 'rejected',
       reason: 'failed',
-    } as never);
+    });
     const actions = actionsFor({ suggestion: EVERY_KIND['push-branch'] });
 
     await expect(actions.primary?.run()).rejects.toThrow('rejected');
