@@ -1,9 +1,14 @@
-import { cn, TruncatedText } from '@goodboy/ui';
+import { ChevronRight } from 'lucide-react';
+import { cn, ICON_SIZE, TruncatedText } from '@goodboy/ui';
+import type { AgentId } from '@goodboy/types';
 import type { ArtifactScoutRow, ArtifactScoutState } from '../../artifactScoutRoster';
+
+type OpenParams = Readonly<{ agentId: AgentId }>;
 
 type Props = {
   readonly rows: ReadonlyArray<ArtifactScoutRow>;
   readonly emptyLine: string;
+  readonly onOpen?: (params: OpenParams) => void;
 };
 
 const DOT_CLASS: Record<ArtifactScoutState, string> = {
@@ -56,7 +61,9 @@ const whereLine = ({ row }: Readonly<{ row: ArtifactScoutRow }>): string | null 
   return row.branch === null ? leaf : `${leaf} on ${row.branch}`;
 };
 
-export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
+const LINE_CLASS = 'flex min-w-0 items-baseline gap-2';
+
+export const ArtifactScoutList = ({ rows, emptyLine, onOpen }: Props) => {
   if (rows.length === 0) {
     return (
       <p data-testid="artifact-scouts-empty" className="text-meta text-muted-foreground">
@@ -69,30 +76,46 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
     <ul data-testid="artifact-scouts" className="flex min-w-0 flex-col gap-1">
       {rows.map((row) => {
         const where = whereLine({ row });
+        const agentId = row.agentId;
+        const summary = (
+          <>
+            <span
+              aria-hidden
+              className={cn('mt-1 size-1.5 shrink-0 rounded-full', DOT_CLASS[row.state])}
+            />
+            <span className="shrink-0 font-medium text-foreground">
+              {sentenceCase({ text: row.name })}
+            </span>
+            {where === null ? null : (
+              <TruncatedText
+                tooltip={row.root === null ? where : row.root}
+                className="min-w-0 shrink truncate font-mono"
+              >
+                {where}
+              </TruncatedText>
+            )}
+            <span className="ml-auto shrink-0 tabular-nums">{stateLine({ row })}</span>
+          </>
+        );
         return (
           <li
             key={row.key}
             data-testid="artifact-scout-row"
             className="flex min-w-0 flex-col gap-0.5 text-meta text-muted-foreground"
           >
-            <span className="flex min-w-0 items-baseline gap-2">
-              <span
-                aria-hidden
-                className={cn('mt-1 size-1.5 shrink-0 rounded-full', DOT_CLASS[row.state])}
-              />
-              <span className="shrink-0 font-medium text-foreground">
-                {sentenceCase({ text: row.name })}
-              </span>
-              {where === null ? null : (
-                <TruncatedText
-                  tooltip={row.root === null ? where : row.root}
-                  className="min-w-0 shrink truncate font-mono"
-                >
-                  {where}
-                </TruncatedText>
-              )}
-              <span className="ml-auto shrink-0 tabular-nums">{stateLine({ row })}</span>
-            </span>
+            {onOpen === undefined || agentId === null ? (
+              <span className={LINE_CLASS}>{summary}</span>
+            ) : (
+              <button
+                type="button"
+                aria-label={`Open ${sentenceCase({ text: row.name })}`}
+                className={cn(LINE_CLASS, 'rounded-sm text-left hover:text-foreground')}
+                onClick={() => onOpen({ agentId })}
+              >
+                {summary}
+                <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0 self-center" />
+              </button>
+            )}
             {row.reason === null ? null : (
               <TruncatedText data-testid="artifact-scout-reason" className="min-w-0 truncate pl-4">
                 {sentenceCase({ text: row.reason })}

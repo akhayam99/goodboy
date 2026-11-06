@@ -641,6 +641,27 @@ describe('ArtifactStudio generating run', () => {
     });
   });
 
+  it('says in one sentence that it is still writing, with no placeholder bars', () => {
+    renderStudio();
+    openRow(/^Wireframe High fidelity,/);
+
+    expect(screen.getByTestId('artifact-writing').textContent).toBe(
+      'Still writing. It opens here when the agent is done.',
+    );
+    expect(document.querySelector('[aria-hidden][class*="animate"]')).toBeNull();
+  });
+
+  it('follows the agent writing it from a visible Follow button', () => {
+    renderStudio();
+    openRow(/^Wireframe High fidelity,/);
+
+    fireEvent.click(screen.getByTestId('artifact-follow'));
+
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-wireframe-live' },
+    });
+  });
+
   it('follows the run to the artifact it produced', () => {
     const { rerender } = renderStudio();
     openRow(/^Wireframe High fidelity,/);

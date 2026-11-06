@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { AgentId } from '@goodboy/types';
 import { ArtifactScoutList } from './ArtifactScoutList';
 import type { ArtifactScoutRow } from '../../artifactScoutRoster';
 
@@ -18,6 +19,7 @@ const row: ArtifactScoutRow = {
   root: '/mock/harborline/ledger-core-rounding',
   branch: 'ak/fix-posting-rounding',
   reason: REASON,
+  agentId: 'agent-scout-screens' as AgentId,
 };
 
 import { asCutText, tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
@@ -64,6 +66,33 @@ describe('ArtifactScoutList', () => {
     );
     expect(screen.queryByTestId('artifact-scout-reason')).toBeNull();
     expect(screen.getByTestId('artifact-scout-row').textContent).toContain('Screens and routes');
+  });
+
+  it('opens the agent from its row when the page can take you there', () => {
+    const onOpen = vi.fn();
+    render(<ArtifactScoutList rows={[row]} emptyLine="nothing read anything" onOpen={onOpen} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Screens and routes' }));
+
+    expect(onOpen).toHaveBeenCalledWith({ agentId: 'agent-scout-screens' });
+  });
+
+  it('leaves a planned scout without an agent as plain text', () => {
+    render(
+      <ArtifactScoutList
+        rows={[{ ...row, agentId: null, state: 'planned' }]}
+        emptyLine="nothing read anything"
+        onOpen={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('draws plain rows when nothing opens', () => {
+    render(<ArtifactScoutList rows={[row]} emptyLine="nothing read anything" />);
+
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('says the session read no repository when there is no scout at all', () => {

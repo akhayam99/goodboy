@@ -33,7 +33,9 @@ After the plan ran, the bar reads **Not sent**, with **Send to** the agent and *
 
 ### Report as a document
 
-Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place.
+Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place. Its page shows no glyph above its own title.
+
+While an agent still writes an artifact, its page says so in one sentence, with no placeholder bars. **Follow** opens that agent, and each scout under **Agents on this run** opens its own. The wireframe **Flow** view says Flow once, on its tab.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-report-dark.webp">
