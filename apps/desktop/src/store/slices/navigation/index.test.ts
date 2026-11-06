@@ -29,7 +29,7 @@ import {
   fixRunTranscript,
   sessionPlace,
 } from './place';
-import { EMPTY_FOCUS, HISTORY_LIMIT } from './types';
+import { EMPTY_FOCUS, HISTORY_LIMIT, type Location } from './types';
 import { captureWindowLocation } from './captureWindowLocation';
 import { parseLocation } from '../../../features/workspace/windowLayout';
 
@@ -184,22 +184,20 @@ describe('restoring a saved window location', () => {
     expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ plans: 320 });
   });
 
-  it.each(['orchestrated', 'agents', 'auto'] as const)(
-    'opens Runs for a saved %s address',
-    async (lens) => {
-      const store = makeStore();
-      await store.getState().restoreLocation({
-        location: {
-          workspaceId: WS,
-          place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
-          studio: null,
-          focus: EMPTY_FOCUS,
-        },
-      });
+  it.each(['orchestrated', 'agents', 'auto'])('opens Runs for a saved %s address', async (lens) => {
+    const store = makeStore();
+    const location: Location = JSON.parse(
+      JSON.stringify({
+        workspaceId: WS,
+        place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
+        studio: null,
+        focus: EMPTY_FOCUS,
+      }),
+    );
+    await store.getState().restoreLocation({ location });
 
-      expect(store.getState().activeLens[S1]).toBe('workflows');
-    },
-  );
+    expect(store.getState().activeLens[S1]).toBe('workflows');
+  });
 
   it('falls back to the board when the saved session is gone', async () => {
     const store = makeStore();

@@ -628,7 +628,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    actions.primary?.run();
+    void actions.primary?.run();
 
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);
   });

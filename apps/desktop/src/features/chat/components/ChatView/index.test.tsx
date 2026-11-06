@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PAGE_MEASURE } from '@goodboy/ui';
-import type { OpenQuestionId, Session, SessionId } from '@goodboy/types';
+import { brandId, type OpenQuestionId, type Session, type SessionId } from '@goodboy/types';
 import { questionPlace } from '../../../../store/slices/navigation/place';
 
 const transcriptRowsMock = vi.hoisted(() => vi.fn());
@@ -430,8 +430,8 @@ describe('ChatView', () => {
 
     expect(state.navigate).toHaveBeenCalledWith({
       to: questionPlace({
-        sessionId: 'sess-1' as SessionId,
-        questionId: 'q-other-agent' as OpenQuestionId,
+        sessionId: brandId<SessionId>({ value: 'sess-1' }),
+        questionId: brandId<OpenQuestionId>({ value: 'q-other-agent' }),
       }),
       mode: 'push',
     });

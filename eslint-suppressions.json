@@ -5221,11 +5221,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/features/session/attentionPlace.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
-    }
-  },
   "apps/desktop/src/features/session/branchRequests.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -7174,9 +7169,6 @@
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }

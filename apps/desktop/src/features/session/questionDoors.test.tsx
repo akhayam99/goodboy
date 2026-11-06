@@ -306,7 +306,7 @@ describe('every door to a question', () => {
     };
 
     await act(async () => {
-      state().restoreLocation({ location: saved });
+      await state().restoreLocation({ location: saved });
     });
 
     landedOn({ questionId: SECOND });

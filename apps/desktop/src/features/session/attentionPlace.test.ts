@@ -22,10 +22,10 @@ import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQues
 import { aView } from '../auto/testing/autoViewFixtures';
 import { attentionPlace } from './attentionPlace';
 
-const SESSION_ID = 'session-now' as SessionId;
-const EARLIER = 'agent-earlier' as AgentId;
-const LATEST = 'agent-latest' as AgentId;
-const AT = '2026-10-04T08:00:00.000Z' as IsoDateTime;
+const SESSION_ID = brandId<SessionId>({ value: 'session-now' });
+const EARLIER = brandId<AgentId>({ value: 'agent-earlier' });
+const LATEST = brandId<AgentId>({ value: 'agent-latest' });
+const AT = brandId<IsoDateTime>({ value: '2026-10-04T08:00:00.000Z' });
 
 type BlockedViewParams = {
   readonly rootAgentId: AgentId;
@@ -54,15 +54,15 @@ const AGENTS: ReadonlyArray<Agent> = [
 ];
 
 const HELD = aWorkflowRun({
-  id: 'run-held' as WorkflowRunId,
+  id: brandId<WorkflowRunId>({ value: 'run-held' }),
   orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
 });
 const DISCARDED = aWorkflowRun({
-  id: 'run-discarded' as WorkflowRunId,
+  id: brandId<WorkflowRunId>({ value: 'run-discarded' }),
   orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
   discardedAt: AT,
 });
-const RUNNING = aWorkflowRun({ id: 'run-going' as WorkflowRunId });
+const RUNNING = aWorkflowRun({ id: brandId<WorkflowRunId>({ value: 'run-going' }) });
 
 const state = {
   sessions: [aSession({ id: SESSION_ID, workflowRuns: [DISCARDED, RUNNING, HELD] })],
@@ -70,12 +70,12 @@ const state = {
   agentTurnState: {
     [EARLIER]: {
       kind: 'blocked',
-      runId: 'run-earlier' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-earlier' }),
       blockedAt: AT,
     } satisfies TurnState,
     [LATEST]: {
       kind: 'blocked',
-      runId: 'run-latest' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-latest' }),
       blockedAt: AT,
     } satisfies TurnState,
   },
@@ -89,7 +89,7 @@ const destination = ({ reason }: DestinationParams) =>
   attentionPlace({ state, sessionId: SESSION_ID, reason });
 
 const questionOf = (id: string): OpenQuestion => ({
-  id: id as OpenQuestionId,
+  id: brandId<OpenQuestionId>({ value: id }),
   sessionId: SESSION_ID,
   text: 'Which ledger?',
   suggestedAnswers: [],
@@ -100,7 +100,7 @@ const questionOf = (id: string): OpenQuestion => ({
 });
 
 const delegateOf = (questionId: string): Agent => ({
-  ...agent({ id: 'agent-delegate' as AgentId, ordinal: 3, status: 'running' }),
+  ...agent({ id: brandId<AgentId>({ value: 'agent-delegate' }), ordinal: 3, status: 'running' }),
   sourceKind: 'open_question',
   sourceThreadId: questionId,
 });
@@ -125,7 +125,7 @@ describe('attentionPlace', () => {
     expect(questionDestination([delegateOf('q1')])).toMatchObject({
       view: { target: { kind: 'question', questionId: 'q2' } },
     });
-    useOpenQuestions.setState({ staged: ['q2' as OpenQuestionId] });
+    useOpenQuestions.setState({ staged: [brandId<OpenQuestionId>({ value: 'q2' })] });
     expect(questionDestination([delegateOf('q1')])).toMatchObject({
       view: { lens: 'questions', target: null },
     });
