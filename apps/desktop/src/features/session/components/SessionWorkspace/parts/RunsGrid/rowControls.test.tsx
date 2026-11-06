@@ -249,6 +249,40 @@ describe('from a branch to its runs', () => {
     expect(backOf({ state, place: here })?.label).toBe('Back to branch');
   });
 
+  it('goes Back to the row it left, not to the first row of the group', () => {
+    const place = sessionPlace({ sessionId: NOW_SESSION });
+    useAppStore.getState().navigate({ to: place });
+    const agents = [
+      ...['block', 'limit', 'retry', 'refund', 'audit'].map((key) =>
+        onMount({ key, name: `Run ${key}`, mount: DUP }),
+      ),
+      onMount({ key: 'budget', name: 'Run budget', mount: RETRY }),
+    ];
+    const runs = runsOf({ agents });
+    const groupKey = `mount:${DUP.id}`;
+    const fifth = runs.find((run) => run.title === 'Run audit');
+    if (fifth === undefined) {
+      throw new Error('no run');
+    }
+    const rowKey = `${groupKey}/${fifth.id}`;
+    openBranchRuns({ sessionId: NOW_SESSION, groupKey, mountPath: DUP.worktreePath });
+    useAppStore.getState().amendFocus({
+      patch: { scroll: { runs: runs.indexOf(fifth) }, returnRows: { runs: rowKey } },
+    });
+    const scrolled = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrolled;
+
+    renderWorld({ agents });
+
+    const row = document.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(rowKey)}"]`);
+    expect(row).not.toBeNull();
+    expect(scrolled).toHaveBeenCalledOnce();
+    expect(scrolled.mock.contexts[0]).toBe(row);
+    expect(document.activeElement).not.toBe(
+      document.querySelector(`[data-row-key="${CSS.escape(`${groupKey}/${runs[0]?.id ?? ''}`)}"]`),
+    );
+  });
+
   it('keeps the plain Back when the page was not reached from a branch', () => {
     useAppStore.getState().navigate({
       to: sessionPlace({ sessionId: NOW_SESSION, lens: 'workflows' }),

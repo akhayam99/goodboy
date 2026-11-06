@@ -77,6 +77,8 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
   const arrivedGroupKey = useAppStore((state) => runGroupFocusOf({ state })?.groupKey ?? null);
   const groupsRef = useRef(branchGroups);
   groupsRef.current = branchGroups;
+  const returnRowIdRef = useRef(returnRowId);
+  returnRowIdRef.current = returnRowId;
 
   useEffect(() => {
     if (returnRowId === null || unfoldedFor.current === returnRowId) {
@@ -114,6 +116,9 @@ export const useRunsFolds = ({ groupBy, runs, branchGroups }: Params) => {
       return;
     }
     setOpenGroups((open) => new Set([...open, arrivedGroupKey]));
+    if (returnRowIdRef.current !== null) {
+      return;
+    }
     const firstRun = groupsRef.current.find((group) => group.key === arrivedGroupKey)?.runs[0];
     if (firstRun !== undefined) {
       setRevealRowKey(`${arrivedGroupKey}/${firstRun.id}`);
