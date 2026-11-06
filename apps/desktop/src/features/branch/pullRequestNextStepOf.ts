@@ -32,12 +32,11 @@ const openStepOf = ({
   if (facts.hasConflicts) {
     return behind > 0 ? 'rebase' : null;
   }
-  if (
-    facts.checks === 'failing' ||
-    facts.review === 'changes_requested' ||
-    facts.commentsNeedYou > 0
-  ) {
+  if (facts.checks === 'failing' || facts.commentsNeedYou > 0) {
     return null;
+  }
+  if (facts.review === 'changes_requested') {
+    return 'requestReview';
   }
   if (mergeIsClear({ readiness })) {
     return 'merge';

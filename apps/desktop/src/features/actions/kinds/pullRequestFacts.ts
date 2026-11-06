@@ -5,6 +5,7 @@ import type {
   PrDetailRead,
   PrMergeMethod,
   PrReview,
+  ProjectId,
   PullRequestHost,
   PullRequestState,
   PullRequestView,
@@ -70,6 +71,23 @@ export const fixSignalsOf = ({
     ),
   };
 };
+
+type PullRequestThreadsParams = {
+  readonly threads: ReadonlyArray<ResolveThread>;
+  readonly projectId: ProjectId | null;
+  readonly prNumber: number | null;
+};
+
+export const pullRequestThreadsOf = ({
+  threads,
+  projectId,
+  prNumber,
+}: PullRequestThreadsParams): ReadonlyArray<ResolveThread> =>
+  threads.filter(
+    (thread) =>
+      (thread.prNumber === null || prNumber === null || thread.prNumber === prNumber) &&
+      (thread.projectId === null || projectId === null || thread.projectId === projectId),
+  );
 
 export const ALL_MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
 

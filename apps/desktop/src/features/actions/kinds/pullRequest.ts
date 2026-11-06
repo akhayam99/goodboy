@@ -60,6 +60,7 @@ import type {
 import {
   ALL_MERGE_METHODS,
   fixSignalsOf,
+  pullRequestThreadsOf,
   pullRequestFacts,
   type PullRequestFacts,
 } from './pullRequestFacts';
@@ -568,7 +569,11 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
         ? null
         : selectPrWrite({ state, target: { projectId: repo.projectId, prNumber: pr.number } });
     const signals = fixSignalsOf({
-      threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
+      threads: pullRequestThreadsOf({
+        threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
+        projectId: repo?.projectId ?? null,
+        prNumber: pr?.number ?? null,
+      }),
     });
     const view =
       pullRequestViewOf({

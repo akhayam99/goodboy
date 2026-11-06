@@ -13,7 +13,12 @@ import {
   sessionPullRequestOf,
 } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { useUnreadThreads } from '../../../../shared/hooks/useUnreadThreads';
-import { sessionMergeFacts, type PullRequestFacts } from '../../../actions/kinds/pullRequestFacts';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import {
+  pullRequestThreadsOf,
+  sessionMergeFacts,
+  type PullRequestFacts,
+} from '../../../actions/kinds/pullRequestFacts';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { evaluatePrMergeReadiness, type PrMergeReadiness } from '../../../review/prMergeReadiness';
 
@@ -47,7 +52,14 @@ export const usePullRequestReadiness = ({
     () => (githubState?.pr != null ? githubState : pr === null ? null : { pr, detail: null }),
     [githubState, pr],
   );
-  const threads = useAppStore((state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY);
+  const sessionThreads = useAppStore(
+    (state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY,
+  );
+  const projectId = useAppStore(
+    (state) =>
+      resolveSessionRepo({ state, sessionId, ...(mountId === null ? {} : { mountId }) })
+        ?.projectId ?? null,
+  );
   const { unread } = useUnreadThreads({ sessionId, mountId });
   const prNumber = github?.pr?.number ?? null;
   const view = useAppStore(
@@ -58,7 +70,7 @@ export const usePullRequestReadiness = ({
       sessionId,
       host,
       github,
-      threads,
+      threads: pullRequestThreadsOf({ threads: sessionThreads, projectId, prNumber }),
       mergeView: view,
       isRebaseStopOpen,
       unpushed,
@@ -75,5 +87,16 @@ export const usePullRequestReadiness = ({
       commentsUnread: reviewCounts({ threads: [], unread }).unread,
       reviewers: pullRequestReviewerGroupsOf({ reviewers }),
     };
-  }, [github, host, isRebaseStopOpen, sessionId, threads, unpushed, unread, view]);
+  }, [
+    github,
+    host,
+    isRebaseStopOpen,
+    prNumber,
+    projectId,
+    sessionId,
+    sessionThreads,
+    unpushed,
+    unread,
+    view,
+  ]);
 };

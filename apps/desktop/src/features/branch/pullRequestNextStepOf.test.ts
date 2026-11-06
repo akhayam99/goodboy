@@ -49,8 +49,16 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     { name: 'open, nobody asked', row: {}, step: 'requestReview' },
     { name: 'waiting on a reviewer', row: { hasReviewer: true }, step: null },
     {
-      name: 'changes requested, the comment steps own it',
+      name: 'changes requested and nothing left to fix, ask for a new look',
       row: { hasReviewer: true, facts: { review: 'changes_requested' as const } },
+      step: 'requestReview',
+    },
+    {
+      name: 'changes requested while comments still need you, the comment steps own it',
+      row: {
+        hasReviewer: true,
+        facts: { review: 'changes_requested' as const, commentsNeedYou: 2 },
+      },
       step: null,
     },
     {
@@ -114,7 +122,7 @@ describe('pullRequestNextStepOf walks every state of the plan', () => {
     expect(
       stepOf({
         hasReviewer: true,
-        facts: { review: 'changes_requested', isFixRunLive: true },
+        facts: { review: 'changes_requested', commentsNeedYou: 1, isFixRunLive: true },
       }),
     ).toBeNull();
   });
