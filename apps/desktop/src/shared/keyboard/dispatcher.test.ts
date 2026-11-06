@@ -2,9 +2,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { platform } = vi.hoisted(() => ({
-  platform: { current: 'darwin' as 'darwin' | 'linux' | 'win32' },
-}));
+const { platform } = vi.hoisted(() => {
+  const platform: { current: 'darwin' | 'linux' | 'win32' } = { current: 'darwin' };
+  return { platform };
+});
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
@@ -260,14 +261,14 @@ describe('typing wins over the lens plane off darwin', () => {
 
   it('ignores a ctrl and alt combo typed into a textarea', () => {
     const onDecisions = vi.fn();
-    bind('lens.decisions', onDecisions);
+    bind('lens.context', onDecisions);
     const textarea = document.createElement('textarea');
     document.body.appendChild(textarea);
     textarea.focus();
 
     const event = typeInto({
       target: textarea,
-      init: { key: '€', code: 'KeyE', ctrlKey: true, altKey: true },
+      init: { key: '€', code: 'KeyC', ctrlKey: true, altKey: true },
     });
 
     expect(onDecisions).not.toHaveBeenCalled();

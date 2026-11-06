@@ -7,7 +7,6 @@ import {
 const SUMMARY_NOTES_TITLE = 'Notes';
 
 const SUMMARY_DISPLAY_KEYS = [
-  'state',
   'next',
   'learned',
 ] as const satisfies ReadonlyArray<SummarySectionKey>;

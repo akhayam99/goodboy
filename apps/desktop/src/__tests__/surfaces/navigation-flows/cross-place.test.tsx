@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+import { brandId } from '@goodboy/types';
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type {
@@ -20,7 +21,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { RIGHT_DRAWER_DEFAULT, pageBoxOf, type PageTier } from '@goodboy/ui';
+
 import { seedSessionAsk } from '../../../app/components/MockScene/scenes/sessionAskSeed';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { STORY_NOW } from '../../../store/storyHarness';
@@ -29,7 +30,6 @@ import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer'
 import { agentPlace, sessionPlace } from '../../../store';
 import { pressShortcut } from '../../helpers/pressKey';
 import {
-  WAIT,
   boot,
   bridge,
   click,
@@ -48,14 +48,12 @@ import {
 
 installNavigationHooks();
 
-const JOURNEY_MS = 60_000;
-
 const door = (id: string): HTMLElement => {
   const found = document.querySelector<HTMLElement>(
     `[data-side-column] [data-column-layer="nav"] [data-column-door="${id}"], [data-column-rail] [data-column-door="${id}"]`,
   );
   expect(found, `no ${id} door in the column or the rail`).not.toBeNull();
-  return found as HTMLElement;
+  return requireValue({ value: found });
 };
 
 const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
@@ -63,7 +61,7 @@ const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
   expect(found).toBeDefined();
-  return found as HTMLElement;
+  return requireValue({ value: found });
 };
 
 const press = async (id: ShortcutId): Promise<void> => {
@@ -120,20 +118,22 @@ const expectHealthy = (): void => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const SHIP_ID = 'journey-workflow-ship-a-fix' as WorkflowId;
+const SHIP_ID = brandId<WorkflowId>({ value: 'journey-workflow-ship-a-fix' });
 
-const JOURNEY_ARTIFACT = 'journey-artifact-plan' as ArtifactId;
+const JOURNEY_ARTIFACT = brandId<ArtifactId>({ value: 'journey-artifact-plan' });
 
 const seedShipAFix = (): void => {
   const state = useAppStore.getState();
-  const workspaceId = state.currentWorkspaceId as WorkspaceId;
+  const workspaceId = brandId<WorkspaceId>({
+    value: requireValue({ value: state.currentWorkspaceId }),
+  });
   const workflow: Workflow = {
     id: SHIP_ID,
     workspaceId,
     name: 'Ship a fix',
     description: '',
     steps: ['Plan', 'Implement'].map((name, ordinal) => ({
-      id: `${SHIP_ID}-step-${ordinal}` as StepId,
+      id: brandId<StepId>({ value: `${SHIP_ID}-step-${ordinal}` }),
       workflowId: SHIP_ID,
       ordinal,
       name,
@@ -191,7 +191,7 @@ const expectColumn = (expected: ColumnState): void => {
   expect(nav?.hasAttribute('inert')).toBe(expected === 'settings');
   if (expected === 'settings') {
     expect(settings?.hasAttribute('inert')).toBe(false);
-    expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
+    screen.getByRole('button', { name: /^Back to app/ });
   }
 };
 
@@ -273,7 +273,8 @@ const expectDrawerBesideContent = ({
   const aside = document.querySelector('main aside[aria-label="Side panel"]');
   expect(aside?.getAttribute('data-drawer-mode'), kind).not.toBe('closed');
   expect(
-    (now.main as Node).compareDocumentPosition(aside as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    requireValue({ value: now.main }).compareDocumentPosition(requireValue({ value: aside })) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
     `${kind} opens on the right of the page`,
   ).toBeTruthy();
 };
@@ -286,7 +287,7 @@ const drawerRequests = (sessionId: SessionId): ReadonlyArray<DrawerRequest> => {
   const plan = state.sessionPlans[sessionId]?.[0];
   const mount = state.sessionProjectMounts[sessionId]?.[0];
   return [
-    { kind: 'context', sessionId, payload: { tab: 'goal', view: 'current' } },
+    { kind: 'context', sessionId, payload: { section: 'goal', view: 'current' } },
     { kind: 'ask', sessionId, payload: null },
     {
       kind: 'scriptRun',
@@ -326,7 +327,7 @@ const sessionRow = (sessionId: SessionId): HTMLElement => {
     `[data-side-column] [data-column-sessions] [data-select-id="${sessionId}"]`,
   );
   expect(found, `no row for ${sessionId} in the column`).not.toBeNull();
-  return found as HTMLElement;
+  return requireValue({ value: found });
 };
 
 const SESSION_LEVEL = '[data-level-layer="session"]:not([inert])';
@@ -351,7 +352,7 @@ const pageRow = (label: string): HTMLElement => {
     .getAllByRole('button')
     .find((button) => button.textContent?.startsWith(label));
   expect(found, `no ${label} page row`).toBeDefined();
-  return found as HTMLElement;
+  return requireValue({ value: found });
 };
 
 const CURRENT_BRANCH = '[data-level-layer="session"]:not([inert]) [data-worktree-current]';
@@ -378,7 +379,7 @@ const otherSession = (sessionId: SessionId): SessionId => {
         document.querySelector(`[data-column-sessions] [data-select-id="${session.id}"]`) !== null,
     );
   expect(other).toBeDefined();
-  return other?.id as SessionId;
+  return brandId<SessionId>({ value: requireValue({ value: other?.id }) });
 };
 
 const currentSession = (sessionId: SessionId): Session => {
@@ -401,7 +402,7 @@ type AskChipTarget = {
 };
 
 const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<AskChipTarget> => {
-  const answer = await screen.findByTestId('ask-answer', undefined, WAIT);
+  const answer = await screen.findByTestId('ask-answer', undefined);
   const chips = Array.from(answer.querySelectorAll<HTMLElement>('[data-ask-kind]'));
   const found = chips
     .map((chip) => ({
@@ -416,7 +417,7 @@ const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<Ask
     found,
     `the answer names a question, a run or an agent: ${chips.map((chip) => chip.getAttribute('data-ask-kind')).join(', ')}`,
   ).toBeDefined();
-  return found as AskChipTarget;
+  return requireValue({ value: found });
 };
 
 const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure)-frame\)\])$/;
@@ -439,7 +440,7 @@ const placeRoot = (): Element => {
     document.querySelector('[data-studio-slot]') ??
     document.querySelector('main [data-drawer-main]');
   expect(root, 'no page root').not.toBeNull();
-  return root as Element;
+  return requireValue({ value: root });
 };
 
 const isShown = (element: Element): boolean =>
@@ -480,7 +481,7 @@ const openContextDrawer = async (sessionId: SessionId): Promise<void> => {
     useAppStore.getState().openDrawer({
       kind: 'context',
       sessionId,
-      payload: { tab: 'goal', view: 'current' },
+      payload: { section: 'goal', view: 'current' },
     }),
   );
   await settle();
@@ -497,7 +498,7 @@ const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
   }
   state.navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
   await settle();
-  await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);
+  await screen.findByPlaceholderText(/^What should .* build\?/, undefined);
 };
 
 const sessionRuns = (sessionId: SessionId): number =>
@@ -505,551 +506,515 @@ const sessionRuns = (sessionId: SessionId): number =>
     .length ?? 0;
 
 describe('moving across every place keeps one frame', () => {
-  it(
-    'walks the board, a session and its pages, then Back and Forward retrace them',
-    async () => {
-      const { sessionId } = await boot({ seed: 'pr' });
+  it('walks the board, a session and its pages, then Back and Forward retrace them', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
 
-      await click(door('board'));
-      await heading('Sessions');
-      expect(currentDoors()).toEqual(['board']);
+    await click(door('board'));
+    await heading('Sessions');
+    expect(currentDoors()).toEqual(['board']);
 
-      await click(historyButton('Previous'));
-      expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-      expect(currentDoors()).toEqual([]);
+    await click(historyButton('Previous'));
+    expect(useAppStore.getState().currentSessionId).toBe(sessionId);
+    expect(currentDoors()).toEqual([]);
 
-      await press('lens.workflows');
-      await press('lens.plans');
-      await press('lens.review');
-      expect(lensOf()).toBe('branch');
+    await press('lens.workflows');
+    await press('lens.plans');
+    await press('lens.review');
+    expect(lensOf()).toBe('branch');
 
-      await click(historyButton('Previous'));
-      expect(lensOf()).toBe('plans');
-      await click(historyButton('Previous'));
-      expect(lensOf()).toBe('workflows');
-      await click(historyButton('Forward'));
-      expect(lensOf()).toBe('plans');
-      expect(document.querySelector('[data-side-column]')).not.toBeNull();
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
+    await click(historyButton('Previous'));
+    expect(lensOf()).toBe('plans');
+    await click(historyButton('Previous'));
+    expect(lensOf()).toBe('workflows');
+    await click(historyButton('Forward'));
+    expect(lensOf()).toBe('plans');
+    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expectHealthy();
+  });
 
-  it(
-    'opens every studio beside the column from a session page and lands back on that page',
-    async () => {
-      await boot({ seed: 'pr' });
-      await openCrumb(/^Artifacts/);
+  it('opens every studio beside the column from a session page and lands back on that page', async () => {
+    await boot({ seed: 'pr' });
+    await openCrumb(/^Artifacts/);
 
-      const doors: ReadonlyArray<readonly [() => HTMLElement, string]> = [
-        [() => door('inbox'), 'inbox'],
-        [() => door('chat'), 'chat'],
-        [() => door('workflows'), 'workflow'],
-        [() => screen.getByRole('button', { name: /^Spend today/ }), 'impact'],
-      ];
-      for (const [control, kind] of doors) {
-        await click(control());
-        expect(studio()).toBe(kind);
-        expectColumnBesideStudio();
-        await escape();
-        expect(studio()).toBeNull();
-        expect(lensOf()).toBe('plans');
-      }
-
-      await openPalette(/^Notifications$/, 'Notifications');
-      expect(studio()).toBe('notifications');
+    const doors: ReadonlyArray<readonly [() => HTMLElement, string]> = [
+      [() => door('inbox'), 'inbox'],
+      [() => door('chat'), 'chat'],
+      [() => door('workflows'), 'workflow'],
+      [() => screen.getByRole('button', { name: /^Spend today/ }), 'impact'],
+    ];
+    for (const [control, kind] of doors) {
+      await click(control());
+      expect(studio()).toBe(kind);
       expectColumnBesideStudio();
-      expect(currentDoors()).toEqual([]);
       await escape();
-      expect(lensOf()).toBe('plans');
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
-
-  it(
-    'swaps the column for Settings, and Back to app, Esc and Back all land on the same page',
-    async () => {
-      await boot({ seed: 'pr' });
-      await openCrumb(/^Artifacts/);
-
-      const exits: ReadonlyArray<readonly [() => Promise<void>, () => HTMLElement]> = [
-        [
-          async () => {
-            screen.getByRole('button', { name: /^Back to app/ }).focus();
-            await backToApp();
-          },
-          () => door('settings'),
-        ],
-        [
-          async () => {
-            screen.getByRole('searchbox', { name: 'Search settings' }).focus();
-            await escape();
-          },
-          () => door('settings'),
-        ],
-        [
-          async () => {
-            historyButton('Previous').focus();
-            await click(historyButton('Previous'));
-          },
-          () => historyButton('Previous'),
-        ],
-      ];
-      for (const [exit, expectedFocus] of exits) {
-        door('settings').focus();
-        await click(door('settings'));
-        expect(studio()).toBe('settings');
-        expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
-        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-          true,
-        );
-
-        await exit();
-
-        expect(studio()).toBeNull();
-        expect(lensOf()).toBe('plans');
-        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
-          false,
-        );
-        expect(document.activeElement).toBe(expectedFocus());
-      }
-
-      await openPalette(/^Settings$/, 'Settings');
-      expect(studio()).toBe('settings');
-      screen.getByRole('button', { name: /^Back to app/ }).focus();
-      await backToApp();
-      expect(document.activeElement, 'falls back to the Settings door').toBe(door('settings'));
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
-
-  it(
-    'finds a setting from the column search and opens its page in place',
-    async () => {
-      await boot({ seed: 'pr' });
-      await click(door('settings'));
-      const entriesBefore =
-        useAppStore.getState().navigation[useAppStore.getState().currentWorkspaceId ?? '']?.entries
-          .length;
-
-      fireEvent.change(screen.getByRole('searchbox', { name: 'Search settings' }), {
-        target: { value: 'storage' },
-      });
-      await settle();
-      const results = screen.getByRole('list', { name: 'Matching settings' });
-      await click(within(results).getAllByRole('button')[0] as HTMLElement);
-
-      const focus = useAppStore.getState().appStudio;
-      expect(focus?.kind).toBe('settings');
-      expect(focus?.kind === 'settings' ? focus.focus.section : null).toBe('storage');
-      expect(
-        useAppStore.getState().navigation[useAppStore.getState().currentWorkspaceId ?? '']?.entries
-          .length,
-      ).toBe(entriesBefore);
-
-      fireEvent.change(screen.getByRole('searchbox', { name: 'Search settings' }), {
-        target: { value: 'zzzz nothing' },
-      });
-      await settle();
-      expect(screen.getByText('No settings match')).toBeDefined();
-    },
-    JOURNEY_MS,
-  );
-
-  it(
-    'folds into the rail of doors with ⌘B on the board, in a session, under a studio and under Settings',
-    async () => {
-      await boot({ seed: 'pr' });
-
-      await press('column.toggle');
-      const rail = document.querySelector<HTMLElement>('[data-column-rail]');
-      if (rail === null) {
-        throw new Error('no rail after the fold');
-      }
-      expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
-      expect(document.querySelector('[data-side-column]')).toBeNull();
-      expect(document.querySelector('[data-session-rail="session"]')).not.toBeNull();
-
-      await click(door('inbox'));
-      expect(studio()).toBe('inbox');
-      expect(currentDoors()).toEqual(['inbox']);
-
-      await click(door('settings'));
-      expect(studio()).toBe('settings');
-      expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
-
-      await press('column.toggle');
-      expect(document.querySelector('[data-side-column]')).not.toBeNull();
-      expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
-
-      await backToApp();
-      await click(door('board'));
-      await heading('Sessions');
-      await press('column.toggle');
-      expect(door('board').getAttribute('aria-current')).toBe('page');
-      await press('column.toggle');
-      expect(door('board').getAttribute('aria-current')).toBe('page');
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
-
-  it(
-    'keeps a drawer with its page while a studio sits over it',
-    async () => {
-      const { sessionId } = await boot({ seed: 'pr' });
-
-      await press('lens.context');
-      await waitFor(
-        () => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'),
-        WAIT,
-      );
-
-      await click(door('inbox'));
-      expect(studio()).toBe('inbox');
-      await escape();
-
       expect(studio()).toBeNull();
-      expect(useAppStore.getState().currentSessionId).toBe(sessionId);
-      expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
+      expect(lensOf()).toBe('plans');
+    }
 
-  it(
-    'keeps the centred column at the same x across Overview, Runs, Artifacts and Settings, drawer or not',
-    async () => {
-      const { sessionId } = await boot({ seed: 'pr' });
-      seedShipAFix();
-      await click(sessionRow(sessionId));
+    await openPalette(/^Notifications$/, 'Notifications');
+    expect(studio()).toBe('notifications');
+    expectColumnBesideStudio();
+    expect(currentDoors()).toEqual([]);
+    await escape();
+    expect(lensOf()).toBe('plans');
+    expectHealthy();
+  });
 
-      const PAGES = ['Overview', 'Runs', 'Artifacts'] as const;
-      const trailColumn = (): string =>
-        shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
-      const columnTiers = (): ReadonlySet<string> =>
-        new Set(
-          visiblePageColumns()
-            .filter((column) => column.getAttribute('data-width') !== 'full')
-            .map((column) => columnShape(column)),
-        );
+  it('swaps the column for Settings, and Back to app, Esc and Back all land on the same page', async () => {
+    await boot({ seed: 'pr' });
+    await openCrumb(/^Artifacts/);
 
-      const walk = async (withDrawer: boolean): Promise<ReadonlyArray<string>> => {
-        const trails: Array<string> = [];
-        for (const page of PAGES) {
-          await openPage(page);
-          expect(currentPage()).toBe(page);
-          if (withDrawer) {
-            act(() =>
-              useAppStore.getState().openDrawer({
-                kind: 'context',
-                sessionId,
-                payload: { tab: 'goal', view: 'current' },
-              }),
-            );
-            await settle();
-            expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
-          }
-          expectCentredColumns();
-          expectAskInToolColumn();
-          for (const shape of columnTiers()) {
-            expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
-          }
-          trails.push(trailColumn());
-          if (withDrawer) {
-            await escape();
-          }
-        }
-        return trails;
-      };
-
-      const atRest = await walk(false);
-      expect(atRest[0], 'the Overview sits on the column of the other pages').toContain(
-        'max-w-[var(--column-frame)]',
-      );
-      expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
-      const withDrawer = await walk(true);
-      expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
-      expect(withDrawer, 'a drawer slides the column, it does not reshape it').toEqual(atRest);
-
+    const exits: ReadonlyArray<readonly [() => Promise<void>, () => HTMLElement]> = [
+      [
+        async () => {
+          screen.getByRole('button', { name: /^Back to app/ }).focus();
+          await backToApp();
+        },
+        () => door('settings'),
+      ],
+      [
+        async () => {
+          screen.getByRole('searchbox', { name: 'Search settings' }).focus();
+          await escape();
+        },
+        () => door('settings'),
+      ],
+      [
+        async () => {
+          historyButton('Previous').focus();
+          await click(historyButton('Previous'));
+        },
+        () => historyButton('Previous'),
+      ],
+    ];
+    for (const [exit, expectedFocus] of exits) {
       door('settings').focus();
       await click(door('settings'));
       expect(studio()).toBe('settings');
-      const settingsColumns = [
-        ...document.querySelectorAll<HTMLElement>('[data-studio-slot] [data-page-column]'),
-      ].filter((column) => column.getAttribute('data-width') !== 'full');
-      expect(settingsColumns.length).toBeGreaterThan(0);
-      for (const column of settingsColumns) {
-        expect(['column', 'measure']).toContain(column.getAttribute('data-width'));
-      }
-    },
-    JOURNEY_MS,
-  );
+      screen.getByRole('navigation', { name: 'Settings scopes' });
+      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(true);
 
-  it(
-    'puts header, Ask, body and composer of every page on one rail, drawer or not',
-    async () => {
-      const { sessionId } = await boot({ seed: 'pr' });
-      seedShipAFix();
-      await click(sessionRow(sessionId));
+      await exit();
 
-      const overviewLayers = (): RailLayers =>
-        sessionLayers({ body: shown('[data-slot="pane-body"]') });
-      expect(currentPage()).toBe('Overview');
-      expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
-      await openContextDrawer(sessionId);
-      expectOneRail({
-        place: 'Overview with a drawer',
-        layers: overviewLayers(),
-        rail: COLUMN_RAIL,
-      });
-      await escape();
+      expect(studio()).toBeNull();
+      expect(lensOf()).toBe('plans');
+      expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+        false,
+      );
+      expect(document.activeElement).toBe(expectedFocus());
+    }
 
-      await openAgentTranscript(sessionId);
-      const agentLayers = (): RailLayers =>
-        sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
-      expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: MEASURE_RAIL });
-      await openContextDrawer(sessionId);
-      expectOneRail({
-        place: 'Agent transcript with a drawer',
-        layers: agentLayers(),
-        rail: MEASURE_RAIL,
-      });
-      await escape();
+    await openPalette(/^Settings$/, 'Settings');
+    expect(studio()).toBe('settings');
+    screen.getByRole('button', { name: /^Back to app/ }).focus();
+    await backToApp();
+    expect(document.activeElement, 'falls back to the Settings door').toBe(door('settings'));
+    expectHealthy();
+  });
 
-      act(() => {
-        const state = useAppStore.getState();
-        useAppStore.setState({
-          sessionBranches: { ...state.sessionBranches, [sessionId]: '' },
-          sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: [] },
-        });
-        state.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) });
-      });
-      await settle();
-      expect(lensOf()).toBe('files');
-      const versionLayers = (): RailLayers =>
-        sessionLayers({ body: shown('[data-slot="pane-body"]') });
-      expectOneRail({ place: 'File versions', layers: versionLayers(), rail: COLUMN_RAIL });
-      await openContextDrawer(sessionId);
-      expectOneRail({
-        place: 'File versions with a drawer',
-        layers: versionLayers(),
-        rail: COLUMN_RAIL,
-      });
-      await escape();
+  it('finds a setting from the column search and opens its page in place', async () => {
+    await boot({ seed: 'pr' });
+    await click(door('settings'));
+    const entriesBefore =
+      useAppStore.getState().navigation[useAppStore.getState().currentWorkspaceId ?? '']?.entries
+        .length;
 
-      await click(door('chat'));
-      expect(studio()).toBe('chat');
-      expectOneRail({
-        place: 'Chat',
-        layers: { header: shown('header h1'), composer: shown('textarea') },
-        rail: MEASURE_RAIL,
-      });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search settings' }), {
+      target: { value: 'storage' },
+    });
+    await settle();
+    const results = screen.getByRole('list', { name: 'Matching settings' });
+    await click(requireValue({ value: within(results).getAllByRole('button')[0] }));
 
-      await click(door('settings'));
-      expect(studio()).toBe('settings');
-      expectOneRail({
-        place: 'Settings',
-        layers: {
-          header: shown('[data-slot="pane-header"]'),
-          body: shown('[data-slot="pane-body"]'),
-        },
-        rail: COLUMN_RAIL,
-      });
-    },
-    JOURNEY_MS,
-  );
+    const focus = useAppStore.getState().appStudio;
+    expect(focus?.kind).toBe('settings');
+    expect(focus?.kind === 'settings' ? focus.focus.section : null).toBe('storage');
+    expect(
+      useAppStore.getState().navigation[useAppStore.getState().currentWorkspaceId ?? '']?.entries
+        .length,
+    ).toBe(entriesBefore);
 
-  it(
-    'walks one app instance across the column, every page, drawer, studio and the palette',
-    async () => {
-      const { sessionId } = await boot({ seed: 'pr' });
-      seedShipAFix();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search settings' }), {
+      target: { value: 'zzzz nothing' },
+    });
+    await settle();
+    screen.getByText('No settings match');
+  });
 
-      await click(door('board'));
-      await heading('Sessions');
-      expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
-      expectColumn('column');
+  it('folds into the rail of doors with ⌘B on the board, in a session, under a studio and under Settings', async () => {
+    await boot({ seed: 'pr' });
 
-      await click(sessionRow(sessionId));
-      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('page');
-      expect(currentPage()).toBe('Overview');
+    await press('column.toggle');
+    const rail = document.querySelector<HTMLElement>('[data-column-rail]');
+    if (rail === null) {
+      throw new Error('no rail after the fold');
+    }
+    expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
+    expect(document.querySelector('[data-side-column]')).toBeNull();
+    expect(document.querySelector('[data-session-rail="session"]')).not.toBeNull();
 
-      for (const [page, lens] of SESSION_PAGES) {
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    expect(currentDoors()).toEqual(['inbox']);
+
+    await click(door('settings'));
+    expect(studio()).toBe('settings');
+    screen.getByRole('navigation', { name: 'Settings scopes' });
+
+    await press('column.toggle');
+    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    screen.getByRole('button', { name: /^Back to app/ });
+
+    await backToApp();
+    await click(door('board'));
+    await heading('Sessions');
+    await press('column.toggle');
+    expect(door('board').getAttribute('aria-current')).toBe('page');
+    await press('column.toggle');
+    expect(door('board').getAttribute('aria-current')).toBe('page');
+    expectHealthy();
+  });
+
+  it('keeps a drawer with its page while a studio sits over it', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+
+    await press('lens.context');
+    await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context'));
+
+    await click(door('inbox'));
+    expect(studio()).toBe('inbox');
+    await escape();
+
+    expect(studio()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(sessionId);
+    expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('context');
+    expectHealthy();
+  });
+
+  it('keeps the centred column at the same x across Overview, Runs, Artifacts and Settings, drawer or not', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+    seedShipAFix();
+    await click(sessionRow(sessionId));
+
+    const PAGES = ['Overview', 'Runs', 'Artifacts'] as const;
+    const trailColumn = (): string =>
+      shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
+    const columnTiers = (): ReadonlySet<string> =>
+      new Set(
+        visiblePageColumns()
+          .filter((column) => column.getAttribute('data-width') !== 'full')
+          .map((column) => columnShape(column)),
+      );
+
+    const walk = async (withDrawer: boolean): Promise<ReadonlyArray<string>> => {
+      const trails: Array<string> = [];
+      for (const page of PAGES) {
         await openPage(page);
-        expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
+        if (withDrawer) {
+          act(() =>
+            useAppStore.getState().openDrawer({
+              kind: 'context',
+              sessionId,
+              payload: { section: 'goal', view: 'current' },
+            }),
+          );
+          await settle();
+          expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
+        }
         expectCentredColumns();
         expectAskInToolColumn();
-        if (lens === 'branch') {
-          expect(leftEdge().columns).not.toContain('full');
+        for (const shape of columnTiers()) {
+          expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
+        }
+        trails.push(trailColumn());
+        if (withDrawer) {
+          await escape();
         }
       }
+      return trails;
+    };
 
-      await openPage('Branch');
-      for (const tab of ['Files', 'Comments'] as const) {
-        await click(getSection(new RegExp(`^${tab}`)));
-        expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
-        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      }
+    const atRest = await walk(false);
+    expect(atRest[0], 'the Overview sits on the column of the other pages').toContain(
+      'max-w-[var(--column-frame)]',
+    );
+    expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
+    const withDrawer = await walk(true);
+    expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
+    expect(withDrawer, 'a drawer slides the column, it does not reshape it').toEqual(atRest);
 
-      await press('ask.open');
-      await waitFor(() => expect(openDrawerKind()).toBe('ask'), WAIT);
-      await waitFor(() => expect(focusOwner()).toBe('drawer'), WAIT);
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      const askEdge = leftEdge();
-      act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
-      await settle();
-      const chip = await askChipAwayFrom({ lens: 'branch' });
-      await click(chip.button);
-      expect(openDrawerKind()).toBe('ask');
-      expect(lensOf()).toBe(chip.lens);
-      expect(leftEdge().main).toBe(askEdge.main);
-      await click(historyButton('Previous'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      await escape();
-      expect(openDrawerKind()).toBeNull();
+    door('settings').focus();
+    await click(door('settings'));
+    expect(studio()).toBe('settings');
+    const settingsColumns = [
+      ...document.querySelectorAll<HTMLElement>('[data-studio-slot] [data-page-column]'),
+    ].filter((column) => column.getAttribute('data-width') !== 'full');
+    expect(settingsColumns.length).toBeGreaterThan(0);
+    for (const column of settingsColumns) {
+      expect(['column', 'measure']).toContain(column.getAttribute('data-width'));
+    }
+  });
 
-      const edge = leftEdge();
-      for (const request of drawerRequests(sessionId)) {
-        act(() => useAppStore.getState().openDrawer(request));
-        await settle();
-        expect(openDrawerKind(), request.kind).toBe(request.kind);
-        expectDrawerBesideContent({ edge, kind: request.kind });
-        await escape();
-        expect(openDrawerKind(), `${request.kind} closes on Esc`).toBeNull();
-        expect(leftEdge().main).toBe(edge.main);
-        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      }
+  it('puts header, Ask, body and composer of every page on one rail, drawer or not', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+    seedShipAFix();
+    await click(sessionRow(sessionId));
 
-      const other = otherSession(sessionId);
-      useAppStore.getState().markSessionOpened({ sessionId: other });
-      useAppStore.getState().markSessionOpened({ sessionId });
-      await press('session.switcher');
-      await visible('listbox', 'Recent sessions');
-      fireEvent.keyUp(window, { key: 'Control', code: 'ControlLeft' });
-      await settle();
-      expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
-      expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(currentPage()).toBe('Overview');
+    const overviewLayers = (): RailLayers =>
+      sessionLayers({ body: shown('[data-slot="pane-body"]') });
+    expect(currentPage()).toBe('Overview');
+    expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
+    await openContextDrawer(sessionId);
+    expectOneRail({
+      place: 'Overview with a drawer',
+      layers: overviewLayers(),
+      rail: COLUMN_RAIL,
+    });
+    await escape();
 
-      await click(historyButton('Previous'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      await click(historyButton('Forward'));
-      expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
+    await openAgentTranscript(sessionId);
+    const agentLayers = (): RailLayers =>
+      sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
+    expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: MEASURE_RAIL });
+    await openContextDrawer(sessionId);
+    expectOneRail({
+      place: 'Agent transcript with a drawer',
+      layers: agentLayers(),
+      rail: MEASURE_RAIL,
+    });
+    await escape();
 
-      await press('column.toggle');
-      expectColumn('rail');
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
-      await settle(16);
-      const peek = screen.getByRole('region', { name: 'Sessions' });
-      expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
-      expect(document.querySelector(CURRENT_BRANCH)).not.toBeNull();
-      await click(pageRow('Overview'));
-      await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
-      expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
-      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      await click(historyButton('Previous'));
-      await press('column.toggle');
-      expectColumn('column');
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-
-      door('settings').focus();
-      await click(door('settings'));
-      expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
-      expectColumn('settings');
-      screen.getByRole('button', { name: /^Back to app/ }).focus();
-      await backToApp();
-      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      expectColumn('column');
-      expect(document.activeElement).toBe(door('settings'));
-      expect(useAppStore.getState().branchTab[sessionId]).toBe('comments');
-
-      for (const [id, kind] of STUDIO_DOORS) {
-        await click(door(id));
-        expectPlace({ session: sessionId, lens: 'branch', studio: kind, doors: [id] });
-        expectColumnBesideStudio();
-        await escape();
-        expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
-      }
-
-      const runsBefore = sessionRuns(sessionId);
-      await act(async () => {
-        await useAppStore
-          .getState()
-          .attachWorkflowToSession(sessionId, SHIP_ID, { navigate: true });
+    act(() => {
+      const state = useAppStore.getState();
+      useAppStore.setState({
+        sessionBranches: { ...state.sessionBranches, [sessionId]: '' },
+        sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: [] },
       });
+      state.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) });
+    });
+    await settle();
+    expect(lensOf()).toBe('files');
+    const versionLayers = (): RailLayers =>
+      sessionLayers({ body: shown('[data-slot="pane-body"]') });
+    expectOneRail({ place: 'File versions', layers: versionLayers(), rail: COLUMN_RAIL });
+    await openContextDrawer(sessionId);
+    expectOneRail({
+      place: 'File versions with a drawer',
+      layers: versionLayers(),
+      rail: COLUMN_RAIL,
+    });
+    await escape();
+
+    await click(door('chat'));
+    expect(studio()).toBe('chat');
+    expectOneRail({
+      place: 'Chat',
+      layers: { header: shown('header h1'), composer: shown('textarea') },
+      rail: MEASURE_RAIL,
+    });
+
+    await click(door('settings'));
+    expect(studio()).toBe('settings');
+    expectOneRail({
+      place: 'Settings',
+      layers: {
+        header: shown('[data-slot="pane-header"]'),
+        body: shown('[data-slot="pane-body"]'),
+      },
+      rail: COLUMN_RAIL,
+    });
+  });
+
+  it('walks one app instance across the column, every page, drawer, studio and the palette', async () => {
+    const { sessionId } = await boot({ seed: 'pr' });
+    seedShipAFix();
+
+    await click(door('board'));
+    await heading('Sessions');
+    expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
+    expectColumn('column');
+
+    await click(sessionRow(sessionId));
+    expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
+    expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('page');
+    expect(currentPage()).toBe('Overview');
+
+    for (const [page, lens] of SESSION_PAGES) {
+      await openPage(page);
+      expectPlace({ session: sessionId, lens, studio: null, doors: [] });
+      expect(currentPage()).toBe(page);
+      expectCentredColumns();
+      expectAskInToolColumn();
+      if (lens === 'branch') {
+        expect(leftEdge().columns).not.toContain('full');
+      }
+    }
+
+    await openPage('Branch');
+    for (const tab of ['Files', 'Comments'] as const) {
+      await click(getSection(new RegExp(`^${tab}`)));
+      expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    }
+
+    await press('ask.open');
+    await waitFor(() => expect(openDrawerKind()).toBe('ask'));
+    await waitFor(() => expect(focusOwner()).toBe('drawer'));
+    expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    const askEdge = leftEdge();
+    act(() => seedSessionAsk({ state: 'answer', session: currentSession(sessionId) }));
+    await settle();
+    const chip = await askChipAwayFrom({ lens: 'branch' });
+    await click(chip.button);
+    expect(openDrawerKind()).toBe('ask');
+    expect(lensOf()).toBe(chip.lens);
+    expect(leftEdge().main).toBe(askEdge.main);
+    await click(historyButton('Previous'));
+    expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    await escape();
+    expect(openDrawerKind()).toBeNull();
+
+    const edge = leftEdge();
+    for (const request of drawerRequests(sessionId)) {
+      act(() => useAppStore.getState().openDrawer(request));
       await settle();
-      await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
-      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
-      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-        'session',
-      );
+      expect(openDrawerKind(), request.kind).toBe(request.kind);
+      expectDrawerBesideContent({ edge, kind: request.kind });
       await escape();
-      expect(currentPage()).toBe('Runs');
-      const page = document.querySelector<HTMLElement>('main [data-drawer-main]') as HTMLElement;
-      expect(
-        (await within(page).findAllByText(/Ship a fix/, undefined, WAIT)).length,
-      ).toBeGreaterThan(0);
-      expect(pageRow('Runs').textContent).toBe('Runs2');
-      expect(screen.queryByText(/workflow run/i)).toBeNull();
+      expect(openDrawerKind(), `${request.kind} closes on Esc`).toBeNull();
+      expect(leftEdge().main).toBe(edge.main);
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    }
 
-      const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;
-      expect(startedRun).not.toBeNull();
-      act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
-      await settle();
-      await press('lens.overview');
-      await settle();
-      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
-      await click(historyButton('Previous'));
-      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
-      expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
+    const other = otherSession(sessionId);
+    useAppStore.getState().markSessionOpened({ sessionId: other });
+    useAppStore.getState().markSessionOpened({ sessionId });
+    await press('session.switcher');
+    await visible('listbox', 'Recent sessions');
+    fireEvent.keyUp(window, { key: 'Control', code: 'ControlLeft' });
+    await settle();
+    expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
+    expectPlace({ session: other, lens: null, studio: null, doors: [] });
+    expect(currentPage()).toBe('Overview');
 
-      await press('lens.plans');
-      await settle();
-      expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
-      act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
-      await settle();
-      await openPage('Overview');
-      expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
-      await click(historyButton('Previous'));
-      expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });
-      expect(useAppStore.getState().focusedArtifactId[sessionId]).toBe(JOURNEY_ARTIFACT);
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
+    await click(historyButton('Previous'));
+    expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    await click(historyButton('Forward'));
+    expectPlace({ session: other, lens: null, studio: null, doors: [] });
+    await click(historyButton('Previous'));
 
-  it(
-    'lands palette destinations in the frame and marks their door',
-    async () => {
-      await boot({ seed: 'pr' });
+    await press('column.toggle');
+    expectColumn('rail');
+    expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
+    await settle(16);
+    const peek = screen.getByRole('region', { name: 'Sessions' });
+    expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
+    expect(document.querySelector(CURRENT_BRANCH)).not.toBeNull();
+    await click(pageRow('Overview'));
+    await click(
+      requireValue({ value: peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) }),
+    );
+    expectPlace({ session: other, lens: null, studio: null, doors: [] });
+    await click(historyButton('Previous'));
+    expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
+    await click(historyButton('Previous'));
+    await press('column.toggle');
+    expectColumn('column');
+    expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
 
-      await openPalette(/^Tasks$/, 'Tasks');
-      expect(studio()).toBe('inbox');
-      expect(currentDoors()).toEqual(['inbox']);
+    door('settings').focus();
+    await click(door('settings'));
+    expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
+    expectColumn('settings');
+    screen.getByRole('button', { name: /^Back to app/ }).focus();
+    await backToApp();
+    expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    expectColumn('column');
+    expect(document.activeElement).toBe(door('settings'));
+    expect(useAppStore.getState().branchTab[sessionId]).toBe('comments');
+
+    for (const [id, kind] of STUDIO_DOORS) {
+      await click(door(id));
+      expectPlace({ session: sessionId, lens: 'branch', studio: kind, doors: [id] });
       expectColumnBesideStudio();
+      await escape();
+      expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
+    }
 
-      await openPalette(/^Sessions$/, 'Back to board');
-      expect(studio()).toBeNull();
-      expect(useAppStore.getState().currentSessionId).toBeNull();
-      expect(currentDoors()).toEqual(['board']);
+    const runsBefore = sessionRuns(sessionId);
+    await act(async () => {
+      await useAppStore.getState().attachWorkflowToSession(sessionId, SHIP_ID, { navigate: true });
+    });
+    await settle();
+    await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1));
+    expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+    expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+      'session',
+    );
+    await escape();
+    expect(currentPage()).toBe('Runs');
+    const page = requireValue({
+      value: document.querySelector<HTMLElement>('main [data-drawer-main]'),
+    });
+    expect((await within(page).findAllByText(/Ship a fix/, undefined)).length).toBeGreaterThan(0);
+    expect(pageRow('Runs').textContent).toBe('Runs2');
+    expect(screen.queryByText(/workflow run/i)).toBeNull();
 
-      await clickButton('New session');
-      expect(
-        document
-          .querySelector('[data-side-column] [data-create="session"]')
-          ?.getAttribute('aria-current'),
-      ).toBe('page');
-      expectHealthy();
-    },
-    JOURNEY_MS,
-  );
+    const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;
+    expect(startedRun).not.toBeNull();
+    act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
+    await settle();
+    await press('lens.overview');
+    await settle();
+    expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
+    expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
+    await click(historyButton('Previous'));
+    expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+    expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
+
+    await press('lens.plans');
+    await settle();
+    expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
+    act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
+    await settle();
+    await openPage('Overview');
+    expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
+    await click(historyButton('Previous'));
+    expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });
+    expect(useAppStore.getState().focusedArtifactId[sessionId]).toBe(JOURNEY_ARTIFACT);
+    expectHealthy();
+  });
+
+  it('lands palette destinations in the frame and marks their door', async () => {
+    await boot({ seed: 'pr' });
+
+    await openPalette(/^Tasks$/, 'Tasks');
+    expect(studio()).toBe('inbox');
+    expect(currentDoors()).toEqual(['inbox']);
+    expectColumnBesideStudio();
+
+    await openPalette(/^Sessions$/, 'Back to board');
+    expect(studio()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBeNull();
+    expect(currentDoors()).toEqual(['board']);
+
+    await clickButton('New session');
+    expect(
+      document
+        .querySelector('[data-side-column] [data-create="session"]')
+        ?.getAttribute('aria-current'),
+    ).toBe('page');
+    expectHealthy();
+  });
 });
+
+type ValueParams<Value> = { readonly value: Value | null | undefined };
+
+const requireValue = <Value,>({ value }: ValueParams<Value>): Value => {
+  if (value == null) {
+    throw new Error('Missing test value');
+  }
+  return value;
+};

@@ -18,16 +18,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
+import { brandId } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { ProviderId } from '@goodboy/types';
-import {
-  STORE_IMPORT_TIMEOUT_MS,
-  importStore,
-  resetStoryStore,
-  type StoryStore,
-} from '../../store/storyHarness';
+import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -45,7 +41,7 @@ import { SessionDraftPane } from '../../features/session/components/SessionDraft
 import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { BranchPage } from '../../features/branch/components/BranchPage';
-import { CONTEXT_TAB_LABEL } from '../../features/session/components/ContextDrawer/contextTabs';
+import { CONTEXT_SECTION_LABEL } from '../../features/session/components/ContextDrawer/contextSections';
 import type { SettingsFocus } from '../../features/settings/settingsFocus';
 
 const LINKED_PR_URL = 'https://example.invalid/cascade/pull/231';
@@ -214,7 +210,7 @@ let consoleErrors: Array<string> = [];
 
 beforeAll(async () => {
   useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -313,7 +309,7 @@ describe('primary surfaces mount on real store selectors', () => {
     });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
+    screen.getByRole('button', { name: 'New' });
     expect(screen.getByTestId('overview-title').closest('h1')).not.toBeNull();
     expectNoRenderLoop();
   });
@@ -358,8 +354,8 @@ describe('primary surfaces mount on real store selectors', () => {
 
     await mountSurface({ ui: <SessionDraftPane workspaceId={WORKSPACE_ID} /> });
 
-    expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-    expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
+    screen.getByRole('textbox', { name: 'Goal' });
+    screen.getByRole('tablist', { name: 'What kind of run?' });
     expect(screen.queryByRole('tablist', { name: 'How do you want to start?' })).toBeNull();
     expectNoRenderLoop();
   });
@@ -371,14 +367,19 @@ describe('primary surfaces mount on real store selectors', () => {
 
       await mountSurface({
         ui: (
-          <ContextDrawer sessionId={sessionId} tab={tab} view="current" onClose={() => undefined} />
+          <ContextDrawer
+            sessionId={sessionId}
+            section={tab}
+            view="current"
+            onClose={() => undefined}
+          />
         ),
       });
 
       expect(
         screen
           .getByRole('region', {
-            name: tab === 'decisions' ? 'Decision records' : CONTEXT_TAB_LABEL[tab],
+            name: tab === 'decisions' ? 'Decision records' : CONTEXT_SECTION_LABEL[tab],
           })
           .getAttribute('data-context-section'),
       ).toBe(tab);
@@ -409,7 +410,11 @@ describe('primary surfaces mount on real store selectors', () => {
     ['app settings', { scope: 'app' }, 'Settings'],
     ['workspace settings with its rail', { scope: 'workspace' }, 'Projects'],
     ['the providers page', { scope: 'providers' }, 'Providers'],
-    ['a provider page', { scope: 'providers', provider: 'anthropic' as ProviderId }, 'Claude'],
+    [
+      'a provider page',
+      { scope: 'providers', provider: brandId<ProviderId>({ value: 'anthropic' }) },
+      'Claude',
+    ],
   ] satisfies ReadonlyArray<readonly [string, SettingsFocus, string]>)(
     'opens %s',
     async (_name, focus, text) => {

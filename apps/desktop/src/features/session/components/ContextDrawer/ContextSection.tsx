@@ -1,27 +1,41 @@
 import { useId, useState, type ReactNode } from 'react';
 import { Band, Reveal, SectionHeader } from '@goodboy/ui';
-import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
-import { CONTEXT_TAB_LABEL } from './contextTabs';
+import type { ContextDrawerSection } from '../../../../store/slices/drawer/state';
+import { CONTEXT_SECTION_LABEL } from './contextSections';
 import { ContextVisibility } from './ContextVisibility';
-import { ContextVisibilityToggle } from './ContextVisibilityToggle';
+import { SlotSourceActions } from './SlotSourceActions';
 import type { Visibility } from './roleVisibility';
 
 const COUNT_FLOOR = 2;
 
 type Props = {
-  readonly section: ContextDrawerTab;
+  readonly section: ContextDrawerSection;
   readonly count?: number;
   readonly action?: ReactNode;
   readonly visibility?: Visibility | null;
   readonly children: ReactNode;
+  readonly isLocked?: boolean;
+  readonly historyCount?: number;
+  readonly onEdit?: () => void;
+  readonly onOpenVersions?: () => void;
 };
 
-export const ContextSection = ({ section, count, action, visibility = null, children }: Props) => {
+export const ContextSection = ({
+  section,
+  count,
+  action,
+  visibility = null,
+  children,
+  isLocked = false,
+  historyCount = 0,
+  onEdit,
+  onOpenVersions,
+}: Props) => {
   const panelId = useId();
   const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
-  const label = CONTEXT_TAB_LABEL[section];
+  const label = CONTEXT_SECTION_LABEL[section];
   const hasCount = count !== undefined && count >= COUNT_FLOOR;
-  const hasActions = (action !== undefined && action !== null) || visibility !== null;
+  const hasActions = action != null || visibility !== null;
 
   return (
     <section
@@ -45,13 +59,17 @@ export const ContextSection = ({ section, count, action, visibility = null, chil
             hasActions ? (
               <div className="flex shrink-0 items-center gap-1">
                 {action}
-                {visibility === null ? null : (
-                  <ContextVisibilityToggle
-                    visibility={visibility}
-                    isOpen={isVisibilityOpen}
-                    panelId={panelId}
-                    onToggle={() => setIsVisibilityOpen((isOpen) => !isOpen)}
+                {onEdit !== undefined && onOpenVersions !== undefined ? (
+                  <SlotSourceActions
+                    label={label}
+                    isLocked={isLocked}
+                    historyCount={historyCount}
+                    onEdit={onEdit}
+                    onOpenVersions={onOpenVersions}
+                    onToggleVisibility={() => setIsVisibilityOpen((isOpen) => !isOpen)}
                   />
+                ) : visibility === null ? null : (
+                  <span className="text-meta text-faint-foreground">{visibility.summary}</span>
                 )}
               </div>
             ) : undefined

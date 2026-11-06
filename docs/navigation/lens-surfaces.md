@@ -85,16 +85,16 @@
   empty Activity reads `Nothing ran yet`. A Next button carries its label only
   and the menu column leaves when no row has a menu. The Activity header holds
   no spend: the session spend lives in the top bar and the spend popover.
-  `Mark all seen` is a ghost button in the Activity header and shows only
+  `Mark as read` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
-  through `openExternalTaskLens`, so the back row above it reads `Back to` its
-  tool and returns to the list, and Back does too. The page draws no back
+  through `openExternalTaskLens`, so the back row reads `Back to overview`.
+  The rail owns the linked work list and its history fold. The page draws no back
   button of its own. `Remove link from this session` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
-  lens list, unless the user already moved on. A `Placed on` property in the Links group shows
+  Overview, unless the user already moved on. A failure keeps the record and its error. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the
   same `Move to` menu as the linked task row, `This session` and one entry per open
   branch of the issue's project (`project · branch`, middle cut), the current
@@ -217,6 +217,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+  Provider entries open **Link work**; a provider list address restores to Overview.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It
   draws the shared page header (`PaneShell` `page="explore"` inside the

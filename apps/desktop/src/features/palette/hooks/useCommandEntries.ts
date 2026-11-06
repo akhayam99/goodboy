@@ -1,3 +1,4 @@
+import { destinationEntryOf } from '../destinationEntryOf';
 import { contextPaletteEntryOf } from '../contextPaletteEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
@@ -18,13 +19,10 @@ import {
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { useUnreadSessionIds } from '../../../shared/hooks/useUnreadSessionIds';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { NAMES, formerNamesOf } from '../../../shared/utils/names';
 import { switchTheme, type ThemePreference } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
-import { openDestination } from '../../session/openDestination';
-import { destinationIconOf } from '../../session/destinationIconOf';
 import { requestNewSession } from '../../session/requestNewSession';
 import { openNewSessionAs } from '../../session/startKind/openNewSessionAs';
 import { openReportSheet } from '../../bug-report/openReportSheet';
@@ -227,16 +225,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         }),
       );
       for (const destination of destinations) {
-        out.push({
-          key: `lens:${destination.pane ?? destination.lens ?? 'overview'}`,
-          label: `Open ${SHORTCUTS[destination.shortcut].label}`,
-          kind: 'page',
-          group: 'action',
-          icon: destinationIconOf({ destination }),
-          shortcut: destination.shortcut,
-          secondary: formerNamesOf(SHORTCUTS[destination.shortcut].label),
-          run: () => openDestination({ sessionId, destination }),
-        });
+        out.push(destinationEntryOf({ sessionId, destination }));
       }
       out.push(contextPaletteEntryOf({ sessionId, toggle: toggleContextDrawer }));
     }

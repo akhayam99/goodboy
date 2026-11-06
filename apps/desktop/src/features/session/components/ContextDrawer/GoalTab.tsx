@@ -30,6 +30,8 @@ export const GoalTab = ({
   onOpenVersions,
 }: Props) => {
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
+  const reportError = useAppStore((state) => state.reportError);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -40,12 +42,20 @@ export const GoalTab = ({
     setDraft(value);
   }, [isEditing, value]);
 
-  const save = () => {
-    setIsEditing(false);
+  const save = async () => {
     if (draft === value) {
+      setIsEditing(false);
       return;
     }
-    void upsertSessionSlot(sessionId, 'goal', draft);
+    setIsSaving(true);
+    try {
+      await upsertSessionSlot(sessionId, 'goal', draft);
+      setIsEditing(false);
+    } catch (error: unknown) {
+      void reportError({ title: "Couldn't save the goal", error, sessionId });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isLoading) {
@@ -64,6 +74,7 @@ export const GoalTab = ({
       <ContextSection section="goal" visibility={visibility}>
         <Textarea
           autoFocus
+          disabled={isSaving}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
@@ -76,7 +87,7 @@ export const GoalTab = ({
             }
             if (isSubmitChord(event)) {
               event.preventDefault();
-              save();
+              void save();
             }
           }}
           aria-label="Goal"
@@ -89,7 +100,7 @@ export const GoalTab = ({
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
           </Button>
-          <Button size="sm" onClick={save}>
+          <Button size="sm" disabled={isSaving} onClick={() => void save()}>
             Save
           </Button>
         </div>
@@ -122,18 +133,10 @@ export const GoalTab = ({
     <ContextSection
       section="goal"
       visibility={visibility}
-      action={
-        <div className="flex items-center gap-1">
-          {historyCount > 0 ? (
-            <Button variant="ghost" size="sm" onClick={onOpenVersions}>
-              {`Versions ${historyCount}`}
-            </Button>
-          ) : null}
-          <Button variant="ghost" size="sm" disabled={isLocked} onClick={() => setIsEditing(true)}>
-            Edit
-          </Button>
-        </div>
-      }
+      isLocked={isLocked}
+      historyCount={historyCount}
+      onEdit={() => setIsEditing(true)}
+      onOpenVersions={onOpenVersions}
     >
       <KeyLineList items={summaryItems({ body: value })} label="Goal" />
       <WriteFromWorkButton sessionId={sessionId} isLocked={isLocked} />

@@ -25,7 +25,7 @@ import type { ClusterPane } from '../../../features/session/panes/clusterPane';
 import { isLensReachable } from '../../../features/session/isLensReachable';
 import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
-import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
+import type { ContextDrawerSection } from '../../../store/slices/drawer/state';
 import type { BranchTab } from '../../../store/slices/navigation/types';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useMenuCommands } from '../useMenuCommands';
@@ -55,7 +55,7 @@ type LensParams = {
 };
 
 type ContextParams = {
-  readonly tab?: ContextDrawerTab;
+  readonly section?: ContextDrawerSection;
 };
 
 type PaneParams = {
@@ -104,13 +104,13 @@ export const useAppShortcuts = ({
 
   const navigateSession = useSessionNavigation();
 
-  const toggleContext = useCallback(({ tab }: ContextParams) => {
+  const toggleContext = useCallback(({ section }: ContextParams) => {
     const state = useAppStore.getState();
     const sessionId = state.currentSessionId;
     if (sessionId == null) {
       return;
     }
-    state.toggleContextDrawer({ sessionId, ...(tab !== undefined && { tab }) });
+    state.toggleContextDrawer({ sessionId, ...(section !== undefined && { section }) });
   }, []);
 
   const toggleCurrentPane = useCallback(({ pane }: PaneParams) => {
@@ -248,9 +248,6 @@ export const useAppShortcuts = ({
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => toggleContext({}));
-  useShortcut('lens.goal', () => toggleContext({ tab: 'goal' }));
-  useShortcut('lens.decisions', () => toggleContext({ tab: 'decisions' }));
-  useShortcut('lens.summary', () => toggleContext({ tab: 'summary' }));
   useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
   useShortcut('lens.agents', goToRuns);
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));

@@ -88,7 +88,7 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
         drawer: {
           kind: 'context',
           sessionId,
-          payload: { tab: 'decisions', view: 'current', highlight: [target.number] },
+          payload: { section: 'decisions', view: 'current', highlight: [target.number] },
         },
       });
       return true;

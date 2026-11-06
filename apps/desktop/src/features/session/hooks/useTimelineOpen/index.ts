@@ -37,7 +37,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   workflow_restored: { lens: 'workflows', label: 'Open runs' },
   workflow_closed: { lens: 'workflows', label: 'Open runs' },
   workflow_deleted: { lens: 'workflows', label: 'Open runs' },
-  decisions_changed: { lens: 'decisions', label: 'Open decisions' },
+  decisions_changed: { lens: null, label: 'Open decisions' },
   project_materialized: { lens: 'files', label: 'Open files' },
   project_materialization_refused: { lens: null, label: 'Open overview' },
   project_materialization_proposed: { lens: null, label: 'Open overview' },
@@ -242,6 +242,12 @@ export const useTimelineOpen = ({
         if (target == null) {
           return null;
         }
+        if (entry.event.kind === 'decisions_changed') {
+          return {
+            label: target.label,
+            open: () => store.openContextDrawer({ sessionId, section: 'decisions' }),
+          };
+        }
         if (entry.event.kind.startsWith('history_')) {
           const payload = entry.event.payload;
           const mount = selectWritableMounts({ state: store, sessionId }).find(
@@ -267,8 +273,8 @@ export const useTimelineOpen = ({
       }
       if (entry.kind === 'learning') {
         return {
-          label: 'Open learned',
-          open: () => store.openContextDrawer({ sessionId, tab: 'learned' }),
+          label: 'Open explanations',
+          open: () => store.openContextDrawer({ sessionId, section: 'explanations' }),
         };
       }
       return {

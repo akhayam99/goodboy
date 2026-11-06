@@ -318,7 +318,7 @@ export const useTimelineRowProps = ({
 
   const openDecisionInContext = useCallback(
     ({ numbers }: { readonly numbers: ReadonlyArray<number> }) =>
-      openContextDrawer({ sessionId, tab: 'decisions', highlight: numbers }),
+      openContextDrawer({ sessionId, section: 'decisions', highlight: numbers }),
     [openContextDrawer, sessionId],
   );
 

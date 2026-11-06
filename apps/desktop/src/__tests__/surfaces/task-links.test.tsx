@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
-const bridge = vi.hoisted(() => ({
-  routes: {} as Record<string, (args: Record<string, unknown>) => unknown>,
-}));
+const bridge = vi.hoisted(() => {
+  const routes: Record<string, (args: Record<string, unknown>) => unknown> = {};
+  return { routes };
+});
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(async (command: string, args: Record<string, unknown> = {}) => {
@@ -25,23 +26,18 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { brandId } from '@goodboy/types';
 import type {
+  AgentId,
   IntegrationBinding,
   IntegrationBindingId,
   IntegrationCredentialId,
   IsoDateTime,
   ProjectId,
   Session,
-  SessionExternalTask,
-  SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  STORE_IMPORT_TIMEOUT_MS,
-  importStore,
-  resetStoryStore,
-  type StoryStore,
-} from '../../store/storyHarness';
+import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
 import { ToastProvider } from '../../shared/components/Toast';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import { attachLinkedSession } from '../../features/inbox/attachLinkedSession';
@@ -53,7 +49,7 @@ import { LinkIssueAction } from '../../features/session/components/SessionOvervi
 import { LevelLinked } from '../../app/components/SessionRail/SessionLevel/LevelLinked';
 
 const ROOT_PATH = '/mock/cascade/core-api';
-const NOW = '2026-09-20T09:00:00.000Z' as IsoDateTime;
+const NOW = brandId<IsoDateTime>({ value: '2026-09-20T09:00:00.000Z' });
 
 const NO_ERRORS: Readonly<Record<InboxProvider, string | null>> = {
   github: null,
@@ -76,7 +72,7 @@ const LINEAR_ISSUE = {
   updatedAt: NOW,
 };
 
-const JIRA_ISSUE = {
+const JIRA_ISSUE: Extract<InboxRecord['payload'], { provider: 'jira' }>['issue'] = {
   id: '10041',
   key: 'NW-41',
   summary: 'Northwind exports drop the currency column',
@@ -147,7 +143,7 @@ const BITBUCKET_REPO = {
   email: 'dev@cascadia.example',
 };
 
-const BITBUCKET_PR = {
+const BITBUCKET_PR: Extract<InboxRecord['payload'], { provider: 'bitbucket' }>['pullRequest'] = {
   id: 41,
   title: 'storefront-web checkout keeps the old cart',
   description: '',
@@ -175,10 +171,17 @@ const base = {
   context: 'Cascadia',
 } as const;
 
-type ProviderCase = {
-  readonly provider: 'linear' | 'jira' | 'gitlab' | 'github' | 'sentry' | 'bitbucket';
+type CreateSessionParams = Parameters<StoreState['createSession']>[0];
+
+type ProviderConnection = {
+  [Provider in IntegrationBinding['provider']]: Pick<
+    Extract<IntegrationBinding, { provider: Provider }>,
+    'provider' | 'config'
+  >;
+}[IntegrationBinding['provider']];
+
+type ProviderCase = ProviderConnection & {
   readonly label: string;
-  readonly config: object;
   readonly record: InboxRecord;
   readonly identifier: string;
   readonly externalId: string;
@@ -225,10 +228,7 @@ const CASES: ReadonlyArray<ProviderCase> = [
       payload: {
         provider: 'jira',
         kind: 'issue',
-        issue: JIRA_ISSUE as unknown as Extract<
-          InboxRecord['payload'],
-          { provider: 'jira' }
-        >['issue'],
+        issue: JIRA_ISSUE,
         sessionId: null,
       },
     },
@@ -315,10 +315,7 @@ const CASES: ReadonlyArray<ProviderCase> = [
       payload: {
         provider: 'bitbucket',
         kind: 'pr',
-        pullRequest: BITBUCKET_PR as unknown as Extract<
-          InboxRecord['payload'],
-          { provider: 'bitbucket' }
-        >['pullRequest'],
+        pullRequest: BITBUCKET_PR,
         repo: BITBUCKET_REPO,
       },
     },
@@ -338,7 +335,7 @@ let restoreActions: Partial<StoreState> = {};
 
 beforeAll(async () => {
   useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -355,7 +352,7 @@ afterEach(() => {
 const stubActions = (actions: Partial<StoreState>): void => {
   const state = useAppStore.getState();
   const originals = Object.fromEntries(
-    Object.keys(actions).map((key) => [key, state[key as keyof StoreState]]),
+    Object.keys(actions).map((key) => [key, Reflect.get(state, key)]),
   );
   restoreActions = { ...originals, ...restoreActions };
   useAppStore.setState(actions);
@@ -372,24 +369,23 @@ const mount = async (ui: ReactNode): Promise<void> => {
   await settle();
 };
 
-const binding = (provider: IntegrationBinding['provider'], config: object): IntegrationBinding =>
-  ({
-    id: `binding-${provider}` as IntegrationBindingId,
-    workspaceId: WORKSPACE_ID,
-    projectId: null,
-    credentialId: `credential-${provider}` as IntegrationCredentialId,
-    provider,
-    config,
-    createdAt: NOW,
-    updatedAt: NOW,
-  }) as IntegrationBinding;
+type BindingParams = { readonly entry: ProviderConnection };
+const binding = ({ entry }: BindingParams): IntegrationBinding => ({
+  id: brandId<IntegrationBindingId>({ value: `binding-${entry.provider}` }),
+  workspaceId: WORKSPACE_ID,
+  projectId: null,
+  credentialId: brandId<IntegrationCredentialId>({ value: `credential-${entry.provider}` }),
+  ...entry,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
 
 const seed = (entry: ProviderCase): Session => {
   seedBoardScene();
   useAppStore.setState({
     sessionExternalTasks: {},
     workspaceIntegrations: {
-      [WORKSPACE_ID]: entry.provider === 'github' ? [] : [binding(entry.provider, entry.config)],
+      [WORKSPACE_ID]: entry.provider === 'github' ? [] : [binding({ entry })],
     },
   });
   bridge.routes = { ...entry.routes };
@@ -446,11 +442,11 @@ const expectLinked = async (session: Session, entry: ProviderCase): Promise<void
     ]),
   );
   const sessionRegion = screen.getByRole('region', { name: 'Session' });
-  expect(
-    within(sessionRegion).getByRole('button', { name: `Open ${entry.identifier}` }),
-  ).toBeDefined();
+  within(sessionRegion).getByRole('button', {
+    name: entry.provider === 'sentry' ? 'Open in Tasks' : `Open ${entry.identifier}`,
+  });
   const inboxRegion = screen.getByRole('region', { name: 'Task' });
-  expect(within(inboxRegion).getByRole('button', { name: /Open session/ })).toBeDefined();
+  within(inboxRegion).getByRole('button', { name: /Open session/ });
   expect(within(inboxRegion).queryByRole('button', { name: /^Start from/ })).toBeNull();
 };
 
@@ -459,25 +455,24 @@ describe('tasks and sessions on the real store', () => {
     'starts a $label inbox item in the new session draft, and the session links it',
     async (entry) => {
       const session = seed(entry);
-      const createSession = vi.fn(
-        async (params: { readonly externalTasks?: ReadonlyArray<SessionExternalTask> }) => {
-          useAppStore.setState((state) => ({
-            sessionExternalTasks: {
-              ...state.sessionExternalTasks,
-              [session.id]: (params.externalTasks ?? []).map((task) => ({
-                ...task,
-                sessionId: session.id,
-              })),
-            },
-          }));
-          return { session };
-        },
-      );
+      const createSession = vi.fn(async (params: CreateSessionParams) => {
+        useAppStore.setState((state) => ({
+          sessionExternalTasks: {
+            ...state.sessionExternalTasks,
+            [session.id]: (params.externalTasks ?? []).map((task) => ({
+              ...task,
+              sessionId: session.id,
+              createdAt: NOW,
+            })),
+          },
+        }));
+        return { session };
+      });
       const requestIssueBrief = vi.fn(async () => undefined);
       stubActions({
-        createSession: createSession as unknown as StoreState['createSession'],
+        createSession: createSession,
         requestIssueBrief,
-        spawnAgent: vi.fn(async () => 'agent-1') as unknown as StoreState['spawnAgent'],
+        spawnAgent: vi.fn(async () => brandId<AgentId>({ value: 'agent-1' })),
       });
 
       await mount(surfaces(session, entry));
@@ -517,22 +512,21 @@ describe('tasks and sessions on the real store', () => {
 
   it.each(PANEL_CASES)('starts a session from a $label inbox item in one step', async (entry) => {
     const session = seed(entry);
-    const createSession = vi.fn(
-      async (params: { readonly externalTasks?: ReadonlyArray<SessionExternalTask> }) => {
-        useAppStore.setState((state) => ({
-          sessionExternalTasks: {
-            ...state.sessionExternalTasks,
-            [session.id]: (params.externalTasks ?? []).map((task) => ({
-              ...task,
-              sessionId: session.id,
-            })),
-          },
-        }));
-        return { session };
-      },
-    );
+    const createSession = vi.fn(async (params: CreateSessionParams) => {
+      useAppStore.setState((state) => ({
+        sessionExternalTasks: {
+          ...state.sessionExternalTasks,
+          [session.id]: (params.externalTasks ?? []).map((task) => ({
+            ...task,
+            sessionId: session.id,
+            createdAt: NOW,
+          })),
+        },
+      }));
+      return { session };
+    });
     stubActions({
-      createSession: createSession as unknown as StoreState['createSession'],
+      createSession: createSession,
       requestIssueBrief: vi.fn(async () => undefined),
     });
 
@@ -584,7 +578,7 @@ describe('tasks and sessions on the real store', () => {
           githubWorkspaceStatus: {
             [WORKSPACE_ID]: { available: true, mode: 'pat', user: 'cascadia-bot', scopes: [] },
           },
-        } as unknown as Partial<StoreState>);
+        });
       }
 
       await mount(surfaces(session, entry));
@@ -615,12 +609,18 @@ describe('tasks and sessions on the real store', () => {
       projectSentryLinks: {
         [WORKSPACE_ID]: [
           {
-            projectId: 'mock-board-project-payments-api' as ProjectId,
+            projectId: brandId<ProjectId>({ value: 'mock-board-project-payments-api' }),
             sentryProject: 'payments-api',
+            id: 'sentry-link-harborline',
+            workspaceId: WORKSPACE_ID,
+            sentryOrg: 'cascadia',
+            sentryProjectName: 'payments-api',
+            source: 'manual',
+            createdAt: NOW,
           },
         ],
       },
-    } as unknown as Partial<StoreState>);
+    });
     stubActions({ loadProjectSentryLinks: vi.fn(async () => undefined) });
 
     await mount(<LinkIssueAction session={session} />);
@@ -676,7 +676,7 @@ describe('tasks and sessions on the real store', () => {
       const picker = within(dialog).getByRole('combobox');
       fireEvent.focus(picker);
       fireEvent.change(picker, { target: { value } });
-      fireEvent.click(await screen.findByRole('option', { name: option }, { timeout: 2000 }));
+      fireEvent.click(await screen.findByRole('option', { name: option }));
       await settle();
 
       await waitFor(() =>
@@ -719,7 +719,7 @@ describe('tasks and sessions on the real store', () => {
     fireEvent.click(await screen.findByRole('option', { name: /^TypeError in the payments-api/ }));
     await settle();
 
-    expect(await screen.findByRole('button', { name: /Open session/ })).toBeDefined();
+    await screen.findByRole('button', { name: /Open session/ });
     expect(screen.queryByRole('button', { name: /^Start from/ })).toBeNull();
   });
 });

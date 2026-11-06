@@ -534,7 +534,7 @@ primary button. The goal, the notices, Needs you, Next and Activity are peer
 sections in the pane body, one `PANE_RHYTHM.stack` gap apart: the header passes
 `headerRhythm="section"`, so the gap under it is the same. Space separates
 sections, never a `<Divider />`, and a section never has a border. The Activity
-header holds the **Activity | Log** switch, **Mark all seen** while an agent has
+header holds the **Activity | Log** switch, **Mark as read** while an agent has
 an unread reply and the session cost on the right; the Log adds a search field
 under it, and there is no description line. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one

@@ -1,36 +1,49 @@
-import { Code } from 'lucide-react';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { Eye, History, Pencil } from 'lucide-react';
+import { OverflowMenu } from '@goodboy/ui';
 
 type Props = {
+  readonly label: string;
   readonly isLocked: boolean;
-  readonly isRawEditing: boolean;
   readonly historyCount: number;
-  readonly onToggleRaw: () => void;
+  readonly onEdit: () => void;
   readonly onOpenVersions: () => void;
+  readonly onToggleVisibility: () => void;
 };
 
 export const SlotSourceActions = ({
+  label,
   isLocked,
-  isRawEditing,
   historyCount,
-  onToggleRaw,
+  onEdit,
   onOpenVersions,
+  onToggleVisibility,
 }: Props) => (
-  <div className="flex items-center gap-1">
-    {historyCount > 0 ? (
-      <Button variant="ghost" size="sm" onClick={onOpenVersions}>
-        {`Versions ${historyCount}`}
-      </Button>
-    ) : null}
-    <Button
-      variant="ghost"
-      size="sm"
-      disabled={isLocked}
-      aria-pressed={isRawEditing}
-      onClick={onToggleRaw}
-    >
-      <Code size={ICON_SIZE.row} aria-hidden />
-      {isRawEditing ? 'Done' : 'Edit source'}
-    </Button>
-  </div>
+  <OverflowMenu
+    label={`${label} actions`}
+    entries={[
+      {
+        kind: 'item',
+        key: 'edit',
+        label: 'Edit',
+        icon: Pencil,
+        isDisabled: isLocked,
+        onSelect: onEdit,
+      },
+      {
+        kind: 'item',
+        key: 'versions',
+        label: 'Versions',
+        icon: History,
+        isDisabled: historyCount === 0,
+        onSelect: onOpenVersions,
+      },
+      {
+        kind: 'item',
+        key: 'visibility',
+        label: 'Who reads this',
+        icon: Eye,
+        onSelect: onToggleVisibility,
+      },
+    ]}
+  />
 );

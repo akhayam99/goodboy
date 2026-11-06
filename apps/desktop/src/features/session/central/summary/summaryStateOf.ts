@@ -49,9 +49,9 @@ const stateLabelOf = ({ age, why }: LabelParams): string => {
     return '';
   }
   if (why === 'branches') {
-    return `Written ${age}, a branch is newer`;
+    return `Updated ${age}, a branch is newer`;
   }
-  return why === 'old' ? `Written ${age}, may be out of date` : `Written ${age}`;
+  return why === 'old' ? `Updated ${age}, may be out of date` : `Updated ${age}`;
 };
 
 export const summaryStateOf = ({

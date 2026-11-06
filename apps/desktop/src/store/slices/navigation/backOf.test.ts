@@ -138,6 +138,18 @@ describe('backOf', () => {
       }),
       'Back to overview',
     ],
+    [
+      'a linked record',
+      sessionPlace({
+        sessionId: S1,
+        lens: 'linear',
+        target: {
+          kind: 'external-task',
+          task: { provider: 'linear', externalId: 'NW-142', projectId: null },
+        },
+      }),
+      'Back to overview',
+    ],
     ['a Branch section', branchPlace({ sessionId: S1, tab: 'commits' }), 'Back to overview'],
     [
       'a branch file',

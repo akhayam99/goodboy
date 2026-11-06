@@ -210,3 +210,46 @@ describe('withoutRemovedPages, address parts no screen reads', () => {
     expect(next.focus.drawer).toBeNull();
   });
 });
+
+describe('retired Context and provider addresses', () => {
+  it.each([
+    ['context', 'goal'],
+    ['goal', 'goal'],
+    ['decisions', 'decisions'],
+    ['last_output_summary', 'summary'],
+  ])('restores %s beside the Overview on %s', (lens, section) => {
+    const next = withoutRemovedPages({ location: storedAt({ lens }) });
+    expect(next.place).toMatchObject({ view: { lens: null, target: null } });
+    expect(next.focus.drawer).toEqual({
+      kind: 'context',
+      sessionId: SESSION_ID,
+      payload: { section, view: 'current' },
+    });
+  });
+
+  it.each(['linear', 'gitlab_issues', 'jira_issues', 'slack_threads'])(
+    'restores the former %s list to Overview',
+    (lens) => {
+      expect(withoutRemovedPages({ location: storedAt({ lens }) }).place).toMatchObject({
+        view: { lens: null, target: null },
+      });
+    },
+  );
+
+  it('restores the old Learned section as Explanations', () => {
+    const location = storedLevel({
+      lens: 'agents',
+      agentId: null,
+      target: null,
+      selection: {},
+      drawer: {
+        kind: 'context',
+        sessionId: SESSION_ID,
+        payload: { tab: 'learned', view: 'current' },
+      },
+    });
+    expect(withoutRemovedPages({ location }).focus.drawer).toMatchObject({
+      payload: { section: 'explanations' },
+    });
+  });
+});

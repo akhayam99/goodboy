@@ -7,6 +7,7 @@ import {
   type AgentId,
   type ArtifactId,
   type MountId,
+  type ProjectId,
   type ResolveAttempt,
   type SessionId,
   type SessionProjectMount,
@@ -33,13 +34,13 @@ import { EMPTY_FOCUS, HISTORY_LIMIT } from './types';
 import { captureWindowLocation } from './captureWindowLocation';
 import { parseLocation } from '../../../features/workspace/windowLayout';
 
-const WS = 'ws-harborline' as WorkspaceId;
-const WS_2 = 'ws-northwind' as WorkspaceId;
-const S1 = 'session-ledger-core' as SessionId;
-const S2 = 'session-notify-relay' as SessionId;
-const AGENT = 'agent-1' as AgentId;
-const RESOLVER = 'agent-resolver' as AgentId;
-const ARTIFACT = 'artifact-1' as ArtifactId;
+const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
+const WS_2 = brandId<WorkspaceId>({ value: 'ws-northwind' });
+const S1 = brandId<SessionId>({ value: 'session-ledger-core' });
+const S2 = brandId<SessionId>({ value: 'session-notify-relay' });
+const AGENT = brandId<AgentId>({ value: 'agent-1' });
+const RESOLVER = brandId<AgentId>({ value: 'agent-resolver' });
+const ARTIFACT = brandId<ArtifactId>({ value: 'artifact-1' });
 
 const agent = (overrides: Partial<Agent>): Agent =>
   anAgent({
@@ -123,7 +124,6 @@ const makeStore = () =>
     focusedExternalTask: {},
     drawer: null,
     openSessionDraftWorkspaceId: null,
-    contextDrawerTab: {},
     sessionPhaseRuns: {
       [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
     },
@@ -165,7 +165,7 @@ describe('restoring a saved window location', () => {
     before.getState().openDrawer({
       kind: 'context',
       sessionId: S1,
-      payload: { tab: 'summary', view: 'current' },
+      payload: { section: 'summary', view: 'current' },
     });
     before.getState().amendFocus({ patch: { scroll: { plans: 320 } } });
     const saved = parseLocation({
@@ -208,7 +208,7 @@ describe('restoring a saved window location', () => {
         workspaceId: WS,
         place: {
           at: 'session',
-          sessionId: 'session-deleted' as SessionId,
+          sessionId: brandId<SessionId>({ value: 'session-deleted' }),
           view: { lens: 'review', agentId: null, target: null },
         },
         studio: null,
@@ -275,22 +275,6 @@ describe('restoring a saved window location', () => {
 });
 
 describe('navigation slice', () => {
-  it('turns an old Context page into the overview with the Context drawer on its tab', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'decisions' }) });
-
-    expect(store.getState().activeLens[S1]).toBeNull();
-    expect(store.getState().drawer).toEqual({
-      kind: 'context',
-      sessionId: S1,
-      payload: { tab: 'decisions', view: 'current' },
-    });
-    expect(keyOf(store)).toBe(`s/${S1}`);
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'context' }) });
-    expect(store.getState().drawer).toMatchObject({ payload: { tab: 'summary' } });
-  });
-
   it('opens the new session draft as its own entry and Back leaves it', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
@@ -403,7 +387,7 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/branch/pr`);
 
     store.getState().back();
-    expect(store.getState().activeLens[S1]).toBe('linear');
+    expect(store.getState().activeLens[S1]).toBeNull();
   });
 
   it('lands the pull request lens on the Branch page for a GitLab merge request', () => {
@@ -991,22 +975,22 @@ describe('Branch page', () => {
   });
 
   it('never moves the write destination when Back returns to a branch', () => {
-    const mountOn = ({ id, path }: { readonly id: string; readonly path: string }) =>
-      ({
-        mountId: id as MountId,
-        sessionId: S1,
-        projectId: 'project-payments-api',
-        mountName: 'payments-api',
-        worktreePath: path,
-        lastWorktreePath: null,
-        repoRoot: '/w/payments-api',
-        branch: path,
-        baseBranch: 'main',
-        parallelIndex: 0,
-        isAttached: true,
-        diskState: 'present',
-        revision: 1,
-      }) as SessionProjectMount;
+    type MountParams = { readonly id: string; readonly path: string };
+    const mountOn = ({ id, path }: MountParams): SessionProjectMount => ({
+      mountId: brandId<MountId>({ value: id }),
+      sessionId: S1,
+      projectId: brandId<ProjectId>({ value: 'project-payments-api' }),
+      mountName: 'payments-api',
+      worktreePath: path,
+      lastWorktreePath: null,
+      repoRoot: '/w/payments-api',
+      branch: path,
+      baseBranch: 'main',
+      parallelIndex: 0,
+      isAttached: true,
+      diskState: 'present',
+      revision: 1,
+    });
     const store = makeStore();
     const setSessionActiveMount = vi.fn(async () => undefined);
     store.setState({
@@ -1016,11 +1000,11 @@ describe('Branch page', () => {
           mountOn({ id: 'mount-b', path: '/w/branch-b' }),
         ],
       },
-      sessionActiveMount: { [S1]: 'mount-a' as MountId },
+      sessionActiveMount: { [S1]: brandId<MountId>({ value: 'mount-a' }) },
       setSessionActiveMount,
     });
     store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-a' }) });
-    store.setState({ sessionActiveMount: { [S1]: 'mount-b' as MountId } });
+    store.setState({ sessionActiveMount: { [S1]: brandId<MountId>({ value: 'mount-b' }) } });
     store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-b' }) });
     expect(setSessionActiveMount).not.toHaveBeenCalled();
     store.getState().back();

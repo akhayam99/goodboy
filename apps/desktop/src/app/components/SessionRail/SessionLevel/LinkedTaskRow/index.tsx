@@ -1,14 +1,14 @@
 import { SelectableRow, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
-import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
-import { taskKeyOf } from '../../../../features/actions/kinds/task';
-import type { ObjectTarget } from '../../../../features/actions/types';
-import { useTaskDrag } from '../../../../features/session/hooks/useTaskDrag';
-import { LinkedKey } from './LinkedKey';
-import { CARD_ROW_INSET } from './railInset';
-import { taskPlacementLabel } from '../../../../shared/utils/taskPlacementLabel';
+import { useAppStore } from '../../../../../store';
+import { IntegrationGlyph } from '../../../../../features/integrations/components/IntegrationGlyph';
+import { ObjectMenuArea } from '../../../../../features/actions/components/ObjectMenuArea';
+import { taskKeyOf } from '../../../../../features/actions/kinds/task';
+import type { ObjectTarget } from '../../../../../features/actions/types';
+import { useTaskDrag } from '../../../../../features/session/hooks/useTaskDrag';
+import { LinkedKey } from '../LinkedKey';
+import { CARD_ROW_INSET } from '../railInset';
+import { taskPlacementLabel } from '../../../../../shared/utils/taskPlacementLabel';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -29,6 +29,7 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
     projectId: task.projectId ?? null,
     branch,
   } satisfies ObjectTarget;
+  const openLabel = task.provider === 'sentry' ? 'Open in Tasks' : `Open ${task.identifier}`;
   const placement = branches.length === 0 ? null : taskPlacementLabel({ branches });
 
   return (
@@ -38,9 +39,7 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
           selected={isShown}
           ariaCurrent={isShown ? 'page' : undefined}
           ariaLabel={
-            placement === null
-              ? `Open ${task.identifier}`
-              : `Open ${task.identifier} ${placement.replace('On ', 'on ')}`
+            placement === null ? openLabel : `${openLabel} ${placement.replace('On ', 'on ')}`
           }
           title={
             placement === null
@@ -53,6 +52,9 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
           <IntegrationGlyph provider={task.provider} size="xs" className="shrink-0" />
           <LinkedKey identifier={task.identifier} />
           <span className="min-w-0 flex-1 truncate">{task.title}</span>
+          {task.provider === 'sentry' ? (
+            <span className="shrink-0 text-meta text-muted-foreground">Open in Tasks</span>
+          ) : null}
         </SelectableRow>
       </div>
     </ObjectMenuArea>

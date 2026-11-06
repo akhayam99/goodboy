@@ -1,697 +1,332 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type {
-  AgentId,
-  IsoDateTime,
-  SessionContextItem,
-  SessionContextItemId,
-  SessionDecision,
-  SessionId,
-} from '@goodboy/types';
-import type { SummarizerPending, SummarizerRound } from '../../../../store/slices/summaries/state';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId, type IsoDateTime, type SessionDecision } from '@goodboy/types';
+import { importStore, resetStoryStore, type StoryStore } from '../../../../store/storyHarness';
+import {
+  SESSION_ID,
+  seedActivityRunScene,
+} from '../../../../app/components/MockScene/scenes/activityRunSeed';
+import { ContextDrawer } from '.';
+import { summarizerQueues } from '../../../../store/slices/turn/turnHelpers';
+import { contextUpdateHint } from './contextUpdateCopy';
 
-const { store } = vi.hoisted(() => ({
-  store: {
-    slots: [] as ReadonlyArray<{ key: string; value: string; enabled: boolean }>,
-    summarizer: { status: 'idle', lastUpdate: null, lastAttempt: null } as {
-      status: 'idle' | 'running' | 'error';
-      lastUpdate: string | null;
-      lastAttempt: unknown;
-    },
-    historyCount: 0,
-    history: [] as ReadonlyArray<unknown>,
-    sessionContextSeenAt: {} as Record<string, string | null>,
-    sessionDecisions: {} as Record<string, ReadonlyArray<SessionDecision>>,
-    sessionDecisionsBaseline: {} as Record<string, string | null>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ id: string; name: string }>>,
-    settings: {} as Record<string, string>,
-    sessionContextItems: {} as Record<string, ReadonlyArray<SessionContextItem>>,
-    loadSessionContextItems: vi.fn(async () => undefined),
-    setContextItemStatus: vi.fn(async () => undefined),
-    reportError: vi.fn(async () => undefined),
-    loadSessionDecisions: vi.fn(async () => undefined),
-    applySessionDecisionOps: vi.fn(async () => undefined),
-    openContextDrawer: vi.fn(),
-    ensureSessionSlots: vi.fn(async () => undefined),
-    loadSessionSlots: vi.fn(async () => undefined),
-    loadSessionOpenQuestions: vi.fn(async () => undefined),
-    loadSessionContextSeen: vi.fn(async () => undefined),
-    markSessionContextSeen: vi.fn(async () => undefined),
-    upsertSessionSlot: vi.fn(async () => undefined),
-    loadSlotHistory: vi.fn(async () => undefined),
-    retrySummarizer: vi.fn(),
-    requestContextUpdate: vi.fn(),
-    round: null as SummarizerRound | null,
-    pending: { turns: 0, isUpdateQueued: false } as SummarizerPending,
-  },
-}));
+type SaveParams = Parameters<(typeof import('@goodboy/db'))['saveSessionDecisions']>[0];
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-  useSessionSlots: () => store.slots,
-  useSessionLoading: () => ({ slots: false }),
-  useSessionSlotsLoad: () => 'loaded',
-  useSessionOpenQuestions: () => [{ status: 'open', text: 'Backfill the old credits?' }],
-  useSlotHistoryCount: () => store.historyCount,
-  useSlotHistory: () => store.history,
-  useSummarizerStatus: () => store.summarizer,
-  useSummarizerRound: () => store.round,
-  useSummarizerPending: () => store.pending,
-}));
-
-vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
-  GoalAttachmentsStrip: () => null,
-}));
-
-import { queryTooltipTextOf, tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
-import { ContextDrawer } from './index';
-
-const SID = 'sess-1' as SessionId;
-
-const slots = (goal: string, decisions: string, summary: string) => [
-  { key: 'goal', value: goal, enabled: true },
-  { key: 'decisions', value: decisions, enabled: true },
-  { key: 'last_output_summary', value: summary, enabled: true },
-];
-
-beforeEach(() => {
-  store.slots = slots(
-    'Stop crediting an invoice twice.',
-    '- Key redeliveries by event id\n- Keep the webhook endpoint',
-    '#### Problem\nwhy\n\n#### State\n- fix merged\n\n#### Next\n- backfill',
-  );
-  store.summarizer = { status: 'idle', lastUpdate: null, lastAttempt: null };
-  store.round = null;
-  store.pending = { turns: 0, isUpdateQueued: false };
-  store.historyCount = 0;
-  store.sessionContextSeenAt = {};
-  store.sessionDecisions = {};
-  store.sessionDecisionsBaseline = {};
-  store.sessionPhaseRuns = {};
-  store.settings = {};
-  store.sessionContextItems = {};
-  vi.clearAllMocks();
-});
-afterEach(cleanup);
-
-const AT = '2026-09-26T10:00:00.000Z' as IsoDateTime;
-
-const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
-  id: `d${overrides.number ?? 1}`,
-  sessionId: SID,
-  number: 1,
-  text: 'Key redeliveries by event id',
-  why: null,
-  status: 'active',
-  replacedBy: null,
-  author: 'agent',
-  agentId: 'implementer' as AgentId,
-  turnOrdinal: 9,
-  reason: null,
-  closedBy: null,
-  closedByAgentId: null,
-  previousText: null,
-  rewordedAt: null,
-  createdAt: AT,
-  updatedAt: AT,
-  ...overrides,
+const h = vi.hoisted(() => {
+  const ledger: ReadonlyArray<SessionDecision> = [];
+  return {
+    ledger,
+    persistRead: vi.fn(async () => undefined),
+    saveSlot: vi.fn(async () => undefined),
+    saveDecisions: vi.fn(async (_params: SaveParams) => undefined),
+  };
 });
 
-const learning = (overrides: Partial<SessionContextItem>): SessionContextItem => ({
-  id: 'l1' as SessionContextItemId,
-  sessionId: SID,
-  workspaceId: 'harborline' as SessionContextItem['workspaceId'],
-  kind: 'learning',
-  title: 'Why select! can drop a half-sent request',
-  text: 'It cancels the losing branch.',
-  topic: 'Rust',
-  source: { role: 'reviewer', agentId: null, turnStart: 4, turnEnd: 6 },
-  audience: [],
-  status: 'active',
-  projectName: 'notify-relay',
-  isSessionDeleted: false,
-  createdAt: AT,
-  updatedAt: AT,
-  ...overrides,
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../store/storyHarness')).dbModuleMock({
+    setSessionContextSeenAt: h.persistRead,
+    upsertContextSlot: h.saveSlot,
+    listSessionDecisions: async () => h.ledger,
+    saveSessionDecisions: h.saveDecisions,
+  }),
+);
+
+let store: StoryStore;
+
+beforeAll(async () => {
+  store = await importStore();
 });
 
-const ROUND: SummarizerRound = {
-  finishedAt: AT,
-  mode: 'turn',
-  turns: 3,
-  provider: 'anthropic',
-  model: 'haiku-4.5',
-  effort: 'low',
-  inputTokens: 3184,
-  outputTokens: 412,
-  costUsd: 0.004,
-  changed: { goal: true, decisions: 2, summary: true },
-};
+beforeEach(async () => {
+  await resetStoryStore();
+  seedActivityRunScene();
+  h.saveSlot.mockReset();
+  h.saveSlot.mockResolvedValue(undefined);
+  h.persistRead.mockReset();
+  h.persistRead.mockResolvedValue(undefined);
+  h.ledger = store.getState().sessionDecisions[SESSION_ID] ?? [];
+  h.saveDecisions.mockReset();
+  h.saveDecisions.mockImplementation(async ({ decisions }: SaveParams) => {
+    h.ledger = h.ledger.map((row) => decisions.find((next) => next.number === row.number) ?? row);
+  });
+  store.setState({
+    slotHistoryCounts: { [SESSION_ID]: { goal: 2, decisions: 2, last_output_summary: 2 } },
+  });
+});
 
-const contextUpdatesRow = (): HTMLElement =>
-  screen.getByRole('button', { name: (name) => name.startsWith('Context updates') });
+afterEach(() => {
+  cleanup();
+  summarizerQueues.delete(SESSION_ID);
+});
 
-const renderDrawer = (
-  tab: 'goal' | 'decisions' | 'summary' | 'learned',
-  view: 'current' | 'versions' = 'current',
-  onClose = vi.fn(),
-  highlight: ReadonlyArray<number> = [],
-) =>
+const mount = () =>
   render(
-    <ContextDrawer sessionId={SID} tab={tab} view={view} highlight={highlight} onClose={onClose} />,
+    <ContextDrawer
+      sessionId={SESSION_ID}
+      section="goal"
+      view="current"
+      onClose={() => undefined}
+    />,
   );
 
-describe('ContextDrawer', () => {
-  it('reads as one scroll of cards: Goal, Decisions, Summary and Explanations, with no tabs', () => {
-    renderDrawer('summary');
-
-    expect(screen.queryByRole('tablist')).toBeNull();
-    expect(
-      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Explanations']);
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-context-card]'));
-    expect(cards.map((card) => card.getAttribute('data-context-section'))).toEqual([
-      'goal',
-      'decisions',
-      'summary',
-      'learned',
-    ]);
-    cards.forEach((card) => {
-      const band = card.querySelector<HTMLElement>('[data-band]');
-      expect(band?.querySelector('h2')).not.toBeNull();
-    });
-  });
-
-  it('keeps one meaning for Learned: the summary block, while what agents explained to you is Explanations', () => {
-    renderDrawer('summary');
-
-    expect(screen.getAllByText('Learned')).toHaveLength(1);
-    expect(
-      screen
-        .getByText('Learned')
-        .closest('[data-context-section]')
-        ?.getAttribute('data-context-section'),
-    ).toBe('summary');
-    expect(screen.getByRole('region', { name: 'Explanations' })).toBeDefined();
-  });
-
-  it('counts the active decisions on the card header from two, never one', () => {
-    const countOf = () =>
-      screen.getByRole('region', { name: 'Decision records' }).querySelector('[data-context-count]')
-        ?.textContent ?? null;
-    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    const { unmount } = renderDrawer('decisions');
-    expect(countOf()).toBeNull();
-    unmount();
-
-    store.sessionDecisions = { [SID]: [decision({ number: 1 }), decision({ number: 2 })] };
-    renderDrawer('decisions');
-    expect(countOf()).toBe('2');
-  });
-
-  it('says which roles receive a section and lists them on demand', () => {
-    renderDrawer('decisions');
-
-    const section = screen.getByRole('region', { name: 'Decision records' });
-    const toggle = within(section).getByRole('button', { name: /^Visible to/ });
-    expect(toggle.getAttribute('aria-label')).toBe('Visible to All roles except Scout, Docs');
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(tooltipTextOf({ element: screen.getByText('Scout') })).toBe('Does not receive this');
-    expect(queryTooltipTextOf({ element: screen.getByText('Reviewer') })).toBeNull();
-    expect(screen.getByText('Agents only. Auto children read only their brief.').tagName).toBe('P');
-  });
-
-  it('reads the Visible to line from the same map as the prompt, per section', () => {
-    renderDrawer('summary');
-
-    const section = screen.getByRole('region', { name: 'Summary' });
-    expect(
-      within(section)
-        .getByRole('button', { name: /^Visible to/ })
-        .getAttribute('aria-label'),
-    ).toBe('Visible to All roles except Resolver');
-  });
-
-  it('lists what agents explained to you in this session, written for you only', () => {
-    store.sessionContextItems = {
-      [SID]: [
-        learning({
-          id: 'l1' as SessionContextItemId,
-          title: 'Why select! can drop a half-sent request',
-        }),
-        learning({ id: 'l2' as SessionContextItemId, title: 'An old one', status: 'dismissed' }),
-      ],
-    };
-    renderDrawer('learned');
-
-    const section = document.querySelector<HTMLElement>('[data-context-section="learned"]')!;
-    expect(within(section).getByRole('heading', { level: 2 }).textContent).toBe('Explanations');
-    expect(
-      within(section)
-        .getByRole('button', { name: /^Visible to/ })
-        .getAttribute('aria-label'),
-    ).toBe('Visible to You only');
-    const row = screen.getByRole('button', { name: /Why select! can drop/ });
-    expect(row.textContent).toContain('Turns 4 to 6 · Reviewer');
-    expect(screen.queryByText('An old one')).toBeNull();
-    fireEvent.click(row);
-    expect(screen.getByText('It cancels the losing branch.').tagName).toBe('P');
-    expect(screen.getByRole('button', { name: 'Dismiss' }).tagName).toBe('BUTTON');
-  });
-
-  it('says when an explanation arrives on an empty Explanations card', () => {
-    renderDrawer('learned');
-
-    expect(screen.getByText('Nothing yet. Agents explain the topics you follow.').tagName).toBe(
-      'P',
+describe('Context drawer', () => {
+  it('draws each changed decision once, before unchanged decisions, with one mark on its row', () => {
+    const { container } = mount();
+    expect(screen.queryByText('Changed since you last looked')).toBeNull();
+    expect(screen.queryByText('New')).toBeNull();
+    for (const change of ['Added', 'Replaced by 7', 'Withdrawn', 'Reworded']) {
+      screen.getByText(change, { exact: true });
+    }
+    const numbers = [...container.querySelectorAll('[data-decision]')].map((row) =>
+      row.getAttribute('data-decision'),
     );
+    expect(numbers.length).toBe(new Set(numbers).size);
+    expect(numbers.slice(0, 4)).toEqual(['7', '5', '8', '1']);
+    expect(container.querySelector('[data-decision="5"] .line-through')).not.toBeNull();
+    expect(screen.queryByRole('region', { name: 'State' })).toBeNull();
+    screen.getByRole('region', { name: 'Next' });
+    screen.getByRole('region', { name: 'Learned' });
   });
 
-  it('still shows Visible to when a retired context.roleMap value of false is stored', () => {
-    store.settings = { 'context.roleMap': 'false' };
-    renderDrawer('decisions');
-
-    expect(
-      within(screen.getByRole('region', { name: 'Decision records' })).queryByRole('button', {
-        name: /^Visible to/,
-      }),
-    ).not.toBeNull();
-  });
-
-  it('shows the summary as State, Next and Learned, without Problem', () => {
-    renderDrawer('summary');
-
-    expect(screen.queryByText('Problem')).toBeNull();
-    const panel = screen.getByRole('region', { name: 'Context' });
-    expect(within(panel).getByText('State')).toBeDefined();
-    expect(within(panel).getByText('Next')).toBeDefined();
-  });
-
-  it('marks the context seen when it opens on any tab and again when it closes', () => {
-    const { unmount } = renderDrawer('goal');
-
-    expect(store.markSessionContextSeen).toHaveBeenCalledTimes(1);
-    unmount();
-    expect(store.markSessionContextSeen).toHaveBeenCalledTimes(2);
-  });
-
-  it('says a change since the last look once, as its own group, with no dot on a heading', () => {
-    store.sessionDecisionsBaseline = { [SID]: '2026-09-26T09:00:00.000Z' };
-    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    renderDrawer('summary');
-
-    expect(screen.queryByRole('img', { name: 'Changed since you last looked' })).toBeNull();
-    expect(screen.getAllByText('Changed since you last looked')).toHaveLength(1);
-  });
-
-  it('numbers the decisions newest first and says who settled them', () => {
-    store.sessionPhaseRuns = { [SID]: [{ id: 'implementer', name: 'Implementer' }] };
-    store.sessionDecisions = {
-      [SID]: [
-        decision({ number: 1, text: 'Fix only payments-api', author: 'user', agentId: null }),
-        decision({ number: 2, text: 'Return 200 on a duplicate delivery' }),
-      ],
-    };
-    const { container } = renderDrawer('decisions');
-
-    const numbers = [...container.querySelectorAll('[data-decision]')].map((node) =>
-      node.getAttribute('data-decision'),
-    );
-    expect(numbers).toEqual(['2', '1']);
-    expect(screen.getByText(/^Implementer · turn 9/)).toBeDefined();
-    expect(screen.getByText(/^You · /)).toBeDefined();
-  });
-
-  it('explains a decision with its why and shows nothing when there is none', () => {
-    const longWhy = [
-      'Northwind retries every webhook on a 5xx and Acme replays the whole day on a restart.',
-      'Keying on the event id is the only guard that holds for both providers at once.',
-    ].join(' ');
-    store.sessionDecisions = {
-      [SID]: [
-        decision({ number: 1, text: 'Fix only payments-api' }),
-        decision({ number: 2, text: 'Return 200 on a duplicate delivery', why: longWhy }),
-      ],
-    };
-    const { container } = renderDrawer('decisions');
-
-    const whys = [...container.querySelectorAll('[data-decision-why]')];
-    expect(whys.map((node) => node.getAttribute('data-decision-why'))).toEqual(['2']);
-    expect(whys[0]?.querySelector('[data-clamped="true"]')).not.toBeNull();
-    fireEvent.click(within(whys[0] as HTMLElement).getByRole('button', { name: 'Show more' }));
-    expect(whys[0]?.querySelector('[data-clamped="false"]')).not.toBeNull();
-    expect(within(whys[0] as HTMLElement).getByRole('button', { name: 'Show less' })).toBeDefined();
-  });
-
-  it('tags what arrived since the last look and says when Goodboy reworded one', () => {
-    store.sessionDecisionsBaseline = { [SID]: '2026-09-26T09:00:00.000Z' };
-    store.sessionDecisions = {
-      [SID]: [
-        decision({
-          number: 1,
-          text: 'Key idempotency on the provider event id',
-          previousText: 'Use event.id as idempotency key',
-          rewordedAt: AT,
-          createdAt: '2026-09-26T08:00:00.000Z' as IsoDateTime,
+  it('keeps the marks while saving, then clears them without closing the drawer', async () => {
+    let finish: () => void = () => undefined;
+    h.persistRead.mockImplementationOnce(
+      () =>
+        new Promise<undefined>((resolve) => {
+          finish = () => resolve(undefined);
         }),
-        decision({ number: 2, text: 'Show the banner after the third failed retry' }),
-      ],
-    };
-    renderDrawer('decisions');
-
-    expect(screen.getAllByText('New')).toHaveLength(1);
-    expect(screen.getByText(/^Reworded by Goodboy/)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Show previous' }));
-    expect(screen.getByText('Use event.id as idempotency key')).toBeDefined();
-  });
-
-  it('opens a decision on click, revealing Edit and Remove, and adds decisions as yours', () => {
-    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    const { container } = renderDrawer('decisions');
-    const actor = { author: 'user', agentId: null, turnOrdinal: null };
-
-    expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
-
-    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
-    expect(screen.getByRole('button', { name: 'Edit decision 1' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Remove decision 1' })).toBeDefined();
-
-    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
-    expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
-
-    const field = screen.getByRole('textbox', { name: 'Add a decision' });
-    fireEvent.change(field, { target: { value: 'Keep processed ids for 30 days' } });
-    fireEvent.keyDown(field, { key: 'Enter' });
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [{ kind: 'add', text: 'Keep processed ids for 30 days' }],
-      actor,
-    });
-  });
-
-  it('removes a decision, keeps it in place with undo, and counts it on the visit banner', () => {
-    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    const { container } = renderDrawer('decisions');
-    const actor = { author: 'user', agentId: null, turnOrdinal: null };
-
-    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
-
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [{ kind: 'withdraw', number: 1, reason: null }],
-      actor,
-    });
-    expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
-    expect(screen.getByText('Removed')).toBeDefined();
-    expect(screen.getByText('1 change on this visit')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Undo all' })).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo remove of decision 1' }));
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [{ kind: 'restore', number: 1 }],
-      actor,
-    });
-    expect(screen.queryByText('1 change on this visit')).toBeNull();
-    expect(screen.queryByText('Removed')).toBeNull();
-  });
-
-  it('undoes every removal on this visit at once', () => {
-    store.sessionDecisions = {
-      [SID]: [
-        decision({ number: 1 }),
-        decision({ number: 2, text: 'Return 200 on a duplicate delivery' }),
-      ],
-    };
-    const { container } = renderDrawer('decisions');
-    const actor = { author: 'user', agentId: null, turnOrdinal: null };
-
-    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
-    fireEvent.click(container.querySelector('[data-decision="2"] button')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 2' }));
-    expect(screen.getByText('2 changes on this visit')).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo all' }));
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [
-        { kind: 'restore', number: 1 },
-        { kind: 'restore', number: 2 },
-      ],
-      actor,
-    });
-    expect(screen.queryByText(/changes on this visit/)).toBeNull();
-  });
-
-  it('drops a removed decision into Removed by you after leaving and re-entering', () => {
-    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    const { container, unmount } = renderDrawer('decisions');
-
-    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
-    expect(screen.getByText('Removed')).toBeDefined();
-    unmount();
-
-    store.sessionDecisions = {
-      [SID]: [decision({ number: 1, status: 'withdrawn', closedBy: 'user', reason: null })],
-    };
-    renderDrawer('decisions');
-
-    expect(screen.queryByText('Key redeliveries by event id')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
-    expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
-  });
-
-  it('offers Restore only on decisions you removed, not on ones an agent closed', () => {
-    store.sessionDecisions = {
-      [SID]: [
-        decision({
-          number: 2,
-          text: 'Add a retry counter column to invoices',
-          status: 'withdrawn',
-          reason: 'The ledger already keeps retry state',
-          closedBy: 'agent',
-          closedByAgentId: 'implementer' as AgentId,
-        }),
-      ],
-    };
-    renderDrawer('decisions');
-
-    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
-    fireEvent.click(screen.getByRole('tab', { name: /Replaced/ }));
-    expect(screen.getByText('"The ledger already keeps retry state"')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Restore' })).toBeNull();
-  });
-
-  it('points a replaced decision at the one that replaced it', () => {
-    store.sessionDecisions = {
-      [SID]: [
-        decision({
-          number: 5,
-          text: 'Show the banner after the first failed retry',
-          author: 'user',
-          agentId: null,
-          status: 'replaced',
-          replacedBy: 9,
-          reason: 'One failed retry is provider noise',
-          closedBy: 'agent',
-          closedByAgentId: 'implementer' as AgentId,
-        }),
-        decision({ number: 9, text: 'Show the banner after the third failed retry' }),
-      ],
-    };
-    store.sessionPhaseRuns = { [SID]: [{ id: 'implementer', name: 'Implementer' }] };
-    renderDrawer('decisions');
-
-    expect(screen.getByText(/replaces 5/)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
-    fireEvent.click(screen.getByRole('tab', { name: /Replaced/ }));
-    expect(screen.getByText(/^You · replaced by/)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Go to decision 9' })).toBeDefined();
-  });
-
-  it('highlights the rows Activity opened it on, opening the closed group when needed', () => {
-    store.sessionDecisions = {
-      [SID]: [
-        decision({ number: 1 }),
-        decision({ number: 2, text: 'Old retry rule', status: 'withdrawn', reason: 'stale' }),
-        decision({ number: 3, text: 'Third retry' }),
-      ],
-    };
-    const { container } = renderDrawer('decisions', 'current', vi.fn(), [2, 3]);
-
-    const highlighted = [...container.querySelectorAll('[data-decision].bg-selected')].map((node) =>
-      node.getAttribute('data-decision'),
     );
-    expect(highlighted.sort()).toEqual(['2', '3']);
-    expect(screen.getByText('Old retry rule')).toBeDefined();
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    screen.getByText('Added');
+    screen.getByText('Withdrawn');
+    await act(async () => {
+      finish();
+    });
+    expect(screen.queryByText('Added')).toBeNull();
+    expect(screen.queryByText('Withdrawn')).toBeNull();
+    screen.getByRole('region', { name: 'Context' });
+    expect(document.querySelector('[data-decision="5"]')).toBeNull();
   });
 
-  it('fades in a reworded text and reveals a decision that arrives while open', async () => {
-    store.sessionDecisions = { [SID]: [decision({ number: 1, text: 'Key on the event id' })] };
-    const { container, rerender } = renderDrawer('decisions');
-    expect(container.querySelector('[data-swapped]')).toBeNull();
-
-    store.sessionDecisions = {
-      [SID]: [
-        decision({ number: 1, text: 'Key idempotency on the event id' }),
-        decision({ number: 2, text: 'Keep processed ids for 30 days' }),
-      ],
-    };
-    rerender(<ContextDrawer sessionId={SID} tab="decisions" view="current" onClose={vi.fn()} />);
-
-    expect(container.querySelector('[data-swapped="true"]')?.className).toContain(
-      'motion-safe:animate-text-swap',
-    );
-    expect(await screen.findByText('Keep processed ids for 30 days')).toBeDefined();
-  });
-
-  it('keeps the decisions readable but not editable while the context updates', () => {
-    store.summarizer = { status: 'running', lastUpdate: null, lastAttempt: null };
-    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    const { container } = renderDrawer('decisions');
-
-    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
-    expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
-    expect(
-      within(screen.getByRole('region', { name: 'Decision records' })).getByText(
-        'Editing opens when the update finishes.',
+  it('keeps marks on failure and retries the same read', async () => {
+    h.persistRead.mockRejectedValueOnce(new Error('disk full'));
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Mark as read' }).hasAttribute('disabled')).toBe(
+        false,
       ),
-    ).toBeDefined();
-  });
-
-  it('says why an empty tab is empty', () => {
-    store.slots = slots('', '', '');
-    const { unmount } = renderDrawer('goal');
-    expect(screen.getByText('No goal yet. Every agent starts from it.')).toBeDefined();
-    unmount();
-
-    const summary = renderDrawer('summary');
-    expect(screen.getByText('A summary appears after the first agent turn.')).toBeDefined();
-    summary.unmount();
-
-    store.sessionDecisions = { [SID]: [] };
-    renderDrawer('decisions');
-    expect(
-      screen.getByText(
-        'No decisions yet. Agents record one when they settle a choice; you can add your own.',
-      ),
-    ).toBeDefined();
-  });
-
-  it('says it is updating while the summarizer writes, and offers a retry when it failed', () => {
-    store.summarizer = { status: 'running', lastUpdate: AT, lastAttempt: null };
-    const { unmount } = renderDrawer('decisions');
-    expect(contextUpdatesRow().textContent).toContain('Updating…');
-    unmount();
-
-    store.summarizer = { status: 'error', lastUpdate: AT, lastAttempt: { turnInput: 'x' } };
-    renderDrawer('decisions');
-    expect(contextUpdatesRow().textContent).toContain("Couldn't update");
-    fireEvent.click(contextUpdatesRow());
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(store.retrySummarizer).toHaveBeenCalledWith(SID);
-    expect(store.requestContextUpdate).not.toHaveBeenCalled();
-  });
-
-  it('opens Context updates on the last round: model, usage and what changed', () => {
-    store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
-    store.round = ROUND;
-    store.pending = { turns: 2, isUpdateQueued: false };
-    renderDrawer('summary');
-
-    fireEvent.click(contextUpdatesRow());
-
-    const panel = screen.getByRole('definition', { name: 'Last update' });
-    expect(panel.textContent).toContain('after 3 turns');
-    expect(screen.getByRole('definition', { name: 'Model' }).textContent).toContain(
-      'Haiku 4.5 · low effort',
     );
-    expect(screen.getByRole('definition', { name: 'Used' }).textContent).toBe(
-      '3,184 in · 412 out · about <$0.01',
+    screen.getByText('Added');
+    expect(store.getState().sessionDecisionsBaseline[SESSION_ID]).toBe(
+      store.getState().sessionContextSeenAt[SESSION_ID],
     );
-    expect(screen.getByText(/2 new turns since the last update\./).tagName).toBe('SPAN');
-    fireEvent.click(screen.getByRole('button', { name: '2 decisions' }));
-    expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
-    expect(screen.getByRole('button', { name: 'Goal' }).textContent).toBe('Goal');
-    expect(screen.getByRole('definition', { name: 'Changed' }).textContent).toBe(
-      'Goal, 2 decisions, Summary',
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
   });
 
-  it('queues Update now in the session queue and shows it as queued', () => {
-    store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
-    store.round = ROUND;
-    const { rerender } = renderDrawer('decisions');
-    fireEvent.click(contextUpdatesRow());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Update now' }));
-    expect(store.requestContextUpdate).toHaveBeenCalledWith(SID);
-
-    store.pending = { turns: 0, isUpdateQueued: true };
-    rerender(<ContextDrawer sessionId={SID} tab="decisions" view="current" onClose={vi.fn()} />);
-    const queued = screen.getByRole('button', { name: 'Queued' });
-    expect(queued.hasAttribute('disabled')).toBe(true);
-    expect(contextUpdatesRow().textContent).toContain('Queued');
+  it('shows a new mark when a later decision arrives after reading', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
+    const template = h.ledger[0];
+    if (template === undefined) {
+      throw new Error('Missing decision seed');
+    }
+    const later = brandId<IsoDateTime>({ value: '2099-01-01T00:00:00.000Z' });
+    act(() => {
+      store.setState({
+        sessionDecisions: {
+          [SESSION_ID]: [
+            ...h.ledger,
+            {
+              ...template,
+              id: 'decision-northwind',
+              number: 99,
+              author: 'agent',
+              status: 'active',
+              createdAt: later,
+              updatedAt: later,
+            },
+          ],
+        },
+      });
+    });
+    await screen.findByText('Added');
   });
 
-  it('sends Change model to the step summaries row in Models', () => {
-    store.summarizer = { status: 'idle', lastUpdate: AT, lastAttempt: null };
-    const opened = vi.fn();
-    window.addEventListener('goodboy:open-settings', opened);
-    renderDrawer('decisions');
-    fireEvent.click(contextUpdatesRow());
+  it.each(['Goal', 'Decisions', 'Summary'])(
+    'puts Edit, Versions and Who reads this in one %s menu, reachable with arrows',
+    (label) => {
+      mount();
+      fireEvent.click(screen.getByRole('button', { name: `${label} actions` }));
+      const menu = screen.getByRole('menu', { name: `${label} actions` });
+      const items = within(menu).getAllByRole('menuitem');
+      expect(items.map((item) => item.textContent)).toEqual(['Edit', 'Versions', 'Who reads this']);
+      fireEvent.keyDown(items[0] ?? menu, { key: 'Home' });
+      expect(document.activeElement).toBe(items[0]);
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+      expect(document.activeElement).toBe(items[1]);
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+      expect(document.activeElement).toBe(items[2]);
+      fireEvent.click(items[2] ?? menu);
+      screen.getByText('Reviewer');
+    },
+  );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Change model' }));
-
-    window.removeEventListener('goodboy:open-settings', opened);
-    const event = opened.mock.calls[0]?.[0];
-    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
-      scope: 'providers',
-      section: 'summarizer',
+  it('opens editing and versions from the card menu', () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Summary actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    screen.getByRole('textbox', { name: 'Session summary source' });
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Session summary source' }), {
+      key: 'Escape',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Summary actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Versions' }));
+    expect(store.getState().drawer).toMatchObject({
+      kind: 'context',
+      payload: { section: 'summary', view: 'versions' },
     });
   });
 
-  it('keeps the goal editable in place, and locked while the context updates', () => {
-    renderDrawer('goal');
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
-      target: { value: 'Stop double credits.' },
-    });
+  it('keeps a goal draft after failure and saves it on retry', async () => {
+    h.saveSlot.mockRejectedValueOnce(new Error('disk full'));
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Goal actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    const field = screen.getByRole('textbox', { name: 'Goal' });
+    fireEvent.change(field, { target: { value: 'Keep Harborline retries idempotent.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-
-    expect(store.upsertSessionSlot).toHaveBeenCalledWith(SID, 'goal', 'Stop double credits.');
+    await waitFor(() => expect(h.saveSlot).toHaveBeenCalledOnce());
+    expect(field.getAttribute('disabled')).toBeNull();
+    screen.getByRole('textbox', { name: 'Goal' });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Goal' })).toBeNull());
+    screen.getByText('Keep Harborline retries idempotent.');
   });
 
-  it('opens Versions inside the drawer, and Escape leaves the view before the drawer', () => {
-    store.historyCount = 3;
-    const onClose = vi.fn();
-    renderDrawer('summary', 'versions', onClose);
+  it('keeps a summary source draft after failure and saves it on retry', async () => {
+    h.saveSlot.mockRejectedValueOnce(new Error('disk full'));
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Summary actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    const field = screen.getByRole('textbox', { name: 'Session summary source' });
+    fireEvent.change(field, { target: { value: '## Next\nKeep Harborline retries idempotent.' } });
+    fireEvent.blur(field);
+    await waitFor(() => expect(h.saveSlot).toHaveBeenCalledOnce());
+    screen.getByRole('textbox', { name: 'Session summary source' });
+    fireEvent.blur(field);
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Session summary source' })).toBeNull(),
+    );
+    screen.getByText('Keep Harborline retries idempotent.');
+  });
 
-    expect(screen.getByRole('button', { name: 'Summary' })).toBeDefined();
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-
-    expect(onClose).not.toHaveBeenCalled();
-    expect(store.openContextDrawer).toHaveBeenCalledWith({
-      sessionId: SID,
-      tab: 'summary',
-      view: 'current',
+  it('retries a failed context update through the session queue', () => {
+    const status = store.getState().summarizerStatus[SESSION_ID];
+    if (status === undefined) {
+      throw new Error('Missing update status');
+    }
+    store.setState({
+      summarizerStatus: {
+        [SESSION_ID]: {
+          ...status,
+          status: 'error',
+          error: 'Context update failed',
+          lastAttempt: { turnInput: '', turnOutput: '', workingDir: null },
+        },
+      },
     });
+    summarizerQueues.set(SESSION_ID, { inFlight: true, scheduled: null, queued: [] });
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: /Context updates:/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(store.getState().summarizerPending[SESSION_ID]?.isUpdateQueued).toBe(true);
+    expect(summarizerQueues.get(SESSION_ID)?.queued).toMatchObject([
+      { mode: 'consolidate', isRequested: true },
+    ]);
+    expect(contextUpdateHint({ phase: 'running', pendingTurns: 0, hasContext: true })).toBe('');
+    expect(contextUpdateHint({ phase: 'failed', pendingTurns: 0, hasContext: true })).toBe('');
+    expect(contextUpdateHint({ phase: 'idle', pendingTurns: 2, hasContext: true })).toBe(
+      '2 new turns since the last update.',
+    );
   });
 
-  it('copies the brief in the same order as the tabs', () => {
-    renderDrawer('goal');
+  it.each(['Undo remove of decision 7', 'Undo all'])(
+    'keeps %s after a failed restore and retries it',
+    async (label) => {
+      mount();
+      const row = document.querySelector<HTMLElement>('[data-decision="7"]');
+      if (row === null) {
+        throw new Error('Missing decision');
+      }
+      fireEvent.click(within(row).getAllByRole('button')[0] ?? row);
+      fireEvent.click(screen.getByRole('button', { name: 'Remove decision 7' }));
+      const undo = await screen.findByRole('button', { name: label });
+      h.saveDecisions.mockRejectedValueOnce(new Error('disk full'));
+      fireEvent.click(undo);
+      await waitFor(() => expect(h.saveDecisions).toHaveBeenCalledTimes(2));
+      screen.getByRole('button', { name: label });
+      fireEvent.click(screen.getByRole('button', { name: label }));
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo all' })).toBeNull());
+    },
+  );
 
-    expect(screen.getByRole('button', { name: /Copy context/i })).toBeDefined();
+  it('restores a decision removed on a previous visit', async () => {
+    h.ledger = h.ledger.map((row) =>
+      row.number === 7 ? { ...row, status: 'withdrawn', closedBy: 'user' } : row,
+    );
+    store.setState({ sessionDecisions: { [SESSION_ID]: h.ledger } });
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
+    const removed = document.querySelector<HTMLElement>('[data-decision="7"]');
+    if (removed === null) {
+      throw new Error('Missing decision 7');
+    }
+    fireEvent.click(within(removed).getByRole('button', { name: 'Restore' }));
+    await waitFor(() =>
+      expect(
+        store.getState().sessionDecisions[SESSION_ID]?.find((row) => row.number === 7)?.status,
+      ).toBe('active'),
+    );
+  });
+
+  it('removes after persistence and restores through each Undo path', async () => {
+    mount();
+    const row = document.querySelector<HTMLElement>('[data-decision="7"]');
+    if (row === null) {
+      throw new Error('Missing decision 7');
+    }
+    fireEvent.click(within(row).getAllByRole('button')[0] ?? row);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 7' }));
+    await screen.findByRole('button', { name: 'Undo remove of decision 7' });
+    fireEvent.click(screen.getByRole('button', { name: 'Undo remove of decision 7' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo all' })).toBeNull());
+    expect(
+      store.getState().sessionDecisions[SESSION_ID]?.find((decision) => decision.number === 7)
+        ?.status,
+    ).toBe('active');
+    const restoredRow = document.querySelector<HTMLElement>('[data-decision="7"]');
+    if (restoredRow === null) {
+      throw new Error('Missing restored decision');
+    }
+    fireEvent.click(within(restoredRow).getAllByRole('button')[0] ?? restoredRow);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 7' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo all' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo all' })).toBeNull());
+    expect(
+      store.getState().sessionDecisions[SESSION_ID]?.find((decision) => decision.number === 7)
+        ?.status,
+    ).toBe('active');
   });
 });

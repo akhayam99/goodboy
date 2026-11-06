@@ -512,27 +512,6 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'views',
   },
-  'lens.goal': {
-    combo: 'cmd+alt+KeyG',
-    offMacCombo: 'ctrl+shift+alt+KeyG',
-    label: 'Context: Goal',
-    plane: 'lens',
-    group: 'views',
-  },
-  'lens.decisions': {
-    combo: 'cmd+alt+KeyE',
-    offMacCombo: 'ctrl+shift+alt+KeyE',
-    label: 'Context: Decisions',
-    plane: 'lens',
-    group: 'views',
-  },
-  'lens.summary': {
-    combo: 'cmd+alt+KeyU',
-    offMacCombo: 'ctrl+shift+alt+KeyU',
-    label: 'Context: Summary',
-    plane: 'lens',
-    group: 'views',
-  },
   'lens.workflows': {
     combo: 'cmd+alt+KeyW',
     offMacCombo: 'ctrl+shift+alt+KeyW',

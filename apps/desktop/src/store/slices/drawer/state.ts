@@ -13,7 +13,7 @@ import type { TerminalTabId } from '../../../shared/types/terminal';
 
 export type ArtifactDrawerTab = 'details' | 'chat';
 
-export type ContextDrawerTab = 'goal' | 'decisions' | 'summary' | 'learned';
+export type ContextDrawerSection = 'goal' | 'decisions' | 'summary' | 'explanations';
 
 export type ContextDrawerView = 'current' | 'versions';
 
@@ -36,7 +36,7 @@ export type DrawerContent =
   | {
       readonly kind: 'context';
       readonly payload: {
-        readonly tab: ContextDrawerTab;
+        readonly section: ContextDrawerSection;
         readonly view: ContextDrawerView;
         readonly highlight?: ReadonlyArray<number>;
       };

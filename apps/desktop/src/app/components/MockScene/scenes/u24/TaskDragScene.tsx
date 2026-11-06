@@ -112,6 +112,10 @@ export const TaskDragScene = ({ target, isAlt = false }: Props) => {
           `[aria-label="Linked work"] [aria-label^="Open ${TASK_IDENTIFIER}"]`,
         );
         if (chip === null) {
+          const history = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+            (button) => button.textContent?.startsWith('Show history') === true,
+          );
+          history?.click();
           return;
         }
         const { x, y } = centerOf({ element: chip });

@@ -3,16 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { lensDestinations, type ConnectedLensTools } from './lens-destinations';
 import { SHORTCUTS, type ShortcutId } from '../../shared/keyboard/registry';
 
-const LENS_SHORTCUT_IDS = (Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>).filter((id) =>
-  id.startsWith('lens.'),
-);
+const LENS_SHORTCUT_IDS = Object.keys(SHORTCUTS)
+  .filter((id): id is ShortcutId => id in SHORTCUTS)
+  .filter((id) => id.startsWith('lens.'));
 
-const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>([
-  'lens.context',
-  'lens.goal',
-  'lens.decisions',
-  'lens.summary',
-]);
+const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>(['lens.context']);
 
 const NO_CONNECTED_TOOLS: ConnectedLensTools = {
   linear: false,

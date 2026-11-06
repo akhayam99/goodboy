@@ -1,3 +1,4 @@
+import { brandId } from '@goodboy/types';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -23,7 +24,7 @@ import { selectDrawerSizing } from './selectDrawerSizing';
 import type { DrawerRequest } from './state';
 
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
-const SESSION_ID = 'session-1' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
@@ -41,7 +42,7 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
       checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
     },
   },
-  { kind: 'context', sessionId: SESSION_ID, payload: { tab: 'goal', view: 'current' } },
+  { kind: 'context', sessionId: SESSION_ID, payload: { section: 'goal', view: 'current' } },
   {
     kind: 'explore-file',
     sessionId: SESSION_ID,
@@ -59,23 +60,27 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   {
     kind: 'artifact',
     sessionId: SESSION_ID,
-    payload: { artifactId: 'artifact-1' as ArtifactId, tab: 'details' },
+    payload: { artifactId: brandId<ArtifactId>({ value: 'artifact-1' }), tab: 'details' },
   },
   {
     kind: 'artifact-document',
     sessionId: SESSION_ID,
-    payload: { artifactId: 'plan-1' as ArtifactId, revision: null },
+    payload: { artifactId: brandId<ArtifactId>({ value: 'plan-1' }), revision: null },
   },
   {
     kind: 'plan-part',
     sessionId: SESSION_ID,
-    payload: { planId: 'plan-1' as ArtifactId, index: 0 },
+    payload: { planId: brandId<ArtifactId>({ value: 'plan-1' }), index: 0 },
   },
   { kind: 'scriptRun', sessionId: SESSION_ID, payload: { scriptKey: 'test', mountId: null } },
   { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: 'thread-1' } },
   { kind: 'ask', sessionId: SESSION_ID, payload: null },
   { kind: 'new', sessionId: SESSION_ID, payload: { form: 'report' } },
-  { kind: 'transcript', sessionId: SESSION_ID, payload: { agentId: 'agent-1' as AgentId } },
+  {
+    kind: 'transcript',
+    sessionId: SESSION_ID,
+    payload: { agentId: brandId<AgentId>({ value: 'agent-1' }) },
+  },
   {
     kind: 'file-diff',
     sessionId: SESSION_ID,

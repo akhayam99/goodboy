@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
+import type { ContextDrawerSection } from '../../../../store/slices/drawer/state';
 import { LogPane } from '../../../../features/session/central/log/LogPane';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
@@ -83,7 +83,7 @@ const SIBLINGS: ReadonlyArray<Session> = [
 ];
 
 type Props = {
-  readonly contextTab?: ContextDrawerTab;
+  readonly contextSection?: ContextDrawerSection;
   readonly isFinished?: boolean;
   readonly onSeeded?: () => void;
   readonly isPageFollowed?: boolean;
@@ -98,7 +98,7 @@ const IDLE_SESSION: Session = {
 };
 
 export const ActivityRunScene = ({
-  contextTab,
+  contextSection,
   isFinished = false,
   onSeeded,
   isPageFollowed = false,
@@ -132,8 +132,8 @@ export const ActivityRunScene = ({
     if (isFinished) {
       finishActivityRuns();
     }
-    if (contextTab !== undefined) {
-      useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, tab: contextTab });
+    if (contextSection !== undefined) {
+      useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, section: contextSection });
     }
     if (isContextRead) {
       useAppStore.setState((state) => ({
@@ -145,7 +145,7 @@ export const ActivityRunScene = ({
     }
     onSeeded?.();
     setIsReady(true);
-  }, [contextTab, isContextRead, isFinished, onSeeded, seedRuns]);
+  }, [contextSection, isContextRead, isFinished, onSeeded, seedRuns]);
 
   if (!isReady) {
     return null;

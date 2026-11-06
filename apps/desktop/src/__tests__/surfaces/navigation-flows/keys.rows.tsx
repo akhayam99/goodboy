@@ -8,6 +8,10 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import {
   brandId,
   type AgentId,
+  type IsoDateTime,
+  type IntegrationBinding,
+  type IntegrationBindingId,
+  type IntegrationCredentialId,
   type ChatId,
   type ProviderRunId,
   type SessionId,
@@ -15,6 +19,7 @@ import {
   type Workspace,
   type WorkspaceId,
 } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace, sessionPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -33,11 +38,9 @@ import {
   type Ctx,
   type Row,
   bridge,
-  WAIT,
   both,
   branchTab,
   clickButton,
-  clickFirstButton,
   heading,
   lens,
   pane,
@@ -99,7 +102,7 @@ type MenuItemParams = {
 };
 
 const pickMenuItem = async ({ id }: MenuItemParams): Promise<void> => {
-  await waitFor(() => expect(menuHandlers).toHaveLength(1), WAIT);
+  await waitFor(() => expect(menuHandlers).toHaveLength(1));
   for (const handler of [...menuHandlers]) {
     handler({ payload: { id } });
   }
@@ -129,7 +132,7 @@ const pressRow = (row: {
 }): Row => keyRow({ ...row, open: press(row.id) });
 
 const tab = async (name: RegExp, isSelected = true): Promise<void> => {
-  expect(await screen.findByRole('tab', { name, selected: isSelected }, WAIT)).toBeDefined();
+  expect(await screen.findByRole('tab', { name, selected: isSelected })).toBeDefined();
 };
 
 const drawerIs = (tabName: string | null) => async (ctx: Ctx) => {
@@ -138,9 +141,11 @@ const drawerIs = (tabName: string | null) => async (ctx: Ctx) => {
     expect(drawer?.kind).toBe('context');
     expect(drawer?.sessionId).toBe(ctx.sessionId);
     if (tabName !== null) {
-      expect((drawer as { payload: { tab: string } }).payload.tab).toBe(tabName);
+      if (drawer?.kind === 'context') {
+        expect(drawer.payload.section).toBe(tabName);
+      }
     }
-  }, WAIT);
+  });
 };
 
 const WORKSPACE_NAMES = ['Northwind', 'Cascadia', 'Acme', 'Harborline Labs'] as const;
@@ -153,9 +158,9 @@ const seedWorkspaces = (): ReadonlyArray<Workspace> => {
   }
   const others = WORKSPACE_NAMES.map((name, index): Workspace => ({
     ...current,
-    id: `keys-workspace-${index}` as WorkspaceId,
+    id: brandId<WorkspaceId>({ value: `keys-workspace-${index}` }),
     name,
-    lastAccessedAt: `2026-09-0${index + 1}T10:00:00.000Z` as Workspace['lastAccessedAt'],
+    lastAccessedAt: brandId<IsoDateTime>({ value: `2026-09-0${index + 1}T10:00:00.000Z` }),
   }));
   useAppStore.setState({ workspaces: [...state.workspaces, ...others] });
   return others;
@@ -223,7 +228,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await visible('dialog', /report|bug/i);
       await pressed('overlay.close', document.body);
     },
-    lands: async () => waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), WAIT),
+    lands: async () => waitFor(() => expect(screen.queryByRole('dialog')).toBeNull()),
   }),
   keyRow({
     id: 'app.reload',
@@ -275,7 +280,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await visible('textbox', 'Find a workspace or folder');
       const wanted = ['Harborline Labs', 'Acme', 'Cascadia', 'Northwind'];
       for (const [index, name] of wanted.entries()) {
-        const id = DIGIT_IDS[index] as ShortcutId;
+        const id = brandId<ShortcutId>({ value: requireValue({ value: DIGIT_IDS[index] }) });
         const row = switcherRowOf(id);
         expect(row?.textContent, `${shortcutGlyphs(id)} is printed on ${name}`).toContain(name);
         await pressed(id, document.body);
@@ -316,7 +321,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await waitFor(() => {
         expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null });
-      }, WAIT);
+      });
     },
   }),
   pressRow({
@@ -431,7 +436,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       }
       useAppStore.setState({
         sessionOpenQuestions: {
-          [waiting.id]: [openQuestionFor({ sessionId: waiting.id as SessionId })],
+          [waiting.id]: [openQuestionFor({ sessionId: brandId<SessionId>({ value: waiting.id }) })],
         },
       });
       await press('session.nextNeedsYou')();
@@ -439,7 +444,11 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: async (ctx) => {
       const state = useAppStore.getState();
       expect(state.currentSessionId).not.toBe(ctx.sessionId);
-      expect(state.activeLens[state.currentSessionId as SessionId]).toBe('questions');
+      expect(
+        state.activeLens[
+          brandId<SessionId>({ value: requireValue({ value: state.currentSessionId }) })
+        ],
+      ).toBe('questions');
     },
   }),
   keyRow({
@@ -452,7 +461,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.delete',
     lands: async () =>
-      expect(await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT)).toBeDefined(),
+      expect(await screen.findByRole('dialog', { name: /^Delete .+\?$/ })).toBeDefined(),
   }),
   keyRow({
     id: 'lens.overview',
@@ -475,13 +484,12 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
         }),
       });
       await settle();
-      await screen.findByText('This run is no longer in this session', undefined, WAIT);
+      await screen.findByText('This run is no longer in this session', undefined);
       await press('lens.workflows')();
     },
     lands: both(lens('workflows'), async (ctx) => {
-      await waitFor(
-        () => expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId] ?? null).toBeNull(),
-        WAIT,
+      await waitFor(() =>
+        expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId] ?? null).toBeNull(),
       );
       await heading('Runs');
     }),
@@ -506,7 +514,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.terminal',
     lands: async () => {
-      await screen.findByRole('button', { name: 'Open page' }, WAIT);
+      await screen.findByRole('button', { name: 'Open page' });
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     },
   }),
@@ -522,14 +530,9 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
-      expect(
-        await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),
-      ).toBeDefined(),
+      expect(await screen.findByRole('textbox', { name: 'Pull request title' })).toBeDefined(),
   }),
   pressRow({ id: 'lens.context', lands: drawerIs(null) }),
-  pressRow({ id: 'lens.goal', lands: drawerIs('goal') }),
-  pressRow({ id: 'lens.decisions', lands: drawerIs('decisions') }),
-  pressRow({ id: 'lens.summary', lands: drawerIs('summary') }),
   pressRow({
     id: 'ask.open',
     lands: async (ctx) => {
@@ -537,7 +540,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
         const drawer = selectOpenDrawer(useAppStore.getState());
         expect(drawer?.kind).toBe('ask');
         expect(drawer?.sessionId).toBe(ctx.sessionId);
-      }, WAIT);
+      });
     },
   }),
 ];
@@ -549,7 +552,9 @@ const STARRED_TITLES = [
 ];
 
 const starredIssue = (index: number): StarredIssue => {
-  const workspaceId = useAppStore.getState().currentWorkspaceId as WorkspaceId;
+  const workspaceId = brandId<WorkspaceId>({
+    value: requireValue({ value: useAppStore.getState().currentWorkspaceId }),
+  });
   return {
     workspaceId,
     provider: 'linear',
@@ -560,13 +565,15 @@ const starredIssue = (index: number): StarredIssue => {
     url: `https://linear.example.test/HBL-50${index + 1}`,
     state: 'open',
     stateLabel: 'Todo',
-    starredAt: `2026-09-0${index + 1}T10:00:00.000Z` as StarredIssue['starredAt'],
-    refreshedAt: `2026-09-0${3 - index}T10:00:00.000Z` as StarredIssue['refreshedAt'],
+    starredAt: brandId<IsoDateTime>({ value: `2026-09-0${index + 1}T10:00:00.000Z` }),
+    refreshedAt: brandId<IsoDateTime>({ value: `2026-09-0${3 - index}T10:00:00.000Z` }),
   };
 };
 
 const seedInbox = async (): Promise<void> => {
-  const workspaceId = useAppStore.getState().currentWorkspaceId as WorkspaceId;
+  const workspaceId = brandId<WorkspaceId>({
+    value: requireValue({ value: useAppStore.getState().currentWorkspaceId }),
+  });
   useAppStore.setState({
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
@@ -607,7 +614,12 @@ const openUrls = (): ReadonlyArray<string> =>
   vi
     .mocked(invoke)
     .mock.calls.filter(([command]) => command === 'open_url')
-    .map(([, args]) => String((args as { url: string }).url));
+    .map(([, args]) => {
+      if (!isRecord(args) || typeof args.url !== 'string') {
+        throw new Error('Missing URL');
+      }
+      return args.url;
+    });
 
 const withBranchlessSession = (ctx: Ctx): void => {
   const state = useAppStore.getState();
@@ -616,16 +628,60 @@ const withBranchlessSession = (ctx: Ctx): void => {
 
 const connectTools = (): void => {
   const state = useAppStore.getState();
-  const workspaceId = state.currentWorkspaceId as WorkspaceId;
+  const workspaceId = brandId<WorkspaceId>({
+    value: requireValue({ value: state.currentWorkspaceId }),
+  });
+  const base = {
+    workspaceId,
+    projectId: null,
+    id: brandId<IntegrationBindingId>({ value: 'keys-binding-harborline' }),
+    credentialId: brandId<IntegrationCredentialId>({ value: 'keys-credential-harborline' }),
+    createdAt: LATEST_ACTIVITY,
+    updatedAt: LATEST_ACTIVITY,
+  };
+  const bindings: ReadonlyArray<IntegrationBinding> = [
+    {
+      ...base,
+      provider: 'linear',
+      config: {
+        workspaceUrlKey: 'harborline',
+        viewerUserId: 'harborline',
+        viewerName: 'Harborline',
+      },
+    },
+    {
+      ...base,
+      provider: 'gitlab',
+      config: { userName: 'Harborline', userId: 'harborline', host: 'https://gitlab.com' },
+    },
+    {
+      ...base,
+      provider: 'jira',
+      config: {
+        siteUrl: 'https://harborline.atlassian.net',
+        email: 'harborline@example.test',
+        projectKey: 'HAR',
+      },
+    },
+    {
+      ...base,
+      provider: 'slack',
+      config: {
+        teamId: 'harborline',
+        teamName: 'Harborline',
+        userId: 'harborline',
+        followedChannels: [],
+        hasSelectedChannels: true,
+        includePrivate: false,
+        agentPolicy: { readFollowed: 'allow', readOthers: 'off', reply: 'ask', react: 'ask' },
+        signature: { agents: true, own: false, text: 'Harborline' },
+      },
+    },
+  ];
   useAppStore.setState({
     workspaceIntegrations: {
       ...state.workspaceIntegrations,
-      [workspaceId]: ['linear', 'gitlab', 'jira', 'slack'].map((provider) => ({
-        id: `keys-${provider}`,
-        workspaceId,
-        provider,
-        config: {},
-      })) as unknown as (typeof state.workspaceIntegrations)[WorkspaceId],
+      [workspaceId]: bindings,
     },
   });
 };
@@ -651,7 +707,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pickMenuItem({ id: 'app.close' });
     },
     lands: async (ctx) => {
-      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
       expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
     },
   }),
@@ -662,7 +718,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pickMenuItem({ id: 'report.open' });
     },
     lands: async () => {
-      expect(await screen.findAllByRole('dialog', { name: 'Report a bug' }, WAIT)).toHaveLength(1);
+      expect(await screen.findAllByRole('dialog', { name: 'Report a bug' })).toHaveLength(1);
     },
   }),
   keyRow({
@@ -682,7 +738,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await waitFor(() => expect(undoRuns).toEqual([1]), WAIT);
+      await waitFor(() => expect(undoRuns).toEqual([1]));
       expect(undoPrevented.at(-1)).toBe(true);
     },
   }),
@@ -714,7 +770,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await waitFor(() => {
         expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null });
-      }, WAIT);
+      });
     },
   }),
   keyRow({
@@ -722,23 +778,23 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'on the Terminal page the new chord opens a terminal, not a session',
     open: async () => {
       await press('terminal.studio')();
-      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+      await screen.findByRole('heading', { name: 'No terminal yet' });
       await pressed('terminal.newHere', document.body);
     },
-    lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT),
+    lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0)),
   }),
   keyRow({
     id: 'home.newWorkspace',
     note: 'on Home, with no workspace open, the new chord opens New workspace in place',
     open: async () => {
       useAppStore.setState({ currentWorkspaceId: null, currentSessionId: null });
-      await screen.findByRole('list', { name: 'Workspaces' }, WAIT);
+      await screen.findByRole('list', { name: 'Workspaces' });
       await pressed('home.newWorkspace', document.body);
     },
     lands: async () => {
-      await screen.findByRole('form', { name: 'New workspace' }, WAIT);
+      await screen.findByRole('form', { name: 'New workspace' });
       expect(useAppStore.getState().appStudio?.kind).toBe('addWorkspace');
-      expect(screen.getByRole('heading', { level: 1, name: 'Goodboy' })).toBeDefined();
+      screen.getByRole('heading', { level: 1, name: 'Goodboy' });
     },
   }),
   keyRow({
@@ -746,13 +802,13 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'on the Terminal page the close chord closes the selected tab, not the page',
     open: async () => {
       await press('terminal.studio')();
-      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+      await screen.findByRole('heading', { name: 'No terminal yet' });
       await pressed('terminal.newHere', document.body);
-      await waitFor(() => expect(terminalRows().length).toBe(1), WAIT);
+      await waitFor(() => expect(terminalRows().length).toBe(1));
       await pressed('terminal.closeTab', document.body);
     },
     lands: async () => {
-      await waitFor(() => expect(terminalRows().length).toBe(0), WAIT);
+      await waitFor(() => expect(terminalRows().length).toBe(0));
       expect(useAppStore.getState().appStudio?.kind).toBe('terminal');
     },
   }),
@@ -767,7 +823,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('app.close', document.body);
     },
     lands: async () => {
-      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
     },
   }),
   keyRow({
@@ -786,7 +842,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
           kind: 'impact',
           scope: { kind: 'spend' },
         });
-      }, WAIT);
+      });
     },
   }),
   keyRow({
@@ -798,7 +854,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('nav.up', document.body);
     },
     lands: async () => {
-      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull());
     },
   }),
   keyRow({
@@ -806,7 +862,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     note: 'inside the Ask panel the new chord resets the chat, not a session',
     open: async (ctx) => {
       await press('ask.open')();
-      const composer = await screen.findByPlaceholderText('Ask about this session…', {}, WAIT);
+      const composer = await screen.findByPlaceholderText('Ask about this session…', {});
       useAppStore.setState((state) => ({
         askThreadId: {
           ...state.askThreadId,
@@ -817,17 +873,14 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('ask.reset', composer);
     },
     lands: async (ctx) => {
-      await waitFor(
-        () => expect(useAppStore.getState().askThreadId[ctx.sessionId]).toBeNull(),
-        WAIT,
-      );
+      await waitFor(() => expect(useAppStore.getState().askThreadId[ctx.sessionId]).toBeNull());
     },
   }),
   keyRow({
     id: 'session.refresh',
     open: press('session.refresh'),
     lands: async (ctx) =>
-      waitFor(() => expect(useAppStore.getState().sessionSyncing[ctx.sessionId]).toBe(true), WAIT),
+      waitFor(() => expect(useAppStore.getState().sessionSyncing[ctx.sessionId]).toBe(true)),
   }),
   keyRow({
     id: 'overview.newHere',
@@ -859,22 +912,22 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'lens.linear',
     open: pressConnected('lens.linear'),
-    lands: lens('linear'),
+    lands: () => visible('dialog', 'Link work'),
   }),
   keyRow({
     id: 'lens.gitlab_issues',
     open: pressConnected('lens.gitlab_issues'),
-    lands: lens('gitlab_issues'),
+    lands: () => visible('dialog', 'Link work'),
   }),
   keyRow({
     id: 'lens.jira_issues',
     open: pressConnected('lens.jira_issues'),
-    lands: lens('jira_issues'),
+    lands: () => visible('dialog', 'Link work'),
   }),
   keyRow({
     id: 'lens.slack_threads',
     open: pressConnected('lens.slack_threads'),
-    lands: lens('slack_threads'),
+    lands: () => visible('dialog', 'Link work'),
   }),
   keyRow({
     id: 'composer.submit',
@@ -888,7 +941,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('composer.submit', field);
     },
     lands: async () => {
-      await waitFor(() => expect(spawnedWindows).toHaveLength(1), WAIT);
+      await waitFor(() => expect(spawnedWindows).toHaveLength(1));
       expect(
         useAppStore.getState().workspaces.find((workspace) => workspace.id === spawnedWindows[0])
           ?.name,
@@ -935,13 +988,12 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'list.openInTool',
     open: inboxKey('list.openInTool'),
     lands: async () =>
-      waitFor(() => expect(openUrls()).toContain('https://linear.example.test/HBL-501'), WAIT),
+      waitFor(() => expect(openUrls()).toContain('https://linear.example.test/HBL-501')),
   }),
   keyRow({
     id: 'list.reply',
     open: inboxKey('list.reply'),
-    lands: async () =>
-      waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'), WAIT),
+    lands: async () => waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA')),
   }),
   keyRow({
     id: 'list.star',
@@ -951,11 +1003,11 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
         const removals = vi
           .mocked(invoke)
           .mock.calls.filter(([command]) => command === 'db_execute')
-          .map(([, args]) => args as { sql: string; params: ReadonlyArray<unknown> })
+          .map(([, args]) => sqlCall({ value: args }))
           .filter((call) => /DELETE FROM workspace_starred_issues/.test(call.sql));
         expect(removals).toHaveLength(1);
         expect(removals[0]?.params).toContain('keys-issue-0');
-      }, WAIT),
+      }),
   }),
   keyRow({
     id: 'list.search',
@@ -1007,7 +1059,7 @@ export const bootWorld = async ({
     checkForUpdates: async () => undefined,
     hydrated: true,
     bootPhase: 'ready',
-  } as never);
+  });
   render(
     <StrictMode>
       <ErrorBoundary>
@@ -1055,7 +1107,7 @@ const openReview = async (): Promise<void> => {
     expect(sessionId === null ? null : useAppStore.getState().branchTab[sessionId]).toBe(
       'comments',
     );
-  }, WAIT);
+  });
 };
 
 const neighbourOf = (threadId: string, step: 1 | -1): string | null => {
@@ -1112,7 +1164,7 @@ const resolveWrites = (threadId: string): number => {
   return vi
     .mocked(invoke)
     .mock.calls.filter(([command]) => command === 'db_execute')
-    .map(([, args]) => args as { sql: string; params: ReadonlyArray<unknown> })
+    .map(([, args]) => sqlCall({ value: args }))
     .filter((call) => /resolve_/.test(call.sql) && ids.some((id) => call.params.includes(id)))
     .length;
 };
@@ -1121,7 +1173,7 @@ let writesBefore = 0;
 let neighbour: string | null = null;
 
 const writesAfter = (threadId: string) => async (): Promise<void> =>
-  waitFor(() => expect(resolveWrites(threadId)).toBeGreaterThan(writesBefore), WAIT);
+  waitFor(() => expect(resolveWrites(threadId)).toBeGreaterThan(writesBefore));
 
 const reviewWrite =
   (id: ShortcutId, threadId: string): WorldRow['open'] =>
@@ -1141,13 +1193,13 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       neighbour = neighbourOf(THREADS.metrics, 1);
       await pressed('review.next', await focusThread(THREADS.metrics));
     },
-    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour), WAIT),
+    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour)),
   }),
   worldRow({
     id: 'review.previous',
     world: 'resolve',
     open: reviewKey('review.previous', THREADS.metrics),
-    lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
+    lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics)),
   }),
   worldRow({
     id: 'review.down',
@@ -1157,13 +1209,13 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       neighbour = neighbourOf(THREADS.metrics, 1);
       await pressed('review.down', await focusThread(THREADS.metrics));
     },
-    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour), WAIT),
+    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour)),
   }),
   worldRow({
     id: 'review.up',
     world: 'resolve',
     open: reviewKey('review.up', THREADS.metrics),
-    lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
+    lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics)),
   }),
   worldRow({
     id: 'review.select',
@@ -1185,9 +1237,8 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     world: 'resolve',
     open: reviewKey('review.fix', THREADS.constant),
     lands: async () => {
-      await waitFor(
-        () => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('fix-comments'),
-        WAIT,
+      await waitFor(() =>
+        expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('fix-comments'),
       );
     },
   }),
@@ -1209,15 +1260,13 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     world: 'resolve',
     note: 'opens the reply box on a comment nobody started',
     open: reviewKey('review.reply', THREADS.constant),
-    lands: async () =>
-      waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'), WAIT),
+    lands: async () => waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA')),
   }),
   worldRow({
     id: 'review.edit',
     world: 'resolve',
     open: reviewKey('review.edit', THREADS.metrics),
-    lands: async () =>
-      waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'), WAIT),
+    lands: async () => waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA')),
   }),
   worldRow({
     id: 'activity.openRun',
@@ -1243,9 +1292,8 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
       await pressed('activity.openRun', lane);
     },
     lands: async () =>
-      waitFor(
-        () => expect(Object.values(useAppStore.getState().activeLens)).toContain('workflows'),
-        WAIT,
+      waitFor(() =>
+        expect(Object.values(useAppStore.getState().activeLens)).toContain('workflows'),
       ),
   }),
 ];
@@ -1253,7 +1301,8 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
 const QUEUE_SELECT = /FROM resolve_queue_items q/;
 
 const queueRows = (sessionId: string): ReadonlyArray<Record<string, unknown>> => {
-  const entries = useAppStore.getState().sessionResolveQueueItems[sessionId as never] ?? [];
+  const entries =
+    useAppStore.getState().sessionResolveQueueItems[brandId<SessionId>({ value: sessionId })] ?? [];
   return entries.map(({ item, thread }) => ({
     ...item,
     threadRowId: thread.id,
@@ -1335,7 +1384,7 @@ export const keysBridge = (command: string, args?: BridgeArgs): Promise<unknown>
   return bridge(command, args);
 };
 
-const standaloneAgent = (ctx: Ctx): string => {
+const standaloneAgent = (ctx: Ctx): AgentId => {
   const agent = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).find(
     (candidate) => candidate.workflowRunId == null && candidate.deletedAt == null,
   );
@@ -1362,11 +1411,11 @@ const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
   useAppStore.getState().navigate({
     to: agentPlace({
       sessionId: ctx.sessionId,
-      agentId: standaloneAgent(ctx) as never,
+      agentId: standaloneAgent(ctx),
     }),
   });
   await settle();
-  const composer = await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);
+  const composer = await screen.findByPlaceholderText(/^What should .* build\?/, undefined);
   composer.focus();
   return composer;
 };
@@ -1377,15 +1426,16 @@ const dbWrites = (
   vi
     .mocked(invoke)
     .mock.calls.filter(([command]) => command === 'db_execute')
-    .map(([, args]) => args as { sql: string; params: ReadonlyArray<unknown> })
+    .map(([, args]) => sqlCall({ value: args }))
     .filter((call) => pattern.test(call.sql));
 
 const sidebarRow = async (ctx: Ctx): Promise<HTMLElement> => {
-  await waitFor(
-    () => expect(document.querySelector(`[data-select-id="${ctx.sessionId}"]`)).not.toBeNull(),
-    WAIT,
+  await waitFor(() =>
+    expect(document.querySelector(`[data-select-id="${ctx.sessionId}"]`)).not.toBeNull(),
   );
-  return document.querySelector(`[data-select-id="${ctx.sessionId}"]`) as HTMLElement;
+  return requireValue({
+    value: document.querySelector<HTMLElement>(`[data-select-id="${ctx.sessionId}"]`),
+  });
 };
 
 const emitTwoNotifications = async (): Promise<void> => {
@@ -1422,7 +1472,7 @@ const rememberSearch = (text: string): void => {
 
 const openDiff = async (): Promise<void> => {
   await press('lens.files')();
-  expect(await screen.findByRole('button', { name: /^Compared with / }, WAIT)).toBeDefined();
+  expect(await screen.findByRole('button', { name: /^Compared with / })).toBeDefined();
 };
 
 const activeTreeFile = async (): Promise<string> =>
@@ -1431,7 +1481,7 @@ const activeTreeFile = async (): Promise<string> =>
       const row = document.querySelector('nav[aria-label="Changed files"] [aria-current="true"]');
       expect(row).not.toBeNull();
       return row;
-    }, WAIT)
+    })
   )?.textContent ?? '';
 
 let terminalTabCount = 0;
@@ -1442,8 +1492,8 @@ const openBoardCard = async (): Promise<HTMLElement> => {
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();
-    return found as HTMLElement;
-  }, WAIT);
+    return requireValue({ value: found });
+  });
   fireEvent.mouseOver(card);
   return card;
 };
@@ -1470,7 +1520,7 @@ const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('selection.all', document.body);
     },
     lands: async () => {
-      const bar = await screen.findByRole('toolbar', { name: /^\d+ selected$/ }, WAIT);
+      const bar = await screen.findByRole('toolbar', { name: /^\d+ selected$/ });
       expect(Number.parseInt(bar.getAttribute('aria-label') ?? '0', 10)).toBeGreaterThan(1);
     },
   }),
@@ -1480,7 +1530,7 @@ const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
       await selectUnderPointer();
       await pressed('selection.clear', document.body);
     },
-    lands: async () => waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull(), WAIT),
+    lands: async () => waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull()),
   }),
   keyRow({
     id: 'selection.delete',
@@ -1516,16 +1566,16 @@ const focusSelectedTab = (): HTMLElement => {
 
 const openTwoTerminalTabs = async (): Promise<void> => {
   await press('terminal.studio')();
-  await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+  await screen.findByRole('heading', { name: 'No terminal yet' });
   await pressed('terminal.newHere', document.body);
-  await waitFor(() => expect(terminalRows().length).toBe(1), WAIT);
+  await waitFor(() => expect(terminalRows().length).toBe(1));
   const first = tabButtons()[0];
   if (first === undefined) {
     throw new Error('The first terminal has no tab');
   }
   first.focus();
   await pressed('terminal.newTab', first);
-  await waitFor(() => expect(terminalRows().length).toBe(2), WAIT);
+  await waitFor(() => expect(terminalRows().length).toBe(2));
 };
 
 export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
@@ -1536,17 +1586,17 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await openTwoTerminalTabs();
       await pressed('terminal.prevTab', focusSelectedTab());
     },
-    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT),
+    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(0)),
   }),
   keyRow({
     id: 'terminal.nextTab',
     open: async () => {
       await openTwoTerminalTabs();
       await pressed('terminal.prevTab', focusSelectedTab());
-      await waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT);
+      await waitFor(() => expect(selectedTabIndex()).toBe(0));
       await pressed('terminal.nextTab', focusSelectedTab());
     },
-    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(1), WAIT),
+    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(1)),
   }),
   keyRow({
     id: 'terminal.tab1',
@@ -1564,9 +1614,9 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await openTwoTerminalTabs();
       await pressed('terminal.tab1', document.body);
-      await waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT);
+      await waitFor(() => expect(selectedTabIndex()).toBe(0));
       await pressed('terminal.tab2', document.body);
-      await waitFor(() => expect(selectedTabIndex()).toBe(1), WAIT);
+      await waitFor(() => expect(selectedTabIndex()).toBe(1));
       for (const id of [
         'terminal.tab3',
         'terminal.tab4',
@@ -1580,7 +1630,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       }
       await pressed('terminal.tab1', document.body);
     },
-    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(0), WAIT),
+    lands: async () => waitFor(() => expect(selectedTabIndex()).toBe(0)),
   }),
   keyRow({
     id: 'terminal.renameTab',
@@ -1589,14 +1639,14 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('terminal.renameTab', focusSelectedTab());
     },
     lands: async () => {
-      expect(await screen.findByRole('textbox', { name: /^Rename / }, WAIT)).toBeDefined();
+      expect(await screen.findByRole('textbox', { name: /^Rename / })).toBeDefined();
     },
   }),
   keyRow({
     id: 'terminal.newTab',
     open: async () => {
       await press('terminal.studio')();
-      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+      await screen.findByRole('heading', { name: 'No terminal yet' });
       const [newTerminal] = screen
         .getAllByRole('button', { name: /^New terminal$/ })
         .filter((button) => button.closest('[data-side-column]') === null);
@@ -1604,15 +1654,14 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
         throw new Error('The empty terminal page has no New terminal button');
       }
       fireEvent.click(newTerminal);
-      await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
-      const first = terminalRows()[0]?.querySelector('[role="tab"]');
+      await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0));
+      const first = terminalRows()[0]?.querySelector<HTMLElement>('[role="tab"]');
       expect(first).toBeDefined();
-      (first as HTMLElement).focus();
+      requireValue({ value: first }).focus();
       terminalTabCount = terminalRows().length;
-      await pressed('terminal.newTab', first as HTMLElement);
+      await pressed('terminal.newTab', requireValue({ value: first }));
     },
-    lands: async () =>
-      waitFor(() => expect(terminalRows().length).toBe(terminalTabCount + 1), WAIT),
+    lands: async () => waitFor(() => expect(terminalRows().length).toBe(terminalTabCount + 1)),
   }),
   keyRow({
     id: 'diff.fileDown',
@@ -1675,14 +1724,12 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('diff.closeFolder', document.body);
     },
     lands: async () =>
-      waitFor(
-        () =>
-          expect(
-            within(screen.getByRole('navigation', { name: 'Changed files' })).queryByText(
-              'ledger.ts',
-            ),
-          ).toBeNull(),
-        WAIT,
+      waitFor(() =>
+        expect(
+          within(screen.getByRole('navigation', { name: 'Changed files' })).queryByText(
+            'ledger.ts',
+          ),
+        ).toBeNull(),
       ),
   }),
   keyRow({
@@ -1693,10 +1740,9 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('diff.closeFolder', document.body);
       await pressed('diff.openFolder', document.body);
     },
-    lands: async () =>
-      expect(
-        within(screen.getByRole('navigation', { name: 'Changed files' })).getByText('ledger.ts'),
-      ).toBeDefined(),
+    lands: async () => {
+      within(screen.getByRole('navigation', { name: 'Changed files' })).getByText('ledger.ts');
+    },
   }),
   keyRow({
     id: 'diff.focusTree',
@@ -1795,7 +1841,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
       expect(armed.defaultPrevented).toBe(true);
       expect(stopRequested).toEqual([]);
-      await screen.findByText('Esc again to stop', undefined, WAIT);
+      await screen.findByText('Esc again to stop', undefined);
       pressShortcut({ id: 'agent.stop', target: composer });
       await settle();
     },
@@ -1824,7 +1870,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      await screen.findByText('Esc again to stop', undefined, WAIT);
+      await screen.findByText('Esc again to stop', undefined);
       expect(placeKeyNow()).toBe(escapePlaceKey.before);
     },
   }),
@@ -1853,7 +1899,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       const row = await sidebarRow(ctx);
       const target = row.querySelector('button') ?? row;
-      (target as HTMLElement).focus();
+      requireValue({ value: target }).focus();
       await pressed('menu.open', target);
     },
     lands: () => visible('menu', /./),
@@ -1868,12 +1914,10 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       expect(screen.queryByRole('dialog', { name: /archive\?$/ })).toBeNull();
     },
     lands: async (ctx) =>
-      waitFor(
-        () =>
-          expect(
-            dbWrites(/archived_at/).filter((call) => call.params.includes(ctx.sessionId)).length,
-          ).toBeGreaterThan(0),
-        WAIT,
+      waitFor(() =>
+        expect(
+          dbWrites(/archived_at/).filter((call) => call.params.includes(ctx.sessionId)).length,
+        ).toBeGreaterThan(0),
       ),
   }),
   keyRow({
@@ -1884,7 +1928,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('find.next');
     },
     lands: async () => {
-      await waitFor(() => expect(findStatus()).not.toBeNull(), WAIT);
+      await waitFor(() => expect(findStatus()).not.toBeNull());
       expect(findSummary()).toMatch(/“credit”.*1 of \d+/);
     },
   }),
@@ -1894,17 +1938,14 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       rememberSearch('credit');
       await focusAnchor();
       await pressed('find.next');
-      await waitFor(() => expect(findPosition()).not.toBeNull(), WAIT);
-      const first = findPosition() as FindPosition;
+      await waitFor(() => expect(findPosition()).not.toBeNull());
+      const first = requireValue({ value: findPosition() });
       await pressed('find.next');
-      await waitFor(
-        () => expect(findPosition()?.index).toBe((first.index % first.total) + 1),
-        WAIT,
-      );
+      await waitFor(() => expect(findPosition()?.index).toBe((first.index % first.total) + 1));
       firstFindIndex = first.index;
       await pressed('find.previous');
     },
-    lands: async () => waitFor(() => expect(findPosition()?.index).toBe(firstFindIndex), WAIT),
+    lands: async () => waitFor(() => expect(findPosition()?.index).toBe(firstFindIndex)),
   }),
   keyRow({
     id: 'list.dismiss',
@@ -1916,9 +1957,26 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('list.dismiss', document.body);
     },
     lands: async () => {
-      await waitFor(() => expect(screen.queryByText('Second alert')).toBeNull(), WAIT);
-      expect(screen.getByText('First alert')).toBeDefined();
+      await waitFor(() => expect(screen.queryByText('Second alert')).toBeNull());
+      screen.getByText('First alert');
     },
   }),
   ...SELECTION_KEY_ROWS,
 ];
+
+type ValueParams<Value> = { readonly value: Value | null | undefined };
+const requireValue = <Value,>({ value }: ValueParams<Value>): Value => {
+  if (value == null) {
+    throw new Error('Missing test value');
+  }
+  return value;
+};
+
+type SqlCall = { readonly sql: string; readonly params: ReadonlyArray<unknown> };
+type SqlParams = { readonly value: unknown };
+const sqlCall = ({ value }: SqlParams): SqlCall => {
+  if (!isRecord(value) || typeof value.sql !== 'string' || !Array.isArray(value.params)) {
+    throw new Error('Missing SQL call');
+  }
+  return { sql: value.sql, params: value.params };
+};

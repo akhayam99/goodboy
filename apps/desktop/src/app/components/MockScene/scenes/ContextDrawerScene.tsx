@@ -1,9 +1,15 @@
-import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
+import type { ContextDrawerSection } from '../../../../store/slices/drawer/state';
 import { ActivityRunScene } from './ActivityRunScene';
 
-const contextTabFromUrl = (): ContextDrawerTab => {
-  const tab = new URLSearchParams(window.location.search).get('tab');
-  return tab === 'goal' || tab === 'summary' || tab === 'learned' ? tab : 'decisions';
+const contextSectionFromUrl = (): ContextDrawerSection => {
+  const section =
+    new URLSearchParams(window.location.search).get('section') ??
+    new URLSearchParams(window.location.search).get('tab');
+  return section === 'goal' || section === 'summary' || section === 'explanations'
+    ? section
+    : 'decisions';
 };
 
-export const ContextDrawerScene = () => <ActivityRunScene contextTab={contextTabFromUrl()} />;
+export const ContextDrawerScene = () => (
+  <ActivityRunScene contextSection={contextSectionFromUrl()} />
+);
