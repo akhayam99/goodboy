@@ -60,7 +60,9 @@ stays reachable in the queue. On someone else's open request the step is `Review
 (`pullRequest.writeReview`). A merged request ends the walk: `Remove worktree` while the folder is
 there (`diff.removeWorktree`, its confirm shares `mountCleanUpWordsOf` with Clean up: the folder and
 the local branch go, the pull request stays, and the branch on origin stays unless the after-merge
-setting removes it). A blocker such as an open terminal draws it disabled in the secondary with the
+setting removes it). Its toast offers Undo: the branch comes back from the keep ref, on origin too
+if it was there, and `attachMount` rebuilds the worktree in a fresh folder, so ignored files do
+not return. A blocker such as an open terminal draws it disabled in the secondary with the
 reason, and a refusal keeps the step, so it never jumps to the session wide archive; `Archive
 session` then waits in `⋯`. Once the last folder is gone the page has no diff target: the step is
 `Archive session` on the session itself (`session.archive`, `hasRemovedMergedMountOf`, every host),
