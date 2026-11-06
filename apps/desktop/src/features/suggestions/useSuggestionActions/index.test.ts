@@ -591,7 +591,7 @@ describe('useSuggestionActions', () => {
     expect(spies.showToast).not.toHaveBeenCalled();
   });
 
-  it('hands the questions lens the answer action', () => {
+  it('opens the first question on its address even when several are open', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -606,6 +606,28 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Answer');
+    actions.primary?.run();
+
+    expect(onSelectQuestions).not.toHaveBeenCalled();
+    expect(spies.navigate).toHaveBeenCalledWith({
+      to: questionPlace({
+        sessionId: SESSION_ID,
+        questionId: brandId<OpenQuestionId>({ value: 'question-1' }),
+      }),
+      mode: 'push',
+    });
+  });
+
+  it('hands the questions lens the answer action when no question is known', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'answer-questions:session-1',
+        kind: 'answer-questions',
+        payload: { count: 2, firstQuestion: null, rootAgentId: null },
+      },
+    });
+
     actions.primary?.run();
 
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);

@@ -5,6 +5,7 @@ import {
   EMPTY_ARRAY,
   agentPlace,
   branchPlace,
+  questionPlace,
   sessionPlace,
   useAppStore,
 } from '../../../../../store';
@@ -605,7 +606,9 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
       navigate({
         to:
           place.kind === 'questions'
-            ? sessionPlace({ sessionId, lens: 'questions' })
+            ? place.questionId === null
+              ? sessionPlace({ sessionId, lens: 'questions' })
+              : questionPlace({ sessionId, questionId: place.questionId })
             : branchPlace({ sessionId, mountPath, tab: place.tab }),
       });
     };
