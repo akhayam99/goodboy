@@ -35,6 +35,9 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   const messages = useAppStore((state) =>
     threadId === null ? NO_MESSAGES : (state.askMessages[threadId] ?? NO_MESSAGES),
   );
+  const isLoaded = useAppStore(
+    (state) => threadId === null || state.askMessages[threadId] !== undefined,
+  );
   const stream = useAppStore((state) =>
     threadId === null ? undefined : state.askStreams[threadId],
   );
@@ -140,7 +143,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
       ) : (
         <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
-          {turns.length === 0 ? (
+          {isLoaded && turns.length === 0 ? (
             <EmptyState
               size="section"
               headingLevel={3}

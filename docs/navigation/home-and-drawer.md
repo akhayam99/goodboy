@@ -327,7 +327,7 @@ the next question makes a new chat id) and the old thread stays under **Earlier*
 so nothing is lost and no Undo is needed. It waits while a reply streams. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
-suggested questions; each line's mark is one text line tall, so
+suggested questions, under a line that says what Ask is (`Ask this session`); each line's mark is one text line tall, so
 it centres on the first line of text even when the line wraps; once a thread has
 turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that

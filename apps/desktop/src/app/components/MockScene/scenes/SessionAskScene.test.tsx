@@ -65,11 +65,8 @@ describe('the session Ask scene', () => {
 
   it('says what Ask is above the questions to try, and drops it once a turn exists', async () => {
     await renderState('rightnow');
-    const empty = within(askDrawer()).getByRole('heading', { name: 'Ask this session' });
-    expect(empty).toBeDefined();
-    expect(
-      within(askDrawer()).getByText('What it did, what it found, what waits on you.'),
-    ).toBeDefined();
+    await within(askDrawer()).findByRole('heading', { name: 'Ask this session' });
+    within(askDrawer()).getByText('What it did, what it found, what waits on you.');
     cleanup();
     await renderState('answer');
     expect(within(askDrawer()).queryByRole('heading', { name: 'Ask this session' })).toBeNull();

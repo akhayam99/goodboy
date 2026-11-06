@@ -814,7 +814,7 @@ describe('ScriptsPanel', () => {
     const suggested = within(group('notify-relay · nw/retry-backoff')).getByRole('region', {
       name: /^Suggested of /u,
     });
-    expect(within(suggested).getByRole('button', { name: 'Stop dev' })).toBeDefined();
+    within(suggested).getByRole('button', { name: 'Stop dev' });
     expect(within(suggested).queryByText('test')).toBeNull();
   });
 

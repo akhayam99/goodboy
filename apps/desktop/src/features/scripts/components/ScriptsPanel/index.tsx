@@ -29,6 +29,7 @@ import { useScriptLive } from '../../hooks/useScriptLive';
 import { useScriptPins } from '../../hooks/useScriptPins';
 import { useServiceStarts } from '../../hooks/useServiceStarts';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
+import { isScriptOpenIn } from '../../isScriptOpenIn';
 import { scriptPinId } from '../../scriptPinId';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/utils/names';
@@ -507,12 +508,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             : live.holderOf({ port, worktreePath: group.worktreePath })
         }
         facts={facts}
-        isSelected={
-          focusedKey === rowKey ||
-          (openPayload !== null &&
-            openPayload.scriptKey === script.key &&
-            (openPayload.mountId === null || openPayload.mountId === group.mountId))
-        }
+        isSelected={focusedKey === rowKey || isScriptOpenIn({ openPayload, group, script })}
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
         target={targetFor({ group, script })}
         onOpen={() => onOpen({ group, script })}
@@ -639,11 +635,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             onTogglePicker={() =>
               setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
             }
-            isScriptSelected={(script) =>
-              openPayload !== null &&
-              openPayload.scriptKey === script.key &&
-              (openPayload.mountId === null || openPayload.mountId === group.mountId)
-            }
+            isScriptSelected={(script) => isScriptOpenIn({ openPayload, group, script })}
             onOpen={(script) => onOpen({ group, script })}
             onRun={(script) => onRun({ group, script })}
             onStop={(script) => onStop({ script })}

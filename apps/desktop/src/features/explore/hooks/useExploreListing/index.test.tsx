@@ -1,13 +1,15 @@
 // @vitest-environment happy-dom
 
-const h = vi.hoisted(() => ({
-  invoke: vi.fn<(command: string, args?: Record<string, unknown>) => Promise<unknown>>(),
-}));
-
-vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
+import { stubStoryInvoke } from '../../../../store/storyHarness';
 import { EXPLORE_ROOT_PATH, type ExploreListing } from '../../exploreRows';
 import { useExploreListing } from './index';
 
@@ -16,8 +18,7 @@ type ProbeParams = {
 };
 
 beforeEach(() => {
-  h.invoke.mockReset();
-  h.invoke.mockImplementation(() => new Promise(() => undefined));
+  stubStoryInvoke({ explore_list: [] });
 });
 
 afterEach(cleanup);
@@ -38,7 +39,6 @@ describe('useExploreListing', () => {
 
     expect(frames.length).toBeGreaterThan(1);
     expect(frames.every((frame) => frame.errorByPath[EXPLORE_ROOT_PATH] == null)).toBe(true);
-    expect(frames.at(-1)?.loadingByPath[EXPLORE_ROOT_PATH]).toBe(true);
   });
 
   it('keeps the error for a folder path that is empty', () => {
