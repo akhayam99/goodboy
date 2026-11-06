@@ -11,6 +11,8 @@ import { SignalWord } from './SignalWord';
 type Props = {
   readonly signal: BoardSignal;
   readonly onOpenRequest?: (event: MouseEvent) => void;
+  readonly onGlyphEnter?: () => void;
+  readonly onGlyphLeave?: (event: MouseEvent<HTMLElement>) => void;
 };
 
 type CountParams = {
@@ -22,7 +24,7 @@ const runningLabel = ({ count }: CountParams): string =>
 
 const countWord = ({ count }: CountParams): string | null => (count > 1 ? String(count) : null);
 
-export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
+export const SessionSignal = ({ signal, onOpenRequest, onGlyphEnter, onGlyphLeave }: Props) => {
   switch (signal.kind) {
     case 'attention': {
       const meta = ATTENTION_REASON_META[signal.reason];
@@ -84,6 +86,8 @@ export const SessionSignal = ({ signal, onOpenRequest }: Props) => {
             role="img"
             aria-label={unreachableLabel}
             data-board-signal=""
+            onMouseEnter={onGlyphEnter}
+            onMouseLeave={onGlyphLeave}
             className="inline-flex text-faint-foreground"
           >
             <CloudOff size={ICON_SIZE.row} aria-hidden />

@@ -409,7 +409,7 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch.tsx": {
+  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch/index.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }
@@ -1356,7 +1356,7 @@
   },
   "packages/ui/src/components/Tooltip.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
+      "count": 2
     }
   },
   "website/src/components/CardRow.tsx": {

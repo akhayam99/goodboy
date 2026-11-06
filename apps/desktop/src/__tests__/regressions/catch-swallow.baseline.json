@@ -27,7 +27,7 @@
   "apps/desktop/src/features/integrations/slack/useSlackDraft/index.ts": 1,
   "apps/desktop/src/features/integrations/starred/refreshStarredIssues.ts": 3,
   "apps/desktop/src/features/palette/hooks/useSessionsEverywhere.ts": 1,
-  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch.tsx": 1,
+  "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch/index.tsx": 1,
   "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/UsageGroup/SpendInGoodboy.tsx": 1,
   "apps/desktop/src/features/providers/hooks/useProviderBudgetOverview.ts": 1,
   "apps/desktop/src/features/resolve/components/ReviewFlow/index.tsx": 1,

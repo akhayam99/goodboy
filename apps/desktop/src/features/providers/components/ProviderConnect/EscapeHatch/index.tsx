@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, formatError, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
-import { openCommandInExternalTerminal } from '../../external-terminal';
-import { useAppStore } from '../../../../store';
+import { openCommandInExternalTerminal } from '../../../external-terminal';
+import { useAppStore } from '../../../../../store';
 import { CopyButton } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { SETTING_TERMINAL_APP } from '../../../settings/settings';
-import { commandTerminalLabel } from '../../commandTerminalLabel';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { SETTING_TERMINAL_APP } from '../../../../settings/settings';
+import { commandTerminalLabel } from '../../../commandTerminalLabel';
 
 type Props = {
   readonly command: string;
@@ -94,16 +94,14 @@ export const EscapeHatch = ({ command, providerId, action }: Props) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Tooltip content="Copy command" side="top">
-          <CopyButton
-            presentation="icon"
-            value={command}
-            label="copy command"
-            className="h-7 gap-2 border border-border bg-muted px-3 text-meta font-medium text-foreground hover:bg-hover hover:text-foreground"
-          >
-            <span>Copy command</span>
-          </CopyButton>
-        </Tooltip>
+        <CopyButton
+          presentation="icon"
+          value={command}
+          label="copy command"
+          className="h-7 gap-2 border border-border bg-muted px-3 text-meta font-medium text-foreground hover:bg-hover hover:text-foreground"
+        >
+          <span>Copy command</span>
+        </CopyButton>
         <Tooltip content={`Open in ${terminalLabel}`} side="top">
           <Button
             variant="secondary"

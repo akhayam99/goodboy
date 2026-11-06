@@ -207,6 +207,7 @@ No other `shared/` subfolder without adding it here. A folder that holds only a 
 ## Shared utilities
 
 - Reusable utilities → `shared/utils/<name>.ts`, each with its `<name>.test.ts` beside it.
+- `shared/utils/plainText.ts` uses `inlineMarkdownText` with `shouldStripUnmatchedMarkers` to remove stray delimiters from text nodes before flattening. Code spans keep their literal values, including identifiers such as `__init__.py`.
 - A file enters `shared/` only when 2+ different features import it. When in doubt, keep it in the feature. Do not share ahead of time.
 - Before you create a new shared util, grep `shared/utils/` for one you can reuse. Three guards and a mint helper are already one place: `isRecord`, `isProviderId` and `isoNow` come from `@goodboy/types/helpers`, never a private copy in a file.
 - Dates, times, durations and ages live in `shared/utils/time/`, one file per formatter: `formatClock` (14:30, 24 hour), `formatDayMonth` (Sep 29), `formatDate` (Sep 29, 2026), `formatDateTime`, `formatWeekday`, `formatDuration` (1h 5m), `formatSpan` (5m), `formatAge` (5m ago) and `formatAdaptiveAge`. `formatIntl.ts` holds the only `Intl.DateTimeFormat` call: it pins `en-US` and a 24 hour clock, so the output never depends on the machine locale. A relative label takes `now` from `useNow` (`shared/hooks/useNow`) so it keeps counting; `RelativeTime` does that for a bare label. Never call `toLocaleTimeString`, `toLocaleDateString` or `Intl.DateTimeFormat` in a feature.

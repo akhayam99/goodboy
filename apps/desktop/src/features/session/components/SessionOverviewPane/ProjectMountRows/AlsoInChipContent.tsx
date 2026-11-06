@@ -3,6 +3,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionStageInfo } from '../../../../../store';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { describeSessionStage } from '../../../session-stage';
+import { plainText } from '../../../../../shared/utils/plainText';
 import { sessionTitle } from '../../../../../shared/utils/sessionTitle';
 
 type Props = {
@@ -13,7 +14,7 @@ export const AlsoInChipContent = ({ session }: Props) => {
   const stage = useSessionStageInfo(session);
   const presentation = describeSessionStage(stage);
   const navigate = useAppStore((state) => state.navigate);
-  const title = sessionTitle({ session });
+  const title = plainText({ text: sessionTitle({ session }) });
 
   return (
     <Tooltip content={`Also in ${title}`}>
