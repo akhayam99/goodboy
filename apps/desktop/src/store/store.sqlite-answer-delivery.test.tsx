@@ -13,11 +13,13 @@ import {
   importStore,
   openStorySqlite,
   resetStoryStore,
+  rowsOf,
   STORE_IMPORT_TIMEOUT_MS,
   storySqlite,
   stubStoryInvoke,
   type StoryStore,
 } from './storyHarness';
+import { answersInFlight } from './slices/open-questions/answersInFlight';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>
@@ -104,11 +106,21 @@ const pairs = [
   { id: SECOND_ID, text: SECOND_TEXT, answer: 'Yes, twice' },
 ];
 
+type TurnParams = {
+  readonly agentId?: AgentId;
+  readonly onStarted?: () => void;
+};
+
+const startedTurn = async ({ onStarted }: TurnParams) => {
+  onStarted?.();
+  return { blockedOverBudget: false };
+};
+
 const failDeliveryOnce = () => {
   const sendTurn = vi
     .fn()
     .mockRejectedValueOnce(new Error('The agent is not reachable.'))
-    .mockResolvedValue({ blockedOverBudget: false, isAlreadySent: false });
+    .mockImplementation(startedTurn);
   useAppStore.setState({ sendTurn });
   return sendTurn;
 };
@@ -179,6 +191,14 @@ const twoAskingAgents = async (): Promise<void> => {
   await useAppStore.getState().loadSessionOpenQuestions(sessionId);
 };
 
+const deliveredRows = async () =>
+  (
+    await rowsOf<{ count: number }>({
+      sql: 'SELECT COUNT(*) AS count FROM open_questions WHERE answer_delivered_at IS NOT NULL',
+      params: [],
+    })
+  )[0]?.count ?? 0;
+
 const deliveredIds = () =>
   (useAppStore.getState().sessionAnsweredQuestions[sessionId] ?? [])
     .filter((question) => question.answerDeliveredAt !== undefined)
@@ -187,8 +207,8 @@ const deliveredIds = () =>
 describe('answers commit per agent, after the agent got them', () => {
   it('marks the agent that got its answers and keeps the refused one undelivered', async () => {
     await twoAskingAgents();
-    const sendTurn = vi.fn(async ({ agentId }: { readonly agentId?: AgentId }) =>
-      agentId === TESTER_ID ? { blockedOverBudget: true } : { blockedOverBudget: false },
+    const sendTurn = vi.fn(async (params: TurnParams) =>
+      params.agentId === TESTER_ID ? { blockedOverBudget: true } : startedTurn(params),
     );
     useAppStore.setState({ sendTurn });
 
@@ -201,7 +221,7 @@ describe('answers commit per agent, after the agent got them', () => {
     expect(pending()?.error).toContain('over its limit');
 
     sendTurn.mockClear();
-    sendTurn.mockImplementation(async () => ({ blockedOverBudget: false }));
+    sendTurn.mockImplementation(startedTurn);
     await useAppStore
       .getState()
       .retryOpenQuestionDelivery({ sessionId, attemptId: pending()?.attemptId ?? '' });
@@ -234,7 +254,7 @@ describe('answers commit per agent, after the agent got them', () => {
         ?.pairs.map((pair) => pair.id)
         .sort(),
     ).toEqual([FIRST_ID, SECOND_ID].sort());
-    const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+    const sendTurn = vi.fn(startedTurn);
     useAppStore.setState({ sendTurn });
     await useAppStore
       .getState()
@@ -245,12 +265,56 @@ describe('answers commit per agent, after the agent got them', () => {
 
   it('flags nothing when every saved answer reached its agent', async () => {
     await twoAskingAgents();
-    useAppStore.setState({ sendTurn: vi.fn(async () => ({ blockedOverBudget: false })) });
+    useAppStore.setState({ sendTurn: vi.fn(startedTurn) });
     await useAppStore.getState().answerOpenQuestions(sessionId, pairs, null);
 
     useAppStore.getState().flagUndeliveredAnswers({ sessionId });
 
     expect(pending()).toBeUndefined();
+  });
+
+  it('never offers to send answers again after a reload in the middle of the turn', async () => {
+    await twoAskingAgents();
+    const turnEnd: { finish: () => void } = { finish: () => undefined };
+    const sendTurn = vi.fn(async ({ onStarted }: TurnParams) => {
+      onStarted?.();
+      await new Promise<void>((resolve) => {
+        turnEnd.finish = resolve;
+      });
+      return { blockedOverBudget: false };
+    });
+    useAppStore.setState({ sendTurn });
+    const answering = useAppStore.getState().answerOpenQuestions(sessionId, pairs, null);
+    await vi.waitFor(async () => expect(await deliveredRows()).toBe(1));
+    answersInFlight.end({ sessionId });
+    useAppStore.setState({ sessionAnsweredQuestions: {} });
+
+    await useAppStore.getState().loadSessionAnsweredQuestions(sessionId);
+    useAppStore.getState().flagUndeliveredAnswers({ sessionId });
+
+    expect(deliveredIds()).toEqual([FIRST_ID]);
+    expect(pending()?.pairs.map((pair) => pair.id)).toEqual([SECOND_ID]);
+    answersInFlight.begin({ sessionId });
+    turnEnd.finish();
+    await vi.waitFor(() => expect(sendTurn).toHaveBeenCalledTimes(2));
+    turnEnd.finish();
+    await answering;
+  });
+
+  it('keeps answers undelivered when the agent never started', async () => {
+    await twoAskingAgents();
+    useAppStore.setState({ sendTurn: vi.fn(async () => ({ blockedOverBudget: false })) });
+
+    await expect(
+      useAppStore.getState().answerOpenQuestions(sessionId, pairs, null),
+    ).rejects.toThrow('The agent did not start');
+
+    expect(deliveredIds()).toEqual([]);
+    expect(
+      pending()
+        ?.pairs.map((pair) => pair.id)
+        .sort(),
+    ).toEqual([FIRST_ID, SECOND_ID].sort());
   });
 });
 
@@ -316,7 +380,7 @@ describe('answering open questions when the delivery fails after the answers are
     ).rejects.toThrow('Not reachable.');
     const newerAttemptId = pending()?.attemptId ?? '';
     sendTurn.mockClear();
-    sendTurn.mockResolvedValue({ blockedOverBudget: false, isAlreadySent: false });
+    sendTurn.mockImplementation(startedTurn);
 
     await useAppStore
       .getState()

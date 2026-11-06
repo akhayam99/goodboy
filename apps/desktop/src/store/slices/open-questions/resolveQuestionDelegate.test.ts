@@ -124,7 +124,10 @@ const createHarness = (): Harness => {
     }),
     loadSessionSlots: vi.fn(async () => undefined),
     refreshUnreadWorkspaces: vi.fn(() => undefined),
-    sendTurn: vi.fn(async () => ({ blockedOverBudget: false })),
+    sendTurn: vi.fn(async ({ onStarted }: { readonly onStarted?: () => void }) => {
+      onStarted?.();
+      return { blockedOverBudget: false };
+    }),
     emitNotification: vi.fn(async () => undefined),
   };
   const set = ((update: unknown) => {

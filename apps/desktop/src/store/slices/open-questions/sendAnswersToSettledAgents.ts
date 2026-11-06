@@ -23,6 +23,8 @@ type DeliverParams = {
 
 const askingAgentOf = (question: OpenQuestion): AskingAgentId => question.createdByAgentId ?? null;
 
+const NOT_STARTED = 'The agent did not start. Your answers are kept.';
+
 const AGENT_PROVENANCE =
   "  Source: an agent answered this on the user's behalf. Treat it as the user's own answer.";
 
@@ -44,17 +46,33 @@ const deliverToAgent = async ({
   agentId,
   questions,
 }: DeliverParams): Promise<void> => {
-  throwIfRefused({
-    result: await get().sendTurn({
-      sessionId,
-      content: wrapOpenQuestionAnswers(buildBatchPrompt(questions)),
-      agentId: agentId ?? undefined,
-    }),
+  let marking: Promise<unknown> | null = null;
+  const mark = (): Promise<unknown> => {
+    marking ??= markOpenQuestionAnswersDelivered({
+      db: tauriDatabase,
+      ids: questions.map((question) => question.id),
+    }).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    return marking;
+  };
+  const result = await get().sendTurn({
+    sessionId,
+    content: wrapOpenQuestionAnswers(buildBatchPrompt(questions)),
+    agentId: agentId ?? undefined,
+    onStarted: () => {
+      void mark();
+    },
   });
-  await markOpenQuestionAnswersDelivered({
-    db: tauriDatabase,
-    ids: questions.map((question) => question.id),
-  });
+  if (marking === null && result.isLaneQueued !== true && result.isAlreadySent !== true) {
+    throwIfRefused({ result });
+    throw new Error(NOT_STARTED);
+  }
+  const failure = await mark();
+  if (failure !== null) {
+    throw failure;
+  }
 };
 
 export const sendAnswersToSettledAgents = async ({
