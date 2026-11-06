@@ -229,6 +229,11 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       return;
     }
     let hasStarted = false;
+    let planUse: Promise<void> | null = null;
+    const startPlanUse = (): Promise<void> => {
+      planUse ??= usePlan();
+      return planUse;
+    };
     const result = await get()
       .sendTurn({
         sessionId,
@@ -237,6 +242,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         origin: 'workflow',
         onStarted: () => {
           hasStarted = true;
+          startPlanUse().catch(() => undefined);
           onStarted?.();
         },
         handoff: {
@@ -247,12 +253,12 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       })
       .catch(async (error: unknown) => {
         if (hasStarted) {
-          await usePlan();
+          await startPlanUse();
         }
         throw error;
       });
     if (hasStarted || result.isLaneQueued === true) {
-      await usePlan();
+      await startPlanUse();
     }
   };
 };

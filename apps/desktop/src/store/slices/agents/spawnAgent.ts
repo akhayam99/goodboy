@@ -369,11 +369,12 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     const kickoffPlan = planToConsume;
     planToConsume = null;
     let hasStarted = false;
-    const usePlan = async (): Promise<void> => {
+    let planUse: Promise<void> | null = null;
+    const usePlan = (): Promise<void> => {
       if (kickoffPlan === null) {
-        return;
+        return Promise.resolve();
       }
-      await recordPlanConsumption({
+      planUse ??= recordPlanConsumption({
         set,
         get,
         sessionId,
@@ -382,6 +383,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       }).catch((error: unknown) =>
         get().reportError({ title: "Couldn't mark the plan as used", error, sessionId }),
       );
+      return planUse;
     };
     void get()
       .sendTurn({
@@ -391,6 +393,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         ...(args.mountId !== undefined && { mountId: args.mountId }),
         onStarted: () => {
           hasStarted = true;
+          void usePlan();
           args.onKickoffAccepted?.();
         },
         handoff:
