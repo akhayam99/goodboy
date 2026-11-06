@@ -5,6 +5,7 @@ import { BranchList } from '../branches/BranchList';
 import type { BranchEntry } from '../branches/branchStoryOf';
 import type { ActionCardModel } from '../next/actionCardsOf';
 import type { NextBranchName } from '../next/nextRowCopyOf';
+import { nextRowCountOf } from '../next/nextRowCountOf';
 import { NextStackView } from '../next/NextStackView';
 import type { ActionCardActions } from '../next/useActionCardActions';
 import type { OverviewCardModel } from '../overviewCardsOf';
@@ -44,12 +45,15 @@ export const BranchesCard = ({
     hasHeader={false}
     regionLabel={entries.length >= 2 ? undefined : card.title}
   >
-    {entries.length >= 2 ? null : <SectionLabel headingLevel={2} label="Next" />}
+    {nextRowCountOf({ cards, card: 'branches' }) > 0 ? (
+      <SectionLabel headingLevel={2} label="Next" />
+    ) : null}
     <NextStackView
       sessionId={sessionId}
       cards={cards}
       overviewCard="branches"
       hasHeader={false}
+      hasGroupLabels={false}
       canLead={canLead}
       actionsFor={actionsFor}
       openFor={openFor}

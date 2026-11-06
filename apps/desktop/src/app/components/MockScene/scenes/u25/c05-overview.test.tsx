@@ -55,19 +55,6 @@ const mount = async (name: SceneName): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-const body = (): HTMLElement => {
-  const pane = document.querySelector<HTMLElement>('[data-slot="pane-body"]');
-  if (pane === null) {
-    throw new Error('no Overview pane body');
-  }
-  return pane;
-};
-
-const sectionOrder = (): ReadonlyArray<string> =>
-  Array.from(body().querySelectorAll(':scope > section'))
-    .map((section) => section.getAttribute('aria-label') ?? '')
-    .filter((label) => label !== '');
-
 type PresentParams = {
   readonly value: HTMLElement | null | undefined;
   readonly what: string;
@@ -165,7 +152,13 @@ describe('the c05 overview scenes', () => {
     within(notices).getByRole('button', { name: /^Restore branch for/ });
     within(notices).getByRole('button', { name: 'Use this branch here' });
     expect(screen.queryByPlaceholderText('What should it do?')).toBeNull();
-    expect(sectionOrder()[0]).toBe('Notices');
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    expect(needsYou.contains(notices)).toBe(false);
+    expect(
+      document.querySelector('[data-overview-glance]')?.getAttribute('data-overview-glance'),
+    ).toBe('waiting');
+    const count = Number(needsYou.querySelector('[data-overview-count]')?.textContent);
+    expect(count).toBeGreaterThan(needsYou.querySelectorAll('[data-action-card]').length);
   });
 
   it('c05-overview-blank starts inline, with New as the outline button and Start as the primary', async () => {

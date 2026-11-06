@@ -4,6 +4,7 @@ import type { MountRowView } from '../../../../../store/slices/project-mounts/mo
 import { useActionControls } from '../../../../actions/useActionControls';
 import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
+import type { RemoteBranchState } from '../../../../worktree/worktree';
 import { ClosedWorktreeNotice } from '../ClosedWorktreeNotice';
 import { AlsoInChip } from '../ProjectMountRows/AlsoInChip';
 import { ForeignCommitsNotice } from '../ProjectMountRows/ForeignCommitsNotice';
@@ -15,9 +16,19 @@ type Props = {
   readonly sessionId: SessionId;
   readonly row: MountRowView;
   readonly status: WorktreeStatus | null;
+  readonly foreign: RemoteBranchState | null;
+  readonly isMismatchDismissed: boolean;
+  readonly onDismissMismatch: () => void;
 };
 
-export const MountNotices = ({ sessionId, row, status }: Props) => {
+export const MountNotices = ({
+  sessionId,
+  row,
+  status,
+  foreign,
+  isMismatchDismissed,
+  onDismissMismatch,
+}: Props) => {
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: row.repoRoot });
   const target = useMemo<MountActionTarget>(
     () => ({ kind: 'mount', sessionId, mountId: row.mountId, status, remoteKind }),
@@ -48,12 +59,15 @@ export const MountNotices = ({ sessionId, row, status }: Props) => {
       {controls.failure === null ? null : (
         <MountActionFailureNotice projectName={row.projectName} controls={controls} />
       )}
-      {hasTools ? <ForeignCommitsNotice sessionId={sessionId} row={row} status={status} /> : null}
+      {hasTools && foreign !== null && status !== null ? (
+        <ForeignCommitsNotice sessionId={sessionId} row={row} status={status} state={foreign} />
+      ) : null}
       {row.projectKind === 'repo' && row.branch !== '' ? (
         <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
       ) : null}
-      {row.observation === null ? null : (
+      {row.observation === null || isMismatchDismissed ? null : (
         <MountBranchDecision
+          onDismiss={onDismissMismatch}
           sessionId={sessionId}
           mountId={row.mountId}
           projectName={row.projectName}

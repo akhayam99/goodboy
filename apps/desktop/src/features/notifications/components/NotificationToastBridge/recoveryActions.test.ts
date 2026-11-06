@@ -18,8 +18,8 @@ vi.mock('../../../../shared/lib/reveal', () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NotificationAction } from '@goodboy/db';
-import { brandId, type MountId, type SessionId } from '@goodboy/types';
+import type { Notification, NotificationAction } from '@goodboy/db';
+import { brandId, type IsoDateTime, type MountId, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -41,8 +41,23 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+const notificationOf = (action: NotificationAction): Notification => ({
+  id: 'n-push',
+  ts: brandId<IsoDateTime>({ value: '2026-11-06T09:00:00.000Z' }),
+  kind: 'error',
+  title: 'Push failed',
+  body: null,
+  severity: 'error',
+  sessionId: SESSION_ID,
+  workspaceId: null,
+  read: false,
+  action,
+  coalesceKey: null,
+  actedAt: null,
+});
+
 const mapAction = (action: NotificationAction) =>
-  mapNotificationAction(action, useAppStore.getState());
+  mapNotificationAction(action, useAppStore.getState(), notificationOf(action));
 
 describe('recovery actions of a reported error', () => {
   let opened: Array<unknown>;

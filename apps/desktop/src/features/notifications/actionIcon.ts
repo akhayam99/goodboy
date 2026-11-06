@@ -21,6 +21,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
     case 'open-storage':
     case 'open-lens':
     case 'open-activity':
+    case 'open-place':
     case 'open-settings':
     case 'reveal-path':
     case 'update-provider-cli':
