@@ -22,6 +22,7 @@ const SETTLE_MS = 1200;
 const TIMEOUT_MS = 480000;
 
 const pageName = ({ url }) => new URL(url).pathname.replace(/\//g, '') || 'home';
+const pageOriginOf = ({ url }) => new URL(url).origin;
 
 export const run = async () => {
   const { urls, shots, isVerifyingIcons } = parseArgs({ argv: process.argv.slice(2) });
@@ -47,6 +48,7 @@ export const run = async () => {
     await cdp.send('Network.setBlockedURLs', { urls: BLOCKED_URLS });
     for (const url of urls) {
       const page = pageName({ url });
+      const pageOrigin = pageOriginOf({ url });
       for (const viewport of VIEWPORTS) {
         for (const theme of THEMES) {
           await cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -62,19 +64,19 @@ export const run = async () => {
           await cdp.send('Emulation.setEmulatedMedia', {
             features: [{ name: 'prefers-color-scheme', value: theme }],
           });
-          cdp.takeErrors();
+          cdp.takeErrors({ pageOrigin });
           await cdp.send('Page.navigate', { url });
           await sleep(SETTLE_MS);
           await scrollThrough(cdp);
           await sleep(SETTLE_MS);
-          failures.push(
-            ...cdp
-              .takeErrors()
-              .map((error) => `${page} ${viewport.name} ${theme}: console error: ${error}`),
-          );
           const probe = await cdp.evaluate(PAGE_PROBE);
           const rules = await cdp.evaluate(rulesProbe);
           const touch = viewport.isTouch === true ? await cdp.evaluate(TOUCH_PROBE) : null;
+          failures.push(
+            ...cdp
+              .takeErrors({ pageOrigin })
+              .map((error) => `${page} ${viewport.name} ${theme}: console error: ${error}`),
+          );
           if (page === 'features' && featuresIds === null) {
             featuresIds = rules.ids;
           }
