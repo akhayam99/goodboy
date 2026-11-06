@@ -14,6 +14,7 @@ import { isKeyboardFocus } from '../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../placeFloating';
 import { glyphsOfShortcut } from '../shortcutGlyphs';
 import { TooltipTriggerContext } from '../tooltipTriggerContext';
+import { useTooltipDelay } from '../useTooltipDelay';
 import { useTooltipQuiet } from '../useTooltipQuiet';
 import { TooltipBubble } from './TooltipBubble';
 
@@ -48,8 +49,6 @@ const BUBBLE_CLASS = cn(
   FLOATING_SURFACE,
   'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-meta font-medium text-foreground motion-safe:animate-popover-in',
 );
-
-const DEFAULT_DELAY_MS = 400;
 
 const WARM_WINDOW_MS = 300;
 
@@ -87,39 +86,29 @@ export const Tooltip = ({
   const visible = (isHovered || isOpen) && !isQuiet && hasContent;
   const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<FloatingCoords | null>(null);
-  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const tipId = useId();
   const identityRef = useRef({});
   const isPointerDownRef = useRef(false);
   const suppressionEndedAtRef = useRef(Number.NEGATIVE_INFINITY);
 
-  const clearDelay = () => {
-    if (delayRef.current === null) {
-      return;
-    }
-    clearTimeout(delayRef.current);
-    delayRef.current = null;
-  };
-
-  const open = () => {
-    clearDelay();
-    setIsHovered(true);
-  };
+  const { isPendingRef, clearDelay, startDelay, open } = useTooltipDelay({
+    isQuietNow,
+    restDelayMs,
+    setIsHovered,
+  });
 
   const show = () => {
+    isPendingRef.current = true;
     clearDelay();
-    if (!isRestRequired && isWarm() && !isQuietNow()) {
+    if (isQuietNow()) {
+      return;
+    }
+    if (!isRestRequired && isWarm()) {
       setIsHovered(true);
       return;
     }
-    delayRef.current = setTimeout(() => {
-      delayRef.current = null;
-      if (isQuietNow()) {
-        return;
-      }
-      setIsHovered(true);
-    }, restDelayMs ?? DEFAULT_DELAY_MS);
+    startDelay();
   };
 
   const markClosed = () => {
@@ -128,6 +117,7 @@ export const Tooltip = ({
   };
 
   const hide = () => {
+    isPendingRef.current = false;
     clearDelay();
     if (isHovered) {
       markClosed();
@@ -185,7 +175,7 @@ export const Tooltip = ({
         lastClosedAt = Number.NEGATIVE_INFINITY;
       }
     };
-  }, []);
+  }, [clearDelay]);
 
   const wasQuietRef = useRef(isQuiet);
   useEffect(() => {
@@ -196,9 +186,12 @@ export const Tooltip = ({
     }
     if (wasQuietRef.current && !isQuiet) {
       suppressionEndedAtRef.current = Date.now();
+      if (isPendingRef.current) {
+        startDelay();
+      }
     }
     wasQuietRef.current = isQuiet;
-  }, [isQuiet]);
+  }, [clearDelay, isPendingRef, isQuiet, startDelay]);
 
   useEffect(() => {
     if (!visible) {
@@ -206,6 +199,7 @@ export const Tooltip = ({
     }
     const unregister = registerEscapeLayer(() => {
       unregister();
+      isPendingRef.current = false;
       clearDelay();
       markClosed();
       setIsHovered(false);
@@ -213,7 +207,7 @@ export const Tooltip = ({
       dismissTopEscapeLayer();
     });
     return unregister;
-  }, [visible]);
+  }, [clearDelay, isPendingRef, visible]);
 
   const reposition = useCallback(() => {
     const anchor = anchorRef.current;
@@ -248,6 +242,7 @@ export const Tooltip = ({
         reposition();
         return;
       }
+      isPendingRef.current = false;
       clearDelay();
       setIsHovered(false);
       setCoords(null);
@@ -258,7 +253,7 @@ export const Tooltip = ({
       window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [visible, isOpen, reposition]);
+  }, [clearDelay, isPendingRef, visible, isOpen, reposition]);
 
   const childRef = (children.props as { ref?: React.Ref<HTMLElement> }).ref;
   const mergedRef = useCallback(
