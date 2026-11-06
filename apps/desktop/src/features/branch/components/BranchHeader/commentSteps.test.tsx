@@ -15,6 +15,7 @@ import {
   type PullRequestState,
   type SessionId,
   type SessionProjectMount,
+  type WorktreeStatus,
 } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -124,7 +125,7 @@ afterEach(() => {
   cleanup();
 });
 
-const diffOf = (): SessionDiff => ({
+const diffOf = ({ status }: Pick<HarnessProps, 'status'>): SessionDiff => ({
   files: [],
   patch: '',
   loading: false,
@@ -135,7 +136,7 @@ const diffOf = (): SessionDiff => ({
   setView: vi.fn(),
   alternate: null,
   commits: [],
-  status: null,
+  status: status ?? null,
   metaError: null,
   refresh: vi.fn(),
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
@@ -147,14 +148,15 @@ const diffOf = (): SessionDiff => ({
 type HarnessProps = {
   readonly comments: BranchStepComments;
   readonly review?: BranchReviewCounts;
+  readonly status?: WorktreeStatus | null;
 };
 
-const Harness = ({ comments, review = NO_REVIEW }: HarnessProps) => {
+const Harness = ({ comments, review = NO_REVIEW, status = null }: HarnessProps) => {
   const controls = useBranchControls({
     sessionId: SESSION_ID,
     worktreePath: MOUNT.worktreePath,
     pr: PR,
-    diff: diffOf(),
+    diff: diffOf({ status }),
     review,
     nextStep: 'merge',
     comments,
@@ -175,16 +177,78 @@ const Harness = ({ comments, review = NO_REVIEW }: HarnessProps) => {
   );
 };
 
-const renderHeader = ({ comments, review }: HarnessProps) =>
+const renderHeader = ({ comments, review, status }: HarnessProps) =>
   render(
     <ToastProvider>
-      <Harness comments={comments} {...(review === undefined ? {} : { review })} />
+      <Harness
+        comments={comments}
+        {...(review === undefined ? {} : { review })}
+        {...(status === undefined ? {} : { status })}
+      />
     </ToastProvider>,
   );
+
+const UNPUSHED: WorktreeStatus = {
+  branch: MOUNT.branch,
+  head: null,
+  headSubject: null,
+  upstream: 'origin/feat/export',
+  mainDistance: { kind: 'known', ahead: 2, behind: 0 },
+  upstreamDistance: { kind: 'known', ahead: 2, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  inProgress: null,
+};
 
 const primaries = (): ReadonlyArray<Element> => [
   ...document.querySelectorAll('[data-branch-primary]'),
 ];
+
+describe('the branch menu keeps the push the header does not show', () => {
+  const ONE_FIXABLE: BranchStepComments = {
+    facts: { ...NO_COMMENT_FACTS, fixable: 1 },
+    readyThreadIds: [],
+    fixableThreadIds: ['thread-ledger'],
+  };
+
+  const menuLabels = (): ReadonlyArray<string> => {
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+    return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+  };
+
+  it('lists Push while Fix 1 comment leads on an own pull request', () => {
+    renderHeader({ comments: ONE_FIXABLE, status: UNPUSHED });
+
+    expect(primaries().map((button) => button.textContent)).toEqual(['Fix 1 comment']);
+    expect(menuLabels().some((label) => label.startsWith('Push 2 commits'))).toBe(true);
+  });
+
+  it('never repeats the push in the menu while the header leads with it', () => {
+    renderHeader({
+      comments: { ...ONE_FIXABLE, facts: NO_COMMENT_FACTS, fixableThreadIds: [] },
+      status: UNPUSHED,
+    });
+
+    expect(primaries().map((button) => button.textContent)).toEqual(['Push 2 commits']);
+    expect(menuLabels().some((label) => label.startsWith('Push'))).toBe(false);
+  });
+
+  it('never repeats the push in the menu while the review push leads', () => {
+    renderHeader({
+      comments: { ...ONE_FIXABLE, facts: NO_COMMENT_FACTS, fixableThreadIds: [] },
+      review: { ...NO_REVIEW, accepted: 1, push: { state: 'idle', count: 2 } },
+      status: UNPUSHED,
+    });
+
+    expect(primaries().map((button) => button.textContent)).toEqual(['Push 2 commits']);
+    expect(menuLabels().some((label) => label.startsWith('Push'))).toBe(false);
+  });
+
+  it('holds five rows at most on the fullest pull request', () => {
+    renderHeader({ comments: ONE_FIXABLE, status: UNPUSHED });
+
+    expect(menuLabels().length).toBeLessThanOrEqual(5);
+  });
+});
 
 describe('the branch header comment steps do the work on any tab', () => {
   it('opens the Fix form at Fix N comments and never switches tab', () => {

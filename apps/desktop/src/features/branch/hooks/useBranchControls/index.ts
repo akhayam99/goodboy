@@ -80,6 +80,7 @@ export type BranchControls = {
   readonly press: (action: BranchPrimary) => void;
   readonly merge: () => void;
   readonly controlsOf: (action: BranchPrimary) => ActionControls | null;
+  readonly hasOpenRebaseStop: boolean;
   readonly isChangingBase: boolean;
   readonly closeChangingBase: () => void;
   readonly projectId: ProjectId | null;
@@ -367,6 +368,7 @@ export const useBranchControls = ({
     secondary,
     press,
     controlsOf,
+    hasOpenRebaseStop,
     isChangingBase,
     closeChangingBase,
     projectId,

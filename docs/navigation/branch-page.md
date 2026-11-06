@@ -210,8 +210,11 @@ cancelled in the database; `missing` says `The push was already handled or
 cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open with the host logo, named Open on GitHub, Copy link) and the
-branch actions (Change base branch…, only before a pull request exists, Open terminal, Open in editor, Copy
-branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
+branch actions (Change base branch…, only before a pull request exists, Copy patch, and `Archive session`
+on a merged request); a queued request with auto-merge adds `Cancel auto-merge`. It lists the push
+whenever the header does not draw one (`branchShownIdsOf`), and it never holds more than five rows
+(`branchMenuRowsOf`): the rows with another home drop first (Edit title and description, Copy link,
+Copy patch, and Rebase and Request review have their own place on Commits and Overview).
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no

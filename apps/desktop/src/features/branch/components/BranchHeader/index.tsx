@@ -10,7 +10,7 @@ import { actionButtonStateOf } from '../../../actions/actionButtonStateOf';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
 import type { BranchControls } from '../../hooks/useBranchControls';
-import type { BranchPrimary } from '../../branchPrimary';
+import { branchShownIdsOf, type BranchPrimary } from '../../branchPrimary';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
 import { PushFailureBlock } from '../../../../shared/components/PushFailureBlock';
@@ -112,8 +112,11 @@ export const BranchHeader = ({
     );
   };
 
-  const primaryId = primary?.actionId ?? null;
-  const shownIds = useMemo(() => (primaryId === null ? [] : [primaryId]), [primaryId]);
+  const { step } = controls;
+  const shownIds = useMemo(
+    () => branchShownIdsOf({ primary, secondary, step }),
+    [primary, secondary, step],
+  );
   const isYielding =
     isPrimaryYielding ||
     controls.diffControls.confirming !== null ||
@@ -155,6 +158,7 @@ export const BranchHeader = ({
                   diffControls={controls.diffControls}
                   pullRequestControls={controls.pullRequestControls}
                   shownIds={shownIds}
+                  isRebaseStopOpen={controls.hasOpenRebaseStop}
                 />
               }
             />

@@ -410,3 +410,49 @@ export const BRANCH_MENU_DIFF: ReadonlyArray<string> = [
   'diff.copyPatch',
   'diff.archiveSession',
 ];
+
+const BRANCH_MENU_MAX_ROWS = 5;
+
+const BRANCH_MENU_PRIORITY: ReadonlyArray<string> = [
+  'pullRequest.merge',
+  'pullRequest.markReady',
+  'pullRequest.reopen',
+  'pullRequest.cancelAutoMerge',
+  'diff.push',
+  'diff.rebase',
+  'diff.changeBase',
+  'diff.archiveSession',
+  'pullRequest.close',
+  'pullRequest.openOnGithub',
+  'pullRequest.requestReview',
+  'pullRequest.convertToDraft',
+  'pullRequest.copyLink',
+  'pullRequest.editDetails',
+  'diff.copyPatch',
+];
+
+type MenuRowsParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
+export const branchMenuRowsOf = ({ ids }: MenuRowsParams): ReadonlySet<string> =>
+  new Set(BRANCH_MENU_PRIORITY.filter((id) => ids.includes(id)).slice(0, BRANCH_MENU_MAX_ROWS));
+
+const PUSH_STEPS: ReadonlySet<BranchStep> = new Set<BranchStep>([
+  'push',
+  'retryPush',
+  'pushCheckFix',
+]);
+
+type ShownIdsParams = Pick<BranchActions, 'primary' | 'secondary' | 'step'>;
+
+export const branchShownIdsOf = ({
+  primary,
+  secondary,
+  step,
+}: ShownIdsParams): ReadonlyArray<string> => {
+  const shown = [primary, secondary].flatMap((action) =>
+    action === null ? [] : [action.actionId],
+  );
+  return shown.length > 0 && PUSH_STEPS.has(step) ? [...shown, 'diff.push'] : shown;
+};
