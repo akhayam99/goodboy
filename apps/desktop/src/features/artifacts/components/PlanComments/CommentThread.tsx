@@ -34,6 +34,7 @@ export const CommentThread = ({ comments, isComposing, label }: Props) => {
           comment={comment}
           isQuoteShown={quoteTextOf({ comment }) !== quoteTextOf({ comment: comments[index - 1] })}
           revision={api.revision}
+          isPlanRan={api.isPlanRan}
           onEdit={api.edit}
           onRemove={api.remove}
         />

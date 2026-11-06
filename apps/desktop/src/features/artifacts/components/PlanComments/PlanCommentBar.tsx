@@ -3,19 +3,57 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGuard';
 import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 
+export type PlanCommentBarRan = Readonly<{
+  agentName: string;
+  canSend: boolean;
+  onSend: () => Promise<unknown>;
+  onCopy: () => Promise<unknown>;
+}>;
+
 type Props = {
   readonly count: number;
   readonly guard: PlanCommentGuard;
   readonly isSending: boolean;
   readonly error: string | null;
   readonly onSend: () => Promise<unknown>;
+  readonly ran?: PlanCommentBarRan | null;
+  readonly status?: string | null;
 };
 
 const CommentIcon = CONCEPT_ICONS.comments;
 
-export const PlanCommentBar = ({ count, guard, isSending, error, onSend }: Props) => {
-  const note = error ?? (guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason);
+type CountParams = {
+  readonly count: number;
+};
+
+const countOf = ({ count }: CountParams): string =>
+  count === 1 ? '1 comment' : `${count} comments`;
+
+type NoteParams = {
+  readonly guard: PlanCommentGuard;
+  readonly ran: PlanCommentBarRan | null;
+};
+
+const noteOf = ({ guard, ran }: NoteParams): string | null => {
+  if (ran !== null) {
+    return ran.canSend
+      ? `${ran.agentName} can still read them.`
+      : `${ran.agentName} is not running. Copy them instead.`;
+  }
+  return guard.reason === PLANNER_QUESTION_REASON ? null : guard.reason;
+};
+
+export const PlanCommentBar = ({
+  count,
+  guard,
+  isSending,
+  error,
+  onSend,
+  ran = null,
+  status = null,
+}: Props) => {
   const hasDrafts = count > 0;
+  const note = error ?? noteOf({ guard, ran });
 
   return (
     <div
@@ -26,7 +64,7 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend }: Props
         {hasDrafts ? (
           <div className="flex min-w-0 flex-col">
             <span className="text-meta text-muted-foreground">
-              {count === 1 ? '1 comment' : `${count} comments`}
+              {ran === null ? countOf({ count }) : `${countOf({ count })} not sent`}
             </span>
             {note === null ? null : (
               <span
@@ -43,13 +81,40 @@ export const PlanCommentBar = ({ count, guard, isSending, error, onSend }: Props
             )}
           </div>
         ) : (
-          <span className="flex min-w-0 items-center gap-2 text-meta text-faint-foreground">
+          <span
+            role={status === null ? undefined : 'status'}
+            className="flex min-w-0 items-center gap-2 text-meta text-faint-foreground"
+          >
             <CommentIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            <span className="truncate">Select text or click a block to comment</span>
+            <span className="truncate">{status ?? 'Select text or click a block to comment'}</span>
           </span>
         )}
         <div className="flex shrink-0 items-center gap-2">
-          {hasDrafts ? (
+          {hasDrafts && ran !== null ? (
+            <>
+              <Button
+                variant={ran.canSend ? 'ghost' : 'primary'}
+                size="sm"
+                onClick={() => void ran.onCopy()}
+                data-testid="plan-bar-copy"
+              >
+                Copy
+              </Button>
+              {ran.canSend ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  isBusy={isSending}
+                  onClick={() => void ran.onSend()}
+                  data-testid="plan-bar-send-agent"
+                  data-filled="true"
+                >
+                  {`Send to ${ran.agentName}`}
+                </Button>
+              ) : null}
+            </>
+          ) : null}
+          {hasDrafts && ran === null ? (
             <Button
               variant="primary"
               size="sm"

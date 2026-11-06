@@ -23,7 +23,7 @@ Read the plan without leaving the planner. It shows as one row in the planner's 
 
 ### Comment on a plan
 
-Point at a part, a paragraph or a few words and leave a comment. Comments stay drafts until **Send to planner** posts them in plan order and asks for an updated plan. When the new version lands, each comment reads **Addressed** or **Not changed in v2**. While comments wait, **Send to planner** is the one filled button, and **Run plan** or **Approve** asks before it goes on without them.
+Point at a part, a paragraph or a few words and leave a comment. Comments stay drafts until **Send to planner** posts them in plan order and asks for an updated plan. When the new version lands, each comment reads **Addressed** or **Not changed in v2**. While comments wait, **Send to planner** is the one filled button, and **Run plan** or **Approve** asks before it goes on without them. Text you typed and did not add is kept as a draft when you leave the box, press Esc or press a button. After the plan ran, the bar reads **Not sent** with **Send to** the agent and **Copy**. A stopped agent leaves only **Copy**.
 
 ### Report as a document
 

@@ -1,16 +1,23 @@
 import type { ArtifactComment, ArtifactCommentAnchor, ImplementationCluster } from '@goodboy/types';
 import { anchorHead, quoteOf, sortByAnchor } from './planCommentAnchors';
 
-const OPENING = 'Please revise the plan:';
+const OPENINGS = {
+  revise: 'Please revise the plan:',
+  read: 'The owner left these comments on the plan you are working from:',
+} as const;
 
-const CLOSING =
-  'Write the full updated plan as one plan block, never a patch. Keep every part and every sentence these comments did not touch.';
+const CLOSINGS = {
+  revise:
+    'Write the full updated plan as one plan block, never a patch. Keep every part and every sentence these comments did not touch.',
+  read: 'Take them into account in the work that is left. Do not rewrite the plan.',
+} as const;
 
 const QUOTE_LIMIT = 400;
 
 type Params = {
   readonly clusters: ReadonlyArray<ImplementationCluster>;
   readonly comments: ReadonlyArray<ArtifactComment>;
+  readonly purpose?: 'revise' | 'read';
 };
 
 const clip = ({ text }: { readonly text: string }): string =>
@@ -52,7 +59,11 @@ const quoted = ({ text }: { readonly text: string }): string =>
     .map((line) => `> ${line}`)
     .join('\n');
 
-export const buildPlanCommentRequest = ({ clusters, comments }: Params): string => {
+export const buildPlanCommentRequest = ({
+  clusters,
+  comments,
+  purpose = 'revise',
+}: Params): string => {
   const items = sortByAnchor({ comments }).map((comment) => {
     const quote = quoteFor({ anchor: comment.anchor, clusters });
     return [
@@ -61,5 +72,5 @@ export const buildPlanCommentRequest = ({ clusters, comments }: Params): string 
       comment.body.trim(),
     ].join('\n');
   });
-  return [OPENING, ...items, CLOSING].join('\n\n');
+  return [OPENINGS[purpose], ...items, CLOSINGS[purpose]].join('\n\n');
 };

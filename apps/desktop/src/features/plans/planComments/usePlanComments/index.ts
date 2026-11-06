@@ -12,6 +12,8 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { planCommentGuard, type PlanCommentGuard } from '../planCommentGuard';
 import { usePlanRevising } from '../../useRevisingPlans';
+import { buildPlanCommentRequest } from '../buildPlanCommentRequest';
+import { planCommentsTargetOf, type PlanCommentsTarget } from '../planCommentsTargetOf';
 import { trackDraftSave } from '../trackDraftSave';
 import type { ComposingTarget, PlanCommentsApi } from '../planCommentsContext';
 
@@ -30,9 +32,13 @@ export type PlanCommentsModel = Readonly<{
   guard: PlanCommentGuard;
   isSending: boolean;
   isRevising: boolean;
+  isPlanRan: boolean;
   run: WorkflowRun | null;
   sendError: string | null;
   send: () => Promise<SendArtifactCommentsResult>;
+  sendToAgent: () => Promise<SendArtifactCommentsResult>;
+  target: PlanCommentsTarget | null;
+  requestText: string;
 }>;
 
 const failureOf = ({ result }: { readonly result: SendArtifactCommentsResult }): string | null =>
@@ -53,6 +59,7 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
   const editArtifactComment = useAppStore((state) => state.editArtifactComment);
   const removeArtifactComment = useAppStore((state) => state.removeArtifactComment);
   const sendArtifactComments = useAppStore((state) => state.sendArtifactComments);
+  const sendArtifactCommentsToAgent = useAppStore((state) => state.sendArtifactCommentsToAgent);
   const [composing, setComposing] = useState<ComposingTarget | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -124,12 +131,27 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     return result;
   }, [plan, sendArtifactComments, sessionId]);
 
+  const sendToAgent = useCallback(async () => {
+    setSendError(null);
+    const result = await sendArtifactCommentsToAgent({ sessionId, plan });
+    setSendError(failureOf({ result }));
+    return result;
+  }, [plan, sendArtifactCommentsToAgent, sessionId]);
+  const target = useMemo(() => planCommentsTargetOf({ plan, agents }), [agents, plan]);
+  const requestText = useMemo(
+    () =>
+      buildPlanCommentRequest({ clusters: plan.clusters ?? [], comments: drafts, purpose: 'read' }),
+    [drafts, plan.clusters],
+  );
+  const isPlanRan = plan.status === 'consumed' || plan.consumptionCount > 0;
+
   const canComment = !isSending && plan.status !== 'discarded';
   const api = useMemo<PlanCommentsApi>(
     () => ({
       comments,
       revision,
       canComment,
+      isPlanRan,
       composing,
       startComposing,
       cancelComposing,
@@ -137,7 +159,18 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
       edit,
       remove,
     }),
-    [add, canComment, cancelComposing, comments, composing, edit, remove, revision, startComposing],
+    [
+      add,
+      canComment,
+      cancelComposing,
+      comments,
+      composing,
+      edit,
+      isPlanRan,
+      remove,
+      revision,
+      startComposing,
+    ],
   );
 
   return {
@@ -146,8 +179,12 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     guard,
     isSending,
     isRevising: revising.kind === 'revising',
+    isPlanRan,
     run,
     sendError,
     send,
+    sendToAgent,
+    target,
+    requestText,
   };
 };

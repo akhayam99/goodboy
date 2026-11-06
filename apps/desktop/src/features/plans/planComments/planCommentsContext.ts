@@ -9,6 +9,7 @@ export type PlanCommentsApi = Readonly<{
   comments: ReadonlyArray<ArtifactComment>;
   revision: number;
   canComment: boolean;
+  isPlanRan: boolean;
   composing: ComposingTarget | null;
   startComposing: (params: { readonly anchor: ArtifactCommentAnchor }) => void;
   cancelComposing: () => void;

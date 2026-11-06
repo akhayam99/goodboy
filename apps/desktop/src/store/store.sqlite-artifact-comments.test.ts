@@ -601,6 +601,92 @@ describe('store on sqlite: plan comments', () => {
     expect(statuses().sort()).toEqual(['Limit the backfill:addressed', 'Name the index:open']);
   });
 
+  describe('sending to the agent that ran the plan', () => {
+    const IMPLEMENTER_ID = 'agent-implementer' as AgentId;
+
+    const ranPlan = () => ({
+      ...planOf(),
+      status: 'consumed' as const,
+      consumptionCount: 1,
+      lastConsumer: { agentId: IMPLEMENTER_ID, name: 'Implement' },
+    });
+
+    const withImplementer = ({ status }: { readonly status: Agent['status'] }) =>
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            planner(),
+            buildStoryAgent({
+              id: IMPLEMENTER_ID,
+              sessionId: SESSION_ID,
+              name: 'Implement',
+              ordinal: 1,
+              status,
+            }),
+          ],
+        },
+      });
+
+    it('sends one turn to that agent as comments to read, then marks them sent', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'running' });
+      const sendTurn = stubSendTurn();
+
+      const result = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(result).toEqual({ kind: 'sentToAgent', agentName: 'Implement' });
+      expect(sendTurn).toHaveBeenCalledTimes(1);
+      const input = sendTurn.mock.calls[0]?.[0];
+      expect(input).toMatchObject({ sessionId: SESSION_ID, agentId: IMPLEMENTER_ID });
+      expect(input?.content.startsWith('The owner left these comments')).toBe(true);
+      expect(input?.content).toContain('Why after BEGIN?');
+      expect(input?.content).not.toContain('Write the full updated plan');
+      expect(statuses()).toEqual(['Why after BEGIN?:sent']);
+    });
+
+    it('refuses a stopped agent and keeps the comments as drafts', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'stopped' });
+      const sendTurn = stubSendTurn();
+
+      const result = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(result).toEqual({
+        kind: 'blocked',
+        reason: 'Implement is not running. Copy the comments instead.',
+      });
+      expect(sendTurn).not.toHaveBeenCalled();
+      expect(statuses()).toEqual(['Why after BEGIN?:draft']);
+    });
+
+    it('keeps the comments as drafts when the turn fails, and lets a retry through', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'running' });
+      useAppStore.setState({
+        sendTurn: vi.fn(async () => {
+          throw new Error('The agent did not answer');
+        }),
+      });
+
+      const failed = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(failed).toEqual({ kind: 'failed', reason: 'The agent did not answer' });
+      expect(statuses()).toEqual(['Why after BEGIN?:draft']);
+      expect(useAppStore.getState().artifactCommentSends[PLAN_ID]).toBeUndefined();
+      stubSendTurn();
+      const retried = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+      expect(retried).toMatchObject({ kind: 'sentToAgent' });
+    });
+  });
+
   it('leaves sent comments alone while the planner still runs', async () => {
     await add({ anchor: part({ index: 2 }), body: 'Limit the backfill' });
     await storySqlite().execute("UPDATE artifact_comments SET status = 'sent'");

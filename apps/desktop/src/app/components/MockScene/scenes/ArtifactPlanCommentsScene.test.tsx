@@ -100,6 +100,22 @@ describe('ArtifactPlanCommentsScene', () => {
     expect(run.getAttribute('data-variant')).toBe('primary');
   });
 
+  it('tells the story of a plan that ran: not sent, Copy, Send to the agent', async () => {
+    render(
+      <ToastProvider>
+        <ArtifactPlanCommentsScene hasRun />
+      </ToastProvider>,
+    );
+
+    const bar = await screen.findByTestId('plan-comment-bar');
+    expect(within(bar).getByText('2 comments not sent')).toBeDefined();
+    expect(within(bar).getByText('Implementer can still read them.')).toBeDefined();
+    expect(within(bar).getByRole('button', { name: 'Copy' })).toBeDefined();
+    fireEvent.click(within(bar).getByRole('button', { name: 'Send to Implementer' }));
+    expect(await screen.findByText('Sent to Implementer.')).toBeDefined();
+    expect(screen.getAllByText('Sent')).toHaveLength(2);
+  });
+
   it('marks the comments sent and drops the bar after Send', async () => {
     render(<Scene />);
     fireEvent.click(await screen.findByRole('button', { name: 'Send to planner' }));

@@ -49,6 +49,7 @@ const api = (overrides: Partial<PlanCommentsApi> = {}): PlanCommentsApi => ({
   comments: [],
   revision: 1,
   canComment: true,
+  isPlanRan: false,
   composing: null,
   startComposing: vi.fn(),
   cancelComposing: vi.fn(),
@@ -114,6 +115,23 @@ describe('PartCommentFrame', () => {
     expect(screen.queryByText('Name the index')).toBeNull();
     fireEvent.click(within(card).getByRole('button', { name: 'Remove comment' }));
     expect(value.remove).toHaveBeenCalledWith({ commentId: 'mine' });
+  });
+
+  it('tags a draft Not sent once the plan ran', () => {
+    const value = api({
+      isPlanRan: true,
+      comments: [
+        comment({
+          id: 'c-late',
+          anchor: { kind: 'part', index: 2, title: ROW.title },
+          body: 'Limit the backfill',
+        }),
+      ],
+    });
+    render(withApi({ value, children: <Framed>row</Framed> }));
+
+    expect(within(screen.getByTestId('plan-comment')).getByText('Not sent')).toBeDefined();
+    expect(screen.queryByText('Draft')).toBeNull();
   });
 
   it('labels each state after the send and offers no remove', () => {

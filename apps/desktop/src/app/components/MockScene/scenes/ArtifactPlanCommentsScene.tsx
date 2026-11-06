@@ -5,15 +5,16 @@ import { seedPlanCommentsScene } from './artifactCommentsSeed';
 
 type Props = {
   readonly hasComments?: boolean;
+  readonly hasRun?: boolean;
 };
 
-export const ArtifactPlanCommentsScene = ({ hasComments = true }: Props) => {
+export const ArtifactPlanCommentsScene = ({ hasComments = true, hasRun = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedPlanCommentsScene({ hasComments });
+    seedPlanCommentsScene({ hasComments, hasRun });
     setIsReady(true);
-  }, [hasComments]);
+  }, [hasComments, hasRun]);
 
   if (!isReady) {
     return null;
