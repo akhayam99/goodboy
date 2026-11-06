@@ -24,11 +24,6 @@ type Props = {
   readonly buttonVariant?: 'primary' | 'secondary';
 };
 
-const FOOT_TRIGGER = cn(
-  'inline-flex h-6 items-center rounded-md text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
-  FOCUS_RING,
-);
-
 export const RunSpendLimitPopover = ({
   sessionId,
   run,
