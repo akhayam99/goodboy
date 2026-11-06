@@ -48,10 +48,14 @@ vi.mock('@goodboy/db', async () =>
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('../../../features/chat/turn', () => ({
-  cancelTurn: vi.fn(async () => undefined),
-  listLiveRunIds: vi.fn(async () => []),
-}));
+vi.mock('../../../features/chat/turn', () => {
+  const listLiveRunIds = vi.fn(async () => []);
+  return {
+    cancelTurn: vi.fn(async () => undefined),
+    listLiveRunIds,
+    probeLiveRunIds: () => listLiveRunIds(),
+  };
+});
 vi.mock('../../../features/workspace/window', () => ({ isMainWindow: () => false }));
 vi.mock('../../../features/budget/budget', () => ({
   invokeBudgetAlertsList: vi.fn(async () => []),

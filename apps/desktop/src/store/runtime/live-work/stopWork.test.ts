@@ -355,6 +355,21 @@ describe('stopWork', () => {
       expect(await stoppedBy()).toBeNull();
     });
 
+    it('stops the ask when the live list cannot be read, so Stop never leaves a live agent', async () => {
+      seedWaiting();
+      storySpies.listLiveRunIds.mockRejectedValueOnce(new Error('the app is busy'));
+
+      const result = await stopWork({
+        getState: useAppStore.getState,
+        scope: { kind: 'all' },
+        reason: 'leave',
+      });
+
+      expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+      expect(storySpies.cancelTurn).toHaveBeenCalledWith(waitingRun);
+      expect(await stoppedBy()).toBe('you');
+    });
+
     it('stops a wait whose process is still alive', async () => {
       seedWaiting();
       const live = new Set<string>([waitingRun]);

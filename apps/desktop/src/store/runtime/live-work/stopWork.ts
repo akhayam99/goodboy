@@ -5,12 +5,14 @@ import {
   type ProviderRunId,
   type SessionId,
 } from '@goodboy/types';
-import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
+import { cancelTurn } from '../../../features/chat/turn';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import type { AppStore } from '../../store';
 import { cancelledRunIds } from '../../slices/sessions/sessionMutators';
 import type { CancelTurnReason } from '../../slices/turn/cancelCurrentTurn';
 import { cancelTurnStartWindow } from '../../slices/turn/turnStartWindow';
+import { NO_KEPT_RUNS, endedWaitingRunsOf } from './endedWaitingRunsOf';
+import { isKeptWait } from './isKeptWait';
 import { liveAgentsOf } from './liveAgentsOf';
 import { selectLiveWork } from './selectLiveWork';
 
@@ -38,8 +40,6 @@ type Params = Readonly<{
   scope: StopWorkScope;
   reason: CancelTurnReason;
 }>;
-
-const NO_RUNS: ReadonlySet<ProviderRunId> = new Set();
 
 type Target = Readonly<{
   sessionId: SessionId;
@@ -74,7 +74,7 @@ const targetsOf = ({ state, scope, keptRuns }: TargetsParams): ReadonlyArray<Tar
     }
     return liveAgentsOf({ state, sessionId }).flatMap((agent) => {
       const turnState = state.agentTurnState[agent.id];
-      if (turnState?.kind === 'blocked' && keptRuns.has(turnState.runId)) {
+      if (isKeptWait({ turnState, keptRuns })) {
         return [];
       }
       return [
@@ -153,26 +153,11 @@ const cancelOrphanRun = async ({ runId }: OrphanCancelParams): Promise<boolean> 
   }
 };
 
-type WaitingParams = Readonly<{
-  state: StopWorkState;
-}>;
-
-const endedWaitingRunsOf = async ({
-  state,
-}: WaitingParams): Promise<ReadonlySet<ProviderRunId>> => {
-  const waiting = Object.values(state.agentTurnState).flatMap((turnState) =>
-    turnState?.kind === 'blocked' ? [turnState.runId] : [],
-  );
-  if (waiting.length === 0) {
-    return NO_RUNS;
-  }
-  const live = await listLiveRunIds();
-  return new Set(waiting.filter((runId) => !live.has(runId)));
-};
-
 export const stopWork = async ({ getState, scope, reason }: Params): Promise<StopWorkResult> => {
   const isLeavingEverything = reason === 'leave' && scope.kind === 'all';
-  const keptRuns = isLeavingEverything ? await endedWaitingRunsOf({ state: getState() }) : NO_RUNS;
+  const keptRuns = isLeavingEverything
+    ? await endedWaitingRunsOf({ state: getState() })
+    : NO_KEPT_RUNS;
   const state = getState();
   const targets = targetsOf({ state, scope, keptRuns });
   const orphans = orphanRunIdsOf({ state, scope, targets, keptRuns });

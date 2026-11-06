@@ -43,6 +43,13 @@ export const turnModuleMock = () => ({
   runTurn: (args: unknown) => storySpies.runTurn(args),
   cancelTurn: (runId: unknown) => storySpies.cancelTurn(runId),
   listLiveRunIds: storySpies.listLiveRunIds,
+  probeLiveRunIds: async () => {
+    try {
+      return await storySpies.listLiveRunIds();
+    } catch {
+      return null;
+    }
+  },
   listQuietRuns: storySpies.listQuietRuns,
   lookupDeliveryRun: vi.fn(async () => null),
   encodeAuthRequiredMessage: () => '',
