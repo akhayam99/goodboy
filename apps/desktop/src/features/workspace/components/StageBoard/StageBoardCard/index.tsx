@@ -110,6 +110,12 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
+  const isSignalOwnTooltip = signal.kind === 'request-pending';
+
+  const pauseCard = () => {
+    onHoverLeave?.();
+  };
+
   return (
     <article
       data-archived={archived || undefined}
@@ -180,7 +186,16 @@ export const StageBoardCard = memo(function StageBoardCard({
         {node.label}
       </span>
 
-      <span className="col-start-2 row-start-1 flex items-center gap-1 self-start">
+      <span
+        onMouseEnter={pauseCard}
+        onMouseLeave={(event) =>
+          onHoverEnter?.({
+            sessionId: id,
+            anchor: event.currentTarget.closest('article') ?? event.currentTarget,
+          })
+        }
+        className="col-start-2 row-start-1 flex items-center gap-1 self-start"
+      >
         <CardActionSlot label="Session quick actions">
           {!isArchived && visibleAction !== undefined && (
             <CardAction
@@ -211,6 +226,16 @@ export const StageBoardCard = memo(function StageBoardCard({
         </span>
         <span
           data-slot="card-signal"
+          onMouseEnter={isSignalOwnTooltip ? pauseCard : undefined}
+          onMouseLeave={
+            isSignalOwnTooltip
+              ? (event) =>
+                  onHoverEnter?.({
+                    sessionId: id,
+                    anchor: event.currentTarget.closest('article') ?? event.currentTarget,
+                  })
+              : undefined
+          }
           className="flex min-w-fit max-w-full flex-1 items-center justify-end"
         >
           <span data-slot="card-signal-reserve" className="inline-flex min-w-14 justify-end">
