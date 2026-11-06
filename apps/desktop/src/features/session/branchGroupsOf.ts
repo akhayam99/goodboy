@@ -63,7 +63,7 @@ type FactParams = {
   readonly row: MountRowView | undefined;
 };
 
-const factOf = ({ row }: FactParams): string | null => {
+const requestFactOf = ({ row }: FactParams): string | null => {
   if (row === undefined || row.request === null) {
     return null;
   }
@@ -78,7 +78,7 @@ type HeadParams = {
   readonly mounts: ReadonlyArray<MountRowView>;
 };
 
-const headOf = ({ key, branches, mounts }: HeadParams): BranchGroupHead => {
+const groupHeadOf = ({ key, branches, mounts }: HeadParams): BranchGroupHead => {
   if (key === NO_BRANCH_KEY) {
     return { kind: 'none' };
   }
@@ -93,13 +93,13 @@ const headOf = ({ key, branches, mounts }: HeadParams): BranchGroupHead => {
     return {
       kind: 'branch',
       branch: first,
-      fact: factOf({ row: mounts.find((row) => row.mountId === first.mountId) }),
+      fact: requestFactOf({ row: mounts.find((row) => row.mountId === first.mountId) }),
     };
   }
   const parts = mounts
     .filter((row) => row.series?.seriesId === series.seriesId)
     .sort((left, right) => (left.series?.position ?? 0) - (right.series?.position ?? 0))
-    .map((row) => ({ mountId: row.mountId, branch: row.branch, fact: factOf({ row }) }));
+    .map((row) => ({ mountId: row.mountId, branch: row.branch, fact: requestFactOf({ row }) }));
   return { kind: 'series', name: series.name, projectName: first.projectName, parts };
 };
 
@@ -129,7 +129,7 @@ export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGr
   }
   const groups = [...runsByKey.entries()].map(([key, groupRuns]) => ({
     key,
-    head: headOf({ key, branches: branchesByKey.get(key) ?? [], mounts }),
+    head: groupHeadOf({ key, branches: branchesByKey.get(key) ?? [], mounts }),
     runs: groupRuns,
     counts: countsOf({ runs: groupRuns }),
   }));

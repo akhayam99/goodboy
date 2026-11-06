@@ -6,25 +6,25 @@ const COLUMN_GAP = 12;
 
 const EDGE_TRACKS = 2;
 
-const CORE_WIDTH = 16 + 16 + 112;
+const VERB_WIDTH = 72;
 
-const NARROW_ORDER = [
-  { key: 'age', width: 48 },
-  { key: 'progress', width: 88 },
-  { key: 'cost', width: 56 },
-] as const;
+const CORE_WIDTH = 16 + 16 + 112 + VERB_WIDTH;
+
+const NARROW_WIDTH = { age: 48, progress: 88, cost: 56 } as const;
+
+const NARROW_ORDER = ['age', 'progress', 'cost'] as const;
 
 type KeyParams = {
-  readonly key: (typeof NARROW_ORDER)[number]['key'];
+  readonly key: (typeof NARROW_ORDER)[number];
 };
 
 const narrowHideBelowOf = ({ key }: KeyParams): number => {
-  const kept = NARROW_ORDER.slice(0, NARROW_ORDER.findIndex((column) => column.key === key) + 1);
-  const shown = 4 + kept.length;
+  const kept = NARROW_ORDER.slice(0, NARROW_ORDER.indexOf(key) + 1);
+  const shown = 5 + kept.length;
   return (
     RUNS_GRID_TITLE_FLOOR +
     CORE_WIDTH +
-    kept.reduce((total, column) => total + column.width, 0) +
+    kept.reduce((total, column) => total + NARROW_WIDTH[column], 0) +
     COLUMN_GAP * (shown + EDGE_TRACKS - 1)
   );
 };
@@ -33,8 +33,8 @@ export const RUNS_GRID_COLUMNS = [
   { key: 'state', width: 16 },
   { key: 'shape', width: 16 },
   { key: 'title', width: 'fill', isTitle: true },
-  { key: 'origin', width: 200, tone: 'secondary', shouldHideWhenEmpty: true, hideBelow: 958 },
-  { key: 'model', width: 152, tone: 'secondary', shouldHideWhenEmpty: true, hideBelow: 836 },
+  { key: 'origin', width: 200, tone: 'secondary', shouldHideWhenEmpty: true, hideBelow: 1042 },
+  { key: 'model', width: 152, tone: 'secondary', shouldHideWhenEmpty: true, hideBelow: 920 },
   { key: 'word', width: 112, tone: 'secondary' },
   {
     key: 'progress',
@@ -58,4 +58,5 @@ export const RUNS_GRID_COLUMNS = [
     tone: 'hint',
     hideBelow: narrowHideBelowOf({ key: 'age' }),
   },
+  { key: 'verb', width: VERB_WIDTH, align: 'end', shouldHideWhenEmpty: true },
 ] as const satisfies ReadonlyArray<ListGridColumn>;

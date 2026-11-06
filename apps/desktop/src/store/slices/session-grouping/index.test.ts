@@ -1,8 +1,25 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { nextSessionId } from '@goodboy/types/testing';
-import { useAppStore } from '../../store';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from '../../storyHarness';
 import { selectGroupBy } from './selectGroupBy';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const SESSION = nextSessionId();
 const OTHER = nextSessionId();
@@ -11,12 +28,13 @@ afterEach(() => {
   useAppStore.setState({ groupBySession: {} });
 });
 
-const choiceOf = (params: { readonly branchCount: number; readonly sessionId?: typeof SESSION }) =>
-  selectGroupBy({
-    state: useAppStore.getState(),
-    sessionId: params.sessionId ?? SESSION,
-    branchCount: params.branchCount,
-  });
+type ChoiceParams = {
+  readonly branchCount: number;
+  readonly sessionId?: typeof SESSION;
+};
+
+const choiceOf = ({ branchCount, sessionId = SESSION }: ChoiceParams) =>
+  selectGroupBy({ state: useAppStore.getState(), sessionId, branchCount });
 
 describe('session grouping', () => {
   it('starts on By branch with two or more branches and on By state with fewer', () => {

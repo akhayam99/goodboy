@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { selectGroupBy } from '../selectGroupBy';
-import type { GroupBy } from '../state';
+import { useAppStore } from '../../store';
+import { selectGroupBy } from './selectGroupBy';
+import type { GroupBy } from './state';
 
 type Params = {
   readonly sessionId: SessionId;

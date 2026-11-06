@@ -1,4 +1,5 @@
 import type { Agent, AgentId, MountId, ProjectId, SessionMountView } from '@goodboy/types';
+import { projectById } from '../../store/slices/projects/projectIndex';
 import { inheritedMountIdOf } from '../../store/slices/workflows/runMount/inheritedMountIdOf';
 
 export type WorkBranch = Readonly<{
@@ -26,7 +27,7 @@ type MountParams = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-const mountIdOf = ({ agent, agents }: MountParams): MountId | null =>
+const stepMountIdOf = ({ agent, agents }: MountParams): MountId | null =>
   agent.mountId ?? inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null });
 
 export const workBranchesOf = ({
@@ -41,7 +42,7 @@ export const workBranchesOf = ({
     if (!members.has(agent.id)) {
       continue;
     }
-    const mountId = mountIdOf({ agent, agents });
+    const mountId = stepMountIdOf({ agent, agents });
     if (mountId === null || found.has(mountId)) {
       continue;
     }
@@ -49,7 +50,7 @@ export const workBranchesOf = ({
     if (mount === undefined || !mount.isAttached) {
       continue;
     }
-    const project = projects.find((candidate) => candidate.id === mount.projectId);
+    const project = projectById(projects, mount.projectId);
     found.set(mountId, {
       mountId,
       projectId: mount.projectId,

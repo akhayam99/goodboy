@@ -6,7 +6,7 @@ import { useNow } from '../../../../../../shared/hooks/useNow';
 import { GroupBySwitch } from '../../../../../../shared/components/GroupBySwitch';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
 import { branchPlace } from '../../../../../../store/slices/navigation/place';
-import { useGroupBy } from '../../../../../../store/slices/session-grouping/useGroupBy';
+import { useGroupBy } from '../../../../../../store/slices/session-grouping/selectors';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';

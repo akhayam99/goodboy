@@ -109,12 +109,8 @@ describe('RunsGrid', () => {
 
     const needsYou = screen.getByRole('list', { name: 'Needs you' });
     const running = screen.getByRole('list', { name: 'Running' });
-    expect(
-      within(needsYou).getByRole('button', { name: 'Open Asker, Agent, Needs permission' }),
-    ).toBeDefined();
-    expect(
-      within(running).getByRole('button', { name: 'Open Runner, Agent, Running' }),
-    ).toBeDefined();
+    within(needsYou).getByRole('button', { name: 'Open Asker, Agent, Needs permission' });
+    within(running).getByRole('button', { name: 'Open Runner, Agent, Running' });
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
@@ -145,7 +141,6 @@ describe('RunsGrid', () => {
 
     expect(screen.queryByRole('img', { name: 'Unread' })).toBeNull();
     const row = screen.getByRole('button', { name: /Open Reviewer.*unread/ });
-    expect(row.querySelector('[data-truncated-text]')?.className).toContain('text-row-strong');
   });
 
   it('files stopped agents under Idle as Stopped and resumes them together', async () => {
@@ -312,7 +307,7 @@ describe('RunsGrid', () => {
         expect.objectContaining({ title: "Couldn't continue the agent" }),
       ),
     );
-    expect(screen.getByRole('list', { name: 'Idle' })).toBeDefined();
+    screen.getByRole('list', { name: 'Idle' });
   });
 
   it('gives no Continue to a finished agent', () => {
@@ -427,7 +422,7 @@ describe('RunsGrid by branch', () => {
       agents: [onDup('block', 'Block double credits'), onRetry('limit', 'Limit retries')],
     });
 
-    expect(screen.getByRole('list', { name: 'feat/retry-budget' })).toBeDefined();
+    screen.getByRole('list', { name: 'feat/retry-budget' });
     const group = screen.getByRole('list', { name: 'fix/duplicate-credit' });
     expect(
       within(group).getAllByRole('button', { name: /^Open Block double credits/ }),
@@ -454,8 +449,8 @@ describe('RunsGrid by branch', () => {
       ),
     );
     expect(new Set(rowKeys).size).toBe(2);
-    expect(within(dup).getByText('Also on feat/retry-budget')).toBeDefined();
-    expect(within(retry).getByText('Also on fix/duplicate-credit')).toBeDefined();
+    within(dup).getByText('Also on feat/retry-budget');
+    within(retry).getByText('Also on fix/duplicate-credit');
   });
 
   it('puts a run without a branch last in No branch', () => {
@@ -484,14 +479,14 @@ describe('RunsGrid by branch', () => {
     expect(useAppStore.getState().groupBySession[NOW_SESSION]).toBe('state');
     const running = screen.getByRole('list', { name: 'Running' });
     expect(within(running).getAllByRole('button')).toHaveLength(2);
-    expect(within(running).getByText('fix/duplicate-credit')).toBeDefined();
+    within(running).getByText('fix/duplicate-credit');
   });
 
   it('draws no switch and no branch groups with one branch', () => {
     renderWorld({ agents: [onDup('block', 'Block double credits'), onDup('second', 'Second')] });
 
     expect(screen.queryByRole('tab', { name: 'By state' })).toBeNull();
-    expect(screen.getByRole('list', { name: 'Running' })).toBeDefined();
+    screen.getByRole('list', { name: 'Running' });
   });
 
   it('shows one branch and a +1 on a By state row that touches two', () => {

@@ -81,6 +81,7 @@ export const RunsGridRow = ({
       ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
       rowKey={rowKey}
+      asideColumn="verb"
       aside={run.verb === null ? undefined : <RunRowVerb sessionId={sessionId} verb={run.verb} />}
       {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
       cells={[
@@ -102,6 +103,7 @@ export const RunsGridRow = ({
         run.progress,
         costUsd === null ? '' : formatUsd(costUsd),
         timeCellOf({ run, now }),
+        run.verb === null ? '' : <span aria-hidden />,
       ]}
     />
   );

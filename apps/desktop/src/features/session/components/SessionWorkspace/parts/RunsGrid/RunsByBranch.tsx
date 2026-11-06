@@ -36,7 +36,7 @@ type GroupParams = {
   readonly group: BranchGroup;
 };
 
-const labelOf = ({ group }: GroupParams): string => {
+const groupLabelOf = ({ group }: GroupParams): string => {
   switch (group.head.kind) {
     case 'branch':
       return group.head.branch.branch;
@@ -51,7 +51,7 @@ const labelOf = ({ group }: GroupParams): string => {
   }
 };
 
-const markOf = ({ group }: GroupParams): string | null => {
+const groupMarkOf = ({ group }: GroupParams): string | null => {
   switch (group.head.kind) {
     case 'branch':
       return group.head.branch.projectName;
@@ -81,7 +81,7 @@ const partBranchesOf = ({ run, head }: PartParams): ReadonlyArray<WorkBranch> =>
   return touched.length === 1 ? touched : [];
 };
 
-const factOf = ({ group }: GroupParams): string | null =>
+const groupFactOf = ({ group }: GroupParams): string | null =>
   group.head.kind === 'branch' ? group.head.fact : null;
 
 export const RunsByBranch = ({
@@ -99,14 +99,14 @@ export const RunsByBranch = ({
       const isFoldable = active.length > 0 && finished.length > 0;
       const isFolded = isFoldable && !openGroups.has(group.key);
       const shown = isFolded ? active : group.runs;
-      const mark = markOf({ group });
-      const summary = branchGroupSummaryOf({ counts: group.counts, fact: factOf({ group }) });
+      const mark = groupMarkOf({ group });
+      const summary = branchGroupSummaryOf({ counts: group.counts, fact: groupFactOf({ group }) });
       const head = group.head;
       return (
         <ListGridGroup
           key={group.key}
           headingLevel={2}
-          label={labelOf({ group })}
+          label={groupLabelOf({ group })}
           mark={mark === null ? undefined : <span>{mark}</span>}
           count={group.runs.length}
           fold={
@@ -138,7 +138,7 @@ export const RunsByBranch = ({
                     key={part.mountId}
                     ariaLabel={`Open branch ${part.branch}`}
                     onSelect={() => onOpenBranch({ mountId: part.mountId })}
-                    cells={['', '', part.branch, '', '', part.fact ?? '', '', '', '']}
+                    cells={['', '', part.branch, '', '', part.fact ?? '', '', '', '', '']}
                   />
                 ))
               : undefined

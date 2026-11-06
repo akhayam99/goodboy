@@ -27,6 +27,7 @@ export type ListGridRowProps = {
   readonly optionId?: string;
   readonly rowKey?: string;
   readonly aside?: ReactNode;
+  readonly asideColumn?: string;
   readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   readonly onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
 };
@@ -124,6 +125,7 @@ export const ListGridRow = ({
   optionId,
   rowKey,
   aside,
+  asideColumn,
   onContextMenu,
   onKeyDown,
 }: ListGridRowProps) => {
@@ -173,17 +175,19 @@ export const ListGridRow = ({
       </li>
     );
   }
+  const asideIndex = visible.findIndex(({ column }) => column?.key === asideColumn);
   const asideNode =
-    aside === undefined || aside === null ? null : (
+    aside === undefined || aside === null || asideIndex === -1 ? null : (
       <span
         data-list-grid-aside=""
-        className="absolute inset-y-0 right-1 flex items-center gap-1 rounded-md bg-hover px-1 opacity-0 focus-within:opacity-100 group-focus-within/grid-row:opacity-100 group-hover/grid-row:opacity-100"
+        style={{ gridColumn: asideIndex + 2, gridRow: 1 }}
+        className="z-10 flex min-w-0 items-center justify-end"
       >
         {aside}
       </span>
     );
   return (
-    <li role={itemRole} className="group/grid-row relative col-span-full grid grid-cols-subgrid">
+    <li role={itemRole} className="col-span-full grid grid-cols-subgrid">
       <OptionalTooltip content={tooltip}>
         <button
           type="button"
@@ -198,6 +202,7 @@ export const ListGridRow = ({
           aria-current={!isOption && isSelected ? 'true' : undefined}
           aria-label={ariaLabel}
           onClick={onSelect}
+          style={asideNode === null ? undefined : { gridRow: 1, gridColumn: '1 / -1' }}
           onContextMenu={onContextMenu}
           onKeyDown={onKeyDown}
           className={cn(

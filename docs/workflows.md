@@ -525,13 +525,36 @@ the agents you started by hand, newest first. The columns: state dot, shape
 glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
 "Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
 Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
-agents"), cost and age, every row the same columns. Groups:
-**In progress** (running, waiting on you or failed), **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button;
+agents"), cost and age, every row the same columns. A row names its work as
+`workBranchesOf` (`features/session`) reads it: the agents of the run through
+`Agent.mountId`, the mount a step inherits from the step before it
+(`inheritedMountIdOf`, shared with `selectRunStepMountId`) and the Auto tree.
+A read only agent counts, and a detached mount leaves the run without a branch.
+`SessionRun.branches` carries the result, and every row, group and count reads
+it. Under two branches the page groups **By state**: **Needs you**,
+**Running**, **Idle** (stopped, paused, ready), **Finished** (the first 30, then
+**Show all**) and **Archived** folded behind **Show** (`runGroupsOf`). The row
+shows its first branch before the cut of the title and the rest as `+N`, with a
+tooltip that lists project and branch. With two or more branches a switch, **By
+branch** or **By state**, is remembered for the session (`groupBySession`,
+`selectGroupBy`, which Questions and Artifacts read too) and starts on **By
+branch**. **By branch** (`branchGroupsOf`) draws one group per branch, one per
+pull request series from `store/slices/pr-series` with its parts as rows,
+and **No branch** last. A group that holds something that needs you goes
+first, its finished runs fold into **N finished**, and a run that touches
+several branches stands in each of them, keyed by group and run, with the chip
+**Also on feat/retry-budget** (**Also on 2 branches** for more). The page
+count stays one per run. Words say state and verbs are verbs: an agent you
+stopped reads **Stopped** and a preset run that has not started reads **Ready**,
+and on hover the row shows a real **Continue** or **Start**. An unread reply
+reads in the title, with no dot. **Stop all** sits in the head of **Running**,
+**Continue all** in the head of **Idle**. Cost, step and age leave the row
+before the title is cut (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents panel reads. The page opens on the **Start a run** field (`StartRun`, see
-[Start a run](features/start.md#start-a-run)), the one start on the page; a session with no run shows
-the field alone.
+of the Agents panel reads. The page opens on the list with a quiet **Start a run** row that opens
+the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
+a session with no run shows the field alone.
 
 A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
 engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`

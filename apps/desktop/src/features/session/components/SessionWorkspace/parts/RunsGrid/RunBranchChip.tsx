@@ -16,7 +16,7 @@ export const RunBranchChip = ({ branches }: Props) => {
   return (
     <>
       <OptionalTooltip content={branchListLabelOf({ branches: [first] })}>
-        <span data-run-branch="" className={cn(CHIP, 'min-w-0 shrink-[8] truncate font-mono')}>
+        <span data-run-branch="" className={cn(CHIP, 'min-w-0 shrink-[8] truncate')}>
           {first.branch}
         </span>
       </OptionalTooltip>

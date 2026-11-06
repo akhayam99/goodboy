@@ -73,7 +73,7 @@ describe('WorkflowsPane', () => {
 
     renderPane();
 
-    expect(screen.getByRole('list', { name: 'Runs' })).toBeDefined();
+    screen.getByRole('list', { name: 'Runs' });
     expect(box()).toBeNull();
     expect(screen.getByRole('button', { name: 'Start a run' }).getAttribute('aria-pressed')).toBe(
       'false',
@@ -87,7 +87,7 @@ describe('WorkflowsPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start a run' }));
     expect(box()).not.toBeNull();
 
-    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Start a run' }), { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape' });
     expect(box()).toBeNull();
   });
 

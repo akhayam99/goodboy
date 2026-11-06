@@ -3,7 +3,7 @@ import { Button } from '@goodboy/ui';
 import { usePendingAction } from '../../../../../../shared/hooks/usePendingAction';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { useAppStore } from '../../../../../../store';
-import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
+import { advanceWorkflowAgent } from '../../../../../workflows/advanceWorkflowAgent';
 import type { SessionRunVerb } from '../../../../sessionRunsOf';
 
 type Props = {
@@ -20,8 +20,10 @@ const LABEL = {
 
 export const RunRowVerb = ({ sessionId, verb }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
+  const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
+  const emitNotification = useAppStore((state) => state.emitNotification);
+  const reportError = useAppStore((state) => state.reportError);
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
-  const advance = useAdvanceWorkflowAgent({ sessionId });
   const pending = usePendingAction({ sessionId });
   const key = `${verb.kind}:${verb.agentId}`;
 
@@ -38,7 +40,11 @@ export const RunRowVerb = ({ sessionId, verb }: Props) => {
       key,
       failureTitle: "The next step didn't start",
       task: () =>
-        advance({ agent: agents.find((candidate) => candidate.id === verb.agentId) ?? null }),
+        advanceWorkflowAgent({
+          sessionId,
+          agent: agents.find((candidate) => candidate.id === verb.agentId) ?? null,
+          actions: { activateWorkflowAgent, emitNotification, reportError },
+        }),
     });
   };
 

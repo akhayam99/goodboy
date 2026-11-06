@@ -18,13 +18,14 @@ import {
   type C08State,
 } from './c08RunSeed';
 
-type C08Click = 'none' | 'menu' | 'addStep';
+type C08Click = 'none' | 'menu' | 'addStep' | 'startRun';
 
 type Props = {
   readonly state: C08State;
   readonly selection: C08Selection | 'list';
   readonly click?: C08Click;
   readonly isFolded?: boolean;
+  readonly extra?: () => void;
 };
 
 const noop = () => undefined;
@@ -63,9 +64,16 @@ const CLICK_DELAY_MS = 200;
 const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
   addStep: '[data-spawned-panel] [data-run-add-step] button',
+  startRun: '[data-start-run-row] button',
 };
 
-export const C08RunScene = ({ state, selection, click = 'none', isFolded = false }: Props) => {
+export const C08RunScene = ({
+  state,
+  selection,
+  click = 'none',
+  isFolded = false,
+  extra,
+}: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C08_SESSION_ID);
   const sizing = useAppStore(selectDrawerSizing);
@@ -74,13 +82,14 @@ export const C08RunScene = ({ state, selection, click = 'none', isFolded = false
 
   useEffect(() => {
     seedC08({ state, selection });
+    extra?.();
     if (selection !== 'list') {
       useAppStore
         .getState()
         .openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
     }
     setIsSeeded(true);
-  }, [state, selection]);
+  }, [state, selection, extra]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {

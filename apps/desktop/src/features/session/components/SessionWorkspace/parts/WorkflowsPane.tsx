@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { GoneObject } from '../../../../../shared/components/GoneObject';
-import { GhostActionButton, PANE_RHYTHM, PaneShell, cn } from '@goodboy/ui';
+import { GhostActionButton, PANE_RHYTHM, PaneShell, cn, useEscapeLayer } from '@goodboy/ui';
 import { leaveRunLevel } from '../../../../workflows/leaveRunLevel';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { OrchestratedRunPage } from '../../OrchestratedRun';
@@ -18,10 +18,6 @@ import { SessionPageIntro } from '../../SessionPageIntro';
 
 type Props = {
   readonly session: Session;
-};
-
-type EscapeParams = {
-  readonly event: KeyboardEvent<HTMLDivElement>;
 };
 
 export const WorkflowsPane = ({ session }: Props) => {
@@ -50,14 +46,10 @@ export const WorkflowsPane = ({ session }: Props) => {
     return () => window.removeEventListener(name, open);
   }, [sessionId]);
 
-  const closeOnEscape = ({ event }: EscapeParams): void => {
-    if (event.key !== 'Escape' || event.defaultPrevented || !hasRuns) {
-      return;
-    }
-    event.preventDefault();
+  useEscapeLayer(() => {
     setIsStartOpen(false);
     startRowRef.current?.querySelector<HTMLElement>('button')?.focus();
-  };
+  }, hasRuns && isStartOpen);
 
   if (focusedRun != null) {
     return (
@@ -81,7 +73,7 @@ export const WorkflowsPane = ({ session }: Props) => {
     <PaneShell page="runs" title={NAMES.runs} subheader={<SessionPageIntro page="runs" />}>
       <div className={cn(PANE_RHYTHM.groups, 'min-w-0')}>
         {hasRuns ? (
-          <div ref={startRowRef} className="flex">
+          <div ref={startRowRef} data-start-run-row="" className="flex">
             <GhostActionButton
               icon={Plus}
               label={RUN_ROUTE_COPY.label}
@@ -90,7 +82,7 @@ export const WorkflowsPane = ({ session }: Props) => {
             />
           </div>
         ) : null}
-        <div hidden={!isFormShown} onKeyDown={(event) => closeOnEscape({ event })}>
+        <div hidden={!isFormShown}>
           <StartRun
             workspaceId={session.workspaceId}
             sessionId={sessionId}

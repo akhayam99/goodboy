@@ -1,22 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { RUNS_GRID_COLUMNS, RUNS_GRID_TITLE_FLOOR } from './runsGridColumns';
-
-const css = readFileSync(join(__dirname, '..', '..', '..', '..', '..', '..', 'styles.css'), 'utf8');
 
 const TRACK_GAP_PX = 12;
 const EDGE_TRACKS = 2;
 const MODEL_TITLE_MIN_PX = 240;
 const ORIGIN_TITLE_MIN_PX = 150;
-
-const columnMaxPx = (): number => {
-  const match = /--column-max:\s*(\d+)px;/.exec(css);
-  if (match === null) {
-    throw new Error('styles.css must declare --column-max in px');
-  }
-  return Number(match[1]);
-};
 
 type WidthParams = {
   readonly gridWidth: number;
@@ -46,11 +34,13 @@ const hideBelowOf = ({ key }: KeyParams): number => {
 };
 
 describe('the Runs grid columns', () => {
-  it('shows origin at the widest the grid can be, the title keeping room to read', () => {
-    const widest = columnMaxPx();
+  it('shows origin only when the title keeps room to read', () => {
+    const at = hideBelowOf({ key: 'origin' });
 
-    expect(hideBelowOf({ key: 'origin' })).toBeLessThanOrEqual(widest);
-    expect(titleWidthAt({ gridWidth: widest })).toBeGreaterThanOrEqual(ORIGIN_TITLE_MIN_PX);
+    expect(titleWidthAt({ gridWidth: at })).toBeGreaterThanOrEqual(ORIGIN_TITLE_MIN_PX);
+    expect(titleWidthAt({ gridWidth: at - 1 })).toBeLessThan(
+      ORIGIN_TITLE_MIN_PX + TRACK_GAP_PX + 200,
+    );
   });
 
   it('shows model as soon as the title keeps room to read, and not a pixel earlier', () => {

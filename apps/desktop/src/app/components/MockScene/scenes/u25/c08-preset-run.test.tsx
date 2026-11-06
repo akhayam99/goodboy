@@ -102,7 +102,7 @@ describe('the c08 preset run scenes', () => {
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     const grid = screen.getByRole('list', { name: 'Runs' });
     expect(within(grid).getByRole('heading', { name: 'Running' })).toBeDefined();
-    expect(within(grid).getByRole('heading', { name: 'Idle' })).toBeDefined();
+    within(grid).getByRole('heading', { name: 'Idle' });
     expect(within(grid).getByRole('heading', { name: 'Finished' })).toBeDefined();
     expect(within(grid).getByRole('heading', { name: 'Archived' })).toBeDefined();
     expect(

@@ -86,6 +86,12 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <sub>Screenshot from Goodboy 0.31.10</sub>
 
+Runs opens on your runs. A quiet **Start a run** row opens the field in place, and **Esc** closes it. With no run yet the field is the page.
+
+The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**. An agent you stopped reads **Stopped**. A preset that has not started reads **Ready**. On hover the row offers a real **Continue** or **Start**. A row names the branch its run works on, and the rest as `+N`.
+
+With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. **By branch** has a group per branch or pull request series, and **No branch** comes last. Groups that need you come first and finished runs fold. A run on several branches stands in each, with **Also on feat/retry-budget**. With one branch the page is the same list.
+
 ### Hints to the orchestrator
 
 Every hint is a round node on the run's line, like a step, and the line runs through it without a break. It runs on through several hints that come after the last step. Queued hints sit on that line under the steps, under the heading **Queued hints 3, read at the next decision**. A queued hint has a dashed node. Its text sits on one line. A hint that is cut, or has a second line, has **Show more** to read the rest and **Show less** to fold it. Its images are small thumbnails at the end of the same line, and a click opens them in the viewer.
