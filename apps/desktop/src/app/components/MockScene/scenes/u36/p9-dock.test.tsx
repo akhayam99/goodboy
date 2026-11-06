@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { brandId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -24,6 +25,10 @@ import { C06_AGENT_ID } from '../u25/c06ConversationSeed';
 import { U36_P9_DOCK_SCENES } from './p9-dock';
 
 const SETTLE_MS = 2_000;
+const OVER_LIMIT = 'Every provider is over its limit. Change a limit or wait for the next period.';
+const HELD_AT = brandId<IsoDateTime>({ value: '2026-11-06T10:00:00.000Z' });
+
+type AppState = ReturnType<StoryStore['getState']>;
 
 type SceneName = keyof typeof U36_P9_DOCK_SCENES;
 
@@ -81,6 +86,36 @@ describe('the P9 dock scenes', () => {
     expect(document.querySelector('[data-glance]')?.textContent).not.toContain('wants to run');
   });
 
+  it('a window that never saw the turn held keeps the ask in the chat, with its answers', async () => {
+    const dock = await mount({ name: 'u36-p9-permission' });
+
+    await act(async () => {
+      useAppStore.setState((state) => {
+        const { [C06_AGENT_ID]: _held, ...agentTurnState } = state.agentTurnState;
+        return { agentTurnState };
+      });
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(within(dock).queryByRole('button', { name: 'Allow and continue' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Allow and continue' })).toHaveLength(1);
+  });
+
+  it('a window that never saw the turn held keeps the ask in the chat, with its answers', async () => {
+    const dock = await mount({ name: 'u36-p9-permission' });
+
+    await act(async () => {
+      useAppStore.setState((state) => {
+        const { [C06_AGENT_ID]: _held, ...agentTurnState } = state.agentTurnState;
+        return { agentTurnState };
+      });
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(within(dock).queryByRole('button', { name: 'Allow and continue' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Allow and continue' })).toHaveLength(1);
+  });
+
   it('u36-p9-permission-typed says the message denies, and Send and deny takes the fill', async () => {
     const dock = await mount({ name: 'u36-p9-permission-typed' });
 
@@ -134,6 +169,62 @@ describe('the P9 dock scenes', () => {
         turn: expect.objectContaining({ agentId: IMPLEMENTER_ID, override: undefined }),
       }),
     );
+  });
+
+  it('clears the saved attachments of the box that sent, not of the agent that asks', async () => {
+    await mount({ name: 'u36-p9-auto-asks' });
+    const clearAgentAttachments = vi.fn();
+    act(() =>
+      useAppStore.setState((state) => ({
+        clearAgentAttachments,
+        sendAgentMessage: vi.fn(async () => ({ isDelivered: true, failure: null })),
+        agentDraft: { ...state.agentDraft, [AUTO_ROOT_ID]: 'Mock fetch by hand' },
+      })),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send and deny' }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(clearAgentAttachments).toHaveBeenCalledWith(AUTO_ROOT_ID);
+    expect(clearAgentAttachments).not.toHaveBeenCalledWith(IMPLEMENTER_ID);
+  });
+
+  it('puts a refused message back in the box of Auto, with the reason, and leaves no row on the agent', async () => {
+    await mount({ name: 'u36-p9-auto-asks' });
+    const refuse: AppState['sendAgentMessage'] = async ({ turn }) => {
+      useAppStore.setState((state) => ({
+        agentQueue: {
+          ...state.agentQueue,
+          [turn.agentId]: [
+            { ...turn, status: 'queued', createdAt: HELD_AT, hold: { reason: OVER_LIMIT } },
+          ],
+        },
+      }));
+      return { isDelivered: false, failure: null };
+    };
+    act(() =>
+      useAppStore.setState((state) => ({
+        sendAgentMessage: refuse,
+        agentDraft: { ...state.agentDraft, [AUTO_ROOT_ID]: 'Mock fetch by hand' },
+      })),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send and deny' }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(useAppStore.getState().agentDraft[AUTO_ROOT_ID]).toBe('Mock fetch by hand');
+    expect(useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? []).toEqual([]);
+    screen.getByText(OVER_LIMIT);
   });
 
   it('u36-p9-question asks in the dock with its pager', async () => {

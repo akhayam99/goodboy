@@ -102,6 +102,7 @@ export const useComposerSend = ({
         atts,
         override: isOwnAsk ? override : undefined,
         agentId: deniedAgentId ?? selectedAgentId,
+        draftAgentId: selectedAgentId,
         force,
       });
       if (outcome !== 'unwritten') {
