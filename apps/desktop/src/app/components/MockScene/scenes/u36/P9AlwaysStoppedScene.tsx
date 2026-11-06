@@ -7,8 +7,8 @@ export const P9AlwaysStoppedScene = () => {
   useEffect(() => {
     useAppStore.setState((state) => {
       const events = state.transcripts[C06_AGENT_ID] ?? [];
-      const ask = events.findLast((event) => event.kind === 'permission_request');
-      if (ask === undefined) {
+      const ask = events.filter((event) => event.kind === 'permission_request').at(-1);
+      if (ask?.kind !== 'permission_request') {
         return state;
       }
       return {

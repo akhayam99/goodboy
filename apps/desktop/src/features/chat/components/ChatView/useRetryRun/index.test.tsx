@@ -87,7 +87,7 @@ describe('useRetryRun', () => {
     );
 
     await act(async () => {
-      await result.current.retryRun({ runId: FAILED_RUN });
+      await result.current.retryRun({ runId: FAILED_RUN, model: null });
     });
 
     expect(sendTurn).toHaveBeenCalledWith(

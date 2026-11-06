@@ -11589,11 +11589,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/store.turn-fallback.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 10
-    }
-  },
   "apps/desktop/src/store/store.viewed-stamping.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 24
