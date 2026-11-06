@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -341,6 +341,26 @@ describe('QuestionDrawer', () => {
       to: questionPlace({ sessionId: SESSION_ID, questionId: Q2.id }),
       mode: 'replace',
     });
+  });
+
+  it('does not pull the user back when Send as message finishes after the drawer is gone', async () => {
+    let finish: (isSent: boolean) => void = () => undefined;
+    setupDrawer({ questionId: Q1.id });
+    store.state = {
+      ...store.state,
+      sendQuestionAsMessage: () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    };
+    fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Send as message' }));
+    store.state = { ...store.state, drawer: null };
+    await act(async () => {
+      finish(true);
+    });
+    expect(actions.navigate).not.toHaveBeenCalled();
   });
 
   it('keeps Undo on a staged answer when its question is opened again', () => {

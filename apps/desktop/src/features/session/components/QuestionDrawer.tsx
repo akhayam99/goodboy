@@ -50,9 +50,17 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
       if (next === null) {
         return;
       }
+      const { drawer } = useAppStore.getState();
+      const isOpen =
+        drawer?.kind === 'question' &&
+        drawer.sessionId === sessionId &&
+        drawer.payload.questionId === questionId;
+      if (!isOpen) {
+        return;
+      }
       openQuestion({ state: useAppStore.getState(), sessionId, questionId: next });
     },
-    [sessionId],
+    [questionId, sessionId],
   );
 
   const dismiss = async ({ question }: QuestionParams) => {
