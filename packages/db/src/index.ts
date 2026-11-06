@@ -138,7 +138,6 @@ export {
   markSessionOpened,
   updateSessionConfig,
   type SessionConfigUpdate,
-  type ArchivedSessionRef,
   type SessionTitleRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
@@ -397,7 +396,6 @@ export {
   registerWorktreeRoot,
 } from './queries/worktree-root';
 export { insertSessionEvent, listSessionEvents } from './queries/session-event';
-export { getWorkspaceOverrides } from './queries/settings-overrides';
 export {
   listProviderCredentials,
   insertProviderCredential,
