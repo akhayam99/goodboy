@@ -61,6 +61,8 @@ type PaneParams = {
   readonly pane: ClusterPane;
 };
 
+const OBJECT_PAGE_LENSES: ReadonlySet<LensKind> = new Set<LensKind>(['workflows', 'plans']);
+
 const doorTabOf = ({ kind }: { readonly kind: LensKind | null }): BranchTab => {
   if (kind === 'files') {
     return 'files';
@@ -129,6 +131,16 @@ export const useAppShortcuts = ({
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
+    if (kind !== null && OBJECT_PAGE_LENSES.has(kind) && active === kind) {
+      const isBelowPage =
+        (state.selectedAgentId[sessionId] ?? null) !== null ||
+        (kind === 'workflows' && (state.focusedWorkflowRunId[sessionId] ?? null) !== null) ||
+        (kind === 'plans' && (state.focusedArtifactId[sessionId] ?? null) !== null);
+      if (isBelowPage) {
+        openLens({ sessionId, lens: kind });
+      }
+      return;
+    }
     const isLeaving = kind != null && (active === kind || isBranchDoor);
     if (kind === 'review' && !isLeaving) {
       state.navigate({

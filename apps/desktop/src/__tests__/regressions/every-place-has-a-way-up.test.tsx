@@ -66,8 +66,8 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
   'features/integrations/slack/SlackConnectGuide.tsx': 'the previous step of a setup guide',
   'shared/components/StudioShell/StudioBackButton.tsx':
     'Back to app is the studio Close, not an up',
-  'features/session/components/SessionWorkspace/parts/AgentOverlay.tsx':
-    'the empty state of a gone agent; the back row above it is the way up',
+  'shared/components/GoneObject.tsx':
+    'the empty state of a gone object; the back row above it is the way up',
   'features/session/ask/components/AskDrawer/AskPlanView.tsx':
     'a view inside the Ask drawer; moves to the DrawerFrame back when touched (plan P5)',
   'features/session/components/ContextDrawer/VersionsView.tsx':

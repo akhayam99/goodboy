@@ -462,6 +462,39 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: lens(null),
   }),
   pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
+  keyRow({
+    id: 'lens.workflows',
+    note: 'on a run that is gone, lands on the Runs list',
+    open: async (ctx) => {
+      useAppStore.getState().navigate({
+        to: sessionPlace({
+          sessionId: ctx.sessionId,
+          lens: 'workflows',
+          target: { kind: 'run', runId: 'keys-run-gone' },
+        }),
+      });
+      await settle();
+      await screen.findByText('This run is no longer in this session', undefined, WAIT);
+      await press('lens.workflows')();
+    },
+    lands: both(lens('workflows'), async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
+      await heading('Runs');
+    }),
+  }),
+  keyRow({
+    id: 'lens.workflows',
+    note: 'pressed again on the Runs list, stays on the list',
+    open: async () => {
+      await press('lens.workflows')();
+      await heading('Runs');
+      await press('lens.workflows')();
+    },
+    lands: both(lens('workflows'), () => heading('Runs')),
+  }),
   pressRow({ id: 'lens.agents', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),

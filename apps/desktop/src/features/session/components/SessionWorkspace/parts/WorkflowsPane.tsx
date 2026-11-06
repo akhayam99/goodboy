@@ -1,5 +1,7 @@
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { GoneObject } from '../../../../../shared/components/GoneObject';
 import { PANE_RHYTHM, PaneShell, cn, useEscapeLayer } from '@goodboy/ui';
 import { leaveRunLevel } from '../../../../workflows/leaveRunLevel';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
@@ -26,11 +28,29 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
     attachedRuns.find(
       ({ run }) => run.id === focusedWorkflowRunId && run.executionMode === 'dynamic',
     ) ?? null;
-  useEscapeLayer(() => leaveRunLevel({ sessionId }), focusedRun !== null && isActive);
+  const isRunGone =
+    focusedWorkflowRunId !== null &&
+    !session.workflowRuns.some((run) => run.id === focusedWorkflowRunId);
+  useEscapeLayer(
+    () => leaveRunLevel({ sessionId }),
+    (focusedRun !== null || isRunGone) && isActive,
+  );
 
   if (focusedRun != null) {
     return (
       <OrchestratedRunPage session={session} run={focusedRun.run} workflow={focusedRun.workflow} />
+    );
+  }
+
+  if (isRunGone) {
+    return (
+      <PaneShell page="run" title="Run">
+        <GoneObject
+          noun="run"
+          icon={CONCEPT_ICONS.workflows}
+          onBack={() => leaveRunLevel({ sessionId })}
+        />
+      </PaneShell>
     );
   }
 

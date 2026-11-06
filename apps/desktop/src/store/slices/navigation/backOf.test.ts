@@ -162,7 +162,7 @@ describe('backOf', () => {
       ...appState,
       sessions: appState.sessions.map((session) => ({
         ...session,
-        workflowRuns: session.workflowRuns.map((run) => ({ ...run, title: null })),
+        workflowRuns: [aWorkflowRun({ id: DYNAMIC_RUN, executionMode: 'dynamic' })],
       })),
     };
     expect(backOf({ state: untitled, place: agentAt({ agentId: STEP }) })?.label).toBe(

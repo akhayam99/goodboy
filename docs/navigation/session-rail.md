@@ -305,14 +305,20 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   agent or Auto conversation is in the center (the Runs page lists every
   current lens, `pageLensOf` read by `useSessionPageLens` in the open, folded
   and flyout session levels). Esc on an orchestrated run (`leaveRunLevel`) and
-  going up to Runs from a run (`upTo` clears the run focus when it lands on
-  the Runs list) land on the list. A step row of the document opens the step
+  going up to Runs from a run land on the list, because a place with no run
+  is the list. A step row of the document opens the step
   in the pane (drawer kind `run-step`), never the center.
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation with the Agents panel open (`openSpawned`), and Runs stays
   selected on the rail while an Auto agent is in the center. ⌘⌥W and the
-  Agents key (`lens.agents`, ⌘⌥A) both open Runs, and pressed on Runs go back
-  to the Overview.
+  Agents key (`lens.agents`, ⌘⌥A) both open Runs. Pressed below Runs (a run,
+  a step, an agent or an Auto conversation) they land on the Runs list, and
+  pressed on the list they stay: ⌘↑ is the key that leaves. ⌘⌥P does the same
+  for Artifacts (`OBJECT_PAGE_LENSES` in `useAppShortcuts`).
+- **A gone object says so.** A run, an agent, an artifact or a plan part that
+  was deleted or moved shows one empty state, "This run is no longer in this
+  session" (`GoneObject`), on its page or in its drawer, with Back on a page;
+  a drawer waits for its collection to load before it says so.
 
 The tools (Explore, Context, Ask, Agents, Scripts, Terminal) are panes, not pages:
 they open from the session tools column at the right of the content (see The
