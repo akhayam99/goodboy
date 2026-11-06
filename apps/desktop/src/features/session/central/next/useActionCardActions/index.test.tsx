@@ -20,7 +20,7 @@ import {
 } from '../../../../auto/testing/autoViewFixtures';
 import type { SessionSuggestion } from '../../../../suggestions/types';
 import type { NeedsYouOwner } from '../../../timeline/needsYou';
-import { questionPlace } from '../../../../../store';
+import { questionPlace } from '../../../../../store/slices/navigation/place';
 import { actionCardsOf, type AutoActionTarget } from '../actionCardsOf';
 
 const { runs } = vi.hoisted(() => ({
