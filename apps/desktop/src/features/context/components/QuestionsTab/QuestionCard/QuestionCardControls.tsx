@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
-import { ICON_SIZE, IconButton, OverflowMenu, type MenuEntry } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, type MenuEntry } from '@goodboy/ui';
+import { QuestionCardMenu } from './QuestionCardMenu';
 import { QuestionPager, type QuestionPagerModel } from './QuestionPager';
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 export const QuestionCardControls = ({ pager, onDismiss, menu = null }: Props) => (
   <span data-question-controls="" className="flex shrink-0 items-center gap-2">
     {pager !== null && <QuestionPager pager={pager} />}
-    {menu !== null && <OverflowMenu entries={menu} label="More" />}
+    {menu !== null && <QuestionCardMenu entries={menu} />}
     {onDismiss !== null && (
       <IconButton
         icon={X}
