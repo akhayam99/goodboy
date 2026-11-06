@@ -415,16 +415,13 @@ describe('setCurrentWorkspace stops all live work', () => {
     const agent = anAgent({ sessionId: live.id, status: 'running' });
     const running: TurnState = {
       kind: 'running',
-      runId: 'run-stuck' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-stuck' }),
       startedAt: NOW,
     };
 
     const stuckStore = () =>
       harness({
-        workspaces: [
-          { id: WORKSPACE_ID, lastAccessedAt: NOW },
-          { id: OTHER_ID, lastAccessedAt: NOW },
-        ],
+        workspaces: [aWorkspace({ id: WORKSPACE_ID }), aWorkspace({ id: OTHER_ID })],
         currentWorkspaceId: WORKSPACE_ID,
         sessions: [live],
         sessionPhaseRuns: { [live.id]: [agent] },
@@ -433,7 +430,7 @@ describe('setCurrentWorkspace stops all live work', () => {
           outcome: 'still_running' as const,
           exitedAt: null,
         })),
-      } as unknown as Partial<AppStore>);
+      });
 
     it('stays here with everything that controls it, and says so', async () => {
       const store = stuckStore();

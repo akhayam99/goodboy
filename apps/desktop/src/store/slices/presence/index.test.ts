@@ -28,6 +28,7 @@ vi.mock('../../../features/workspace/window', () => ({
 type FakeState = {
   windowPresence: Record<string, WorkspaceId | null>;
   currentWorkspaceId: WorkspaceId | null;
+  workspaceSwitchError?: { workspaceId: WorkspaceId; message: string };
   sessions: ReadonlyArray<Session>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   agentTurnState: Record<string, TurnState>;
@@ -236,7 +237,9 @@ describe('presence slice', () => {
 
   it('keeps the window title when the switch was refused', async () => {
     vi.mocked(setWindowTitle).mockClear();
-    const { slice } = harness({ currentWorkspaceId: wsA });
+    const { slice } = harness({
+      workspaceSwitchError: { workspaceId: wsB, message: 'An agent did not stop' },
+    });
 
     await slice.switchWorkspaceHere({ id: wsB, title: 'B' });
 

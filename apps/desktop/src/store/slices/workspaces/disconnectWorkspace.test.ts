@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { disconnectWorkspaceAndProjects } from '@goodboy/db';
-import type { ProviderRunId, TurnState } from '@goodboy/types';
+import { brandId, type ProviderRunId, type TurnState } from '@goodboy/types';
 import { aSession, aWorkflowRun, aWorkspace, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -119,7 +119,7 @@ describe('disconnectWorkspace stops all live work', () => {
     const agent = anAgent({ sessionId: live.id, status: 'running' });
     const running: TurnState = {
       kind: 'running',
-      runId: 'run-stuck' as ProviderRunId,
+      runId: brandId<ProviderRunId>({ value: 'run-stuck' }),
       startedAt: TEST_NOW,
     };
 
