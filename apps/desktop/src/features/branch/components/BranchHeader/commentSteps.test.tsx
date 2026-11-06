@@ -190,12 +190,23 @@ describe('the branch header comment steps do the work on any tab', () => {
   it('opens the Fix form at Fix N comments and never switches tab', () => {
     const navigate = vi.fn<StoreState['navigate']>();
     useAppStore.setState({ navigate });
-    renderHeader({ comments: { facts: { ...NO_COMMENT_FACTS, fixable: 4 }, readyThreadIds: [] } });
+    const fixableThreadIds = ['thread-a', 'thread-b', 'thread-c', 'thread-d'];
+    renderHeader({
+      comments: {
+        facts: { ...NO_COMMENT_FACTS, fixable: 4 },
+        readyThreadIds: [],
+        fixableThreadIds,
+      },
+    });
 
     expect(primaries()).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Fix 4 comments' }));
 
-    expect(useAppStore.getState().drawer?.kind).toBe('fix-comments');
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind).toBe('fix-comments');
+    expect(drawer?.kind === 'fix-comments' ? drawer.payload.threadIds : null).toEqual(
+      fixableThreadIds,
+    );
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -207,6 +218,7 @@ describe('the branch header comment steps do the work on any tab', () => {
       comments: {
         facts: { ...NO_COMMENT_FACTS, questionThreadId: 'thread-ledger', fixable: 2 },
         readyThreadIds: [],
+        fixableThreadIds: [],
       },
     });
 
@@ -215,6 +227,11 @@ describe('the branch header comment steps do the work on any tab', () => {
 
     expect(navigate).toHaveBeenCalledWith(
       expect.objectContaining({
+        to: expect.objectContaining({
+          view: expect.objectContaining({
+            target: expect.objectContaining({ mountPath: MOUNT.worktreePath }),
+          }),
+        }),
         drawer: {
           kind: 'conversation',
           sessionId: SESSION_ID,
@@ -232,11 +249,13 @@ describe('the branch header comment steps do the work on any tab', () => {
           release = () => resolve({ acceptedCount: 2, failures: [] });
         }),
     );
-    useAppStore.setState({ acceptReviewComments });
+    const clearReviewSelection = vi.fn<StoreState['clearReviewSelection']>();
+    useAppStore.setState({ acceptReviewComments, clearReviewSelection });
     renderHeader({
       comments: {
         facts: { ...NO_COMMENT_FACTS, waitingFixes: 2, fixable: 1 },
         readyThreadIds: ['thread-ledger', 'thread-notify'],
+        fixableThreadIds: [],
       },
     });
 
@@ -248,7 +267,9 @@ describe('the branch header comment steps do the work on any tab', () => {
       sessionId: SESSION_ID,
       threadIds: ['thread-ledger', 'thread-notify'],
     });
+    expect(clearReviewSelection).not.toHaveBeenCalled();
     await act(async () => release());
+    expect(clearReviewSelection).toHaveBeenCalledWith({ sessionId: SESSION_ID });
   });
 
   it('names the failure of Apply and keeps the step to press again', async () => {
@@ -262,6 +283,7 @@ describe('the branch header comment steps do the work on any tab', () => {
       comments: {
         facts: { ...NO_COMMENT_FACTS, waitingFixes: 1 },
         readyThreadIds: ['thread-ledger'],
+        fixableThreadIds: [],
       },
     });
 
@@ -286,6 +308,7 @@ describe('the branch header comment steps do the work on any tab', () => {
       comments: {
         facts: { ...NO_COMMENT_FACTS, fixable: 3, isFixRunLive: true },
         readyThreadIds: [],
+        fixableThreadIds: [],
       },
     });
 

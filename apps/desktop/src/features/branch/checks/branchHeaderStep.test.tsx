@@ -57,6 +57,7 @@ import {
   type PullRequestView,
 } from '@goodboy/types';
 import { startCheckFix } from './startCheckFix';
+import { stopRequests } from '../../../store/slices/turn/stopRequests';
 import { withPullRequestViewEntry } from '../../../store/slices/pull-request-view/pullRequestViewAt';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import type { BranchReviewCounts } from '../branchPrimary';
@@ -493,7 +494,8 @@ describe('the branch header step runs the Overview chain on any tab', () => {
     expect(headerStep()).toBeNull();
 
     const github = store.getState().mountGithub[seed.repo.mountId];
-    if (github?.detail == null) {
+    const detail = github?.detail;
+    if (github === undefined || detail == null) {
       throw new Error('The seeded branch is missing');
     }
     act(() =>
@@ -502,8 +504,8 @@ describe('the branch header step runs the Overview chain on any tab', () => {
           [seed.repo.mountId]: {
             ...github,
             detail: {
-              ...github.detail,
-              checks: github.detail.checks.map((check) =>
+              ...detail,
+              checks: detail.checks.map((check) =>
                 check.conclusion === 'failure'
                   ? { ...check, detailsUrl: `${check.detailsUrl}/rerun` }
                   : check,
@@ -696,6 +698,36 @@ describe('one agent per branch, whichever door starts it', () => {
       }),
     ).rejects.toThrow(ANALYZING);
     expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it('offers Stop again once a stop request stalled, and reads working, not stopping', () => {
+    seed = checksAnalyzeSeed({ phase: 'running' });
+    const turn = store.getState().agentTurnState[seed.agent.id];
+    if (turn?.kind !== 'running') {
+      throw new Error('The seeded Debugger is not running');
+    }
+    render(
+      <ToastProvider>
+        <BranchCheckWorkLine
+          sessionId={seed.sessionId}
+          agentId={seed.agent.id}
+          isFixing={false}
+          checkName={seed.check.name}
+        />
+      </ToastProvider>,
+    );
+
+    act(() => stopRequests.request({ agentId: seed.agent.id, runId: turn.runId, at: Date.now() }));
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+
+    act(() =>
+      stopRequests.request({ agentId: seed.agent.id, runId: turn.runId, at: Date.now() - 10_000 }),
+    );
+    expect(screen.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
+    expect(screen.getByTestId('branch-check-work').textContent).toContain(
+      `Analyzing ${seed.check.name}`,
+    );
+    act(() => stopRequests.settle({ agentId: seed.agent.id }));
   });
 
   it('disables the row Analyze of another check', () => {

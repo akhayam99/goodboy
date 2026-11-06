@@ -40,19 +40,23 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
   });
   const questionThreadId =
     branchEntries.find((entry) => entry.resolveWord === 'question')?.threadId ?? null;
-  const fixable = branchEntries.filter((entry) => entry.isFixable).length;
+  const fixableThreadIds = useMemo(
+    () => branchEntries.filter((entry) => entry.isFixable).map((entry) => entry.threadId),
+    [branchEntries],
+  );
   const readyThreadIds = fixRunReady?.threadIds ?? NO_THREADS;
   const comments = useMemo<BranchStepComments>(
     () => ({
       facts: {
         questionThreadId,
         waitingFixes: readyThreadIds.length,
-        fixable,
+        fixable: fixableThreadIds.length,
         isFixRunLive: isRunLive,
       },
       readyThreadIds,
+      fixableThreadIds,
     }),
-    [fixable, isRunLive, questionThreadId, readyThreadIds],
+    [fixableThreadIds, isRunLive, questionThreadId, readyThreadIds],
   );
   return { entries, push, comments, run, lane };
 };

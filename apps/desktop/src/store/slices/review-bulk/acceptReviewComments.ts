@@ -14,6 +14,8 @@ type Params = SliceDeps & {
   readonly threadIds: ReadonlyArray<string>;
 };
 
+const accepting = new Set<string>();
+
 const acceptedItemIdsOf = ({
   get,
   sessionId,
@@ -46,9 +48,11 @@ export const acceptReviewComments = async ({
       state: rowState,
       facts: state.sessionThreadGit?.[sessionId]?.[threadId] ?? null,
     });
-    if (!isBulkAcceptable({ state: rowState, remote })) {
+    const key = JSON.stringify([sessionId, threadId]);
+    if (!isBulkAcceptable({ state: rowState, remote }) || accepting.has(key)) {
       continue;
     }
+    accepting.add(key);
     try {
       await acceptReviewItem({
         state,
@@ -60,6 +64,8 @@ export const acceptReviewComments = async ({
       accepted.push(threadId);
     } catch (error) {
       failures.push({ threadId, message: formatError(error) });
+    } finally {
+      accepting.delete(key);
     }
   }
   for (const threadId of accepted) {

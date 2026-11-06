@@ -188,6 +188,24 @@ describe('review bulk accept', () => {
     expect(await approvalOf({ id: 'c' })).toBe('accepted');
   });
 
+  it('accepts a thread once when two doors apply at the same time', async () => {
+    const store = await harness();
+    const real = store.getState().acceptResolveQueueItem;
+    const accept = vi.fn(real);
+    store.setState({ acceptResolveQueueItem: accept });
+
+    const [first, second] = await Promise.all([
+      store.getState().acceptReviewComments({ sessionId, threadIds: ['a', 'b'] }),
+      store.getState().acceptReviewComments({ sessionId, threadIds: ['a', 'b'] }),
+    ]);
+
+    expect(accept).toHaveBeenCalledTimes(2);
+    expect(first.failures).toEqual([]);
+    expect(second.failures).toEqual([]);
+    expect(await approvalOf({ id: 'a' })).toBe('accepted');
+    expect(await approvalOf({ id: 'b' })).toBe('accepted');
+  });
+
   it('does nothing and records nothing when no comment is ready', async () => {
     const store = await harness();
     const result = await store

@@ -17,11 +17,12 @@ export const BranchCheckWorkLine = ({ sessionId, agentId, isFixing, checkName }:
   const openDrawer = useAppStore((s) => s.openDrawer);
   const agentStop = useAgentStop({ sessionId, agentId });
   const name = checkName ?? 'the failing check';
+  const isStopping = agentStop.phase === 'stopping';
   return (
     <section aria-label="Check fix status" data-testid="branch-check-work" className="min-w-0">
       <TailLine
         facts={{
-          state: agentStop.phase === 'idle' ? 'working' : 'stopping',
+          state: isStopping ? 'stopping' : 'working',
           phrase: isFixing ? `Fixing ${name}` : `Analyzing ${name}`,
           startedAt: null,
           stepAgentId: agentId,
@@ -33,11 +34,11 @@ export const BranchCheckWorkLine = ({ sessionId, agentId, isFixing, checkName }:
           }
         }}
         verbs={
-          agentStop.phase === 'idle' ? (
+          isStopping ? null : (
             <Button size="xs" variant="ghost-danger" onClick={agentStop.stop}>
               {NAMES.stop}
             </Button>
-          ) : null
+          )
         }
       />
     </section>

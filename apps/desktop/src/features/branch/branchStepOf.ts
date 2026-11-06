@@ -28,6 +28,7 @@ export type BranchCommentFacts = {
 export type BranchStepComments = {
   readonly facts: BranchCommentFacts;
   readonly readyThreadIds: ReadonlyArray<string>;
+  readonly fixableThreadIds: ReadonlyArray<string>;
 };
 
 export type BranchCheckFacts = {

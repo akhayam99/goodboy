@@ -45,7 +45,11 @@ type Params = {
   readonly mergeLabel?: string;
 };
 
-const NO_COMMENTS: BranchStepComments = { facts: NO_COMMENT_FACTS, readyThreadIds: [] };
+const NO_COMMENTS: BranchStepComments = {
+  facts: NO_COMMENT_FACTS,
+  readyThreadIds: [],
+  fixableThreadIds: [],
+};
 
 type ApplyParams = {
   readonly threadIds: ReadonlyArray<string>;
@@ -175,6 +179,7 @@ export const useBranchControls = ({
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const acceptReviewComments = useAppStore((s) => s.acceptReviewComments);
+  const clearReviewSelection = useAppStore((s) => s.clearReviewSelection);
   const reportError = useAppStore((s) => s.reportError);
   const [busyStepId, setBusyStepId] = useState<string | null>(null);
 
@@ -230,6 +235,7 @@ export const useBranchControls = ({
     async ({ threadIds }: ApplyParams): Promise<void> => {
       try {
         const result = await acceptReviewComments({ sessionId, threadIds });
+        clearReviewSelection({ sessionId });
         const [first] = result.failures;
         if (first !== undefined) {
           void reportError({
@@ -246,7 +252,7 @@ export const useBranchControls = ({
         }
       }
     },
-    [acceptReviewComments, reportError, sessionId],
+    [acceptReviewComments, clearReviewSelection, reportError, sessionId],
   );
 
   const runStep = useCallback(
@@ -254,12 +260,17 @@ export const useBranchControls = ({
       if (actionId === BRANCH_STEP_ID.answer) {
         const threadId = comments.facts.questionThreadId;
         if (threadId !== null) {
-          openReviewComment({ navigate, sessionId, threadId });
+          openReviewComment({ navigate, sessionId, threadId, mountPath: worktreePath });
         }
         return;
       }
       if (actionId === BRANCH_STEP_ID.fixComments) {
-        openFixComments({ openDrawer, sessionId, mountId });
+        openFixComments({
+          openDrawer,
+          sessionId,
+          mountId,
+          threadIds: comments.fixableThreadIds,
+        });
         return;
       }
       if (actionId === BRANCH_STEP_ID.apply) {
@@ -272,11 +283,13 @@ export const useBranchControls = ({
       applyFixes,
       checkStep,
       comments.facts.questionThreadId,
+      comments.fixableThreadIds,
       comments.readyThreadIds,
       mountId,
       navigate,
       openDrawer,
       sessionId,
+      worktreePath,
     ],
   );
 
