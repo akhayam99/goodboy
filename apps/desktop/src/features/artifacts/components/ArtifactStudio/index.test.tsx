@@ -623,7 +623,7 @@ describe('ArtifactStudio plan parts', () => {
     { title: 'Skip settled batches in retries', instructions: 'notify-relay' },
   ];
 
-  it('lists the parts after the goal and says how they run in one line', () => {
+  it('lists the parts after the goal and says how they run in one line', async () => {
     state.plans = [
       {
         ...plan,
@@ -635,7 +635,8 @@ describe('ArtifactStudio plan parts', () => {
     renderStudio();
     const parts = screen.getByTestId('plan-parts');
     expect(within(parts).getByText('2 parts, one after the other.')).toBeDefined();
-    expect(within(parts).getByText('2 parts, one after the other.').getAttribute('title')).toBe(
+    fireEvent.mouseEnter(within(parts).getByText('2 parts, one after the other.'));
+    await screen.findByText(
       'Parts that touch the same files go one after the other; the rest can run together.',
     );
     expect(within(parts).getByText('Done when: run pnpm test ledger-core')).toBeDefined();
@@ -752,7 +753,7 @@ describe('ArtifactStudio generating run', () => {
   it('goes back to the list on Escape from a run that has no address of its own', async () => {
     renderStudio();
     openRow(/^Wireframe High fidelity,/);
-    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
+    screen.getByTestId('artifact-run-detail');
     fireEvent.keyDown(window, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByTestId('artifact-run-detail')).toBeNull());
     expect(state.up).not.toHaveBeenCalled();

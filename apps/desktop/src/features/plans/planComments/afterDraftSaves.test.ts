@@ -26,14 +26,17 @@ describe('afterDraftSaves', () => {
   });
 
   it('does not run when the save failed', async () => {
-    const run = vi.fn();
-    const failed = Promise.reject(new Error('The database is locked'));
-    trackDraftSave({ save: failed });
+    vi.useFakeTimers();
+    try {
+      const run = vi.fn();
+      trackDraftSave({ save: Promise.reject(new Error('The database is locked')) });
 
-    afterDraftSaves({ run });
-    await failed.catch(() => undefined);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+      afterDraftSaves({ run });
+      await vi.advanceTimersByTimeAsync(50);
 
-    expect(run).not.toHaveBeenCalled();
+      expect(run).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

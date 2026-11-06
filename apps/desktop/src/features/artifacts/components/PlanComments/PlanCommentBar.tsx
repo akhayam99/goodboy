@@ -8,7 +8,7 @@ export type PlanCommentBarRan = Readonly<{
   canSend: boolean;
   isSending: boolean;
   onSend: () => Promise<unknown>;
-  onCopy: () => Promise<void>;
+  onCopy: () => void;
 }>;
 
 type Props = {
@@ -99,7 +99,7 @@ export const PlanCommentBar = ({
               <Button
                 variant={ran.canSend ? 'ghost' : 'primary'}
                 size="sm"
-                onClick={() => void ran.onCopy()}
+                onClick={ran.onCopy}
                 data-testid="plan-bar-copy"
               >
                 Copy

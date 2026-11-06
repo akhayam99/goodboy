@@ -63,14 +63,31 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
       purpose: 'read',
     });
     IN_FLIGHT.add(plan.id);
-    let flip: Promise<void> | undefined;
-    const markSent = (): Promise<void> => {
+    let flip: Promise<boolean> | undefined;
+    const markSent = (): Promise<boolean> => {
       flip ??= (async () => {
-        await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
-        await refreshArtifactComments({ set, sessionId });
+        try {
+          await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
+          await refreshArtifactComments({ set, sessionId });
+          return true;
+        } catch (error) {
+          void get().reportError({
+            title: "Couldn't mark the comments as sent",
+            error,
+            sessionId,
+          });
+          return false;
+        }
       })();
       return flip;
     };
+    const sentOf = async (): Promise<SendArtifactCommentsResult> =>
+      (await markSent())
+        ? { kind: 'sentToAgent', agentName: target.name }
+        : {
+            kind: 'failed',
+            reason: `${target.name} has the comments, but they could not be marked as sent.`,
+          };
     try {
       if (isAgentBusy({ get, agentId: target.agentId, sessionId })) {
         const turn = {
@@ -87,8 +104,7 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
         if (!isQueued) {
           return { kind: 'failed', reason: "The message couldn't be queued. Try again." };
         }
-        await markSent();
-        return { kind: 'sentToAgent', agentName: target.name };
+        return await sentOf();
       }
       const result = await get().sendTurn({
         sessionId,
@@ -96,7 +112,7 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
         content,
         origin: 'operator',
         onStarted: () => {
-          void markSent().catch(() => undefined);
+          void markSent();
         },
       });
       if (result.blockedOverBudget) {
@@ -114,17 +130,10 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
       if (flip === undefined && result.isLaneQueued !== true && result.isAlreadySent !== true) {
         return { kind: 'failed', reason: "The agent didn't take the message. Try again." };
       }
-      await markSent();
-      return { kind: 'sentToAgent', agentName: target.name };
+      return await sentOf();
     } catch (cause) {
       if (flip !== undefined) {
-        const isFlipped = await flip.then(
-          () => true,
-          () => false,
-        );
-        if (isFlipped) {
-          return { kind: 'sentToAgent', agentName: target.name };
-        }
+        return await sentOf();
       }
       return { kind: 'failed', reason: formatError(cause) };
     } finally {

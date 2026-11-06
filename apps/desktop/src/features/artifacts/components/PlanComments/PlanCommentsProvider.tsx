@@ -3,7 +3,6 @@ import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
-import { draftSavesOk } from '../../../plans/planComments/draftSavesOk';
 import { PlanCommentsContext } from '../../../plans/planComments/planCommentsContext';
 import { usePlanComments } from '../../../plans/planComments/usePlanComments';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
@@ -27,7 +26,7 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
   const copyText = useCopyText();
   const [status, setStatus] = useState<string | null>(null);
   const [isSendingToAgent, setIsSendingToAgent] = useState(false);
-  const { send, sendToAgent, target, requestText, isPlanRan } = model;
+  const { send, sendToAgent, target, requestText, isPlanRan, draftSavesOk } = model;
   const { run, primary } = action;
   const hasQuestion = plannerQuestionsOf({ questions, plan }).length > 0;
   const waitsOnPlan = run !== null && isRunHeldForPlan({ run }) && primary.kind === 'approve';
@@ -42,7 +41,7 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
     const result = await send();
     onSent?.(result);
     return result;
-  }, [onSent, send]);
+  }, [draftSavesOk, onSent, send]);
   const latestRequest = useRef(requestText);
   latestRequest.current = requestText;
   const ran = useMemo<PlanCommentBarRan | null>(() => {
@@ -68,14 +67,15 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
           setIsSendingToAgent(false);
         }
       },
-      onCopy: async () => {
-        if (!(await draftSavesOk())) {
-          return;
-        }
-        void copyText({ text: latestRequest.current });
+      onCopy: () => {
+        void draftSavesOk().then((isOk) => {
+          if (isOk) {
+            void copyText({ text: latestRequest.current });
+          }
+        });
       },
     };
-  }, [copyText, isPlanRan, isSendingToAgent, sendToAgent, target]);
+  }, [copyText, draftSavesOk, isPlanRan, isSendingToAgent, sendToAgent, target]);
 
   useEffect(() => {
     if (model.drafts.length > 0) {

@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -244,26 +244,40 @@ describe('PlanCommentsProvider', () => {
       return { settle, save };
     };
 
-    it('sends to the planner only after the save, and not when it failed', async () => {
+    it('sends to the planner only after the save', async () => {
       const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
       renderProvider({
         seed: { run: 'held', drafts: [aPlanDraft()] },
         stubs: { sendArtifactComments: send },
       });
-      const first = pendingSave();
+      const pending = pendingSave();
 
       fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await act(async () => undefined);
       expect(send).not.toHaveBeenCalled();
-      first.settle('saved');
-      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+      pending.settle('saved');
 
-      const second = pendingSave();
-      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
-      second.settle('failed');
-      await second.save.catch(() => undefined);
-      await new Promise((resolve) => setTimeout(resolve, 30));
-      expect(send).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    });
+
+    it('does not send to the planner when the save failed', async () => {
+      vi.useFakeTimers();
+      try {
+        const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
+        renderProvider({
+          seed: { run: 'held', drafts: [aPlanDraft()] },
+          stubs: { sendArtifactComments: send },
+        });
+        const pending = pendingSave();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+        pending.settle('failed');
+        await vi.advanceTimersByTimeAsync(50);
+
+        expect(send).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('sends to the agent only after the save', async () => {
@@ -276,7 +290,7 @@ describe('PlanCommentsProvider', () => {
       const pending = pendingSave();
 
       fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await act(async () => undefined);
       expect(send).not.toHaveBeenCalled();
       pending.settle('saved');
 
@@ -293,7 +307,7 @@ describe('PlanCommentsProvider', () => {
       const pending = pendingSave();
 
       fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await act(async () => undefined);
       expect(writeText).not.toHaveBeenCalled();
       pending.settle('saved');
 

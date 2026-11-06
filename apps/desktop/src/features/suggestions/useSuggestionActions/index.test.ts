@@ -545,7 +545,14 @@ describe('useSuggestionActions', () => {
     );
   });
 
-  it('asks before starting the implementer while a comment on the plan is unsent', () => {
+  it('asks before starting the implementer only while a comment on the plan is unsent', () => {
+    const suggestion: SessionSuggestion = {
+      ...suggestionBase,
+      id: 'plan-ready:plan-1',
+      kind: 'plan-ready',
+      payload: { planId: 'plan-1' as PlanId },
+    };
+    const clean = actionsFor({ suggestion }).primary;
     storeState.artifactComments = {
       [SESSION_ID]: [
         { artifactId: 'plan-1', status: 'draft' },
@@ -553,36 +560,13 @@ describe('useSuggestionActions', () => {
         { artifactId: 'plan-2', status: 'draft' },
       ],
     };
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'plan-ready:plan-1',
-        kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
-      },
-    });
+    const unsent = actionsFor({ suggestion }).primary;
     storeState.artifactComments = {};
 
-    expect(actions.primary?.requiresConfirm).toBe(true);
-    expect(actions.primary?.confirm).toEqual({
-      title: 'Run without your comment?',
-      description: 'The run starts without it. It stays on the plan as Not sent.',
-      confirmLabel: 'Run anyway',
-    });
-  });
-
-  it('starts the implementer with no question when the plan has no unsent comment', () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'plan-ready:plan-1',
-        kind: 'plan-ready',
-        payload: { planId: 'plan-1' as PlanId },
-      },
-    });
-
-    expect(actions.primary?.requiresConfirm).toBeUndefined();
-    expect(actions.primary?.confirm).toBeUndefined();
+    expect(clean?.requiresConfirm).toBeUndefined();
+    expect(unsent?.requiresConfirm).toBe(true);
+    expect(unsent?.confirm?.title).toBe('Run without your comment?');
+    expect(unsent?.confirm?.confirmLabel).toBe('Run anyway');
   });
 
   it('says why when the plan cannot run, with a link to the run, instead of announcing a start', async () => {

@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { Eyebrow } from '@goodboy/ui';
+import { Eyebrow, Tooltip } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { planPartOrder } from '../../waves/planPartOrder';
 import { planPartsLine } from '../../waves/planPartsLine';
@@ -55,9 +55,11 @@ export const PlanParts = ({ sessionId, planId, rows, hasRun, onOpenPart, frameRo
         <span className="text-meta tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
       {hasRun ? null : (
-        <p className="text-meta text-muted-foreground" title={PARTS_RULE}>
-          {planPartsLine({ order, count: rows.length })}
-        </p>
+        <Tooltip content={PARTS_RULE}>
+          <p className="text-meta text-muted-foreground">
+            {planPartsLine({ order, count: rows.length })}
+          </p>
+        </Tooltip>
       )}
       {order.hasGroups ? (
         <PlanPartWaves order={order} renderRow={renderRow} />

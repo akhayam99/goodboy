@@ -15,6 +15,7 @@ import { usePlanRevising } from '../../useRevisingPlans';
 import { buildPlanCommentRequest } from '../buildPlanCommentRequest';
 import { isSameAnchor } from '../planCommentAnchors';
 import { planCommentsTargetOf, type PlanCommentsTarget } from '../planCommentsTargetOf';
+import { draftSavesOk } from '../draftSavesOk';
 import { trackDraftSave } from '../trackDraftSave';
 import type { ComposingTarget, PlanCommentsApi } from '../planCommentsContext';
 
@@ -40,6 +41,7 @@ export type PlanCommentsModel = Readonly<{
   sendToAgent: () => Promise<SendArtifactCommentsResult>;
   target: PlanCommentsTarget | null;
   requestText: string;
+  draftSavesOk: () => Promise<boolean>;
 }>;
 
 const failureOf = ({ result }: { readonly result: SendArtifactCommentsResult }): string | null =>
@@ -192,5 +194,6 @@ export const usePlanComments = ({ sessionId, plan }: Params): PlanCommentsModel 
     sendToAgent,
     target,
     requestText,
+    draftSavesOk,
   };
 };

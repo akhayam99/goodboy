@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import { useAppStore } from '../../../../store';
 import {
   CommentComposer as SharedCommentComposer,
   type CommentComposerBody,
@@ -36,7 +37,12 @@ export const CommentComposer = ({
         return;
       }
       isHandled.current = true;
-      void latest.current.onSubmit({ body: text }).catch(() => undefined);
+      void latest.current.onSubmit({ body: text }).catch((cause: unknown) => {
+        void useAppStore.getState().reportError({
+          title: "Couldn't save the comment",
+          error: cause,
+        });
+      });
     };
     window.addEventListener('pagehide', flush);
     return () => {

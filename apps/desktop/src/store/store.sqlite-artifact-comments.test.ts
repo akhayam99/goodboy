@@ -679,7 +679,7 @@ describe('store on sqlite: plan comments', () => {
       useAppStore.setState({
         sendTurn: vi.fn(async (input: SendTurnInput): Promise<SendTurnResult> => {
           input.onStarted?.();
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          await vi.waitFor(() => expect(statuses()).toEqual(['Why after BEGIN?:sent']));
           seenAtStart = statuses();
           await turnEnd;
           return { blockedOverBudget: false };
