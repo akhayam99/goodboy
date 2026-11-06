@@ -109,11 +109,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/chat/components/ChatInput/hooks/useMessageQueue.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/features/chat/components/ChatInput/hooks/useScopeNudge.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
@@ -132,11 +127,6 @@
   "apps/desktop/src/features/chat/components/ChatInput/lib.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/chat/components/ChatInput/parts/ComposerDispatchError.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/chat/components/ChatInput/parts/SuggestionStack.tsx": {
@@ -1066,7 +1056,7 @@
   },
   "apps/desktop/src/store/slices/workflows/activateWorkflowAgent.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 9
+      "count": 8
     }
   },
   "apps/desktop/src/store/slices/workflows/attachWorkflowToSession.ts": {
