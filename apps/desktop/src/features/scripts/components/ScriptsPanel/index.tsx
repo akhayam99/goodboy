@@ -47,13 +47,13 @@ import {
 import { workspaceInvocation } from '../../workspaceInvocation';
 import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
-import { SuggestedRow } from '../ScriptRow/SuggestedRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { EndedServicesRow } from './EndedServicesRow';
 import { ScriptBand } from './ScriptBand';
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
+import { SuggestedBand } from './SuggestedBand';
 import { ScriptPinPicker } from './ScriptPinPicker';
 import { StartAllServices } from './StartAllServices';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
@@ -68,6 +68,8 @@ type Props = {
   readonly sessionId: SessionId;
   readonly onClose: () => void;
 };
+
+const FILTER_FROM_ROWS = 9;
 
 type RowParams = {
   readonly group: SessionScriptGroup;
@@ -121,6 +123,10 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
     [allProjects, workspaceId],
   );
   const visibleGroups = useMemo(() => filterScriptGroups({ groups, query }), [groups, query]);
+  const rowCount = groups.reduce(
+    (total, group) => total + group.scripts.length + group.suggested.length,
+    0,
+  );
   const live = useScriptLive({ runs });
   const runningCount = useMemo(
     () => Object.values(runs ?? {}).filter((record) => record.status === 'pending').length,
@@ -625,36 +631,17 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
           </ScriptBand>
         )}
         {group.suggested.length === 0 || pickerMountId === group.mountId ? null : (
-          <ScriptBand
-            label="Suggested"
+          <SuggestedBand
             group={group}
-            count={group.suggested.length}
-            hint="Pin the ones you run here."
-            action={
-              hasManifestScripts && group.isReady ? (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  aria-label={`Pin a script of ${group.projectName}`}
-                  aria-expanded={pickerMountId === group.mountId}
-                  onClick={() =>
-                    setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
-                  }
-                >
-                  <Pin size={ICON_SIZE.row} aria-hidden />
-                  Pin a script
-                </Button>
-              ) : null
+            runs={runs}
+            canPick={hasManifestScripts && group.isReady}
+            isPickerOpen={pickerMountId === group.mountId}
+            onTogglePicker={() =>
+              setPickerMountId(pickerMountId === group.mountId ? null : group.mountId)
             }
-          >
-            {group.suggested.map((script) => (
-              <SuggestedRow
-                key={script.key}
-                script={script}
-                onPin={() => togglePin({ group, script })}
-              />
-            ))}
-          </ScriptBand>
+            onRun={(script) => onRun({ group, script })}
+            onPin={(script) => togglePin({ group, script })}
+          />
         )}
       </>
     );
@@ -744,7 +731,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
       iconClassName="text-faint-foreground"
       action={newScriptAction}
       toolbar={
-        groups.length === 0 ? null : <ScriptsFilterInput value={query} onChange={setQuery} />
+        rowCount < FILTER_FROM_ROWS && query === '' ? null : (
+          <ScriptsFilterInput value={query} onChange={setQuery} />
+        )
       }
       onClose={onClose}
     >

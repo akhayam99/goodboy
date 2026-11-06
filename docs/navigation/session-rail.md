@@ -968,7 +968,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
 
 ## The Scripts pane
 
-`ScriptsPanel` is one `DrawerFrame` (`Scripts`, count `N projects · N running`,
+a `Filter scripts` field from nine rows on, that `/` focuses, and an icon `New script`) over one list
 a `Filter scripts` field that `/` focuses and `New script`) over one list
 grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick

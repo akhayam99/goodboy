@@ -74,6 +74,14 @@ const ROTATE = {
   sortOrder: 1,
 };
 
+const FILLER = Array.from({ length: 9 }, (_, index) => ({
+  id: `script-filler-${index}`,
+  projectId: LEDGER.id,
+  name: `Filler ${index}`,
+  body: 'node ./tools/filler.mjs',
+  sortOrder: index + 2,
+}));
+
 const manifestKey = ({ path, name }: { readonly path: string; readonly name: string }) =>
   JSON.stringify([path, 'package-json', '', name]);
 
@@ -313,6 +321,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('splits a monorepo into its packages, root first, and runs each in its folder', () => {
+    state.saved = [REPLAY, ...FILLER];
     const dev = [{ name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' }];
     state.discovered = {
       ...state.discovered,
@@ -497,6 +506,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('filters by name, command or project and says when nothing matches', () => {
+    state.saved = [REPLAY, ...FILLER];
     renderPanel();
     const filter = screen.getByRole('searchbox', { name: 'Filter scripts' });
 
@@ -711,13 +721,51 @@ describe('ScriptsPanel', () => {
     expect(within(suggested).getByText('Pin the ones you run here.')).toBeDefined();
     expect(within(suggested).getByText('test')).toBeDefined();
     expect(within(suggested).queryByText('db:migrate')).toBeNull();
-    expect(within(suggested).queryByRole('button', { name: /^Run / })).toBeNull();
+    fireEvent.click(within(suggested).getByRole('button', { name: 'Run test' }));
+    expect(state.runDiscoveredScript).toHaveBeenCalledWith(
+      expect.objectContaining({ command: 'pnpm run test', cwd: RELAY_PATH }),
+    );
 
     fireEvent.click(within(suggested).getByRole('button', { name: 'Pin test' }));
     expect(state.toggleScriptPin).toHaveBeenCalledWith({
       projectId: RELAY.id,
       pinId: pinIdOf({ relDir: '', name: 'test' }),
     });
+  });
+
+  it('leaves a last run mark on a suggested row after Run, and keeps the row where it was', () => {
+    state.mounts = [RELAY_MOUNT];
+    state.saved = [];
+    state.discovered = {
+      [RELAY_PATH]: manifest([{ name: 'test', command: 'pnpm run test' }]),
+    };
+    state.pins = {};
+    state.runs = {
+      [manifestKey({ path: RELAY_PATH, name: 'test' })]: {
+        status: 'error',
+        result: { exitCode: 1 },
+        runId: 'run-9',
+        startedAt: Date.now(),
+        mountId: RELAY_MOUNT.mountId,
+      },
+    };
+    renderPanel();
+
+    const suggested = within(group('notify-relay · nw/retry-backoff')).getByRole('region', {
+      name: /^Suggested of /u,
+    });
+    expect(within(suggested).getAllByText('Exit 1')).toHaveLength(1);
+    expect(within(suggested).getAllByRole('button', { name: 'Run test' })).toHaveLength(1);
+  });
+
+  it('draws the filter only from nine rows, or while a filter is typed', () => {
+    renderPanel();
+    expect(screen.queryByRole('searchbox', { name: 'Filter scripts' })).toBeNull();
+    cleanup();
+
+    state.saved = [REPLAY, ...FILLER];
+    renderPanel();
+    expect(screen.getAllByRole('searchbox', { name: 'Filter scripts' })).toHaveLength(1);
   });
 
   it('opens the pin picker from the Suggested band for scripts it does not suggest', () => {

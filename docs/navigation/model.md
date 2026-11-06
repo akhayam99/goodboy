@@ -302,7 +302,7 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
+**Run** on every row (a Run leaves its last result on the row) and a quiet **Pin**. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
