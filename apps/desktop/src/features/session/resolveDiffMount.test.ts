@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
+import {
+  brandId,
+  type MountId,
+  type ProjectId,
+  type SessionId,
+  type SessionProjectMount,
+} from '@goodboy/types';
 import { resolveDiffMount } from './resolveDiffMount';
 
 const mountOf = ({
@@ -10,9 +16,9 @@ const mountOf = ({
   readonly name: string;
   readonly worktreePath: string;
 }): SessionProjectMount => ({
-  mountId: `mount-${name}` as MountId,
-  sessionId: 'session-diff' as SessionId,
-  projectId: `prj-${name}` as ProjectId,
+  mountId: brandId<MountId>({ value: `mount-${name}` }),
+  sessionId: brandId<SessionId>({ value: 'session-diff' }),
+  projectId: brandId<ProjectId>({ value: `prj-${name}` }),
   mountName: name,
   worktreePath,
   lastWorktreePath: null,

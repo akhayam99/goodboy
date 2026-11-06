@@ -693,8 +693,7 @@ Folding the rail leaves the column in place.
   Runs page (`openLens` workflows) and the panel stays open. Its body follows the page (`useSpawnedFocus`): on a preset run (from
   Runs, the Running card, the Done card or a link to a step, read through
   `presetRunFocusOf`) it shows the run's identity row (the state dot and the
-  title, which renames inline on click), the run's agents as a tree, **Add
-  step** and the foot "Limit $3.00 · $1.12 spent" (`RunSpendFoot`); on an Auto
+  title, which renames inline on click), and the run's agents as a tree; on an Auto
   agent or one of its children it shows Auto and its children as a tree, "No
   agents started yet" while Auto has none; Auto's limit sits on the Auto page's
   settings line (`AgentSettingsLine`), not in this panel. With no run or Auto
@@ -711,22 +710,18 @@ Folding the rail leaves the column in place.
   Overview's Now run header (`LiveRunBlock`) opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
-  The tree is drawn on the Activity rail, in the Activity orientation: a **Now**
-  marker on top (`SpawnedNowRow`), the spine running down to the oldest
-  launch, and inside each launch the children above their parent, newest on
-  top, each joined to its parent's lane by the same branch curve
-  (`spawnedRailOf` lays the rows out with `layoutTimelineRail`, `SpawnedRailCell`
-  draws them with `TimelineRail`; a queued child dashes its lane). The DOM keeps
-  each launch parent first for assistive tech and reverses it on screen
-  (`flex-col-reverse` on `[data-spawned-launch]`); every reader of the screen
-  order goes through `spawnedTreeItemsOf`. A focused Auto launch is the same
-  `SpawnedAutoGroup` as the list, so it reads the same way: Now, the newest
-  child, down to the oldest, Auto at the foot. A child
-  that starts while you read lower in the list moves in at the top and the rows
-  you read stay where they are (`useSpawnedScrollHold` keeps the first visible
-  row's offset across the change; at the top, on Now, the new row simply shows).
-  Focus stays on its row. The run page's step tree (`OrchestratedChecklist`)
-  stays top down, the first step on top. A row is one 28px line: the
+  The tree reads top down, like the step list of the run page: each parent
+  above its children, the first step on top, each child joined to its parent's
+  lane by the fork curve (`spawnedRailOf` lays the rows out with
+  `layoutTimelineRail`, `SpawnedRailCell` draws them with `TimelineRail`; a
+  queued child dashes its lane). Every reader of the order goes through
+  `spawnedTreeItemsOf`, which is DOM order. A focused Auto launch is the same
+  `SpawnedAutoGroup` as the list, always open, so Auto and a run share one
+  layout. There is no Now row, no state grouping and no spend foot: limit and
+  spend live on the glance line of the page. A row opened from a done parent
+  says how many helpers failed (`helperUrgencyOf`, "1 of 2 helpers failed").
+  Focus stays on its row and `useSpawnedScrollHold` keeps the first visible
+  row's offset when a row lands above it. A row is one 28px line: the
   state node on the rail, role glyph (the noun in its tooltip), title, a
   fixed chevron slot and a fixed time column (`DelegationClock`, the clock
   every work row reads), so icons and times line up down the list. The

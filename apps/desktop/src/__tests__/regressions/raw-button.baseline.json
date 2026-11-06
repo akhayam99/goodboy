@@ -135,7 +135,6 @@
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUpChild.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentFollowUpMove.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentUsageFooter.tsx": 1,
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": 1,
   "apps/desktop/src/features/session/components/ContextDrawer/ClosedDecisionRow.tsx": 1,
   "apps/desktop/src/features/session/components/ContextDrawer/ContextUpdates.tsx": 2,
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionChangesList.tsx": 1,

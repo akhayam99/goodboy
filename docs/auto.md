@@ -280,12 +280,11 @@ writing to it reopens it to **Deciding**.
 - **The tree in the Agents panel.** What Auto spawned lives in the Agents
   panel of the session tools ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)):
   opening Auto agents or an Auto agent opens it, and it follows an Auto agent
-  or one of its children in the center. The tree sits on the Activity rail
-  with Auto at the bottom and one row per child above it, ordered by when Auto
-  started them, newest on top, in the list of launches and in a focused launch
-  alike (one `SpawnedAutoGroup`); a child that starts while you read lower
-  moves in at the top without moving your scroll or focus; a live tree opens, a
-  settled one folds to Auto with its count of children
+  or one of its children in the center. The tree reads top down
+  with Auto first and one row per child under it, ordered by when Auto
+  started them, in the list of launches and in a focused launch
+  alike (one `SpawnedAutoGroup`); a live tree opens, a settled one in the list
+  folds to Auto with its count of children
   ([navigation/session-rail.md](navigation/session-rail.md#the-session-tools)). Auto is titled by the
   first line of the ask it started with (`autoRootTitleOf`), which the tree
   view carries (`AutoTreeView.rootAsk`, `readFirstUserText`) so no transcript

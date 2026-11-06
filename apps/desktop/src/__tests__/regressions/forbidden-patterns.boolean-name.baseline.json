@@ -164,7 +164,6 @@
     "apps/desktop/src/features/session/agent-kind.ts": 1,
     "apps/desktop/src/features/session/agent-lifecycle.ts": 1,
     "apps/desktop/src/features/session/components/AgentHeaderActions.tsx": 1,
-    "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": 1,
     "apps/desktop/src/features/session/components/RoleSelect/index.tsx": 1,
     "apps/desktop/src/features/session/components/sessionCardShell.ts": 3,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/AuthorshipChip.tsx": 1,
