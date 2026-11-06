@@ -68,6 +68,7 @@ export const useRowReturn = ({ listKey, rowIds, rowAttribute }: Params): RowRetu
       if (index < 0) {
         return;
       }
+      hasReturned.current = false;
       const state = useAppStore.getState();
       const stack = state.navigation[stackKey(state)];
       const focus = stack?.entries[stack.index]?.focus;

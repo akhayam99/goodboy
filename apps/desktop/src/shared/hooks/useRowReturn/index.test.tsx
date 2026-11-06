@@ -97,6 +97,32 @@ describe('useRowReturn', () => {
     expect(scrolled.mock.contexts[0]).toBe(screen.getByText('run-payments-api'));
   });
 
+  it('scrolls Back again for a second row while the same list stays mounted', () => {
+    let remember: (params: RememberParams) => void = () => undefined;
+    render(<RunsList onRemember={(next) => (remember = next)} />);
+    const scrolled = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrolled;
+    act(() => {
+      remember({ rowId: 'run-payments-api' });
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION, lens: null }) });
+    });
+    act(() => {
+      useAppStore.getState().back();
+    });
+    expect(scrolled).toHaveBeenCalledOnce();
+
+    act(() => {
+      remember({ rowId: 'run-notify-relay' });
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION, lens: null }) });
+    });
+    act(() => {
+      useAppStore.getState().back();
+    });
+
+    expect(scrolled).toHaveBeenCalledTimes(2);
+    expect(scrolled.mock.contexts[1]).toBe(screen.getByText('run-notify-relay'));
+  });
+
   it('returns to the same row when a new row landed above it meanwhile', () => {
     let remember: (params: RememberParams) => void = () => undefined;
     const first = render(<RunsList onRemember={(next) => (remember = next)} />);
