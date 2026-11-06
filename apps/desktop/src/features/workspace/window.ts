@@ -6,7 +6,8 @@ import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { WorkspaceId } from '@goodboy/types';
 import { currentPlatform } from '../../shared/platform';
 import { isTauriRuntime } from '../../shared/lib/isTauriRuntime';
-import { decideWindowClose, type WindowCloseGuard } from './decideWindowClose';
+import { decideWindowClose } from './decideWindowClose';
+import { currentWindowCloseGuard } from './windowCloseGuard';
 
 export const MAIN_WINDOW_LABEL = 'main';
 const WORKSPACE_HASH_KEY = 'ws';
@@ -239,24 +240,8 @@ export const listenPresence = async (handlers: PresenceHandlers): Promise<Unlist
   };
 };
 
-const ALLOW_CLOSE: WindowCloseGuard = async () => 'close';
-
 const closeCallbacks = new Set<() => void>();
-const closeGuard: { current: WindowCloseGuard } = { current: ALLOW_CLOSE };
 let closeListener: Promise<UnlistenFn> | null = null;
-
-type GuardParams = Readonly<{
-  guard: WindowCloseGuard;
-}>;
-
-export const setWindowCloseGuard = ({ guard }: GuardParams): (() => void) => {
-  closeGuard.current = guard;
-  return () => {
-    if (closeGuard.current === guard) {
-      closeGuard.current = ALLOW_CLOSE;
-    }
-  };
-};
 
 export const closeWindowNow = async (): Promise<void> => {
   for (const callback of closeCallbacks) {
@@ -306,7 +291,7 @@ type CloseRequestParams = Readonly<{
 export const handleWindowCloseRequest = async ({ event }: CloseRequestParams): Promise<void> => {
   event.preventDefault();
   await claimClose();
-  const decision = await decideWindowClose({ guard: closeGuard.current });
+  const decision = await decideWindowClose({ guard: currentWindowCloseGuard() });
   if (decision === 'hold') {
     return;
   }

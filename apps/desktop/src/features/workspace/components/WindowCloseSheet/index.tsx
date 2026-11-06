@@ -5,7 +5,8 @@ import { liveAgentCountOf } from '../../../../store/runtime/live-work/liveAgentC
 import { stopWork } from '../../../../store/runtime/live-work/stopWork';
 import { currentPlatform } from '../../../../shared/platform';
 import { NAMES } from '../../../../shared/utils/names';
-import { closeWindowNow, isMainWindow, setWindowCloseGuard } from '../../window';
+import { closeWindowNow, isMainWindow } from '../../window';
+import { setWindowCloseGuard } from '../../windowCloseGuard';
 import { windowCloseCopyOf } from './windowCloseCopyOf';
 
 type Ask = Readonly<{

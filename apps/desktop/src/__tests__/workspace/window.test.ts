@@ -9,7 +9,6 @@ import {
   isMainWindow,
   listenPresence,
   requestPresence,
-  setWindowCloseGuard,
   targetWorkspaceFromHash,
 } from '../../features/workspace/window';
 import {
@@ -17,6 +16,7 @@ import {
   decideWindowClose,
   type WindowCloseDecision,
 } from '../../features/workspace/decideWindowClose';
+import { setWindowCloseGuard } from '../../features/workspace/windowCloseGuard';
 
 describe('window helpers (outside a Tauri runtime)', () => {
   it('reads the target workspace from the URL hash', () => {
