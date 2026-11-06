@@ -15,6 +15,7 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { openToolPane } from '../../../session/panes/openToolPane';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { markPointersActed } from '../../markPointersActed';
+import { continueNotifiedAgent } from '../../continueNotifiedAgent';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -104,7 +105,7 @@ export const mapNotificationAction = (
     return {
       label: 'Continue',
       onClick: () => {
-        void store.continueStoppedAgent({ sessionId, agentId });
+        continueNotifiedAgent({ sessionId, agentId });
       },
     };
   }
