@@ -492,8 +492,7 @@ describe('StageBoardCard actions', () => {
       <StageBoardCard
         session={session}
         nav={nav}
-        isArchived
-        onRestore={vi.fn()}
+        archived
         onHoverEnter={onHoverEnter}
         onHoverLeave={onHoverLeave}
       />,
