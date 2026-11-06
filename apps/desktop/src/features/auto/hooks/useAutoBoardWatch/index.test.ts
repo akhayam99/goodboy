@@ -22,6 +22,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { aView } from '../../testing/autoViewFixtures';
 import { useAutoBoardWatch } from './index';
 
 const HARBORLINE = brandId<SessionId>({ value: 'session-harborline' });
@@ -90,5 +91,45 @@ describe('useAutoBoardWatch', () => {
     await vi.advanceTimersByTimeAsync(6000);
 
     expect(readSessions()).toEqual([]);
+  });
+
+  it('never reads a tree that rests, nor a blocked tree with no live agent', async () => {
+    act(() => {
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [HARBORLINE]: [anAgent({ sessionId: HARBORLINE, kind: 'auto', status: 'completed' })],
+          [NORTHWIND]: [anAgent({ sessionId: NORTHWIND, status: 'completed' })],
+        },
+        autoTreeViews: {
+          [HARBORLINE]: [aView({ phase: 'answering' })],
+          [NORTHWIND]: [aView({ phase: 'blocked' })],
+        },
+      });
+    });
+    renderHook(() => useAutoBoardWatch());
+
+    await vi.advanceTimersByTimeAsync(6000);
+
+    expect(readSessions()).toEqual([]);
+  });
+
+  it('reads a blocked tree while one of its agents still runs, and a working tree', async () => {
+    act(() => {
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [HARBORLINE]: [anAgent({ sessionId: HARBORLINE, kind: 'auto', status: 'completed' })],
+          [NORTHWIND]: [anAgent({ sessionId: NORTHWIND, status: 'running' })],
+        },
+        autoTreeViews: {
+          [HARBORLINE]: [aView({ phase: 'delegating' })],
+          [NORTHWIND]: [aView({ phase: 'blocked' })],
+        },
+      });
+    });
+    renderHook(() => useAutoBoardWatch());
+
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(new Set(readSessions())).toEqual(new Set([HARBORLINE, NORTHWIND]));
   });
 });
