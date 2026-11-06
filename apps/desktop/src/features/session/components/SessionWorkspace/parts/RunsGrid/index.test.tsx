@@ -60,6 +60,7 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  localStorage.clear();
   await resetStoryStore();
 });
 
@@ -374,6 +375,92 @@ describe('RunsGrid', () => {
       ),
     );
   });
+
+  it('keeps Stop all in the page action row when every running agent waits for permission', () => {
+    const agents = [
+      aNowAgent({ key: 'first', name: 'First', status: 'running' }),
+      aNowAgent({ key: 'second', name: 'Second', status: 'running' }),
+    ];
+    useAppStore.setState({ sessionPhaseRuns: { [NOW_SESSION]: agents } });
+
+    renderGrid({ runs: runsOf({ agents, blockedIds: ['agent-first', 'agent-second'] }) });
+
+    expect(screen.queryByRole('list', { name: 'Running' })).toBeNull();
+    screen.getByRole('list', { name: 'Needs you' });
+    const stopAll = screen.getByRole('button', { name: 'Stop all (2)' });
+    expect(stopAll.closest('[data-runs-actions]')).not.toBeNull();
+  });
+
+  it('offers Connect instead of a Continue that would only fail when the provider is signed out', () => {
+    const continueStoppedAgent = vi.fn(async () => undefined);
+    const agents = [aNowAgent({ key: 'halted', name: 'Halted', status: 'stopped' })];
+    useAppStore.setState({
+      continueStoppedAgent,
+      sessionPhaseRuns: { [NOW_SESSION]: agents },
+      authResults: { anthropic: { state: 'disconnected', identity: null } },
+    });
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-settings', opened);
+
+    renderGrid({ runs: runsOf({ agents }) });
+
+    expect(screen.queryByRole('button', { name: NAMES.continue })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Claude' }));
+    window.removeEventListener('goodboy:open-settings', opened);
+    expect(continueStoppedAgent).not.toHaveBeenCalled();
+    expect(opened).toHaveBeenCalledOnce();
+  });
+
+  it('continues an operator stopped orchestrated run as a run when no step was cut', async () => {
+    const retryWorkflowOrchestration = vi.fn(async () => undefined);
+    useAppStore.setState({ retryWorkflowOrchestration });
+    const plan = aNowRun({
+      key: 'plan',
+      title: 'Center every member page',
+      isDynamic: true,
+      workflow: aNowWorkflow({
+        key: 'plan',
+        name: 'Orchestrated',
+        stepNames: ['Find'],
+        origin: 'orchestrated',
+      }),
+      overrides: { orchestrationStop: { kind: 'operator', message: 'You stopped this run.' } },
+    });
+    const agents = [
+      aNowStepAgent({ attached: plan, stepIndex: 0, status: 'completed', name: 'Find' }),
+    ];
+    useAppStore.setState({ sessionPhaseRuns: { [NOW_SESSION]: agents } });
+
+    renderGrid({ runs: runsOf({ agents, attached: [plan] }) });
+    fireEvent.click(screen.getByRole('button', { name: NAMES.continue }));
+
+    await waitFor(() =>
+      expect(retryWorkflowOrchestration).toHaveBeenCalledWith(NOW_SESSION, plan.run.id),
+    );
+  });
+
+  it('starts a queued manual orchestrated run with a real Start', async () => {
+    const startWorkflowRun = vi.fn(async () => undefined);
+    useAppStore.setState({ startWorkflowRun });
+    const plan = aNowRun({
+      key: 'plan',
+      title: 'Center every member page',
+      isDynamic: true,
+      workflow: aNowWorkflow({
+        key: 'plan',
+        name: 'Orchestrated',
+        stepNames: ['Find'],
+        origin: 'orchestrated',
+      }),
+      overrides: { triggerMode: 'manual' },
+    });
+
+    renderGrid({ runs: runsOf({ agents: [], attached: [plan] }) });
+    screen.getByRole('button', { name: 'Open Center every member page, Workflow, Ready' });
+    fireEvent.click(screen.getByRole('button', { name: NAMES.start }));
+
+    await waitFor(() => expect(startWorkflowRun).toHaveBeenCalledWith(NOW_SESSION, plan.run.id));
+  });
 });
 
 describe('RunsGrid by branch', () => {
@@ -505,5 +592,140 @@ describe('RunsGrid by branch', () => {
     const row = screen.getByRole('button', { name: /^Open Move the backfill/ });
     expect(row.querySelector('[data-run-branch]')?.textContent).toBe('fix/duplicate-credit');
     expect(row.querySelector('[data-run-branch-more]')?.textContent).toBe('+1');
+  });
+
+  it('shows Stop all and Continue all in the page action row of the By branch view', () => {
+    const resumeStoppedAgents = vi.fn(async () => 2);
+    useAppStore.setState({ resumeStoppedAgents });
+    const stopped = (key: string, name: string, mountId: typeof DUP.id): Agent => ({
+      ...aNowAgent({ key, name, status: 'stopped', stoppedBy: 'app' }),
+      mountId,
+    });
+    renderWorld({
+      agents: [
+        onDup('block', 'Block double credits'),
+        onRetry('limit', 'Limit retries'),
+        stopped('first', 'First stopped', DUP.id),
+        stopped('second', 'Second stopped', RETRY.id),
+      ],
+    });
+
+    screen.getByRole('list', { name: 'fix/duplicate-credit' });
+    const stopAll = screen.getByRole('button', { name: /^Stop all/ });
+    const continueAll = screen.getByRole('button', { name: 'Continue all' });
+    expect(stopAll.closest('[data-runs-actions]')).not.toBeNull();
+    expect(continueAll.closest('[data-runs-actions]')).not.toBeNull();
+    fireEvent.click(continueAll);
+    expect(resumeStoppedAgents).toHaveBeenCalledWith({ sessionId: NOW_SESSION });
+  });
+
+  it('presses Continue once for a run that stands in two groups', async () => {
+    let finish: () => void = () => undefined;
+    const continueStoppedAgent = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const lead: Agent = {
+      ...aNowAgent({ key: 'lead', name: 'Move the backfill', status: 'stopped' }),
+      mountId: DUP.id,
+    };
+    const child: Agent = {
+      ...aNowAgent({ key: 'lead-child', name: 'Notify child', status: 'completed' }),
+      parentAgentId: lead.id,
+      mountId: RETRY.id,
+    };
+    useAppStore.setState({ continueStoppedAgent });
+    renderWorld({ agents: [lead, child] });
+
+    const buttons = screen.getAllByRole('button', { name: NAMES.continue });
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) {
+      fireEvent.click(button);
+    }
+
+    expect(continueStoppedAgent).toHaveBeenCalledOnce();
+    finish();
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('button', { name: NAMES.continue })
+          .every((button) => !button.hasAttribute('disabled')),
+      ).toBe(true),
+    );
+  });
+
+  it('folds archived runs apart in a branch group and never shows them inline', () => {
+    const old = aNowRun({
+      key: 'old',
+      title: 'Old layout fix',
+      workflow: aNowWorkflow({ key: 'old', name: 'Fix a layout', stepNames: ['Find'] }),
+      overrides: { discardedAt: NOW_STARTED_AT },
+    });
+    const oldStep: Agent = {
+      ...aNowStepAgent({ attached: old, stepIndex: 0, status: 'completed', name: 'Find' }),
+      mountId: DUP.id,
+    };
+    const agents = [onRetry('limit', 'Limit retries'), oldStep];
+    useAppStore.setState({
+      sessionPhaseRuns: { [NOW_SESSION]: agents },
+      sessionMounts: { [NOW_SESSION]: [DUP, RETRY] },
+      projects: [PAYMENTS, NOTIFY],
+    });
+
+    renderGrid({ runs: runsOf({ agents, attached: [old], mounts: [DUP, RETRY] }) });
+
+    const group = screen.getByRole('list', { name: 'fix/duplicate-credit' });
+    expect(within(group).queryByRole('button', { name: /Old layout fix/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 archived' }));
+    within(group).getByRole('button', { name: /Old layout fix/ });
+    screen.getByRole('button', { name: 'Hide archived' });
+  });
+
+  it('puts the archived runs of a group after its finished ones', () => {
+    const old = aNowRun({
+      key: 'old',
+      title: 'Old layout fix',
+      workflow: aNowWorkflow({ key: 'old', name: 'Fix a layout', stepNames: ['Find'] }),
+      overrides: { discardedAt: NOW_STARTED_AT },
+    });
+    const oldStep: Agent = {
+      ...aNowStepAgent({ attached: old, stepIndex: 0, status: 'completed', name: 'Find' }),
+      mountId: DUP.id,
+    };
+    const finished: Agent = {
+      ...aNowAgent({ key: 'fin', name: 'Finished one', status: 'completed' }),
+      mountId: DUP.id,
+    };
+    const agents = [onRetry('limit', 'Limit retries'), oldStep, finished];
+    useAppStore.setState({
+      sessionPhaseRuns: { [NOW_SESSION]: agents },
+      sessionMounts: { [NOW_SESSION]: [DUP, RETRY] },
+      projects: [PAYMENTS, NOTIFY],
+    });
+
+    renderGrid({ runs: runsOf({ agents, attached: [old], mounts: [DUP, RETRY] }) });
+    fireEvent.click(screen.getByRole('button', { name: '1 archived' }));
+
+    const group = screen.getByRole('list', { name: 'fix/duplicate-credit' });
+    const names = within(group)
+      .getAllByRole('button', { name: /^Open / })
+      .map((row) => row.getAttribute('aria-label'));
+    expect(names.at(-1)).toMatch(/^Open Old layout fix/);
+    expect(names[0]).toMatch(/^Open Finished one/);
+  });
+
+  it('opens on the remembered choice after a reload and writes the choice down', () => {
+    localStorage.setItem(`goodboy:session-grouping:v1:${NOW_SESSION}`, 'state');
+
+    renderWorld({
+      agents: [onDup('block', 'Block double credits'), onRetry('limit', 'Limit retries')],
+    });
+
+    screen.getByRole('list', { name: 'Running' });
+    expect(screen.queryByRole('list', { name: 'fix/duplicate-credit' })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'By branch' }));
+    expect(localStorage.getItem(`goodboy:session-grouping:v1:${NOW_SESSION}`)).toBe('branch');
   });
 });

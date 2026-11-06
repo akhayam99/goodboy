@@ -17,6 +17,7 @@ import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { workflowKindName } from '../../../../workflows/workflowKindName';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { isRunPaused } from '../../../../workflows/isRunPaused';
+import { isRunQueuedManual } from '../../../../workflows/isRunQueuedManual';
 import { isWorkflowRunClosable } from '../../../../workflows/isWorkflowRunClosable';
 import { isWorkflowRunClosedByUser } from '../../../../workflows/isWorkflowRunClosedByUser';
 import {
@@ -133,7 +134,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
     !isDiscarded &&
     (isClosed ||
       (isDynamic ? run.orchestrationOutcome === 'done' : stepCount > 0 && doneCount >= stepCount));
-  const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && agents.length === 0;
+  const isQueuedManual = isRunQueuedManual({ run, agents });
   const nextStep = isDiscarded || isDynamic ? null : view.chainStep;
   const nextStepAgent =
     nextStep === null

@@ -37,6 +37,7 @@ export const WorkflowsPane = ({ session }: Props) => {
     focusedWorkflowRunId !== null &&
     !session.workflowRuns.some((run) => run.id === focusedWorkflowRunId);
   const hasRuns = runs.length > 0;
+  const isListShown = focusedRun == null && !isRunGone;
   const isFormShown = !hasRuns || isStartOpen;
 
   useEffect(() => {
@@ -46,10 +47,19 @@ export const WorkflowsPane = ({ session }: Props) => {
     return () => window.removeEventListener(name, open);
   }, [sessionId]);
 
-  useEscapeLayer(() => {
-    setIsStartOpen(false);
-    startRowRef.current?.querySelector<HTMLElement>('button')?.focus();
-  }, hasRuns && isStartOpen);
+  useEffect(() => {
+    if (!isListShown) {
+      setIsStartOpen(false);
+    }
+  }, [isListShown]);
+
+  useEscapeLayer(
+    () => {
+      setIsStartOpen(false);
+      startRowRef.current?.querySelector<HTMLElement>('button')?.focus();
+    },
+    hasRuns && isStartOpen && isListShown,
+  );
 
   if (focusedRun != null) {
     return (

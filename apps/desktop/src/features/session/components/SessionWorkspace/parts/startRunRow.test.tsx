@@ -13,7 +13,8 @@ vi.mock('../../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { useEscapeLayer } from '@goodboy/ui';
 import { aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -104,5 +105,38 @@ describe('WorkflowsPane', () => {
     });
 
     expect(box()).not.toBeNull();
+  });
+
+  it('hands Escape to the layers below once a run page covers the open form', () => {
+    seedRun();
+    const onEscape = vi.fn();
+    renderHook(() => useEscapeLayer(onEscape, true));
+    renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Start a run' }));
+
+    act(() => {
+      useAppStore.setState({ focusedWorkflowRunId: { [NOW_SESSION]: 'run-gone' } });
+    });
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(onEscape).toHaveBeenCalledOnce();
+  });
+
+  it('comes back to the list with the form shut after a run page', () => {
+    seedRun();
+    renderPane();
+    fireEvent.click(screen.getByRole('button', { name: 'Start a run' }));
+
+    act(() => {
+      useAppStore.setState({ focusedWorkflowRunId: { [NOW_SESSION]: 'run-gone' } });
+    });
+    act(() => {
+      useAppStore.setState({ focusedWorkflowRunId: { [NOW_SESSION]: null } });
+    });
+
+    expect(box()).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start a run' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
   });
 });

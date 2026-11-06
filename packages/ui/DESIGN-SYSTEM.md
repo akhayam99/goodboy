@@ -227,8 +227,11 @@ state is a `StateDot` or a glyph in a 16px column.
   never "0 B", "-" or "no port".
 - `hideBelow` on a column drops it while the list is narrower than that many
   pixels, so the title keeps room and no row runs past the list edge. Runs hides
-  the origin below 1008 and the model below 796. `validate-scenes` checks in a
-  browser that no list row ends past its list.
+  the model below 920 and the origin below 928, both inside the 960 page column.
+  `validate-scenes` checks in a browser that no list row ends past its list.
+- `yieldsTo` on a column names another column; while that one is shown the first
+  is dropped, so two optional columns never share a list that holds only one.
+  Runs sets it on the origin, which gives its track to the model.
 - `canSpanEmpty` on a column lets its cell take the empty cells right after it in
   a row, so a title keeps the width of a column that row leaves blank. The Questions
   grid sets it on the question column: a waiting question has no answer line.

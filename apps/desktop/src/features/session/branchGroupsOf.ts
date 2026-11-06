@@ -110,7 +110,7 @@ type CountParams = {
 const countsOf = ({ runs }: CountParams): BranchGroupCounts => ({
   needsYou: runs.filter((run) => runGroupKeyOf({ run }) === 'needsYou').length,
   running: runs.filter((run) => runGroupKeyOf({ run }) === 'running').length,
-  finished: runs.filter((run) => run.isFinished || run.isArchived).length,
+  finished: runs.filter((run) => run.isFinished && !run.isArchived).length,
 });
 
 export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGroup> => {

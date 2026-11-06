@@ -3,6 +3,7 @@ import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflo
 import type { DotState } from '@goodboy/ui';
 import { workflowRunOpenQuestions } from '../context/openQuestionsGate';
 import { isRunPaused } from './isRunPaused';
+import { isRunQueuedManual } from './isRunQueuedManual';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
@@ -18,6 +19,8 @@ export type RunRowFacts = {
   readonly progress: string;
   readonly isActive: boolean;
   readonly isStartable: boolean;
+  readonly isQueuedManual: boolean;
+  readonly isContinuable: boolean;
 };
 
 const DOT_ONLY_WORDS: ReadonlySet<string> = new Set(['Running', 'Done', 'Archived', READY_WORD]);
@@ -36,6 +39,7 @@ type StateFacts = {
   readonly dot: DotState;
   readonly word: string;
   readonly wait?: RunWait;
+  readonly isContinuable?: boolean;
 };
 
 type RunParams = {
@@ -105,7 +109,7 @@ const stateOf = ({
   if (stop?.kind === 'operator') {
     return isOrchestrating || isRunning
       ? { dot: 'running', word: 'Stopping' }
-      : { dot: 'idle', word: 'Stopped' };
+      : { dot: 'idle', word: 'Stopped', isContinuable: true };
   }
   if (stop?.kind === 'budget' && !isRunning) {
     return { dot: 'needsYou', word: 'Paused at the limit', wait: 'limit' };
@@ -142,7 +146,11 @@ export const runRowFactsOf = ({
   questions,
   isPlanRevising,
 }: Params): RunRowFacts => {
-  const { wait = null, ...state } = stateOf({
+  const {
+    wait = null,
+    isContinuable = false,
+    ...state
+  } = stateOf({
     run,
     workflow,
     agents,
@@ -157,6 +165,8 @@ export const runRowFactsOf = ({
     isWordRead: !DOT_ONLY_WORDS.has(state.word),
     progress: progressOf({ run, workflow, agents }),
     isStartable: state.word === READY_WORD && run.executionMode !== 'dynamic',
+    isQueuedManual: state.word === READY_WORD && isRunQueuedManual({ run, agents }),
+    isContinuable,
     isActive:
       run.discardedAt == null &&
       !isWorkflowRunClosedByUser({ run }) &&

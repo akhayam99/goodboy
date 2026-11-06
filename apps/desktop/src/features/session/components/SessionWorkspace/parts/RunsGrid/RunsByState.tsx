@@ -1,12 +1,9 @@
 import type { ReactNode } from 'react';
-import type { SessionId } from '@goodboy/types';
 import { Button, ListGridGroup } from '@goodboy/ui';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
 import type { RunGroup } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
-import { ContinueAllAction } from './ContinueAllAction';
 import { RunBranchChip } from './RunBranchChip';
-import { StopAllAction } from './StopAllAction';
 
 export type StateRowParams = {
   readonly run: SessionRun;
@@ -15,7 +12,6 @@ export type StateRowParams = {
 };
 
 type Props = {
-  readonly sessionId: SessionId;
   readonly groups: ReadonlyArray<RunGroup>;
   readonly isEarlierShown: boolean;
   readonly isArchivedShown: boolean;
@@ -25,7 +21,6 @@ type Props = {
 };
 
 export const RunsByState = ({
-  sessionId,
   groups,
   isEarlierShown,
   isArchivedShown,
@@ -48,10 +43,6 @@ export const RunsByState = ({
           count={group.runs.length}
           action={
             <>
-              {group.key === 'running' ? <StopAllAction sessionId={sessionId} /> : null}
-              {group.key === 'idle' ? (
-                <ContinueAllAction sessionId={sessionId} runs={group.runs} />
-              ) : null}
               {group.key === 'finished' && earlierCount > 0 ? (
                 <Button
                   variant="quiet"

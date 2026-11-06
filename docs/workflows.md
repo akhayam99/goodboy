@@ -536,20 +536,30 @@ it. Under two branches the page groups **By state**: **Needs you**,
 **Show all**) and **Archived** folded behind **Show** (`runGroupsOf`). The row
 shows its first branch before the cut of the title and the rest as `+N`, with a
 tooltip that lists project and branch. With two or more branches a switch, **By
-branch** or **By state**, is remembered for the session (`groupBySession`,
-`selectGroupBy`, which Questions and Artifacts read too) and starts on **By
+branch** or **By state**, is remembered for the session, also after a reload
+(`groupBySession` in memory and `storedGroupBy` under
+`goodboy:session-grouping:v1:<sessionId>`, dropped when the session is deleted;
+`selectGroupBy`, which Questions and Artifacts read too), and starts on **By
 branch**. **By branch** (`branchGroupsOf`) draws one group per branch, one per
 pull request series from `store/slices/pr-series` with its parts as rows,
 and **No branch** last. A group that holds something that needs you goes
-first, its finished runs fold into **N finished**, and a run that touches
+first, its finished runs fold into **N finished**, its archived runs fold apart
+behind **N archived** and come last (`branchGroupRunsOf`), and a run that touches
 several branches stands in each of them, keyed by group and run, with the chip
 **Also on feat/retry-budget** (**Also on 2 branches** for more). The page
 count stays one per run. Words say state and verbs are verbs: an agent you
-stopped reads **Stopped** and a preset run that has not started reads **Ready**,
-and on hover the row shows a real **Continue** or **Start**. An unread reply
-reads in the title, with no dot. **Stop all** sits in the head of **Running**,
-**Continue all** in the head of **Idle**. Cost, step and age leave the row
-before the title is cut (`runsGridColumns.ts`). A row is the button;
+stopped reads **Stopped** and a run that has not started reads **Ready**, and
+the row always shows the real verb its page offers (`SessionRun.verb`):
+**Continue** on a stopped agent, a stopped Auto, or a run you stopped (its cut
+step, or the run itself when the orchestrator waits), **Start** on the next step
+of a preset or on a queued manual run of either kind. With the provider signed
+out **Continue** reads **Connect** and opens its settings (`useAgentStoppedCopy`,
+the same predicate as the notice on the agent page). One press guard per run
+covers every copy of the row (`useRunVerbPress`). An unread reply reads in the
+title, with no dot. **Stop all** and **Continue all** sit in one action row at
+the top of the page, in both views, with the switch. Cost, step and age leave
+the row before the title is cut, then the model (below 920) and the origin
+(below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
 of the Agents panel reads. The page opens on the list with a quiet **Start a run** row that opens

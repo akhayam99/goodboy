@@ -98,9 +98,6 @@ export const AgentDetailPane = ({
   const events = useTranscript(agent.id);
   const brief = useMemo(() => briefLineOf({ events }), [events]);
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
-  const providerOverride = useAppStore(
-    (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
-  );
   const executed = useExecutedAgentRouting({ agent });
   const routing = useAgentHeaderRouting({ session, agent });
   const openQuestions = useSessionOpenQuestions(session.id);
@@ -192,13 +189,7 @@ export const AgentDetailPane = ({
     <>
       {context}
       {isInWorkflowRun ? null : (
-        <AgentStoppedNotice
-          session={session}
-          agent={agent}
-          executedProvider={executed?.provider ?? null}
-          providerOverride={providerOverride}
-          isAutoChild={isAutoChild}
-        />
+        <AgentStoppedNotice session={session} agent={agent} isAutoChild={isAutoChild} />
       )}
       {runStep === undefined ? (
         <AgentNextAction session={session} agent={agent} onShownChange={setHasNextAction} />

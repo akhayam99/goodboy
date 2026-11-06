@@ -1,44 +1,22 @@
 import { Button, Notice } from '@goodboy/ui';
-import type { Agent, ProviderId, ProviderName, Session } from '@goodboy/types';
+import type { Agent, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
-import { agentStoppedCopy } from './agentStoppedCopy';
+import { useAgentStoppedCopy } from './useAgentStoppedCopy';
 
 type Props = {
   readonly session: Session;
   readonly agent: Agent;
-  readonly executedProvider: ProviderName | null;
-  readonly providerOverride: ProviderId | null;
   readonly isAutoChild: boolean;
 };
 
-type ProviderParams = Omit<Props, 'agent' | 'isAutoChild'>;
-
-const stoppedProvider = ({
-  session,
-  executedProvider,
-  providerOverride,
-}: ProviderParams): ProviderId =>
-  executedProvider == null || executedProvider === 'openai'
-    ? (providerOverride ?? session.providerPreference.defaultProvider)
-    : executedProvider;
-
-export const AgentStoppedNotice = ({
-  session,
-  agent,
-  executedProvider,
-  providerOverride,
-  isAutoChild,
-}: Props) => {
+export const AgentStoppedNotice = ({ session, agent, isAutoChild }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
-  const authResults = useAppStore((state) => state.authResults);
   const pending = usePendingAction({ sessionId: session.id });
+  const { copy } = useAgentStoppedCopy({ session, agent, isAutoChild });
   if (agent.status !== 'stopped') {
     return null;
   }
-  const provider = stoppedProvider({ session, executedProvider, providerOverride });
-  const isProviderConnected = authResults?.[provider]?.state !== 'disconnected';
-  const copy = agentStoppedCopy({ agent, provider, isProviderConnected, isAutoChild });
   return (
     <div data-agent-stopped="">
       <Notice

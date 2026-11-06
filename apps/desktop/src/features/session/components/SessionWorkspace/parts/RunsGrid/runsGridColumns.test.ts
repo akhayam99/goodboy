@@ -4,15 +4,17 @@ import { RUNS_GRID_COLUMNS, RUNS_GRID_TITLE_FLOOR } from './runsGridColumns';
 const TRACK_GAP_PX = 12;
 const EDGE_TRACKS = 2;
 const MODEL_TITLE_MIN_PX = 240;
-const ORIGIN_TITLE_MIN_PX = 150;
+const PAGE_COLUMN_MAX_PX = 960;
 
 type WidthParams = {
   readonly gridWidth: number;
+  readonly omit?: ReadonlyArray<string>;
 };
 
-const titleWidthAt = ({ gridWidth }: WidthParams): number => {
+const titleWidthAt = ({ gridWidth, omit = [] }: WidthParams): number => {
   const shown = RUNS_GRID_COLUMNS.filter(
-    (column) => !('hideBelow' in column) || gridWidth >= column.hideBelow,
+    (column) =>
+      !omit.includes(column.key) && (!('hideBelow' in column) || gridWidth >= column.hideBelow),
   );
   const fixed = shown.reduce(
     (sum, column) => sum + (column.width === 'fill' ? 0 : column.width),
@@ -34,13 +36,29 @@ const hideBelowOf = ({ key }: KeyParams): number => {
 };
 
 describe('the Runs grid columns', () => {
-  it('shows origin only when the title keeps room to read', () => {
+  it('can show origin in the widest page column when no row has a model', () => {
     const at = hideBelowOf({ key: 'origin' });
 
-    expect(titleWidthAt({ gridWidth: at })).toBeGreaterThanOrEqual(ORIGIN_TITLE_MIN_PX);
-    expect(titleWidthAt({ gridWidth: at - 1 })).toBeLessThan(
-      ORIGIN_TITLE_MIN_PX + TRACK_GAP_PX + 200,
+    expect(at).toBeLessThanOrEqual(PAGE_COLUMN_MAX_PX);
+    expect(titleWidthAt({ gridWidth: at, omit: ['model'] })).toBeGreaterThanOrEqual(
+      RUNS_GRID_TITLE_FLOOR,
     );
+    expect(titleWidthAt({ gridWidth: PAGE_COLUMN_MAX_PX, omit: ['model'] })).toBeGreaterThanOrEqual(
+      RUNS_GRID_TITLE_FLOOR,
+    );
+    expect(titleWidthAt({ gridWidth: at - 1, omit: ['model'] })).toBeLessThan(
+      RUNS_GRID_TITLE_FLOOR + TRACK_GAP_PX + 200,
+    );
+  });
+
+  it('gives the track to the model column when both could show, so the title keeps its room', () => {
+    const origin = RUNS_GRID_COLUMNS.find((column) => column.key === 'origin');
+
+    expect(origin !== undefined && 'yieldsTo' in origin ? origin.yieldsTo : null).toBe('model');
+    expect(
+      titleWidthAt({ gridWidth: PAGE_COLUMN_MAX_PX, omit: ['origin'] }),
+    ).toBeGreaterThanOrEqual(MODEL_TITLE_MIN_PX);
+    expect(titleWidthAt({ gridWidth: PAGE_COLUMN_MAX_PX })).toBeLessThan(RUNS_GRID_TITLE_FLOOR);
   });
 
   it('shows model as soon as the title keeps room to read, and not a pixel earlier', () => {

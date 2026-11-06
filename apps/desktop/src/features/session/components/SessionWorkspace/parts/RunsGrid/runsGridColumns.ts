@@ -29,11 +29,22 @@ const narrowHideBelowOf = ({ key }: KeyParams): number => {
   );
 };
 
+const ORIGIN_WIDTH = 200;
+
+const ORIGIN_HIDE_BELOW = narrowHideBelowOf({ key: 'cost' }) + ORIGIN_WIDTH + COLUMN_GAP;
+
 export const RUNS_GRID_COLUMNS = [
   { key: 'state', width: 16 },
   { key: 'shape', width: 16 },
   { key: 'title', width: 'fill', isTitle: true },
-  { key: 'origin', width: 200, tone: 'secondary', shouldHideWhenEmpty: true, hideBelow: 1042 },
+  {
+    key: 'origin',
+    width: ORIGIN_WIDTH,
+    tone: 'secondary',
+    shouldHideWhenEmpty: true,
+    hideBelow: ORIGIN_HIDE_BELOW,
+    yieldsTo: 'model',
+  },
   { key: 'model', width: 152, tone: 'secondary', shouldHideWhenEmpty: true, hideBelow: 920 },
   { key: 'word', width: 112, tone: 'secondary' },
   {

@@ -24,6 +24,7 @@ describe('storage keys', () => {
     expect(STORAGE_KEYS.zoom).toBe('goodboy:zoom');
     expect(STORAGE_KEYS.windowReloadIntent).toBe('goodboy:window-reload-intent');
     expect(STORAGE_PREFIXES.turnCursor).toBe('goodboy:turn-cursor:');
+    expect(STORAGE_PREFIXES.sessionGrouping).toBe('goodboy:session-grouping:v1:');
     expect(STORAGE_PREFIXES.scriptsGroupsCollapsed).toBe('goodboy:scripts-groups-collapsed:v1:');
     expect(STORAGE_PREFIXES.scriptsPackagesCollapsed).toBe(
       'goodboy:scripts-packages-collapsed:v1:',

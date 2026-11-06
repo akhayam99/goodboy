@@ -88,9 +88,9 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 Runs opens on your runs. A quiet **Start a run** row opens the field in place, and **Esc** closes it. With no run yet the field is the page.
 
-The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**. An agent you stopped reads **Stopped**. A preset that has not started reads **Ready**. On hover the row offers a real **Continue** or **Start**. A row names the branch its run works on, and the rest as `+N`.
+The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**. An agent you stopped reads **Stopped**. A preset that has not started reads **Ready**. The row always offers the real **Continue** or **Start**, and **Connect** when the provider is signed out. A row names the branch its run works on, and the rest as `+N`.
 
-With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. **By branch** has a group per branch or pull request series, and **No branch** comes last. Groups that need you come first and finished runs fold. A run on several branches stands in each, with **Also on feat/retry-budget**. With one branch the page is the same list.
+With two or more branches a switch groups the page **By branch** or **By state**, one choice per session. **By branch** has a group per branch or pull request series, and **No branch** comes last. Groups that need you come first, finished runs fold, and archived runs fold apart, last. The choice stays after a reload. A run on several branches stands in each, with **Also on feat/retry-budget**. With one branch the page is the same list.
 
 ### Hints to the orchestrator
 

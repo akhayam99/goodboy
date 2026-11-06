@@ -155,6 +155,30 @@ describe('ListGrid', () => {
     rect.mockRestore();
   });
 
+  it('drops a column that yields to another while the other is shown', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'origin', width: 200, shouldHideWhenEmpty: true, yieldsTo: 'model' },
+      { key: 'model', width: 152, shouldHideWhenEmpty: true },
+    ];
+    const { rerender } = render(
+      <ListGrid label="Runs" columns={columns}>
+        <ListGridRow key="a" cells={['Fix flaky tests', 'Workflow', 'Sonnet 5.5']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Runs' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 152px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(0);
+
+    rerender(
+      <ListGrid label="Runs" columns={columns}>
+        <ListGridRow key="a" cells={['Fix flaky tests', 'Workflow', '']} />
+      </ListGrid>,
+    );
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 200px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(1);
+  });
+
   it('lets a title cell take the empty cells after it when the column opts in', () => {
     const columns: ReadonlyArray<ListGridColumn> = [
       { key: 'title', width: 'fill', isTitle: true, canSpanEmpty: true },

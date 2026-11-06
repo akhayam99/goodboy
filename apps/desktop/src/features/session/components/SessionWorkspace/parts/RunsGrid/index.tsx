@@ -6,6 +6,7 @@ import { useNow } from '../../../../../../shared/hooks/useNow';
 import { GroupBySwitch } from '../../../../../../shared/components/GroupBySwitch';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
 import { branchPlace } from '../../../../../../store/slices/navigation/place';
+import type { GroupBy } from '../../../../../../store/slices/session-grouping/state';
 import { useGroupBy } from '../../../../../../store/slices/session-grouping/selectors';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
@@ -13,15 +14,19 @@ import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
 import { openSpawned } from '../../../../openSpawned';
 import { NAMES } from '../../../../../../shared/utils/names';
 import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
-import { branchGroupsOf } from '../../../../branchGroupsOf';
+import { branchGroupsOf, type BranchGroup } from '../../../../branchGroupsOf';
 import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { useMountRows } from '../../../SessionOverviewPane/ProjectMountRows/useMountRows';
+import { ContinueAllAction } from './ContinueAllAction';
 import { RunsByBranch } from './RunsByBranch';
 import { RunsByState } from './RunsByState';
 import { RunsGridAgentRow } from './RunsGridAgentRow';
 import { RunsGridRow } from './RunsGridRow';
+import { StopAllAction } from './StopAllAction';
+import { archivedFoldKeyOf } from './branchGroupRunsOf';
 import { RUNS_GRID_COLUMNS } from './runsGridColumns';
+import { useRunVerbPress } from './useRunVerbPress';
 
 type Props = {
   readonly session: Session;
@@ -52,6 +57,33 @@ type AgentParams = {
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
+type ReturnFoldParams = {
+  readonly groupBy: GroupBy;
+  readonly returnRowId: string | null;
+  readonly branchGroups: ReadonlyArray<BranchGroup>;
+};
+
+const foldKeyOfReturnRow = ({
+  groupBy,
+  returnRowId,
+  branchGroups,
+}: ReturnFoldParams): string | undefined => {
+  if (groupBy !== 'branch' || returnRowId === null) {
+    return undefined;
+  }
+  for (const group of branchGroups) {
+    const run = group.runs.find((candidate) => `${group.key}/${candidate.id}` === returnRowId);
+    if (run === undefined) {
+      continue;
+    }
+    if (run.isArchived) {
+      return archivedFoldKeyOf({ groupKey: group.key });
+    }
+    return run.isFinished ? group.key : undefined;
+  }
+  return undefined;
+};
+
 const agentOf = ({ agents, agentId }: AgentParams): Agent | null =>
   agents.find((candidate) => candidate.id === agentId) ?? null;
 
@@ -60,6 +92,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
   const now = useNow(30_000);
   const navigate = useAppStore((state) => state.navigate);
   const setGroupBy = useAppStore((state) => state.setGroupBy);
+  const verbPress = useRunVerbPress({ sessionId });
   const { aggregatesByAgentId } = useAgentMetrics({ sessionId });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const mountGroups = useMountRows({ sessionId });
@@ -94,14 +127,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
     finished.slice(VISIBLE_FINISHED_COUNT).some((run) => run.id === returnRowId);
   const isReturnArchived =
     groupBy === 'state' && returnRowId !== null && archived.some((run) => run.id === returnRowId);
-  const foldedGroupOfReturn =
-    groupBy === 'branch' && returnRowId !== null
-      ? branchGroups.find((group) =>
-          group.runs.some(
-            (run) => `${group.key}/${run.id}` === returnRowId && (run.isFinished || run.isArchived),
-          ),
-        )
-      : undefined;
+  const foldKeyOfReturn = foldKeyOfReturnRow({ groupBy, returnRowId, branchGroups });
   const unfoldedFor = useRef<string | null>(null);
 
   useEffect(() => {
@@ -116,11 +142,11 @@ export const RunsGrid = ({ session, runs }: Props) => {
       unfoldedFor.current = returnRowId;
       setIsArchivedShown(true);
     }
-    if (foldedGroupOfReturn !== undefined) {
+    if (foldKeyOfReturn !== undefined) {
       unfoldedFor.current = returnRowId;
-      setOpenGroups((open) => new Set([...open, foldedGroupOfReturn.key]));
+      setOpenGroups((open) => new Set([...open, foldKeyOfReturn]));
     }
-  }, [returnRowId, isReturnEarlier, isReturnArchived, foldedGroupOfReturn]);
+  }, [returnRowId, isReturnEarlier, isReturnArchived, foldKeyOfReturn]);
 
   const toggleGroup = useCallback(({ key }: GroupParams) => {
     setOpenGroups((open) => {
@@ -169,42 +195,48 @@ export const RunsGrid = ({ session, runs }: Props) => {
       return (
         <RunsGridRow
           key={rowKey}
-          sessionId={sessionId}
+          session={session}
           run={run}
           rowKey={rowKey}
           modelLine={null}
           costUsd={costUsd}
           titleSuffix={titleSuffix}
           now={now}
+          isVerbBusy={verbPress.isBusy({ run })}
           onOpen={() => open({ run, rowKey })}
+          onVerb={() => verbPress.press({ run })}
         />
       );
     }
     return (
       <RunsGridAgentRow
         key={rowKey}
-        sessionId={sessionId}
+        session={session}
         run={run}
         rowKey={rowKey}
         agent={agent}
         costUsd={costUsd}
         titleSuffix={titleSuffix}
         now={now}
+        isVerbBusy={verbPress.isBusy({ run })}
         onOpen={() => open({ run, rowKey })}
+        onVerb={() => verbPress.press({ run })}
       />
     );
   };
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      {branchCount < 2 ? null : (
-        <div className="flex justify-end">
+      <div data-runs-actions="" className="flex items-center justify-end gap-3 empty:hidden">
+        <StopAllAction sessionId={sessionId} />
+        <ContinueAllAction sessionId={sessionId} runs={runs} />
+        {branchCount < 2 ? null : (
           <GroupBySwitch
             value={groupBy}
             onChange={(next) => setGroupBy({ sessionId, groupBy: next })}
           />
-        </div>
-      )}
+        )}
+      </div>
       <ListGrid label={NAMES.runs} columns={RUNS_GRID_COLUMNS} isGrouped>
         {groupBy === 'branch' ? (
           <RunsByBranch
@@ -217,7 +249,6 @@ export const RunsGrid = ({ session, runs }: Props) => {
           />
         ) : (
           <RunsByState
-            sessionId={sessionId}
             groups={stateGroups}
             isEarlierShown={isEarlierShown}
             isArchivedShown={isArchivedShown}

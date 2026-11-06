@@ -8,6 +8,7 @@ import type { SessionRun } from '../../../../sessionRunsOf';
 import type { WorkBranch } from '../../../../workBranchesOf';
 import { RunAlsoOnChip } from './RunAlsoOnChip';
 import { RunBranchChip } from './RunBranchChip';
+import { archivedFoldKeyOf, branchGroupRunsOf } from './branchGroupRunsOf';
 
 export type BranchRowParams = {
   readonly run: SessionRun;
@@ -94,11 +95,16 @@ export const RunsByBranch = ({
 }: Props) => (
   <>
     {groups.map((group) => {
-      const finished = group.runs.filter((run) => run.isFinished || run.isArchived);
-      const active = group.runs.filter((run) => !run.isFinished && !run.isArchived);
+      const { active, finished, archived } = branchGroupRunsOf({ runs: group.runs });
       const isFoldable = active.length > 0 && finished.length > 0;
       const isFolded = isFoldable && !openGroups.has(group.key);
-      const shown = isFolded ? active : group.runs;
+      const archivedKey = archivedFoldKeyOf({ groupKey: group.key });
+      const isArchivedShown = openGroups.has(archivedKey);
+      const shown = [
+        ...active,
+        ...(isFolded ? [] : finished),
+        ...(isArchivedShown ? archived : []),
+      ];
       const mark = groupMarkOf({ group });
       const summary = branchGroupSummaryOf({ counts: group.counts, fact: groupFactOf({ group }) });
       const head = group.head;
@@ -108,7 +114,7 @@ export const RunsByBranch = ({
           headingLevel={2}
           label={groupLabelOf({ group })}
           mark={mark === null ? undefined : <span>{mark}</span>}
-          count={group.runs.length}
+          count={group.runs.length - archived.length}
           fold={
             isFoldable
               ? {
@@ -129,6 +135,16 @@ export const RunsByBranch = ({
                   Open branch
                 </Button>
               ) : null}
+              {archived.length === 0 ? null : (
+                <Button
+                  variant="quiet"
+                  size="xs"
+                  aria-expanded={isArchivedShown}
+                  onClick={() => onToggleGroup({ key: archivedKey })}
+                >
+                  {isArchivedShown ? 'Hide archived' : `${archived.length} archived`}
+                </Button>
+              )}
             </>
           }
           lead={

@@ -9,7 +9,7 @@ import {
   cn,
 } from '@goodboy/ui';
 import { NAMES } from '../../../../../../shared/utils/names';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, Session } from '@goodboy/types';
 import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLine';
 import type { ModelLine } from '../../../../../providers/modelLine/modelLineOf';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
@@ -20,14 +20,16 @@ import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
 import { RunRowVerb } from './RunRowVerb';
 
 type Props = {
-  readonly sessionId: SessionId;
+  readonly session: Session;
   readonly run: SessionRun;
   readonly rowKey: string;
   readonly modelLine: ModelLine | null;
   readonly costUsd: number | null;
   readonly titleSuffix: ReactNode;
   readonly now: number;
+  readonly isVerbBusy: boolean;
   readonly onOpen: () => void;
+  readonly onVerb: () => void;
 };
 
 const SHAPE_ICON = {
@@ -60,15 +62,18 @@ const timeCellOf = ({ run, now }: TimeParams): string => {
 };
 
 export const RunsGridRow = ({
-  sessionId,
+  session,
   run,
   rowKey,
   modelLine,
   costUsd,
   titleSuffix,
   now,
+  isVerbBusy,
   onOpen,
+  onVerb,
 }: Props) => {
+  const sessionId = session.id;
   const agentId = menuAgentOf({ run });
   const menu = useObjectMenuTrigger({
     target:
@@ -82,7 +87,11 @@ export const RunsGridRow = ({
       onSelect={onOpen}
       rowKey={rowKey}
       asideColumn="verb"
-      aside={run.verb === null ? undefined : <RunRowVerb sessionId={sessionId} verb={run.verb} />}
+      aside={
+        run.verb === null ? undefined : (
+          <RunRowVerb session={session} verb={run.verb} isBusy={isVerbBusy} onPress={onVerb} />
+        )
+      }
       {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
       cells={[
         <StateDot state={run.dot} label={run.stateWord} isLive={run.dot === 'running'} />,
