@@ -3,6 +3,12 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type IsoDateTime, type SessionDecision } from '@goodboy/types';
+import type { SummarizerRound } from '../../../../store/slices/summaries/state';
+import type {
+  ContextDrawerSection,
+  ContextDrawerView,
+} from '../../../../store/slices/drawer/state';
+import { aDecision } from '../../../../test/aDecision';
 import { importStore, resetStoryStore, type StoryStore } from '../../../../store/storyHarness';
 import {
   SESSION_ID,
@@ -67,15 +73,89 @@ afterEach(() => {
   summarizerQueues.delete(SESSION_ID);
 });
 
-const mount = () =>
+type MountParams = {
+  readonly section?: ContextDrawerSection;
+  readonly view?: ContextDrawerView;
+  readonly highlight?: ReadonlyArray<number>;
+  readonly onClose?: () => void;
+};
+
+const mount = ({
+  section = 'goal',
+  view = 'current',
+  highlight,
+  onClose = () => undefined,
+}: MountParams = {}) =>
   render(
     <ContextDrawer
       sessionId={SESSION_ID}
-      section="goal"
-      view="current"
-      onClose={() => undefined}
+      section={section}
+      view={view}
+      {...(highlight !== undefined && { highlight })}
+      onClose={onClose}
     />,
   );
+
+type SlotValues = {
+  readonly goal: string;
+  readonly decisions: string;
+  readonly summary: string;
+};
+
+const setSlots = ({ goal, decisions, summary }: SlotValues) =>
+  store.setState({
+    sessionSlots: {
+      [SESSION_ID]: [
+        { key: 'goal', value: goal, enabled: true },
+        { key: 'decisions', value: decisions, enabled: true },
+        { key: 'last_output_summary', value: summary, enabled: true },
+      ],
+    },
+  });
+
+type LedgerParams = {
+  readonly ledger: ReadonlyArray<SessionDecision>;
+};
+
+const setLedger = ({ ledger }: LedgerParams) => {
+  h.ledger = ledger;
+  store.setState({ sessionDecisions: { [SESSION_ID]: ledger } });
+};
+
+const AT = brandId<IsoDateTime>({ value: '2026-11-01T10:00:00.000Z' });
+
+const ROUND: SummarizerRound = {
+  finishedAt: AT,
+  mode: 'turn',
+  turns: 3,
+  provider: 'anthropic',
+  model: 'haiku-4.5',
+  effort: 'low',
+  inputTokens: 3184,
+  outputTokens: 412,
+  costUsd: 0.004,
+  changed: { goal: true, decisions: 2, summary: true },
+};
+
+type StatusParams = {
+  readonly status: 'idle' | 'running' | 'error';
+};
+
+const setSummarizer = ({ status }: StatusParams) =>
+  store.setState({
+    summarizerStatus: {
+      [SESSION_ID]: {
+        status,
+        lastUpdate: AT,
+        error: null,
+        lastUsage: null,
+        lastAttempt: null,
+      },
+    },
+  });
+
+const contextUpdatesRow = (): HTMLElement =>
+  screen.getByRole('button', { name: (name) => name.startsWith('Context updates') });
 
 describe('Context drawer', () => {
   it('draws each changed decision once, before unchanged decisions, with one mark on its row', () => {
@@ -328,5 +408,215 @@ describe('Context drawer', () => {
       store.getState().sessionDecisions[SESSION_ID]?.find((decision) => decision.number === 7)
         ?.status,
     ).toBe('active');
+  });
+});
+
+describe('Context drawer sections', () => {
+  it('reads as one scroll of cards with no tabs: Goal, Decisions, Summary and Explanations', () => {
+    mount();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Explanations']);
+    expect(
+      Array.from(document.querySelectorAll('[data-context-card]')).map((card) =>
+        card.getAttribute('data-context-section'),
+      ),
+    ).toEqual(['goal', 'decisions', 'summary', 'explanations']);
+  });
+
+  it('copies the brief from the header', () => {
+    mount();
+    screen.getByRole('button', { name: /Copy context/i });
+  });
+
+  it('counts the active decisions on the card header from two, never one', () => {
+    const countOf = () =>
+      screen.getByRole('region', { name: 'Decision records' }).querySelector('[data-context-count]')
+        ?.textContent ?? null;
+    setLedger({ ledger: [aDecision({ sessionId: SESSION_ID, number: 1 })] });
+    const { unmount } = mount();
+    expect(countOf()).toBeNull();
+    unmount();
+
+    setLedger({
+      ledger: [
+        aDecision({ sessionId: SESSION_ID, number: 1 }),
+        aDecision({ sessionId: SESSION_ID, number: 2 }),
+      ],
+    });
+    mount();
+    expect(countOf()).toBe('2');
+  });
+
+  it('shows the marks and Mark as read on a drawer restored without its own baseline', () => {
+    store.setState({ sessionDecisionsBaseline: {} });
+    mount({ section: 'decisions' });
+    screen.getByText('Added');
+    screen.getByRole('button', { name: 'Mark as read' });
+  });
+
+  it('shows no marks for a session whose first look is now', () => {
+    const now = brandId<IsoDateTime>({ value: new Date().toISOString() });
+    store.setState({
+      sessionDecisionsBaseline: {},
+      sessionContextSeenAt: { [SESSION_ID]: now },
+    });
+    mount({ section: 'decisions' });
+    expect(screen.queryByText('Added')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark as read' })).toBeNull();
+  });
+
+  it('highlights the rows Activity opened it on, opening the closed group when needed', () => {
+    const { container } = mount({ section: 'decisions', highlight: [3, 7] });
+    const highlighted = [...container.querySelectorAll('[data-decision].bg-selected')].map((node) =>
+      node.getAttribute('data-decision'),
+    );
+    expect(highlighted.sort()).toEqual(['3', '7']);
+    screen.getByText('Detect duplicates by hashing the payload');
+  });
+
+  it('keeps the closed group shut when no highlight asks for it', () => {
+    mount({ section: 'decisions' });
+    expect(screen.queryByText('Detect duplicates by hashing the payload')).toBeNull();
+  });
+
+  it('opens Versions inside the drawer, and Escape leaves the view before the drawer', () => {
+    const onClose = vi.fn();
+    mount({ section: 'summary', view: 'versions', onClose });
+    screen.getByRole('button', { name: 'Summary' });
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(store.getState().drawer).toMatchObject({
+      kind: 'context',
+      payload: { section: 'summary', view: 'current' },
+    });
+  });
+
+  it('keeps the decisions readable but not editable while the context updates', () => {
+    setSummarizer({ status: 'running' });
+    const { container } = mount({ section: 'decisions' });
+    const row = container.querySelector('[data-decision="7"] button');
+    if (row === null) {
+      throw new Error('Missing decision 7');
+    }
+    fireEvent.click(row);
+    screen.getByText('Show the stuck-delivery banner after the third failed retry, not the first');
+    expect(screen.queryByRole('button', { name: 'Edit decision 7' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove decision 7' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Goal actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Edit' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+  });
+
+  it('says why an empty card is empty', () => {
+    setSlots({ goal: '', decisions: '', summary: '' });
+    setLedger({ ledger: [] });
+    store.setState({ sessionContextItems: { [SESSION_ID]: [] } });
+    mount();
+    screen.getByText('No goal yet. Every agent starts from it.');
+    screen.getByText('A summary appears after the first agent turn.');
+    screen.getByText(
+      'No decisions yet. Agents record one when they settle a choice; you can add your own.',
+    );
+    screen.getByText('Nothing yet. Agents explain the topics you follow.');
+  });
+
+  it('keeps the Goal menu on an empty Goal and on a Goal being edited', () => {
+    setSlots({ goal: '', decisions: '', summary: 'x' });
+    const empty = mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Goal actions' }));
+    const menu = screen.getByRole('menu', { name: 'Goal actions' });
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Edit', 'Versions', 'Who reads this']);
+    expect(screen.queryByText(/^All roles/)).toBeNull();
+    empty.unmount();
+
+    setSlots({ goal: 'Stop crediting an invoice twice.', decisions: '', summary: 'x' });
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Goal actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    screen.getByRole('textbox', { name: 'Goal' });
+    fireEvent.click(screen.getByRole('button', { name: 'Goal actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Edit' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('menuitem', { name: 'Versions' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Who reads this' }));
+    screen.getByText('Agents only.');
+  });
+
+  it('says Explanations are for you only', () => {
+    mount();
+    const section = document.querySelector<HTMLElement>('[data-context-section="explanations"]');
+    if (section === null) {
+      throw new Error('Missing Explanations');
+    }
+    within(section).getByText('You only');
+  });
+});
+
+describe('Context updates in the drawer', () => {
+  it('opens on the last round: model, usage and what changed', () => {
+    setSummarizer({ status: 'idle' });
+    store.setState({
+      summarizerRounds: { [SESSION_ID]: ROUND },
+      summarizerPending: { [SESSION_ID]: { turns: 2, isUpdateQueued: false } },
+    });
+    mount();
+    fireEvent.click(contextUpdatesRow());
+    expect(screen.getByRole('definition', { name: 'Last update' }).textContent).toContain(
+      'after 3 turns',
+    );
+    expect(screen.getByRole('definition', { name: 'Model' }).textContent).toContain(
+      'Haiku 4.5 · low effort',
+    );
+    expect(screen.getByRole('definition', { name: 'Used' }).textContent).toBe(
+      '3,184 in · 412 out · about <$0.01',
+    );
+    expect(screen.getByRole('definition', { name: 'Changed' }).textContent).toBe(
+      'Goal, 2 decisions, Summary',
+    );
+    fireEvent.click(screen.getByRole('button', { name: '2 decisions' }));
+    expect(store.getState().drawer).toMatchObject({ payload: { section: 'decisions' } });
+  });
+
+  it('queues Update now in the session queue and shows it as queued', () => {
+    setSummarizer({ status: 'idle' });
+    store.setState({ summarizerRounds: { [SESSION_ID]: ROUND } });
+    summarizerQueues.set(SESSION_ID, { inFlight: true, scheduled: null, queued: [] });
+    mount();
+    fireEvent.click(contextUpdatesRow());
+    fireEvent.click(screen.getByRole('button', { name: 'Update now' }));
+    expect(store.getState().summarizerPending[SESSION_ID]?.isUpdateQueued).toBe(true);
+    expect(screen.getByRole('button', { name: 'Queued' }).hasAttribute('disabled')).toBe(true);
+    expect(contextUpdatesRow().textContent).toContain('Queued');
+  });
+
+  it('says it is updating while the summarizer writes', () => {
+    setSummarizer({ status: 'running' });
+    mount();
+    expect(contextUpdatesRow().textContent).toContain('Updating…');
+  });
+
+  it('sends Change model to the step summaries row in Models', () => {
+    setSummarizer({ status: 'idle' });
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-settings', opened);
+    mount();
+    fireEvent.click(contextUpdatesRow());
+    fireEvent.click(screen.getByRole('button', { name: 'Change model' }));
+    window.removeEventListener('goodboy:open-settings', opened);
+    const event = opened.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
+      scope: 'providers',
+      section: 'summarizer',
+    });
   });
 });
