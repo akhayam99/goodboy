@@ -13,7 +13,7 @@ vi.mock('../../../../features/permissions/permissions', async () =>
 );
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProviderRunId } from '@goodboy/types';
+import { brandId, type ProviderRunId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -27,7 +27,7 @@ import { throwIfRefused } from './throwIfRefused';
 
 const LIMIT = 'Every provider is over its limit. Change a limit or wait for the next period.';
 const FOLDER = 'Another agent is writing in this folder. Try again in a moment.';
-const RUN_ID = 'run-ledger-1' as ProviderRunId;
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-ledger-1' });
 const session = aSession({ goal: 'Reconcile the Harborline ledger export' });
 const blockedStep = anAgent({ sessionId: session.id, name: 'Implementer', status: 'blocked' });
 const stuckStep = anAgent({

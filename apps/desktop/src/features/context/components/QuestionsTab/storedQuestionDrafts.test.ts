@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OpenQuestionId } from '@goodboy/types';
+import { brandId, type OpenQuestionId } from '@goodboy/types';
 
-const QUESTION = 'question-ledger-1' as OpenQuestionId;
+const QUESTION = brandId<OpenQuestionId>({ value: 'question-ledger-1' });
 
 const freshStore = async () => {
   vi.resetModules();
