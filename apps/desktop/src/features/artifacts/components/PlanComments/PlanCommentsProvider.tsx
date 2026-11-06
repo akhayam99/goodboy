@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
+import { draftSavesOk } from '../../../plans/planComments/draftSavesOk';
 import { PlanCommentsContext } from '../../../plans/planComments/planCommentsContext';
 import { usePlanComments } from '../../../plans/planComments/usePlanComments';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
@@ -35,21 +36,29 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
     [hasQuestion, model.guard],
   );
   const sendAndTell = useCallback(async () => {
+    if (!(await draftSavesOk())) {
+      return null;
+    }
     const result = await send();
     onSent?.(result);
     return result;
   }, [onSent, send]);
+  const latestRequest = useRef(requestText);
+  latestRequest.current = requestText;
   const ran = useMemo<PlanCommentBarRan | null>(() => {
-    if (!isPlanRan || target === null) {
+    if (!isPlanRan) {
       return null;
     }
     return {
-      agentName: target.name,
-      canSend: target.canReceive,
+      agentName: target === null ? null : target.name,
+      canSend: target !== null && target.canReceive,
       isSending: isSendingToAgent,
       onSend: async () => {
         setIsSendingToAgent(true);
         try {
+          if (!(await draftSavesOk())) {
+            return null;
+          }
           const result = await sendToAgent();
           if (result.kind === 'sentToAgent') {
             setStatus(`Sent to ${result.agentName}.`);
@@ -59,11 +68,14 @@ export const PlanCommentsProvider = ({ sessionId, plan, onSent, children }: Prop
           setIsSendingToAgent(false);
         }
       },
-      onCopy: () => {
-        void copyText({ text: requestText });
+      onCopy: async () => {
+        if (!(await draftSavesOk())) {
+          return;
+        }
+        void copyText({ text: latestRequest.current });
       },
     };
-  }, [copyText, isPlanRan, isSendingToAgent, requestText, sendToAgent, target]);
+  }, [copyText, isPlanRan, isSendingToAgent, sendToAgent, target]);
 
   useEffect(() => {
     if (model.drafts.length > 0) {

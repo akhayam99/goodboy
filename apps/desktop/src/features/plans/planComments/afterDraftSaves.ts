@@ -1,4 +1,5 @@
 import { PENDING_DRAFT_SAVES } from './PENDING_DRAFT_SAVES';
+import { draftSavesOk } from './draftSavesOk';
 
 type Params = Readonly<{ run: () => void }>;
 
@@ -7,10 +8,9 @@ export const afterDraftSaves = ({ run }: Params): void => {
     run();
     return;
   }
-  void Promise.allSettled([...PENDING_DRAFT_SAVES]).then((outcomes) => {
-    if (outcomes.some((outcome) => outcome.status === 'rejected')) {
-      return;
+  void draftSavesOk().then((isOk) => {
+    if (isOk) {
+      run();
     }
-    window.setTimeout(run, 0);
   });
 };

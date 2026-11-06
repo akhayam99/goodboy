@@ -13,6 +13,7 @@ import {
   seedPlanDrawer,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
+import { trackDraftSave } from '../../../plans/planComments/trackDraftSave';
 import { PlanCommentsProvider } from './PlanCommentsProvider';
 
 type Stubs = Partial<
@@ -196,6 +197,94 @@ describe('PlanCommentsProvider', () => {
       expect((await screen.findByRole('alert')).textContent).toBe('The agent did not answer');
       screen.getByRole('button', { name: 'Send to Implement' });
     });
+  });
+
+  describe('with a comment still being saved', () => {
+    const RAN_AGENT: Partial<PlanWithCount> = {
+      status: 'consumed',
+      consumptionCount: 1,
+      lastConsumer: { agentId: PLAN_IMPLEMENTER, name: 'Implement' },
+    };
+
+    const pendingSave = () => {
+      let settle: (outcome: 'saved' | 'failed') => void = () => undefined;
+      const save = new Promise<void>((resolve, reject) => {
+        settle = (outcome) => (outcome === 'saved' ? resolve() : reject(new Error('Locked')));
+      });
+      trackDraftSave({ save });
+      return { settle, save };
+    };
+
+    it('sends to the planner only after the save, and not when it failed', async () => {
+      const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
+      renderProvider({
+        seed: { run: 'held', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactComments: send },
+      });
+      const first = pendingSave();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(send).not.toHaveBeenCalled();
+      first.settle('saved');
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+
+      const second = pendingSave();
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      second.settle('failed');
+      await second.save.catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(send).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends to the agent only after the save', async () => {
+      const send = vi.fn(async () => ({ kind: 'sentToAgent' as const, agentName: 'Implement' }));
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactCommentsToAgent: send },
+        planOverrides: RAN_AGENT,
+      });
+      const pending = pendingSave();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to Implement' }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(send).not.toHaveBeenCalled();
+      pending.settle('saved');
+
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    });
+
+    it('copies only after the save', async () => {
+      const writeText = vi.fn(async () => undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      renderProvider({
+        seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+        planOverrides: RAN_AGENT,
+      });
+      const pending = pendingSave();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(writeText).not.toHaveBeenCalled();
+      pending.settle('saved');
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  it('offers only Copy for a plan that ran with no agent to send to', () => {
+    renderProvider({
+      seed: { run: 'took', status: 'consumed', drafts: [aPlanDraft()] },
+      planOverrides: { status: 'consumed', consumptionCount: 1, lastConsumer: null },
+    });
+
+    const bar = screen.getByTestId('plan-comment-bar');
+    within(bar).getByText('1 comment not sent');
+    within(bar).getByText('No agent to send them to. Copy them instead.');
+    expect(within(bar).getByRole('button', { name: 'Copy' }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
+    expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
   });
 
   it('makes Send wait while the planner has a question open', () => {

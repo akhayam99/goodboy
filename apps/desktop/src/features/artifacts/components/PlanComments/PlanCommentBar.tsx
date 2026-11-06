@@ -4,11 +4,11 @@ import type { PlanCommentGuard } from '../../../plans/planComments/planCommentGu
 import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 
 export type PlanCommentBarRan = Readonly<{
-  agentName: string;
+  agentName: string | null;
   canSend: boolean;
   isSending: boolean;
   onSend: () => Promise<unknown>;
-  onCopy: () => void;
+  onCopy: () => Promise<void>;
 }>;
 
 type Props = {
@@ -37,6 +37,9 @@ type NoteParams = {
 
 const barNoteOf = ({ guard, ran }: NoteParams): string | null => {
   if (ran !== null) {
+    if (ran.agentName === null) {
+      return 'No agent to send them to. Copy them instead.';
+    }
     return ran.canSend
       ? `${ran.agentName} can still read them.`
       : `${ran.agentName} isn't running. Copy them instead.`;
@@ -96,7 +99,7 @@ export const PlanCommentBar = ({
               <Button
                 variant={ran.canSend ? 'ghost' : 'primary'}
                 size="sm"
-                onClick={ran.onCopy}
+                onClick={() => void ran.onCopy()}
                 data-testid="plan-bar-copy"
               >
                 Copy
