@@ -113,7 +113,7 @@ export const QueuedMessages = ({
               data-status={item.status}
               data-source={item.source}
               className={cn(
-                'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-chip',
+                'flex flex-wrap items-center justify-end gap-2 rounded-md border bg-background px-2 py-1 text-chip',
                 ROW_CLASSES[item.status],
               )}
             >
@@ -126,7 +126,7 @@ export const QueuedMessages = ({
                       ? 'Edit, moves it back to the composer'
                       : 'Clear the composer to edit'
                 }
-                anchorClassName="min-w-0 flex-1"
+                anchorClassName="min-w-24 flex-1"
               >
                 <button
                   type="button"
