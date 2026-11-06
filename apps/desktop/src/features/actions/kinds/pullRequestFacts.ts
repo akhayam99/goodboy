@@ -13,7 +13,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
-import type { SessionGithubState } from '../../../store/types';
+import type { AppState, SessionGithubState } from '../../../store/types';
 import { reviewCounts } from '../../resolve/reviewCounts';
 import { checksCountsOf, checksGroupsOf } from '../../integrations/github/checksRollup';
 
@@ -228,11 +228,20 @@ export const pullRequestFacts = ({
   };
 };
 
+type PullRequestViewerParams = {
+  readonly host: PullRequestHost;
+  readonly state: Pick<AppState, 'githubStatus'>;
+};
+
+export const pullRequestViewerOf = ({ host, state }: PullRequestViewerParams): string | null =>
+  host === 'github' ? (state.githubStatus?.user ?? null) : null;
+
 type SessionMergeParams = {
   readonly sessionId: SessionId;
   readonly host?: PullRequestHost;
   readonly github: Pick<SessionGithubState, 'pr' | 'detail'> | null;
   readonly threads: ReadonlyArray<ResolveThread>;
+  readonly viewer?: string | null;
   readonly mergeView?: PullRequestView | null;
   readonly isRebaseStopOpen?: boolean;
   readonly unpushed?: number;
@@ -243,6 +252,7 @@ export const sessionMergeFacts = ({
   host = 'github',
   github,
   threads,
+  viewer = null,
   mergeView = null,
   isRebaseStopOpen = false,
   unpushed = 0,
@@ -258,7 +268,7 @@ export const sessionMergeFacts = ({
     checksRead: detail?.checksRead ?? null,
     comments: detail?.comments ?? [],
     reviews: detail?.reviews ?? [],
-    viewer: null,
+    viewer,
     writeInFlight: null,
     isScribeWriting: false,
     isRebaseStopOpen,

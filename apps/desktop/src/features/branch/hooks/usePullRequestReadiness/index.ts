@@ -16,6 +16,7 @@ import { useUnreadThreads } from '../../../../shared/hooks/useUnreadThreads';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import {
   pullRequestThreadsOf,
+  pullRequestViewerOf,
   sessionMergeFacts,
   type PullRequestFacts,
 } from '../../../actions/kinds/pullRequestFacts';
@@ -60,6 +61,7 @@ export const usePullRequestReadiness = ({
       resolveSessionRepo({ state, sessionId, ...(mountId === null ? {} : { mountId }) })
         ?.projectId ?? null,
   );
+  const viewer = useAppStore((state) => pullRequestViewerOf({ host, state }));
   const { unread } = useUnreadThreads({ sessionId, mountId });
   const prNumber = github?.pr?.number ?? null;
   const view = useAppStore(
@@ -71,6 +73,7 @@ export const usePullRequestReadiness = ({
       host,
       github,
       threads: pullRequestThreadsOf({ threads: sessionThreads, projectId, prNumber }),
+      viewer,
       mergeView: view,
       isRebaseStopOpen,
       unpushed,
@@ -98,5 +101,6 @@ export const usePullRequestReadiness = ({
     unpushed,
     unread,
     view,
+    viewer,
   ]);
 };

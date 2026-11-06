@@ -62,6 +62,7 @@ import {
   fixSignalsOf,
   pullRequestThreadsOf,
   pullRequestFacts,
+  pullRequestViewerOf,
   type PullRequestFacts,
 } from './pullRequestFacts';
 
@@ -596,7 +597,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
           : portChecks.read,
       comments: detailMatches ? detail.comments : [],
       reviews: detailMatches ? detail.reviews : [],
-      viewer: host === 'github' ? (state.githubStatus?.user ?? null) : null,
+      viewer: pullRequestViewerOf({ host, state }),
       writeInFlight:
         claim === null || pr === null
           ? null
