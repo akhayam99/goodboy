@@ -197,13 +197,12 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-working' });
 
     await waitFor(() => expect(document.querySelector('[data-glance]')).not.toBeNull(), WAIT);
-    const glance = within(document.body)
-      .getAllByRole('status')
-      .find((node) => node.hasAttribute('data-glance'));
-    if (glance === undefined) {
+    const glance = document.querySelector<HTMLElement>('[data-glance]');
+    if (glance === null) {
       throw new Error('no glance line');
     }
     expect(glance.dataset.glance).toBe('working');
+    expect(within(glance).getByRole('status').textContent).not.toContain('Waiting for');
     expect(glance.textContent).not.toContain('Waiting for');
     expect(
       document.querySelector('[data-auto-dock]')?.textContent?.match(/Waiting for/g),
