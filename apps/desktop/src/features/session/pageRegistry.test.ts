@@ -22,10 +22,10 @@ describe('the session level pages', () => {
     ]);
   });
 
-  it('fold Orchestrated, Agents and Auto agents into the one Runs entry', () => {
+  it('fold Orchestrated into the one Runs entry', () => {
     const runs = columnPagesOf({ isBranchless: false }).find((page) => page.id === 'runs');
     expect(runs).toMatchObject({ lens: 'workflows', count: 'runs', shortcut: 'lens.workflows' });
-    expect(runs?.currentLenses).toEqual(['workflows', 'orchestrated', 'agents', 'auto']);
+    expect(runs?.currentLenses).toEqual(['workflows', 'orchestrated']);
   });
 
   it('leave the branch entries to the worktree rows', () => {

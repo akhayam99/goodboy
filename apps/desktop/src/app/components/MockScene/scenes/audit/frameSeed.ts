@@ -33,7 +33,7 @@ export const seedFrame = ({ context }: SeedParams): void => {
       siblings: [],
       branches: {},
       telemetryAt: NOW,
-      lens: 'agents',
+      lens: 'workflows',
     });
     useAppStore.setState({ activeLens: {} });
     return;

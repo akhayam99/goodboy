@@ -692,8 +692,8 @@ const PLACES: Readonly<Record<OneFlowPlace, PlaceState>> = {
   overview: { lens: null, runId: null, agentId: null },
   preset: { lens: 'workflows', runId: PRESET_RUN_ID, agentId: null },
   orchestrated: { lens: 'workflows', runId: PLAN_RUN_ID, agentId: null },
-  agent: { lens: 'agents', runId: null, agentId: HAND_AGENT_ID },
-  auto: { lens: 'auto', runId: null, agentId: AUTO_ROOT_ID },
+  agent: { lens: 'workflows', runId: null, agentId: HAND_AGENT_ID },
+  auto: { lens: 'workflows', runId: null, agentId: AUTO_ROOT_ID },
   runs: { lens: 'workflows', runId: null, agentId: null },
 };
 

@@ -120,7 +120,7 @@ describe('which rows can be rebound', () => {
 
   it('opens the view and session chords', () => {
     const open: ReadonlyArray<ShortcutId> = [
-      'lens.agents',
+      'session.spawned',
       'session.model',
       'terminal.newTab',
       'terminal.prevTab',

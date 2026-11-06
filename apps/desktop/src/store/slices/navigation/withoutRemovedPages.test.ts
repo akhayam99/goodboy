@@ -49,7 +49,7 @@ describe('withoutRemovedPages', () => {
 
   it('opens Settings, iPhone in place of a stored pairing studio', () => {
     const stored: Location = JSON.parse(
-      JSON.stringify({ ...storedAt({ lens: 'agents' }), studio: { kind: 'companion' } }),
+      JSON.stringify({ ...storedAt({ lens: 'questions' }), studio: { kind: 'companion' } }),
     );
 
     const next = withoutRemovedPages({ location: stored });
@@ -59,13 +59,13 @@ describe('withoutRemovedPages', () => {
   });
 
   it('keeps a live studio as it was', () => {
-    const location: Location = { ...storedAt({ lens: 'agents' }), studio: { kind: 'guide' } };
+    const location: Location = { ...storedAt({ lens: 'questions' }), studio: { kind: 'guide' } };
 
     expect(withoutRemovedPages({ location })).toBe(location);
   });
 
   it('keeps a live page as it was', () => {
-    const location = storedAt({ lens: 'agents' });
+    const location = storedAt({ lens: 'questions' });
 
     expect(withoutRemovedPages({ location })).toBe(location);
   });
@@ -108,7 +108,21 @@ describe('withoutRemovedPages, the retired level 2 of the session rail', () => {
       }),
     });
 
-    expect(next.place).toMatchObject({ view: { lens: 'auto', agentId: 'agent-auto-root' } });
+    expect(next.place).toMatchObject({ view: { lens: 'workflows', agentId: 'agent-auto-root' } });
+    expect(next.focus.drawer).toBeNull();
+  });
+
+  it('lands a stored Agents page on the Runs page, keeping its agent', () => {
+    const next = withoutRemovedPages({
+      location: storedLevel({
+        lens: 'agents',
+        agentId: 'agent-implementer',
+        target: null,
+        selection: {},
+      }),
+    });
+
+    expect(next.place).toMatchObject({ view: { lens: 'workflows', agentId: 'agent-implementer' } });
     expect(next.focus.drawer).toBeNull();
   });
 

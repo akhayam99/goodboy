@@ -144,14 +144,14 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 **Tools beside the page**
 
-The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put on every page of the session.
+The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel. They stay put on every page of the session, and an open tool stays open when you move to another page.
 
 | Tool         | Key |
 | ------------ | --- |
 | **Explore**  | ⌘⌥X |
 | **Context**  | ⌘⌥C |
 | **Ask**      | ⌘L  |
-| **Agents**   | ⌘⌥L |
+| **Agents**   | ⌘⌥A |
 | **Scripts**  | ⌘⌥S |
 | **Terminal** | ⌘⌥T |
 

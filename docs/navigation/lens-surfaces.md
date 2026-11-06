@@ -144,7 +144,7 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   action row at the end); the mode lives in the store per session and drops
   back when the page closes.
 - **The resolver stays on its comment.** A resolver exists for one comment, so its
-  home is that comment, never the Agents lens, and it has no page of its own.
+  home is that comment, never the Runs page, and it has no page of its own.
   The comment shows its agent in one line from the first paint (model, age, the
   state word, and while it drafts the last thing it said). Its transcript opens
   as a drawer of kind `transcript` on the Comments tab of its Branch, in the

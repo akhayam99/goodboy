@@ -236,7 +236,7 @@ describe('shortcut registry', () => {
 
     expect(shortcutGlyphs('palette.open')).toBe('⌘K');
     expect(shortcutGlyphs('session.delete')).toBe('⌘⇧⌫');
-    expect(shortcutGlyphs('lens.agents')).toBe('⌘⌥A');
+    expect(shortcutGlyphs('session.spawned')).toBe('⌘⌥A');
     expect(shortcutGlyphs('workspace.1')).toBe('⌘1');
     expect(formatCombo('cmd+BracketLeft')).toBe('⌘[');
     expect(formatCombo('cmd+Enter')).toBe('⌘↵');
@@ -247,7 +247,7 @@ describe('shortcut registry', () => {
 
     expect(shortcutGlyphs('palette.open')).toBe('Ctrl+K');
     expect(shortcutGlyphs('session.delete')).toBe('Ctrl+Shift+Backspace');
-    expect(shortcutGlyphs('lens.agents')).toBe('Ctrl+Shift+Alt+A');
+    expect(shortcutGlyphs('session.spawned')).toBe('Ctrl+Shift+Alt+A');
     expect(shortcutGlyphs('workspace.1')).toBe('Ctrl+1');
     expect(formatCombo('cmd+BracketLeft')).toBe('Ctrl+[');
     expect(formatCombo('cmd+Enter')).toBe('Ctrl+Enter');

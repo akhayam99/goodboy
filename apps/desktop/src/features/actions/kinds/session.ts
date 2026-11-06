@@ -112,7 +112,7 @@ const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean })
 type OpenLensParams = {
   readonly env: ActionEnv;
   readonly sessionId: SessionId;
-  readonly lens: 'review' | 'files' | 'agents' | null;
+  readonly lens: 'review' | 'files' | null;
 };
 
 const openLens = ({ env, sessionId, lens }: OpenLensParams): void => {

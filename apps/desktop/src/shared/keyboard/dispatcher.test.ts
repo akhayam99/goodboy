@@ -68,7 +68,7 @@ describe('shortcut dispatcher on darwin', () => {
 
   it('fires an option letter, which macOS composes into another character', () => {
     const onAgents = vi.fn();
-    bind('lens.agents', onAgents);
+    bind('session.spawned', onAgents);
 
     press({ key: 'å', code: 'KeyA', metaKey: true, altKey: true });
 
@@ -167,7 +167,7 @@ describe('shortcut dispatcher off darwin', () => {
     const onPrev = vi.fn();
     const onAgents = vi.fn();
     bind('session.prev', onPrev);
-    bind('lens.agents', onAgents);
+    bind('session.spawned', onAgents);
 
     press({ key: '{', code: 'BracketLeft', ctrlKey: true, shiftKey: true });
     press({ key: 'A', code: 'KeyA', ctrlKey: true, shiftKey: true, altKey: true });
@@ -276,7 +276,7 @@ describe('typing wins over the lens plane off darwin', () => {
 
   it('still fires the lens combo outside an editable field', () => {
     const onAgents = vi.fn();
-    bind('lens.agents', onAgents);
+    bind('session.spawned', onAgents);
 
     press({ key: 'A', code: 'KeyA', ctrlKey: true, shiftKey: true, altKey: true });
 
@@ -285,7 +285,7 @@ describe('typing wins over the lens plane off darwin', () => {
 
   it('leaves a bare Ctrl+Alt chord to the desktop', () => {
     const onAgents = vi.fn();
-    bind('lens.agents', onAgents);
+    bind('session.spawned', onAgents);
 
     press({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
 
@@ -295,7 +295,7 @@ describe('typing wins over the lens plane off darwin', () => {
   it('keeps the darwin option plane working inside a textarea', () => {
     platform.current = 'darwin';
     const onAgents = vi.fn();
-    bind('lens.agents', onAgents);
+    bind('session.spawned', onAgents);
     const textarea = document.createElement('textarea');
     document.body.appendChild(textarea);
     textarea.focus();

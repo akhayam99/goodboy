@@ -293,7 +293,7 @@ export const BrandContextScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedContextBase({ lens: 'agents' });
+    seedContextBase({ lens: 'workflows' });
     useAppStore.setState({
       selectedAgentId: { [CTX_SESSION_ID]: IMPLEMENT_ID },
       sessionPhaseRuns: { [CTX_SESSION_ID]: AGENTS },

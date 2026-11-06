@@ -1,3 +1,4 @@
+import { resolveRootAgent } from '../../../features/session/agent-kind';
 import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
 import { sessionPlace } from './place';
@@ -59,11 +60,9 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
     ) {
       return sessionPlace({ sessionId, lens: home, agentId: parentAgentId });
     }
-    const runId =
-      home === 'workflows'
-        ? ((state.sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === view.agentId)
-            ?.workflowRunId ?? null)
-        : null;
+    const root = resolveRootAgent({ agents, agentId: view.agentId });
+    const isRunHome = root?.workflowRunId != null && root.stepId != null;
+    const runId = isRunHome ? (agent?.workflowRunId ?? null) : null;
     return sessionPlace({
       sessionId,
       lens: home,

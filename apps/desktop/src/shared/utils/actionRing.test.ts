@@ -36,6 +36,6 @@ describe('actionRing', () => {
     for (const name of ['send prompt fix the refund', 'Rowan', 'a.b.c.d.e.f', 'x'.repeat(60), '']) {
       expect(ring.isActionName({ name })).toBe(false);
     }
-    expect(ring.isActionName({ name: 'lens.agents' })).toBe(true);
+    expect(ring.isActionName({ name: 'session.spawned' })).toBe(true);
   });
 });

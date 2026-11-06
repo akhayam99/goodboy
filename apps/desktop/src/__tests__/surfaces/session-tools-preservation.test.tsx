@@ -88,7 +88,7 @@ describe('session tools rows stay reachable', () => {
     expect(drawerKind()).toBe('ask');
 
     act(() => {
-      useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'agents' }) });
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
     });
     await settle();
     expect(within(tools()).getByRole('button', { name: 'Ask this session' })).toBeDefined();

@@ -391,7 +391,7 @@ describe('report sheet on the real store', () => {
   });
 
   it('says the app hit an error, not that it closed, when it kept running', async () => {
-    bridge.lastCrash = { ...LAST_CRASH, kind: 'error', actions: ['nav.back', 'lens.agents'] };
+    bridge.lastCrash = { ...LAST_CRASH, kind: 'error', actions: ['nav.back', 'session.spawned'] };
     mount();
 
     expect(await screen.findByText('Goodboy hit an error last time')).toBeDefined();
@@ -404,7 +404,7 @@ describe('report sheet on the real store', () => {
       'value',
       'Goodboy hit an error last time',
     );
-    expect(sentText(sheet)).toContain('Last actions: nav.back, lens.agents');
+    expect(sentText(sheet)).toContain('Last actions: nav.back, session.spawned');
   });
 
   it('deletes the saved crash when the toast is dismissed', async () => {

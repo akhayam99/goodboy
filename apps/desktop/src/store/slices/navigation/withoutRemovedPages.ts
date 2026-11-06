@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import type { OpenDrawer } from '../drawer/state';
+import type { LensKind } from '../session-view/types';
 import type { StudioPlace } from './studio';
 import type { Location, SessionTarget } from './types';
 
@@ -22,6 +23,8 @@ type TargetParams = {
 };
 
 const REMOVED_LENSES: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts']);
+
+const RETIRED_RUNS_LENSES: ReadonlySet<string> = new Set(['agents', 'auto']);
 
 const REMOVED_TARGETS: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts', 'agent']);
 
@@ -61,6 +64,18 @@ const targetStillThere = ({ target }: TargetParams): SessionTarget | null => {
   return target;
 };
 
+type LensParams = {
+  readonly lens: LensKind | null;
+};
+
+const lensStillThere = ({ lens }: LensParams): LensKind | null => {
+  const name = String(lens);
+  if (REMOVED_LENSES.has(name)) {
+    return null;
+  }
+  return RETIRED_RUNS_LENSES.has(name) ? 'workflows' : lens;
+};
+
 const withoutRemovedLens = ({ location }: Params): Location => {
   const { place } = location;
   if (place.at !== 'session') {
@@ -69,8 +84,9 @@ const withoutRemovedLens = ({ location }: Params): Location => {
   const { view } = place;
   const lens = String(view.lens);
   const hasRemovedLens = REMOVED_LENSES.has(lens);
+  const nextLens = lensStillThere({ lens: view.lens });
   const target = hasRemovedLens ? null : targetStillThere({ target: view.target });
-  if (!hasRemovedLens && target === view.target) {
+  if (nextLens === view.lens && target === view.target) {
     return location;
   }
   const pane = hasRemovedLens ? paneOfLens({ lens, sessionId: place.sessionId }) : null;
@@ -78,7 +94,7 @@ const withoutRemovedLens = ({ location }: Params): Location => {
     ...location,
     place: {
       ...place,
-      view: { ...view, lens: hasRemovedLens ? null : view.lens, target },
+      view: { ...view, lens: nextLens, target },
     },
     focus: { ...location.focus, drawer: location.focus.drawer ?? pane },
   };

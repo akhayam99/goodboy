@@ -272,7 +272,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents panel',
-        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, lists every agent, run or Auto or yours, in a tree. An agent opens beside it; j and k hop.`,
+        desc: `Agents, or ${shortcutGlyphs('session.spawned')}, shows the tree of the run or Auto you have open, or what is live. An agent opens beside it; j and k hop. It stays open when the page moves.`,
       },
       {
         term: 'Session tools',

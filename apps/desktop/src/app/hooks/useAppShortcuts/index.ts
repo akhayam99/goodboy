@@ -155,8 +155,6 @@ export const useAppShortcuts = ({
     openLens({ sessionId, lens: isLeaving ? null : kind });
   }, []);
 
-  const goToRuns = useCallback(() => goToLens({ kind: 'workflows' }), [goToLens]);
-
   const isExploreSession = useAppStore((state) => {
     const sessionId = state.currentSessionId;
     if (sessionId == null) {
@@ -243,7 +241,6 @@ export const useAppShortcuts = ({
   useShortcut('lens.decisions', () => toggleContext({ tab: 'decisions' }));
   useShortcut('lens.summary', () => toggleContext({ tab: 'summary' }));
   useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
-  useShortcut('lens.agents', goToRuns);
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));
   useShortcut('lens.questions', () => goToLens({ kind: 'questions' }));
   useShortcut('lens.files', () => goToLens({ kind: 'files' }), !isExploreSession);

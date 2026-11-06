@@ -40,7 +40,7 @@ describe('resolvePaletteScope', () => {
   });
 
   it('is the agent only while the agent page is the visible surface', () => {
-    expect(resolvePaletteScope({ ...base, selectedAgentId: AGENT, lens: 'agents' })).toEqual({
+    expect(resolvePaletteScope({ ...base, selectedAgentId: AGENT, lens: 'workflows' })).toEqual({
       kind: 'agent',
       sessionId: SESSION,
       agentId: AGENT,

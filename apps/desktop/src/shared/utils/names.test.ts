@@ -19,7 +19,6 @@ describe('names', () => {
     expect(RUN_AUTONOMY_HEADER).toBe(NAMES.asksYou);
     expect(ROLE_LABEL).toEqual(NAMES.role);
     expect(LENS_LABEL.questions).toBe(NAMES.questions);
-    expect(LENS_LABEL.agents).toBe(NAMES.agents);
     expect(LENS_LABEL.workflows).toBe(NAMES.runs);
     expect(LENS_LABEL.review).toBe(NAMES.comments);
     expect(LENS_LABEL.plans).toBe(NAMES.artifacts);

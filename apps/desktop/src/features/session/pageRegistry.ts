@@ -61,7 +61,7 @@ const CHANGES_PAGE: Page = {
 
 const RUNS_PAGE: Page = {
   ...lensPage({ id: 'runs', lens: 'workflows', shortcut: 'lens.workflows', count: 'runs' }),
-  currentLenses: ['workflows', 'orchestrated', 'agents', 'auto'],
+  currentLenses: ['workflows', 'orchestrated'],
 };
 
 const ARTIFACTS_PAGE = lensPage({
