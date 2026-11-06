@@ -27,6 +27,7 @@ export const useSessionScripts = ({
   );
   const discovered = useAppStore((state) => state.discoveredScripts[sessionId]);
   const scans = useAppStore((state) => state.discoveredScriptScans[sessionId]);
+  const runs = useAppStore((state) => state.scriptRuns[sessionId]);
   const loadDiscoveredScripts = useAppStore((state) => state.loadDiscoveredScripts);
   const pins = useScriptPins({ projectIds: mounts.map((mount) => mount.projectId) });
 
@@ -42,8 +43,8 @@ export const useSessionScripts = ({
   }, [loadDiscoveredScripts, mounts, sessionId, shouldScan]);
 
   const groups = useMemo(
-    () => buildSessionScripts({ mounts, projects, saved, discovered, pins }),
-    [discovered, mounts, pins, projects, saved],
+    () => buildSessionScripts({ mounts, projects, saved, discovered, pins, runs }),
+    [discovered, mounts, pins, projects, runs, saved],
   );
   const isReading = mounts.some(
     (mount) =>
