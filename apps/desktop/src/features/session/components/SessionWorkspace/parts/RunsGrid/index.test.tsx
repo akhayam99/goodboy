@@ -65,6 +65,8 @@ const runsOf = ({ agents, blockedIds = [] }: RunsParams) =>
     rootTurns: {},
     turnByAgentId: new Map(blockedIds.map((id) => [id, BLOCKED])),
     revisingStarts: {},
+    mounts: [],
+    projects: [],
   });
 
 type GridParams = {

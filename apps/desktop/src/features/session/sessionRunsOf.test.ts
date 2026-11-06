@@ -6,10 +6,11 @@ import {
   type AgentId,
   type IsoDateTime,
   type OpenQuestion,
+  type SessionMountView,
   type ProviderRunId,
   type TurnState,
 } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
+import { aProject, anAgent } from '@goodboy/types/testing';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { aDelegation, aView, FIXTURE_NOW, FIXTURE_ROOT } from '../auto/testing/autoViewFixtures';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
@@ -19,6 +20,8 @@ import {
   aNowRun,
   aNowStepAgent,
   aNowWorkflow,
+  NOW_MOUNT_API,
+  NOW_MOUNT_LEDGER,
   NOW_SESSION,
   NOW_STARTED_AT,
   nowModelOf,
@@ -28,6 +31,11 @@ import { buildTimelineStream } from './timeline/buildTimelineStream';
 import { runSpawnedRowsOf } from '../../app/components/SpawnedPanel/runSpawnedRowsOf';
 import { sessionRunCountsOf } from './sessionRunCountsOf';
 import { sessionRunsOf } from './sessionRunsOf';
+import { aMountView } from './testing/aMountView';
+
+const PAYMENTS_PROJECT = aProject({ name: 'payments-api' });
+
+const LEDGER_PROJECT = aProject({ name: 'ledger-core' });
 
 const words = vi.hoisted(() => ({ isRenamed: false }));
 
@@ -52,6 +60,7 @@ type WorldParams = {
   readonly autoViews?: ReadonlyArray<AutoTreeView>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly turns?: ReadonlyMap<string, TurnState>;
+  readonly mounts?: ReadonlyArray<SessionMountView>;
 };
 
 const BLOCKED: TurnState = {
@@ -66,6 +75,7 @@ const runsOf = ({
   autoViews = [],
   questions = [],
   turns = new Map(),
+  mounts = [],
 }: WorldParams) =>
   sessionRunsOf({
     attachedRuns: runs,
@@ -77,6 +87,8 @@ const runsOf = ({
     rootTurns: {},
     turnByAgentId: turns,
     revisingStarts: {},
+    mounts,
+    projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
   });
 
 const presetRun = () =>
@@ -473,5 +485,50 @@ describe('sessionRunsOf auto dot', () => {
 
     expect(before).toEqual(['needsYou', 'running', 'done', 'stopped', 'idle']);
     expect(dotsOf()).toEqual(before);
+  });
+});
+
+describe('the branches a run works on', () => {
+  const API = aMountView({
+    key: 'payments-api',
+    sessionId: NOW_SESSION,
+    projectId: PAYMENTS_PROJECT.id,
+    projectName: 'payments-api',
+    branch: 'fix/duplicate-credit',
+  });
+  const LEDGER = aMountView({
+    key: 'ledger-core',
+    sessionId: NOW_SESSION,
+    projectId: LEDGER_PROJECT.id,
+    projectName: 'ledger-core',
+    branch: 'rec/2-backfill',
+  });
+
+  it('reads every kind of run through the same owner', () => {
+    const plan = orchestratedRun();
+    const agents = [
+      aNowStepAgent({
+        attached: plan,
+        stepIndex: 0,
+        status: 'completed',
+        name: 'Find',
+        mountId: NOW_MOUNT_API,
+      }),
+      aNowStepAgent({ attached: plan, stepIndex: 1, status: 'running', name: 'Center' }),
+      { ...autoRoot({ status: 'running' }), mountId: NOW_MOUNT_LEDGER },
+      handScout({ status: 'completed' }),
+    ];
+    const runs = runsOf({
+      runs: [plan],
+      agents,
+      autoViews: [aView({ phase: 'waiting' })],
+      mounts: [API, LEDGER],
+    });
+    const branchesOf = (kind: string) =>
+      runs.find((run) => run.kind === kind)?.branches.map((branch) => branch.branch);
+
+    expect(branchesOf('orchestrated')).toEqual(['fix/duplicate-credit']);
+    expect(branchesOf('auto')).toEqual(['rec/2-backfill']);
+    expect(branchesOf('agent')).toEqual([]);
   });
 });

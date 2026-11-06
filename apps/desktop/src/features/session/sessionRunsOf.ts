@@ -2,6 +2,7 @@ import type {
   Agent,
   AgentId,
   OpenQuestion,
+  SessionMountView,
   TurnEvent,
   TurnState,
   WorkflowRunId,
@@ -27,6 +28,7 @@ import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
 import { agentCountLabelOf } from './agentCountLabelOf';
 import { descendantAgentsOf } from './descendantAgentsOf';
 import { runAgentCountOf } from './runAgentCountOf';
+import { workBranchesOf, type WorkBranch, type WorkBranchProject } from './workBranchesOf';
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
 
@@ -57,7 +59,10 @@ export type SessionRun = Readonly<{
   revisingSince: number | null;
   agentIds: ReadonlyArray<AgentId>;
   open: SessionRunOpen;
+  branches: ReadonlyArray<WorkBranch>;
 }>;
+
+type SessionRunRow = Omit<SessionRun, 'branches'>;
 
 type Params = {
   readonly attachedRuns: ReadonlyArray<AttachedRun>;
@@ -69,6 +74,8 @@ type Params = {
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
   readonly turnByAgentId: ReadonlyMap<string, TurnState>;
   readonly revisingStarts: Readonly<Record<string, number>>;
+  readonly mounts: ReadonlyArray<SessionMountView>;
+  readonly projects: ReadonlyArray<WorkBranchProject>;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -133,7 +140,7 @@ const workflowRowsOf = ({
   orchestrating,
   questions,
   revisingStarts,
-}: WorkflowRowsParams): ReadonlyArray<SessionRun> => {
+}: WorkflowRowsParams): ReadonlyArray<SessionRunRow> => {
   const { agentsByRunId } = splitWorkflowRuns({ attachedRuns, agents });
   const nameByRunId = new Map(
     attachedRuns.map(({ run, workflow }) => [run.id, run.title ?? workflowKindName({ workflow })]),
@@ -212,7 +219,7 @@ type AutoRowParams = {
   readonly rootTurns: Params['rootTurns'];
 };
 
-const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRun => {
+const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRunRow => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
   const resting: Pick<AutoTreeWord, 'state' | 'word'> =
     root.status === 'running'
@@ -254,7 +261,7 @@ type AgentRowParams = {
   readonly turn: TurnState | undefined;
 };
 
-const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): SessionRun => {
+const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): SessionRunRow => {
   const state = agentStateOf({
     agent,
     turn,
@@ -314,6 +321,8 @@ export const sessionRunsOf = ({
   rootTurns,
   turnByAgentId,
   revisingStarts,
+  mounts,
+  projects,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -332,5 +341,10 @@ export const sessionRunsOf = ({
     ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingStarts }),
     ...autoRows,
     ...agentRows,
-  ].sort(compareRuns);
+  ]
+    .map((row) => ({
+      ...row,
+      branches: workBranchesOf({ agentIds: row.agentIds, agents, mounts, projects }),
+    }))
+    .sort(compareRuns);
 };
