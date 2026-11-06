@@ -370,7 +370,10 @@ decisions ledger holds a change you have not marked as read
 did yourself and what came and went unseen). Opening or closing the drawer does
 not mark anything as read: only **Mark as read** does (`markContextRead`). A
 session never looked at starts its baseline the first time it loads, so the
-rows it already had never read as new. The chip shows
+rows it already had never read as new. The last read is taken again from the database
+when the drawer opens and when the window gets focus (`loadSessionContextSeen`, called
+from `useViewedOnReturn`), and only ever moves forward, so **Mark as read** in one window
+clears the marks and the tool dot in the other. The chip shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's **Context updates** row. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary`, and a saved drawer that
@@ -393,20 +396,22 @@ column), **Change model** (Settings, Providers, Models, scrolled to Step summari
 and **Update now**. Update now queues a consolidation pass through
 `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is queued.
-Summary drops its State block: the glance line on the Overview says it (`summaryStateOf`).
+Summary draws its State block only when the State holds more than the sentence the glance line on the Overview shows (`summaryStateOf`, `stateBodyHasMore`), so the line opens onto the rest and never onto a repeat.
 
 Every card reads as labelled blocks (`ContextBlock`: a flat group with an
 eyebrow title, an icon and a count). A block shows its key line first and
 folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
 body into items, one per top-level bullet with its sub-bullets, or one per
-sentence for prose. Summary shows Next and Learned, then any section the
-summarizer did not name; State and Open questions are left out because the glance
-line and Needs you already say them, and **Edit** on the card still shows the whole
-document. Goal is one block with the card menu in its header.
+sentence for prose. Summary shows State when it says more than the glance line, then Next
+and Learned, then any section the summarizer did not name; Open questions are left out
+because Needs you already says them, and **Edit** on the card still shows the whole
+document. Goal is one block with the card menu in its header, also while it is empty,
+loading or being edited (Edit and Versions are off while a draft is open).
 
 The Decisions card reads the decisions ledger ([turns.md](../turns.md#the-decisions-ledger))
-as one list. A row that changed since you last read (`sessionDecisionsBaseline`, the
-`context_seen_at` captured when the drawer opened) sorts first and carries its own
+as one list. A row that changed since you last read (`selectContextBaseline`: the
+`sessionDecisionsBaseline` captured when the drawer opened, else `context_seen_at`, so a
+restored drawer, an old address or a search hit shows the marks too) sorts first and carries its own
 mark: `Added`, `Replaced by 7`, `Withdrawn` or `Reworded` (`decisionChangeLabelOf`),
 and a replaced or withdrawn row stays struck through until you read it. **Mark as
 read** in the card header (`MarkContextRead`) moves the marker to the moment of the

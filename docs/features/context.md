@@ -19,7 +19,7 @@ Read the reason behind a decision without opening the run. When Goodboy records 
 
 ### Running summary
 
-Hand the next agent where things stand. After a reply the drawer shows **Next** and **Learned**. Open questions stay on the Overview. The Overview owns the State sentence and calls its age **Updated**. Copied context and agent prompts keep the complete summary.
+Hand the next agent where things stand. After a reply the drawer shows **Next** and **Learned**, and **State** when it says more than the one sentence the Overview shows. Open questions stay on the Overview. The Overview owns the State sentence and calls its age **Updated**. Copied context and agent prompts keep the complete summary.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-dark.webp">
@@ -58,5 +58,5 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 ## Under the hood
 
 - Decision marks: `DecisionsSection` renders one list and `markContextRead` clears marks after persistence.
-- Summary: `summaryDisplayBlocks` hides State, `summaryStateOf` owns its Overview sentence, and `shareableContext` keeps the complete text.
+- Summary: `summaryDisplayBlocks` draws State only when `stateBodyHasMore` says it exceeds the sentence, `summaryStateOf` owns its Overview sentence, and `shareableContext` keeps the complete text.
 - Card controls: `SlotSourceActions` keeps the three menu entries together.

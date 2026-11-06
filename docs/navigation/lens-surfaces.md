@@ -34,7 +34,9 @@
   role), and the age; there is no answer or asker column. Answered folds behind its count
   (Show and Hide on its heading) once nothing waits, and stays open while something does or
   while the open question is one of its rows. The first Needs you row takes keyboard focus
-  when the page opens, once, and only when nothing else has focus and no question is open. A blocking ask is one warning dot in the leading cell. The row
+  when the page opens, once, and only when nothing else has focus (the pane title that
+  `PaneSwap` focuses first counts as free) and no question is open; a later rerender never
+  takes focus back. A blocking ask is one warning dot in the leading cell. The row
   opens the question on its address: Questions with that question open, the `question`
   target of the session address (`questionPlace`, one function for every door: a run row's
   Answer, a Needs you row, the run menu, a search hit, an Ask chip, the board, the
@@ -232,7 +234,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
-  Provider entries open **Link work**; a provider list address restores to Overview.
+  Provider entries open **Link work** on that provider (the event carries the source), unfold a folded session rail first, and are not offered on an archived session; a provider list address restores to Overview.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It
   draws the shared page header (`PaneShell` `page="explore"` inside the

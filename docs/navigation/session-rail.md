@@ -242,10 +242,10 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   title before it truncates (`BranchRowLine`). Rebase actions live on the
   Branch page; Rebase all stays on the Projects header. A branch is one row
   and has no rows under it: its five pages (Pull request, or Merge request on
-  GitLab, Comments, Files, Commits, Checks) are the tab strip under the title
+  GitLab, Comments, Changes, Commits, Checks) are the tab strip under the title
   of the Branch page, each tab with its count from `worktreeEntryFactsOf`. The
   row carries the one pill, and the failing count in it is the number the
-  Checks tab shows (`checksCountsOf`). Files opens the diff in the center,
+  Checks tab shows (`checksCountsOf`). Changes opens the diff in the center,
   whose changed file list sits in its own rail on the right of that page,
   never in the session rail. The branch switch (Switch branch…), Link work to this branch, Copy
   branch name, Copy path, Open in editor, Close branch and the rest are the
