@@ -13,7 +13,19 @@ type Params = {
 };
 
 export const useArtifactGenerations = ({ sessionId, agents, artifacts, openQuestions }: Params) => {
-  const verifications = useAppStore((s) => s.wireframeScoutVerification);
+  const verificationList = useAppStore(
+    useShallow((s) => agents.map((agent) => s.wireframeScoutVerification[agent.id])),
+  );
+  const verifications = useMemo(
+    () =>
+      Object.fromEntries(
+        agents.flatMap((agent, index) => {
+          const verification = verificationList[index];
+          return verification === undefined ? [] : [[agent.id, verification] as const];
+        }),
+      ),
+    [agents, verificationList],
+  );
   const turnKinds = useAppStore(
     useShallow((s) => agents.map((agent) => s.agentTurnState[agent.id]?.kind ?? null)),
   );

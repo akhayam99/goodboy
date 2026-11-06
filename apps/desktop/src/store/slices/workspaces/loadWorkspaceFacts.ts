@@ -50,14 +50,15 @@ const readMovingAutoViews = async ({
       .filter((sessionId) => wanted.has(sessionId)),
   );
   const settled = await Promise.allSettled(
-    [...moving].map(
-      async (sessionId) => [sessionId, await readAutoTreeViews({ db, sessionId })] as const,
-    ),
+    [...moving].map(async (sessionId): Promise<readonly [string, ReadonlyArray<AutoTreeView>]> => [
+      sessionId,
+      await readAutoTreeViews({ db, sessionId }),
+    ]),
   );
   const failed = settled.find((result) => result.status === 'rejected');
   const resting = sessionIds
     .filter((sessionId) => !moving.has(sessionId))
-    .map((sessionId) => [sessionId, [] as ReadonlyArray<AutoTreeView>] as const);
+    .map((sessionId): readonly [string, ReadonlyArray<AutoTreeView>] => [sessionId, []]);
   return {
     views: Object.fromEntries([
       ...resting,
