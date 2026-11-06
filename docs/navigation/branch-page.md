@@ -52,9 +52,11 @@ and `Fix checks` starts one Debugger at the first press, its tooltip naming the 
 While a fix run or a check agent works, a line under the tabs says what runs, with `Stop`
 (`BranchWorkLines`; the Comments tab keeps its own run line). One agent works per branch: a check
 agent live on any check of the mount (`liveCheckWorkOf`, read from the agent rows, so a second window
-sees it too) draws the work line and no fill, and the other doors that start an agent (row Analyze,
+sees it too; a fixer that ended never counts, even while its commit is unread) draws the work line and no fill, and the other doors that start an agent (row Analyze,
 the Overview card, the Fix comments launch, the Debugger and Implementer runners) stay disabled with
-the name of what runs. A push that runs, a stop that is open or a queued request keeps the push
+the name of what runs. The `Push` row of `Branch actions` takes the same route as the header push
+(`pushFromMenu`): with an accepted fix waiting it is the review push, so the replies go with the commit.
+A push that runs, a stop that is open or a queued request keeps the push
 (and a `Retry push` there) in the secondary alone, with no primary beside it; `Publish N replies`
 stays reachable in the queue. On someone else's open request the step is `Review`
 (`pullRequest.writeReview`). A merged request ends the walk: `Remove worktree` while the folder is

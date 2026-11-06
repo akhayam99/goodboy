@@ -1192,7 +1192,6 @@
     "apps/desktop/src/store/slices/agents/markAllAgentsSeen.ts": 1,
     "apps/desktop/src/store/slices/agents/renameAgent.ts": 1,
     "apps/desktop/src/store/slices/agents/selectAgent.ts": 3,
-    "apps/desktop/src/store/slices/agents/selectCheckChain.ts": 1,
     "apps/desktop/src/store/slices/agents/selectFixOffers.ts": 1,
     "apps/desktop/src/store/slices/agents/selectors.ts": 4,
     "apps/desktop/src/store/slices/agents/setAgentAttachments.ts": 1,
