@@ -28,7 +28,6 @@ import { SummarySection } from './SummarySection';
 import { VersionsView } from './VersionsView';
 import { ContextUpdates } from './ContextUpdates';
 import { ContextLoadFailure } from './ContextLoadFailure';
-import { hasDecisionChanges } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { MarkContextRead } from './MarkContextRead';
 import { ContextSection } from './ContextSection';
 import { slotVisibility, youOnlyVisibility } from './roleVisibility';
@@ -214,9 +213,7 @@ export const ContextDrawer = ({
         <ContextSection
           section="decisions"
           count={activeDecisionCount}
-          action={
-            hasDecisionChanges(changes) ? <MarkContextRead sessionId={sessionId} /> : undefined
-          }
+          action={<MarkContextRead sessionId={sessionId} changes={changes} />}
           visibility={visibilityOf({ section: 'decisions' })}
           isLocked={isLocked}
           historyCount={decisionsHistory}

@@ -89,12 +89,12 @@ describe('Context from the session tools', () => {
     await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
   });
 
-  it('leaves the State sentence to Overview and keeps the complete context for copying', async () => {
+  it('draws State beyond the Overview sentence and keeps the complete context for copying', async () => {
     mount();
     toggle();
     const drawer = await screen.findByRole('region', { name: 'Context' });
     const summary = within(drawer).getByRole('region', { name: 'Summary' });
-    expect(within(summary).queryByRole('region', { name: 'State' })).toBeNull();
+    within(summary).getByRole('region', { name: 'State' });
     within(summary).getByRole('region', { name: 'Next' });
     within(summary).getByRole('region', { name: 'Learned' });
     screen.getByRole('button', { name: 'Copy context' });
