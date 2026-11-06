@@ -52,6 +52,14 @@ vi.mock('../features/worktree/worktree', async () =>
 vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
 vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
+const { announceDataChanged } = vi.hoisted(() => ({
+  announceDataChanged: vi.fn(async (_params: unknown) => undefined),
+}));
+vi.mock('../shared/lib/dataChanged', () => ({
+  announceDataChanged,
+  listenDataChanged: async () => () => undefined,
+}));
+
 const SESSION_ID = brandId<SessionId>({ value: 'session-fallback-1' });
 const AGENT_A = brandId<AgentId>({ value: 'agent-fallback-a' });
 const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-fallback' });
@@ -157,6 +165,24 @@ describe('sendTurn, provider failure fallback', () => {
     ).toHaveLength(0);
     expect(transcript.filter((event) => event.kind === 'user_text')).toHaveLength(1);
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).not.toBe('error');
+  });
+
+  it('tells the other windows when the turn settles, after a fallback too', async () => {
+    setup();
+    announceDataChanged.mockClear();
+    storySpies.runTurn.mockImplementationOnce(async function* () {
+      throw new Error('rate limit exceeded for this account');
+    });
+
+    await useAppStore
+      .getState()
+      .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
+
+    await vi.waitFor(() =>
+      expect(announceDataChanged).toHaveBeenCalledExactlyOnceWith({
+        change: { kind: 'agent-turn', sessionId: SESSION_ID, agentId: AGENT_A },
+      }),
+    );
   });
 
   describe('over a permission ask', () => {

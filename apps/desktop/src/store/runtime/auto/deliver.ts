@@ -35,8 +35,8 @@ import type { OwnTurns } from './createOwnTurns';
 import { chooseDeliveryRows } from './deliveryRows';
 import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
+import { userOnceAllowsOf } from '../../slices/permissions/userOnceAllowsOf';
 import { userImagesOf } from './userImagesOf';
-import { userOnceAllowsOf } from './userOnceAllowsOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type DeliverParams = Readonly<{

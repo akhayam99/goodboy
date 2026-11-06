@@ -1,6 +1,6 @@
 import { isUserPayload } from '@goodboy/core/auto';
 import type { AutoOutboxRow } from '@goodboy/db';
-import { scopedReadGrantsOf } from '../../slices/permissions/scopedReadGrantsOf';
+import { scopedReadGrantsOf } from './scopedReadGrantsOf';
 
 type Params = {
   readonly rows: ReadonlyArray<Pick<AutoOutboxRow, 'payload'>>;

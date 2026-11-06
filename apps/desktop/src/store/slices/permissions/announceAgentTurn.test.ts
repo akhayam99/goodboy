@@ -1,36 +1,84 @@
-// @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { brandId, type AgentId, type SessionId } from '@goodboy/types';
+// @vitest-environment happy-dom
 
-const { announceDataChanged, turnEventsSaved } = vi.hoisted(() => ({
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type TurnEvent,
+} from '@goodboy/types';
+
+const { announceDataChanged, insertTurnEventsBatch } = vi.hoisted(() => ({
   announceDataChanged: vi.fn(async (_params: unknown) => undefined),
-  turnEventsSaved: vi.fn(async () => undefined),
+  insertTurnEventsBatch: vi.fn(async (): Promise<void> => undefined),
 }));
 
-vi.mock('../../../shared/lib/dataChanged', () => ({ announceDataChanged }));
-vi.mock('../transcripts/queue', () => ({ turnEventsSaved }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../storyHarness')).dbModuleMock({ insertTurnEventsBatch }),
+);
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
+vi.mock('../../../shared/lib/dataChanged', () => ({
+  announceDataChanged,
+  listenDataChanged: async () => () => undefined,
+}));
 
-import { announceAgentTurn } from './announceAgentTurn';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../storyHarness';
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-ledger' });
 const AGENT_ID = brandId<AgentId>({ value: 'agent-ledger' });
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-ledger' });
+const AT = brandId<IsoDateTime>({ value: '2026-11-06T10:00:00.000Z' });
 
-describe('announceAgentTurn', () => {
-  beforeEach(() => {
-    announceDataChanged.mockClear();
-  });
+const decision = ({ decidedBy }: { readonly decidedBy: 'user' | 'engine' }): TurnEvent => ({
+  kind: 'permission_decision',
+  runId: RUN_ID,
+  toolUseId: 'tool-migrate',
+  decision: 'allow',
+  ruleId: null,
+  decidedBy,
+  at: AT,
+});
 
-  it('tells the other windows only after the events are saved', async () => {
+let store: StoryStore;
+
+beforeAll(async () => {
+  store = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  announceDataChanged.mockClear();
+  insertTurnEventsBatch.mockReset();
+  insertTurnEventsBatch.mockResolvedValue(undefined);
+});
+
+describe('telling the other windows about an answer', () => {
+  it('waits until the decision is saved', async () => {
     let save: () => void = () => undefined;
-    turnEventsSaved.mockImplementationOnce(
+    insertTurnEventsBatch.mockImplementationOnce(
       () =>
-        new Promise<undefined>((resolve) => {
-          save = () => resolve(undefined);
+        new Promise<void>((resolve) => {
+          save = resolve;
         }),
     );
 
-    announceAgentTurn({ sessionId: SESSION_ID, agentId: AGENT_ID });
-    await Promise.resolve();
+    store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, decision({ decidedBy: 'user' }));
+    await vi.waitFor(() => expect(insertTurnEventsBatch).toHaveBeenCalledOnce());
     expect(announceDataChanged).not.toHaveBeenCalled();
 
     save();
@@ -40,5 +88,12 @@ describe('announceAgentTurn', () => {
         change: { kind: 'agent-turn', sessionId: SESSION_ID, agentId: AGENT_ID },
       }),
     );
+  });
+
+  it('says nothing about a decision of the engine', async () => {
+    store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, decision({ decidedBy: 'engine' }));
+
+    await vi.waitFor(() => expect(insertTurnEventsBatch).toHaveBeenCalledOnce());
+    expect(announceDataChanged).not.toHaveBeenCalled();
   });
 });
