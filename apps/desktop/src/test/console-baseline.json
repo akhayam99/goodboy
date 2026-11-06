@@ -61,10 +61,6 @@
       "message": "[role-models] invalid scout model gpt-#.#-sol for cursor; using the anthropic default model"
     },
     {
-      "file": "src/store/slices/workflows/suggestWorkflowTitle.test.ts",
-      "message": "[workflow] title suggestion failed: provider unavailable"
-    },
-    {
       "file": "src/store/slices/turn/turnHelpers.artifact-capture.test.ts",
       "message": "[artifact-capture] artifact refresh failed for session session-#: artifact list unavailable"
     }

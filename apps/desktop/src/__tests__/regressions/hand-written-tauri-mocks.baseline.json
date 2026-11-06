@@ -394,7 +394,6 @@
   "apps/desktop/src/store/slices/workflows/retryWorkflowOrchestration.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/setWorkflowRunSpendLimit.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": 1,
-  "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.test.ts": 1,
   "apps/desktop/src/store/slices/workflowStudio/startWorkflowGeneration.test.ts": 1

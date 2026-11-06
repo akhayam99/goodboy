@@ -1910,7 +1910,6 @@
     "apps/desktop/src/store/slices/workflows/startWorkflowRun.ts": 1,
     "apps/desktop/src/store/slices/workflows/stepSummaryNotice.ts": 2,
     "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.ts": 1,
-    "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts": 2,
     "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.ts": 2,
     "apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts": 1,
     "apps/desktop/src/store/slices/workflows/sweepIdleRuns.ts": 1,

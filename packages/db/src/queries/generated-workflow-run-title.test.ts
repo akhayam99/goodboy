@@ -81,8 +81,8 @@ describe('a generated run title', () => {
       title: 'Title: the user asked for a',
     });
 
-    expect(written).toBe('move patient settings');
-    expect(await storedTitleOf({ db })).toBe('move patient settings');
+    expect(written).toBe('Move patient settings under /patient/settings');
+    expect(await storedTitleOf({ db })).toBe('Move patient settings under /patient/settings');
   });
 
   it('writes nothing when the reply and the ask are both empty', async () => {
@@ -112,7 +112,7 @@ describe('a run title read from the database', () => {
       RUN,
     ]);
 
-    expect(await storedTitleOf({ db })).toBe('move patient settings');
+    expect(await storedTitleOf({ db })).toBe('Move patient settings under /patient/settings');
   });
 
   it('reads a stored Title label and quotes as the bare title', async () => {

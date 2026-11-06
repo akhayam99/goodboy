@@ -1,86 +1,10 @@
-const ACTION_VERBS = new Set([
-  'fix',
-  'add',
-  'refactor',
-  'debug',
-  'update',
-  'implement',
-  'create',
-  'remove',
-  'delete',
-  'rename',
-  'test',
-  'write',
-  'move',
-  'build',
-  'migrate',
-  'deploy',
-  'review',
-  'setup',
-  'check',
-  'parse',
-  'convert',
-  'extract',
-  'generate',
-  'optimize',
-  'improve',
-  'change',
-  'replace',
-  'integrate',
-  'configure',
-  'wire',
-  'hook',
-  'expose',
-  'patch',
-  'bump',
-  'clean',
-  'lint',
-  'format',
-]);
-
-const STOP_WORDS = new Set([
-  'a',
-  'an',
-  'the',
-  'in',
-  'on',
-  'at',
-  'to',
-  'for',
-  'of',
-  'and',
-  'or',
-  'is',
-  'are',
-  'was',
-  'be',
-  'with',
-  'from',
-  'by',
-  'as',
-  'i',
-  'me',
-  'my',
-  'you',
-  'your',
-  'it',
-  'its',
-  'this',
-  'that',
-  'can',
-  'could',
-  'would',
-  'should',
-  'please',
-  'make',
-  'do',
-  'let',
-  'want',
-  'need',
-  'help',
-]);
-
 const CODE_FENCE = '```';
+
+const MAX_TITLE_WORDS = 10;
+
+const MAX_TITLE_LENGTH = 60;
+
+const CLAUSE_END = /[.,;:!?](?:\s|$)/;
 
 type PromptParams = {
   readonly prompt: string;
@@ -94,26 +18,37 @@ const withoutCodeFences = ({ prompt }: PromptParams): string => {
     .join(' ');
 };
 
-export const heuristicAgentTitle = ({ prompt }: PromptParams): string | null => {
-  const clean = withoutCodeFences({ prompt })
+const firstLineOf = ({ prompt }: PromptParams): string => {
+  const lines = withoutCodeFences({ prompt })
+    .slice(0, 600)
     .replace(/`[^`]+`/g, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
     .replace(/[*_#>\[\]]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim());
+  return lines.find((line) => line.length > 0) ?? '';
+};
 
-  const first = clean.slice(0, 300).split('\n')[0] ?? '';
-  const words = first.toLowerCase().split(/\s+/).filter(Boolean);
+const firstClauseOf = ({ prompt }: PromptParams): string => {
+  const end = prompt.search(CLAUSE_END);
+  const clause = end > 0 ? prompt.slice(0, end).trim() : prompt;
+  return clause.length > 0 ? clause : prompt;
+};
 
-  const verbIdx = words.findIndex((w) => ACTION_VERBS.has(w));
-  if (verbIdx !== -1) {
-    const slice = words.slice(verbIdx, verbIdx + 6);
-    const significant = slice.filter((w, i) => i === 0 || !STOP_WORDS.has(w)).slice(0, 3);
-    if (significant.length >= 2) {
-      return significant.join(' ');
-    }
+const cutOnWord = ({ prompt }: PromptParams): string => {
+  const words = prompt.split(' ').slice(0, MAX_TITLE_WORDS).join(' ');
+  if (words.length <= MAX_TITLE_LENGTH) {
+    return words;
   }
+  const lastSpace = words.lastIndexOf(' ', MAX_TITLE_LENGTH);
+  return words.slice(0, lastSpace > 0 ? lastSpace : MAX_TITLE_LENGTH).trimEnd();
+};
 
-  const significant = words.filter((w) => !STOP_WORDS.has(w)).slice(0, 3);
-  return significant.length >= 2 ? significant.join(' ') : null;
+export const heuristicAgentTitle = ({ prompt }: PromptParams): string | null => {
+  const clause = firstClauseOf({ prompt: firstLineOf({ prompt }) });
+  const title = cutOnWord({ prompt: clause });
+  if (title.length === 0) {
+    return null;
+  }
+  return `${title.charAt(0).toUpperCase()}${title.slice(1)}`;
 };

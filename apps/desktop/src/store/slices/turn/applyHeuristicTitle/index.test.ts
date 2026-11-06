@@ -150,9 +150,9 @@ describe('applyHeuristicTitle', () => {
       prompt: 'Implement a secure authentication flow',
     });
 
-    expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+    expect(harness.read().sessions[0]?.goal).toBe('Implement a secure authentication flow');
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe(
-      'implement secure authentication',
+      'Implement a secure authentication flow',
     );
   });
 
@@ -186,7 +186,7 @@ describe('applyHeuristicTitle', () => {
       ...harness,
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
-      prompt: 'fix it',
+      prompt: '`only code`',
     });
 
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('Fix login crash');
@@ -206,7 +206,7 @@ describe('applyHeuristicTitle', () => {
       get,
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
-      prompt: 'fix it',
+      prompt: '`only code`',
     });
 
     expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe('agent 2');
@@ -295,7 +295,7 @@ describe('applyHeuristicTitle', () => {
       prompt: 'Implement a secure authentication flow',
     });
 
-    expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+    expect(harness.read().sessions[0]?.goal).toBe('Implement a secure authentication flow');
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'failed to persist generated session title',
       expect.any(Error),
@@ -375,9 +375,9 @@ describe('applyHeuristicTitle', () => {
       await vi.advanceTimersByTimeAsync(15_000);
       await expect(pending).resolves.toBeUndefined();
 
-      expect(harness.read().sessions[0]?.goal).toBe('implement secure authentication');
+      expect(harness.read().sessions[0]?.goal).toBe('Implement a secure authentication flow');
       expect(harness.read().sessionPhaseRuns[SESSION_ID]?.[0]?.name).toBe(
-        'implement secure authentication',
+        'Implement a secure authentication flow',
       );
     } finally {
       vi.useRealTimers();

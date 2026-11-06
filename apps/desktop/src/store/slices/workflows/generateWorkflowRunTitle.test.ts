@@ -102,15 +102,17 @@ describe('generateWorkflowRunTitle', () => {
       stderr: '',
       exitCode: 0,
     });
-    updateGeneratedTitleSpy.mockResolvedValue('login page loops');
+    updateGeneratedTitleSpy.mockResolvedValue(
+      'The login page loops back to itself after the OAuth',
+    );
     const { generate, currentRun } = buildHarness();
 
     await generate();
 
     expect(updateGeneratedTitleSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'login page loops' }),
+      expect.objectContaining({ title: 'The login page loops back to itself after the OAuth' }),
     );
-    expect(currentRun()?.title).toBe('login page loops');
+    expect(currentRun()?.title).toBe('The login page loops back to itself after the OAuth');
   });
 
   it('skips a run that has no goal to name it from', async () => {

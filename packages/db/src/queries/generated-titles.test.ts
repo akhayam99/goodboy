@@ -76,7 +76,7 @@ describe('run titles on read', () => {
       runId,
     ]);
 
-    expect(await readRunTitle({ db })).toBe('fix login redirect');
+    expect(await readRunTitle({ db })).toBe('Fix the login redirect loop');
     expect(await readStoredRunTitle({ db })).toBe(THINKING_ALOUD);
   });
 
@@ -99,8 +99,8 @@ describe('run titles on read', () => {
       title: 'Auto routed to Claude Haiku',
     });
 
-    expect(written).toBe('fix login redirect');
-    expect(await readStoredRunTitle({ db })).toBe('fix login redirect');
+    expect(written).toBe('Fix the login redirect loop');
+    expect(await readStoredRunTitle({ db })).toBe('Fix the login redirect loop');
   });
 });
 

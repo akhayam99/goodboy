@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseGeneratedTitle } from './parseGeneratedTitle';
 
 const ASK = 'Fix the ledger export so it finishes in under five seconds';
-const DERIVED = 'fix ledger export';
+const DERIVED = 'Fix the ledger export so it finishes in under five';
 
 const parse = (result: string, ask = ASK): string =>
   parseGeneratedTitle({ providerId: 'anthropic', stdout: JSON.stringify({ result }), ask });
@@ -17,8 +17,12 @@ describe('parseGeneratedTitle', () => {
     expect(parse('Sure.\n<title>Block double credits</title>\nDone.')).toBe('Block double credits');
   });
 
-  it('caps a tagged title at six words', () => {
-    expect(parse('<title>Fix the flaky summarizer parser regression now</title>')).toBe(
+  it('rejects a tagged title over six words and uses the goal', () => {
+    expect(parse('<title>Fix the flaky summarizer parser regression now</title>')).toBe(DERIVED);
+  });
+
+  it('keeps a tagged title of exactly six words', () => {
+    expect(parse('<title>Fix the flaky summarizer parser regression</title>')).toBe(
       'Fix the flaky summarizer parser regression',
     );
   });

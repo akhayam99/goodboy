@@ -12,10 +12,9 @@ type Params = {
 
 export const parseGeneratedTitle = ({ providerId, stdout, ask }: Params): string => {
   const text = extractAuxOutput({ providerId, stdout }).text;
-  const title = titleInTag({ text })
+  const words = titleInTag({ text })
     .split(/\s+/)
-    .filter((word) => word.length > 0)
-    .slice(0, MAX_TITLE_WORDS)
-    .join(' ');
+    .filter((word) => word.length > 0);
+  const title = words.length > MAX_TITLE_WORDS ? '' : words.join(' ');
   return cleanWorkflowRunTitle({ title, goal: ask });
 };
