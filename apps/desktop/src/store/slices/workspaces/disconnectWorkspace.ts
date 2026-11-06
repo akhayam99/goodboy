@@ -2,7 +2,7 @@ import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { disconnectWorkspaceAndProjects } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
-import { stopLiveWork } from '../../runtime/live-work/stopLiveWork';
+import { stopWork } from '../../runtime/live-work/stopWork';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
@@ -16,7 +16,7 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
 
     const wasCurrentWorkspace = state.currentWorkspaceId === id;
     if (wasCurrentWorkspace) {
-      await stopLiveWork({ get });
+      await stopWork({ getState: get, scope: { kind: 'all' }, reason: 'leave' });
       const termSessions = state.sessions.filter(
         (s) => state.terminalSessions[s.id as SessionId] === 'open',
       );

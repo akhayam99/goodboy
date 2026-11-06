@@ -38,7 +38,7 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
-import { stopLiveWork } from '../../runtime/live-work/stopLiveWork';
+import { stopWork } from '../../runtime/live-work/stopWork';
 import { createLatestOnly } from '../../runtime/state-writes/latestOnly';
 import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import { storedAgentKind, type AgentKind } from '../../../features/session/agent-kind';
@@ -409,7 +409,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
     switchEpoch.value += 1;
     const isOpeningAnother = id != null && id !== get().currentWorkspaceId;
     beginWorkspaceSwitch({ set, id: isOpeningAnother ? id : null });
-    await stopLiveWork({ get });
+    await stopWork({ getState: get, scope: { kind: 'all' }, reason: 'leave' });
     if (!claimed.isCurrent()) {
       return;
     }

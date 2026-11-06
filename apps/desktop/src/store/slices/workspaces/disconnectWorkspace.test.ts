@@ -78,9 +78,14 @@ describe('disconnectWorkspace stops all live work', () => {
   const disconnect = () =>
     disconnectWorkspace(useAppStore.setState, useAppStore.getState)(workspace.id);
 
-  it('cancels a blocked turn by its run id and stops a deciding workflow run', async () => {
+  it('stops a blocked turn as stopped by you and stops a deciding workflow run', async () => {
     const waiting = aSession({ workspaceId: workspace.id });
     const agent = anAgent({ sessionId: waiting.id });
+    storySpies.invokeAgentUpdateStatus.mockResolvedValue({
+      ...agent,
+      status: 'stopped',
+      stoppedBy: 'you',
+    });
     const run = aWorkflowRun();
     const deciding = aSession({ workspaceId: workspace.id, workflowRuns: [run] });
     useAppStore.setState({
@@ -100,6 +105,10 @@ describe('disconnectWorkspace stops all live work', () => {
     await disconnect();
 
     expect(storySpies.cancelTurn).toHaveBeenCalledWith('run-blocked');
+    expect(storySpies.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      agent.id,
+      expect.objectContaining({ status: 'stopped', stoppedBy: 'you' }),
+    );
     expect(stopWorkflowRunNow).toHaveBeenCalledWith(deciding.id, run.id);
   });
 

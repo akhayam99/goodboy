@@ -264,6 +264,48 @@ describe('stopWork', () => {
     await pending;
   });
 
+  it('leaving a workspace mid reply reads Stopped by you, never Done, and adds no provider error', async () => {
+    const hold = gate();
+    const live = new Set<string>();
+    storySpies.listLiveRunIds.mockImplementation(async () => live);
+    storySpies.cancelTurn.mockImplementation(async () => {
+      live.clear();
+      hold.open();
+    });
+    storySpies.runTurn.mockImplementation(() =>
+      (async function* silent(): AsyncIterable<TurnEvent> {
+        await hold.opened;
+      })(),
+    );
+    const append = vi.spyOn(useAppStore.getState(), 'appendTurnEvent');
+    const pending = useAppStore.getState().sendTurn({
+      sessionId,
+      agentId,
+      content: 'Reconcile the Harborline ledger export',
+    });
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().agentTurnState[agentId]?.kind).toBe('running'),
+    );
+    live.add(runningRunId());
+
+    const result = await stopWork({
+      getState: useAppStore.getState,
+      scope: { kind: 'all' },
+      reason: 'leave',
+    });
+    await pending;
+
+    expect(result).toEqual({ stopped: 1, stillRunning: 0 });
+    expect(await agentStatus()).toBe('stopped');
+    const stoppedBy = await rowsOf<{ stopped_by: string | null }>({
+      sql: 'SELECT stopped_by FROM agents WHERE id = ?',
+      params: [agentId],
+    });
+    expect(stoppedBy[0]?.stopped_by).toBe('you');
+    const errors = append.mock.calls.filter(([, , event]) => event.kind === 'error');
+    expect(errors).toEqual([]);
+  });
+
   it('leaves another session alone when the scope is one session', async () => {
     const other = await useAppStore.getState().createSession({
       workspaceId: workspace.id,
