@@ -117,8 +117,8 @@ describe('SessionTools', () => {
     expect(order).toEqual([
       'explore',
       'context',
-      'session-tools-separator',
       'ask',
+      'session-tools-separator',
       'spawned',
       'scripts',
       'terminal',

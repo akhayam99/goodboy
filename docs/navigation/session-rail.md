@@ -638,8 +638,8 @@ to GitHub issue`). A click calls `upTo` with the parent place: a real
 ## The session tools
 
 One 44px column at the right edge of the session content holds Explore,
-Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore and
-Context form the reading group; one separator leads to the other tools.
+Context, Ask, Agents, Scripts and Terminal (`SESSION_TOOLS`). Explore, Context and
+Ask form the reading group; one separator leads to the other tools.
 Each tool keeps its pane id and shortcut. `SessionToolButton` names every
 tool below its icon in the 9px `text-rail` role: faint when closed, muted when
 open. On a window under 480px tall all captions hide together and the tooltips
