@@ -23,6 +23,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
+  'features/context/components/QuestionsTab/QuestionCard/QuestionCardControls.tsx':
+    'question card head menu: delegate, send as message and dismiss of one open question, card chrome',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
 };
