@@ -33,6 +33,10 @@ import {
 import type { MountGithubState } from '../../../../store/types';
 import { useThreadVisit } from '../../../resolve/hooks/useThreadVisit';
 import { queueRowAt } from '../../../resolve/testing/queueRow';
+import { gitlabMrFixture } from '../../../../store/slices/mount-request/testing/gitlabMrFixture';
+import { PULL_REQUEST_KIND } from '../../../actions/kinds/pullRequest';
+import { pullRequestCellsOf } from '../../components/PullRequestTab/pullRequestCellsOf';
+import { mergeIsClear } from '../../../review/prMergeReadiness';
 import { withPullRequestViewEntry } from '../../../../store/slices/pull-request-view/pullRequestViewAt';
 import { usePullRequestReadiness } from './index';
 
@@ -252,6 +256,87 @@ describe('usePullRequestReadiness with the same request number in two repositori
     const merge = readinessOf({ mountId: MOUNT_PAYMENTS }).result.current.facts.mergeMethods;
 
     expect(merge).not.toEqual(['merge']);
+  });
+});
+
+describe('usePullRequestReadiness and the action kind read one source of checks', () => {
+  const mr = gitlabMrFixture.makeMr({ iid: SAME_NUMBER, name: 'ledger-core' });
+
+  const seedGitlabDenied = (): void => {
+    useAppStore.setState({
+      mountGithub: {},
+      mountRequests: {
+        [MOUNT_LEDGER]: gitlabMrFixture.mountState({
+          mountId: MOUNT_LEDGER,
+          projectId: PROJECT_LEDGER,
+          name: 'ledger-core',
+          mr: { ...mr, headPipeline: { id: 7, status: 'success', webUrl: null } },
+        }),
+      },
+      pullRequestViews: {
+        [SESSION_ID]: entryOf({
+          mountId: MOUNT_LEDGER,
+          view: {
+            ...viewOf({ name: 'ledger-core', mergeMethods: ['merge'] }),
+            host: 'gitlab',
+            checks: { read: 'denied', error: 'This token cannot read jobs', runs: [] },
+          },
+        }),
+      },
+    });
+  };
+
+  it('blocks the Merge cell on GitLab while its jobs read denied, like the merge action', () => {
+    seedGitlabDenied();
+
+    const { readiness, facts } = readinessOf({ mountId: MOUNT_LEDGER }).result.current;
+    const kindFacts = PULL_REQUEST_KIND.facts({
+      state: useAppStore.getState(),
+      target: {
+        kind: 'pullRequest',
+        sessionId: SESSION_ID,
+        mountId: MOUNT_LEDGER,
+        prNumber: SAME_NUMBER,
+      },
+    });
+
+    expect(facts.host).toBe('gitlab');
+    expect(facts.checks).toBe('unknown');
+    expect(kindFacts?.checks).toBe('unknown');
+    expect(readiness.blockers).toEqual(['Checks unknown.']);
+    expect(mergeIsClear({ readiness })).toBe(false);
+    const merge = pullRequestCellsOf({
+      state: 'open',
+      pr: { baseBranch: 'main', reviewDecision: null },
+      runs: null,
+      isChecksUnread: true,
+      people: [],
+      readiness,
+      hasConflicts: false,
+      mergeWord: 'Merge commit',
+      queueLine: null,
+      branch: { ahead: 0, behind: 0, onlineAhead: 0, isRebasing: false },
+    }).find((cell) => cell.id === 'merge');
+    expect(merge?.word).toBe('Blocked');
+    expect(merge?.opens).toBe('checks');
+  });
+
+  it('keeps reading the pipeline when the host has no jobs to read', () => {
+    seedGitlabDenied();
+    useAppStore.setState({
+      pullRequestViews: {
+        [SESSION_ID]: entryOf({
+          mountId: MOUNT_LEDGER,
+          view: {
+            ...viewOf({ name: 'ledger-core', mergeMethods: ['merge'] }),
+            host: 'gitlab',
+            checks: { read: 'unsupported', error: null, runs: [] },
+          },
+        }),
+      },
+    });
+
+    expect(readinessOf({ mountId: MOUNT_LEDGER }).result.current.facts.checks).toBe('green');
   });
 });
 
