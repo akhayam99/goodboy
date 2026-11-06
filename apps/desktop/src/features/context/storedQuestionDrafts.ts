@@ -76,7 +76,12 @@ const draftsOf = ({ value }: ValueParams): Drafts => {
   }, {});
 };
 
-type ForgetParams = Readonly<{
+type SaveParams = Readonly<{
+  questionId: string;
+  draft: QuestionDraft;
+}>;
+
+type DropParams = Readonly<{
   questionIds: ReadonlyArray<string>;
 }>;
 
@@ -102,10 +107,21 @@ const writeDrafts = ({ drafts }: WriteParams): void => {
   });
 };
 
+const dropDrafts = ({ questionIds }: DropParams): void => {
+  writeDrafts({
+    drafts: Object.fromEntries(
+      Object.entries(readDrafts()).filter(([id]) => !questionIds.includes(id)),
+    ),
+  });
+};
+
 export const storedQuestionDrafts = {
   read: readDrafts,
-  write: writeDrafts,
-  forget: ({ questionIds }: ForgetParams): void => {
+  save: ({ questionId, draft }: SaveParams): void => {
+    writeDrafts({ drafts: { ...readDrafts(), [questionId]: draft } });
+  },
+  drop: dropDrafts,
+  forget: ({ questionIds }: DropParams): void => {
     if (questionIds.length === 0) {
       return;
     }

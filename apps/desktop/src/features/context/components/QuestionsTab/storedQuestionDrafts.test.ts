@@ -52,6 +52,45 @@ describe('a question draft', () => {
     expect(after.getState().drafts[OTHER]?.customAnswer).toBe('Keep the payments-api route');
   });
 
+  it('keeps the draft of another window when this one saves its own', async () => {
+    const firstWindow = await freshStore();
+    const secondWindow = await freshStore();
+
+    firstWindow.getState().setCustomAnswer(QUESTION, 'Alias the export in ledger-core');
+    secondWindow.getState().setCustomAnswer(OTHER, 'Keep the payments-api route');
+    const after = await freshStore();
+
+    expect(after.getState().drafts[QUESTION]?.customAnswer).toBe('Alias the export in ledger-core');
+    expect(after.getState().drafts[OTHER]?.customAnswer).toBe('Keep the payments-api route');
+  });
+
+  it('keeps the draft of another window when this one clears its own', async () => {
+    const firstWindow = await freshStore();
+    const secondWindow = await freshStore();
+    firstWindow.getState().setCustomAnswer(QUESTION, 'Alias the export in ledger-core');
+    secondWindow.getState().setCustomAnswer(OTHER, 'Keep the payments-api route');
+
+    secondWindow.getState().clearDraft(OTHER);
+    firstWindow.getState().flashAnswered([OTHER]);
+    const after = await freshStore();
+
+    expect(after.getState().drafts[QUESTION]?.customAnswer).toBe('Alias the export in ledger-core');
+    expect(after.getState().drafts[OTHER]).toBeUndefined();
+  });
+
+  it('never brings back a draft another window cleared when it saves a different one', async () => {
+    const firstWindow = await freshStore();
+    firstWindow.getState().setCustomAnswer(QUESTION, 'Alias the export in ledger-core');
+    const secondWindow = await freshStore();
+
+    firstWindow.getState().clearDraft(QUESTION);
+    secondWindow.getState().setCustomAnswer(OTHER, 'Keep the payments-api route');
+    const after = await freshStore();
+
+    expect(after.getState().drafts[QUESTION]).toBeUndefined();
+    expect(after.getState().drafts[OTHER]?.customAnswer).toBe('Keep the payments-api route');
+  });
+
   it('drops a stored draft it cannot read instead of failing', async () => {
     localStorage.setItem('goodboy:question-draft:v1:all', '{"question-ledger-1":{"kind":1}}');
 
