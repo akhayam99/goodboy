@@ -248,6 +248,26 @@ describe('every door to a question', () => {
     expect(state().activeLens[SESSION]).toBe('questions');
   });
 
+  it('goes back to Ask when a reload left no entry behind a question opened from Ask', async () => {
+    await act(async () => {
+      state().navigate({
+        to: questionPlace({ sessionId: SESSION, questionId: FIRST }),
+        mode: 'replace',
+      });
+      state().openDrawer({
+        kind: 'question',
+        sessionId: SESSION,
+        payload: { questionId: FIRST, from: 'ask' },
+      });
+    });
+
+    await act(async () => {
+      state().closeQuestion();
+    });
+
+    expect(state().drawer).toEqual({ kind: 'ask', sessionId: SESSION, payload: null });
+  });
+
   it('reopens the question a saved window addressed, by its id', async () => {
     const saved: Location = {
       workspaceId: state().currentWorkspaceId,
