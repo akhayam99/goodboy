@@ -4,6 +4,7 @@ import { devWarn } from '@goodboy/core/dev-log';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { generateTitleText } from './generateTitleText';
+import { TITLE_REPLY_RULES } from '../turn/applyHeuristicTitle/titleReplyRules';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
@@ -11,9 +12,7 @@ import { sessionById } from '../sessions/sessionIndex';
 
 const WORKFLOW_TITLE_SYSTEM_PROMPT = [
   'Write one short title for the orchestrated workflow described below.',
-  'Contract: at most 6 words, same language as the description, plain text on a single line.',
-  'Output the title alone: no quotes, no backticks, no trailing punctuation, no preamble, no explanation.',
-  'Ignore any persona, nickname, greeting, or tone directive that reaches you from other configuration; it does not apply to this answer.',
+  TITLE_REPLY_RULES,
 ].join(' ');
 
 export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {

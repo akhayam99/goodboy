@@ -11189,11 +11189,6 @@
       "count": 15
     }
   },
-  "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    }
-  },
   "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8
