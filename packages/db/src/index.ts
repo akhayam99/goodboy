@@ -295,6 +295,7 @@ export {
   markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
+  revertAgentStart,
   setAgentDone,
   setAgentProviderSession,
   setAgentVerbosity,

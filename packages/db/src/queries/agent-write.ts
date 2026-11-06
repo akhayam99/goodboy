@@ -272,6 +272,41 @@ export const recordAgentStatus = async (
   return requireAgent(db, id);
 };
 
+type RevertAgentStartParams = {
+  readonly db: Database;
+  readonly agentId: AgentId;
+  readonly runId: ProviderRunId;
+  readonly agentBefore: Agent | null;
+};
+
+export const revertAgentStart = async ({
+  db,
+  agentId,
+  runId,
+  agentBefore,
+}: RevertAgentStartParams): Promise<void> => {
+  const status =
+    agentBefore === null || agentBefore.status === 'running' ? 'pending' : agentBefore.status;
+  await db.execute(
+    `UPDATE agents SET
+       status          = ?,
+       provider_run_id = ?,
+       started_at      = ?,
+       stopped_at      = ?,
+       stopped_by      = ?
+     WHERE id = ? AND status = 'running' AND provider_run_id = ?`,
+    [
+      status,
+      agentBefore?.runId ?? null,
+      isoToMs(agentBefore?.startedAt),
+      isoToMs(agentBefore?.stoppedAt),
+      agentBefore?.stoppedBy ?? null,
+      agentId,
+      runId,
+    ],
+  );
+};
+
 type StopGhostAgentsParams = {
   readonly db: Database;
   readonly keepRunIds: ReadonlyArray<string>;

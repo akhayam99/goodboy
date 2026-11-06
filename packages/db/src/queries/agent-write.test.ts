@@ -24,6 +24,7 @@ import {
   markAgentUnviewed,
   markAgentViewed,
   recordAgentStatus,
+  revertAgentStart,
   setAgentDone,
   setAgentProviderSession,
   setAgentVerbosity,
@@ -338,6 +339,64 @@ describe('agent writes', () => {
 
       expect(stopped.stoppedBy).toBe('you');
       expect(stopped.stoppedAt).toBeDefined();
+    });
+
+    it('puts a start that never spawned back as it was, stopped fields included', async () => {
+      const id = await seedAgent('a3', 'running');
+      const before = await recordAgentStatus(db, id, { status: 'stopped', stoppedBy: 'app' });
+      const runId = 'run-unspawned' as ProviderRunId;
+      await recordAgentStatus(db, id, {
+        status: 'running',
+        startedAt: STOPPED_AT,
+        providerRunId: runId,
+      });
+
+      await revertAgentStart({ db, agentId: id, runId, agentBefore: before });
+
+      const after = await getAgentById(db, id);
+      expect(after?.status).toBe('stopped');
+      expect(after?.stoppedBy).toBe('app');
+      expect(after?.stoppedAt).toBe(before.stoppedAt);
+      expect(after?.startedAt).toBe(before.startedAt);
+      expect(after?.runId).toBe(before.runId);
+    });
+
+    it('puts a fresh row back to pending with no start', async () => {
+      const id = await seedAgent('a3', 'pending');
+      const runId = 'run-unspawned' as ProviderRunId;
+      await recordAgentStatus(db, id, {
+        status: 'running',
+        startedAt: STOPPED_AT,
+        providerRunId: runId,
+      });
+
+      await revertAgentStart({ db, agentId: id, runId, agentBefore: null });
+
+      const after = await getAgentById(db, id);
+      expect(after?.status).toBe('pending');
+      expect(after?.startedAt).toBeUndefined();
+    });
+
+    it('leaves a row a stop or a newer run already moved on', async () => {
+      const id = await seedAgent('a3', 'pending');
+      const before = await getAgentById(db, id);
+      const runId = 'run-unspawned' as ProviderRunId;
+      await recordAgentStatus(db, id, {
+        status: 'running',
+        startedAt: STOPPED_AT,
+        providerRunId: runId,
+      });
+      await recordAgentStatus(db, id, { status: 'stopped', stoppedBy: 'you' });
+
+      await revertAgentStart({ db, agentId: id, runId, agentBefore: before });
+      expect((await getAgentById(db, id))?.status).toBe('stopped');
+
+      await recordAgentStatus(db, id, {
+        status: 'running',
+        providerRunId: 'run-newer' as ProviderRunId,
+      });
+      await revertAgentStart({ db, agentId: id, runId, agentBefore: before });
+      expect((await getAgentById(db, id))?.status).toBe('running');
     });
 
     it('stamps last_finished_at on a terminal status and only then', async () => {
