@@ -13,6 +13,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
     case 'retry-publication':
     case 'retry-update':
     case 'retry-push':
+    case 'continue-agent':
       return RotateCcw;
     case 'open-agent':
     case 'open-budget':

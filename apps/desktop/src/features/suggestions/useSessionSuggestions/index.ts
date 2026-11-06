@@ -327,7 +327,13 @@ export const useSessionSuggestionsFrom = ({
     [projects, rebaseMounts, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
-  const { outcomes, dismissedFingerprints, loadedFor } = useNextStepOutcomes({ sessionId });
+  const outcomeRead = useNextStepOutcomes({ sessionId });
+  const { outcomes, loadedFor } = outcomeRead;
+  const loadedDismissed = useAppStore((state) => state.sessionDismissedNextSteps[sessionId]);
+  const dismissedFingerprints =
+    loadedFor === sessionId || loadedDismissed === undefined
+      ? outcomeRead.dismissedFingerprints
+      : loadedDismissed;
   const setSessionDismissedNextSteps = useAppStore((state) => state.setSessionDismissedNextSteps);
   useEffect(() => {
     if (loadedFor === sessionId) {

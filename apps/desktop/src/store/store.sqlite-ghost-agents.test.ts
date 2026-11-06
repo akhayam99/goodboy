@@ -1,13 +1,27 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertAgent, insertSession, insertWorkspace, listAgentsForSessions } from '@goodboy/db';
-import type { AgentId, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import {
+  insertAgent,
+  insertSession,
+  insertTurnEvent,
+  insertWorkspace,
+  listAgentsForSessions,
+} from '@goodboy/db';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+  type WorkspaceId,
+} from '@goodboy/types';
 import {
   buildStorySession,
   buildStoryWorkspace,
   importStore,
+  injectDbFault,
   openStorySqlite,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
+  STORY_NOW,
   storySqlite,
   stubStoryInvoke,
 } from './storyHarness';
@@ -146,6 +160,46 @@ describe('store on sqlite: ghost running agents at boot', () => {
 
     expect(await reconcileGhostAgents()).toBe(0);
     expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-reload': 'running' });
+  });
+
+  it('keeps a run whose permission ask nobody answered, also for another window', async () => {
+    await seedAgent({
+      id: 'agent-asking',
+      sessionId: ONBOARDING_ID,
+      runId: 'run-asking',
+      status: 'running',
+    });
+    await insertTurnEvent(storySqlite(), {
+      id: 'event-asking',
+      sessionId: ONBOARDING_ID,
+      agentId: brandId<AgentId>({ value: 'agent-asking' }),
+      event: {
+        kind: 'permission_request',
+        runId: brandId<ProviderRunId>({ value: 'run-asking' }),
+        toolUseId: 'tool-asking',
+        toolName: 'Bash',
+        input: { command: 'pnpm test' },
+        at: STORY_NOW,
+      },
+    });
+    stubStoryInvoke({ turn_list_live: () => [] });
+
+    expect(await reconcileGhostAgents()).toBe(0);
+    expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-asking': 'running' });
+  });
+
+  it('stops nothing when the sweep cannot read the waiting permissions', async () => {
+    await seedAgent({
+      id: 'agent-ghost',
+      sessionId: ONBOARDING_ID,
+      runId: 'run-ghost',
+      status: 'running',
+    });
+    stubStoryInvoke({ turn_list_live: () => [] });
+    injectDbFault({ match: /permission_request/ });
+
+    await expect(reconcileGhostAgents()).rejects.toThrow('injected db fault');
+    expect(await statusOf(ONBOARDING_ID)).toEqual({ 'agent-ghost': 'running' });
   });
 
   it('stops nothing when the live runs cannot be read', async () => {

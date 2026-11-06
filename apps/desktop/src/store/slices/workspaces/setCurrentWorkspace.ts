@@ -7,6 +7,7 @@ import type {
   Session,
   SessionExternalTask,
   SessionId,
+  TurnState,
   Workflow,
   WorkspaceId,
 } from '@goodboy/types';
@@ -57,6 +58,8 @@ import { workspaceVerification } from '../project-mounts/verify/workspaceVerific
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import { beginWorkspaceSwitch } from './beginWorkspaceSwitch';
 import { failWorkspaceSwitch } from './failWorkspaceSwitch';
+import { loadWorkspaceFacts, type WorkspaceFacts } from './loadWorkspaceFacts';
+import { workspaceFactsPatchOf } from './workspaceFactsPatchOf';
 import { switchEpoch } from './switchEpoch';
 import type { GetFn, SetFn } from './types';
 
@@ -87,8 +90,11 @@ type WorkspaceSnapshot = MountRecords & {
   readonly sessions: ReadonlyArray<Session>;
   readonly worktreesBySession: ReadonlyMap<SessionId, ReadonlyArray<SessionWorktree>>;
   readonly sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  readonly waitingTurns: Record<string, TurnState>;
   readonly kindOverridesFromDb: Record<string, AgentKind>;
   readonly sessionExternalTasks: Record<string, SessionExternalTask[]>;
+  readonly facts: WorkspaceFacts | null;
+  readonly factsError: string | null;
 };
 
 type SessionMountHydration = {
@@ -326,6 +332,7 @@ const loadWorkspaceSnapshot = async ({
     sessionBranches: {},
   };
   const sessionPhaseRuns: Record<string, ReadonlyArray<Agent>> = {};
+  const waitingTurns: Record<string, TurnState> = {};
   const kindOverridesFromDb: Record<string, AgentKind> = {};
   const hydratedSessions: Array<Session> = [];
   for (const s of sessions) {
@@ -336,9 +343,15 @@ const loadWorkspaceSnapshot = async ({
     });
     writeHydration({ records, sessionId: s.id, hydration });
     hydratedSessions.push(sessionAfterHydration({ session: s, hydration }));
-    const runs = await Promise.all(
+    const reconciled = await Promise.all(
       (agentsBySession.get(s.id) ?? []).map((agent) => reconcileLoadedAgent({ agent, liveRunIds })),
     );
+    const runs = reconciled.map(({ agent }) => agent);
+    for (const { agent, waiting } of reconciled) {
+      if (waiting !== null) {
+        waitingTurns[agent.id] = waiting;
+      }
+    }
     sessionPhaseRuns[s.id] = runs;
     for (const run of runs) {
       if (run.kind) {
@@ -353,6 +366,14 @@ const loadWorkspaceSnapshot = async ({
   for (const s of sessions) {
     sessionExternalTasks[s.id] = sessionExternalTasks[s.id] ?? [];
   }
+  const factsRead = await loadWorkspaceFacts({
+    db: tauriDatabase,
+    sessionIds,
+    sessionPhaseRuns,
+    kindOverride: { ...get().agentKindOverride, ...kindOverridesFromDb },
+  })
+    .then((facts) => ({ facts, factsError: facts.error }))
+    .catch((error: unknown) => ({ facts: null, factsError: formatError(error) }));
   if (!isCurrent()) {
     return null;
   }
@@ -364,8 +385,10 @@ const loadWorkspaceSnapshot = async ({
     worktreesBySession,
     ...records,
     sessionPhaseRuns,
+    waitingTurns,
     kindOverridesFromDb,
     sessionExternalTasks,
+    ...factsRead,
   };
 };
 
@@ -439,9 +462,12 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        waitingTurns,
         kindOverridesFromDb,
         sessionExternalTasks,
         worktreesBySession,
+        facts,
+        factsError,
       } = snapshot;
       clearPendingTurnEvents();
       set((state) => ({
@@ -461,8 +487,11 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionActiveMount,
         sessionBranches,
         sessionPhaseRuns,
+        agentTurnState: waitingTurns,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks,
+        ...(facts === null ? {} : workspaceFactsPatchOf({ state, facts, now: Date.now() })),
+        workspaceFactsError: factsError,
         boardReady: true,
       }));
       for (const runs of Object.values(sessionPhaseRuns)) {

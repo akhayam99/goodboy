@@ -4,6 +4,7 @@ import type {
   ArtifactId,
   ArtifactKind,
   IsoDateTime,
+  OpenQuestion,
   PlanWithCount,
   SessionArtifact,
   Workflow,
@@ -61,7 +62,7 @@ type Params = Readonly<{
   agents: ReadonlyArray<Agent>;
   runs: ReadonlyArray<WorkflowRun>;
   templates: ReadonlyArray<Workflow>;
-  openQuestionCount: number;
+  openQuestions: ReadonlyArray<OpenQuestion>;
   askingAgentIds: ReadonlySet<AgentId>;
   revising: ReadonlyMap<ArtifactId, PlanRevising>;
   autoViews: ReadonlyArray<AutoTreeView>;
@@ -114,7 +115,7 @@ const planRow = ({
   agents,
   runs,
   templates,
-  openQuestionCount,
+  openQuestions,
   askingAgentIds,
   revising,
   autoViews,
@@ -123,7 +124,7 @@ const planRow = ({
   readonly agents: ReadonlyArray<Agent>;
   readonly runs: ReadonlyArray<WorkflowRun>;
   readonly templates: ReadonlyArray<Workflow>;
-  readonly openQuestionCount: number;
+  readonly openQuestions: ReadonlyArray<OpenQuestion>;
   readonly askingAgentIds: ReadonlySet<AgentId>;
   readonly revising: PlanRevising;
   readonly autoViews: ReadonlyArray<AutoTreeView>;
@@ -134,13 +135,13 @@ const planRow = ({
     plan,
     rows: partRows,
     revising,
+    openQuestions,
     handoff: planHandoffOf({ plan, run: owner, views: autoViews }),
   });
   const state = artifactStateOf({
     kind: 'plan',
     status: plan.status,
     isNew: false,
-    openQuestionCount,
     ...inputs,
   });
   return {
@@ -186,7 +187,6 @@ const documentRow = ({
     kind: artifact.kind,
     status: artifact.status,
     isNew: isNewArtifact({ artifact, now }),
-    openQuestionCount: 0,
     ...NO_PLAN_STATE_INPUTS,
   });
   return {
@@ -218,7 +218,7 @@ export const buildArtifactListRows = ({
   agents,
   runs,
   templates,
-  openQuestionCount,
+  openQuestions,
   askingAgentIds,
   revising,
   autoViews,
@@ -232,7 +232,7 @@ export const buildArtifactListRows = ({
         agents,
         runs,
         templates,
-        openQuestionCount,
+        openQuestions,
         askingAgentIds,
         revising: revising.get(plan.id) ?? NOT_REVISING,
         autoViews,

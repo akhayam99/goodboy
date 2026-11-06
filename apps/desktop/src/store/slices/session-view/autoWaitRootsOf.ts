@@ -25,12 +25,17 @@ export const autoWaitRootsOf = ({ state, session, agents }: Params): ReadonlyArr
   if (views.length === 0) {
     return [];
   }
+  const now = state.autoClockAt ?? NO_CLOCK;
   return autoRootsOf({ agents, kindOverride: state.agentKindOverride ?? {} }).filter((root) => {
     const view = views.find((candidate) => candidate.tree.rootAgentId === root.id);
     if (view === undefined) {
       return false;
     }
-    const { word } = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
-    return word === 'Needs you' || autoGroupOf({ view, agents, now: NO_CLOCK })?.isStuck === true;
+    const tree = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
+    return (
+      tree.state === 'asking' ||
+      tree.state === 'blocked' ||
+      autoGroupOf({ view, agents, now })?.isStuck === true
+    );
   });
 };

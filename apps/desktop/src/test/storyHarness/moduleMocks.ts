@@ -55,6 +55,7 @@ type StoryTurnHooks = StoryTurnParams['hooks'];
 export const turnModuleMock = () => ({
   runTurn: (args: unknown, _now?: unknown, hooks?: StoryTurnHooks) => storyTurn({ args, hooks }),
   cancelTurn: (runId: unknown) => storySpies.cancelTurn(runId),
+  isTurnStreamActive: () => false,
   listLiveRunIds: storySpies.listLiveRunIds,
   probeLiveRunIds: async () => {
     try {

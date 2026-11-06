@@ -192,6 +192,7 @@ export {
   insertTurnEventsBatch,
   countUserTextEvents,
   readFirstUserText,
+  findUndecidedPermissionAsk,
   listTurnEventsForAgent,
   listTurnEventEntriesForAgent,
   listTurnEventsForSession,
@@ -200,7 +201,6 @@ export {
   deleteTurnEventsForSessions,
   type PendingTurnEventInsert,
   type StoredTurnEvent,
-  type TurnEventStorageStats,
 } from './queries/turn-event';
 export { getDatabaseSizeBytes } from './queries/storage';
 export {
@@ -445,12 +445,11 @@ export { listThreadReads, markThreadsRead, type ThreadRead } from './queries/thr
 export {
   deleteNudgeEvent,
   insertNudgeEvent,
+  listDecidedNudgeEventsForSessions,
   listNudgeEvents,
   updateNudgeEventOutcome,
-  type ListNudgeEventsOptions,
   type NextStepNudgeKind,
   type NudgeEvent,
-  type NudgeEventKind,
   type NudgeKind,
   type NudgeOutcome,
 } from './queries/nudge-event';
@@ -551,6 +550,7 @@ export {
   insertOpenQuestion,
   getOpenQuestionById,
   listOpenQuestionsForSession,
+  listOpenQuestionsForSessions,
   listResolvedQuestionTextsForSession,
   markOpenQuestionAnswered,
   markOpenQuestionAnswersDelivered,

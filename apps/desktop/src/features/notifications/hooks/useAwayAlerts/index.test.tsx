@@ -3,9 +3,10 @@
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
-vi.mock('@tauri-apps/api/event', async () =>
-  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
-);
+vi.mock('@tauri-apps/api/event', async () => ({
+  ...(await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+  emit: async () => undefined,
+}));
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).dbLibModuleMock(),
@@ -21,6 +22,7 @@ const tauri = vi.hoisted(() => ({
   onAction: vi.fn(async (_callback: (event: unknown) => void) => ({
     unregister: vi.fn(async () => undefined),
   })),
+  setFocus: vi.fn(async () => undefined),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -39,7 +41,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
       isFocused: async () => tauri.isFocused,
       unminimize: async () => undefined,
       isVisible: async () => true,
-      setFocus: async () => undefined,
+      setFocus: tauri.setFocus,
     },
   ],
 }));
@@ -417,7 +419,8 @@ describe('a click on a banner', () => {
     await waitFor(() => expect(store.getState().currentSessionId).toBe(retry.id));
   });
 
-  it('ignores a banner of another workspace', async () => {
+  it('ignores a banner of another workspace in a window that is not the main one', async () => {
+    tauri.label = 'win-harborline';
     mount();
     await waitFor(() => expect(tauri.onAction).toHaveBeenCalled());
 
@@ -425,5 +428,35 @@ describe('a click on a banner', () => {
     await settle();
 
     expect(store.getState().currentSessionId).toBeNull();
+  });
+
+  it('brings the main window forward before it opens a workspace no window shows', async () => {
+    const opened: Array<string> = [];
+    tauri.setFocus.mockImplementation(async () => {
+      opened.push('focus');
+    });
+    store.setState({
+      openWorkspace: async () => {
+        opened.push('open');
+        return { kind: 'opened' };
+      },
+    });
+    mount();
+    await waitFor(() => expect(tauri.onAction).toHaveBeenCalled());
+
+    tapWith({ workspaceId: 'workspace-northwind', sessionId: retry.id, reason: 'open-question' });
+
+    await waitFor(() => expect(opened).toEqual(['focus', 'open']));
+  });
+
+  it('leaves the main window where it is when another window shows that workspace', async () => {
+    store.setState({ windowPresence: { 'win-northwind': NORTHWIND } });
+    mount();
+    await waitFor(() => expect(tauri.onAction).toHaveBeenCalled());
+
+    tapWith({ workspaceId: NORTHWIND, sessionId: retry.id, reason: 'open-question' });
+    await settle();
+
+    expect(tauri.setFocus).not.toHaveBeenCalled();
   });
 });

@@ -22,7 +22,7 @@ export const hitPlanRunning = ({ hit, state }: Params): boolean => {
     agents: state.sessionPhaseRuns[hit.sessionId] ?? [],
     runs: session?.workflowRuns ?? [],
     templates: session === undefined ? [] : (state.phaseTemplates[session.workspaceId] ?? []),
-    openQuestionCount: (state.sessionOpenQuestions[hit.sessionId] ?? []).length,
+    openQuestions: state.sessionOpenQuestions[hit.sessionId] ?? [],
     now: Date.now(),
     revising: new Map(),
     autoViews: state.autoTreeViews[hit.sessionId] ?? [],

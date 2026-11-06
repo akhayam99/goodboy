@@ -42,6 +42,7 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hois
       { id: 'api', name: 'API', baseBranch: 'main', workspaceId: 'ws-1' },
     ] as ReadonlyArray<Record<string, string>>,
     sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionDismissedNextSteps: Object.fromEntries(Array.of<[string, ReadonlySet<string>]>()),
     phaseTemplates: {} as Record<
       string,
       ReadonlyArray<{ origin: string; id: string; name: string }>
@@ -364,6 +365,22 @@ describe('useSessionSuggestions and the sessions list', () => {
         fingerprints: new Set(['fix-checks:mount-api:318']),
       }),
     );
+  });
+
+  it('keeps a Not now read at launch hidden while its own read still loads', async () => {
+    const view = renderHook(() => useSessionSuggestions({ session }));
+    await waitFor(() =>
+      expect(view.result.current.some((s) => s.kind === 'rebase-project')).toBe(true),
+    );
+    const rebase = view.result.current.find((s) => s.kind === 'rebase-project');
+    view.unmount();
+    listNudgeEvents.mockImplementation(() => new Promise(() => undefined));
+    store.sessionDismissedNextSteps = { 'session-1': new Set([rebase?.fingerprint ?? '']) };
+
+    const relaunched = renderHook(() => useSessionSuggestions({ session }));
+
+    expect(relaunched.result.current.some((s) => s.kind === 'rebase-project')).toBe(false);
+    store.sessionDismissedNextSteps = {};
   });
 
   it('writes nothing before the set of its session has loaded', () => {

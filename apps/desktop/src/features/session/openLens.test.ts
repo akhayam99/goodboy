@@ -8,7 +8,6 @@ const { state } = vi.hoisted(() => {
   return {
     state: {
       navigate: vi.fn(),
-      setScriptsLensScope: vi.fn(),
       openDrawer: vi.fn(),
       setExploreMountPath: vi.fn(),
       currentSessionId: noSession(),
@@ -32,7 +31,6 @@ const toLens = (lens: Parameters<typeof sessionPlace>[0]['lens']) => ({
 
 beforeEach(() => {
   state.navigate = vi.fn();
-  state.setScriptsLensScope = vi.fn();
   state.openDrawer = vi.fn();
   state.setExploreMountPath = vi.fn();
 });
@@ -48,7 +46,6 @@ describe('openLens and openToolPane', () => {
   it('opens the Scripts pane with no scope, without leaving the current session', () => {
     state.currentSessionId = SESSION_ID;
     openToolPane({ sessionId: SESSION_ID, pane: 'scripts' });
-    expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'scripts',
       sessionId: SESSION_ID,
@@ -68,10 +65,10 @@ describe('openLens and openToolPane', () => {
     });
   });
 
-  it('leaves the scripts scope alone for every other destination', () => {
+  it('opens no drawer for every other destination', () => {
     openLens({ sessionId: SESSION_ID, lens: 'plans' });
     openLens({ sessionId: SESSION_ID, lens: null });
-    expect(state.setScriptsLensScope).not.toHaveBeenCalled();
+    expect(state.openDrawer).not.toHaveBeenCalled();
     expect(state.navigate).toHaveBeenLastCalledWith(toLens(null));
   });
 });

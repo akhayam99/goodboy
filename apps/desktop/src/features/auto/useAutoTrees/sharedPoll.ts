@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { startPoll } from '../../../shared/lib/usePoll/startPoll';
 
 const POLL_MS = 2000;
+const HIDDEN_EVERY_TICKS = 5;
 
 type Poll = {
   readonly loads: Set<() => void>;
@@ -18,15 +19,23 @@ type StartParams = {
 export const startSharedPoll = ({ sessionId, load }: StartParams): (() => void) => {
   const loads = polls.get(sessionId)?.loads ?? new Set<() => void>();
   if (!polls.has(sessionId)) {
+    let hiddenTicks = 0;
     polls.set(sessionId, {
       loads,
       stop: startPoll({
         run: () => {
+          if (document.visibilityState !== 'visible') {
+            hiddenTicks += 1;
+            if (hiddenTicks < HIDDEN_EVERY_TICKS) {
+              return;
+            }
+          }
+          hiddenTicks = 0;
           const [first] = loads;
           first?.();
         },
         everyMs: POLL_MS,
-        gate: 'visible',
+        gate: 'always',
         isImmediate: false,
       }),
     });
