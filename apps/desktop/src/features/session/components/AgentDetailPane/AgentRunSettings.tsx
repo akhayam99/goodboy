@@ -2,6 +2,7 @@ import type { RefCallback } from 'react';
 import type { Agent, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { useAutoChat } from '../../../auto/chat/useAutoChat';
+import { autoLimitOpenEvent } from '../../../auto/chat/autoLimitOpenEvent';
 import { autoGlanceOf } from '../../../auto/glance/autoGlanceOf';
 import { isAutoDockSpeaking } from '../../../auto/glance/isAutoDockSpeaking';
 import { agentGlanceOf } from '../../glance/agentGlanceOf';
@@ -56,6 +57,7 @@ export const AgentRunSettings = ({
       glance={isDockSpeaking ? { ...glance, sentence: '' } : glance}
       spend={spendTextOf({ spentUsd: budget === null ? agentSpendUsd : budget.spentUsd })}
       settings={line}
+      revealEvent={autoView === null ? undefined : autoLimitOpenEvent({ treeId: autoView.tree.id })}
     />
   );
 };

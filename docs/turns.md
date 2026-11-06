@@ -1045,7 +1045,10 @@ first row whose bottom is below the top edge (`pickAnchor`, a binary search),
 and keeps its offset. A ResizeObserver on every row and on the content runs
 after layout and before paint; when the anchor moved, `anchorShift` adds the
 difference to `scrollTop` in that same frame, so a row above that grows or
-shrinks never moves what the reader sees. It stands down while `useScrollPin`
+shrinks never moves what the reader sees. `ChatView` also asks it to track the
+viewport top (`isTopTracked`), so a box above the transcript that grows, such as
+the Settings panel of the run glance line, scrolls the view by the same amount
+and the text stays where it was; the viewport itself is observed for that. It stands down while `useScrollPin`
 holds the view (`isHolding`: pinned to the bottom, or held at the top of a
 revealing answer, which re-reads the answer top itself), during a drag or a click on the overlay thumb track, and
 after `suspend()`, which every programmatic smooth scroll calls first (Jump to
@@ -1122,7 +1125,10 @@ divider key is the day plus the key of the row that opens it, never the index.
 
 jsdom has no layout, so the tests prove the decisions (`pickAnchor`,
 `anchorShift`, the hook against a fake layout) and the wiring (every row keyed
-and estimated, the viewport off CSS anchoring). The real check is the
+and estimated, the viewport off CSS anchoring). A real browser checks the Settings
+case: `pnpm validate:scenes --only reading-hold` scrolls the agent page, opens and
+closes Settings, and fails when the text under the reader moves by more than a
+pixel. The other real check is the
 `transcript-long` scene (about 150 rows): open it, scroll to the middle,
 scroll up slowly and with a fast flick, and watch that the line under the
 pointer never moves and the thumb does not jump; then drag the thumb to the

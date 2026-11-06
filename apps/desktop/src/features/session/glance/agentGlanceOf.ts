@@ -8,7 +8,8 @@ type Params = {
 };
 
 export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
-  if (turnState?.kind === 'blocked' || agent.status === 'blocked') {
+  const isBlockedAtRest = agent.status === 'blocked' && turnState?.kind !== 'running';
+  if (turnState?.kind === 'blocked' || isBlockedAtRest) {
     return glanceOf({ state: 'waiting', sentence: 'Waiting for your OK to go on' });
   }
   if (turnState?.kind === 'error') {

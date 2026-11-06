@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { autoRetryTargetsOf } from '../../../auto/autoRetryTargetsOf';
+import { autoGlancesBesideCardsOf } from '../../central/autoGlancesBesideCardsOf';
 import { BranchChip } from '../../central/branches/BranchChip';
 import { branchEntriesOf } from '../../central/branches/branchStoryOf';
 import { useBranchDetails } from '../../central/branches/useBranchDetails';
@@ -33,7 +34,6 @@ import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
 import { overviewGlanceOf } from '../../central/overviewGlanceOf';
 import { OverviewGlanceLine } from '../../central/summary/OverviewGlanceLine';
-import { autoGlanceOf } from '../../../auto/glance/autoGlanceOf';
 import { useSessionWorkModel } from '../../central/useSessionWorkModel';
 
 type Props = {
@@ -105,11 +105,8 @@ export const CentralColumn = ({ session }: Props) => {
     ),
   );
   const autoGlances = useMemo(
-    () =>
-      model.autoTrees.map((view, index) =>
-        autoGlanceOf({ view, rootTurn: rootTurns[index] ?? null }),
-      ),
-    [model.autoTrees, rootTurns],
+    () => autoGlancesBesideCardsOf({ views: model.autoTrees, rootTurns, cards: nextCards }),
+    [model.autoTrees, nextCards, rootTurns],
   );
   const shown = overviewCardsOf({
     cards: nextCards,

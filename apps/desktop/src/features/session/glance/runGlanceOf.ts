@@ -1,3 +1,4 @@
+import { pluralize } from '../../../shared/utils/pluralize';
 import type { RunPrimaryKind } from '../../workflows/runPrimaryOf';
 import { glanceOf, type Glance } from './glanceOf';
 
@@ -14,9 +15,9 @@ type StepsParams = Pick<Params, 'doneCount' | 'stepCount' | 'isDynamic'>;
 
 const stepsSentenceOf = ({ doneCount, stepCount, isDynamic }: StepsParams): string => {
   if (isDynamic || stepCount === 0) {
-    return doneCount === 0 ? 'Nothing ran yet' : `${doneCount} agents finished`;
+    return doneCount === 0 ? 'Nothing ran yet' : `${pluralize(doneCount, 'agent')} finished`;
   }
-  return `${doneCount} of ${stepCount} steps`;
+  return `${doneCount} of ${pluralize(stepCount, 'step')}`;
 };
 
 const PRIMARY_GLANCE: Readonly<Record<Exclude<RunPrimaryKind, 'continue'>, Glance>> = {

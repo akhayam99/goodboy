@@ -49,8 +49,7 @@ import { anchorKeyOf } from './anchorKeyOf';
 import { listenUserInput } from './listenUserInput';
 import { findRetrySource } from './findRetrySource';
 import { buildRetryOverride } from './buildRetryOverride';
-import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
-import { rowHeightCache } from './rowHeightCache';
+import { useTranscriptAnchor } from './useTranscriptAnchor';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceStack } from './parts/WorkflowAdvanceStack';
 import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
@@ -86,8 +85,6 @@ type Props = {
 };
 
 type ChatViewMode = 'conversation' | 'record' | 'steps';
-
-const TRANSCRIPT_ROW_SELECTOR = '[data-find-root] > li > ul > li';
 
 export const ChatView = ({
   session,
@@ -301,12 +298,7 @@ export const ChatView = ({
     };
   }, [scrollerRef, onScroll, userInput]);
 
-  const { suspend: suspendAnchor } = useScrollAnchor({
-    viewportRef: scrollerRef,
-    rowSelector: TRANSCRIPT_ROW_SELECTOR,
-    shouldHold: isHolding,
-    onRowMeasured: rowHeightCache.write,
-  });
+  const { suspend: suspendAnchor } = useTranscriptAnchor({ scrollerRef, isHolding });
 
   const onSelectRun = (runId: ProviderRunId) => {
     suspendAnchor();

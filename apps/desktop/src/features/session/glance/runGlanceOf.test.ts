@@ -36,6 +36,13 @@ describe('runGlanceOf', () => {
     );
   });
 
+  it('says one agent and one step in the singular', () => {
+    expect(runGlanceOf({ ...BASE, isDynamic: true, doneCount: 1 }).sentence).toBe(
+      '1 agent finished',
+    );
+    expect(runGlanceOf({ ...BASE, stepCount: 1 }).sentence).toBe('1 of 1 step');
+  });
+
   it.each([
     ['approve-plan', 'waiting'],
     ['answer', 'waiting'],
