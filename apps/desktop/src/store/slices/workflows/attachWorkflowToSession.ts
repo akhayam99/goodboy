@@ -206,7 +206,6 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       agentKindOverride: { ...state.agentKindOverride, ...spawned.kindOverrides },
       agentProviderOverride: { ...state.agentProviderOverride, ...spawned.providerOverrides },
       agentEffortOverride: { ...state.agentEffortOverride, ...spawned.effortOverrides },
-      focusedWorkflowRunId: { ...state.focusedWorkflowRunId, [sessionId]: workflowRunId },
     }));
 
     const firstBlocked = spawned.blocked[0];
@@ -220,7 +219,13 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     }
 
     if (options?.navigate === true) {
-      get().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
+      get().navigate({
+        to: sessionPlace({
+          sessionId,
+          lens: 'workflows',
+          target: { kind: 'run', runId: workflowRunId },
+        }),
+      });
     }
 
     const attachmentInputs = options?.attachmentInputs;

@@ -11,7 +11,6 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
-import type { AgentPane } from '../../../../store/slices/navigation/types';
 import type { ScribeWork } from '../../../../store/slices/scribe/types';
 import { AgentDetailPane } from '../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../store';
@@ -130,10 +129,9 @@ const WORK: Readonly<Record<ScribeProposalSceneState, ScribeWork>> = {
 
 type Props = {
   readonly state: ScribeProposalSceneState;
-  readonly pane: AgentPane;
 };
 
-export const ScribeProposalScene = ({ state, pane }: Props) => {
+export const ScribeProposalScene = ({ state }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -141,7 +139,6 @@ export const ScribeProposalScene = ({ state, pane }: Props) => {
       sessions: [SESSION],
       currentSessionId: SESSION_ID,
       selectedAgentId: { [SESSION_ID]: AGENT_ID },
-      agentPane: { [SESSION_ID]: pane },
       sessionPhaseRuns: { [SESSION_ID]: [AGENT] },
       agentRunHistory: { [AGENT_ID]: [RUN_ID] },
       transcripts: { [AGENT_ID]: TRANSCRIPT },
@@ -173,7 +170,7 @@ export const ScribeProposalScene = ({ state, pane }: Props) => {
       scribeWork: { [SCRIBE_KEY]: WORK[state] },
     });
     setIsReady(true);
-  }, [pane, state]);
+  }, [state]);
 
   if (!isReady) {
     return null;

@@ -88,16 +88,12 @@ const TURN: TelemetryRecord = {
   recordedAt: NOW,
 };
 
-type Pane = 'brief' | 'transcript';
-
-const seed = ({ pane }: { readonly pane: Pane | null }): void => {
+const seed = (): void => {
   const turnState: TurnState = { kind: 'idle', lastActivityAt: NOW };
   useAppStore.setState({
     sessions: [SESSION],
     currentSessionId: SESSION_ID,
     selectedAgentId: { [SESSION_ID]: LEAD_ID },
-    agentPane: { [SESSION_ID]: pane },
-    agentTab: {},
     sessionPhaseRuns: { [SESSION_ID]: [LEAD, BLOCKED, DONE] },
     sessionTelemetry: { [SESSION_ID]: [TURN] },
     agentRunHistory: { [LEAD_ID]: [LEAD_RUN] },
@@ -111,17 +107,13 @@ const seed = ({ pane }: { readonly pane: Pane | null }): void => {
   });
 };
 
-type SceneProps = {
-  readonly pane: Pane | null;
-};
-
-const AgentDoorScene = ({ pane }: SceneProps) => {
+const AgentDoorScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seed({ pane });
+    seed();
     setIsReady(true);
-  }, [pane]);
+  }, []);
 
   if (!isReady) {
     return null;
@@ -135,6 +127,6 @@ const AgentDoorScene = ({ pane }: SceneProps) => {
 };
 
 export const U23_AGENT_BRIEF_SCENES = {
-  'agent-brief-door': () => <AgentDoorScene pane={null} />,
-  'agent-brief-door-transcript': () => <AgentDoorScene pane="transcript" />,
+  'agent-brief-door': () => <AgentDoorScene />,
+  'agent-brief-door-transcript': () => <AgentDoorScene />,
 } satisfies Readonly<Record<string, ComponentType>>;

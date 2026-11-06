@@ -51,7 +51,6 @@ export const RewriterTranscriptScene = ({ isLive = false }: Props) => {
     };
     useAppStore.setState((current) => ({
       sessionPhaseRuns: { [SESSION.id]: [REWRITER] },
-      agentTab: { ...current.agentTab, [REWRITER_ID]: 'transcript' },
       historyRuns: { [mount.mountId]: run },
       historyRewriters: isLive
         ? {

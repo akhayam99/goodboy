@@ -331,16 +331,24 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent and one target
-  (artifact, run, issue, diff focus, Explore project). Its `studio` is the app
+  (artifact, run, issue, diff focus, Branch section, thread). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
-  drawer, selection, scroll and revealed rows. `locationKey` prints the text
+  drawer and the scroll. An address carries only what a screen reads: a window
+  saved by an older build with an agent tab, an Explore folder, the Explore or
+  Scripts lens, a selection or revealed rows still loads, and
+  `withoutRemovedPages` drops those parts (an old lens opens its pane). `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
   `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
-  `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
+  `agentPlace` and `BOARD_PLACE` build the `to`. A move lands exactly where
+  its `to` says: a place with no target is the list (Runs, Artifacts), never
+  the run or artifact shown before, so every caller that means an object
+  passes it as the target, and opening a row is a move that Back undoes
+  (`openArtifactPage`, `openGithubIssue`). A write in the background, such as
+  a run starting, never moves the page. The per-session keys the
   surfaces render from (`activeLens`, `selectedAgentId`, the
   focused target) are written only by the slice. A contract test
   (`__tests__/navigation/oneDoor.test.ts`) fails when `features/`, `app/` or

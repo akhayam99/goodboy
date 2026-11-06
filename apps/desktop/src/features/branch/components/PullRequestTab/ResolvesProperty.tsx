@@ -13,7 +13,7 @@ import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { closingIssueReferences } from '../../../integrations/github/closingIssueReferences';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
-import { openLens } from '../../../session/openLens';
+import { openGithubIssue } from '../../../session/openGithubIssue';
 import { PropertyField } from './PropertyField';
 
 type Props = {
@@ -45,7 +45,6 @@ export const ResolvesProperty = ({ sessionId, mountId, pr, view, canEdit }: Prop
     (s) => branchGithubOf({ state: s, sessionId, mountId })?.linkedIssues ?? EMPTY_ARRAY,
   );
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const repo = useSessionRepo({ sessionId, mountId });
   const branch = repo?.branch ?? null;
 
@@ -102,8 +101,7 @@ export const ResolvesProperty = ({ sessionId, mountId, pr, view, canEdit }: Prop
                   if (row.number === null) {
                     return;
                   }
-                  setFocusedGithubIssueNumber(sessionId, row.number);
-                  openLens({ sessionId, lens: 'github_issue' });
+                  openGithubIssue({ sessionId, issueNumber: row.number });
                 }}
                 className={cn(
                   'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-1 text-left text-meta',

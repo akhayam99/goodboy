@@ -39,7 +39,6 @@ export const AutoResultsScene = ({ theme }: Props) => {
       autoTreeViews: { [RESULTS_SESSION.id]: [RESULTS_VIEW] },
       loadAutoTrees: async () => undefined,
       selectedAgentId: { [RESULTS_SESSION.id]: RESULTS_ROOT_ID },
-      agentPane: { [RESULTS_SESSION.id]: 'transcript' },
       agentTurnState: { [RESULTS_ROOT_ID]: { kind: 'idle', lastActivityAt: RESULTS_IDLE_AT } },
       transcripts: { [RESULTS_ROOT_ID]: RESULTS_EVENTS },
       loadAgentTranscript: async () => undefined,

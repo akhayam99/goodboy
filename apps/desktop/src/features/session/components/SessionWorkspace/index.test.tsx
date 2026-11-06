@@ -17,6 +17,7 @@ import type { LensKind } from '../../../../store';
 
 type Store = {
   sessions: ReadonlyArray<Session>;
+  currentSessionId: string | null;
   workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: string }>;
   projects: ReadonlyArray<{ id: string; workspaceId: string; name: string; kind: string }>;
   activeLens: Record<string, LensKind | null>;
@@ -64,6 +65,7 @@ type PaneShellMockProps = {
 const { store, hooks } = vi.hoisted(() => ({
   store: {
     sessions: [] as ReadonlyArray<Session>,
+    currentSessionId: null,
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     projects: [],
     activeLens: {},
@@ -108,8 +110,11 @@ const { store, hooks } = vi.hoisted(() => ({
     answeredQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
     agentsLaneMounts: 0,
     agentsLaneUnmounts: 0,
+    escapeLadder: vi.fn(),
   },
 }));
+
+vi.mock('../../escapeLadder', () => ({ escapeLadder: hooks.escapeLadder }));
 
 vi.mock('../../../resolve/hooks/useResolveQueueRows', () => ({
   useResolveQueueRows: () => [],
@@ -261,8 +266,10 @@ beforeEach(() => {
   store.agentTurnState = {};
   store.agentKindOverride = {};
   store.sessionLoading = {};
+  store.currentSessionId = null;
   store.navigate.mockReset();
   store.up.mockReset();
+  hooks.escapeLadder.mockReset();
   store.loadPhaseRunsForSession.mockClear();
   store.loadSessionPlans.mockClear();
   hooks.openQuestions = [];
@@ -551,7 +558,20 @@ describe('SessionWorkspace page header', () => {
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
   });
 
-  it('goes up on Escape from a run step', () => {
+  it('hands Escape to the one session ladder only while the session is shown', () => {
+    render(<SessionWorkspace session={session} />);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(hooks.escapeLadder).not.toHaveBeenCalled();
+    cleanup();
+
+    store.currentSessionId = SESSION_ID;
+    render(<SessionWorkspace session={session} />);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(hooks.escapeLadder).toHaveBeenCalledTimes(1);
+    expect(store.up).not.toHaveBeenCalled();
+  });
+
+  it('draws a run step without a Part of line', () => {
     const workflowAgent = anAgent({
       ...selectedAgent,
       stepId: 'step-1' as StepId,
@@ -577,8 +597,6 @@ describe('SessionWorkspace page header', () => {
     render(<SessionWorkspace session={workflowSession} />);
 
     expect(screen.queryByText('Part of')).toBeNull();
-    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-    expect(store.up).toHaveBeenCalledTimes(1);
   });
 });
 

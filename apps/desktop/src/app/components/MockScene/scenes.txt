@@ -1204,6 +1204,10 @@ u36-p1-window-close
 u36-p1-window-close-stuck
 u36-p2-send-held
 u36-p2-send-stopped
+u36-p6-gone-run-dark
+u36-p6-gone-run-light
+u36-p6-step-back-dark
+u36-p6-step-back-light
 update-card
 update-card-long-version
 update-card-narrow

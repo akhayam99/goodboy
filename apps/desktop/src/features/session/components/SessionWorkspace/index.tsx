@@ -16,6 +16,7 @@ import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface, type LensSurface } from '../../lens-surface';
 import { SessionBackRow } from './SessionBackRow';
 import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
+import { escapeLadder } from '../../escapeLadder';
 
 const LENS_KEEP_ALIVE_CAP = 3;
 
@@ -60,8 +61,9 @@ export const SessionWorkspace = ({ session }: Props) => {
   const showAgentOverlay = surfaceLayer === 'agent';
   const showLens = surfaceLayer === 'lens';
   const leaveAgentOverlay = useCallback(() => up(), [up]);
+  const isCurrent = useAppStore((s) => s.currentSessionId === sessionId);
 
-  useEscapeLayer(leaveAgentOverlay, showAgentOverlay, true);
+  useEscapeLayer(() => escapeLadder({}), isCurrent, true);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
   const trail = <SessionBackRow sessionId={sessionId} />;

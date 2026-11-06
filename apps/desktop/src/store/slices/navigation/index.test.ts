@@ -211,7 +211,7 @@ describe('restoring a saved window location', () => {
           view: { lens: 'review', agentId: null, target: null },
         },
         studio: null,
-        focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+        focus: { drawer: null, scroll: {} },
       },
     });
     expect(store.getState().currentSessionId).toBeNull();
@@ -234,7 +234,7 @@ describe('restoring a saved window location', () => {
             },
           },
           studio: null,
-          focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+          focus: { drawer: null, scroll: {} },
         }),
       ),
     });
@@ -255,7 +255,7 @@ describe('restoring a saved window location', () => {
           workspaceId: WS,
           place: { at: 'board' },
           studio: { kind: 'companion' },
-          focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+          focus: { drawer: null, scroll: {} },
         }),
       ),
     });
@@ -361,29 +361,24 @@ describe('navigation slice', () => {
   it('amends the focus of the current voice without pushing', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().amendFocus({ patch: { selection: { thread: 'gh:PRRT_42' } } });
+    store.getState().amendFocus({ patch: { scroll: { queue: 80 } } });
     store.getState().amendFocus({ patch: { scroll: { queue: 120 } } });
     const stack = store.getState().navigation[WS];
     expect(stack?.entries).toHaveLength(2);
-    expect(stack?.entries[1]?.focus).toEqual({
-      drawer: null,
-      selection: { thread: 'gh:PRRT_42' },
-      scroll: { queue: 120 },
-      revealed: [],
-    });
+    expect(stack?.entries[1]?.focus).toEqual({ drawer: null, scroll: { queue: 120 } });
   });
 
   it('opens the next place with an empty focus and brings the old one back on back', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
-    store.getState().amendFocus({ patch: { selection: { thread: 'gh:PRRT_42' } } });
+    store.getState().amendFocus({ patch: { scroll: { queue: 120 } } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
     const stack = store.getState().navigation[WS];
-    expect(stack?.entries[stack.index]?.focus.selection).toEqual({});
+    expect(stack?.entries[stack.index]?.focus.scroll).toEqual({});
 
     store.getState().back();
     const back = store.getState().navigation[WS];
-    expect(back?.entries[back.index]?.focus.selection).toEqual({ thread: 'gh:PRRT_42' });
+    expect(back?.entries[back.index]?.focus.scroll).toEqual({ queue: 120 });
   });
 
   it('replaces the top voice in replace mode', () => {
@@ -474,18 +469,6 @@ describe('navigation slice', () => {
     expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
     expect(store.getState().selectedAgentId[S1]).toBeNull();
     expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
-    expect(store.getState().agentPane[S1]).toBeNull();
-  });
-
-  it('lands an old agent tab request for a resolver on the same Comments and drawer', () => {
-    for (const pane of ['brief', 'transcript'] as const) {
-      const store = makeStore();
-      withAttempt(store);
-      store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane }) });
-
-      expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
-      expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
-    }
   });
 
   it('rewrites an old fix run address to Branch Comments with the transcript drawer', () => {
@@ -496,7 +479,7 @@ describe('navigation slice', () => {
         sessionId: S1,
         lens: 'review',
         agentId: RESOLVER,
-        target: { kind: 'thread', threadId: 'gh:PRRT_7', pane: 'transcript' },
+        target: { kind: 'thread', threadId: 'gh:PRRT_7' },
       }),
     });
 
@@ -517,7 +500,7 @@ describe('navigation slice', () => {
           target: { kind: 'thread', threadId: 'gh:PRRT_42' },
         }),
         studio: null,
-        focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+        focus: { drawer: null, scroll: {} },
       },
     });
 
@@ -525,43 +508,16 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
-  it('lands an agent on the tab a door asks for and on no tab otherwise', () => {
+  it('lands an agent on its page, with no tab in the address', () => {
     const store = makeStore();
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
-    expect(store.getState().agentPane[S1]).toBeNull();
     expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
-
-    store
-      .getState()
-      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
-    expect(store.getState().agentPane[S1]).toBe('transcript');
-    expect(keyOf(store)).toBe(`s/${S1}/workflows/pane/transcript/agent/${AGENT}`);
-
-    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
-    expect(store.getState().agentPane[S1]).toBeNull();
+    expect(keyOf(store)).toBe(`s/${S1}/workflows/agent/${AGENT}`);
   });
 
-  it('brings the tab a door asked for back with Back and Forward', () => {
-    const store = makeStore();
-    store
-      .getState()
-      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
-    expect(store.getState().agentPane[S1]).toBeNull();
-
-    store.getState().back();
-    expect(store.getState().agentPane[S1]).toBe('transcript');
-    expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
-
-    store.getState().forward();
-    expect(store.getState().agentPane[S1]).toBeNull();
-  });
-
-  it('brings the tab back after a window restore', () => {
+  it('brings the agent back after a window restore', () => {
     const before = makeStore();
-    before
-      .getState()
-      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'brief' }) });
+    before.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     const saved = parseLocation({
       value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
     });
@@ -569,8 +525,32 @@ describe('navigation slice', () => {
     const after = makeStore();
     after.getState().restoreLocation({ location: saved! });
 
-    expect(after.getState().agentPane[S1]).toBe('brief');
     expect(after.getState().selectedAgentId[S1]).toBe(AGENT);
+    expect(keyOf(after)).toBe(`s/${S1}/workflows/agent/${AGENT}`);
+  });
+
+  it('lands a window saved on an agent tab by an older build on the agent page', () => {
+    const store = makeStore();
+    const saved = parseLocation({
+      value: {
+        workspaceId: WS,
+        place: {
+          at: 'session',
+          sessionId: S1,
+          view: {
+            lens: 'workflows',
+            agentId: AGENT,
+            target: { kind: 'agent', pane: 'transcript' },
+          },
+        },
+        studio: null,
+        focus: { drawer: null, selection: { thread: 't1' }, scroll: {}, revealed: ['step-2'] },
+      },
+    });
+    store.getState().restoreLocation({ location: saved! });
+
+    expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
+    expect(keyOf(store)).toBe(`s/${S1}/workflows/agent/${AGENT}`);
   });
 
   it('closes the transcript drawer on the next page and brings it back on Back', () => {
@@ -915,7 +895,7 @@ const DRAFTS: DrawerRequest = {
   payload: { threadId: 'note:ledger-cast' },
 };
 
-const EMPTY = { drawer: null, selection: {}, scroll: {}, revealed: [] };
+const EMPTY = { drawer: null, scroll: {} };
 
 const MOUNT = '/w/payments-api';
 
@@ -1116,94 +1096,5 @@ describe('Branch page', () => {
       },
     });
     expect(store.getState().activeLens[S1]).toBe('branch');
-  });
-});
-
-describe('Explore project', () => {
-  const LEDGER = '/work/harborline/ledger-core-rounding';
-  const NOTIFY = '/work/harborline/notify-relay-retries';
-  const README_IN_NOTIFY: DrawerRequest = {
-    kind: 'explore-file',
-    sessionId: S1,
-    payload: {
-      sessionDir: NOTIFY,
-      entry: {
-        name: 'README.md',
-        relPath: 'README.md',
-        isDir: false,
-        sizeBytes: 120,
-        modifiedAt: null,
-      },
-    },
-  };
-
-  it('brings back the project and the file you browsed when Back returns to Explore', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
-    store.setState({ exploreMountPath: { [S1]: NOTIFY } });
-    store.getState().openDrawer(README_IN_NOTIFY);
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'scripts' }) });
-    store.setState({ exploreMountPath: { [S1]: LEDGER } });
-
-    store.getState().back();
-
-    expect(store.getState().activeLens[S1]).toBe('explore');
-    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
-    expect(store.getState().drawer).toEqual(README_IN_NOTIFY);
-    expect(keyOf(store)).toBe(`s/${S1}/explore/${NOTIFY}`);
-  });
-
-  it('keeps the pick when you leave Explore and come back through the door', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
-    store.setState({ exploreMountPath: { [S1]: NOTIFY } });
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'scripts' }) });
-    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
-    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
-  });
-
-  it('opens Explore on the project a door names', () => {
-    const store = makeStore();
-    store.setState({ exploreMountPath: { [S1]: LEDGER } });
-
-    store.getState().navigate({
-      to: sessionPlace({
-        sessionId: S1,
-        lens: 'explore',
-        target: { kind: 'explore', mountPath: NOTIFY },
-      }),
-    });
-
-    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
-  });
-
-  it('restores an entry captured before any pick as the default project', () => {
-    const store = makeStore();
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'scripts' }) });
-    store.setState({ exploreMountPath: { [S1]: NOTIFY } });
-
-    store.getState().back();
-
-    expect(store.getState().exploreMountPath[S1]).toBeNull();
-  });
-
-  it('sends Up from a picked project to the session overview', () => {
-    const store = makeStore();
-    store.getState().navigate({
-      to: sessionPlace({
-        sessionId: S1,
-        lens: 'explore',
-        target: { kind: 'explore', mountPath: NOTIFY },
-      }),
-    });
-
-    store.getState().up();
-
-    expect(keyOf(store)).toBe(`s/${S1}`);
   });
 });

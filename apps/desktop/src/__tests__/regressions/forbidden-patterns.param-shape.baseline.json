@@ -1718,7 +1718,6 @@
     "apps/desktop/src/store/slices/session-view/selectors.ts": 14,
     "apps/desktop/src/store/slices/session-view/sessionCreation.ts": 3,
     "apps/desktop/src/store/slices/session-view/sessionStageRequest.ts": 1,
-    "apps/desktop/src/store/slices/session-view/setAgentTab.ts": 1,
     "apps/desktop/src/store/slices/session-view/setExploreExpanded.ts": 1,
     "apps/desktop/src/store/slices/session-view/setExploreMountPath.ts": 1,
     "apps/desktop/src/store/slices/session-view/setSessionViewPrefs.ts": 1,

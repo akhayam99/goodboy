@@ -44,9 +44,7 @@ describe('windowView reload intent', () => {
           sessionId: session,
           payload: { tab: 'summary' as const, view: 'current' as const },
         },
-        selection: {},
         scroll: { timeline: 240 },
-        revealed: ['step-2'],
       },
     };
     writeReloadIntent({

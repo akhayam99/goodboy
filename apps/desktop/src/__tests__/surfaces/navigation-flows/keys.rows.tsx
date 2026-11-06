@@ -19,6 +19,7 @@ import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/regist
 import { agentPlace, sessionPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { currentStack } from '../../../store/slices/navigation/currentStack';
+import { locationKey } from '../../../store/slices/navigation/locationKey';
 import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
@@ -462,6 +463,39 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     lands: lens(null),
   }),
   pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
+  keyRow({
+    id: 'lens.workflows',
+    note: 'on a run that is gone, lands on the Runs list',
+    open: async (ctx) => {
+      useAppStore.getState().navigate({
+        to: sessionPlace({
+          sessionId: ctx.sessionId,
+          lens: 'workflows',
+          target: { kind: 'run', runId: 'keys-run-gone' },
+        }),
+      });
+      await settle();
+      await screen.findByText('This run is no longer in this session', undefined, WAIT);
+      await press('lens.workflows')();
+    },
+    lands: both(lens('workflows'), async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId] ?? null).toBeNull(),
+        WAIT,
+      );
+      await heading('Runs');
+    }),
+  }),
+  keyRow({
+    id: 'lens.workflows',
+    note: 'pressed again on the Runs list, stays on the list',
+    open: async () => {
+      await press('lens.workflows')();
+      await heading('Runs');
+      await press('lens.workflows')();
+    },
+    lands: both(lens('workflows'), () => heading('Runs')),
+  }),
   pressRow({ id: 'lens.agents', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
@@ -1313,6 +1347,14 @@ const standaloneAgent = (ctx: Ctx): string => {
 
 const composerKeys: { last: KeyboardEvent | null } = { last: null };
 
+const escapePlaceKey: { before: string | null } = { before: null };
+
+const placeKeyNow = (): string => {
+  const stack = currentStack(useAppStore.getState());
+  const top = stack.entries[stack.index];
+  return top === undefined ? '' : locationKey({ place: top.place });
+};
+
 const stopRequested: Array<string> = [];
 
 const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
@@ -1321,7 +1363,6 @@ const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
     to: agentPlace({
       sessionId: ctx.sessionId,
       agentId: standaloneAgent(ctx) as never,
-      pane: 'transcript',
     }),
   });
   await settle();
@@ -1759,6 +1800,53 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async (ctx) => expect(stopRequested).toEqual([standaloneAgent(ctx)]),
+  }),
+  keyRow({
+    id: 'agent.stop',
+    note: 'a live agent arms Stop first and the page stays where it is',
+    open: async (ctx) => {
+      const composer = await openAgentChat(ctx);
+      const agentId = brandId<AgentId>({ value: standaloneAgent(ctx) });
+      useAppStore.setState({
+        agentTurnState: {
+          ...useAppStore.getState().agentTurnState,
+          [agentId]: {
+            kind: 'running',
+            runId: brandId<ProviderRunId>({ value: 'run-keys-stop-stays' }),
+            startedAt: LATEST_ACTIVITY,
+          },
+        },
+        cancelCurrentTurn: vi.fn(async () => undefined),
+      });
+      await settle();
+      escapePlaceKey.before = placeKeyNow();
+      pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+    },
+    lands: async () => {
+      await screen.findByText('Esc again to stop', undefined, WAIT);
+      expect(placeKeyNow()).toBe(escapePlaceKey.before);
+    },
+  }),
+  keyRow({
+    id: 'agent.stop',
+    note: 'with text in the box of an idle agent, Esc leaves the box and keeps the text and the page',
+    open: async (ctx) => {
+      const composer = await openAgentChat(ctx);
+      fireEvent.change(composer, { target: { value: 'Check the retry header first' } });
+      await settle();
+      escapePlaceKey.before = placeKeyNow();
+      pressShortcut({ id: 'agent.stop', target: composer });
+      await settle();
+    },
+    lands: async () => {
+      const composer = screen.getByRole('textbox', { name: 'Message to the agent' });
+      expect(document.activeElement).not.toBe(composer);
+      expect(composer instanceof HTMLTextAreaElement ? composer.value : null).toBe(
+        'Check the retry header first',
+      );
+      expect(placeKeyNow()).toBe(escapePlaceKey.before);
+    },
   }),
   keyRow({
     id: 'menu.open',
