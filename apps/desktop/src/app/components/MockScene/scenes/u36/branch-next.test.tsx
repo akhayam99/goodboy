@@ -165,7 +165,7 @@ describe('the u36 branch next step scenes', () => {
     await waitFor(() => expect(headerStep()?.textContent).toBe('Archive session'));
   });
 
-  it('asks once, archives the session, and keeps the step when the archive fails', async () => {
+  it('archives the session at once and keeps the step when the archive fails', async () => {
     const store = await importStore();
     const bulkArchiveTask = vi.fn(async () => ({ succeeded: [], failed: [SESSION.id] }));
     mount({ id: 'u36-p16-merged-archive' });
@@ -173,8 +173,6 @@ describe('the u36 branch next step scenes', () => {
     store.setState({ bulkArchiveTask });
 
     fireEvent.click(screen.getByRole('button', { name: 'Archive session' }));
-    const panel = confirmPanel({ title: await screen.findByText('Archive session?') });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Archive session' }));
 
     await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith([SESSION.id]));
     expect(headerStep()?.textContent).toBe('Archive session');
