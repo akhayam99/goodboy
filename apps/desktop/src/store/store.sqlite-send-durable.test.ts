@@ -81,6 +81,7 @@ const WORKFLOW_ID = brandId<WorkflowId>({ value: 'workflow-durable-send' });
 const AT = brandId<IsoDateTime>({ value: '2026-11-06T09:30:00.000Z' });
 const TEXT = 'Also cover the 402 path in payments-api, then run the replay again.';
 const LIMIT = 'Every provider is over its limit. Change a limit or wait for the next period.';
+const WRITTEN_COUNT_NOT_SAVED = "The message couldn't be saved, so it was not sent.";
 
 const harborline = buildStoryWorkspace({
   id: WORKSPACE_ID,
@@ -489,6 +490,23 @@ describe('Send writes the row, then delivers', () => {
 
     expect(storySpies.runTurn).not.toHaveBeenCalled();
     expect(rows()).toEqual([{ id: 'send-8', status: 'queued', reason: LIMIT }]);
+  });
+
+  it('writes no text and keeps the row when its count could not be saved', async () => {
+    await storySqlite().execute(
+      `CREATE TRIGGER refuse_written_count BEFORE INSERT ON agent_queued_messages
+       WHEN json_extract(NEW.override_json, '$.queueState.writtenTexts') > 0
+       BEGIN SELECT RAISE(ABORT, 'disk is full'); END`,
+    );
+
+    const delivery = await send('send-20');
+
+    expect(delivery.isDelivered).toBe(false);
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(await userTexts()).toBe(0);
+    expect(await savedQueue()).toEqual(['send-20']);
+    expect(rows()[0]?.reason).toBe(WRITTEN_COUNT_NOT_SAVED);
+    await storySqlite().execute('DROP TRIGGER refuse_written_count');
   });
 
   const holdHeadWithRowBehind = async ({ head, behind }: HeldHeadParams) => {

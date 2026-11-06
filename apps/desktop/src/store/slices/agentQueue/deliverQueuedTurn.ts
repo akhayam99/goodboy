@@ -4,7 +4,7 @@ import type { SessionId, UserTurnSentVia } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { storedToAttachmentInput } from '../../../features/attachments/pendingAttachment';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
-import { isReportedError } from '../notifications/reportedError';
+import { ReportedError, isReportedError } from '../notifications/reportedError';
 import { turnRefusalMessage } from '../turn/refusal/turnRefusalMessage';
 import { turnRefusalOf } from '../turn/refusal/turnRefusalOf';
 import { persistAgentQueue, readAgentQueue, writeAgentQueue } from './queueStore';
@@ -25,6 +25,8 @@ type FailParams = Readonly<{
 }>;
 
 const NOT_STARTED = 'The agent did not start. Your message is safe here.';
+
+const COUNT_NOT_SAVED = "The message couldn't be saved, so it was not sent.";
 
 const DELIVERED: QueuedTurnDelivery = { isDelivered: true, failure: null };
 
@@ -63,6 +65,7 @@ export const deliverQueuedTurn = async ({
     await persistAgentQueue({ get, agentId });
   };
   const markWriting = async (): Promise<void> => {
+    const textsBefore = writtenTexts;
     writtenTexts += 1;
     writeAgentQueue({
       set,
@@ -71,7 +74,11 @@ export const deliverQueuedTurn = async ({
         item.id === turn.id ? { ...item, writtenTexts, isTextShown: true } : item,
       ),
     });
-    await persistAgentQueue({ get, agentId });
+    const isSaved = await persistAgentQueue({ get, agentId });
+    if (!isSaved) {
+      writtenTexts = textsBefore;
+      throw new ReportedError(COUNT_NOT_SAVED);
+    }
   };
   const fail = async ({ error, title }: FailParams): Promise<QueuedTurnDelivery> => {
     const message = formatError(error);
