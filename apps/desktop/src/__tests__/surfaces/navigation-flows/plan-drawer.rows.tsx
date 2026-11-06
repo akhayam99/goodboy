@@ -261,7 +261,7 @@ const openAndWorkThePlan = async (ctx: Ctx): Promise<void> => {
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
   await visible('button', 'Open page');
-  expect(screen.getByTestId('plan-primary').textContent).toBe('Approve');
+  expect(screen.getByTestId('plan-primary').textContent).toBe('Approve and start Implement');
 
   await comment();
   expect(screen.getByTestId('plan-primary').getAttribute('data-filled')).toBe('false');
@@ -342,7 +342,7 @@ const askedPlanWaitsThenApproves = async (ctx: Ctx): Promise<void> => {
   expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
   expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(true);
   expect(screen.queryByTestId('plan-drawer-reason')).toBeNull();
-  expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Approve and start Implement' })).toHaveLength(1);
 
   act(() =>
     useAppStore.setState((state) => ({
@@ -361,7 +361,7 @@ const openPlanOverTheOverview = async (ctx: Ctx): Promise<void> => {
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
   await visible('button', 'Open page');
-  expect(screen.getByTestId('plan-primary').textContent).toBe('Approve');
+  expect(screen.getByTestId('plan-primary').textContent).toBe('Approve and start Implement');
   expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
   await click(screen.getByTestId('plan-primary'));
   await settle(6);

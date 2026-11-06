@@ -14,7 +14,9 @@ import { dismissTopEscapeLayer, registerEscapeLayer } from '../../escape';
 import { FLOATING_SURFACE } from '../../floatingSurface';
 import { isKeyboardFocus } from '../../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../../placeFloating';
+import { useHoverSurface } from '../../useHoverSurface';
 import { useRestHover } from '../../useRestHover';
+import { useCloseOnOutsidePointer } from './useCloseOnOutsidePointer';
 import { FactCardBody } from './FactCardBody';
 import { factCardSentence } from './factCardSentence';
 import type { FactCardSpec } from './types';
@@ -62,6 +64,7 @@ export const FactCard = ({
   const sentence = factCardSentence({ card });
   const isHovered = target !== null;
   const isShown = (isHovered || isOpen) && !isSuppressed;
+  useHoverSurface({ isActive: isShown });
 
   useEffect(() => {
     if (!isHovered) {
@@ -125,20 +128,7 @@ export const FactCard = ({
     };
   }, [isShown, isOpen, reposition, close]);
 
-  useEffect(() => {
-    if (!isTapOpen || !isHovered) {
-      return;
-    }
-    const onOutside = (event: PointerEvent) => {
-      const anchor = anchorRef.current;
-      if (anchor !== null && event.target instanceof Node && anchor.contains(event.target)) {
-        return;
-      }
-      close();
-    };
-    document.addEventListener('pointerdown', onOutside);
-    return () => document.removeEventListener('pointerdown', onOutside);
-  }, [isTapOpen, isHovered, close]);
+  useCloseOnOutsidePointer({ isActive: isTapOpen && isHovered, anchorRef, close });
 
   const childRef = children.props.ref;
   const mergedRef = useCallback(
@@ -246,6 +236,7 @@ export const FactCard = ({
               ref={cardRef}
               aria-hidden
               data-testid="fact-card"
+              data-hover-surface=""
               style={{
                 position: 'fixed',
                 top: coords?.top ?? -9999,

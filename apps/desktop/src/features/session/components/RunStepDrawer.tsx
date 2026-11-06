@@ -95,7 +95,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, onClose }: Props) => 
               </>
             ),
             tail: null,
-            stopLabel: stepStopLabelOf({ agent, stepAgent, workflow }),
+            ...stepStopLabelOf({ agent, stepAgent, workflow }),
           }}
         />
       </section>

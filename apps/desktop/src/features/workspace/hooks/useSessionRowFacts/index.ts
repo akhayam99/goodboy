@@ -1,10 +1,10 @@
 import type { Session } from '@goodboy/types';
-import { inlineMarkdownText } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { unreadAgentsOf } from '../../../../store/slices/agents/unreadAgentsOf';
 import { sessionNodeOf, type SessionNode } from '../../../session/sessionNode';
 import { unreadLabelOf } from '../../../session/unreadLabelOf';
 import { viewedAgentIdOf } from '../../../../shared/utils/viewedAgentIdOf';
+import { plainText } from '../../../../shared/utils/plainText';
 import { sessionRowTitle, type SessionRowTitle } from '../../../../shared/utils/sessionTitle';
 import { useSessionSummary, type SessionSummary } from '../useSessionSummary';
 
@@ -41,7 +41,7 @@ export const useSessionRowFacts = ({ session, isArchived = false }: Params): Ses
     rowTitle,
     keys: rowTitle.keys,
     title: rowTitle.title,
-    plainTitle: inlineMarkdownText({ text: rowTitle.title }),
+    plainTitle: plainText({ text: rowTitle.title }),
     unreadLabel: node.hasUnread ? unreadLabel : null,
   };
 };

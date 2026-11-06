@@ -246,6 +246,83 @@ describe('PermissionRequestCard', () => {
     );
   });
 
+  describe('in the dock', () => {
+    const renderDocked = ({ isMessageTyped = false }: { readonly isMessageTyped?: boolean } = {}) =>
+      render(
+        <PermissionRequestCard
+          item={makeItem()}
+          sessionId={SESSION_ID}
+          agentId={AGENT_ID}
+          isDocked
+          isMessageTyped={isMessageTyped}
+          pager="1 of 2"
+        />,
+      );
+
+    const settle = () => {
+      vi.advanceTimersByTime(401);
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: false });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('names the asker and the pager, with one filled button on the right', () => {
+      renderDocked();
+      screen.getByText('Implementer wants to run a command');
+      screen.getByText('1 of 2');
+      expect(screen.getByRole('button', { name: 'Allow and continue' }).dataset.variant).toBe(
+        'primary',
+      );
+      expect(screen.getByRole('button', { name: 'Deny' }).dataset.variant).toBe('ghost-danger');
+      expect(screen.queryByText(/is on$/)).toBeNull();
+    });
+
+    it('ignores a press in the first 400ms after the ask changes, then allows', async () => {
+      renderDocked();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Allow and continue' }));
+      });
+      expect(allowAndContinueMock).not.toHaveBeenCalled();
+      settle();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Allow and continue' }));
+      });
+      expect(allowAndContinueMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('always allows, denies and denies with a reason through the same store paths', async () => {
+      renderDocked();
+      settle();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Always allow/ }));
+      });
+      expect(allowWithRuleMock).toHaveBeenCalledWith(
+        expect.objectContaining({ scope: 'workspace', agentId: AGENT_ID }),
+      );
+      cleanup();
+      renderDocked();
+      settle();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
+      });
+      expect(denyWithReasonMock).toHaveBeenCalledWith(expect.objectContaining({ reason: '' }));
+    });
+
+    it('says the message denies before it is sent, and keeps Allow quiet', () => {
+      renderDocked({ isMessageTyped: true });
+      screen.getByText('Your message will deny this, with your text as the reason.');
+      expect(screen.getByRole('button', { name: 'Allow and continue' }).dataset.variant).toBe(
+        'quiet',
+      );
+      expect(screen.queryByRole('button', { name: 'Deny' })).toBeNull();
+    });
+  });
+
   it('reports a failed answer to the log and keeps the card open', async () => {
     allowAndContinueMock.mockRejectedValueOnce(new Error('database is locked'));
     render(<PermissionRequestCard item={makeItem()} sessionId={SESSION_ID} agentId={AGENT_ID} />);

@@ -39,6 +39,7 @@ export type UserPayload = Readonly<{
   text: string;
   facts: UserFacts;
   images?: ReadonlyArray<MessageAttachment>;
+  permissionOnceAllows?: ReadonlyArray<string>;
 }>;
 
 export type MountNote = Readonly<{

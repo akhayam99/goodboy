@@ -7,14 +7,16 @@ import {
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { cn } from '../cn';
 import { dismissTopEscapeLayer, registerEscapeLayer } from '../escape';
 import { FLOATING_SURFACE } from '../floatingSurface';
 import { isKeyboardFocus } from '../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../placeFloating';
 import { glyphsOfShortcut } from '../shortcutGlyphs';
-import { Kbd } from './Kbd';
+import { TooltipTriggerContext } from '../tooltipTriggerContext';
+import { useTooltipDelay } from '../useTooltipDelay';
+import { useTooltipQuiet } from '../useTooltipQuiet';
+import { TooltipBubble } from './TooltipBubble';
 
 export type TooltipSide = FloatingSide;
 
@@ -42,7 +44,11 @@ export type TooltipProps = {
 
 const GAP = 6;
 
-const DEFAULT_DELAY_MS = 400;
+const BUBBLE_CLASS = cn(
+  'pointer-events-none z-tooltip',
+  FLOATING_SURFACE,
+  'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-meta font-medium text-foreground motion-safe:animate-popover-in',
+);
 
 const WARM_WINDOW_MS = 300;
 
@@ -75,43 +81,34 @@ export const Tooltip = ({
   const [isHovered, setIsHovered] = useState(false);
   const hasContent =
     content !== undefined && content !== null && content !== false && content !== '';
-  const visible = (isHovered || isOpen) && !isSuppressed && hasContent;
+  const anchorRef = useRef<HTMLElement>(null);
+  const { isNested, isQuiet, isQuietNow } = useTooltipQuiet({ isSuppressed, anchorRef });
+  const visible = (isHovered || isOpen) && !isQuiet && hasContent;
   const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<FloatingCoords | null>(null);
-  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const anchorRef = useRef<HTMLElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const tipId = useId();
   const identityRef = useRef({});
   const isPointerDownRef = useRef(false);
   const suppressionEndedAtRef = useRef(Number.NEGATIVE_INFINITY);
 
-  const clearDelay = () => {
-    if (delayRef.current === null) {
-      return;
-    }
-    clearTimeout(delayRef.current);
-    delayRef.current = null;
-  };
-
-  const open = () => {
-    clearDelay();
-    setIsHovered(true);
-  };
+  const { isPendingRef, clearDelay, startDelay, open } = useTooltipDelay({
+    isQuietNow,
+    restDelayMs,
+    setIsHovered,
+  });
 
   const show = () => {
-    if (isSuppressed) {
+    isPendingRef.current = true;
+    clearDelay();
+    if (isQuietNow()) {
       return;
     }
-    clearDelay();
     if (!isRestRequired && isWarm()) {
       setIsHovered(true);
       return;
     }
-    delayRef.current = setTimeout(() => {
-      delayRef.current = null;
-      setIsHovered(true);
-    }, restDelayMs ?? DEFAULT_DELAY_MS);
+    startDelay();
   };
 
   const markClosed = () => {
@@ -120,6 +117,7 @@ export const Tooltip = ({
   };
 
   const hide = () => {
+    isPendingRef.current = false;
     clearDelay();
     if (isHovered) {
       markClosed();
@@ -146,7 +144,7 @@ export const Tooltip = ({
   };
 
   const focus = (target: EventTarget) => {
-    if (isRestRequired || isSuppressed) {
+    if (isRestRequired) {
       return;
     }
     if (isPointerDownRef.current) {
@@ -156,7 +154,7 @@ export const Tooltip = ({
     if (Date.now() - suppressionEndedAtRef.current < REFOCUS_WINDOW_MS) {
       return;
     }
-    if (!isKeyboardFocus({ target })) {
+    if (!isKeyboardFocus({ target }) || isQuietNow()) {
       show();
       return;
     }
@@ -177,20 +175,23 @@ export const Tooltip = ({
         lastClosedAt = Number.NEGATIVE_INFINITY;
       }
     };
-  }, []);
+  }, [clearDelay]);
 
-  const wasSuppressedRef = useRef(isSuppressed);
+  const wasQuietRef = useRef(isQuiet);
   useEffect(() => {
-    if (isSuppressed) {
+    if (isQuiet) {
       clearDelay();
       setIsHovered(false);
       setCoords(null);
     }
-    if (wasSuppressedRef.current && !isSuppressed) {
+    if (wasQuietRef.current && !isQuiet) {
       suppressionEndedAtRef.current = Date.now();
+      if (isPendingRef.current) {
+        startDelay();
+      }
     }
-    wasSuppressedRef.current = isSuppressed;
-  }, [isSuppressed]);
+    wasQuietRef.current = isQuiet;
+  }, [clearDelay, isPendingRef, isQuiet, startDelay]);
 
   useEffect(() => {
     if (!visible) {
@@ -198,6 +199,7 @@ export const Tooltip = ({
     }
     const unregister = registerEscapeLayer(() => {
       unregister();
+      isPendingRef.current = false;
       clearDelay();
       markClosed();
       setIsHovered(false);
@@ -205,7 +207,7 @@ export const Tooltip = ({
       dismissTopEscapeLayer();
     });
     return unregister;
-  }, [visible]);
+  }, [clearDelay, isPendingRef, visible]);
 
   const reposition = useCallback(() => {
     const anchor = anchorRef.current;
@@ -240,6 +242,7 @@ export const Tooltip = ({
         reposition();
         return;
       }
+      isPendingRef.current = false;
       clearDelay();
       setIsHovered(false);
       setCoords(null);
@@ -250,7 +253,7 @@ export const Tooltip = ({
       window.removeEventListener('scroll', closeOnScroll, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [visible, isOpen, reposition]);
+  }, [clearDelay, isPendingRef, visible, isOpen, reposition]);
 
   const childRef = (children.props as { ref?: React.Ref<HTMLElement> }).ref;
   const mergedRef = useCallback(
@@ -325,39 +328,24 @@ export const Tooltip = ({
       ? null
       : (anchorRef.current?.closest('dialog[open]') ?? document.body);
 
+  if (isNested) {
+    return children;
+  }
+
   return (
-    <>
+    <TooltipTriggerContext.Provider value={hasContent && !isSuppressed}>
       {enhanced}
-      {visible && portalTarget !== null
-        ? createPortal(
-            <span
-              ref={tipRef}
-              id={tipId}
-              role="tooltip"
-              style={{
-                position: 'fixed',
-                top: coords?.top ?? -9999,
-                left: coords?.left ?? -9999,
-                visibility: coords ? 'visible' : 'hidden',
-              }}
-              className={cn(
-                'pointer-events-none z-tooltip',
-                FLOATING_SURFACE,
-                'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-meta font-medium text-foreground motion-safe:animate-popover-in',
-              )}
-            >
-              {keys === '' ? (
-                content
-              ) : (
-                <span className="inline-flex items-baseline gap-2">
-                  <span>{content}</span>
-                  <Kbd>{keys}</Kbd>
-                </span>
-              )}
-            </span>,
-            portalTarget,
-          )
-        : null}
-    </>
+      {visible && portalTarget !== null ? (
+        <TooltipBubble
+          tipRef={tipRef}
+          tipId={tipId}
+          coords={coords}
+          content={content}
+          keys={keys}
+          target={portalTarget}
+          className={BUBBLE_CLASS}
+        />
+      ) : null}
+    </TooltipTriggerContext.Provider>
   );
 };

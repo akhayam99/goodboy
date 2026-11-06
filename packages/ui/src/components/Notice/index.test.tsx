@@ -193,4 +193,48 @@ describe('Notice', () => {
     expect(actions?.className).toContain('@md/notice:col-start-3');
     expect(actions?.className).toContain('@md/notice:row-start-1');
   });
+
+  it('keeps two actions beside the body once wide', () => {
+    render(
+      <Notice
+        tone="warning"
+        placement="inline"
+        role="status"
+        title="Reconnect Acme"
+        body="The token expired."
+        actions={
+          <>
+            <button type="button">Reconnect</button>
+            <button type="button">Dismiss</button>
+          </>
+        }
+      />,
+    );
+    const actions = screen.getByRole('button', { name: 'Reconnect' }).parentElement;
+    expect(actions?.className).toContain('@md/notice:col-start-3');
+    expect(actions?.parentElement?.className).toContain('@md/notice:grid-cols-');
+  });
+
+  it('keeps three actions under the body at every width, so the text never shrinks to a letter', () => {
+    render(
+      <Notice
+        tone="warning"
+        placement="inline"
+        role="status"
+        title="Reconnect Acme"
+        body="The token expired."
+        actions={
+          <>
+            <button type="button">Reconnect</button>
+            <button type="button">Switch account</button>
+            <button type="button">Dismiss</button>
+          </>
+        }
+      />,
+    );
+    const actions = screen.getByRole('button', { name: 'Reconnect' }).parentElement;
+    expect(actions?.className).toContain('col-start-2');
+    expect(actions?.className).not.toContain('@md/notice:col-start-3');
+    expect(actions?.parentElement?.className).not.toContain('@md/notice:grid-cols-');
+  });
 });

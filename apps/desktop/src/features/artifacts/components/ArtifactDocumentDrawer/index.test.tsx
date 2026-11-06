@@ -111,10 +111,12 @@ describe('plan document drawer header', () => {
     seedAndRender({ run: 'held' });
 
     const toolbar = screen.getByTestId('plan-drawer-toolbar');
-    expect(within(toolbar).getByTestId('plan-primary').textContent).toBe('Approve');
+    expect(within(toolbar).getByTestId('plan-primary').textContent).toBe(
+      'Approve and start Implement',
+    );
     expect(within(toolbar).getByRole('button', { name: 'Edit' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'More plan actions' })).toBeNull();
-    expect(toolbarButtons()).toEqual(['Edit', 'Approve']);
+    expect(toolbarButtons()).toEqual(['Edit', 'Approve and start Implement']);
   });
 
   it('holds two icon buttons between the title and Close, and no Expand', () => {
@@ -134,13 +136,13 @@ describe('plan document drawer header', () => {
   it('has exactly one filled button for a plan a run holds for', () => {
     seedAndRender({ run: 'held' });
 
-    expect(filledButtons()).toEqual(['Approve']);
+    expect(filledButtons()).toEqual(['Approve and start Implement']);
   });
 
   it('has exactly one filled button for a plan whose run feeds its next step', () => {
     seedAndRender({ run: 'feeding' });
 
-    expect(filledButtons()).toEqual(['Approve']);
+    expect(filledButtons()).toEqual(['Approve and start Implement']);
   });
 
   it('has exactly one filled button, Run plan, for a session plan', () => {
@@ -152,7 +154,7 @@ describe('plan document drawer header', () => {
   it('keeps the one button, off and with its reason printed beside it, while the planner revises', () => {
     seedAndRender({ run: 'held', turn: running('run-2') });
 
-    expect(filledButtons()).toEqual(['Approve']);
+    expect(filledButtons()).toEqual(['Approve and start Implement']);
     const primary = screen.getByTestId('plan-primary');
     expect(primary.hasAttribute('disabled')).toBe(true);
     expect(primary.getAttribute('title')).toBe(REVISING_REASON);
@@ -279,7 +281,7 @@ describe('a plan whose run was approved and has not chosen its next step', () =>
 
     expect(screen.queryByTestId('plan-primary')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Implement' })).toBeNull();
     expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
     expect(screen.getByTestId('plan-drawer-reason').textContent).toContain(
       'The run is choosing the next step',
@@ -673,10 +675,10 @@ describe('the bar in the drawer', () => {
     seedAndRender({ run: 'held' });
 
     const bar = screen.getByTestId('plan-comment-bar');
-    expect(within(bar).queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(within(bar).queryByRole('button', { name: 'Approve and start Implement' })).toBeNull();
     expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
     expect(bar.textContent).toContain('Select text or click a block to comment');
-    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Approve and start Implement' })).toHaveLength(1);
   });
 
   it('turns Send off with the revising reason while the planner revises', () => {

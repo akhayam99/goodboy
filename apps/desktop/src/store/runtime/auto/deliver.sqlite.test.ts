@@ -79,6 +79,29 @@ describe('the images of a user message', () => {
   });
 });
 
+describe('the read grant of a user message', () => {
+  it('reaches the turn of Auto with the delivery that carried it', async () => {
+    const state = await makeDeliveryWorld();
+    await addOutboxRow({
+      world: state.world,
+      id: 'outbox-user-grant',
+      kind: 'user',
+      payload: {
+        kind: 'user',
+        text: 'Permission for that exact command is granted for this one call.',
+        facts: EMPTY_USER_FACTS,
+        permissionOnceAllows: ['Read(//notify-relay/README.md)'],
+      },
+    });
+
+    await deliver(state);
+
+    expect(state.ports.autoTurns[0]?.permissionOnceAllows).toEqual([
+      'Read(//notify-relay/README.md)',
+    ]);
+  });
+});
+
 describe('delivering stored rows to Auto', () => {
   it('tells Auto a writer can still be delegated when no mount is attached', async () => {
     const state = await makeDeliveryWorld();

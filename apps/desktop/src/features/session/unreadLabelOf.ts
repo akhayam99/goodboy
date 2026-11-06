@@ -1,4 +1,5 @@
 import type { Agent } from '@goodboy/types';
+import { plainText } from '../../shared/utils/plainText';
 import { firstSentenceOf } from './central/done/firstSentenceOf';
 
 type Params = {
@@ -12,7 +13,9 @@ type AgentParams = {
 const MAX_TITLE_CHARS = 80;
 
 const unreadTitleOf = ({ agent }: AgentParams): string => {
-  const title = firstSentenceOf({ text: agent.outputSummary }) ?? agent.name;
+  const sentence = firstSentenceOf({ text: agent.outputSummary });
+  const plain = sentence === null ? '' : plainText({ text: sentence });
+  const title = plain === '' ? agent.name : plain;
   return title.length > MAX_TITLE_CHARS ? `${title.slice(0, MAX_TITLE_CHARS - 1)}…` : title;
 };
 

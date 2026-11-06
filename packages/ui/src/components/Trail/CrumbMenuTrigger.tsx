@@ -86,7 +86,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
   };
 
   const trigger = isCurrent ? (
-    <Tooltip content={menu.triggerLabel} anchorClassName="flex min-w-0">
+    <Tooltip content={menu.triggerLabel} anchorClassName="flex min-w-0" isSuppressed={open}>
       <button
         ref={triggerRef}
         type="button"
@@ -135,7 +135,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
           <TrailLabel label={segment.label} isCurrent={false} isIconOnly={isIconOnly} />
         </span>
       )}
-      <Tooltip content={menu.triggerLabel} anchorClassName="flex shrink-0">
+      <Tooltip content={menu.triggerLabel} anchorClassName="flex shrink-0" isSuppressed={open}>
         <button
           ref={triggerRef}
           type="button"

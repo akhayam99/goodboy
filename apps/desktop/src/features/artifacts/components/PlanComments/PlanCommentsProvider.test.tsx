@@ -110,7 +110,7 @@ describe('PlanCommentsProvider', () => {
       },
     });
 
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve and start Implement' })).toBeNull();
   });
 
   it('tells the page what the planner did after Send', async () => {

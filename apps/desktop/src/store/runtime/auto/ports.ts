@@ -92,6 +92,7 @@ export type StartAutoTurnParams = Readonly<{
   rowIds?: ReadonlyArray<string>;
   text: string;
   images?: ReadonlyArray<MessageAttachment>;
+  permissionOnceAllows?: ReadonlyArray<string>;
   onEnded: (ended: AutoTurnEnded) => void;
 }>;
 

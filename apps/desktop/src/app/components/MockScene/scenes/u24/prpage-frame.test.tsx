@@ -131,7 +131,7 @@ describe('the u24 prpage frame scenes', () => {
     await settle();
 
     expect(chip().getAttribute('data-state')).toBe('queued');
-    expect(chip().getAttribute('data-tone')).toBe('primary');
+    expect(chip().getAttribute('data-tone')).toBe('neutral');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
     expect(screen.getByText('Queued to merge, 3rd in line')).toBeDefined();
   });

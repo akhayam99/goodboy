@@ -15,6 +15,7 @@ type Params = {
 type Result = Readonly<{
   phase: StopPhase;
   isLive: boolean;
+  isBlocked: boolean;
   stop: () => void;
 }>;
 
@@ -26,9 +27,12 @@ export const useAgentStop = ({ sessionId, agentId }: Params): Result => {
     () => (agentId === null ? null : stopRequests.of({ agentId })),
   );
   const [now, setNow] = useState(() => Date.now());
-  const isLive = turn?.kind === 'running';
+  const isBlocked = turn?.kind === 'blocked';
+  const isLive = turn?.kind === 'running' || isBlocked;
   const requestedAt =
-    turn?.kind === 'running' && request !== null && request.runId === turn.runId
+    (turn?.kind === 'running' || turn?.kind === 'blocked') &&
+    request !== null &&
+    request.runId === turn.runId
       ? request.at
       : null;
 
@@ -50,7 +54,12 @@ export const useAgentStop = ({ sessionId, agentId }: Params): Result => {
   }, [agentId, cancelCurrentTurn, sessionId]);
 
   if (requestedAt === null) {
-    return { phase: 'idle', isLive, stop };
+    return { phase: 'idle', isLive, isBlocked, stop };
   }
-  return { phase: now - requestedAt >= STALLED_AFTER_MS ? 'stalled' : 'stopping', isLive, stop };
+  return {
+    phase: now - requestedAt >= STALLED_AFTER_MS ? 'stalled' : 'stopping',
+    isLive,
+    isBlocked,
+    stop,
+  };
 };

@@ -23,6 +23,7 @@ import { discardInPlaceCapture } from './discardInPlaceCapture';
 import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
+import { announceAgentTurn } from '../permissions/announceAgentTurn';
 import { noticeAutoOfChildTurn } from '../../runtime/auto/noticeAutoOfChildTurn';
 import { routeAutoUserTurn } from '../../runtime/auto/routeAutoUserTurn';
 import { cancelTurn, lookupDeliveryRun } from '../../../features/chat/turn';
@@ -221,6 +222,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       );
       if (settledAgentId !== null) {
         markTurnSettled({ agentId: settledAgentId });
+        announceAgentTurn({ sessionId: input.sessionId, agentId: settledAgentId });
         watchStepEnd({ set, get, sessionId: input.sessionId, agentId: settledAgentId });
         void get().drainAgentQueue({ sessionId: input.sessionId, agentId: settledAgentId });
       }

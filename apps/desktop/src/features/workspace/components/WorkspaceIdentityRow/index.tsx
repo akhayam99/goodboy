@@ -54,9 +54,11 @@ export const WorkspaceIdentityRow = () => {
         trigger={
           <Tooltip
             content={
-              elsewhere.count === 0
-                ? `${currentWorkspace.name}, ${subtitle}`
-                : `${currentWorkspace.name}, ${subtitle}. ${needYouWords({ count: elsewhere.count })} in other workspaces`
+              elsewhere.count > 0
+                ? `${currentWorkspace.name}, ${subtitle}. ${needYouWords({ count: elsewhere.count })} in other workspaces`
+                : hasUnreadElsewhere
+                  ? `${currentWorkspace.name}, ${subtitle}. Activity in another workspace`
+                  : `${currentWorkspace.name}, ${subtitle}`
             }
             shortcut="workspace.switcher"
             isSuppressed={dropdown.open}
@@ -94,9 +96,7 @@ export const WorkspaceIdentityRow = () => {
                   variant="pill"
                 />
               ) : null}
-              {hasUnreadElsewhere ? (
-                <StatusDot tone="warning" size="sm" title="Activity in another workspace" />
-              ) : null}
+              {hasUnreadElsewhere ? <StatusDot tone="warning" size="sm" /> : null}
               <ChevronsUpDown
                 size={ICON_SIZE.row}
                 aria-hidden

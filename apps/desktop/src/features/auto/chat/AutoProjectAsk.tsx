@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, FormActions, Notice, formatError } from '@goodboy/ui';
+import { Button, FormActions, formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { mountOnBranchOf } from '../../../store/runtime/auto/mount/mountOnBranchOf';
@@ -23,7 +23,7 @@ type Answered = Readonly<{
   word: string;
 }>;
 
-const JUST_ANSWER = 'No folder, just answer';
+const JUST_ANSWER = 'Answer without a project';
 
 type ReplyParams = {
   readonly content: string;
@@ -49,7 +49,11 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
   const { inSession, others, workspaceId } = useProjectCandidates({ sessionId, query });
 
   if (answered !== null && answered.key === ask.key) {
-    return <p className="text-ui text-muted-foreground">{answered.word}</p>;
+    return (
+      <p role="status" className="text-ui text-muted-foreground">
+        {answered.word}
+      </p>
+    );
   }
 
   const mountAsk = ask.mount;
@@ -141,36 +145,54 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
     });
 
   return (
-    <Notice
-      tone="warning"
-      placement="transcript"
-      title={card === null ? `Where should the ${ask.roleNoun} work?` : card.title}
-      body={
-        card !== null ? (
-          <p className="text-ui text-muted-foreground">{card.line}</p>
-        ) : (
-          <ProjectPickList
-            shown={isAnotherOpen ? all : inSession}
-            picked={picked}
-            isDisabled={isBusy}
-            hasInSession={inSession.length > 0}
-            isSearchOpen={isAnotherOpen}
-            query={query}
-            onToggle={toggle}
-            onQuery={setQuery}
-          />
-        )
-      }
+    <section
+      aria-label="Project for this agent"
+      data-dock-ask="project"
+      className="flex min-w-0 flex-col gap-2"
     >
+      <p className="text-row text-foreground">
+        {card === null ? `Where should the ${ask.roleNoun} work?` : card.title}
+      </p>
+      {card !== null ? (
+        <p className="text-ui text-muted-foreground">{card.line}</p>
+      ) : (
+        <ProjectPickList
+          shown={isAnotherOpen ? all : inSession}
+          picked={picked}
+          isDisabled={isBusy}
+          hasInSession={inSession.length > 0}
+          isSearchOpen={isAnotherOpen}
+          query={query}
+          onToggle={toggle}
+          onQuery={setQuery}
+        />
+      )}
       <FormActions
         error={error}
         leading={
           <span className="flex items-center gap-1">
             {isAnotherOpen ? null : (
               <Button variant="quiet" size="sm" onClick={() => setIsAnotherOpen(true)}>
-                Another folder…
+                Add project
               </Button>
             )}
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={isBusy}
+              onClick={() =>
+                void run({
+                  label: JUST_ANSWER,
+                  work: () =>
+                    reply({
+                      content: 'No project, just answer in the chat.',
+                      word: 'Answered without a project',
+                    }),
+                })
+              }
+            >
+              {JUST_ANSWER}
+            </Button>
             <ObjectActionVerb
               actionId="projectAsk.discard"
               target={{
@@ -193,23 +215,6 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
         }
       >
         <Button
-          variant="secondary"
-          size="sm"
-          disabled={isBusy}
-          onClick={() =>
-            void run({
-              label: 'No folder',
-              work: () =>
-                reply({
-                  content: 'No folder, just answer in the chat.',
-                  word: 'Answered: no folder',
-                }),
-            })
-          }
-        >
-          {JUST_ANSWER}
-        </Button>
-        <Button
           size="sm"
           disabled={card === null ? answer.message === null || isBusy : isBusy}
           isBusy={isBusy}
@@ -219,6 +224,6 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           {card === null ? answer.label : card.label}
         </Button>
       </FormActions>
-    </Notice>
+    </section>
   );
 };

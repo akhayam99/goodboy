@@ -1,16 +1,15 @@
 import { NAMES } from '../../shared/utils/names';
 import type { ArtifactComment, PlanWithCount, WorkflowRun } from '@goodboy/types';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
+import { planApproveLabelOf } from './planApproveLabelOf';
 import { PLANNER_QUESTION_REASON } from './plannerQuestions';
 import { NOT_REVISING, PLAN_REVISING_REASON, type PlanRevising } from './planRevising';
 
 type PlanPrimaryKind = 'approve' | 'run' | 'disabled' | 'none';
 
-type PlanPrimaryLabel = typeof NAMES.approve | typeof NAMES.runPlan;
-
 export type PlanPrimary = Readonly<{
   kind: PlanPrimaryKind;
-  label: PlanPrimaryLabel | null;
+  label: string | null;
   reason: string | null;
   isSecondary: boolean;
 }>;
@@ -23,6 +22,7 @@ type Params = Readonly<{
   isRunning?: boolean;
   plannerQuestionCount?: number;
   isHeldByAuto?: boolean;
+  nextStepName?: string | null;
 }>;
 
 const NONE: PlanPrimary = { kind: 'none', label: null, reason: null, isSecondary: false };
@@ -35,15 +35,17 @@ export const planPrimaryOf = ({
   isRunning = false,
   plannerQuestionCount = 0,
   isHeldByAuto = false,
+  nextStepName = null,
 }: Params): PlanPrimary => {
   if (isHeldByAuto) {
     return NONE;
   }
   const feedsRun = run !== null && run.discardedAt == null;
+  const heldLabel = feedsRun ? planApproveLabelOf({ nextStepName }) : NAMES.runPlan;
   if (revising.kind === 'revising') {
     return {
       kind: 'disabled',
-      label: feedsRun ? NAMES.approve : NAMES.runPlan,
+      label: heldLabel,
       reason: PLAN_REVISING_REASON,
       isSecondary: false,
     };
@@ -54,7 +56,7 @@ export const planPrimaryOf = ({
   if (plannerQuestionCount > 0) {
     return {
       kind: 'disabled',
-      label: feedsRun ? NAMES.approve : NAMES.runPlan,
+      label: heldLabel,
       reason: PLANNER_QUESTION_REASON,
       isSecondary: false,
     };
@@ -66,5 +68,5 @@ export const planPrimaryOf = ({
   if (!isRunHeldForPlan({ run }) && run.rulesSnapshot?.planApproved === true) {
     return NONE;
   }
-  return { kind: 'approve', label: NAMES.approve, reason: null, isSecondary };
+  return { kind: 'approve', label: heldLabel, reason: null, isSecondary };
 };

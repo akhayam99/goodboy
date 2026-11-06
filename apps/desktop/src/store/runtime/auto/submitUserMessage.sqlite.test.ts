@@ -34,6 +34,22 @@ describe('a user message to Auto', () => {
     expect(rows.map((row) => row.joinKey)).toEqual(['user:queue:send-auto-1']);
   });
 
+  it('keeps the read grant in the saved row', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+
+    await submitUserMessage({
+      ctx: world.state.ctx,
+      treeId: world.treeId,
+      text: TEXT,
+      permissionOnceAllows: ['Read(//notify-relay/README.md)'],
+    });
+
+    const [row] = await userRows(world);
+    expect(row?.payload).toMatchObject({
+      permissionOnceAllows: ['Read(//notify-relay/README.md)'],
+    });
+  });
+
   it('answers both overlapping sends of one delivery with the row that was saved', async () => {
     const world = await makeRuntimeWorld({ capUsd: 10 });
     const send = () =>

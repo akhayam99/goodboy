@@ -12,6 +12,7 @@ const isTurn = (value: unknown): boolean =>
   isText(value['workspaceId']) &&
   typeof value['text'] === 'string' &&
   (value['images'] === undefined || Array.isArray(value['images'])) &&
+  (value['permissionOnceAllows'] === undefined || Array.isArray(value['permissionOnceAllows'])) &&
   (value['deliveryId'] === undefined || isText(value['deliveryId']));
 
 const isCall = (value: unknown): value is AutoBridgeCall => {

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
+import { QUIET_DOCK } from '../ConversationDock/testing/quietDock';
 
 vi.mock('../../../suggestions', () => ({ useSessionSuggestions: () => [] }));
 
@@ -421,11 +422,10 @@ describe('ChatInput, input wiring', () => {
         },
       });
 
-    it('shows Send now at rest and enables it once there is text, with the helper line', async () => {
+    it('shows no send control on an empty box, and the box keeps its place when you type', async () => {
       const user = userEvent.setup();
-      render(<ChatInput session={runningSession()} />);
+      render(<ChatInput session={runningSession()} composerDock={QUIET_DOCK} />);
 
-      expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
       screen.getByRole('button', { name: 'Stop' });
       await user.type(screen.getByRole('textbox'), 'keep the flag');
 
@@ -433,7 +433,7 @@ describe('ChatInput, input wiring', () => {
       expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(
         false,
       );
-      expect(screen.getByText(/Queue waits for this turn to end/)).toBeDefined();
+      expect(screen.queryByText(/Queue waits for this turn to end/)).toBeNull();
     });
 
     it('queues on Enter', async () => {
@@ -1330,9 +1330,9 @@ describe('ChatInput, composer flows', () => {
     expect(textarea.getAttribute('placeholder')).toBe(ARCHIVED_SESSION_REASON);
   });
 
-  it('puts a Stop square beside Send now and Queue that stops the turn', async () => {
+  it('puts one labeled Stop in the dock that stops the turn', async () => {
     const user = userEvent.setup();
-    render(<ChatInput session={runningSession()} />);
+    render(<ChatInput session={runningSession()} composerDock={QUIET_DOCK} />);
 
     expect(cancelCurrentTurnMock).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Stop' }));

@@ -477,3 +477,87 @@ describe('the pinned sessions on the rail', () => {
     expect(card.getByRole('button', { name: 'Pinned work 2' })).toBeDefined();
   });
 });
+
+const plainTooltips = () =>
+  Array.from(document.querySelectorAll('[role="tooltip"]:not([data-hover-surface])'));
+
+describe('one hover on a rail node shows one thing', () => {
+  it('shows the hover card of a pin and never a tooltip with it', () => {
+    const pinned = pinnedSessions(3, runningState());
+    mountRail({ pinned, currentSessionId: pinnedId(pinned, 2) });
+    const other = screen.getByRole('button', { name: /Pinned work 1/ });
+
+    fireEvent.mouseEnter(other);
+    wait(450);
+    expect(plainTooltips()).toHaveLength(0);
+
+    wait(100);
+    expect(screen.getByTestId('session-hover-card').textContent).toContain('Pinned work 1');
+    expect(plainTooltips()).toHaveLength(0);
+
+    wait(1000);
+    expect(plainTooltips()).toHaveLength(0);
+  });
+
+  it('keeps the unread summary in the hover card of an unread pin', () => {
+    const unread = sessionOf({ goal: 'Unread reply' });
+    seedColumn({ store: useAppStore, sessions: [open, unread], currentSessionId: idOf(open) });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [unread.id]: [
+          anAgent({
+            sessionId: idOf(unread),
+            name: 'Reviewer',
+            status: 'completed',
+            outputSummary: 'Checked the ledger-core retry.',
+            lastFinishedAt: at('2026-10-06T09:00:00.000Z'),
+          }),
+        ],
+      },
+    });
+    render(railOf());
+    const node = document.querySelector(`[data-rail-session="${unread.id}"]`);
+    if (node === null) {
+      throw new Error('expected the rail node to be drawn');
+    }
+    fireEvent.mouseEnter(node);
+    wait(600);
+
+    const card = screen.getByTestId('session-hover-card');
+    expect(card.querySelector('[data-slot="unread-label"]')?.textContent).toBe(
+      '1 new: Checked the ledger-core retry',
+    );
+  });
+
+  it('keeps the unread summary in the flyout of the open node', () => {
+    mountRail();
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [open.id]: [
+          anAgent({
+            sessionId: idOf(open),
+            name: 'Reviewer',
+            status: 'completed',
+            outputSummary: 'Checked the ledger-core retry.',
+            lastFinishedAt: at('2026-10-06T09:00:00.000Z'),
+          }),
+        ],
+      },
+    });
+    hoverOpenSession();
+
+    expect(flyout()?.querySelector('[data-slot="unread-label"]')?.textContent).toBe(
+      '1 new: Checked the ledger-core retry',
+    );
+  });
+
+  it('shows the flyout of the open node and never a tooltip with it', () => {
+    mountRail();
+    hoverOpenSession();
+    expect(flyout()).not.toBeNull();
+    expect(plainTooltips()).toHaveLength(0);
+
+    wait(1000);
+    expect(plainTooltips()).toHaveLength(0);
+  });
+});

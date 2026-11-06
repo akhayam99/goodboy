@@ -1,6 +1,7 @@
 import { Check, MessageSquare } from 'lucide-react';
 import { Button, Chip, ICON_SIZE } from '@goodboy/ui';
 import { PLAN_REVISING_REASON } from '../../plans/planRevising';
+import { AUTO_PLAN_APPROVE_LABEL } from './autoPlanApproveLabel';
 import type { AutoPlanApprovalModel } from './useAutoPlanApproval';
 
 type Props = {
@@ -47,7 +48,7 @@ export const AutoPlanToolbar = ({ model }: Props) => {
             onClick={() => void model.approve()}
           >
             <Check size={ICON_SIZE.control} aria-hidden />
-            Approve plan
+            {AUTO_PLAN_APPROVE_LABEL}
           </Button>
         </>
       )}

@@ -1,11 +1,14 @@
 import type { TurnState } from '@goodboy/types';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { NAMES } from '../../../shared/utils/names';
+import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
 import { dockPlanRowOf } from '../dockPlanRowOf';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
+import { runningRoleNouns } from '../runningRoleNouns';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -35,8 +38,11 @@ const stepsSentenceOf = ({ view }: ViewParams): string => {
 
 export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   const phase = view.tree.phase;
-  if (phase === 'stopped' || phase === 'stopping') {
-    return glanceOf({ state: 'stopped', sentence: 'You stopped Auto, nothing is running' });
+  if (phase === 'stopping') {
+    return glanceOf({ state: 'stopped', sentence: 'Stopping' });
+  }
+  if (phase === 'stopped') {
+    return glanceOf({ state: 'stopped', sentence: 'Stopped by you. What they wrote is kept.' });
   }
   if (phase === 'finished') {
     return glanceOf({ state: 'done', sentence: stepsSentenceOf({ view }) });
@@ -58,7 +64,8 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   if (isAutoPlanAwaitingApproval({ view })) {
     return glanceOf({
       state: 'waiting',
-      sentence: `Plan v${plan?.revision ?? 1} needs your OK`,
+      word: NAMES.needsApproval,
+      sentence: planNeedsApprovalOf({ version: plan?.revision ?? 1 }),
     });
   }
   if (projectAskOf({ view }) !== null) {
@@ -75,7 +82,13 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   }
   const nouns = openRoleNouns({ delegations: view.delegations });
   if (phase === 'waiting' && nouns.length > 0) {
-    return glanceOf({ state: 'working', sentence: `Waiting for ${joinNouns({ nouns })}` });
+    const running = runningRoleNouns({ delegations: view.delegations });
+    const queued = nouns.filter((noun) => !running.includes(noun));
+    const sentence = [
+      ...(running.length === 0 ? [] : [`${joinNouns({ nouns: running })} running`]),
+      ...(queued.length === 0 ? [] : [`${joinNouns({ nouns: queued })} queued`]),
+    ].join(', ');
+    return glanceOf({ state: 'working', sentence });
   }
   if (phase === 'delegating') {
     return glanceOf({ state: 'working', sentence: 'Starting agents' });

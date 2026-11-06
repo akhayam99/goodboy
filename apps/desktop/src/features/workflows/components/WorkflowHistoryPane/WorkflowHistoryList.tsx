@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import { ListGrid, ListGridRow, SegmentedTabs, StateDot, formatUsd } from '@goodboy/ui';
+import { plainText } from '../../../../shared/utils/plainText';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -51,7 +52,9 @@ export const WorkflowHistoryList = ({ workflowName, runs, onOpenRun }: Props) =>
       ) : null}
       <ListGrid label={`Runs of ${workflowName}`} columns={HISTORY_COLUMNS}>
         {rows.map(({ run, state }) => {
-          const title = sessionTitle({ session: { goal: run.sessionGoal } });
+          const title = plainText({
+            text: sessionTitle({ session: { goal: run.sessionGoal } }),
+          });
           return (
             <ListGridRow
               key={run.workflowRunId}

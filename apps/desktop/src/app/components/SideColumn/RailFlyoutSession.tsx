@@ -1,4 +1,3 @@
-import { inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
 import { SessionPages } from '../../../features/workspace/components/SessionActivityBar/SessionPages';
@@ -13,7 +12,7 @@ type Props = {
 
 export const RailFlyoutSession = ({ session, hasStudioOver }: Props) => {
   const sessionId = session.id as SessionId;
-  const { summary, title } = useSessionRowFacts({ session });
+  const { summary, plainTitle, unreadLabel } = useSessionRowFacts({ session });
   const { pages, facts } = useCardPages({ session });
   const pageLens = useSessionPageLens({ session });
   const sign = currentSignOf({
@@ -26,11 +25,14 @@ export const RailFlyoutSession = ({ session, hasStudioOver }: Props) => {
   return (
     <div className="flex flex-col gap-1" data-slot="rail-flyout-session">
       <div className="flex min-w-0 flex-col px-2 pb-1 pt-1">
-        <span className="truncate text-row text-foreground">
-          {inlineMarkdownText({ text: title })}
-        </span>
+        <span className="truncate text-row text-foreground">{plainTitle}</span>
         {words === '' ? null : (
           <span className="truncate text-meta text-faint-foreground">{words}</span>
+        )}
+        {unreadLabel === null ? null : (
+          <span className="truncate text-meta text-faint-foreground" data-slot="unread-label">
+            {unreadLabel}
+          </span>
         )}
       </div>
       <SessionPages session={session} pages={pages} facts={facts} sign={sign} />

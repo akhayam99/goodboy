@@ -1,4 +1,5 @@
 import { joinNouns } from '../../../auto/joinNouns';
+import { plainText } from '../../../../shared/utils/plainText';
 import { firstSentenceOf } from './firstSentenceOf';
 
 type Params = {
@@ -25,7 +26,7 @@ const LIST_PARENTHETICAL = /\s*\([^()]{0,40}[,/][^()]{0,40}\)/g;
 const withoutLabelOf = ({ text }: TextParams): string => text.replace(LABEL_PREFIX, '');
 
 const withoutMarkupOf = ({ text }: TextParams): string =>
-  text.replace(/`/g, '').replace(LIST_PARENTHETICAL, '');
+  plainText({ text }).replace(LIST_PARENTHETICAL, '');
 
 const slashListWordsOf = ({ text }: TextParams): string =>
   text.replace(SLASH_LIST, (list) => joinNouns({ nouns: list.split('/') }));

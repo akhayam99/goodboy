@@ -1,16 +1,12 @@
-import { useState } from 'react';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { Button, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { autoChildLabelsOf } from '../autoChildLabelsOf';
-import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { AutoChildCard } from './AutoChildCard';
-import { AutoNextAction } from './AutoNextAction';
 import { cardTitleOf } from './cardTitleOf';
 import { delegationCardOf } from './delegationCardOf';
-import { nextActionOf } from './nextActionOf';
 import { revisionWordOf } from './revisionWordOf';
 import { PublishConfirmRow } from './PublishConfirmRow';
 import { usePublishAct } from './usePublishAct';
@@ -31,11 +27,9 @@ export const AutoDelegationLines = ({
   agents,
   onOpenChild,
 }: Props) => {
-  const [untold, setUntold] = useState<Readonly<Record<string, string>>>({});
   const publishing = usePublishAct();
   const labels = autoChildLabelsOf({ delegations: view.delegations });
   const waiting = waitingPublishesOf({ delegations });
-  const isPlanWaiting = isAutoPlanAwaitingApproval({ view });
   return (
     <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
       {delegations.map((delegation) => {
@@ -77,23 +71,6 @@ export const AutoDelegationLines = ({
                 onOpen={onOpenChild}
               />
             )}
-            {delegation.state === 'awaiting_confirm' || untold[delegation.id] !== undefined ? (
-              <AutoNextAction
-                sessionId={sessionId}
-                rootAgentId={view.tree.rootAgentId}
-                action={nextActionOf({ view, delegation, card })}
-                untold={untold[delegation.id] ?? null}
-                isPlanWaiting={isPlanWaiting}
-                onUntold={(content) =>
-                  setUntold((current) => {
-                    const rest = Object.fromEntries(
-                      Object.entries(current).filter(([id]) => id !== delegation.id),
-                    );
-                    return content === null ? rest : { ...rest, [delegation.id]: content };
-                  })
-                }
-              />
-            ) : null}
           </li>
         );
       })}

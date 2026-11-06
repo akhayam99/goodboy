@@ -49,8 +49,8 @@ export const PULL_REQUEST_PRESENTATION = {
     icon: ListChecks,
     label: 'Queued',
     reason: 'waiting in the merge queue',
-    textClass: 'text-primary',
-    tone: 'primary',
+    textClass: 'text-muted-foreground',
+    tone: 'neutral',
   },
   merged: {
     icon: GitMerge,

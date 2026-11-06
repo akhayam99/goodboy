@@ -6,7 +6,13 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import { askBatchAfterAnswer } from './askBatchAfterAnswer';
+import { askDenialEventOf } from './askDenialEventOf';
+import { denialNoticeOf } from './denialNoticeOf';
+import { heldOnceAllowsOf } from './heldOnceAllowsOf';
+import { NO_RESOLVED_ASKS } from './noResolvedAsks';
 import type { GetFn } from './types';
+import { withHeldAnswers } from './withHeldAnswers';
 
 type Params = {
   sessionId: SessionId;
@@ -16,16 +22,6 @@ type Params = {
   runId: ProviderRunId;
   reason: string;
 };
-
-type NoticeParams = {
-  readonly toolName: string;
-  readonly reason: string;
-};
-
-const noticeOf = ({ toolName, reason }: NoticeParams): string =>
-  reason === ''
-    ? `Denied ${toolName} for this one call. Do not run it; carry on another way, or say what you need.`
-    : `Denied ${toolName}. ${reason}`;
 
 export const denyWithReason = (get: GetFn) => {
   return async ({
@@ -37,24 +33,31 @@ export const denyWithReason = (get: GetFn) => {
     reason,
   }: Params): Promise<void> => {
     const now = brandId<IsoDateTime>({ value: new Date().toISOString() });
-    get().appendTurnEvent(agentId, sessionId, {
-      kind: 'permission_decision',
-      runId,
-      toolUseId,
-      decision: 'deny',
-      scope: 'once',
-      ruleId: null,
-      decidedBy: 'user',
-      at: now,
-    });
+    const trimmed = reason.trim();
+    get().appendTurnEvent(
+      agentId,
+      sessionId,
+      askDenialEventOf({ runId, toolUseId, reason: trimmed, at: now }),
+    );
     if (get().agentTurnState[agentId]?.kind === 'running') {
       return;
     }
+    const { isWaiting, held } = askBatchAfterAnswer({
+      transcripts: get().transcripts,
+      agentId,
+      toolUseId,
+    });
+    if (isWaiting) {
+      return;
+    }
+    const prompt = denialNoticeOf({ toolName, reason: trimmed });
     throwIfRefused({
       result: await get().sendTurn({
         sessionId,
         agentId,
-        content: noticeOf({ toolName, reason: reason.trim() }),
+        content: withHeldAnswers({ held, prompt }),
+        resolvedAsks: NO_RESOLVED_ASKS,
+        ...(held.length > 0 && { permissionOnceAllows: heldOnceAllowsOf({ held }) }),
       }),
     });
   };

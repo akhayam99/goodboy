@@ -20,13 +20,15 @@ const PLAN_APPROVED_TITLE = 'Plan approved';
 
 const PLAN_APPROVED_LABEL = 'Follow the run';
 
+const PLAN_GOES_ON = 'The run goes on';
+
 export const planApprovedFollowOf = ({
   sessionId,
   runId,
   startedStepName,
 }: Params): PlanApprovedFollow => ({
   title: PLAN_APPROVED_TITLE,
-  message: startedStepName === null ? 'The run goes on' : `${startedStepName} started`,
+  message: startedStepName === null ? PLAN_GOES_ON : `${startedStepName} started`,
   label: PLAN_APPROVED_LABEL,
   startKey: runId,
   target: {

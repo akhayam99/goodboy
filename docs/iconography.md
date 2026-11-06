@@ -113,7 +113,7 @@ holds the session, from `ATTENTION_REASON_META` in
 a sentence that the Board card, the Now chip rows and the palette read too. Red
 `!` (`failed`) is only an agent error, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
 answer, approve or act on: `?` for a question or a comment that needs you, the
-shield for a tool permission (Waiting for your permission) or a held plan (the plan waits for your approval), and an amber `!` (`alert`) for changes
+shield for a tool permission (Waiting for your permission) or a held plan (the plan needs approval), and an amber `!` (`alert`) for changes
 requested and comments the fix could not fix. A solid green disc with a white
 check (`approved`) is a pull request ready to merge. A Bitbucket session wears
 the same marks: its commit statuses and its reviewers feed the same table, so a

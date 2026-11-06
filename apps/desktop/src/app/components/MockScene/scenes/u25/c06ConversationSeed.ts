@@ -43,7 +43,7 @@ export const C06_SESSION: Session = {
   updatedAt: C06_NOW,
 };
 
-export type C06State = 'working' | 'finished' | 'failed' | 'permission' | 'delegating';
+export type C06State = 'working' | 'finished' | 'failed' | 'permission' | 'delegating' | 'stopped';
 
 type StateParams = {
   readonly state: C06State;
@@ -115,6 +115,7 @@ const STATUS: Record<C06State, Agent['status']> = {
   failed: 'failed',
   permission: 'running',
   delegating: 'running',
+  stopped: 'stopped',
 };
 
 const c06Agent = ({ state }: StateParams): Agent =>
@@ -128,12 +129,17 @@ const c06Agent = ({ state }: StateParams): Agent =>
     ...(state === 'finished' || state === 'failed' ? { completedMinute: '11:40' } : {}),
   });
 
+const stoppedAgentOf = ({ state }: StateParams): Agent =>
+  state === 'stopped'
+    ? { ...c06Agent({ state }), stoppedAt: at('11:40'), stoppedBy: 'you' }
+    : c06Agent({ state });
+
 const C06_OUTCOME = 'payments-api now installs with pnpm; the export tests pass on 12,000 rows.';
 
 const withOutcome = ({ state }: StateParams): Agent =>
   state === 'finished'
     ? { ...c06Agent({ state }), outputSummary: C06_OUTCOME }
-    : c06Agent({ state });
+    : stoppedAgentOf({ state });
 
 const CHILDREN: ReadonlyArray<Agent> = [
   agentOf({
@@ -399,6 +405,7 @@ const TRANSCRIPT: Record<C06State, ReadonlyArray<TurnEvent>> = {
   working: [...TURN_ONE, ...TURN_TWO_WORKING],
   finished: [...TURN_ONE, ...TURN_TWO_FINISHED],
   failed: [...TURN_ONE, ...TURN_TWO_FAILED],
+  stopped: TURN_ONE,
   permission: [...TURN_ONE, ...TURN_TWO_PERMISSION],
   delegating: [...TURN_ONE, ...TURN_TWO_WORKING],
 };

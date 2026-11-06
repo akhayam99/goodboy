@@ -5,6 +5,7 @@ import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@go
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { couldntFixWords, needsYouWords, pushFailedWords } from '../resolve/notes/attentionWords';
 import { NAMES } from '../../shared/utils/names';
+import { planNeedsApprovalOf } from '../../shared/utils/planNeedsApprovalOf';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/utils/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
@@ -64,7 +65,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'plan',
     tone: 'warning',
     mark: 'approval',
-    words: 'The plan waits for your approval',
+    words: 'The plan needs approval',
   }),
   'changes-requested': entryOf({
     icon: 'review',
@@ -177,7 +178,7 @@ export const attentionWordsOf = ({
     return pushFailedWords({ count: countOf({ count: counts.pushFailedCount }) });
   }
   if (reason === 'plan-approval' && planVersion !== null) {
-    return `Plan v${planVersion} waits for your approval`;
+    return planNeedsApprovalOf({ version: planVersion });
   }
   return ATTENTION_REASON_META[reason].words;
 };
