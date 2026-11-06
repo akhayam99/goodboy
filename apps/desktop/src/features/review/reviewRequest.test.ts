@@ -56,7 +56,7 @@ describe('requestReview with a fix request', () => {
       currentSessionId: SESSION_ID,
       activeLens: { [SESSION_ID]: 'branch' },
       branchTab: { [SESSION_ID]: 'files' },
-      branchThreadId: { [SESSION_ID]: 'PRRT_open' },
+      drawer: { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: 'PRRT_open' } },
     });
 
     fix(['PRRT_1']);

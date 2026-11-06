@@ -335,7 +335,16 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
-  `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
+  `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open),
+  `s/{session}/questions/q/{question}` (a question open over Questions).
+- **An open item is named by the address, and the panel is not a second holder.**
+  A question (`question` target, `questionPlace`) and a thread (the `threadId` of the
+  Branch target) are items: the address names them while their panel is open, and
+  `captureLocation` reads that from the one open drawer, so closing it with Esc, the X
+  or ⌘W, or pressing a tool over it, clears the address too and a reload or a saved
+  window reopens the same item. An item is not depth: Up from an open thread or
+  question leaves the page, it does not stop on the list first. Close on a question
+  goes back through the history to where it was opened from (`closeQuestion`).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. A move lands exactly where

@@ -19,6 +19,22 @@ type TargetParams = {
   readonly lens: LensKind | null;
 };
 
+type ThreadParams = {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+};
+
+const openThreadOf = ({ state, sessionId }: ThreadParams): string | null => {
+  const drawer = state.drawer ?? null;
+  if (drawer === null || drawer.sessionId !== sessionId) {
+    return null;
+  }
+  if (drawer.kind === 'conversation') {
+    return drawer.payload.threadId;
+  }
+  return drawer.kind === 'transcript' ? (state.branchThreadId[sessionId] ?? null) : null;
+};
+
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
   const agentId = state.selectedAgentId[sessionId] ?? null;
   if (lens === 'review' && agentId !== null) {
@@ -49,7 +65,7 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
       kind: 'branch',
       mountPath,
       tab: branchTabOf({ state, sessionId, mountPath }),
-      threadId: state.branchThreadId[sessionId] ?? null,
+      threadId: openThreadOf({ state, sessionId }),
       focus: state.diffFocus[sessionId] ?? null,
     };
   }

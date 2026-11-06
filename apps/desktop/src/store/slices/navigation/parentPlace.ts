@@ -20,7 +20,9 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   const { sessionId, view } = place;
   if (view.target?.kind === 'branch') {
     const { target } = view;
-    if (target.threadId !== null) {
+    const isItemOpen =
+      state.drawer?.kind === 'conversation' && state.drawer.sessionId === sessionId;
+    if (target.threadId !== null && !isItemOpen) {
       return { ...place, view: { ...view, target: { ...target, threadId: null } } };
     }
     if (target.tab === 'files' && target.focus?.path != null) {

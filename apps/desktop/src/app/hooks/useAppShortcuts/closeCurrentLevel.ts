@@ -13,7 +13,12 @@ export const closeCurrentLevel = ({}: Params): void => {
     return;
   }
   const state = useAppStore.getState();
-  if (selectOpenDrawer(state) !== null) {
+  const drawer = selectOpenDrawer(state);
+  if (drawer !== null) {
+    if (drawer.kind === 'question') {
+      state.closeQuestion();
+      return;
+    }
     state.closeDrawer();
     return;
   }

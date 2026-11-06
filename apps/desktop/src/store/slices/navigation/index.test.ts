@@ -1037,15 +1037,15 @@ describe('Branch page', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('sends Up to the crumb on the left, one level at a time', () => {
+  it('sends Up to the crumb on the left, and an open thread is not a level of its own', () => {
     const store = makeStore();
     store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
-    store
-      .getState()
-      .navigate({ to: branchPlace({ sessionId: S1, mountPath: MOUNT, threadId: 'thread-9' }) });
-    store.getState().up();
-    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: null });
+    store.getState().navigate({
+      to: branchPlace({ sessionId: S1, mountPath: MOUNT, threadId: 'thread-9' }),
+      drawer: { kind: 'conversation', sessionId: S1, payload: { threadId: 'thread-9' } },
+    });
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: 'thread-9' });
     store.getState().up();
     expect(store.getState().activeLens[S1]).toBeNull();
   });

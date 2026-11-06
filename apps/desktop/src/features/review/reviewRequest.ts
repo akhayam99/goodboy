@@ -59,7 +59,7 @@ const requestFix = ({ getState, sessionId, threadIds }: FixParams): void => {
     to: branchPlace({
       sessionId,
       tab: 'comments',
-      threadId: state.branchThreadId[sessionId] ?? null,
+      threadId: fromThreadId,
     }),
   });
 };
