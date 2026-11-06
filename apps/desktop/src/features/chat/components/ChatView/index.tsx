@@ -49,6 +49,7 @@ import { anchorKeyOf } from './anchorKeyOf';
 import { listenUserInput } from './listenUserInput';
 import { findRetrySource } from './findRetrySource';
 import { buildRetryOverride } from './buildRetryOverride';
+import { useAskDock } from './useAskDock';
 import { useTranscriptAnchor } from './useTranscriptAnchor';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceStack } from './parts/WorkflowAdvanceStack';
@@ -126,18 +127,10 @@ export const ChatView = ({
   const loadAgentTranscript = useAppStore((s) => s.loadAgentTranscript);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
-  const selectedAgentLastFinishedAt = useAppStore((s) =>
-    selectedAgentId
-      ? (s.sessionPhaseRuns[session.id]?.find((r) => r.id === selectedAgentId)?.lastFinishedAt ??
-        null)
-      : null,
-  );
-  const selectedAgentLastViewedAt = useAppStore((s) =>
-    selectedAgentId
-      ? (s.sessionPhaseRuns[session.id]?.find((r) => r.id === selectedAgentId)?.lastViewedAt ??
-        null)
-      : null,
-  );
+  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const selectedRun = phaseRuns.find((run) => run.id === selectedAgentId);
+  const selectedAgentLastFinishedAt = selectedRun?.lastFinishedAt ?? null;
+  const selectedAgentLastViewedAt = selectedRun?.lastViewedAt ?? null;
 
   useEffect(() => {
     if (!isActive || !selectedAgentId || transcriptCached) {
@@ -222,12 +215,18 @@ export const ChatView = ({
   const isConversation = mode === 'conversation';
   const isTurnLive = activeRunId !== null;
   const isAskInDock = isConversation && hasComposer && !isEnded && selectedAgentId != null;
+  const askDock = useAskDock({
+    sessionId: session.id,
+    agentId: selectedAgentId,
+    isAskInDock,
+    isAskLapsed: selectedRun?.status === 'stopped',
+  });
   const rows = useMemo(
     () =>
       isConversation
-        ? conversationRows({ items: deferredItems, isLive: isTurnLive, isAskInDock })
+        ? conversationRows({ items: deferredItems, isLive: isTurnLive, askDock })
         : clusterOperations(deferredItems),
-    [deferredItems, isAskInDock, isConversation, isTurnLive],
+    [askDock, deferredItems, isConversation, isTurnLive],
   );
   const unseenSince = useAppStore((state) =>
     selectedAgentId == null ? null : (state.agentUnseenSince[selectedAgentId] ?? null),
@@ -266,7 +265,6 @@ export const ChatView = ({
           isLastClusterRunning: lastClusterRunning,
         });
   const thinkingStartedAt = turnStateForRun.kind === 'running' ? turnStateForRun.startedAt : null;
-  const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const selectedMountId = phaseRuns.find((agent) => agent.id === selectedAgentId)?.mountId;
   const projectName = useAppStore((s) =>
     selectedMountId === undefined

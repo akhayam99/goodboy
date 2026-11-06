@@ -146,7 +146,7 @@
   },
   "apps/desktop/src/features/chat/components/ChatView/index.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 13
+      "count": 11
     }
   },
   "apps/desktop/src/features/chat/components/ChatView/useScrollPin.ts": {
