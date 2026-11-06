@@ -164,11 +164,7 @@ export const Tooltip = ({
     if (Date.now() - suppressionEndedAtRef.current < REFOCUS_WINDOW_MS) {
       return;
     }
-    if (!isKeyboardFocus({ target })) {
-      show();
-      return;
-    }
-    if (isQuietNow()) {
+    if (!isKeyboardFocus({ target }) || isQuietNow()) {
       show();
       return;
     }

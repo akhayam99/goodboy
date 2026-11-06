@@ -683,7 +683,11 @@ const CardWithSurface = () => {
   );
 };
 
-const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+const wait = (ms: number) => {
+  act(() => {
+    vi.advanceTimersByTime(ms);
+  });
+};
 
 const tooltips = () => document.querySelectorAll('[role="tooltip"]');
 

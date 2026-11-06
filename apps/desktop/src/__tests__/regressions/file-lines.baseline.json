@@ -84,6 +84,6 @@
   "packages/ui/src/components/Listbox/index.tsx": 359,
   "packages/ui/src/components/Markdown/index.tsx": 678,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,
-  "packages/ui/src/components/Tooltip.tsx": 325,
+  "packages/ui/src/components/Tooltip.tsx": 322,
   "scripts/validate-scenes.mjs": 915
 }
