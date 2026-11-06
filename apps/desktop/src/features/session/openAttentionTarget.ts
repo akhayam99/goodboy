@@ -26,5 +26,5 @@ export const openAttentionTarget = async ({ target }: Params): Promise<Attention
     return 'elsewhere';
   }
   const taken = attentionTargetChannel.take({ workspaceId, now: Date.now() });
-  return taken === null ? 'elsewhere' : landAttentionTarget({ target: taken });
+  return taken === null ? 'elsewhere' : landAttentionTarget({ target: taken, isFreshOpen: true });
 };

@@ -5,7 +5,11 @@ import { ATTENTION_HANDLED_EVENT } from '../../attentionHandledEvent';
 import { attentionTargetChannel } from '../../attentionTargetChannel';
 import { landAttentionTarget } from '../../landAttentionTarget';
 
-const takeAndLand = (): void => {
+type TakeParams = {
+  readonly isFreshOpen: boolean;
+};
+
+const takeAndLand = ({ isFreshOpen }: TakeParams): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId;
   if (workspaceId === null || !state.boardReady || state.switchingToWorkspaceId !== null) {
@@ -15,7 +19,7 @@ const takeAndLand = (): void => {
   if (target === null) {
     return;
   }
-  landAttentionTarget({ target });
+  landAttentionTarget({ target, isFreshOpen });
 };
 
 export const useAttentionTargets = (): void => {
@@ -29,7 +33,7 @@ export const useAttentionTargets = (): void => {
 
   useEffect(() => {
     if (isReady) {
-      takeAndLand();
+      takeAndLand({ isFreshOpen: true });
     }
   }, [isReady]);
 
@@ -43,7 +47,7 @@ export const useAttentionTargets = (): void => {
     let off: () => void = () => undefined;
     let isLive = true;
     attentionTargetChannel
-      .listen({ onTarget: () => takeAndLand() })
+      .listen({ onTarget: () => takeAndLand({ isFreshOpen: false }) })
       .then((unlisten) => {
         if (!isLive) {
           unlisten();

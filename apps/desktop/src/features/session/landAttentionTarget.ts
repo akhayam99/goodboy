@@ -10,9 +10,10 @@ export type AttentionLanding = 'landed' | 'handled';
 
 type Params = {
   readonly target: AttentionTarget;
+  readonly isFreshOpen?: boolean;
 };
 
-const landOf = ({ target }: Params): AttentionLanding => {
+const landOf = ({ target, isFreshOpen = false }: Params): AttentionLanding => {
   const state = useAppStore.getState();
   const { sessionId, reason, agentId } = target;
   if (selectSessionById(state, sessionId) === null) {
@@ -31,6 +32,10 @@ const landOf = ({ target }: Params): AttentionLanding => {
     state.navigate({ to: restingPlace });
     return 'landed';
   }
+  if (isFreshOpen) {
+    state.navigate({ to: attentionPlace({ state, sessionId, reason }) });
+    return 'landed';
+  }
   const info = stageInfoOf(state, session);
   const isCurrent = info.attention === reason || (info.otherReasons ?? []).includes(reason);
   if (!isCurrent) {
@@ -41,8 +46,8 @@ const landOf = ({ target }: Params): AttentionLanding => {
   return 'landed';
 };
 
-export const landAttentionTarget = ({ target }: Params): AttentionLanding => {
-  const landing = landOf({ target });
+export const landAttentionTarget = ({ target, isFreshOpen }: Params): AttentionLanding => {
+  const landing = landOf({ target, isFreshOpen: isFreshOpen === true });
   if (landing === 'handled') {
     globalThis.dispatchEvent?.(new CustomEvent(ATTENTION_HANDLED_EVENT));
   }
