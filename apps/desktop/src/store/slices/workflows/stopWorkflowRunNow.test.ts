@@ -65,6 +65,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import type { CancelOutcome } from '../turn/cancelTurnConfirmed';
+import { clearAgentStopping, isAgentStopping, markAgentStopping } from '../turn/stoppingAgents';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 
@@ -240,6 +241,29 @@ describe('stopWorkflowRunNow', () => {
       AGENT_ID,
       expect.objectContaining({ status: 'stopped' }),
     );
+  });
+
+  it('keeps the step stopping until its cut status is written and read back', async () => {
+    const state = baseState();
+    const seen: boolean[] = [];
+    state['cancelTurnConfirmed'] = vi.fn(async () => {
+      markAgentStopping({ agentId: AGENT_ID });
+      clearAgentStopping({ agentId: AGENT_ID });
+      return EXITED;
+    });
+    invokeAgentUpdateStatusSpy.mockImplementation(async () => {
+      seen.push(isAgentStopping({ agentId: AGENT_ID }));
+    });
+    invokeAgentListSpy.mockImplementation(async () => {
+      seen.push(isAgentStopping({ agentId: AGENT_ID }));
+      return [{ ...runningAgent(), status: 'stopped' }];
+    });
+    const { set, get } = harness(state);
+
+    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+
+    expect(seen).toEqual([true, true]);
+    expect(isAgentStopping({ agentId: AGENT_ID })).toBe(false);
   });
 
   it('clears the operator stop when autorun goes back on', async () => {

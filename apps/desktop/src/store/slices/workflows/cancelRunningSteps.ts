@@ -1,6 +1,7 @@
 import type { Agent, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { clearAgentStopping, markAgentStopping } from '../turn/stoppingAgents';
 import type { GetFn, SetFn } from './types';
 
 export type CutStepStatus = 'stopped' | 'skipped';
@@ -48,19 +49,28 @@ export const cancelRunningSteps = async ({
   }
   const stillRunning: Agent[] = [];
   for (const agent of running) {
-    const { outcome } = await get().cancelTurnConfirmed({
-      sessionId,
-      agentId: agent.id,
-      reason: 'teardown',
-    });
-    if (outcome !== 'exited') {
-      stillRunning.push(agent);
-      continue;
-    }
-    await markCut({ agent, cut });
+    markAgentStopping({ agentId: agent.id });
   }
-  const refreshed = await invokeAgentList(sessionId);
-  set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
+  try {
+    for (const agent of running) {
+      const { outcome } = await get().cancelTurnConfirmed({
+        sessionId,
+        agentId: agent.id,
+        reason: 'teardown',
+      });
+      if (outcome !== 'exited') {
+        stillRunning.push(agent);
+        continue;
+      }
+      await markCut({ agent, cut });
+    }
+    const refreshed = await invokeAgentList(sessionId);
+    set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
+  } finally {
+    for (const agent of running) {
+      clearAgentStopping({ agentId: agent.id });
+    }
+  }
   void get().refreshUnreadWorkspaces();
   return { stillRunning };
 };

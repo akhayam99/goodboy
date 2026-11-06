@@ -360,6 +360,29 @@ describe('Send writes the row, then delivers', () => {
     expect(await savedQueue()).toEqual([]);
   });
 
+  it('never restarts a step the run cut as skipped', async () => {
+    await replaceAgentQueuedMessages(storySqlite(), {
+      agentId,
+      messages: [
+        { id: 'send-15', agentId, content: TEXT, attachments: [], override: null, createdAt: AT },
+      ],
+    });
+    useAppStore.setState((state) => ({
+      sessionPhaseRuns: {
+        ...state.sessionPhaseRuns,
+        [sessionId]: (state.sessionPhaseRuns[sessionId] ?? []).map((agent) =>
+          agent.id === agentId ? { ...agent, status: 'skipped' } : agent,
+        ),
+      },
+    }));
+
+    await useAppStore.getState().loadAgentQueues(sessionId);
+    await useAppStore.getState().drainSessionQueues({ sessionId });
+
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(await savedQueue()).toEqual(['send-15']);
+  });
+
   it('never drops a message on Retry after a cancelled start', async () => {
     ensureTurnStartWindow({ agentId });
     cancelTurnStartWindow({ agentId });

@@ -22,7 +22,7 @@ export const drainAgentQueue = (set: SetFn, get: GetFn) => {
       return;
     }
     const agent = (state.sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === agentId);
-    if (agent?.status === 'stopped') {
+    if (agent?.status === 'stopped' || agent?.status === 'skipped') {
       return;
     }
     const queue = readAgentQueue({ get, agentId });
