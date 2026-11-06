@@ -108,11 +108,8 @@ export const Tooltip = ({
   };
 
   const show = () => {
-    if (isQuietNow()) {
-      return;
-    }
     clearDelay();
-    if (!isRestRequired && isWarm()) {
+    if (!isRestRequired && isWarm() && !isQuietNow()) {
       setIsHovered(true);
       return;
     }
@@ -157,7 +154,7 @@ export const Tooltip = ({
   };
 
   const focus = (target: EventTarget) => {
-    if (isRestRequired || isQuietNow()) {
+    if (isRestRequired) {
       return;
     }
     if (isPointerDownRef.current) {
@@ -168,6 +165,10 @@ export const Tooltip = ({
       return;
     }
     if (!isKeyboardFocus({ target })) {
+      show();
+      return;
+    }
+    if (isQuietNow()) {
       show();
       return;
     }

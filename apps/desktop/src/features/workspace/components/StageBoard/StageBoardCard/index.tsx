@@ -1,5 +1,5 @@
-import { memo, useId } from 'react';
-import { cn, Input, Tooltip, InlineMarkdown, inlineMarkdownText, ToneBar } from '@goodboy/ui';
+import { memo, useEffect, useId, useRef } from 'react';
+import { cn, Input, Tooltip, InlineMarkdown, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CardAction, CardActionSlot, FOCUS_RING } from '@goodboy/ui';
@@ -32,6 +32,8 @@ type CardHover = {
   readonly anchor: HTMLElement;
 };
 
+type EnterParams = Pick<CardHover, 'anchor'>;
+
 type StageBoardCardProps = {
   readonly session: Session;
   readonly nav: BoardNavigation;
@@ -63,7 +65,10 @@ export const StageBoardCard = memo(function StageBoardCard({
   const id = session.id as SessionId;
   const stateWordId = useId();
   const isArchived = archived === true;
-  const { summary, node, rowTitle, title } = useSessionRowFacts({ session, isArchived });
+  const { summary, node, rowTitle, title, plainTitle } = useSessionRowFacts({
+    session,
+    isArchived,
+  });
   const { stage } = summary;
   const signal = useSessionSignal({ session, isArchived });
   const track = stageTrackOf({ stage, isArchived });
@@ -110,10 +115,31 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
-  const isSignalOwnTooltip = signal.kind === 'request-pending';
+  const isEnteredRef = useRef(false);
+  const leaveRef = useRef(onHoverLeave);
+  leaveRef.current = onHoverLeave;
+  useEffect(
+    () => () => {
+      if (isEnteredRef.current) {
+        isEnteredRef.current = false;
+        leaveRef.current?.();
+      }
+    },
+    [],
+  );
 
-  const pauseCard = () => {
+  const enterCard = ({ anchor }: EnterParams) => {
+    isEnteredRef.current = true;
+    onHoverEnter?.({ sessionId: id, anchor });
+  };
+
+  const leaveCard = () => {
+    isEnteredRef.current = false;
     onHoverLeave?.();
+  };
+
+  const resumeCard = ({ currentTarget }: React.MouseEvent<HTMLElement>) => {
+    enterCard({ anchor: currentTarget.closest('article') ?? currentTarget });
   };
 
   return (
@@ -121,8 +147,8 @@ export const StageBoardCard = memo(function StageBoardCard({
       data-archived={archived || undefined}
       data-select-id={id}
       onContextMenu={menu.onContextMenu}
-      onMouseEnter={(event) => onHoverEnter?.({ sessionId: id, anchor: event.currentTarget })}
-      onMouseLeave={() => onHoverLeave?.()}
+      onMouseEnter={({ currentTarget }) => enterCard({ anchor: currentTarget })}
+      onMouseLeave={leaveCard}
       onClick={(event) => {
         if (selectFromEvent(event)) {
           return;
@@ -148,19 +174,18 @@ export const StageBoardCard = memo(function StageBoardCard({
           className="min-w-0 self-start"
         />
       ) : (
-        <Tooltip content={inlineMarkdownText({ text: title })}>
+        <Tooltip content={plainTitle}>
           <button
             type="button"
             aria-pressed={selected === true}
             aria-describedby={stateWordId}
             aria-keyshortcuts="Alt+Enter Shift+Enter Shift+F10"
             onFocus={(event) =>
-              onHoverEnter?.({
-                sessionId: id,
+              enterCard({
                 anchor: event.currentTarget.closest('article') ?? event.currentTarget,
               })
             }
-            onBlur={() => onHoverLeave?.()}
+            onBlur={leaveCard}
             onKeyDown={(event) => {
               menu.onKeyDown(event);
               if (event.key !== 'Enter' && event.key !== ' ') {
@@ -187,13 +212,8 @@ export const StageBoardCard = memo(function StageBoardCard({
       </span>
 
       <span
-        onMouseEnter={pauseCard}
-        onMouseLeave={(event) =>
-          onHoverEnter?.({
-            sessionId: id,
-            anchor: event.currentTarget.closest('article') ?? event.currentTarget,
-          })
-        }
+        onMouseEnter={leaveCard}
+        onMouseLeave={resumeCard}
         className="col-start-2 row-start-1 flex items-center gap-1 self-start"
       >
         <CardActionSlot label="Session quick actions">
@@ -226,20 +246,15 @@ export const StageBoardCard = memo(function StageBoardCard({
         </span>
         <span
           data-slot="card-signal"
-          onMouseEnter={isSignalOwnTooltip ? pauseCard : undefined}
-          onMouseLeave={
-            isSignalOwnTooltip
-              ? (event) =>
-                  onHoverEnter?.({
-                    sessionId: id,
-                    anchor: event.currentTarget.closest('article') ?? event.currentTarget,
-                  })
-              : undefined
-          }
           className="flex min-w-fit max-w-full flex-1 items-center justify-end"
         >
           <span data-slot="card-signal-reserve" className="inline-flex min-w-14 justify-end">
-            <SessionSignal signal={signal} onOpenRequest={handlePrClick} />
+            <SessionSignal
+              signal={signal}
+              onOpenRequest={handlePrClick}
+              onGlyphEnter={leaveCard}
+              onGlyphLeave={resumeCard}
+            />
           </span>
         </span>
       </div>

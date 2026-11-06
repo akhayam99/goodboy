@@ -119,6 +119,43 @@ describe('Tooltip beside a hover surface', () => {
   });
 });
 
+describe('Tooltip armed while a surface is open', () => {
+  it('shows after the surface closes during the rest of the hover', async () => {
+    vi.useFakeTimers();
+    render(<Harness />);
+    fireEvent.click(screen.getByText('toggle'));
+    fireEvent.mouseEnter(screen.getByText('outside'));
+    await advance(100);
+    fireEvent.click(screen.getByText('toggle'));
+    await advance(400);
+
+    expect(screen.getByRole('tooltip').textContent).toBe('outside tip');
+  });
+
+  it('shows on keyboard focus that lands while a surface is still open', async () => {
+    vi.useFakeTimers();
+    render(<Harness />);
+    fireEvent.click(screen.getByText('toggle'));
+    const outside = screen.getByText('outside');
+    act(() => outside.focus());
+    await advance(100);
+    fireEvent.click(screen.getByText('toggle'));
+    await advance(400);
+
+    expect(screen.getByRole('tooltip').textContent).toBe('outside tip');
+  });
+
+  it('still stays quiet when the surface is open at fire time', async () => {
+    vi.useFakeTimers();
+    render(<Harness />);
+    fireEvent.click(screen.getByText('toggle'));
+    fireEvent.mouseEnter(screen.getByText('outside'));
+    await advance(1000);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});
+
 describe('Tooltip inside another tooltip trigger', () => {
   it('returns the bare child so the outer tooltip is the only one', async () => {
     vi.useFakeTimers();

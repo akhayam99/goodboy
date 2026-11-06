@@ -24,9 +24,14 @@ const filesUnder = ({ dir }: { readonly dir: string }): ReadonlyArray<string> =>
 const sourceOf = ({ path }: { readonly path: string }): string =>
   readFileSync(join(REPO_ROOT, path), 'utf8');
 
+const RENDERS_REGISTERED_SURFACE = /<(?:SessionHoverCard|FactCard|RailFlyout)\b/;
+
 const isFloatingSurface = ({ source }: { readonly source: string }): boolean =>
   /\buseFloatingPlace\(/.test(source) ||
-  (/\buseRestHover</.test(source) && /\bcreatePortal\(/.test(source));
+  (/\buseRestHover</.test(source) && /\bcreatePortal\(/.test(source)) ||
+  (/\b(?:useRestHover|useHoverCardTarget)\b/.test(source) &&
+    /\bcreatePortal\(|<AnchoredPopover\b/.test(source) &&
+    !RENDERS_REGISTERED_SURFACE.test(source));
 
 describe('a hover surface registers so tooltips stay quiet beside it', () => {
   const surfaces = ROOTS.flatMap((root) => filesUnder({ dir: root })).filter((path) =>
@@ -42,7 +47,35 @@ describe('a hover surface registers so tooltips stay quiet beside it', () => {
   it.each(surfaces)('%s calls useHoverSurface and marks its element', (path) => {
     const source = sourceOf({ path });
 
-    expect(source).toMatch(/\buseHoverSurface\(\{ isActive: /);
+    expect(source).toMatch(/\buseHoverSurface\(\{ isActive: (?!false\b)\w/);
     expect(source).toMatch(/data-hover-surface=""/);
+  });
+});
+
+describe('the hover surface guard sees the shapes it must', () => {
+  it('catches a hover target that draws its own portal', () => {
+    const source =
+      'const hover = useHoverCardTarget(); return createPortal(<div />, document.body);';
+
+    expect(isFloatingSurface({ source })).toBe(true);
+  });
+
+  it('catches a rest hover that opens an anchored popover', () => {
+    const source = 'const rest = useRestHover({}); return <AnchoredPopover dropdown={d} />;';
+
+    expect(isFloatingSurface({ source })).toBe(true);
+  });
+
+  it('lets a file that renders a registered surface through', () => {
+    const source =
+      'const hover = useHoverCardTarget(); return <SessionHoverCard target={hover} />;';
+
+    expect(isFloatingSurface({ source })).toBe(false);
+  });
+
+  it('rejects an inactive registration', () => {
+    expect('useHoverSurface({ isActive: false });').not.toMatch(
+      /\buseHoverSurface\(\{ isActive: (?!false\b)\w/,
+    );
   });
 });

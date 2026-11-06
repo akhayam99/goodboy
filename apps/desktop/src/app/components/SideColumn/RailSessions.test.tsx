@@ -489,7 +489,7 @@ describe('one hover on a rail node shows one thing', () => {
 
     fireEvent.mouseEnter(other);
     wait(450);
-    expect(plainTooltips()).toHaveLength(1);
+    expect(plainTooltips()).toHaveLength(0);
 
     wait(100);
     expect(screen.getByTestId('session-hover-card').textContent).toContain('Pinned work 1');
@@ -497,6 +497,54 @@ describe('one hover on a rail node shows one thing', () => {
 
     wait(1000);
     expect(plainTooltips()).toHaveLength(0);
+  });
+
+  it('keeps the unread summary in the hover card of an unread pin', () => {
+    const unread = sessionOf({ goal: 'Unread reply' });
+    seedColumn({ store: useAppStore, sessions: [open, unread], currentSessionId: idOf(open) });
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [unread.id]: [
+          anAgent({
+            sessionId: idOf(unread),
+            name: 'Reviewer',
+            status: 'completed',
+            outputSummary: 'Checked the ledger-core retry.',
+            lastFinishedAt: at('2026-10-06T09:00:00.000Z'),
+          }),
+        ],
+      },
+    });
+    render(railOf());
+    fireEvent.mouseEnter(document.querySelector(`[data-rail-session="${unread.id}"]`) as Element);
+    wait(600);
+
+    const card = screen.getByTestId('session-hover-card');
+    expect(card.querySelector('[data-slot="unread-label"]')?.textContent).toBe(
+      '1 new: Checked the ledger-core retry',
+    );
+  });
+
+  it('keeps the unread summary in the flyout of the open node', () => {
+    mountRail();
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [open.id]: [
+          anAgent({
+            sessionId: idOf(open),
+            name: 'Reviewer',
+            status: 'completed',
+            outputSummary: 'Checked the ledger-core retry.',
+            lastFinishedAt: at('2026-10-06T09:00:00.000Z'),
+          }),
+        ],
+      },
+    });
+    hoverOpenSession();
+
+    expect(flyout()?.querySelector('[data-slot="unread-label"]')?.textContent).toBe(
+      '1 new: Checked the ledger-core retry',
+    );
   });
 
   it('shows the flyout of the open node and never a tooltip with it', () => {

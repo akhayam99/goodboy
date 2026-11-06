@@ -1,6 +1,6 @@
-import type { ReactElement } from 'react';
+import type { TooltipProps } from '@goodboy/ui';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
   IsoDateTime,
@@ -52,6 +52,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     agents: [] as ReadonlyArray<unknown>,
     cost: 0,
     prFetchState: 'known' as SessionPrFetchState,
+    isRealTooltip: false,
   },
   useDynamicActionsMock: vi.fn((): ReadonlyArray<MockDynamicAction> => []),
 }));
@@ -86,12 +87,17 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   return {
     ...actual,
     StatusDot: () => <span data-testid="status-dot" />,
-    Tooltip: ({ content, children }: { content: string; children: ReactElement }) => (
-      <span data-tooltip={content}>{children}</span>
-    ),
+    Tooltip: ({ content, children }: TooltipProps) =>
+      hooks.isRealTooltip ? (
+        <actual.Tooltip content={content}>{children}</actual.Tooltip>
+      ) : (
+        <span data-tooltip={typeof content === 'string' ? content : undefined}>{children}</span>
+      ),
   };
 });
 
+import { useState } from 'react';
+import { useHoverSurface } from '@goodboy/ui';
 import { StageBoardCard } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -171,6 +177,7 @@ beforeEach(() => {
   hooks.agents = [];
   hooks.cost = 0;
   hooks.prFetchState = 'known';
+  hooks.isRealTooltip = false;
 });
 
 afterEach(cleanup);
@@ -523,9 +530,46 @@ describe('StageBoardCard actions', () => {
     const onHoverLeave = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
 
-    fireEvent.mouseEnter(elementOf({ node: signalSlot() }));
+    fireEvent.mouseEnter(screen.getByRole('img', { name: /Could not reach/ }));
 
     expect(onHoverLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the hover card armed over the empty signal slot of an unreachable card', () => {
+    hooks.prFetchState = 'unreachable';
+    const onHoverLeave = vi.fn();
+    render(<StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />);
+
+    fireEvent.mouseEnter(elementOf({ node: signalSlot() }));
+
+    expect(onHoverLeave).not.toHaveBeenCalled();
+  });
+
+  it('lets go of the hover card when it unmounts under the pointer', () => {
+    const onHoverEnter = vi.fn();
+    const onHoverLeave = vi.fn();
+    const { unmount } = render(
+      <StageBoardCard
+        session={session}
+        nav={nav}
+        onHoverEnter={onHoverEnter}
+        onHoverLeave={onHoverLeave}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByRole('article'));
+    unmount();
+
+    expect(onHoverLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not touch the hover card when a card it never entered unmounts', () => {
+    const onHoverLeave = vi.fn();
+    const { unmount } = render(
+      <StageBoardCard session={session} nav={nav} onHoverLeave={onHoverLeave} />,
+    );
+    unmount();
+
+    expect(onHoverLeave).not.toHaveBeenCalled();
   });
 
   it('leaves the hover card armed over a plain signal, the card carries its words', () => {
@@ -623,5 +667,52 @@ describe('StageBoardCard facts moved to the hover card', () => {
     expect(screen.queryByLabelText('Autopilot')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
     expect(screen.queryByText(/draft comment/)).toBeNull();
+  });
+});
+
+const CardWithSurface = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  useHoverSurface({ isActive: isOpen });
+  return (
+    <StageBoardCard
+      session={session}
+      nav={nav}
+      onHoverEnter={() => setIsOpen(true)}
+      onHoverLeave={() => setIsOpen(false)}
+    />
+  );
+};
+
+const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+
+const tooltips = () => document.querySelectorAll('[role="tooltip"]');
+
+describe('StageBoardCard with the real tooltip beside the hover card', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    hooks.isRealTooltip = true;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows no title tooltip while the hover card is open', () => {
+    render(<CardWithSurface />);
+    fireEvent.mouseEnter(screen.getByRole('article'));
+    fireEvent.mouseEnter(cardTitle());
+    wait(1000);
+
+    expect(tooltips()).toHaveLength(0);
+  });
+
+  it('shows the unreachable tooltip once the pointer rests on the glyph', () => {
+    hooks.prFetchState = 'unreachable';
+    render(<CardWithSurface />);
+    fireEvent.mouseEnter(screen.getByRole('article'));
+    fireEvent.mouseEnter(screen.getByRole('img', { name: /Could not reach/ }));
+    wait(500);
+
+    expect(tooltips()).toHaveLength(1);
   });
 });

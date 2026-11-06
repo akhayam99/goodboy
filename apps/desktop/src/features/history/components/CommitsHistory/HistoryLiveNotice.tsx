@@ -44,7 +44,7 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
       title={live.shouldStashFiles ? 'Set your files aside first' : 'Could not edit the history'}
       body={live.error}
       actions={
-        <div className="flex items-center gap-2">
+        <>
           {live.hasConflict && plan !== null ? (
             <Button
               size="sm"
@@ -110,7 +110,7 @@ export const HistoryLiveNotice = ({ sessionId, mountId, live }: Props) => {
           >
             {live.hasConflict ? 'Undo' : 'Dismiss'}
           </Button>
-        </div>
+        </>
       }
     >
       {live.hasConflict && plan !== null ? (
