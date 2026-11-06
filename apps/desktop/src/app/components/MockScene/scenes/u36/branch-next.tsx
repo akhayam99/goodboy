@@ -7,4 +7,5 @@ export const U36_BRANCH_NEXT_SCENES: Readonly<Record<string, ComponentType>> = {
   'u36-p16-checks-working': () => <BranchNextScene phase="running" />,
   'u36-p16-start-fix': () => <BranchNextScene phase="proposal" />,
   'u36-p16-merged-remove': () => <BranchMergedScene />,
+  'u36-p16-merged-archive': () => <BranchMergedScene isRemoved />,
 };

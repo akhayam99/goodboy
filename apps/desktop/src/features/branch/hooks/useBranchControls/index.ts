@@ -9,7 +9,11 @@ import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mo
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { DIFF_CHANGE_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import type { PullRequestFacts } from '../../../actions/kinds/pullRequestFacts';
-import type { DiffActionTarget, PullRequestActionTarget } from '../../../actions/types';
+import type {
+  DiffActionTarget,
+  PullRequestActionTarget,
+  SessionActionTarget,
+} from '../../../actions/types';
 import { useActionControls, type ActionControls } from '../../../actions/useActionControls';
 import { requestReview } from '../../../review/reviewRequest';
 import { useRebasePrediction } from '../../../history/useRebasePrediction';
@@ -24,6 +28,7 @@ import {
   type BranchReviewCounts,
 } from '../../branchPrimary';
 import { NO_COMMENT_FACTS, type BranchStep, type BranchStepComments } from '../../branchStepOf';
+import { hasRemovedMergedMountOf } from '../../hasRemovedMergedMountOf';
 import type { PullRequestPresentationState } from '../../../../shared/utils/pullRequestPresentation';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
@@ -67,6 +72,7 @@ type RunStepParams = {
 export type BranchControls = {
   readonly diffControls: ActionControls;
   readonly pullRequestControls: ActionControls;
+  readonly sessionControls: ActionControls;
   readonly step: BranchStep;
   readonly checkWork: BranchCheckWork;
   readonly primary: BranchPrimary | null;
@@ -157,9 +163,17 @@ export const useBranchControls = ({
     }),
     [diff.status, mountId, pr?.number, remoteHost, sessionId],
   );
+  const isWorktreeGone = useAppStore(
+    (s) => worktreePath === null && hasRemovedMergedMountOf({ state: s, sessionId }),
+  );
+  const sessionTarget = useMemo<SessionActionTarget | null>(
+    () => (isWorktreeGone ? { kind: 'session', sessionId } : null),
+    [isWorktreeGone, sessionId],
+  );
   const scopeKey = `${sessionId}:${worktreePath ?? ''}`;
   const diffControls = useActionControls({ target: diffTarget, scopeKey });
   const pullRequestControls = useActionControls({ target: pullRequestTarget, scopeKey });
+  const sessionControls = useActionControls({ target: sessionTarget, scopeKey });
 
   const [isChangingBase, setIsChangingBase] = useState(false);
   useEffect(() => {
@@ -193,6 +207,7 @@ export const useBranchControls = ({
       branchActionsOf({
         diff: diffControls.actions,
         pullRequest: pullRequestControls.actions,
+        session: sessionControls.actions,
         review,
         comments: comments.facts,
         checks: checkStep.facts,
@@ -217,6 +232,7 @@ export const useBranchControls = ({
       pr,
       pullRequestControls.actions,
       review,
+      sessionControls.actions,
       state,
     ],
   );
@@ -228,12 +244,23 @@ export const useBranchControls = ({
 
   const controlsOf = useCallback(
     (action: BranchPrimary): ActionControls | null => {
-      if (action.source === 'review' || action.source === 'step') {
-        return null;
+      switch (action.source) {
+        case 'review':
+        case 'step':
+          return null;
+        case 'diff':
+          return diffControls;
+        case 'session':
+          return sessionControls;
+        case 'pullRequest':
+          return pullRequestControls;
+        default: {
+          const unexpected: never = action.source;
+          return unexpected;
+        }
       }
-      return action.source === 'diff' ? diffControls : pullRequestControls;
     },
-    [diffControls, pullRequestControls],
+    [diffControls, pullRequestControls, sessionControls],
   );
 
   const applyFixes = useCallback(
@@ -319,10 +346,9 @@ export const useBranchControls = ({
         });
         return;
       }
-      const controls = action.source === 'diff' ? diffControls : pullRequestControls;
-      controls.trigger({ actionId: action.actionId });
+      controlsOf(action)?.trigger({ actionId: action.actionId });
     },
-    [busyStepId, diffControls, pullRequestControls, runStep, sessionId],
+    [busyStepId, controlsOf, runStep, sessionId],
   );
 
   const merge = useCallback(
@@ -333,6 +359,7 @@ export const useBranchControls = ({
   return {
     diffControls,
     pullRequestControls,
+    sessionControls,
     merge,
     step,
     checkWork: checkStep.work,

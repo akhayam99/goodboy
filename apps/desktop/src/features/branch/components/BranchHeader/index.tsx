@@ -117,7 +117,8 @@ export const BranchHeader = ({
   const isYielding =
     isPrimaryYielding ||
     controls.diffControls.confirming !== null ||
-    controls.pullRequestControls.confirming !== null;
+    controls.pullRequestControls.confirming !== null ||
+    controls.sessionControls.confirming !== null;
   const primaryVariant = isYielding ? 'secondary' : 'primary';
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
@@ -227,6 +228,8 @@ export const BranchHeader = ({
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.pullRequestControls} />
+      <ActionStatusLine controls={controls.sessionControls} showReasons={false} />
+      <ActionConfirmPanel controls={controls.sessionControls} />
     </div>
   );
 };

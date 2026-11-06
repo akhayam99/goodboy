@@ -682,6 +682,7 @@ describe('BranchHeader overflow', () => {
       'diff.rebase',
       'diff.changeBase',
       'diff.copyPatch',
+      'diff.archiveSession',
     ]);
     withMountPr();
     status = statusOf({ changed: 3 });

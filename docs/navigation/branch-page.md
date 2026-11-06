@@ -58,9 +58,14 @@ the name of what runs. A push that runs, a stop that is open or a queued request
 (and a `Retry push` there) in the secondary alone, with no primary beside it; `Publish N replies`
 stays reachable in the queue. On someone else's open request the step is `Review`
 (`pullRequest.writeReview`). A merged request ends the walk: `Remove worktree` while the folder is
-there and nothing blocks it (`diff.removeWorktree`, its confirm says the folder and the local branch
-go and the pull request and the branch on origin stay), then `Archive session` (`diff.archiveSession`,
-one confirm only while agents run, an Undo toast otherwise). While the new pull request form leads
+there (`diff.removeWorktree`, its confirm shares `mountCleanUpWordsOf` with Clean up: the folder and
+the local branch go, the pull request stays, and the branch on origin stays unless the after-merge
+setting removes it). A blocker such as an open terminal draws it disabled in the secondary with the
+reason, and a refusal keeps the step, so it never jumps to the session wide archive; `Archive
+session` then waits in `⋯`. Once the last folder is gone the page has no diff target: the step is
+`Archive session` on the session itself (`session.archive`, `hasRemovedMergedMountOf`, every host),
+and another open branch of the session keeps it away. `diff.archiveSession` confirms only while
+agents run, with an Undo toast otherwise. While the new pull request form leads
 before a request exists, the header draws no push: it waits in `⋯`, so the unpushed count is said once,
 in the line under the title. A selection of comments takes the one fill and the header step steps
 down to secondary until the selection is cleared. A closed

@@ -27,7 +27,7 @@ import {
   type BranchStep,
 } from './branchStepOf';
 
-type BranchPrimarySource = 'diff' | 'pullRequest' | 'review' | 'step';
+type BranchPrimarySource = 'diff' | 'pullRequest' | 'review' | 'session' | 'step';
 
 export type BranchStepAction = 'answer' | 'apply' | 'fixComments' | 'checks';
 
@@ -58,6 +58,7 @@ export type BranchNextStep = BranchLifecycleStep;
 type Params = {
   readonly diff: ReadonlyArray<ResolvedAction>;
   readonly pullRequest: ReadonlyArray<ResolvedAction>;
+  readonly session: ReadonlyArray<ResolvedAction>;
   readonly review: BranchReviewCounts;
   readonly comments: BranchCommentFacts;
   readonly checks: BranchCheckFacts;
@@ -77,6 +78,7 @@ export type BranchActions = {
 };
 
 const REVIEW_PUSH_ID = 'review.push';
+const SESSION_ARCHIVE_ID = 'session.archive';
 
 export const BRANCH_STEP_ID: Readonly<Record<BranchStepAction, string>> = {
   answer: 'step.answer',
@@ -222,6 +224,7 @@ const stepPrimaryOf = ({
   step,
   diff,
   pullRequest,
+  session,
   mergeLabel,
   comments,
   review,
@@ -239,6 +242,12 @@ const stepPrimaryOf = ({
   const closeAction = ({ id, label, icon }: RequestActionParams) => {
     const action = find({ actions: diff, id });
     return action === null ? null : fromAction({ source: 'diff', action, label, icon });
+  };
+  const sessionArchive = () => {
+    const action = find({ actions: session, id: SESSION_ARCHIVE_ID });
+    return action === null
+      ? null
+      : fromAction({ source: 'session', action, label: 'Archive session', icon: Archive });
   };
   const requestAction = ({ id, label, icon }: RequestActionParams) => {
     const action = find({ actions: pullRequest, id });
@@ -297,7 +306,10 @@ const stepPrimaryOf = ({
     case 'removeWorktree':
       return closeAction({ id: 'diff.removeWorktree', label: NAMES.removeWorktree, icon: Trash2 });
     case 'archiveSession':
-      return closeAction({ id: 'diff.archiveSession', label: 'Archive session', icon: Archive });
+      return (
+        closeAction({ id: 'diff.archiveSession', label: 'Archive session', icon: Archive }) ??
+        sessionArchive()
+      );
     default: {
       const unexpected: never = step;
       return unexpected;
@@ -315,16 +327,18 @@ const canDiffPush = ({ diff, hasOpenRebaseStop }: DiffStopParams): boolean => {
 const isRebaseStopped = ({ diff, hasOpenRebaseStop }: DiffStopParams): boolean =>
   hasOpenRebaseStop || find({ actions: diff, id: 'diff.continueRebase' }) !== null;
 
-const closingOf = ({ diff }: Pick<Params, 'diff'>): BranchClosingFacts => {
-  const remove = find({ actions: diff, id: 'diff.removeWorktree' });
-  return {
-    canRemove: remove !== null && remove.blockedReason === null,
-    canArchive: find({ actions: diff, id: 'diff.archiveSession' }) !== null,
-  };
-};
+const isWorktreeGone = ({ session }: Pick<Params, 'session'>): boolean =>
+  find({ actions: session, id: SESSION_ARCHIVE_ID }) !== null;
+
+const closingOf = ({ diff, session }: Pick<Params, 'diff' | 'session'>): BranchClosingFacts => ({
+  canRemove: find({ actions: diff, id: 'diff.removeWorktree' }) !== null,
+  canArchive:
+    find({ actions: diff, id: 'diff.archiveSession' }) !== null || isWorktreeGone({ session }),
+});
 
 const stepFor = ({
   diff,
+  session,
   review,
   comments,
   checks,
@@ -336,12 +350,12 @@ const stepFor = ({
 }: Params): BranchStep => {
   const isPullRequestPush = hasPullRequestPush({ hasPullRequest, state });
   return branchStepOf({
-    state: hasPullRequest || state === 'none' ? state : 'merged',
+    state: isWorktreeGone({ session }) || !(hasPullRequest || state === 'none') ? 'merged' : state,
     lifecycle: nextStep,
     hasConflicts,
     comments,
     checks,
-    closing: closingOf({ diff }),
+    closing: closingOf({ diff, session }),
     push: {
       isInFlight: isPullRequestPush && isReviewPushInFlight({ review }),
       failed: isPullRequestPush ? review.failed : 0,
@@ -360,6 +374,9 @@ export const branchActionsOf = ({ ...facts }: Params): BranchActions => {
   const primary = stepPrimaryOf({ ...facts, step });
   if (primary === null) {
     return { step, primary: null, secondary: null };
+  }
+  if (step === 'removeWorktree' && primary.blockedReason !== null) {
+    return { step, primary: null, secondary: primary };
   }
   const isPushStep = step === 'push' || (step === 'retryPush' && facts.state === 'queued');
   if (isPushStep && hasPullRequestPush(facts)) {
@@ -391,4 +408,5 @@ export const BRANCH_MENU_DIFF: ReadonlyArray<string> = [
   'diff.rebase',
   'diff.changeBase',
   'diff.copyPatch',
+  'diff.archiveSession',
 ];

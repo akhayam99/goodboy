@@ -7,8 +7,10 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { brandId } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import type { TerminalTabId } from '../../../../../shared/types/terminal';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import {
@@ -16,9 +18,14 @@ import {
   resetStoryStore,
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { MOCK_SCENES } from '../..';
+import { SESSION } from '../resolveSeed';
+import { PR_PAGE_WORKTREE } from '../u23/prPageSeed';
 import { U36_BRANCH_NEXT_SCENES } from './branch-next';
+
+type StoreState = ReturnType<StoryStore['getState']>;
 
 beforeAll(async () => {
   await importStore();
@@ -56,6 +63,9 @@ const mount = ({ id }: MountParams) => {
   );
 };
 
+const confirmPanel = ({ title }: { readonly title: HTMLElement }): HTMLElement =>
+  title.closest<HTMLElement>('[role="group"]') ?? document.body;
+
 const headerStep = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('[data-branch-primary]');
 
@@ -92,5 +102,81 @@ describe('the u36 branch next step scenes', () => {
     mount({ id: 'u36-p16-merged-remove' });
 
     await waitFor(() => expect(headerStep()?.textContent).toBe('Remove worktree'));
+  });
+
+  it('shows a blocked Remove disabled with its reason, and no jump to Archive', async () => {
+    const store = await importStore();
+    mount({ id: 'u36-p16-merged-remove' });
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Remove worktree'));
+
+    act(() => {
+      store.setState({
+        terminalTabs: {
+          [SESSION.id]: [
+            {
+              id: brandId<TerminalTabId>({ value: 'terminal-1' }),
+              owner: { kind: 'session', sessionId: SESSION.id },
+              title: 'zsh',
+              cwd: PR_PAGE_WORKTREE,
+              status: 'running',
+              createdAt: 1,
+            },
+          ],
+        },
+      });
+    });
+
+    await waitFor(() => expect(headerStep()).toBeNull());
+    const remove = document.querySelector<HTMLButtonElement>(
+      '[data-branch-secondary="diff.removeWorktree"]',
+    );
+    expect(remove?.textContent).toBe('Remove worktree');
+    expect(remove?.disabled).toBe(true);
+    fireEvent.mouseEnter(remove?.parentElement ?? document.body);
+    await screen.findByText(/terminal/i);
+  });
+
+  it('keeps Remove and offers Archive session in the menu when Remove refuses', async () => {
+    const store = await importStore();
+    const runAfterMergeCleanup = vi.fn<StoreState['runAfterMergeCleanup']>(async () => ({
+      kind: 'ask',
+      keptBecause: "Kept hl/fix-duplicate-credit: Goodboy didn't create it.",
+    }));
+    const bulkArchiveTask = vi.fn(async () => ({ succeeded: [SESSION.id], failed: [] }));
+    mount({ id: 'u36-p16-merged-remove' });
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Remove worktree'));
+    store.setState({ runAfterMergeCleanup, bulkArchiveTask });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove worktree' }));
+    const panel = confirmPanel({ title: await screen.findByText('Remove the worktree?') });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Remove worktree' }));
+
+    await screen.findByText(/Goodboy didn't create it/);
+    expect(headerStep()?.textContent).toBe('Remove worktree');
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Archive session/ }));
+
+    await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith([SESSION.id]));
+  });
+
+  it('follows Remove with Archive session once the last folder is gone', async () => {
+    mount({ id: 'u36-p16-merged-archive' });
+
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Archive session'));
+  });
+
+  it('asks once, archives the session, and keeps the step when the archive fails', async () => {
+    const store = await importStore();
+    const bulkArchiveTask = vi.fn(async () => ({ succeeded: [], failed: [SESSION.id] }));
+    mount({ id: 'u36-p16-merged-archive' });
+    await waitFor(() => expect(headerStep()?.textContent).toBe('Archive session'));
+    store.setState({ bulkArchiveTask });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive session' }));
+    const panel = confirmPanel({ title: await screen.findByText('Archive session?') });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Archive session' }));
+
+    await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith([SESSION.id]));
+    expect(headerStep()?.textContent).toBe('Archive session');
   });
 });
