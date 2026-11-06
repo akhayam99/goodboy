@@ -147,6 +147,16 @@ describe('QuestionCard', () => {
     expect(props.onAnswer).toHaveBeenCalledOnce();
   });
 
+  it('ignores a held Enter and answers once on a fresh press', () => {
+    const props = renderCard({ draft: draftWith({ selectedSuggestions: ['Shared jobs queue'] }) });
+    const article = screen.getByRole('article');
+    fireEvent.keyDown(article, { key: 'Enter', repeat: true });
+    fireEvent.keyDown(article, { key: 'Enter', repeat: true });
+    expect(props.onAnswer).not.toHaveBeenCalled();
+    fireEvent.keyDown(article, { key: 'Enter' });
+    expect(props.onAnswer).toHaveBeenCalledOnce();
+  });
+
   it('skips to the next question', () => {
     const props = renderCard();
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }));

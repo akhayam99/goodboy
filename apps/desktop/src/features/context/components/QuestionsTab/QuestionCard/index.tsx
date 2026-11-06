@@ -161,6 +161,9 @@ export const QuestionCard = ({
       return;
     }
     event.preventDefault();
+    if (event.repeat) {
+      return;
+    }
     submit();
   };
 
