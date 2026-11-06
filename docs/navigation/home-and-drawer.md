@@ -202,11 +202,11 @@ One drawer at a time, per window. The `drawer` store slice holds
 (pressing the trigger again closes it). **The open drawer is part of the
 history entry's focus.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
-Escape and its X close it in place. The one exception is the `ask` drawer: a
-forward move that stays in its session keeps it open (`keepAskDrawer` in
-`navigate`), so a chip in an answer changes the page beside it; leaving the
-session closes it, and Back brings it back like any drawer. Another drawer
-opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
+Escape and its X close it in place. The exception is a tool (Ask, Context, Explore,
+Scripts, Agents, Terminal): a forward move that stays in its session keeps it open
+(`keepToolDrawer` in `navigate`), so a chip in an answer changes the page beside
+it; leaving the session closes it, and Back brings it back like any drawer. A
+reader, an item or a form never stays. Another drawer opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and

@@ -796,6 +796,48 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(ask);
   });
 
+  it.each<readonly [string, DrawerRequest]>([
+    ['Context', { kind: 'context', sessionId: S1, payload: { tab: 'goal', view: 'current' } }],
+    ['Explore', { kind: 'explore', sessionId: S1, payload: null }],
+    ['Scripts', { kind: 'scripts', sessionId: S1, payload: null }],
+    ['Agents', { kind: 'spawned', sessionId: S1, payload: null }],
+    ['Terminal', { kind: 'terminal', sessionId: S1, payload: { terminalId: 'tab-1' as never } }],
+  ])('keeps the %s tool open across every page of its session', (_name, tool) => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().openDrawer(tool);
+
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, tab: 'files' }) });
+    expect(store.getState().drawer).toEqual(tool);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    expect(store.getState().drawer).toEqual(tool);
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().drawer).toEqual(tool);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    expect(store.getState().drawer).toBeNull();
+    store.getState().back();
+    expect(store.getState().drawer).toEqual(tool);
+  });
+
+  it('lets the Agents tool follow the page instead of the agent it revealed', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().openDrawer({ kind: 'spawned', sessionId: S1, payload: { agentId: AGENT } });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    expect(store.getState().drawer).toEqual({ kind: 'spawned', sessionId: S1, payload: null });
+  });
+
+  it('closes a reader or an item on a move, whatever tool it was opened from', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store
+      .getState()
+      .openDrawer({ kind: 'conversation', sessionId: S1, payload: { threadId: 't1' } });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    expect(store.getState().drawer).toBeNull();
+  });
+
   it('closes Ask when you leave its session, and Back brings it back', () => {
     const store = makeStore();
     const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
