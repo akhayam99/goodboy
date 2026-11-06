@@ -2,6 +2,7 @@ import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionDismissed } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { storedQuestionDrafts } from '../../../features/context/storedQuestionDrafts';
 import type { GetFn, SetFn } from './types';
 
 export const BLOCKING_DISMISSAL_REFUSAL =
@@ -21,6 +22,7 @@ export const settleDismissedQuestion = async ({
   question,
 }: SettleParams): Promise<void> => {
   await markOpenQuestionDismissed(tauriDatabase, question.id);
+  storedQuestionDrafts.forget({ questionIds: [question.id] });
   set((state) => ({
     sessionOpenQuestions: {
       ...state.sessionOpenQuestions,

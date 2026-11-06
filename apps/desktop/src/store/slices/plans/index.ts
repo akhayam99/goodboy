@@ -11,6 +11,6 @@ export const createPlansSlice = ({ set, get }: SliceDeps) => {
     setPlanStatus: setPlanStatus(set),
     updatePlanBody: updatePlanBody(set),
     loadConsumptionsForPlan: loadConsumptionsForPlan(set),
-    runPlan: runPlan(get),
+    runPlan: runPlan(set, get),
   };
 };

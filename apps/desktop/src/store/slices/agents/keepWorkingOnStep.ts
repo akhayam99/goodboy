@@ -1,6 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { notFinishedKindOf } from '@goodboy/core/workflows';
 import { composeStepBoundary } from '../turn/kickoff';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import type { GetFn } from './types';
 
 type Params = {
@@ -35,11 +36,13 @@ export const keepWorkingOnStep = ({ get }: FactoryParams) => {
     if (agent === undefined || notFinishedKindOf({ agent }) !== 'stuck' || isTurnLive) {
       throw new Error(NOT_UNFINISHED);
     }
-    await get().sendTurn({
-      sessionId,
-      agentId,
-      content: keepWorkingPrompt({ agentId }),
-      origin: 'workflow',
+    throwIfRefused({
+      result: await get().sendTurn({
+        sessionId,
+        agentId,
+        content: keepWorkingPrompt({ agentId }),
+        origin: 'workflow',
+      }),
     });
   };
 };

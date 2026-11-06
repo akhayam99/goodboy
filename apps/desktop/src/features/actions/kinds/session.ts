@@ -28,7 +28,7 @@ import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
-import { runningAgentCountOf } from '../../../store/runtime/live-work/runningAgentCountOf';
+import { liveAgentsOf } from '../../../store/runtime/live-work/liveAgentsOf';
 import { unreadTargetOf } from '../../../store/slices/agents/unreadTargetOf';
 import { sessionHasUnread } from '../../../store/slices/session-view/sessionHasUnread';
 import { openStartRun } from '../../session/startRun/openStartRun';
@@ -618,7 +618,7 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       mounts,
       worktreePaths,
       prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
-      runningAgentCount: runningAgentCountOf({ state, sessionId: target.sessionId }),
+      runningAgentCount: liveAgentsOf({ state, sessionId: target.sessionId }).length,
       hasUnread: sessionHasUnread({ state, sessionId: target.sessionId }),
       canMarkUnread: unreadTargetOf({ state, sessionId: target.sessionId }) !== null,
     };

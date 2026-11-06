@@ -96,7 +96,7 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   operator: {
     phase: 'stopped',
     tone: 'warning',
-    sentence: 'Stopped by you · the step in flight was skipped',
+    sentence: 'Stopped by you · what the steps wrote is kept',
     showsMessage: true,
   },
   closed: {
@@ -209,6 +209,18 @@ export const resolveOrchestratorState = ({
       phase: OPERATOR_STOP_IN_FLIGHT.phase,
       tone: OPERATOR_STOP_IN_FLIGHT.tone,
       sentence: OPERATOR_STOP_IN_FLIGHT.sentence,
+    };
+  }
+  const endingIndex =
+    run.orchestrationStop?.kind === 'operator'
+      ? ordered.findIndex((agent) => agent.status === 'running')
+      : -1;
+  if (endingIndex >= 0) {
+    return {
+      ...base,
+      phase: OPERATOR_STOP_IN_FLIGHT.phase,
+      tone: OPERATOR_STOP_IN_FLIGHT.tone,
+      sentence: `Stopping · Step ${endingIndex + 1} is ending its work`,
     };
   }
   if (isRunPaused({ run })) {

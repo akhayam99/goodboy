@@ -38,7 +38,7 @@ const {
   summarizeSessionSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
   summarizeWorkspaceSpy: vi.fn(async () => ({ estimatedCostUsd: 0 })),
   invokeAgentUpdateStatusSpy: vi.fn(async () => undefined),
-  invokeAgentListSpy: vi.fn(async () => []),
+  invokeAgentListSpy: vi.fn(async (): Promise<ReadonlyArray<Agent>> => []),
 }));
 
 vi.mock('@goodboy/db', async () =>
@@ -64,6 +64,8 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: vi.fn(),
 }));
 
+import type { CancelOutcome } from '../turn/cancelTurnConfirmed';
+import { clearAgentStopping, isAgentStopping, markAgentStopping } from '../turn/stoppingAgents';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 
@@ -75,6 +77,10 @@ const AGENT_ID = 'agent-1' as AgentId;
 const NOW = '2026-08-08T00:00:00.000Z' as IsoDateTime;
 
 const SECOND_AGENT_ID = 'agent-2' as AgentId;
+
+const EXITED: CancelOutcome = { outcome: 'exited', exitedAt: NOW };
+const STILL: CancelOutcome = { outcome: 'still_running', exitedAt: null };
+const FAILED: CancelOutcome = { outcome: 'failed', exitedAt: null };
 
 const runningAgent = (): Agent => ({
   id: AGENT_ID,
@@ -126,7 +132,7 @@ type State = Record<string, unknown>;
 const baseState = (): State => ({
   sessions: [session()],
   sessionPhaseRuns: { [SESSION_ID]: [runningAgent()] },
-  cancelCurrentTurn: vi.fn(async () => undefined),
+  cancelTurnConfirmed: vi.fn(async () => EXITED),
   maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
   refreshUnreadWorkspaces: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
@@ -153,20 +159,30 @@ beforeEach(() => {
 });
 
 describe('stopWorkflowRunNow', () => {
-  it('cancels the turn, lands the agent skipped, and records the operator stop', async () => {
+  it('waits for the turn to end, lands the cut step stopped by you, and records the operator stop', async () => {
     const state = baseState();
-    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'skipped' }] as never);
+    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'stopped' }]);
     const { set, get } = harness(state);
 
-    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+    const outcome = await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
 
-    expect(state['cancelCurrentTurn']).toHaveBeenCalledWith(SESSION_ID, AGENT_ID);
+    expect(outcome).toBe('stopped');
+    expect(state['cancelTurnConfirmed']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      reason: 'teardown',
+    });
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'stopped', stoppedBy: 'you' }),
+    );
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalledWith(
       AGENT_ID,
       expect.objectContaining({ status: 'skipped' }),
     );
     expect(runOf(state).autoRun).toBe(false);
     expect(runOf(state).orchestrationStop?.kind).toBe('operator');
+    expect(runOf(state).orchestrationStop?.wasAutoRun).toBe(true);
   });
 
   it('leaves no agent stranded on running', async () => {
@@ -179,17 +195,93 @@ describe('stopWorkflowRunNow', () => {
 
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
-      expect.objectContaining({ status: 'skipped' }),
+      expect.objectContaining({ status: 'stopped' }),
     );
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       SECOND_AGENT_ID,
-      expect.objectContaining({ status: 'skipped' }),
+      expect.objectContaining({ status: 'stopped' }),
     );
+  });
+
+  it.each([
+    ['still running', STILL],
+    ['a failed cancel', FAILED],
+  ])(
+    'on %s keeps the step running, gives the run back, and says the step did not stop',
+    async (_label, cancelOutcome) => {
+      const state = baseState();
+      state['cancelTurnConfirmed'] = vi.fn(async () => cancelOutcome);
+      invokeAgentListSpy.mockResolvedValue([runningAgent()]);
+      const { set, get } = harness(state);
+
+      const outcome = await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+
+      expect(outcome).toBe('still_running');
+      expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+      expect(runOf(state).orchestrationStop).toBeUndefined();
+      expect(runOf(state).autoRun).toBe(true);
+      expect(state['emitNotification']).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Implement did not stop' }),
+      );
+    },
+  );
+
+  it('a second press after a step that did not stop ends it', async () => {
+    const state = baseState();
+    const cancel = vi.fn(async () => EXITED);
+    cancel.mockResolvedValueOnce(STILL);
+    state['cancelTurnConfirmed'] = cancel;
+    invokeAgentListSpy.mockResolvedValue([runningAgent()]);
+    const { set, get } = harness(state);
+
+    expect(await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID)).toBe('still_running');
+    expect(await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID)).toBe('stopped');
+
+    expect(runOf(state).orchestrationStop?.kind).toBe('operator');
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'stopped' }),
+    );
+  });
+
+  it('keeps the step stopping until its cut status is written and read back', async () => {
+    const state = baseState();
+    const seen: boolean[] = [];
+    state['cancelTurnConfirmed'] = vi.fn(async () => {
+      markAgentStopping({ agentId: AGENT_ID });
+      clearAgentStopping({ agentId: AGENT_ID });
+      return EXITED;
+    });
+    invokeAgentUpdateStatusSpy.mockImplementation(async () => {
+      seen.push(isAgentStopping({ agentId: AGENT_ID }));
+    });
+    invokeAgentListSpy.mockImplementation(async () => {
+      seen.push(isAgentStopping({ agentId: AGENT_ID }));
+      return [{ ...runningAgent(), status: 'stopped' }];
+    });
+    const { set, get } = harness(state);
+
+    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+
+    expect(seen).toEqual([true, true]);
+    expect(isAgentStopping({ agentId: AGENT_ID })).toBe(false);
+  });
+
+  it('keeps that auto run was on when you press Stop run a second time', async () => {
+    const state = baseState();
+    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'stopped' }]);
+    const { set, get } = harness(state);
+
+    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+    await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
+
+    expect(runOf(state).autoRun).toBe(false);
+    expect(runOf(state).orchestrationStop?.wasAutoRun).toBe(true);
   });
 
   it('clears the operator stop when autorun goes back on', async () => {
     const state = baseState();
-    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'skipped' }] as never);
+    invokeAgentListSpy.mockResolvedValue([{ ...runningAgent(), status: 'skipped' }]);
     const { set, get } = harness(state);
     await stopWorkflowRunNow(set, get)(SESSION_ID, RUN_ID);
 

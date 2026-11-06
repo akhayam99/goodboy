@@ -20,11 +20,9 @@ import { invokeAgentInsert, invokeAgentList } from '../../../features/workflows/
 import { tauriDatabase } from '../../../shared/lib/db';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { rulesOfKickoff } from '../../../features/chat/utils/resolverKickoffParts';
-import {
-  addPlanConsumption as invokeAddPlanConsumption,
-  listConsumptionsForPlan as invokeListConsumptionsForPlan,
-  listPlansForSession as invokeListPlansForSession,
-} from '../../../features/plans/plans';
+import { recordPlanConsumption } from './recordPlanConsumption';
+import { planStartLock } from '../plans/planStartLock';
+import { throwIfRefused } from '../turn/refusal/throwIfRefused';
 import {
   kindConsumesPlan,
   resolveAgentKind,
@@ -51,7 +49,6 @@ import { scopedKindRouting } from './scopedKindRouting';
 import { sendAutoKickoff } from './sendAutoKickoff';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import { createStaleMountError } from '../resolve/rebuildFailure/createStaleMountError';
-import { sessionReads } from '../../runtime/state-writes/sessionReads';
 import { OPEN_PROVIDER_SETTINGS } from '../notifications/errorRecovery';
 
 const spawnQueue = createKeyedQueue();
@@ -313,16 +310,13 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   if (clusters && clusters.length >= 2) {
     const consumeTarget = planToConsume ?? fanOutPlan;
     if (consumeTarget) {
-      await invokeAddPlanConsumption(consumeTarget.id, inserted.id);
-      const plansRead = sessionReads.plans({ sessionId });
-      const refreshedPlans = await invokeListPlansForSession(sessionId);
-      const consumptions = await invokeListConsumptionsForPlan(consumeTarget.id);
-      set((s) => ({
-        ...(plansRead.isCurrent() && {
-          sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
-        }),
-        planConsumptions: { ...s.planConsumptions, [consumeTarget.id]: consumptions },
-      }));
+      await recordPlanConsumption({
+        set,
+        get,
+        sessionId,
+        planId: consumeTarget.id,
+        agentId: inserted.id,
+      });
     }
     await fanOutClusters(set, get, sessionId, inserted, clusters, fanOutPlan!.title);
     return inserted.id;
@@ -373,13 +367,47 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     }
   } else if (kickoff.length > 0 && args.shouldDeferKickoff !== true) {
     const handedPlan = planSection === '' ? null : planForKickoff;
+    const kickoffPlan = planToConsume;
+    planToConsume = null;
+    let hasStarted = false;
+    let planUse: Promise<void> | null = null;
+    const usePlan = (): Promise<void> => {
+      if (kickoffPlan === null) {
+        return Promise.resolve();
+      }
+      planUse ??= recordPlanConsumption({
+        set,
+        get,
+        sessionId,
+        planId: kickoffPlan.id,
+        agentId: inserted.id,
+      }).catch((error: unknown) =>
+        get().reportError({ title: "Couldn't mark the plan as used", error, sessionId }),
+      );
+      return planUse;
+    };
+    let isPlanHeld = kickoffPlan !== null;
+    if (kickoffPlan !== null) {
+      planStartLock.hold({ set, planId: kickoffPlan.id });
+    }
+    const releasePlan = (): void => {
+      if (!isPlanHeld || kickoffPlan === null) {
+        return;
+      }
+      isPlanHeld = false;
+      planStartLock.release({ set, planId: kickoffPlan.id });
+    };
     void get()
       .sendTurn({
         sessionId,
         agentId: inserted.id,
         content: kickoff,
         ...(args.mountId !== undefined && { mountId: args.mountId }),
-        ...(args.onKickoffAccepted !== undefined && { onStarted: args.onKickoffAccepted }),
+        onStarted: () => {
+          hasStarted = true;
+          void usePlan().finally(releasePlan);
+          args.onKickoffAccepted?.();
+        },
         handoff:
           isRecheck && humanPrompt !== null && machineRules !== null
             ? {
@@ -397,12 +425,23 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
                 plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
               },
       })
-      .then((result) => {
+      .then(async (result) => {
         if (result?.isLaneQueued === true) {
           args.onKickoffAccepted?.();
         }
+        if (hasStarted || result?.isLaneQueued === true) {
+          await usePlan();
+          releasePlan();
+          return;
+        }
+        releasePlan();
+        throwIfRefused({ result });
       })
-      .catch((error: unknown) => {
+      .catch(async (error: unknown) => {
+        if (hasStarted) {
+          await usePlan();
+        }
+        releasePlan();
         if (isReportedError(error)) {
           return;
         }
@@ -411,16 +450,13 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
   }
 
   if (planToConsume) {
-    await invokeAddPlanConsumption(planToConsume.id, inserted.id);
-    const plansRead = sessionReads.plans({ sessionId });
-    const refreshedPlans = await invokeListPlansForSession(sessionId);
-    const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
-    set((s) => ({
-      ...(plansRead.isCurrent() && {
-        sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
-      }),
-      planConsumptions: { ...s.planConsumptions, [planToConsume.id]: consumptions },
-    }));
+    await recordPlanConsumption({
+      set,
+      get,
+      sessionId,
+      planId: planToConsume.id,
+      agentId: inserted.id,
+    });
   }
 
   return inserted.id;

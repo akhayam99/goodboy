@@ -11,6 +11,7 @@ export const useComposerDataLoad = ({ session }: Params) => {
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
   const loadAgentQueues = useAppStore((s) => s.loadAgentQueues);
+  const drainSessionQueues = useAppStore((s) => s.drainSessionQueues);
 
   useEffect(() => {
     void loadScripts(session.workspaceId);
@@ -18,6 +19,8 @@ export const useComposerDataLoad = ({ session }: Params) => {
   }, [session.workspaceId, loadScripts, loadPhaseTemplates]);
 
   useEffect(() => {
-    void loadPhaseRunsForSession(session.id).then(() => loadAgentQueues(session.id));
-  }, [session.id, loadPhaseRunsForSession, loadAgentQueues]);
+    void loadPhaseRunsForSession(session.id)
+      .then(() => loadAgentQueues(session.id))
+      .then(() => drainSessionQueues({ sessionId: session.id }));
+  }, [session.id, loadPhaseRunsForSession, loadAgentQueues, drainSessionQueues]);
 };

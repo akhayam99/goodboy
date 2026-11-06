@@ -7,6 +7,7 @@ import { agentGlanceOf } from './agentGlanceOf';
 const AGENT = brandId<AgentId>({ value: 'agent-ledger-core' });
 const RUN = brandId<ProviderRunId>({ value: 'run-1' });
 const AT = brandId<IsoDateTime>({ value: '2026-11-05T10:00:00.000Z' });
+const CUT_SENTENCE = 'Skipped while it ran, what it wrote is kept';
 
 describe('agentGlanceOf', () => {
   it.each([
@@ -48,5 +49,24 @@ describe('agentGlanceOf', () => {
     });
 
     expect(glance).toMatchObject({ word: 'Working', sentence: '' });
+  });
+
+  it.each([
+    ['a step that never ran', {}, 'Nothing ran for this step'],
+    [
+      'a step that a failed step kept from starting',
+      { outputSummary: 'Did not start: the plan step failed' },
+      'Nothing ran for this step',
+    ],
+    ['a live step cut by Read now', { runId: RUN, startedAt: AT }, CUT_SENTENCE],
+    ['a cut step with no run left on the row', { startedAt: AT }, CUT_SENTENCE],
+    ['a cut step that kept its output', { outputSummary: 'Half the migration' }, CUT_SENTENCE],
+  ] as const)('says what happened to %s', (_name, facts, sentence) => {
+    const glance = agentGlanceOf({
+      agent: anAgent({ id: AGENT, status: 'skipped', ...facts }),
+      turnState: null,
+    });
+
+    expect(glance).toMatchObject({ state: 'idle', sentence });
   });
 });

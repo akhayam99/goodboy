@@ -16,7 +16,7 @@ vi.mock('../ChatView', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Agent, AgentId } from '@goodboy/types';
+import { brandId, type Agent, type AgentId, type IsoDateTime } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -90,9 +90,11 @@ describe('AgentTranscriptDrawer', () => {
     expect(transcript.getAttribute('data-composer')).toBe('false');
   });
 
-  it('opens with the quoted draft in its reply field, focused, and sends it to that agent', async () => {
-    const sendTurn = vi.fn<StoreState['sendTurn']>(async () => ({ blockedOverBudget: false }));
-    stub({ sendTurn });
+  it('opens with the quoted draft in its reply field, focused, and sends it through the saved row', async () => {
+    const sendAgentMessage = vi.fn<StoreState['sendAgentMessage']>(
+      () => new Promise(() => undefined),
+    );
+    stub({ sendAgentMessage });
     useAppStore.getState().setAgentDraft(PLANNER, 'About `src/retry.ts:12`');
 
     render(
@@ -106,14 +108,68 @@ describe('AgentTranscriptDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
-      expect(sendTurn).toHaveBeenCalledWith({
+      expect(sendAgentMessage).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
-        agentId: PLANNER,
-        content: 'About `src/retry.ts:12`',
+        turn: expect.objectContaining({
+          agentId: PLANNER,
+          content: 'About `src/retry.ts:12`',
+          attachments: [],
+        }),
       }),
     );
-    await waitFor(() => expect(useAppStore.getState().agentDraft[PLANNER] ?? '').toBe(''));
+    expect(useAppStore.getState().agentDraft[PLANNER] ?? '').toBe('');
     expect(useAppStore.getState().selectedAgentId[SESSION_ID]).toBeNull();
+  });
+
+  it('names the reason when the message stays as Not delivered', async () => {
+    const reportError = vi.fn<StoreState['reportError']>(async () => undefined);
+    const sendAgentMessage = vi.fn<StoreState['sendAgentMessage']>(async ({ turn }) => {
+      useAppStore.setState({
+        agentQueue: {
+          [PLANNER]: [
+            {
+              ...turn,
+              status: 'queued',
+              createdAt: brandId<IsoDateTime>({ value: '2026-11-06T09:30:00.000Z' }),
+              hold: { reason: 'Every provider is over its limit.' },
+            },
+          ],
+        },
+      });
+      return { isDelivered: false, failure: null };
+    });
+    stub({ sendAgentMessage, reportError });
+    useAppStore.getState().setAgentDraft(PLANNER, 'Retry the ledger-core export');
+
+    render(
+      <AgentTranscriptDrawer sessionId={SESSION_ID} agentId={PLANNER} onClose={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
+    expect(String(reportError.mock.calls[0]?.[0].error)).toContain('over its limit');
+    expect(useAppStore.getState().agentDraft[PLANNER] ?? '').toBe('');
+  });
+
+  it('puts the text back and says so when the message could not be saved', async () => {
+    const reportError = vi.fn<StoreState['reportError']>(async () => undefined);
+    const failure = "The message couldn't be saved, so it was not sent.";
+    const sendAgentMessage = vi.fn<StoreState['sendAgentMessage']>(async () => ({
+      isDelivered: false,
+      failure,
+      isUnwritten: true,
+    }));
+    stub({ sendAgentMessage, reportError });
+    useAppStore.getState().setAgentDraft(PLANNER, 'Retry the ledger-core export');
+
+    render(
+      <AgentTranscriptDrawer sessionId={SESSION_ID} agentId={PLANNER} onClose={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledOnce());
+    expect(String(reportError.mock.calls[0]?.[0].error)).toContain(failure);
+    expect(useAppStore.getState().agentDraft[PLANNER]).toBe('Retry the ledger-core export');
   });
 
   it('says so when the agent is gone', () => {

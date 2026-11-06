@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -12,11 +12,16 @@ export const useSessionWorkLoads = ({ sessionId }: Params): void => {
   const loadSessionEvents = useAppStore((s) => s.loadSessionEvents);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const loadSessionContextItems = useAppStore((s) => s.loadSessionContextItems);
+  const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
   const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
+  const flagUndeliveredAnswers = useAppStore((s) => s.flagUndeliveredAnswers);
   const reportError = useAppStore((s) => s.reportError);
+  const hasAgents = useAppStore((s) => s.sessionPhaseRuns[sessionId] !== undefined);
+  const [questionsReadFor, setQuestionsReadFor] = useState<SessionId | null>(null);
 
   useEffect(() => {
+    let isCurrent = true;
     const count = mountsBySession.get(sessionId) ?? 0;
     mountsBySession.set(sessionId, count + 1);
     if (count === 0) {
@@ -25,10 +30,19 @@ export const useSessionWorkLoads = ({ sessionId }: Params): void => {
       loadSessionContextItems({ sessionId }).catch((error: unknown) => {
         void reportError({ title: "Couldn't load the session notes", error, sessionId });
       });
-      void loadSessionAnsweredQuestions(sessionId);
+      const isOpenLoaded = useAppStore.getState().sessionOpenQuestions[sessionId] !== undefined;
+      void Promise.all([
+        isOpenLoaded ? undefined : loadSessionOpenQuestions(sessionId),
+        loadSessionAnsweredQuestions(sessionId),
+      ]).then(() => {
+        if (isCurrent) {
+          setQuestionsReadFor(sessionId);
+        }
+      });
       void loadSessionDismissedQuestions(sessionId);
     }
     return () => {
+      isCurrent = false;
       const remaining = (mountsBySession.get(sessionId) ?? 1) - 1;
       if (remaining <= 0) {
         mountsBySession.delete(sessionId);
@@ -42,7 +56,14 @@ export const useSessionWorkLoads = ({ sessionId }: Params): void => {
     loadSessionContextItems,
     loadSessionDismissedQuestions,
     loadSessionEvents,
+    loadSessionOpenQuestions,
     reportError,
     sessionId,
   ]);
+
+  useEffect(() => {
+    if (hasAgents && questionsReadFor === sessionId) {
+      flagUndeliveredAnswers({ sessionId });
+    }
+  }, [flagUndeliveredAnswers, hasAgents, questionsReadFor, sessionId]);
 };

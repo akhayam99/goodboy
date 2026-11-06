@@ -105,7 +105,7 @@ const stateOf = ({
       : { dot: 'needsYou', word: 'Plan ready' };
   }
   if (stop?.kind === 'operator') {
-    return isOrchestrating
+    return isOrchestrating || isRunning
       ? { dot: 'running', word: 'Stopping' }
       : { dot: 'idle', word: 'Stopped' };
   }

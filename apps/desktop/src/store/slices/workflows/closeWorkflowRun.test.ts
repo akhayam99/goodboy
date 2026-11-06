@@ -137,7 +137,7 @@ const baseState = (): State => ({
       agent(PENDING_ID, 2, 'pending'),
     ],
   },
-  cancelCurrentTurn: vi.fn(async () => undefined),
+  cancelTurnConfirmed: vi.fn(async () => ({ outcome: 'exited', exitedAt: null })),
   refreshUnreadWorkspaces: vi.fn(async () => undefined),
   recordSessionEvent: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
@@ -174,7 +174,11 @@ describe('closeWorkflowRun', () => {
     const outcome = await closeWorkflowRun(set, get)(SESSION_ID, RUN_ID);
 
     expect(outcome).toBe('closed');
-    expect(state['cancelCurrentTurn']).toHaveBeenCalledWith(SESSION_ID, RUNNING_ID);
+    expect(state['cancelTurnConfirmed']).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: RUNNING_ID,
+      reason: 'teardown',
+    });
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       RUNNING_ID,
       expect.objectContaining({ status: 'skipped' }),

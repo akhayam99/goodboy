@@ -123,6 +123,7 @@ type FakeState = {
   sessionArtifacts: Record<SessionId, ReadonlyArray<SessionArtifact>>;
   agentTurnState: Record<AgentId, TurnState>;
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
+  planStarts: Record<PlanId, number>;
   spawnAgent: ReturnType<typeof vi.fn>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
@@ -171,6 +172,7 @@ function defaultState(overrides: Partial<FakeState> = {}): FakeState {
     },
     agentTurnState: {},
     phaseTemplates: { [WS_ID]: [wf] },
+    planStarts: {},
     spawnAgent: vi.fn(async () => 'spawned' as AgentId),
     activateWorkflowAgent: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),

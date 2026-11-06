@@ -120,6 +120,7 @@ export type WorkflowOrchestrationStopKind =
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;
   message: string;
+  wasAutoRun?: boolean;
 }>;
 
 export type WorkflowSpendLimitMode = 'notify' | 'pause';

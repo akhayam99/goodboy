@@ -304,7 +304,14 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         if (facts.stoppedAgentId !== null) {
           void env
             .getState()
-            .continueStoppedAgent({ sessionId: facts.sessionId, agentId: facts.stoppedAgentId });
+            .continueStoppedAgent({ sessionId: facts.sessionId, agentId: facts.stoppedAgentId })
+            .catch((error: unknown) =>
+              env.getState().reportError({
+                title: "Couldn't continue the step",
+                error,
+                sessionId: facts.sessionId,
+              }),
+            );
         }
       },
     },
