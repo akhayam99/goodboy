@@ -83,7 +83,8 @@ describe('the run stop scenes', () => {
   it('u36-p1-run-stopped reads Not finished on the cut step and offers Continue', async () => {
     await mount({ name: 'u36-p1-run-stopped' });
 
-    expect(screen.getAllByText('Not finished').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Ready for the next step')).toBeNull();
+    expect(screen.getAllByText(/^Stopped by you/).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /^Continue/ }).length).toBeGreaterThan(0);
   });
 });
