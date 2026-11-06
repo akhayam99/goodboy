@@ -9,6 +9,7 @@ import {
 type Props = {
   readonly quote: string | null;
   readonly initialBody?: string;
+  readonly seed?: string;
   readonly submitLabel?: string;
   readonly onSubmit: (params: CommentComposerBody) => Promise<void>;
   readonly onCancel: () => void;
@@ -19,13 +20,15 @@ type ChangeParams = Readonly<{ next: string }>;
 export const CommentComposer = ({
   quote,
   initialBody = '',
+  seed = '',
   submitLabel = 'Add comment',
   onSubmit,
   onCancel,
 }: Props) => {
-  const [body, setBody] = useState(initialBody);
+  const start = initialBody === '' ? seed : initialBody;
+  const [body, setBody] = useState(start);
   const [error, setError] = useState<string | null>(null);
-  const typed = useRef(initialBody);
+  const typed = useRef(start);
   const isHandled = useRef(false);
   const latest = useRef({ onSubmit, canKeep: initialBody === '' });
   latest.current = { onSubmit, canKeep: initialBody === '' };

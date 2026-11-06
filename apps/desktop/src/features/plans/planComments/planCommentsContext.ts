@@ -3,6 +3,8 @@ import type { ArtifactComment, ArtifactCommentAnchor } from '@goodboy/types';
 
 export type ComposingTarget = Readonly<{
   anchor: ArtifactCommentAnchor;
+  revision?: number;
+  body?: string;
 }>;
 
 export type PlanCommentsApi = Readonly<{

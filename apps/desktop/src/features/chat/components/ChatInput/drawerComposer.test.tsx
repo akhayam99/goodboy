@@ -73,7 +73,7 @@ type SpiesParams = {
 
 const spyOnActions = ({ sendTurn }: SpiesParams = {}) => {
   const sent = vi.fn<AppState['sendTurn']>(sendTurn ?? (async () => IDLE_RESULT));
-  const queued = vi.fn<AppState['enqueueAgentMessage']>(async () => undefined);
+  const queued = vi.fn<AppState['enqueueAgentMessage']>(async () => true);
   const now = vi.fn<AppState['sendAgentMessageNow']>(async () => undefined);
   store.setState({ sendTurn: sent, enqueueAgentMessage: queued, sendAgentMessageNow: now });
   return { sent, queued, now };

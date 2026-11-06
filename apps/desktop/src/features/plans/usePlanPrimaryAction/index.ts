@@ -213,6 +213,7 @@ export const usePlanPrimaryAction = ({
 
   const press = useCallback(() => {
     afterDraftSaves({
+      artifactId: plan.id,
       run: () => {
         if (latest.current.prompt !== null) {
           setIsConfirming(true);
@@ -220,8 +221,11 @@ export const usePlanPrimaryAction = ({
         }
         void latest.current.start();
       },
+      onBlocked: ({ title, message }) => {
+        void reportError({ title, error: new Error(message), sessionId });
+      },
     });
-  }, []);
+  }, [plan.id, reportError, sessionId]);
 
   const confirm = useMemo<PlanApproveConfirm | null>(() => {
     if (!isConfirming || prompt === null) {

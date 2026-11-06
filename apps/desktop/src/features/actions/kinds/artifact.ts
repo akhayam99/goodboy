@@ -23,9 +23,7 @@ import type {
   WireframeArtifact,
   SessionId,
   WorkflowRun,
-  WorkflowRunId,
 } from '@goodboy/types';
-import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planEditBlockOf } from '../../plans/planEditBlock';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
@@ -54,6 +52,9 @@ import { artifactSourceExport } from '../../artifacts/hooks/useArtifactExport/ar
 import { REGENERATE_BLOCKED_HINT, REGENERATE_READY_HINT } from '../../reports/useReportRegenerate';
 import { WIREFRAME_FIDELITY_VARIANT_LABEL } from '../../wireframes/wireframeFidelity';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
+import { showApproved } from './showApproved';
+import { DRAFT_RUN_WORDS } from '../../plans/planComments/DRAFT_RUN_WORDS';
+import { guardDraftRun } from '../../plans/planComments/guardDraftRun';
 import type {
   ActionDefinition,
   ActionEnv,
@@ -64,7 +65,6 @@ import type {
   ObjectKindDefinition,
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import type { AppStore } from '../../../store/store';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 
 export const ARTIFACT_EDIT_EVENT = 'goodboy:artifact-edit';
@@ -222,53 +222,6 @@ const portBlocked = ({ facts, id }: FactsOnly & { readonly id: ArtifactPortId })
 const portBusy = ({ facts, id }: FactsOnly & { readonly id: ArtifactPortId }): boolean =>
   portOf({ facts, id })?.isBusy === true;
 
-const stepNameOf = ({
-  state,
-  sessionId,
-  agentId,
-}: {
-  readonly state: AppStore;
-  readonly sessionId: SessionId;
-  readonly agentId: AgentId;
-}): string =>
-  (state.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === agentId)?.name ??
-  'The next step';
-
-const isOnRunPage = ({
-  state,
-  sessionId,
-  runId,
-}: {
-  readonly state: AppStore;
-  readonly sessionId: SessionId;
-  readonly runId: WorkflowRunId;
-}): boolean =>
-  state.currentSessionId === sessionId &&
-  state.activeLens[sessionId] === 'workflows' &&
-  state.focusedWorkflowRunId[sessionId] === runId;
-
-type ApprovedParams = FactsOnly & {
-  readonly env: ActionEnv;
-  readonly runId: WorkflowRunId;
-  readonly startedAgentId: AgentId | null;
-};
-
-const showApproved = ({ facts, env, runId, startedAgentId }: ApprovedParams): void => {
-  const state = env.getState();
-  env.showToast(
-    planApprovedToast({
-      sessionId: facts.sessionId,
-      runId,
-      startedStepName:
-        startedAgentId === null
-          ? null
-          : stepNameOf({ state, sessionId: facts.sessionId, agentId: startedAgentId }),
-      isOnRunPage: isOnRunPage({ state, sessionId: facts.sessionId, runId }),
-      navigate: state.navigate,
-    }),
-  );
-};
-
 type RunPlanParams = FactsOnly & {
   readonly env: ActionEnv;
   readonly approvesRun?: WorkflowRun | null;
@@ -330,7 +283,26 @@ const approvePlan = async ({
 const runPlanAction = async ({
   facts,
   env,
-}: FactsOnly & { readonly env: ActionEnv }): Promise<void> => {
+}: FactsOnly & { readonly env: ActionEnv }): Promise<void | 'unchanged'> => {
+  const artifactId = idOf({ facts });
+  if (artifactId !== null) {
+    const guard = await guardDraftRun({
+      artifactId,
+      confirmedCount: facts.planDrafts.length,
+      countDrafts: () =>
+        (env.getState().artifactComments[facts.sessionId] ?? NO_DRAFTS).filter(
+          (comment) => comment.artifactId === artifactId && comment.status === 'draft',
+        ).length,
+    });
+    if (guard !== 'ok') {
+      env.showToast({
+        kind: 'warning',
+        title: DRAFT_RUN_WORDS.title,
+        message: guard === 'blocked' ? DRAFT_RUN_WORDS.held : DRAFT_RUN_WORDS.changed,
+      });
+      return 'unchanged';
+    }
+  }
   if (primaryOf({ facts }).kind === 'approve') {
     await approvePlan({ facts, env });
     return;

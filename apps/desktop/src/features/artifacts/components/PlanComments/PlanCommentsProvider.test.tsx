@@ -6,7 +6,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION, aPlan } from '../../../../test/planFixtures';
+import {
+  PLAN_FIXTURE_AT,
+  PLAN_FIXTURE_ID,
+  PLAN_FIXTURE_SESSION,
+  aPlan,
+} from '../../../../test/planFixtures';
 import {
   PLAN_IMPLEMENTER,
   aPlanDraft,
@@ -14,6 +19,7 @@ import {
   seedPlanDrawer,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
+import { heldDraftStore } from '../../../plans/planComments/heldDraftStore';
 import { trackDraftSave } from '../../../plans/planComments/trackDraftSave';
 import { PartCommentFrame } from './PartCommentFrame';
 import { PlanCommentsProvider } from './PlanCommentsProvider';
@@ -53,7 +59,20 @@ const renderProvider = ({
   );
 };
 
-afterEach(cleanup);
+const HELD_PART = { kind: 'part', index: 0, title: 'Backfill the ledger' } as const;
+
+const heldDraftOf = ({ body = 'Split in two' }: { readonly body?: string } = {}) => ({
+  sessionId: PLAN_FIXTURE_SESSION,
+  artifactId: PLAN_FIXTURE_ID,
+  revision: 2,
+  anchor: HELD_PART,
+  body,
+});
+
+afterEach(() => {
+  cleanup();
+  heldDraftStore.clear();
+});
 
 describe('PlanCommentsProvider', () => {
   it('shows a hint and no button in the bar when the run waits and nobody commented', () => {
@@ -240,7 +259,7 @@ describe('PlanCommentsProvider', () => {
       const save = new Promise<void>((resolve, reject) => {
         settle = (outcome) => (outcome === 'saved' ? resolve() : reject(new Error('Locked')));
       });
-      trackDraftSave({ save });
+      trackDraftSave({ save, draft: heldDraftOf() });
       return { settle, save };
     };
 
@@ -312,6 +331,89 @@ describe('PlanCommentsProvider', () => {
       pending.settle('saved');
 
       await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  describe('a comment that could not be saved', () => {
+    const failingAdd = () => vi.fn(async () => Promise.reject(new Error('The database is locked')));
+
+    const partFrame = (
+      <PartCommentFrame index={0} title="Backfill the ledger">
+        row
+      </PartCommentFrame>
+    );
+
+    it('keeps its text, plan, revision and anchor after the box went away, and brings it back', async () => {
+      useAppStore.setState({ addArtifactComment: failingAdd() });
+      const view = renderProvider({ seed: { run: 'held' }, children: partFrame });
+      fireEvent.click(screen.getByRole('button', { name: 'Comment on part 1' }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+
+      view.unmount();
+
+      await waitFor(() =>
+        expect(heldDraftStore.allFor({ artifactId: PLAN_FIXTURE_ID })).toEqual([heldDraftOf()]),
+      );
+      const add = vi.fn(async () => null);
+      useAppStore.setState({ addArtifactComment: add });
+      renderProvider({ seed: { run: 'held' }, children: partFrame });
+
+      const box = await screen.findByLabelText('Comment for the planner');
+      expect(box).toHaveProperty('value', 'Split in two');
+      fireEvent.blur(box);
+
+      await waitFor(() =>
+        expect(add).toHaveBeenCalledWith(
+          expect.objectContaining({
+            artifactId: PLAN_FIXTURE_ID,
+            revision: 2,
+            anchor: HELD_PART,
+            body: 'Split in two',
+          }),
+        ),
+      );
+      await waitFor(() =>
+        expect(heldDraftStore.hasFor({ artifactId: PLAN_FIXTURE_ID })).toBe(false),
+      );
+      await waitFor(() => expect(screen.queryByLabelText('Comment for the planner')).toBeNull());
+    });
+
+    it('is dropped with Cancel and no longer blocks the plan', async () => {
+      useAppStore.setState({ addArtifactComment: failingAdd() });
+      const view = renderProvider({ seed: { run: 'held' }, children: partFrame });
+      fireEvent.click(screen.getByRole('button', { name: 'Comment on part 1' }));
+      fireEvent.change(screen.getByLabelText('Comment for the planner'), {
+        target: { value: 'Split in two' },
+      });
+      view.unmount();
+      await waitFor(() =>
+        expect(heldDraftStore.hasFor({ artifactId: PLAN_FIXTURE_ID })).toBe(true),
+      );
+      renderProvider({ seed: { run: 'held' }, children: partFrame });
+      await screen.findByLabelText('Comment for the planner');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(heldDraftStore.hasFor({ artifactId: PLAN_FIXTURE_ID })).toBe(false);
+      await waitFor(() => expect(screen.queryByLabelText('Comment for the planner')).toBeNull());
+    });
+
+    it('still blocks Send to planner on the next press', async () => {
+      const send = vi.fn(async () => ({ kind: 'unchanged' as const }));
+      renderProvider({
+        seed: { run: 'held', drafts: [aPlanDraft()] },
+        stubs: { sendArtifactComments: send },
+      });
+      heldDraftStore.hold({ draft: heldDraftOf() });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      await act(async () => undefined);
+      fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
+      await act(async () => undefined);
+
+      expect(send).not.toHaveBeenCalled();
     });
   });
 

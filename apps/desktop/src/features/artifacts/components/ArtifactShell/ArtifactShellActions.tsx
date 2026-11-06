@@ -46,8 +46,12 @@ export const ArtifactShellActions = ({ target, details = null }: Props) => {
   const latest = useRef(actions);
   latest.current = actions;
 
+  const artifactId = target.subject.kind === 'stored' ? target.subject.artifactId : null;
+
   const press = ({ shown }: PressParams) =>
     afterDraftSaves({
+      artifactId,
+      onBlocked: ({ title, message }) => env.showToast({ kind: 'warning', title, message }),
       run: () => {
         const action = latest.current.find((candidate) => candidate.id === shown.id) ?? shown;
         if (action.confirm !== null) {

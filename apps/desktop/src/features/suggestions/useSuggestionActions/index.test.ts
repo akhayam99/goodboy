@@ -536,7 +536,7 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Start implementer');
     actions.primary?.run();
 
-    expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
+    await vi.waitFor(() => expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1'));
     await vi.waitFor(() => expect(spies.showToast).toHaveBeenCalledOnce());
     expect(spies.showToast).toHaveBeenCalledWith(
       expect.objectContaining({

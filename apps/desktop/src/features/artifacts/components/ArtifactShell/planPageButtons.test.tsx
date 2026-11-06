@@ -1,12 +1,17 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { heldDraftStore } from '../../../plans/planComments/heldDraftStore';
+import { trackDraftSave } from '../../../plans/planComments/trackDraftSave';
+import { PLAN_FIXTURE_ID } from '../../../../test/planFixtures';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { PLAN_FIXTURE_SESSION } from '../../../../test/planFixtures';
 import {
   aPlanDraft,
   seedPlanDrawer,
+  setPlanDrafts,
+  stubRunPlan,
   type PlanDrawerSeed,
 } from '../../../../test/planDrawerFixtures';
 import { ArtifactDocumentShell } from './ArtifactDocumentShell';
@@ -23,7 +28,10 @@ const renderPage = (seed: PlanDrawerSeed) => {
 
 const filledButtons = () => Array.from(document.querySelectorAll('button[data-variant="primary"]'));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  heldDraftStore.clear();
+});
 
 describe('ArtifactDocumentShell plan page', () => {
   it('draws Approve once for a held plan, in the header, filled', async () => {
@@ -50,5 +58,60 @@ describe('ArtifactDocumentShell plan page', () => {
 
     const run = await screen.findByTestId('artifact-action-runPlan');
     expect(run.getAttribute('data-variant')).toBe('primary');
+  });
+
+  describe('with a first comment still being saved', () => {
+    const written = {
+      sessionId: PLAN_FIXTURE_SESSION,
+      artifactId: PLAN_FIXTURE_ID,
+      revision: 2,
+      anchor: { kind: 'part', index: 0, title: 'Backfill the ledger' },
+      body: 'Name the index',
+    } as const;
+
+    it('asks about the comment that landed, from the header button', async () => {
+      renderPage({ run: 'none' });
+      const runPlan = vi.fn(async () => ({
+        kind: 'refused' as const,
+        reason: null,
+        workflowRunId: null,
+      }));
+      stubRunPlan({ runPlan });
+      let settle: () => void = () => undefined;
+      trackDraftSave({
+        save: new Promise<void>((resolve) => {
+          settle = () => {
+            setPlanDrafts({ drafts: [aPlanDraft()] });
+            resolve();
+          };
+        }),
+        draft: written,
+      });
+
+      fireEvent.click(await screen.findByTestId('artifact-action-runPlan'));
+      await act(async () => undefined);
+      expect(runPlan).not.toHaveBeenCalled();
+      expect(screen.queryByText('Run without your comment?')).toBeNull();
+      await act(async () => settle());
+
+      await screen.findByText('Run without your comment?');
+      expect(runPlan).not.toHaveBeenCalled();
+    });
+
+    it('does not start while a comment that could not be saved is held', async () => {
+      renderPage({ run: 'none' });
+      const runPlan = vi.fn(async () => ({
+        kind: 'refused' as const,
+        reason: null,
+        workflowRunId: null,
+      }));
+      stubRunPlan({ runPlan });
+      heldDraftStore.hold({ draft: written });
+
+      fireEvent.click(await screen.findByTestId('artifact-action-runPlan'));
+
+      await screen.findByText(/A comment didn't save/);
+      expect(runPlan).not.toHaveBeenCalled();
+    });
   });
 });

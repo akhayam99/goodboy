@@ -1,6 +1,7 @@
 import { setArtifactCommentsStatus } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
+import { consumerDelivery } from '../../../features/plans/planComments/consumerDelivery';
 import { buildPlanCommentRequest } from '../../../features/plans/planComments/buildPlanCommentRequest';
 import { sortByAnchor } from '../../../features/plans/planComments/planCommentAnchors';
 import { planCommentsTargetOf } from '../../../features/plans/planComments/planCommentsTargetOf';
@@ -28,7 +29,7 @@ const isAgentBusy = ({ get, agentId, sessionId }: BusyParams): boolean => {
   return state.kind === 'starting' || state.kind === 'running';
 };
 
-const IN_FLIGHT = new Set<ArtifactId>();
+const IN_FLIGHT = new Map<ArtifactId, symbol>();
 
 export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
   return async ({
@@ -56,18 +57,30 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
         reason: `${target?.name ?? 'The agent'} isn't running. Copy the comments instead.`,
       };
     }
-    const ids = drafts.map((comment) => comment.id);
+    const ids = [...new Set(drafts.map((comment) => comment.id))];
+    const turnId = crypto.randomUUID();
     const content = buildPlanCommentRequest({
       clusters: plan.clusters ?? [],
       comments: drafts,
       purpose: 'read',
     });
-    IN_FLIGHT.add(plan.id);
+    const token = Symbol(plan.id);
+    IN_FLIGHT.set(plan.id, token);
+    const release = (): void => {
+      if (IN_FLIGHT.get(plan.id) === token) {
+        IN_FLIGHT.delete(plan.id);
+      }
+    };
     let flip: Promise<boolean> | undefined;
     const markSent = (): Promise<boolean> => {
       flip ??= (async () => {
         try {
-          await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent' });
+          await setArtifactCommentsStatus({
+            db: tauriDatabase,
+            ids,
+            status: 'sent',
+            sentTurnId: consumerDelivery.turnIdOf({ turnId }),
+          });
           await refreshArtifactComments({ set, sessionId });
           return true;
         } catch (error) {
@@ -91,18 +104,21 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
     try {
       if (isAgentBusy({ get, agentId: target.agentId, sessionId })) {
         const turn = {
-          id: crypto.randomUUID(),
+          id: turnId,
           agentId: target.agentId,
           content,
           attachments: [],
           override: undefined,
         };
-        await get().enqueueAgentMessage({ turn });
-        const isQueued = (get().agentQueue[target.agentId] ?? []).some(
-          (item) => item.id === turn.id,
-        );
-        if (!isQueued) {
-          return { kind: 'failed', reason: "The message couldn't be queued. Try again." };
+        const isSaved = await get().enqueueAgentMessage({ turn });
+        if (!isSaved) {
+          await get().removeQueuedMessage({ agentId: target.agentId, itemId: turn.id });
+          const isTaken = (get().agentQueue[target.agentId] ?? []).some(
+            (item) => item.id === turn.id,
+          );
+          if (!isTaken) {
+            return { kind: 'failed', reason: "The message couldn't be queued. Try again." };
+          }
         }
         return await sentOf();
       }
@@ -112,7 +128,7 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
         content,
         origin: 'operator',
         onStarted: () => {
-          void markSent();
+          void markSent().then(release);
         },
       });
       if (result.blockedOverBudget) {
@@ -137,7 +153,7 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
       }
       return { kind: 'failed', reason: formatError(cause) };
     } finally {
-      IN_FLIGHT.delete(plan.id);
+      release();
     }
   };
 };

@@ -609,6 +609,13 @@ describe('store on sqlite: plan comments', () => {
 
     const CONSUMED: PlanWithCount['status'] = 'consumed';
 
+    beforeEach(async () => {
+      await storySqlite().execute(
+        "INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, 1, 'Implement', 'completed')",
+        [IMPLEMENTER_ID, SESSION_ID],
+      );
+    });
+
     const ranPlan = () => ({
       ...planOf(),
       status: CONSUMED,
@@ -746,6 +753,128 @@ describe('store on sqlite: plan comments', () => {
         .getState()
         .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
       expect(retried).toMatchObject({ kind: 'sentToAgent' });
+    });
+
+    it('keeps the comments as drafts when the queue cannot be saved, and a retry queues once', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'running' });
+      const sendTurn = stubSendTurn();
+      await storySqlite().execute(
+        'ALTER TABLE agent_queued_messages RENAME TO agent_queued_messages_off',
+      );
+
+      const failed = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(failed).toEqual({
+        kind: 'failed',
+        reason: "The message couldn't be queued. Try again.",
+      });
+      expect(statuses()).toEqual(['Why after BEGIN?:draft']);
+      expect(useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? []).toHaveLength(0);
+
+      await storySqlite().execute(
+        'ALTER TABLE agent_queued_messages_off RENAME TO agent_queued_messages',
+      );
+      const retried = await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+      expect(retried).toMatchObject({ kind: 'sentToAgent' });
+      expect(useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? []).toHaveLength(1);
+      expect(sendTurn).not.toHaveBeenCalled();
+      expect(statuses()).toEqual(['Why after BEGIN?:sent']);
+    });
+
+    describe('a second batch while the first turn is still going', () => {
+      const turnThatStartsAndWaits = () => {
+        let endTurn: () => void = () => undefined;
+        const turnEnd = new Promise<void>((resolve) => {
+          endTurn = resolve;
+        });
+        useAppStore.setState({
+          sendTurn: vi.fn(async (input: SendTurnInput): Promise<SendTurnResult> => {
+            input.onStarted?.();
+            await turnEnd;
+            return { blockedOverBudget: false };
+          }),
+        });
+        return { endTurn };
+      };
+
+      it('is not refused once the first batch was taken and marked sent', async () => {
+        await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+        withImplementer({ status: 'completed' });
+        const first = turnThatStartsAndWaits();
+        const pending = useAppStore
+          .getState()
+          .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+        await vi.waitFor(() => expect(statuses()).toEqual(['Why after BEGIN?:sent']));
+        withImplementer({ status: 'running' });
+        await add({ anchor: part({ index: 2 }), body: 'Limit the backfill' });
+
+        const second = await useAppStore
+          .getState()
+          .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+        expect(second).toEqual({ kind: 'sentToAgent', agentName: 'Implement' });
+        const queued = useAppStore.getState().agentQueue[IMPLEMENTER_ID] ?? [];
+        expect(queued).toHaveLength(1);
+        expect(queued[0]?.content).toContain('Limit the backfill');
+        expect(queued[0]?.content).not.toContain('Why after BEGIN?');
+        first.endTurn();
+        await expect(pending).resolves.toMatchObject({ kind: 'sentToAgent' });
+      });
+
+      it('lets an old turn end without freeing the lock of a newer send', async () => {
+        await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+        withImplementer({ status: 'completed' });
+        const first = turnThatStartsAndWaits();
+        const firstSend = useAppStore
+          .getState()
+          .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+        await vi.waitFor(() => expect(statuses()).toEqual(['Why after BEGIN?:sent']));
+        await add({ anchor: part({ index: 2 }), body: 'Limit the backfill' });
+        let endSecond: () => void = () => undefined;
+        const secondEnd = new Promise<void>((resolve) => {
+          endSecond = resolve;
+        });
+        useAppStore.setState({
+          sendTurn: vi.fn(async (): Promise<SendTurnResult> => {
+            await secondEnd;
+            return { blockedOverBudget: false };
+          }),
+        });
+        const secondSend = useAppStore
+          .getState()
+          .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+        await Promise.resolve();
+
+        first.endTurn();
+        await firstSend;
+        const third = await useAppStore
+          .getState()
+          .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+
+        expect(third).toEqual({ kind: 'busy' });
+        endSecond();
+        await secondSend;
+      });
+    });
+
+    it('leaves comments sent to an agent alone when the planner is idle at the next load', async () => {
+      await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
+      withImplementer({ status: 'completed' });
+      stubSendTurn();
+      await useAppStore
+        .getState()
+        .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
+      expect(statuses()).toEqual(['Why after BEGIN?:sent']);
+
+      await useAppStore.getState().loadArtifactComments({ sessionId: SESSION_ID });
+
+      expect(statuses()).toEqual(['Why after BEGIN?:sent']);
     });
   });
 

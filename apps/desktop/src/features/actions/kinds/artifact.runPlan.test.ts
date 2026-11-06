@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  brandId,
   DEFAULT_WORKFLOW_RULES,
   type AgentId,
   type ArtifactComment,
@@ -26,6 +27,10 @@ import {
   aPlan,
   aStoredPlan,
 } from '../../../test/planFixtures';
+import { DRAFT_RUN_WORDS } from '../../plans/planComments/DRAFT_RUN_WORDS';
+import type { HeldDraft } from '../../plans/planComments/heldDraft';
+import { heldDraftStore } from '../../plans/planComments/heldDraftStore';
+import { trackDraftSave } from '../../plans/planComments/trackDraftSave';
 import { PLANNER_QUESTION_REASON } from '../../plans/plannerQuestions';
 import { resolveActions } from '../resolveActions';
 import type { ActionEnv, ArtifactPorts } from '../types';
@@ -69,7 +74,58 @@ const runFromPalette = async (result: RunPlanResult) => {
 
 beforeEach(() => {
   showToast.mockClear();
+  heldDraftStore.clear();
 });
+
+const WRITTEN: HeldDraft = {
+  sessionId: PLAN_FIXTURE_SESSION,
+  artifactId: PLAN_FIXTURE_ID,
+  revision: 1,
+  anchor: { kind: 'part', index: 0, title: 'Add the idempotency key' },
+  body: 'Name the index',
+};
+
+const WRITTEN_COMMENT: ArtifactComment = {
+  id: 'comment-written',
+  sessionId: PLAN_FIXTURE_SESSION,
+  artifactId: PLAN_FIXTURE_ID,
+  revision: 1,
+  anchor: WRITTEN.anchor,
+  body: WRITTEN.body,
+  status: 'draft',
+  sentTurnId: null,
+  createdAt: brandId<IsoDateTime>({ value: '2026-10-05T10:00:00.000Z' }),
+  updatedAt: brandId<IsoDateTime>({ value: '2026-10-05T10:00:00.000Z' }),
+};
+
+const startRunPlanFromTheMenu = () => {
+  const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
+    kind: 'started',
+    agentId: brandId<AgentId>({ value: 'agent-impl' }),
+    scope: 'workflow',
+  }));
+  const plan = aPlan();
+  useAppStore.setState({
+    runPlan,
+    sessionPlans: { [PLAN_FIXTURE_SESSION]: [plan] },
+    sessionArtifacts: { [PLAN_FIXTURE_SESSION]: [aStoredPlan({}, plan)] },
+    artifactComments: {},
+    agentTurnState: {},
+  });
+  const facts = ARTIFACT_KIND.facts({
+    state: useAppStore.getState(),
+    target: {
+      kind: 'artifact',
+      sessionId: PLAN_FIXTURE_SESSION,
+      subject: { kind: 'stored', artifactId: PLAN_FIXTURE_ID, isPlanRunning: false },
+    },
+  });
+  const definition = ARTIFACT_KIND.actions.find((action) => action.id === 'artifact.runPlan');
+  if (facts === null || definition === undefined) {
+    throw new Error('the plan facts or the Run plan action are missing');
+  }
+  return { runPlan, press: () => definition.run({ facts, env, choice: null }) };
+};
 
 describe('Run plan from the palette and the menu', () => {
   it('announces the implementer only when one started', async () => {
@@ -116,6 +172,53 @@ describe('Run plan from the palette and the menu', () => {
     await runFromPalette({ kind: 'refused', reason: null, workflowRunId: null });
 
     expect(showToast).not.toHaveBeenCalled();
+  });
+
+  describe('with a first comment still being saved', () => {
+    it('waits for the save and does not start without asking about the new comment', async () => {
+      const { runPlan, press } = startRunPlanFromTheMenu();
+      let settle: () => void = () => undefined;
+      trackDraftSave({
+        save: new Promise<void>((resolve) => {
+          settle = () => {
+            useAppStore.setState({
+              artifactComments: { [PLAN_FIXTURE_SESSION]: [WRITTEN_COMMENT] },
+            });
+            resolve();
+          };
+        }),
+        draft: WRITTEN,
+      });
+
+      const pressed = press();
+      await Promise.resolve();
+      expect(runPlan).not.toHaveBeenCalled();
+      settle();
+      await pressed;
+
+      expect(runPlan).not.toHaveBeenCalled();
+      expect(showToast).toHaveBeenCalledOnce();
+      expect(showToast.mock.calls[0]?.[0]).toMatchObject({ message: DRAFT_RUN_WORDS.changed });
+    });
+
+    it('starts once the save landed with nothing new to decide about', async () => {
+      const { runPlan, press } = startRunPlanFromTheMenu();
+      trackDraftSave({ save: Promise.resolve(), draft: WRITTEN });
+
+      await press();
+
+      expect(runPlan).toHaveBeenCalledOnce();
+    });
+
+    it('does not start while a comment that could not be saved is held', async () => {
+      const { runPlan, press } = startRunPlanFromTheMenu();
+      heldDraftStore.hold({ draft: WRITTEN });
+
+      await press();
+
+      expect(runPlan).not.toHaveBeenCalled();
+      expect(showToast.mock.calls[0]?.[0]).toMatchObject({ message: DRAFT_RUN_WORDS.held });
+    });
   });
 });
 

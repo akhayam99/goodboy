@@ -15,10 +15,7 @@ import { startRebaseTarget } from '../startRebaseTarget';
 import { REBASE_ALL_MIN_BRANCHES } from '../../history/behindBranchesOf';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
-import {
-  unsentCommentsConfirmOf,
-  type UnsentCommentsConfirm,
-} from '../../plans/unsentCommentsConfirmOf';
+import type { UnsentCommentsConfirm } from '../../plans/unsentCommentsConfirmOf';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
@@ -38,6 +35,7 @@ import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { archiveSessionAction } from './archiveSessionAction';
 import { fixChecksActions } from './fixChecksActions';
 import { mergeSeriesAction } from './mergeSeriesAction';
+import { planReadyAction } from './planReadyAction';
 import { moveTrackerAction } from './moveTrackerAction';
 
 const REVIEW_THE_CHANGES = 'Review the changes';
@@ -261,28 +259,16 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'plan-ready') {
-      const unsent = unsentCommentsConfirmOf({
-        primary: { kind: 'run' },
-        count: sessionComments.filter(
-          (comment) =>
-            comment.artifactId === suggestion.payload.planId && comment.status === 'draft',
-        ).length,
-      });
       return {
-        primary: {
-          label: 'Start implementer',
-          shortLabel: 'Start',
-          agentKind: 'implementer',
-          isDisabled: false,
-          failureTitle: "Couldn't start the implementer",
-          ...(unsent !== null && { requiresConfirm: true, confirm: unsent }),
-          run: async () => {
-            announcePlanRun({
-              result: await runPlan(sessionId, suggestion.payload.planId),
-              sessionId,
-            });
-          },
-        },
+        primary: planReadyAction({
+          sessionId,
+          planId: suggestion.payload.planId,
+          comments: sessionComments,
+          readComments: () => useAppStore.getState().artifactComments[sessionId] ?? NO_COMMENTS,
+          runPlan,
+          announcePlanRun,
+          showToast,
+        }),
         onDismiss: null,
       };
     }
