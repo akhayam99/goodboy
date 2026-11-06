@@ -54,6 +54,25 @@ describe('useTimelineOpen', () => {
     expect(result.current({ entry })).toBeNull();
   });
 
+  it('labels a rebase request by the page it lands on, Runs', () => {
+    const sessionId = typedString<SessionId>({ value: 'session-1' });
+    const entry: TimelineEventEntry = {
+      kind: 'event',
+      id: 'event-2',
+      at: '2026-08-30T10:00:00Z',
+      event: {
+        id: typedString<SessionEventId>({ value: 'event-2' }),
+        sessionId,
+        kind: 'rebase_requested',
+        payload: null,
+        createdAt: typedString<IsoDateTime>({ value: '2026-08-30T10:00:00Z' }),
+      },
+    };
+    const { result } = renderHook(() => useTimelineOpen({ sessionId }));
+
+    expect(result.current({ entry })?.label).toBe('Open runs');
+  });
+
   const agentEntry = ({ agentKind }: { readonly agentKind: AgentKind }): TimelineAgentEntry => ({
     kind: 'agent',
     id: 'agent-1',
