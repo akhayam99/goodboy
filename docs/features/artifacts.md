@@ -19,7 +19,7 @@ Check a plan before it runs. A plan can give each part done-when checks and the 
 
 ### Plan beside the planner
 
-Read the plan without leaving the planner. It shows as one row in the planner's chat, and pressing it opens the plan in a drawer on the right, with **Open in Artifacts** and **Edit**. Reports and wireframes open the same way from Activity or from their chip in a transcript.
+Read the plan without leaving the planner. It shows as one row in the planner's chat, and pressing it opens the plan in a drawer on the right, with **Open page** and **Edit**. Reports and wireframes open the same way from Activity or from their chip in a transcript.
 
 ### Comment on a plan
 

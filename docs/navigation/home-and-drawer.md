@@ -193,7 +193,7 @@ stands, without playing the entry again.
 an address, so it draws no breadcrumb. A drawer opened from another drawer shows
 one quiet back row under its header (`DrawerBackLink` from `@goodboy/ui`, the row
 `DrawerFrame`'s `back` draws), naming where it returns: **Back to agents**,
-**Back to files**, **Back to scripts**. The run step drawer has no `DrawerFrame`
+**Back to Explore**, **Back to scripts**. The run step drawer has no `DrawerFrame`
 and draws the same `DrawerBackLink` above its transcript; **Back to agents**
 reopens the Agents drawer on the run it came from.
 
@@ -229,7 +229,7 @@ drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
 open on its page); a header holds at most one labelled button (Stop,
-Run again, Open in Files, New) and utilities share one icon tone. The count slot
+Run again, New) and utilities share one icon tone. The count slot
 is for a count or a version, never for the session title: Ask's header reads
 `Ask`.
 
@@ -289,7 +289,7 @@ sits beside it. The same goes for every artifact kind read from its work: a
 report or a wireframe row in Activity, and a report or wireframe chip in a
 transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
-the wireframe stage, with Open in Artifacts as its one header action). **A plan always opens
+the wireframe stage, with Open page as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
 inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
@@ -297,14 +297,14 @@ Artifacts page, where they select the plan. From another session they land on
 that session with the drawer open (`openPlanAnywhere`). Reports and wireframes
 are transit from the palette and from search and keep navigating; the Artifacts
 page stays the library. Going to
-the Artifacts page from a drawer is a command of its own, **Open in Artifacts**
-in the drawer header, and it is the only page change. The `artifact-document` kind
+the Artifacts page from a drawer is a command of its own, **Open page**
+(`DrawerFrame` `page`, tooltip Open in Artifacts) in the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
 drawer in the reader tier: it opens at 720px and you drag its edge from 480
 to 1000 (a double click resets it to 720), so there is no Expand. The body
 stays on the 720 reading measure whatever the width. The header holds the
-title, **Open in Artifacts** and **Copy markdown** as two 28px icon buttons,
+title, **Copy markdown** and **Open page** as two 28px icon buttons,
 and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
 **Run plan**. **Copy markdown** is absent when the plan has no copy action.
 Escape closes it. While the planner
@@ -314,23 +314,23 @@ The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 (`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
 `ScrollFade` and the composer in its `dock`. The question bubble
-(`UserMessageBubble`) and the **Start work from chat** button
-(`StartWorkFromChatButton`) are the Chat ones, drawn from `shared/components`;
+(`UserMessageBubble`) and the Start work button
+(`StartWorkFromChatButton`, **Start work from this** in Ask) are the Chat ones, drawn from `shared/components`;
 the composer is the same `MessageComposer` (`shared/components`) that
 `ChatComposer` wraps, without images. Start work on a
 finished answer adds a brief drafted from the thread to this session and opens
 Start a run there (`startWorkFromAsk`), with no new session. The questions stay
 in the session's `ask` threads and are never listed in the Chat door. Its header is **Ask** and a
-**Reset chat** icon button (⌘N while focus is inside the panel, also in ⌘K), with
-no session title; the session is the scope chip at the top of the thread
-(`AskScope`, **Scope: {session}**). The rail icon has its own glyph
+**New question** icon button (⌘N while focus is inside the panel, also in ⌘K), with
+no session title and no scope chip. The thread follows the end of a reply only while you sit at the bottom
+(`useAskFollow`). The rail icon has its own glyph
 (`CONCEPT_ICONS.ask`, apart from the Chat door) and reads **Ask this session**
 with ⌘L on hover. Reset starts a clean thread (`newAskThread`, `askThreadId` back to `null`,
 the next question makes a new chat id) and the old thread stays under **Earlier**,
 so nothing is lost and no Undo is needed. It waits while a reply streams. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
-suggested questions; each line's mark is one text line tall, so
+suggested questions, under a line that says what Ask is (`Ask this session`); each line's mark is one text line tall, so
 it centres on the first line of text even when the line wraps; once a thread has
 turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
@@ -339,7 +339,7 @@ opens the Questions page and the question in the drawer under **Back to Ask**
 (`question` drawer, `from: 'ask'`); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,
 and Escape goes back before it closes. Buttons come only from verbs the action
-registry offers right now (`askVerb`, `useAskActions`): **Answer question N**
+registry offers right now (`askVerb`, `useAskActions`): **Answer: {the question}**
 prefills and focuses the answer field, **Review N ready** runs
 `session.review`, **Tell {agent}…** prefills the agent's box and runs
 `agent.message`. A verb with a confirm shows an `InlineConfirm` first. Nothing
@@ -481,7 +481,7 @@ and the log, which follows the tail until you scroll up and then offers
 `Jump to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
 hash) wraps at the edge instead of breaking every word. The status row under the log
 says `Following output` while it runs and the exit, time and Copy output after.
-`Ask the agent about this` sits next to it, while the run is live too, and
+`Send to the agent` sits next to it, while the run is live too, and
 hands the log to the session's agent: it queues a text attachment titled
 `Output of <script>, <exit>, <project> on <branch>` (`outputHandoffOf`), opens
 the session when it is not on screen, and the composer takes it as a chip,
@@ -501,7 +501,9 @@ right branch.
 page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
-`Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
+the Open page arrow, which opens the Files tab of the Branch page on that mount with the file in
+focus. A changed file in the Explore drawer offers the same arrow, and its `⋯` menu no longer
+holds `Open in Files`.
 `identifier-peek` (payload `{ worktreePath, word, selected }`, reader width) is
 where every result of the identifier popover in a diff opens; the page behind it
 does not move. See [session-rail.md](./session-rail.md) for what it shows.

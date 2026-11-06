@@ -18,7 +18,10 @@ type FindParams = {
 };
 
 const findIn = ({ group, scriptKey }: FindParams): ResolvedScriptTarget | null => {
-  const script = group.scripts.find((candidate) => candidate.key === scriptKey) ?? null;
+  const script =
+    group.scripts.find((candidate) => candidate.key === scriptKey) ??
+    group.suggested.find((candidate) => candidate.key === scriptKey) ??
+    null;
   return script === null ? null : { group, script };
 };
 

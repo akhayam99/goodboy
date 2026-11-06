@@ -6,9 +6,14 @@ import { NAMES } from '../utils/names';
 type Props = {
   readonly messageId: ChatMessageId;
   readonly onStartWork: (messageId: ChatMessageId) => void;
+  readonly label?: string;
 };
 
-export const StartWorkFromChatButton = ({ messageId, onStartWork }: Props) => (
+export const StartWorkFromChatButton = ({
+  messageId,
+  onStartWork,
+  label = NAMES.startWorkFromChat,
+}: Props) => (
   <Button
     variant="quiet"
     size="xs"
@@ -16,6 +21,6 @@ export const StartWorkFromChatButton = ({ messageId, onStartWork }: Props) => (
     onClick={() => onStartWork(messageId)}
   >
     <Play size={ICON_SIZE.row} aria-hidden />
-    {NAMES.startWorkFromChat}
+    {label}
   </Button>
 );

@@ -256,7 +256,7 @@ describe('ScriptRunDrawer', () => {
     });
     renderDrawer();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask the agent about this' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to the agent' }));
 
     expect(state.queueOutputHandoff).toHaveBeenCalledTimes(1);
     const [{ agentId, handoff }] = state.queueOutputHandoff.mock.calls[0] ?? [{}];
@@ -279,7 +279,7 @@ describe('ScriptRunDrawer', () => {
     renderDrawer();
 
     const ask = screen.getByRole<HTMLButtonElement>('button', {
-      name: 'Ask the agent about this',
+      name: 'Send to the agent',
     });
     expect(ask.disabled).toBe(false);
     fireEvent.click(ask);
@@ -294,7 +294,7 @@ describe('ScriptRunDrawer', () => {
     renderDrawer();
 
     const ask = screen.getByRole<HTMLButtonElement>('button', {
-      name: 'Ask the agent about this',
+      name: 'Send to the agent',
     });
     expect(ask.disabled).toBe(true);
   });
@@ -310,7 +310,7 @@ describe('ScriptRunDrawer', () => {
     });
     renderDrawer();
 
-    expect(screen.queryByRole('button', { name: 'Ask the agent about this' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send to the agent' })).toBeNull();
     screen.getByRole('button', { name: 'Copy output' });
   });
 });

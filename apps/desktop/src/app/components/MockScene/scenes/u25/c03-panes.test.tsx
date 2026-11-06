@@ -96,7 +96,7 @@ describe('c03 session tools scenes', () => {
     cleanup();
     await resetStoryStore();
     await mount('c03-panes-explore-file');
-    expect(screen.getByRole('button', { name: 'Back to files' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Back to Explore' })).toBeDefined();
     expect(pressed()).toEqual(['Explore']);
     expect(document.querySelector('[data-session-rail]')?.hasAttribute('data-rail-folded')).toBe(
       true,

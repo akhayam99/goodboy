@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
-import { ArrowUpRight } from 'lucide-react';
-import { DrawerFrame, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { DrawerFrame } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../store';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -34,23 +33,17 @@ export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props)
       iconClassName="text-muted-foreground"
       count={`v${artifact.revision}`}
       onClose={onClose}
-      action={
-        <IconButton
-          icon={ArrowUpRight}
-          iconSize={ICON_SIZE.row}
-          label="Open in Artifacts"
-          variant="ghost"
-          onClick={() =>
-            navigate({
-              to: sessionPlace({
-                sessionId,
-                lens: 'plans',
-                target: { kind: 'artifact', artifactId: artifact.id },
-              }),
-            })
-          }
-        />
-      }
+      page={{
+        tooltip: 'Open in Artifacts',
+        onOpen: () =>
+          navigate({
+            to: sessionPlace({
+              sessionId,
+              lens: 'plans',
+              target: { kind: 'artifact', artifactId: artifact.id },
+            }),
+          }),
+      }}
     >
       <div
         data-testid="artifact-reading-drawer"

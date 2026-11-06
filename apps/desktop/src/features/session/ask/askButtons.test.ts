@@ -15,7 +15,7 @@ const HANDLES: ReadonlyArray<AskHandle> = [
 ];
 
 const FACTS: AskButtonFacts = {
-  openQuestions: [{ id: QUESTION, number: 1 }],
+  openQuestions: [{ id: QUESTION, number: 1, text: 'Stop retrying after 5 attempts?' }],
   messageableAgents: [
     { id: IMPLEMENTER, name: 'Add the stuck-delivery banner', noun: 'Implementer' },
   ],
@@ -33,7 +33,7 @@ describe('askButtons', () => {
       facts: FACTS,
     });
     expect(buttons.map((button) => button.label)).toEqual([
-      'Answer question 1',
+      'Answer: Stop retrying after 5 attempts?',
       'Review 5',
       'Message Implementer…',
     ]);

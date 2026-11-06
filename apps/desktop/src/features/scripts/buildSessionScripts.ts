@@ -9,7 +9,12 @@ import type {
 import { classifyScript, type ScriptCategory } from './classifyScript';
 import { extractPreviewLine } from './extractPreviewLine';
 import { scriptPinId } from './scriptPinId';
-import { discoveredScriptId, type ScriptGroup, type ScriptSource } from './scripts';
+import {
+  discoveredScriptId,
+  type ScriptGroup,
+  type ScriptRunRecord,
+  type ScriptSource,
+} from './scripts';
 import { projectById } from '../../store/slices/projects/projectIndex';
 
 export type RunnableScriptSource = 'saved' | ScriptSource;
@@ -173,7 +178,30 @@ type Params = {
   readonly saved: ReadonlyArray<ProjectScript>;
   readonly discovered: Readonly<Record<string, ReadonlyArray<ScriptGroup>>> | undefined;
   readonly pins: Readonly<Record<ProjectId, ReadonlyArray<string>>>;
+  readonly runs?: Readonly<Record<string, ScriptRunRecord>> | undefined;
 };
+
+type KeptParams = {
+  readonly suggested: ReadonlyArray<RunnableScript>;
+  readonly pinned: ReadonlyArray<RunnableScript>;
+  readonly runs: Readonly<Record<string, ScriptRunRecord>> | undefined;
+  readonly mountId: MountId;
+};
+
+const keptSuggestedOf = ({
+  suggested,
+  pinned,
+  runs,
+  mountId,
+}: KeptParams): ReadonlyArray<RunnableScript> =>
+  suggested.filter((script) => {
+    const record = runs?.[script.key];
+    return (
+      record !== undefined &&
+      (record.mountId === undefined || record.mountId === mountId) &&
+      !pinned.some((candidate) => candidate.key === script.key)
+    );
+  });
 
 export const buildSessionScripts = ({
   mounts,
@@ -181,6 +209,7 @@ export const buildSessionScripts = ({
   saved,
   discovered,
   pins,
+  runs,
 }: Params): ReadonlyArray<SessionScriptGroup> =>
   mounts.map((mount) => {
     const isReady = mount.worktreePath !== '';
@@ -189,6 +218,9 @@ export const buildSessionScripts = ({
       groups: manifest,
       worktreePath: mount.worktreePath,
       pins: pins[mount.projectId] ?? [],
+    });
+    const suggested = suggestedScriptsOf({
+      scripts: allManifestScriptsOf({ groups: manifest, worktreePath: mount.worktreePath }),
     });
     return {
       mountId: mount.mountId,
@@ -201,12 +233,7 @@ export const buildSessionScripts = ({
       scripts: [...savedScriptsOf({ saved, projectId: mount.projectId }), ...pinned],
       suggested:
         pinned.length === 0
-          ? suggestedScriptsOf({
-              scripts: allManifestScriptsOf({
-                groups: manifest,
-                worktreePath: mount.worktreePath,
-              }),
-            })
-          : [],
+          ? suggested
+          : keptSuggestedOf({ suggested, pinned, runs, mountId: mount.mountId }),
     };
   });

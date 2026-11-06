@@ -26,7 +26,6 @@ type Params = {
   readonly onAsk: (() => void) | null;
   readonly onOpen: () => void;
   readonly onReveal: () => void;
-  readonly onOpenInFiles?: (() => void) | null;
 };
 
 export const exploreFileTargetOf = ({
@@ -37,7 +36,6 @@ export const exploreFileTargetOf = ({
   onAsk,
   onOpen,
   onReveal,
-  onOpenInFiles = null,
 }: Params): ExploreFileActionTarget => ({
   kind: 'exploreFile',
   sessionId,
@@ -51,6 +49,5 @@ export const exploreFileTargetOf = ({
     onAsk: entry.isDir ? null : onAsk,
     onOpen: openAction === null ? null : onOpen,
     onReveal,
-    onOpenInFiles,
   },
 });

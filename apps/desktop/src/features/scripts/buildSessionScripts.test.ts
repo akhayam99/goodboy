@@ -12,7 +12,12 @@ import type {
 } from '@goodboy/types';
 import { buildSessionScripts } from './buildSessionScripts';
 import { scriptPinId } from './scriptPinId';
-import { discoveredScriptCwd, type ScriptGroup } from './scripts';
+import {
+  discoveredScriptCwd,
+  discoveredScriptId,
+  type ScriptGroup,
+  type ScriptRunRecord,
+} from './scripts';
 
 const LEDGER = 'project-ledger' as ProjectId;
 const CREATED_AT = '2026-09-01T00:00:00.000Z' as IsoDateTime;
@@ -327,5 +332,47 @@ describe('buildSessionScripts', () => {
 
     expect(pinned?.suggested).toEqual([]);
     expect(preparing?.suggested).toEqual([]);
+  });
+
+  it('keeps a suggested script that has a run record once another script is pinned', () => {
+    const keyOf = (name: string) =>
+      discoveredScriptId({
+        worktreePath: '/work/ledger',
+        source: 'package-json',
+        relDir: '',
+        name,
+      });
+    const here = mount('a', LEDGER, '/work/ledger');
+    const elsewhere = mount('other-mount', LEDGER, '/work/ledger-other');
+    const record = (owner: SessionProjectMount): ScriptRunRecord => ({
+      status: 'pending',
+      result: null,
+      runId: 'run-1',
+      startedAt: 1,
+      mountId: owner.mountId,
+    });
+    const build = (runs: Record<string, ScriptRunRecord>) =>
+      buildSessionScripts({
+        mounts: [here],
+        projects: PROJECTS,
+        saved: [],
+        discovered: { '/work/ledger': MANIFEST },
+        pins: {
+          [LEDGER]: [
+            scriptPinId({ source: 'package-json', relDir: '', name: 'test', savedId: null }),
+          ],
+        },
+        runs,
+      })[0];
+
+    const kept = build({
+      [keyOf('dev')]: record(here),
+      [keyOf('test')]: record(here),
+      [keyOf('lint')]: record(elsewhere),
+    });
+
+    expect(kept?.suggested.map((script) => script.name)).toEqual(['dev']);
+    expect(kept?.scripts.map((script) => script.name)).toEqual(['test']);
+    expect(build({})?.suggested).toEqual([]);
   });
 });
