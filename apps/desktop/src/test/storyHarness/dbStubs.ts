@@ -173,6 +173,7 @@ export const storyDbStubs = () => ({
   listOpenQuestionsForSessions: vi.fn(async () => []),
   listDecidedNudgeEventsForSessions: vi.fn(async () => []),
   findUndecidedPermissionAsk: vi.fn(async () => null),
+  listUndecidedAskRunIds: vi.fn(async () => []),
   insertTurnEvent: vi.fn(async () => undefined),
   insertTurnEventsBatch: vi.fn(async () => undefined),
   listAgentsForSessions: vi.fn(async () => new Map()),

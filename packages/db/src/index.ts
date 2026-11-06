@@ -193,6 +193,7 @@ export {
   countUserTextEvents,
   readFirstUserText,
   findUndecidedPermissionAsk,
+  listUndecidedAskRunIds,
   listTurnEventsForAgent,
   listTurnEventEntriesForAgent,
   listTurnEventsForSession,

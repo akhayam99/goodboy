@@ -273,8 +273,10 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   turn: "Stopped 2 processes this turn left running: next-server, 1 more."
 - **Boot reconcile.** At boot one update marks every `running` agent row whose
   provider run is not live as stopped (`reconcileGhostAgents`), in all
-  workspaces, not only the open one. Runs the backend still holds and runs
-  this window can reattach to are kept.
+  workspaces, not only the open one. Runs the backend still holds, runs
+  this window can reattach to and runs whose permission ask nobody answered
+  (`listUndecidedAskRunIds`) are kept. If that ask read fails, the sweep stops
+  nothing and each workspace load reconciles its own agents.
 
 ### Terminal and script output
 
