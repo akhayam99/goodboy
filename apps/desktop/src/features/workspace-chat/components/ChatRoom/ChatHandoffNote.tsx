@@ -1,6 +1,7 @@
 import { cn, FOCUS_RING, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { plainText } from '../../../../shared/utils/plainText';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 
@@ -15,7 +16,7 @@ const VERB: Record<ChatSessionEntry['link']['kind'], string> = {
 };
 
 export const ChatHandoffNote = ({ entry, onOpen }: Props) => {
-  const title = sessionTitle({ session: entry.session });
+  const title = plainText({ text: sessionTitle({ session: entry.session }) });
   const verb = VERB[entry.link.kind];
   return (
     <Tooltip content={`Open ${title}`} anchorClassName="flex min-w-0 self-start">
