@@ -525,8 +525,8 @@ inside Ask the same chord is new chat, new terminal and Reset chat, see
 [keyboard.md](../keyboard.md)), the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
 address `new`). Nothing is written: no row in the database, the column or
-the board. The trail and the title say `New session`, the title is faint and
-cannot be renamed, and there is no `⋯` and no chip. The
+the board. The title says `New session`, the page draws no back row, the
+title is faint and cannot be renamed, and there is no `⋯` and no chip. The
 column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
 leaving it keeps it intact, New brings it back, and the button shows a primary
@@ -559,9 +559,7 @@ header. Where is a searchable multiple `Listbox` in two groups
 (`projectPickerOptions`): "Suggested" holds at most five (the most recently
 used, then starred ones) and "All projects" lists the rest by name. The draft
 keeps the picks as `projectIds`; the first is the session's project and the
-rest are added with it (`additionalProjectIds`). The page has no visible
-title, the trail names it (a screen reader heading stays, drawn by
-`PaneTitleRow` inside `sr-only`).
+rest are added with it (`additionalProjectIds`).
 
 A task comes in from Tasks: **Start** on an issue calls `pickIssue`, which puts
 the issue in the draft's `pickedIssues` and fills the field with the issue goal
@@ -802,18 +800,16 @@ Folding the rail leaves the column in place.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
-  `Workflows > Ship a fix` with its save state and actions), so the app has one
-  breadcrumb. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
+  `Workflows > Ship a fix` with its save state and actions). A session page has
+  no trail, only its back row. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
   is the first child of the detail beside the page rail, not a bar across the rail, so
   the crumb, the title and the body share one x ([frame map](../styling.md#the-frame-map)).
 - **The parent crumb is Up, and the last crumb names the kind.** A studio
   trail only: no crumb carries a back glyph and `Trail` has no lead slot.
   `no-back-glyph-in-trail.test.tsx` fails on a chevron or arrow to the left
   inside a trail.
-- **Every crumb has an icon, and depth compacts the trail.** Agents carry the
-  agent glyph in their kind's colour, runs the run glyph, artifacts, questions
-  and pull request modes their own. The last crumb and its parent always stay
-  full. The first crumb (the session title on a page, the studio in a band)
+- **Every crumb has an icon, and depth compacts the trail.** The last crumb and
+  its parent always stay full. The first crumb (the studio in a band)
   keeps its name through five crumbs. From five every other
   ancestor but the parent becomes an icon, and from six the first crumb does too.
   When the band still has no room, ancestors turn
@@ -833,9 +829,8 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   for another reviewer, `Resolve: 3 review comments` for a group. Rows saved with
   the lowercase `resolve: ` prefix are shown without it (`agentDisplayName` in
   `shared/utils`), so old and new rows read the same.
-- **An integration trail hangs off its own tool.** It uses the name the sidebar
-  uses (GitHub, GitLab, Jira, Linear, Slack), at the same depth as any other
-  lens. A studio belongs under its own tool, never under another tool's lens.
+- **An integration page hangs off its own tool.** Its back row uses the name
+  the sidebar uses (GitHub, GitLab, Jira, Linear, Slack). A studio belongs under its own tool, never under another tool's lens.
 - **Opening a child changes the back row to its parent**: a sub agent reads
   `Back to {parent agent name}`. Selecting a sibling changes only the child
   region.
@@ -871,9 +866,8 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment on the Branch (`s/{session}/review/t/{thread}/agent`). Back returns where
-  you were, while the trail says where you are.
-- **Segment menus.** The session trail carries none for now: a crumb is a
-  link. `CrumbMenu` stays in the `Trail` primitive (`@goodboy/ui`) and comes
+  you were, while the back row names the parent.
+- **Segment menus.** The back row carries none: it is one link. `CrumbMenu` stays in the `Trail` primitive (`@goodboy/ui`) and comes
   back per segment where a switch is missed, under one rule: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
   to that thing. A segment whose menu would hold fewer than two entries, rows plus
@@ -941,8 +935,8 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   drawer is keyed by worktree and word, so a late answer for an old word is
   dropped. The commit view has no peek, because its lines are not the working
   tree's.
-- **A fix run has no segment of its own.** Its transcript is a drawer on the
-  Comments tab, so the trail reads Session, Branch, Comments.
+- **A fix run has no page of its own.** Its transcript is a drawer on the
+  Comments tab, so the Branch page behind it keeps its own back row.
 - **Settings draws no band in the column.** On Home, where it covers the
   window, it claims its studio band with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers and
