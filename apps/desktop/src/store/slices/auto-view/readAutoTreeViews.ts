@@ -28,6 +28,7 @@ import type { AutoPendingMessage, AutoPendingRefusal, AutoTreeView } from './sta
 type Params = {
   readonly db: Database;
   readonly sessionId: SessionId;
+  readonly trees?: ReadonlyArray<AutoTree>;
 };
 
 type PendingRefusalParams = {
@@ -95,8 +96,9 @@ const droppedMessageIdsOf = ({ tree, pending }: PendingRefusalParams): ReadonlyA
 export const readAutoTreeViews = async ({
   db,
   sessionId,
+  trees: knownTrees,
 }: Params): Promise<ReadonlyArray<AutoTreeView>> => {
-  const trees = await listAutoTreesOfSession({ db, sessionId });
+  const trees = knownTrees ?? (await listAutoTreesOfSession({ db, sessionId }));
   if (trees.length === 0) {
     return [];
   }

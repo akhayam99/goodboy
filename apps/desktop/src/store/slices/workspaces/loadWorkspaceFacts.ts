@@ -1,19 +1,24 @@
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import {
+  listAutoTreesOfSessions,
   listDecidedNudgeEventsForSessions,
   listOpenQuestionsForSessions,
+  type AutoTree,
   type Database,
 } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import { autoRootsOf } from '../../../features/auto/autoRootsOf';
+import { isAutoTreeResting } from '../../../features/auto/isAutoTreeResting';
 import type { AgentKind } from '../../../features/session/agent-kind';
 import { dismissedFingerprintsFromEvents } from '../../../features/suggestions/nextStepOutcomes';
 import { readAutoTreeViews } from '../auto-view/readAutoTreeViews';
 import type { AutoTreeView } from '../auto-view/state';
 
 export type WorkspaceFacts = Readonly<{
-  sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
-  sessionDismissedNextSteps: Readonly<Record<SessionId, ReadonlySet<string>>>;
-  autoTreeViews: Readonly<Record<SessionId, ReadonlyArray<AutoTreeView>>>;
+  sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>> | null;
+  sessionDismissedNextSteps: Readonly<Record<SessionId, ReadonlySet<string>>> | null;
+  autoTreeViews: Readonly<Record<SessionId, ReadonlyArray<AutoTreeView>>> | null;
+  error: string | null;
 }>;
 
 type Params = {
@@ -21,6 +26,46 @@ type Params = {
   readonly sessionIds: ReadonlyArray<SessionId>;
   readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
   readonly kindOverride: Readonly<Record<string, AgentKind>>;
+};
+
+type AutoViewsRead = Readonly<{
+  views: Readonly<Record<SessionId, ReadonlyArray<AutoTreeView>>>;
+  failure: unknown;
+}>;
+
+type ReadAutoViewsParams = {
+  readonly db: Database;
+  readonly sessionIds: ReadonlyArray<SessionId>;
+};
+
+const readMovingAutoViews = async ({
+  db,
+  sessionIds,
+}: ReadAutoViewsParams): Promise<AutoViewsRead> => {
+  if (sessionIds.length === 0) {
+    return { views: {}, failure: null };
+  }
+  const trees = await listAutoTreesOfSessions({ db, sessionIds });
+  const treesBySession = new Map<SessionId, Array<AutoTree>>();
+  for (const tree of trees) {
+    treesBySession.set(tree.sessionId, [...(treesBySession.get(tree.sessionId) ?? []), tree]);
+  }
+  const moving = [...treesBySession].filter(([, sessionTrees]) =>
+    sessionTrees.some((tree) => !isAutoTreeResting({ phase: tree.phase })),
+  );
+  const settled = await Promise.allSettled(
+    moving.map(
+      async ([sessionId, sessionTrees]) =>
+        [sessionId, await readAutoTreeViews({ db, sessionId, trees: sessionTrees })] as const,
+    ),
+  );
+  const failed = settled.find((result) => result.status === 'rejected');
+  return {
+    views: Object.fromEntries(
+      settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : [])),
+    ),
+    failure: failed === undefined ? null : failed.reason,
+  };
 };
 
 export const loadWorkspaceFacts = async ({
@@ -33,30 +78,38 @@ export const loadWorkspaceFacts = async ({
     (sessionId) =>
       autoRootsOf({ agents: sessionPhaseRuns[sessionId] ?? [], kindOverride }).length > 0,
   );
-  const [questions, nudges, autoViews] = await Promise.all([
+  const [questions, nudges, autoViews] = await Promise.allSettled([
     listOpenQuestionsForSessions({ db, sessionIds }),
     listDecidedNudgeEventsForSessions({ db, sessionIds }),
-    Promise.all(
-      autoSessionIds.map(
-        async (sessionId) => [sessionId, await readAutoTreeViews({ db, sessionId })] as const,
-      ),
-    ),
+    readMovingAutoViews({ db, sessionIds: autoSessionIds }),
   ]);
+  const failures = [
+    questions.status === 'rejected' ? questions.reason : null,
+    nudges.status === 'rejected' ? nudges.reason : null,
+    autoViews.status === 'rejected' ? autoViews.reason : autoViews.value.failure,
+  ].filter((failure) => failure != null);
   return {
-    sessionOpenQuestions: Object.fromEntries(
-      sessionIds.map((sessionId) => [
-        sessionId,
-        questions.filter((question) => question.sessionId === sessionId),
-      ]),
-    ),
-    sessionDismissedNextSteps: Object.fromEntries(
-      sessionIds.map((sessionId) => [
-        sessionId,
-        dismissedFingerprintsFromEvents({
-          events: nudges.filter((event) => event.sessionId === sessionId),
-        }),
-      ]),
-    ),
-    autoTreeViews: Object.fromEntries(autoViews),
+    sessionOpenQuestions:
+      questions.status === 'rejected'
+        ? null
+        : Object.fromEntries(
+            sessionIds.map((sessionId) => [
+              sessionId,
+              questions.value.filter((question) => question.sessionId === sessionId),
+            ]),
+          ),
+    sessionDismissedNextSteps:
+      nudges.status === 'rejected'
+        ? null
+        : Object.fromEntries(
+            sessionIds.map((sessionId) => [
+              sessionId,
+              dismissedFingerprintsFromEvents({
+                events: nudges.value.filter((event) => event.sessionId === sessionId),
+              }),
+            ]),
+          ),
+    autoTreeViews: autoViews.status === 'rejected' ? null : autoViews.value.views,
+    error: failures.length === 0 ? null : formatError(failures[0]),
   };
 };

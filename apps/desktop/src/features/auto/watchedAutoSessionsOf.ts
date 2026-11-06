@@ -1,9 +1,9 @@
-import { AUTO_RESTING_PHASES, type AutoPhase } from '@goodboy/db';
+import type { AutoPhase } from '@goodboy/db';
 import type { Agent, AgentStatus, SessionId } from '@goodboy/types';
 import type { AppState } from '../../store/types';
 import type { AutoViewState } from '../../store/slices/auto-view/state';
 import { classifyAgent } from '../session/agent-kind';
-import { isAutoTreeActive } from './autoTreePhases';
+import { isAutoTreeResting } from './isAutoTreeResting';
 
 const LIVE_STATUSES: ReadonlySet<AgentStatus> = new Set<AgentStatus>([
   'pending',
@@ -22,7 +22,7 @@ type TreeParams = {
 };
 
 const isTreeMoving = ({ phase, runs }: TreeParams): boolean => {
-  if (!isAutoTreeActive({ phase }) || AUTO_RESTING_PHASES.some((resting) => resting === phase)) {
+  if (isAutoTreeResting({ phase })) {
     return false;
   }
   if (phase !== 'blocked') {

@@ -808,6 +808,7 @@ export {
   getAutoTreeByRootAgent,
   insertAutoTree,
   listAutoTreesOfSession,
+  listAutoTreesOfSessions,
   listAutoAgentsWithoutTree,
   listAutoTreesToRecover,
   recordAutoRefusal,

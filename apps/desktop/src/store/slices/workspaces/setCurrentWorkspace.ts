@@ -372,7 +372,7 @@ const loadWorkspaceSnapshot = async ({
     sessionPhaseRuns,
     kindOverride: { ...get().agentKindOverride, ...kindOverridesFromDb },
   })
-    .then((facts) => ({ facts, factsError: null }))
+    .then((facts) => ({ facts, factsError: facts.error }))
     .catch((error: unknown) => ({ facts: null, factsError: formatError(error) }));
   if (!isCurrent()) {
     return null;
