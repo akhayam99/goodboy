@@ -102,4 +102,66 @@ describe('useInlineRename', () => {
     expect(result.current.error).toBe('The database is locked');
     expect(result.current.canRetry).toBe(true);
   });
+
+  it('writes nothing and closes when the text was not changed', async () => {
+    const onCommit = vi.fn();
+    const onCancel = vi.fn();
+    const { result } = renderHook(() =>
+      useInlineRename({ value: 'Harborline payouts', onCommit, onCancel }),
+    );
+
+    act(() => {
+      result.current.start();
+    });
+    expect(result.current.editing).toBe(true);
+    await act(async () => {
+      await result.current.commit();
+    });
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(result.current.editing).toBe(false);
+  });
+
+  it('closes without a write when the box loses focus on the same text', () => {
+    const onCommit = vi.fn();
+    const { result } = renderHook(() => useInlineRename({ value: 'Harborline payouts', onCommit }));
+
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      result.current.onBlur();
+    });
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(result.current.editing).toBe(false);
+  });
+
+  it('treats a trimmed copy of the name as unchanged and a new name as a write', async () => {
+    const onCommit = vi.fn();
+    const { result } = renderHook(() => useInlineRename({ value: 'Harborline payouts', onCommit }));
+
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      result.current.setDraft('  Harborline payouts  ');
+    });
+    await act(async () => {
+      await result.current.commit();
+    });
+    expect(onCommit).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      result.current.setDraft('Northwind payouts');
+    });
+    await act(async () => {
+      await result.current.commit();
+    });
+    expect(onCommit).toHaveBeenCalledWith('Northwind payouts');
+  });
 });
