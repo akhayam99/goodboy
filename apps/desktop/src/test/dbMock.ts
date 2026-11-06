@@ -5,7 +5,11 @@ type DbModule = typeof import('@goodboy/db');
 
 export type DbStubs = Readonly<Record<string, unknown>>;
 
-const PURE_NAMES: ReadonlySet<string> = new Set(['cleanWorkflowRunTitle']);
+const PURE_NAMES: ReadonlySet<string> = new Set([
+  'cleanWorkflowRunTitle',
+  'heuristicAgentTitle',
+  'titleInTag',
+]);
 
 const isClass = (value: unknown): boolean =>
   typeof value === 'function' && /^class[\s{]/.test(Function.prototype.toString.call(value));

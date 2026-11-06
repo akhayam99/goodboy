@@ -1,5 +1,7 @@
 import { stripTitlePreamble } from './title-preamble';
 import { stripTrailingPunctuation } from './strip-trailing-punctuation';
+import { heuristicAgentTitle } from './heuristic-agent-title';
+import { talksAboutTitle } from './title-talk';
 
 const WORKFLOW_RUN_TITLE_MAX_LENGTH = 60;
 
@@ -32,7 +34,10 @@ const clampAtWord = ({ text, isEllipsisAllowed }: ClampParams): string => {
 };
 
 const isUsableTitle = ({ text }: TextParams): boolean =>
-  text !== '' && !LEAK_PATTERN.test(text) && text.split(/\s+/).length <= MAX_TITLE_WORDS;
+  text !== '' &&
+  !LEAK_PATTERN.test(text) &&
+  !talksAboutTitle({ text }) &&
+  text.split(/\s+/).length <= MAX_TITLE_WORDS;
 
 type Params = {
   readonly title: string | null | undefined;
@@ -46,6 +51,10 @@ export const cleanWorkflowRunTitle = ({ title, goal }: Params): string => {
   }).trim();
   if (isUsableTitle({ text: candidate })) {
     return clampAtWord({ text: candidate, isEllipsisAllowed: false });
+  }
+  const derived = heuristicAgentTitle({ prompt: goal ?? '' });
+  if (derived !== null) {
+    return derived;
   }
   const fallback = stripTitlePreamble({ text: leadingLineOf({ text: goal ?? '' }) }).trim();
   if (fallback === '') {

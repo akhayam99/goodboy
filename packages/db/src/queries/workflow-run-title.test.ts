@@ -101,17 +101,38 @@ describe('cleanWorkflowRunTitle', () => {
     );
   });
 
-  it('falls back to the first line of the ask when the title is a leaked preamble', () => {
+  it('falls back to the title derived from the goal when the title is a leaked preamble', () => {
     expect(cleanWorkflowRunTitle({ title: 'Title: the user asked for a', goal: GOAL })).toBe(
-      'Move patient settings under /patient/settings with a\u2026',
+      'move patient settings',
+    );
+  });
+
+  it.each([
+    'Il titolo \u00e8 in italiano, quindi',
+    'Title generation',
+    'ruolo: title only. task richiede lavoro',
+    'Auto routed to Claude Haiku',
+  ])('treats the phrase "%s" as talk about the title', (title) => {
+    expect(cleanWorkflowRunTitle({ title, goal: GOAL })).toBe('move patient settings');
+  });
+
+  it('keeps a title that only contains the word title later on', () => {
+    expect(cleanWorkflowRunTitle({ title: 'Fix the page title tag', goal: GOAL })).toBe(
+      'Fix the page title tag',
+    );
+  });
+
+  it('falls back to the first line of the ask when the goal has nothing to derive from', () => {
+    expect(cleanWorkflowRunTitle({ title: 'I will write a title', goal: 'please help me' })).toBe(
+      'please help me',
     );
   });
 
   it('never cuts the fallback in the middle of a word', () => {
-    const goal = `${'ledger '.repeat(20)}end`;
+    const goal = `${'please help me '.repeat(10)}end`;
     const title = cleanWorkflowRunTitle({ title: 'I will write a title', goal });
     expect(title.length).toBeLessThanOrEqual(60);
-    expect(title.endsWith('ledger…')).toBe(true);
+    expect(title.endsWith('me…')).toBe(true);
   });
 
   it('never cuts a long clean title in the middle of a word', () => {
@@ -128,7 +149,7 @@ describe('cleanWorkflowRunTitle', () => {
         title: 'Here is a short title for the ledger export workflow you asked',
         goal: 'Speed up the ledger export',
       }),
-    ).toBe('Speed up the ledger export');
+    ).toBe('speed up ledger');
   });
 
   it('returns an empty string when neither the title nor the ask has text', () => {

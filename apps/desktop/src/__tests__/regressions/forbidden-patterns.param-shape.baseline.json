@@ -1108,7 +1108,6 @@
     "apps/desktop/src/shared/keyboard/registry.ts": 4,
     "apps/desktop/src/shared/keyboard/selectionSurfaces.ts": 4,
     "apps/desktop/src/shared/keyboard/useShortcut.ts": 1,
-    "apps/desktop/src/shared/lib/agent-title-heuristic.ts": 1,
     "apps/desktop/src/shared/lib/cursorMaxModeAdvisory.ts": 1,
     "apps/desktop/src/shared/lib/db.ts": 7,
     "apps/desktop/src/shared/lib/editor.ts": 1,

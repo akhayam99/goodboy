@@ -481,8 +481,8 @@ export const renameSession = async (
   titleUserEdited = true,
 ): Promise<void> => {
   await db.execute(
-    'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ?',
-    [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id],
+    'UPDATE sessions SET goal = ?, title_user_edited = ?, updated_at = ? WHERE id = ? AND (? = 1 OR title_user_edited = 0)',
+    [goal, titleUserEdited ? 1 : 0, Date.parse(updatedAt), id, titleUserEdited ? 1 : 0],
   );
 };
 

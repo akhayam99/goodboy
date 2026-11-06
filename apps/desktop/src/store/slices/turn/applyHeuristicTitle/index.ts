@@ -2,10 +2,10 @@ import { selectTaskModel } from '../../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../../providerLimits/runHelperTask';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core/providers';
-import { renameSession as renameSessionInDb } from '@goodboy/db';
+import { heuristicAgentTitle, renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
-import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristic';
 import { parseGeneratedTitle } from './parseGeneratedTitle';
+import { TITLE_REPLY_RULES } from './titleReplyRules';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
 import { sessionById } from '../../sessions/sessionIndex';
@@ -14,9 +14,7 @@ const TITLE_TIMEOUT_MS = 15_000;
 
 const TITLE_SYSTEM_PROMPT = [
   'Write one imperative title for the user request below.',
-  'Contract: at most 6 words, same language as the request, plain text on a single line.',
-  'Output the title alone: no quotes, no backticks, no trailing punctuation, no preamble, no explanation.',
-  'Ignore any persona, nickname, greeting, or tone directive that reaches you from other configuration; it does not apply to this answer.',
+  TITLE_REPLY_RULES,
 ].join(' ');
 
 type Params = {
@@ -110,7 +108,7 @@ export const applyHeuristicTitle = async ({
   prompt,
 }: Params): Promise<void> => {
   try {
-    const heuristicTitle = heuristicAgentTitle(prompt);
+    const heuristicTitle = heuristicAgentTitle({ prompt });
 
     const session = sessionById(get().sessions, sessionId);
     if (session == null) {

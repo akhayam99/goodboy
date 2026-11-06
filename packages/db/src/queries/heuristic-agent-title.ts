@@ -80,9 +80,22 @@ const STOP_WORDS = new Set([
   'help',
 ]);
 
-export const heuristicAgentTitle = (prompt: string): string | null => {
-  const clean = prompt
-    .replace(/```[\s\S]*?```/g, ' ')
+const CODE_FENCE = '```';
+
+type PromptParams = {
+  readonly prompt: string;
+};
+
+const withoutCodeFences = ({ prompt }: PromptParams): string => {
+  const parts = prompt.split(CODE_FENCE);
+  const isUnclosed = parts.length % 2 === 0;
+  return parts
+    .filter((_part, index) => index % 2 === 0 || (isUnclosed && index === parts.length - 1))
+    .join(' ');
+};
+
+export const heuristicAgentTitle = ({ prompt }: PromptParams): string | null => {
+  const clean = withoutCodeFences({ prompt })
     .replace(/`[^`]+`/g, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
     .replace(/[*_#>\[\]]/g, ' ')

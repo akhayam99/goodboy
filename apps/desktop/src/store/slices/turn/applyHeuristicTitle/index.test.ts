@@ -84,7 +84,7 @@ describe('applyHeuristicTitle', () => {
 
   it('replaces eligible heuristic titles with the generated title', async () => {
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stdout: JSON.stringify({ result: '<title>Implement secure authentication flow</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -132,7 +132,7 @@ describe('applyHeuristicTitle', () => {
         ),
       },
     }));
-    resolveInvoke({ stdout: 'Generated title', stderr: '', exitCode: 0 });
+    resolveInvoke({ stdout: '<title>Generated title</title>', stderr: '', exitCode: 0 });
     await pending;
 
     expect(harness.read().sessions[0]?.goal).toBe('User session title');
@@ -176,7 +176,7 @@ describe('applyHeuristicTitle', () => {
 
   it('null-heuristic prompt: AI title replaces placeholder agent name', async () => {
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Fix login crash' }),
+      stdout: JSON.stringify({ result: '<title>Fix login crash</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -215,7 +215,7 @@ describe('applyHeuristicTitle', () => {
 
   it('non-founding agent gets AI name but session goal is untouched', async () => {
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Refactor auth module' }),
+      stdout: JSON.stringify({ result: '<title>Refactor auth module</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -280,7 +280,7 @@ describe('applyHeuristicTitle', () => {
   it('reverts the generated title when persisting it fails, so the ui never lies', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stdout: JSON.stringify({ result: '<title>Implement secure authentication flow</title>' }),
       stderr: '',
       exitCode: 0,
     });
@@ -331,7 +331,7 @@ describe('applyHeuristicTitle', () => {
   it('keeps a user rename that lands while the generated title write is in flight', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     invokeMock.mockResolvedValue({
-      stdout: JSON.stringify({ result: 'Implement secure authentication flow' }),
+      stdout: JSON.stringify({ result: '<title>Implement secure authentication flow</title>' }),
       stderr: '',
       exitCode: 0,
     });

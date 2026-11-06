@@ -176,6 +176,8 @@ export {
 } from './queries/session-workflow';
 export { updateGeneratedWorkflowRunTitle } from './queries/generated-workflow-run-title';
 export { cleanWorkflowRunTitle } from './queries/workflow-run-title';
+export { heuristicAgentTitle } from './queries/heuristic-agent-title';
+export { titleInTag } from './queries/title-in-tag';
 export {
   listWorkspaceWorkflowRuns,
   type WorkflowRunHistoryRow,
