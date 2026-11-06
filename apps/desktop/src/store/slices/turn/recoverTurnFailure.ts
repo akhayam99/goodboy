@@ -51,7 +51,17 @@ type Params = Readonly<{
 }>;
 
 export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }: Params) => {
-  const { sessionId, content, attachments, override, force, origin, retry, onStarted } = ctx.input;
+  const {
+    sessionId,
+    content,
+    attachments,
+    override,
+    force,
+    origin,
+    retry,
+    onStarted,
+    onWritingUserText,
+  } = ctx.input;
   const {
     session,
     turnTarget,
@@ -210,6 +220,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         ...(turnTarget !== null && { mountTarget: turnTarget }),
         ...(copyPath !== null && { resolveCopyPath: copyPath }),
         ...(onStarted !== undefined && !progress.hasSpawned && { onStarted }),
+        ...(onWritingUserText !== undefined && !progress.hasSpawned && { onWritingUserText }),
         retry: {
           attempt: (retry?.attempt ?? 0) + 1,
           provider: fallbackPlan.provider,
@@ -277,7 +288,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     finishedAt: now(),
     error: rawMessage,
   });
-  const isRetriedFromItsRow = ctx.input.onWritingUserText !== undefined && !progress.hasSpawned;
+  const isRetriedFromItsRow = onWritingUserText !== undefined && !progress.hasSpawned;
   get().appendTurnEvent(activeAgentId, sessionId, {
     kind: 'error',
     runId,

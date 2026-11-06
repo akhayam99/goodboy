@@ -644,6 +644,22 @@ describe('Started means the process runs', () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the row and offers one Retry when the fallback fails to spawn too', async () => {
+    storySpies.turnSpawn
+      .mockRejectedValueOnce(new Error('429 rate limit exceeded'))
+      .mockRejectedValueOnce(new Error('claude: command not found'));
+
+    const delivery = await send('send-27');
+
+    expect(delivery.isDelivered).toBe(false);
+    expect(await savedQueue()).toEqual(['send-27']);
+    expect(
+      (useAppStore.getState().transcripts[agentId] ?? []).filter(
+        (event) => event.kind === 'error' && event.retryable === true,
+      ),
+    ).toEqual([]);
+  });
+
   it('fires the start once when a started turn fails and falls back', async () => {
     storySpies.runTurn.mockImplementationOnce(() =>
       (async function* stream(): AsyncIterable<TurnEvent> {
