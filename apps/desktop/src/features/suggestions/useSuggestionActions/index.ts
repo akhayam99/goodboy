@@ -1,7 +1,13 @@
 import { NAMES } from '../../../shared/utils/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, ProviderId, Session, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  ArtifactComment,
+  ProviderId,
+  Session,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
@@ -9,6 +15,10 @@ import { startRebaseTarget } from '../startRebaseTarget';
 import { REBASE_ALL_MIN_BRANCHES } from '../../history/behindBranchesOf';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
+import {
+  unsentCommentsConfirmOf,
+  type UnsentCommentsConfirm,
+} from '../../plans/unsentCommentsConfirmOf';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
@@ -50,6 +60,7 @@ type SuggestionAction = {
   readonly failureTitle: string;
   readonly run: () => Promise<void>;
   readonly requiresConfirm?: boolean;
+  readonly confirm?: UnsentCommentsConfirm;
   readonly runsOn?: SuggestionRunsOn;
   readonly shouldOpenPicker?: boolean;
 };
@@ -67,6 +78,8 @@ export type SuggestionActions = {
 export type SuggestionActionResolver = (params: {
   readonly suggestion: SessionSuggestion;
 }) => SuggestionActions;
+
+const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
 
@@ -113,6 +126,7 @@ export const useSuggestionActions = ({
   const showToast = useShowToast();
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
   const announcePlanRun = usePlanRunToast();
+  const sessionComments = useAppStore((state) => state.artifactComments[sessionId]) ?? NO_COMMENTS;
 
   const rebaseMounts = useMemo(
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
@@ -247,6 +261,13 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'plan-ready') {
+      const unsent = unsentCommentsConfirmOf({
+        primary: { kind: 'run' },
+        count: sessionComments.filter(
+          (comment) =>
+            comment.artifactId === suggestion.payload.planId && comment.status === 'draft',
+        ).length,
+      });
       return {
         primary: {
           label: 'Start implementer',
@@ -254,6 +275,7 @@ export const useSuggestionActions = ({
           agentKind: 'implementer',
           isDisabled: false,
           failureTitle: "Couldn't start the implementer",
+          ...(unsent !== null && { requiresConfirm: true, confirm: unsent }),
           run: async () => {
             announcePlanRun({
               result: await runPlan(sessionId, suggestion.payload.planId),

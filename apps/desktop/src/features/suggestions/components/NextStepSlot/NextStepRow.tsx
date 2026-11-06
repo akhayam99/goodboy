@@ -158,9 +158,9 @@ export const NextStepRow = ({
             <ConfirmPopover
               role={CONFIRM_ROLE[suggestion.kind] ?? 'primary'}
               icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-              title={`${primary.label}?`}
-              description={suggestion.title}
-              confirmLabel={primary.label}
+              title={primary.confirm?.title ?? `${primary.label}?`}
+              description={primary.confirm?.description ?? suggestion.title}
+              confirmLabel={primary.confirm?.confirmLabel ?? primary.label}
               isOpen={isConfirming}
               anchorClassName="flex w-full min-w-0 items-center"
               onConfirm={runPrimary}

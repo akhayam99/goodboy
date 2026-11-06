@@ -204,7 +204,7 @@ describe('PlanCommentsProvider', () => {
   });
 
   it('saves a typed comment once when its own Comment button is pressed again', async () => {
-    const add = vi.fn(async () => undefined);
+    const add = vi.fn(async () => null);
     useAppStore.setState({ addArtifactComment: add });
     renderProvider({
       seed: { run: 'held' },

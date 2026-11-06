@@ -672,13 +672,16 @@ describe('store on sqlite: plan comments', () => {
       await add({ anchor: part({ index: 1 }), body: 'Why after BEGIN?' });
       withImplementer({ status: 'completed' });
       let seenAtStart: ReadonlyArray<string> = [];
-      const turnEnd = Promise.withResolvers<void>();
+      let endTurn: () => void = () => undefined;
+      const turnEnd = new Promise<void>((resolve) => {
+        endTurn = resolve;
+      });
       useAppStore.setState({
         sendTurn: vi.fn(async (input: SendTurnInput): Promise<SendTurnResult> => {
           input.onStarted?.();
           await new Promise((resolve) => setTimeout(resolve, 50));
           seenAtStart = statuses();
-          await turnEnd.promise;
+          await turnEnd;
           return { blockedOverBudget: false };
         }),
       });
@@ -687,7 +690,7 @@ describe('store on sqlite: plan comments', () => {
         .getState()
         .sendArtifactCommentsToAgent({ sessionId: SESSION_ID, plan: ranPlan() });
       await vi.waitFor(() => expect(seenAtStart).toEqual(['Why after BEGIN?:sent']));
-      turnEnd.resolve();
+      endTurn();
       await expect(pending).resolves.toMatchObject({ kind: 'sentToAgent' });
     });
 

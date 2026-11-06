@@ -114,6 +114,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
       mountGithub: {} as Record<string, unknown>,
       mountRequests: {} as Record<string, unknown>,
       projects: [] as ReadonlyArray<unknown>,
+      artifactComments: {} as Record<string, ReadonlyArray<unknown>>,
       ensureProjectMounted,
       recordSessionEvent,
       setSessionActiveProject,
@@ -542,6 +543,46 @@ describe('useSuggestionActions', () => {
         message: 'An agent is running this plan. You can keep working.',
       }),
     );
+  });
+
+  it('asks before starting the implementer while a comment on the plan is unsent', () => {
+    storeState.artifactComments = {
+      [SESSION_ID]: [
+        { artifactId: 'plan-1', status: 'draft' },
+        { artifactId: 'plan-1', status: 'sent' },
+        { artifactId: 'plan-2', status: 'draft' },
+      ],
+    };
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'plan-ready:plan-1',
+        kind: 'plan-ready',
+        payload: { planId: 'plan-1' as PlanId },
+      },
+    });
+    storeState.artifactComments = {};
+
+    expect(actions.primary?.requiresConfirm).toBe(true);
+    expect(actions.primary?.confirm).toEqual({
+      title: 'Run without your comment?',
+      description: 'The run starts without it. It stays on the plan as Not sent.',
+      confirmLabel: 'Run anyway',
+    });
+  });
+
+  it('starts the implementer with no question when the plan has no unsent comment', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'plan-ready:plan-1',
+        kind: 'plan-ready',
+        payload: { planId: 'plan-1' as PlanId },
+      },
+    });
+
+    expect(actions.primary?.requiresConfirm).toBeUndefined();
+    expect(actions.primary?.confirm).toBeUndefined();
   });
 
   it('says why when the plan cannot run, with a link to the run, instead of announcing a start', async () => {
