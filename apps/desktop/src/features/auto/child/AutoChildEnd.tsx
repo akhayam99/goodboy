@@ -41,7 +41,8 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
     return null;
   }
   const live = autoChildLive({ delegation, turn, agent, lastTool: null, project: null });
-  const facts = live ?? (delegation.state === 'settled' ? RETURNED : null);
+  const settled = live ?? (delegation.state === 'settled' ? RETURNED : null);
+  const facts = agent.status === 'stopped' ? null : settled;
   const decide = ({ choice }: DecideParams): void => {
     if (decision.busyId === delegation.id) {
       return;

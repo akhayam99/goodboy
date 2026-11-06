@@ -10,6 +10,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { anAgent } from '@goodboy/types/testing';
 import type { AutoDelegation } from '@goodboy/db';
+import type { Agent } from '@goodboy/types';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { aDelegation, FIXTURE_SESSION } from '../testing/autoViewFixtures';
 import { delegationCardOf } from '../chat/delegationCardOf';
@@ -31,17 +32,18 @@ afterEach(() => {
 
 type ShowParams = {
   readonly delegation: AutoDelegation;
+  readonly status?: Agent['status'];
 };
 
-const show = ({ delegation }: ShowParams) => {
-  const agent = anAgent({ id: delegation.childAgentId });
+const show = ({ delegation, status = 'running' }: ShowParams) => {
+  const agent = anAgent({ id: delegation.childAgentId, status });
   const card = delegationCardOf({ delegation, childAgent: agent });
   render(
     <AutoChildEnd sessionId={FIXTURE_SESSION} delegation={delegation} card={card} agent={agent} />,
   );
 };
 
-describe('the end of an Auto child pane', () => {
+describe('the end of an Auto child page', () => {
   it('asks for your OK with Confirm and Decline, never Queued or Stop', async () => {
     const port = vi.fn(async () => 'confirmed' as const);
     registerDelegationDecisionPort({ port });
@@ -85,5 +87,31 @@ describe('the end of an Auto child pane', () => {
 
     screen.getByText('Queued');
     screen.getByRole('button', { name: 'Stop' });
+  });
+
+  it('leaves a stopped child to the page notice, with no second Retry at the end', () => {
+    const delegation = aDelegation({
+      key: 'impl',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'stopped',
+    });
+    show({ delegation, status: 'stopped' });
+
+    expect(screen.queryByText('Stopped')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry through Auto' })).toBeNull();
+  });
+
+  it('keeps the failure and its Retry when the child failed', () => {
+    const delegation = aDelegation({
+      key: 'impl',
+      role: 'implementer',
+      state: 'settled',
+      outcome: 'failed',
+    });
+    show({ delegation, status: 'failed' });
+
+    screen.getByText(/^Failed/);
+    screen.getByRole('button', { name: 'Retry through Auto' });
   });
 });

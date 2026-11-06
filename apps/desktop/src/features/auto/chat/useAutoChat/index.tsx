@@ -4,6 +4,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
+import { useAutoChildChat } from '../../child/useAutoChildChat';
 import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
 import { AutoDock } from '../AutoDock';
@@ -36,6 +37,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const { openChild, openArtifact } = useAutoTreeActions({ sessionId: session.id });
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
+  const child = useAutoChildChat({ session, agent, tree });
 
   const insertions = useMemo(() => {
     if (view === null) {
@@ -105,8 +107,9 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
 
   return {
     tree,
-    insertions,
+    insertions: insertions ?? child.insertions,
     dock,
-    composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
+    composerPlaceholder:
+      view === null ? child.composerPlaceholder : composerPlaceholderOf({ view }),
   };
 };

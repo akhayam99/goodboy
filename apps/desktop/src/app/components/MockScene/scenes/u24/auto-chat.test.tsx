@@ -306,14 +306,14 @@ describe('the Auto chat scenes', () => {
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
-  it('auto-chat-child reads the Planner started by Auto, with a composer Auto hears', async () => {
+  it('auto-chat-child reads the Planner with its brief on top and one box Auto hears', async () => {
     mount({ id: 'auto-chat-child' });
 
-    expect(
-      await screen.findByText('Started by Auto. Auto sees what you tell it.', undefined, WAIT),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open Auto' })).toBeDefined();
-    expect(screen.getByRole('textbox')).toBeDefined();
+    const brief = await screen.findByRole('region', { name: 'Why Auto started it' }, WAIT);
+    within(brief).getByText('Auto started this agent and reads your messages to it.');
+    expect(screen.queryByRole('button', { name: 'Open Auto' })).toBeNull();
+    expect(screen.getByPlaceholderText('Message Planner')).toBeDefined();
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });
 
   it('auto-overview-row draws the Auto tree once in Running, its agents under it', async () => {

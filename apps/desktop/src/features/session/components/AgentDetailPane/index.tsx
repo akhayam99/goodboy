@@ -34,7 +34,6 @@ import { useRewriterComposer } from '../../hooks/useRewriterComposer';
 import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
 import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
 import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
-import { AutoChildNotice } from '../../../auto/chat/AutoChildNotice';
 import { AutoMarkFinishedButton } from '../../../auto/chat/AutoMarkFinishedButton';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
@@ -86,7 +85,6 @@ export const AgentDetailPane = ({
   const autoChat = useAutoChat({ session, agent });
   const isAutoChild = autoChat.tree?.kind === 'child';
   const isAutoRoot = kind === 'auto';
-  const autoRootAgentId = autoChat.tree?.view.tree.rootAgentId ?? null;
   const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
   const adoption = membership.adoption;
   const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -259,18 +257,6 @@ export const AgentDetailPane = ({
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
         }
-        {...(isAutoChild &&
-          autoRootAgentId !== null && {
-            composerLead: (
-              <AutoChildNotice
-                onOpenAuto={() =>
-                  navigateTo({
-                    to: agentPlace({ sessionId: session.id, agentId: autoRootAgentId }),
-                  })
-                }
-              />
-            ),
-          })}
         composerNotice={
           isRewriterFinished ? (
             <RewriterFinishedNotice sessionId={session.id} mountId={rewriter.mountId} />
