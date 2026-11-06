@@ -492,7 +492,7 @@ describe('one hover on a rail node shows one thing', () => {
     expect(plainTooltips()).toHaveLength(1);
 
     wait(100);
-    expect(screen.getByTestId('session-hover-card')).toBeDefined();
+    expect(screen.getByTestId('session-hover-card').textContent).toContain('Pinned work 1');
     expect(plainTooltips()).toHaveLength(0);
 
     wait(1000);

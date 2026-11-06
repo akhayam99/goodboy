@@ -2189,7 +2189,7 @@
     "packages/ui/src/components/DrawerFrame.tsx": 1,
     "packages/ui/src/components/EmptyState.tsx": 1,
     "packages/ui/src/components/ErrorBoundary.tsx": 2,
-    "packages/ui/src/components/FactCard/index.tsx": 7,
+    "packages/ui/src/components/FactCard/index.tsx": 6,
     "packages/ui/src/components/FieldRow.tsx": 1,
     "packages/ui/src/components/HeaderActions.tsx": 1,
     "packages/ui/src/components/IconButton.tsx": 1,

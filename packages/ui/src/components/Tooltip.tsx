@@ -1,24 +1,21 @@
 import {
   cloneElement,
   useCallback,
-  useContext,
   useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { cn } from '../cn';
 import { dismissTopEscapeLayer, registerEscapeLayer } from '../escape';
 import { FLOATING_SURFACE } from '../floatingSurface';
-import { hoverSurfaces } from '../hoverSurfaceStore';
 import { isKeyboardFocus } from '../isKeyboardFocus';
 import { placeFloating, type FloatingCoords, type FloatingSide } from '../placeFloating';
 import { glyphsOfShortcut } from '../shortcutGlyphs';
 import { TooltipTriggerContext } from '../tooltipTriggerContext';
-import { useHoverSurfaceCount } from '../useHoverSurfaceCount';
-import { Kbd } from './Kbd';
+import { useTooltipQuiet } from '../useTooltipQuiet';
+import { TooltipBubble } from './TooltipBubble';
 
 export type TooltipSide = FloatingSide;
 
@@ -45,6 +42,12 @@ export type TooltipProps = {
 };
 
 const GAP = 6;
+
+const BUBBLE_CLASS = cn(
+  'pointer-events-none z-tooltip',
+  FLOATING_SURFACE,
+  'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-meta font-medium text-foreground motion-safe:animate-popover-in',
+);
 
 const DEFAULT_DELAY_MS = 400;
 
@@ -79,12 +82,8 @@ export const Tooltip = ({
   const [isHovered, setIsHovered] = useState(false);
   const hasContent =
     content !== undefined && content !== null && content !== false && content !== '';
-  const isNested = useContext(TooltipTriggerContext);
-  const surfaceCount = useHoverSurfaceCount();
   const anchorRef = useRef<HTMLElement>(null);
-  const isCoveredBySurface =
-    surfaceCount > 0 && !hoverSurfaces.isInside({ anchor: anchorRef.current });
-  const isQuiet = isSuppressed || isNested || isCoveredBySurface;
+  const { isNested, isQuiet, isQuietNow } = useTooltipQuiet({ isSuppressed, anchorRef });
   const visible = (isHovered || isOpen) && !isQuiet && hasContent;
   const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<FloatingCoords | null>(null);
@@ -107,11 +106,6 @@ export const Tooltip = ({
     clearDelay();
     setIsHovered(true);
   };
-
-  const isQuietNow = () =>
-    isSuppressed ||
-    isNested ||
-    (hoverSurfaces.count() > 0 && !hoverSurfaces.isInside({ anchor: anchorRef.current }));
 
   const show = () => {
     if (isQuietNow()) {
@@ -196,27 +190,18 @@ export const Tooltip = ({
     };
   }, []);
 
-  const wasSuppressedRef = useRef(isSuppressed);
+  const wasQuietRef = useRef(isQuiet);
   useEffect(() => {
-    if (isSuppressed) {
+    if (isQuiet) {
       clearDelay();
       setIsHovered(false);
       setCoords(null);
     }
-    if (wasSuppressedRef.current && !isSuppressed) {
+    if (wasQuietRef.current && !isQuiet) {
       suppressionEndedAtRef.current = Date.now();
     }
-    wasSuppressedRef.current = isSuppressed;
-  }, [isSuppressed]);
-
-  useEffect(() => {
-    if (!isCoveredBySurface) {
-      return;
-    }
-    clearDelay();
-    setIsHovered(false);
-    setCoords(null);
-  }, [isCoveredBySurface]);
+    wasQuietRef.current = isQuiet;
+  }, [isQuiet]);
 
   useEffect(() => {
     if (!visible) {
@@ -358,36 +343,17 @@ export const Tooltip = ({
   return (
     <TooltipTriggerContext.Provider value={hasContent && !isSuppressed}>
       {enhanced}
-      {visible && portalTarget !== null
-        ? createPortal(
-            <span
-              ref={tipRef}
-              id={tipId}
-              role="tooltip"
-              style={{
-                position: 'fixed',
-                top: coords?.top ?? -9999,
-                left: coords?.left ?? -9999,
-                visibility: coords ? 'visible' : 'hidden',
-              }}
-              className={cn(
-                'pointer-events-none z-tooltip',
-                FLOATING_SURFACE,
-                'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-meta font-medium text-foreground motion-safe:animate-popover-in',
-              )}
-            >
-              {keys === '' ? (
-                content
-              ) : (
-                <span className="inline-flex items-baseline gap-2">
-                  <span>{content}</span>
-                  <Kbd>{keys}</Kbd>
-                </span>
-              )}
-            </span>,
-            portalTarget,
-          )
-        : null}
+      {visible && portalTarget !== null ? (
+        <TooltipBubble
+          tipRef={tipRef}
+          tipId={tipId}
+          coords={coords}
+          content={content}
+          keys={keys}
+          target={portalTarget}
+          className={BUBBLE_CLASS}
+        />
+      ) : null}
     </TooltipTriggerContext.Provider>
   );
 };

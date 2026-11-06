@@ -1371,7 +1371,7 @@
   },
   "packages/ui/src/components/Tooltip.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
+      "count": 2
     }
   },
   "website/src/components/CardRow.tsx": {
