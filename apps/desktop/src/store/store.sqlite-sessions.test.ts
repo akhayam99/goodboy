@@ -1,6 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertProject, insertWorkspace } from '@goodboy/db';
-import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { insertAgent, insertOpenQuestion, insertProject, insertWorkspace } from '@goodboy/db';
+import type {
+  AgentId,
+  OpenQuestionId,
+  ProjectId,
+  SessionId,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { storedQuestionDrafts } from '../features/context/components/QuestionsTab/storedQuestionDrafts';
+import { storedAgentDraft } from './slices/agents/storedAgentDraft';
 import {
   buildStoryProject,
   buildStoryWorkspace,
@@ -11,6 +20,7 @@ import {
   rowsOf,
   STORE_IMPORT_TIMEOUT_MS,
   storySpies,
+  storySqlite,
   type StoryStore,
 } from './storyHarness';
 
@@ -165,6 +175,47 @@ describe('store on sqlite: deleting a session', () => {
     expect(await goalSlots(sessionId)).toEqual([]);
     expect((await sessionFlags(sessionId))[0]?.deleted_at).not.toBeNull();
     expect(useAppStore.getState().sessions.map((entry) => entry.id)).toEqual([]);
+  });
+
+  it('forgets the stored drafts of a session that was never opened', async () => {
+    const sessionId = await createLiveSession();
+    const agentId = 'agent-ledger-scout' as AgentId;
+    const questionId = 'question-ledger-alias' as OpenQuestionId;
+    await insertAgent(storySqlite(), {
+      id: agentId,
+      sessionId,
+      ordinal: 0,
+      name: 'Scout',
+      status: 'pending',
+    });
+    await insertOpenQuestion(storySqlite(), {
+      id: questionId,
+      sessionId,
+      text: 'Keep the legacy route?',
+      suggestedAnswers: [],
+      isBlocking: false,
+    });
+    useAppStore.setState({ sessionPhaseRuns: {} });
+    const forgetAgents = vi.spyOn(storedAgentDraft, 'forget');
+    const forgetQuestions = vi.spyOn(storedQuestionDrafts, 'forget');
+
+    await useAppStore.getState().deleteTask(sessionId);
+
+    expect(forgetAgents).toHaveBeenCalledWith({ agentIds: [agentId] });
+    expect(forgetQuestions).toHaveBeenCalledWith({ questionIds: [questionId] });
+    forgetAgents.mockRestore();
+    forgetQuestions.mockRestore();
+  });
+
+  it('keeps the stored drafts when the purge fails', async () => {
+    const sessionId = await createLiveSession();
+    injectDbFault({ match: /UPDATE sessions SET deleted_at/, message: 'disk full' });
+    const forgetQuestions = vi.spyOn(storedQuestionDrafts, 'forget');
+
+    await expect(useAppStore.getState().deleteTask(sessionId)).rejects.toThrow();
+
+    expect(forgetQuestions).not.toHaveBeenCalled();
+    forgetQuestions.mockRestore();
   });
 
   it('keeps every row and the store entry when the purge fails on its last statement', async () => {

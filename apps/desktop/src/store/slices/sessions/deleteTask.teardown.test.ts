@@ -65,6 +65,8 @@ vi.mock('@goodboy/db', async () =>
     listSessionMounts,
     purgeSessionForDelete,
     detachSessionMounts,
+    listAgentsForSessions: async () => new Map(),
+    listOpenQuestionsForSession: async () => [],
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));

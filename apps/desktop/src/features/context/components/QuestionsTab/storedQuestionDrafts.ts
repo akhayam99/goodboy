@@ -76,21 +76,42 @@ const draftsOf = ({ value }: ValueParams): Drafts => {
   }, {});
 };
 
+type ForgetParams = Readonly<{
+  questionIds: ReadonlyArray<string>;
+}>;
+
+const forgotten = new Set<string>();
+
+const readDrafts = (): Drafts => {
+  const raw = storedText.read({ key: KEY });
+  if (raw === '') {
+    return NO_DRAFTS;
+  }
+  try {
+    return draftsOf({ value: JSON.parse(raw) });
+  } catch {
+    return NO_DRAFTS;
+  }
+};
+
+const writeDrafts = ({ drafts }: WriteParams): void => {
+  const kept = Object.fromEntries(Object.entries(drafts).filter(([id]) => !forgotten.has(id)));
+  storedText.write({
+    key: KEY,
+    text: Object.keys(kept).length === 0 ? '' : JSON.stringify(kept),
+  });
+};
+
 export const storedQuestionDrafts = {
-  read: (): Drafts => {
-    const raw = storedText.read({ key: KEY });
-    if (raw === '') {
-      return NO_DRAFTS;
+  read: readDrafts,
+  write: writeDrafts,
+  forget: ({ questionIds }: ForgetParams): void => {
+    if (questionIds.length === 0) {
+      return;
     }
-    try {
-      return draftsOf({ value: JSON.parse(raw) });
-    } catch {
-      return NO_DRAFTS;
+    for (const id of questionIds) {
+      forgotten.add(id);
     }
+    writeDrafts({ drafts: readDrafts() });
   },
-  write: ({ drafts }: WriteParams): void =>
-    storedText.write({
-      key: KEY,
-      text: Object.keys(drafts).length === 0 ? '' : JSON.stringify(drafts),
-    }),
 };
