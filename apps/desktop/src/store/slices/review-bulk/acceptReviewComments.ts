@@ -14,6 +14,11 @@ type Params = SliceDeps & {
   readonly threadIds: ReadonlyArray<string>;
 };
 
+type AcceptedThread = {
+  readonly threadId: string;
+  readonly itemId: string;
+};
+
 const accepting = new Set<string>();
 
 const acceptedItemIdsOf = ({
@@ -32,9 +37,8 @@ export const acceptReviewComments = async ({
   sessionId,
   threadIds,
 }: Params): Promise<ReviewBulkAcceptResult> => {
-  const before = acceptedItemIdsOf({ get, sessionId });
   const failures: Array<ReviewBulkFailure> = [];
-  const accepted: Array<string> = [];
+  const accepted: Array<AcceptedThread> = [];
   for (const threadId of new Set(threadIds)) {
     const state = get();
     const row = launchRowsOf({ state, sessionId }).find(
@@ -61,21 +65,22 @@ export const acceptReviewComments = async ({
         revision: row.thread.revision,
         reply: replyOf({ draft: state.resolveItemDrafts[sessionId]?.[threadId], row }),
       });
-      accepted.push(threadId);
+      accepted.push({ threadId, itemId: row.item.id });
     } catch (error) {
       failures.push({ threadId, message: formatError(error) });
     } finally {
       accepting.delete(key);
     }
   }
-  for (const threadId of accepted) {
+  for (const { threadId } of accepted) {
     try {
       await postReplyWhenNothingWaits({ getState: get, sessionId, threadId });
     } catch (error) {
       failures.push({ threadId, message: formatError(error) });
     }
   }
-  const itemIds = [...acceptedItemIdsOf({ get, sessionId })].filter((id) => !before.has(id));
+  const stillAccepted = acceptedItemIdsOf({ get, sessionId });
+  const itemIds = accepted.map(({ itemId }) => itemId).filter((id) => stillAccepted.has(id));
   if (itemIds.length === 0) {
     return { acceptedCount: 0, failures };
   }
