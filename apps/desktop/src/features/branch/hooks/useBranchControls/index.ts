@@ -8,6 +8,7 @@ import { selectMountForPath } from '../../../../store/slices/project-mounts/sele
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { DIFF_CHANGE_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
+import type { PullRequestFacts } from '../../../actions/kinds/pullRequestFacts';
 import type { DiffActionTarget, PullRequestActionTarget } from '../../../actions/types';
 import { useActionControls, type ActionControls } from '../../../actions/useActionControls';
 import { requestReview } from '../../../review/reviewRequest';
@@ -39,10 +40,14 @@ type Params = {
   readonly remoteHost?: PullRequestHost;
   readonly nextStep?: BranchNextStep;
   readonly comments?: BranchStepComments;
-  readonly isChecksFailing?: boolean;
-  readonly hasConflicts?: boolean;
+  readonly facts?: Pick<PullRequestFacts, 'checks' | 'hasConflicts'>;
   readonly hasOpenRebaseStop?: boolean;
   readonly mergeLabel?: string;
+};
+
+const NO_FACTS: Pick<PullRequestFacts, 'checks' | 'hasConflicts'> = {
+  checks: 'none',
+  hasConflicts: false,
 };
 
 const NO_COMMENTS: BranchStepComments = {
@@ -84,8 +89,7 @@ export const useBranchControls = ({
   remoteHost,
   nextStep = null,
   comments = NO_COMMENTS,
-  isChecksFailing = false,
-  hasConflicts = false,
+  facts = NO_FACTS,
   hasOpenRebaseStop = false,
   mergeLabel = 'Merge',
 }: Params): BranchControls => {
@@ -174,7 +178,7 @@ export const useBranchControls = ({
     sessionId,
     mountId,
     prNumber: pr?.number ?? null,
-    isFailing: isChecksFailing,
+    isFailing: facts.checks === 'failing',
   });
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
@@ -195,7 +199,7 @@ export const useBranchControls = ({
         hasPullRequest: pr !== null && !isRequestMerged,
         state,
         nextStep,
-        hasConflicts,
+        hasConflicts: facts.hasConflicts,
         hasOpenRebaseStop,
         mergeLabel,
       }),
@@ -204,7 +208,7 @@ export const useBranchControls = ({
       checkStep.note,
       comments.facts,
       diffControls.actions,
-      hasConflicts,
+      facts.hasConflicts,
       hasOpenRebaseStop,
       isRequestMerged,
       mergeLabel,

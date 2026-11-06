@@ -216,8 +216,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     remoteHost: host,
     nextStep,
     comments: branchReview.comments,
-    isChecksFailing: prReadiness.facts.checks === 'failing',
-    hasConflicts: prReadiness.facts.hasConflicts,
+    facts: prReadiness.facts,
     hasOpenRebaseStop,
     mergeLabel: mergeWord,
   });

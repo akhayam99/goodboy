@@ -164,7 +164,7 @@ const StepHeader = () => {
     pr: seed.pullRequest,
     diff: stepDiff(),
     review: STEP_REVIEW,
-    isChecksFailing: true,
+    facts: { checks: 'failing', hasConflicts: false },
     mergeLabel: 'Squash and merge',
   });
   return (
