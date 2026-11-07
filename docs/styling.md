@@ -441,7 +441,7 @@ flex-col` roots and only ever falls.
 Every `PaneShell` keeps the back row (the page trail) and the `lead` pinned at
 the top; the rest of the header sits above the body and steps aside while you
 read. There is no static mode: a body with nothing to scroll keeps its header.
-A page that draws its own `PageHeader` (Board, Chat, Terminal) wraps the header
+A page that draws its own `PageHeader` (Board, Chat) wraps the header
 and the body in `RevealRegion`, the same region `PaneShell` uses, with any
 composer below it. `DrawerFrame` pins its title row (the close is its way
 back) and steps its meta line, overlay hint and toolbar aside; the back link
@@ -463,12 +463,18 @@ keyboard focus inside the header and a new `revealKey` (the Branch page passes
 its tab, so a tab change brings the header back even when React keeps the
 scroller). When the header leaves, the whole body (a toolbar above the
 scroller included) moves up with it (`--reveal-shift`) and grows by the same
-height in step (`translate` and `height` share one transition), so its bottom
-edge never moves: a composer at the foot of the body stays put, a chat pinned to
-its last line keeps it, and the scroller never sits under the header, so its
-thumb, shade and sticky rows need nothing. A page with less than 24px left to scroll once the header is gone
-never hides it, and a hidden page that runs out of room brings it back, so a
-short diff never strands the header. Only the reader moves the header
+height in step, so its bottom edge never moves: a composer at the foot of the
+body stays put, a chat pinned to its last line keeps it, and the scroller never
+sits under the header, so its thumb, shade and sticky rows need nothing. The
+header's `top`, the body's `margin-top` and its `height` read the same var in
+one layout pass; never move one of them with `translate`, which runs on the
+compositor a frame apart and makes a pinned last line wobble. A page with less
+than 24px left to scroll once the header is gone never hides it, and a hidden
+page that runs out of room brings it back, so a short diff never strands the
+header. Near the end the header stays too: it hides only while a full header
+height of content is left below where the scroll will land (its position plus
+the wheel or key distance still on its way), since hiding there would shrink
+the range under the scroll and snap the page back. Only the reader moves the header
 (`scrollIntent.ts`): a scroll counts when it follows a wheel, a scroll key on
 the content (never one typed into a field), a touch move or a track press on
 that same viewport, in that direction and no larger than the input asked for;
@@ -491,8 +497,10 @@ the composer) passes `isPageScroller={false}` to its `ScrollFade`.
 The slide uses `--duration-base` and `--ease-enter` to arrive,
 `--duration-quick` and `--ease-exit` to leave, and is off under reduced motion.
 A body with no scroller keeps the header in place. The terminal output (xterm)
-owns its own viewport, not a `ScrollFade`, and never drives the header: on
-the Terminal page only the list of terminals does. A
+owns its own viewport, not a `ScrollFade`, and is never inside a reveal body,
+since any change to its height refits it: the Terminal page keeps its title,
+and only the rail reveals, the New terminal row stepping aside over the list
+of terminals. A
 failure banner never goes in the header: it is the page's `lead`, pinned under
 the back row (rule 13).
 

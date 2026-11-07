@@ -92,6 +92,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       scrollTop: clampedTopOf({ viewport }),
       range: rangeOf({ viewport }),
       headerHeight,
+      pending: isUserScroll ? intent.pendingDownOf({ viewport }) : 0,
       isUserScroll,
       isFocusHeld,
     });

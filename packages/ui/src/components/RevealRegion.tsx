@@ -38,10 +38,9 @@ export const RevealRegion = ({
           ref={headerRef}
           data-slot="reveal-header"
           className={cn(
-            'absolute inset-x-0 top-0 z-20',
+            'absolute inset-x-0 top-[calc(var(--reveal-shift,0px)*-1)] z-20',
             SURFACE_CLASS[surface],
-            'motion-safe:transition-transform motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease)',
-            'group-data-[reveal-header=hidden]/reveal:-translate-y-full',
+            'motion-safe:transition-[top] motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease)',
           )}
         >
           {header}
@@ -55,8 +54,8 @@ export const RevealRegion = ({
             className={cn(
               'flex min-h-0 min-w-0 flex-1 flex-col pt-[var(--reveal-pad,0px)]',
               'group-data-[reveal=slide]/reveal:h-[calc(100%+var(--reveal-shift,0px))] group-data-[reveal=slide]/reveal:flex-none',
-              'group-data-[reveal=slide]/reveal:translate-y-[calc(var(--reveal-shift,0px)*-1)]',
-              'motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease) group-data-[reveal=slide]/reveal:motion-safe:transition-[translate,height]',
+              'relative group-data-[reveal=slide]/reveal:top-[calc(var(--reveal-shift,0px)*-1)]',
+              'motion-safe:duration-(--reveal-duration) motion-safe:ease-(--reveal-ease) group-data-[reveal=slide]/reveal:motion-safe:transition-[top,height]',
             )}
           >
             {children}

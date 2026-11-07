@@ -313,8 +313,17 @@ describe('PaneShell header reveal', () => {
     expect(headerState()).toBe('shown');
   });
 
+  it('keeps the header while a wheel runs to the end, so the body never pulls the page back', () => {
+    const viewport = mountPage();
+    scrollTo({ viewport, top: CONTENT_PX - VIEW_PX - 40 });
+
+    expect(headerState()).toBe('shown');
+    expect(region().style.getPropertyValue('--reveal-shift')).toBe('0px');
+  });
+
   it('keeps the header away when the bottom clamps as the body grows', () => {
     const viewport = mountPage();
+    scrollTo({ viewport, top: 400 });
     scrollTo({ viewport, top: CONTENT_PX - VIEW_PX });
     expect(headerState()).toBe('hidden');
 

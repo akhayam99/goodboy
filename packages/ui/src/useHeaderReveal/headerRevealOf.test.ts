@@ -9,6 +9,7 @@ type StepParams = {
   readonly scrollTop: number;
   readonly headerHeight?: number;
   readonly range?: number;
+  readonly pending?: number;
   readonly isUserScroll?: boolean;
   readonly isFocusHeld?: boolean;
 };
@@ -18,10 +19,11 @@ const step = ({
   scrollTop,
   headerHeight = 160,
   range = LONG_RANGE,
+  pending = 0,
   isUserScroll = true,
   isFocusHeld = false,
 }: StepParams) =>
-  headerRevealOf({ state, scrollTop, range, headerHeight, isUserScroll, isFocusHeld });
+  headerRevealOf({ state, scrollTop, range, headerHeight, pending, isUserScroll, isFocusHeld });
 
 type WalkParams = {
   readonly from: HeaderRevealState;
@@ -113,8 +115,21 @@ describe('headerRevealOf', () => {
   it('never hides the header of a page too short to scroll once it is gone', () => {
     const short = step({ state: AT_TOP, scrollTop: 60, range: 180, headerHeight: 160 });
     expect(short.isShown).toBe(true);
-    const enough = step({ state: AT_TOP, scrollTop: 60, range: 184, headerHeight: 160 });
+    const enough = step({ state: AT_TOP, scrollTop: 24, range: 184, headerHeight: 160 });
     expect(enough.isShown).toBe(false);
+  });
+
+  it('keeps the header near the end, where hiding would pull the page back', () => {
+    const near = step({ state: AT_TOP, scrollTop: 900, range: 1000, headerHeight: 120 });
+    expect(near).toEqual({ isShown: true, anchor: 0 });
+    const clear = step({ state: AT_TOP, scrollTop: 880, range: 1000, headerHeight: 120 });
+    expect(clear.isShown).toBe(false);
+  });
+
+  it('keeps the header while a wheel still on its way would land near the end', () => {
+    const landing = { state: AT_TOP, scrollTop: 400, range: 1000, headerHeight: 120 };
+    expect(step({ ...landing, pending: 520 }).isShown).toBe(true);
+    expect(step({ ...landing, pending: 480 }).isShown).toBe(false);
   });
 
   it('brings the header back when a hidden page no longer has room to scroll', () => {

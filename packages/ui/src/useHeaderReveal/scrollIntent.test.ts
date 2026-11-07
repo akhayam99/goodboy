@@ -67,6 +67,17 @@ describe('scrollIntent', () => {
     expect(intent.isUserScroll({ viewport, delta: -30 })).toBe(false);
   });
 
+  it('reports the downward wheel distance still on its way, and none going up', () => {
+    const intent = scrollIntent();
+    const viewport = viewportOf();
+    expect(intent.pendingDownOf({ viewport })).toBe(0);
+    intent.onWheel({ viewport, event: wheel({ deltaY: 100, target: viewport }) });
+    intent.isUserScroll({ viewport, delta: 30 });
+    expect(intent.pendingDownOf({ viewport })).toBe(70);
+    intent.onWheel({ viewport, event: wheel({ deltaY: -100, target: viewport }) });
+    expect(intent.pendingDownOf({ viewport })).toBe(0);
+  });
+
   it('reads an app jump right after the wheel as the app, not the reader', () => {
     const intent = scrollIntent();
     const viewport = viewportOf();

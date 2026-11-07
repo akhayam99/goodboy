@@ -53,6 +53,7 @@ export type ScrollIntent = {
   readonly hold: () => void;
   readonly forget: () => void;
   readonly isUserScroll: (params: ClassifyParams) => boolean;
+  readonly pendingDownOf: (params: ViewportParams) => number;
 };
 
 type ValueParams = {
@@ -213,6 +214,14 @@ export const scrollIntent = (): ScrollIntent => {
     return true;
   };
 
+  const pendingDownOf = ({ viewport }: ViewportParams): number => {
+    const live = grants.get(viewport);
+    if (live === undefined || live.until < performance.now() || live.sign === -1) {
+      return 0;
+    }
+    return live.budget;
+  };
+
   return {
     onWheel,
     onKey,
@@ -223,5 +232,6 @@ export const scrollIntent = (): ScrollIntent => {
     hold,
     forget,
     isUserScroll,
+    pendingDownOf,
   };
 };
