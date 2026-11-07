@@ -366,7 +366,7 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'u34-p27-auto-done' });
 
     await screen.findByText('Nothing needs you', undefined, WAIT);
-    expect(screen.queryByText(/Auto waits on your OK/)).toBeNull();
+    expect(screen.queryByText(/Auto needs approval/)).toBeNull();
     expect(screen.queryByText('Ready to implement')).toBeNull();
     expect(screen.queryByText(/Stopped when Goodboy closed/)).toBeNull();
   });

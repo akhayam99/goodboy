@@ -43,7 +43,7 @@ const mount = () => {
 };
 
 const launches = async (): Promise<HTMLElement> =>
-  screen.findByRole('tree', { name: 'Launches' }, WAIT);
+  screen.findByRole('tree', { name: 'Agents' }, WAIT);
 
 type TreeParams = {
   readonly tree: HTMLElement;
@@ -79,14 +79,14 @@ describe('the u30 Agents fold scene', () => {
       'Scout, Read the ledger-core diff, Done',
       'Scout, Ask which ledger-core table owns the key, Needs you',
       'Reviewer, Review the ledger-core side, Done',
-      'Implementer, Fix the applyCredit race, 2 helpers, Failed, Done',
-      'Implementer, Build the idempotency key once, 2 helpers, Done',
+      'Implementer, Fix the applyCredit race, 2 subagents, Failed, Done',
+      'Implementer, Build the idempotency key once, 2 subagents, Done',
       'Planner, Plan the retry safe credit flow, Done',
-      '10 helpers, Needs you',
+      '10 subagents, Needs you',
       'Auto agent, Make the payments-api retry safe end to end., Idle',
-      '3 helpers, Failed',
+      '3 subagents, Failed',
       'Auto agent, Why does the Harborline cache miss on every deploy?, Idle',
-      '2 helpers',
+      '2 subagents',
       'Auto agent, Write the Northwind release notes for 2.4., Idle',
     ]);
   });
@@ -97,7 +97,7 @@ describe('the u30 Agents fold scene', () => {
     const tree = await launches();
     const race = within(tree).getByRole('treeitem', { name: /Fix the applyCredit race/ });
     expect(race.getAttribute('aria-expanded')).toBe('false');
-    expect(race.querySelector('[data-spawned-count]')?.textContent).toBe('2 helpers');
+    expect(race.querySelector('[data-spawned-count]')?.textContent).toBe('2 subagents');
     expect(race.querySelector('[data-spawned-urgency]')?.textContent).toBe('Failed');
     fireEvent.click(within(race).getByTestId('spawned-fold-toggle'));
     expect(race.getAttribute('aria-expanded')).toBe('true');
@@ -125,7 +125,7 @@ describe('the u30 Agents fold scene', () => {
     mount();
 
     const tree = await launches();
-    const summary = within(tree).getByRole('treeitem', { name: '3 helpers, Failed' });
+    const summary = within(tree).getByRole('treeitem', { name: '3 subagents, Failed' });
     expect(summary.querySelector('[data-spawned-urgency]')?.textContent).toBe('Failed');
     fireEvent.click(summary);
     expect(summary.getAttribute('aria-expanded')).toBe('true');

@@ -17,8 +17,8 @@ export const BranchCommits = ({ sessionId, worktreePath, isReadOnly }: Props) =>
           size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
-          title="No worktree for this session"
-          description="This session has no checked-out worktree, so there are no commits to show."
+          title="No branch in this session"
+          description="Add a branch to see its commits."
         />
       </PageColumn>
     );

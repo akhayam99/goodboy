@@ -53,7 +53,7 @@ const mount = ({ id }: MountParams) => {
 };
 
 const launches = async (): Promise<HTMLElement> =>
-  screen.findByRole('tree', { name: 'Launches' }, WAIT);
+  screen.findByRole('tree', { name: 'Agents' }, WAIT);
 
 type TreeParams = {
   readonly tree: HTMLElement;
@@ -96,9 +96,9 @@ describe('the u27 Agents tree scenes', () => {
     expect(roots.map((root) => root.getAttribute('aria-expanded'))).toEqual(['true', null, null]);
     expect(
       within(tree)
-        .getAllByRole('treeitem', { name: /helpers$/ })
+        .getAllByRole('treeitem', { name: /subagents$/ })
         .map((item) => item.getAttribute('aria-label')),
-    ).toEqual(['3 helpers', '2 helpers']);
+    ).toEqual(['3 subagents', '2 subagents']);
     expect(labelsOf({ tree })).toHaveLength(13 + 2 + 2);
   });
 
@@ -141,7 +141,7 @@ describe('the u27 Agents tree scenes', () => {
     const tree = await launches();
     const cache = within(tree).getByRole('treeitem', { name: /Harborline cache/ });
     expect(within(cache).queryByTestId('spawned-fold-toggle')).toBeNull();
-    const summary = within(tree).getByRole('treeitem', { name: '3 helpers' });
+    const summary = within(tree).getByRole('treeitem', { name: '3 subagents' });
     act(() => summary.focus());
     fireEvent.keyDown(summary, { key: 'ArrowRight' });
     expect(summary.getAttribute('aria-expanded')).toBe('true');
@@ -236,20 +236,20 @@ describe('the focused Auto launch', () => {
     document.head.querySelector('[data-test-scroll]')?.remove();
   });
 
-  it('groups the launch by state: Working, Waiting, then Done folded, with no Now marker', async () => {
+  it('groups the launch by state: Running, Queued, then Done folded, with no Now marker', async () => {
     const { container } = mount({ id: FOCUSED });
 
     const tree = await focusedTree();
     expect(screen.getByRole('button', { name: 'All runs' })).toBeDefined();
     expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
-      '2 working, 3 waiting, 7 done',
+      '2 running, 3 queued, 7 done',
     );
     expect(visualLabelsOf({ tree })).toEqual([
       ROOT,
-      'Working, 2',
+      'Running, 2',
       TOP,
       'Reviewer, Review the ledger-core side, Running',
-      'Waiting, 3',
+      'Queued, 3',
       'Scout, Check notify-relay for duplicate retries, Queued',
       READER,
       'Docs, Write the retry section of the payments-api guide, Queued',
@@ -269,7 +269,7 @@ describe('the focused Auto launch', () => {
     const tree = await focusedTree();
     const auto = within(tree).getByRole('treeitem', { name: ROOT });
     expect(auto.tabIndex).toBe(0);
-    const first = within(tree).getByRole('treeitem', { name: 'Working, 2' });
+    const first = within(tree).getByRole('treeitem', { name: 'Running, 2' });
     expect(first.tabIndex).toBe(-1);
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'ArrowDown' });

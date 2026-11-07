@@ -32,8 +32,8 @@ export const BranchFiles = ({
         <EmptyState
           size="page"
           icon={CONCEPT_ICONS.diff}
-          title="No worktree for this session"
-          description="There is no diff without a checked-out worktree."
+          title="No branch in this session"
+          description="Add a branch to see its files."
         />
       </PageColumn>
     );

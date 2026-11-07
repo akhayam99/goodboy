@@ -727,7 +727,7 @@ describe('Branch page Checks and Files', () => {
 
     await visit(/^Files/);
 
-    expect(screen.getByText('No worktree for this session')).toBeDefined();
+    expect(screen.getByText('No branch in this session')).toBeDefined();
   });
 });
 

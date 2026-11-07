@@ -61,7 +61,7 @@ const mount = (name: string): void => {
 };
 
 const labelsOf = async (): Promise<ReadonlyArray<string>> => {
-  const tree = await screen.findByRole('tree', { name: 'Launches' }, WAIT);
+  const tree = await screen.findByRole('tree', { name: 'Agents' }, WAIT);
   return within(tree)
     .getAllByRole('treeitem')
     .map((item) => item.getAttribute('aria-label') ?? '');
@@ -75,7 +75,7 @@ describe('the Agents tool lists what is live', () => {
 
     expect(labels).toHaveLength(2);
     expect(labels[0]).toMatch(/Trace the retried webhook in payments-api, Running$/);
-    expect(labels[1]).toMatch(/Tidy the Cascadia fixtures, Blocked$/);
+    expect(labels[1]).toMatch(/Tidy the Cascadia fixtures, Needs you$/);
     expect(screen.queryByText('Nothing live right now')).toBeNull();
     expect(screen.queryByText(/Review the notify-relay backoff change/)).toBeNull();
   });
@@ -84,7 +84,7 @@ describe('the Agents tool lists what is live', () => {
     mount('u28-agents-tool-empty');
 
     await screen.findByText('Nothing live right now', undefined, WAIT);
-    expect(screen.queryByRole('tree', { name: 'Launches' })).toBeNull();
+    expect(screen.queryByRole('tree', { name: 'Agents' })).toBeNull();
   });
 
   it('drops a row from the list when its agent finishes', async () => {

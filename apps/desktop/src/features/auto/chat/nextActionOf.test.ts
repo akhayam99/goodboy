@@ -32,7 +32,7 @@ describe('nextActionOf', () => {
     });
 
     expect(action.choices.map((choice) => choice.label)).toEqual([
-      'Spawn implementer',
+      'Start implementer',
       'Spawn a tester first',
       'Ask a reviewer',
     ]);

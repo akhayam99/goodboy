@@ -23,7 +23,7 @@ export const SpawnedLaunches = ({ session, selectedAgentId }: Props) => {
     return <EmptyLine className="px-2">Nothing live right now</EmptyLine>;
   }
   return (
-    <SpawnedTree label="Launches">
+    <SpawnedTree label="Agents">
       {launches.map((launch) => {
         switch (launch.kind) {
           case 'run':
