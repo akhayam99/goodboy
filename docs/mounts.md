@@ -663,7 +663,7 @@ action the user can see, or allows one on a mount the user sees as gone.
 The Overview has no Projects section. A worktree is a one line row of the
 Projects tree in the session rail (`WorktreeRow`: state glyph, the pull request
 title or the branch, at most one chip: failing, conflict or behind). A branch
-is one row with no rows under it; its pages (Pull request, Comments, Files,
+is one row with no rows under it; its pages (Pull request, Comments, Changes,
 Commits, Checks) are the tab strip of the Branch page. Its row menu (the `⋯`, a right click, Shift+F10) holds the
 `mount` kind of the action registry (`features/actions/kinds/mount.ts`). The
 navigation rules live in [navigation/session-rail.md](navigation/session-rail.md#session-rail).

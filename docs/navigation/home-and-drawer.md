@@ -514,6 +514,6 @@ holds `Open in Files`.
 `identifier-peek` (payload `{ worktreePath, word, selected }`, reader width) is
 where every result of the identifier popover in a diff opens; the page behind it
 does not move. See [session-rail.md](./session-rail.md) for what it shows.
-There is no drawer for notes: a note lives on its line in Files and as a row in
+There is no drawer for notes: a note lives on its line in Changes and as a row in
 Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
 without a branch sits in `Unassigned comments` on the Session overview.

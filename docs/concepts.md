@@ -1097,8 +1097,8 @@ work on one goal without mixing up their chats.
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
 
-**Ask** is a question about the whole session, asked from its trail band. It
-is not an agent: it never lands on the board, in the agent count or in an
+**Ask** is a question about the whole session, asked from the Ask tool in the
+session tools column (`SESSION_TOOLS`, shortcut ⌘L). It is not an agent: it never lands on the board, in the agent count or in an
 agent's chat, and it never changes the work. It reads the session record, the
 agents' reports, questions, runs, review comments, branch, pull request and
 the session worktrees, read only, and answers with chips that open what it
@@ -1122,7 +1122,7 @@ request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
 header and its merge ask read them from the host. Comments exists whenever a
 pull request or a comment does, so a branch with only your notes has the section too. It lists the
 pull request threads and your notes together, told apart by a chip (`Draft`, `On GitHub`) and
-filtered by `All`, `Notes` and `On GitHub`. Your notes also sit under their line in Files, where
+filtered by `All`, `Notes` and `On GitHub`. Your notes also sit under their line in Changes, where
 every open note gets a conversation, and deleting or resolving the note closes it. An agent
 reviewer's comments on a branch without a pull request are kept as notes. When a pull request
 arrives the notes stay notes; `Post to GitHub` on a note in Comments turns it into a draft review
@@ -1237,7 +1237,7 @@ row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
-`…` in the drawer header also offers Stop drafting, Resolve, Open in Files, Agent
+`…` in the drawer header also offers Stop drafting, Resolve, Open in Changes (`NAMES.changes`), Agent
 transcript, Open (the host logo, named Open on GitHub) and Copy link, and shows only with two or more of them. Apply fix and Skip move the drawer to the
 next open comment. Apply fix never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the

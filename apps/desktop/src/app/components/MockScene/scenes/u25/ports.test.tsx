@@ -391,7 +391,7 @@ describe('Listening on this Mac', () => {
         within(menu)
           .getAllByRole('menuitem')
           .map((item) => item.textContent),
-      ).toEqual(['Open in browser', 'Pin', 'Stop', 'Force stop', 'Hide', 'Copy address']);
+      ).toEqual(['Open in browser', 'Pin', 'Hide', 'Copy address']);
       fireEvent.keyDown(menu, { key: 'Escape' });
     }
   });

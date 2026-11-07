@@ -106,7 +106,7 @@ describe('RecordHeader', () => {
     ).toContain('text-lead');
   });
 
-  it('orders the overflow from the registry: tool verbs, session, refresh, copies, then destructive', () => {
+  it('orders the overflow from the registry: tool verbs, session, the link, then destructive', () => {
     render(
       <RecordHeader
         provider="gitlab"
@@ -126,9 +126,7 @@ describe('RecordHeader', () => {
       'Open in GitLab',
       'Convert to draft',
       'Remove link to session',
-      'Refresh',
       'Copy link',
-      'Copy !87',
       'Close merge request',
     ]);
   });

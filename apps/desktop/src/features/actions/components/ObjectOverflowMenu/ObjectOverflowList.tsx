@@ -19,6 +19,7 @@ type Props = ActionMenuBehavior & {
   readonly omit: ReadonlyArray<string>;
   readonly only?: ReadonlyArray<string> | null;
   readonly relabel?: ReadonlyMap<string, string> | null;
+  readonly cuts?: ReadonlyArray<string>;
   readonly onClose: () => void;
   readonly viewing?: ActionViewing | null;
   readonly onArm?: OnArm | undefined;
@@ -31,6 +32,7 @@ export const ObjectOverflowList = ({
   omit,
   only = null,
   relabel = null,
+  cuts,
   onClose,
   viewing = null,
   onArm,
@@ -57,7 +59,7 @@ export const ObjectOverflowList = ({
     [onPreview],
   );
   const entries = useMemo((): ReadonlyArray<MenuEntry> => {
-    const visible = visibleActionsOf({ actions, omit, only, relabel });
+    const visible = visibleActionsOf({ actions, omit, only, relabel, cuts });
     const drawn = toMenuEntries({ actions: visible, env, run, onPreview });
     const base =
       isHeld === undefined
@@ -84,6 +86,6 @@ export const ObjectOverflowList = ({
         onSelect: () => onArm({ action, run: () => run({ actionId: action.id }) }),
       };
     });
-  }, [actions, env, isHeld, omit, onArm, onPreview, only, relabel, run]);
+  }, [actions, cuts, env, isHeld, omit, onArm, onPreview, only, relabel, run]);
   return <MenuList label={label} entries={entries} onClose={onClose} />;
 };

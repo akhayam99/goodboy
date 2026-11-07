@@ -1,3 +1,4 @@
+import { overflowCutOf } from '../../overflowCutOf';
 import type { ResolvedAction } from '../../types';
 
 type Params = {
@@ -5,6 +6,7 @@ type Params = {
   readonly omit: ReadonlyArray<string>;
   readonly only: ReadonlyArray<string> | null;
   readonly relabel: ReadonlyMap<string, string> | null;
+  readonly cuts?: ReadonlyArray<string>;
 };
 
 export const visibleActionsOf = ({
@@ -12,10 +14,16 @@ export const visibleActionsOf = ({
   omit,
   only,
   relabel,
-}: Params): ReadonlyArray<ResolvedAction> =>
-  actions
-    .filter((action) => !omit.includes(action.id) && (only === null || only.includes(action.id)))
+  cuts = [],
+}: Params): ReadonlyArray<ResolvedAction> => {
+  const listed = actions.filter(
+    (action) => !omit.includes(action.id) && (only === null || only.includes(action.id)),
+  );
+  const cut = overflowCutOf({ actions: listed, cuts });
+  return listed
+    .filter((action) => !cut.includes(action.id))
     .map((action) => {
       const label = relabel?.get(action.id);
       return label === undefined ? action : { ...action, label };
     });
+};

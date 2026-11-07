@@ -14,7 +14,7 @@ It reads top to bottom:
 - No setup line: a new worktree's setup (**Run** and **Not now**) is offered on the Branch page.
 - **Needs you** comes first. It holds what a branch needs you to decide. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published. Each of these counts as an item in the header and in the line under the title. The notices sit in one place above the cards and keep their state when the count changes. A closed worktree shows a notice with **Reopen** too. It does not count, because you closed it on purpose. A stopped rebase is the only notice a worktree draws while it lasts.
 - Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark as read** are quiet buttons, so **Answer** stays the one filled button.
-- The line under the goal says what is happening. It counts what waits for you (amber), what works (blue) and what is stuck (red). With only **Next** rows left it reads **Next:** and the step. It says **Nothing needs you** (green) only when nothing is left to press.
+- The line under the goal says what is happening. It counts what needs you (amber, "2 need you"), what stopped or failed (red, "1 stopped", "Auto failed") and what runs (blue, "3 running"). With only **Next** rows left it reads **Next:** and the step. It says **Nothing needs you** (green) only when nothing is left to press.
 - The line reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
 - One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order. **Next** is one heading over the steps in **Branches**. A folder card sits under **Branches**.
 - A session with no agent, no run, no branch and no card shows the start form and nothing else.
@@ -276,7 +276,7 @@ This part is for contributors and agents who change the feature.
 - `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.
 - Needs you card: `waitingGroupsOf` takes the live groups `liveSectionIdOf` calls waiting, and `NeedsYouCard` draws them above the Decide and Fix rows. `liveSectionsOf` keeps only Running and Stopped.
 - Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
-- Stuck Auto agent with a card: the card offers **Open Auto**, **Stop** and **Retry** (`autoActions`), its agents fold is `LiveAutoAgents`. Without a card `StuckActions` offers **Answer** and **Stop**.
+- Auto agent that stopped, with a card: the card offers **Open Auto**, **Stop** and **Retry** (`autoActions`), its agents fold is `LiveAutoAgents`. Without a card `StuckActions` offers **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.
 - Archive suggestion: `archiveSuggestionOf`.
