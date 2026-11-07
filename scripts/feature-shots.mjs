@@ -186,7 +186,11 @@ function scrollToTop({ selector }) {
 
 function clickText(text) {
   const targets = [...this.querySelectorAll('button, [role="tab"], [role="menuitem"], a')];
-  const target = targets.find((element) => (element.textContent ?? '').trim().startsWith(text));
+  const target = targets.find(
+    (element) =>
+      (element.textContent ?? '').trim().startsWith(text) ||
+      element.getAttribute('aria-label') === text,
+  );
   if (!target) {
     return false;
   }

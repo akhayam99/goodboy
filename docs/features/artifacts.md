@@ -12,10 +12,10 @@ The state is a word on the row, used ones fold into **N used**, and **Recently d
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-light.webp" alt="The Artifacts list of the Harborline session under the tabs All, Plans, Reports and Wireframes: a Needs you group with a plan marked Partly ran, a Ready group of wireframes, reports and plans with Ready to run, a Running group with a wireframe and a plan with Stop, a Consumed group and Recently deleted with Show">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-light.webp" alt="The Artifacts list of the Harborline session grouped By branch, under the tabs All, Plans and Reports and the By branch and By state switch: payments-api fix/duplicate-credit, notify-relay feat/retry-budget and ledger-core rec/2-backfill, each with Open branch and its rows marked Ready or Ready to run, a report marked Also on another branch, then No branch and Recently deleted with Show">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Plan parts and Run plan
 
