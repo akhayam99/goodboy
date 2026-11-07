@@ -33,7 +33,7 @@ Session, agent, step and Auto conversations share one dock joined to the box. Pe
 One labeled Stop names what it stops, such as Stop Auto and 2 agents. A message sent over an open permission ask denies it, with the text as the reason.
 
 #### One word per state
-<!-- gb area=sessions image=one-word-per-state pr=2118 -->
+<!-- gb area=sessions pr=2118 -->
 
 Every state reads one word from one table, in the glance, rows, tails, the sidebar and the Agents panel. An error reads Failed, a limit reads Paused, and a stopped Auto or agent reads Needs you with one sentence.
 
@@ -140,6 +140,7 @@ Overview puts the status line and the summary in one block under the title. A no
 - A notice with three or more actions wraps them under the text in a narrow window. <!-- gb area=app pr=2111 -->
 - A queued pull request reads gray, apart from the blue of an open one. <!-- gb area=review pr=2111 -->
 - Two mounts in a series no longer show a branch switch with a single group. <!-- gb area=review pr=2120 -->
+- The agent cost footer now shows the same cost as the agent header. <!-- gb area=agents -->
 
 ## Goodboy v0.31.11
 
