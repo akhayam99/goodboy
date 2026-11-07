@@ -121,7 +121,7 @@
   },
   "features/overview-next": {
     "version": "0.31.12",
-    "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 490,280,740,334 --window 1280x800 --wait 8000"
+    "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 499,289,725,328 --window 1280x800 --wait 8000"
   },
   "features/overview-session": {
     "version": "0.31.12",
@@ -157,7 +157,7 @@
   },
   "features/review-diff": {
     "version": "0.31.12",
-    "recipe": "--scene 'c04-worktree-files&brand=1' --window 1500x760 --wait 8000"
+    "recipe": "--scene 'branch-files-docked&brand=1' --window 1500x760 --wait 8000"
   },
   "features/review-pr-page": {
     "version": "0.31.12",
@@ -277,7 +277,7 @@
   },
   "features/switch-rail": {
     "version": "0.31.12",
-    "recipe": "--scene 'session-hover&brand=1' --window 1280x720 --clip 0,0,680,720 --wait 8000"
+    "recipe": "--scene 'session-hover&brand=1' --window 1800x720 --scale 2 --wait 8000"
   },
   "features/workflow-hints": {
     "version": "0.27.1",
@@ -297,7 +297,7 @@
   },
   "features/workflow-run": {
     "version": "0.31.12",
-    "recipe": "--scene 'workflow-run&run=finished&brand=1' --window 1500x820 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
+    "recipe": "--scene 'u36-p12-orch-done&brand=1' --click 'Show guidance' --window 1500x900 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/workflow-studio-steps": {
     "version": "0.27.1",

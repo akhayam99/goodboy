@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="The Overview of a Harborline session: Needs you 4, Running, Branches and Done, with the sessions rail and the Context drawer open on Decisions 5">
+  <img src="./docs/readme/readme-hero-light.webp" alt="The Overview of a Harborline session: Needs you 3, Running, Failed, Branches and Done, with the sessions rail and the Context drawer open on Decisions 5">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>

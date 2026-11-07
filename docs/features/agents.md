@@ -8,7 +8,7 @@ Ask about the workspace without starting a session. **Chat**, in the sidebar aft
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the sessions rail on the left: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Duplicate credit path: a table of three source files with Read 3 files and Sonnet 5.5 Medium, then the question Where should the check go? answered on GPT-6.1 Sol High, above a message box that reads Read only. Nothing is changed.">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the sessions rail on the left: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Where is the consent step defined?: a table of three source files, Read 4 files, Start work from chat and Sonnet 5.5 Medium, above a message box that reads Read only. Nothing is changed.">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>

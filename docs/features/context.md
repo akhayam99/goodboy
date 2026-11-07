@@ -23,7 +23,7 @@ Hand the next agent where things stand. After a reply the drawer shows **Next** 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-light.webp" alt="The Context drawer on the Summary card with the blocks State 4, Next 3, Open questions and Learned 2, each with its key line first and Show more links for the rest, above the Explanations card">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-summary-light.webp" alt="The Context drawer on the Summary card with the blocks State 4, Next 3 and Learned 2, each with its key line first and Show more links for the rest, above the Explanations card">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>
@@ -34,7 +34,7 @@ Open goal, decisions, summary and explanations from any session page with the **
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The session Stop retried webhooks posting a second credit on its Overview, with Needs you 1, Branches 2 and Done 4, and the Context drawer open on Decisions 5, with Changed since you last looked (4 rows: Added, Replaced by 7, Withdrawn, Reworded) and Mark as read above the active decisions 7, 6, 4 and 2">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The session Stop retried webhooks posting a second credit on its Overview, with Needs you 1, Branches 2 and Done 4, and the Context drawer open on Decisions 5 with Mark as read, each decision carrying its own mark inline: Added, Replaced by 7, Withdrawn and Reworded, and Show previous">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>

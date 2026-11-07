@@ -85,7 +85,7 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of the session in the app, with the run Duplicate credit fix on GPT-6.1 Sol, pinned at High, writing to payments-api on hl/fix-duplicate-credit, with Steps 5 all done: three scouts under step 1, a planner, two implementers and a tester, the two hints read at step 1 and step 2, the orchestrator summary and the Create report and Create wireframe buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of a finished run, Speed up the export end to end, with its guidance open, Done, 4 steps done and $1.21, the four steps with a scout, an implementer, a tester with two scouts and docs, the hints read at step 3 and step 4, the result with Done and Left lists, Create report and Create wireframe, and the Continue with a hint box">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>
@@ -121,7 +121,7 @@ See why each step was picked. A short **Recap** says what is done and what is le
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The page of a finished orchestrated run: its goal with Can use Claude, Codex, Limit $3.00 and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The page of a finished orchestrated run: its goal with Done, 4 steps done and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>
