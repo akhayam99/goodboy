@@ -378,13 +378,13 @@
         },
         {
           "title": "Context drawer",
-          "text": "Open goal, decisions, summary and explanations from any session page with the Context button, and copy them all with Copy context.",
+          "text": "Open goal, decisions, summary and explanations in one column from any session page with the Context button, and copy them all with Copy context. A changed decision carries a mark until Mark as read.",
           "group": "Shared context",
           "also": "context drawer"
         },
         {
           "title": "Who receives what",
-          "text": "Each part of the context says which roles receive it, so you see what goes into each agent's prompt.",
+          "text": "Who reads this, in each card menu, lists the roles that receive that part, so you see what goes into each agent's prompt.",
           "group": "Shared context",
           "also": "who receives what"
         },
@@ -823,7 +823,7 @@
         },
         {
           "title": "Notes before a pull request",
-          "text": "Read your own code first in the Files section. Leave notes on lines, and Fix comments hands the open ones to an agent. Post to GitHub moves a note into your review draft for the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
+          "text": "Read your own code first in the Changes section. Leave notes on lines, and Fix comments hands the open ones to an agent. Post to GitHub moves a note into your review draft for the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
           "group": "Review and resolve on the Branch page",
           "also": "notes before a PR"
         },
@@ -854,7 +854,7 @@
         },
         {
           "title": "Read the code",
-          "text": "Files has a file tree in a rail on the right of the diff with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
+          "text": "Changes has a file tree in a rail on the right of the diff with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
           "group": "Review and resolve on the Branch page",
           "also": "diff"
         },
@@ -943,7 +943,7 @@
         },
         {
           "title": "Link an item to a session",
-          "text": "Attach a Tasks item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once.",
+          "text": "Attach a Tasks item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once, and linked work lives in the session rail, where a record opens with a way back.",
           "group": "Tasks and your tools",
           "also": "link to a session"
         },
@@ -1201,6 +1201,12 @@
           "text": "Read who an agent is at a glance. Its role, name and provider share one row with its menu.",
           "group": "Agents",
           "also": "agent header"
+        },
+        {
+          "title": "One page per agent",
+          "text": "Every door to an agent or a step lands on its page, in every kind of run: who it is, why it started, its brief and what came back, with a composer that talks to that agent.",
+          "group": "Agents",
+          "also": "one page per agent"
         },
         {
           "title": "What the agent received",

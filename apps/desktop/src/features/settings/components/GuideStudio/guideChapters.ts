@@ -97,7 +97,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Changes',
-        desc: "The session rail lists each turn's files. Restore a file or a whole turn, then Undo restore if you change your mind.",
+        desc: "The session rail lists each reply's files. Restore a file or a whole reply, then Undo restore if you change your mind.",
       },
       {
         term: 'Saved versions',
@@ -293,11 +293,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: `Enter queues your message for the next turn, and ${shortcutGlyphs('composer.submit')} sends it now. Stop keeps what the agent wrote and offers Continue, and a queued message waits until the provider takes it.`,
+        desc: `Enter queues your message for the next turn, and ${shortcutGlyphs('composer.submit')} sends it now. Over an open permission ask it denies the ask. Stop names what it stops and offers Continue. A message that can't start reads Not delivered, with Retry.`,
       },
       {
         term: 'Runs page',
-        desc: "Every run, newest first: presets, orchestrated runs, Auto and your agents. An agent's menu holds Rename, Change model, Let Auto take it from here and Delete agent.",
+        desc: 'Every run, grouped by branch or by state. Each agent opens as one page with its brief and what came back.',
       },
       {
         term: 'Auto',
@@ -309,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Overview cards',
-        desc: 'The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. Needs you holds runs, questions and fixes. The full log sits in the session menu.',
+        desc: 'The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. Needs you holds runs, questions and fixes.',
       },
       {
         term: 'Next',
@@ -330,7 +330,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
+        desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on, such as Review plan. A halted step reads Needs you, with Open step N.',
       },
       {
         term: 'Orchestrated',
@@ -371,11 +371,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: `Context, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions and summary, with Copy context. A dot on it means something changed since you looked, and Update now queues an update.`,
+        desc: `Context, in the session tools or ${shortcutGlyphs('lens.context')}, holds the goal, decisions, summary and explanations in one column, with Copy context. Changes carry a mark until Mark as read, and Update now queues an update.`,
       },
       {
         term: 'Visible to',
-        desc: 'The eye on each card says which roles receive it. Planners, implementers, reviewers, debuggers and resolvers read the decisions.',
+        desc: 'Who reads this, in the menu of each card, says which roles receive it. Planners, implementers, reviewers, debuggers and resolvers read the decisions.',
       },
       {
         term: 'Explanations',
@@ -528,7 +528,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One list',
-        desc: 'All, Plans, Reports and Wireframes filter one list grouped as Needs you, Running, Ready, To read, Used and Recently deleted. Each row shows one action, such as Run plan or Approve.',
+        desc: 'All, Plans, Reports and Wireframes filter one list grouped by branch, waiting work first. Each row shows its state and one action, such as Run plan or Approve. Used rows fold into a count.',
       },
       {
         term: 'Plans',
@@ -809,7 +809,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Input tokens',
-        desc: 'Everything sent into the model: instructions, history, tool results and your latest message. It grows every turn, which is why later turns cost more.',
+        desc: 'Everything sent into the model: instructions, history, tool results and your latest message. It grows every turn.',
       },
       {
         term: 'Cached input tokens',
@@ -838,11 +838,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'One short goal per session',
-        desc: 'Long open-ended sessions drift. When the scope grows, or the context is nearly full, start a new one.',
+        desc: 'Open-ended sessions drift. When the scope grows, start a new one.',
       },
       {
         term: 'Light models for looking around',
-        desc: 'A light model can search, list and summarize at a fraction of the price.',
+        desc: 'A light model can search, list and summarize cheaply.',
       },
     ],
     links: [],
