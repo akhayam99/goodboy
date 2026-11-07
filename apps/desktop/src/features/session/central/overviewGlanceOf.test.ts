@@ -36,6 +36,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 0 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: null,
       }),
@@ -51,6 +52,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 2, running: 1 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: null,
       }),
@@ -66,6 +68,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 0 }),
         stuckCount: 1,
+        failedCount: 0,
         autoGlances: [AUTO_FAILED],
         nextTitle: null,
       }),
@@ -77,6 +80,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 0 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [AUTO_PAUSED],
         nextTitle: null,
       }),
@@ -88,6 +92,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 1, running: 0 }),
         stuckCount: 2,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: null,
       }).sentence,
@@ -96,6 +101,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 1 }),
         stuckCount: 2,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: null,
       }).sentence,
@@ -107,6 +113,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 3 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: null,
       }).state,
@@ -118,6 +125,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 0 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: 'Rebase ledger-core on main',
       }),
@@ -133,6 +141,7 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 1, running: 0 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: 'Rebase ledger-core on main',
       }).state,
@@ -141,9 +150,22 @@ describe('overviewGlanceOf', () => {
       overviewGlanceOf({
         cards: cardsOf({ needs: 0, running: 2 }),
         stuckCount: 0,
+        failedCount: 0,
         autoGlances: [],
         nextTitle: 'Rebase ledger-core on main',
       }).state,
     ).toBe('working');
+  });
+
+  it('reads a carded failed Auto once as failed, never as needing you', () => {
+    expect(
+      overviewGlanceOf({
+        cards: cardsOf({ needs: 1, running: 0 }),
+        stuckCount: 0,
+        failedCount: 1,
+        autoGlances: [],
+        nextTitle: null,
+      }),
+    ).toEqual({ state: 'stuck', tone: 'danger', sentence: 'Auto failed' });
   });
 });

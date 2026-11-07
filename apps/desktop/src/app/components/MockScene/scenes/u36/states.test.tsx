@@ -106,16 +106,21 @@ describe('the u36 states scenes', () => {
   );
 
   it.each(['light', 'dark'])(
-    'u36-states-overview-noreply-%s reads an Auto that stopped replying as Failed, counted once',
+    'u36-states-overview-noreply-%s reads an Auto that stopped replying as one Failed row',
     async (theme) => {
       await show({ name: `u36-states-overview-noreply-${theme}` });
 
-      const auto = document.querySelector('[data-live-group="auto"]');
-      expect(auto?.getAttribute('data-state')).toBe('failed');
-      expect(auto?.textContent).toContain('Failed');
-      expect(document.body.textContent).toContain('1 needs you');
+      expect(document.querySelector('[data-live-group="auto"]')).toBeNull();
+      const word = document.querySelector('[data-card-state-word]');
+      expect(word?.textContent).toContain('Failed');
+      expect(document.querySelectorAll('[data-action-card]')).toHaveLength(1);
+      expect(document.querySelector('[data-live-agents-toggle]')?.textContent).toContain(
+        '2 agents',
+      );
+      expect(document.body.textContent).toContain("Auto couldn't reply");
+      expect(document.body.textContent).toContain('Auto failed');
+      expect(document.body.textContent).not.toContain('1 needs you');
       expect(document.body.textContent).not.toContain('1 stopped');
-      expect(document.body.textContent).not.toContain('Auto failed');
       for (const word of WORDS) {
         expect(document.body.textContent).not.toContain(word);
       }

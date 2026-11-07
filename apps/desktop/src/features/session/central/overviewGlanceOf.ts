@@ -13,6 +13,7 @@ export type OverviewGlance = Readonly<{
 type Params = {
   readonly cards: ReadonlyArray<OverviewCardModel>;
   readonly stuckCount: number;
+  readonly failedCount: number;
   readonly autoGlances: ReadonlyArray<Glance>;
   readonly nextTitle: string | null;
 };
@@ -32,19 +33,28 @@ type NeedsParams = {
 const needsSentenceOf = ({ count }: NeedsParams): string =>
   count === 1 ? '1 needs you' : `${count} need you`;
 
+type FailedParams = {
+  readonly count: number;
+};
+
+const failedSentenceOf = ({ count }: FailedParams): string =>
+  count === 1 ? 'Auto failed' : `${count} Autos failed`;
+
 export const overviewGlanceOf = ({
   cards,
   stuckCount,
+  failedCount,
   autoGlances,
   nextTitle,
 }: Params): OverviewGlance => {
-  const needs = cardCountOf({ cards, id: 'needs-you' });
+  const needs = Math.max(0, cardCountOf({ cards, id: 'needs-you' }) - failedCount);
   const running = cardCountOf({ cards, id: 'running' });
   const autoWaiting = autoGlances.find((glance) => glance.state === 'waiting') ?? null;
   const autoHeld =
     autoGlances.find((glance) => glance.state === 'failed' || glance.state === 'paused') ?? null;
   const parts = [
     ...(needs > 0 ? [needsSentenceOf({ count: needs })] : []),
+    ...(failedCount > 0 ? [failedSentenceOf({ count: failedCount })] : []),
     ...(autoWaiting === null ? [] : [`Auto ${autoWaiting.word.toLowerCase()}`]),
     ...(autoHeld === null ? [] : [`Auto ${autoHeld.word.toLowerCase()}`]),
     ...(stuckCount > 0 && autoHeld === null ? [`${stuckCount} stopped`] : []),
@@ -53,7 +63,7 @@ export const overviewGlanceOf = ({
   if (needs > 0 || autoWaiting !== null) {
     return { state: 'waiting', tone: 'warning', sentence: parts.join(', ') };
   }
-  if (stuckCount > 0 || autoHeld !== null) {
+  if (stuckCount > 0 || failedCount > 0 || autoHeld !== null) {
     return {
       state: 'stuck',
       tone: autoHeld?.state === 'paused' ? 'warning' : 'danger',

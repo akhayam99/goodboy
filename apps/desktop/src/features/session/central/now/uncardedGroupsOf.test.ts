@@ -9,6 +9,7 @@ import {
   FIXTURE_ROOT,
 } from '../../../auto/testing/autoViewFixtures';
 import { actionCardsOf, type AutoActionTarget } from '../next/actionCardsOf';
+import { failedCardCountOf } from '../next/failedCardCountOf';
 import { overviewCardsOf } from '../overviewCardsOf';
 import { overviewGlanceOf } from '../overviewGlanceOf';
 import { liveGroupsOf } from './liveGroupsOf';
@@ -98,7 +99,7 @@ describe('uncardedGroupsOf', () => {
     ).toBe(1);
   });
 
-  it('counts a failed Auto once: the card says Needs you, the Failed row stays out of the count', () => {
+  it('counts a failed Auto once: the card row says Failed, the glance reads Auto failed', () => {
     const groups = groupsOf({ phase: 'blocked' });
     const cards = actionCardsOf({ owners: [], suggestions: [], autoTargets: [BLOCKED] });
     const stuckCount = uncardedGroupsOf({ groups, cards }).filter(
@@ -115,6 +116,7 @@ describe('uncardedGroupsOf', () => {
         isArchived: false,
       }),
       stuckCount,
+      failedCount: failedCardCountOf({ cards }),
       autoGlances: autoGlancesBesideCardsOf({
         views: [aView({ phase: 'blocked' })],
         rootTurns: [null],
@@ -124,7 +126,7 @@ describe('uncardedGroupsOf', () => {
     });
 
     expect(stuckCount).toBe(0);
-    expect(glance.sentence).toBe('1 needs you');
+    expect(glance.sentence).toBe('Auto failed');
   });
 
   it('keeps the failed Auto as a stopped row when no card speaks for it', () => {

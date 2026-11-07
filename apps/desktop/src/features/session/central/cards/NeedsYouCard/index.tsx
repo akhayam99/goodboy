@@ -65,7 +65,7 @@ export const NeedsYouCard = ({
     (group): group is LiveAutoGroup =>
       group.kind === 'auto' &&
       carded.has(group.group.rootAgentId) &&
-      (group.group.isStuck || waiting.includes(group)),
+      (group.group.isStuck || group.state === 'failed' || waiting.includes(group)),
   );
   const live =
     rows.length === 0 && folds.length === 0 && (stuck === null || isStuckCarded) ? null : (
