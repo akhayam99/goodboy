@@ -8,7 +8,10 @@ import { humanTurnErrorOf } from '../../chat/humanTurnErrorOf';
 
 export type AgentTurnLiveParams = Readonly<{
   turn: TurnState | null;
-  agent: Pick<Agent, 'status' | 'stoppedBy' | 'stoppedAt'>;
+  agent: Pick<
+    Agent,
+    'status' | 'stoppedBy' | 'stoppedAt' | 'providerOverride' | 'providerSessionProviderId'
+  >;
   lastTool: LastTool | null;
   project: string | null;
   hasQueuedMessage: boolean;
@@ -59,7 +62,7 @@ export const agentTurnLive = ({
   if (turn?.kind === 'error') {
     return {
       state: 'failed',
-      phrase: `Failed: ${humanTurnErrorOf({ message: turn.message })}`,
+      phrase: `Failed: ${humanTurnErrorOf({ message: turn.message, agent })}`,
       startedAt: null,
       actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript],
     };

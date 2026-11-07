@@ -146,7 +146,6 @@ export const useTimelineOpen = ({
         }
       }
       if (entry.kind === 'agent') {
-        const isResolver = entry.agentKind === 'resolver';
         return {
           label: 'Open agent',
           open: () => {

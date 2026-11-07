@@ -180,7 +180,7 @@ the rail's **Folder** card names the folder and what agents do there
 has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
-chat ends in a card with Open changes and Undo this reply
+chat ends in a card with Open changes and Undo changes from this reply
 (`features/chat/components/TurnChangesCard/`). The git verbs are not
 registered for a session without a branch: Comments (`session.review`) and
 Files (`session.diff`) leave the menus and the palette, and **Changes**

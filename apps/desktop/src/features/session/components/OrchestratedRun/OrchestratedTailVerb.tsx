@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { CircleStop } from 'lucide-react';
-import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
+import { pluralize } from '../../../../shared/utils/pluralize';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 
@@ -143,8 +144,8 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           {ORCHESTRATED_COPY.openAgentChat}
         </Button>
       );
-    case 'readQueued':
-      return (
+    case 'readQueued': {
+      const button = (
         <Button
           size="xs"
           variant="secondary"
@@ -152,13 +153,22 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           onClick={() =>
             void press({
               task: () => readQueuedWorkflowHints({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't read the queued hints",
+              failure: verb.isStopped
+                ? "Couldn't continue the step"
+                : "Couldn't read the queued hints",
             })
           }
         >
           {verb.isStopped ? NAMES.continue : `Read ${verb.count} queued`}
         </Button>
       );
+      if (verb.isStopped === false) {
+        return button;
+      }
+      return (
+        <Tooltip content={`Goes on with ${pluralize(verb.count, 'queued hint')}`}>{button}</Tooltip>
+      );
+    }
     case 'quiet':
       return (
         <Button

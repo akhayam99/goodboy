@@ -423,7 +423,7 @@ read top to bottom at the conversation measure:
   **Continue**, "No output for 15 min" with **Continue**, agents
   a restart stopped with **Continue**. A finished run has no tail, only the
   result under the list. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
-  **Stop step** the verb is **Continue**. A run the
+  **Stop step** the verb is **Continue**, and its tooltip counts the queued hints it goes on with. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **Open transcript** on its tail (`orchestratedTailOf`, the
   last step's agent, same as a failed decision) and **Add a hint and continue** at the dock

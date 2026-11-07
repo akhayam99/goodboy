@@ -336,7 +336,7 @@ describe('ChangesPane', () => {
   it('restores a whole turn and undoes it from the band', async () => {
     render(<ChangesPane sessionId={sessionId} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /Undo this reply/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Undo changes from this reply/ }));
 
     expect(await screen.findByText('Restored reply 2.')).toBeDefined();
     await waitFor(() => expect(row({ name: 'faq.md, reply 2' }).textContent).toContain('Restored'));

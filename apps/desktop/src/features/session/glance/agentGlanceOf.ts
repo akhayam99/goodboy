@@ -27,7 +27,10 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
     return glanceOf({ state: 'waiting', sentence: 'Waiting for your OK to go on' });
   }
   if (turnState?.kind === 'error') {
-    return glanceOf({ state: 'stuck', sentence: humanTurnErrorOf({ message: turnState.message }) });
+    return glanceOf({
+      state: 'stuck',
+      sentence: humanTurnErrorOf({ message: turnState.message, agent }),
+    });
   }
   if (turnState?.kind === 'starting') {
     return glanceOf({ state: 'working', sentence: 'Starting' });

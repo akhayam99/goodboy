@@ -195,7 +195,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
           onClick={() => run({ target: turnRestoreTargetOf({ turn }), isForced: false })}
         >
           <CONCEPT_ICONS.versionRestore size={ICON_SIZE.row} aria-hidden />
-          Undo this reply
+          Undo changes from this reply
         </Button>
       </div>
       <ul className="flex min-w-0 flex-col gap-1">

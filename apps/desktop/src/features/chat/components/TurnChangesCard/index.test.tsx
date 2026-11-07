@@ -115,7 +115,7 @@ describe('TurnChangesCard', () => {
   it('restores the whole turn in place and undoes it', async () => {
     render(<TurnChangesCard sessionId={session.id} runId={RUN_ID} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /Undo this reply/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Undo changes from this reply/ }));
 
     expect(await screen.findByText('Restored reply 1.')).toBeDefined();
     await waitFor(() => expect(screen.getAllByText('restored')).toHaveLength(2));
