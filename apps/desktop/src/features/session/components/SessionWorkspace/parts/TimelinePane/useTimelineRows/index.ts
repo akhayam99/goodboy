@@ -34,7 +34,6 @@ import {
   type HistoryBatchDetail,
 } from '../../../../../timeline/historyBatchDetail';
 import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
-import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
 import {
   layoutTimelineRail,
@@ -69,7 +68,6 @@ export type TimelineRows = {
   readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly unreadAgentIds: ReadonlySet<string>;
   readonly liveAgentIds: ReadonlySet<string> | undefined;
-  readonly shownQuestions: ReadonlySet<string>;
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
@@ -243,14 +241,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     keepOpen({ ids: liveRootKey.split(' ') });
   }, [areAgentsLoaded, keepOpen, liveRootKey]);
 
-  const shownQuestions = useMemo(() => {
-    const shown = new Set(shownQuestionIds({ items: stream.items }));
-    for (const owner of owners) {
-      owner.questionIds.forEach((id) => shown.add(id));
-    }
-    return shown;
-  }, [owners, stream.items]);
-
   const estimatedDetails = useMemo(() => {
     const details = new Map<string, DecisionChangeDetail>();
     for (const item of stream.items) {
@@ -360,7 +350,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     owners,
     unreadAgentIds,
     liveAgentIds,
-    shownQuestions,
     stepById,
     spendByAgentId,
     spendByRunId,

@@ -324,8 +324,8 @@ describe('the rail count, the Runs list and the Now card', () => {
       },
     });
 
-    expect(counts.inProgress).toBe(listed.length);
-    expect(groups).toHaveLength(counts.inProgress);
+    expect(counts.runningRuns + counts.waitingRuns).toBe(listed.length);
+    expect(groups).toHaveLength(counts.runningRuns + counts.waitingRuns);
     expect(Number(slot.text ?? '0')).toBe(
       counts.waitingRuns > 0
         ? counts.waitingRuns

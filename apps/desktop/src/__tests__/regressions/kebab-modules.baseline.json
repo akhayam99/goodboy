@@ -16,7 +16,6 @@
   "apps/desktop/src/features/providers/provider-lifecycle.ts": 1,
   "apps/desktop/src/features/session/agent-kind.ts": 1,
   "apps/desktop/src/features/session/agent-lifecycle.ts": 1,
-  "apps/desktop/src/features/session/agent-row-format.ts": 1,
   "apps/desktop/src/features/session/agent-status.ts": 1,
   "apps/desktop/src/features/session/drift-detection.ts": 1,
   "apps/desktop/src/features/session/lens-destinations.ts": 1,

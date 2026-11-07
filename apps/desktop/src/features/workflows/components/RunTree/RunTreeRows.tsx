@@ -8,7 +8,6 @@ import { railInkAbove, type RailInk } from '../../../workTreeModel/railGeometry'
 import { RunTreeFoldRow } from './RunTreeFoldRow';
 import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
 import { withoutStepsOf } from './withoutStepsOf';
-import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 import type { RunTreeDensity } from './runTreeDensity';
@@ -25,7 +24,6 @@ type Props = {
   readonly routing: RunTreeRouting;
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId?: string | null;
-  readonly skip?: RunStepSkipAction | null;
   readonly folds?: RunTreeFolds;
   readonly plans?: ReadonlyMap<string, PlanWithCount>;
   readonly waveLabels?: ReadonlyMap<string, string>;
@@ -61,7 +59,6 @@ export const RunTreeRows = ({
   routing,
   selectedAgentId,
   highlightedStepId = null,
-  skip = null,
   folds,
   plans = NO_PLANS,
   waveLabels = NO_WAVE_LABELS,
@@ -196,7 +193,6 @@ export const RunTreeRows = ({
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
               isHighlighted={stepId !== null && stepId === highlightedStepId}
-              skip={skip}
               onHighlight={
                 onHighlight === undefined || stepId === null
                   ? undefined

@@ -8,22 +8,17 @@ import {
   sessionPlace,
 } from '../../../../store';
 import { SessionActivityBar } from '../../../workspace/components/SessionActivityBar';
-import { SidebarToggleButton } from './parts/SidebarToggleButton';
 
 type Props = {
   readonly currentSessionId: SessionId | null;
   readonly isStudioOver?: boolean;
   readonly onNavigate?: () => void;
-  readonly isCollapsed?: boolean;
-  readonly onToggleSidebar?: () => void;
 };
 
 export const SessionNavSidebar = ({
   currentSessionId,
   isStudioOver = false,
   onNavigate,
-  isCollapsed = false,
-  onToggleSidebar,
 }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
@@ -50,11 +45,6 @@ export const SessionNavSidebar = ({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {onToggleSidebar !== undefined ? (
-        <div className="flex shrink-0 items-center gap-2 pb-2 pl-2 pr-2 pt-2">
-          <SidebarToggleButton isCollapsed={isCollapsed} onToggle={onToggleSidebar} />
-        </div>
-      ) : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-x-clip">
         <div className="flex min-h-0 flex-1">
           {currentWorkspace ? (

@@ -4,7 +4,6 @@ export type SessionRunCounts = Readonly<{
   runs: number;
   runningRuns: number;
   waitingRuns: number;
-  inProgress: number;
 }>;
 
 type Params = {
@@ -19,6 +18,5 @@ export const sessionRunCountsOf = ({ runs }: Params): SessionRunCounts => {
     runs: live.length,
     runningRuns: inProgress.length - waiting.length,
     waitingRuns: waiting.length,
-    inProgress: inProgress.length,
   };
 };

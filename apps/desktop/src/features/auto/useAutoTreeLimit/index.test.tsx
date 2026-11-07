@@ -19,7 +19,6 @@ const Probe = ({ sessionId = null }: ProbeParams) => {
   return (
     <div>
       <p data-testid="usd">{String(view.usd)}</p>
-      <p data-testid="stored">{String(view.isStored)}</p>
       <p data-testid="session">{String(view.isFromSession)}</p>
       <p data-testid="start">{String(start().usd)}</p>
       <button type="button" onClick={() => view.change(9)}>
@@ -59,7 +58,6 @@ describe('useAutoTreeLimit', () => {
     render(<Probe />);
 
     expect(screen.getByTestId('usd').textContent).toBe('6');
-    expect(screen.getByTestId('stored').textContent).toBe('true');
   });
 
   it('ignores a leftover auto.treeLimitUsd value in the store', () => {
@@ -75,7 +73,6 @@ describe('useAutoTreeLimit', () => {
     render(<Probe />);
 
     expect(screen.getByTestId('usd').textContent).toBe('null');
-    expect(screen.getByTestId('stored').textContent).toBe('false');
   });
 
   it('starts with an amount typed on the run and keeps it for a retry', () => {

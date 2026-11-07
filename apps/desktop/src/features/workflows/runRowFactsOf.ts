@@ -16,15 +16,12 @@ export type RunRowFacts = {
   readonly dot: DotState;
   readonly word: string;
   readonly wait: RunWait | null;
-  readonly isWordRead: boolean;
   readonly progress: string;
   readonly isActive: boolean;
   readonly isStartable: boolean;
   readonly isQueuedManual: boolean;
   readonly isContinuable: boolean;
 };
-
-const DOT_ONLY_WORDS: ReadonlySet<string> = new Set(['Running', 'Done', 'Archived', READY_WORD]);
 
 type Params = {
   readonly run: WorkflowRun;
@@ -151,7 +148,6 @@ export const runRowFactsOf = ({
   return {
     ...state,
     wait,
-    isWordRead: !DOT_ONLY_WORDS.has(state.word),
     progress: progressOf({ run, workflow, agents }),
     isStartable: state.word === READY_WORD && run.executionMode !== 'dynamic',
     isQueuedManual: state.word === READY_WORD && isRunQueuedManual({ run, agents }),

@@ -11,10 +11,8 @@ import type {
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../components/AgentTree/ContextWindowBar';
 import type { AgentAggregate } from '../../agentAggregate';
-import { computeLatestTelemetryByAgentId } from '../../agent-row-format';
 
 export type AgentMetrics = {
-  readonly latestTelemetryByAgentId: ReadonlyMap<string, TelemetryRecord>;
   readonly aggregatesByAgentId: ReadonlyMap<string, AgentAggregate>;
   readonly providerUsageByAgentId: ReadonlyMap<string, ReadonlyArray<ProviderContextUsage>>;
   readonly turnsByAgentId: ReadonlyMap<string, number>;
@@ -141,11 +139,6 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
 
   const telemetryByRunId = useMemo(() => latestTurnTelemetryByRunId({ telemetry }), [telemetry]);
 
-  const latestTelemetryByAgentId = useMemo(
-    () => computeLatestTelemetryByAgentId(phaseRuns, agentRunHistory, telemetryByRunId),
-    [phaseRuns, agentRunHistory, telemetryByRunId],
-  );
-
   const turnsByAgentId = useMemo(() => {
     const map = new Map<string, number>();
     for (const message of messages) {
@@ -257,11 +250,10 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
 
   return useMemo(
     () => ({
-      latestTelemetryByAgentId,
       aggregatesByAgentId,
       providerUsageByAgentId,
       turnsByAgentId,
     }),
-    [latestTelemetryByAgentId, aggregatesByAgentId, providerUsageByAgentId, turnsByAgentId],
+    [aggregatesByAgentId, providerUsageByAgentId, turnsByAgentId],
   );
 };

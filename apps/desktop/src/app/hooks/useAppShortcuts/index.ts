@@ -132,7 +132,7 @@ export const useAppShortcuts = ({
     const isBranchDoor =
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
-      branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
+      branchTabOf({ state, sessionId }) === doorTabOf({ kind });
     if (kind !== null && OBJECT_PAGE_LENSES.has(kind) && active === kind) {
       const openDrawerKind = selectOpenDrawer(state)?.kind ?? null;
       const isBelowPage =

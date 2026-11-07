@@ -19,7 +19,6 @@ export type BranchStart = {
   readonly step: BranchNextStep;
   readonly line: BranchStartLine;
   readonly conflictFiles: ReadonlyArray<string>;
-  readonly baseBranch: string;
   readonly configuredBase: string | null;
 };
 
@@ -51,7 +50,6 @@ export const useBranchStart = ({ sessionId, mountId, mountPath, status }: Params
       step,
       line: branchStartLineOf({ step, baseBranch, localCheck, now }),
       conflictFiles: files,
-      baseBranch,
       configuredBase,
     };
   }, [baseBranch, configuredBase, conflictFiles, hasConflictStop, isDone, localCheck, now, status]);

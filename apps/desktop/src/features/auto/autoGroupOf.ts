@@ -1,6 +1,6 @@
 import { parseAutoDelegationRole } from '@goodboy/core/auto';
 import type { AutoDelegation } from '@goodboy/db';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId } from '@goodboy/types';
 import { textOf } from '@goodboy/types/helpers';
 import { NAMES } from '../../shared/utils/names';
 import type { AutoDeliveredResult, AutoTreeView } from '../../store/slices/auto-view/state';
@@ -44,7 +44,6 @@ export type AutoGroupChild = Readonly<{
 }>;
 
 export type AutoGroup = Readonly<{
-  sessionId: SessionId;
   rootAgentId: AgentId;
   title: string | null;
   word: string;
@@ -319,7 +318,6 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
   const isLive = isRunning || facts.phase === 'failed';
   const isStuck = isLive && children.some((child) => isAutoChildStuck({ child }));
   return {
-    sessionId: view.tree.sessionId,
     rootAgentId,
     title: textOf({ value: byId.get(rootAgentId)?.name }),
     word: isStuck && isRunning ? NAMES.needsYou : facts.word,
