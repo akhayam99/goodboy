@@ -4,6 +4,7 @@ import { useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { WorkTimeProvider } from '../../../features/workTreeModel/components/WorkTimeProvider';
+import { SpawnedBranchProvider } from './SpawnedBranchProvider';
 import { SpawnedFocusBody } from './SpawnedFocusBody';
 import { SpawnedLaunches } from './SpawnedLaunches';
 import { SpawnedRunsLink } from './SpawnedRunsLink';
@@ -30,17 +31,19 @@ export const SpawnedPanel = ({ sessionId, onClose }: Props) => {
   return (
     <DrawerFrame title="Agents" icon={CONCEPT_ICONS.agents} onClose={onClose}>
       <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-        <div
-          data-spawned-panel={focus?.kind ?? 'live'}
-          className="flex min-w-0 flex-col gap-2 px-2 pb-2"
-        >
-          {focus === null ? (
-            <SpawnedLaunches session={session} selectedAgentId={selectedAgentId} />
-          ) : (
-            <SpawnedFocusBody session={session} focus={focus} selectedAgentId={selectedAgentId} />
-          )}
-          <SpawnedRunsLink sessionId={sessionId} />
-        </div>
+        <SpawnedBranchProvider session={session}>
+          <div
+            data-spawned-panel={focus?.kind ?? 'live'}
+            className="flex min-w-0 flex-col gap-2 px-2 pb-2"
+          >
+            {focus === null ? (
+              <SpawnedLaunches session={session} selectedAgentId={selectedAgentId} />
+            ) : (
+              <SpawnedFocusBody session={session} focus={focus} selectedAgentId={selectedAgentId} />
+            )}
+            <SpawnedRunsLink sessionId={sessionId} />
+          </div>
+        </SpawnedBranchProvider>
       </WorkTimeProvider>
     </DrawerFrame>
   );

@@ -20,6 +20,13 @@ import {
 import { planConsumerLabel, resolvePlanConsumer } from '../../shared/utils/planConsumer';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
+import type { MountRowView } from '../../store/slices/project-mounts/mountRowModel';
+import {
+  branchKeyedGroupsOf,
+  NO_BRANCH_KEY,
+  type BranchGroupHead,
+} from '../session/branchGroupsOf';
+import type { WorkBranch } from '../session/workBranchesOf';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
 import { planHandoffOf } from '../plans/planHandoffOf';
 import { planOwnerOf } from '../plans/planOwnerOf';
@@ -270,6 +277,58 @@ export const groupArtifactRows = ({
     group,
     rows: rows.filter((row) => row.group === group),
   })).filter((entry) => entry.rows.length > 0);
+
+export type ArtifactBranchItem = Readonly<{
+  row: ArtifactListRow;
+  branches: ReadonlyArray<WorkBranch>;
+}>;
+
+export type ArtifactBranchGroup = Readonly<{
+  key: string;
+  head: BranchGroupHead;
+  items: ReadonlyArray<ArtifactBranchItem>;
+}>;
+
+export type ArtifactBranchView = Readonly<{
+  groups: ReadonlyArray<ArtifactBranchGroup>;
+  deleted: ReadonlyArray<ArtifactListRow>;
+}>;
+
+type ByBranchParams = {
+  readonly items: ReadonlyArray<ArtifactBranchItem>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+type RankParams = {
+  readonly item: ArtifactBranchItem;
+};
+
+const groupRank = ({ item }: RankParams): number => ARTIFACT_GROUP_ORDER.indexOf(item.row.group);
+
+export const groupArtifactRowsByBranch = ({
+  items,
+  mounts,
+}: ByBranchParams): ArtifactBranchView => {
+  const live = items.filter((item) => item.row.group !== 'deleted');
+  const keyed = branchKeyedGroupsOf({
+    entries: live.map((item) => ({ item, branches: item.branches })),
+    mounts,
+  }).map((group): ArtifactBranchGroup => ({
+    key: group.key,
+    head: group.head,
+    items: [...group.items].sort(
+      (left, right) => groupRank({ item: left }) - groupRank({ item: right }),
+    ),
+  }));
+  const named = keyed.filter((group) => group.key !== NO_BRANCH_KEY);
+  const none = keyed.filter((group) => group.key === NO_BRANCH_KEY);
+  const needing = named.filter((group) => group.items.some((item) => item.row.group === 'needs'));
+  const rest = named.filter((group) => !group.items.some((item) => item.row.group === 'needs'));
+  return {
+    groups: [...needing, ...rest, ...none],
+    deleted: items.filter((item) => item.row.group === 'deleted').map((item) => item.row),
+  };
+};
 
 export const filterArtifactRows = ({
   rows,

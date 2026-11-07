@@ -8,6 +8,7 @@ import { agentKindPalette, type AgentKind } from '../../../features/session/agen
 import type { RailRow } from '../../../features/workTreeModel/railGeometry';
 import { HelperUrgencyWord } from './HelperUrgencyWord';
 import { helpersWordOf } from './helpersWordOf';
+import { SpawnedBranchContext } from './spawnedBranchContext';
 import { SpawnedRailCell } from './SpawnedRailCell';
 import type { SpawnedRowFold, SpawnedRowModelSource } from './spawnedRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
@@ -50,6 +51,8 @@ export const SpawnedTreeRow = ({
   onOpen,
 }: Props) => {
   const { activeId, setActiveId } = useContext(SpawnedTreeContext);
+  const branchLabels = useContext(SpawnedBranchContext);
+  const branch = agentId === undefined ? undefined : branchLabels.get(agentId);
   const roleLabel = role === null ? null : agentKindPalette({ kind: role }).label;
   const isRoleNamed =
     roleLabel === null || roleLabel.startsWith(title) || title.startsWith(roleLabel);
@@ -105,6 +108,14 @@ export const SpawnedTreeRow = ({
       <SpawnedRailCell rail={rail} width={railWidth} marker={glyph} />
       {role === null ? null : <AgentKindChip kind={role} density="glyph" />}
       <span className="min-w-0 flex-1 truncate">{title}</span>
+      {branch === undefined ? null : (
+        <span
+          data-spawned-branch=""
+          className="hidden max-w-[40%] shrink-[4] truncate text-meta text-faint-foreground @min-[20rem]:inline"
+        >
+          {branch}
+        </span>
+      )}
       {model === null ? null : (
         <AgentRowModelLine
           agent={model.agent}

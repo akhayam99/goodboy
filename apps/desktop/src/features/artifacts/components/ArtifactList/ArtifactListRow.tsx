@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Button, cn, ICON_SIZE, InteractiveRow, Tooltip, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -13,6 +13,7 @@ import { useActionControls } from '../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 import { ArtifactKindGlyph } from './ArtifactKindGlyph';
+import type { ArtifactOpenParams } from './artifactBranchProps';
 import { ArtifactRowConfirm } from './ArtifactRowConfirm';
 import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 import { ArtifactRowParts } from './ArtifactRowParts';
@@ -20,10 +21,13 @@ import { ArtifactStateBadge } from './ArtifactStateBadge';
 
 type Props = {
   readonly row: Row;
+  readonly rowKey?: string;
+  readonly isStateShown?: boolean;
+  readonly titleSuffix?: ReactNode;
   readonly sessionId: SessionId;
   readonly isPartsOpen: boolean;
   readonly onTogglePartsOf: (rowId: string) => void;
-  readonly onOpenRow: (row: Row) => void;
+  readonly onOpenRow: (params: ArtifactOpenParams) => void;
   readonly hasActionColumn: boolean;
 };
 
@@ -82,10 +86,11 @@ const GROUP_SAYS_IT: ReadonlySet<ArtifactState['key']> = new Set([
 
 type ShownStateParams = {
   readonly row: Row;
+  readonly isStateShown: boolean;
 };
 
-const shownStateOf = ({ row }: ShownStateParams): ArtifactState | null => {
-  if (row.state === null || GROUP_SAYS_IT.has(row.state.key)) {
+const shownStateOf = ({ row, isStateShown }: ShownStateParams): ArtifactState | null => {
+  if (row.state === null || (!isStateShown && GROUP_SAYS_IT.has(row.state.key))) {
     return null;
   }
   return row.state;
@@ -93,6 +98,9 @@ const shownStateOf = ({ row }: ShownStateParams): ArtifactState | null => {
 
 const RowComponent = ({
   row,
+  rowKey = row.id,
+  isStateShown = false,
+  titleSuffix,
   sessionId,
   isPartsOpen,
   onTogglePartsOf,
@@ -100,7 +108,7 @@ const RowComponent = ({
   hasActionColumn,
 }: Props) => {
   const target = useMemo(() => targetOf({ row, sessionId }), [row, sessionId]);
-  const anchorKey = `artifact-row:${row.id}`;
+  const anchorKey = `artifact-row:${rowKey}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const controls = useActionControls({ target, anchorKey });
   const isDeleted = row.group === 'deleted';
@@ -112,12 +120,24 @@ const RowComponent = ({
   const hasOwnVerb = row.group === 'needs' || row.target.kind === 'generation';
   const primary = hasOwnVerb ? primaryOf({ row, controls }) : null;
   const isFilled = primary !== null && primary.slot === 'primary' && primary.isSecondary !== true;
-  const state = shownStateOf({ row });
+  const state = shownStateOf({ row, isStateShown });
   const at = row.deletedAt ?? row.at;
   const atTitle =
     at === null
       ? undefined
       : `${isDeleted ? 'Deleted ' : ''}${formatDateTime({ at, hasYear: true })}`;
+
+  const title = (
+    <TruncatedText
+      isFocusable
+      className={cn(
+        titleSuffix === undefined ? ARTIFACT_ROW_GRID.title : 'min-w-0 truncate text-row',
+        row.isFaint ? 'text-faint-foreground' : 'text-foreground',
+      )}
+    >
+      {row.title}
+    </TruncatedText>
+  );
 
   return (
     <div className="@container relative flex min-w-0 flex-col" data-testid="artifact-row-frame">
@@ -125,8 +145,8 @@ const RowComponent = ({
         menu={menu}
         label={rowLabel}
         isSelected={false}
-        onOpen={() => onOpenRow(row)}
-        dataAttributes={{ 'data-artifact-row': row.id }}
+        onOpen={() => onOpenRow({ row, rowKey })}
+        dataAttributes={{ 'data-artifact-row': rowKey }}
         frameClassName="group"
         className={ARTIFACT_ROW_GRID.frame}
       >
@@ -136,7 +156,7 @@ const RowComponent = ({
               type="button"
               aria-expanded={isPartsOpen}
               aria-label={`${isPartsOpen ? 'Hide' : 'Show'} parts of ${row.title}`}
-              onClick={() => onTogglePartsOf(row.id)}
+              onClick={() => onTogglePartsOf(rowKey)}
               className={cn(
                 ARTIFACT_ROW_GRID.lead,
                 'grid place-items-center rounded-sm text-faint-foreground hover:bg-hover hover:text-foreground',
@@ -157,15 +177,14 @@ const RowComponent = ({
           size={ICON_SIZE.control}
           className={cn(ARTIFACT_ROW_GRID.glyph, row.isFaint && 'text-faint-foreground')}
         />
-        <TruncatedText
-          isFocusable
-          className={cn(
-            ARTIFACT_ROW_GRID.title,
-            row.isFaint ? 'text-faint-foreground' : 'text-foreground',
-          )}
-        >
-          {row.title}
-        </TruncatedText>
+        {titleSuffix === undefined ? (
+          title
+        ) : (
+          <span className="flex min-w-16 flex-1 items-center gap-2">
+            {title}
+            {titleSuffix}
+          </span>
+        )}
         <span className={cn(ARTIFACT_ROW_GRID.state, row.isFaint && 'opacity-80')}>
           {state === null ? null : <ArtifactStateBadge state={state} />}
         </span>

@@ -1768,11 +1768,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/artifacts/components/PlanComments/PlanComments.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5

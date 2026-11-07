@@ -42,22 +42,50 @@ type KeyParams = {
   readonly mounts: ReadonlyArray<MountRowView>;
 };
 
-const keyOfBranch = ({ branch, mounts }: KeyParams): string => {
-  const row = mounts.find((candidate) => candidate.mountId === branch.mountId);
-  return row?.series == null ? `mount:${branch.mountId}` : `series:${row.series.seriesId}`;
+type MountKeyParams = {
+  readonly mountId: MountId;
+  readonly mounts: ReadonlyArray<MountRowView>;
 };
+
+export const branchGroupKeyOfMount = ({ mountId, mounts }: MountKeyParams): string => {
+  const row = mounts.find((candidate) => candidate.mountId === mountId);
+  return row?.series == null ? `mount:${mountId}` : `series:${row.series.seriesId}`;
+};
+
+const keyOfBranch = ({ branch, mounts }: KeyParams): string =>
+  branchGroupKeyOfMount({ mountId: branch.mountId, mounts });
+
+type BranchKeysParams = {
+  readonly branches: ReadonlyArray<WorkBranch>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+export const branchKeysOf = ({ branches, mounts }: BranchKeysParams): ReadonlyArray<string> => {
+  if (branches.length === 0) {
+    return [NO_BRANCH_KEY];
+  }
+  return [...new Set(branches.map((branch) => keyOfBranch({ branch, mounts })))];
+};
+
+type CountKeysParams = {
+  readonly branchLists: ReadonlyArray<ReadonlyArray<WorkBranch>>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+export const namedBranchGroupCountOf = ({ branchLists, mounts }: CountKeysParams): number =>
+  new Set(
+    branchLists.flatMap((branches) =>
+      branches.map((branch) => branchGroupKeyOfMount({ mountId: branch.mountId, mounts })),
+    ),
+  ).size;
 
 type RunKeysParams = {
   readonly run: SessionRun;
   readonly mounts: ReadonlyArray<MountRowView>;
 };
 
-export const branchGroupKeysOf = ({ run, mounts }: RunKeysParams): ReadonlyArray<string> => {
-  if (run.branches.length === 0) {
-    return [NO_BRANCH_KEY];
-  }
-  return [...new Set(run.branches.map((branch) => keyOfBranch({ branch, mounts })))];
-};
+export const branchGroupKeysOf = ({ run, mounts }: RunKeysParams): ReadonlyArray<string> =>
+  branchKeysOf({ branches: run.branches, mounts });
 
 type FactParams = {
   readonly row: MountRowView | undefined;
@@ -120,13 +148,32 @@ const countsOf = ({ runs }: CountParams): BranchGroupCounts => ({
   finished: runs.filter((run) => run.isFinished && !run.isArchived).length,
 });
 
-export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGroup> => {
-  const runsByKey = new Map<string, Array<SessionRun>>();
+export type BranchEntry<T> = Readonly<{
+  item: T;
+  branches: ReadonlyArray<WorkBranch>;
+}>;
+
+export type BranchKeyedGroup<T> = Readonly<{
+  key: string;
+  head: BranchGroupHead;
+  items: ReadonlyArray<T>;
+}>;
+
+type KeyedParams<T> = {
+  readonly entries: ReadonlyArray<BranchEntry<T>>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+export const branchKeyedGroupsOf = <T>({
+  entries,
+  mounts,
+}: KeyedParams<T>): ReadonlyArray<BranchKeyedGroup<T>> => {
+  const itemsByKey = new Map<string, Array<T>>();
   const branchesByKey = new Map<string, Array<WorkBranch>>();
-  for (const run of runs) {
-    for (const key of branchGroupKeysOf({ run, mounts })) {
-      runsByKey.set(key, [...(runsByKey.get(key) ?? []), run]);
-      const branches = run.branches.filter((branch) => keyOfBranch({ branch, mounts }) === key);
+  for (const { item, branches: itemBranches } of entries) {
+    for (const key of branchKeysOf({ branches: itemBranches, mounts })) {
+      itemsByKey.set(key, [...(itemsByKey.get(key) ?? []), item]);
+      const branches = itemBranches.filter((branch) => keyOfBranch({ branch, mounts }) === key);
       const known = branchesByKey.get(key) ?? [];
       branchesByKey.set(key, [
         ...known,
@@ -134,11 +181,22 @@ export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGr
       ]);
     }
   }
-  const groups = [...runsByKey.entries()].map(([key, groupRuns]) => ({
+  return [...itemsByKey.entries()].map(([key, items]) => ({
     key,
     head: groupHeadOf({ key, branches: branchesByKey.get(key) ?? [], mounts }),
-    runs: groupRuns,
-    counts: countsOf({ runs: groupRuns }),
+    items,
+  }));
+};
+
+export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGroup> => {
+  const groups = branchKeyedGroupsOf({
+    entries: runs.map((run) => ({ item: run, branches: run.branches })),
+    mounts,
+  }).map((group) => ({
+    key: group.key,
+    head: group.head,
+    runs: group.items,
+    counts: countsOf({ runs: group.items }),
   }));
   const named = groups.filter((group) => group.key !== NO_BRANCH_KEY);
   const none = groups.filter((group) => group.key === NO_BRANCH_KEY);
@@ -147,15 +205,19 @@ export const branchGroupsOf = ({ runs, mounts }: Params): ReadonlyArray<BranchGr
   return [...needing, ...rest, ...none];
 };
 
-type AlsoParams = {
-  readonly run: SessionRun;
+type AlsoBranchesParams = {
+  readonly branches: ReadonlyArray<WorkBranch>;
   readonly groupKey: string;
   readonly mounts: ReadonlyArray<MountRowView>;
 };
 
-export const alsoOnOf = ({ run, groupKey, mounts }: AlsoParams): ReadonlyArray<WorkBranch> => {
+export const alsoOnBranchesOf = ({
+  branches,
+  groupKey,
+  mounts,
+}: AlsoBranchesParams): ReadonlyArray<WorkBranch> => {
   const seen = new Set<string>([groupKey]);
-  return run.branches.filter((branch) => {
+  return branches.filter((branch) => {
     const key = keyOfBranch({ branch, mounts });
     if (seen.has(key)) {
       return false;
@@ -164,3 +226,12 @@ export const alsoOnOf = ({ run, groupKey, mounts }: AlsoParams): ReadonlyArray<W
     return true;
   });
 };
+
+type AlsoParams = {
+  readonly run: SessionRun;
+  readonly groupKey: string;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+export const alsoOnOf = ({ run, groupKey, mounts }: AlsoParams): ReadonlyArray<WorkBranch> =>
+  alsoOnBranchesOf({ branches: run.branches, groupKey, mounts });

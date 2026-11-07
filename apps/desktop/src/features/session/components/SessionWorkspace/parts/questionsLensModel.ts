@@ -1,6 +1,10 @@
-import type { Agent, OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import type { Agent, OpenQuestion, OpenQuestionId, SessionMountView } from '@goodboy/types';
 import { partitionDelegatedQuestions } from '../../../../context/questionDelegate';
 import { questionParts } from '../../../../context/components/QuestionsTab/questionParts';
+import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
+import { branchKeyedGroupsOf, NO_BRANCH_KEY, type BranchGroupHead } from '../../../branchGroupsOf';
+import type { WorkBranch, WorkBranchProject } from '../../../workBranchesOf';
+import { questionBranchesOf } from './questionBranchesOf';
 
 type QuestionRowKind = 'waiting' | 'delegated' | 'staged' | 'dismissed' | 'answered';
 
@@ -77,6 +81,66 @@ export const questionGroupsOf = ({ model }: ModelParams): QuestionGroups => ({
   waiting: [...model.waiting, ...model.delegated],
   answered: [...model.recent, ...model.answered],
 });
+
+export type QuestionBranchRow = Readonly<{
+  row: QuestionRow;
+  branches: ReadonlyArray<WorkBranch>;
+}>;
+
+export type QuestionBranchGroup = Readonly<{
+  key: string;
+  head: BranchGroupHead;
+  waiting: ReadonlyArray<QuestionBranchRow>;
+  answered: ReadonlyArray<QuestionBranchRow>;
+}>;
+
+type BranchGroupsParams = {
+  readonly model: QuestionsLensModel;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly sessionMounts: ReadonlyArray<SessionMountView>;
+  readonly projects: ReadonlyArray<WorkBranchProject>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+export const questionBranchGroupsOf = ({
+  model,
+  agents,
+  sessionMounts,
+  projects,
+  mounts,
+}: BranchGroupsParams): ReadonlyArray<QuestionBranchGroup> => {
+  const groups = questionGroupsOf({ model });
+  const waitingRows = new Set<QuestionRow>(groups.waiting);
+  const entries = [...groups.waiting, ...groups.answered].map((row) => {
+    const branches = questionBranchesOf({
+      question: row.question,
+      agents,
+      mounts: sessionMounts,
+      projects,
+    });
+    return { item: { row, branches }, branches };
+  });
+  const keyed = branchKeyedGroupsOf({ entries, mounts }).map((group): QuestionBranchGroup => ({
+    key: group.key,
+    head: group.head,
+    waiting: group.items.filter((item) => waitingRows.has(item.row)),
+    answered: group.items.filter((item) => !waitingRows.has(item.row)),
+  }));
+  const named = keyed.filter((group) => group.key !== NO_BRANCH_KEY);
+  const none = keyed.filter((group) => group.key === NO_BRANCH_KEY);
+  return [
+    ...named.filter((group) => group.waiting.length > 0),
+    ...named.filter((group) => group.waiting.length === 0),
+    ...none,
+  ];
+};
+
+type CountParams = {
+  readonly groups: ReadonlyArray<QuestionBranchGroup>;
+};
+
+export const questionBranchCountOf = ({ groups }: CountParams): number =>
+  groups.filter((group) => group.key !== NO_BRANCH_KEY).length;
 
 export const questionRowsOf = ({ model }: ModelParams): ReadonlyArray<QuestionRow> => {
   const groups = questionGroupsOf({ model });

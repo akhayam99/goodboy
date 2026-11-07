@@ -82,7 +82,7 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {
     return { ...place, view: { ...view, target: null } };
   }
-  if (view.lens === 'workflows' && view.target === null) {
+  if ((view.lens === 'workflows' || view.lens === 'questions') && view.target === null) {
     const runGroup = runGroupFocusOf({ state });
     if (runGroup !== null) {
       return branchPlace({ sessionId, mountPath: runGroup.mountPath });

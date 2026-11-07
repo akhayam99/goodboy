@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
-import { useMountRows } from '../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../shared/hooks/useMountRows';
 import { useWorktreeStatusSnapshot } from '../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../features/session/hooks/useWorktreeStatuses/targets';
 import { RailFlyout } from '../SideColumn/RailFlyout';

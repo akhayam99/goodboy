@@ -1,33 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { aProject, nextSessionId } from '@goodboy/types/testing';
-import { aMountView } from '../../../../testing/aMountView';
-import type { WorkBranch } from '../../../../workBranchesOf';
 import { alsoOnLabelOf } from './alsoOnLabelOf';
-import { branchListLabelOf } from './branchListLabelOf';
-
-const PROJECT = aProject({ name: 'notify-relay' });
+import { branchListLabelOf, type AlsoOnBranch } from './branchListLabelOf';
 
 type Params = {
   readonly name: string;
 };
 
-const branchOf = ({ name }: Params): WorkBranch => {
-  const view = aMountView({
-    key: name,
-    sessionId: nextSessionId(),
-    projectId: PROJECT.id,
-    projectName: 'notify-relay',
-    branch: name,
-  });
-  return {
-    mountId: view.id,
-    projectId: PROJECT.id,
-    projectName: 'notify-relay',
-    branch: name,
-    worktreePath: view.worktreePath,
-  };
-};
+const branchOf = ({ name }: Params): AlsoOnBranch => ({
+  branch: name,
+  projectName: 'notify-relay',
+});
 
 describe('alsoOnLabelOf', () => {
   it('names the branch when the run is on one more', () => {
