@@ -1,3 +1,4 @@
+import { brandId } from '@goodboy/types';
 import type {
   AgentId,
   ArtifactId,
@@ -12,10 +13,10 @@ import { NOT_REVISING } from '../../features/plans/planRevising';
 import type { ArtifactGeneration } from '../../features/artifacts/artifactCollection';
 import type { ArtifactFacts } from '../../features/actions/kinds/artifact';
 
-export const SESSION = 'session-harborline' as SessionId;
-export const AGENT = 'agent-planner' as AgentId;
-export const ARTIFACT = 'artifact-payout' as ArtifactId;
-export const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
+export const SESSION = brandId<SessionId>({ value: 'session-harborline' });
+export const AGENT = brandId<AgentId>({ value: 'agent-planner' });
+export const ARTIFACT = brandId<ArtifactId>({ value: 'artifact-payout' });
+export const NOW = brandId<IsoDateTime>({ value: '2026-09-14T16:40:00.000Z' });
 
 export const plan = ({
   status,
@@ -34,7 +35,10 @@ export const plan = ({
   updatedAt: NOW,
   consumptionCount,
   ...(consumptionCount > 0 && {
-    lastConsumer: { agentId: 'agent-implementer' as AgentId, name: 'Implementer 3' },
+    lastConsumer: {
+      agentId: brandId<AgentId>({ value: 'agent-implementer' }),
+      name: 'Implementer 3',
+    },
   }),
 });
 

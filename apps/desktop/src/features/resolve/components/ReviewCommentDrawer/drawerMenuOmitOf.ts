@@ -4,6 +4,7 @@ import type { ResolvedAction } from '../../../actions/types';
 const REACHABLE_ELSEWHERE: ReadonlyArray<string> = [
   'reviewComment.copyLink',
   'reviewComment.transcript',
+  'reviewComment.openInDiff',
 ];
 
 type Params = {

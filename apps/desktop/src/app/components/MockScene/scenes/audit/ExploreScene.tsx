@@ -26,6 +26,30 @@ const saveSideWidth = ({ widthPx }: SideWidthParams): void => {
   }
 };
 
+const readSideWidth = (): string | null => {
+  try {
+    return localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+type RestoreParams = {
+  readonly saved: string | null;
+};
+
+const restoreSideWidth = ({ saved }: RestoreParams): void => {
+  try {
+    if (saved === null) {
+      localStorage.removeItem(RIGHT_DRAWER_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, saved);
+  } catch {
+    return;
+  }
+};
+
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
@@ -306,10 +330,11 @@ export const ExploreScene = (props: Props) => {
       lens: null,
     });
     seedExploreRoots({ roots });
+    const savedWidth = readSideWidth();
     saveSideWidth({ widthPx });
     useAppStore.getState().openDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
     setIsReady(true);
-    return () => saveSideWidth({ widthPx: null });
+    return () => restoreSideWidth({ saved: savedWidth });
   }, [changes, isBig, roots, variant, widthPx]);
 
   useSceneClicks({

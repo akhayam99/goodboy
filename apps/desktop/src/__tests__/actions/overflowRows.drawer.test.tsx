@@ -17,7 +17,12 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { ToastProvider } from '../../shared/components/Toast';
-import { SESSION, seedResolveScene } from '../../app/components/MockScene/scenes/resolveSeed';
+import {
+  SESSION,
+  THREAD_IDS,
+  seedResolveScene,
+  type ReplyOnlyVariant,
+} from '../../app/components/MockScene/scenes/resolveSeed';
 import { DrawerHost } from '../../app/components/DrawerHost';
 import { BranchPage } from '../../features/branch/components/BranchPage';
 import { BAR_COPY } from '../../features/resolve/commentStateCopy';
@@ -48,8 +53,13 @@ const page = () => (
   </ToastProvider>
 );
 
-const mountThread = async ({ threadId }: { readonly threadId: string | null }): Promise<void> => {
-  seedResolveScene({ expandedThreadId: threadId });
+type MountParams = {
+  readonly threadId: string | null;
+  readonly replyOnly?: ReplyOnlyVariant;
+};
+
+const mountThread = async ({ threadId, replyOnly }: MountParams): Promise<void> => {
+  seedResolveScene({ expandedThreadId: threadId, replyOnly });
   render(page());
   await screen.findByRole('navigation', { name: 'Comments' });
   if (threadId !== null) {
@@ -93,4 +103,21 @@ describe('the comment drawer ⋯ holds at most five rows in any one state', () =
     }
     expect(opened).toBeGreaterThan(3);
   });
+
+  it.each<ReplyOnlyVariant>(['bundled', 'alone', 'posted'])(
+    'draws at most five rows for a reply-only draft, %s',
+    async (replyOnly) => {
+      await mountThread({ threadId: THREAD_IDS.retryConstant, replyOnly });
+      const drawer = document.querySelector<HTMLElement>('[data-slot="review-comment-drawer"]');
+      const trigger =
+        drawer === null ? null : within(drawer).queryByRole('button', { name: BAR_COPY.more });
+      expect(trigger).not.toBeNull();
+      if (trigger === null) {
+        return;
+      }
+      fireEvent.click(trigger);
+      const rows = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+      expect(rows.length, rows.join(' | ')).toBeLessThanOrEqual(MAX_OVERFLOW_ROWS);
+    },
+  );
 });
