@@ -1,5 +1,4 @@
 import { isRunEntryFinished } from '../done/outcomeLineOf';
-import type { AutoPhase } from '@goodboy/db';
 import type { Agent, AgentId, MountId, Step, TurnState } from '@goodboy/types';
 import { autoGroupOf, type AutoGroup } from '../../../auto/autoGroupOf';
 import { classifyStep, type AgentKind } from '../../agent-kind';
@@ -68,7 +67,6 @@ export type LiveAutoGroup = LiveGroupBase &
   Readonly<{
     kind: 'auto';
     group: AutoGroup;
-    treePhase: AutoPhase;
     counts: null;
     children: AutoGroup['children'];
   }>;
@@ -277,7 +275,6 @@ const agentGroupOf = ({ entry, rowState, turnByAgentId }: AgentParams): LiveAgen
 
 type AutoParams = {
   readonly group: AutoGroup;
-  readonly treePhase: AutoPhase;
   readonly agents: ReadonlyArray<Agent>;
 };
 
@@ -294,7 +291,7 @@ const autoStateOf = ({ group }: Pick<AutoParams, 'group'>): LiveGroupState | nul
   return group.phase === 'waiting' ? 'waiting' : 'working';
 };
 
-const autoGroupModelOf = ({ group, treePhase, agents }: AutoParams): LiveAutoGroup | null => {
+const autoGroupModelOf = ({ group, agents }: AutoParams): LiveAutoGroup | null => {
   const state = autoStateOf({ group });
   if (state === null) {
     return null;
@@ -314,7 +311,6 @@ const autoGroupModelOf = ({ group, treePhase, agents }: AutoParams): LiveAutoGro
     mountId: mountIdOf({ agents: owned }),
     startedAt: timeOf({ value: byId.get(group.rootAgentId)?.startedAt }),
     group,
-    treePhase,
     counts: null,
     children: group.children,
   };
@@ -390,8 +386,7 @@ export const liveGroupsOf = ({ model, agents, now }: Params): ReadonlyArray<Live
   });
   const fromAuto = model.autoTrees.flatMap((view) => {
     const group = autoGroupOf({ view, agents, now });
-    const live =
-      group === null ? null : autoGroupModelOf({ group, treePhase: view.tree.phase, agents });
+    const live = group === null ? null : autoGroupModelOf({ group, agents });
     return live === null ? [] : [live];
   });
   return [...fromEntries, ...fromAuto].sort(compareGroups);

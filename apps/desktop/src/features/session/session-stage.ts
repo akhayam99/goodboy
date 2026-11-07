@@ -6,7 +6,6 @@ import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import { couldntFixWords, needsYouWords, pushFailedWords } from '../resolve/notes/attentionWords';
 import { NAMES } from '../../shared/utils/names';
 import { runStateFromKind } from '../workflows/runStateOf';
-import { planNeedsApprovalOf } from '../../shared/utils/planNeedsApprovalOf';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/utils/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
@@ -138,7 +137,6 @@ type AttentionCounts = Pick<
 type WordsParams = {
   readonly reason: SessionAttentionReason;
   readonly counts?: AttentionCounts;
-  readonly planVersion?: number | null;
 };
 
 const countOf = ({ count }: { readonly count: number | undefined }): number =>
@@ -155,11 +153,7 @@ const fixCountsOf = ({
     ? { comments: comments ?? 0, notes: notes ?? 0 }
     : { comments: countOf({ count: comments }), notes: 0 };
 
-export const attentionWordsOf = ({
-  reason,
-  counts = {},
-  planVersion = null,
-}: WordsParams): string => {
+export const attentionWordsOf = ({ reason, counts = {} }: WordsParams): string => {
   if (reason === 'open-question') {
     const count = countOf({ count: counts.openQuestionCount });
     return count === 1 ? '1 question for you' : `${count} questions for you`;
@@ -177,9 +171,6 @@ export const attentionWordsOf = ({
   }
   if (reason === 'push-failed') {
     return pushFailedWords({ count: countOf({ count: counts.pushFailedCount }) });
-  }
-  if (reason === 'plan-approval' && planVersion !== null) {
-    return planNeedsApprovalOf({ version: planVersion });
   }
   return ATTENTION_REASON_META[reason].words;
 };

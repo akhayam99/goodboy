@@ -1,4 +1,5 @@
 import type { Agent, AgentId, IsoDateTime } from '@goodboy/types';
+import { childAgentsByParent } from '../../../shared/utils/childAgentsByParent';
 
 type Params = {
   readonly runs: ReadonlyArray<Agent>;
@@ -19,15 +20,7 @@ export const stampAgentSubtreeViewed = ({
   additionalAgentIds = [],
 }: Params): ViewedAgentStamp => {
   const agentIds = new Set<AgentId>([rootAgentId, ...additionalAgentIds]);
-  const childrenByParentId = new Map<AgentId, AgentId[]>();
-  for (const run of runs) {
-    if (run.parentAgentId == null) {
-      continue;
-    }
-    const children = childrenByParentId.get(run.parentAgentId) ?? [];
-    children.push(run.id);
-    childrenByParentId.set(run.parentAgentId, children);
-  }
+  const childrenByParentId = childAgentsByParent({ agents: runs });
 
   const queue: AgentId[] = [rootAgentId];
   while (queue.length > 0) {
@@ -35,7 +28,7 @@ export const stampAgentSubtreeViewed = ({
     if (current == null) {
       continue;
     }
-    for (const childId of childrenByParentId.get(current) ?? []) {
+    for (const { id: childId } of childrenByParentId.get(current) ?? []) {
       if (agentIds.has(childId)) {
         continue;
       }

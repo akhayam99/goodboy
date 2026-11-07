@@ -1,12 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { useCopyLink } from '@goodboy/ui';
 import type { OpenQuestion, Session, SessionId } from '@goodboy/types';
-import {
-  useAppStore,
-  useMountDiffStats,
-  sessionPlace,
-  branchPlace,
-} from '../../../../../../../store';
+import { useAppStore, useMountDiffStats, sessionPlace } from '../../../../../../../store';
 import { useSessionRoleModels } from '../../../../../../../shared/hooks/useSessionRoleModels';
 import { usePendingAction } from '../../../../../../../shared/hooks/usePendingAction';
 import { useAdvanceWorkflowAgent } from '../../../../../../workflows/useAdvanceWorkflowAgent';
@@ -23,8 +18,6 @@ import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
 import type { TimelineRowAction } from '../TimelineStreamRow';
-import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
-import { openReview } from '../../../../../../review/openReview';
 import {
   fixOfferKey,
   selectFixOffers,
@@ -42,7 +35,6 @@ type Params = {
   readonly session: Session;
   readonly explode: ExplodeGroups;
   readonly rows: TimelineRows;
-  readonly isNeedsYouShown?: boolean;
 };
 
 type RowParams = {
@@ -53,15 +45,9 @@ type RowParams = {
 type RowPropsControl = {
   readonly rowPropsFor: (params: RowParams) => TimelineRowProps | null;
   readonly hasActionColumn: boolean;
-  readonly openNeedsYou: (params: { readonly owner: NeedsYouOwner }) => void;
 };
 
-export const useTimelineRowProps = ({
-  session,
-  explode,
-  rows,
-  isNeedsYouShown = false,
-}: Params): RowPropsControl => {
+export const useTimelineRowProps = ({ session, explode, rows }: Params): RowPropsControl => {
   const sessionId: SessionId = session.id;
   const navigate = useAppStore((s) => s.navigate);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
@@ -172,9 +158,6 @@ export const useTimelineRowProps = ({
     },
   });
 
-  const isOwnedByNeedsYou = ({ item }: { readonly item: TimelineRowItem }): boolean =>
-    rows.owners.some((owner) => owner.id === item.id || owner.id === item.familyId);
-
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
     if (entry.kind === 'event') {
@@ -253,9 +236,6 @@ export const useTimelineRowProps = ({
     }
     switch (ask.kind) {
       case 'answer':
-        if (isNeedsYouShown && isOwnedByNeedsYou({ item })) {
-          return null;
-        }
         return answerAction({ question: ask.question });
       case 'restartStep': {
         const target = openTargetFor({ entry });
@@ -332,39 +312,6 @@ export const useTimelineRowProps = ({
       rows.toggleExpanded,
       runAction,
     ],
-  );
-
-  const openNeedsYou = useCallback(
-    ({ owner }: { readonly owner: NeedsYouOwner }) => {
-      if (owner.kind === 'fixRun') {
-        const target = owner.owed?.target ?? null;
-        if (target === null) {
-          navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
-          return;
-        }
-        void openReview({
-          sessionId,
-          destination: {
-            kind: 'threads',
-            mountId: target.mountId,
-            threadIds: [target.threadId],
-          },
-        });
-        return;
-      }
-      if (owner.question !== null) {
-        openAgentQuestion({ question: owner.question });
-        return;
-      }
-      if (owner.kind === 'question') {
-        navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
-        return;
-      }
-      if (owner.item !== null) {
-        openTargetFor({ entry: owner.item.entry })?.open();
-      }
-    },
-    [navigate, openAgentQuestion, openTargetFor, sessionId],
   );
 
   const isGroupExpanded = ({ id }: { readonly id: string }): boolean =>
@@ -445,5 +392,5 @@ export const useTimelineRowProps = ({
     (item) => item.kind === 'row' && actionFor({ item }) !== null,
   );
 
-  return { rowPropsFor, openNeedsYou, hasActionColumn };
+  return { rowPropsFor, hasActionColumn };
 };

@@ -77,18 +77,6 @@ describe('agentNowState', () => {
 
   it('never reads a running agent whose turn is not live as ready', () => {
     expect(agentNowState({ agent, turnState: IDLE, transcript: [] }).label).toBeNull();
-    expect(agentNowState({ agent, turnState: IDLE, transcript: [], activeChildren: 0 }).label).toBe(
-      null,
-    );
-  });
-
-  it('names the subagents a running agent waits on while its own turn is not live', () => {
-    expect(agentNowState({ agent, turnState: IDLE, transcript: [], activeChildren: 1 }).label).toBe(
-      'Waiting on 1 subagent',
-    );
-    expect(agentNowState({ agent, turnState: IDLE, transcript: [], activeChildren: 3 }).label).toBe(
-      'Waiting on 3 subagents',
-    );
   });
 
   it('keeps ready for an agent that is not running', () => {

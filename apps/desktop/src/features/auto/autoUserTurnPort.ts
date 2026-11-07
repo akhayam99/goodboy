@@ -1,4 +1,5 @@
 import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
+import { createPort } from './createPort';
 
 export type AutoUserTurnQueued = Readonly<{
   rowId: string;
@@ -20,18 +21,8 @@ export type AutoUserTurnResult = 'queued' | 'lost';
 
 export type AutoUserTurnPort = (params: AutoUserTurnParams) => Promise<AutoUserTurnResult>;
 
-type Registry = {
-  port: AutoUserTurnPort | null;
-};
+const slot = createPort<AutoUserTurnPort>();
 
-const registry: Registry = { port: null };
+export const registerAutoUserTurnPort = slot.register;
 
-type RegisterParams = {
-  readonly port: AutoUserTurnPort | null;
-};
-
-export const registerAutoUserTurnPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentAutoUserTurnPort = (): AutoUserTurnPort | null => registry.port;
+export const currentAutoUserTurnPort = slot.current;

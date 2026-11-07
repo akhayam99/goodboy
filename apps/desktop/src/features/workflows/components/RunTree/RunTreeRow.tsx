@@ -23,7 +23,6 @@ import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { answerOf } from './answerOf';
 import { isNotFinishedNote } from './isNotFinishedNote';
 import { stuckActionOf } from './stuckActionOf';
@@ -55,7 +54,6 @@ type Props = {
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly isHighlighted: boolean;
-  readonly skip: RunStepSkipAction | null;
   readonly onHighlight?: (isOn: boolean) => void;
   readonly onSelect: () => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -76,7 +74,6 @@ export const RunTreeRow = ({
   parentStepName,
   isSelected,
   isHighlighted,
-  skip,
   onHighlight,
   onSelect,
   onAnswer,
@@ -103,9 +100,8 @@ export const RunTreeRow = ({
   const boxHeight = isFixed ? TIMELINE_RHYTHM.grade[item.grade].height : item.height;
   const slot = rowSlotWidth({ rail, railWidth, isNested, isFixed });
   const markerColumn = isFixed ? Math.min(rail.markerColumn, 1) : rail.markerColumn;
-  const isSkipShown = answer === null && skip !== null && !isNested && agent.status === 'running';
   const stuckAction = isNested ? null : stuckActionOf({ agent, state: item.rowState });
-  const planAction = isNested || answer !== null || isSkipShown ? null : plan;
+  const planAction = isNested || answer !== null ? null : plan;
   const isPlanHeld =
     planAction !== null && planAction.status === 'active' && isRunHeldForPlan({ run: routing.run });
   const label =
@@ -213,9 +209,6 @@ export const RunTreeRow = ({
                     {isPage ? meta : null}
                     {hasActionColumn ? (
                       <span data-meta-column="action" className={WORK_META_COLUMN.action}>
-                        {isSkipShown && skip !== null ? (
-                          <RunStepSkip agent={agent} skip={skip} />
-                        ) : null}
                         {answer === null ? null : (
                           <Button
                             variant="secondary"

@@ -29,8 +29,6 @@ export const A11Y_BASELINE = {
   'scene resolve-queue-shell': [],
   'scene resolve-publish-blocked': [],
   'scene artifacts-lens-shell': [],
-  'scene lens-switcher': [],
-  'scene lens-switcher-closed': [],
   'scene session-states': [],
   'scene session-start': [],
   'scene workspace-states': [],

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
@@ -50,18 +50,6 @@ describe('SessionNavSidebar', () => {
     expect(screen.getByTestId('activity-bar')).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: /lenses/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'ship the nav' })).toBeNull();
-  });
-
-  it('opens on the collapse control, with Board gone to the top bar', () => {
-    const onToggle = vi.fn();
-    render(<SessionNavSidebar currentSessionId={session.id} onToggleSidebar={onToggle} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /^Hide sessions/ }));
-    expect(onToggle).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('button', { name: /board/i })).toBeNull();
-    expect(screen.queryByText('Sessions')).toBeNull();
-    expect(screen.queryByLabelText(/switch workspace/i)).toBeNull();
-    expect(screen.queryByLabelText('Preferences')).toBeNull();
   });
 
   it('closes the peek once a session is picked', () => {

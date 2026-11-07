@@ -82,7 +82,6 @@ import {
   ResolvePublishBlockedScene,
   ArtifactsLensShellScene,
 } from '../scenes/SurfaceAuditScenes';
-import { LensSwitcherClosedScene, LensSwitcherScene } from '../scenes/LensSwitcherScenes';
 import { CardRailsScene } from '../scenes/CardRailsScene';
 import { ProvidersScene } from '../scenes/ProvidersScene';
 import { ImpactScene } from '../scenes/ImpactScene';
@@ -95,7 +94,6 @@ import {
 } from '../scenes/ModelPickerScenes';
 import { ModelPickerClaudeScene } from '../scenes/ModelPickerClaudeScene';
 import { ModelPickerAutoScene } from '../scenes/ModelPickerAutoScene';
-import { RunsOnScene } from '../scenes/RunsOnScene';
 
 import { FrameScene } from '../scenes/audit/FrameScene';
 import { FirstRunScene } from '../scenes/audit/FirstRunScene';
@@ -411,8 +409,6 @@ export const BASE_SCENES = {
   'resolve-publish-blocked': ResolvePublishBlockedScene,
   'artifacts-lens-shell': ArtifactsLensShellScene,
   'card-rails': CardRailsScene,
-  'lens-switcher': LensSwitcherScene,
-  'lens-switcher-closed': LensSwitcherClosedScene,
   providers: ProvidersScene,
   impact: ImpactScene,
   'model-picker': ModelPickerScene,
@@ -421,7 +417,6 @@ export const BASE_SCENES = {
   'model-picker-claude': ModelPickerClaudeScene,
   'model-picker-auto': ModelPickerAutoScene,
   'model-picker-triggers': ModelPickerTriggersScene,
-  'runs-on-codex-default': RunsOnScene,
   frame: FrameScene,
   'first-run': FirstRunScene,
   'first-lap': FirstLapScene,

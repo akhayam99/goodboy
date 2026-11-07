@@ -456,7 +456,6 @@ describe('a run tree row and a routing pill follow the same rules', () => {
         parentStepName={null}
         isSelected={false}
         isHighlighted={false}
-        skip={null}
         onSelect={vi.fn()}
         onAnswer={vi.fn()}
       />,

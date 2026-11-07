@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Agent } from '@goodboy/types';
+import { childAgentsByParent } from '../../../../shared/utils/childAgentsByParent';
 
 type Params = {
   readonly phaseRuns: ReadonlyArray<Agent>;
@@ -21,18 +22,7 @@ export const useSessionAgentTree = ({ phaseRuns }: Params) => {
     return map;
   }, [sorted]);
 
-  const childrenByParentId = useMemo(() => {
-    const map = new Map<string, Agent[]>();
-    for (const r of sorted) {
-      if (r.parentAgentId == null) {
-        continue;
-      }
-      const bucket = map.get(r.parentAgentId) ?? [];
-      bucket.push(r);
-      map.set(r.parentAgentId, bucket);
-    }
-    return map;
-  }, [sorted]);
+  const childrenByParentId = useMemo(() => childAgentsByParent({ agents: sorted }), [sorted]);
 
   const adHocAgents = useMemo(
     () =>

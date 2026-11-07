@@ -9,7 +9,6 @@ type State = Pick<AppState, 'branchTab'> & RequestState;
 type Params = {
   readonly state: State;
   readonly sessionId: SessionId;
-  readonly mountPath: string | null;
 };
 
 export const branchTabOf = ({ state, sessionId }: Params): BranchTab =>

@@ -1,17 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import type { SessionWorktree } from '@goodboy/db';
-import type {
-  Agent,
-  ProviderRunId,
-  Session,
-  SessionEvent,
-  SessionId,
-  Step,
-  TelemetryRecord,
-} from '@goodboy/types';
+import type { Session, SessionId, Step, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../../store';
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
+import { useSessionRunHistory } from '../../../../../../../shared/hooks/useSessionRunHistory';
 import { useSessionWorkModel } from '../../../../../central/useSessionWorkModel';
 import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
 import { logEntriesMatching } from '../../../../../timeline/logSearch';
@@ -33,8 +25,6 @@ import {
   historyBatchDetailOf,
   type HistoryBatchDetail,
 } from '../../../../../timeline/historyBatchDetail';
-import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
-import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
 import {
   layoutTimelineRail,
@@ -58,7 +48,6 @@ type Params = {
 export type TimelineRows = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly viewEntries: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly events: ReadonlyArray<SessionEvent>;
   readonly worktrees: ReadonlyArray<SessionWorktree>;
   readonly isLoaded: boolean;
   readonly stream: TimelineStream;
@@ -66,10 +55,7 @@ export type TimelineRows = {
   readonly rail: RailLayout;
   readonly laneGutter: number;
   readonly laneRuns: TimelineLaneRuns;
-  readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly unreadAgentIds: ReadonlySet<string>;
-  readonly liveAgentIds: ReadonlySet<string> | undefined;
-  readonly shownQuestions: ReadonlySet<string>;
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
@@ -106,18 +92,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
-  const agentRunHistory = useAppStore(
-    useShallow((s) => {
-      const history: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      for (const agent of s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)) {
-        const runIds = s.agentRunHistory[agent.id];
-        if (runIds != null) {
-          history[agent.id] = runIds;
-        }
-      }
-      return history;
-    }),
-  );
+  const agentRunHistory = useSessionRunHistory({ sessionId });
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const [measuredHeights, setMeasuredHeights] = useState<ReadonlyMap<string, number>>(new Map());
 
@@ -243,14 +218,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     keepOpen({ ids: liveRootKey.split(' ') });
   }, [areAgentsLoaded, keepOpen, liveRootKey]);
 
-  const shownQuestions = useMemo(() => {
-    const shown = new Set(shownQuestionIds({ items: stream.items }));
-    for (const owner of owners) {
-      owner.questionIds.forEach((id) => shown.add(id));
-    }
-    return shown;
-  }, [owners, stream.items]);
-
   const estimatedDetails = useMemo(() => {
     const details = new Map<string, DecisionChangeDetail>();
     for (const item of stream.items) {
@@ -349,7 +316,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   return {
     entries: modelEntries,
     viewEntries,
-    events,
     worktrees,
     isLoaded,
     stream,
@@ -357,10 +323,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     rail,
     laneGutter,
     laneRuns,
-    owners,
     unreadAgentIds,
-    liveAgentIds,
-    shownQuestions,
     stepById,
     spendByAgentId,
     spendByRunId,

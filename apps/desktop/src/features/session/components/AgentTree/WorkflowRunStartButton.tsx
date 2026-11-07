@@ -1,8 +1,6 @@
-import { TriangleAlert, Play } from 'lucide-react';
-import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
-import { useStartAnywayConfirm } from '../../../workflows/useStartAnywayConfirm';
+import { StartAnywayButton } from '../../../workflows/StartAnywayButton';
 
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../../shared/lib/userStarts';
@@ -36,50 +34,29 @@ export const WorkflowRunStartButton = ({
   variant = 'primary',
 }: Props) => {
   const followRun = useFollowToast();
-  const start = useStartAnywayConfirm({
-    blockReason,
-    title: 'Start this run anyway?',
-    onStart: async () => {
-      const place = sessionPlace({
-        sessionId,
-        lens: 'workflows',
-        target: { kind: 'run', runId },
-      });
-      const historyBefore = useAppStore.getState().navigation;
-      const wasThere = isAtPlace({ place });
-      markUserStart({ key: runId });
-      await onStart();
-      const hasNavigated = useAppStore.getState().navigation !== historyBefore;
-      if (isAtPlace({ place }) && (hasNavigated || !wasThere)) {
-        return;
-      }
-      followRun({ title: 'Run started', target: { place }, startKey: runId });
-    },
-  });
-  const isBlocked = blockReason != null;
 
   return (
-    <ConfirmPopover
-      role="alert"
-      icon={<TriangleAlert size={ICON_SIZE.row} />}
-      title={start.title}
-      description={start.description}
-      confirmLabel={start.confirmLabel}
-      cancelLabel={start.cancelLabel}
-      isBusy={start.isBusy}
-      isOpen={start.isConfirming}
-      onConfirm={start.onConfirm}
-      onCancel={start.onCancel}
-      trigger={() => (
-        <Button size="sm" variant={variant} isBusy={start.isBusy} onClick={start.onTrigger}>
-          {isBlocked ? (
-            <TriangleAlert size={ICON_SIZE.control} aria-hidden />
-          ) : (
-            <Play size={ICON_SIZE.control} aria-hidden />
-          )}
-          Start run
-        </Button>
-      )}
+    <StartAnywayButton
+      label="Start run"
+      variant={variant}
+      title="Start this run anyway?"
+      blockReason={blockReason}
+      onStart={async () => {
+        const place = sessionPlace({
+          sessionId,
+          lens: 'workflows',
+          target: { kind: 'run', runId },
+        });
+        const historyBefore = useAppStore.getState().navigation;
+        const wasThere = isAtPlace({ place });
+        markUserStart({ key: runId });
+        await onStart();
+        const hasNavigated = useAppStore.getState().navigation !== historyBefore;
+        if (isAtPlace({ place }) && (hasNavigated || !wasThere)) {
+          return;
+        }
+        followRun({ title: 'Run started', target: { place }, startKey: runId });
+      }}
     />
   );
 };

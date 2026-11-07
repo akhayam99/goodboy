@@ -269,19 +269,5 @@ describe('useAgentMetrics', () => {
     const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
 
     expect(result.current.providerUsageByAgentId.get('a')?.[0]?.contextTokens).toBe(150_000);
-    expect(result.current.latestTelemetryByAgentId.get('a')?.model).toBe('claude-sonnet-4-5');
-  });
-
-  it('exposes the latest telemetry record per agent', () => {
-    store.state.sessionPhaseRuns = { [SID]: [agent('a')] };
-    store.state.agentRunHistory = { a: ['run-a', 'run-a2'] };
-    store.state.sessionTelemetry = {
-      [SID]: [
-        turn('run-a', { model: 'claude-haiku-4-5' }),
-        turn('run-a2', { model: 'claude-opus-4-5' }),
-      ],
-    };
-    const { result } = renderHook(() => useAgentMetrics({ sessionId: SID }));
-    expect(result.current.latestTelemetryByAgentId.get('a')?.model).toBe('claude-opus-4-5');
   });
 });

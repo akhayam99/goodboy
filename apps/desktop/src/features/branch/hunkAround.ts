@@ -5,7 +5,6 @@ export type HunkWindow = {
   readonly from: number;
   readonly to: number;
   readonly lines: ReadonlyArray<DiffHunkLine>;
-  readonly anchorLine: number | null;
 };
 
 type Params = {
@@ -52,7 +51,6 @@ export const hunkAround = ({
       from: Math.min(...numbers),
       to: Math.max(...numbers),
       lines,
-      anchorLine: line,
     };
   }
   return null;

@@ -127,8 +127,6 @@ describe('delegationCardOf', () => {
     expect(card.result).toMatchObject({
       summary: 'Retry keys are built once per credit.',
       changedFileCount: 2,
-      costUsd: 0.12,
-      isCostEstimated: false,
       questions: ['Keep the old key format?'],
     });
     expect(card.result?.checks).toEqual([
@@ -259,7 +257,6 @@ describe('delegationCardOf', () => {
     });
 
     expect(card.result?.reasonText).toBe('It ended without saying whether the work was done.');
-    expect(card.result?.isCostEstimated).toBe(true);
   });
 
   it('says a child stopped for no activity kept its work', () => {

@@ -5,8 +5,7 @@ import type { BranchTab } from '../../../../store/slices/navigation/types';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly mountPath: string | null;
 };
 
-export const useBranchTab = ({ sessionId, mountPath }: Params): BranchTab =>
-  useAppStore((state) => branchTabOf({ state, sessionId, mountPath }));
+export const useBranchTab = ({ sessionId }: Params): BranchTab =>
+  useAppStore((state) => branchTabOf({ state, sessionId }));

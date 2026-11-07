@@ -67,10 +67,11 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const handleUnlink = async ({ task }: UnlinkParams) => {
     setUnlinkError(null);
     setIsUnlinking(true);
+    const drawer = useAppStore.getState().drawer ?? null;
     try {
       await unlinkSessionExternalTask(sessionId, provider, task.externalId, task.projectId);
       const state = useAppStore.getState();
-      if (!isTaskOnScreen({ state, workspaceId, sessionId, provider, task })) {
+      if (!isTaskOnScreen({ state, workspaceId, sessionId, provider, task, drawer })) {
         return;
       }
       navigate({ to: sessionPlace({ sessionId, lens: null }), mode: 'replace' });

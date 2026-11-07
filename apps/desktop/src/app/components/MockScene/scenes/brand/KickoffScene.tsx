@@ -15,7 +15,7 @@ import {
   sentryIssueCandidate,
 } from '../../../../../features/integrations/issueCandidateOf';
 import type { SentryIssue } from '../../../../../features/integrations/sentry/client';
-import { issueBriefSource } from '../../../../../features/session/components/SessionKickoff/issueBriefSource';
+import type { IssueBriefSource } from '../../../../../store/slices/issue-briefs/types';
 import { issueBriefKey } from '../../../../../store/slices/issue-briefs/issueBriefKey';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
 import { useAppStore } from '../../../../../store';
@@ -79,7 +79,15 @@ const isSentryPick = (): boolean =>
   new URLSearchParams(window.location.search).get('issue') === 'sentry';
 
 const PICKED = isSentryPick() ? sentryIssueCandidate(SENTRY_ISSUE) : linearIssueCandidate(HBL_412);
-const PICKED_SOURCE = issueBriefSource({ candidate: PICKED });
+const PICKED_SOURCE: IssueBriefSource = {
+  provider: PICKED.provider,
+  externalId: PICKED.externalId,
+  identifier: PICKED.identifier,
+  title: PICKED.title,
+  body: PICKED.body,
+  url: PICKED.url,
+  noun: PICKED.provider === 'slack' ? 'thread' : 'issue',
+};
 
 const LINEAR_BRIEF = {
   title: BRAND_SESSION.title,

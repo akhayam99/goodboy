@@ -46,7 +46,6 @@ describe('hunkAround', () => {
       '  const id = slug as LedgerId',
       '  return buildCsv(id, rows)',
     ]);
-    expect(window?.anchorLine).toBe(20);
   });
 
   it('gives nothing for a file outside the diff or a line outside every hunk', () => {

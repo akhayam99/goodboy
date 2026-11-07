@@ -6,7 +6,6 @@ import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { ReportedError } from '../../../store/slices/notifications/reportedError';
 import type { ActionTrack } from '../../actions/types';
-import type { AgentKindRouting } from '../../session/agent-kind';
 import { recordNextStepOutcome, revertNextStepOutcome } from '../useNextStepOutcomes';
 import { choiceKey } from '../choiceKey';
 import { useSuggestionActions, type SuggestionActions } from '../useSuggestionActions';
@@ -157,7 +156,6 @@ export const useSuggestionRunner = ({
     if (primary === null) {
       return actions;
     }
-    const runsOn = primary.runsOn;
     const tracked =
       ({ key, task }: TaskParams) =>
       () =>
@@ -167,13 +165,6 @@ export const useSuggestionRunner = ({
       primary: {
         ...primary,
         run: tracked({ key: suggestion.id, task: primary.run }),
-        ...(runsOn !== undefined && {
-          runsOn: {
-            kind: runsOn.kind,
-            runWith: (routing: AgentKindRouting) =>
-              tracked({ key: suggestion.id, task: () => runsOn.runWith(routing) })(),
-          },
-        }),
       },
     };
   };

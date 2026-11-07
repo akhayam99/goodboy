@@ -15,7 +15,6 @@ type Params = {
 
 type Result = {
   readonly facts: ReadonlyArray<BranchFacts>;
-  readonly hasMergedRequest: boolean;
 };
 
 export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
@@ -76,9 +75,5 @@ export const useBranchFacts = ({ sessionId, groups }: Params): Result => {
       now: Date.now(),
     });
   }, [finishedRows, groups, mountGithub, mountRequests, rows, statuses]);
-  const hasMergedRequest = useMemo(
-    () => facts.some((fact) => fact.request?.state === 'merged'),
-    [facts],
-  );
-  return { facts, hasMergedRequest };
+  return { facts };
 };

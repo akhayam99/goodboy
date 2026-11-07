@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { doneRowsOf } from './doneRowsOf';
-import type { DoneCosts } from './doneTypes';
 import { eventOf, modelOf, SESSION_ID } from './testing/doneFixtures';
 import {
   branchEvents,
@@ -12,10 +11,8 @@ import {
   stamp,
 } from './testing/historyBatchFixtures';
 
-const NO_COSTS: DoneCosts = { byAgentId: new Map(), byRunId: new Map() };
-
 const rowsOf = (model: Parameters<typeof doneRowsOf>[0]['model']) =>
-  doneRowsOf({ model, source: null, costs: NO_COSTS }).flatMap((day) => day.rows);
+  doneRowsOf({ model }).flatMap((day) => day.rows);
 
 describe('doneRowsOf batch fold', () => {
   it('turns one Rebase all over nine branches into one row', () => {
@@ -26,22 +23,6 @@ describe('doneRowsOf batch fold', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.title).toBe('Rebased 9 branches on main');
     expect(rows[0]?.by).toBe('Rebase all · 9 pushed, 3 PRs updated');
-    expect(rows[0]?.mountId).toBeNull();
-  });
-
-  it('opens on one line per branch with its push and PR facts', () => {
-    const model = modelOf({ events: [request, ...many({ count: 9, batchId: 'run-1' })] });
-
-    const { branches } = rowsOf(model)[0]?.detail ?? { branches: [] };
-
-    expect(branches).toHaveLength(9);
-    expect(branches[0]).toEqual({
-      id: 'mount-0',
-      project: 'payments-api',
-      branch: 'hl/branch-0',
-      fact: 'Pushed · PR #300 updated',
-    });
-    expect(branches[8]?.fact).toBe('Pushed');
   });
 
   it('points Show in log at the one folded entry of the log', () => {

@@ -18,7 +18,6 @@ export type AutoTreeLimitView = Readonly<{
   isFromSession: boolean;
   isDefault: boolean;
   defaultUsd: number | null;
-  isStored: boolean;
   tiers: string;
   change: (usd: number | null) => void;
 }>;
@@ -58,7 +57,6 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
       isFromSession: facts.isFromSession,
       isDefault: facts.isDefault,
       defaultUsd: facts.defaultUsd,
-      isStored: runDefaultUsd !== null,
       tiers,
       change,
     },

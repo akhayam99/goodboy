@@ -195,7 +195,6 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.tsx": 1,
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/OtherToolsSection.tsx": 1,
-  "apps/desktop/src/features/suggestions/components/NextStepSlot/NextStepRow.tsx": 1,
   "apps/desktop/src/features/terminal/components/TerminalStudio/NewTerminalMenu.tsx": 1,
   "apps/desktop/src/features/terminal/components/TerminalStudio/TerminalPane.tsx": 1,
   "apps/desktop/src/features/updater/components/UpdateArrivalCard.tsx": 1,

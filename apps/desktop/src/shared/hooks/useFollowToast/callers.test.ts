@@ -18,7 +18,7 @@ const CALLERS: ReadonlyArray<string> = [
 const sourceOf = (path: string): string => readFileSync(join(SRC, path), 'utf8');
 
 const callsOf = (source: string): ReadonlyArray<string> =>
-  Array.from(source.matchAll(/follow\w*\(\{[\s\S]*?\n\s*\}\);/g), (match) => match[0]);
+  Array.from(source.matchAll(/follow\w*\(\{[\s\S]*?\}\);/g), (match) => match[0]);
 
 describe('every start that offers Follow goes through useFollowToast', () => {
   it('has removed the old agent started hook', () => {

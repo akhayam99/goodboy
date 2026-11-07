@@ -19,9 +19,6 @@ import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-
-const planTint = tintClasses(CONCEPT_TONE.plans);
 
 type AdvanceParams = {
   readonly step: Step;
@@ -35,7 +32,6 @@ export type Props = {
   readonly runs: ReadonlyArray<Agent>;
   readonly onAdvance: (params: AdvanceParams) => void | Promise<void>;
   readonly blockReason?: WorkflowBlockReason | null;
-  readonly consumesActivePlan?: boolean;
   readonly className?: string;
   readonly roleModels?: RoleModelPreferences | null;
   readonly agentModel?: string | null;
@@ -50,7 +46,6 @@ export const WorkflowNextStepCta = ({
   runs,
   onAdvance,
   blockReason = null,
-  consumesActivePlan = false,
   className,
   roleModels = null,
   agentModel = null,
@@ -116,7 +111,7 @@ export const WorkflowNextStepCta = ({
             content={
               blockReason != null
                 ? WORKFLOW_BLOCK_COPY[blockReason]
-                : `effort: ${effortText}${stepVerbosity ? `, verbosity: ${stepVerbosity}` : ''}${consumesActivePlan ? '. Advancing will consume the active plan' : ''}`
+                : `effort: ${effortText}${stepVerbosity ? `, verbosity: ${stepVerbosity}` : ''}`
             }
             anchorClassName="min-w-0"
           >
@@ -161,11 +156,6 @@ export const WorkflowNextStepCta = ({
                 model={routing.model}
                 effort={routing.effort}
               />
-              {consumesActivePlan ? (
-                <span className="shrink-0">
-                  <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
-                </span>
-              ) : null}
             </button>
           </Tooltip>
         )}

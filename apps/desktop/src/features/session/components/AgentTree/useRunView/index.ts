@@ -1,4 +1,3 @@
-import { runsForWorkflowRun } from '@goodboy/core/workflows';
 import type {
   Agent,
   OpenQuestion,
@@ -19,7 +18,6 @@ import { workflowKindName } from '../../../../workflows/workflowKindName';
 import type { WorkflowBlockReason } from '../../../../workflows/advanceGate';
 import { isRunPaused } from '../../../../workflows/isRunPaused';
 import { isRunQueuedManual } from '../../../../workflows/isRunQueuedManual';
-import { isWorkflowRunClosable } from '../../../../workflows/isWorkflowRunClosable';
 import { isWorkflowRunClosedByUser } from '../../../../workflows/isWorkflowRunClosedByUser';
 import {
   runPrimaryOf,
@@ -57,12 +55,9 @@ export type RunView = {
   readonly isDiscarded: boolean;
   readonly isDynamic: boolean;
   readonly isCompleted: boolean;
-  readonly isClosable: boolean;
   readonly isOrchestrating: boolean;
   readonly stepCount: number;
   readonly doneCount: number;
-  readonly agentCount: number;
-  readonly costUsd: number;
   readonly blockReason: WorkflowBlockReason | null;
   readonly plan: PlanWithCount | null;
   readonly orchestrator: OrchestratorView;
@@ -73,17 +68,6 @@ export type RunView = {
   readonly isPlanRevising: boolean;
   readonly advance: WorkflowRunAdvance;
 };
-
-type CountParams = {
-  readonly agent: Agent;
-  readonly childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>;
-};
-
-const countAgentTree = ({ agent, childrenByParentId }: CountParams): number =>
-  (childrenByParentId.get(agent.id) ?? []).reduce(
-    (sum, child) => sum + countAgentTree({ agent: child, childrenByParentId }),
-    1,
-  );
 
 type HoldParams = {
   readonly run: WorkflowRun;
@@ -182,19 +166,9 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
     isDiscarded,
     isDynamic,
     isCompleted,
-    isClosable: isWorkflowRunClosable({
-      run,
-      workflow,
-      agents: runsForWorkflowRun(phaseRuns, run.id),
-    }),
     isOrchestrating,
     stepCount,
     doneCount,
-    agentCount: agents.reduce(
-      (sum, agent) => sum + countAgentTree({ agent, childrenByParentId: tree.childrenByParentId }),
-      0,
-    ),
-    costUsd,
     blockReason: heldAdmissionBlock({ run }) ?? view.blockReason,
     plan,
     orchestrator,
