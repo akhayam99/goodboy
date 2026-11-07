@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../../store';
+import { useAppStore } from '../../../store';
 import {
   buildMountRows,
   type MountProjectGroup,
-} from '../../../../../../store/slices/project-mounts/mountRowModel';
-import { useSessionMountHosts } from '../../../../../../shared/hooks/useSessionMountHosts';
+} from '../../../store/slices/project-mounts/mountRowModel';
+import { useSessionMountHosts } from '../useSessionMountHosts';
 
 type Params = {
   readonly sessionId: SessionId;

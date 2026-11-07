@@ -13,7 +13,10 @@ import {
   type ArtifactListRow as Row,
 } from '../../artifactListRows';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { GroupBySwitch } from '../../../../shared/components/GroupBySwitch';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
+import { ArtifactBranchList } from './ArtifactBranchList';
+import type { ArtifactBranchProps, ArtifactOpenParams } from './artifactBranchProps';
 import { ArtifactListSkeleton } from './ArtifactListSkeleton';
 import { ArtifactListGroup } from './ArtifactListGroup';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
@@ -21,11 +24,13 @@ import { useArtifactParts } from './useArtifactParts';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly returnRowId?: string | null;
   readonly rows: ReadonlyArray<Row>;
   readonly counts: ArtifactListCounts;
   readonly filter: ArtifactFilter;
   readonly onFilterChange: (filter: ArtifactFilter) => void;
-  readonly onOpen: (row: Row) => void;
+  readonly onOpen: (params: ArtifactOpenParams) => void;
+  readonly branch?: ArtifactBranchProps;
   readonly onImported: (artifactId: ArtifactId) => void;
 };
 
@@ -38,11 +43,13 @@ const NO_MATCH_LINE: Record<ArtifactFilter, string> = {
 
 export const ArtifactList = ({
   sessionId,
+  returnRowId = null,
   rows,
   counts,
   filter,
   onFilterChange,
   onOpen,
+  branch,
   onImported,
 }: Props) => {
   const hasLoaded = useAppStore((state) => state.sessionArtifacts[sessionId] !== undefined);
@@ -86,7 +93,13 @@ export const ArtifactList = ({
           {counts.all === 0 ? null : (
             <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
           )}
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-3">
+            {branch === undefined || branch.branchCount < 2 ? null : (
+              <GroupBySwitch
+                value={branch.groupBy}
+                onChange={(next) => branch.onGroupByChange({ groupBy: next })}
+              />
+            )}
             <ArtifactNewMenu sessionId={sessionId} onImportWireframe={importer.pick} />
           </div>
         </div>
@@ -150,18 +163,32 @@ export const ArtifactList = ({
           </EmptyLine>
         ) : (
           <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-8">
-            {groups.map((entry) => (
-              <ArtifactListGroup
-                key={entry.group}
-                group={entry.group}
-                rows={entry.rows}
+            {branch !== undefined && branch.groupBy === 'branch' ? (
+              <ArtifactBranchList
+                view={branch.view}
+                returnRowId={returnRowId}
+                mounts={branch.mounts}
                 sessionId={sessionId}
                 openPartsIds={openPartsIds}
+                hasActionColumn={hasActionColumn}
                 onTogglePartsOf={toggleParts}
                 onOpenRow={onOpen}
-                hasActionColumn={hasActionColumn}
+                onOpenBranch={branch.onOpenBranch}
               />
-            ))}
+            ) : (
+              groups.map((entry) => (
+                <ArtifactListGroup
+                  key={entry.group}
+                  group={entry.group}
+                  rows={entry.rows}
+                  sessionId={sessionId}
+                  openPartsIds={openPartsIds}
+                  onTogglePartsOf={toggleParts}
+                  onOpenRow={onOpen}
+                  hasActionColumn={hasActionColumn}
+                />
+              ))
+            )}
           </div>
         )}
       </div>

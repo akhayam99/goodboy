@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { isOpenRequest } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { useMountRows } from '../../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../../shared/hooks/useMountRows';
 import type { NextBranchName } from '../../next/nextRowCopyOf';
 
 type Params = {

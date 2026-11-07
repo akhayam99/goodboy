@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useMountRows } from '../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../shared/hooks/useMountRows';
 
 type Params = {
   readonly sessionId: SessionId;
