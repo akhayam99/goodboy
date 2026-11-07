@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
-import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
-import { ExploreAddFolder } from '../../../ExploreAddFolder';
+import { RIGHT_DRAWER_STORAGE_KEY } from '@goodboy/ui';
+import { useAppStore } from '../../../../../store';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { payloadString } from './ipcPayload';
@@ -9,6 +9,22 @@ import { sceneParam, sceneParamList } from './sceneParams';
 import { SCRATCH_DIR, isExploreRoots, seedExploreRoots, type ExploreRoots } from './exploreRoots';
 import { useSceneClicks } from './useSceneClicks';
 import { sceneClock } from '../../sceneClock';
+
+type SideWidthParams = {
+  readonly widthPx: number | null;
+};
+
+const saveSideWidth = ({ widthPx }: SideWidthParams): void => {
+  try {
+    if (widthPx === null) {
+      localStorage.removeItem(RIGHT_DRAWER_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, String(widthPx));
+  } catch {
+    return;
+  }
+};
 
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
@@ -290,8 +306,11 @@ export const ExploreScene = (props: Props) => {
       lens: null,
     });
     seedExploreRoots({ roots });
+    saveSideWidth({ widthPx });
+    useAppStore.getState().openDrawer({ kind: 'explore', sessionId: SESSION_ID, payload: null });
     setIsReady(true);
-  }, [changes, isBig, roots, variant]);
+    return () => saveSideWidth({ widthPx: null });
+  }, [changes, isBig, roots, variant, widthPx]);
 
   useSceneClicks({
     isReady,
@@ -308,26 +327,5 @@ export const ExploreScene = (props: Props) => {
     return null;
   }
 
-  const pane = (
-    <ExplorePane
-      sessionId={SESSION_ID}
-      noFolderAction={<ExploreAddFolder sessionId={SESSION_ID} />}
-      onClose={() => undefined}
-    />
-  );
-
-  return (
-    <ShellFrame
-      session={SESSION}
-      main={
-        widthPx === null ? (
-          pane
-        ) : (
-          <div style={{ width: widthPx }} className="flex h-full min-w-0 flex-col">
-            {pane}
-          </div>
-        )
-      }
-    />
-  );
+  return <ShellFrame session={SESSION} main={<div aria-hidden className="h-full" />} />;
 };

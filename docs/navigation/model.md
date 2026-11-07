@@ -272,11 +272,11 @@ drawer instead of the Terminal page.
   only when searched by name (every word a word prefix of its label), dimmed
   with its reason, and Enter does nothing. Delete and the other confirmed verbs
   swap the list for an InlineConfirm; Archive runs at once with Undo. The
-  registry owns Comments, Files and Open in terminal of a session in scope, so the lens
+  registry owns Comments, Changes and Open in terminal of a session in scope, so the lens
   rows with the same names step aside. The lens rows read their labels from
-  the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Files`,
+  the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Changes`,
   `Pull request`), so the palette, the page menu and the shortcut sheet cannot
-  disagree; `Review`, `Diff` and `Session` still answer to a query as former
+  disagree; `Review`, `Files`, `Diff` and `Session` still answer to a query as former
   names.
 - **Keys.** ↑↓ move, ↵ runs the row (an object row opens it), → opens every
   verb of an object row, grouped Open, Act, Copy and export, Danger, and ← or

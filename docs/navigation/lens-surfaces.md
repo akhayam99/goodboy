@@ -121,11 +121,27 @@
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
+- **A `⋯` holds five rows at most, in any one state, a destructive row
+  included.** A row with another home (a button on the page, a control beside
+  it, a card in the page) leaves the menu and stays on the right click menu,
+  which is not bound. `overflowCutOf` (`features/actions/overflowCutOf.ts`)
+  names the rows to drop only when a state would draw a sixth:
+  `artifactHeaderOmitOf` for the artifact header (the buttoned verbs, then Show
+  in Finder, which the saved copy block offers), `RECORD_HEADER_CUTS` for the
+  record header (Copy key, then Refresh) and `drawerMenuOmitOf` for the comment
+  drawer (Copy link, then Agent transcript). The agent, run, session and
+  branch menus cut by list (`AGENT_HEADER_MENU_IDS`, `runPageOmitOf`,
+  `sessionMenuOf`, `branchMenuRowsOf`). `overflowRows.test.ts` and
+  `overflowRows.drawer.test.tsx` in `src/__tests__/actions` walk every state of
+  these page headers through the real menu code and fail on a sixth row. The
+  row `⋯` of a mount, a commit, a stored worktree and a port are not under the
+  guard yet.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
   the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
-  and an object you work on is a child page in the trail. See
+  and an object you work on is a child page under one back row, not a trail
+  ([Back row](session-rail.md#back-row)). See
   [The right drawer](home-and-drawer.md#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
@@ -315,8 +331,8 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
-- **A lens surface is reached from the overview or from the trail's
-  destination switcher, never from a rail.** Rows and chips inside the
+- **A lens surface is reached from the overview or from the palette, never
+  from a rail, and the page it opens has one back row, no trail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts
   and dots are read-only signals on the row that routes there. Session
   lifecycle actions are not navigation and do not belong on those rows. A

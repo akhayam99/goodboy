@@ -27,7 +27,7 @@ never exists on one surface only.
   `Linked to` row and in the palette.
 - **The sidebar session row.** Its right click (and Shift+F10) opens the
   session kind's menu, the full set of session verbs: **Go to** (a submenu
-  with Open, Comments, Files, Open in editor and Open in terminal app; a verb
+  with Open, Comments, Changes, Open in editor and Open in terminal app; a verb
   that cannot run stays in it with its reason as a tooltip), Open the full log,
   Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
@@ -54,7 +54,7 @@ never exists on one surface only.
   included, renders its rows through `AppMenuList` (radio entries for
   pickers, items for verbs), and only the menu primitives in `packages/ui`
   write those roles.
-- **What each object offers.** A session: Open, Comments, Files, Open in terminal
+- **What each object offers.** A session: Open, Comments, Changes, Open in terminal
   (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
   Turn off Autopilot (the session's autorun, the default of a run started
@@ -796,7 +796,7 @@ open, and when something below already claimed the event. A surface registers
 its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
-Navigate, Session, Views, Lists, Comments, Files, Window; ids stay `review` and
+Navigate, Session, Views, Lists, Comments, Changes, Window; ids stay `review` and
 `diff`), and Settings > App > Keyboard shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
 one place carries a `scope` (Tasks and Notifications lists, the Branch page,

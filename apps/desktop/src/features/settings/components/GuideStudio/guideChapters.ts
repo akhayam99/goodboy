@@ -434,7 +434,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'review',
     group: 'daily',
     title: 'Review and the Branch page',
-    lead: 'One page per branch: its pull request, comments, files, commits and checks, so you read the code, fix review comments and merge without leaving the app.',
+    lead: 'One page per branch: its pull request, comments, changes, commits and checks, so you read the code, fix review comments and merge without leaving the app.',
     points: [
       {
         term: 'Branch page',
