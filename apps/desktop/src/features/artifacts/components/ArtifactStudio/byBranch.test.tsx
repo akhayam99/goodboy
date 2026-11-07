@@ -1,9 +1,15 @@
 // @vitest-environment happy-dom
 
-const provenance = vi.hoisted(() => ({ mountIds: new Map<string, ReadonlyArray<string>>() }));
+const provenance = vi.hoisted(() => ({
+  mountIds: new Map<string, ReadonlyArray<string>>(),
+  hanging: new Set<string>(),
+}));
 
 vi.mock('../../artifactProvenance', () => ({
   loadArtifactProvenance: vi.fn(async (agentId: string) => {
+    if (provenance.hanging.has(agentId)) {
+      return new Promise<null>(() => undefined);
+    }
     const mountIds = provenance.mountIds.get(agentId);
     return mountIds === undefined ? null : { mountIds };
   }),
@@ -154,6 +160,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   provenance.mountIds.clear();
+  provenance.hanging.clear();
   provenance.mountIds.set(WRITER.id, [DUP.id, RETRY.id]);
   provenance.mountIds.set(GENERATOR.id, [DUP.id, RETRY.id]);
   await resetStoryStore();
@@ -188,6 +195,15 @@ describe('Artifacts by branch', () => {
     expect(shared).toHaveLength(2);
     expect(new Set(shared).size).toBe(2);
     expect(screen.getAllByRole('button', { name: /^Open branch$/ })).toHaveLength(2);
+  });
+
+  it('lets one provenance read that never answers leave the others alone', async () => {
+    provenance.hanging.add(ON_DUP.id);
+    render(<ArtifactStudio sessionId={SESSION_ID} />);
+
+    await waitFor(() => expect(branchSections()).toHaveLength(2));
+    const shared = rowKeys().filter((key) => (key ?? '').endsWith('/artifact:report-shared'));
+    expect(shared).toHaveLength(2);
   });
 
   it('puts the state on the row, since the group no longer says it', async () => {

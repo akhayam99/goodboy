@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { registerMockFixtures } from '../../../../../shared/lib/mockFixtures';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -19,6 +20,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { mockArtifactProvenance, mockMountDiffStat } from '../../mockFixtureData';
 import { U36_WORK_BY_BRANCH_SCENES } from './work-by-branch';
 
 const SETTLE_MS = 2_000;
@@ -30,6 +32,9 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
+  registerMockFixtures({
+    readers: { mountDiffStat: mockMountDiffStat, artifactProvenance: mockArtifactProvenance },
+  });
   await resetStoryStore();
   storySpies.tauriInvoke.mockImplementation((command, args) => {
     if (typeof command !== 'string') {
@@ -41,6 +46,9 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  registerMockFixtures({
+    readers: { mountDiffStat: () => null, artifactProvenance: () => null },
+  });
   vi.useRealTimers();
   cleanup();
   clearSceneInvoke();

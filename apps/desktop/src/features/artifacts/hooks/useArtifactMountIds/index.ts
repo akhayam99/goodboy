@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { brandId, type AgentId, type MountId } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../artifactProvenance';
 
@@ -6,13 +6,13 @@ type Params = {
   readonly agentIds: ReadonlyArray<AgentId>;
 };
 
-type MountIdsByAgentId = ReadonlyMap<AgentId, ReadonlyArray<MountId>>;
-
-const NONE: MountIdsByAgentId = new Map();
-
 type OneParams = {
   readonly agentId: AgentId;
 };
+
+type MountIdsByAgentId = ReadonlyMap<AgentId, ReadonlyArray<MountId>>;
+
+const NONE: MountIdsByAgentId = new Map();
 
 const mountIdsOf = async ({ agentId }: OneParams): Promise<ReadonlyArray<MountId>> => {
   try {
@@ -25,6 +25,8 @@ const mountIdsOf = async ({ agentId }: OneParams): Promise<ReadonlyArray<MountId
 
 export const useArtifactMountIds = ({ agentIds }: Params): MountIdsByAgentId => {
   const [loaded, setLoaded] = useState<MountIdsByAgentId>(NONE);
+  const requested = useRef<ReadonlySet<AgentId>>(new Set());
+  const isMounted = useRef(true);
   const wantedKey = useMemo(() => [...new Set(agentIds)].sort().join(','), [agentIds]);
   const wanted = useMemo(
     () =>
@@ -33,23 +35,26 @@ export const useArtifactMountIds = ({ agentIds }: Params): MountIdsByAgentId => 
   );
 
   useEffect(() => {
-    const missing = wanted.filter((agentId) => !loaded.has(agentId));
-    if (missing.length === 0) {
-      return;
-    }
-    let isCurrent = true;
-    void Promise.all(
-      missing.map(async (agentId) => [agentId, await mountIdsOf({ agentId })] as const),
-    ).then((entries) => {
-      if (!isCurrent) {
-        return;
-      }
-      setLoaded((previous) => new Map([...previous, ...entries]));
-    });
+    isMounted.current = true;
     return () => {
-      isCurrent = false;
+      isMounted.current = false;
     };
-  }, [wanted, loaded]);
+  }, []);
+
+  useEffect(() => {
+    for (const agentId of wanted) {
+      if (requested.current.has(agentId)) {
+        continue;
+      }
+      requested.current = new Set([...requested.current, agentId]);
+      void mountIdsOf({ agentId }).then((mountIds) => {
+        if (!isMounted.current) {
+          return;
+        }
+        setLoaded((previous) => new Map([...previous, [agentId, mountIds]]));
+      });
+    }
+  }, [wanted]);
 
   return loaded;
 };
