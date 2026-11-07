@@ -1,11 +1,9 @@
-import { Markdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
-import { decisionEntries } from '../../../workflows/decisionEntries';
 import { hintQueueOf } from '../../../workflows/hintQueueOf';
 import { isBetweenStepsPhase } from '../../../workflows/isBetweenStepsPhase';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
@@ -14,7 +12,6 @@ import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunPendingDelivery } from '../RunPendingDelivery';
 import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
-import { OrchestratedBlockedStep } from './OrchestratedBlockedStep';
 import { OrchestratedMountBlock } from './OrchestratedMountBlock';
 import { OrchestratedTailVerb } from './OrchestratedTailVerb';
 
@@ -30,7 +27,7 @@ const NO_VIEWS: ReadonlyArray<AutoTreeView> = [];
 const MINUTE_MS = 60_000;
 
 export const OrchestratedTail = ({ session, view }: Props) => {
-  const { run, workflow, agents } = view;
+  const { run, agents } = view;
   const readingIds = useAppStore((state) => state.orchestratorReadingHints[run.id] ?? NO_READING);
   const { queuedCount } = hintQueueOf({ run, readingIds });
   const autoTreeViews = useAppStore((state) => state.autoTreeViews[session.id] ?? NO_VIEWS);
@@ -60,8 +57,6 @@ export const OrchestratedTail = ({ session, view }: Props) => {
   }
   const isMountBlocked = mountBlock !== null && tail.blockedAgentId === mountBlock.agentId;
   const phase = view.orchestrator.state.phase;
-  const entries = decisionEntries({ run, steps: workflow.steps });
-  const blockedReason = phase === 'blocked' ? (entries.closing?.reason ?? '') : '';
 
   const placement = runQuestionsPlacementOf({
     phase,
@@ -107,18 +102,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         <RunPendingDelivery sessionId={session.id} />
         {isMountBlocked ? (
           <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-        ) : tail.blockedAgentId === null ? null : (
-          <OrchestratedBlockedStep
-            sessionId={session.id}
-            agentId={tail.blockedAgentId}
-            isReasonShown={false}
-          />
-        )}
-        {blockedReason === '' ? null : (
-          <div data-orchestrated-block="" className="min-w-0 px-2">
-            <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
-          </div>
-        )}
+        ) : null}
       </div>
       {placement === 'after-state' ? questionCluster : null}
     </section>

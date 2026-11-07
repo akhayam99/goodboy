@@ -46,6 +46,7 @@ export type OrchestratorState = {
   readonly sentence: string;
   readonly detail: string | null;
   readonly waitingOnAgentId: AgentId | null;
+  readonly haltedStepNumber: number | null;
 };
 
 export type PlanSignal =
@@ -201,7 +202,7 @@ export const resolveOrchestratorState = ({
   const doneCount = ordered.filter((agent) =>
     isAgentStatusSettled({ status: agent.status }),
   ).length;
-  const base = { detail: null, waitingOnAgentId: null };
+  const base = { detail: null, waitingOnAgentId: null, haltedStepNumber: null };
 
   if (isOrchestrating && run.orchestrationStop?.kind === 'operator') {
     return {
@@ -318,6 +319,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'step-failed',
       tone: 'neutral',
+      haltedStepNumber: haltedIndex + 1,
       sentence: `Paused on ${isBlocked ? 'blocked' : 'failed'} step ${haltedIndex + 1}`,
     };
   }

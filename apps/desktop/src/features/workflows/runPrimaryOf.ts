@@ -13,6 +13,7 @@ export type RunPrimaryKind =
   | 'raise-cap'
   | 'decide-next'
   | 'start-step'
+  | 'open-step'
   | 'start-run'
   | 'restore';
 
@@ -28,6 +29,7 @@ type DynamicFlow = {
   readonly phase: OrchestratorPhase;
   readonly hasQuestion: boolean;
   readonly isAutoRun: boolean;
+  readonly haltedStepNumber?: number | null;
 };
 
 type StaticFlow = {
@@ -58,7 +60,10 @@ const LABELS = {
   'decide-next': 'Decide next step',
   'start-run': 'Start run',
   restore: 'Restore',
-} as const satisfies Record<Exclude<RunPrimaryKind, 'start-step' | 'approve-plan'>, string>;
+} as const satisfies Record<
+  Exclude<RunPrimaryKind, 'start-step' | 'open-step' | 'approve-plan'>,
+  string
+>;
 
 type FixedParams = {
   readonly kind: keyof typeof LABELS;
@@ -79,6 +84,13 @@ const planEntry = ({ hold, nextStepName }: PlanEntryParams): RunPrimary | null =
     ? { kind: 'approve-plan', label: planApproveLabelOf({ nextStepName }) }
     : null;
 };
+
+type OpenStepLabelParams = {
+  readonly number: number | null;
+};
+
+export const openStepLabelOf = ({ number }: OpenStepLabelParams): string =>
+  number === null ? 'Open step' : `Open step ${number}`;
 
 type DynamicParams = {
   readonly flow: DynamicFlow;
@@ -107,13 +119,17 @@ const dynamicPrimary = ({ flow, hold }: DynamicParams): RunPrimary | null => {
     case 'ready-first':
     case 'ready-mid':
       return flow.isAutoRun ? null : fixed({ kind: 'decide-next' });
+    case 'step-failed':
+      return {
+        kind: 'open-step',
+        label: openStepLabelOf({ number: flow.haltedStepNumber ?? null }),
+      };
     case 'done':
     case 'deciding':
     case 'stopping':
     case 'waiting':
     case 'automatic':
     case 'needs-approval':
-    case 'step-failed':
       return null;
     default: {
       const exhaustive: never = flow.phase;

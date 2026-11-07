@@ -36,6 +36,7 @@ const PRIMARY_GLANCE: Readonly<Record<Exclude<RunPrimaryKind, 'continue'>, Glanc
   answer: glanceOf({ state: 'waiting', sentence: 'A question needs your answer' }),
   'decide-next': glanceOf({ state: 'waiting', sentence: 'Decide what happens next' }),
   resume: glanceOf({ state: 'paused', sentence: 'Nothing new starts until you continue' }),
+  'open-step': glanceOf({ state: 'waiting', sentence: 'A step needs you' }),
   'start-step': glanceOf({ state: 'ready', sentence: 'Next step is ready' }),
   'start-run': glanceOf({ state: 'ready', sentence: 'Ready to start' }),
   retry: glanceOf({ state: 'failed', sentence: "Couldn't pick the next step" }),

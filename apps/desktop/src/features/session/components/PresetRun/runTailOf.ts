@@ -139,6 +139,13 @@ const primaryTailOf = ({
       };
     case 'answer':
       return { state: 'waiting', phrase: NAMES.needsYou, stepAgentId: null, verb };
+    case 'open-step':
+      return {
+        state: 'needsYou',
+        phrase: NAMES.needsYou,
+        stepAgentId: null,
+        verb: isStepPage ? { kind: 'openRun' } : verb,
+      };
     case 'continue':
     case 'retry':
     case 'hint':

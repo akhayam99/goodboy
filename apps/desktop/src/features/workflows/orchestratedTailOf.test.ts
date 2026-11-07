@@ -44,6 +44,7 @@ const stateOf = ({
   sentence,
   detail,
   waitingOnAgentId,
+  haltedStepNumber: null,
 });
 
 const DONE = agentOf({ key: 'scout', ordinal: 0, status: 'completed' });
@@ -94,7 +95,7 @@ describe('orchestratedTailOf', () => {
     expect(tail?.verbs).toEqual([]);
   });
 
-  it('reads the running step as working, with Stop step N and its clock', () => {
+  it('reads the running step as working, with no Stop step verb (the dock holds the one Stop)', () => {
     const tail = tailOf({
       orchestrator: stateOf({
         phase: 'waiting',
@@ -105,7 +106,7 @@ describe('orchestratedTailOf', () => {
     });
     expect(tail.state).toBe('working');
     expect(tail.stepAgentId).toBe(RUNNING.id);
-    expect(tail?.verbs).toEqual([{ kind: 'stopStep', agent: RUNNING, number: 2 }]);
+    expect(tail?.verbs).toEqual([]);
   });
 
   it('continues a step that was stopped', () => {
@@ -151,36 +152,19 @@ describe('orchestratedTailOf', () => {
     ]);
   });
 
-  it('restarts a failed step', () => {
+  it.each([
+    ['failed', 'failed'],
+    ['blocked', 'blocked'],
+  ] as const)('reads a %s halted step as Needs you with no verb and no reason', (_name, status) => {
+    const halted = agentOf({ key: 'verify', ordinal: 1, status });
     const tail = tailOf({
-      orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on failed step 1' }),
+      orchestrator: stateOf({ phase: 'step-failed', sentence: `Paused on ${status} step 2` }),
+      agents: [DONE, halted],
     });
-    expect(tail?.verbs).toEqual([{ kind: 'restartStep' }]);
-  });
-
-  it('keeps Restart step secondary and adds Open agent chat on a step blocked on a question', () => {
-    const blocked = agentOf({ key: 'verify', ordinal: 1, status: 'blocked' });
-    const tail = tailOf({
-      orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on blocked step 2' }),
-      agents: [DONE, blocked],
-    });
-    expect(tail.blockedAgentId).toBe(blocked.id);
-    expect(tail.phrase).toBe('Not finished');
-    expect(tail.verbs).toEqual([
-      { kind: 'restartStep' },
-      { kind: 'openAgentChat', agentId: blocked.id },
-    ]);
-  });
-
-  it('names no blocked step when the halted step failed', () => {
-    const failed = agentOf({ key: 'verify', ordinal: 1, status: 'failed' });
-    const tail = tailOf({
-      orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on failed step 2' }),
-      agents: [DONE, failed],
-    });
+    expect(tail.state).toBe('needsYou');
+    expect(tail.phrase).toBe('Needs you');
     expect(tail.blockedAgentId).toBeNull();
-    expect(tail.phrase).toBe('Paused on failed step 2');
-    expect(tail.verbs).toEqual([{ kind: 'restartStep' }]);
+    expect(tail.verbs).toEqual([]);
   });
 
   it('leaves the hint to the run page and offers View transcript on a human call', () => {

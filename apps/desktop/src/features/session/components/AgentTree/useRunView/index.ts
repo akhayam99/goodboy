@@ -157,6 +157,7 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
             ? orchestrator.planQuestion !== null
             : orchestrator.runQuestion !== null,
         isAutoRun: run.autoRun === true,
+        haltedStepNumber: orchestrator.state.haltedStepNumber,
       }
     : {
         kind: 'static',
