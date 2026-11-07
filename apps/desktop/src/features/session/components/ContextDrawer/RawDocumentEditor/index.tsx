@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { BlockEditor } from './BlockEditor';
+import { useEffect, useRef, useState } from 'react';
+import { BlockEditor } from '../BlockEditor';
 
 type Props = {
   readonly value: string;
@@ -11,6 +11,14 @@ type Props = {
 export const RawDocumentEditor = ({ value, label, onWrite, onClose }: Props) => {
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState(value);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const save = async () => {
     if (isSaving) {
@@ -22,6 +30,9 @@ export const RawDocumentEditor = ({ value, label, onWrite, onClose }: Props) => 
     }
     setIsSaving(true);
     const isSaved = await onWrite(draft);
+    if (!isMounted.current) {
+      return;
+    }
     setIsSaving(false);
     if (isSaved) {
       onClose();

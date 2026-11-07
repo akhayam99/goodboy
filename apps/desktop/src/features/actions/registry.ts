@@ -27,6 +27,7 @@ import { NOTIFICATION_KIND } from './kinds/notification';
 import { PROVIDER_KIND } from './kinds/provider';
 import { INTEGRATION_KIND } from './kinds/integration';
 import { BRANCH_KIND } from './kinds/branch';
+import { CONTEXT_SLOT_KIND } from './kinds/contextSlot';
 import { PLAN_COMMENTS_KIND } from './kinds/planComments';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
@@ -189,6 +190,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: BRANCH_KIND, state, target });
     case 'planComments':
       return bind({ definition: PLAN_COMMENTS_KIND, state, target });
+    case 'contextSlot':
+      return bind({ definition: CONTEXT_SLOT_KIND, state, target });
     case 'projectAsk':
       return bind({ definition: PROJECT_ASK_KIND, state, target });
     case 'link':

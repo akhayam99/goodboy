@@ -93,6 +93,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
   const mountBranches = groups.flatMap((group) =>
     [...group.rows, ...group.finishedRows].map((row) => ({
       branch: row.branch,
+      projectId: row.projectId,
       state: row.request?.state ?? null,
     })),
   );

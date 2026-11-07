@@ -1,4 +1,9 @@
-import type { PullRequestState, PullRequestStateKind, SessionExternalTask } from '@goodboy/types';
+import type {
+  ProjectId,
+  PullRequestState,
+  PullRequestStateKind,
+  SessionExternalTask,
+} from '@goodboy/types';
 
 export type WorkItem = Readonly<{
   key: string;
@@ -16,6 +21,7 @@ export type WorkItemGroups = Readonly<{
 
 export type MountBranchState = Readonly<{
   branch: string;
+  projectId: ProjectId;
   state: PullRequestStateKind | null;
 }>;
 
@@ -35,19 +41,18 @@ export const buildWorkItems = ({
   branchPrs,
   mountBranches = [],
 }: Params): WorkItemGroups => {
-  const sessionBranches = new Set([
-    ...(currentBranch === null ? [] : [currentBranch]),
-    ...mountBranches.map(({ branch }) => branch),
-  ]);
+  const hasNoBranches = currentBranch === null && mountBranches.length === 0;
   const items = tasks.map((task) => {
     const branch = task.branch ?? null;
+    const taskMounts = mountBranches.filter(
+      (mount) =>
+        mount.branch === branch && (task.projectId == null || mount.projectId === task.projectId),
+    );
     const isOnCurrentBranch =
-      branch == null || sessionBranches.size === 0 || sessionBranches.has(branch);
+      branch == null || hasNoBranches || branch === currentBranch || taskMounts.length > 0;
     const isActiveBranch = branch == null || branch === currentBranch;
     const prs = isOnCurrentBranch && isActiveBranch ? branchPrs : [];
-    const mountStates = mountBranches
-      .filter((mount) => mount.branch === branch)
-      .map(({ state }) => state);
+    const mountStates = taskMounts.map(({ state }) => state);
     const isMountMerged =
       !isActiveBranch && mountStates.length > 0 && mountStates.every((state) => state === 'merged');
     return {

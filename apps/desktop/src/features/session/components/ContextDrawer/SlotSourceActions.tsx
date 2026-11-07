@@ -1,5 +1,4 @@
-import { Eye, History, Pencil } from 'lucide-react';
-import { OverflowMenu } from '@goodboy/ui';
+import { ObjectOverflowMenu } from '../../../actions/ObjectOverflowMenu';
 
 type Props = {
   readonly label: string;
@@ -18,32 +17,17 @@ export const SlotSourceActions = ({
   onOpenVersions,
   onToggleVisibility,
 }: Props) => (
-  <OverflowMenu
+  <ObjectOverflowMenu
     label={`${label} actions`}
-    entries={[
-      {
-        kind: 'item',
-        key: 'edit',
-        label: 'Edit',
-        icon: Pencil,
-        isDisabled: isLocked,
-        onSelect: onEdit,
+    target={{
+      kind: 'contextSlot',
+      facts: {
+        isLocked,
+        hasVersions: historyCount > 0,
+        onEdit,
+        onOpenVersions,
+        onToggleVisibility,
       },
-      {
-        kind: 'item',
-        key: 'versions',
-        label: 'Versions',
-        icon: History,
-        isDisabled: historyCount === 0,
-        onSelect: onOpenVersions,
-      },
-      {
-        kind: 'item',
-        key: 'visibility',
-        label: 'Who reads this',
-        icon: Eye,
-        onSelect: onToggleVisibility,
-      },
-    ]}
+    }}
   />
 );

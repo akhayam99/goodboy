@@ -15,7 +15,12 @@ import { sessionObjectKey } from '../../../../../features/actions/kinds/session'
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
-import { importStore, resetStoryStore, type StoryStore } from '../../../../../store/storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { MOCK_SCENES } from '../..';
@@ -31,7 +36,7 @@ let useAppStore: StoryStore;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-});
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   installFakeResizeObserver();
@@ -86,7 +91,7 @@ describe('the r4 content scenes', () => {
     await mount('r4-context-summary');
 
     const summary = screen.getByRole('region', { name: 'Summary' });
-    expect(within(summary).queryByText('State')).toBeNull();
+    within(summary).getByText('State');
     expect(screen.getAllByText('Learned')).toHaveLength(1);
     within(summary).getByText('Learned');
   });

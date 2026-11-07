@@ -31,6 +31,7 @@ import type { NotificationFacts } from './kinds/notification';
 import type { ProviderFacts } from './kinds/provider';
 import type { IntegrationFacts } from './kinds/integration';
 import type { BranchFacts } from './kinds/branch';
+import type { ContextSlotFacts } from './kinds/contextSlot';
 import type { PlanCommentsFacts } from './kinds/planComments';
 import type { ProjectAskFacts } from './kinds/projectAsk';
 import type { CheckRunFacts } from './kinds/checkRun';
@@ -443,6 +444,11 @@ export type BranchActionTarget = {
   readonly facts: BranchFacts;
 };
 
+export type ContextSlotActionTarget = {
+  readonly kind: 'contextSlot';
+  readonly facts: ContextSlotFacts;
+};
+
 export type PlanCommentsActionTarget = {
   readonly kind: 'planComments';
   readonly facts: PlanCommentsFacts;
@@ -566,6 +572,7 @@ export type ObjectTarget =
   | IntegrationActionTarget
   | BranchActionTarget
   | PlanCommentsActionTarget
+  | ContextSlotActionTarget
   | ProjectAskActionTarget
   | LinkActionTarget
   | CheckRunActionTarget

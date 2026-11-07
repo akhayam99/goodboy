@@ -27,6 +27,7 @@ import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerSection } from '../../../store/slices/drawer/state';
 import type { BranchTab } from '../../../store/slices/navigation/types';
+import { providerOfListLens } from '../../../store/slices/navigation/providerOfListLens';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useMenuCommands } from '../useMenuCommands';
 import { closeCurrentLevel } from './closeCurrentLevel';
@@ -150,7 +151,10 @@ export const useAppShortcuts = ({
       }
       return;
     }
-    const isLeaving = kind != null && (active === kind || isBranchDoor);
+    const isLeaving =
+      kind != null &&
+      providerOfListLens({ lens: kind }) === null &&
+      (active === kind || isBranchDoor);
     if (kind === 'review' && !isLeaving) {
       state.navigate({
         to: branchPlace({
