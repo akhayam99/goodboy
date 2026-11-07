@@ -24,6 +24,7 @@ import { useArtifactParts } from './useArtifactParts';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly returnRowId?: string | null;
   readonly rows: ReadonlyArray<Row>;
   readonly counts: ArtifactListCounts;
   readonly filter: ArtifactFilter;
@@ -42,6 +43,7 @@ const NO_MATCH_LINE: Record<ArtifactFilter, string> = {
 
 export const ArtifactList = ({
   sessionId,
+  returnRowId = null,
   rows,
   counts,
   filter,
@@ -164,6 +166,7 @@ export const ArtifactList = ({
             {branch !== undefined && branch.groupBy === 'branch' ? (
               <ArtifactBranchList
                 view={branch.view}
+                returnRowId={returnRowId}
                 mounts={branch.mounts}
                 sessionId={sessionId}
                 openPartsIds={openPartsIds}

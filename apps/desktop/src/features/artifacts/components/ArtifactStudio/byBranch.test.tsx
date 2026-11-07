@@ -6,18 +6,41 @@ const provenance = vi.hoisted(() => ({
   failing: new Set<string>(),
 }));
 
-vi.mock('../../artifactProvenance', () => ({
-  loadArtifactProvenance: vi.fn(async (agentId: string) => {
-    if (provenance.hanging.has(agentId)) {
-      return new Promise<null>(() => undefined);
-    }
-    if (provenance.failing.has(agentId)) {
-      throw new Error('read failed');
-    }
-    const mountIds = provenance.mountIds.get(agentId);
-    return mountIds === undefined ? null : { mountIds };
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../store/storyHarness')).dbModuleMock({
+    listArtifactComments: vi.fn(async () => []),
+    markArtifactOpened: vi.fn(async () => undefined),
+    getArtifactProvenance: vi.fn(async ({ agentId }: ProvenanceParams) => {
+      if (provenance.hanging.has(agentId)) {
+        return new Promise<null>(() => undefined);
+      }
+      if (provenance.failing.has(agentId)) {
+        throw new Error('read failed');
+      }
+      const mountIds = provenance.mountIds.get(agentId);
+      return mountIds === undefined
+        ? null
+        : ({
+            agentId,
+            sessionId: SESSION_ID,
+            kind: 'report',
+            brief: null,
+            evidence: [],
+            omissions: [],
+            designProfileSummary: null,
+            hasDesignEvidence: false,
+            phase: 'producing',
+            scoutPlan: [],
+            mountIds: mountIds.map((value) => brandId<MountId>({ value })),
+            target: null,
+            deadlineAt: null,
+            sourceWorkflowRunId: null,
+            executingWorkflowRunId: null,
+            createdAt: AT,
+          } satisfies ArtifactProvenance);
+    }),
   }),
-}));
+);
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
@@ -58,6 +81,8 @@ import {
   brandId,
   type AgentId,
   type ArtifactId,
+  type ArtifactProvenance,
+  type MountId,
   type IsoDateTime,
   type PlanWithCount,
   type ProviderRunId,
@@ -66,15 +91,20 @@ import {
 } from '@goodboy/types';
 import { aProject, anAgent } from '@goodboy/types/testing';
 import {
-  STORE_IMPORT_TIMEOUT_MS,
   importStore,
   openStorySqlite,
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { ToastProvider } from '../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { aMountView } from '../../../session/testing/aMountView';
 import { ArtifactStudio } from './index';
+
+type ProvenanceParams = {
+  readonly agentId: AgentId;
+};
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-payments' });
 const AT = brandId<IsoDateTime>({ value: '2026-11-06T10:00:00.000Z' });
@@ -167,7 +197,7 @@ let useAppStore: StoryStore;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   provenance.mountIds.clear();
@@ -325,6 +355,41 @@ describe('Artifacts by branch', () => {
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
     await screen.findByText('Old credit notes');
+  });
+
+  it('restores a used row in its branch after opening it and going Back', async () => {
+    useAppStore.setState({ sessionPlans: { [SESSION_ID]: [USED] } });
+    act(() =>
+      useAppStore.getState().navigate({
+        to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }),
+      }),
+    );
+    const scroll = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ArtifactStudio sessionId={SESSION_ID} />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: '1 used' }));
+    fireEvent.click(screen.getByText('Old credit notes'));
+    await waitFor(() => expect(screen.queryByTestId('artifact-list')).toBeNull());
+    scroll.mockClear();
+
+    act(() => useAppStore.getState().back());
+
+    await screen.findByText('Old credit notes');
+    await waitFor(() =>
+      expect(
+        scroll.mock.contexts.some(
+          (node) =>
+            node instanceof HTMLElement &&
+            node.getAttribute('data-artifact-row') === `mount:${DUP.id}/artifact:${USED.id}`,
+        ),
+      ).toBe(true),
+    );
+    scroll.mockRestore();
   });
 
   it('reads a provenance that came back empty again when the artifacts change', async () => {

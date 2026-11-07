@@ -115,3 +115,5 @@ This part is for contributors and agents who change the feature.
 
 - Fact card on a row: `artifactStateCardOf` builds the card that opens on the state of a row.
 - A plan's Needs you: `artifactStateOf` reads only `plannerQuestionCount`, the open questions of the plan's own planner (`plannerQuestionsOf`). The list rows, the reader and the plan model pass the same count, so a question from another agent leaves every plan where it was.
+
+- Branch return: `ArtifactBranchList` unfolds the saved row before `useRowReturn` scrolls to it. `useArtifactBranchItems` keys provenance retries by state, and `useArtifactMountIds` follows a pending empty or failed read with the latest requested phase. The Back regression is in `apps/desktop/src/features/artifacts/components/ArtifactStudio/byBranch.test.tsx`; retry coverage is in `apps/desktop/src/features/artifacts/hooks/useArtifactBranchItems/index.test.ts`.

@@ -45,7 +45,6 @@ import {
 } from '@goodboy/types';
 import { aProject, aSession, anAgent } from '@goodboy/types/testing';
 import {
-  STORE_IMPORT_TIMEOUT_MS,
   importStore,
   openStorySqlite,
   resetStoryStore,
@@ -141,7 +140,7 @@ let useAppStore: StoryStore;
 
 beforeAll(async () => {
   useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -269,6 +268,43 @@ describe('Questions by branch', () => {
 
     await screen.findByText('Keep the old table for a month?');
     expect(useAppStore.getState().groupBySession[SESSION.id]).toBe('branch');
+  });
+
+  it('reveals another branch from Also on without opening the question drawer', async () => {
+    render(<QuestionsPane session={SESSION} />);
+    const chips = await screen.findAllByTestId('run-also-on');
+    const chip = chips[0];
+    if (chip === undefined) {
+      throw new Error('missing Also on chip');
+    }
+    fireEvent.click(chip.querySelector('span') ?? chip);
+
+    expect(useAppStore.getState().drawer).toBeNull();
+    await waitFor(() =>
+      expect(document.activeElement?.getAttribute('data-row-key')).toBe(
+        `mount:${RETRY.id}/${SHARED.id}`,
+      ),
+    );
+  });
+
+  it('unfolds and focuses answered only arrivals with one named branch in state mode', async () => {
+    useAppStore.setState({
+      sessionOpenQuestions: { [SESSION.id]: [] },
+      sessionAnsweredQuestions: { [SESSION.id]: [DONE] },
+    });
+    act(() =>
+      openBranchWork({
+        sessionId: SESSION.id,
+        lens: 'questions',
+        groupKey: `mount:${DUP.id}`,
+        mountPath: DUP.worktreePath,
+      }),
+    );
+    render(<QuestionsPane session={SESSION} />);
+
+    await screen.findByText(DONE.text);
+    expect(screen.queryByRole('tablist', { name: 'Group by' })).toBeNull();
+    await waitFor(() => expect(document.activeElement?.getAttribute('data-row-key')).toBe(DONE.id));
   });
 
   it('goes Back from the questions page to the branch it came from', () => {

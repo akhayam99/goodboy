@@ -45,11 +45,11 @@ type GroupByParams = {
   readonly groupBy: GroupBy;
 };
 
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
 export const ArtifactStudio = ({ sessionId }: Props) => {
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
-  const agents = useAppStore(
-    (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
+  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
@@ -211,6 +211,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   return (
     <ArtifactList
       sessionId={sessionId}
+      returnRowId={rowReturn.returnRowId}
       rows={visibleRows}
       counts={counts}
       filter={filter}

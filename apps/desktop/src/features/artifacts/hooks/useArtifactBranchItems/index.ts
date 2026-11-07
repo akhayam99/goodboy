@@ -63,7 +63,7 @@ export const useArtifactBranchItems = ({
     [plans, artifacts, rows],
   );
   const phaseKey = useMemo(
-    () => rows.map((row) => `${row.id}:${row.group}:${row.state ?? ''}`).join(','),
+    () => rows.map((row) => `${row.id}:${row.group}:${row.state?.key ?? ''}`).join(','),
     [rows],
   );
   const { mountIdsByAgentId, isSettled } = useArtifactMountIds({ agentIds, phaseKey });

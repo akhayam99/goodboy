@@ -27,6 +27,7 @@ type RevealParams = {
 
 type Props = {
   readonly view: ArtifactBranchView;
+  readonly returnRowId: string | null;
   readonly mounts: ReadonlyArray<MountRowView>;
   readonly sessionId: SessionId;
   readonly openPartsIds: ReadonlySet<string>;
@@ -38,6 +39,7 @@ type Props = {
 
 export const ArtifactBranchList = ({
   view,
+  returnRowId,
   mounts,
   sessionId,
   openPartsIds,
@@ -46,7 +48,19 @@ export const ArtifactBranchList = ({
   onOpenRow,
   onOpenBranch,
 }: Props) => {
-  const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(() => new Set());
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(
+        view.groups
+          .filter((group) =>
+            group.items.some(
+              (item) =>
+                artifactBranchRowKeyOf({ groupKey: group.key, rowId: item.row.id }) === returnRowId,
+            ),
+          )
+          .map((group) => group.key),
+      ),
+  );
   const arrivalGroups = useMemo(
     () =>
       view.groups.map((group) => {

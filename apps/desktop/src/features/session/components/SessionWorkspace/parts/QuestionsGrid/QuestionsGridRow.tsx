@@ -64,7 +64,12 @@ export const QuestionsGridRow = ({
       <span
         data-question-row-title=""
         className="flex min-w-0 flex-1 cursor-pointer select-none flex-col"
-        onClick={onOpen}
+        onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest('button, a') !== null) {
+            return;
+          }
+          onOpen();
+        }}
       >
         <span className="flex min-w-0 items-center gap-2">
           {titleText}

@@ -118,19 +118,22 @@ export const QuestionsGrid = ({
           firstRowKey:
             first === undefined
               ? null
-              : questionBranchRowKeyOf({
-                  groupKey: group.key,
-                  questionId: first.row.question.id,
-                }),
+              : isBranchView
+                ? questionBranchRowKeyOf({
+                    groupKey: group.key,
+                    questionId: first.row.question.id,
+                  })
+                : first.row.question.id,
         };
       }),
-    [branchGroups],
+    [branchGroups, isBranchView],
   );
   const onArrive = useCallback(({ groupKey }: ArriveParams) => {
     setOpenGroups((open) => new Set([...open, groupKey]));
+    setIsAnsweredShownByUser(true);
   }, []);
   const { revealRow } = useGroupArrival({
-    isActive: isBranchView,
+    isActive: true,
     rowAttribute: 'data-row-key',
     groups: arrivalGroups,
     onArrive,

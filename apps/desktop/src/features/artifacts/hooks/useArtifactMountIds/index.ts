@@ -11,6 +11,11 @@ type OneParams = {
   readonly agentId: AgentId;
 };
 
+type ReadParams = {
+  readonly agentId: AgentId;
+  readonly requestedPhase: string;
+};
+
 type MountIdsByAgentId = ReadonlyMap<AgentId, ReadonlyArray<MountId>>;
 
 export type ArtifactMountIds = Readonly<{
@@ -34,6 +39,7 @@ export const useArtifactMountIds = ({ agentIds, phaseKey }: Params): ArtifactMou
   const [loaded, setLoaded] = useState<MountIdsByAgentId>(NONE);
   const [attempted, setAttempted] = useState<ReadonlySet<AgentId>>(NONE_ATTEMPTED);
   const inFlight = useRef<ReadonlySet<AgentId>>(new Set());
+  const requestedPhases = useRef<ReadonlyMap<AgentId, string>>(new Map());
   const found = useRef<ReadonlySet<AgentId>>(new Set());
   const isMounted = useRef(true);
   const wantedKey = useMemo(() => [...new Set(agentIds)].sort().join(','), [agentIds]);
@@ -51,23 +57,31 @@ export const useArtifactMountIds = ({ agentIds, phaseKey }: Params): ArtifactMou
   }, []);
 
   useEffect(() => {
+    requestedPhases.current = new Map(wanted.map((agentId) => [agentId, phaseKey]));
+    const read = async ({ agentId, requestedPhase }: ReadParams): Promise<void> => {
+      const mountIds = await mountIdsOf({ agentId });
+      inFlight.current = new Set([...inFlight.current].filter((id) => id !== agentId));
+      if (!isMounted.current || !requestedPhases.current.has(agentId)) {
+        return;
+      }
+      setAttempted((previous) => new Set([...previous, agentId]));
+      if (mountIds !== null) {
+        found.current = new Set([...found.current, agentId]);
+        setLoaded((previous) => new Map([...previous, [agentId, mountIds]]));
+        return;
+      }
+      const latestPhase = requestedPhases.current.get(agentId);
+      if (latestPhase !== undefined && latestPhase !== requestedPhase) {
+        inFlight.current = new Set([...inFlight.current, agentId]);
+        void read({ agentId, requestedPhase: latestPhase });
+      }
+    };
     for (const agentId of wanted) {
       if (inFlight.current.has(agentId) || found.current.has(agentId)) {
         continue;
       }
       inFlight.current = new Set([...inFlight.current, agentId]);
-      void mountIdsOf({ agentId }).then((mountIds) => {
-        inFlight.current = new Set([...inFlight.current].filter((id) => id !== agentId));
-        if (!isMounted.current) {
-          return;
-        }
-        setAttempted((previous) => new Set([...previous, agentId]));
-        if (mountIds === null) {
-          return;
-        }
-        found.current = new Set([...found.current, agentId]);
-        setLoaded((previous) => new Map([...previous, [agentId, mountIds]]));
-      });
+      void read({ agentId, requestedPhase: phaseKey });
     }
   }, [wanted, phaseKey]);
 
