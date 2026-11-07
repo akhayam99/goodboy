@@ -19,21 +19,23 @@ type Params = {
   readonly generations: ReadonlyArray<ArtifactGeneration>;
 };
 
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+const NO_RUNS: ReadonlyArray<WorkflowRun> = [];
+
+const NO_TEMPLATES: ReadonlyArray<Workflow> = [];
+
 export const useArtifactRows = ({
   sessionId,
   generations,
 }: Params): ReadonlyArray<ArtifactListRow> => {
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
-  const agents = useAppStore(
-    (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
+  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
   const autoViews = useAppStore((s) => s.autoTreeViews[sessionId] ?? EMPTY_ARRAY);
   const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
-  const runs = session?.workflowRuns ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowRun>);
+  const runs = session?.workflowRuns ?? NO_RUNS;
   const templates = useAppStore(
-    (s) =>
-      (session === null ? undefined : s.phaseTemplates[session.workspaceId]) ??
-      (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+    (s) => (session === null ? undefined : s.phaseTemplates[session.workspaceId]) ?? NO_TEMPLATES,
   );
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
