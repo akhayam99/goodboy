@@ -1,20 +1,20 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn((command: string, args?: BridgeArgs) => bridge(command, args)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(async () => () => undefined),
-  emit: vi.fn(async () => undefined),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../store/storyHarness')).tauriEventModuleMock(),
+);
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent, ProviderRunId } from '@goodboy/types';
+import { brandId, type Agent, type ProviderRunId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
 import {
@@ -25,29 +25,21 @@ import {
   mountFixture,
   seedActionState,
 } from '../../../__tests__/helpers/actionFixtures';
-import { bindTarget } from '../../actions/registry';
+import type { AgentKind } from '../agent-kind';
 import { AgentHeaderActions } from './AgentHeaderActions';
 
-type BridgeArgs = {
-  readonly statements?: ReadonlyArray<unknown>;
-};
-
-const bridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
-  if (command === 'db_transaction') {
-    return Promise.resolve({
-      status: 'committed',
-      results: (args?.statements ?? []).map(() => ({ rowsAffected: 1, rows: [] })),
-    });
-  }
-  if (command === 'db_execute') {
-    return Promise.resolve({ rowsAffected: 1, lastInsertId: 0 });
-  }
-  if (command === 'db_select' || command.includes('_list')) {
-    return Promise.resolve([]);
-  }
-  return Promise.resolve(null);
-};
-
+const KINDS: ReadonlyArray<AgentKind> = [
+  'generic',
+  'planner',
+  'implementer',
+  'tester',
+  'reviewer',
+  'auto',
+  'scout',
+  'resolver',
+  'rewriter',
+];
+const STATUSES: ReadonlyArray<Agent['status']> = ['running', 'failed', 'completed', 'stopped'];
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -56,6 +48,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({
+    db_execute: { rowsAffected: 1, lastInsertId: 0 },
+    db_select: [],
+    db_transaction: { status: 'committed', results: [] },
+  });
 });
 
 afterEach(cleanup);
@@ -154,7 +151,7 @@ describe('AgentHeaderActions', () => {
         turnStates: {
           [agent.id]: {
             kind: 'running',
-            runId: 'run-1' as ProviderRunId,
+            runId: brandId<ProviderRunId>({ value: 'run-1' }),
             startedAt: FIXTURE_NOW,
           },
         },
@@ -167,22 +164,24 @@ describe('AgentHeaderActions', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('lists every available verb in the overflow, the buttoned ones too, in the registry order', () => {
-    const agent = agentFixture({ status: 'failed' });
-    renderFor(agent);
-    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    const labels = screen
-      .getAllByRole('menuitem')
-      .map((item) => item.getAttribute('data-menu-label'));
-    const registry = (
-      bindTarget({
-        state: useAppStore.getState(),
-        target: { kind: 'agent', sessionId: SESSION, agentId: agent.id },
-      })?.resolve({ viewing: { kind: 'agent', id: agent.id } }) ?? []
-    ).map((action) => action.label);
-
-    expect(labels).toEqual(registry);
-    expect(labels).toContain('Delete agent');
-    expect(labels).not.toContain('Open agent');
+  it.each(KINDS)('keeps the %s header menu short in every lifecycle state', (kind) => {
+    for (const status of STATUSES) {
+      const agent = agentFixture({ status, kind, name: 'Harborline' });
+      seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+      useAppStore.setState({ agentKindOverride: { [agent.id]: kind } });
+      render(<AgentHeaderActions agent={agent} sessionId={SESSION} hasStateButton={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+      const labels = screen
+        .getAllByRole('menuitem')
+        .map((item) => item.getAttribute('data-menu-label'));
+      expect(labels.length).toBeLessThanOrEqual(5);
+      expect(labels).toContain('Rename');
+      expect(labels).toContain('Delete agent');
+      expect(labels).not.toContain('Copy name');
+      expect(labels).not.toContain('Show its changes');
+      expect(labels).not.toContain('Close');
+      expect(labels).not.toContain('Change model');
+      cleanup();
+    }
   });
 });

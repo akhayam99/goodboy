@@ -16,5 +16,7 @@ export const stepHeadingOf = ({ agent, stepAgent, workflow, role }: Params): str
   if (stepAgent.id !== agent.id) {
     return `Step ${number} · ${role} · ${agent.name}`;
   }
-  return `Step ${number} · ${role}`;
+  return agent.name === role
+    ? `Step ${number} · ${role}`
+    : `Step ${number} · ${role} · ${agent.name}`;
 };

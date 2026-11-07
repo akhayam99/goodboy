@@ -338,12 +338,23 @@ describe('the live child card', () => {
     expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(1);
   });
 
-  it('turns into the bare line with no Stop once the delegation settled', () => {
+  it('keeps the same row shape and shows the outcome once the delegation settles', () => {
     renderRunning(
       aDelegation({ key: 'impl', role: 'implementer', state: 'settled', outcome: 'completed' }),
     );
 
     expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
     expect(screen.queryByText('Running')).toBeNull();
+  });
+  it('opens a settled child from its one row and shows its report on one line', () => {
+    const onOpenChild = vi.fn();
+    renderLines({ view: aView({ phase: 'done', delegations: [SETTLED_PLAN] }), onOpenChild });
+    const row = screen.getByRole('listitem');
+    within(row).getByText('A three part plan.');
+    within(row).getByText('Done');
+    expect(within(row).getAllByRole('button')).toHaveLength(1);
+    expect(within(row).queryByText('Open')).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: /^Open / }));
+    expect(onOpenChild).toHaveBeenCalledWith(SETTLED_PLAN.childAgentId);
   });
 });

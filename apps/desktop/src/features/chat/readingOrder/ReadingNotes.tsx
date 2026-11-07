@@ -1,17 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Disclosure, Markdown } from '@goodboy/ui';
 import type { NotesRole } from './readingOrderOf';
 
 type Props = {
   role: NotesRole;
+  label?: string;
 };
 
-export const ReadingNotes = ({ role }: Props) => {
+export const ReadingNotes = ({ role, label = 'Notes' }: Props) => {
   const [isOpen, setIsOpen] = useState(role.isOpen);
+  useEffect(() => {
+    if (role.isOpen) {
+      setIsOpen(true);
+    }
+  }, [role.isOpen]);
   return (
     <Disclosure
       label={
-        <span className="text-meta text-muted-foreground">{`Notes, ${role.lineCount} ${
+        <span className="text-meta text-muted-foreground">{`${label}, ${role.lineCount} ${
           role.lineCount === 1 ? 'line' : 'lines'
         }`}</span>
       }

@@ -13,7 +13,7 @@ import {
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { executedRoutingOf } from '../../../auto/executedRoutingOf';
 import { agentHeadingOf } from './agentHeadingOf';
-import { briefLineOf } from './briefLineOf';
+import { agentBriefOf } from './agentBriefOf';
 import type { OpenTranscriptAt } from '../../../chat/openTranscriptAt';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentProviderMark } from './AgentProviderMark';
@@ -82,7 +82,7 @@ export const AgentDetailPane = ({
   const [modelsSlot, setModelsSlot] = useState<HTMLElement | null>(null);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const events = useTranscript(agent.id);
-  const briefLine = useMemo(() => briefLineOf({ events }), [events]);
+  const briefLine = useMemo(() => agentBriefOf({ events }), [events]);
   const brief = autoChat.childTask ?? briefLine;
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
   const executed = useExecutedAgentRouting({ agent });
@@ -155,7 +155,7 @@ export const AgentDetailPane = ({
   const openTranscript: OpenTranscriptAt = ({ turn }) =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
   const heading = agentHeadingOf({ name: agent.name, kind, brief });
-  const isChipShown = !isAutoRoot && heading !== AGENT_KIND_META[kind].noun;
+  const isChipShown = !isAutoRoot && heading !== brief && heading !== AGENT_KIND_META[kind].noun;
   const shownRouting = executedRoutingOf({ executed, fallback: routing });
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },

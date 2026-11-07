@@ -164,4 +164,20 @@ describe('AgentTitle', () => {
 
     expect(renameAgent).not.toHaveBeenCalled();
   });
+  it('opens the full brief from the title and keeps double click rename', () => {
+    render(
+      <AgentTitle
+        agent={{ ...agent, name: 'Implementer' }}
+        sessionId={sessionId}
+        brief={'Check ledger-core.\nKeep the second credit out of payments-api.'}
+      />,
+    );
+    const title = screen.getByRole('button', { name: 'Read full brief' });
+    expect(title.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(title);
+    expect(title.getAttribute('aria-expanded')).toBe('true');
+    expect(title.textContent).toContain('Keep the second credit out of payments-api.');
+    fireEvent.doubleClick(title);
+    screen.getByRole('textbox', { name: 'Rename agent' });
+  });
 });

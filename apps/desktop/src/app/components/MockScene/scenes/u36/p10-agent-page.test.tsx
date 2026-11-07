@@ -283,13 +283,13 @@ describe('one agent, one page', () => {
     if (!(drawer instanceof HTMLElement)) {
       throw new Error('Steps did not open');
     }
-    within(drawer).getByText('The turn failed');
+    within(drawer).getByText('Reply failed');
     expect(within(drawer).queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(within(drawer).queryByRole('textbox')).toBeNull();
   });
 
   it.each(['completed', 'failed', 'stopped'])(
-    'keeps the %s child overflow within five rows and keeps Copy name',
+    'keeps the %s child overflow within five rows and keeps Rename',
     async (status) => {
       mount({ id: 'u36-p10-child-result' });
       await screen.findByText('Returned to Auto', undefined, WAIT);
@@ -318,7 +318,7 @@ describe('one agent, one page', () => {
 
       const menu = await screen.findByRole('menu', undefined, WAIT);
       expect(within(menu).getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
-      within(menu).getByRole('menuitem', { name: 'Copy name' });
+      within(menu).getByRole('menuitem', { name: 'Rename' });
       expect(within(menu).queryByRole('menuitem', { name: 'Change model' })).toBeNull();
     },
   );

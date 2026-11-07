@@ -44,6 +44,7 @@ import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '.
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
 import { runObjectKey, runTitleAnchorKey } from '../runObjectKey';
+import { STEP_RENAME_ACTION } from './stepRenameAction';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
@@ -418,6 +419,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         });
       },
     },
+    STEP_RENAME_ACTION,
     {
       id: 'workflowRun.rename',
       label: 'Rename',

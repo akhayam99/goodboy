@@ -42,6 +42,7 @@ auto-chat-child
 auto-chat-confirm
 auto-chat-delegating
 auto-chat-done
+auto-chat-done-real
 auto-chat-finished
 auto-chat-nocap
 auto-chat-plan
@@ -1209,6 +1210,12 @@ u36-p10-child-composer-light
 u36-p10-child-page
 u36-p10-child-result
 u36-p10-steps
+u36-p11-done-dark
+u36-p11-done-light
+u36-p11-failed-dark
+u36-p11-failed-light
+u36-p11-working-dark
+u36-p11-working-light
 u36-p12-orch-done
 u36-p12-orch-page
 u36-p12-orch-step-blocked

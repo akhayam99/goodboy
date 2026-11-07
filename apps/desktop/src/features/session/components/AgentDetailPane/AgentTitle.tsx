@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Tooltip, cn, TruncatedText } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -13,9 +14,11 @@ type Props = {
   readonly agent: Agent;
   readonly sessionId: SessionId;
   readonly brief?: string | null;
+  readonly heading?: string;
 };
 
-export const AgentTitle = ({ agent, sessionId, brief = null }: Props) => {
+export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) => {
+  const [isBriefOpen, setIsBriefOpen] = useState(false);
   const renameAgent = useAppStore((state) => state.renameAgent);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const fixRunName = useFixRunName({ sessionId, agentId: agent.id });
@@ -51,8 +54,27 @@ export const AgentTitle = ({ agent, sessionId, brief = null }: Props) => {
 
   const kind = classifyAgent({ agent, override: kindOverride });
   const displayName =
+    heading ??
     (kind === 'resolver' && isAutoResolverName({ name: agent.name }) ? fixRunName : null) ??
     agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
+
+  if (brief !== null && displayName === brief) {
+    return (
+      <button
+        type="button"
+        aria-label="Read full brief"
+        aria-expanded={isBriefOpen}
+        className={cn(
+          'min-w-0 text-left',
+          isBriefOpen ? 'whitespace-pre-wrap break-words' : 'truncate',
+        )}
+        onClick={() => setIsBriefOpen((wasOpen) => !wasOpen)}
+        onDoubleClick={rename.start}
+      >
+        {brief}
+      </button>
+    );
+  }
 
   return (
     <TruncatedText className="min-w-0 truncate" onDoubleClick={rename.start}>

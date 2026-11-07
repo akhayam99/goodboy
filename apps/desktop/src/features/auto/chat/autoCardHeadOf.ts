@@ -27,12 +27,15 @@ const headWordOf = ({ delegations, isOpen }: WordParams): string => {
   if (delegations.some((delegation) => NEEDS_YOU_STATES.has(delegation.state))) {
     return 'Needs you';
   }
-  if (isOpen) {
-    return 'Running';
-  }
   const worst = WORST_FIRST.find((outcome) =>
     delegations.some((delegation) => delegation.outcome === outcome),
   );
+  if (worst === 'failed' || worst === 'timed_out') {
+    return 'Failed';
+  }
+  if (isOpen) {
+    return 'Running';
+  }
   return settledStatusOf({ outcome: worst ?? 'completed' }).word;
 };
 
@@ -43,7 +46,7 @@ export const autoCardHeadOf = ({ delegations }: Params): AutoCardHead => {
   const isOpen = delegations.some((delegation) => delegation.state !== 'settled');
   const count = delegations.length;
   return {
-    name: isPlanning ? 'Planning' : isBuilding ? 'Building' : 'Working',
+    name: isPlanning ? 'Plan' : isBuilding ? 'Build' : 'Review',
     meta: count === 1 ? '1 agent' : `${count} agents`,
     word: headWordOf({ delegations, isOpen }),
     isOpen,

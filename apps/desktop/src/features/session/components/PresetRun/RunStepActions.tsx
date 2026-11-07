@@ -7,7 +7,11 @@ type Props = {
   readonly stepAgentId: AgentId;
 };
 
-const STEP_VERBS: ReadonlyArray<string> = ['workflowRun.stepTranscript', 'workflowRun.skipStep'];
+const STEP_VERBS: ReadonlyArray<string> = [
+  'workflowRun.stepRename',
+  'workflowRun.stepTranscript',
+  'workflowRun.skipStep',
+];
 
 export const RunStepActions = ({ sessionId, runId, stepAgentId }: Props) => (
   <ObjectOverflowMenu

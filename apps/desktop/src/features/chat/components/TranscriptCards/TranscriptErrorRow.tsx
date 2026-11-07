@@ -71,7 +71,7 @@ export const TranscriptErrorRow = ({
     <Notice
       tone="danger"
       placement="transcript"
-      title={hasLimitStop ? 'The turn stopped' : 'The turn failed'}
+      title={hasLimitStop ? 'Reply stopped' : 'Reply failed'}
       body={body}
       detail={detail}
       iconTestId="transcript-error-icon"

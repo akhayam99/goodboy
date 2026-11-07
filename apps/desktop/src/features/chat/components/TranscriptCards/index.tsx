@@ -46,7 +46,6 @@ type TranscriptCardProps = {
   readonly turnOutcome?: TurnOutcome;
   readonly turnStartedAt?: IsoDateTime | null;
   readonly previousRunId?: ProviderRunId | null;
-  readonly isBrief?: boolean;
   readonly isReadOnly?: boolean;
   readonly clampLines?: number;
 };
@@ -66,7 +65,6 @@ const TranscriptCardImpl = ({
   turnOutcome,
   turnStartedAt,
   previousRunId = null,
-  isBrief = false,
   isReadOnly = false,
   clampLines,
   errorDock = null,
@@ -82,7 +80,6 @@ const TranscriptCardImpl = ({
           workingDir={workingDir}
           sessionId={sessionId}
           agentId={agentId}
-          isBrief={isBrief}
         />
       );
     case 'auto_delivery':
@@ -97,13 +94,7 @@ const TranscriptCardImpl = ({
       );
     case 'handoff':
       return (
-        <HandoffBlock
-          item={item}
-          sessionId={sessionId}
-          agentId={agentId}
-          workingDir={workingDir}
-          isBrief={isBrief}
-        />
+        <HandoffBlock item={item} sessionId={sessionId} agentId={agentId} workingDir={workingDir} />
       );
     case 'assistant_text':
       return (
@@ -246,7 +237,6 @@ export const TranscriptCard = memo(
     prev.turnOutcome === next.turnOutcome &&
     prev.turnStartedAt === next.turnStartedAt &&
     prev.previousRunId === next.previousRunId &&
-    prev.isBrief === next.isBrief &&
     prev.isReadOnly === next.isReadOnly &&
     prev.clampLines === next.clampLines,
 );

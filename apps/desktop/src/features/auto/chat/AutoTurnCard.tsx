@@ -27,7 +27,13 @@ export const AutoTurnCard = ({ delegations, replies = [], children }: Props) => 
         <span
           className={cn(
             'shrink-0 text-meta',
-            head.isOpen ? 'text-foreground' : 'text-muted-foreground',
+            head.word === 'Failed'
+              ? 'text-danger'
+              : head.word === 'Needs you'
+                ? 'text-warning'
+                : head.isOpen
+                  ? 'text-foreground'
+                  : 'text-muted-foreground',
           )}
         >
           {head.word}

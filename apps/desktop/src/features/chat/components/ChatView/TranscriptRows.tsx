@@ -12,7 +12,7 @@ import type {
 import type { ConversationRow } from '../../utils/conversationRows';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { ReadingNotes } from '../../readingOrder/ReadingNotes';
-import { readingOrderOf } from '../../readingOrder/readingOrderOf';
+import { useReadingOrder } from '../../readingOrder/useReadingOrder';
 import { TranscriptSteps } from './TranscriptSteps';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import { ThinkingIndicator } from '../ThinkingIndicator';
@@ -99,7 +99,10 @@ export const TranscriptRows = ({
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
   const planVersions = planBlockVersions({ rows });
-  const readingRoles = readingOrderOf({ rows, activeRunId: activeRunId ?? null });
+  const { roles: readingRoles, register } = useReadingOrder({
+    rows,
+    activeRunId: activeRunId ?? null,
+  });
   const placedRunIds = new Set<ProviderRunId>();
   const briefRow =
     briefLabel === undefined
@@ -127,9 +130,6 @@ export const TranscriptRows = ({
   let userTurnOrdinal = 0;
   let turnIndex = -1;
   let isStepHeadDue = false;
-  const firstAnswerIndex = rows.findIndex(
-    (row) => row.kind === 'summary' || (row.kind === 'item' && row.item.kind === 'assistant_text'),
-  );
   let railGroup: Array<ReactNode> = [];
   let railGroupKey: string | null = null;
   let lastFooterRunId: ProviderRunId | null = null;
@@ -260,6 +260,11 @@ export const TranscriptRows = ({
     out.push(
       <li
         key={row.key}
+        ref={
+          row.kind === 'item' && row.item.kind === 'assistant_text'
+            ? (element) => register({ key: row.key, element })
+            : undefined
+        }
         {...rowAnchorOf({ row, heightKey })}
         {...stepHead}
         style={rowVisibilityStyle({
@@ -286,7 +291,7 @@ export const TranscriptRows = ({
         ) : row === briefRow && briefLabel !== undefined && row.item.kind === 'handoff' ? (
           <BriefCard label={briefLabel} text={row.item.text} />
         ) : reading?.kind === 'notes' ? (
-          <ReadingNotes role={reading} />
+          <ReadingNotes role={reading} label="Earlier in this reply" />
         ) : (
           <TranscriptCard
             {...(reading?.kind === 'answer' && { clampLines: reading.clampLines })}
@@ -313,11 +318,6 @@ export const TranscriptRows = ({
                 : undefined
             }
             previousRunId={previousRunId}
-            isBrief={
-              (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
-              turnIndex === 0 &&
-              firstAnswerIndex > idx
-            }
           />
         )}
       </li>,

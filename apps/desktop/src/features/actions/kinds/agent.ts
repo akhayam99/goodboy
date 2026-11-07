@@ -173,7 +173,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'Rename',
       icon: Pencil,
       group: 'act',
-      when: ({ facts }) => !facts.isWorkflowStep,
+      when: () => true,
       run: ({ facts, env }) => {
         const objectKey = agentObjectKey({ agentId: facts.agent.id });
         if (requestRename({ objectKey, anchorKey: env.anchorKey })) {

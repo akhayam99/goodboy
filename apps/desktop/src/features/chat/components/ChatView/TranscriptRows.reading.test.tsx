@@ -144,14 +144,14 @@ describe('TranscriptRows reading order', () => {
     );
     screen.getByText('already covered upstream');
     expect(screen.getAllByTestId('reading-notes')).toHaveLength(1);
-    screen.getByRole('button', { name: 'Notes, 1 line' });
+    screen.getByRole('button', { name: 'Earlier in this reply, 1 line' });
   });
 
-  it('keeps Notes open when the row re-renders with the same key and a new message', () => {
+  it('keeps earlier text open when the row re-renders with the same key and a new message', () => {
     const runId = nextProviderRunId();
     const texts = ['Reading notify-relay', 'Northwind needs no change.'];
     const { rerender } = render(tree({ rows: rowsOf({ runId, texts }) }));
-    const trigger = screen.getByRole('button', { name: 'Notes, 1 line' });
+    const trigger = screen.getByRole('button', { name: 'Earlier in this reply, 1 line' });
     fireEvent.click(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
     const followUp: ReadonlyArray<ConversationRow> = [
@@ -164,8 +164,19 @@ describe('TranscriptRows reading order', () => {
     ];
     rerender(tree({ rows: [...rowsOf({ runId, texts }), ...followUp] }));
     expect(
-      screen.getByRole('button', { name: 'Notes, 1 line' }).getAttribute('aria-expanded'),
+      screen
+        .getByRole('button', { name: 'Earlier in this reply, 1 line' })
+        .getAttribute('aria-expanded'),
     ).toBe('true');
     screen.getByText('Reading notify-relay');
+  });
+  it('keeps the first message in the same shape before and after an answer', () => {
+    const runId = nextProviderRunId();
+    const { rerender } = render(tree({ rows: [userRow()] }));
+    screen.getByText('review payments-api');
+    expect(screen.queryByRole('button', { name: /^Asked:/ })).toBeNull();
+    rerender(tree({ rows: rowsOf({ runId, texts: ['The ledger-core retry is fixed.'] }) }));
+    screen.getByText('review payments-api');
+    expect(screen.queryByRole('button', { name: /^Asked:/ })).toBeNull();
   });
 });

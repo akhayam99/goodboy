@@ -30,22 +30,31 @@ export const AutoChildCard = ({ sessionId, delegation, card, name, revision, onO
           onOpen={() => onOpen(card.childAgentId)}
           radius="lg"
           frameClassName="bg-elevated"
-          className="flex min-w-0 items-center gap-2 px-3 py-1 text-meta"
+          className="flex min-w-0 flex-col gap-1 px-3 py-1 text-meta"
         >
-          <AgentKindChip kind={card.role} density="glyph" />
-          <span className="shrink-0 text-muted-foreground">{card.roleLabel}</span>
-          <TruncatedText
-            isFocusable
-            className="min-w-0 flex-1 truncate text-foreground"
-            tooltip={card.task ?? name}
-          >
-            {name}
-          </TruncatedText>
-          {revision === null ? null : (
-            <span className="shrink-0 text-muted-foreground">{revision}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <AgentKindChip kind={card.role} density="glyph" />
+            <span className="shrink-0 text-muted-foreground">{card.roleLabel}</span>
+            <TruncatedText
+              isFocusable
+              className="min-w-0 flex-1 truncate text-foreground"
+              tooltip={card.task ?? name}
+            >
+              {name}
+            </TruncatedText>
+            {revision === null ? null : (
+              <span className="shrink-0 text-muted-foreground">{revision}</span>
+            )}
+            <span className={cn('shrink-0', tintClasses(facts.tone).text)}>{facts.word}</span>
+            <span className="flex w-16 shrink-0 justify-end">
+              <DelegationClock agentId={card.childAgentId} isLive={card.status.isLive} />
+            </span>
+          </span>
+          {card.result === null ? null : (
+            <TruncatedText className="w-full min-w-0 text-meta text-muted-foreground">
+              {card.result.outcomeLine?.text ?? card.result.summary ?? card.result.reasonText}
+            </TruncatedText>
           )}
-          <span className={cn('shrink-0', tintClasses(facts.tone).text)}>{facts.word}</span>
-          <DelegationClock agentId={card.childAgentId} isLive={card.status.isLive} />
         </InteractiveRow>
       </ObjectMenuArea>
     </div>
