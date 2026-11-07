@@ -9,7 +9,9 @@ import { ConversationDockLine } from './ConversationDockLine';
 import type { DockFailure } from './dockFailureOf';
 import { DockFailureLine } from './DockFailureLine';
 import { DockLiveLine } from './DockLiveLine';
+import { DockStepLine } from './DockStepLine';
 import { DockStoppedLine } from './DockStoppedLine';
+import type { BlockedStepAnswer } from '../ChatInput/hooks/useBlockedStepAnswer';
 import { useDockAskFocus } from './useDockAskFocus';
 
 type Props = {
@@ -22,6 +24,7 @@ type Props = {
   readonly stop: ConversationStop | null;
   readonly isStopArmed: boolean;
   readonly failure: DockFailure | null;
+  readonly step: BlockedStepAnswer | null;
 };
 
 export const ConversationDock = ({
@@ -34,6 +37,7 @@ export const ConversationDock = ({
   stop,
   isStopArmed,
   failure,
+  step,
 }: Props) => {
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
@@ -62,7 +66,10 @@ export const ConversationDock = ({
         {stopped === null || agentId === null || failure !== null ? null : (
           <DockStoppedLine sessionId={session.id} agentId={agentId} stopped={stopped} />
         )}
-        {hasAsks && agentId !== null && failure === null ? (
+        {step === null || failure !== null ? null : (
+          <DockStepLine sessionId={session.id} step={step} />
+        )}
+        {hasAsks && agentId !== null && failure === null && step === null ? (
           <ConversationDockLine sessionId={session.id} agentId={agentId} />
         ) : null}
       </ScrollFade>

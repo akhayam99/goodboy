@@ -65,7 +65,6 @@ export const ORCHESTRATED_COPY = {
   blockedAnswerFailed: "Couldn't send the answer",
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",
-  blockedAsked: 'The step asked',
   noFailureReason: 'no reason was recorded.',
   continueFailed: "Couldn't continue the run",
   leftOpen: ({ count }: CountParams): string => `Left open (${count})`,

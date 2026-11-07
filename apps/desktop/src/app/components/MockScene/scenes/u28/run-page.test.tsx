@@ -87,11 +87,12 @@ describe('the u28 run page scenes', () => {
     }
   });
 
-  it('u28-run-step-blocked reads one word on the run page, with no reason and no step verbs', async () => {
+  it('u28-run-step-blocked reads Needs you once on the run page, with no reason and no step verbs', async () => {
     await mount('u28-run-step-blocked');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('step-failed');
-    within(tail()).getByText('Needs you');
+    expect(screen.getAllByText('Needs you')).toHaveLength(1);
+    expect(within(tail()).queryByText('Needs you')).toBeNull();
     expect(document.querySelector('[data-blocked-question]')).toBeNull();
     expect(tail().textContent).not.toContain('The benchmark script writes its report');
     expect(within(tail()).queryByRole('form', { name: 'Answer the step' })).toBeNull();

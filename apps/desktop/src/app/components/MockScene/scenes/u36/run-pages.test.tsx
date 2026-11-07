@@ -219,18 +219,21 @@ describe('one run page', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Stop run' })).toBeNull();
   });
 
-  it('reads the reason of a blocked step on its own page, with Retry and one Continue', async () => {
+  it('reads a blocked step as one dock line with Retry and one Continue, and the question once', async () => {
     await mount('u36-p12-orch-step-blocked');
 
-    const tail = within(nodeOf('[data-run-tail]'));
-    tail.getByText('Not finished');
-    tail.getByRole('button', { name: 'Retry' });
-    expect(tail.queryByRole('button', { name: 'Restart step' })).toBeNull();
-    expect(tail.queryByRole('button', { name: 'Keep working' })).toBeNull();
-    expect(tail.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
-    expect(nodeOf('[data-blocked-question]').textContent).toContain(
-      'Should I keep the report in the repo or only attach it to the notes?',
-    );
+    const dock = within(nodeOf('[data-dock-line="step-not-finished"]'));
+    dock.getByText('Not finished');
+    dock.getByRole('button', { name: 'Retry' });
+    dock.getByRole('button', { name: 'Continue' });
+    expect(screen.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
+    expect(screen.getAllByText('Not finished')).toHaveLength(1);
+    expect(document.querySelector('[data-blocked-question]')).toBeNull();
+    expect(screen.queryByRole('form', { name: 'Answer the step' })).toBeNull();
+    expect(
+      screen.getAllByText(/Should I keep the report in the repo or only attach it to the notes\?/),
+    ).toHaveLength(1);
+    screen.getByPlaceholderText('Answer the step');
   });
 
   it('names the failure of Retry, keeps the step page and lets the same button try again', async () => {
@@ -241,18 +244,19 @@ describe('one run page', () => {
     act(() => {
       useAppStore.setState({ recoverStuckStep, reportError });
     });
+    const dock = within(nodeOf('[data-dock-line="step-not-finished"]'));
 
     await act(async () => {
-      fireEvent.click(within(nodeOf('[data-run-tail]')).getByRole('button', { name: 'Retry' }));
+      fireEvent.click(dock.getByRole('button', { name: 'Retry' }));
     });
 
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't retry the step", sessionId: C09_SESSION_ID }),
     );
-    expect(nodeOf('[data-blocked-question]').textContent).toContain('Should I keep the report');
+    dock.getByText('Not finished');
 
     await act(async () => {
-      fireEvent.click(within(nodeOf('[data-run-tail]')).getByRole('button', { name: 'Retry' }));
+      fireEvent.click(dock.getByRole('button', { name: 'Retry' }));
     });
 
     expect(recoverStuckStep).toHaveBeenCalledTimes(2);
@@ -267,10 +271,13 @@ describe('one run page', () => {
     fireEvent.change(screen.getByPlaceholderText('Answer the step'), {
       target: { value: 'Attach it to the notes only.' },
     });
-    const form = within(nodeOf('[data-run-tail]')).getByRole('form', { name: 'Answer the step' });
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Continue' }));
+      fireEvent.click(
+        within(nodeOf('[data-dock-line="step-not-finished"]')).getByRole('button', {
+          name: 'Continue',
+        }),
+      );
     });
 
     expect(answerBlockedStep).toHaveBeenCalledWith({
@@ -288,10 +295,13 @@ describe('one run page', () => {
     act(() => {
       useAppStore.setState({ askAgentToContinue, answerBlockedStep });
     });
-    const form = within(nodeOf('[data-run-tail]')).getByRole('form', { name: 'Answer the step' });
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Continue' }));
+      fireEvent.click(
+        within(nodeOf('[data-dock-line="step-not-finished"]')).getByRole('button', {
+          name: 'Continue',
+        }),
+      );
     });
 
     expect(askAgentToContinue).toHaveBeenCalledWith({
@@ -312,13 +322,15 @@ describe('one run page', () => {
     fireEvent.change(screen.getByPlaceholderText('Answer the step'), {
       target: { value: 'Attach it to the notes only.' },
     });
-    const form = within(nodeOf('[data-run-tail]')).getByRole('form', { name: 'Answer the step' });
+    const dock = within(nodeOf('[data-dock-line="step-not-finished"]'));
 
     await act(async () => {
-      fireEvent.click(within(form).getByRole('button', { name: 'Continue' }));
+      fireEvent.click(dock.getByRole('button', { name: 'Continue' }));
     });
 
-    expect(within(form).getByRole('alert').textContent).toContain('no longer waiting');
+    expect(nodeOf('[data-dock-line="step-not-finished"]').textContent).toContain(
+      'no longer waiting',
+    );
     expect(screen.getByPlaceholderText('Answer the step')).toHaveProperty(
       'value',
       'Attach it to the notes only.',

@@ -10,7 +10,6 @@ import { useMountBlockedStep } from '../../hooks/useMountBlockedStep';
 import { resolveNextAction } from '../../../workflows/resolveNextAction';
 import { agentKindPalette, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import type { RunView } from '../AgentTree/useRunView';
-import { OrchestratedBlockedStep } from '../OrchestratedRun/OrchestratedBlockedStep';
 import { OrchestratedMountBlock } from '../OrchestratedRun/OrchestratedMountBlock';
 import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
 import { RunOpenQuestion } from '../RunOpenQuestion';
@@ -119,6 +118,8 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
             ),
           ],
         });
+  const isHaltedStepOnRunPage =
+    !isStepPage && tail.verb?.kind === 'openStep' && tail.state === 'needsYou';
   const placement = runQuestionsPlacementOf({ phase: null, stop, questions: clusterQuestions });
   const questionCluster =
     clusterQuestions.length === 0 ? null : (
@@ -137,7 +138,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
             Not started, the run paused at the limit.
           </p>
         ) : null}
-        {isMountBlocked ? null : (
+        {isMountBlocked || isHaltedStepOnRunPage || isBlockedStepOnScreen ? null : (
           <TailLine
             facts={{
               state: tail.state,
@@ -160,15 +161,9 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
           />
         )}
         <RunPendingDelivery sessionId={session.id} />
-        {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
+        {isMountBlocked && mountBlock !== null ? (
           <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-        ) : !isBlockedStepOnScreen ? null : (
-          <OrchestratedBlockedStep
-            sessionId={session.id}
-            agentId={blockedStep.id}
-            isReasonShown={isBlockedStepOnScreen}
-          />
-        )}
+        ) : null}
       </div>
       {placement === 'after-state' ? questionCluster : null}
     </section>

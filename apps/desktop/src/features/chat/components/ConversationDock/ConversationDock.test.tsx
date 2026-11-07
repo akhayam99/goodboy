@@ -52,6 +52,7 @@ const renderDock = ({ hasAsks = true }: { readonly hasAsks?: boolean } = {}) =>
       stop={null}
       isStopArmed={false}
       failure={null}
+      step={null}
     />,
   );
 
@@ -68,6 +69,7 @@ describe('ConversationDock', () => {
         stop={null}
         isStopArmed={false}
         failure={null}
+        step={null}
       />,
     );
 
@@ -91,6 +93,7 @@ describe('ConversationDock', () => {
         }}
         isStopArmed={false}
         failure={null}
+        step={null}
       />,
     );
 

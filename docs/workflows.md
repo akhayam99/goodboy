@@ -385,12 +385,14 @@ read top to bottom at the conversation measure:
   names, `modelNamesIn`; the run glance says it too) with **Open
   transcript**; the move each of those waits for is the header primary, never a
   second button on the tail. A halted step (failed, or blocked on a question
-  or an ended turn) reads **Needs you** on the tail and **Open step 3** in the
+  or an ended turn) reads **Needs you** once on the run page (the glance; the
+  tail line stays out, `phase` `step-failed`) and **Open step 3** in the
   header (`runPrimaryOf` kind `open-step`, step number from
   `OrchestratorState.haltedStepNumber`), with no reason, no field and no step
-  verb on the run page: the question (what the step agent closed with, `blockedQuestionOf` on
-  its last reply, as markdown) and the "This step ended without a result" notice
-  show only on the step page (`OrchestratedBlockedStep` `isReasonShown`). A real
+  verb on the run page. The step page keeps the question once, in the
+  transcript, and holds one state line in the conversation dock
+  (`ConversationDock/DockStepLine`, the word from `runStateFromKind`
+  `halted-blocked`) with **Retry** and **Continue**. A real
   open question (phase
   `needs-answer`, a preset run's tail too) shows the same card as the transcript
   (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
@@ -1600,12 +1602,15 @@ two states:
   to continue and Skip.
 
 A step that `watchStepEnd` set to `blocked` reads "This step ended without a result" on
-its step page (`OrchestratedBlockedStep` in `RunTail`, only for the step on screen)
-and on the agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. The run
-page reads only **Needs you** for it, with **Open step N**. The step page offers
-**Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
-which finalizes the step with `force` from the agent's last words and lets the
-run advance). `watchStepEnd` records the end time it set in
+the agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. The run
+page reads only **Needs you** for it, with **Open step N**. The notice offers
+**Mark step done** (`markStepDone`, which finalizes the step with `force` from
+the agent's last words and lets the run advance). **Continue** and **Retry**
+live only in the dock of a blocked step (`DockStepLine`). The composer reads
+"Answer the step"; with text, **Continue** or Enter answers the step
+(`answerBlockedStep`, through `useBlockedStepAnswer`), with no text
+**Continue** asks it to go on (`askAgentToContinue`). A failed answer keeps the
+text and names the failure on the dock line. `watchStepEnd` records the end time it set in
 `silentlyEndedSteps`, and the notice shows only while the agent's `completedAt`
 still equals it. A step blocked for any other reason (a missing artifact, a
 question, the unattended-turn breaker, a budget stop) keeps its own copy.

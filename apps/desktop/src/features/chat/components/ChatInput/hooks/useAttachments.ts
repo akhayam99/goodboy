@@ -195,5 +195,14 @@ export const useAttachments = ({
     onFileInputChange,
     removeAttachment,
     cleanupSentAttachments,
+    files: {
+      attachments,
+      isDragging,
+      composerRef,
+      fileInputRef,
+      onPaste,
+      onFileInputChange,
+      onRemove: removeAttachment,
+    },
   };
 };
