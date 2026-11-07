@@ -166,6 +166,7 @@ export const CentralColumn = ({ session }: Props) => {
             session={session}
             card={card}
             waiting={waiting}
+            autoViews={model.autoTrees}
             leadRunId={leadRunId}
             cards={nextCards}
             whereOf={whereOf}
@@ -183,7 +184,6 @@ export const CentralColumn = ({ session }: Props) => {
             session={session}
             card={card}
             groups={groups}
-            model={model}
             whereOf={whereOf}
             leadRunId={leadRunId}
           />

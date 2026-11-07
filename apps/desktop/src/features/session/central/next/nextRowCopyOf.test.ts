@@ -57,7 +57,7 @@ describe('nextRowCopyOf', () => {
 
     expect([row.title, row.detail]).toEqual([
       'hl/feat-center-home-page · #9995',
-      'The implementer is blocked.',
+      'The implementer needs you.',
     ]);
   });
 

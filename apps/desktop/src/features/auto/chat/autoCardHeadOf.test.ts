@@ -37,9 +37,9 @@ describe('autoCardHeadOf', () => {
 
   it.each([
     ['failed', 'Failed'],
-    ['blocked', 'Blocked'],
+    ['blocked', 'Needs you'],
     ['stopped', 'Stopped'],
-    ['timed_out', 'Timed out'],
+    ['timed_out', 'Failed'],
   ] as const)('says %s for a settled agent that did not finish', (outcome, word) => {
     const head = autoCardHeadOf({
       delegations: [

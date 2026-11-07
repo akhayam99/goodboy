@@ -161,11 +161,11 @@ describe('attentionWaitsOf and Auto', () => {
     autoTreeViews: { [SESSION_ID]: views },
   });
 
-  it('raises an Auto tree that is blocked', () => {
+  it('raises nothing for an Auto tree that stopped replying: it reads Failed, not Needs you', () => {
     expect(
       waitsOf({ state: stateOf({ views: [aView({ phase: 'blocked' })], agents: [ROOT] }) })
         .hasAutoNeedsYou,
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('raises an Auto tree whose plan waits for approval', () => {

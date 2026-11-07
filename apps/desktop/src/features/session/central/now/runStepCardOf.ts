@@ -28,9 +28,9 @@ type StateParams = {
 const stateOf = ({ step, role }: StateParams): FactState => {
   switch (step.state) {
     case 'running':
-      return { tone: 'info', words: `${role} working`, isRunning: true };
+      return { tone: 'info', words: `${role} running`, isRunning: true };
     case 'waiting':
-      return { tone: 'warning', words: 'Waits for your go' };
+      return { tone: 'warning', words: 'Ready' };
     case 'failed':
       return { tone: 'danger', words: 'Failed' };
     case 'done':

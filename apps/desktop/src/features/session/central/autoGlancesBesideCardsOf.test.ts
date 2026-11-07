@@ -70,6 +70,6 @@ describe('autoGlancesBesideCardsOf', () => {
       autoGlances: autoGlancesBesideCardsOf({ views: [WAITING_VIEW], rootTurns: [null], cards }),
     });
 
-    expect(glance.sentence).toBe('1 waiting for you');
+    expect(glance.sentence).toBe('1 needs you');
   });
 });

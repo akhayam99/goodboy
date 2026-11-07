@@ -67,7 +67,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 **Needs you**
 
 - It is the one card for everything that waits for you. First come runs and agents that paused for an answer, oldest first.
-- Then come the rows that ask a decision or a fix: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
+- Then come the rows that ask a decision or a fix: a plan that needs approval, a question, an agent that needs you, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
 - Its header counts the rows drawn. With nothing waiting the card is gone and the line under the goal says **Nothing needs you**.
 - The first row holds the one filled button. Every other row has one quiet verb and no **⋯** at rest; the rest of its moves sit in the right click menu.
 - A run or agent that waits is not drawn again when a row above already asks the same thing.
@@ -84,7 +84,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
 - The agents a run or an agent started hang under it on one thin line. Auto shows one row with a button such as **2 agents**, which opens its agents.
-- When an agent Auto started is stuck, the Auto row says **Stuck**. One line under it offers **Answer** and **Stop**. **Retry** is on the **Needs you** card, once.
+- When an agent Auto started is stuck, the Auto row says **Needs you** in the Needs you card. One line under it offers **Answer** and **Stop**. **Retry** is on the **Needs you** card, once.
 - **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 
 **Next**
@@ -191,7 +191,7 @@ Each branch, pull request or Auto plan shows once per kind of work.
 - Say an agent Auto started is stuck on a branch that also has a failing check, or two of its agents are stuck there. Next shows one row led by the worst blocker: blocked, then timed out, then never started, then a check.
 - That row says "and 1 more" in its sentence and puts the others in its **⋯** menu.
 - A stuck agent reads by its role and state, as in "The tester timed out. It ran out of time." It never quotes the request Auto sent it.
-- A row's title is its subject. A plan that waits on your OK is titled by the plan's name. Its sentence reads "Plan v3 waits on your OK. The run covers 4 branches." These are the branches its agents work on.
+- A row's title is its subject. A plan that waits on your OK is titled by the plan's name. Its sentence reads "Plan v3 needs approval. The run covers 4 branches." These are the branches its agents work on.
 - A **Fix** row on a known branch is titled by the branch and its open pull request, as in "hl/feat-center-home-page · #9995". One sentence sits under it, such as "4 comments to fix."
 - Rows in **Update** and **Ship** keep their verb titles, except a stopped rebase.
 

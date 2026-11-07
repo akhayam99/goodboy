@@ -102,7 +102,7 @@ describe('the u33 overview needs you scene', () => {
     await screen.findByRole('region', { name: 'Needs you' }, WAIT);
     const glance = container.querySelector('[data-overview-glance]');
     expect(glance?.getAttribute('data-overview-glance')).toBe('waiting');
-    expect(glance?.textContent).toContain('waiting for you');
+    expect(glance?.textContent).toContain('need you');
   });
 
   it('has no accessibility violations', async () => {

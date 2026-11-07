@@ -46,7 +46,7 @@ type KeysParams = {
 const keysOf = ({ rows }: KeysParams): ReadonlyArray<string> => rows.map((row) => row.id);
 
 describe('spawnedStateGroupsOf', () => {
-  it('sorts agents into Working, Waiting and Done, newest first inside each group', () => {
+  it('sorts agents into Running, Needs you, Queued and Done, newest first inside each group', () => {
     const groups = spawnedStateGroupsOf({
       rows: [
         rowOf({ key: 'plan', node: 'done' }),
@@ -54,12 +54,15 @@ describe('spawnedStateGroupsOf', () => {
         rowOf({ key: 'tests', node: 'queued' }),
         rowOf({ key: 'review', node: 'running' }),
         rowOf({ key: 'scout', node: 'done' }),
+        rowOf({ key: 'permission', node: 'approval' }),
+        rowOf({ key: 'ready', node: 'ready' }),
       ],
     });
 
     expect(groups.map((group) => [group.label, keysOf({ rows: group.rows })])).toEqual([
-      ['Working', ['review', 'fix']],
-      ['Waiting', ['tests']],
+      ['Running', ['review', 'fix']],
+      ['Needs you', ['permission']],
+      ['Queued', ['ready', 'tests']],
       ['Done', ['scout', 'plan']],
     ]);
   });
@@ -94,7 +97,7 @@ describe('spawnedStateGroupsOf', () => {
     expect(keysOf({ rows: partial[0]?.rows ?? [] })).toEqual(['b', 'a']);
   });
 
-  it('orders Working by start time even when an undated helper waits', () => {
+  it('orders Running by start time even when an undated helper waits', () => {
     const groups = spawnedStateGroupsOf({
       rows: [
         rowOf({ key: 'a', node: 'running', startedAt: '2026-10-20T09:01:00.000Z' }),
@@ -131,6 +134,6 @@ describe('spawnedStateGroupsOf', () => {
     });
 
     expect(groups.map((group) => group.key)).toEqual(['working', 'done']);
-    expect(spawnedStateSummaryOf({ groups })).toBe('1 working, 1 done');
+    expect(spawnedStateSummaryOf({ groups })).toBe('1 running, 1 done');
   });
 });

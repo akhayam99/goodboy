@@ -97,7 +97,7 @@ const suggestionMountIdOf = ({ suggestion }: SuggestionParams): string | null =>
   return null;
 };
 
-const AUTO_STUCK = 'Auto is stuck';
+const AUTO_STUCK = 'Auto needs you';
 
 const DECLARED_BLOCKED = 'declared_blocked';
 
@@ -109,9 +109,9 @@ const autoTitleOf = ({ target }: AutoParams): string => {
     case 'childBlocked':
       return AUTO_STUCK;
     case 'approve':
-      return target.plan?.name ?? 'Auto waits on your OK';
+      return target.plan?.name ?? 'Auto needs approval';
     case 'blocked':
-      return 'Auto is blocked';
+      return "Auto couldn't reply";
     default: {
       const exhaustive: never = target.kind;
       return exhaustive;

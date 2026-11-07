@@ -130,7 +130,7 @@ describe('c07 Auto scenes', () => {
       (await treeRow(/^Tester, .*, Queued$/))
         .closest('[data-spawned-state]')
         ?.getAttribute('data-spawned-state'),
-    ).toBe('waiting');
+    ).toBe('queued');
     expect(within(implementer).getByText('Sonnet 5.5')).toBeDefined();
     expect(within(implementer).getByText('Medium')).toBeDefined();
     expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
@@ -147,11 +147,11 @@ describe('c07 Auto scenes', () => {
     const auto = await treeRow(/^Auto agent, /);
     act(() => auto.focus());
     fireEvent.keyDown(auto, { key: 'ArrowDown' });
-    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Working, /);
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Running, /);
     fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowDown' });
     expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Implementer, /);
     fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowLeft' });
-    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Working, /);
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Running, /);
     fireEvent.keyDown(document.activeElement ?? auto, { key: 'End' });
     expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Done, /);
     fireEvent.keyDown(document.activeElement ?? auto, { key: 'ArrowUp' });
@@ -201,7 +201,7 @@ describe('c07 Auto scenes', () => {
     if (glance === null) {
       throw new Error('no glance line');
     }
-    expect(glance.dataset.glance).toBe('working');
+    expect(glance.dataset.glance).toBe('running');
     expect(within(glance).getByRole('status').textContent).not.toContain('running');
     expect(glance.textContent).not.toContain('Implementer');
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
@@ -487,7 +487,9 @@ describe('c07 Auto scenes', () => {
     expect((await autoTree()).querySelectorAll('[data-agent-id]')).toHaveLength(1);
     expect(within(await panel()).getByText('No agents started yet')).toBeDefined();
     expect(document.querySelector('[data-spawned-summary]')).toBeNull();
-    expect(screen.queryByRole('treeitem', { name: /^(Working|Waiting|Done), \d+$/ })).toBeNull();
+    expect(
+      screen.queryByRole('treeitem', { name: /^(Running|Needs you|Queued|Done), \d+$/ }),
+    ).toBeNull();
     expect(await treeRow(/^Auto agent, .*, Idle$/)).toBeDefined();
   });
 

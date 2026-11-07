@@ -200,9 +200,9 @@ describe('the Auto agents rail grouped by state', () => {
 
     const root = await tree();
     expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
-      '1 working, 1 done',
+      '1 running, 1 done',
     );
-    within(root).getByRole('treeitem', { name: 'Working, 1' });
+    within(root).getByRole('treeitem', { name: 'Running, 1' });
     within(root).getByRole('treeitem', { name: 'Done, 1' });
     const working = root.querySelector('[data-spawned-state="working"]');
     expect(working?.querySelectorAll('[data-agent-id]')).toHaveLength(1);
@@ -372,10 +372,10 @@ describe('the Auto agents rail grouped by state', () => {
     expect(auto.getAttribute('aria-level')).toBe('1');
     expect(auto.tabIndex).toBe(0);
     expect(rowOf({ tree: root, ...FIRST }).getAttribute('aria-level')).toBe('2');
-    expect(within(root).getByRole('treeitem', { name: 'Working, 1' }).tabIndex).toBe(-1);
+    expect(within(root).getByRole('treeitem', { name: 'Running, 1' }).tabIndex).toBe(-1);
   });
 
-  it('moves focus to the Auto row when the Waiting head vanishes and no Done head exists', async () => {
+  it('moves focus to the Auto row when the Queued head vanishes and no Done head exists', async () => {
     const seed = seedOf({
       phase: 'waiting',
       children: [
@@ -386,13 +386,13 @@ describe('the Auto agents rail grouped by state', () => {
     mount({ seed });
 
     const root = await tree();
-    const head = within(root).getByRole('treeitem', { name: 'Waiting, 1' });
+    const head = within(root).getByRole('treeitem', { name: 'Queued, 1' });
     act(() => head.focus());
     expect(document.activeElement).toBe(head);
 
     retarget({ seed, ...SECOND, status: RUNNING });
 
-    expect(within(root).queryByRole('treeitem', { name: 'Waiting, 1' })).toBeNull();
+    expect(within(root).queryByRole('treeitem', { name: 'Queued, 1' })).toBeNull();
     const auto = within(root).getByRole('treeitem', { name: /^Auto agent, / });
     expect(document.activeElement).toBe(auto);
     fireEvent.keyDown(auto, { key: 'ArrowDown' });

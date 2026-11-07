@@ -138,7 +138,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'stuck',
     facts: {
-      cards: ['needs-you', 'running', 'done'],
+      cards: ['needs-you', 'done'],
       primary: 'Retry',
       done: null,
     },

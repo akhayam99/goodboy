@@ -127,7 +127,7 @@ describe('AutoResultCards', () => {
       }),
     ]);
 
-    const blocked = screen.getByRole('article', { name: 'Scout, Blocked' });
+    const blocked = screen.getByRole('article', { name: 'Scout, Needs you' });
     expect(within(blocked).getByText('notify-relay is not mounted.')).toBeDefined();
   });
 

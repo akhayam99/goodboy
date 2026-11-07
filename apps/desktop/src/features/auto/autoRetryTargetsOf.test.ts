@@ -93,7 +93,7 @@ describe('autoRetryTargetsOf', () => {
     expect(targets.map((target) => [target.kind, target.reason])).toEqual([
       ['failed', 'The agent ended with an error.'],
       ['timedOut', 'It ran out of time.'],
-      ['childBlocked', 'It reported that it is blocked.'],
+      ['childBlocked', "It said it can't go on."],
     ]);
   });
 

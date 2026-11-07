@@ -191,7 +191,7 @@ describe('actionCardsOf', () => {
       id: 'auto:agent-fixer:neverStarted',
       band: 0,
       kind: 'neverStarted',
-      title: 'Auto is stuck',
+      title: 'Auto needs you',
       detail: 'The fixer never started. Auto created it at 10:21, no first message reached it.',
     });
     expect(cards).toHaveLength(3);
@@ -229,9 +229,9 @@ describe('actionCardsOf', () => {
     });
 
     expect(cards.map((card) => [card.kind, card.title, card.detail])).toEqual([
-      ['failed', 'Auto is stuck', 'The docs writer failed.'],
-      ['childBlocked', 'Auto is stuck', 'The scout is blocked.'],
-      ['timedOut', 'Auto is stuck', 'The tester timed out. It ran out of time.'],
+      ['failed', 'Auto needs you', 'The docs writer failed.'],
+      ['childBlocked', 'Auto needs you', 'The scout needs you.'],
+      ['timedOut', 'Auto needs you', 'The tester timed out. It ran out of time.'],
     ]);
     expect(cards.every((card) => !(card.detail ?? '').includes('"'))).toBe(true);
   });
@@ -299,7 +299,7 @@ describe('actionCardsOf', () => {
     });
 
     expect(cards.map((card) => [card.kind, card.mountId, card.detail])).toEqual([
-      ['approve', null, 'Plan v3 waits on your OK. The run covers 4 branches.'],
+      ['approve', null, 'Plan v3 needs approval. The run covers 4 branches.'],
       [
         'neverStarted',
         MOUNT_ID,
@@ -331,8 +331,8 @@ describe('actionCardsOf', () => {
     });
 
     expect(cards.map((card) => [card.title, card.detail])).toEqual([
-      ['Auto waits on your OK', 'The plan waits on your OK.'],
-      ['Auto is stuck', 'The fixer timed out. It ran out of time.'],
+      ['Auto needs approval', 'The plan needs approval.'],
+      ['Auto needs you', 'The fixer timed out. It ran out of time.'],
     ]);
     expect(cards.some((card) => `${card.title}${card.detail}`.includes('"'))).toBe(false);
     expect(cards.some((card) => `${card.title}${card.detail}`.includes('_'))).toBe(false);

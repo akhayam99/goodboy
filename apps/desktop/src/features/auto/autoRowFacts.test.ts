@@ -14,12 +14,12 @@ describe('autoRowFacts', () => {
     expect(factsOf('answering')).toBeNull();
   });
 
-  it('says Idle when the work rests and Finished only for a tree the user closed', () => {
+  it('says Idle when the work rests and Done for a tree the user closed', () => {
     expect(factsOf('done')).toEqual({ phase: 'done', word: 'Idle', short: 'Idle' });
     expect(factsOf('finished')).toEqual({
       phase: 'closed',
-      word: 'Finished by you',
-      short: 'Finished',
+      word: 'Done',
+      short: 'Done',
     });
   });
 
@@ -64,17 +64,13 @@ describe('autoRowFacts', () => {
       word: 'Deciding what to do',
       short: 'Deciding',
     });
-    expect(factsOf('delegating')?.short).toBe('Delegating');
+    expect(factsOf('delegating')?.short).toBe('Starting');
     expect(factsOf('merging')).toEqual({
       phase: 'running',
       word: 'Reading the results',
       short: 'Reading',
     });
-    expect(factsOf('blocked')).toEqual({
-      phase: 'waiting',
-      word: 'Blocked, open the chat',
-      short: 'Blocked',
-    });
+    expect(factsOf('blocked')).toEqual({ phase: 'failed', word: 'Failed', short: 'Failed' });
     expect(factsOf('stopping')?.short).toBe('Stopping');
     expect(factsOf('stopped')).toEqual({
       phase: 'closed',

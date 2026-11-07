@@ -176,7 +176,7 @@ describe('liveGroupsOf', () => {
     ).toEqual([]);
   });
 
-  it('orders by state first, stuck then waiting then working, and by start time inside a state', () => {
+  it('orders by state first, failed then waiting then working, and by start time inside a state', () => {
     type MinuteParams = { readonly minute: number };
     const startedAt = ({ minute }: MinuteParams) =>
       brandId<IsoDateTime>({ value: `2026-05-01T10:0${minute}:00.000Z` });
@@ -212,7 +212,7 @@ describe('liveGroupsOf', () => {
       ['Rebuild the index', 'working'],
     ]);
     expect(groupsWith({ status: 'failed' })).toEqual([
-      ['Check the docs', 'stuck'],
+      ['Check the docs', 'failed'],
       ['Add the limit table', 'working'],
       ['Rebuild the index', 'working'],
     ]);

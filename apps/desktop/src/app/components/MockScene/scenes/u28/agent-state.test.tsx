@@ -51,8 +51,8 @@ describe('u28 agent state scene', () => {
     expect(labels[0]).toMatch(
       /^Open Run the settlement suite in ledger-core, Agent, Needs permission/,
     );
-    expect(labels[1]).toMatch(/^Open Tidy the Cascadia fixtures, Agent, Blocked/);
-    expect(labels.filter((label) => label?.includes('Stopped, Continue') === true)).toHaveLength(2);
+    expect(labels[1]).toMatch(/^Open Tidy the Cascadia fixtures, Agent, Needs you/);
+    expect(labels.filter((label) => label?.includes('Stopped') === true)).toHaveLength(2);
     screen.getByRole('button', { name: 'Continue all' });
   });
 });

@@ -16,7 +16,7 @@ const isStoppedByYou = ({ group }: GroupParams): boolean => {
 
 export const liveSectionIdOf = ({ group }: GroupParams): LiveSectionId => {
   switch (group.state) {
-    case 'stuck':
+    case 'failed':
       return 'stopped';
     case 'waiting':
       return isStoppedByYou({ group }) ? 'stopped' : 'needs-you';

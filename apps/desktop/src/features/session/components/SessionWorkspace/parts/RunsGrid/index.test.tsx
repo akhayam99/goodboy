@@ -131,7 +131,7 @@ describe('RunsGrid', () => {
     renderGrid({ runs: runsOf({ agents }) });
 
     const group = screen.getByRole('list', { name: 'In progress' });
-    expect(within(group).getAllByRole('button', { name: /Stopped, Continue/ })).toHaveLength(2);
+    expect(within(group).getAllByRole('button', { name: /Stopped/ })).toHaveLength(2);
     expect(screen.queryByRole('list', { name: 'Finished' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue all' }));
     await waitFor(() =>

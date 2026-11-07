@@ -8,22 +8,22 @@ import type { RowPhase, RowState, RowStateReason } from './rowState';
 export type RowNodeState = Exclude<WorkNodeState, 'marker' | 'mixed' | 'finished' | 'merging'>;
 
 export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
-  queued: 'Not started',
-  ready: 'Ready to run',
-  running: 'Running',
+  queued: NAMES.queued,
+  ready: NAMES.ready,
+  running: NAMES.running,
   question: NAMES.needsYou,
-  budget: 'Paused at the limit',
+  budget: NAMES.paused,
   approval: NAMES.waitingForPermission,
   alert: NAMES.needsYou,
-  failed: 'Failed',
+  failed: NAMES.failed,
   approved: 'Approved',
-  done: 'Done',
+  done: NAMES.done,
   closed: 'Closed by you',
   stopped: 'Stopped by you',
   skipped: 'Skipped',
 };
 
-export const NOT_FINISHED = 'Not finished';
+export const NOT_FINISHED = NAMES.notFinished;
 
 type ReasonParams = {
   readonly reason: RowStateReason;
@@ -47,7 +47,7 @@ export const quietSentence = ({ quietMs }: QuietParams): string => {
 const reasonSentence = ({ reason }: ReasonParams): string | null => {
   switch (reason.kind) {
     case 'ready':
-      return reason.stepLabel == null ? 'Ready to run' : `Step ${reason.stepLabel} is ready to run`;
+      return reason.stepLabel == null ? NAMES.ready : `Step ${reason.stepLabel} is ready`;
     case 'question':
       return reason.stepLabel == null
         ? 'Needs your answer'
@@ -60,19 +60,19 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
         ? 'Paused at the limit'
         : `Paused at the ${formatUsd(reason.limitUsd)} limit`;
     case 'failed':
-      return 'Failed';
+      return NAMES.failed;
     case 'blocked':
-      return 'Blocked, tell the agent what to do next';
+      return 'Tell it what to do next';
     case 'noArtifact':
       return 'No artifact, use Retry capture in the transcript';
     case 'needsApproval':
-      return 'Needs permission, answer the request in the transcript';
+      return 'Needs permission';
     case 'stepFailed':
       return reason.stepLabel == null ? 'A step failed' : `Step ${reason.stepLabel} failed`;
     case 'stepBlocked':
       return reason.stepLabel == null
-        ? 'A step is blocked, tell the agent what to do next'
-        : `Step ${reason.stepLabel} is blocked, tell the agent what to do next`;
+        ? "A step isn't finished"
+        : `Step ${reason.stepLabel} not finished`;
     case 'orchestratorFailed':
       return 'The orchestrator failed';
     case 'stopped':
@@ -91,7 +91,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'briefing':
       return 'Briefing the next step';
     case 'chatTurn':
-      return 'Waiting for the chat turn to finish';
+      return 'Waits for the chat to finish';
     case 'closed':
       return 'Closed by you';
     case 'skipped':
@@ -99,17 +99,17 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'notFinished':
       return NOT_FINISHED;
     case 'didNotStart':
-      return 'Did not start';
+      return NAMES.notStarted;
     case 'without':
       return `Without ${reason.steps}`;
     case 'paused':
       return 'Paused by you';
     case 'planReady':
-      return 'Plan ready, approve it to go on';
+      return 'Plan needs approval';
     case 'chained':
       return `Starts after ${reason.afterTitle}`;
     case 'awaitingFirstMessage':
-      return 'Waiting for your first message';
+      return 'Write to start';
     case 'discarded':
       return null;
     case 'job':
@@ -133,9 +133,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'openQuestions':
       return null;
     case 'budget':
-      return 'At the limit';
     case 'paused':
-      return 'Paused';
+      return NAMES.paused;
     case 'planReady':
       return 'Plan ready';
     case 'orchestratorFailed':
@@ -146,25 +145,27 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'stepStopped':
       return 'Stopped';
     case 'deciding':
-      return 'Choosing next';
+      return 'Choosing';
     case 'briefing':
-      return 'Briefing';
+      return 'Preparing';
     case 'chatTurn':
-      return 'Waits on chat';
+      return 'Waits for chat';
     case 'closed':
       return 'Closed';
     case 'chained':
-      return 'Chained';
+      return NAMES.queued;
     case 'awaitingFirstMessage':
       return 'Write to start';
     case 'blocked':
-      return 'Blocked';
+      return NAMES.needsYou;
     case 'noArtifact':
       return 'No artifact';
     case 'needsApproval':
       return 'Needs permission';
     case 'stepBlocked':
-      return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
+      return reason.stepLabel == null
+        ? 'Step not finished'
+        : `Step ${reason.stepLabel} not finished`;
     case 'auto':
       return reason.short;
     case 'failed':
@@ -301,8 +302,11 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   if (state.reason?.kind === 'stepAsking') {
     return { state: node, label: 'Waiting on a step' };
   }
-  if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
-    return { state: node, label: 'Blocked' };
+  if (state.reason?.kind === 'blocked') {
+    return { state: node, label: NAMES.needsYou };
+  }
+  if (state.reason?.kind === 'stepBlocked') {
+    return { state: node, label: NOT_FINISHED };
   }
   if (state.reason?.kind === 'noArtifact') {
     return { state: node, label: 'No artifact' };

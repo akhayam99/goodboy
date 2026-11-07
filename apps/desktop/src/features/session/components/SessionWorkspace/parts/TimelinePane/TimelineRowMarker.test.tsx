@@ -95,7 +95,7 @@ describe('TimelineRowMarker', () => {
       />,
     );
 
-    const node = nodeOf({ label: 'Not started' });
+    const node = nodeOf({ label: 'Queued' });
     expect(node.textContent).toBe('');
     expect(node.getAttribute('data-node-state')).toBe('queued');
   });

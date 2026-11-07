@@ -44,11 +44,11 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
   const isGenericTitle = auto.title === null || auto.title.toLowerCase() === 'auto';
   const title = isGenericTitle ? NAMES.runKind.autoAgent : auto.title;
   const stateSpec = LIVE_TONE.state[group.state];
-  const tone = group.state === 'stuck' ? 'danger' : stateSpec.tone;
+  const tone = stateSpec.tone;
   const palette = agentKindPalette({ kind: 'auto' });
   const isStateWord = auto.word.includes(' ') && !auto.word.includes(': ');
   const status = isStateWord
-    ? { word: stateSpec.word, reason: auto.word }
+    ? { word: stateSpec.word, reason: auto.word === stateSpec.word ? null : auto.word }
     : liveStatusOf({ word: auto.word, detail: null });
   const isOwn = liveOwnStateOf({ group, isStateWord });
   return (

@@ -1,7 +1,8 @@
 import type { WorkNodeState } from '@goodboy/ui';
+import { NAMES } from '../../../shared/utils/names';
 import type { SpawnedRow } from './spawnedRow';
 
-type SpawnedStateKey = 'working' | 'waiting' | 'done';
+type SpawnedStateKey = 'working' | 'waiting' | 'queued' | 'done';
 
 export type SpawnedStateGroup = Readonly<{
   key: SpawnedStateKey;
@@ -16,8 +17,8 @@ type Params = {
 const STATE_BY_NODE: Readonly<Record<WorkNodeState, SpawnedStateKey>> = {
   running: 'working',
   merging: 'working',
-  queued: 'waiting',
-  ready: 'waiting',
+  queued: 'queued',
+  ready: 'queued',
   question: 'waiting',
   budget: 'waiting',
   approval: 'waiting',
@@ -34,12 +35,13 @@ const STATE_BY_NODE: Readonly<Record<WorkNodeState, SpawnedStateKey>> = {
 };
 
 const LABEL_BY_KEY: Readonly<Record<SpawnedStateKey, string>> = {
-  working: 'Working',
-  waiting: 'Waiting',
-  done: 'Done',
+  working: NAMES.running,
+  waiting: NAMES.needsYou,
+  queued: NAMES.queued,
+  done: NAMES.done,
 };
 
-const KEYS: ReadonlyArray<SpawnedStateKey> = ['working', 'waiting', 'done'];
+const KEYS: ReadonlyArray<SpawnedStateKey> = ['working', 'waiting', 'queued', 'done'];
 
 type StateParams = {
   readonly row: SpawnedRow;

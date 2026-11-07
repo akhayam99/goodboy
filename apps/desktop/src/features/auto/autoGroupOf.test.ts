@@ -123,7 +123,7 @@ describe('autoGroupOf', () => {
 
     expect(group?.children.map((child) => child.reason)).toEqual([
       'The design notes are not in harbor-portal.',
-      'It reported that it is blocked.',
+      "It said it can't go on.",
       null,
     ]);
   });
@@ -364,7 +364,7 @@ describe('autoGroupOf', () => {
       });
 
       expect(group?.isStuck).toBe(true);
-      expect(group?.word).toBe('Stuck');
+      expect(group?.word).toBe('Needs you');
       expect(group?.children[0]?.isGone).toBeUndefined();
     });
 

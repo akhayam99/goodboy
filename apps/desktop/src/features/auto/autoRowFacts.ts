@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/utils/names';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import type { RowPhase } from '../workTreeModel/rowState';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
@@ -23,10 +24,10 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
     case 'deciding':
       return { phase: 'running', word: 'Deciding what to do', short: 'Deciding' };
     case 'delegating':
-      return { phase: 'running', word: 'Starting agents', short: 'Delegating' };
+      return { phase: 'running', word: 'Starting agents', short: 'Starting' };
     case 'waiting': {
       if (isAutoPlanAwaitingApproval({ view })) {
-        return { phase: 'waiting', word: 'Needs you', short: 'Needs you' };
+        return { phase: 'waiting', word: NAMES.needsYou, short: NAMES.needsYou };
       }
       const nouns = openRoleNouns({ delegations: view.delegations });
       return {
@@ -38,13 +39,13 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
     case 'merging':
       return { phase: 'running', word: 'Reading the results', short: 'Reading' };
     case 'blocked':
-      return { phase: 'waiting', word: 'Blocked, open the chat', short: 'Blocked' };
+      return { phase: 'failed', word: NAMES.failed, short: NAMES.failed };
     case 'stopping':
       return { phase: 'running', word: 'Stopping', short: 'Stopping' };
     case 'stopped':
       return { phase: 'closed', word: 'Stopped by you', short: 'Stopped' };
     case 'finished':
-      return { phase: 'closed', word: 'Finished by you', short: 'Finished' };
+      return { phase: 'closed', word: NAMES.done, short: NAMES.done };
     default: {
       const exhaustive: never = view.tree.phase;
       return exhaustive;

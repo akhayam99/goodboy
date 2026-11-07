@@ -78,7 +78,7 @@ describe('nextRowsOf', () => {
       'auto:agent-tester:timedOut',
       `suggestion:fix-checks:${HOME}`,
     ]);
-    expect(rows[0]?.detail).toBe('The tester is blocked, and 2 more.');
+    expect(rows[0]?.detail).toBe('The tester needs you, and 2 more.');
   });
 
   it('folds the questions an Auto run asked into its plan row as questions, not more', () => {
@@ -112,7 +112,7 @@ describe('nextRowsOf', () => {
     expect(rows[0]?.folded.map((card) => card.id)).toEqual([
       `suggestion:answer-questions:${SESSION_ID}`,
     ]);
-    expect(rows[0]?.detail).toBe('Plan v3 waits on your OK, and 2 questions.');
+    expect(rows[0]?.detail).toBe('Plan v3 needs approval, and 2 questions.');
   });
 
   it('keeps the same branch apart when the work is in another group', () => {

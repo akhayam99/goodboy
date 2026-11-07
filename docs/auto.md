@@ -261,8 +261,8 @@ moment." and the composer keeps its text.
 An Auto tree is one row, like any agent row: its state in the row word and the
 cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
-Tester**, **Needs you**, **Reading the results**, **Blocked, open the
-chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
+Tester**, **Needs you**, **Reading the results**, **Failed**, **Stopping**,
+**Stopped by you**, **Idle**, **Done**. The
 children are not rows of the Overview; they live in the Auto tree of the Agents
 panel.
 
@@ -401,7 +401,7 @@ writing to it reopens it to **Deciding**.
   tooltip and accessible name. The rail row, the Agents drawer, the delegation
   line, the result card and the delivery text Auto reads all take the name from
   that one function, so Auto and the screen say the same name. A stuck child is a Next card headed by its branch and
-  pull request ("Auto is stuck" only when its branch is unknown) whose
+  pull request ("Auto needs you" only when its branch is unknown) whose
   sentence names the role, never the quoted ask: `The scout never started.` (or
   `failed.`, `timed out.`, `is blocked.`, one verb per child state from
   `autoStuckKindOf` and `autoStuckVerbOf`; a blocked child stays a
@@ -418,8 +418,8 @@ writing to it reopens it to **Deciding**.
   nothing. A done child shows the result it declared in `delegation.result`,
   then the summary Auto accepted, never the working `outputSummary`, and no
   "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
-  and Auto is live, the Auto row reads **Stuck**, the same word as the Running
-  card (`AutoGroup.isStuck`), not Auto's own phase.
+  and Auto is live, the Auto row reads **Needs you** and sits in the Needs you
+  card, with **Answer** and **Stop** under it (`AutoGroup.isStuck`), not Auto's own phase.
 - **Stopped and replaced children are not stuck.** A delegation that settled
   `stopped` (you or Auto stopped it, or you declined its start, reason
   `declined`) is the child state `stopped`, which `autoStuckKindOf` does not
@@ -470,8 +470,8 @@ writing to it reopens it to **Deciding**.
 - **The glance line and the cards.** The Auto page header keeps the back row, the title
   and the menu, then one glance line, the same component for every run kind
   (`RunGlanceLine`: Auto, orchestrated, preset and a plain agent): a dot, the state word (**Needs
-  you**, **Planning**, **Working**, **Stuck**, **Stopped**, **Done**,
-  **Idle**), one sentence, the spend of the limit and **Settings**
+  you**, **Running**, **Queued**, **Ready**, **Paused**, **Failed**, **Stopping**,
+  **Stopped**, **Done**, **Idle**, **Skipped**), one sentence, the spend of the limit and **Settings**
   (`autoGlanceOf` for Auto, `agentGlanceOf` and `runGlanceOf` for the others, all
   through `glanceOf`). **Settings** unfolds the unchanged chip row
   inline, never a popover; the row stays mounted so the asks and model slots
@@ -626,6 +626,12 @@ after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from w
 the run left behind, or, with nothing stored, blocks with "Auto stopped answering
 before it replied. Retry to send the message again." and puts the message back.
 
+A blocked tree reads **Failed** on every surface (glance, row, card, tail), never
+**Blocked** or **Needs you**: it ended on an error and **Retry** moves it. It does not
+count as a wait for you (`autoWaitRootsOf` counts a plan, a project ask, a
+stuck child and a spent limit, compared on the typed `AutoTreeState`, never on a
+display word). A tree at its limit reads **Paused**.
+
 A blocked tree writes nothing while it waits. It resumes by itself only after a
 budget block, once the limit is raised. Otherwise **Retry** on the tail
 (`retryBlockedTree`, through the retry port) resumes it: it clears the reason,
@@ -661,7 +667,7 @@ Auto is not running or another window owns the tree, the delete fails with the r
 stays and the tree stays unconfirmed; deleting again resumes the stop. The purge itself
 (`agentPurgeStatements`) never touches the tree. The lists read only trees whose root agent is
 still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
-left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto is stuck**
+left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto needs you**
 line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
 accepted and has not started has no agent yet and still counts, and so does one whose agent could
 not be created (reason `agent_not_created`, `launchChildren`): its failure and retry card stay. Plans stay readable in the plan

@@ -98,23 +98,20 @@ describe('the central column scenes', () => {
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 
-  it('says Stuck once on the Auto row and offers the stuck line in Running on the blocked scene', async () => {
+  it('says Needs you once on the Auto row and offers the stuck line under it on the blocked scene', async () => {
     await show({ name: 'u26-central-blocked-light' });
 
-    const now = screen.getByRole('region', { name: 'Running' });
-    expect(now.querySelector('[data-now-sentence]')).toBeNull();
-    expect(now.querySelector('[data-auto-word]')?.textContent).toBe('Stuck');
-    expect(now.textContent).not.toContain('Deciding');
-    expect(now.textContent).not.toContain('declared_blocked');
-    expect(now.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
-    const inNow = within(now);
-    const retryName = 'Retry "Fix the two doc mismatches in ledger-core"';
-    expect(inNow.queryByRole('button', { name: retryName })).toBeNull();
-    inNow.getByRole('button', { name: 'Answer Auto in its chat' });
-    inNow.getByRole('button', { name: 'Stop Auto and its agents' });
-    within(screen.getByRole('region', { name: 'Needs you' })).getByRole('button', {
-      name: retryName,
-    });
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    expect(needsYou.querySelector('[data-now-sentence]')).toBeNull();
+    expect(needsYou.querySelector('[data-auto-word]')?.textContent).toBe('Needs you');
+    expect(needsYou.textContent).not.toContain('Stuck');
+    expect(needsYou.textContent).not.toContain('Deciding');
+    expect(needsYou.textContent).not.toContain('declared_blocked');
+    expect(screen.queryByRole('region', { name: 'Running' })).toBeNull();
+    const inCard = within(needsYou);
+    inCard.getByRole('button', { name: 'Answer Auto in its chat' });
+    inCard.getByRole('button', { name: 'Stop Auto and its agents' });
+    inCard.getByRole('button', { name: 'Retry "Fix the two doc mismatches in ledger-core"' });
   });
 
   it('settles when the stale branch detail read fails on the branches scene', async () => {

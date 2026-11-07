@@ -29,7 +29,7 @@ type Props = {
 };
 
 const PHASE_OF_STATE: Record<LiveGroupState, RowPhase> = {
-  stuck: 'failed',
+  failed: 'failed',
   waiting: 'waiting',
   working: 'running',
   deciding: 'running',
@@ -47,9 +47,9 @@ type ReasonParams = {
 
 const runStatusDetailOf = ({ group }: ReasonParams): string | null => {
   if (group.state === 'waiting' && group.waitingStepNumber !== null) {
-    return `Waits for your go on step ${group.waitingStepNumber}`;
+    return `Step ${group.waitingStepNumber} is ready`;
   }
-  if (group.state === 'stuck' && group.failedStep !== null) {
+  if (group.state === 'failed' && group.failedStep !== null) {
     return `Step ${group.failedStep.number} failed: ${group.failedStep.title}`;
   }
   return null;

@@ -136,35 +136,36 @@ const usualTimes = (): DurationHistory => ({
 });
 
 describe('the parity list of the Overview, walked on the cards', () => {
-  it('1: a stuck agent is reachable from Running, with its state and the way to open it', async () => {
+  it('1: a stuck agent is reachable from Needs you, with its state and the way to open it', async () => {
     await show({ kind: 'stuck' });
 
-    const auto = within(cardOf({ name: 'Running' })).getByRole('region', {
+    const auto = within(cardOf({ name: 'Needs you' })).getByRole('region', {
       name: /^Auto agent: Harden retries/,
     });
-    expect(auto.getAttribute('data-state')).toBe('stuck');
-    expect(auto.textContent).toContain('Stuck');
+    expect(auto.getAttribute('data-state')).toBe('waiting');
+    expect(auto.textContent).toContain('Needs you');
+    expect(auto.textContent).not.toContain('Stuck');
     fireEvent.click(within(auto).getByRole('button', { name: /agents?$/ }));
-    expect(auto.textContent).toContain('Never started');
+    expect(auto.textContent).toContain('Not started');
     within(auto).getByRole('button', { name: 'Open Auto chat' });
   });
 
-  it('1: an agent that timed out stays in Running and asks in Needs you', async () => {
+  it('1: an agent that timed out asks in Needs you, never under the word Stuck', async () => {
     await show({ kind: 'failed' });
 
-    expect(cardOf({ name: 'Running' }).textContent).toContain('Stuck');
-    expect(cardOf({ name: 'Needs you' }).textContent).toContain('Auto is stuck');
+    expect(cardOf({ name: 'Needs you' }).textContent).toContain('Auto needs you');
+    expect(cardOf({ name: 'Needs you' }).textContent).not.toContain('Stuck');
   });
 
-  it('1: a child that declared itself blocked says Blocked on the Auto row', async () => {
+  it('1: a child that declared itself blocked says Needs you on the Auto row', async () => {
     await show({ kind: 'blocked' });
 
-    for (const toggle of within(cardOf({ name: 'Running' })).getAllByRole('button', {
+    for (const toggle of within(cardOf({ name: 'Needs you' })).getAllByRole('button', {
       name: /agents?$/,
     })) {
       fireEvent.click(toggle);
     }
-    expect(cardOf({ name: 'Running' }).textContent).toContain('Blocked');
+    expect(cardOf({ name: 'Needs you' }).textContent).not.toContain('Blocked');
   });
 
   it('2: the Needs you ask keeps its group, its sentence and the button that opens it', async () => {
@@ -176,7 +177,7 @@ describe('the parity list of the Overview, walked on the cards', () => {
 
     const needsYou = cardOf({ name: 'Needs you' });
     expect(needsYou.querySelector('[data-next-group-head]')).toBeNull();
-    expect(needsYou.textContent).toContain('Auto is stuck');
+    expect(needsYou.textContent).toContain('Auto needs you');
     fireEvent.click(within(needsYou).getByRole('button', { name: 'Open Auto' }));
 
     expect(navigate).toHaveBeenCalledTimes(1);
