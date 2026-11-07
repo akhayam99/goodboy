@@ -34,11 +34,25 @@ import { runPageOmitOf } from '../../features/session/components/PresetRun/runPa
 import { artifactHeaderOmitOf } from '../../features/artifacts/components/ArtifactShell/artifactHeaderOmitOf';
 import type { RecordVerb } from '../../shared/components/StudioDetail/RecordActions/types';
 import { RECORD_HEADER_CUTS } from '../../shared/components/StudioDetail/RecordHeader/recordHeaderCuts';
+import { COMMIT_KIND } from '../../features/actions/kinds/commit';
+import { MOUNT_KIND } from '../../features/actions/kinds/mount';
+import { PORT_KIND } from '../../features/actions/kinds/port';
+import { WORKTREE_KIND } from '../../features/actions/kinds/worktree';
+import { portRowMenuOf } from '../../features/actions/portRowMenuOf';
+import { MOUNT_ROW_CUTS } from '../../app/components/SessionRail/SessionLevel/mountRowCuts';
+import { HISTORY_ROW_CUTS } from '../../features/history/components/CommitsHistory/historyRowCuts';
+import { WORKTREE_ROW_CUTS } from '../../features/storage/components/StoragePage/worktreeRowCuts';
 import { MAX_OVERFLOW_ROWS } from '../../features/actions/overflowCutOf';
 import { branchMenuRowsOf } from '../../features/branch/branchPrimary';
 import { AGENT, RUN, SESSION, seedActionState, type ActionSeed } from '../helpers/actionFixtures';
 import { AGENT_STATES } from '../helpers/agentMenuStates';
 import { ARTIFACT_STATES } from '../helpers/artifactMenuStates';
+import {
+  COMMIT_ROW_STATES,
+  MOUNT_ROW_STATES,
+  PORT_ROW_STATES,
+  WORKTREE_ROW_STATES,
+} from '../helpers/rowMenuStates';
 import { RUN_STATES } from '../helpers/runMenuStates';
 import { SESSION_STATES } from '../helpers/sessionMenuStates';
 
@@ -255,6 +269,47 @@ describe('a header or row ⋯ holds at most five rows in any one state', () => {
         'diff.archiveSession',
       ];
       expect(branchMenuRowsOf({ ids: everything }).size).toBe(MAX_OVERFLOW_ROWS);
+    });
+  });
+
+  describe('rail branch row', () => {
+    it.each(MOUNT_ROW_STATES)('%s', (_state, facts) => {
+      const actions = resolveActions({ definitions: MOUNT_KIND.actions, facts });
+      expectWithinFive(rowsDrawn({ actions, cuts: MOUNT_ROW_CUTS }));
+    });
+  });
+
+  describe('commit row', () => {
+    it.each(COMMIT_ROW_STATES)('%s', (_state, facts) => {
+      const actions = resolveActions({ definitions: COMMIT_KIND.actions, facts });
+      expectWithinFive(rowsDrawn({ actions, cuts: HISTORY_ROW_CUTS }));
+    });
+  });
+
+  describe('storage worktree row', () => {
+    it.each(WORKTREE_ROW_STATES)('%s', (_state, facts) => {
+      const actions = resolveActions({ definitions: WORKTREE_KIND.actions, facts });
+      expectWithinFive(rowsDrawn({ actions, cuts: WORKTREE_ROW_CUTS }));
+    });
+  });
+
+  describe('port row', () => {
+    it.each(PORT_ROW_STATES)('%s, with a stop control', (_state, facts) => {
+      const actions = resolveActions({ definitions: PORT_KIND.actions, facts });
+      const { omit, cuts } = portRowMenuOf({ hasStop: true });
+      const rows = rowsDrawn({ actions, omit, cuts });
+      expectWithinFive(rows);
+      expect(rows).not.toContain('Stop');
+      expect(rows).not.toContain('Force stop');
+    });
+
+    it.each(PORT_ROW_STATES)('%s, nested without a stop control', (_state, facts) => {
+      const actions = resolveActions({ definitions: PORT_KIND.actions, facts });
+      const { omit, cuts } = portRowMenuOf({ hasStop: false });
+      const rows = rowsDrawn({ actions, omit, cuts });
+      expectWithinFive(rows);
+      const offered = actions.map((action) => action.label);
+      expect(rows.includes('Force stop')).toBe(offered.includes('Force stop'));
     });
   });
 });

@@ -490,7 +490,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromOverflow[0]).toBe('Open in GitLab');
   });
 
-  it('commit row: the ⋯, the right click and Cmd+K on the focused row list the same actions in the same order', async () => {
+  it('commit row: the right click and Cmd+K list every action in the same order, the ⋯ a subset of five in that order', async () => {
     seedActionState({ useAppStore, seed: {} });
     const target: CommitActionTarget = {
       kind: 'commit',
@@ -564,9 +564,9 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     const fromPalette = screen
       .getAllByRole('option')
       .map((option) => option.getAttribute('aria-label') ?? '')
-      .slice(0, fromOverflow.length);
+      .slice(0, fromContext.length);
 
-    expect(fromOverflow).toEqual([
+    expect(fromContext).toEqual([
       'Rename',
       'Fold down',
       'Squash down',
@@ -576,10 +576,11 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       'Copy subject',
       'Remove',
     ]);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(fromOverflow).toEqual(['Rename', 'Fold down', 'Squash down', 'Copy SHA', 'Remove']);
+    expect(fromContext.filter((label) => fromOverflow.includes(label))).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
-    expect(fromPalette.slice(0, fromOverflow.length - 1)).toEqual(
-      fromOverflow.filter((label) => label !== 'Remove'),
+    expect(fromPalette.slice(0, fromContext.length - 1)).toEqual(
+      fromContext.filter((label) => label !== 'Remove'),
     );
     expect(fromPalette).not.toContain('Remove');
   });

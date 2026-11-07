@@ -131,11 +131,17 @@
   record header (Copy key, then Refresh) and `drawerMenuOmitOf` for the comment
   drawer (Copy link, then Agent transcript). The agent, run, session and
   branch menus cut by list (`AGENT_HEADER_MENU_IDS`, `runPageOmitOf`,
-  `sessionMenuOf`, `branchMenuRowsOf`). `overflowRows.test.ts` and
-  `overflowRows.drawer.test.tsx` in `src/__tests__/actions` walk every state of
-  these page headers through the real menu code and fail on a sixth row. The
-  row `⋯` of a mount, a commit, a stored worktree and a port are not under the
-  guard yet.
+  `sessionMenuOf`, `branchMenuRowsOf`). The hover row menus cut the same way
+  through the `cuts` prop: the rail branch row (`MOUNT_ROW_CUTS`, keeping Open
+  pull request, Open changes, Open in editor, Switch branch and Close branch,
+  or the state's own primary in place of the least needed), the commit row
+  (`HISTORY_ROW_CUTS`: Move up, Move down and Copy subject, since the drag
+  handle moves a commit), the stored worktree row (`WORKTREE_ROW_CUTS`) and the
+  port row (`portRowMenuOf`: a row with a stop control omits Stop and Force
+  stop, a nested row has none and keeps them). The right click of each lists
+  every row. `overflowRows.test.ts` and `overflowRows.drawer.test.tsx` in
+  `src/__tests__/actions` walk every state of these headers and row menus
+  through the real menu code and fail on a sixth row.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
   the work. The session context and the Explore file preview open there.
