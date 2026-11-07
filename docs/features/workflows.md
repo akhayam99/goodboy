@@ -88,7 +88,7 @@ While the session's workflows load, the run page draws its goal, its facts and t
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of the session in the app, with the run Duplicate credit fix on GPT-6.1 Sol, pinned at High, writing to payments-api on hl/fix-duplicate-credit, with Steps 5 all done: three scouts under step 1, a planner, two implementers and a tester, the two hints read at step 1 and step 2, the orchestrator summary and the Create report and Create wireframe buttons">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 Runs opens on your runs. A quiet **Start a run** row opens the field in place, and **Esc** closes it. With no run yet the field is the page.
 
@@ -124,7 +124,7 @@ See why each step was picked. A short **Recap** says what is done and what is le
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The page of a finished orchestrated run: its goal with Can use Claude, Codex, Limit $3.00 and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Step handoff summary
 
@@ -136,10 +136,10 @@ Each question arrives as one card with whether it is **Blocking**, and numbered 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-light.webp" alt="The Questions page of a session: Needs you 3 and Answered 4 as rows with the agent and the age, and the question Which queue should the delivery retries run on? open in the drawer with its file and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Let an agent decide, Skip, Send as message and Answer">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-light.webp" alt="The Questions page of a session: Needs you 3 and Answered 4 as rows with the agent and the age, and the question Which queue should the delivery retries run on? open in the drawer with its file and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Skip and the filled Answer button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Let an agent decide
 
@@ -147,10 +147,10 @@ Hand a question to another agent with a hint and a model from **Let an agent dec
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Questions page of a session with Which queue should the delivery retries run on? open in the drawer on Let an agent decide: An agent decides with GPT-5.6 Terra Medium, a hints box, Cancel, Skip and Hand off">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Questions page of a session with Which queue should the delivery retries run on? open in the drawer on Let an agent decide: An agent decides with GPT-5.6 Sol, a hints box, Cancel, Skip and Send to agent">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Import workflows
 

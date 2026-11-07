@@ -11,7 +11,7 @@ Ask about the workspace without starting a session. **Chat**, in the sidebar aft
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the sessions rail on the left: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Duplicate credit path: a table of three source files with Read 3 files and Sonnet 5.5 Medium, then the question Where should the check go? answered on GPT-6.1 Sol High, above a message box that reads Read only. Nothing is changed.">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Ask in a session
 
@@ -50,10 +50,10 @@ Follow one agent's work as one conversation you can write in. Each finished turn
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An Implementer agent in a session of Harborline: its turns each reduced to one line such as Read package.json, ran a command, the checklist Remove node_modules in payments-api, Install with pnpm and Run the export tests, and the Transcript drawer open beside the conversation with each step of the turn">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An Implementer agent in a session of Harborline: its turns each reduced to one line such as Read package.json, ran a command, the checklist Remove node_modules in payments-api, Install with pnpm and Run the export tests, and the Steps drawer open beside the conversation with each step of the turn">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Agent suggests
 

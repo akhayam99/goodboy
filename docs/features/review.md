@@ -108,7 +108,7 @@ A branch with no pull request gets its own page: the branch name, whether it is 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments, Changes 6, Commits 5 and Checks 1, with the state Open #318 into main and the Fix checks button, the cards Checks 1 failing, Review Changes requested, Merge Blocked by checks and Branch 3 behind main, the reviewers, the author, the linked issue, the description with its Edit button and the activity down to Checks 1 failing and 9 comments on files">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### One trail to the Branch page
 
@@ -131,7 +131,7 @@ Read the branch against its base in **Changes**, unified or split. The changed f
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Changes tab of the Branch page for hl/fix-duplicate-credit with a diff of ledgerClient.ts and postCredit.ts, each file header with Viewed and Comment, and on the right the file list with Next unviewed 6, a filter box and the changed files in a tree with their added and removed lines">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Write review
 

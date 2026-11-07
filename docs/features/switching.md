@@ -34,7 +34,7 @@ A session nobody touched for three days stays where it is and fades. Rest the po
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="760" alt="The Northwind Sessions list in one-line rows with a state sign, Inactive 14, and a card over the open session Fix webhook retries">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">

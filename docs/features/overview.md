@@ -37,7 +37,7 @@ An empty card is not drawn. An archived session keeps only **Done**.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of Stop retried webhooks posting a second credit, with the goal, a Needs you block and the projects payments-api and notify-relay">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Refresh a session
 
@@ -234,7 +234,7 @@ A click on a row's title opens its place.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-light.webp" width="821" alt="The Next block of a session: Split the reconciliation rewrite into six parts, Ready to implement, with a Start button, and Remove the ledger-core worktree, #418 merged, 412 MB, with a Remove button, each with Not now">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Time left
 

@@ -5,7 +5,7 @@
   <img src="./docs/readme/readme-hero-light.webp" alt="The Overview of a Harborline session: Needs you 4, Running, Branches and Done, with the sessions rail and the Context drawer open on Decisions 5">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
@@ -46,7 +46,7 @@ A workflow splits a task into steps, such as scout, plan, implement and review. 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="A finished workflow run, Duplicate credit fix: five steps done, the orchestrator on GPT-6.1 Sol and a summary of the result">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ## Shared context
 
@@ -57,7 +57,7 @@ What one agent learns, the next one reads. The goal, decisions and a running sum
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/context-drawer-light.webp" alt="The Context drawer on Decisions 5: four changes since you last looked, then decisions 7, 6, 4 and 2, beside the session Overview">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ## Pull request review
 
@@ -68,7 +68,7 @@ The **Branch** page holds one branch: its pull request, review comments, changed
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of #318: Checks 1 failing, Changes requested, Merge Blocked by checks, reviewers, description and activity">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ## Chat
 
@@ -79,7 +79,7 @@ Ask about your repos without starting a session. **Chat** reads every project an
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list and a table of three source files, Read 3 files, then a follow-up answer">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ## Features
 
