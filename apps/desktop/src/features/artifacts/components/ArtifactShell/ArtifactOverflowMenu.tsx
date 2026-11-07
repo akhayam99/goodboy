@@ -8,6 +8,7 @@ type Props = {
   readonly label: string;
   readonly anchorKey?: string | null;
   readonly viewing?: ActionViewing | null;
+  readonly omit?: ReadonlyArray<string>;
   readonly size?: MenuTriggerSize;
   readonly onArm?: OnArm;
 };
@@ -17,6 +18,7 @@ export const ArtifactOverflowMenu = ({
   label,
   anchorKey = null,
   viewing = null,
+  omit,
   size = 'compact',
   onArm,
 }: Props) => (
@@ -27,6 +29,7 @@ export const ArtifactOverflowMenu = ({
     hideWhenEmpty={size === 'control'}
     anchorKey={anchorKey}
     viewing={viewing}
+    omit={omit}
     onArm={onArm}
   />
 );

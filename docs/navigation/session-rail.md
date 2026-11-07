@@ -779,7 +779,7 @@ Folding the rail leaves the column in place.
   from Explore replaces it and shows **Back to Explore**; a script output opened
   from Scripts replaces it and shows **Back to scripts** (`DrawerFrame`'s
   `back`, carried by the payload's `from`); Run on a Service does not open it,
-  Run on a Task does. `openExplorePane` takes the
+  Run on a Command does (`NAMES.commands`, the band in `ScriptsPanel`). `openExplorePane` takes the
   worktree to browse (the mount registry's Browse files passes it),
   `openScriptsPane` the project to scope to (Open scripts). There is no
   Explore or Scripts lens: the palette's Open Explore and Open Scripts, toasts

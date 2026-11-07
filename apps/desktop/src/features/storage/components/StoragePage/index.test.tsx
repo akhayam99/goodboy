@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-li
 import type { ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
 import { aProject } from '@goodboy/types/testing';
 import type { StorageArtifact, StorageFolder } from '../../../../store/slices/storage/types';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -428,26 +429,34 @@ describe('StoragePage', () => {
     });
   });
 
-  it('explains what a worktree is from the row menu, in the Guide Words chapter', () => {
+  it('explains what a worktree is from the right click, in the Guide Words chapter', () => {
     const openStudio = vi.fn();
     state.openStudio = openStudio;
-    render(<StoragePage />);
+    render(
+      <ObjectMenuProvider>
+        <StoragePage />
+      </ObjectMenuProvider>,
+    );
     const row = screen.getAllByTestId('storage-folder-row')[0];
 
-    fireEvent.click(within(row!).getByRole('button', { name: 'More actions' }));
+    fireEvent.contextMenu(row!);
     fireEvent.click(screen.getByRole('menuitem', { name: 'What is a worktree?' }));
 
     expect(openStudio).toHaveBeenCalledWith({ studio: { kind: 'guide' } });
     expect(peekGuideChapter()).toBe('words');
   });
 
-  it('keeps a folder for thirty days from its menu', () => {
-    render(<StoragePage />);
+  it('keeps a folder for thirty days from the right click', () => {
+    render(
+      <ObjectMenuProvider>
+        <StoragePage />
+      </ObjectMenuProvider>,
+    );
     const row = screen
       .getAllByTestId('storage-folder-row')
       .find((candidate) => candidate.getAttribute('data-status') === 'not-tracked');
 
-    fireEvent.click(within(row!).getByRole('button', { name: 'More actions' }));
+    fireEvent.contextMenu(row!);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Keep for 30 days' }));
 
     expect(state.keepStorageFolder).toHaveBeenCalledWith({ path: untracked.path, days: 30 });

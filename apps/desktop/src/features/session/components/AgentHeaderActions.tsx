@@ -6,18 +6,9 @@ import { ArmedActionPopover } from '../../../shared/components/HeaderConfirm/Arm
 import type { ArmedAction } from '../../../shared/components/HeaderConfirm/armedAction';
 import { useActionEnv } from '../../actions/useActionEnv';
 import { useObjectActions } from '../../actions/useObjectActions';
+import { AGENT_HEADER_MENU_IDS } from './agentHeaderMenuIds';
 
 const STATE_BUTTONS = ['agent.stop', 'agent.close', 'agent.reopen'];
-const MENU_ACTIONS = [
-  'agent.rename',
-  'agent.close',
-  'agent.reopen',
-  'agent.moveToAuto',
-  'agent.detachFromAuto',
-  'agent.markAutoFinished',
-  'agent.copyReply',
-  'agent.delete',
-];
 const DELETE_ACTION = 'agent.delete';
 
 type Props = {
@@ -80,7 +71,7 @@ export const AgentHeaderActions = ({
               viewing={viewing}
               size="control"
               omit={omit}
-              only={MENU_ACTIONS}
+              only={AGENT_HEADER_MENU_IDS}
               hideWhenEmpty
               onArm={({ action, run: runAction }) =>
                 setArmed({
