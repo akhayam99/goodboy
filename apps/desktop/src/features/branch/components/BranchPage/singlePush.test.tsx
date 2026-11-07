@@ -107,7 +107,9 @@ const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments
 const bar = (): HTMLElement => screen.getByRole('toolbar', { name: 'Comment actions' });
 
 const headerPush = (name: RegExp): HTMLElement =>
-  screen.getAllByRole('button', { name }).find((button) => !list().contains(button)) ??
+  screen
+    .getAllByRole('button', { name })
+    .find((button) => button.closest('[data-slot="pane-header"]') !== null) ??
   (() => {
     throw new Error(`no header button ${String(name)}`);
   })();

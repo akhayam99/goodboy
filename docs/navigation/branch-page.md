@@ -18,7 +18,15 @@ its title (`BranchTabStrip`); the page computes its counts once
 (`branchTabFactsOf`, built on `worktreeEntryFactsOf`). The tree row of the branch has no rows under it, only
 one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
-detail; nothing moves from one section to the next.
+detail; nothing moves from one section to the next. The header steps aside
+while you read (`PaneShell headerMode="reveal"`): scrolling a section down keeps
+only the back row (`Back to overview`) and the banners pinned, and a small
+scroll up of 8px (it leaves only after a deliberate 24px down), the top of the
+section, keyboard focus in the header or another tab
+brings the title, the line, the tabs and the work lines back over the content.
+On a section whose scroller does not start its body (Changes, with its toolbar
+above the diff; Comments, with its filter above the list) the toolbar rides up
+with the content and stays under the back row.
 
 **Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
@@ -111,8 +119,9 @@ confirm is an inline panel with a method picker (`ActionConfirm.choice`,
 method the repository forbids shown disabled with its reason
 (`Turned off in payments-api`). Merging raises one plain `info` toast with no
 Follow. Push, Publish and Retry go through the existing publish
-machinery: a frozen preview in line under the header (`PushBanner`, the only
-push one), drift and the result per thread. Under it sits the rebase job banner
+machinery: a frozen preview pinned under the back row, above the title
+(`PushBanner`, the only push one, in the page's `lead`, so it never scrolls or
+steps away), drift and the result per thread. Under it sits the rebase job banner
 (`JobBanner`, `features/history/JobBanner`): one strip for a rebase
 on main, on every tab of the page, which replaces the red line that used to
 tell a stop. It reads the stop of the branch (`rebaseStopOf`, through `useRebaseStop` and

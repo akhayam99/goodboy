@@ -38,6 +38,7 @@ import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTa
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
+import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
@@ -428,6 +429,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       <PaneShell
         page="branch"
         scroll="self"
+        headerMode="reveal"
+        headerRhythm="section"
+        lead={
+          <>
+            <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
+            <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
+          </>
+        }
         header={
           <div className="flex min-w-0 flex-col gap-3">
             <BranchHeader
@@ -460,11 +469,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               isFixRunShown={tab !== 'comments' && branchReview.comments.facts.isFixRunLive}
               onOpenComments={() => selectTab('comments')}
             />
-            <PushBanner sessionId={sessionId} mountId={historyMountId} push={push} />
             {baseRow}
-            <div data-rebase-flow-hook="" className="flex min-w-0 flex-col empty:hidden">
-              <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
-            </div>
             <div
               ref={setTabActionsSlot}
               data-slot="branch-tab-actions"
@@ -473,7 +478,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           </div>
         }
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{body()}</div>
       </PaneShell>
     </BranchDetail>
   );
