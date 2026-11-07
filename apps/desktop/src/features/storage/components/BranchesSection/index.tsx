@@ -1,3 +1,5 @@
+import { BRANCH_TAB_EMPTY_COPY } from './BRANCH_TAB_EMPTY_COPY';
+import { CHECK_STATE, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DeletedBranch, Project, ProjectId } from '@goodboy/types';
 import { Band, Listbox, SectionHeader, SkeletonRow, type ListboxOption } from '@goodboy/ui';
@@ -42,12 +44,6 @@ const TAB_OPTIONS: ReadonlyArray<ListboxOption<BranchTab>> = [
   { value: 'all', label: 'All' },
 ];
 
-const EMPTY_COPY = {
-  safe: 'Nothing safe to delete here. Choose All to see the rest.',
-  'needs-look': 'No branch needs a look.',
-  all: 'No branch here.',
-} as const satisfies Record<BranchTab, string>;
-
 const keyOf = (projectId: ProjectId, branch: string): string => `${projectId}:${branch}`;
 
 export const BranchesSection = ({ scope }: Props) => {
@@ -71,7 +67,8 @@ export const BranchesSection = ({ scope }: Props) => {
       return;
     }
     void loadProjectBranches({ projectIds: projects.map((project) => project.id) }).catch(
-      (error: unknown) => reportError({ title: "Couldn't read the branches", error }),
+      (error: unknown) =>
+        reportError({ recovery: READ_FAILED, title: "Couldn't read the branches", error }),
     );
     let isCancelled = false;
     void Promise.all(
@@ -150,7 +147,7 @@ export const BranchesSection = ({ scope }: Props) => {
       await restoreDeletedBranches({ ids: deleted.map((entry) => entry.id) });
       showToast({ kind: 'success', message: `Restored ${branchCount(deleted.length)}.` });
     } catch (error) {
-      void reportError({ title: "Couldn't restore the branches", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't restore the branches", error });
     }
   };
 
@@ -181,7 +178,7 @@ export const BranchesSection = ({ scope }: Props) => {
         });
       }
     } catch (error) {
-      void reportError({ title: "Couldn't delete the branches", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't delete the branches", error });
     } finally {
       setIsBusy(false);
     }
@@ -252,7 +249,7 @@ export const BranchesSection = ({ scope }: Props) => {
         {visibleGroups.length === 0 && isLoading ? (
           <SkeletonRow label="Checking branches" />
         ) : visibleGroups.length === 0 ? (
-          <p className="px-2 py-2 text-meta text-muted-foreground">{EMPTY_COPY[tab]}</p>
+          <p className="px-2 py-2 text-meta text-muted-foreground">{BRANCH_TAB_EMPTY_COPY[tab]}</p>
         ) : (
           <div className="flex flex-col">
             {visibleGroups.map((group) =>

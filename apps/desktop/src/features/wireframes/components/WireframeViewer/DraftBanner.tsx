@@ -52,7 +52,7 @@ export const DraftBanner = ({
       tone="warning"
       placement="inline"
       role="alert"
-      title={`v${draft.fromRevision + 1} was not kept. ${draft.reason} You are still on v${currentRevision}.`}
+      title={`v${draft.fromRevision + 1} wasn't kept. ${draft.reason} You are still on v${currentRevision}.`}
       {...(isOpen && draft.detail !== null ? { body: draft.detail } : {})}
       actions={
         <span className="flex items-center gap-2">

@@ -16,7 +16,7 @@ type Params = {
 };
 
 const RULES =
-  'return the whole document in one wireframe artifact block, never a patch. keep the id of every node you did not change, give new nodes new ids, and touch only the picked nodes and the scope asked.';
+  "return the whole document in one wireframe artifact block, never a patch. keep the id of every node you didn't change, give new nodes new ids, and touch only the picked nodes and the scope asked.";
 
 const prettySpec = ({ sourceText }: { readonly sourceText: string }): string => {
   try {

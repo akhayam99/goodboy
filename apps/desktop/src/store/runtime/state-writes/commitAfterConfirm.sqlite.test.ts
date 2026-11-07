@@ -106,7 +106,7 @@ describe('commitAfterConfirm applies state only after the step succeeded', () =>
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatchObject({
       title: 'Could not save the pin',
-      body: 'the write was rejected',
+      body: 'the write was rejected\nCheck the current state before trying again.',
       workspace_id: WORKSPACE_ID,
     });
     expect(useAppStore.getState().notifications.map((n) => n.title)).toContain(

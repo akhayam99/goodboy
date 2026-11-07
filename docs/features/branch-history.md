@@ -101,7 +101,7 @@ On a conflict or a commit hook, the panel does three things.
 
 - It reads **Rebase on main stopped: 2 files conflict** and **Your branch is as it was**.
 - It lists every file with **Open** (your editor).
-- It offers **Resolve with Auto**, **Resolve myself** and **Keep branch as it was**, with **Add a hint** for Auto.
+- It offers **Resolve with Auto**, **Resolve in terminal** and **Keep branch as it was**, with **Add a hint** for Auto.
 
 **Resolve with Auto**
 
@@ -110,7 +110,7 @@ On a conflict or a commit hook, the panel does three things.
 - Until Auto took the goal, the panel stays. A failed start keeps your hint and you can try again.
 - While Auto works, the panel reads **Auto is rebasing on main** with **1 of 2 files resolved** and **Open Auto**.
 
-**Resolve myself**
+**Resolve in terminal**
 
 - It starts the rebase in the worktree and opens the terminal on it. If the stop, the mount or its branch changed while it read the base, it starts nothing and says so.
 - Then the panel reads **You are rebasing on main in the terminal**.
@@ -125,7 +125,7 @@ On a conflict or a commit hook, the panel does three things.
 - With or without a pull request, **Push** is the branch page's one push action. It has the same confirm, force with lease and failure line as the header. It shows while the branch has commits origin lacks.
 - When someone pushed while you rebased, the panel reads **Rebased here, but origin has 1 new commit** and names the commit. It offers three verbs.
 - **Bring them in** adds their commits to yours, then pushes with the lease of what it brought in.
-- **Resolve myself** opens the terminal.
+- **Resolve in terminal** opens the terminal.
 - **Undo rebase** uses the backup.
 
 **The verbs of a stopped rebase**
@@ -209,7 +209,7 @@ This part is for contributors and agents who change the feature.
 - Push with lease: `pushBranch({ mode: 'lease' })` is the one verb. A push that used the lease also finishes the waiting rebase or rewrite, with the edited replies, the `Pushed` event and the pull request description, in `apps/desktop/src/store/slices/history/settleHistoryPush.ts`.
 - Rebase progress: `features/history/rebaseJob.ts` reports `progress`. The banner is `apps/desktop/src/features/history/JobBanner/index.tsx` and the live notice is `apps/desktop/src/features/history/components/CommitsHistory/HistoryLiveNotice/index.tsx`, which keep the hint of a failed start.
 - Stopped rebase panel: `apps/desktop/src/features/history/components/RebaseStopPanel.tsx`, with `apps/desktop/src/features/history/components/RebaseConflictPrompt.tsx` and the count from `rebaseConflictOf`.
-- Resolve myself: `apps/desktop/src/store/slices/history/resolveRebaseMyself.ts` starts the rebase, and `worktree_start_rebase` refuses a worktree no longer on the expected branch.
+- Resolve in terminal: `apps/desktop/src/store/slices/history/resolveRebaseMyself.ts` starts the rebase, and `worktree_start_rebase` refuses a worktree no longer on the expected branch.
 - File states in the panel: `apps/desktop/src/features/history/components/RebaseStopFiles.tsx` names each state to a screen reader. `is_stage_only` in `worktree_rebase_conflicts` and `apps/desktop/src/features/history/rebaseFileStatesOf.ts` find a conflict without markers. `worktree_continue_rebase` stages the resolved files and continues.
 - Push after a rebase: `diff.push` is the branch page's one push action. `bringOriginInAndPush` adds the commits someone pushed to yours, then pushes with the lease of what it brought in.
 - Verbs of a stopped rebase: `rebaseStopVerbs({ get, sessionId, mountId })` in `apps/desktop/src/store/slices/history/rebaseStopVerbs.ts` is the one set the banner, the panel and the Next row run. `useJobBannerActions` keeps the error per branch.

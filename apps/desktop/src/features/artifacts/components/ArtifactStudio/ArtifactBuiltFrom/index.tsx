@@ -27,9 +27,9 @@ const scopeLine = ({ kind, sourceWorkflowRunId }: ScopeParams): string => {
     return 'The whole session';
   }
   if (kind === 'wireframe') {
-    return `Run ${sourceWorkflowRunId}. Agents were scoped to that run, session plans were not`;
+    return `Run ${sourceWorkflowRunId}. Agents were scoped to that run, session plans weren't`;
   }
-  return `Run ${sourceWorkflowRunId}. Agents and artifacts were scoped to that run, session events, checks and local change evidence were not`;
+  return `Run ${sourceWorkflowRunId}. Agents and artifacts were scoped to that run, session events, checks and local change evidence weren't`;
 };
 
 export const ArtifactBuiltFrom = ({ artifact }: Props) => {
@@ -74,7 +74,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
       <Band inset="content" label="Built from" ariaLabel="Built from">
         <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
           <p className="text-meta text-muted-foreground">
-            The record of this generation did not load.
+            The record of this generation didn't load.
           </p>
           <Button size="sm" variant="ghost" onClick={() => setLoadAttempt((n) => n + 1)}>
             <RotateCcw size={ICON_SIZE.row} aria-hidden />

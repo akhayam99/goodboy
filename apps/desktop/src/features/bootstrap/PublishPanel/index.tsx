@@ -219,7 +219,7 @@ export const PublishPanel = ({
           body={
             failure.remoteUrl === null
               ? 'Nothing was published.'
-              : `The repository exists at ${failure.remoteUrl} and was not removed.`
+              : `The repository exists at ${failure.remoteUrl} and wasn't removed.`
           }
           detail={failure.message}
           actions={

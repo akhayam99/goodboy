@@ -92,11 +92,11 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page,
 
 ### About you
 
-Tell agents once who you are and how you like to work, in four short fields. **See who reads what** shows which agent role reads each part, and **Explanations** collects what agents explained to you about your topics.
+Tell agents once who you are and how you like to work, in four short fields. **Show who reads what** shows which agent role reads each part, and **Explanations** collects what agents explained to you about your topics.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-light.webp" alt="The About you page of workspace settings with the Profile card: Your job (Tech Lead, Backend Engineer), About your work, How agents should work with you, Explain more when it touches (Rust, Database migrations, Idempotency), the Explanations count with Open and a See who reads what link">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-light.webp" alt="The About you page of workspace settings with the Profile card: Your job (Tech Lead, Backend Engineer), About your work, How agents should work with you, Explain more when it touches (Rust, Database migrations, Idempotency), the Explanations count with Open and a Show who reads what link">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

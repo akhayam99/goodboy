@@ -19,7 +19,7 @@ export const stillOutdatedBody = ({
 }): string => {
   const onPath =
     result.binaryPath === null
-      ? `The ${cli} on your PATH did not change.`
+      ? `The ${cli} on your PATH didn't change.`
       : `The ${cli} on your PATH is ${result.binaryPath}.`;
   const hint =
     command === null

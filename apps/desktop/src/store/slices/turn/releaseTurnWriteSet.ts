@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import { releaseWriteSet } from '../../../features/worktree/worktree';
 import type { GetFn, TurnLease } from './types';
@@ -20,6 +21,7 @@ export const releaseTurnWriteSet = async ({ get, sessionId, lease }: Params): Pr
     await releaseWriteSet({ entries: writeSet, holder: writeSetHolder });
   } catch (error) {
     void get().reportError({
+      recovery: CHECK_STATE,
       title: "Couldn't release the folders this turn held",
       error,
       severity: 'warning',

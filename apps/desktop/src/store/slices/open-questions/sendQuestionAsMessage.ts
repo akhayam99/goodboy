@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { OpenQuestion, SessionId } from '@goodboy/types';
 import { cancelQuestionDelegates } from './cancelQuestionDelegates';
 import { settleDismissedQuestion } from './dismissOpenQuestion';
@@ -25,7 +26,12 @@ export const sendQuestionAsMessage = (set: SetFn, get: GetFn) => {
       result = await get().sendTurn({ sessionId, agentId, content });
     } catch (error) {
       if (!isReportedError(error)) {
-        void get().reportError({ title: "The message didn't send", error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "The message didn't send",
+          error,
+          sessionId,
+        });
       }
       return false;
     }

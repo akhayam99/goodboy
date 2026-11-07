@@ -1,3 +1,5 @@
+import type { ReportErrorParams } from '../../notifications/reportError';
+import { CHECK_STATE } from '../../notifications/errorRecovery';
 import { getProjectValue } from '@goodboy/db';
 import type { MountId, Project, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
@@ -13,15 +15,9 @@ import {
   setupOfferValueOf,
 } from '../../../../features/worktree/newWorktreeSettings';
 
-type ReportParams = {
-  readonly title: string;
-  readonly error: unknown;
-  readonly sessionId: SessionId;
-};
-
 type Params = {
   readonly saveSetting: (key: string, value: string) => Promise<void>;
-  readonly reportError: (params: ReportParams) => Promise<void>;
+  readonly reportError: (params: ReportErrorParams) => Promise<void>;
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly project: Project;
@@ -76,6 +72,11 @@ export const prepareNewWorktree = async ({
       setupOfferValueOf({ offer: { command, carried, skipped, state: 'offered' } }),
     );
   } catch (error) {
-    await reportError({ title: "Couldn't prepare the worktree", error, sessionId });
+    await reportError({
+      recovery: CHECK_STATE,
+      title: "Couldn't prepare the worktree",
+      error,
+      sessionId,
+    });
   }
 };

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
@@ -28,7 +29,12 @@ export const DockContinueButton = ({ sessionId, agentId, toolName, toolUseId }: 
       await retryBlockedTool({ sessionId, agentId, toolName, toolUseId });
       setHasSent(true);
     } catch (err) {
-      void reportError({ title: `Couldn't continue after ${toolName}`, error: err, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: `Couldn't continue after ${toolName}`,
+        error: err,
+        sessionId,
+      });
     } finally {
       setIsBusy(false);
     }

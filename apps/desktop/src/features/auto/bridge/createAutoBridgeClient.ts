@@ -18,7 +18,7 @@ const AUTO_BRIDGE_TIMEOUT_MS = 30_000;
 
 const AUTO_BRIDGE_LONG_TIMEOUT_MS = 30 * 60_000;
 
-const NO_ANSWER = 'The main window did not answer. Do it from the main window.';
+const NO_ANSWER = "The main window didn't answer. Do it from the main window.";
 
 const STOP_RESULTS: ReadonlyArray<TreeStopResult> = ['stopped', 'stuck', 'not_owner'];
 

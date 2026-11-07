@@ -50,7 +50,7 @@ export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViol
       violations.push({
         kind: agentKind,
         signal: 'file-edit-from-readonly-kind',
-        detail: `${agentKind} agent edited ${nonDocFiles.length} file(s). this role should not modify files.`,
+        detail: `${agentKind} agent edited ${nonDocFiles.length} file(s). this role shouldn't modify files.`,
       });
     }
   }

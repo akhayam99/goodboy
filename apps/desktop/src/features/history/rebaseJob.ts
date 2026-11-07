@@ -103,7 +103,7 @@ const pushFailureLine = ({ reason, message }: PushFailureLineParams): string => 
   }
   return historyStopCause({ reason, message }) === 'hook stopped the push'
     ? 'A pre-push hook stopped it.'
-    : 'Origin was not updated.';
+    : "Origin wasn't updated.";
 };
 
 type DirtyTitleOfParams = {
@@ -125,7 +125,7 @@ const keptFilesOf = ({ count }: KeptFilesOfParams): string => {
   if (count === null || count === 0) {
     return '';
   }
-  return count === 1 ? ' Your file was not touched.' : ` Your ${count} files were not touched.`;
+  return count === 1 ? " Your file wasn't touched." : ` Your ${count} files weren't touched.`;
 };
 
 type CommitsOfParams = {
@@ -416,7 +416,7 @@ const copyOf = ({
     case 'result-differs':
       return {
         tone: 'warn',
-        title: 'The result did not match your branch',
+        title: "The result didn't match your branch",
         line: 'Nothing was changed. Details has the output.',
         detail: message.trim() === '' ? null : message.trim(),
       };

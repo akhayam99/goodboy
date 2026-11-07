@@ -49,7 +49,7 @@ import { scopedKindRouting } from './scopedKindRouting';
 import { sendAutoKickoff } from './sendAutoKickoff';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import { createStaleMountError } from '../resolve/rebuildFailure/createStaleMountError';
-import { OPEN_PROVIDER_SETTINGS } from '../notifications/errorRecovery';
+import { CHECK_STATE, OPEN_PROVIDER_SETTINGS } from '../notifications/errorRecovery';
 
 const spawnQueue = createKeyedQueue();
 
@@ -178,7 +178,12 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           !isAutoOwnProvider({ provider: args.provider ?? routing.provider })
         ) {
           const error = new ReportedError(AUTO_PROVIDER_MESSAGE);
-          await get().reportError({ title: AUTO_PROVIDER_TITLE, error, sessionId });
+          await get().reportError({
+            recovery: OPEN_PROVIDER_SETTINGS,
+            title: AUTO_PROVIDER_TITLE,
+            error,
+            sessionId,
+          });
           throw error;
         }
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
@@ -382,7 +387,12 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         planId: kickoffPlan.id,
         agentId: inserted.id,
       }).catch((error: unknown) =>
-        get().reportError({ title: "Couldn't mark the plan as used", error, sessionId }),
+        get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't mark the plan as used",
+          error,
+          sessionId,
+        }),
       );
       return planUse;
     };
@@ -445,7 +455,12 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         if (isReportedError(error)) {
           return;
         }
-        void get().reportError({ title: "The agent didn't start", error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "The agent didn't start",
+          error,
+          sessionId,
+        });
       });
   }
 

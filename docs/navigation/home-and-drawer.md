@@ -463,7 +463,7 @@ A studio covers the whole window grid, so it cannot use that column. A Tasks
 record opens in the studio's `DrawerColumn` beside the list on the reader tier
 (`InboxStudioLayout` passes `sizing: 'reader'` through `useStudioDrawer`), with
 the same card and motion; a window too narrow for the list and the pane lifts
-the pane over the list. Open full in the pane header puts the record at the 720
+the pane over the list. Open in the pane header puts the record at the 720
 measure in place of the list (`TaskFullPage`), which claims the studio band with the trail
 Tasks › its key (`StudioTrail`); the Tasks crumb returns to the list.
 Escape closes the record before the studio.

@@ -38,4 +38,4 @@ export const breakerTitle = ({
   `${PROVIDER_LABEL[providerId]} refused your last ${Math.max(REFUSALS_TO_OPEN_BREAKER, health.refusals.length)} runs`;
 
 export const breakerBody = ({ providerId }: ProviderParams): string =>
-  `${PROVIDER_LABEL[providerId]} says you are signed in on this Mac, but it did not accept the runs.`;
+  `${PROVIDER_LABEL[providerId]} says you are signed in on this Mac, but it didn't accept the runs.`;

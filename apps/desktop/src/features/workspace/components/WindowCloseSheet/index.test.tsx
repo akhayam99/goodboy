@@ -131,7 +131,7 @@ describe('the window close sheet', () => {
       agentId: first.id,
       reason: 'leave',
     });
-    expect(screen.queryByRole('dialog', { name: /did not stop/ })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /didn't stop/ })).toBeNull();
   });
 
   it('counts only what the press stops, and keeps a permission ask whose run ended', async () => {
@@ -152,7 +152,7 @@ describe('the window close sheet', () => {
       agentId: first.id,
       reason: 'leave',
     });
-    expect(screen.queryByRole('dialog', { name: /did not stop/ })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /didn't stop/ })).toBeNull();
   });
 
   it('closes without asking when the only live agent is an ask whose run ended', async () => {
@@ -235,7 +235,7 @@ describe('the window close sheet', () => {
     screen.getByRole('button', { name: 'Stop 1 agent' });
   });
 
-  it('says which agents did not stop and offers Close anyway, never a false stop', async () => {
+  it("says which agents didn't stop and offers Close anyway, never a false stop", async () => {
     seedLive({ cancel: async () => ({ outcome: 'still_running', exitedAt: null }) });
     render(<WindowCloseSheet />);
     await requestClose();
@@ -244,7 +244,7 @@ describe('the window close sheet', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Stop 2 agents' }));
     });
 
-    const sheet = within(screen.getByRole('dialog', { name: '2 agents did not stop' }));
+    const sheet = within(screen.getByRole('dialog', { name: "2 agents didn't stop" }));
     sheet.getByRole('button', { name: 'Close anyway' });
   });
 

@@ -35,7 +35,7 @@ const MARK_ROWS: ReadonlyArray<MarkRow> = [
   },
   {
     label: 'failed',
-    desc: 'an agent error, a failing check or a reply that did not go out',
+    desc: "an agent error, a failing check or a reply that didn't go out",
     info: { stage: 'attention', attention: 'ci-failed', prState: null },
   },
   {

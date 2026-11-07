@@ -164,9 +164,7 @@ describe('a provider that refuses runs while its probe says connected', () => {
     );
     expect(screen.getByText('Cursor refused your last 3 runs')).toBeDefined();
     expect(
-      screen.getByText(
-        'Cursor says you are signed in on this Mac, but it did not accept the runs.',
-      ),
+      screen.getByText("Cursor says you are signed in on this Mac, but it didn't accept the runs."),
     ).toBeDefined();
     expect(
       within(screen.getByRole('alert')).getByRole('button', { name: 'Sign in again' }),

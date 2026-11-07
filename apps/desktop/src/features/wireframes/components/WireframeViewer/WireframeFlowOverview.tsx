@@ -68,7 +68,7 @@ export const WireframeFlowOverview = ({
             key={box.screenId}
             role="button"
             tabIndex={0}
-            aria-label={`Go to ${box.title}`}
+            aria-label={`Open ${box.title}`}
             className="cursor-pointer"
             onClick={() => onSelectScreen(box.screenId)}
             onKeyDown={(event) => {

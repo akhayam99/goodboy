@@ -1,3 +1,4 @@
+import { CHECK_STATE, READ_FAILED } from '../../slices/notifications/errorRecovery';
 import { brandId } from '@goodboy/types';
 import type {
   Agent,
@@ -64,7 +65,12 @@ type RefuseParams = {
 
 const refuse = async ({ get, input, message }: RefuseParams): Promise<never> => {
   const error = new ReportedError(message);
-  await get().reportError({ title: REFUSED_TITLE, error, sessionId: input.sessionId });
+  await get().reportError({
+    recovery: CHECK_STATE,
+    title: REFUSED_TITLE,
+    error,
+    sessionId: input.sessionId,
+  });
   throw error;
 };
 
@@ -110,7 +116,12 @@ const keptImages = async ({
   try {
     return await storeImages({ sessionId: input.sessionId, images: input.attachments ?? [] });
   } catch (cause) {
-    await get().reportError({ title: REFUSED_TITLE, error: cause, sessionId: input.sessionId });
+    await get().reportError({
+      recovery: CHECK_STATE,
+      title: REFUSED_TITLE,
+      error: cause,
+      sessionId: input.sessionId,
+    });
     throw new ReportedError(AUTO_IMAGES_LOST_MESSAGE);
   }
 };
@@ -187,6 +198,7 @@ export const routeAutoUserTurn = async ({
   }
   await state.loadAutoTrees({ sessionId: input.sessionId }).catch((error: unknown) =>
     state.reportError({
+      recovery: READ_FAILED,
       title: "Couldn't read the Auto agents",
       error,
       sessionId: input.sessionId,

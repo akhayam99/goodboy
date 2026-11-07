@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { isFilePathTool, prefixRuleFor } from '@goodboy/core/permissions';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -62,6 +63,7 @@ export const usePermissionAsk = ({ item, sessionId, agentId, isDocked, onAnswere
       setIsResolved(true);
     } catch (err) {
       void reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't answer the ${toolName} request`,
         error: err,
         sessionId: sessionId ?? undefined,

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, ConfirmPopover, FieldRow, ICON_SIZE } from '@goodboy/ui';
@@ -44,7 +45,12 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
       await disconnect(workspaceId);
       requestClose();
     } catch (err) {
-      void reportError({ title: "Couldn't disconnect the workspace", error: err, workspaceId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't disconnect the workspace",
+        error: err,
+        workspaceId,
+      });
       setIsDisconnecting(false);
     }
   };

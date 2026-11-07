@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import { getSessionById } from '@goodboy/db';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
@@ -31,6 +32,8 @@ const continueInOwner = async ({ sessionId, agentId }: Params): Promise<void> =>
 
 export const continueNotifiedAgent = ({ sessionId, agentId }: Params): void => {
   continueInOwner({ sessionId, agentId }).catch((error: unknown) => {
-    void useAppStore.getState().reportError({ title: "Couldn't continue the agent", error });
+    void useAppStore
+      .getState()
+      .reportError({ recovery: CHECK_STATE, title: "Couldn't continue the agent", error });
   });
 };

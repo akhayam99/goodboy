@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionId } from '@goodboy/types';
@@ -69,6 +70,7 @@ export const useSessionBranchSync = ({ session }: Params): void => {
           projectId,
         }).catch((error: unknown) =>
           reportError({
+            recovery: READ_FAILED,
             title: "Couldn't check origin",
             error,
             severity: 'warning',

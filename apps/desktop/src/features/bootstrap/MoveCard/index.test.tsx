@@ -68,10 +68,8 @@ describe('MoveCard', () => {
   it('says how many files move and moves them with one click, then opens bootstrap', async () => {
     render(<MoveCard project={project} changedCount={12} isTurnRunning={false} />);
 
-    screen.getByText(
-      '12 changed files in the folder move into a worktree session. The folder ends clean on main.',
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Move my work' }));
+    screen.getByText('Moves 12 changed files into a session. Leaves main clean.');
+    fireEvent.click(screen.getByRole('button', { name: 'Move your work' }));
 
     await waitFor(() => expect(useAppStore.getState().currentSessionId).toBe(bootstrapSession.id));
     expect(moves).toEqual([project.id]);
@@ -80,13 +78,13 @@ describe('MoveCard', () => {
   it('uses the singular for one file', () => {
     render(<MoveCard project={project} changedCount={1} isTurnRunning={false} />);
 
-    screen.getByText(/1 changed file in the folder/);
+    screen.getByText(/Moves 1 changed file into a session/);
   });
 
   it('waits for a running turn instead of moving files under it', () => {
     render(<MoveCard project={project} changedCount={3} isTurnRunning />);
 
-    expect(screen.getByRole('button', { name: 'Move my work' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Move your work' })).toHaveProperty('disabled', true);
     screen.getByText('Wait for the running turn to finish');
   });
 
@@ -98,7 +96,7 @@ describe('MoveCard', () => {
     });
     render(<MoveCard project={project} changedCount={3} isTurnRunning={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move my work' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move your work' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain(
       'these folders hold their own git repository: vendor/engine',
@@ -109,7 +107,7 @@ describe('MoveCard', () => {
   it('offers Finish instead of a move when the folder has no changed files', () => {
     render(<MoveCard project={project} changedCount={0} isTurnRunning={false} />);
 
-    expect(screen.queryByRole('button', { name: 'Move my work' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Move your work' })).toBeNull();
     screen.getByRole('button', { name: 'Finish' });
     screen.getByText('The folder has no changed files. Finish to start worktree sessions.');
   });

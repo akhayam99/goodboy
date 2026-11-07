@@ -359,7 +359,7 @@ describe('ArtifactStudio list', () => {
         sessionId: 'sess-1',
         kind: 'report',
         workflowRunId: null,
-        note: 'the brief of this generation was not recorded',
+        note: "the brief of this generation wasn't recorded",
       });
     });
   });

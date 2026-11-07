@@ -56,7 +56,7 @@ export const blockerCopy = ({
     case 'uncaptured_work':
       return { sentence: 'The branch carries work nobody approved', action: 'view_work' };
     case 'unapproved_commit':
-      return { sentence: 'The branch carries a commit you did not approve', action: 'view_work' };
+      return { sentence: "The branch carries a commit you didn't approve", action: 'view_work' };
     case 'dirty_tree':
       return { sentence: 'Worktree has uncommitted changes', action: 'open_diff' };
     case 'writer_busy':

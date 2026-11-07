@@ -237,7 +237,7 @@ describe('gitlabPullRequestTransport', () => {
     );
 
     await expect(transport.readMergeRequest()).rejects.toMatchObject({
-      message: 'GitLab did not answer',
+      message: "GitLab didn't answer",
       details: '',
     });
   });

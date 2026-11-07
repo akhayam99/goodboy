@@ -83,10 +83,10 @@ const failedSentence = ({
       return pushError === null ? 'Nothing was pushed' : `Nothing was pushed: ${pushError}`;
     case 'reply':
       return pushedSha === null
-        ? 'The reply was not posted'
-        : `${shortSha({ sha: pushedSha })} is on origin. The reply was not posted`;
+        ? "The reply wasn't posted"
+        : `${shortSha({ sha: pushedSha })} is on origin. The reply wasn't posted`;
     case 'resolve':
-      return `Reply posted. ${provider} did not resolve the thread`;
+      return `Reply posted. ${provider} didn't resolve the thread`;
     case 'uncertain':
       return "We couldn't confirm the reply landed";
     default: {

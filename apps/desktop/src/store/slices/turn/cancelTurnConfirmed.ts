@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { AgentId, IsoDateTime, SessionId, TurnState } from '@goodboy/types';
 import { updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -59,7 +60,12 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       if (isAlive) {
         cancelledRunIds.delete(runId);
         if (isReported) {
-          void get().reportError({ title: "Couldn't stop the agent", error: cause, sessionId });
+          void get().reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't stop the agent",
+            error: cause,
+            sessionId,
+          });
         }
         return FAILED;
       }
@@ -70,13 +76,19 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
     } catch (waitError) {
       cancelledRunIds.delete(runId);
       if (isReported) {
-        void get().reportError({ title: "Couldn't stop the agent", error: waitError, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't stop the agent",
+          error: waitError,
+          sessionId,
+        });
       }
       return FAILED;
     }
     if (!hasStopped) {
       if (isReported) {
         void get().reportError({
+          recovery: CHECK_STATE,
           title: "The agent hasn't stopped yet",
           error: new Error('The process is still running. Press Stop again to retry.'),
           severity: 'warning',
@@ -93,6 +105,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
       await updateSessionState(tauriDatabase, sessionId, derived, exitedAt);
     } catch (error) {
       void get().reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't save the stopped state",
         error,
         severity: 'warning',

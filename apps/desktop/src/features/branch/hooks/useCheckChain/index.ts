@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { MountId, SessionId } from '@goodboy/types';
@@ -39,7 +40,12 @@ export const useCheckChain = ({ sessionId, mountId, url }: Params) => {
       void loadAgentTranscript(sessionId, agentId, { isSelecting: false }).catch(
         (error: unknown) => {
           if (!isReportedError(error)) {
-            void reportError({ title: "Couldn't read the analysis", error, sessionId });
+            void reportError({
+              recovery: READ_FAILED,
+              title: "Couldn't read the analysis",
+              error,
+              sessionId,
+            });
           }
         },
       );

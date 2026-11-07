@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { StarredIssue, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
@@ -100,7 +101,11 @@ export const useInboxStars = ({ workspaceId, records, refreshOnOpen = true }: Pa
         }
         await starIssueRecord({ workspaceId, record });
       } catch (error) {
-        void reportError({ title: `Couldn't update the star on ${record.identifier}`, error });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: `Couldn't update the star on ${record.identifier}`,
+          error,
+        });
       }
     },
     [reportError, starIssueRecord, starredKeys, unstarIssue, workspaceId],

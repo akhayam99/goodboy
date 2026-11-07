@@ -1,3 +1,5 @@
+import { wireframeDescription } from './wireframeDescription';
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import {
   ArchiveRestore,
   Copy,
@@ -41,7 +43,6 @@ import {
   artifactKickoff,
   artifactSourceContents,
   openArtifactCopy,
-  otherWireframeFidelity,
   regenerateReport,
   retryArtifactGeneration,
   revealArtifactCopy,
@@ -50,7 +51,6 @@ import {
 } from '../../artifacts/artifactActionRuns';
 import { artifactSourceExport } from '../../artifacts/hooks/useArtifactExport/artifactSourceExport';
 import { REGENERATE_BLOCKED_HINT, REGENERATE_READY_HINT } from '../../reports/useReportRegenerate';
-import { WIREFRAME_FIDELITY_VARIANT_LABEL } from '../../wireframes/wireframeFidelity';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { showApproved } from './showApproved';
 import { DRAFT_RUN_WORDS } from '../../plans/planComments/DRAFT_RUN_WORDS';
@@ -96,15 +96,6 @@ const portOf = ({ facts, id }: FactsOnly & { readonly id: ArtifactPortId }): Art
 
 const artifactOf = ({ facts }: FactsOnly): SessionArtifact | null =>
   facts.plan === null ? facts.stored : planAsArtifact({ plan: facts.plan, stored: facts.stored });
-
-const wireframeDescription = ({
-  artifact,
-}: {
-  readonly artifact: WireframeArtifact | null;
-}): string | null =>
-  artifact === null
-    ? null
-    : `Runs the wireframe again as a separate ${WIREFRAME_FIDELITY_VARIANT_LABEL[otherWireframeFidelity({ artifact })]}, leaving this one untouched`;
 
 const noCopyReason = ({ facts }: FactsOnly): string | null =>
   facts.workspaceSlug === null ? 'This session has no workspace folder' : null;
@@ -261,6 +252,7 @@ const approvePlan = async ({
   const result = await state.approveWorkflowRunPlan(facts.sessionId, run.id);
   if (result.kind === 'failed') {
     await state.reportError({
+      recovery: CHECK_STATE,
       title: "Couldn't approve the plan",
       error: new Error(result.message),
       sessionId: facts.sessionId,
@@ -642,7 +634,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
         description:
           history === null
             ? 'It is removed from this device. This cannot be undone.'
-            : `It is removed from this device, with its run history (${history}). This cannot be undone.`,
+            : `Deletes it and its run history (${history}) from this device permanently.`,
         confirmLabel: 'Delete permanently',
         role: 'danger',
       };

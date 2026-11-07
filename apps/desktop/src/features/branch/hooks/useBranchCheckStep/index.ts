@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
@@ -114,7 +115,7 @@ export const useBranchCheckStep = ({
       await action.run({});
     } catch (error: unknown) {
       if (!isReportedError(error)) {
-        void reportError({ title: action.failureTitle, error, sessionId });
+        void reportError({ recovery: CHECK_STATE, title: action.failureTitle, error, sessionId });
       }
     }
   }, [chainState, mountId, prNumber, reportError, sessionId]);

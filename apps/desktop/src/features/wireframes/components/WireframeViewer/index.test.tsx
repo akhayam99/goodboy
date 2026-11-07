@@ -309,7 +309,7 @@ describe('WireframeViewer', () => {
     ).toBe(true);
   });
 
-  it('says a version was not kept and asks again with the same request', async () => {
+  it("says a version wasn't kept and asks again with the same request", async () => {
     state.wireframeDrafts = {
       'wireframe-1': {
         status: 'failed',
@@ -324,7 +324,7 @@ describe('WireframeViewer', () => {
       },
     };
     renderViewer();
-    const alert = await waitFor(() => screen.getByText(/v2 was not kept/));
+    const alert = await waitFor(() => screen.getByText(/v2 wasn't kept/));
     expect(alert.textContent).toContain('You are still on v1.');
     fireEvent.click(screen.getByRole('button', { name: 'Ask again' }));
     expect(state.requestWireframeChange).toHaveBeenCalledWith(
@@ -363,7 +363,7 @@ describe('WireframeViewer', () => {
     expect(rows[0]?.textContent).toContain('Split exceptions out');
     expect(rows[0]?.textContent).toContain('1 screen changed');
     expect(rows[1]?.textContent).toContain('First draft');
-    fireEvent.click(within(rows[1] as HTMLElement).getByRole('button', { name: 'View' }));
+    fireEvent.click(within(rows[1] as HTMLElement).getByRole('button', { name: 'Open' }));
     expect(screen.getByText('You are viewing v1 of 2.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Restore v1' }));
     expect(state.restoreArtifactRevision).toHaveBeenCalledWith(
@@ -459,7 +459,7 @@ describe('WireframeViewer', () => {
     const alert = await screen.findByRole('alert');
     expect(within(alert).getByText("Couldn't show the pages")).toBeDefined();
     expect(
-      within(alert).getByText('The wireframe is saved, but its preview did not render.'),
+      within(alert).getByText("The wireframe is saved, but its preview didn't render."),
     ).toBeDefined();
     expect(alert.textContent).not.toContain('Cannot read properties');
     fireEvent.click(within(alert).getByRole('button', { name: 'Details' }));

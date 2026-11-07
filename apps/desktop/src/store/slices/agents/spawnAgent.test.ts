@@ -437,7 +437,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(sendTurn).not.toHaveBeenCalled();
   });
 
-  it('keeps the plan unused when the kickoff is refused, and says the agent did not start', async () => {
+  it("keeps the plan unused when the kickoff is refused, and says the agent didn't start", async () => {
     const { sendTurn, reportError, spawn } = buildHarness([makePlan()]);
     sendTurn.mockImplementationOnce(async () => ({ blockedOverBudget: true }));
 
@@ -606,6 +606,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await vi.waitFor(() =>
       expect(reportError).toHaveBeenCalledWith({
+        recovery: { clause: 'check-state' },
         title: "The agent didn't start",
         error: new Error('every provider is signed out'),
         sessionId: SESSION_ID,

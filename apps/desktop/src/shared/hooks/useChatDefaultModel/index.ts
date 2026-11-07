@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED, READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -33,7 +34,12 @@ export const useChatDefaultModel = ({ workspaceId }: Params) => {
   const load = useCallback(
     (): Promise<string | null> =>
       loadSetting(key).catch((error: unknown) => {
-        void reportError({ title: "Couldn't read the default chat model", error, workspaceId });
+        void reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read the default chat model",
+          error,
+          workspaceId,
+        });
         return null;
       }),
     [loadSetting, reportError, key, workspaceId],
@@ -49,7 +55,12 @@ export const useChatDefaultModel = ({ workspaceId }: Params) => {
   const write = ({ value }: WriteParams): void => {
     saveSetting(key, value).catch(
       (error: unknown) =>
-        void reportError({ title: "Couldn't save the default chat model", error, workspaceId }),
+        void reportError({
+          recovery: NOTHING_CHANGED,
+          title: "Couldn't save the default chat model",
+          error,
+          workspaceId,
+        }),
     );
   };
 

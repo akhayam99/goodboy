@@ -1,3 +1,4 @@
+import { OPEN_APP_SETTINGS_GENERAL } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo } from 'react';
 import { DrawerFrame, ErrorStrip, formatError, Skeleton } from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
@@ -48,6 +49,7 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
                 editor: editorBinary,
               }).catch((error: unknown) =>
                 reportError({
+                  recovery: OPEN_APP_SETTINGS_GENERAL,
                   title: "Couldn't open the file in your editor",
                   error: formatError(error),
                   sessionId,

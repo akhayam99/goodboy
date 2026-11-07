@@ -29,7 +29,7 @@ export const requestReviewersOrWarn = async ({
     (error: unknown) =>
       showToast({
         kind: 'warning',
-        message: `Reviewers were not requested: ${formatError(error)}`,
+        message: `Reviewers weren't requested: ${formatError(error)}`,
       }),
   );
 };

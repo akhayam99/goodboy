@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { ReactNode } from 'react';
 import { PaneShell } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -73,7 +74,7 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
   if (section === 'iphone') {
     return iphoneSettingsPage({
       animationClassName: SETTINGS_PANE_ENTRY,
-      onStopFailed: (failure) => void reportError(failure),
+      onStopFailed: (failure) => void reportError({ ...failure, recovery: CHECK_STATE }),
     });
   }
   const meta: Readonly<Partial<Record<PaneSection, string>>> = {

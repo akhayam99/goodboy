@@ -9,7 +9,7 @@ import {
   type RunDefaultScope,
 } from '../../../session/startRun/runDefaultSetting';
 import { RUN_ROUTE_COPY } from '../../../session/startRun/runRouteCopy';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly scope: RunDefaultScope;
@@ -42,7 +42,7 @@ export const RunDefaultRow = ({ scope, label, help, fallback }: Props) => {
 
   useEffect(() => {
     loadSetting(key).catch((error: unknown) => {
-      void reportError({ title: "Couldn't read how new runs start", error });
+      void reportError({ recovery: READ_FAILED, title: "Couldn't read how new runs start", error });
     });
   }, [key, loadSetting, reportError]);
 
@@ -54,7 +54,7 @@ export const RunDefaultRow = ({ scope, label, help, fallback }: Props) => {
       void reportError({
         title: "Couldn't save how new runs start",
         error,
-        recovery: NOTHING_CHANGED,
+        recovery: CHECK_STATE,
       });
     } finally {
       setIsSaving(false);

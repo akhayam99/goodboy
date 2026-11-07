@@ -5,7 +5,7 @@ type FailureCopy = {
 
 const FAILURE_COPY: Readonly<Record<string, FailureCopy>> = {
   'mount.reopen': { verb: 'reopen', body: 'The worktree stayed closed. Nothing else changed.' },
-  'mount.rebase': { verb: 'rebase', body: 'The branch was not rebased.' },
+  'mount.rebase': { verb: 'rebase', body: "The branch wasn't rebased." },
   'mount.push': { verb: 'push', body: 'Nothing was pushed.' },
   'mount.createPullRequest': {
     verb: 'create the pull request for',

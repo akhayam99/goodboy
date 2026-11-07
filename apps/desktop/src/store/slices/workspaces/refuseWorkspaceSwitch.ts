@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { WorkspaceId } from '@goodboy/types';
 import { failWorkspaceSwitch } from './failWorkspaceSwitch';
 import type { GetFn, SetFn } from './types';
@@ -13,6 +14,7 @@ const STILL_RUNNING_MESSAGE =
 
 export const refuseWorkspaceSwitch = ({ set, get, id }: Params): void => {
   void get().reportError({
+    recovery: CHECK_STATE,
     title: "Couldn't leave this workspace",
     error: new Error(STILL_RUNNING_MESSAGE),
     severity: 'warning',

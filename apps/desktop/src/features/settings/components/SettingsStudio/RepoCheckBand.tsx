@@ -3,7 +3,7 @@ import { Band, FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy
 import { useAppStore } from '../../../../store';
 import { SETTING_REPO_CHECK_MINUTES } from '../../settings';
 import { repoCheckMinutesOf } from '../../../workspace/repoCheckMinutesOf';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { NOTHING_CHANGED, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 
 const INTERVAL_OPTIONS: ReadonlyArray<SegmentedTabOption<string>> = [
   { value: '0', label: 'Off' },
@@ -29,7 +29,11 @@ export const RepoCheckBand = () => {
       return;
     }
     void loadSetting(SETTING_REPO_CHECK_MINUTES).catch((error: unknown) =>
-      reportError({ title: "Couldn't read how often to check the repositories", error }),
+      reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read how often to check the repositories",
+        error,
+      }),
     );
   }, [raw, loadSetting, reportError]);
 

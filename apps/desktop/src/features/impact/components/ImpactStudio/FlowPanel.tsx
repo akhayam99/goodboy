@@ -56,7 +56,7 @@ export const FlowPanel = ({
             <StatCard
               label="median wall-clock"
               value={formatHours({ hours: health.medianSessionHours })}
-              hint={`p90 ${formatHours({ hours: health.p90SessionHours })}`}
+              hint={`P90 ${formatHours({ hours: health.p90SessionHours })}`}
             />
             <StatCard
               label="wait on human"

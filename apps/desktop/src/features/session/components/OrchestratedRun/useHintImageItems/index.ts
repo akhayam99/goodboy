@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -40,6 +41,7 @@ export const useHintImageItems = ({ sessionId, runId, hint }: Params): HintImage
       }
       setFailedAttempt(attempt);
       void reportError({
+        recovery: READ_FAILED,
         title: ORCHESTRATED_COPY.hintImagesLoadFailed,
         error,
         sessionId,

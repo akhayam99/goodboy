@@ -99,7 +99,7 @@ describe('ProfileForm', () => {
   it('shows who reads which field', () => {
     render(<Harness onCommit={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'See who reads what' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show who reads what' }));
     const table = screen.getByRole('dialog', { name: 'Who reads what' });
     const implementerRow = within(table).getByRole('row', { name: /Implementer, Tester, Docs/ });
     expect(

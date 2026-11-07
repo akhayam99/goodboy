@@ -255,7 +255,7 @@ const renderAgents = ({
           ? [`only the last ${REPORT_CONTEXT_LIMITS.agents} fit, earlier agents are missing`]
           : []),
         ...(silent > 0 ? [`${silent} had no output recorded`] : []),
-        ...(droppedCount > 0 ? [`${droppedCount} did not fit and were dropped`] : []),
+        ...(droppedCount > 0 ? [`${droppedCount} didn't fit and were dropped`] : []),
         ...(clippedCount > 0
           ? [`${clippedCount} final message(s) were shortened to fit the budget`]
           : []),
@@ -638,7 +638,7 @@ const attachmentsRow = ({
     state: kept.length === 0 ? 'missing' : 'partial',
     detail: [
       ...kept.map((attachment) => attachment.fileName),
-      `${dropped} of ${attachments.length} paths did not fit the framing budget`,
+      `${dropped} of ${attachments.length} paths didn't fit the framing budget`,
     ],
   };
 };
@@ -753,7 +753,7 @@ export const buildReportContext = ({
   const droppedAttachments = attachments.length - bounded.kept.length;
   if (droppedAttachments > 0) {
     truncations.push(
-      `attachments: ${droppedAttachments} of ${attachments.length} paths did not fit the framing budget`,
+      `attachments: ${droppedAttachments} of ${attachments.length} paths didn't fit the framing budget`,
     );
   }
 

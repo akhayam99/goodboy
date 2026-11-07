@@ -125,7 +125,7 @@ export const MountPreflightCard = ({
       )}
       {state.branchScanError === null ? null : (
         <p className="text-meta text-muted-foreground">
-          Could not read the existing branches, so a name clash was not ruled out:{' '}
+          Could not read the existing branches, so a name clash wasn't ruled out:{' '}
           {state.branchScanError}
         </p>
       )}

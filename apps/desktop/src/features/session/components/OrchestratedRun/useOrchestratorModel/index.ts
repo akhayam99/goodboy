@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo } from 'react';
 import type { Session, WorkflowRun } from '@goodboy/types';
 import type { PickedRoute } from '../../../../../shared/components/RoutingPicker/PickedRoute';
@@ -42,7 +43,12 @@ export const useOrchestratorModel = ({ session, run }: Params): OrchestratorMode
               pin: { provider: route.provider, model: route.model, effort: route.effort },
             });
       setRouting(sessionId, runId, next).catch((error: unknown) => {
-        void reportError({ title: "Couldn't change the orchestrator model", error, sessionId });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't change the orchestrator model",
+          error,
+          sessionId,
+        });
       });
     },
     [reportError, runId, sessionId, setRouting],

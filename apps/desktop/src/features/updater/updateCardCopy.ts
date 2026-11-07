@@ -59,7 +59,7 @@ export const updateCardCopy = ({
       };
     case 'failed':
       return {
-        title: `${name} did not install`,
+        title: `${name} didn't install`,
         body: 'Nothing changed on this Mac.',
         detail: failure === null ? null : failure.message,
       };

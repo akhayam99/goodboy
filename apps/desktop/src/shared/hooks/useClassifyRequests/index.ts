@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED, READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect } from 'react';
 import { useAppStore } from '../../../store';
 import { SETTING_CLASSIFY_REQUESTS } from '../../../features/settings/settings';
@@ -18,14 +19,22 @@ export const useClassifyRequests = (): ClassifyRequestsModel => {
       return;
     }
     loadSetting(SETTING_CLASSIFY_REQUESTS).catch((error: unknown) => {
-      void reportError({ title: "Couldn't read the request classifier", error });
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the request classifier",
+        error,
+      });
     });
   }, [raw, loadSetting, reportError]);
 
   const setIsOn = useCallback(
     (isNext: boolean) => {
       saveSetting(SETTING_CLASSIFY_REQUESTS, isNext ? 'true' : 'false').catch((error: unknown) => {
-        void reportError({ title: "Couldn't save the request classifier", error });
+        void reportError({
+          recovery: NOTHING_CHANGED,
+          title: "Couldn't save the request classifier",
+          error,
+        });
       });
     },
     [saveSetting, reportError],

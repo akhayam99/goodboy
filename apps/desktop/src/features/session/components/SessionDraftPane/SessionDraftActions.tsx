@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -24,7 +25,12 @@ export const SessionDraftActions = ({ workspaceId }: Props) => {
       await startBlankSession({ workspaceId });
     } catch (error) {
       setIsStarting(false);
-      void reportError({ severity: 'error', title: "Couldn't create the session", error });
+      void reportError({
+        recovery: CHECK_STATE,
+        severity: 'error',
+        title: "Couldn't create the session",
+        error,
+      });
     }
   };
 

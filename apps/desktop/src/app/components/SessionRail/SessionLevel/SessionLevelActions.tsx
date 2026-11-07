@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import { Pin } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
@@ -33,7 +34,12 @@ export const SessionLevelActions = ({ session, controls }: Props) => {
 
   useEffect(() => {
     loadSessionBudget(sessionId).catch((error: unknown) => {
-      void reportError({ title: "Couldn't read the session limit", error, sessionId });
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the session limit",
+        error,
+        sessionId,
+      });
     });
   }, [loadSessionBudget, reportError, sessionId]);
 

@@ -394,7 +394,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               placement="inline"
               role="alert"
               title="Couldn't link the chat to the session"
-              body="The session is ready. The link between them was not saved."
+              body="The session is ready. The link between them wasn't saved."
               actions={
                 <>
                   <Button

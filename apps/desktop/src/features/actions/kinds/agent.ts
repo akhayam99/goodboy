@@ -1,3 +1,4 @@
+import { CHECK_STATE, NOTHING_CHANGED } from '../../../store/slices/notifications/errorRecovery';
 import {
   CircleCheck,
   CircleDot,
@@ -273,6 +274,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
           return 'done';
         }
         await env.getState().reportError({
+          recovery: CHECK_STATE,
           title: "Couldn't detach from Auto",
           error: new Error(outcome.message),
           sessionId: facts.sessionId,
@@ -304,6 +306,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
           });
         } catch (error) {
           await env.getState().reportError({
+            recovery: NOTHING_CHANGED,
             title: "Couldn't mark Auto finished",
             error,
             sessionId: facts.sessionId,

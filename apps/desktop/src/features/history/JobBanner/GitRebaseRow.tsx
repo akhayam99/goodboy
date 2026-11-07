@@ -27,7 +27,7 @@ export const GitRebaseRow = ({ sessionId, worktreePath, actions }: Props) => {
         tone="warning"
         placement="banner"
         title="Rebase in progress in the worktree"
-        body="Goodboy did not start it. Continue it, or abort."
+        body="Goodboy didn't start it. Continue it, or abort."
       >
         <div className="flex min-w-0 flex-col gap-3">
           {actions.failureLine === null ? null : (

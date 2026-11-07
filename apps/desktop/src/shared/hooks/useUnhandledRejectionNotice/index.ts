@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { useAppStore } from '../../../store';
 
@@ -12,6 +13,7 @@ export const useUnhandledRejectionNotice = () => {
       void useAppStore
         .getState()
         .reportError({
+          recovery: CHECK_STATE,
           severity: 'warning',
           title: 'An action failed in the background',
           error: event.reason,

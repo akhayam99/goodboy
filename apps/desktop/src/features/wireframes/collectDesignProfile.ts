@@ -468,11 +468,11 @@ export const collectDesignProfile = async ({
   }
   if (discovery.isBounded) {
     notes.push(
-      `the walk stopped at ${DESIGN_PROFILE_LIMITS.maxDirectoryDepth} folders deep, so deeper folders were not read`,
+      `the walk stopped at ${DESIGN_PROFILE_LIMITS.maxDirectoryDepth} folders deep, so deeper folders weren't read`,
     );
   }
   if (commitSha === null) {
-    notes.push('the mount head commit was not resolved, so the refs are not pinned');
+    notes.push("the mount head commit wasn't resolved, so the refs are not pinned");
   }
   const hasEvidence =
     tailwind !== null || tokens.length > 0 || variants.length > 0 || layoutExamples.length > 0;

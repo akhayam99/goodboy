@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED, READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
@@ -68,7 +69,12 @@ export const WorktreeSetupOffer = ({
 
   useEffect(() => {
     void loadSetting(key).catch((error: unknown) =>
-      reportError({ title: "Couldn't read the setup offer", error, sessionId }),
+      reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the setup offer",
+        error,
+        sessionId,
+      }),
     );
   }, [key, loadSetting, reportError, sessionId]);
 
@@ -78,7 +84,12 @@ export const WorktreeSetupOffer = ({
 
   const save = ({ next }: SaveParams) =>
     saveSetting(key, setupOfferValueOf({ offer: next })).catch((error: unknown) =>
-      reportError({ title: "Couldn't save the setup offer", error, sessionId }),
+      reportError({
+        recovery: NOTHING_CHANGED,
+        title: "Couldn't save the setup offer",
+        error,
+        sessionId,
+      }),
     );
   const dismiss = () => void save({ next: { ...offer, state: 'dismissed' } });
   const command = offer.command;

@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
@@ -21,7 +22,12 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
 
   useEffect(() => {
     void loadSavedProjectModels().catch((error: unknown) =>
-      reportError({ title: "Couldn't read the saved folder model settings", error, workspaceId }),
+      reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the saved folder model settings",
+        error,
+        workspaceId,
+      }),
     );
   }, [loadSavedProjectModels, reportError, workspaceId]);
 

@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { Button, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -36,7 +37,12 @@ export const ClosedWorktreeNotice = ({ sessionId, row, controls }: Props) => {
       return;
     }
     checkMountBranchGone({ sessionId, mountId: row.mountId }).catch((error: unknown) => {
-      void reportError({ title: "Couldn't check the branch", error, sessionId });
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't check the branch",
+        error,
+        sessionId,
+      });
     });
   }, [checkMountBranchGone, isRepo, reportError, row.mountId, row.revision, sessionId]);
 

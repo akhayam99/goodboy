@@ -19,7 +19,7 @@ export const GOODBOY_IGNORE_CHOICES: ReadonlyArray<GoodboyIgnoreChoice> = [
   },
   {
     mode: 'global',
-    label: 'All my repositories',
+    label: 'All your repositories',
     hint: 'Adds .goodboy/ to your global git ignore. No folder file changes.',
   },
 ];

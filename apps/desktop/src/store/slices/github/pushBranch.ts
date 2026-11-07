@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { MountId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { ONLINE_COPY_CHANGED_MESSAGE } from '../../../features/history/onlineCopyChangedMessage';
@@ -111,6 +112,7 @@ export const pushBranch = ({ set, get }: SliceDeps) => {
       await settleHistoryPush({ set, get, sessionId, mountId });
     } catch (error) {
       await get().reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't finish recording the push.",
         error,
         severity: 'warning',

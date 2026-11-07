@@ -132,7 +132,7 @@ describe('the policy and failure scenes', () => {
       alert: screen.getByRole('alert'),
       shape: {
         title: "Couldn't show the pages",
-        body: 'The wireframe is saved, but its preview did not render.',
+        body: "The wireframe is saved, but its preview didn't render.",
         raw: STAGE_FAILURE,
         retry: true,
       },
@@ -195,7 +195,7 @@ describe('the policy and failure scenes', () => {
       alert: screen.getByRole('alert'),
       shape: {
         title: 'Publishing main failed',
-        body: 'The repository exists at https://github.com/northwind/cascadia and was not removed.',
+        body: "The repository exists at https://github.com/northwind/cascadia and wasn't removed.",
         raw: 'Permission to northwind/cascadia.git denied',
         retry: true,
       },

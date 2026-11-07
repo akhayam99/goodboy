@@ -69,7 +69,7 @@ describe('the rebase review scene', () => {
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'Review the change' })).toBeNull(),
     );
-    screen.getByText('The result did not match your branch');
+    screen.getByText("The result didn't match your branch");
     expect(screen.queryByRole('button', { name: 'Review the change' })).toBeNull();
   });
   it('puts Open in editor and Copy path in the menu of each file header', async () => {

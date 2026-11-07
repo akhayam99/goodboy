@@ -119,7 +119,7 @@ describe('the Auto dock when Auto was not told', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Approve and start Build' }));
     const tell = await screen.findByRole('button', { name: 'Tell Auto' });
-    screen.getByText('Plan v1 approved, Auto did not hear it');
+    screen.getByText("Plan v1 approved, Auto didn't hear it");
     expect(screen.queryByRole('button', { name: 'Approve and start Build' })).toBeNull();
     fireEvent.click(tell);
 

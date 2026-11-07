@@ -49,13 +49,13 @@ describe('bitbucketFailureOf', () => {
       'network',
       failing({ kind: 'network', status: 0, detail: 'connection refused' }),
       'network',
-      'Bitbucket did not answer, check the connection',
+      "Bitbucket didn't answer, check the connection",
     ],
     [
       'timeout',
       failing({ kind: 'timeout', status: null, detail: 'request timed out: 30s' }),
       'network',
-      'Bitbucket did not answer, check the connection',
+      "Bitbucket didn't answer, check the connection",
     ],
     [
       'no credential',

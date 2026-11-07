@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, type KeyboardEvent } from 'react';
 import { DrawerFrame } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
@@ -99,7 +100,7 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
 
   const pickSessionFolder = () => {
     void openSessionFolderTerminal({ sessionId }).catch((error: unknown) =>
-      reportError({ title: "Couldn't open the terminal", error, sessionId }),
+      reportError({ recovery: CHECK_STATE, title: "Couldn't open the terminal", error, sessionId }),
     );
   };
 

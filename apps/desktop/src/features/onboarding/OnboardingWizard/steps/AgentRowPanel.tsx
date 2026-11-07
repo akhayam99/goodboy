@@ -96,7 +96,7 @@ export const AgentRowPanel = ({ row, isLocked, onRun }: Props) => {
         {row.progress === null ? null : <span>{row.progress}</span>}
         {authUrl === null ? null : (
           <span>
-            Browser did not open?{' '}
+            Browser didn't open?{' '}
             <CopyButton
               value={authUrl}
               label="Copy the sign-in link"

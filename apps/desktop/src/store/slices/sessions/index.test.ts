@@ -1868,7 +1868,7 @@ describe('store contract', () => {
         expect.objectContaining({
           severity: 'warning',
           title: "Couldn't link acme/web#7 to this session",
-          body: 'acme/web#7: db down',
+          body: 'acme/web#7: db down\nCheck the current state before trying again.',
           sessionId: session.id,
         }),
       );

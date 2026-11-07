@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import { updateSessionMountLifecycle } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -86,7 +87,7 @@ export const undoStorageRemoval = ({ set, get }: SliceDeps) => {
     try {
       await get().loadStorage();
     } catch (error) {
-      await get().reportError({ title: "Couldn't refresh Storage", error });
+      await get().reportError({ recovery: READ_FAILED, title: "Couldn't refresh Storage", error });
     }
   };
 };

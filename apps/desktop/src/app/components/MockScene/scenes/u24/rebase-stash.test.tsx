@@ -56,7 +56,7 @@ describe.each([false, true])('rebase stash scenes with dark theme %s', (isDark) 
   });
   it('shows the carried count and offers undo', async () => {
     show({ name: 'rebase-done-carried', isDark });
-    await screen.findByText('7 commits. Your 11 files were not touched. Backup kept for 30 days.');
+    await screen.findByText("7 commits. Your 11 files weren't touched. Backup kept for 30 days.");
     screen.getByRole('button', { name: 'Undo rewrite' });
   });
   it('keeps conflicts saved and offers the exact stash command', async () => {

@@ -226,12 +226,12 @@ describe('UpdateArrivalCard', () => {
     expect(useAppStore.getState().updateQueuedUntilIdle).toBe(false);
   });
 
-  it('failed: says it did not install, shows the reason, and Retry downloads again', async () => {
+  it("failed: says it didn't install, shows the reason, and Retry downloads again", async () => {
     useAppStore.setState({
       updaterStatus: 'available',
       updateFailure: { phase: 'download', message: 'The download was cut off.' },
     });
-    const dialog = await openCard({ name: 'Goodboy 0.24.1 did not install' });
+    const dialog = await openCard({ name: "Goodboy 0.24.1 didn't install" });
 
     within(dialog).getByText('Nothing changed on this Mac.');
     within(dialog).getByText('The download was cut off.');
@@ -246,7 +246,7 @@ describe('UpdateArrivalCard', () => {
     useAppStore.setState({
       updateFailure: { phase: 'install', message: 'The disk is full.' },
     });
-    const dialog = await openCard({ name: 'Goodboy 0.24.1 did not install' });
+    const dialog = await openCard({ name: "Goodboy 0.24.1 didn't install" });
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Retry' }));
 

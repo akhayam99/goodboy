@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { useShallow } from 'zustand/react/shallow';
@@ -295,9 +296,12 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
             });
             await discardHistoryCopy({ worktreePath, copyPath: binding.copyPath }).catch(
               (error: unknown) =>
-                useAppStore
-                  .getState()
-                  .reportError({ title: "Couldn't clean up the old copy.", error, sessionId }),
+                useAppStore.getState().reportError({
+                  recovery: CHECK_STATE,
+                  title: "Couldn't clean up the old copy.",
+                  error,
+                  sessionId,
+                }),
             );
           }
           await useAppStore.getState().startHistoryRewriter({

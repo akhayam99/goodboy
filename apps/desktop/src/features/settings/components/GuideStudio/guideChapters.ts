@@ -241,7 +241,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: "The Now chip, providers, today's spend, theme button and bell sit on the right; spend opens Impact on Spend.",
       },
     ],
-    links: [{ label: 'Go to the board', target: { kind: 'board' } }],
+    links: [{ label: 'Open board', target: { kind: 'board' } }],
     extra: 'stages',
   },
   {
@@ -383,7 +383,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'What the agent received',
-        desc: 'The top of each chat shows the parts of its brief, and View as sent shows the exact text.',
+        desc: 'The top of each chat shows the parts of its brief, and Show text as sent shows the exact text.',
       },
     ],
     links: [],
@@ -400,7 +400,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: NAMES.tasks,
-        desc: 'Issues, pull requests, threads and errors in one list, opening on For me: assigned to you, starred or linked to your sessions. Filters narrows by source, type and folder, and a row opens in the pane on the right.',
+        desc: 'Issues, pull requests, threads and errors in one list, opening on For you: assigned to you, starred or linked to your sessions. Filters narrows by source, type and folder, and a row opens in the pane on the right.',
       },
       {
         term: 'Find any issue',
@@ -499,7 +499,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve myself or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve myself starts the rebase in the terminal.',
+        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts it.',
       },
       {
         term: 'Rebase all',
@@ -783,7 +783,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     links: [
       { label: 'Open the command palette', target: { kind: 'palette' } },
       {
-        label: 'See all shortcuts',
+        label: 'Open shortcuts',
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } },

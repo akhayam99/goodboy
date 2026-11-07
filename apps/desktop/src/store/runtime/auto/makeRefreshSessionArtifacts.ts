@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import type { GetFn, SetFn } from '../../slice-types';
 import type { RefreshSessionArtifactsParams } from './ports';
 import { reloadSessionArtifacts } from './reloadSessionArtifacts';
@@ -18,6 +19,7 @@ export const makeRefreshSessionArtifacts = ({ get, set, announce }: Params) => {
     const failure = await announced;
     if (failure !== null) {
       await get().reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't tell the other windows about the plans",
         error: failure,
         sessionId,

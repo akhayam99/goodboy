@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { PROVIDER_API_KEY_ENV } from '@goodboy/core/providers';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -56,7 +57,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       await refreshProviders();
       reset();
     } catch (err) {
-      void reportError({ title: "Couldn't save the API key", error: err });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't save the API key", error: err });
     } finally {
       setBusy(false);
     }
@@ -68,7 +69,11 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
         await deleteCredential(credentialId);
         await refreshProviders();
       } catch (err) {
-        void reportError({ title: "Couldn't remove the API key", error: err });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't remove the API key",
+          error: err,
+        });
       } finally {
         setArmedId(null);
       }

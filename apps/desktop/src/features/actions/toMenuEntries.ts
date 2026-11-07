@@ -18,7 +18,7 @@ type ItemParams = Params & {
 };
 
 const SUBMENUS = {
-  goto: { label: 'Go to', icon: Compass },
+  goto: { label: 'Open', icon: Compass },
 } as const satisfies Record<ActionSubmenu, Pick<MenuItemEntry, 'label' | 'icon'>>;
 
 const guarded = async ({

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
@@ -104,7 +105,12 @@ export const useAnswerQuestion = ({ sessionId }: Params): AnswerQuestionControls
       } catch (cause) {
         if (!(cause instanceof OpenQuestionDeliveryError)) {
           unstageAnswer(question.id);
-          void reportError({ title: "Couldn't send your answers", error: cause, sessionId });
+          void reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't send your answers",
+            error: cause,
+            sessionId,
+          });
           return;
         }
         for (const pair of pairs) {

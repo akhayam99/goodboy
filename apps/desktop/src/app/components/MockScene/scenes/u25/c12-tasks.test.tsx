@@ -88,7 +88,7 @@ describe('c12 task scenes', () => {
     await mount('c12-tasks-forme');
 
     expect(groupNames()).toEqual(['Starred', 'GitHub', 'Linear', 'Jira']);
-    expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'For you' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('button', { name: 'Show all' }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /^Show all \d/ })).toBeNull();
     expect(within(list()).getAllByRole('option').length).toBeLessThanOrEqual(16);
@@ -137,7 +137,7 @@ describe('c12 task scenes', () => {
     expect(within(properties).getByRole('region', { name: 'State' })).toBeDefined();
     expect(within(properties).getByRole('region', { name: 'Planning' })).toBeDefined();
     expect(within(properties).getByRole('region', { name: 'Links' })).toBeDefined();
-    expect(within(pane).getByRole('button', { name: 'Open full' })).toBeDefined();
+    expect(within(pane).getByRole('button', { name: 'Open' })).toBeDefined();
     expect(within(pane).getByRole('button', { name: 'Star HBL-412' })).toBeDefined();
     expect(within(pane).queryByText('Linked to')).toBeNull();
   });
@@ -146,7 +146,7 @@ describe('c12 task scenes', () => {
     await mount('c12-issue-github');
     expect(
       within(screen.getByRole('complementary', { name: 'Task' })).getByRole('button', {
-        name: 'Open full',
+        name: 'Open',
       }),
     ).toBeDefined();
     cleanup();
@@ -154,7 +154,7 @@ describe('c12 task scenes', () => {
     await mount('c12-issue-sentry');
     expect(
       within(screen.getByRole('complementary', { name: 'Task' })).getByRole('button', {
-        name: 'Open full',
+        name: 'Open',
       }),
     ).toBeDefined();
   });
@@ -171,7 +171,7 @@ describe('c12 task scenes', () => {
     const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(within(trail).getByRole('button', { name: 'Tasks' })).toBeDefined();
     expect(within(trail).getByText('HBL-412')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open' })).toBeNull();
     expect(
       screen.getByRole('heading', { name: 'Ledger export times out over 10k rows' }),
     ).toBeDefined();

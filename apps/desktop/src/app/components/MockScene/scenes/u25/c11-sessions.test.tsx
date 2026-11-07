@@ -132,7 +132,7 @@ describe('every Sessions page capability is reachable from its home', () => {
     fireEvent.contextMenu(card);
     await settle();
     const items = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
-    expect(items[0]).toBe('Go to');
+    expect(items[0]).toBe('Open');
     expect(items.some((item) => item.startsWith('Archive'))).toBe(true);
   });
 

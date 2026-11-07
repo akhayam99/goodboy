@@ -133,7 +133,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           },
           {
             key: 'resolve-myself',
-            label: 'Resolve myself',
+            label: 'Resolve in terminal',
             variant: 'secondary',
             run: actions.resolveMyself,
           },
@@ -220,7 +220,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
           { key: 'bring-in', label: 'Bring them in', variant: 'primary', run: actions.bringIn },
           {
             key: 'open-terminal',
-            label: 'Resolve myself',
+            label: 'Resolve in terminal',
             variant: 'secondary',
             run: controls.openTerminal,
           },

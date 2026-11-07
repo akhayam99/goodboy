@@ -76,6 +76,7 @@ describe('running the checks of an agent again', () => {
     await rerunOnce(port);
 
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't run the checks again",
       error: new Error('The branch changed after this agent finished.'),
     });
@@ -85,7 +86,7 @@ describe('running the checks of an agent again', () => {
   it('shows an error when the main window does not answer, and lets the user try again', async () => {
     const port = vi
       .fn<ChecksRerunPort>()
-      .mockRejectedValueOnce(new Error('The main window did not answer.'))
+      .mockRejectedValueOnce(new Error("The main window didn't answer."))
       .mockResolvedValueOnce({ kind: 'rerun', verdict: 'green' });
     registerChecksRerunPort({ port });
     const { result } = renderHook(() => useChecksRerun());

@@ -1,3 +1,4 @@
+import { OPEN_FAILED, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { Info, Lock, Wrench } from 'lucide-react';
 import {
@@ -26,7 +27,7 @@ export const OtherToolsSection = () => {
 
   useEffect(() => {
     void loadOtherTools().catch((error: unknown) =>
-      reportError({ title: "Couldn't measure the other tools", error }),
+      reportError({ recovery: READ_FAILED, title: "Couldn't measure the other tools", error }),
     );
     return () => {
       void cancelOtherTools().catch(() => undefined);
@@ -39,7 +40,11 @@ export const OtherToolsSection = () => {
 
   const onReveal = (tool: OtherToolUsage) =>
     void revealInFileManager({ path: tool.path }).catch((error: unknown) =>
-      reportError({ title: "Couldn't show the folder", error }),
+      reportError({
+        recovery: OPEN_FAILED,
+        title: "Couldn't show the folder",
+        error,
+      }),
     );
 
   return (

@@ -35,7 +35,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
   };
 
   const hasWork = changedCount !== null && changedCount > 0;
-  const actionLabel = hasWork ? 'Move my work' : 'Finish';
+  const actionLabel = hasWork ? 'Move your work' : 'Finish';
 
   return (
     <Notice
@@ -45,7 +45,7 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
       title="Main is on the remote now. Move your work into a session called bootstrap"
       body={
         hasWork
-          ? `${changedCount} changed ${nounFor({ count: changedCount, one: 'file' })} in the folder move into a worktree session. The folder ends clean on main.`
+          ? `Moves ${changedCount} changed ${nounFor({ count: changedCount, one: 'file' })} into a session. Leaves main clean.`
           : 'The folder has no changed files. Finish to start worktree sessions.'
       }
       actions={

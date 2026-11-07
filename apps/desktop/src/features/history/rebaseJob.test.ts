@@ -95,12 +95,12 @@ describe('a rebase job that finished', () => {
     });
   });
 
-  it('says the uncommitted files were not touched', () => {
+  it("says the uncommitted files weren't touched", () => {
     expect(job({ phase: 'pushed', commitCount: 7 }, 11)?.line).toBe(
-      '7 commits. Your 11 files were not touched. Backup kept for 30 days.',
+      "7 commits. Your 11 files weren't touched. Backup kept for 30 days.",
     );
     expect(job({ phase: 'pushed', commitCount: 1 }, 1)?.line).toBe(
-      '1 commit. Your file was not touched. Backup kept for 30 days.',
+      "1 commit. Your file wasn't touched. Backup kept for 30 days.",
     );
   });
 
@@ -135,7 +135,7 @@ describe('a rebase job that stopped', () => {
     [
       'a result that differs',
       { reason: 'unverified', message: 'changed ledger.ts' },
-      'The result did not match your branch',
+      "The result didn't match your branch",
       'Nothing was changed. Details has the output.',
       'Stopped: result differs',
     ],
@@ -178,7 +178,7 @@ describe('a rebase job that stopped', () => {
         message: 'To github.com:acme/payments-api.git (pre-receive hook declined)',
       },
       'Rebased, but the push failed',
-      'Origin was not updated.',
+      "Origin wasn't updated.",
       'Stopped: push failed',
     ],
     [
@@ -203,7 +203,7 @@ describe('a rebase job that stopped', () => {
       'a push with no output',
       { reason: 'push-failed', message: '' },
       'Rebased, but the push failed',
-      'Origin was not updated.',
+      "Origin wasn't updated.",
       'Stopped: push failed',
     ],
   ];
@@ -256,7 +256,7 @@ describe('a rebase that stopped on a conflict', () => {
     autoAgentId: null,
   };
 
-  it('asks with the conflicted file count and says the branch did not change', () => {
+  it("asks with the conflicted file count and says the branch didn't change", () => {
     expect(
       job({
         phase: 'stopped',

@@ -286,7 +286,7 @@ const CLICKS: ReadonlyArray<string> = [
   'Replaced and withdrawn',
   'sent by',
   'All',
-  'View as sent to Codex',
+  'Show text as sent to Codex',
 ];
 
 export const BrandContextScene = () => {

@@ -52,7 +52,7 @@ describe('resolveRowState', () => {
         pushedSha: '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd',
       }),
     ).toMatchObject({
-      sentence: '4f21c8b is on origin. The reply was not posted',
+      sentence: "4f21c8b is on origin. The reply wasn't posted",
       action: 'retry_reply',
     });
     expect(

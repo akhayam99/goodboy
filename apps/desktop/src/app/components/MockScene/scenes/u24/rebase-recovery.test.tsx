@@ -76,7 +76,7 @@ describe('the u24 rebase recovery scenes', () => {
     await screen.findByRole('button', { name: 'Bring them in' }, { timeout: 4_000 });
     await waitForSettledReads();
 
-    expect(screen.getByRole('button', { name: 'Resolve myself' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
   });
 

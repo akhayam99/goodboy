@@ -20,7 +20,7 @@ const STOP_TITLE: Readonly<Record<HistoryStopReason, string>> = {
   hook: 'Nothing was changed: a hook stopped the temporary copy',
   stuck: NAMES.rebaseNeedsYou,
   invalid: "Nothing was changed: the plan isn't valid",
-  unverified: 'Nothing was changed: the result did not match the plan',
+  unverified: "Nothing was changed: the result didn't match the plan",
   'origin-moved': 'Someone else pushed to origin',
   'head-moved': 'Nothing was changed: the branch moved',
   blocked: 'Nothing was changed yet',

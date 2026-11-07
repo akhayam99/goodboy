@@ -80,7 +80,7 @@ talking to a market. There are two voices:
 - **Contractions everywhere.** "Couldn't", "haven't", "can't", never "could
   not" or "cannot" in a string the reader sees. `contractions-copy.test.ts`
   scans the rendered copy for could not, cannot, do not, does not, is not, are
-  not, will not and have not, and its baseline only falls.
+  not, will not, have not, did not, was not, were not and should not, and its baseline only falls.
 - **One sentence says what Goodboy is.** "Goodboy runs coding agents side by
   side on your own repositories, one session for each goal." opens the README,
   the website hero lead and the Agents step, and `one-sentence.test.ts` keeps
@@ -98,6 +98,11 @@ talking to a market. There are two voices:
   [concepts.md](concepts.md) → Vocabulary rules. A failed action offers
   "Retry", never "Try again". Advice inside a sentence may still say "try
   again".
+  The scanner follows conditional labels and counts single words in state and
+  copy properties. Option labels also reject "my", "me" and "myself".
+  `state-words.test.ts` checks the state maps and tooltip meanings against the
+  table in concepts. `verb-words.test.ts` rejects View, See, Go to and Open full
+  on controls; a View facet heading remains a noun.
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
   Settings, Slack, after-merge cleanup and limits.
 - **One form for a settings path and for a key.** Write a path as

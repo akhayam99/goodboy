@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { CircleStop } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
@@ -50,7 +51,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
     try {
       await task();
     } catch (error) {
-      await reportError({ title: failure, error, sessionId });
+      await reportError({ recovery: CHECK_STATE, title: failure, error, sessionId });
     } finally {
       setIsBusy(false);
     }

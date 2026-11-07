@@ -65,7 +65,7 @@ export const AutoDockPlan = ({
           aria-live="polite"
           className={tintClasses(AUTO_STATE_TONE.waitingOnYou).text}
         >
-          Plan v{model.version} approved, Auto did not hear it
+          Plan v{model.version} approved, Auto didn't hear it
         </span>
         <span className="flex-1" />
         {openPlan}

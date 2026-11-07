@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import type { ShowToast } from '../../../shared/components/Toast';
 import type { AppStore } from '../../../store/store';
@@ -37,6 +38,7 @@ export const moveTrackerAction = ({
         onClick: () => {
           undoTrackerMove({ sessionId, move: result.move }).catch((error: unknown) =>
             reportError({
+              recovery: CHECK_STATE,
               title: `Couldn't move ${move.identifier} back`,
               error,
               sessionId,

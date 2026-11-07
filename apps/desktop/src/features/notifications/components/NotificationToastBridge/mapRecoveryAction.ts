@@ -1,3 +1,4 @@
+import { OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import type { NotificationAction } from '@goodboy/db';
 import type { useAppStore } from '../../../../store';
 import type { ToastAction } from '../../../../shared/components/Toast';
@@ -41,7 +42,11 @@ export const mapRecoveryAction = ({ action, store }: Params): ToastAction => {
       label: NAMES.showInFinder,
       onClick: () => {
         revealInFileManager({ path }).catch((error: unknown) => {
-          void store.reportError({ title: "Couldn't show the folder", error });
+          void store.reportError({
+            recovery: OPEN_FAILED,
+            title: "Couldn't show the folder",
+            error,
+          });
         });
       },
     };

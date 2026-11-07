@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useState } from 'react';
 import type { Agent, ProviderRunId, SessionId, TurnFileSet } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -46,7 +47,11 @@ export const useTurnFiles = ({
       },
       (error: unknown) => {
         if (isCurrent) {
-          void reportError({ title: "Couldn't read what each turn changed", error });
+          void reportError({
+            recovery: READ_FAILED,
+            title: "Couldn't read what each turn changed",
+            error,
+          });
         }
       },
     );

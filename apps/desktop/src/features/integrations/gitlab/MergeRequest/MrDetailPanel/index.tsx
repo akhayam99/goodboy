@@ -1,3 +1,5 @@
+import { approvalSummary } from './approvalSummary';
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
 import { gitlabSessionOf } from '../../../../../store/slices/mount-request/requestOf';
 import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
@@ -17,7 +19,6 @@ import { useToast } from '../../../../../shared/components/Toast';
 import {
   gitlabUpdateMrState,
   type GitlabMergeRequest,
-  type GitlabMrApprovalState,
   type GitlabMrStateEvent,
 } from '../../client';
 import { useGitlabMrApprovals } from '../../useGitlabMrApprovals';
@@ -35,18 +36,6 @@ import { useConversationPane } from '../../../../../shared/components/Conversati
 import { useMrConversationSource } from './useMrConversationSource';
 import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
-
-type ApprovalSummaryParams = {
-  readonly approval: GitlabMrApprovalState;
-};
-
-const approvalSummary = ({ approval }: ApprovalSummaryParams): string => {
-  const given = approval.approvedBy.length;
-  if (approval.approvalsRequired > 0) {
-    return `${given} of ${approval.approvalsRequired}`;
-  }
-  return given === 1 ? '1 approval' : `${given} approvals`;
-};
 
 type UpdateParams = {
   readonly kind: Exclude<MrVerbBusy, 'merge' | null>;
@@ -174,6 +163,7 @@ export const MrDetailPanel = ({
       onClose();
     } catch (err) {
       void reportError({
+        recovery: CHECK_STATE,
         title: mr == null ? "Couldn't merge the merge request" : `Couldn't merge !${mr.iid}`,
         error: err,
         ...(sessionId != null && { sessionId }),
@@ -219,6 +209,7 @@ export const MrDetailPanel = ({
       showToast({ kind: 'success', message: toast });
     } catch (err) {
       void reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't update !${mr.iid}`,
         error: err,
         ...(sessionId != null && { sessionId }),

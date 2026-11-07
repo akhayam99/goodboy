@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { MountId, SessionId } from '@goodboy/types';
@@ -54,9 +55,12 @@ export const usePushFix = ({ sessionId, mountId, onSettled }: Params): PushFixSt
           .completePushFixOutcome({ mountId, agentId, followUp: followUp ?? null });
       } catch (error: unknown) {
         useAppStore.getState().releasePushFixClaim({ mountId, agentId });
-        await useAppStore
-          .getState()
-          .reportError({ title: "Couldn't continue after the fix.", error, sessionId });
+        await useAppStore.getState().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't continue after the fix.",
+          error,
+          sessionId,
+        });
       }
     };
     void run();

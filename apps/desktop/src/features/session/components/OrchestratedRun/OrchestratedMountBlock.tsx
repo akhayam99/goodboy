@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -32,7 +33,12 @@ export const OrchestratedMountBlock = ({ sessionId, block }: Props) => {
     try {
       await resolveMountBlockedStep({ sessionId, agentId: block.agentId, choice });
     } catch (error) {
-      await reportError({ title: RUN_STEP_PIN_COPY.failed, error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: RUN_STEP_PIN_COPY.failed,
+        error,
+        sessionId,
+      });
     } finally {
       setBusyKey(null);
     }

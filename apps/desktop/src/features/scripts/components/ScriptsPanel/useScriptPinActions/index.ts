@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useAppStore } from '../../../../../store';
 import type { RunnableScript, SessionScriptGroup } from '../../../buildSessionScripts';
 import { scriptPinId } from '../../../scriptPinId';
@@ -26,7 +27,7 @@ export const useScriptPinActions = ({ groups }: Params) => {
     (pins[group.projectId] ?? []).includes(scriptPinId(script));
   const togglePinId = ({ group, pinId }: PinIdParams) =>
     void toggleScriptPin({ projectId: group.projectId, pinId }).catch((error: unknown) =>
-      reportError({ title: "Couldn't pin the script", error }),
+      reportError({ recovery: CHECK_STATE, title: "Couldn't pin the script", error }),
     );
   const togglePin = ({ group, script }: RowParams) =>
     togglePinId({ group, pinId: scriptPinId(script) });

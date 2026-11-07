@@ -107,7 +107,7 @@ export const useConversation = ({ source, resetKey }: Params): ConversationModel
         return null;
       }
       return {
-        error: entry.error ?? 'The tool did not accept the message.',
+        error: entry.error ?? "The tool didn't accept the message.",
         body: entry.body,
         retry: () => deliver(entry),
         discard: () => setOutbox((current) => current.filter((item) => item.id !== entry.id)),

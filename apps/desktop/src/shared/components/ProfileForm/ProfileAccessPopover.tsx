@@ -45,7 +45,7 @@ export const ProfileAccessPopover = () => {
           onClick={dropdown.toggle}
           className="text-meta font-medium text-primary underline-offset-2 hover:underline"
         >
-          See who reads what
+          Show who reads what
         </button>
       }
     >

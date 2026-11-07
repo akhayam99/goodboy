@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { branchPlace } from '../../store/slices/navigation/place';
@@ -23,7 +24,12 @@ export const switchBranchMount = async ({
   try {
     await before.setSessionActiveMount({ sessionId, mountId });
   } catch (error) {
-    void before.reportError({ title: "Couldn't switch to that branch", error, sessionId });
+    void before.reportError({
+      recovery: CHECK_STATE,
+      title: "Couldn't switch to that branch",
+      error,
+      sessionId,
+    });
     return;
   }
   useAppStore.getState().navigate({

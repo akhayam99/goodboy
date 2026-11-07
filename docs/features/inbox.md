@@ -12,7 +12,7 @@ Agents on any provider can read and act on the tools you connected, without hold
 
 ### Tasks
 
-Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open beside it. Tasks opens on **For me**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
+Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open beside it. Tasks opens on **For you**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
 
 Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button, which names the current one (**Group: Source**). Each group names its total once, beside its label, shows its first five rows and **Show all**, and a starred item still counts in its source group; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. The key shows what tells rows apart (a Sentry error shows its number, a Slack thread has none), and a thread has no status. Rows carry no buttons: the row is the button.
 
@@ -20,11 +20,11 @@ Narrow the list from one **Filters** button in the header, the same lines icon a
 
 What arrived since you last looked has a small dot before its title, and the header adds how many ("12 open, 2 new"). Goodboy remembers, on this Mac and per workspace, when it first saw each item and when you last had Tasks in front for a few seconds; the dots stay until you leave, and the next visit starts clean. The very first visit marks nothing. The Tasks row in the sidebar shows a dot while something assigned to you arrived and you have not looked yet. Nothing is fetched in the background for it: the dot follows what Tasks, the task picker or the work-item links already loaded.
 
-Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open full** in the pane shows it at full width; **Back** at the top returns to the list.
+Click a row or press **Enter** to open it in the pane on the right, and move with **j** and **k** while the pane follows. **Enter** again starts from the open item. **Open** in the pane shows it at full width; **Back** at the top returns to the list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Tasks page with the For me and All switch, the search box, the Filters button and Group: Source, listing 10 items from Linear, GitHub, Jira, Sentry and Slack, with Linear issue CAS-231 open on the right with Start session, Link to a session and its conversation">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Tasks page with the For you and All switch, the search box, the Filters button and Group: Source, listing 10 items from Linear, GitHub, Jira, Sentry and Slack, with Linear issue CAS-231 open on the right with Start session, Link to a session and its conversation">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -101,7 +101,7 @@ See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goe
 
 ### Records read the same way
 
-Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in groups spaced apart on one grid of labels and values: status, priority and assignee, then project and labels, then pull requests and sessions, then details. A Sentry error shows its level as a word and its culprit once, with no made up description. The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**, which scrolls with it. On the full page the studio band reads **Tasks › key**, and the Tasks crumb leads back. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
+Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in groups spaced apart on one grid of labels and values: status, priority and assignee, then project and labels, then pull requests and sessions, then details. A Sentry error shows its level as a word and its culprit once, with no made up description. The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**, which scrolls with it. On the full page the studio band reads **Tasks › key**, and the Tasks crumb leads back. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
 
 ### Comment threads
 

@@ -3,8 +3,9 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { RETIRED_NAMES } from './retiredNames';
-import { COPY_PROPS, scanCopy } from './scanCopy';
-import type { CopyString } from './scanCopy';
+import { COPY_PROPS } from './copyProps';
+import { scanCopy } from './scanCopy';
+import type { CopyString } from './scanCopySource';
 
 const BASELINE_PATH = join(__dirname, 'copy-budget.baseline.json');
 const IS_UPDATING = process.env.GOODBOY_UPDATE_BASELINE === '1';
@@ -21,6 +22,19 @@ const SENTENCE_PROPS: ReadonlySet<string> = new Set([
 const POSITION_PHRASE =
   /\b(shows? up here|lands? here|land here|appears? here|(?:is|are) (?:kept|listed|recorded|shown) here|moves? to the left|moves? to the right|above|below)\b/i;
 const FIRST_PERSON = /\b(I|I'm|I'll|I've|we|we're|we'll|our|let's)\b|\b(?:We|Our|Let's)\b/;
+const OPTION_PROPS: ReadonlySet<string> = new Set([
+  'label',
+  'actionLabel',
+  'confirmLabel',
+  'shortLabel',
+  'short',
+  'aria-label',
+  'ariaLabel',
+]);
+const OPTION_FIRST_PERSON = /\b(?:my|me|myself)\b/i;
+const BUTTON_RETRY = /\btry (?:the push )?again\b/i;
+const WAITING_TITLE = /\b(?:waiting for you|waits on you|waiting for your (?:OK|answer))\b/i;
+const TITLE_PROPS: ReadonlySet<string> = new Set(['title', 'label', 'word', 'short', 'phrase']);
 const BRAND_LOWERCASE = ['pnpm', 'npm', 'gh', 'git'];
 
 type Rule = {
@@ -46,7 +60,9 @@ const RULES: ReadonlyArray<Rule> = [
   {
     id: 'first-person',
     fix: 'say what the app shows, not who says it',
-    matches: (copy) => inCopyProp(copy) && FIRST_PERSON.test(copy.text),
+    matches: (copy) =>
+      (inCopyProp(copy) && FIRST_PERSON.test(copy.text)) ||
+      (copy.prop !== null && OPTION_PROPS.has(copy.prop) && OPTION_FIRST_PERSON.test(copy.text)),
   },
   {
     id: 'lowercase-start',
@@ -54,13 +70,26 @@ const RULES: ReadonlyArray<Rule> = [
     matches: (copy) =>
       copy.prop !== null &&
       SENTENCE_PROPS.has(copy.prop) &&
+      copy.hasLeadingExpression !== true &&
       /^[a-z]/.test(copy.text) &&
       !BRAND_LOWERCASE.some((brand) => copy.text.startsWith(`${brand} `)),
   },
   ...RETIRED_NAMES.map((retired): Rule => ({
     id: `retired-${retired.id}`,
     fix: `say "${retired.use}" instead`,
-    matches: (copy) => retired.pattern.test(copy.text),
+    matches: (copy) => {
+      if (retired.id === 'try-again' && copy.prop !== null && OPTION_PROPS.has(copy.prop)) {
+        return BUTTON_RETRY.test(copy.text);
+      }
+      if (
+        retired.id === 'waiting-for-you-title' &&
+        copy.prop !== null &&
+        TITLE_PROPS.has(copy.prop)
+      ) {
+        return WAITING_TITLE.test(copy.text);
+      }
+      return retired.pattern.test(copy.text);
+    },
   })),
 ];
 
@@ -90,6 +119,45 @@ const sorted = (counts: Counts): Counts =>
 const readBaseline = (): Counts => JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 
 describe('on-screen copy stays short and plain', () => {
+  it.each(['Sync and try again', 'Try the push again'])(
+    'catches the retry phrase inside a button: %s',
+    (text) => {
+      const rule = RULES.find(({ id }) => id === 'retired-try-again');
+      expect(rule?.matches({ path: 'Harborline.tsx', line: 1, prop: 'label', text })).toBe(true);
+      expect(
+        rule?.matches({
+          path: 'Harborline.tsx',
+          line: 1,
+          prop: 'body',
+          text: `Check it. ${text}.`,
+        }),
+      ).toBe(false);
+    },
+  );
+
+  it('catches a counted waiting title and leaves a reason sentence alone', () => {
+    const rule = RULES.find(({ id }) => id === 'retired-waiting-for-you-title');
+    expect(
+      rule?.matches({ path: 'Harborline.ts', line: 1, prop: 'word', text: '3 waiting for you' }),
+    ).toBe(true);
+    expect(
+      rule?.matches({
+        path: 'Harborline.ts',
+        line: 1,
+        prop: 'sentence',
+        text: 'The agent is waiting for your answer.',
+      }),
+    ).toBe(false);
+  });
+
+  it.each(['Move my work', 'Help me', 'Resolve myself'])(
+    'catches first person in an option: %s',
+    (text) => {
+      const rule = RULES.find(({ id }) => id === 'first-person');
+      expect(rule?.matches({ path: 'Harborline.ts', line: 1, prop: 'label', text })).toBe(true);
+    },
+  );
+
   const measured = measure();
 
   if (IS_UPDATING) {

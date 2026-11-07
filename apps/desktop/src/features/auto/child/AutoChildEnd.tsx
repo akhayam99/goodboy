@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -51,7 +52,12 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
   const handlers: Partial<Record<TailActionId, () => void>> = {
     retryThroughAuto: () =>
       void continueStoppedAgent({ sessionId, agentId: agent.id }).catch((error: unknown) =>
-        reportError({ title: "Couldn't continue the agent", error, sessionId }),
+        reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't continue the agent",
+          error,
+          sessionId,
+        }),
       ),
     stopAgent: () => void cancelCurrentTurn(sessionId, agent.id, 'user'),
     confirmDelegation: () => decide({ choice: 'confirm' }),

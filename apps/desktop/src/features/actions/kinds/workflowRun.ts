@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import {
   Copy,
   ListChecks,
@@ -264,7 +265,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.diff',
-      label: 'View diff',
+      label: 'Open changes',
       icon: CONCEPT_ICONS.diff,
       group: 'open',
       when: ({ facts }) => facts.hasChanges,
@@ -314,6 +315,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
             .continueStoppedAgent({ sessionId: facts.sessionId, agentId: facts.stoppedAgentId })
             .catch((error: unknown) =>
               env.getState().reportError({
+                recovery: CHECK_STATE,
                 title: "Couldn't continue the step",
                 error,
                 sessionId: facts.sessionId,

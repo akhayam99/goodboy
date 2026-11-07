@@ -324,7 +324,7 @@ describe('Analyze with the real store and SQLite', () => {
         checks: [seed.check],
         hint: 'Look at the retry queue first.',
       }),
-    ).rejects.toThrow('A Debugger is already analyzing this check. Your hint was not applied.');
+    ).rejects.toThrow("A Debugger is already analyzing this check. Your hint wasn't applied.");
     release?.();
     await first;
   });

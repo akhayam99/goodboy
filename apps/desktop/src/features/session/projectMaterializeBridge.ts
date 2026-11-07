@@ -85,7 +85,7 @@ export const executeMaterializeRequest = async ({
           if (!holdsFolderCapture({ sessionId, folderPath: project.rootPath })) {
             return {
               ok: false,
-              error: `${project.name} is a plain folder and this turn did not start in it, so nothing written there would be saved. Do not write in it now. The owner can send the next turn with ${project.name} as its destination.`,
+              error: `${project.name} is a plain folder and this turn didn't start in it, so nothing written there would be saved. Do not write in it now. The owner can send the next turn with ${project.name} as its destination.`,
             };
           }
           return { ok: true, mountPath: project.rootPath, branch: '' };

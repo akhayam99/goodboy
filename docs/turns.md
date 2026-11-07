@@ -394,9 +394,9 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   its section in a single panel below; the same chip closes it, and a second
   chip replaces the first rather than stacking. Closing the block hides the
   chips again. **All** shows every section as a closed summary, including
-  **View as sent**. Every handoff starts closed. Earlier steps open their agent,
+  **Show text as sent**. Every handoff starts closed. Earlier steps open their agent,
   the plan is a title and Open plan
-  (never its body), and **View as sent** shows the exact text in mono, in two
+  (never its body), and **Show text as sent** shows the exact text in mono, in two
   parts for Claude and one for the others with a line that says why. When you
   wrote the first message yourself, your bubble stays and a one-line **Also
   received** strip sits above it. Long text uses one eight-line clamp with

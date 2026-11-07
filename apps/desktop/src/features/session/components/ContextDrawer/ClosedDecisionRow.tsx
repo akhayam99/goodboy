@@ -44,7 +44,7 @@ export const ClosedDecisionRow = ({
         {byline.target === null ? null : (
           <button
             type="button"
-            aria-label={`Go to decision ${byline.target}`}
+            aria-label={`Open decision ${byline.target}`}
             onClick={() => onJump(byline.target ?? number)}
             className={cn(
               'inline-flex items-center gap-0.5 rounded-sm text-foreground hover:underline',

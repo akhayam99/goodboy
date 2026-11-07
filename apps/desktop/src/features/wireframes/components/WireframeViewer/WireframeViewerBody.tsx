@@ -268,7 +268,7 @@ export const WireframeViewerBody = ({
           placement="inline"
           role="alert"
           title="Couldn't show the pages"
-          body="The wireframe is saved, but its preview did not render."
+          body="The wireframe is saved, but its preview didn't render."
           detail={stage.message}
           actions={
             <Button variant="secondary" size="sm" onClick={() => setStageAttempt((n) => n + 1)}>

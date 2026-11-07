@@ -155,7 +155,7 @@ describe('collectDesignProfile', () => {
     });
     expect(profile.tokens).toEqual([]);
     expect(profile.notes).toContain(
-      `the walk stopped at ${DESIGN_PROFILE_LIMITS.maxDirectoryDepth} folders deep, so deeper folders were not read`,
+      `the walk stopped at ${DESIGN_PROFILE_LIMITS.maxDirectoryDepth} folders deep, so deeper folders weren't read`,
     );
   });
 
@@ -191,7 +191,7 @@ describe('collectDesignProfile', () => {
     expect(profile.notes).toContain('the walk found no tailwind config in this repository');
     expect(profile.notes).toContain('the walk found no css custom properties in this repository');
     expect(profile.notes).toContain(
-      'the mount head commit was not resolved, so the refs are not pinned',
+      "the mount head commit wasn't resolved, so the refs are not pinned",
     );
   });
 

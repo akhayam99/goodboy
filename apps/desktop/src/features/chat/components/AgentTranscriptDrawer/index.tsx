@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, DrawerFrame, cn, PANE_RHYTHM } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -109,6 +110,7 @@ export const AgentTranscriptDrawer = ({
       const failure = delivery.failure ?? held?.reason ?? null;
       if (!delivery.isDelivered && failure !== null) {
         void reportError({
+          recovery: CHECK_STATE,
           title: TRANSCRIPT_DRAWER_COPY.sendFailed,
           error: new Error(failure),
           sessionId,
@@ -122,7 +124,12 @@ export const AgentTranscriptDrawer = ({
         setAgentDraft(agentId, restoreDraftOnFailedSend({ sent: content, current }));
       }
       if (!isReportedError(error)) {
-        void reportError({ title: TRANSCRIPT_DRAWER_COPY.sendFailed, error, sessionId });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: TRANSCRIPT_DRAWER_COPY.sendFailed,
+          error,
+          sessionId,
+        });
       }
     } finally {
       setIsSending(false);
