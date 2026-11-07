@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { PAGE_MEASURE, PageColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -78,7 +79,12 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
         return;
       }
       if (!isReportedError(error)) {
-        void reportError({ title: "The next step didn't start", error, sessionId });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "The next step didn't start",
+          error,
+          sessionId,
+        });
       }
     }
   };

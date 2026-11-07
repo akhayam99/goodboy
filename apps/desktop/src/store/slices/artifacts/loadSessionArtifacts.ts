@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { refreshSessionArtifacts } from './refresh';
@@ -13,6 +14,7 @@ const loadComments = async ({ get, sessionId }: CommentsParams): Promise<void> =
     await get().loadArtifactComments({ sessionId });
   } catch (error) {
     void get().reportError({
+      recovery: READ_FAILED,
       title: "Couldn't load the plan comments",
       error,
       sessionId,

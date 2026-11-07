@@ -112,7 +112,7 @@ describe('the u26 rebase scenes', () => {
     }
     const inPrompt = within(prompt);
     expect(inPrompt.getByRole('button', { name: 'Resolve with Auto' })).toBeDefined();
-    expect(inPrompt.getByRole('button', { name: 'Resolve myself' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Resolve in terminal' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: 'Keep branch as it was' })).toBeDefined();
     expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
     expect(

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -41,10 +42,9 @@ export const CommentComposer = ({
       }
       isHandled.current = true;
       void latest.current.onSubmit({ body: text }).catch((cause: unknown) => {
-        void useAppStore.getState().reportError({
-          title: "Couldn't save the comment",
-          error: cause,
-        });
+        void useAppStore
+          .getState()
+          .reportError({ recovery: CHECK_STATE, title: "Couldn't save the comment", error: cause });
       });
     };
     window.addEventListener('pagehide', flush);

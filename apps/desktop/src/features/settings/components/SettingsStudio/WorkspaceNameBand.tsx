@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { FieldRow, Input, useEscapeLayer } from '@goodboy/ui';
@@ -46,7 +47,12 @@ export const WorkspaceNameBand = ({ workspaceId }: Props) => {
     try {
       await renameWorkspace({ workspaceId, name: next });
     } catch (err) {
-      void reportError({ title: "Couldn't rename the workspace", error: err, workspaceId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't rename the workspace",
+        error: err,
+        workspaceId,
+      });
       setDraft(workspace.name);
     } finally {
       setRenaming(false);

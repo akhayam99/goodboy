@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { sessionById } from '../sessions/sessionIndex';
 import { changeSessionPins, type PinsChange } from './changeSessionPins';
@@ -83,7 +84,7 @@ export const createSessionPinsSlice = ({ set, get }: SliceDeps): SessionPinsSlic
         }
         storePins({ set, workspaceId, pins });
       } catch (error) {
-        void get().reportError({ title: failureTitle, error, workspaceId });
+        void get().reportError({ recovery: CHECK_STATE, title: failureTitle, error, workspaceId });
         await syncFromDatabase({ workspaceId }).catch(() => undefined);
       }
     });

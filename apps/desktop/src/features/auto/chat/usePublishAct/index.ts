@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -35,7 +36,11 @@ export const usePublishAct = (): PublishActModel => {
           const result = await port({ act: name, delegationIds });
           for (const row of result.rows) {
             if ((row.state === 'failed' || row.state === 'refused') && row.message !== null) {
-              await reportError({ title: FAILED_TITLE, error: new Error(row.message) });
+              await reportError({
+                recovery: CHECK_STATE,
+                title: FAILED_TITLE,
+                error: new Error(row.message),
+              });
             }
           }
           await loadAutoTrees({ sessionId });

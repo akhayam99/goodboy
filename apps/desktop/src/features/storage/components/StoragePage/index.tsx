@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 import { resolveStorageScope } from '../../resolveStorageScope';
@@ -15,7 +16,7 @@ export const StoragePage = () => {
 
   useEffect(() => {
     void loadStorage().catch((error: unknown) =>
-      reportError({ title: "Couldn't read storage usage", error }),
+      reportError({ recovery: READ_FAILED, title: "Couldn't read storage usage", error }),
     );
   }, [loadStorage, reportError]);
 

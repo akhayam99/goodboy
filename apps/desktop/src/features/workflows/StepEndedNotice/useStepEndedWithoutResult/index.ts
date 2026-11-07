@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -32,7 +33,12 @@ export const useStepEndedWithoutResult = ({ sessionId, agentId }: Params): boole
     }
     void loadAgentTranscript(sessionId, agentId, { isSelecting: false }).catch((error: unknown) => {
       if (!isReportedError(error)) {
-        void reportError({ title: "Couldn't read what the step said", error, sessionId });
+        void reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read what the step said",
+          error,
+          sessionId,
+        });
       }
     });
   }, [isLoaded, isBlocked, loadAgentTranscript, reportError, sessionId, agentId]);

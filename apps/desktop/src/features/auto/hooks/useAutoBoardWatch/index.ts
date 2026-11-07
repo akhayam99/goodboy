@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -40,7 +41,12 @@ const loadOnce = ({ sessionId, reported }: LoadParams): void => {
         return;
       }
       reported.add(sessionId);
-      void state.reportError({ title: "Couldn't read the Auto agents", error, sessionId });
+      void state.reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the Auto agents",
+        error,
+        sessionId,
+      });
     });
 };
 

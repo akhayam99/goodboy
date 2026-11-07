@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SessionBudgetOnExceed, SessionId } from '@goodboy/types';
 import { invokeSessionBudgetSet } from '../../../features/budget/budget';
 import { currentAutoDrivePort } from '../../../features/auto/autoDrivePort';
@@ -27,7 +28,7 @@ export const setSessionBudget = (set: SetFn, get: GetFn) => {
       return;
     }
     const reportError = ({ error }: FailureParams) => {
-      void get().reportError({ title: LOWER_FAILED, error, sessionId });
+      void get().reportError({ recovery: CHECK_STATE, title: LOWER_FAILED, error, sessionId });
     };
     try {
       const lowered = await lowerAutoLimitsToSession({

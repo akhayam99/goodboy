@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { IsoDateTime, ProjectId } from '@goodboy/types';
 import { disconnectProject } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -47,6 +48,7 @@ export const removeProject = (set: SetFn, get: GetFn) => {
         .forgetFolderVersions({ folder: project })
         .catch((error: unknown) =>
           get().reportError({
+            recovery: CHECK_STATE,
             title: `Couldn't clear the first copy of ${project.name}`,
             error,
             severity: 'warning',

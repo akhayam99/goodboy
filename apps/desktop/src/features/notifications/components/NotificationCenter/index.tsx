@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import {
@@ -139,13 +140,21 @@ export const NotificationCenter = () => {
     ids: shownUnreadIds,
     onSeen: ({ id }) => {
       markNotificationRead(id).catch((error: unknown) => {
-        void reportError({ title: "Couldn't mark the notification read", error });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't mark the notification read",
+          error,
+        });
       });
     },
   });
   const markAllRead = () => {
     markNotificationsRead().catch((error: unknown) => {
-      void reportError({ title: "Couldn't mark the notifications read", error });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't mark the notifications read",
+        error,
+      });
     });
   };
   const changeScope = ({ next }: ScopeParams) => {
@@ -154,7 +163,11 @@ export const NotificationCenter = () => {
         setUnreadKeys(unreadGroupKeys({ notifications: useAppStore.getState().notifications }));
       })
       .catch((error: unknown) => {
-        void reportError({ title: "Couldn't change which workspaces the bell shows", error });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't change which workspaces the bell shows",
+          error,
+        });
       });
   };
   return (

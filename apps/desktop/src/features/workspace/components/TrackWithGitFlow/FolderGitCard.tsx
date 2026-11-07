@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { Button, formatError, ICON_SIZE, Notice } from '@goodboy/ui';
@@ -59,6 +60,7 @@ export const FolderGitCard = ({ projectId, isInitiallyOpen, isEmbedded = false }
   const refresh = () => {
     void probeFolderGit({ projectId }).catch((err: unknown) =>
       reportError({
+        recovery: READ_FAILED,
         title: `Couldn't check git in ${project.name}`,
         error: err,
         severity: 'warning',

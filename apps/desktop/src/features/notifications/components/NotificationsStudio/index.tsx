@@ -1,3 +1,5 @@
+import { notificationActiveFilterCount } from './notificationActiveFilterCount';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { EmptyState, Eyebrow, PaneShell, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -69,11 +71,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
   const loadedMatching = notifications.filter((notification) =>
     notificationMatches({ notification, filters }),
   ).length;
-  const activeCount = [
-    filters.view !== 'all',
-    filters.severity != null,
-    filters.source != null,
-  ].filter((isActive) => isActive).length;
+  const activeCount = notificationActiveFilterCount({ filters });
   const isFiltered = activeCount > 0;
 
   const groupByKey = (key: string) =>
@@ -89,7 +87,8 @@ export const NotificationsStudio = ({ onClose }: Props) => {
       setSelectedKey(visibleKeys[index + 1] ?? visibleKeys[index - 1] ?? null);
     }
     void dismissNotificationGroup({ ids: group.map((notification) => notification.id) }).catch(
-      (error: unknown) => reportError({ title: "Couldn't delete the notification", error }),
+      (error: unknown) =>
+        reportError({ recovery: CHECK_STATE, title: "Couldn't delete the notification", error }),
     );
   };
 

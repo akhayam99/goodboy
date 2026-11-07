@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { updateWorkflowRunOrchestrationStop, updateWorkflowRunRulesSnapshot } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRules, WorkflowRun, WorkflowRunId } from '@goodboy/types';
@@ -102,7 +103,12 @@ const reportStartFailure = ({ get, sessionId, error }: FailureParams): void => {
     return;
   }
   if (!isReportedError(error)) {
-    void get().reportError({ title: "The next step didn't start", error, sessionId });
+    void get().reportError({
+      recovery: CHECK_STATE,
+      title: "The next step didn't start",
+      error,
+      sessionId,
+    });
   }
 };
 

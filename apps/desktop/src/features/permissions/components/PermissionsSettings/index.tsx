@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
@@ -64,7 +65,12 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
     try {
       await setWorkspacePermissionDefault({ workspaceId, mode });
     } catch (error) {
-      void reportError({ title: "Couldn't change the default mode", error, workspaceId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't change the default mode",
+        error,
+        workspaceId,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -75,7 +81,12 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
       await rules.add(rule);
       return true;
     } catch (error) {
-      void reportError({ title: "Couldn't add the rule", error, workspaceId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't add the rule",
+        error,
+        workspaceId,
+      });
       return false;
     }
   };
@@ -89,7 +100,12 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
         undo: () => rules.restore(rule),
       });
     } catch (error) {
-      void reportError({ title: "Couldn't remove the rule", error, workspaceId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't remove the rule",
+        error,
+        workspaceId,
+      });
     }
   };
 

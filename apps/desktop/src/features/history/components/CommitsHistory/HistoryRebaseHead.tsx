@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, Listbox } from '@goodboy/ui';
@@ -46,6 +47,7 @@ export const HistoryRebaseHead = ({
       })
       .catch((error: unknown) => {
         void reportError({
+          recovery: READ_FAILED,
           title: "Couldn't list the branches",
           error,
           severity: 'warning',

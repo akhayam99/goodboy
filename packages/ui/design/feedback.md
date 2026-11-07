@@ -78,7 +78,12 @@ and answers again when the work ends. The product rules live in
   an agent started with `focus: 'none'`.
 - **Failure is one log row.** The error goes to `reportError` with a title
   that names the action ("Couldn't push the branch") and the real message as
-  its body. The toast is its preview. The control comes back enabled, so the
+  its body. Recovery is required: an action or an audited sentence from
+  `apps/desktop/src/store/slices/notifications/errorRecovery.ts`. Only a path
+  that made no change uses Nothing was changed. A read suggests loading again;
+  a partial or uncertain write asks you to check the current state first.
+  `hostErrorRecoveryOf` offers tool settings for rejected credentials and the
+  neutral sentence for other failures. The toast is its preview. The control comes back enabled, so the
   click is the retry. A form the user is still looking at keeps its error next
   to its footer instead, as DESIGN.md says. Never a toast, an inline banner and
   a suggestion for the same outcome.

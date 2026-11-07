@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import { ErrorStrip, EmptyState, PageColumn, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
@@ -56,7 +57,12 @@ export const WriteReview = ({ session }: Props) => {
           side: anchor?.side ?? 'new',
           body,
         }).catch((err: unknown) =>
-          reportError({ title: "Couldn't save the review comment", error: err, sessionId }),
+          reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't save the review comment",
+            error: err,
+            sessionId,
+          }),
         );
       },
       onAskAgent: askAgent,

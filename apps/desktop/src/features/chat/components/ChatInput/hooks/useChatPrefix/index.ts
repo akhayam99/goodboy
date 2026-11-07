@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Workflow } from '@goodboy/types';
@@ -100,6 +101,7 @@ export const useChatPrefix = ({ session, value, setValue }: Params) => {
         await attachWorkflowToSession(session.id, workflow.id, { navigate: true });
       } catch (error) {
         void reportError({
+          recovery: CHECK_STATE,
           title: `Couldn't start ${workflow.name}`,
           error,
           sessionId: session.id,
@@ -124,7 +126,12 @@ export const useChatPrefix = ({ session, value, setValue }: Params) => {
     try {
       await spawnAgent(session.id, { focus: 'agent' });
     } catch (error) {
-      void reportError({ title: "Couldn't start a new agent", error, sessionId: session.id });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't start a new agent",
+        error,
+        sessionId: session.id,
+      });
     }
   }, [reportError, spawnAgent, session.id, setValue]);
 

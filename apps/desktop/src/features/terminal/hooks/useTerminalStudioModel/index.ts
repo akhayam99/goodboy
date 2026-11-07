@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
@@ -397,6 +398,7 @@ export const useTerminalStudioModel = ({
       if (hasCustomName) {
         void renameTerminalTab({ owner: tab.owner, tabId: id, title: tab.title }).catch((error) =>
           reportError({
+            recovery: CHECK_STATE,
             title: "Couldn't keep the terminal name",
             error,
             workspaceId,
@@ -435,7 +437,12 @@ export const useTerminalStudioModel = ({
         selected.id,
         stringToBase64({ value: changeDirectoryInput({ path: target.path }) }),
       ).catch((error) =>
-        reportError({ title: "Couldn't change the terminal folder", error, workspaceId }),
+        reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't change the terminal folder",
+          error,
+          workspaceId,
+        }),
       );
     },
     [selected, busyIds, reportError, workspaceId],

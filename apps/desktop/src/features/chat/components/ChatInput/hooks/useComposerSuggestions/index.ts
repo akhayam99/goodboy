@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../../store/slices/notifications/errorRecovery';
 import type { ReactNode } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
@@ -58,7 +59,12 @@ export const useComposerSuggestions = ({
         });
       }
     } catch (error) {
-      void reportError({ title: "Couldn't start the agent", error, sessionId: session.id });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't start the agent",
+        error,
+        sessionId: session.id,
+      });
     }
   };
 

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { markHistoryPlan } from '@goodboy/db';
 import type { MountId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -53,7 +54,13 @@ export const settleHistoryPush = async ({
     try {
       await step();
     } catch (error) {
-      await get().reportError({ title, error, severity: 'warning', sessionId });
+      await get().reportError({
+        recovery: CHECK_STATE,
+        title,
+        error,
+        severity: 'warning',
+        sessionId,
+      });
     }
   };
   setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });

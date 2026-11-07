@@ -363,7 +363,7 @@ describe('WireframeViewer', () => {
     expect(rows[0]?.textContent).toContain('Split exceptions out');
     expect(rows[0]?.textContent).toContain('1 screen changed');
     expect(rows[1]?.textContent).toContain('First draft');
-    fireEvent.click(within(rows[1] as HTMLElement).getByRole('button', { name: 'View' }));
+    fireEvent.click(within(rows[1] as HTMLElement).getByRole('button', { name: 'Open' }));
     expect(screen.getByText('You are viewing v1 of 2.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Restore v1' }));
     expect(state.restoreArtifactRevision).toHaveBeenCalledWith(

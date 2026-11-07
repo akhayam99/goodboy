@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { listResolveAttempts } from '@goodboy/db';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -58,7 +59,12 @@ export const feedLaunchTurns = async ({ get, sessionId, attempt }: Params): Prom
         }),
       });
     } catch (error) {
-      void get().reportError({ title: "Couldn't continue the fix run", error, sessionId });
+      void get().reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't continue the fix run",
+        error,
+        sessionId,
+      });
       stop();
       return;
     }

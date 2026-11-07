@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
@@ -51,7 +52,12 @@ export const PushFailureActions = ({
         onAccepted: () => state.settleStartHint({ capture }),
       });
     } catch (error) {
-      await reportError({ title: "Couldn't start the agent.", error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't start the agent.",
+        error,
+        sessionId,
+      });
     } finally {
       setIsFixing(false);
     }
@@ -67,7 +73,12 @@ export const PushFailureActions = ({
         confirmedRemoteSha,
       });
     } catch (error) {
-      await reportError({ title: "Couldn't open the terminal.", error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't open the terminal.",
+        error,
+        sessionId,
+      });
     } finally {
       setIsOpening(false);
     }

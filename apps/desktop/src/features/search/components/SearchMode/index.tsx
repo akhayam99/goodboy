@@ -1,6 +1,9 @@
+import { searchModeItems } from './searchModeItems';
+import type { SearchModeItem } from './searchModeItem';
+import { CHECK_STATE, OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import type { SearchHit, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { ScrollFade, EmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -28,12 +31,8 @@ import { LookupHitRow } from './LookupHitRow';
 import { searchProgressLabel } from './searchProgressLabel';
 import { useListboxCursor } from '../../../../shared/hooks/useListboxCursor';
 
-type Item =
-  | { readonly kind: 'lookup'; readonly id: string; readonly url: string }
-  | { readonly kind: 'result'; readonly id: string; readonly hit: SearchHit };
-
 type OpenItemParams = {
-  readonly item: Item;
+  readonly item: SearchModeItem;
 };
 
 const RECENT_KINDS = ['session', 'plan', 'report', 'decision', 'question', 'issue', 'pr'] as const;
@@ -89,15 +88,10 @@ export const SearchMode = ({
       ? lookupStatuses({ lookup: lookup.state.value, workspaceName: context.workspaceLabel ?? '' })
       : [];
 
-  const items = useMemo((): ReadonlyArray<Item> => {
-    const fromLookup = lookupHits.map((hit): Item => ({
-      kind: 'lookup',
-      id: `lookup:${hit.record.key}`,
-      url: hit.record.url,
-    }));
-    const fromIndex = results.hits.map((hit): Item => ({ kind: 'result', id: hit.docId, hit }));
-    return [...fromLookup, ...fromIndex];
-  }, [lookupHits, results.hits]);
+  const items = useMemo(
+    () => searchModeItems({ lookupHits, hits: results.hits }),
+    [lookupHits, results.hits],
+  );
 
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
   const cursor = useListboxCursor({ ids: itemIds, listRef, listboxId });
@@ -114,7 +108,7 @@ export const SearchMode = ({
     ({ item }: OpenItemParams) => {
       if (item.kind === 'lookup') {
         void openUrl(item.url).catch((error: unknown) =>
-          reportError({ title: "Couldn't open this issue", error }),
+          reportError({ recovery: OPEN_FAILED, title: "Couldn't open this issue", error }),
         );
         onClose();
         return;
@@ -124,7 +118,7 @@ export const SearchMode = ({
       }
       onClose();
       void openSearchHit({ hit: item.hit, query: text }).catch((error: unknown) =>
-        reportError({ title: "Couldn't open this result", error }),
+        reportError({ recovery: CHECK_STATE, title: "Couldn't open this result", error }),
       );
     },
     [onClose, reportError, text],

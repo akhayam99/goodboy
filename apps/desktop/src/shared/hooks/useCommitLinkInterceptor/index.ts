@@ -1,3 +1,4 @@
+import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { openUrl } from '../../lib/editor';
 import { useAppStore } from '../../../store';
@@ -27,7 +28,11 @@ export const useCommitLinkInterceptor = () => {
       if (/^https?:/i.test(href)) {
         e.preventDefault();
         openUrl(href).catch((error: unknown) => {
-          void useAppStore.getState().reportError({ title: "Couldn't open the link", error });
+          void useAppStore.getState().reportError({
+            recovery: OPEN_FAILED,
+            title: "Couldn't open the link",
+            error,
+          });
         });
       }
     };

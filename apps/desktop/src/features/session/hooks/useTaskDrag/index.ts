@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { ProjectId, SessionExternalTask, SessionId } from '@goodboy/types';
@@ -140,6 +141,7 @@ export const useTaskDrag = ({ sessionId, task, branch }: Params) => {
         .catch(async (error: unknown) => {
           taskDragStore.announce({ text: `Couldn't move ${payload.task.identifier}` });
           await state.reportError({
+            recovery: CHECK_STATE,
             title: `Couldn't move ${payload.task.identifier}`,
             error,
             sessionId: payload.sessionId,

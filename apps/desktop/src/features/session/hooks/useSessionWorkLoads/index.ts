@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -28,7 +29,12 @@ export const useSessionWorkLoads = ({ sessionId }: Params): void => {
       void loadSessionEvents({ sessionId });
       void loadSessionArtifacts(sessionId);
       loadSessionContextItems({ sessionId }).catch((error: unknown) => {
-        void reportError({ title: "Couldn't load the session notes", error, sessionId });
+        void reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't load the session notes",
+          error,
+          sessionId,
+        });
       });
       const isOpenLoaded = useAppStore.getState().sessionOpenQuestions[sessionId] !== undefined;
       void Promise.all([

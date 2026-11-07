@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { Notification } from '@goodboy/db';
 import { useAppStore } from '../../store';
 import type { AttentionTarget } from '../session/attentionTarget';
@@ -35,7 +36,9 @@ export const openNotificationSession = ({
       ...exactPlaceOf({ notification }),
     },
   }).catch((error: unknown) => {
-    void useAppStore.getState().reportError({ title: "Couldn't open this notification", error });
+    void useAppStore
+      .getState()
+      .reportError({ recovery: CHECK_STATE, title: "Couldn't open this notification", error });
   });
   return true;
 };

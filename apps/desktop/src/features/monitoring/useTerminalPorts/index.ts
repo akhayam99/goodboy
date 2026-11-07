@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePoll } from '../../../shared/lib/usePoll';
 import { useAppStore } from '../../../store';
@@ -42,6 +43,7 @@ export const useTerminalPorts = (): ReadonlyMap<string, ReadonlyArray<number>> =
         }
         hasReported.current = true;
         void useAppStore.getState().reportError({
+          recovery: READ_FAILED,
           title: "Couldn't read which terminals listen on a port",
           error,
           severity: 'warning',

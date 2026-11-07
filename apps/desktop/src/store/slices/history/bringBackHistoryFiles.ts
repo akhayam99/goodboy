@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { applyHistoryPlan } from '../../../features/history/historyEngine';
 import type { SliceDeps } from '../../slice-types';
 import { identityChange } from './historyIdentity';
@@ -43,6 +44,7 @@ export const bringBackHistoryFiles = ({ set, get }: DepsParams) => {
       });
       if (outcome.cleanupError !== undefined) {
         await get().reportError({
+          recovery: CHECK_STATE,
           title: 'Your files are back, but stash cleanup needs attention',
           error: outcome.cleanupError,
           severity: 'warning',

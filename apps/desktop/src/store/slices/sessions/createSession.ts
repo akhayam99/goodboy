@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, firstOnProvider } from '@goodboy/core/providers';
 import { FAIL_CLOSED_PERMISSION_MODE } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
@@ -278,6 +279,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       const firstFailure = picked.failed[0];
       if (firstFailure !== undefined) {
         void get().reportError({
+          recovery: CHECK_STATE,
           severity: 'warning',
           title: `Couldn't add ${firstFailure.project.name} to this session`,
           error: picked.failed
@@ -322,6 +324,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const firstFailedLink = failedTaskLinks[0];
     if (firstFailedLink !== undefined) {
       void get().reportError({
+        recovery: CHECK_STATE,
         severity: 'warning',
         title:
           failedTaskLinks.length === 1

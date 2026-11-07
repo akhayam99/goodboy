@@ -3,8 +3,8 @@ import type { RowFix } from './rowFix';
 
 export const ROW_FIX_COPY = {
   fixing: 'In the fix run',
-  seeDiff: 'See diff',
-  seeDiffOf: 'See diff of',
+  seeDiff: 'Open changes',
+  seeDiffOf: 'Open changes of',
   review: 'Review the fix',
 } as const;
 

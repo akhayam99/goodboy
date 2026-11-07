@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -23,7 +24,12 @@ export const MarkContextRead = ({ sessionId, changes }: Props) => {
     try {
       await markContextRead({ sessionId, readAt });
     } catch (error: unknown) {
-      void reportError({ title: "Couldn't mark the changes as read", error, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't mark the changes as read",
+        error,
+        sessionId,
+      });
     } finally {
       setIsSaving(false);
     }

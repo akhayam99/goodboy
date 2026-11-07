@@ -12,7 +12,7 @@ import {
 import { useAppStore } from '../../../../store';
 
 import { ToolChoiceField, type ToolChoice } from './ToolChoiceField';
-import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 
 const BROWSER_LABELS: Readonly<Record<string, string>> = {
   safari: 'Safari',
@@ -89,7 +89,7 @@ export const OpenWithBand = () => {
       void reportError({
         title: "Couldn't save the default editor",
         error: err,
-        recovery: NOTHING_CHANGED,
+        recovery: CHECK_STATE,
       });
     }
   };
@@ -102,7 +102,7 @@ export const OpenWithBand = () => {
       void reportError({
         title: "Couldn't save the default browser",
         error: err,
-        recovery: NOTHING_CHANGED,
+        recovery: CHECK_STATE,
       });
     }
   };
@@ -115,7 +115,7 @@ export const OpenWithBand = () => {
       void reportError({
         title: "Couldn't save the default terminal app",
         error: err,
-        recovery: NOTHING_CHANGED,
+        recovery: CHECK_STATE,
       });
     }
   };

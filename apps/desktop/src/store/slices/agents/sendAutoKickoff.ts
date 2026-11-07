@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { AutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import { isReportedError } from '../notifications/reportedError';
@@ -32,6 +33,7 @@ export const sendAutoKickoff = ({
         return;
       }
       void get().reportError({
+        recovery: CHECK_STATE,
         title: START_FAILED_TITLE,
         error: new Error(LOST_MESSAGE),
         sessionId,
@@ -41,6 +43,11 @@ export const sendAutoKickoff = ({
       if (isReportedError(error)) {
         return;
       }
-      void get().reportError({ title: START_FAILED_TITLE, error, sessionId });
+      void get().reportError({
+        recovery: CHECK_STATE,
+        title: START_FAILED_TITLE,
+        error,
+        sessionId,
+      });
     });
 };

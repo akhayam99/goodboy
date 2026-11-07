@@ -1,8 +1,11 @@
+import { slotValue } from './slotValue';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BandStack, CopyButton, DrawerFrame, ICON_SIZE, ScrollFade } from '@goodboy/ui';
 import { activeDecisionsNewestFirst } from '@goodboy/core/context';
-import type { SessionContextItem, SessionDecision, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import {
+  EMPTY_ARRAY,
   useAppStore,
   useSessionLoading,
   useSessionOpenQuestions,
@@ -34,18 +37,7 @@ import { slotVisibility, youOnlyVisibility } from './roleVisibility';
 import { ExplanationsSection } from './ExplanationsSection';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
 
-type SlotValueParams = {
-  readonly slots: ReturnType<typeof useSessionSlots>;
-  readonly key: string;
-};
-
-const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 const NO_PENDING_REMOVALS: ReadonlySet<number> = new Set();
-const NO_ITEMS: ReadonlyArray<SessionContextItem> = [];
-const NO_DECISIONS: ReadonlyArray<SessionDecision> = [];
-
-const slotValue = ({ slots, key }: SlotValueParams): string =>
-  slots.find((slot) => slot.key === key)?.value ?? '';
 
 type ContextSlotSection = Exclude<ContextDrawerSection, 'explanations'>;
 
@@ -69,7 +61,7 @@ export const ContextDrawer = ({
   sessionId,
   section,
   view,
-  highlight = NO_HIGHLIGHT,
+  highlight = EMPTY_ARRAY,
   onClose,
 }: Props) => {
   const slots = useSessionSlots(sessionId);
@@ -87,7 +79,7 @@ export const ContextDrawer = ({
   const reportError = useAppStore((state) => state.reportError);
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
   const versionsSection: ContextSlotSection = section === 'explanations' ? 'summary' : section;
-  const learnings = useAppStore((state) => state.sessionContextItems[sessionId] ?? NO_ITEMS);
+  const learnings = useAppStore((state) => state.sessionContextItems[sessionId] ?? EMPTY_ARRAY);
   const loadSessionContextItems = useAppStore((state) => state.loadSessionContextItems);
   const learningList = useLearningList({ items: learnings });
   const goalHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.goal);
@@ -106,7 +98,7 @@ export const ContextDrawer = ({
     [baseline, ledger],
   );
   const activeDecisionCount = useMemo(
-    () => activeDecisionsNewestFirst({ ledger: ledger ?? NO_DECISIONS }).length,
+    () => activeDecisionsNewestFirst({ ledger: ledger ?? EMPTY_ARRAY }).length,
     [ledger],
   );
   const hasSlots = slots.length > 0;
@@ -169,7 +161,12 @@ export const ContextDrawer = ({
       await upsertSessionSlot(sessionId, CONTEXT_SECTION_SLOT[section], next);
       return true;
     } catch (error: unknown) {
-      void reportError({ title: "Couldn't save the context", error, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't save the context",
+        error,
+        sessionId,
+      });
       return false;
     }
   };

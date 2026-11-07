@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -36,7 +37,12 @@ export const useLinkWorkItems = ({ sessionId, workspaceId, query }: Params): Res
 
   useEffect(() => {
     loadStarredIssues({ workspaceId }).catch((error: unknown) => {
-      void reportError({ title: "Couldn't load starred issues", error, workspaceId });
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't load starred issues",
+        error,
+        workspaceId,
+      });
     });
   }, [loadStarredIssues, reportError, workspaceId]);
 

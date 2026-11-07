@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { goodboyStopRoute, type GoodboyStopRoute } from './goodboyStopRoute';
 import { settleStopping } from './settleStopping';
 import type { GetFn, SetFn, StopGoodboyRowParams } from './types';
@@ -36,7 +37,7 @@ export const stopGoodboyRow = (set: SetFn, get: GetFn) => {
     try {
       await runOwnStop({ get, route });
     } catch (error) {
-      void get().reportError({ title: "Couldn't stop the process", error });
+      void get().reportError({ recovery: CHECK_STATE, title: "Couldn't stop the process", error });
     } finally {
       set(settleStopping({ pid: entry.pid, progress: null }));
     }

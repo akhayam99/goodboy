@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button, Checkbox } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -46,7 +47,9 @@ export const NextStepRebasePicker = ({ sessionId, targets, onClose }: Props) => 
         mountIds: chosen.map((target) => target.mountId),
         shouldTidy,
       })
-      .catch((error: unknown) => state.reportError({ title: FAILURE_TITLE, error, sessionId }));
+      .catch((error: unknown) =>
+        state.reportError({ recovery: CHECK_STATE, title: FAILURE_TITLE, error, sessionId }),
+      );
     onClose();
   };
   return (

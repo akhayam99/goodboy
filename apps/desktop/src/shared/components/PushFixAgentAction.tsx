@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
@@ -41,7 +42,12 @@ export const PushFixAgentAction = ({ sessionId, mountId, output, pending, onSett
         ...(pending !== undefined && { pending }),
       });
     } catch (error) {
-      await store.reportError({ title: "Couldn't start the agent.", error, sessionId });
+      await store.reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't start the agent.",
+        error,
+        sessionId,
+      });
     } finally {
       setIsStarting(false);
     }

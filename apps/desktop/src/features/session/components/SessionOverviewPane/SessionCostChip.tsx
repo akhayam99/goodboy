@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TriangleAlert, Pause } from 'lucide-react';
 import {
@@ -111,7 +112,12 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
 
   useEffect(() => {
     loadSessionBudget(sessionId).catch((error: unknown) => {
-      void reportError({ title: "Couldn't read the session limit", error, sessionId });
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the session limit",
+        error,
+        sessionId,
+      });
     });
   }, [loadSessionBudget, reportError, sessionId]);
 

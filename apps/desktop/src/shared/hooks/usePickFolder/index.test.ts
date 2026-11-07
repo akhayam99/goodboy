@@ -43,6 +43,7 @@ describe('usePickFolder', () => {
 
     await expect(result.current()).resolves.toBeNull();
     expect(state.reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'nothing-changed' },
       title: "Couldn't open the folder picker",
       error,
     });

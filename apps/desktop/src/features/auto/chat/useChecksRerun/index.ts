@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -33,7 +34,11 @@ export const useChecksRerun = (): ChecksRerunModel => {
         work: async ({ port }) => {
           const result = await port({ delegationId });
           if (result.kind === 'refused') {
-            await reportError({ title: FAILED_TITLE, error: new Error(result.message) });
+            await reportError({
+              recovery: CHECK_STATE,
+              title: FAILED_TITLE,
+              error: new Error(result.message),
+            });
           }
           await loadAutoTrees({ sessionId });
         },

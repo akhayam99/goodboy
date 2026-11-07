@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import { useAppStore } from '../../../../store';
 import {
@@ -36,6 +37,7 @@ export const useDelegationDecision = (): DelegationDecisionModel => {
           const result = await port({ delegationId, decision });
           if (result === 'lost') {
             await reportError({
+              recovery: CHECK_STATE,
               title: LOST_TITLE,
               error: new Error('This question is no longer open.'),
             });

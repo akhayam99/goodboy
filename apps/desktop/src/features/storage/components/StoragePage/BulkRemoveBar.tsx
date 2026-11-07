@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { ICON_SIZE, SelectionBar, SelectionConfirm } from '@goodboy/ui';
@@ -60,7 +61,7 @@ export const BulkRemoveBar = ({
       await removeStorageFolders({ paths: chosen.map((folder) => folder.path), mode: 'safe' });
       onDone();
     } catch (error) {
-      void reportError({ title: "Couldn't remove the folders", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't remove the folders", error });
     } finally {
       setIsBusy(false);
     }

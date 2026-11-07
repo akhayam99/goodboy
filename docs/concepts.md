@@ -268,6 +268,28 @@ and every row: **Needs you**, **Needs approval**, **Not finished**,
 a limit reads **Paused**, a hint, a stopped Auto or an agent that stopped
 unfinished reads **Needs you** with one sentence.
 
+State word tooltips follow this table. The regression guard checks the shared
+meanings and the state maps against it.
+
+| State word       | Meaning, also its tooltip                                     |
+| ---------------- | ------------------------------------------------------------- |
+| Needs you        | Only you can move it. The sentence says what it needs.        |
+| Needs approval   | A plan waits for your approval. Counts as Needs you.          |
+| Needs permission | A tool waits for your permission. Counts as Needs you.        |
+| Not finished     | A step stopped before its work was done. Counts as Needs you. |
+| Running          | Work is happening now.                                        |
+| Queued           | Starts by itself when its turn comes.                         |
+| Ready            | Starts when you say so.                                       |
+| Paused           | Held on purpose, or at a limit. Nothing new starts.           |
+| Failed           | Ended on an error.                                            |
+| Stopping         | Stopping is in progress. What it wrote is kept.               |
+| Stopped          | You or a restart ended it. What it wrote is kept.             |
+| Done             | Finished its work.                                            |
+| Idle             | Nothing happening. Write to continue.                         |
+| Not started      | Ended and never ran.                                          |
+| Skipped          | Nothing ran for this step.                                    |
+| Closed           | You closed a failed agent out.                                |
+
 Needs you counts three units, and each tooltip names its own: sessions ("2
 sessions need you") on the Sessions door, the dock badge and the palette; questions ("3 questions") on the Questions entry of the session rail;
 items ("4 items need you") on the Overview card and the Runs group. The bell is
@@ -1721,7 +1743,7 @@ the header holds the facets: source, show (assigned, starred, in progress, has a
 session, closed), type and project, one pick per section, with counts; only the
 types a connected tool can produce show. A tool that did not load says so in its
 source row of the menu and in one gray line inside its group that retries. A
-record opens in the reader pane beside the list, and Open full shows it at the
+record opens in the reader pane beside the list, and Open shows it at the
 720 measure in place of the list, with the same header, grouped properties and
 sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
 the workspace with Link to a session, or open the session already linked to it.

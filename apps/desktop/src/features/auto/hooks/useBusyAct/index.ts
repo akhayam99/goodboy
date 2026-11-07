@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAppStore } from '../../../../store';
+import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 
 type Params<Port> = {
   readonly title: string;
@@ -33,14 +34,18 @@ export const useBusyAct = <Port>({
     async ({ busyIds: ids, work }: RunParams<Port>): Promise<void> => {
       const port = currentPort();
       if (port === null) {
-        await reportError({ title, error: new Error(notReadyMessage) });
+        await reportError({
+          recovery: NOTHING_CHANGED,
+          title,
+          error: new Error(notReadyMessage),
+        });
         return;
       }
       setBusyIds((current) => [...current, ...ids]);
       try {
         await work({ port });
       } catch (error) {
-        await reportError({ title, error });
+        await reportError({ recovery: CHECK_STATE, title, error });
       } finally {
         setBusyIds((current) => current.filter((id) => !ids.includes(id)));
       }

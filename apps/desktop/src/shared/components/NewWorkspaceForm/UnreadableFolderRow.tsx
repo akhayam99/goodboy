@@ -1,3 +1,4 @@
+import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { Lock } from 'lucide-react';
 import { Button, ICON_SIZE, ICON_STROKE, StatusDot } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
@@ -73,7 +74,11 @@ export const UnreadableFolderRow = ({ folder, draft, home, isBusy, lead, trailin
                     disabled={isBusy}
                     onClick={() =>
                       void openPrivacySettings().catch((error: unknown) =>
-                        reportError({ title: "Couldn't open Privacy settings", error }),
+                        reportError({
+                          recovery: OPEN_FAILED,
+                          title: "Couldn't open Privacy settings",
+                          error,
+                        }),
                       )
                     }
                   >

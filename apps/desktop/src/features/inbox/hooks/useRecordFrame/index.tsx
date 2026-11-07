@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
@@ -143,7 +144,11 @@ export const useRecordFrame = ({
             try {
               await unlinkSessionExternalTask(linkedSessionId, 'sentry', sentryIssueId);
             } catch (error: unknown) {
-              void reportError({ title: "Couldn't remove the session link", error });
+              void reportError({
+                recovery: CHECK_STATE,
+                title: "Couldn't remove the session link",
+                error,
+              });
             } finally {
               setIsUnlinking(false);
             }

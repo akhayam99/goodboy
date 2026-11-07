@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { keepLimitStops } from './keepLimitStops';
 import { limitTimers } from './limitTimers';
 import type { LimitStopRunParams, LimitStopsDeps } from './types';
@@ -18,6 +19,7 @@ export const continueAfterLimit = ({ set, get }: LimitStopsDeps) => {
       .sendTurn(stop.input)
       .catch((error: unknown) =>
         get().reportError({
+          recovery: CHECK_STATE,
           title: "Couldn't continue after the usage limit",
           error,
           sessionId: stop.sessionId,

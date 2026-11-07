@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
@@ -29,7 +30,12 @@ export const useCiFixActivity = ({ sessionId }: Params): ReadonlyMap<string, Job
       void loadAgentTranscript(sessionId, agentId, { isSelecting: false }).catch(
         (error: unknown) => {
           if (!isReportedError(error)) {
-            void reportError({ title: "Couldn't load the check fix", error, sessionId });
+            void reportError({
+              recovery: READ_FAILED,
+              title: "Couldn't load the check fix",
+              error,
+              sessionId,
+            });
           }
         },
       );

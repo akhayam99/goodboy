@@ -1,3 +1,4 @@
+import { CHECK_STATE, OPEN_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { FolderOpen, Trash2 } from 'lucide-react';
 import { Band, BandRow, Button, ConfirmPopover, ICON_SIZE, SectionHeader } from '@goodboy/ui';
@@ -38,7 +39,11 @@ export const StorageHistory = () => {
         message: `Pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
       });
     } catch (error) {
-      void reportError({ title: "Couldn't prune archived transcripts", error });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't prune archived transcripts",
+        error,
+      });
     } finally {
       setIsBusy(false);
     }
@@ -49,7 +54,11 @@ export const StorageHistory = () => {
       return;
     }
     void revealInFileManager({ path: folder }).catch((error: unknown) =>
-      reportError({ title: "Couldn't show the app data folder", error }),
+      reportError({
+        recovery: OPEN_FAILED,
+        title: "Couldn't show the app data folder",
+        error,
+      }),
     );
   };
 

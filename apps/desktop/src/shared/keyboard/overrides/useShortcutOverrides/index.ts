@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import { useAppStore } from '../../../../store';
 import { SETTING_SHORTCUT_OVERRIDES } from '../../../../features/settings/settings';
@@ -14,7 +15,7 @@ export const useShortcutOverrides = (): Readonly<Record<string, string>> => {
       return;
     }
     void loadSetting(SETTING_SHORTCUT_OVERRIDES).catch((error: unknown) =>
-      reportError({ title: "Couldn't read your shortcut keys", error }),
+      reportError({ recovery: READ_FAILED, title: "Couldn't read your shortcut keys", error }),
     );
   }, [raw, loadSetting, reportError]);
 

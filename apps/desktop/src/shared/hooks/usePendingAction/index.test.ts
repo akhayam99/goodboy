@@ -95,6 +95,7 @@ describe('usePendingAction', () => {
     expect(outcome).toBe(false);
     expect(reportError).toHaveBeenCalledTimes(1);
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't push the branch",
       error: new Error('rejected: non-fast-forward'),
       sessionId: SESSION_ID,

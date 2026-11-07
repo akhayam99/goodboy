@@ -56,11 +56,12 @@ const group = (name: string): HTMLElement =>
   within(within(pane()).getByRole('group', { name: 'Properties' })).getByRole('region', { name });
 
 describe('issues and Tasks rows reachable from the issue pane', () => {
-  it('keeps the Tasks detail beside the list, in the pane, with Open full to the depth view', async () => {
+  it('keeps the Tasks detail beside the list, in the pane, with Open to the depth view', async () => {
     await mount({ name: 'c12-issue-pane' });
 
     expect(screen.getByRole('list', { name: 'Task items' })).toBeDefined();
-    expect(within(pane()).getByRole('button', { name: 'Open full' })).toBeDefined();
+    const open = within(pane()).getByRole('button', { name: 'Open' });
+    expect(open).toBeDefined();
   });
 
   it('keeps Linear labels and Team › Project in the Planning group', async () => {
@@ -114,7 +115,8 @@ describe('issues and Tasks rows reachable from the issue pane', () => {
     await mount({ name: 'c12-issue-sentry' });
 
     expect(within(pane()).getAllByText(/PAYMENTS-API-7000/).length).toBeGreaterThan(0);
-    expect(within(pane()).getByRole('button', { name: 'Open full' })).toBeDefined();
+    const open = within(pane()).getByRole('button', { name: 'Open' });
+    expect(open).toBeDefined();
   });
 
   it('goes back from the full page to Tasks', async () => {

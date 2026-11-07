@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { AFTER_MERGE_RULES, type AfterMergeRule, type Project } from '@goodboy/types';
 import { Listbox, type ListboxOption } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
@@ -35,6 +36,7 @@ export const ProjectAfterMergeField = ({ project, busy }: Props) => {
       });
     } catch (error) {
       void reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't save what happens after a merge in ${project.name}`,
         error,
       });

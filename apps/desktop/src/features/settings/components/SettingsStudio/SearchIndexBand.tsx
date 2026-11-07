@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import type { ProjectId } from '@goodboy/types';
 import { Band, Button, FieldRow, Listbox } from '@goodboy/ui';
@@ -59,7 +60,11 @@ export const SearchIndexBand = () => {
         await setExcluded({ projectId, isExcluded: false });
       }
     } catch (error) {
-      void reportError({ title: "Couldn't change what search leaves out", error });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't change what search leaves out",
+        error,
+      });
     }
   };
 
@@ -67,7 +72,11 @@ export const SearchIndexBand = () => {
     try {
       await rebuild();
     } catch (error) {
-      void reportError({ title: "Couldn't rebuild the search index", error });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't rebuild the search index",
+        error,
+      });
     }
   };
 

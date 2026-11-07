@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import { getWorkspaceValue } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -18,6 +19,7 @@ export const loadTerminalWorkspaceFolder = (set: SetFn, get: GetFn) => {
       });
     } catch (error) {
       await get().reportError({
+        recovery: READ_FAILED,
         title: 'Could not read the terminal folder',
         error,
         workspaceId,

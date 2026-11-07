@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
@@ -42,6 +43,7 @@ const loadBranchData = async ({ sessionId }: LoadParams): Promise<void> => {
   for (const result of results) {
     if (result.status === 'rejected') {
       void store.reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't load this branch before opening it",
         error: result.reason,
       });

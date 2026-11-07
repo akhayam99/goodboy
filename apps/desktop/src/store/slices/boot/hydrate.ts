@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { getSettings, listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
@@ -134,6 +135,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         const adoption = await adoptLegacyIntegrationSecrets();
         if (adoption.ok === false) {
           void get().reportError({
+            recovery: CHECK_STATE,
             severity: 'warning',
             title: "Couldn't move saved integration keys to the keychain",
             error: adoption.error,

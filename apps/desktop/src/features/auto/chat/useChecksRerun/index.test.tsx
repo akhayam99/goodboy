@@ -76,6 +76,7 @@ describe('running the checks of an agent again', () => {
     await rerunOnce(port);
 
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't run the checks again",
       error: new Error('The branch changed after this agent finished.'),
     });
