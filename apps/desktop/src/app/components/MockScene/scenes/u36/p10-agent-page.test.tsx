@@ -283,7 +283,7 @@ describe('one agent, one page', () => {
     if (!(drawer instanceof HTMLElement)) {
       throw new Error('Steps did not open');
     }
-    within(drawer).getByText('The turn failed');
+    within(drawer).getByText('Failed');
     expect(within(drawer).queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(within(drawer).queryByRole('textbox')).toBeNull();
   });

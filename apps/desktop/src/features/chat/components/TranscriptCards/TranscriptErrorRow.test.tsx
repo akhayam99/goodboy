@@ -179,7 +179,7 @@ describe('Open transcript on a failed turn', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open transcript' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'transcript',
