@@ -1,5 +1,5 @@
 import type { RetryRunParams } from '../../retryRun';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type {
   AgentId,
@@ -10,13 +10,10 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { ConversationRow } from '../../utils/conversationRows';
-import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { ReadingNotes } from '../../readingOrder/ReadingNotes';
-import { readingOrderOf } from '../../readingOrder/readingOrderOf';
-import { OperationsCluster } from '../OperationsCluster';
-import { PlanChecklist } from '../PlanChecklist';
-import { TurnSummaryLine } from '../TurnSummaryLine';
+import { useReadingOrder } from '../../hooks/useReadingOrder';
+import { TranscriptSteps } from './TranscriptSteps';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
@@ -27,13 +24,14 @@ import { NewRowsDivider } from './NewRowsDivider';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, rowAnchorOf } from './lib';
 import { DayDivider } from './DayDivider';
-import { TurnHeading } from './TurnHeading';
 import { planBlockVersions } from './planBlockVersions';
 import { rowVisibilityStyle } from './rowVisibilityStyle';
 import { splitTurns } from './splitTurns';
 import { lastRowIndexByRun } from './lastRowIndexByRun';
 import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
+import { heightKeyOf } from './heightKeyOf';
+import { NoStepsRow } from './NoStepsRow';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { InsertionRow } from './InsertionRow';
@@ -64,20 +62,10 @@ type Props = {
   isStepsOnly?: boolean;
   errorDock?: ErrorDock | null;
   newFromKey?: string | null;
+  scrollerRef?: RefObject<HTMLElement | null>;
 };
-
-const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
 
 const RAIL_ROW_PX = 56;
-
-type CacheKeyParams = {
-  readonly agentId: AgentId | null;
-  readonly isStepsOnly: boolean;
-  readonly key: string;
-};
-
-const heightKeyOf = ({ agentId, isStepsOnly, key }: CacheKeyParams): string =>
-  `${agentId ?? 'none'}:${isStepsOnly ? 'steps' : 'record'}:${key}`;
 
 type FlushParams = {
   readonly beforeMs: number | null;
@@ -106,13 +94,18 @@ export const TranscriptRows = ({
   isStepsOnly = false,
   errorDock = null,
   newFromKey = null,
+  scrollerRef,
 }: Props) => {
   const { rows, insertions } = placedRowsOf({ rows: givenRows, insertions: givenInsertions });
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
   const anchors = lastRowIndexByRun({ rows });
   const planVersions = planBlockVersions({ rows });
-  const readingRoles = readingOrderOf({ rows, activeRunId: activeRunId ?? null });
+  const { roles: readingRoles, register } = useReadingOrder({
+    rows,
+    activeRunId: activeRunId ?? null,
+    ...(scrollerRef !== undefined && { scrollerRef }),
+  });
   const placedRunIds = new Set<ProviderRunId>();
   const briefRow =
     briefLabel === undefined
@@ -139,9 +132,7 @@ export const TranscriptRows = ({
   let lastDay: string | null = null;
   let userTurnOrdinal = 0;
   let turnIndex = -1;
-  const firstAnswerIndex = rows.findIndex(
-    (row) => row.kind === 'summary' || (row.kind === 'item' && row.item.kind === 'assistant_text'),
-  );
+  let isStepHeadDue = false;
   let railGroup: Array<ReactNode> = [];
   let railGroupKey: string | null = null;
   let lastFooterRunId: ProviderRunId | null = null;
@@ -230,13 +221,13 @@ export const TranscriptRows = ({
       if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
         turnIndex += 1;
       }
-      if (isStepsOnly && row !== briefRow) {
+      if (isStepsOnly) {
         flushRailGroup();
-        out.push(<TurnHeading key={row.key} index={turnIndex} text={row.item.text} />);
+        isStepHeadDue = true;
         return;
       }
     }
-    if (isStepsOnly && row.kind === 'item' && STEPS_ONLY_HIDDEN.has(row.item.kind)) {
+    if (isStepsOnly && row.kind === 'item' && row.item.kind !== 'error') {
       return;
     }
     if (row.kind === 'item' && isWorkflowRailRow({ row })) {
@@ -267,28 +258,27 @@ export const TranscriptRows = ({
       lastFooterRunId = row.item.runId;
     }
     const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
+    const turn = Math.max(0, turnIndex);
+    const stepHead = isStepHeadDue ? { 'data-turn-heading': turn } : null;
+    isStepHeadDue = false;
     out.push(
       <li
         key={row.key}
+        ref={(element) => register({ key: row.key, element })}
         {...rowAnchorOf({ row, heightKey })}
+        {...stepHead}
         style={rowVisibilityStyle({
           px:
             rowHeightCache.read({ key: heightKey }) ??
             rowEstimatePx({ row, isClusterOpen: isStepsOnly }),
         })}
       >
-        {row.kind === 'summary' ? (
-          <TurnSummaryLine
-            steps={row.steps}
-            turn={Math.max(0, turnIndex)}
-            {...(onOpenTranscript !== undefined && { onOpenTranscript })}
-          />
-        ) : row.kind === 'plan' ? (
-          <PlanChecklist checklist={row.checklist} isLive={activeRunId != null} />
-        ) : row.kind === 'operations' ? (
-          <OperationsCluster
-            items={row.items}
-            isInitiallyOpen={isStepsOnly}
+        {row.kind !== 'item' ? (
+          <TranscriptSteps
+            row={row}
+            turn={turn}
+            onOpenTranscript={onOpenTranscript}
+            isStepsOnly={isStepsOnly}
             sessionId={sessionId}
             agentId={selectedAgentId}
             workingDir={workingDir}
@@ -305,6 +295,7 @@ export const TranscriptRows = ({
         ) : (
           <TranscriptCard
             {...(reading?.kind === 'answer' && { clampLines: reading.clampLines })}
+            isReadOnly={isStepsOnly}
             item={row.item}
             sessionId={sessionId}
             agentId={selectedAgentId}
@@ -327,11 +318,7 @@ export const TranscriptRows = ({
                 : undefined
             }
             previousRunId={previousRunId}
-            isBrief={
-              (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
-              turnIndex === 0 &&
-              firstAnswerIndex > idx
-            }
+            turn={turn}
           />
         )}
       </li>,
@@ -341,14 +328,12 @@ export const TranscriptRows = ({
 
   flushOrdinal(userTurnOrdinal);
   flushInsertions({ beforeMs: null });
-  const remainingOrdinals = [...oqByTurnOrdinal.keys()]
+  [...oqByTurnOrdinal.keys()]
     .filter((ordinal): ordinal is number => ordinal !== null && ordinal > userTurnOrdinal)
-    .sort((a, b) => a - b);
-  for (const ordinal of remainingOrdinals) {
-    flushOrdinal(ordinal);
-  }
+    .sort((a, b) => a - b)
+    .forEach((ordinal) => flushOrdinal(ordinal));
   for (const [runId, node] of suggestions) {
-    if (placedRunIds.has(runId)) {
+    if (placedRunIds.has(runId) || isStepsOnly) {
       continue;
     }
     placedRunIds.add(runId);
@@ -362,12 +347,15 @@ export const TranscriptRows = ({
       </li>,
     );
   }
-  for (const draft of slackDrafts) {
+  for (const draft of isStepsOnly ? [] : slackDrafts) {
     out.push(
       <li key={`slack-draft-${draft.id}`}>
         <SlackDraftCard draft={draft} sessionId={sessionId} />
       </li>,
     );
+  }
+  if (isStepsOnly && !isThinking && !rows.some((row) => row.kind === 'operations')) {
+    out.push(<NoStepsRow key="no-steps" />);
   }
   if (isThinking) {
     out.push(

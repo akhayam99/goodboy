@@ -158,6 +158,8 @@ Bring custom workflows over from your other workspaces with **Import** in the Wo
 
 ## Under the hood
 
+- Run transcript doors: `workflowRun.stepTranscript` and `OrchestratedTailVerb` navigate to the step agent page and close the drawer, keeping one composer (`workflowRun.subagent.test.ts`, `run-pages.test.tsx`, `failure-links.test.tsx`).
+
 This part is for contributors and agents who change the feature.
 
 - Stopped run questions: `runQuestionsPlacementOf` decides if `OrchestratedTail` and `RunTail` draw the run's open questions, and where. It reads the phase and the run stop. The questions show in the paused, limit, failed, stopped, needs-approval and plan-approval phases. They also show on any stop other than `questions`, whatever the phase. In `plan-question` and `plan-revising` the planner's tail and the header Answer own the questions, so the cluster stays hidden. They sit before the state line when one question `isBlocking`, else after it. A finished run and the in-flight phases with no stop hide them.

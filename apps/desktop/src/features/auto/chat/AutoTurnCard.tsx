@@ -3,12 +3,26 @@ import type { AutoDelegation } from '@goodboy/db';
 import { cn } from '@goodboy/ui';
 import type { InsertionReply } from '../../../shared/types/transcriptInsertion';
 import { AutoCardReply } from './AutoCardReply';
-import { autoCardHeadOf } from './autoCardHeadOf';
+import { autoCardHeadOf, type AutoCardHead } from './autoCardHeadOf';
 
 type Props = {
   readonly delegations: ReadonlyArray<AutoDelegation>;
   readonly replies?: ReadonlyArray<InsertionReply>;
   readonly children: ReactNode;
+};
+
+type WordParams = {
+  readonly head: AutoCardHead;
+};
+
+const wordClassOf = ({ head }: WordParams): string => {
+  if (head.word === 'Failed') {
+    return 'text-danger';
+  }
+  if (head.word === 'Needs you') {
+    return 'text-warning';
+  }
+  return head.isOpen ? 'text-foreground' : 'text-muted-foreground';
 };
 
 export const AutoTurnCard = ({ delegations, replies = [], children }: Props) => {
@@ -24,14 +38,7 @@ export const AutoTurnCard = ({ delegations, replies = [], children }: Props) => 
         <span className="text-row text-foreground">{head.name}</span>
         <span className="min-w-0 truncate text-meta text-faint-foreground">{head.meta}</span>
         <span className="flex-1" />
-        <span
-          className={cn(
-            'shrink-0 text-meta',
-            head.isOpen ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          {head.word}
-        </span>
+        <span className={cn('shrink-0 text-meta', wordClassOf({ head }))}>{head.word}</span>
       </div>
       {replies.map((reply) => (
         <AutoCardReply key={reply.key} reply={reply} />

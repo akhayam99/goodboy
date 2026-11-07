@@ -33,7 +33,9 @@ const rowOf = ({ ids }: RowParams): HTMLLIElement => {
 describe('useRevealToolCall', () => {
   it('waits for the transcript to render the row, then scrolls to it once', async () => {
     const body = bodyOf();
-    renderHook(() => useRevealToolCall({ bodyRef: { current: body }, toolUseId: 'toolu-2' }));
+    renderHook(() =>
+      useRevealToolCall({ bodyRef: { current: body }, toolUseId: 'toolu-2', request: null }),
+    );
     expect(scrollIntoView).not.toHaveBeenCalled();
 
     body.append(rowOf({ ids: 'toolu-1 toolu-2' }));
@@ -52,8 +54,29 @@ describe('useRevealToolCall', () => {
     const body = bodyOf();
     body.append(rowOf({ ids: 'toolu-1' }));
 
-    renderHook(() => useRevealToolCall({ bodyRef: { current: body }, toolUseId: null }));
+    renderHook(() =>
+      useRevealToolCall({ bodyRef: { current: body }, toolUseId: null, request: null }),
+    );
 
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('reveals the same call again when it is asked for again', async () => {
+    const body = bodyOf();
+    body.append(rowOf({ ids: 'toolu-2' }));
+    const first = {};
+    const bodyRef = { current: body };
+    const { rerender } = renderHook(
+      ({ request }: { readonly request: object }) =>
+        useRevealToolCall({ bodyRef, toolUseId: 'toolu-2', request }),
+      { initialProps: { request: first } },
+    );
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+
+    rerender({ request: first });
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+
+    rerender({ request: {} });
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
   });
 });

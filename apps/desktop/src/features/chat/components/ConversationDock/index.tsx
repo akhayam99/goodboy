@@ -12,6 +12,7 @@ import { DockLiveLine } from './DockLiveLine';
 import { DockStepLine } from './DockStepLine';
 import { DockStoppedLine } from './DockStoppedLine';
 import type { BlockedStepAnswer } from '../ChatInput/hooks/useBlockedStepAnswer';
+import { useAutoChildRecovery } from './useAutoChildRecovery';
 import { useDockAskFocus } from './useDockAskFocus';
 
 type Props = {
@@ -36,9 +37,10 @@ export const ConversationDock = ({
   live,
   stop,
   isStopArmed,
-  failure,
+  failure: givenFailure,
   step,
 }: Props) => {
+  const failure = useAutoChildRecovery({ sessionId: session.id, agentId, failure: givenFailure });
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
   const stopped = useStoppedAnswer({ agentId });

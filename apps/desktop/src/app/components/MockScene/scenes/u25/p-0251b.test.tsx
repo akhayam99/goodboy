@@ -49,12 +49,10 @@ describe('the u25 transcript width scene', () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /^Notes, \d+ lines?$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Earlier in this reply, \d+ lines?$/ }));
     const reply = screen.getByText(/The retry path in notify-relay posts the credit twice/);
     expect(reply.closest('[class*="--measure"]')).toBeNull();
-    fireEvent.click(
-      screen.getByRole('button', { name: /^Asked: Resume the Acme payments-api fix/ }),
-    );
+    expect(screen.queryByRole('button', { name: /^Asked: / })).toBeNull();
     const userCard = screen
       .getByText(/Resume the Acme payments-api fix/)
       .closest(`[class*="${PANE_RHYTHM.message.user}"]`);

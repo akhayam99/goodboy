@@ -123,4 +123,16 @@ describe('readingOrderOf', () => {
     expect(roles.get('t3')).toBeUndefined();
     expect(roles.get('t4')).toEqual({ kind: 'answer', clampLines: 12 });
   });
+  it('keeps a visible live reply open after completion but opens its fold on error', () => {
+    const rows = [
+      user({ key: 'u1' }),
+      text({ key: 't1', body: 'Reading ledger-core' }),
+      text({ key: 't2', body: 'Done.' }),
+    ];
+    const unfoldedKeys = new Set(['t1', 't2']);
+    expect(readingOrderOf({ rows, unfoldedKeys }).size).toBe(0);
+    expect(
+      readingOrderOf({ rows: [...rows, error({ key: 'e1' })], unfoldedKeys }).get('t1'),
+    ).toMatchObject({ kind: 'notes', isOpen: true });
+  });
 });

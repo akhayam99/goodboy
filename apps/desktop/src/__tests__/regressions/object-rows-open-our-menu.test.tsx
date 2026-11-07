@@ -187,7 +187,7 @@ describe('every object row answers right click with our menu', () => {
   });
 
   it('lets prose the user selected before the right click keep the native menu', async () => {
-    await mount({ scene: 'c07-auto-child' });
+    await mount({ scene: 'c07-auto-working' });
     const prose = document.querySelector('[data-reading-region] p');
     if (prose === null) {
       throw new Error('the transcript scene shows no prose');

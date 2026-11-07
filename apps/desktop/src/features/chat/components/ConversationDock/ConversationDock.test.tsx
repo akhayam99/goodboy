@@ -7,16 +7,27 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import type { ComponentProps } from 'react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { aDelegation, aView } from '../../../auto/testing/autoViewFixtures';
+import { getAutoTree, listAutoAttemptsOfDelegation, listAutoDelegations } from '@goodboy/db';
+import { registerAutoUserTurnPort } from '../../../auto/autoUserTurnPort';
+import {
+  makeRuntimeWorld,
+  userSays,
+  autoDelegates,
+  autoTurnEnds,
+  childTurnEnds,
+} from '../../../../store/runtime/auto/testing/runtimeWorld';
 import { ConversationDock } from './index';
 
 const AGENT_ID = brandId<AgentId>({ value: 'agent-implementer' });
@@ -38,7 +49,10 @@ beforeEach(async () => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  registerAutoUserTurnPort({ port: null });
+});
 
 const renderDock = ({ hasAsks = true }: { readonly hasAsks?: boolean } = {}) =>
   render(
@@ -181,5 +195,258 @@ describe('ConversationDock', () => {
     renderDock({ hasAsks: false });
 
     expect(screen.queryByText('rm -rf node_modules')).toBeNull();
+  });
+});
+
+describe('Auto child recovery through the dock', () => {
+  it.each(['no_closing_envelope', 'process_error'])(
+    'creates an Auto attempt after one Retry for %s',
+    async (reason) => {
+      const world = await makeRuntimeWorld({ capUsd: 10 });
+      await userSays({ world, id: 'harborline-goal', text: 'Update ledger-core' });
+      await autoDelegates({
+        world,
+        spec: {
+          children: [
+            {
+              role: 'implementer',
+              task: 'Update ledger-core',
+              reason: 'Acme needs the change',
+              mount: 'mount-ledger-core',
+            },
+          ],
+        },
+      });
+      await autoTurnEnds({ world });
+      await childTurnEnds({
+        world,
+        index: 0,
+        text: 'Harborline could not finish.',
+        overrides: reason === 'process_error' ? { exit: 'error' } : {},
+      });
+      await autoTurnEnds({ world });
+      const db = world.state.world.db;
+      const tree = await getAutoTree({ db, treeId: world.treeId });
+      const [delegation] = await listAutoDelegations({ db, treeId: world.treeId });
+      if (tree === null || delegation === undefined) {
+        throw new Error('The Auto child was not created');
+      }
+      const targetSession = aSession({ id: tree.sessionId });
+      const agentId = delegation.childAgentId;
+      stubStoryInvoke({ db_select: [], db_execute: 1 });
+      useAppStore.setState({
+        sessions: [targetSession],
+        sessionPhaseRuns: {
+          [targetSession.id]: [
+            anAgent({ id: tree.rootAgentId, kind: 'auto', status: 'running' }),
+            anAgent({ id: agentId, status: 'failed', parentAgentId: tree.rootAgentId }),
+          ],
+        },
+        autoTreeViews: {
+          [targetSession.id]: [
+            { ...aView({ phase: tree.phase, delegations: [delegation] }), tree },
+          ],
+        },
+      });
+      registerAutoUserTurnPort({
+        port: async ({ text, onQueued }) => {
+          const result = await world.runtime.say({ treeId: tree.id, text });
+          if (result.kind === 'lost') {
+            return 'lost';
+          }
+          onQueued?.({ rowId: result.rowId });
+          await world.runtime.settled();
+          return 'queued';
+        },
+      });
+      render(
+        <ConversationDock
+          session={targetSession}
+          step={null}
+          agentId={agentId}
+          lead={null}
+          hasAsks={false}
+          isMessageTyped={false}
+          live={null}
+          stop={null}
+          isStopArmed={false}
+          failure={
+            reason === 'process_error'
+              ? {
+                  message: 'The provider failed.',
+                  runId: RUN_ID,
+                  isRetrying: false,
+                  retry: () => {
+                    throw new Error('Generic retry must not run');
+                  },
+                }
+              : null
+          }
+        />,
+      );
+      expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      });
+      await waitFor(() =>
+        expect(world.state.ports.autoTurns.at(-1)?.text).toContain(`delegation ${delegation.id}`),
+      );
+
+      await autoDelegates({
+        world,
+        requestId: 'harborline-retry',
+        spec: { children: [{ retryOf: delegation.id, reason: 'The operator asked to retry' }] },
+      });
+      await autoTurnEnds({ world });
+
+      const repeated = (await listAutoDelegations({ db, treeId: tree.id })).find(
+        (row) => row.retryOf === delegation.id,
+      );
+      if (repeated === undefined) {
+        throw new Error('Auto did not create the retry');
+      }
+      const attempts = await listAutoAttemptsOfDelegation({ db, delegationId: repeated.id });
+      expect(attempts).toHaveLength(1);
+      expect(attempts[0]?.id).not.toBe(delegation.firstAttemptId);
+      expect(repeated.childAgentId).toBe(agentId);
+    },
+  );
+});
+
+describe('Auto child recovery by outcome', () => {
+  const ROOT_ID = brandId<AgentId>({ value: 'agent-auto' });
+
+  const renderChild = ({
+    outcome,
+    failure = null,
+    settledAt = null,
+  }: {
+    readonly outcome: 'failed' | 'blocked' | 'timed_out' | 'completed';
+    readonly settledAt?: number | null;
+    readonly failure?: ComponentProps<typeof ConversationDock>['failure'];
+  }) => {
+    const continueStoppedAgent = vi.fn(async () => undefined);
+    useAppStore.setState({
+      continueStoppedAgent,
+      sessionPhaseRuns: {
+        [session.id]: [
+          anAgent({ id: ROOT_ID, kind: 'auto', status: 'running' }),
+          anAgent({ id: AGENT_ID, status: 'failed', parentAgentId: ROOT_ID }),
+        ],
+      },
+      autoTreeViews: {
+        [session.id]: [
+          aView({
+            delegations: [
+              aDelegation({
+                key: 'implementer',
+                role: 'implementer',
+                state: 'settled',
+                outcome,
+                settledAt,
+              }),
+            ],
+          }),
+        ],
+      },
+    });
+    render(
+      <ConversationDock
+        session={session}
+        step={null}
+        agentId={AGENT_ID}
+        lead={null}
+        hasAsks={false}
+        isMessageTyped={false}
+        live={null}
+        stop={null}
+        isStopArmed={false}
+        failure={failure}
+      />,
+    );
+    return continueStoppedAgent;
+  };
+
+  it.each(['failed', 'blocked', 'timed_out'] as const)(
+    'gives a child that ended %s one Retry through Auto',
+    async (outcome) => {
+      const continueStoppedAgent = renderChild({ outcome });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      });
+
+      expect(continueStoppedAgent).toHaveBeenCalledWith({
+        sessionId: session.id,
+        agentId: AGENT_ID,
+      });
+    },
+  );
+
+  it('retries a failed message with its own run after the delegation completed', async () => {
+    const retry = vi.fn();
+    const continueStoppedAgent = renderChild({
+      outcome: 'completed',
+      failure: { message: 'The provider failed.', runId: RUN_ID, isRetrying: false, retry },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(retry).toHaveBeenCalledOnce();
+    expect(continueStoppedAgent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the message of the failure with one Retry', () => {
+    renderChild({
+      outcome: 'failed',
+      failure: { message: 'The provider failed.', runId: RUN_ID, isRetrying: false, retry: null },
+    });
+
+    screen.getByText('The provider failed.');
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
+  });
+
+  it('hides Retry while Auto is working, so a second click cannot queue twice', () => {
+    useAppStore.setState({
+      agentTurnState: { [ROOT_ID]: { kind: 'running', runId: RUN_ID, startedAt: AT } },
+    });
+    renderChild({ outcome: 'failed' });
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('stops offering the old failure once a later reply on the page went through', () => {
+    const settledAt = Date.parse(AT) - 60_000;
+    useAppStore.setState({
+      transcripts: {
+        [AGENT_ID]: [
+          {
+            kind: 'user_text',
+            runId: RUN_ID,
+            text: 'Try again with the retry cap lowered.',
+            at: AT,
+          },
+          { kind: 'assistant_text', runId: RUN_ID, delta: 'The retry cap is lowered.', at: AT },
+        ],
+      },
+    });
+    renderChild({ outcome: 'failed', settledAt });
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByText('The agent ended with an error.')).toBeNull();
+  });
+
+  it('keeps the old failure while the only message sent is older than the settlement', () => {
+    const settledAt = Date.parse(AT) + 60_000;
+    useAppStore.setState({
+      transcripts: {
+        [AGENT_ID]: [{ kind: 'user_text', runId: RUN_ID, text: 'Fix the retry cap.', at: AT }],
+      },
+    });
+    renderChild({ outcome: 'failed', settledAt });
+
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
   });
 });

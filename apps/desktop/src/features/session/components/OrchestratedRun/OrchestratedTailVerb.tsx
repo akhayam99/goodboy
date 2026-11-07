@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import type { OrchestratedVerb } from '../../../workflows/orchestratedTailOf';
@@ -29,7 +29,8 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
   const runId = view.run.id;
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const readQueuedWorkflowHints = useAppStore((state) => state.readQueuedWorkflowHints);
-  const openDrawer = useAppStore((state) => state.openDrawer);
+  const closeDrawer = useAppStore((state) => state.closeDrawer);
+  const navigate = useAppStore((state) => state.navigate);
   const askAgentToContinue = useAppStore((state) => state.askAgentToContinue);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const reportError = useAppStore((state) => state.reportError);
@@ -73,9 +74,10 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
         <button
           type="button"
           className={QUIET_VERB}
-          onClick={() =>
-            openDrawer({ kind: 'transcript', sessionId, payload: { agentId: verb.agentId } })
-          }
+          onClick={() => {
+            closeDrawer();
+            navigate({ to: agentPlace({ sessionId, agentId: verb.agentId }) });
+          }}
         >
           Open transcript
         </button>

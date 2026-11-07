@@ -375,8 +375,7 @@ read top to bottom at the conversation measure:
   the same role column as the decided steps; a plain string entry leaves the
   column empty. A row opens the page of the step, as for every
   kind of run (`presetRunFocusOf`, `RunStepPage`), with the reason the
-  orchestrator gave for it at the top (`stepReasonOf`). The `run-step` drawer
-  kind stays only for saved windows until it goes with the Auto panel.
+  orchestrator gave for it at the top (`stepReasonOf`).
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
   end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and no Stop verb (the one Stop is in the dock; **Continue** brings the cut step back), "Choosing the next step", "Waiting
@@ -431,7 +430,7 @@ read top to bottom at the conversation measure:
   a stop the verb is **Continue and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **Open transcript** on its tail (`orchestratedTailOf`, the
-  last step's agent, same as a failed decision) and **Add a hint and continue** at the dock
+  last step's page, same as a failed decision) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing
@@ -687,7 +686,7 @@ tooltip line.
 - **A step** (`RunStepPage`): the step's agent conversation, embedded
   (`AgentDetailPane` with a `runStep` frame), for a preset and an orchestrated
   run alike. The header reads "Step 2 · Implementer" with the provider mark, then
-  the step `⋯` (`RunStepActions`: Open transcript, which opens the transcript of the agent on screen, a helper's own on a helper's page, and Skip step N, which skips the step the helper belongs to). The run's verbs
+  the step `⋯` (`RunStepActions`: Open transcript, which opens the agent's page and closes the drawer, a helper's own on a helper's page, and Skip step N, which skips the step the helper belongs to). The run's verbs
   leave the head: its next move reads on the quiet line at the end, such as
   "Step 2 done" with **Start step 3**. The agent's own menu stays on the right
   click of the title. No next action card above the conversation and no Start
@@ -864,8 +863,8 @@ the workflow run row and at the top of the agent detail body, right under its
 header, and the conversation does not repeat it at the bottom. Every door
 (Activity, Workflow, the board, a toast) opens the agent on its one
 conversation (`AgentDetailPane`, `ChatView` `mode="conversation"`); there is no
-Brief and no Transcript tab, and **Open transcript** opens the full record in
-the `transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
+Brief and no Transcript tab, and a turn's summary line opens **Steps** in the
+`transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs say the same states on
 their tail ([The orchestrated document](#the-orchestrated-document)), with **Skip step N** in the
 run `⋯` and **Answer** when the run waits on a question.

@@ -6,7 +6,6 @@ import {
   OctagonX,
   Cpu,
   Pencil,
-  ScrollText,
   Tag,
 } from 'lucide-react';
 import { parseHiddenModels, visibleCatalog } from '@goodboy/core/providers';
@@ -174,7 +173,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'Rename',
       icon: Pencil,
       group: 'act',
-      when: ({ facts }) => !facts.isWorkflowStep,
+      when: () => true,
       run: ({ facts, env }) => {
         const objectKey = agentObjectKey({ agentId: facts.agent.id });
         if (requestRename({ objectKey, anchorKey: env.anchorKey })) {
@@ -184,21 +183,6 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         dispatchAfterNavigation({
           name: RENAME_REQUEST_EVENT,
           detail: { objectKey, anchorKey: `agent-header:${facts.agent.id}` },
-        });
-      },
-    },
-    {
-      id: 'agent.transcript',
-      label: 'Open transcript',
-      icon: ScrollText,
-      group: 'open',
-      when: ({ facts }) => !facts.isWorkflowStep,
-      run: ({ facts, env }) => {
-        openAgent({ env, facts });
-        env.getState().openDrawer({
-          kind: 'transcript',
-          sessionId: facts.sessionId,
-          payload: { agentId: facts.agent.id },
         });
       },
     },

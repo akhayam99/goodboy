@@ -22,6 +22,7 @@ const OFF_THE_MENU: ReadonlyArray<string> = [
   'workflowRun.restore',
   'workflowRun.autonomy',
   'workflowRun.stepTranscript',
+  'workflowRun.stepRename',
 ];
 
 const PAST_FIVE_ROWS_LIVE: ReadonlyArray<string> = [

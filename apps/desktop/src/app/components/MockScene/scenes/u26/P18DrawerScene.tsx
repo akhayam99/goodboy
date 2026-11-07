@@ -45,7 +45,7 @@ export const P18DrawerScene = ({ theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     applyDocumentTheme({ theme });
-    seedC07({ state: 'done', place: 'auto', pane: 'tester' });
+    seedC07({ state: 'done', place: 'child', pane: 'tester' });
     const current = useAppStore.getState();
     useAppStore.setState({
       sessions: [{ ...SESSION, permissionMode: 'bypassPermissions' }],

@@ -62,8 +62,14 @@ export const AgentTranscriptDrawer = ({
       ? (drawer.payload.toolUseId ?? null)
       : null;
   });
+  const request = useAppStore((s) => {
+    const drawer = selectOpenDrawer(s);
+    return drawer?.kind === 'transcript' && drawer.payload.agentId === agentId
+      ? drawer.payload
+      : null;
+  });
   const bodyRef = useRef<HTMLDivElement>(null);
-  useRevealToolCall({ bodyRef, toolUseId });
+  useRevealToolCall({ bodyRef, toolUseId, request });
   const draft = useAppStore((s) => s.agentDraft?.[agentId] ?? '');
   const isEnded = useAppStore(
     (s) =>
@@ -136,9 +142,12 @@ export const AgentTranscriptDrawer = ({
     bodyRef.current
       ?.querySelector(`[data-turn-heading="${turn}"]`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [turn]);
+  }, [turn, request]);
 
   const title = agent === null ? null : agentTranscriptTitle({ agent });
+  const shownTitle = isConversationCenter
+    ? TRANSCRIPT_DRAWER_COPY.steps
+    : (title ?? TRANSCRIPT_DRAWER_COPY.title);
   const kind = agent === null ? null : classifyAgent({ agent, override: null });
   const name = kind === null || kind === 'resolver' ? title : AGENT_KIND_META[kind].noun;
   const reply =
@@ -201,7 +210,7 @@ export const AgentTranscriptDrawer = ({
           topInset="tight"
           hasComposer={false}
           mode={isConversationCenter ? 'steps' : 'record'}
-          briefLabel={briefLabel}
+          briefLabel={isConversationCenter ? undefined : briefLabel}
         />
       )}
     </div>
@@ -209,7 +218,7 @@ export const AgentTranscriptDrawer = ({
 
   return (
     <DrawerFrame
-      title={title ?? TRANSCRIPT_DRAWER_COPY.title}
+      title={shownTitle}
       icon={CONCEPT_ICONS.agents}
       onClose={onClose}
       scroll="self"

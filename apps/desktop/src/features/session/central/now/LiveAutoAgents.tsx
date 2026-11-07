@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, type Tone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
 import { autoChildCopyOf } from '../../../auto/group/autoChildCopyOf';
@@ -29,7 +29,7 @@ const childToneOf = ({ child }: ChildParams): Tone => {
 
 export const LiveAutoAgents = ({ sessionId, group }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const openDrawer = useAppStore((state) => state.openDrawer);
+  const navigate = useAppStore((state) => state.navigate);
   const auto = group.group;
   const title = liveAutoNameOf({ group });
   if (auto.children.length === 0) {
@@ -62,12 +62,7 @@ export const LiveAutoAgents = ({ sessionId, group }: Props) => {
               isSectionState: group.state === 'working' && child.state === 'running',
               time: <DelegationClock agentId={child.agentId} isLive={copy.isLive} />,
               openLabel: `${child.label}, ${copy.word.toLowerCase()}`,
-              onOpen: () =>
-                openDrawer({
-                  kind: 'auto-child',
-                  sessionId,
-                  payload: { agentId: child.agentId },
-                }),
+              onOpen: () => navigate({ to: agentPlace({ sessionId, agentId: child.agentId }) }),
             };
           })}
         />

@@ -1,4 +1,4 @@
-import { Button, Notice, StatusDot } from '@goodboy/ui';
+import { Button, Notice, StatusDot, Tooltip } from '@goodboy/ui';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
@@ -11,10 +11,12 @@ type Props = {
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly failedToolUseId?: string | null;
+  readonly turn?: number | null;
   readonly onRetry?: () => void;
   readonly isRetrying?: boolean;
   readonly dockRunId?: ProviderRunId | null;
   readonly isRecordOnly?: boolean;
+  readonly isReadOnly?: boolean;
 };
 
 export const TranscriptErrorRow = ({
@@ -23,10 +25,12 @@ export const TranscriptErrorRow = ({
   sessionId = null,
   agentId = null,
   failedToolUseId = null,
+  turn = null,
   onRetry,
   isRetrying = false,
   dockRunId = null,
   isRecordOnly = false,
+  isReadOnly = false,
 }: Props) => {
   const { body, detail } = formatErrorForHumans({ message });
   const hasLimitStop = useAppStore(
@@ -46,22 +50,28 @@ export const TranscriptErrorRow = ({
     openDrawer({
       kind: 'transcript',
       sessionId,
-      payload: { agentId, ...(failedToolUseId !== null && { toolUseId: failedToolUseId }) },
+      payload: {
+        agentId,
+        ...(failedToolUseId !== null && { toolUseId: failedToolUseId }),
+        ...(failedToolUseId === null && turn !== null && { turn }),
+      },
     });
   };
 
-  if (isRecordOnly && (!hasLimitStop || runId === dockRunId)) {
+  if (!isReadOnly && isRecordOnly && (!hasLimitStop || runId === dockRunId)) {
     return (
-      <Button
-        variant="quiet"
-        size="xs"
-        data-failed-here=""
-        disabled={!canViewTranscript}
-        onClick={viewTranscript}
-      >
-        <StatusDot tone="danger" size="sm" />
-        Failed here
-      </Button>
+      <Tooltip content={body}>
+        <Button
+          variant="quiet"
+          size="xs"
+          data-failed-here=""
+          disabled={sessionId === null || agentId === null}
+          onClick={viewTranscript}
+        >
+          <StatusDot tone="danger" size="sm" />
+          Failed here
+        </Button>
+      </Tooltip>
     );
   }
 
@@ -74,6 +84,7 @@ export const TranscriptErrorRow = ({
       detail={detail}
       iconTestId="transcript-error-icon"
       actions={
+        !isReadOnly &&
         (onRetry !== undefined || hasLimitStop || canViewTranscript) && (
           <>
             {onRetry !== undefined && (

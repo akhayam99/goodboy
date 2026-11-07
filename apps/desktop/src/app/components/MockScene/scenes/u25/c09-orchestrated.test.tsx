@@ -154,21 +154,17 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
   });
 
-  it('c09-orch-step opens the step in the pane with its reason there', async () => {
+  it('c09-orch-step opens the step on its page with its reason and one box', async () => {
     await mount('c09-orch-step');
 
-    expect(screen.getByText('Step 3 · Tester')).toBeDefined();
     expect(nodeOf('[data-step-reason]').textContent).toContain(
       'The batching must be proven on 12,000 rows before any CSV work.',
     );
-    const pane = nodeOf('[data-run-step-pane]');
-    expect(within(pane).queryByRole('button', { name: 'Open transcript' })).toBeNull();
-    fireEvent.click(within(pane).getByRole('button', { name: 'More actions' }));
-    expect(screen.getByRole('menuitem', { name: 'Open agent' })).toBeDefined();
-    expect(screen.getAllByRole('menuitem', { name: 'Open transcript' })).toHaveLength(1);
-    expect(screen.queryByPlaceholderText(/^Message/)).toBeNull();
-    expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
-    expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
+    expect(document.querySelector('[data-run-step-pane]')).toBeNull();
+    const boxes = [...document.querySelectorAll('textarea')].filter(
+      (box) => box.closest('[inert]') === null,
+    );
+    expect(boxes).toHaveLength(1);
   });
 
   it('draws no running row on a discarded run', async () => {

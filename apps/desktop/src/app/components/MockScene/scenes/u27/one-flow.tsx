@@ -59,10 +59,7 @@ export const U27_ONE_FLOW_SCENES = {
     />
   ),
   'u27-one-flow-after-preset': () => (
-    <OneFlowScene
-      seed={{ era: 'after', place: 'orchestrated', drawerStepKey: 'plan-billing' }}
-      center={RUN}
-    />
+    <OneFlowScene seed={{ era: 'after', place: 'orchestrated' }} center={RUN} />
   ),
   'u27-one-flow-after-single-agent': () => (
     <OneFlowScene seed={{ era: 'after', place: 'auto' }} center={LEAD} />

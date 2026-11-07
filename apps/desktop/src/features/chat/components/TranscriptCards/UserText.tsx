@@ -1,6 +1,4 @@
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { ICON_SIZE, Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
+import { Markdown, MetaRow, PANE_RHYTHM } from '@goodboy/ui';
 
 import type { AgentId, MessageAttachment, SessionId, UserTurnSentVia } from '@goodboy/types';
 import { AttachmentStrip } from '../../../attachments/AttachmentStrip';
@@ -18,7 +16,6 @@ type Props = {
   workingDir?: string | null;
   sessionId?: SessionId | null;
   agentId?: AgentId | null;
-  isBrief?: boolean;
 };
 
 const SENT_VIA_LABEL: Record<UserTurnSentVia, string> = {
@@ -34,35 +31,12 @@ export const UserText = ({
   workingDir = null,
   sessionId = null,
   agentId = null,
-  isBrief = false,
 }: Props) => {
   const atts = attachments ?? [];
-  const [isBriefOpen, setIsBriefOpen] = useState(false);
   const menu = useObjectMenuTrigger({
     target: { kind: 'message', text, sessionId, agentId },
     anchorKey: null,
   });
-  const firstLine =
-    text
-      .split('\n')
-      .map((line) => line.trim())
-      .find((line) => line !== '') ?? '';
-  if (isBrief && !isBriefOpen && firstLine !== '') {
-    return (
-      <div className="flex min-w-0 justify-end">
-        <button
-          type="button"
-          aria-expanded={false}
-          onClick={() => setIsBriefOpen(true)}
-          onContextMenu={menu.onContextMenu}
-          className="flex min-w-0 max-w-full items-center gap-1 rounded-lg bg-elevated px-3 py-1 text-meta text-muted-foreground ring-1 ring-border-soft hover:text-foreground"
-        >
-          <span className="min-w-0 truncate">Asked: {firstLine}</span>
-          <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        </button>
-      </div>
-    );
-  }
   return (
     <TranscriptShell
       onContextMenu={menu.onContextMenu}
