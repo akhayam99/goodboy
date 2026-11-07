@@ -16,8 +16,7 @@ import { AttachmentStrip } from '../../../attachments/AttachmentStrip';
 import { OrchestratedPlanSlot } from './OrchestratedPlanSlot';
 import { useHintImageItems } from './useHintImageItems';
 import { useHintRowState } from './useHintRowState';
-import { useIsClipped } from './useIsClipped';
-import { useRowHeight } from './useRowHeight';
+import { useMeasuredNode } from './useMeasuredNode';
 import { TimelineRail } from '../SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { railThroughOf, type RailInk } from '../../../workTreeModel/railGeometry';
 
@@ -45,6 +44,14 @@ const NAMED_HINT_CHARS = 60;
 
 const HINT_MARKER_Y = 16;
 
+type NodeParams = {
+  readonly node: HTMLElement;
+};
+
+const offsetHeightOf = ({ node }: NodeParams): number => node.offsetHeight;
+
+const isClippedNode = ({ node }: NodeParams): boolean => node.scrollWidth > node.clientWidth;
+
 export const OrchestratedHintRow = ({
   hint,
   sessionId,
@@ -56,14 +63,20 @@ export const OrchestratedHintRow = ({
   onOpenStep = null,
   onRemove,
 }: Props) => {
-  const { ref: railRef, height: railHeight } = useRowHeight();
+  const { ref: railRef, value: railHeight } = useMeasuredNode({
+    measure: offsetHeightOf,
+    initial: 0,
+  });
   const { rowRef, isExpanded, openImageId, setIsExpanded, setOpenImageId } = useHintRowState({
     runId,
     hintId: hint.id,
   });
   const bodyId = useId();
   const { images, hasFailed, retry } = useHintImageItems({ sessionId, runId, hint });
-  const { ref: textRef, isClipped } = useIsClipped();
+  const { ref: textRef, value: isClipped } = useMeasuredNode({
+    measure: isClippedNode,
+    initial: false,
+  });
   const canToggle = hintIsLong({ text: hint.text, isClipped }) || isExpanded;
   const first = hint.text.split('\n').find((line) => line.trim() !== '') ?? hint.text;
   const named = first.length > NAMED_HINT_CHARS ? `${first.slice(0, NAMED_HINT_CHARS)}...` : first;

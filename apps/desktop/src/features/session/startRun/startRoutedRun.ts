@@ -15,12 +15,14 @@ import { useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
-import { ORCHESTRATED_WORKFLOW_NAME, uniqueWorkflowName } from '../../workflows/uniqueWorkflowName';
+import { uniqueNameOf } from '../../workflows/uniqueNameOf';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import type { StartLimit } from '../../auto/startLimitOf';
 import type { AgentKindRouting } from '../agent-kind';
 import type { RunRouteResult } from './runRouteOf';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
+
+const ORCHESTRATED_WORKFLOW_NAME = 'Orchestrated workflow';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -85,9 +87,9 @@ export const startRoutedRun = async ({
   const existing = state.phaseTemplates[workspaceId] ?? [];
   const now = brandId<IsoDateTime>({ value: new Date().toISOString() });
   const workflowId = brandId<WorkflowId>({ value: `wf_run_${crypto.randomUUID()}` });
-  const name = uniqueWorkflowName({
+  const name = uniqueNameOf({
     requested: preset === null ? ORCHESTRATED_WORKFLOW_NAME : `Plan from ${preset.name}`,
-    existing,
+    taken: existing.filter((workflow) => !workflow.deletedAt).map((workflow) => workflow.name),
   });
   const process = preset?.processText?.trim() ?? '';
   const workflow: Workflow = {

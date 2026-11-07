@@ -1,9 +1,7 @@
-import { RecordProperties } from '../../../../../../shared/components/StudioDetail/RecordProperties';
-import { Skeleton, PaneShell } from '@goodboy/ui';
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { ErrorStrip } from '@goodboy/ui';
 import { JiraIssueDetail } from '../../../../../integrations/jira/JiraIssueDetail';
 import { useJiraIssue } from '../../../../../integrations/jira/useJiraIssue';
+import { TaskDetailFallback } from './TaskDetailFallback';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -23,22 +21,12 @@ export const JiraTaskDetail = ({ workspaceId, projectId, task }: Props) => {
   }
 
   return (
-    <PaneShell
-      scroll="body"
-      title={task.title}
-      meta={<span className="font-mono">{task.identifier}</span>}
-    >
-      {isLoading ? (
-        <div role="status" aria-label="Loading Jira issue" className="flex flex-col gap-3">
-          <Skeleton className="h-4 w-2/3 rounded-sm" />
-          <Skeleton className="h-3 w-full rounded-sm" />
-          <Skeleton className="h-3 w-3/4 rounded-sm" />
-        </div>
-      ) : null}
-      <RecordProperties facts={[]} />
-      {error != null ? (
-        <ErrorStrip label="the Jira issue" error={new Error(error)} onRetry={refetch} />
-      ) : null}
-    </PaneShell>
+    <TaskDetailFallback
+      task={task}
+      providerName="Jira"
+      isLoading={isLoading}
+      error={error}
+      onRetry={refetch}
+    />
   );
 };

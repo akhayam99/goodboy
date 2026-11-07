@@ -1,6 +1,6 @@
 import type { SessionId, Workflow, WorkflowRunId } from '@goodboy/types';
 import { draftFromWorkflow, upsertArgsFromDraft } from '../../../features/workflows/engine';
-import { uniqueWorkflowName } from '../../../features/workflows/uniqueWorkflowName';
+import { uniqueNameOf } from '../../../features/workflows/uniqueNameOf';
 import { findWorkflowRun } from './findWorkflowRun';
 import type { GetFn } from './types';
 
@@ -25,9 +25,11 @@ export const saveRunAsPreset = (get: GetFn) => {
       throw new Error('A run with no steps yet cannot be saved as a preset.');
     }
     const draft = draftFromWorkflow({ workflow });
-    const name = uniqueWorkflowName({
+    const name = uniqueNameOf({
       requested: run.title ?? workflow.name,
-      existing: get().phaseTemplates[workflow.workspaceId] ?? [],
+      taken: (get().phaseTemplates[workflow.workspaceId] ?? [])
+        .filter((existing) => !existing.deletedAt)
+        .map((existing) => existing.name),
     });
     return get().savePhaseTemplate(
       upsertArgsFromDraft({

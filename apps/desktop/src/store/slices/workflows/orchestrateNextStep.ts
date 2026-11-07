@@ -41,7 +41,7 @@ import {
   updateWorkflowRunOrchestratorSummary,
 } from '@goodboy/db';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
-import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
+import { uniqueNameOf } from '../../../features/workflows/uniqueNameOf';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { roleDefaultsFor } from './roleDefaultsFor';
 import { resolveProposedRouting } from './resolveProposedRouting';
@@ -343,7 +343,7 @@ const appendStep = async ({
     id: `step_orchestrator_${crypto.randomUUID()}` as StepId,
     workflowId: workflow.id,
     ordinal,
-    name: uniqueStepName({ requested: step.name, steps: workflow.steps }),
+    name: uniqueNameOf({ requested: step.name, taken: workflow.steps.map((entry) => entry.name) }),
     role: step.role,
     promptPrefix: step.promptPrefix,
     expectedOutput: step.expectedOutput,
