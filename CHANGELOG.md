@@ -75,7 +75,7 @@ The Branch page has one primary button picked by state: Mark ready, Merge, Fix c
 Merge asks for a confirm that names the target. Remove worktree says what goes and what stays, and has an Undo. Fix checks starts one agent and shows its work inline.
 
 #### Errors say what to do next
-<!-- gb area=app image=errors-next-step pr=2117,2121 -->
+<!-- gb area=app pr=2117,2121 -->
 
 Every reported error ends with what to do next: nothing was changed, your work is kept, check the state before trying again, try loading again, or a settings action. Turn errors read plain and name the agent's provider, with the raw text under Show details.
 
