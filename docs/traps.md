@@ -427,9 +427,6 @@ type. Adding a member to the type forces you to update the switch cases. It
 never forces you to update the list. Leaving a member out compiles clean and
 fails silently at runtime.
 
-- `LENS_KINDS`, used in production only by `readPersistedLens`. A missing
-  entry breaks lens restore with no error. A test checks that the set matches
-  `LENS_LABEL`, so a missing entry is caught only once its label entry exists.
 - `ALL_ISSUE_PROVIDERS` and `CREATE_SESSION_PROVIDERS` decide what the mobile
   companion allows. Their `WorkspaceIntegrationProvider` switches
   (`fetchIssuesFor`, `resolveIssueForSession`) are `never`-checked and will

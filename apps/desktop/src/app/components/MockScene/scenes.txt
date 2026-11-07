@@ -472,8 +472,6 @@ inbox-error
 inbox-source
 inbox-states
 integration-issue-focused
-lens-switcher
-lens-switcher-closed
 limit-continue
 link-scope
 linkwork-star

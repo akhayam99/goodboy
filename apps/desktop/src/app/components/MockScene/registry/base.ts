@@ -82,7 +82,6 @@ import {
   ResolvePublishBlockedScene,
   ArtifactsLensShellScene,
 } from '../scenes/SurfaceAuditScenes';
-import { LensSwitcherClosedScene, LensSwitcherScene } from '../scenes/LensSwitcherScenes';
 import { CardRailsScene } from '../scenes/CardRailsScene';
 import { ProvidersScene } from '../scenes/ProvidersScene';
 import { ImpactScene } from '../scenes/ImpactScene';
@@ -411,8 +410,6 @@ export const BASE_SCENES = {
   'resolve-publish-blocked': ResolvePublishBlockedScene,
   'artifacts-lens-shell': ArtifactsLensShellScene,
   'card-rails': CardRailsScene,
-  'lens-switcher': LensSwitcherScene,
-  'lens-switcher-closed': LensSwitcherClosedScene,
   providers: ProvidersScene,
   impact: ImpactScene,
   'model-picker': ModelPickerScene,
