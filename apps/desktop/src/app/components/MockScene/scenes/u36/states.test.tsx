@@ -65,7 +65,7 @@ describe('the u36 states scenes', () => {
   it('registers a light and a dark scene for each state', () => {
     const names = Object.keys(U36_STATES_SCENES);
 
-    expect(names).toHaveLength(12);
+    expect(names).toHaveLength(16);
     for (const name of names.filter((candidate) => candidate.endsWith('-light'))) {
       expect(names).toContain(name.replace(/-light$/, '-dark'));
     }
@@ -88,10 +88,45 @@ describe('the u36 states scenes', () => {
   );
 
   it.each(['light', 'dark'])(
-    'u36-states-overview-failed-%s keeps Stuck and Blocked off the screen',
+    'u36-states-overview-failed-%s reads a timed out child as Needs you and keeps Stuck and Blocked off the screen',
     async (theme) => {
       await show({ name: `u36-states-overview-failed-${theme}` });
 
+      const card = document.querySelector('[data-overview-card="needs-you"]');
+      expect(card?.textContent).toContain('Needs you');
+      for (const word of WORDS) {
+        expect(document.body.textContent).not.toContain(word);
+      }
+    },
+  );
+
+  it.each(['light', 'dark'])(
+    'u36-states-overview-noreply-%s reads an Auto that stopped replying as Failed, counted once',
+    async (theme) => {
+      await show({ name: `u36-states-overview-noreply-${theme}` });
+
+      const auto = document.querySelector('[data-live-group="auto"]');
+      expect(auto?.getAttribute('data-state')).toBe('failed');
+      expect(auto?.textContent).toContain('Failed');
+      expect(document.body.textContent).toContain('1 needs you');
+      expect(document.body.textContent).not.toContain('1 stopped');
+      expect(document.body.textContent).not.toContain('Auto failed');
+      for (const word of WORDS) {
+        expect(document.body.textContent).not.toContain(word);
+      }
+    },
+  );
+
+  it.each(['light', 'dark'])(
+    'u36-states-overview-limit-%s reads an Auto blocked by its budget as Paused, never Failed',
+    async (theme) => {
+      await show({ name: `u36-states-overview-limit-${theme}` });
+
+      const auto = document.querySelector('[data-live-group="auto"]');
+      expect(auto?.getAttribute('data-state')).toBe('waiting');
+      expect(auto?.textContent).toContain('Paused');
+      expect(document.body.textContent).not.toContain('Failed');
+      expect(document.body.textContent).not.toContain("couldn't reply");
       for (const word of WORDS) {
         expect(document.body.textContent).not.toContain(word);
       }

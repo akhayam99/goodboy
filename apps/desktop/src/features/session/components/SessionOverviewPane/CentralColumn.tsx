@@ -29,6 +29,7 @@ import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
 import { useLiveGroups } from '../../central/now/useLiveGroups';
 import { liveSectionIdOf } from '../../central/now/liveSectionIdOf';
 import { runLeadOf } from '../../central/now/runLeadOf';
+import { uncardedGroupsOf } from '../../central/now/uncardedGroupsOf';
 import { waitingGroupsOf } from '../../central/now/waitingGroupsOf';
 import { useWhereOf } from '../../central/now/useWhereOf';
 import { overviewCardsOf, type OverviewCardModel } from '../../central/overviewCardsOf';
@@ -108,7 +109,12 @@ export const CentralColumn = ({ session }: Props) => {
   );
   const stopRowFor = useRebaseStopRows({ sessionId });
   const waiting = useMemo(() => waitingGroupsOf({ groups, cards: nextCards }), [groups, nextCards]);
+  const waitingCount = uncardedGroupsOf({ groups: waiting, cards: nextCards }).length;
   const stuckCount = groups.filter((group) => liveSectionIdOf({ group }) === 'stopped').length;
+  const glanceStuckCount = uncardedGroupsOf({
+    groups: groups.filter((group) => liveSectionIdOf({ group }) === 'stopped'),
+    cards: nextCards,
+  }).length;
   const rootTurns = useAppStore(
     useShallow((state) =>
       model.autoTrees.map((view) => state.agentTurnState[view.tree.rootAgentId]),
@@ -123,7 +129,7 @@ export const CentralColumn = ({ session }: Props) => {
   const noticesNode = isArchived ? null : <OverviewNotices session={session} view={noticesView} />;
   const shown = overviewCardsOf({
     cards: nextCards,
-    waitingCount: waiting.length,
+    waitingCount,
     runningCount: groups.filter((group) => liveSectionIdOf({ group }) === 'running').length,
     stuckCount,
     branchCount: liveEntries.length,
@@ -136,7 +142,7 @@ export const CentralColumn = ({ session }: Props) => {
   const seenSubjects = useAppStore((state) => state.nextSeenSubjects[sessionId] ?? EMPTY_ARRAY);
   const glance = overviewGlanceOf({
     cards: shown,
-    stuckCount,
+    stuckCount: glanceStuckCount,
     autoGlances,
     nextTitle: nextLeadTitleOf({
       cards: nextCards,
@@ -166,6 +172,7 @@ export const CentralColumn = ({ session }: Props) => {
             session={session}
             card={card}
             waiting={waiting}
+            groups={groups}
             autoViews={model.autoTrees}
             leadRunId={leadRunId}
             cards={nextCards}

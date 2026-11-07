@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { brandId, type AgentId } from '@goodboy/types';
@@ -56,6 +57,35 @@ describe('autoRowFacts', () => {
     expect(asked([aPlanRow({ approvalState: 'approved', approvedRevision: 1 })])?.word).toBe(
       'Waiting',
     );
+  });
+
+  it.each([
+    ['the budget', AUTO_BLOCK_TEXT.budget],
+    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
+  ])('says Paused, waiting on you, for a tree blocked by %s', (_name, blockedReason) => {
+    const view = aView({ phase: 'blocked' });
+
+    expect(autoRowFacts({ view: { ...view, tree: { ...view.tree, blockedReason } } })).toEqual({
+      phase: 'waiting',
+      word: 'Paused',
+      short: 'Paused',
+    });
+  });
+
+  it('says Paused for a spent limit in every live phase, as the glance does', () => {
+    for (const phase of ['waiting', 'deciding', 'delegating', 'merging'] as const) {
+      expect(autoRowFacts({ view: aView({ phase, capUsd: 1, spentUsd: 1 }) }), phase).toEqual({
+        phase: 'waiting',
+        word: 'Paused',
+        short: 'Paused',
+      });
+    }
+  });
+
+  it('keeps the plan that waits ahead of a spent limit', () => {
+    const view = aView({ phase: 'waiting', capUsd: 1, spentUsd: 1, artifacts: [aPlanRow()] });
+
+    expect(autoRowFacts({ view })?.word).toBe('Needs you');
   });
 
   it('says what the tree does in every other phase', () => {

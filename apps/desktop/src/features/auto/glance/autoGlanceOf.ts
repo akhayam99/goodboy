@@ -5,6 +5,7 @@ import { planNeedsApprovalOf } from '../../../shared/utils/planNeedsApprovalOf';
 import { glanceOf, type Glance } from '../../session/glance/glanceOf';
 import { projectAskOf } from '../chat/projectAskOf';
 import { dockPlanRowOf } from '../dockPlanRowOf';
+import { isAutoPausedAtLimit } from '../isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from '../isAutoPlanAwaitingApproval';
 import { joinNouns } from '../joinNouns';
 import { openRoleNouns } from '../openRoleNouns';
@@ -17,14 +18,6 @@ type Params = {
 
 type ViewParams = {
   readonly view: AutoTreeView;
-};
-
-const isPausedAtLimit = ({ view }: ViewParams): boolean => {
-  const budget = view.budget;
-  if (budget === null || budget.capUsd === null || budget.remainingUsd === null) {
-    return false;
-  }
-  return Math.round(budget.remainingUsd * 100) <= 0;
 };
 
 const stepsSentenceOf = ({ view }: ViewParams): string => {
@@ -49,9 +42,13 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   }
   if (phase === 'blocked') {
     const reason = view.tree.blockedReason;
+    const hasReason = reason !== null && reason !== '';
+    if (isAutoPausedAtLimit({ view })) {
+      return glanceOf({ state: 'paused', sentence: hasReason ? reason : 'At the limit' });
+    }
     return glanceOf({
       state: 'failed',
-      sentence: reason === null || reason === '' ? "Auto couldn't reply" : reason,
+      sentence: hasReason ? reason : "Auto couldn't reply",
     });
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
@@ -71,7 +68,7 @@ export const autoGlanceOf = ({ view, rootTurn }: Params): Glance => {
   if (projectAskOf({ view }) !== null) {
     return glanceOf({ state: 'waiting', sentence: 'Auto asks which project to use' });
   }
-  if (isPausedAtLimit({ view })) {
+  if (isAutoPausedAtLimit({ view })) {
     return glanceOf({ state: 'paused', sentence: 'At the limit' });
   }
   if (plan !== null && plan.artifact.approvalState === 'revising') {

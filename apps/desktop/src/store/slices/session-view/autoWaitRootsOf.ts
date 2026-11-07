@@ -1,10 +1,7 @@
 import type { Agent, Session } from '@goodboy/types';
-import { autoGroupOf } from '../../../features/auto/autoGroupOf';
-import { autoRootsOf } from '../../../features/auto/autoRootsOf';
-import { autoTreeWordOf } from '../../../features/auto/autoTreeWordOf';
-import { liveAutoViewsOf } from '../../../features/auto/liveAutoViewsOf';
 import type { AppState } from '../../types';
 import type { AutoViewState } from '../auto-view/state';
+import { autoTreeStatesOf } from './autoTreeStatesOf';
 
 export type AutoWaitState = Pick<AppState, 'agentTurnState'> &
   Partial<Pick<AppState, 'agentKindOverride'> & AutoViewState>;
@@ -15,27 +12,7 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-const NO_CLOCK = 0;
-
-export const autoWaitRootsOf = ({ state, session, agents }: Params): ReadonlyArray<Agent> => {
-  const views = liveAutoViewsOf({
-    views: state.autoTreeViews?.[session.id] ?? [],
-    agents,
-  });
-  if (views.length === 0) {
-    return [];
-  }
-  const now = state.autoClockAt ?? NO_CLOCK;
-  return autoRootsOf({ agents, kindOverride: state.agentKindOverride ?? {} }).filter((root) => {
-    const view = views.find((candidate) => candidate.tree.rootAgentId === root.id);
-    if (view === undefined) {
-      return false;
-    }
-    const tree = autoTreeWordOf({ view, rootTurn: state.agentTurnState[root.id] ?? null });
-    return (
-      tree.state === 'asking' ||
-      tree.state === 'paused' ||
-      autoGroupOf({ view, agents, now })?.isStuck === true
-    );
-  });
-};
+export const autoWaitRootsOf = ({ state, session, agents }: Params): ReadonlyArray<Agent> =>
+  autoTreeStatesOf({ state, session, agents })
+    .filter((entry) => entry.state === 'asking' || entry.isStuck)
+    .map((entry) => entry.root);

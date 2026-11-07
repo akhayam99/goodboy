@@ -31,6 +31,10 @@ export const U36_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   'u36-states-overview-blocked-child-dark': () => (
     <CentralColumnScene theme="dark" kind="blocked" />
   ),
+  'u36-states-overview-noreply-light': () => <CentralColumnScene theme="light" kind="noreply" />,
+  'u36-states-overview-noreply-dark': () => <CentralColumnScene theme="dark" kind="noreply" />,
+  'u36-states-overview-limit-light': () => <CentralColumnScene theme="light" kind="limit" />,
+  'u36-states-overview-limit-dark': () => <CentralColumnScene theme="dark" kind="limit" />,
   'u36-states-auto-running-light': () => <AutoStateScene theme="light" seed={RUNNING} />,
   'u36-states-auto-running-dark': () => <AutoStateScene theme="dark" seed={RUNNING} />,
   'u36-states-auto-failed-light': () => <AutoStateScene theme="light" seed={FAILED} />,

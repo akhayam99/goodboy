@@ -2,6 +2,7 @@ import type { TurnState } from '@goodboy/types';
 import type { WorkNodeState } from '@goodboy/ui';
 import { NAMES } from '../../shared/utils/names';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
+import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { projectAskOf } from './chat/projectAskOf';
 
@@ -34,18 +35,6 @@ const RUNNING: AutoTreeWord = {
   isLive: true,
 };
 
-type ViewParams = {
-  readonly view: AutoTreeView;
-};
-
-const isPausedAtLimit = ({ view }: ViewParams): boolean => {
-  const budget = view.budget;
-  if (budget === null || budget.capUsd === null || budget.remainingUsd === null) {
-    return false;
-  }
-  return Math.round(budget.remainingUsd * 100) <= 0;
-};
-
 export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   const phase = view.tree.phase;
   if (phase === 'stopping') {
@@ -58,6 +47,9 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
     return { state: 'done', word: NAMES.done, node: 'done', isLive: false };
   }
   if (phase === 'blocked') {
+    if (isAutoPausedAtLimit({ view })) {
+      return PAUSED;
+    }
     return { state: 'failed', word: NAMES.failed, node: 'failed', isLive: false };
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
@@ -69,7 +61,7 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
   if (projectAskOf({ view }) !== null || isAutoPlanAwaitingApproval({ view })) {
     return NEEDS_YOU;
   }
-  if (isPausedAtLimit({ view })) {
+  if (isAutoPausedAtLimit({ view })) {
     return PAUSED;
   }
   return RUNNING;

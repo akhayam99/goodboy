@@ -348,6 +348,17 @@ describe('autoGroupOf', () => {
       expect(group?.children[0]?.isGone).toBeUndefined();
     });
 
+    it('stays stuck under a tree that stopped replying, which still reads Failed', () => {
+      const base = failed();
+      const group = autoGroupOf({
+        view: { ...base, tree: { ...base.tree, phase: 'blocked' } },
+        agents: [ROOT, anAgent({ id: childId('scout'), parentAgentId: FIXTURE_ROOT })],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group).toMatchObject({ isStuck: true, phase: 'failed', word: 'Failed' });
+    });
+
     it('stays stuck when its agent could not be created, since there was none to delete', () => {
       const group = autoGroupOf({
         view: aView({

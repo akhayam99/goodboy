@@ -1,6 +1,7 @@
 import { NAMES } from '../../shared/utils/names';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import type { RowPhase } from '../workTreeModel/rowState';
+import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 import { joinNouns } from './joinNouns';
 import { openRoleNouns } from './openRoleNouns';
@@ -15,6 +16,8 @@ type ViewParams = {
   readonly view: AutoTreeView;
 };
 
+const PAUSED: AutoRowFacts = { phase: 'waiting', word: NAMES.paused, short: NAMES.paused };
+
 export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
   switch (view.tree.phase) {
     case 'answering':
@@ -22,12 +25,19 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
     case 'done':
       return { phase: 'done', word: 'Idle', short: 'Idle' };
     case 'deciding':
-      return { phase: 'running', word: 'Deciding what to do', short: 'Deciding' };
+      return isAutoPausedAtLimit({ view })
+        ? PAUSED
+        : { phase: 'running', word: 'Deciding what to do', short: 'Deciding' };
     case 'delegating':
-      return { phase: 'running', word: 'Starting agents', short: 'Starting' };
+      return isAutoPausedAtLimit({ view })
+        ? PAUSED
+        : { phase: 'running', word: 'Starting agents', short: 'Starting' };
     case 'waiting': {
       if (isAutoPlanAwaitingApproval({ view })) {
         return { phase: 'waiting', word: NAMES.needsYou, short: NAMES.needsYou };
+      }
+      if (isAutoPausedAtLimit({ view })) {
+        return PAUSED;
       }
       const nouns = openRoleNouns({ delegations: view.delegations });
       return {
@@ -37,9 +47,13 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
       };
     }
     case 'merging':
-      return { phase: 'running', word: 'Reading the results', short: 'Reading' };
+      return isAutoPausedAtLimit({ view })
+        ? PAUSED
+        : { phase: 'running', word: 'Reading the results', short: 'Reading' };
     case 'blocked':
-      return { phase: 'failed', word: NAMES.failed, short: NAMES.failed };
+      return isAutoPausedAtLimit({ view })
+        ? PAUSED
+        : { phase: 'failed', word: NAMES.failed, short: NAMES.failed };
     case 'stopping':
       return { phase: 'running', word: 'Stopping', short: 'Stopping' };
     case 'stopped':

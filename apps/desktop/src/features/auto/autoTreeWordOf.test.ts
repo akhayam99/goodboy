@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
 import { aPlanRow, aView } from './testing/autoViewFixtures';
 import { autoTreeWordOf } from './autoTreeWordOf';
@@ -38,6 +39,26 @@ describe('autoTreeWordOf', () => {
     });
 
     expect(tree).toMatchObject({ state: 'asking', word: 'Needs you' });
+  });
+
+  it.each([
+    ['the budget', AUTO_BLOCK_TEXT.budget],
+    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
+  ])('reads a tree blocked by %s as Paused, not Failed', (_name, blockedReason) => {
+    const view = aView({ phase: 'blocked' });
+
+    expect(
+      autoTreeWordOf({ view: { ...view, tree: { ...view.tree, blockedReason } }, rootTurn: null }),
+    ).toMatchObject({ state: 'paused', word: 'Paused', node: 'budget' });
+  });
+
+  it('reads a tree blocked by the no progress gate as Failed', () => {
+    const view = aView({ phase: 'blocked' });
+    const blockedReason = AUTO_BLOCK_TEXT.limit_no_progress;
+
+    expect(
+      autoTreeWordOf({ view: { ...view, tree: { ...view.tree, blockedReason } }, rootTurn: null }),
+    ).toMatchObject({ state: 'failed', word: 'Failed' });
   });
 
   it('reads a spent limit as Paused, a state of its own', () => {

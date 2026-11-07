@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
 import { aDelegation, anArtifactRow, aPlanRow, aView } from '../testing/autoViewFixtures';
 import { autoGlanceOf } from './autoGlanceOf';
@@ -102,6 +103,24 @@ describe('autoGlanceOf', () => {
       state: 'stopping',
       word: 'Stopping',
       sentence: '',
+    });
+  });
+
+  it.each([
+    ['the budget', AUTO_BLOCK_TEXT.budget],
+    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
+  ])('says Paused, with the reason, for a tree blocked by %s', (_name, blockedReason) => {
+    const view = aView({ phase: 'blocked' });
+    const glance = autoGlanceOf({
+      view: { ...view, tree: { ...view.tree, blockedReason } },
+      rootTurn: null,
+    });
+
+    expect(glance).toMatchObject({
+      state: 'paused',
+      word: 'Paused',
+      tone: 'warning',
+      sentence: blockedReason,
     });
   });
 

@@ -5,6 +5,7 @@ import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
 import { autoGroupOf, type AutoGroupChild } from './autoGroupOf';
 import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { textField } from './chat/readJson';
+import { isAutoPausedAtLimit } from './isAutoPausedAtLimit';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 
 type AutoRetryTargetKind = AutoStuckKind | 'approve' | 'blocked';
@@ -124,6 +125,8 @@ export const autoRetryTargetsOf = ({
     return [
       ...children,
       ...(isAutoPlanAwaitingApproval({ view }) ? [ownTargetOf({ view, kind: 'approve' })] : []),
-      ...(phase === 'blocked' ? [ownTargetOf({ view, kind: 'blocked' })] : []),
+      ...(phase === 'blocked' && !isAutoPausedAtLimit({ view })
+        ? [ownTargetOf({ view, kind: 'blocked' })]
+        : []),
     ];
   });

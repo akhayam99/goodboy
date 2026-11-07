@@ -23,6 +23,7 @@ export type AttentionFactsParams = {
   readonly hasLimitPausedRun?: boolean;
   readonly hasRunWaitingForGo?: boolean;
   readonly hasAutoNeedsYou?: boolean;
+  readonly hasAutoFailed?: boolean;
   readonly hasSlackReplyWaiting?: boolean;
   readonly deferredReasons?: ReadonlySet<SessionAttentionReason>;
 };
@@ -112,6 +113,7 @@ export const attentionFactsOf = ({
   hasLimitPausedRun = false,
   hasRunWaitingForGo = false,
   hasAutoNeedsYou = false,
+  hasAutoFailed = false,
   hasSlackReplyWaiting = false,
   deferredReasons = NO_DEFERRALS,
 }: AttentionFactsParams): ReadonlyArray<SessionAttentionReason> => {
@@ -119,7 +121,7 @@ export const attentionFactsOf = ({
   const livePr = isOnBranch && isPrLive(pr) ? pr : null;
   const holds: Record<SessionAttentionReason, boolean> = {
     'needs-approval': hasBlockedAgent,
-    'agent-error': session.state.kind === 'error',
+    'agent-error': session.state.kind === 'error' || hasAutoFailed,
     'push-failed': isOnBranch && pushFailedCount > 0,
     'plan-approval': hasPlanWaiting,
     'open-question': openQuestionCount > 0,

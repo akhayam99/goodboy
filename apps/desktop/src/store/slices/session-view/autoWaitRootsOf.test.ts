@@ -4,6 +4,7 @@ import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import {
   aDelegation,
+  aPlanRow,
   aView,
   FIXTURE_NOW,
   FIXTURE_ROOT,
@@ -55,9 +56,10 @@ afterEach(() => {
 });
 
 describe('autoWaitRootsOf', () => {
-  it('counts an Auto that asks you or sits at its limit, never one that runs, rests or failed', () => {
+  it('counts an Auto that asks you, never one that runs, rests, failed or sits at its limit', () => {
     expect(waitsOf({ view: aView({ phase: 'blocked' }) })).toEqual([]);
-    expect(waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 }) })).toEqual([
+    expect(waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 }) })).toEqual([]);
+    expect(waitsOf({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) })).toEqual([
       FIXTURE_ROOT,
     ]);
     expect(waitsOf({ view: aView({ phase: 'deciding' }) })).toEqual([]);

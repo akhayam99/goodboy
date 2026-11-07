@@ -23,6 +23,7 @@ type Props = {
   readonly session: Session;
   readonly card: OverviewCardModel;
   readonly waiting: ReadonlyArray<LiveGroupModel>;
+  readonly groups: ReadonlyArray<LiveGroupModel>;
   readonly autoViews: ReadonlyArray<AutoTreeView>;
   readonly leadRunId: string | null;
   readonly cards: ReadonlyArray<ActionCardModel>;
@@ -38,6 +39,7 @@ export const NeedsYouCard = ({
   session,
   card,
   waiting,
+  groups,
   autoViews,
   leadRunId,
   cards,
@@ -52,9 +54,9 @@ export const NeedsYouCard = ({
   if (card.count === 0) {
     return null;
   }
-  const stuck = stuckAutoOf({ groups: waiting, views: autoViews });
+  const stuck = stuckAutoOf({ groups, views: autoViews });
   const live =
-    waiting.length === 0 ? null : (
+    waiting.length === 0 && stuck === null ? null : (
       <div data-needs-you-live="" className="flex min-w-0 flex-col gap-1">
         {stuck === null ? null : (
           <StuckActions sessionId={session.id} group={stuck.group} view={stuck.view} />

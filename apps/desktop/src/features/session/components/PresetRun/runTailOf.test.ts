@@ -113,10 +113,10 @@ describe('runTailOf', () => {
     });
   });
 
-  it('says a queued run waits to start, or names the run it follows', () => {
+  it('says a manual run is ready on your press, or names the run it follows', () => {
     const primary = { kind: 'start-run', label: 'Start run' } as const;
     const agents = agentsOf({ scout: 'pending', implementer: 'pending' });
-    expect(tailOf({ agents, primary })?.phrase).toBe('Queued');
+    expect(tailOf({ agents, primary })?.phrase).toBe('Ready to start');
     expect(
       tailOf({
         agents,

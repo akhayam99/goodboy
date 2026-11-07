@@ -92,12 +92,14 @@ const primaryTailOf = ({
       };
     }
     case 'start-run':
-      return {
-        state: 'queued',
-        phrase: run.triggerMode === 'after_run' ? `Starts after ${predecessorName}` : 'Queued',
-        stepAgentId: null,
-        verb,
-      };
+      return run.triggerMode === 'after_run'
+        ? {
+            state: 'queued',
+            phrase: `Starts after ${predecessorName}`,
+            stepAgentId: null,
+            verb,
+          }
+        : { state: 'idle', phrase: 'Ready to start', stepAgentId: null, verb };
     case 'resume':
       return { state: 'stopped', phrase: 'Paused by you', stepAgentId: null, verb: null };
     case 'raise-cap':

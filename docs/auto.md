@@ -626,11 +626,18 @@ after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from w
 the run left behind, or, with nothing stored, blocks with "Auto stopped answering
 before it replied. Retry to send the message again." and puts the message back.
 
-A blocked tree reads **Failed** on every surface (glance, row, card, tail), never
-**Blocked** or **Needs you**: it ended on an error and **Retry** moves it. It does not
-count as a wait for you (`autoWaitRootsOf` counts a plan, a project ask, a
-stuck child and a spent limit, compared on the typed `AutoTreeState`, never on a
-display word). A tree at its limit reads **Paused**.
+A tree blocked by a guard other than a limit reads **Failed** on every surface
+(glance, row, card, tail), never **Blocked** or **Needs you**: it ended on an error
+and **Retry** moves it. It raises `agent-error` for the session (`autoFailedRootsOf`),
+the same reason a failed plain agent raises, and it does not count as a wait for you
+(`autoWaitRootsOf` counts a plan, a project ask and a stuck child, compared on the
+typed `AutoTreeState`, never on a display word).
+
+A tree at its limit reads **Paused**, whether the budget is spent
+or a guard blocked it for the budget or the wall clock (`isAutoPausedAtLimit`, the one
+function the word, the glance and the row facts read). Its row sits under Needs you
+with the word Paused, and it raises `run-paused-at-limit` (`autoLimitRootsOf`), not
+`auto-needs-you`. It has no Retry card: the limit is raised, not retried.
 
 A blocked tree writes nothing while it waits. It resumes by itself only after a
 budget block, once the limit is raised. Otherwise **Retry** on the tail
