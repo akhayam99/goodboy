@@ -1619,3 +1619,4 @@ shows "Couldn't mark the step as ended" and leaves the step as it was.
 When the orchestrator creates the next step, the hints it read are marked read
 after the step exists (`consumeReadOrchestratorHints`). A failed write of that
 mark does not stop the step from starting: the hints stay unread and
+"Couldn't mark the hints as read" is shown.

@@ -37,4 +37,19 @@ describe('humanTurnErrorOf', () => {
       'The provider is limiting requests right now. Wait a moment, then retry.',
     );
   });
+
+  it('prefers the provider that ran the session over the configured override', () => {
+    expect(
+      humanTurnErrorOf({
+        message: 'Error: 429 Too Many Requests',
+        agent: { providerOverride: 'anthropic', providerSessionProviderId: 'codex' },
+      }),
+    ).toBe('Codex is limiting requests right now. Wait a moment, then retry.');
+  });
+
+  it('says the reply failed when the output is detail only', () => {
+    expect(
+      humanTurnErrorOf({ message: 'anthropic: io error: No such file or directory (os error 2)' }),
+    ).toBe('The reply failed.');
+  });
 });

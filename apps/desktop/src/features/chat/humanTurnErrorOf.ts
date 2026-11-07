@@ -7,7 +7,7 @@ type Params = {
 };
 
 export const humanTurnErrorOf = ({ message, agent }: Params): string => {
-  const providerId = agent?.providerOverride ?? agent?.providerSessionProviderId ?? null;
+  const providerId = agent?.providerSessionProviderId ?? agent?.providerOverride ?? null;
   const human = formatErrorForHumans({ message, providerId });
-  return human.body === null || human.body === '' ? message : human.body;
+  return human.body === null || human.body === '' ? 'The reply failed.' : human.body;
 };

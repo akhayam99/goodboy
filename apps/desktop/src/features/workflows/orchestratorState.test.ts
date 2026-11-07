@@ -218,12 +218,15 @@ describe('resolveOrchestratorState', () => {
   });
 
   it('reads an unrecognized stop as Stopped with its message below, and says so when there is none', () => {
-    const savedStop = (message: string): WorkflowOrchestrationStop =>
+    type SavedStopParams = { readonly message: string };
+    const savedStop = ({ message }: SavedStopParams): WorkflowOrchestrationStop =>
       Object.assign({ kind: 'failure' as const, message }, { kind: 'retired-kind' });
     const withMessage = resolve({
-      run: makeRun({ orchestrationStop: savedStop('The planner lost the thread') }),
+      run: makeRun({ orchestrationStop: savedStop({ message: 'The planner lost the thread' }) }),
     });
-    const withoutMessage = resolve({ run: makeRun({ orchestrationStop: savedStop('') }) });
+    const withoutMessage = resolve({
+      run: makeRun({ orchestrationStop: savedStop({ message: '' }) }),
+    });
 
     expect(withMessage.sentence).toBe('Stopped.');
     expect(withMessage.detail).toBe('The planner lost the thread');
