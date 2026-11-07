@@ -79,11 +79,11 @@ describe('MergeBox', () => {
     expect(passes.map((pass) => pass.textContent)).toEqual(['7 checks passed', 'No conflicts']);
   });
 
-  it('draws shapes and no words while the pull request loads', () => {
+  it('draws shapes and one screen reader label while the pull request loads', () => {
     render(<MergeBox box={null} onOpen={() => undefined} />);
 
     const box = screen.getByRole('region', { name: 'Merge status' });
     expect(box.getAttribute('aria-busy')).toBe('true');
-    expect(box.textContent).toBe('');
+    expect(box.textContent).toBe('Reading merge status');
   });
 });

@@ -24,7 +24,7 @@ describe('the u34 pr page loading scene', () => {
     const box = container.querySelector('[data-merge-box]');
     expect(box?.getAttribute('aria-busy')).toBe('true');
     expect(box?.hasAttribute('data-pending')).toBe(true);
-    expect(box?.textContent).toBe('');
+    expect(box?.textContent).toBe('Reading merge status');
     const rows = screen.getByRole('status', { name: 'Reading the activity' }).children;
     expect(rows).toHaveLength(4);
   });
