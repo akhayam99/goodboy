@@ -17,10 +17,11 @@ type Props = {
 export const OrchestratedBlockedStep = ({ sessionId, agentId, isReasonShown }: Props) => {
   const question = useBlockedQuestion({ sessionId, agentId });
   const answerBlockedStep = useAppStore((state) => state.answerBlockedStep);
+  const askAgentToContinue = useAppStore((state) => state.askAgentToContinue);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const canSend = text.trim() !== '' && !isSending;
+  const canSend = !isSending;
 
   const send = async (): Promise<void> => {
     if (!canSend) {
@@ -29,6 +30,10 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId, isReasonShown }: P
     setIsSending(true);
     setError(null);
     try {
+      if (text.trim() === '') {
+        await askAgentToContinue({ sessionId, agentId });
+        return;
+      }
       await answerBlockedStep({ sessionId, agentId, text });
       setText('');
     } catch (cause) {
@@ -52,6 +57,7 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId, isReasonShown }: P
         <StepEndedNotice
           sessionId={sessionId}
           agentId={agentId}
+          isContinueShown={false}
           fallback={
             question?.isQuestion === true ? (
               <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
@@ -91,7 +97,7 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId, isReasonShown }: P
         maxRows={6}
         actions={
           <Button size="sm" type="submit" disabled={!canSend} isBusy={isSending}>
-            {ORCHESTRATED_COPY.blockedAnswerAction}
+            {NAMES.continue}
           </Button>
         }
       />

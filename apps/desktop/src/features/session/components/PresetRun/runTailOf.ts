@@ -1,8 +1,9 @@
+import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import { NAMES } from '../../../../shared/utils/names';
 import type { Agent, AgentId, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
 import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
-import type { RunPrimary } from '../../../workflows/runPrimaryOf';
+import { openStepLabelOf, type RunPrimary } from '../../../workflows/runPrimaryOf';
 import { NOT_FINISHED } from '../../../workTreeModel/rowStateCopy';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { stepNumberOf } from './stepNumberOf';
@@ -242,8 +243,21 @@ export const runTailOf = ({
     };
   }
   if (nextAction.kind === 'recover') {
+    const halted = steps.find((agent) => isAgentStatusHalted({ status: agent.status })) ?? null;
+    if (selectedRootId === null && halted !== null) {
+      return {
+        state: 'needsYou',
+        phrase: NAMES.needsYou,
+        stepAgentId: null,
+        verb: {
+          kind: 'openStep',
+          agentId: halted.id,
+          label: openStepLabelOf({ number: stepNumberOf({ workflow, agent: halted }) }),
+        },
+      };
+    }
     return {
-      state: 'failed',
+      state: nextAction.isBlocked ? 'needsYou' : 'failed',
       phrase: nextAction.isBlocked ? NOT_FINISHED : nextAction.sentence,
       stepAgentId: null,
       verb: { kind: 'recover' },

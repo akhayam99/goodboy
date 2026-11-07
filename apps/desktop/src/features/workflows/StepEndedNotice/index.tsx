@@ -10,6 +10,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly fallback?: ReactNode;
+  readonly isContinueShown?: boolean;
 };
 
 type Action = 'continue' | 'done';
@@ -19,7 +20,12 @@ type PressParams = {
   readonly failure: string;
 };
 
-export const StepEndedNotice = ({ sessionId, agentId, fallback = null }: Props) => {
+export const StepEndedNotice = ({
+  sessionId,
+  agentId,
+  fallback = null,
+  isContinueShown = true,
+}: Props) => {
   const isEnded = useStepEndedWithoutResult({ sessionId, agentId });
   const askAgentToContinue = useAppStore((state) => state.askAgentToContinue);
   const markStepDone = useAppStore((state) => state.markStepDone);
@@ -60,18 +66,20 @@ export const StepEndedNotice = ({ sessionId, agentId, fallback = null }: Props) 
         body={STEP_ENDED_COPY.body}
         actions={
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              isBusy={busy === 'continue'}
-              disabled={busy !== null}
-              onClick={() =>
-                void press({ action: 'continue', failure: STEP_ENDED_COPY.continueFailed })
-              }
-            >
-              <MessageCircle size={ICON_SIZE.row} aria-hidden />
-              {STEP_ENDED_COPY.continueAction}
-            </Button>
+            {isContinueShown ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                isBusy={busy === 'continue'}
+                disabled={busy !== null}
+                onClick={() =>
+                  void press({ action: 'continue', failure: STEP_ENDED_COPY.continueFailed })
+                }
+              >
+                <MessageCircle size={ICON_SIZE.row} aria-hidden />
+                {STEP_ENDED_COPY.continueAction}
+              </Button>
+            ) : null}
             <Button
               size="sm"
               variant="quiet"

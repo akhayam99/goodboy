@@ -22,6 +22,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { C09_SESSION_ID, C09_TESTER_ID } from '../u25/c09OrchestratedSeed';
 import { C08RunScene } from '../u25/C08RunScene';
 import { C09OrchestratedScene } from '../u25/C09OrchestratedScene';
 import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
@@ -218,14 +219,84 @@ describe('one run page', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Stop run' })).toBeNull();
   });
 
-  it('reads the reason of a blocked step on its own page, with Restart step', async () => {
+  it('reads the reason of a blocked step on its own page, with Retry and one Continue', async () => {
     await mount('u36-p12-orch-step-blocked');
 
     const tail = within(nodeOf('[data-run-tail]'));
     tail.getByText('Not finished');
-    tail.getByRole('button', { name: 'Restart step' });
+    tail.getByRole('button', { name: 'Retry' });
+    expect(tail.queryByRole('button', { name: 'Restart step' })).toBeNull();
+    expect(tail.queryByRole('button', { name: 'Keep working' })).toBeNull();
+    expect(tail.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
     expect(nodeOf('[data-blocked-question]').textContent).toContain(
       'Should I keep the report in the repo or only attach it to the notes?',
+    );
+  });
+
+  it('answers the blocked step with the text of the one field and clears it', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const answerBlockedStep = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ answerBlockedStep });
+    });
+    fireEvent.change(screen.getByPlaceholderText('Answer the step'), {
+      target: { value: 'Attach it to the notes only.' },
+    });
+    const form = within(nodeOf('[data-run-tail]')).getByRole('form', { name: 'Answer the step' });
+
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Continue' }));
+    });
+
+    expect(answerBlockedStep).toHaveBeenCalledWith({
+      sessionId: C09_SESSION_ID,
+      agentId: C09_TESTER_ID,
+      text: 'Attach it to the notes only.',
+    });
+    expect(screen.getByPlaceholderText('Answer the step')).toHaveProperty('value', '');
+  });
+
+  it('asks the step to continue when Continue is pressed with no text', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const askAgentToContinue = vi.fn(async () => undefined);
+    const answerBlockedStep = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ askAgentToContinue, answerBlockedStep });
+    });
+    const form = within(nodeOf('[data-run-tail]')).getByRole('form', { name: 'Answer the step' });
+
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Continue' }));
+    });
+
+    expect(askAgentToContinue).toHaveBeenCalledWith({
+      sessionId: C09_SESSION_ID,
+      agentId: C09_TESTER_ID,
+    });
+    expect(answerBlockedStep).not.toHaveBeenCalled();
+  });
+
+  it('keeps the text and says why when the answer fails', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const answerBlockedStep = vi.fn(async () => {
+      throw new Error('This step is no longer waiting for an answer.');
+    });
+    act(() => {
+      useAppStore.setState({ answerBlockedStep });
+    });
+    fireEvent.change(screen.getByPlaceholderText('Answer the step'), {
+      target: { value: 'Attach it to the notes only.' },
+    });
+    const form = within(nodeOf('[data-run-tail]')).getByRole('form', { name: 'Answer the step' });
+
+    await act(async () => {
+      fireEvent.click(within(form).getByRole('button', { name: 'Continue' }));
+    });
+
+    expect(within(form).getByRole('alert').textContent).toContain('no longer waiting');
+    expect(screen.getByPlaceholderText('Answer the step')).toHaveProperty(
+      'value',
+      'Attach it to the notes only.',
     );
   });
 

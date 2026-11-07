@@ -91,7 +91,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
     selectedRoot.status === 'pending' &&
     run.orchestrationStop?.kind === 'budget';
   const blockedStep =
-    tail.verb?.kind === 'recover'
+    tail.verb?.kind === 'recover' || (tail.verb?.kind === 'openStep' && tail.state === 'needsYou')
       ? (advance.runAgents.find(
           (agent) => agent.parentAgentId == null && agent.status === 'blocked',
         ) ?? null)
@@ -162,7 +162,7 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         <RunPendingDelivery sessionId={session.id} />
         {blockedStep === null ? null : isMountBlocked && mountBlock !== null ? (
           <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
-        ) : (
+        ) : !isBlockedStepOnScreen ? null : (
           <OrchestratedBlockedStep
             sessionId={session.id}
             agentId={blockedStep.id}
