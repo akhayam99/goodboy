@@ -19,7 +19,7 @@ its title (`BranchTabStrip`); the page computes its counts once
 one pill. A host with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next. The header steps aside
-while you read (`PaneShell headerMode="reveal"`, `revealKey` the tab): 24px of
+while you read (`PaneShell`, `revealKey` the tab): 24px of
 scroll down keeps only the back row (`Back to overview`) and the banners
 pinned, and 8px up, the top of the section, keyboard focus in the header or
 another tab brings the title, the line, the tabs and the work lines back. On a

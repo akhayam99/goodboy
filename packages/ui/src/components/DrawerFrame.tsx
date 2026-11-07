@@ -6,8 +6,11 @@ import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
 import { DrawerBackLink } from './DrawerBackLink';
+import { DrawerHeaderMore } from './DrawerHeaderMore';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
+import { RevealRegion } from './RevealRegion';
+import { HeaderRevealContext } from '../useHeaderReveal/headerRevealContext';
 import { PANE_RHYTHM } from '../paneRhythm';
 import { ICON_SIZE } from '../iconSize';
 
@@ -177,6 +180,18 @@ export const DrawerFrame = ({
     </>
   );
 
+  const isOverlay = drawerContent?.mode === 'overlay';
+  const hasStepAside = !isHeaderless && (isOverlay || meta != null || hasToolbar);
+  const backLink = back === undefined || isHeaderless ? null : <DrawerBackLink back={back} />;
+  const body =
+    scroll === 'self' || isHeaderless ? (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+    ) : (
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
+        {children}
+      </ScrollFade>
+    );
+
   return (
     <section
       ref={sectionRef}
@@ -187,11 +202,7 @@ export const DrawerFrame = ({
       {isHeaderless ? null : (
         <header
           data-drawer-header=""
-          className={cn(
-            'flex shrink-0 flex-col pb-2',
-            PANE_RHYTHM.headerInset,
-            hasToolbar && 'gap-2',
-          )}
+          className={cn('flex shrink-0 flex-col', PANE_RHYTHM.headerInset, !hasStepAside && 'pb-2')}
         >
           <div
             data-drawer-header-row=""
@@ -203,34 +214,28 @@ export const DrawerFrame = ({
           >
             {titleRow}
           </div>
-          {drawerContent?.mode === 'overlay' ? (
-            <span className="px-4 text-meta text-muted-foreground">
-              Covers the page. Esc to go back
-            </span>
-          ) : null}
-          {meta == null ? null : (
-            <p
-              data-drawer-meta=""
-              style={{ paddingLeft: Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX }}
-              className="min-w-0 truncate pr-2 text-meta text-muted-foreground"
-            >
-              {meta}
-            </p>
-          )}
-          {hasToolbar ? (
-            <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
-              {toolbar}
-            </div>
-          ) : null}
         </header>
       )}
-      {back === undefined || isHeaderless ? null : <DrawerBackLink back={back} />}
-      {scroll === 'self' || isHeaderless ? (
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+      {hasStepAside ? (
+        <RevealRegion
+          surface="subtle"
+          header={
+            <DrawerHeaderMore
+              isOverlay={isOverlay}
+              meta={meta}
+              metaInsetPx={Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX}
+              toolbar={toolbar}
+            />
+          }
+        >
+          {backLink}
+          {body}
+        </RevealRegion>
       ) : (
-        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
-          {children}
-        </ScrollFade>
+        <HeaderRevealContext.Provider value={null}>
+          {backLink}
+          {body}
+        </HeaderRevealContext.Provider>
       )}
       {dock != null ? (
         <div ref={dockRef} className="shrink-0 px-4 py-3">

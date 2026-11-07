@@ -145,8 +145,8 @@ describe('DrawerFrame', () => {
     expect(body?.className).toContain('min-h-0');
   });
 
-  it('puts a toolbar on a second row under the title and the close button', () => {
-    render(
+  it('puts a toolbar on a second row under the title and the close button, stepping aside while you read', () => {
+    const { container } = render(
       <DrawerFrame
         title="Retry-safe webhook credits"
         toolbar={<button type="button">Approve</button>}
@@ -157,8 +157,13 @@ describe('DrawerFrame', () => {
     );
 
     const header = screen.getByRole('banner');
-    const toolbar = header.querySelector('[data-drawer-toolbar]');
+    const toolbar = container.querySelector('[data-drawer-toolbar]');
+    const stepAside = container.querySelector('[data-slot="reveal-header"]');
     expect(toolbar?.contains(screen.getByRole('button', { name: 'Approve' }))).toBe(true);
+    expect(stepAside?.contains(toolbar ?? null)).toBe(true);
+    expect(
+      header.compareDocumentPosition(stepAside ?? header) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(toolbar?.contains(screen.getByRole('button', { name: 'Close' }))).toBe(false);
     expect(header.contains(screen.getByRole('button', { name: 'Close' }))).toBe(true);
     expect(
@@ -173,7 +178,8 @@ describe('DrawerFrame', () => {
       </DrawerFrame>,
     );
 
-    expect(screen.getByRole('banner').querySelector('[data-drawer-toolbar]')).toBeNull();
+    expect(document.querySelector('[data-drawer-toolbar]')).toBeNull();
+    expect(document.querySelector('[data-slot="reveal-region"]')).toBeNull();
   });
 
   it('focuses the drawer itself, not Close, when it opens and holds no field', () => {

@@ -1,9 +1,8 @@
 import type { RefObject } from 'react';
 import { isKeyboardFocus } from '../isKeyboardFocus';
-import { DURATION_BASE_MS } from '../motionTimings';
-import { prefersReducedMotion } from '../prefersReducedMotion';
 import type { HeaderReveal, PageScroller } from './headerRevealContext';
 import { headerRevealOf } from './headerRevealOf';
+import { REVEALS_BY_REGION } from './revealsByRegion';
 import type { HeaderRevealState } from './headerRevealState';
 import { scrollIntent } from './scrollIntent';
 
@@ -32,12 +31,6 @@ type Drag = {
   readonly startTop: number;
 };
 
-type ExtendParams = {
-  readonly region: HTMLElement;
-  readonly shift: string;
-  readonly isShown: boolean;
-};
-
 const clampedTopOf = ({ viewport }: ViewportParams): number =>
   Math.min(Math.max(0, viewport.scrollTop), rangeOf({ viewport }));
 
@@ -58,23 +51,6 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
   let settleGeneration = 0;
   let observer: ResizeObserver | null = null;
   let drag: Drag | null = null;
-  let extendTimer: ReturnType<typeof setTimeout> | null = null;
-
-  const paintExtend = ({ region, shift, isShown }: ExtendParams) => {
-    if (extendTimer !== null) {
-      clearTimeout(extendTimer);
-      extendTimer = null;
-    }
-    if (!isShown || prefersReducedMotion()) {
-      region.style.setProperty('--reveal-extend', shift);
-      return;
-    }
-    extendTimer = setTimeout(() => {
-      extendTimer = null;
-      region.style.setProperty('--reveal-extend', '0px');
-    }, DURATION_BASE_MS);
-  };
-
   const paint = () => {
     const region = regionRef.current;
     if (region === null) {
@@ -91,7 +67,6 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       isShown ? 'var(--duration-base)' : 'var(--duration-quick)',
     );
     region.style.setProperty('--reveal-ease', isShown ? 'var(--ease-enter)' : 'var(--ease-exit)');
-    paintExtend({ region, shift, isShown });
   };
 
   const liveViewport = (): HTMLElement | null => {
@@ -250,9 +225,15 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     };
   };
 
+  const reveal: HeaderReveal = { register, holdAppScroll: intent.hold };
+
   const attach = (): (() => void) => {
     const header = headerRef.current;
     const body = bodyRef.current;
+    const region = regionRef.current;
+    if (region !== null) {
+      REVEALS_BY_REGION.set(region, reveal);
+    }
     const controller = new AbortController();
     const { signal } = controller;
     window.addEventListener('pointerup', endDrag, { signal });
@@ -296,14 +277,13 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       controller.abort();
       resize.disconnect();
       observer = null;
-      if (extendTimer !== null) {
-        clearTimeout(extendTimer);
-        extendTimer = null;
+      if (region !== null) {
+        REVEALS_BY_REGION.delete(region);
       }
       forget();
       isFocusHeld = false;
     };
   };
 
-  return { reveal: { register, holdAppScroll: intent.hold }, attach, reset };
+  return { reveal, attach, reset };
 };

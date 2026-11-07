@@ -411,7 +411,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       <PaneShell
         page="branch"
         scroll="self"
-        headerMode="reveal"
         revealKey={tab}
         headerRhythm="section"
         lead={

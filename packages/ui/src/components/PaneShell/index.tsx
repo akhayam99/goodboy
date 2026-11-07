@@ -1,11 +1,7 @@
 import { useContext, type ReactElement, type ReactNode } from 'react';
-import { cn } from '../../cn';
 import type { FramePage } from '../../frameGeometry';
-import { PANE_RHYTHM } from '../../paneRhythm';
 import { Divider } from '../Divider';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
-import { ScrollFade } from '../ScrollFade';
-import { HeaderRevealContext } from '../../useHeaderReveal/headerRevealContext';
 import { PageHeader } from './PageHeader';
 import { pageWidthOf } from './pageWidthOf';
 import { PaneActionsContext } from './paneActionsContext';
@@ -15,8 +11,7 @@ import { RevealPane } from './RevealPane';
 
 type BaseProps = {
   readonly animationClassName?: string;
-  readonly scroll?: 'pane' | 'body' | 'self';
-  readonly headerMode?: 'static' | 'reveal';
+  readonly scroll?: 'body' | 'self';
   readonly revealKey?: string;
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
@@ -49,8 +44,7 @@ type Props = BaseProps & (TitleHeaderProps | CustomHeaderProps);
 export const PaneShell = (props: Props) => {
   const {
     animationClassName = 'motion-safe:animate-studio-in',
-    scroll = 'pane',
-    headerMode = 'static',
+    scroll = 'body',
     revealKey,
     tabs,
     dock,
@@ -62,7 +56,6 @@ export const PaneShell = (props: Props) => {
     children: content,
   } = props;
   const width = pageWidthOf({ page, width: widthOverride });
-  const isReveal = headerMode === 'reveal';
   const inheritedBanner = useContext(PaneBannerContext);
   const banner =
     inheritedBanner == null ? null : (
@@ -81,7 +74,7 @@ export const PaneShell = (props: Props) => {
     props.header !== undefined ? (
       <PageHeader
         isOnColumn
-        isTrailPinned={isReveal}
+        isTrailPinned
         rhythm={headerRhythm}
         tabs={tabs}
         animationClassName={animationClassName}
@@ -91,7 +84,7 @@ export const PaneShell = (props: Props) => {
     ) : (
       <PageHeader
         isOnColumn
-        isTrailPinned={isReveal}
+        isTrailPinned
         rhythm={headerRhythm}
         tabs={tabs}
         animationClassName={animationClassName}
@@ -101,15 +94,6 @@ export const PaneShell = (props: Props) => {
         subheader={props.subheader}
         {...(page !== undefined && { page })}
       />
-    );
-
-  const leadBlock =
-    lead == null ? null : (
-      <div data-slot="pane-lead" className="min-w-0 shrink-0 has-[[data-page-column]:empty]:hidden">
-        <PageColumn width={width} className="flex flex-col gap-3 pb-3 empty:hidden">
-          {lead}
-        </PageColumn>
-      </div>
     );
 
   const dockBlock =
@@ -124,77 +108,18 @@ export const PaneShell = (props: Props) => {
       </>
     ) : null;
 
-  if (isReveal) {
-    return (
-      <RevealPane
-        width={width}
-        header={header}
-        banner={banner}
-        lead={lead}
-        dockBlock={dockBlock}
-        isSelfScroll={scroll === 'self'}
-        resetKey={revealKey ?? null}
-        animationClassName={animationClassName}
-      >
-        {children}
-      </RevealPane>
-    );
-  }
-
-  if (scroll === 'pane') {
-    return (
-      <HeaderRevealContext.Provider value={null}>
-        <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-            <PageColumn width={width} className="flex flex-col pb-5">
-              {header}
-              <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
-                {banner}
-                {leadBlock}
-                {children}
-              </div>
-            </PageColumn>
-          </ScrollFade>
-          {dockBlock}
-        </div>
-      </HeaderRevealContext.Provider>
-    );
-  }
-
   return (
-    <HeaderRevealContext.Provider value={null}>
-      <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-        <div className="shrink-0 overflow-hidden">
-          <PageColumn width={width}>{header}</PageColumn>
-        </div>
-        {scroll === 'self' ? (
-          <div data-slot="pane-body" className="flex min-h-0 min-w-0 flex-1 flex-col">
-            {banner === null ? null : (
-              <PageColumn
-                width={width}
-                className="shrink-0 pb-3 has-[[data-slot=pane-banner]:empty]:hidden"
-              >
-                {banner}
-              </PageColumn>
-            )}
-            {leadBlock}
-            <div data-slot="pane-fill" className="flex min-h-0 min-w-0 flex-1 flex-col">
-              {children}
-            </div>
-          </div>
-        ) : (
-          <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-            <PageColumn width={width} className="pb-5">
-              <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
-                {banner}
-                {leadBlock}
-                {children}
-              </div>
-            </PageColumn>
-          </ScrollFade>
-        )}
-        {dockBlock}
-      </div>
-    </HeaderRevealContext.Provider>
+    <RevealPane
+      width={width}
+      header={header}
+      banner={banner}
+      lead={lead}
+      dockBlock={dockBlock}
+      isSelfScroll={scroll === 'self'}
+      resetKey={revealKey ?? null}
+      animationClassName={animationClassName}
+    >
+      {children}
+    </RevealPane>
   );
 };
