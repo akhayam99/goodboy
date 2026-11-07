@@ -1,5 +1,6 @@
 import { notFinishedKindOf } from '@goodboy/core/workflows';
 import type { Agent, TurnState } from '@goodboy/types';
+import { isAwaitingFirstMessage } from '../../workTreeModel/rowState';
 import { effectiveAgentStatusOf } from '../../workTreeModel/agentStateOf';
 import { glanceOf, type Glance } from './glanceOf';
 import { stoppedSentenceOf } from './stoppedSentenceOf';
@@ -51,7 +52,13 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
     return glanceOf({ state: 'skipped', sentence: skippedSentenceOf({ agent }) });
   }
   if (status === 'pending') {
-    return glanceOf({ state: 'queued', sentence: 'Starts on its own' });
+    if (isAwaitingFirstMessage({ agent })) {
+      return glanceOf({ state: 'queued', sentence: 'Write to start' });
+    }
+    return glanceOf({
+      state: 'queued',
+      sentence: agent.parentAgentId == null ? 'Not started yet' : 'Starts on its own',
+    });
   }
   return glanceOf({ state: 'idle', sentence: '' });
 };

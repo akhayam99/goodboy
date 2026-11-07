@@ -14,5 +14,5 @@ type Params = {
 
 export const autoWaitRootsOf = ({ state, session, agents }: Params): ReadonlyArray<Agent> =>
   autoTreeStatesOf({ state, session, agents })
-    .filter((entry) => entry.state === 'asking' || entry.isStuck)
+    .filter((entry) => entry.state === 'asking' || (entry.isStuck && entry.state === 'running'))
     .map((entry) => entry.root);

@@ -93,7 +93,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             tone="warning"
             placement="inline"
             title="The step summary failed"
-            body="This step got a short copy of the last result. Retry gives it a proper summary."
+            body="This step got a short copy of the last result and keeps it. Retry writes a proper summary for the steps after it."
             actions={
               <Button
                 variant="secondary"

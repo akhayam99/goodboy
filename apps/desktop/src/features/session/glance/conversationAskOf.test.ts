@@ -23,7 +23,7 @@ describe('conversationAskOf', () => {
     ['failed', 'Failed', 'The agent ended on an error'],
     ['stopped', 'Stopped', 'Stopped by you. What it wrote is kept.'],
     ['completed', 'Idle', ''],
-    ['pending', 'Queued', 'Starts on its own'],
+    ['pending', 'Queued', 'Write to start'],
   ] as const)('an agent %s reads %s and says the sentence once', (status, word, sentence) => {
     expect(agentAsk(status)).toMatchObject({ word, sentence });
   });

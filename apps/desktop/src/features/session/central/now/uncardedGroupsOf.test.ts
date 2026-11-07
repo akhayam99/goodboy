@@ -58,7 +58,11 @@ const STUCK_CHILD: AutoActionTarget = {
   kind: 'childBlocked',
 };
 
-const groupsOf = ({ phase }: { readonly phase: 'waiting' | 'blocked' }) => {
+type GroupsParams = {
+  readonly phase: 'waiting' | 'blocked';
+};
+
+const groupsOf = ({ phase }: GroupsParams) => {
   const view = aView({
     phase,
     delegations: [

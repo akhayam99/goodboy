@@ -77,7 +77,7 @@ type AgentParams = {
   readonly isMissingArtifact?: boolean;
 };
 
-const isAwaitingFirstMessage = ({ agent }: { readonly agent: Agent }): boolean =>
+export const isAwaitingFirstMessage = ({ agent }: { readonly agent: Agent }): boolean =>
   agent.stepId == null &&
   agent.workflowRunId == null &&
   agent.parentAgentId == null &&

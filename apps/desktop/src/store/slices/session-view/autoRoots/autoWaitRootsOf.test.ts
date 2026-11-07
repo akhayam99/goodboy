@@ -76,6 +76,15 @@ describe('autoWaitRootsOf', () => {
     expect(waitsOf({ view })).toEqual([FIXTURE_ROOT]);
   });
 
+  it('counts no stuck child under a tree that paused at its limit or stopped replying', () => {
+    const stuck = [aDelegation({ key: 'fixer', role: 'implementer', state: 'settled' })];
+
+    expect(
+      waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1, delegations: stuck }) }),
+    ).toEqual([]);
+    expect(waitsOf({ view: aView({ phase: 'blocked', delegations: stuck }) })).toEqual([]);
+  });
+
   it('reads the real clock: a child that never started counts as stuck after a minute', () => {
     const view = aView({
       phase: 'waiting',

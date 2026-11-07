@@ -427,11 +427,11 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
         : verbOf({
             label: 'Stop',
             ariaLabel: 'Stop Auto and its agents',
-            isBusy: treeActions.isStopping,
+            isBusy: treeActions.stoppingTreeId === view.tree.id,
             run: () => void treeActions.stop({ view }),
           });
     const treeFailure =
-      stop === null || treeActions.failure === null
+      view === null || treeActions.failure === null || treeActions.failure.treeId !== view.tree.id
         ? null
         : `${treeActions.failure.title}. ${treeActions.failure.message}`;
     if (!canRetry) {
