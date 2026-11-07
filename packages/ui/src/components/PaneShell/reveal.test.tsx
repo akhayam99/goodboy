@@ -6,6 +6,13 @@ import { ScrollFade } from '../ScrollFade';
 import { PageTrailContext } from './pageTrailContext';
 import { PaneShell } from '.';
 
+const htmlElementOf = ({ node }: { readonly node: Element | null | undefined }): HTMLElement => {
+  if (!(node instanceof HTMLElement)) {
+    throw new Error('html element not found');
+  }
+  return node;
+};
+
 const HEADER_PX = 160;
 const VIEW_PX = 600;
 const CONTENT_PX = 4000;
@@ -202,7 +209,7 @@ describe('PaneShell header reveal', () => {
 
   it('never hides the header on a wheel that scrolls a nested list', () => {
     const viewport = mountPage();
-    const inner = screen.getByText('Inner list').parentElement as HTMLElement;
+    const inner = htmlElementOf({ node: screen.getByText('Inner list').parentElement });
     Object.defineProperty(inner, 'scrollHeight', { value: 800, configurable: true });
     Object.defineProperty(inner, 'clientHeight', { value: 160, configurable: true });
     inner.style.overflowY = 'auto';
@@ -265,7 +272,7 @@ describe('PaneShell header reveal', () => {
 
   it('holds the header and the layout still while the thumb drags, then settles on release', () => {
     const viewport = mountPage();
-    const root = viewport.parentElement as HTMLElement;
+    const root = htmlElementOf({ node: viewport.parentElement });
 
     fireEvent.pointerDown(root);
     [10, 11, 300, 700].forEach((top) => {

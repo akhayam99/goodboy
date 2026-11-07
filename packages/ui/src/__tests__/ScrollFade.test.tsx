@@ -6,6 +6,13 @@ import { ScrollerStyleContext } from '../components/ScrollFade/scrollerStyleCont
 
 afterEach(cleanup);
 
+const htmlElementOf = ({ node }: { readonly node: Element | null | undefined }): HTMLElement => {
+  if (!(node instanceof HTMLElement)) {
+    throw new Error('html element not found');
+  }
+  return node;
+};
+
 const viewportOf = (container: HTMLElement): HTMLElement => {
   const root = container.firstElementChild;
   const viewport = root?.firstElementChild;
@@ -71,7 +78,7 @@ describe('ScrollFade', () => {
     const viewport = viewportOf(container);
     expect(viewport.className).toContain('mask-fade-y');
     expect(viewport.getAttribute('style') ?? '').not.toContain('mask-image');
-    const root = container.firstElementChild as HTMLElement;
+    const root = htmlElementOf({ node: container.firstElementChild });
     expect(root.querySelectorAll('[aria-hidden].bg-gradient-to-b').length).toBe(0);
     expect(root.querySelectorAll('[aria-hidden].bg-gradient-to-t').length).toBe(0);
   });
@@ -154,7 +161,7 @@ describe('ScrollFade', () => {
         <p>content</p>
       </ScrollFade>,
     );
-    const root = container.firstElementChild as HTMLElement;
+    const root = htmlElementOf({ node: container.firstElementChild });
     const viewport = viewportOf(container);
     makeOverflow({ viewport });
     viewport.scrollTop = 150;
@@ -225,7 +232,7 @@ describe('ScrollFade line edge', () => {
         flushFrames();
       });
     };
-    return { root: view.container.firstElementChild as HTMLElement, viewport, scrollTo };
+    return { root: htmlElementOf({ node: view.container.firstElementChild }), viewport, scrollTo };
   };
 
   it('marks the root scrolled once the viewport leaves the top, and clears it at 0', () => {
@@ -262,7 +269,7 @@ describe('ScrollFade line edge', () => {
     const lines = root.querySelectorAll('[data-slot="scroll-edge"]');
 
     expect(lines).toHaveLength(1);
-    const line = lines[0] as HTMLElement;
+    const line = htmlElementOf({ node: lines[0] });
     expect(line.getAttribute('aria-hidden')).toBe('true');
     expect(line.className).toContain('top-0');
     expect(line.className).toContain('h-px');
@@ -418,7 +425,7 @@ describe('ScrollFade overlay thumb', () => {
         <p>content</p>
       </ScrollFade>,
     );
-    const root = container.firstElementChild as HTMLElement;
+    const root = htmlElementOf({ node: container.firstElementChild });
     const viewport = viewportOf(container);
     makeOverflow({ viewport });
     expect(root.querySelector('[data-slot="scroll-shade"]')).not.toBeNull();
