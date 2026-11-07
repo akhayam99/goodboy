@@ -1,5 +1,6 @@
 import type { NavigationLocation } from '../../../../store';
 import type { AppState } from '../../../../store/types';
+import { plainText } from '../../../../shared/utils/plainText';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
 import { placeTitleOf } from '../../../../store/slices/navigation/placeTitleOf';
@@ -25,5 +26,8 @@ export const historyLabel = ({ location, state }: Params): HistoryLabel => {
     return { label: title, context: null };
   }
   const session = sessionById(state.sessions, place.sessionId) ?? null;
-  return { label: title, context: session === null ? null : sessionTitle({ session }) };
+  return {
+    label: title,
+    context: session === null ? null : plainText({ text: sessionTitle({ session }) }),
+  };
 };

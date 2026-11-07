@@ -16,6 +16,8 @@ export type AutoChildLiveParams = Readonly<{
 
 const RETRY = [TAIL_ACTION.retryThroughAuto];
 
+const CONTINUE = [{ ...TAIL_ACTION.retryThroughAuto, label: NAMES.continue }];
+
 const FAILURE_REASON = {
   failed: 'the agent did not finish',
   blocked: 'the agent was blocked',
@@ -59,7 +61,7 @@ export const autoChildLive = ({
 }: AutoChildLiveParams): TailFacts | null => {
   if (delegation.state === 'settled') {
     if (delegation.outcome === 'stopped') {
-      return { state: 'stopped', phrase: 'Stopped', startedAt: null, actions: RETRY };
+      return { state: 'stopped', phrase: 'Stopped', startedAt: null, actions: CONTINUE };
     }
     if (delegation.outcome === 'completed' || delegation.outcome === null) {
       return null;
@@ -87,5 +89,8 @@ export const autoChildLive = ({
   if (live === null) {
     return WORKING;
   }
-  return live.state === 'failed' || live.state === 'stopped' ? { ...live, actions: RETRY } : live;
+  if (live.state === 'stopped') {
+    return { ...live, actions: CONTINUE };
+  }
+  return live.state === 'failed' ? { ...live, actions: RETRY } : live;
 };

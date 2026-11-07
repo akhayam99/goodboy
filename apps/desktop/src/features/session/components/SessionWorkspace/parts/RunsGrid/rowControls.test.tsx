@@ -31,6 +31,9 @@ import { backOf } from '../../../../../../store/slices/navigation/backOf';
 import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
 import { openBranchRuns } from '../../../../openBranchRuns';
 import { RENAME_REQUEST_EVENT } from '../../../../../../shared/utils/renameRequest';
+import { ObjectMenuProvider } from '../../../../../actions/components/ObjectMenuProvider';
+import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
+import { aSessionRun } from '../../../../testing/aSessionRun';
 import { RunsGrid } from './index';
 
 const session = aSession({ id: NOW_SESSION });
@@ -65,6 +68,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   cleanup();
 });
 
@@ -100,7 +104,9 @@ const renderWorld = ({ agents }: { readonly agents: ReadonlyArray<Agent> }) => {
   });
   return render(
     <ToastProvider>
-      <RunsGrid session={session} runs={runsOf({ agents })} />
+      <ObjectMenuProvider>
+        <RunsGrid session={session} runs={runsOf({ agents })} />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
 };
@@ -149,7 +155,7 @@ describe('run row controls', () => {
     expect(document.activeElement).toBe(row);
   });
 
-  it('opens the run on one click of the title, after the double click window', () => {
+  it('opens the run immediately on one click of the title', () => {
     vi.useFakeTimers();
     const navigate = vi.fn();
     useAppStore.setState({ navigate });
@@ -162,33 +168,20 @@ describe('run row controls', () => {
       throw new Error('no title');
     }
     fireEvent.click(title);
-    expect(navigate).not.toHaveBeenCalled();
-
-    act(() => {
-      vi.advanceTimersByTime(300);
-    });
     expect(navigate).toHaveBeenCalledTimes(1);
   });
 
-  it('renames in place on a double click and never opens the run', () => {
+  it('renames in place from the row menu and never opens the run', () => {
     vi.useFakeTimers();
     const navigate = vi.fn();
     const renameAgent = vi.fn(async () => undefined);
     useAppStore.setState({ navigate, renameAgent });
-    const { container } = renderWorld({
+    renderWorld({
       agents: [onMount({ key: 'block', name: 'Block double credits', mount: DUP })],
     });
 
-    const title = container.querySelector('[data-run-row-title]');
-    if (title === null) {
-      throw new Error('no title');
-    }
-    fireEvent.click(title);
-    fireEvent.click(title);
-    fireEvent.doubleClick(title);
-    act(() => {
-      vi.advanceTimersByTime(300);
-    });
+    fireEvent.contextMenu(screen.getByRole('button', { name: /^Open Block double credits/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
 
     expect(navigate).not.toHaveBeenCalled();
     const input = screen.getByRole('textbox', { name: 'Rename run' });
@@ -247,6 +240,83 @@ describe('from a branch to its runs', () => {
     const here = captureLocation({ state }).place;
     expect(here.at === 'session' ? here.view.lens : null).toBe('workflows');
     expect(backOf({ state, place: here })?.label).toBe('Back to branch');
+  });
+
+  it('reveals and focuses a branch run past the state view cap with only one work branch', () => {
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId: NOW_SESSION }) });
+    const groupKey = `mount:${DUP.id}`;
+    const branch = {
+      mountId: DUP.id,
+      projectId: PAYMENTS.id,
+      projectName: 'payments-api',
+      branch: DUP.branch,
+      worktreePath: DUP.worktreePath,
+    };
+    const earlier = aSessionRun({ id: 'ledger-core', isFinished: true, branches: [branch] });
+    const runs = [
+      ...Array.from({ length: VISIBLE_FINISHED_COUNT }, (_, index) =>
+        aSessionRun({ id: `notify-relay-${index}`, isFinished: true }),
+      ),
+      earlier,
+      aSessionRun({ id: 'payments-api', isFinished: true, branches: [branch] }),
+    ];
+    const scrolled = vi.fn();
+    vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(scrolled);
+    render(
+      <ToastProvider>
+        <RunsGrid session={session} runs={runs} />
+      </ToastProvider>,
+    );
+    expect(screen.queryByRole('button', { name: /^Open ledger-core/ })).toBeNull();
+
+    act(() => openBranchRuns({ sessionId: NOW_SESSION, groupKey, mountPath: DUP.worktreePath }));
+
+    expect(screen.queryByRole('tab', { name: 'By branch' })).toBeNull();
+    const row = screen.getByRole('button', { name: /^Open ledger-core/ });
+    screen.getByRole('button', { name: /^Open payments-api/ });
+    expect(row.getAttribute('data-row-key')).toBe(earlier.id);
+    expect(document.activeElement).toBe(row);
+    expect(scrolled.mock.contexts).toContain(row);
+  });
+
+  it('unfolds archived branch runs in the state view before scrolling to their bare row', () => {
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId: NOW_SESSION }) });
+    const archived = aSessionRun({
+      id: 'ledger-core',
+      isFinished: true,
+      isArchived: true,
+      branches: [
+        {
+          mountId: DUP.id,
+          projectId: PAYMENTS.id,
+          projectName: 'payments-api',
+          branch: DUP.branch,
+          worktreePath: DUP.worktreePath,
+        },
+      ],
+    });
+    const scrolled = vi.fn();
+    vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(scrolled);
+    const runs = [archived];
+    render(
+      <ToastProvider>
+        <RunsGrid session={session} runs={runs} />
+      </ToastProvider>,
+    );
+    expect(screen.queryByRole('button', { name: /^Open ledger-core/ })).toBeNull();
+
+    act(() =>
+      openBranchRuns({
+        sessionId: NOW_SESSION,
+        groupKey: `mount:${DUP.id}`,
+        mountPath: DUP.worktreePath,
+      }),
+    );
+
+    const row = screen.getByRole('button', { name: /^Open ledger-core/ });
+    expect(row.getAttribute('data-row-key')).toBe(archived.id);
+    expect(document.activeElement).toBe(row);
+    expect(scrolled.mock.contexts).toContain(row);
   });
 
   it('goes Back to the row it left, not to the first row of the group', () => {

@@ -155,6 +155,7 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
   const isWriteSetTurn =
     !isIsolatedTurn && (isConfinedWriterRole({ role: ctx.input.confinedRole }) || isInPlaceWriter);
   let isReadOnlyAnswer = false;
+  const turnBeforeLease = get().agentTurnState[activeAgentId];
   if (isWriteSetTurn) {
     await releaseTurnWriteSet({ get, sessionId, lease });
     const acquisition = await acquireTurnWriteSet({
@@ -207,6 +208,7 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
       hasFolderLease,
       reservedRunId,
       inPlaceCapture,
+      turnBeforeLease,
     },
   });
 };

@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
-import { sessionPlace, useAppStore } from '../../../store';
+import { useAppStore } from '../../../store';
 import { useFollowToast } from '../../../shared/hooks/useFollowToast';
+import { planApprovedFollowOf } from '../../plans/planApprovedFollow';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
 };
-
-const FOLLOW_THE_RUN = 'Follow the run';
 
 const FALLBACK_STEP_NAME = 'The next step';
 
@@ -35,18 +34,6 @@ export const useApproveRunPlan = ({ sessionId, runId }: Params): (() => Promise<
             (agent) => agent.id === result.agentId,
           )?.name ?? FALLBACK_STEP_NAME)
         : null;
-    followToast({
-      title: 'Plan approved',
-      message: startedName === null ? 'The run goes on' : `${startedName} started`,
-      target: {
-        place: sessionPlace({
-          sessionId,
-          lens: 'workflows',
-          target: { kind: 'run', runId },
-        }),
-      },
-      label: FOLLOW_THE_RUN,
-      startKey: runId,
-    });
+    followToast(planApprovedFollowOf({ sessionId, runId, startedStepName: startedName }));
   }, [approveWorkflowRunPlan, followToast, reportError, runId, sessionId]);
 };

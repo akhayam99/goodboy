@@ -65,8 +65,6 @@ const decisionEvent: TurnEvent = {
   at: AT,
 };
 
-const retryBlockedToolMock = vi.fn(async () => undefined);
-
 let useAppStore: StoryStore;
 
 beforeAll(async () => {
@@ -75,10 +73,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  retryBlockedToolMock.mockReset().mockResolvedValue(undefined);
   useAppStore.setState({
     transcripts: { [AGENT_ID]: [decisionEvent] },
-    retryBlockedTool: retryBlockedToolMock,
   });
 });
 
@@ -116,19 +112,11 @@ describe('PermissionDecisionCard', () => {
     screen.getByText('rule-42');
   });
 
-  it('offers Continue, in a warning tone, only while nothing resumed the agent', async () => {
+  it('says the answer stopped, and leaves Continue to the dock', () => {
     renderCard(makeItem());
 
     screen.getByText('Stopped before your answer.');
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    });
-    expect(retryBlockedToolMock).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      agentId: AGENT_ID,
-      toolName: 'Bash',
-    });
-    screen.getByText('Continuing');
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
   it('offers no Continue once the agent runs again', () => {

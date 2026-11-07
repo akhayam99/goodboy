@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
+import { requestRename } from '../../../../../shared/utils/renameRequest';
+import { runObjectKey } from '../../../../../features/actions/runObjectKey';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
@@ -13,13 +15,14 @@ import { showDemoNotice } from '../../demo/director/showDemoNotice';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import {
   C08_SESSION_ID,
+  C08_RUN_ID,
   C08_WORKSPACE_ID,
   seedC08,
   type C08Selection,
   type C08State,
 } from './c08RunSeed';
 
-type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'how' | 'titleDouble';
+type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'how' | 'rowRename';
 
 type Props = {
   readonly state: C08State;
@@ -69,7 +72,7 @@ const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   addStep: '[data-run-overview] [data-run-add-step] button',
   startRun: '[data-start-run-row] button',
   how: '[data-setting-chip="How"]',
-  titleDouble: '[data-run-row-title]',
+  rowRename: `[data-row-key$="/${C08_RUN_ID}"]`,
 };
 
 export const C08RunScene = ({
@@ -107,8 +110,14 @@ export const C08RunScene = ({
     }
     const timer = window.setTimeout(() => {
       const target = document.querySelector<HTMLElement>(SELECTOR[click]);
-      if (click === 'titleDouble') {
-        target?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      if (click === 'rowRename') {
+        const rowKey = target?.getAttribute('data-row-key');
+        if (rowKey != null) {
+          requestRename({
+            objectKey: runObjectKey({ runId: C08_RUN_ID }),
+            anchorKey: `run:${rowKey}`,
+          });
+        }
         return;
       }
       target?.click();

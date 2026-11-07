@@ -90,7 +90,7 @@ describe('generateWorkflowTitle', () => {
 
   it('replaces the placeholder name with the generated title', async () => {
     invokeMock.mockResolvedValue({
-      stdout: okStdout('Ship the auth rework'),
+      stdout: okStdout('<title>Ship the auth rework</title>'),
       stderr: '',
       exitCode: 0,
     });
@@ -125,9 +125,33 @@ describe('generateWorkflowTitle', () => {
     expect(state.emitNotification).not.toHaveBeenCalled();
   });
 
+  it('asks for the tagged reply and names the workflow from the goal when the reply has no tag', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: okStdout('Title generation'),
+      stderr: '',
+      exitCode: 0,
+    });
+    invokeWorkflowUpsertSpy.mockResolvedValue({ ...workflow, name: 'Scrivi i test del modulo' });
+    const { generate } = buildHarness();
+
+    await generate(
+      WORKSPACE_ID,
+      WORKFLOW_ID,
+      SESSION_ID,
+      FALLBACK_NAME,
+      'Scrivi i test del modulo, poi rivedili',
+      'read the code',
+    );
+
+    expect(JSON.stringify(invokeMock.mock.calls)).toContain('<title>');
+    expect(invokeWorkflowUpsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Scrivi i test del modulo' }),
+    );
+  });
+
   it('skips the write when the name no longer matches the fallback it was assigned', async () => {
     invokeMock.mockResolvedValue({
-      stdout: okStdout('Ship the auth rework'),
+      stdout: okStdout('<title>Ship the auth rework</title>'),
       stderr: '',
       exitCode: 0,
     });

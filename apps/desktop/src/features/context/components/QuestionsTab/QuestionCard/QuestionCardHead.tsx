@@ -1,4 +1,5 @@
-import { cn, type MenuEntry } from '@goodboy/ui';
+import { cn, tintClasses, type MenuEntry } from '@goodboy/ui';
+import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
 import type { QuestionParts } from '../questionParts';
 import { QuestionBlockingMark } from './QuestionBlockingMark';
 import { QuestionCardControls } from './QuestionCardControls';
@@ -9,7 +10,9 @@ import type { QuestionPagerModel } from './QuestionPager';
 type Props = {
   readonly parts: QuestionParts;
   readonly isCompact: boolean;
+  readonly isDocked: boolean;
   readonly isBlocking: boolean;
+  readonly askerKind: AgentKind | null;
   readonly age: string;
   readonly pager: QuestionPagerModel | null;
   readonly menu: ReadonlyArray<MenuEntry> | null;
@@ -19,14 +22,16 @@ type Props = {
 export const QuestionCardHead = ({
   parts,
   isCompact,
+  isDocked,
   isBlocking,
+  askerKind,
   age,
   pager,
   menu,
   onDismiss,
 }: Props) => {
   const hasControls = pager !== null || onDismiss !== null || menu !== null;
-  const hasCompactTop = isCompact && (isBlocking || hasControls);
+  const hasCompactTop = isCompact && (isDocked || isBlocking || hasControls);
   return (
     <>
       {isCompact ? null : (
@@ -43,9 +48,14 @@ export const QuestionCardHead = ({
           data-question-top=""
           className={cn(
             'flex min-h-6 min-w-0 items-center gap-2',
-            isBlocking ? 'justify-between' : 'justify-end',
+            isBlocking || isDocked ? 'justify-between' : 'justify-end',
           )}
         >
+          {isDocked ? (
+            <span className={cn('min-w-0 flex-1 truncate text-row', tintClasses('warning').text)}>
+              {askerKind === null ? 'The agent' : AGENT_KIND_META[askerKind].noun} asks
+            </span>
+          ) : null}
           {isBlocking ? <QuestionBlockingMark /> : null}
           {hasControls ? (
             <QuestionCardControls pager={pager} menu={menu} onDismiss={onDismiss} />

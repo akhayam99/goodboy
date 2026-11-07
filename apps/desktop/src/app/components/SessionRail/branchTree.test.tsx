@@ -1240,7 +1240,7 @@ describe('the Projects tree', () => {
       .querySelector('[data-pr-state]');
 
     expect(prMarkOf('payments-api')?.getAttribute('data-pr-state')).toBe('queued');
-    expect(prMarkOf('payments-api')?.getAttribute('data-pr-tone')).toBe('primary');
+    expect(prMarkOf('payments-api')?.getAttribute('data-pr-tone')).toBe('neutral');
     expect(closed?.getAttribute('data-pr-state')).toBe('closed');
     expect(closed?.getAttribute('data-pr-tone')).toBe('neutral');
   });

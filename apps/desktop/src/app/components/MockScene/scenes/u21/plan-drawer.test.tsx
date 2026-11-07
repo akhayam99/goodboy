@@ -72,8 +72,8 @@ describe('the plan drawer scenes', () => {
 
     await screen.findByTestId('plan-drawer');
     expect(screen.getByTestId('plan-drawer-toolbar').textContent).toContain('v2');
-    expect(screen.getByTestId('plan-primary').textContent).toBe('Approve');
-    expect(filled()).toEqual(['Approve']);
+    expect(screen.getByTestId('plan-primary').textContent).toBe('Approve and start Implement');
+    expect(filled()).toEqual(['Approve and start Implement']);
     expect(screen.getByTestId('plan-comment-bar').textContent).toContain(
       'Select text or click a block to comment',
     );

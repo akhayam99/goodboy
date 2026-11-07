@@ -7,6 +7,7 @@ import { shownRefusalOf } from '../../auto/chat/shownRefusalOf';
 import { isAutoPlanAwaitingApproval } from '../../auto/isAutoPlanAwaitingApproval';
 import { joinNouns } from '../../auto/joinNouns';
 import { openRoleNouns } from '../../auto/openRoleNouns';
+import { openDelegationCountOf } from '../../auto/chat/openDelegationCountOf';
 import { TAIL_ACTION } from '../tailAction';
 import type { TailFacts } from '../tailFacts';
 import type { LastTool } from '../workingPhraseOf';
@@ -64,20 +65,18 @@ const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
   if (Math.round(budget.remainingUsd * 100) > 0) {
     return null;
   }
-  const spent = formatUsd(budget.spentUsd);
-  const cap = formatUsd(budget.capUsd);
-  const lead =
-    Math.round(budget.reservedUsd * 100) > 0
-      ? `Paused at the limit: ${spent} spent, ${formatUsd(budget.reservedUsd)} held of ${cap}`
-      : `Paused at the limit: ${spent} of ${cap}`;
+  const lead = `At the ${formatUsd(budget.capUsd)} limit.`;
   const running = stillRunningOf({ view });
   return {
     state: 'paused',
-    phrase: running === null ? lead : `${lead}. ${running}`,
+    phrase: `${lead} ${running ?? 'Nothing new starts.'}`,
     startedAt: null,
     actions: AT_LIMIT,
   };
 };
+
+const stopOf = ({ view }: ViewParams): TailFacts['actions'] =>
+  openDelegationCountOf({ view }) > 0 ? STOP : [];
 
 const blocked = ({ view }: ViewParams): TailFacts => {
   const reason = view.tree.blockedReason;
@@ -85,7 +84,7 @@ const blocked = ({ view }: ViewParams): TailFacts => {
     const running = stillRunningOf({ view });
     return {
       state: 'failed',
-      phrase: running === null ? `Blocked: ${reason}` : `Blocked: ${reason} ${running}`,
+      phrase: running === null ? reason : `${reason} ${running}`,
       startedAt: null,
       actions: AT_LIMIT,
     };
@@ -93,16 +92,16 @@ const blocked = ({ view }: ViewParams): TailFacts => {
   if (reason === AUTO_BLOCK_TEXT.limit_wall_clock) {
     return {
       state: 'failed',
-      phrase: `Blocked: ${reason}`,
+      phrase: reason,
       startedAt: null,
-      actions: [TAIL_ACTION.viewTranscript],
+      actions: [TAIL_ACTION.viewTranscript, ...stopOf({ view })],
     };
   }
   return {
     state: 'failed',
-    phrase: reason === null || reason === '' ? 'Blocked' : `Blocked: ${reason}`,
+    phrase: reason === null || reason === '' ? 'Auto is blocked' : reason,
     startedAt: null,
-    actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript],
+    actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript, ...stopOf({ view })],
   };
 };
 
@@ -158,7 +157,7 @@ export const autoTreeLive = ({
     return working({ phrase: 'Reading the results' });
   }
   if (phase === 'waiting') {
-    if (isAutoPlanAwaitingApproval({ view })) {
+    if (isAutoPlanAwaitingApproval({ view }) && openDelegationCountOf({ view }) === 0) {
       return null;
     }
     const nouns = openRoleNouns({ delegations: view.delegations });
@@ -166,7 +165,7 @@ export const autoTreeLive = ({
       state: 'waiting',
       phrase: nouns.length === 0 ? 'Reading the results' : `Waiting for ${joinNouns({ nouns })}`,
       startedAt: null,
-      actions: [TAIL_ACTION.changeApproach, TAIL_ACTION.stopAuto],
+      actions: STOP,
     };
   }
   if (phase === 'finished') {

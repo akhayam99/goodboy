@@ -59,7 +59,7 @@ export const U36_RUN_PAGES_SCENES = {
     <C08RunScene state="working" selection="list" click="how" extra={seedRunsEmpty} />
   ),
   'u36-f5-row-rename': () => (
-    <C08RunScene state="working" selection="list" click="titleDouble" extra={seedRunsByBranch} />
+    <C08RunScene state="working" selection="list" click="rowRename" extra={seedRunsByBranch} />
   ),
   'u36-f3-branch-runs': () => <BranchNextScene phase="running" extra={putAgentsOnBranch} />,
 } satisfies Readonly<Record<string, ComponentType>>;

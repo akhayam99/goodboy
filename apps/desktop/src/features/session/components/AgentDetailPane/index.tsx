@@ -4,7 +4,6 @@ import { PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import {
-  agentPlace,
   useAppStore,
   useExecutedAgentRouting,
   useSessionAnsweredQuestions,
@@ -29,21 +28,20 @@ import { AgentHeader } from './AgentHeader';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
-import { RewriterFinishedNotice } from './RewriterFinishedNotice';
+import { AgentDockLead } from './AgentDockLead';
+import { AgentComposerNotice } from './AgentComposerNotice';
+import { agentHeaderOmitOf } from './agentHeaderOmitOf';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
-import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
-import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
 import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
-import { AutoMarkFinishedButton } from '../../../auto/chat/AutoMarkFinishedButton';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
-import { isTurnStateLive } from '../../agent-lifecycle';
 
 type RunStepFrame = {
   readonly heading: ReactNode;
   readonly actions: ReactNode;
   readonly tail: ReactNode;
   readonly stopLabel?: string;
+  readonly liveSentence?: string;
 };
 
 type Props = {
@@ -57,12 +55,6 @@ type Props = {
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
 
-const STOP_VERB = 'agent.stop';
-
-const AUTO_HEADER_VERBS: ReadonlyArray<string> = [STOP_VERB, 'agent.markAutoFinished'];
-
-const HEADER_VERBS: ReadonlyArray<string> = [STOP_VERB];
-
 export const AgentDetailPane = ({
   session,
   agent,
@@ -71,7 +63,6 @@ export const AgentDetailPane = ({
   context,
   runStep,
 }: Props) => {
-  const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
   const rewriter = useRewriterComposer({
@@ -89,7 +80,6 @@ export const AgentDetailPane = ({
   const [hasNextAction, setHasNextAction] = useState(false);
   const [asksSlot, setAsksSlot] = useState<HTMLElement | null>(null);
   const [modelsSlot, setModelsSlot] = useState<HTMLElement | null>(null);
-  const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const events = useTranscript(agent.id);
   const briefLine = useMemo(() => briefLineOf({ events }), [events]);
@@ -172,6 +162,18 @@ export const AgentDetailPane = ({
     anchorKey: `agent-header:${agent.id}`,
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
+  const hasComposer = !isRewriterFinished && adoption === null && !isMoveOpen;
+  const isDocked = hasComposer && session.state.kind !== 'ended';
+  const stoppedNotice =
+    hasNextAction && runStep === undefined ? null : (
+      <AgentStoppedNotice
+        session={session}
+        agent={agent}
+        isAutoChild={isAutoChild}
+        isDocked={isDocked}
+        isRunStep={runStep !== undefined}
+      />
+    );
   const runSettings =
     runStep === undefined ? (
       <AgentRunSettings
@@ -185,9 +187,7 @@ export const AgentDetailPane = ({
   const lead = (
     <>
       {context}
-      {isInWorkflowRun ? null : (
-        <AgentStoppedNotice session={session} agent={agent} isAutoChild={isAutoChild} />
-      )}
+      {isDocked || isInWorkflowRun ? null : stoppedNotice}
       {runStep === undefined ? (
         <AgentNextAction session={session} agent={agent} onShownChange={setHasNextAction} />
       ) : null}
@@ -220,23 +220,18 @@ export const AgentDetailPane = ({
             </span>
           }
           actions={
-            <>
-              {isAutoRoot ? (
-                <AutoMarkFinishedButton sessionId={session.id} agentId={agent.id} />
-              ) : null}
-              {runStep === undefined ? (
-                <AgentHeaderActions
-                  key={agent.id}
-                  agent={agent}
-                  sessionId={session.id}
-                  hasStateButton={false}
-                  omit={isAutoRoot ? AUTO_HEADER_VERBS : HEADER_VERBS}
-                  onDeleted={onBack}
-                />
-              ) : (
-                runStep.actions
-              )}
-            </>
+            runStep === undefined ? (
+              <AgentHeaderActions
+                key={agent.id}
+                agent={agent}
+                sessionId={session.id}
+                hasStateButton={false}
+                omit={agentHeaderOmitOf({ isAutoRoot })}
+                onDeleted={onBack}
+              />
+            ) : (
+              runStep.actions
+            )
           }
         />
       }
@@ -251,35 +246,36 @@ export const AgentDetailPane = ({
         hasAdvanceRow={runStep === undefined}
         {...(runStep === undefined && { controlSlots: { asks: asksSlot, models: modelsSlot } })}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
+        {...(runStep?.liveSentence !== undefined && { liveSentence: runStep.liveSentence })}
+        composerStop={autoChat.stop}
+        isFailureOwned={autoChat.isFailureOwned}
         {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
-        hasComposer={!isRewriterFinished && adoption === null && !isMoveOpen}
+        hasComposer={hasComposer}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
         }
+        composerLead={
+          <AgentDockLead
+            session={session}
+            agent={agent}
+            autoDock={autoChat.dock}
+            stopped={stoppedNotice}
+            isDocked={isDocked}
+            isRunStep={runStep !== undefined}
+            isTreeAtRest={isAutoRoot ? autoChat.isTreeAtRest : null}
+          />
+        }
         composerNotice={
-          isRewriterFinished ? (
-            <RewriterFinishedNotice sessionId={session.id} mountId={rewriter.mountId} />
-          ) : isMoveOpen && adoption === null ? (
-            <MoveToAutoPanel
-              sessionId={session.id}
-              agent={agent}
-              onClose={() => setIsMoveOpen(false)}
-            />
-          ) : adoption !== null ? (
-            <AdoptedNotice
-              sessionId={session.id}
-              agentId={agent.id}
-              isTurnLive={isTurnStateLive({ turnState })}
-              onOpenAuto={() =>
-                navigateTo({
-                  to: agentPlace({ sessionId: session.id, agentId: adoption.autoAgentId }),
-                })
-              }
-            />
-          ) : undefined
+          <AgentComposerNotice
+            session={session}
+            agent={agent}
+            rewriter={rewriter}
+            adoption={adoption}
+            isMoveOpen={isMoveOpen}
+            onCloseMove={() => setIsMoveOpen(false)}
+          />
         }
         insertions={insertions}
-        {...(autoChat.dock !== undefined && { composerLead: autoChat.dock })}
       />
     </PaneShell>
   );

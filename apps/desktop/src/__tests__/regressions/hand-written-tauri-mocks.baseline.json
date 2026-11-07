@@ -227,7 +227,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/u26/p10.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/p11.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/p18.test.tsx": 1,
-  "apps/desktop/src/app/components/MockScene/scenes/u26/p21.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/rebase.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/shell.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/u26/spawned-panel.test.tsx": 1,
@@ -392,7 +391,6 @@
   "apps/desktop/src/store/slices/workflows/retryWorkflowOrchestration.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/setWorkflowRunSpendLimit.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/stopWorkflowRunNow.test.ts": 1,
-  "apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": 1,
   "apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.test.ts": 1,
   "apps/desktop/src/store/slices/workflowStudio/startWorkflowGeneration.test.ts": 1

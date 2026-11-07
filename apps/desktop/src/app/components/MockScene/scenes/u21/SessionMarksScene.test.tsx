@@ -85,7 +85,7 @@ const MARKS: ReadonlyArray<Mark> = [
     title: 'Plan the Cascadia onboarding',
     tone: 'warning',
     state: 'approval',
-    words: 'The plan waits for your approval',
+    words: 'The plan needs approval',
   },
   {
     title: 'Review the Acme import mapper',

@@ -61,6 +61,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     retry,
     onStarted,
     onWritingUserText,
+    permissionOnceAllows,
   } = ctx.input;
   const {
     session,
@@ -81,7 +82,12 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
     turnSpanBase,
     touchedMountsForTurn,
     recordTurnFiles,
+    resolvedAsks,
   } = ctx;
+  const answersOfAsks = {
+    resolvedAsks,
+    ...(permissionOnceAllows !== undefined && { permissionOnceAllows }),
+  };
   const { assistantText } = progress;
   const isAlreadySent = err instanceof CommandError && err.kind === 'delivery_duplicate';
   if (isAlreadySent) {
@@ -213,6 +219,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
         sessionId,
         agentId: activeAgentId,
         content,
+        ...answersOfAsks,
         ...(attachments !== undefined && { attachments }),
         ...(override !== undefined && { override }),
         ...(force === true ? { force: true } : {}),
@@ -261,6 +268,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
             sessionId,
             agentId: activeAgentId,
             content,
+            ...answersOfAsks,
             ...(override !== undefined && { override }),
             ...(force === true ? { force: true } : {}),
             ...(origin !== undefined && { origin }),

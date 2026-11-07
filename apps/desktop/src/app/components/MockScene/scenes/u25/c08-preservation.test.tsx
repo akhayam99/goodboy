@@ -392,7 +392,9 @@ describe('run rows stay reachable from the preset run level', () => {
 
   it('Plan approval is one quiet verb on the step page', async () => {
     await mount('c08-run-approval');
-    tail().getByRole('button', { name: 'Approve plan' });
+    expect(
+      tail().getByRole('button', { name: 'Approve and start Fix the batching' }),
+    ).toBeDefined();
   });
 
   it('Answer a step question from the quiet line or the card', async () => {

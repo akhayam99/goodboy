@@ -14,7 +14,12 @@ type Props = {
 };
 
 export const RunContinueVerb = ({ session, agent, isBusy, onPress }: Props) => {
-  const { copy, provider } = useAgentStoppedCopy({ session, agent, isAutoChild: false });
+  const { copy, provider } = useAgentStoppedCopy({
+    session,
+    agent,
+    isAutoChild: false,
+    isRunStep: false,
+  });
   const connection = useAppStore(
     (state): ProviderConnectionState =>
       state.providers.find((candidate) => candidate.id === provider)?.connection ?? 'unknown',

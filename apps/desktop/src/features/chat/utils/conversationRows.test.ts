@@ -8,6 +8,12 @@ import { planChecklist } from './planChecklist';
 const RUN: ProviderRunId = JSON.parse('"run-1"');
 const AT: IsoDateTime = JSON.parse('"2026-09-14T15:08:00.000Z"');
 
+type DockParams = {
+  readonly ids: ReadonlyArray<string>;
+};
+
+const dockWith = ({ ids }: DockParams) => ({ openAskIds: new Set(ids), isAskLapsed: false });
+
 const user = ({ key }: { readonly key: string }): TranscriptItem => ({
   kind: 'user_text',
   key,
@@ -83,6 +89,90 @@ describe('conversationRows', () => {
       'assistant_text:final',
       'usage:f1',
     ]);
+  });
+
+  describe('with the dock', () => {
+    const asked: TranscriptItem = {
+      kind: 'permission_request',
+      key: 'p1',
+      toolUseId: 't1',
+      toolName: 'Bash',
+      runId: RUN,
+      input: {},
+      at: AT,
+    };
+    const decided: TranscriptItem = {
+      kind: 'permission_decision',
+      key: 'd1',
+      toolUseId: 't1',
+      toolName: 'Bash',
+      runId: RUN,
+      subject: 'rm -rf node_modules',
+      decision: 'deny',
+      scope: 'once',
+      ruleId: null,
+      decidedBy: 'user',
+      reason: 'Do a dry run first',
+      at: AT,
+    };
+
+    it('leaves a waiting permission to the dock', () => {
+      expect(
+        conversationRows({
+          items: [asked],
+          isLive: false,
+          askDock: dockWith({ ids: ['t1'] }),
+        }).some((row) => row.kind === 'item' && row.item.kind === 'permission_request'),
+      ).toBe(false);
+    });
+
+    it('keeps the card of an ask the dock does not hold, as in a second window', () => {
+      expect(
+        conversationRows({ items: [asked], isLive: false, askDock: dockWith({ ids: [] }) }).some(
+          (row) => row.kind === 'item' && row.item.kind === 'permission_request',
+        ),
+      ).toBe(true);
+    });
+
+    it('offers no card for an ask a stopped agent left behind', () => {
+      expect(
+        conversationRows({
+          items: [asked],
+          isLive: false,
+          askDock: { openAskIds: new Set(), isAskLapsed: true },
+        }).some((row) => row.kind === 'item' && row.item.kind === 'permission_request'),
+      ).toBe(false);
+    });
+
+    it('offers no card for an ask a later message closed', () => {
+      expect(
+        conversationRows({
+          items: [asked, user({ key: 'u2' })],
+          isLive: false,
+          askDock: dockWith({ ids: [] }),
+        }).some((row) => row.kind === 'item' && row.item.kind === 'permission_request'),
+      ).toBe(false);
+    });
+
+    it('keeps one record row for an answer the person gave', () => {
+      const rows = conversationRows({
+        items: [asked, decided],
+        isLive: false,
+        askDock: dockWith({ ids: [] }),
+      });
+
+      expect(rows.at(-1)).toMatchObject({ kind: 'item', key: 'd1' });
+    });
+
+    it('keeps no row for an answer a rule gave', () => {
+      const rows = conversationRows({
+        items: [{ ...decided, decidedBy: 'engine' }],
+        isLive: false,
+        askDock: dockWith({ ids: [] }),
+      });
+
+      expect(rows.some((row) => row.key === 'd1')).toBe(false);
+    });
   });
 
   it('shows nothing of the live turn but its pending permission', () => {

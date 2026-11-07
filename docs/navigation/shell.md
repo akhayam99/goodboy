@@ -289,7 +289,7 @@ was approved reads Approved with no primary until the run starts the step. The
 run pages (the preset run level and the orchestrated document) hold one
 primary in their header (`runHeaderPrimaryOf`): **Answer** for an open
 question, **Raise limit** at the limit, else the verb of `runPrimaryOf`
-(**Review plan**, **Approve plan**, **Continue**, **Retry**, **Decide
+(**Review plan**, **Approve and continue**, **Continue**, **Retry**, **Decide
 next step**, **Start step 2**, **Start run**, **Restore**), else **Pause run**
 or, once paused, **Continue** in the same place (`RunLiveVerbs`, the
 `workflowRun` registry's own `when`). The tail says the state and keeps only
@@ -297,7 +297,7 @@ its own step verbs. The `⋯` follows See, Steer, Settings, Copy, End: View
 diff, Skip step N (and Pause or Continue while the header holds another
 primary), Step routing (orchestrated), Save as preset, Copy
 run summary, **Stop run** (asks first), Archive run and Delete run, never
-**Approve plan**. A failed Pause, Continue or Stop leaves the run as it was,
+the approve button. A failed Pause, Continue or Stop leaves the run as it was,
 reports the error and keeps the word, so pressing it again is the retry.
 The title is the only h1 of the page; the row above it says `Back to runs`, it
 or Esc (the session's one Esc ladder) goes back to the list, and no other chevron on the page does.

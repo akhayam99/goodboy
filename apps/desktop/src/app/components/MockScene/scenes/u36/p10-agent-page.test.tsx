@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+import { brandId, type ProviderRunId, type IsoDateTime } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
@@ -162,6 +163,66 @@ describe('one agent, one page', () => {
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
     screen.getByText('1 file changed');
     expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
+  });
+
+  it('keeps exactly one Retry in the dock when an Auto child failed', async () => {
+    mount({ id: 'u36-p10-child-page' });
+    await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
+    const runId = brandId<ProviderRunId>({ value: 'mock-child-failed-run' });
+    const at = brandId<IsoDateTime>({ value: '2026-10-13T12:10:00.000Z' });
+    const sendTurn = vi.fn<ReturnType<StoryStore['getState']>['sendTurn']>().mockResolvedValue({
+      blockedOverBudget: false,
+    });
+    act(() => {
+      useAppStore.setState((state) => ({
+        sendTurn,
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [AUTO_SESSION.id]: (state.sessionPhaseRuns[AUTO_SESSION.id] ?? []).map((agent) =>
+            agent.id === IMPLEMENTER_ID ? { ...agent, status: 'failed' } : agent,
+          ),
+        },
+        agentTurnState: { ...state.agentTurnState, [IMPLEMENTER_ID]: { kind: 'idle' } },
+        autoTreeViews: {
+          ...state.autoTreeViews,
+          [AUTO_SESSION.id]: (state.autoTreeViews[AUTO_SESSION.id] ?? []).map((view) => ({
+            ...view,
+            delegations: view.delegations.map((delegation) =>
+              delegation.childAgentId === IMPLEMENTER_ID
+                ? { ...delegation, state: 'settled', outcome: 'failed', reason: 'process_error' }
+                : delegation,
+            ),
+          })),
+        },
+        transcripts: {
+          ...state.transcripts,
+          [IMPLEMENTER_ID]: [
+            {
+              kind: 'user_text',
+              runId,
+              text: 'Fix the retry in payments-api',
+              at,
+              deliveredBy: 'auto',
+            },
+            { kind: 'error', runId, message: 'process_error', retryable: true, at },
+          ],
+        },
+      }));
+    });
+
+    const retries = await screen.findAllByRole('button', { name: /^Retry/ }, WAIT);
+    expect(retries).toHaveLength(1);
+    expect(retries[0]?.closest('[data-conversation-dock]')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await vi.waitFor(() =>
+      expect(sendTurn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionId: AUTO_SESSION.id,
+          agentId: IMPLEMENTER_ID,
+          content: 'Fix the retry in payments-api',
+        }),
+      ),
+    );
   });
 
   it('keeps one box on the child page in both themes', async () => {

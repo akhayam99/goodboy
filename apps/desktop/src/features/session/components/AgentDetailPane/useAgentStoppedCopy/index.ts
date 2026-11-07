@@ -6,6 +6,7 @@ type Params = {
   readonly session: Session;
   readonly agent: Agent;
   readonly isAutoChild: boolean;
+  readonly isRunStep: boolean;
 };
 
 export type AgentStoppedView = {
@@ -13,7 +14,12 @@ export type AgentStoppedView = {
   readonly provider: ProviderId;
 };
 
-export const useAgentStoppedCopy = ({ session, agent, isAutoChild }: Params): AgentStoppedView => {
+export const useAgentStoppedCopy = ({
+  session,
+  agent,
+  isAutoChild,
+  isRunStep,
+}: Params): AgentStoppedView => {
   const executed = useExecutedAgentRouting({ agent });
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
@@ -26,7 +32,7 @@ export const useAgentStoppedCopy = ({ session, agent, isAutoChild }: Params): Ag
       : executedProvider;
   const isProviderConnected = authResults?.[provider]?.state !== 'disconnected';
   return {
-    copy: agentStoppedCopy({ agent, provider, isProviderConnected, isAutoChild }),
+    copy: agentStoppedCopy({ agent, provider, isProviderConnected, isAutoChild, isRunStep }),
     provider,
   };
 };

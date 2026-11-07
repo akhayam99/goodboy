@@ -27,6 +27,7 @@ type Params = {
   readonly session: Session;
   readonly providerDisconnected: boolean;
   readonly selectedAgentId: AgentId | null;
+  readonly deniedAgentId: AgentId | null;
   readonly isRunning: boolean;
   readonly value: string;
   readonly setValue: (next: string) => void;
@@ -44,6 +45,7 @@ export const useComposerSend = ({
   session,
   providerDisconnected,
   selectedAgentId,
+  deniedAgentId,
   isRunning,
   value,
   setValue,
@@ -94,11 +96,13 @@ export const useComposerSend = ({
       if (selectedAgentId == null) {
         return;
       }
+      const isOwnAsk = deniedAgentId === null || deniedAgentId === selectedAgentId;
       const outcome = await dispatch.dispatchTurn({
         content,
         atts,
-        override,
-        agentId: selectedAgentId,
+        override: isOwnAsk ? override : undefined,
+        agentId: deniedAgentId ?? selectedAgentId,
+        draftAgentId: selectedAgentId,
         force,
       });
       if (outcome !== 'unwritten') {
@@ -115,6 +119,7 @@ export const useComposerSend = ({
       routing.routingOverride,
       isRunning,
       selectedAgentId,
+      deniedAgentId,
       enqueue,
       sendNow,
       dispatch.dispatchTurn,

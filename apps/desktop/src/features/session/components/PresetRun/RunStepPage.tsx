@@ -41,7 +41,7 @@ export const RunStepPage = ({ session, view, agent }: Props) => {
           <RunStepActions sessionId={session.id} runId={view.run.id} stepAgentId={agent.id} />
         ),
         tail: <RunTail session={session} view={view} selectedAgentId={agent.id} />,
-        stopLabel: stepStopLabelOf({ agent, stepAgent, workflow: view.workflow }),
+        ...stepStopLabelOf({ agent, stepAgent, workflow: view.workflow }),
       }}
     />
   );

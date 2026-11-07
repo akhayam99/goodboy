@@ -28,8 +28,11 @@ type HookParams = {
   readonly phase?: StopPhase;
 };
 
-const hook = ({ isLive = true, phase = 'idle' }: HookParams = {}) =>
-  renderHook(() => useEscapeStop({ isLive, phase, stop: stopMock }));
+const stopOf = ({ isLive = true, phase = 'idle' }: HookParams) =>
+  isLive ? { label: 'Stop', phase, sentence: null, stop: stopMock } : null;
+
+const hook = (params: HookParams = {}) =>
+  renderHook(() => useEscapeStop({ stop: stopOf(params), isCovered: false }));
 
 describe('useEscapeStop', () => {
   it('arms on the first Esc and stops on the second, never on the first', () => {
@@ -138,7 +141,7 @@ describe('useEscapeStop', () => {
   it('disarms when the turn ends', () => {
     const { result, rerender } = renderHook(
       (props: { readonly isLive: boolean }) =>
-        useEscapeStop({ isLive: props.isLive, phase: 'idle', stop: stopMock }),
+        useEscapeStop({ stop: stopOf({ isLive: props.isLive }), isCovered: false }),
       { initialProps: { isLive: true } },
     );
     act(() => {

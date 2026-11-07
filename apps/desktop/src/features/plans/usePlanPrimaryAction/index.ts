@@ -5,9 +5,11 @@ import type {
   ArtifactComment,
   PlanWithCount,
   SessionId,
+  Workflow,
   WorkflowRun,
 } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../store';
+import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 import { useFollowToast } from '../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../shared/lib/userStarts';
@@ -15,6 +17,7 @@ import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { isPlanHeldByAuto } from '../../auto/isPlanHeldByAuto';
 import { afterDraftSaves } from '../planComments/afterDraftSaves';
 import { planApprovedFollowOf } from '../planApprovedFollow';
+import { planNextStepNameOf } from '../planNextStepNameOf';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
 import type { PlanRevising } from '../planRevising';
@@ -25,6 +28,7 @@ import { usePlanRun, usePlanRunToast } from '../usePlanRun';
 const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 const NO_VIEWS: ReadonlyArray<AutoTreeView> = [];
+const NO_TEMPLATES: ReadonlyArray<Workflow> = [];
 
 const NEXT_STEP_NAME = 'The next step';
 
@@ -101,6 +105,15 @@ export const usePlanPrimaryAction = ({
   const isHeldByAuto = useAppStore((state) =>
     isPlanHeldByAuto({ views: state.autoTreeViews[sessionId] ?? NO_VIEWS, planId: plan.id }),
   );
+  const nextStepName = useAppStore((state) => {
+    const workspaceId = sessionById(state.sessions, sessionId)?.workspaceId ?? null;
+    return planNextStepNameOf({
+      run,
+      templates:
+        workspaceId === null ? NO_TEMPLATES : (state.phaseTemplates[workspaceId] ?? NO_TEMPLATES),
+      agents: state.sessionPhaseRuns[sessionId] ?? NO_AGENTS,
+    });
+  });
   const primary = useMemo(
     () =>
       planPrimaryOf({
@@ -111,8 +124,9 @@ export const usePlanPrimaryAction = ({
         isRunning,
         plannerQuestionCount,
         isHeldByAuto,
+        nextStepName,
       }),
-    [plan, run, drafts, revising, isRunning, plannerQuestionCount, isHeldByAuto],
+    [plan, run, drafts, revising, isRunning, plannerQuestionCount, isHeldByAuto, nextStepName],
   );
 
   const settleApproved = useCallback(

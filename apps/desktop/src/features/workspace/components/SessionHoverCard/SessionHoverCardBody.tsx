@@ -46,7 +46,7 @@ export const SessionHoverCardBody = ({
   isFactsOnly = false,
 }: Props) => {
   const sessionId = session.id as SessionId;
-  const { summary, node, keys, title } = useSessionRowFacts({ session, isArchived });
+  const { summary, node, keys, title, unreadLabel } = useSessionRowFacts({ session, isArchived });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => gitlabSessionOf({ state, sessionId })?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
@@ -110,6 +110,11 @@ export const SessionHoverCardBody = ({
             words={<span data-attention-line={line.reason}>{line.words}</span>}
           />
         ))}
+        {unreadLabel === null ? null : (
+          <span className="truncate text-meta text-faint-foreground" data-slot="unread-label">
+            {unreadLabel}
+          </span>
+        )}
       </div>
       {summary.progress === null ? null : (
         <SessionProgress progress={summary.progress} tone={summary.tone} />

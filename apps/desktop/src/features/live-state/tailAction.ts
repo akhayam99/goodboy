@@ -5,7 +5,6 @@ export const TAIL_ACTION = {
   stop: { id: 'stop', label: NAMES.stop },
   stopAgent: { id: 'stopAgent', label: NAMES.stop },
   stopAuto: { id: 'stopAuto', label: NAMES.stop },
-  changeApproach: { id: 'changeApproach', label: 'Change approach' },
   stopStep: { id: 'stopStep', label: NAMES.stopStep },
   continue: { id: 'continue', label: NAMES.continue },
   retry: { id: 'retry', label: 'Retry' },

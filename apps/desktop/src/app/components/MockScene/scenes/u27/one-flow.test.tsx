@@ -109,16 +109,11 @@ describe('the u27 one flow scenes', () => {
       .getAllByRole('button')
       .filter((button) => button.hasAttribute('data-list-grid-row'));
     expect(rows).toHaveLength(4);
-    for (const origin of [
-      'Workflow · Preset Fix a layout',
-      'Workflow · Orchestrated',
-      'Agent · Auto agent',
-      'Agent · Scout',
-    ]) {
-      expect(within(list).getByText(origin)).toBeDefined();
-    }
     expect(
       rows.filter((row) => row.getAttribute('aria-label')?.includes(', Workflow, ') === true),
+    ).toHaveLength(2);
+    expect(
+      rows.filter((row) => row.getAttribute('aria-label')?.includes(', Agent, ') === true),
     ).toHaveLength(2);
   });
 });

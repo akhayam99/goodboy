@@ -13,8 +13,11 @@ import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
 import { HandoffBlock } from '../HandoffBlock';
-import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
-import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
+import {
+  PermissionDecisionCard,
+  PermissionRecordLine,
+  PermissionRequestCard,
+} from '../../../permissions/permissionSurfaces';
 import { ToolCallCard } from '../ToolCallCard';
 import { TurnChangesCard } from '../TurnChangesCard';
 import { TurnFooter } from '../TurnFooter';
@@ -26,6 +29,7 @@ import { StoppedProcessesLine } from './StoppedProcessesLine';
 import { TranscriptErrorRow } from './TranscriptErrorRow';
 import { FileEditBlock } from './FileEditBlock';
 import { UserText } from './UserText';
+import type { ErrorDock } from './errorDock';
 
 type TranscriptCardProps = {
   readonly item: TranscriptItem;
@@ -37,6 +41,7 @@ type TranscriptCardProps = {
   readonly onRetryRun?: (params: RetryRunParams) => void;
   readonly retryingRunId?: ProviderRunId | null;
   readonly activeRunId?: ProviderRunId | null;
+  readonly errorDock?: ErrorDock | null;
   readonly planVersion?: number | null;
   readonly permission?: PermissionState;
   readonly turnOutcome?: TurnOutcome;
@@ -63,6 +68,7 @@ const TranscriptCardImpl = ({
   previousRunId = null,
   isBrief = false,
   clampLines,
+  errorDock = null,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -169,6 +175,8 @@ const TranscriptCardImpl = ({
               : undefined
           }
           isRetrying={item.runId != null && retryingRunId != null && item.runId === retryingRunId}
+          isRecordOnly={errorDock != null}
+          dockRunId={errorDock?.runId ?? null}
         />
       );
     }
@@ -208,7 +216,11 @@ const TranscriptCardImpl = ({
     case 'permission_request':
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
-      return <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />;
+      return item.isRecordLine === true ? (
+        <PermissionRecordLine item={item} sessionId={sessionId} agentId={agentId} />
+      ) : (
+        <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />
+      );
     default: {
       const exhaustive: never = item;
       return exhaustive;
@@ -228,6 +240,7 @@ export const TranscriptCard = memo(
     prev.onRetryRun === next.onRetryRun &&
     prev.retryingRunId === next.retryingRunId &&
     prev.activeRunId === next.activeRunId &&
+    prev.errorDock === next.errorDock &&
     prev.planVersion === next.planVersion &&
     prev.permission?.requested === next.permission?.requested &&
     prev.permission?.decision === next.permission?.decision &&

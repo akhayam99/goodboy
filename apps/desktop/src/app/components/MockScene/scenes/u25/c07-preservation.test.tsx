@@ -100,19 +100,19 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
   });
 
-  it('Auto phase words and Change approach: the dock of the Auto chat', async () => {
+  it('Auto phase words and the one Stop: the dock of the Auto chat', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
 
     const dock = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-dock]');
-      expect(found?.textContent).toContain('Waiting for Implementer and Tester');
+      const found = document.querySelector<HTMLElement>('[data-dock-live]');
+      expect(found?.textContent).toContain('Implementer');
       return found;
     }, WAIT);
     if (dock === null) {
       throw new Error('no dock');
     }
-    expect(within(dock).getByRole('button', { name: 'Change approach' })).toBeDefined();
-    expect(within(dock).queryByRole('button', { name: /^Stop/ })).toBeNull();
+    expect(within(dock).getByRole('button', { name: /^Stop Auto/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
   });
 
   it('Composer placeholder by state: Message Auto while Auto waits', async () => {
@@ -137,17 +137,19 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
   });
 
-  it('Auto plan approval: the dock asks with Approve plan and keeps Open plan one click away', async () => {
+  it('Auto plan approval: the dock asks with the approve label and keeps Open plan one click away', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-plan'] });
 
-    expect(await screen.findByText('Plan v1 waits for your OK', undefined, WAIT)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(await screen.findByText('Plan v1 needs approval', undefined, WAIT)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve and start Build' })).toBeDefined();
     const openPlan = screen.getByText('Open plan').closest('button');
     if (openPlan === null) {
       throw new Error('no Open plan');
     }
     fireEvent.click(openPlan);
-    expect(await screen.findAllByText('Approve plan', undefined, WAIT)).not.toHaveLength(0);
+    expect(await screen.findAllByText('Approve and start Build', undefined, WAIT)).not.toHaveLength(
+      0,
+    );
   });
 
   it('Child page notice: the started by Auto line sits in the brief, the back row goes to Auto', async () => {

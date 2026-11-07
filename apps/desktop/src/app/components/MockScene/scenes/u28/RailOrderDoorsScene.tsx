@@ -19,7 +19,7 @@ const DOOR_CASES: ReadonlyArray<DoorCase> = [
   {
     count: 3,
     tone: 'warning',
-    reasons: ['2 questions for you', 'Plan v3 waits for your approval'],
+    reasons: ['2 questions for you', 'Plan v3 needs approval'],
   },
   { count: 12, tone: 'danger', reasons: ['Checks failing'] },
 ];

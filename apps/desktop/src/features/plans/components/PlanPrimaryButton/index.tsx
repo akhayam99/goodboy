@@ -1,4 +1,3 @@
-import { NAMES } from '../../../../shared/utils/names';
 import { Check, Play } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 
@@ -34,7 +33,6 @@ export const PlanPrimaryButton = ({ action, isReasonShown = true }: Props) => {
     return null;
   }
   const isDisabled = primary.kind === 'disabled';
-  const Icon = primary.label === NAMES.approve ? Check : Play;
 
   return (
     <>
@@ -52,7 +50,7 @@ export const PlanPrimaryButton = ({ action, isReasonShown = true }: Props) => {
             data-plan-primary={primary.kind}
             data-filled={primary.isSecondary ? 'false' : 'true'}
           >
-            <Icon size={ICON_SIZE.row} aria-hidden />
+            <Play size={ICON_SIZE.row} aria-hidden />
             {primary.label}
           </Button>
         )}

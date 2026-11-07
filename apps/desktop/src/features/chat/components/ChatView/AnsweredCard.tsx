@@ -25,6 +25,7 @@ export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
   const answeredByAgent = resolvedByAgent || question.answerSource === 'agent';
   const answeredAt = question.answeredAt ?? question.createdAt;
   const tone = 'neutral';
+  const recordWord = answeredByAgent ? 'Answered' : 'You answered';
 
   return (
     <TranscriptDisclosure
@@ -42,8 +43,10 @@ export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
               <CircleCheck size={ICON_SIZE.row} aria-hidden />
             )
           }
-          eyebrow="Answered"
-          preview={question.text}
+          eyebrow={recordWord}
+          {...(!open && {
+            preview: resolvedByAgent ? question.text : (question.userAnswer ?? question.text),
+          })}
           meta={formatAge({ from: answeredAt, now })}
           open={open}
           onToggle={() => setOpen((value) => !value)}

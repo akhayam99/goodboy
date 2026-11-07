@@ -192,11 +192,9 @@ describe('c07 Auto scenes', () => {
       throw new Error('no glance line');
     }
     expect(glance.dataset.glance).toBe('working');
-    expect(within(glance).getByRole('status').textContent).not.toContain('Waiting for');
-    expect(glance.textContent).not.toContain('Waiting for');
-    expect(
-      document.querySelector('[data-auto-dock]')?.textContent?.match(/Waiting for/g),
-    ).toHaveLength(1);
+    expect(within(glance).getByRole('status').textContent).not.toContain('running');
+    expect(glance.textContent).not.toContain('Implementer');
+    expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
     expect(screen.queryByRole('group', { name: 'Working now' })).toBeNull();
     const toggle = within(glance).getByRole('button', { name: 'Run settings' });
     const region = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
@@ -220,9 +218,8 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('Delegated to')).toBeNull();
     expect(document.querySelectorAll('[data-auto-child-card]').length).toBeGreaterThan(0);
-    expect(document.querySelectorAll('[data-auto-tail]')).toHaveLength(1);
-    const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
-    expect(dock?.textContent).toContain('Waiting for Implementer and Tester');
+    const dock = document.querySelector<HTMLElement>('[data-dock-live]');
+    expect(dock?.textContent).toContain('Implementer');
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });
 
@@ -238,28 +235,30 @@ describe('c07 Auto scenes', () => {
     }
   });
 
-  it('c07-auto-plan pins the plan ask in the dock with Approve plan as the one primary', async () => {
+  it('c07-auto-plan pins the plan ask in the dock with the approve label as the one primary', async () => {
     mount({ id: 'c07-auto-plan' });
 
-    await screen.findByText('Plan v1 waits for your OK', undefined, WAIT);
+    await screen.findByText('Plan v1 needs approval', undefined, WAIT);
     const dock = document.querySelector<HTMLElement>('[data-auto-dock]');
     if (dock === null) {
       throw new Error('no dock');
     }
-    const approve = within(dock).getByRole('button', { name: 'Approve plan' });
+    const approve = within(dock).getByRole('button', { name: 'Approve and start Build' });
     expect(within(dock).getByRole('button', { name: /^Open plan / }).textContent).toBe('Open plan');
     expect(within(dock).getByRole('button', { name: 'Ask for changes' })).toBeDefined();
     expect(screen.queryByText('View plan')).toBeNull();
     expect(screen.queryByText('Plan v1 needs your approval')).toBeNull();
-    expect(document.querySelector('[data-auto-tail]')).toBeNull();
     expect(approve).toBeDefined();
   });
 
-  it('c07-auto-idle offers Mark finished in the header and draws no tail', async () => {
+  it('c07-auto-idle keeps Mark finished in the menu of the header', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    expect(await screen.findByRole('button', { name: 'Mark finished' }, WAIT)).toBeDefined();
-    expect(document.querySelector('[data-auto-tail]')).toBeNull();
+    const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
+    expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
+    fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
+    expect(await screen.findByRole('menuitem', { name: /Mark finished/ }, WAIT)).toBeDefined();
+    expect(screen.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
   });
 
   it('c07-auto-child opens the Implementer on its page with its why, its tail and one box', async () => {
@@ -336,25 +335,28 @@ describe('c07 Auto scenes', () => {
 
     const ask = await screen.findByText('Where should the Implementer work?', undefined, WAIT);
     expect(ask).toBeDefined();
-    expect(document.querySelector('[data-auto-tail]')).toBeNull();
-    expect(screen.getByPlaceholderText('Pick a folder, or write to Auto')).toBeDefined();
+    expect(ask.closest('[data-conversation-dock]')).not.toBeNull();
+    expect(screen.getByPlaceholderText('Pick a project, or write to Auto')).toBeDefined();
     const list = screen.getByRole('list', { name: 'Projects' });
     const boxes = within(list).getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThan(1);
     expect(screen.getByText('In this session')).toBeDefined();
     expect(screen.queryByText(/, in this session/)).toBeNull();
-    const actions = list.closest('[data-placement]')?.querySelector('[data-slot="form-actions"]');
+    const actions = list
+      .closest('[data-dock-ask="project"]')
+      ?.querySelector('[data-slot="form-actions"]');
     expect(actions?.textContent).toContain('Discard request');
     expect(
       screen.getByRole('button', { name: 'Discard request' }).getAttribute('data-variant'),
     ).toBe('quiet');
     expect(screen.queryByRole('button', { name: 'More request actions' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Another folder…' }));
-    expect(screen.getByRole('textbox', { name: 'Type a folder name' })).toBeDefined();
+    const dock = ask.closest<HTMLElement>('[data-conversation-dock]');
+    fireEvent.click(within(dock ?? list).getByRole('button', { name: 'Add project' }));
+    expect(screen.getByRole('textbox', { name: 'Type a project name' })).toBeDefined();
     expect(list.compareDocumentPosition(actions ?? list) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(screen.getByRole('button', { name: 'Choose a folder' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Use this project' })).toHaveProperty(
       'disabled',
       true,
     );
@@ -364,16 +366,16 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByRole('button', { name: 'Use both' })).toBeDefined();
   });
 
-  it('No folder, just answer tells Auto through its door and collapses the ask', async () => {
+  it('Answer without a project tells Auto through its door and collapses the ask', async () => {
     const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
     registerAutoUserTurnPort({ port });
     mount({ id: 'c07-auto-project' });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'No folder, just answer' }, WAIT));
+    fireEvent.click(await screen.findByRole('button', { name: 'Answer without a project' }, WAIT));
 
-    expect(await screen.findByText('Answered: no folder', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByText('Answered without a project', undefined, WAIT)).toBeDefined();
     expect(port).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'No folder, just answer in the chat.' }),
+      expect.objectContaining({ text: 'No project, just answer in the chat.' }),
     );
     registerAutoUserTurnPort({ port: null });
   });
@@ -386,14 +388,12 @@ describe('c07 Auto scenes', () => {
     expect(within(shots).getByText('banner-narrow.png')).toBeDefined();
   });
 
-  it('c07-auto-capped pauses at the limit with Raise to and Change limit on the tail', async () => {
+  it('c07-auto-capped pauses at the limit with Raise to and Change limit in the dock', async () => {
     mount({ id: 'c07-auto-capped' });
 
     const tail = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-tail]');
-      expect(found?.textContent).toContain(
-        'Paused at the limit: $9.50 spent, $0.50 held of $10.00',
-      );
+      const found = document.querySelector<HTMLElement>('[data-dock-line="paused"]');
+      expect(found?.textContent).toContain('At the $10.00 limit.');
       return found;
     }, WAIT);
     if (tail === null || tail === undefined) {
@@ -455,7 +455,7 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-session-level' });
 
     await waitFor(() => expect(levelStack().dataset.levelStack).toBe('session'), WAIT);
-    expect(screen.getAllByText('Waiting for Implementer and Tester').length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
   });
 
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
@@ -477,7 +477,6 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-answering' });
 
     await autoTree();
-    expect(document.querySelector('[data-auto-tail]')).toBeNull();
     expect(screen.queryByText('Deciding what to do next')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop Auto and its agents' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
@@ -489,8 +488,8 @@ describe('c07 Auto scenes', () => {
     mount({ id: 'c07-auto-blocked' });
 
     const tail = await waitFor(() => {
-      const found = document.querySelector<HTMLElement>('[data-auto-tail]');
-      expect(found?.textContent).toContain('Blocked: Auto stopped answering before it replied.');
+      const found = document.querySelector<HTMLElement>('[data-dock-line="failed"]');
+      expect(found?.textContent).toContain('Auto stopped answering before it replied.');
       return found;
     }, WAIT);
     if (tail === null || tail === undefined) {
@@ -502,17 +501,17 @@ describe('c07 Auto scenes', () => {
     expect(within(tail).queryByRole('alert')).toBeNull();
   });
 
-  it('c07-auto-blocked offers View transcript on the tail and opens the root conversation', async () => {
+  it('c07-auto-blocked offers View transcript in the dock and opens the root conversation', async () => {
     mount({ id: 'c07-auto-blocked' });
 
     const verb = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
-    expect(verb.closest('[data-auto-tail]')).not.toBeNull();
+    expect(verb.closest('[data-conversation-dock]')).not.toBeNull();
     fireEvent.click(verb);
 
     expect(useAppStore.getState().drawer?.kind).toBe('transcript');
   });
 
-  it('c07-auto-blocked shows a refused Retry on the tail, not in a notification', async () => {
+  it('c07-auto-blocked shows a refused Retry in the dock, not in a notification', async () => {
     registerTreeRetryPort({
       port: async () => ({ kind: 'refused', message: 'This conversation reached its time limit.' }),
     });
@@ -523,7 +522,7 @@ describe('c07 Auto scenes', () => {
 
     const title = await screen.findByText("Couldn't retry Auto", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
-    expect(alert?.closest('[data-auto-tail]')).not.toBeNull();
+    expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
     expect(alert?.textContent).toContain('This conversation reached its time limit.');
   });
 
@@ -532,7 +531,7 @@ describe('c07 Auto scenes', () => {
 
     const title = await screen.findByText("Couldn't stop the Auto agents", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
-    expect(alert?.closest('[data-auto-dock]')).not.toBeNull();
+    expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
     expect(alert?.textContent).toContain('Auto is not running yet. Stop it again in a moment.');
   });
 

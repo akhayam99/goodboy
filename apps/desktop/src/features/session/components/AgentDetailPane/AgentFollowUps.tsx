@@ -72,7 +72,7 @@ export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }
       label="Continue"
       hint={
         pending.length > 0
-          ? "Auto picks it up from this agent's work."
+          ? "The next agent picks up from this agent's work."
           : "Follow-ups already picked up this agent's output."
       }
     >

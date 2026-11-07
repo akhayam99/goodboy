@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/utils/names';
 import type { AutoArtifactLedgerRow } from '@goodboy/db';
 import type { AutoLevel } from '@goodboy/core/auto';
 import type { Tone } from '@goodboy/ui';
@@ -27,14 +28,14 @@ export const artifactApprovalOf = ({ row, level }: Params): ArtifactApprovalView
         return { word: 'No approval needed', tone: AUTO_STATE_TONE.artifact, state: 'not_needed' };
       }
       return {
-        word: 'Needs approval',
+        word: NAMES.needsApproval,
         tone: AUTO_STATE_TONE.waitingOnYou,
         state: 'needs_approval',
       };
     case 'approved':
       return row.artifact.approvedRevision === row.revision
         ? { word: 'Approved', tone: AUTO_STATE_TONE.artifact, state: 'approved' }
-        : { word: 'Needs approval', tone: 'warning', state: 'needs_approval' };
+        : { word: NAMES.needsApproval, tone: 'warning', state: 'needs_approval' };
     case 'revising':
       return { word: `Revising to v${row.revision + 1}`, tone: 'info', state: 'revising' };
     default: {

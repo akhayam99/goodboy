@@ -7,7 +7,6 @@ import { currentSendNowPort } from '../../sendNowPort';
 import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { currentWithdrawPort } from '../../withdrawPort';
-import { focusAgentComposer } from '../focusAgentComposer';
 import type { RailRow } from '../railRowsOf';
 
 type Params = {
@@ -37,7 +36,6 @@ export type AutoTreeActions = Readonly<{
   retry: (params: ViewParams) => Promise<void>;
   sendNow: (params: SendNowParams) => Promise<void>;
   withdraw: (params: SendNowParams) => Promise<WithdrawOutcome>;
-  changeApproach: (params: ViewParams) => Promise<void>;
   openAgent: (agentId: AgentId) => void;
   openChild: (agentId: AgentId) => void;
   openRow: (row: Pick<RailRow, 'kind' | 'agentId'>) => void;
@@ -130,14 +128,6 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     [loadAutoTrees, sessionId],
   );
 
-  const changeApproach = useCallback(
-    async ({ view }: ViewParams): Promise<void> => {
-      await stop({ view });
-      focusAgentComposer();
-    },
-    [stop],
-  );
-
   const openAgent = useCallback(
     (agentId: AgentId) => {
       closeDrawer();
@@ -179,7 +169,6 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     retry,
     sendNow,
     withdraw,
-    changeApproach,
     openAgent,
     openChild,
     openRow,

@@ -67,7 +67,16 @@ describe('the u26 Agents panel scenes', () => {
       mount({ id });
       const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
       const tree = within(panel).getByRole('tree', { name: 'Auto agents' });
-      expect(tree.querySelectorAll('[data-agent-id]')).toHaveLength(3);
+      expect(
+        Array.from(tree.querySelectorAll('[data-agent-id]')).map((row) =>
+          row.getAttribute('data-agent-id'),
+        ),
+      ).toEqual([
+        'mock-auto-root',
+        'mock-auto-planner',
+        'mock-auto-implementer',
+        'mock-auto-tester',
+      ]);
     },
   );
 
