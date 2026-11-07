@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useRef } from 'react';
 import type { Agent, SessionId } from '@goodboy/types';
 import { Button, formatUsd, type Tone } from '@goodboy/ui';
@@ -46,6 +47,7 @@ export const AutoDockAttention = ({ sessionId, view, rootAgent, facts, tone, act
       const failure = await saveCap({ expectedCapUsd: capUsd, capUsd: raisedTo });
       if (failure !== null) {
         await reportError({
+          recovery: CHECK_STATE,
           title: "Couldn't raise the limit",
           error: new Error(failure),
           sessionId,

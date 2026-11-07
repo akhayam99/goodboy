@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { SETTING_TERMINAL_TABS, snapshotTerminalTabs } from './savedTerminalTabs';
@@ -29,9 +30,11 @@ export const saveTerminalTabs = ({ get }: SaveParams): void => {
     });
     await setSetting(tauriDatabase, SETTING_TERMINAL_TABS, JSON.stringify(snapshot));
   };
-  writeChain = writeChain
-    .then(run)
-    .catch((error: unknown) =>
-      get().reportError({ title: 'Could not save the terminal tabs', error }),
-    );
+  writeChain = writeChain.then(run).catch((error: unknown) =>
+    get().reportError({
+      recovery: CHECK_STATE,
+      title: 'Could not save the terminal tabs',
+      error,
+    }),
+  );
 };

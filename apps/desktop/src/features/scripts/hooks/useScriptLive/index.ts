@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../../../store';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
@@ -77,7 +78,11 @@ export const useScriptLive = ({ runs }: Params): ScriptLive => {
         })
         .catch((error: unknown) => {
           if (isCurrent) {
-            void reportError({ title: "Couldn't read the running scripts", error });
+            void reportError({
+              recovery: READ_FAILED,
+              title: "Couldn't read the running scripts",
+              error,
+            });
           }
         });
     };

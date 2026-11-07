@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
 import { dispatchAfterNavigation } from '../../../actions/dispatchAfterNavigation';
 import { linkIssueEventName } from '../../../actions/kinds/session';
@@ -198,11 +199,14 @@ export const useTimelineOpen = ({
         return {
           label: 'Restore',
           open: () => {
-            void store
-              .restoreDeletedBranch({ id: deletedBranchId })
-              .catch((error: unknown) =>
-                store.reportError({ title: "Couldn't restore the branch", error, sessionId }),
-              );
+            void store.restoreDeletedBranch({ id: deletedBranchId }).catch((error: unknown) =>
+              store.reportError({
+                recovery: CHECK_STATE,
+                title: "Couldn't restore the branch",
+                error,
+                sessionId,
+              }),
+            );
           },
         };
       }
@@ -224,7 +228,12 @@ export const useTimelineOpen = ({
                   });
                 })
                 .catch((error: unknown) =>
-                  store.reportError({ title: "Couldn't re-link the task", error, sessionId }),
+                  store.reportError({
+                    recovery: CHECK_STATE,
+                    title: "Couldn't re-link the task",
+                    error,
+                    sessionId,
+                  }),
                 );
               return;
             }

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { cn, EmptyLine, ICON_SIZE, SelectionCheckbox } from '@goodboy/ui';
@@ -70,6 +71,7 @@ export const ArtifactRow = ({
     const failure = outcome.failed[0];
     if (failure !== undefined) {
       void reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't delete this artifact",
         error: new Error(failure.message),
       });

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useState } from 'react';
 import { GitFork } from 'lucide-react';
@@ -69,6 +70,7 @@ export const NewBranchMountAction = ({
       dropdown.close();
     } catch (error) {
       void reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't create a new branch in ${projectName}`,
         error,
         sessionId,

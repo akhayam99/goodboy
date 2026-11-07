@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import type { Database } from '@goodboy/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { lookupDeliveryRun, listLiveRunIds } from '../../../features/chat/turn';
@@ -74,7 +75,7 @@ export const makeAutoRuntime = ({
     sleep,
     ...(watchPolls === undefined ? {} : { watchPolls }),
     onError: (error) => {
-      void getState().reportError({ title: 'Auto hit a problem', error });
+      void getState().reportError({ recovery: CHECK_STATE, title: 'Auto hit a problem', error });
     },
   });
   return holder.runtime;

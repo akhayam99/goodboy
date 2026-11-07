@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type MountId, type SessionId } from '@goodboy/types';
+import type { ReportErrorParams } from './reportError';
 import { pushFailureKeyOf, pushFailureReportOf } from './pushFailureReport';
 
 const SESSION = brandId<SessionId>({ value: 'session-ledger-core' });
@@ -25,8 +26,13 @@ describe('pushFailureReportOf', () => {
 
   it('spreads into a reportError call without losing a field', () => {
     const report = pushFailureReportOf({ sessionId: SESSION, mountId: MOUNT, isRetryable: true });
-    const params = { title: "Couldn't push the branch", error: new Error('rejected'), ...report };
+    const params = {
+      title: "Couldn't push the branch",
+      error: new Error('rejected'),
+      ...report,
+    } satisfies ReportErrorParams;
 
+    expect(params.recovery).toEqual(report.recovery);
     expect(Object.keys(params).sort()).toEqual([
       'coalesceKey',
       'error',

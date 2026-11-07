@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useRef, useState } from 'react';
 import { inlineMarkdownText } from '@goodboy/ui';
 import type { PullRequestState, WorkspaceId } from '@goodboy/types';
@@ -66,7 +67,7 @@ export const usePullRequestReviewStart = ({ workspaceId, mount }: Params): Resul
         });
         return true;
       } catch (error: unknown) {
-        void reportError({ title: "Couldn't start the review", error });
+        void reportError({ recovery: CHECK_STATE, title: "Couldn't start the review", error });
         return false;
       } finally {
         busyRef.current = false;

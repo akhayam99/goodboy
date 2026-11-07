@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Undo2 } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE, Notice } from '@goodboy/ui';
@@ -36,6 +37,7 @@ export const RebaseStoppedNotice = ({
     status,
     onError: (message) =>
       void reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't start the agent",
         error: message,
         sessionId,

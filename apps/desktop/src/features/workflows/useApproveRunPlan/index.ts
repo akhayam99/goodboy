@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -22,6 +23,7 @@ export const useApproveRunPlan = ({ sessionId, runId }: Params): (() => Promise<
     }
     if (result.kind === 'failed') {
       await reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't approve the plan",
         error: new Error(result.message),
         sessionId,

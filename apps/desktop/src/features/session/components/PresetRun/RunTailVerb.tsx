@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
@@ -47,7 +48,7 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
     try {
       await task();
     } catch (error) {
-      await reportError({ title: failure, error, sessionId });
+      await reportError({ recovery: CHECK_STATE, title: failure, error, sessionId });
     } finally {
       setIsBusy(false);
     }

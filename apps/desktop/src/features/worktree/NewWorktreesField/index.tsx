@@ -1,3 +1,4 @@
+import { CHECK_STATE, READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import type { Project } from '@goodboy/types';
@@ -69,7 +70,11 @@ export const NewWorktreesField = ({ project }: Props) => {
     };
     load().catch((failure: unknown) => {
       if (isCurrent) {
-        void reportError({ title: "Couldn't read the worktree setup", error: failure });
+        void reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read the worktree setup",
+          error: failure,
+        });
       }
     });
     return () => {
@@ -116,6 +121,7 @@ export const NewWorktreesField = ({ project }: Props) => {
           });
         } catch (restoreFailure) {
           void reportError({
+            recovery: CHECK_STATE,
             title: "Couldn't put the carry list back",
             error: restoreFailure,
           });

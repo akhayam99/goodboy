@@ -9,7 +9,13 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import type { Notification } from '@goodboy/db';
-import { NOTHING_CHANGED, OPEN_APP_SETTINGS_GENERAL, WORK_KEPT } from './errorRecovery';
+import {
+  CHECK_STATE,
+  NOTHING_CHANGED,
+  OPEN_APP_SETTINGS_GENERAL,
+  READ_FAILED,
+  WORK_KEPT,
+} from './errorRecovery';
 import { isoDateTimeOf } from '../../../__tests__/helpers/brandedIds';
 import type {
   Agent,
@@ -349,6 +355,7 @@ describe('store contract', () => {
     it('reportError persists an error row with the formatted failure as body', async () => {
       const store = useAppStore;
       await store.getState().reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't prune transcripts",
         error: new Error('disk full'),
         sessionId: SESSION_ID,
@@ -364,17 +371,31 @@ describe('store contract', () => {
       expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
     });
 
+    it('reportError asks to check a write with an uncertain result', async () => {
+      await useAppStore.getState().reportError({
+        title: "Couldn't save the comments",
+        error: new Error('connection closed'),
+        recovery: CHECK_STATE,
+        sessionId: SESSION_ID,
+      });
+
+      expect(useAppStore.getState().notifications[0]?.body).toBe(
+        'connection closed\nCheck the current state before trying again.',
+      );
+    });
+
     it('reportError truncates a long failure and honours a warning severity', async () => {
       const store = useAppStore;
       await store.getState().reportError({
+        recovery: READ_FAILED,
         title: "Couldn't read the log",
         error: 'x'.repeat(2000),
         severity: 'warning',
       });
       const row = store.getState().notifications[0];
       expect(row?.severity).toBe('warning');
-      expect(row?.body).toHaveLength(600);
-      expect(row?.body?.endsWith('…')).toBe(true);
+      expect(row?.body?.split('\n')[0]).toHaveLength(600);
+      expect(row?.body?.endsWith('\nTry loading it again.')).toBe(true);
     });
 
     it('reportError names what stayed untouched in one clause after the cause', async () => {

@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef } from 'react';
 import type { AgentStatus, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
@@ -43,7 +44,12 @@ export const useAutoTrees = ({ sessionId }: Params): ReadonlyArray<AutoTreeView>
             return;
           }
           hasReported.current = true;
-          void reportError({ title: "Couldn't read the Auto agents", error, sessionId });
+          void reportError({
+            recovery: READ_FAILED,
+            title: "Couldn't read the Auto agents",
+            error,
+            sessionId,
+          });
         });
     };
     load();

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { formatError } from '@goodboy/ui';
 import { restoreHistoryBackup } from '../../../features/history/historyEngine';
 import { readWorktreeStatusNow } from '../../runtime/worktreeStatuses/cache';
@@ -230,6 +231,7 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
     await get().loadHistoryDraft({ sessionId, mountId });
     if (moved.cleanupError !== undefined) {
       await get().reportError({
+        recovery: CHECK_STATE,
         title: 'Your files are back, but stash cleanup needs attention',
         error: moved.cleanupError,
         severity: 'warning',

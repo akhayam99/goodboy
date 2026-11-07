@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import type { BulkSessionResult, GetFn, SetFn } from './types';
 
@@ -26,6 +27,7 @@ export const bulkUnarchiveTask = (set: SetFn, get: GetFn) => {
     const onlyFailed = failed.length === 1 ? failed[0] : undefined;
     if (failed.length > 0) {
       void get().reportError({
+        recovery: CHECK_STATE,
         severity: 'warning',
         title: failureMessage({ failed: failed.length, total: ids.length }),
         error: firstError,

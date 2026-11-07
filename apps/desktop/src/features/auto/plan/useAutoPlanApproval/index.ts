@@ -1,3 +1,8 @@
+import {
+  CHECK_STATE,
+  NOTHING_CHANGED,
+  READ_FAILED,
+} from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo, useState } from 'react';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
@@ -68,6 +73,7 @@ export const useAutoPlanApproval = ({
       });
       if (result.kind === 'refused') {
         await reportError({
+          recovery: NOTHING_CHANGED,
           title: "Couldn't approve the plan",
           error: new Error(result.message),
           sessionId,
@@ -76,7 +82,8 @@ export const useAutoPlanApproval = ({
       if (result.kind === 'told_failed') {
         setToldFailedRevision(result.revision);
         await reportError({
-          title: 'The plan is approved, but Auto was not told',
+          recovery: CHECK_STATE,
+          title: "The plan is approved, but Auto wasn't told",
           error: result.error,
           sessionId,
         });
@@ -85,10 +92,20 @@ export const useAutoPlanApproval = ({
         closeDrawer();
       }
     } catch (error) {
-      await reportError({ title: "Couldn't approve the plan", error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't approve the plan",
+        error,
+        sessionId,
+      });
     } finally {
       await loadAutoTrees({ sessionId }).catch((error: unknown) =>
-        reportError({ title: "Couldn't read the Auto agents", error, sessionId }),
+        reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read the Auto agents",
+          error,
+          sessionId,
+        }),
       );
       setIsBusy(false);
     }
@@ -118,7 +135,7 @@ export const useAutoPlanApproval = ({
       setToldFailedRevision(null);
       closeDrawer();
     } catch (error) {
-      await reportError({ title: "Couldn't tell Auto", error, sessionId });
+      await reportError({ recovery: CHECK_STATE, title: "Couldn't tell Auto", error, sessionId });
     } finally {
       setIsBusy(false);
     }

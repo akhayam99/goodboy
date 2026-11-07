@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -66,7 +67,12 @@ export const useLimitAmountDraft = ({
       return;
     }
     if (isClosing) {
-      await reportError({ title: failureTitle, error: new Error(outcome), ...reportTo });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: failureTitle,
+        error: new Error(outcome),
+        ...reportTo,
+      });
       return;
     }
     setFailure(outcome);

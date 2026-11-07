@@ -1,3 +1,7 @@
+import {
+  NOTHING_CHANGED,
+  OPEN_APP_SETTINGS_GENERAL,
+} from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import { resolveEditorBinary } from '../../shared/lib/editorSettings';
 import { useAppStore } from '../../store';
@@ -21,6 +25,7 @@ export const openFileLink = async ({ sessionId, root, baseDir, link }: Params): 
   const relPath = fileLinkRelPath({ root, baseDir, path: link.path });
   if (relPath === null) {
     void reportError({
+      recovery: NOTHING_CHANGED,
       title: "Couldn't open the file",
       error: new Error(`${link.path} is outside this folder.`),
       severity: 'warning',
@@ -60,6 +65,10 @@ export const openFileLink = async ({ sessionId, root, baseDir, link }: Params): 
       ...(column === undefined ? {} : { column }),
     });
   } catch (error) {
-    void reportError({ title: "Couldn't open the file", error });
+    void reportError({
+      recovery: OPEN_APP_SETTINGS_GENERAL,
+      title: "Couldn't open the file",
+      error,
+    });
   }
 };

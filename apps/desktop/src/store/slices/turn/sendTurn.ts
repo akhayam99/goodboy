@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { cancelledRunIds } from '../sessions/sessionMutators';
 import { closeUnspawnedRun } from './unstartedTurn/closeUnspawnedRun';
@@ -96,6 +97,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         error,
       }).catch((closeError: unknown) =>
         get().reportError({
+          recovery: CHECK_STATE,
           title: "Couldn't close the turn that never started",
           error: closeError,
           sessionId: input.sessionId,

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { Notification } from '@goodboy/db';
 import { useAppStore } from '../../store';
 import { notificationActionClass } from './actionClass';
@@ -20,6 +21,10 @@ export const markPointersActed = ({ notifications }: Params): void => {
   }
   const store = useAppStore.getState();
   store.markNotificationsActed({ ids }).catch((error: unknown) => {
-    void store.reportError({ title: "Couldn't mark the notification done", error });
+    void store.reportError({
+      recovery: CHECK_STATE,
+      title: "Couldn't mark the notification done",
+      error,
+    });
   });
 };

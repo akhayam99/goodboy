@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
@@ -28,7 +29,12 @@ export const StepEndedNotice = ({ sessionId, agentId }: Props) => {
     try {
       await markStepDone({ sessionId, agentId });
     } catch (error) {
-      await reportError({ title: STEP_ENDED_COPY.markDoneFailed, error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: STEP_ENDED_COPY.markDoneFailed,
+        error,
+        sessionId,
+      });
     } finally {
       setIsBusy(false);
     }

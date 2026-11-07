@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../notifications/errorRecovery';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../../features/workflows/workflows';
@@ -56,7 +57,12 @@ const checkStepEnd = async ({ set, get, sessionId, agentId }: Params): Promise<v
       sessionId,
     });
   } catch (error) {
-    await get().reportError({ title: "Couldn't mark the step as ended", error, sessionId });
+    await get().reportError({
+      recovery: CHECK_STATE,
+      title: "Couldn't mark the step as ended",
+      error,
+      sessionId,
+    });
   }
 };
 

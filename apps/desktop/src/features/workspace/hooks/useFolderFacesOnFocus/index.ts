@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 
@@ -12,6 +13,7 @@ export const useFolderFacesOnFocus = (): void => {
       }
       void hydrateFolderPurposes().catch((error: unknown) =>
         reportError({
+          recovery: READ_FAILED,
           title: "Couldn't read what each folder is for",
           error,
           severity: 'warning',

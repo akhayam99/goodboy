@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { IsoDateTime, OrchestratorHint, SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateWorkflowRunOrchestratorHints } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -71,6 +72,7 @@ export const consumeReadOrchestratorHints = async ({
     });
   } catch (error) {
     await target.get().reportError({
+      recovery: CHECK_STATE,
       title: "Couldn't mark the hints as read",
       error,
       sessionId: target.sessionId,

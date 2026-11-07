@@ -20,7 +20,7 @@ export const createNotificationsSlice = ({ set, get }: SliceDeps) => {
     setNotificationScope: setNotificationScope(set, get),
     emitNotification: emitNotification(set, get),
     resolveNotifications: resolveNotifications(set, get),
-    reportError: reportError(get),
+    reportError: reportError({ get }),
     markNotificationRead: markNotificationRead(set, get),
     markNotificationUnread: markNotificationUnread(set, get),
     markNotificationsActed: markNotificationsActed({ set, get }),

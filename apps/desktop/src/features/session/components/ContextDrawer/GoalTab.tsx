@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { Button, EmptyLine, Skeleton, Textarea } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -52,7 +53,12 @@ export const GoalTab = ({
       await upsertSessionSlot(sessionId, 'goal', draft);
       setIsEditing(false);
     } catch (error: unknown) {
-      void reportError({ title: "Couldn't save the goal", error, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't save the goal",
+        error,
+        sessionId,
+      });
     } finally {
       setIsSaving(false);
     }

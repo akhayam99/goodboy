@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
 import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from '@goodboy/ui';
@@ -51,7 +52,12 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   const saveEditPostedReply = ({ isOn }: { readonly isOn: boolean }) => {
     saveSetting(editKey, isOn ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF).catch(
       (error: unknown) =>
-        void reportError({ title: "Couldn't save the review reply settings", error, workspaceId }),
+        void reportError({
+          recovery: NOTHING_CHANGED,
+          title: "Couldn't save the review reply settings",
+          error,
+          workspaceId,
+        }),
     );
   };
 
@@ -60,7 +66,12 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
     try {
       await patchWorkspaceOverrides({ workspaceId, patch });
     } catch (error) {
-      void reportError({ title: "Couldn't save the review reply settings", error, workspaceId });
+      void reportError({
+        recovery: NOTHING_CHANGED,
+        title: "Couldn't save the review reply settings",
+        error,
+        workspaceId,
+      });
     } finally {
       setIsBusy(false);
     }

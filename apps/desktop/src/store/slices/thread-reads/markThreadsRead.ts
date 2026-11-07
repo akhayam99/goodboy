@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { markThreadsRead as markThreadsReadDb } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -22,6 +23,7 @@ export const markThreadsRead = ({ set, get }: SliceDeps) => {
       await markThreadsReadDb({ db: tauriDatabase, sessionId, marks });
     } catch (error) {
       void get().reportError({
+        recovery: CHECK_STATE,
         title: 'Could not save which comments you have seen',
         error,
         severity: 'warning',

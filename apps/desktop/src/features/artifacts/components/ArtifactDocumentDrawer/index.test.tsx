@@ -437,6 +437,7 @@ describe('approving from the drawer', () => {
 
     await waitFor(() => expect(reportError).toHaveBeenCalledTimes(1));
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't approve the plan",
       error: new Error('The planner is revising this plan'),
       sessionId: PLAN_FIXTURE_SESSION,

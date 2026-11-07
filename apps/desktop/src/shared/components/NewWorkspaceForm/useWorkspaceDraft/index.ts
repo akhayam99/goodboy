@@ -1,3 +1,4 @@
+import { CHECK_STATE, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { brandId, type FolderPurpose, type ProjectId, type WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
@@ -362,6 +363,7 @@ export const useWorkspaceDraft = ({
       });
     } catch (cause) {
       await reportError({
+        recovery: READ_FAILED,
         title: `Couldn't count the files of ${folderName({ path }) ?? path}`,
         error: cause,
         severity: 'warning',
@@ -431,7 +433,12 @@ export const useWorkspaceDraft = ({
       const session = await ensureFirstLapSession({ projectId });
       navigate({ to: sessionPlace({ sessionId: session.id }) });
     } catch (cause) {
-      await reportError({ title: 'The first session did not start', error: cause, workspaceId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "The first session didn't start",
+        error: cause,
+        workspaceId,
+      });
     }
   };
 

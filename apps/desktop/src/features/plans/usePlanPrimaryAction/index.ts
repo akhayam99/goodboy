@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type {
   Agent,
@@ -160,6 +161,7 @@ export const usePlanPrimaryAction = ({
       const result = await approveWorkflowRunPlan(sessionId, held.id);
       if (result.kind === 'failed') {
         await reportError({
+          recovery: CHECK_STATE,
           title: APPROVE_FAILED_TITLE,
           error: new Error(result.message),
           sessionId,
@@ -201,7 +203,12 @@ export const usePlanPrimaryAction = ({
       }
       await approveThroughRun({ feeds: run });
     } catch (cause) {
-      await reportError({ title: APPROVE_FAILED_TITLE, error: cause, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: APPROVE_FAILED_TITLE,
+        error: cause,
+        sessionId,
+      });
     } finally {
       setIsApproving(false);
     }
@@ -236,7 +243,7 @@ export const usePlanPrimaryAction = ({
         void latest.current.start();
       },
       onBlocked: ({ title, message }) => {
-        void reportError({ title, error: new Error(message), sessionId });
+        void reportError({ recovery: CHECK_STATE, title, error: new Error(message), sessionId });
       },
     });
   }, [plan.id, reportError, sessionId]);

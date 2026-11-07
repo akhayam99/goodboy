@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED } from '../notifications/errorRecovery';
 import { PULL_REQUEST_NOUNS, type PullRequestPort } from '@goodboy/core/review-source';
 import type { MountId, Session, SessionId } from '@goodboy/types';
 import { ReportedError } from '../notifications/reportedError';
@@ -45,6 +46,7 @@ export const prWriteContext = ({
   const fail = (message: string): never => {
     void get()
       .reportError({
+        recovery: NOTHING_CHANGED,
         title: failureTitle({
           prNumber: num,
           nouns:

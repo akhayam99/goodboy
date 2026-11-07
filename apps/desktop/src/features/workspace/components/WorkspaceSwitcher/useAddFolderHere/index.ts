@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -51,6 +52,7 @@ export const useAddFolderHere = ({ workspace }: Params): (() => Promise<void>) =
       });
     } catch (error) {
       void reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't add the folder to ${workspaceName}`,
         error,
         workspaceId,

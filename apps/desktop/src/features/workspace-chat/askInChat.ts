@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import { useAppStore } from '../../store';
 import { chatDefaultModelKey, parseChatDefaultModel } from './chatDefaultModelSetting';
 import { defaultChatRouting } from './defaultChatRouting';
@@ -37,6 +38,6 @@ export const askInChat = async ({ question }: Params): Promise<void> => {
   } catch (error) {
     void useAppStore
       .getState()
-      .reportError({ title: "Couldn't start the chat", error, workspaceId });
+      .reportError({ recovery: CHECK_STATE, title: "Couldn't start the chat", error, workspaceId });
   }
 };

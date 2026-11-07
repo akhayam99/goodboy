@@ -14,7 +14,10 @@ import { ProjectGitDetail } from '../ProjectGitPill/ProjectGitDetail';
 import { RepoEntryRow } from './RepoEntryRow';
 import { repoGroupsOf } from './repoGroupsOf';
 import { repoRowFactsOf, type RepoRowFacts } from './repoRowFactsOf';
-import { OPEN_APP_SETTINGS_GENERAL } from '../../../../store/slices/notifications/errorRecovery';
+import {
+  OPEN_APP_SETTINGS_GENERAL,
+  OPEN_FAILED,
+} from '../../../../store/slices/notifications/errorRecovery';
 
 type Entry = {
   readonly project: Project;
@@ -101,7 +104,12 @@ export const RepoEntryPanel = ({ workspaceId, entries }: Props) => {
     try {
       await revealInFileManager({ path: project.rootPath });
     } catch (error) {
-      void reportError({ title: `Couldn't show ${project.name} in Finder`, error, workspaceId });
+      void reportError({
+        recovery: OPEN_FAILED,
+        title: `Couldn't show ${project.name} in Finder`,
+        error,
+        workspaceId,
+      });
     }
   };
 

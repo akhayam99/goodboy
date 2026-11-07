@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
@@ -40,6 +41,7 @@ export const useFolderGitProbe = ({ workspaceId, isIncludingLocalRepos }: Params
       for (const projectId of projectIds) {
         void probeFolderGit({ projectId }).catch((error: unknown) =>
           reportError({
+            recovery: READ_FAILED,
             title: "Couldn't check a folder for git",
             error,
             severity: 'warning',

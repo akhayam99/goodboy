@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 import { useShowToast } from '../../../../shared/components/Toast/useShowToast';
@@ -20,7 +21,9 @@ const takeAndLand = ({ isFreshOpen }: TakeParams): void => {
     return;
   }
   landAttentionTarget({ target, isFreshOpen }).catch((error: unknown) => {
-    void useAppStore.getState().reportError({ title: "Couldn't open this notification", error });
+    void useAppStore
+      .getState()
+      .reportError({ recovery: CHECK_STATE, title: "Couldn't open this notification", error });
   });
 };
 
@@ -58,9 +61,11 @@ export const useAttentionTargets = (): void => {
         off = unlisten;
       })
       .catch((error: unknown) => {
-        void useAppStore
-          .getState()
-          .reportError({ title: "Couldn't listen for notification clicks", error });
+        void useAppStore.getState().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't listen for notification clicks",
+          error,
+        });
       });
     return () => {
       isLive = false;

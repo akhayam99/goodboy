@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import type { Project } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { NOTHING_CHANGED } from '../../../store/slices/notifications/errorRecovery';
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly project: Project;
@@ -35,7 +35,7 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
       void reportError({
         title: `Couldn't save the description of ${project.name}`,
         error,
-        recovery: NOTHING_CHANGED,
+        recovery: CHECK_STATE,
       });
     }
   };

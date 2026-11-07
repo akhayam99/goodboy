@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import { findUndecidedPermissionAsk, listTurnEventEntriesForAgent } from '@goodboy/db';
 import type {
   Agent,
@@ -113,6 +114,7 @@ export const refreshAgentAsks = ({ set, get }: Deps) => {
       applyAgentTurnState(set, sessionId, agentId, next, at);
     } catch (error) {
       void get().reportError({
+        recovery: READ_FAILED,
         title: "Couldn't read the permission state of this agent",
         error,
         sessionId,

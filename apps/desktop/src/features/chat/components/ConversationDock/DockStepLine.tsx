@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { DockStateLine } from '../../../../shared/components/DockStateLine';
 import { NAMES } from '../../../../shared/utils/names';
 import { useAppStore } from '../../../../store';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { runStateFromKind } from '../../../workflows/runStateOf';
 import type { BlockedStepAnswer } from '../ChatInput/hooks/useBlockedStepAnswer';
@@ -29,7 +30,7 @@ export const DockStepLine = ({ sessionId, step }: Props) => {
     try {
       await recoverStuckStep({ sessionId, workflowRunId: step.runId });
     } catch (error) {
-      await reportError({ title: RETRY_FAILED, error, sessionId });
+      await reportError({ recovery: CHECK_STATE, title: RETRY_FAILED, error, sessionId });
     } finally {
       setIsRetrying(false);
     }

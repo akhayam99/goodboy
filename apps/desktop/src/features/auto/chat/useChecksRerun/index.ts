@@ -1,3 +1,4 @@
+import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -26,6 +27,7 @@ export const useChecksRerun = (): ChecksRerunModel => {
       const port = currentChecksRerunPort();
       if (port === null) {
         await reportError({
+          recovery: NOTHING_CHANGED,
           title: FAILED_TITLE,
           error: new Error(AUTO_STARTING_SENTENCE),
         });
@@ -35,11 +37,15 @@ export const useChecksRerun = (): ChecksRerunModel => {
       try {
         const result = await port({ delegationId });
         if (result.kind === 'refused') {
-          await reportError({ title: FAILED_TITLE, error: new Error(result.message) });
+          await reportError({
+            recovery: CHECK_STATE,
+            title: FAILED_TITLE,
+            error: new Error(result.message),
+          });
         }
         await loadAutoTrees({ sessionId });
       } catch (error) {
-        await reportError({ title: FAILED_TITLE, error });
+        await reportError({ recovery: CHECK_STATE, title: FAILED_TITLE, error });
       } finally {
         setRunningId(null);
       }

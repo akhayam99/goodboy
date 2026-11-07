@@ -1,3 +1,7 @@
+import { replacedDecisionNumbersOf } from './replacedDecisionNumbersOf';
+import { isRemovedByYou } from './isRemovedByYou';
+import { matchesClosedSearch } from './matchesClosedSearch';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import {
@@ -38,21 +42,8 @@ const NO_NUMBERS: ReadonlySet<number> = new Set();
 
 type ClosedFilter = 'removed' | 'replaced';
 
-type RowParams = { readonly row: SessionDecision };
-type SearchParams = RowParams & { readonly query: string };
 type WriteParams = { readonly op: DecisionOp };
 type NumberParams = { readonly number: number };
-
-const isRemovedByYou = ({ row }: RowParams): boolean =>
-  row.status === 'withdrawn' && row.closedBy === 'user';
-
-const matchesClosedSearch = ({ row, query }: SearchParams): boolean => {
-  const trimmed = query.trim().toLowerCase().replace(/^#/, '');
-  if (trimmed === '') {
-    return true;
-  }
-  return row.text.toLowerCase().includes(trimmed) || String(row.number).startsWith(trimmed);
-};
 
 type Props = {
   readonly sessionId: SessionId;
@@ -157,15 +148,7 @@ export const DecisionsSection = ({
     () => closedRows.filter((row) => matchesClosedSearch({ row, query: closedQuery })),
     [closedRows, closedQuery],
   );
-  const replacedBy = useMemo(() => {
-    const map = new Map<number, number>();
-    for (const row of decisions) {
-      if (row.replacedBy !== null && row.replacedBy > row.number) {
-        map.set(row.replacedBy, row.number);
-      }
-    }
-    return map;
-  }, [decisions]);
+  const replacedBy = useMemo(() => replacedDecisionNumbersOf({ decisions }), [decisions]);
 
   if (isRawEditing) {
     return (
@@ -193,7 +176,12 @@ export const DecisionsSection = ({
       await applySessionDecisionOps({ sessionId, ops: [op], actor });
       return true;
     } catch (error: unknown) {
-      void reportError({ title: "Couldn't save the decision", error, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't save the decision",
+        error,
+        sessionId,
+      });
       return false;
     }
   };
@@ -251,7 +239,12 @@ export const DecisionsSection = ({
       });
       onClearRemovals();
     } catch (error: unknown) {
-      void reportError({ title: "Couldn't restore the decisions", error, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't restore the decisions",
+        error,
+        sessionId,
+      });
     }
   };
 

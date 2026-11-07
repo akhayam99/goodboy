@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { setSetting as dbSetSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { announceDataChanged } from '../../../shared/lib/dataChanged';
@@ -9,6 +10,7 @@ export const saveSetting = (set: SetFn, get: GetFn) => {
     set((state) => ({ settings: { ...state.settings, [key]: value } }));
     announceDataChanged({ change: { kind: 'setting', key } }).catch((error: unknown) =>
       get().reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't tell the other windows about a saved setting",
         error,
         severity: 'warning',

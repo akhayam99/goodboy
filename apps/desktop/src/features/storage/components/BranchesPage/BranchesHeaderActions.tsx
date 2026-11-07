@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { RefreshCw } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
@@ -28,7 +29,7 @@ export const BranchesHeaderActions = ({ workspaceId }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
   const onCheck = () =>
     void loadProjectBranches({ projectIds }).catch((error: unknown) =>
-      reportError({ title: "Couldn't read the branches", error }),
+      reportError({ recovery: READ_FAILED, title: "Couldn't read the branches", error }),
     );
   return (
     <Button variant="ghost" size="sm" onClick={onCheck} isBusy={isLoading} busyLabel="Checking">

@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { openPermissionAsksOf } from '../../../features/permissions/openPermissionAsksOf';
 import { deliverQueuedTurn } from './deliverQueuedTurn';
@@ -27,7 +28,12 @@ const isAskHoldingQueue = async ({ get, sessionId, agentId }: AskHoldParams): Pr
     await get()
       .loadAgentTranscript(sessionId, agentId, { isSelecting: false })
       .catch((error: unknown) =>
-        get().reportError({ title: "Couldn't read the agent's chat", error, sessionId }),
+        get().reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read the agent's chat",
+          error,
+          sessionId,
+        }),
       );
   }
   const hasOpenAsk = (): boolean => {

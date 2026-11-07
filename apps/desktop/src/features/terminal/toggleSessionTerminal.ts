@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import { isBranchlessSession } from '../../shared/utils/isBranchlessSession';
 import { useAppStore } from '../../store';
@@ -23,7 +24,12 @@ export const toggleSessionTerminal = ({ sessionId: requested }: Params): void =>
   }
   if (isBranchlessSession({ branch: state.sessionBranches[sessionId] })) {
     void openSessionFolderTerminal({ sessionId }).catch((error: unknown) =>
-      state.reportError({ title: "Couldn't open the terminal", error, sessionId }),
+      state.reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't open the terminal",
+        error,
+        sessionId,
+      }),
     );
     return;
   }

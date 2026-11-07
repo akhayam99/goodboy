@@ -79,9 +79,9 @@ describe('resolve-state scenes', () => {
     expect(banner.textContent).toContain('replies to and resolves the 4 comments on GitHub');
     expect(within(banner).queryAllByRole('button')).toHaveLength(0);
     expect(rowLines(comments)).toEqual(Array(4).fill('Fixed in 90b1d57 · Review the fix'));
-    expect(within(comments).getAllByRole('button', { name: 'See diff of 90b1d57' })).toHaveLength(
-      4,
-    );
+    expect(
+      within(comments).getAllByRole('button', { name: 'Open changes of 90b1d57' }),
+    ).toHaveLength(4);
     const group = within(comments).getByRole('region', { name: 'Fix run comments' });
     expect(within(group).getByTestId('fix-run-ready')).toBe(banner);
     expect(group.querySelectorAll('[data-thread-id]')).toHaveLength(4);
@@ -89,7 +89,7 @@ describe('resolve-state scenes', () => {
     expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
   });
 
-  it('ready: See diff opens the files of the branch on the fix commit', async () => {
+  it('ready: Open changes opens the files of the branch on the fix commit', async () => {
     const navigate = vi.fn();
     show({ name: 'resolve-state-ready' });
     const comments = await list();
@@ -97,7 +97,7 @@ describe('resolve-state scenes', () => {
       useAppStore.setState({ navigate });
     });
 
-    const [first] = within(comments).getAllByRole('button', { name: 'See diff of 90b1d57' });
+    const [first] = within(comments).getAllByRole('button', { name: 'Open changes of 90b1d57' });
     if (first === undefined) {
       throw new Error('no diff link');
     }

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -68,7 +69,12 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
         return;
       }
     } catch (failure) {
-      void reportError({ title: REBASE_FAILURE_TITLE, error: failure, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: REBASE_FAILURE_TITLE,
+        error: failure,
+        sessionId,
+      });
     } finally {
       setIsStarting(false);
     }

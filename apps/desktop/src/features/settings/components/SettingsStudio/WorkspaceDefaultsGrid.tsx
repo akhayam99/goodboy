@@ -60,7 +60,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
     try {
       await patchWorkspaceOverrides({ workspaceId, patch });
     } catch (err) {
-      void reportError({ title: failureTitle, error: err, workspaceId });
+      void reportError({ recovery: NOTHING_CHANGED, title: failureTitle, error: err, workspaceId });
     } finally {
       setBusy(false);
     }

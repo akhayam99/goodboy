@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import type { ReactNode } from 'react';
 import { Button, tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
@@ -35,6 +36,7 @@ export const AutoDockPlanComments = ({
     const failed = results.find((result) => result.status === 'rejected');
     if (failed !== undefined) {
       await reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't discard the comments",
         error: failed.reason,
         sessionId,

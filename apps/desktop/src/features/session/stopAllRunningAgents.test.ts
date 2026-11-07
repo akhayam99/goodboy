@@ -126,6 +126,7 @@ describe('stopAllRunningAgents', () => {
 
     expect(result).toEqual({ stopped: 1, stillRunning: 1 });
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't stop the agent",
       error: failure,
       sessionId: SESSION_ID,

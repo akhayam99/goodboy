@@ -163,7 +163,7 @@ describe('the queued hints on the run line', () => {
 
     act(() => reportQueue({ isIntersecting: false }));
     within(composerOf()).getByText(/hints queued/);
-    fireEvent.click(within(composerOf()).getByRole('button', { name: 'View' }));
+    fireEvent.click(within(composerOf()).getByRole('button', { name: 'Show' }));
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(
       document.querySelector(`[data-hint-queue="${HINT_NODE_SEED.runId}"]`),
     );

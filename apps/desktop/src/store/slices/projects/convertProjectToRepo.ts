@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { FirstCommit, IsoDateTime, Project, ProjectId } from '@goodboy/types';
 import { updateProjectKind } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -49,6 +50,7 @@ export const convertProjectToRepo = (set: SetFn, get: GetFn) => {
     } finally {
       await releaseWriteSet({ entries: lease.entries, holder }).catch((error: unknown) =>
         get().reportError({
+          recovery: CHECK_STATE,
           title: `Couldn't hand ${project.name} back to sessions after the first commit`,
           error,
           severity: 'warning',

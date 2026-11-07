@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { markHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -282,6 +283,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
     }
     if (cleanupError !== undefined) {
       await get().reportError({
+        recovery: CHECK_STATE,
         title: 'Your files are back, but stash cleanup needs attention',
         error: cleanupError,
         severity: 'warning',

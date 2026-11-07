@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import {
   brandId,
   NEW_WORKSPACE_PERMISSION_MODE,
@@ -359,7 +360,12 @@ export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
 
     if (isNewWorkspace) {
       await seedWorkflowLibrary({ db: tauriDatabase }, workspaceId).catch((error: unknown) =>
-        get().reportError({ title: 'Workflows were not added', error, workspaceId }),
+        get().reportError({
+          recovery: CHECK_STATE,
+          title: 'Workflows were not added',
+          error,
+          workspaceId,
+        }),
       );
       const templates = await invokeWorkflowList(workspaceId).catch(() => []);
       set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspaceId]: templates } }));

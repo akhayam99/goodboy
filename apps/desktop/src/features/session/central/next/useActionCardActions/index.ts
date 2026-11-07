@@ -368,7 +368,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
         ? [
             {
               id: `${key}:myself`,
-              label: 'Resolve myself',
+              label: 'Resolve in terminal',
               run: later({ task: stopVerbs.resolveMyself }),
             },
           ]

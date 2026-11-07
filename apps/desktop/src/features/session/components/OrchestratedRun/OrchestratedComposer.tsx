@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { Agent, SessionId, WorkflowRun } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -64,7 +65,12 @@ export const OrchestratedComposer = ({ sessionId, run, agents }: Props) => {
             await addWorkflowOrchestratorHint(sessionId, run.id, draft);
             return true;
           } catch (error) {
-            void reportError({ title: "Couldn't save the hint", error, sessionId });
+            void reportError({
+              recovery: CHECK_STATE,
+              title: "Couldn't save the hint",
+              error,
+              sessionId,
+            });
             return false;
           }
         }}
