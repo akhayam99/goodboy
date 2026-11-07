@@ -5,6 +5,7 @@ import type {
   SessionPrFetchState,
   SessionStageInfo,
 } from '@goodboy/types';
+import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
 import {
   couldntFixWords,
   needsYouWords,
@@ -48,10 +49,10 @@ type ReasonTextParams = {
 };
 
 const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => string> = {
-  'needs-approval': () => 'Needs permission',
-  'agent-error': () => 'agent errored',
+  'needs-approval': () => ATTENTION_REASON_META['needs-approval'].words,
+  'agent-error': () => ATTENTION_REASON_META['agent-error'].words,
   'push-failed': ({ pushFailedCount }) => pushFailedWords({ count: pushFailedCount }),
-  'plan-approval': () => 'plan waiting for approval',
+  'plan-approval': () => ATTENTION_REASON_META['plan-approval'].words,
   'open-question': ({ openQuestionCount }) =>
     openQuestionCount === 1 ? '1 open question' : `${openQuestionCount} open questions`,
   'fix-needs-you': ({ fixNeedsYouCount, noteNeedsYouCount }) =>
@@ -62,12 +63,12 @@ const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => 
     couldntFixWords({ comments: fixCouldntFixCount, notes: noteCouldntFixCount, form: 'status' }),
   'pr-queued': ({ label }) => `${label} in the merge queue`,
   'pr-approved': ({ label }) => `${label} approved, ready to merge`,
-  'unread-reply': () => 'unread agent reply',
-  'run-stopped': () => 'a run stopped',
-  'run-paused-at-limit': () => 'a run paused at its limit',
-  'run-waits-for-go': () => 'a run waits for you to continue',
-  'auto-needs-you': () => 'Auto waits for you',
-  'slack-reply-waiting': () => 'a Slack reply waits for your OK',
+  'unread-reply': () => 'Unread reply',
+  'run-stopped': () => ATTENTION_REASON_META['run-stopped'].words,
+  'run-paused-at-limit': () => ATTENTION_REASON_META['run-paused-at-limit'].words,
+  'run-waits-for-go': () => ATTENTION_REASON_META['run-waits-for-go'].words,
+  'auto-needs-you': () => ATTENTION_REASON_META['auto-needs-you'].words,
+  'slack-reply-waiting': () => ATTENTION_REASON_META['slack-reply-waiting'].words,
 };
 
 const SETTLED_TEXT: Record<SettledOutcome, string> = {

@@ -107,7 +107,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('ready-mid');
     expect(state.tone).toBe('neutral');
-    expect(state.sentence).toBe('Waiting for your go');
+    expect(state.sentence).toBe('Ready');
   });
 
   it('says the step in flight finishes when you pause, and nothing new starts', () => {
@@ -168,7 +168,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('done');
     expect(state.tone).toBe('success');
-    expect(state.sentence).toBe('Run complete');
+    expect(state.sentence).toBe('Done');
   });
 
   it('reads a run the user closed as closed, never as complete', () => {
@@ -255,7 +255,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('ready-mid');
-    expect(state.sentence).toBe('Waiting for your go');
+    expect(state.sentence).toBe('Ready');
   });
 
   it('waits on the running step and names it for its measured time', () => {
@@ -376,7 +376,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('automatic');
-    expect(state.sentence).toBe('Continuing automatically');
+    expect(state.sentence).toBe('Continuing');
   });
 
   it('offers the first step when the run has no agents', () => {
@@ -405,7 +405,7 @@ describe('resolveOrchestratorState while the run waits on its plan', () => {
     const state = resolve({ run: held(), agents: [makeAgent(0, 'completed')] });
 
     expect(state.phase).toBe('plan-approval');
-    expect(state.sentence).toBe('Plan ready · waiting for you');
+    expect(state.sentence).toBe('Plan needs approval');
   });
 
   it('says the planner is revising, ahead of the plan stop', () => {

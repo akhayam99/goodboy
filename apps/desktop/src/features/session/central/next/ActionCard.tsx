@@ -6,6 +6,7 @@ import {
   FOCUS_RING,
   HeaderActions,
   ICON_SIZE,
+  StatusDot,
   Tooltip,
   TruncatedText,
   cn,
@@ -21,6 +22,7 @@ import { LiveGlyph } from '../now/LiveGlyph';
 import { ROW_COLUMNS } from '../rowColumns';
 import type { ActionCardModel } from './actionCardsOf';
 import { cardIconOf } from './cardIconOf';
+import { cardStateWordOf } from './cardStateWordOf';
 import type { CardActions, CardVerb } from './useActionCardActions';
 
 type Props = {
@@ -73,8 +75,9 @@ export const ActionCard = ({
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [previewKind, setPreviewKind] = useState<AgentKind | null>(null);
-  const { main, second, failure, menu, foldedTarget } = actions;
+  const { main, second, failure, menu, foldedTarget, stop = null } = actions;
   const Icon = cardIconOf({ card });
+  const stateWord = cardStateWordOf({ card });
   const glyphKind = previewKind ?? actions.agentKind;
   const palette = glyphKind === null ? null : agentKindPalette({ kind: glyphKind });
 
@@ -204,6 +207,14 @@ export const ActionCard = ({
               </TruncatedText>
             )}
             {chip}
+            {stateWord === null ? null : (
+              <span data-card-state-word="" className="flex shrink-0 items-center gap-2">
+                <StatusDot tone={stateWord.tone} size="sm" />
+                <span className="whitespace-nowrap text-ui text-muted-foreground">
+                  {stateWord.word}
+                </span>
+              </span>
+            )}
           </div>
           {card.detail === null ? null : (
             <TruncatedText className="text-meta text-muted-foreground">{card.detail}</TruncatedText>
@@ -218,9 +229,16 @@ export const ActionCard = ({
         <HeaderActions
           className="@max-[360px]:col-start-2 @max-[360px]:justify-start"
           secondary={
-            second === null || isQuiet
-              ? null
-              : verbButton({ verb: second, variant: 'secondary', onClick: second.run })
+            isQuiet || (second === null && stop === null) ? null : (
+              <>
+                {second === null
+                  ? null
+                  : verbButton({ verb: second, variant: 'secondary', onClick: second.run })}
+                {stop === null
+                  ? null
+                  : verbButton({ verb: stop, variant: 'secondary', onClick: stop.run })}
+              </>
+            )
           }
           button={isFirst ? null : mainNode}
           primary={isFirst ? mainNode : null}

@@ -40,8 +40,8 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
         <TranscriptRowHeader
           tone="warning"
           icon={<FileWarning size={ICON_SIZE.row} aria-hidden />}
-          eyebrow="artifact"
-          preview="artifact block couldn't be captured"
+          eyebrow="Artifact"
+          preview="The artifact didn't come through"
           data-testid="artifact-capture-notice"
           open={open}
           onToggle={() => setOpen((value) => !value)}
@@ -50,7 +50,7 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
     >
       <p className="min-w-0">{item.message}</p>
       <p className="min-w-0 text-muted-foreground">
-        the turn is intact and the last captured artifact is unchanged.
+        The turn is intact and the last saved artifact is unchanged.
       </p>
       <div className="flex items-center gap-2">
         <Button
@@ -58,13 +58,11 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
           size="sm"
           onClick={handleRepair}
           disabled={!canRepair}
-          title={repaired ? 'repair already requested once' : 'ask the agent to re-emit the block'}
+          title={repaired ? 'Already asked once' : 'Ask the agent to write it again'}
         >
-          Retry capture
+          Rewrite
         </Button>
-        {repaired ? (
-          <span className="text-meta text-muted-foreground">repair requested</span>
-        ) : null}
+        {repaired ? <span className="text-meta text-muted-foreground">Asked</span> : null}
       </div>
     </TranscriptDisclosure>
   );

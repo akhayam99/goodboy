@@ -89,8 +89,8 @@ describe('the u27 Next list scenes', () => {
     const cards = cardsOf({ stack });
     expect(cards).toHaveLength(22);
     const texts = cards.map((card) => card.textContent ?? '');
-    expect(texts.filter((text) => text.startsWith('Auto is stuck'))).toHaveLength(7);
-    expect(texts.filter((text) => text.startsWith('Auto waits on your OK'))).toHaveLength(2);
+    expect(texts.filter((text) => text.startsWith('Auto needs you'))).toHaveLength(7);
+    expect(texts.filter((text) => text.startsWith('Auto needs approval'))).toHaveLength(2);
     expect(texts.filter((text) => text.includes('stopped · origin moved'))).toHaveLength(3);
     expect(texts.filter((text) => text.includes('hl/feat-center-home-page'))).toHaveLength(4);
     expect(texts.filter((text) => text.includes('It was stopped.'))).toHaveLength(2);
@@ -120,11 +120,11 @@ describe('the u27 Next list scenes', () => {
     expect(
       texts.filter((text) =>
         text.startsWith(
-          'Center pages rolloutPlan v3 waits on your OK, and 2 questions. The run covers 4 branches.',
+          'Center pages rolloutPlan v3 needs approval, and 2 questions. The run covers 4 branches.',
         ),
       ),
     ).toHaveLength(1);
-    expect(texts.some((text) => text.includes('Auto waits on your OK'))).toBe(false);
+    expect(texts.some((text) => text.includes('Auto needs approval'))).toBe(false);
     expect(texts.some((text) => text.includes('Answer open questions'))).toBe(false);
     expect(filledOf({ stack }).map((button) => button.textContent)).toEqual(['Review plan']);
   });
@@ -141,10 +141,10 @@ describe('the u27 Next list scenes', () => {
     expect(texts.some((text) => text.includes('It was stopped.'))).toBe(false);
     expect(
       texts.filter((text) =>
-        text.startsWith('hl/feat-center-home-page · #9995harbor-portalThe implementer is blocked'),
+        text.startsWith('hl/feat-center-home-page · #9995harbor-portalThe implementer needs you'),
       ),
     ).toHaveLength(1);
-    expect(texts.some((text) => text.startsWith('Auto is stuck'))).toBe(false);
+    expect(texts.some((text) => text.startsWith('Auto needs you'))).toBe(false);
     expect(texts.some((text) => text.includes('hl/feat-center-contact-page'))).toBe(false);
     expect(texts.filter((text) => text.includes('4 comments to fix'))).toHaveLength(1);
     expect(filledOf({ stack: fix })).toEqual([]);

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoPhase } from '@goodboy/db';
 import { aDelegation, anArtifactRow, aPlanRow, aView } from '../testing/autoViewFixtures';
 import { autoGlanceOf } from './autoGlanceOf';
@@ -36,7 +37,7 @@ describe('autoGlanceOf', () => {
     expect(glance.sentence).toBe('Plan v2 needs approval');
   });
 
-  it('says Planning while the Planner revises the plan', () => {
+  it('says Running while the Planner revises the plan', () => {
     const glance = autoGlanceOf({
       view: aView({
         phase: 'waiting',
@@ -46,8 +47,8 @@ describe('autoGlanceOf', () => {
     });
 
     expect(glance).toMatchObject({
-      state: 'planning',
-      word: 'Planning',
+      state: 'running',
+      word: 'Running',
       sentence: 'The Planner is revising plan v1',
       isLive: true,
     });
@@ -66,23 +67,70 @@ describe('autoGlanceOf', () => {
     });
 
     expect(glance).toMatchObject({
-      state: 'working',
+      state: 'running',
       sentence: 'Implementer running, Tester queued',
       isLive: true,
     });
   });
 
-  it('says Stuck when blocked', () => {
-    expect(glanceOf('blocked')).toMatchObject({ state: 'stuck', word: 'Stuck', tone: 'danger' });
+  it('says Failed when Auto stopped replying, never Stuck or Blocked', () => {
+    expect(glanceOf('blocked')).toMatchObject({
+      state: 'failed',
+      word: 'Failed',
+      tone: 'danger',
+      sentence: "Auto couldn't reply",
+    });
   });
 
-  it('says Stuck when the limit is spent', () => {
+  it('keeps the reason Auto gave as the sentence under Failed', () => {
+    const view = aView({ phase: 'blocked' });
+    const glance = autoGlanceOf({
+      view: {
+        ...view,
+        tree: { ...view.tree, blockedReason: 'Auto stopped answering before it replied.' },
+      },
+      rootTurn: null,
+    });
+
+    expect(glance).toMatchObject({
+      word: 'Failed',
+      sentence: 'Auto stopped answering before it replied.',
+    });
+  });
+
+  it('says Stopping for the moment after Stop and Stopped once it ends', () => {
+    expect(glanceOf('stopping')).toMatchObject({
+      state: 'stopping',
+      word: 'Stopping',
+      sentence: '',
+    });
+  });
+
+  it.each([
+    ['the budget', AUTO_BLOCK_TEXT.budget],
+    ['the wall clock', AUTO_BLOCK_TEXT.limit_wall_clock],
+  ])('says Paused, with the reason, for a tree blocked by %s', (_name, blockedReason) => {
+    const view = aView({ phase: 'blocked' });
+    const glance = autoGlanceOf({
+      view: { ...view, tree: { ...view.tree, blockedReason } },
+      rootTurn: null,
+    });
+
+    expect(glance).toMatchObject({
+      state: 'paused',
+      word: 'Paused',
+      tone: 'warning',
+      sentence: blockedReason,
+    });
+  });
+
+  it('says Paused when the limit is spent', () => {
     const glance = autoGlanceOf({
       view: aView({ phase: 'waiting', capUsd: 10, spentUsd: 10 }),
       rootTurn: null,
     });
 
-    expect(glance).toMatchObject({ state: 'stuck', sentence: 'Paused at the limit' });
+    expect(glance).toMatchObject({ state: 'paused', word: 'Paused', sentence: 'At the limit' });
   });
 
   it('says Stopped, Done and Idle for the resting phases', () => {

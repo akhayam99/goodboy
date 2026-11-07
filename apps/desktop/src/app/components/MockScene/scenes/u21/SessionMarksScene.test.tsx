@@ -37,7 +37,7 @@ const MARKS: ReadonlyArray<Mark> = [
     title: 'Billing export fails on large files',
     tone: 'danger',
     state: 'failed',
-    words: 'An agent stopped on an error',
+    words: 'An agent failed',
   },
   {
     title: 'Stop notify-relay retries on a 409',
@@ -79,7 +79,7 @@ const MARKS: ReadonlyArray<Mark> = [
     title: 'Write the notify-relay digest',
     tone: 'warning',
     state: 'approval',
-    words: 'Waiting for your permission',
+    words: 'Needs permission',
   },
   {
     title: 'Plan the Cascadia onboarding',

@@ -142,7 +142,7 @@ describe('OperationsCluster', () => {
     const rail = screen.getByRole('button').parentElement!;
     expect(rail.className).not.toContain('border-l-2');
     expect(rail.querySelector('[data-testid="tone-bar"][data-tone="warning"]')).not.toBeNull();
-    screen.getByText('Waiting for your permission');
+    screen.getByText('Needs permission');
   });
 
   it('keeps a user-opened cluster open once the run completes', () => {

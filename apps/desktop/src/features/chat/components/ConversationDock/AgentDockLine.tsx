@@ -10,11 +10,7 @@ type Props = {
   readonly agent: Agent;
 };
 
-const SAID_ELSEWHERE: ReadonlySet<GlanceState> = new Set<GlanceState>([
-  'working',
-  'planning',
-  'stopped',
-]);
+const SAID_ELSEWHERE: ReadonlySet<GlanceState> = new Set<GlanceState>(['running', 'stopped']);
 
 export const AgentDockLine = ({ sessionId, agent }: Props) => {
   const glance = useConversationGlance({ sessionId, agent, autoView: null });

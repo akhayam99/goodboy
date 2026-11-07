@@ -280,7 +280,7 @@ describe('a card that holds folded cards', () => {
 
     const verbs = result.current.actionsFor({ card }).menu?.target.foldedVerbs ?? [];
     expect(verbs.map((verb) => [verb.id, verb.label])).toEqual([
-      [`folded:${autoCard().id}`, 'Auto is stuck'],
+      [`folded:${autoCard().id}`, 'Auto needs you'],
     ]);
 
     await act(async () => {

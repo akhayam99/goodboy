@@ -104,7 +104,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           return;
         }
         for (const pick of picks.filter((candidate) => !candidate.isMounted)) {
-          setBusy(`Creating a worktree for ${pick.name} from main`);
+          setBusy(`Creating a branch for ${pick.name}`);
           await ensureProjectMounted({
             sessionId,
             projectId: pick.projectId,

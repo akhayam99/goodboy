@@ -92,7 +92,7 @@ describe('resolveAgentRowState', () => {
     [
       'A1b opened by hand, no turn yet',
       {},
-      { node: 'queued', sentence: 'Waiting for your first message', tone: 'neutral', ask: null },
+      { node: 'queued', sentence: 'Write to start', tone: 'neutral', ask: null },
     ],
     [
       'A1c resolver waiting in the resolve queue',
@@ -107,7 +107,7 @@ describe('resolveAgentRowState', () => {
     [
       'A2 ready, autorun off',
       { isReadyStep: true },
-      { node: 'ready', sentence: 'Ready to run', tone: 'warning', ask: null },
+      { node: 'ready', sentence: 'Ready', tone: 'warning', ask: null },
     ],
     [
       'A5 running',
@@ -144,7 +144,7 @@ describe('resolveAgentRowState', () => {
       { agent: { status: 'blocked' } },
       {
         node: 'approval',
-        sentence: 'Blocked, tell the agent what to do next',
+        sentence: 'Tell it what to do next',
         tone: 'warning',
         ask: null,
       },
@@ -192,7 +192,7 @@ describe('resolveRunRowState', () => {
       { advance: blocked('turn-running') },
       {
         node: 'running',
-        sentence: 'Waiting for the chat turn to finish',
+        sentence: 'Waits for the chat to finish',
         tone: 'neutral',
         ask: null,
       },
@@ -213,7 +213,7 @@ describe('resolveRunRowState', () => {
         advance: { kind: 'ready', step: STEP },
         readyStep: { step: STEP, agent: agentOf(), stepLabel: '5' },
       },
-      { node: 'ready', sentence: 'Step 5 is ready to run', tone: 'warning', ask: 'runStep' },
+      { node: 'ready', sentence: 'Step 5 is ready', tone: 'warning', ask: 'runStep' },
     ],
     [
       'R7 a step failed',
@@ -225,7 +225,7 @@ describe('resolveRunRowState', () => {
       { failedStep: { stepLabel: '4.1', isBlocked: true }, advance: blocked('failed-step') },
       {
         node: 'approval',
-        sentence: 'Step 4.1 is blocked, tell the agent what to do next',
+        sentence: 'Step 4.1 not finished',
         tone: 'warning',
         ask: null,
       },
@@ -388,10 +388,10 @@ describe('rowStateShortSentence', () => {
   it.each<[RowStateReason, string]>([
     [{ kind: 'question', stepLabel: '2' }, 'Needs you'],
     [{ kind: 'ready', stepLabel: '3' }, 'Step 3 ready'],
-    [{ kind: 'budget', limitUsd: 12 }, 'At the limit'],
+    [{ kind: 'budget', limitUsd: 12 }, 'Paused'],
     [{ kind: 'stepFailed', stepLabel: '4' }, 'Step 4 failed'],
-    [{ kind: 'chained', afterTitle: 'Backfill the settled batches behind a flag' }, 'Chained'],
-    [{ kind: 'deciding' }, 'Choosing next'],
+    [{ kind: 'chained', afterTitle: 'Backfill the settled batches behind a flag' }, 'Queued'],
+    [{ kind: 'deciding' }, 'Choosing'],
     [{ kind: 'awaitingFirstMessage' }, 'Write to start'],
   ])('keeps %o readable in a narrow row as %s', (reason, short) => {
     expect(rowStateShortSentence({ state: waiting(reason) })).toBe(short);
@@ -444,7 +444,7 @@ describe('stopped agents', () => {
 
     expect(state.reason?.kind).toBe('stepBlocked');
     expect(rowStateTone({ state })).toBe('warning');
-    expect(rowStateNode({ state }).label).toBe('Blocked');
+    expect(rowStateNode({ state }).label).toBe('Not finished');
   });
 
   it('still counts an open question as needing you', () => {

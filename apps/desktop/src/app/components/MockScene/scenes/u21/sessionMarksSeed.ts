@@ -19,7 +19,7 @@ import {
   type WorkflowRun,
   type WorkflowRunId,
 } from '@goodboy/types';
-import { aView } from '../../../../../features/auto/testing/autoViewFixtures';
+import { aPlanRow, aView } from '../../../../../features/auto/testing/autoViewFixtures';
 import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { useAppStore } from '../../../../../store';
 import type { SessionGithubState } from '../../../../../store/types';
@@ -375,7 +375,7 @@ const autoRootFor = ({ slug }: SlugParams): Agent => ({
 });
 
 const AUTO_VIEW: AutoTreeView = (() => {
-  const view = aView({ phase: 'blocked' });
+  const view = aView({ phase: 'waiting', artifacts: [aPlanRow()] });
   return {
     ...view,
     tree: {

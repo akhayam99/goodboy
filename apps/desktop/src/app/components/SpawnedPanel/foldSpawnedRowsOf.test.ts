@@ -144,7 +144,7 @@ describe('foldSpawnedRowsOf', () => {
     });
 
     expect(failed.find(({ row }) => row.id === 'lead')?.urgency).toEqual({
-      word: '1 of 2 helpers failed',
+      word: '1 of 2 subagents failed',
       tone: 'danger',
       isNeedsYou: false,
     });
@@ -186,7 +186,7 @@ describe('foldSpawnedRowsOf', () => {
 
     expect(shown).toHaveLength(1);
     expect(shown[0]?.urgency).toMatchObject({
-      word: '1 of 4 helpers failed',
+      word: '1 of 4 subagents failed',
       isNeedsYou: false,
     });
   });

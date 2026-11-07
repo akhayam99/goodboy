@@ -13,6 +13,7 @@ export type OverviewGlance = Readonly<{
 type Params = {
   readonly cards: ReadonlyArray<OverviewCardModel>;
   readonly stuckCount: number;
+  readonly failedCount: number;
   readonly autoGlances: ReadonlyArray<Glance>;
   readonly nextTitle: string | null;
 };
@@ -25,28 +26,49 @@ type CountParams = {
 const cardCountOf = ({ cards, id }: CountParams): number =>
   cards.find((card) => card.id === id)?.count ?? 0;
 
+type NeedsParams = {
+  readonly count: number;
+};
+
+const needsSentenceOf = ({ count }: NeedsParams): string =>
+  count === 1 ? '1 needs you' : `${count} need you`;
+
+type FailedParams = {
+  readonly count: number;
+};
+
+const failedSentenceOf = ({ count }: FailedParams): string =>
+  count === 1 ? 'Auto failed' : `${count} Autos failed`;
+
 export const overviewGlanceOf = ({
   cards,
   stuckCount,
+  failedCount,
   autoGlances,
   nextTitle,
 }: Params): OverviewGlance => {
-  const needs = cardCountOf({ cards, id: 'needs-you' });
+  const needs = Math.max(0, cardCountOf({ cards, id: 'needs-you' }) - failedCount);
   const running = cardCountOf({ cards, id: 'running' });
   const autoWaiting = autoGlances.find((glance) => glance.state === 'waiting') ?? null;
-  const autoStuck = autoGlances.find((glance) => glance.state === 'stuck') ?? null;
+  const autoHeld =
+    autoGlances.find((glance) => glance.state === 'failed' || glance.state === 'paused') ?? null;
   const parts = [
-    ...(needs > 0 ? [`${needs} waiting for you`] : []),
+    ...(needs > 0 ? [needsSentenceOf({ count: needs })] : []),
+    ...(failedCount > 0 ? [failedSentenceOf({ count: failedCount })] : []),
     ...(autoWaiting === null ? [] : [`Auto ${autoWaiting.word.toLowerCase()}`]),
-    ...(autoStuck === null ? [] : [`Auto ${autoStuck.word.toLowerCase()}`]),
-    ...(stuckCount > 0 && autoStuck === null ? [`${stuckCount} stuck`] : []),
-    ...(running > 0 ? [`${running} working`] : []),
+    ...(autoHeld === null ? [] : [`Auto ${autoHeld.word.toLowerCase()}`]),
+    ...(stuckCount > 0 && autoHeld === null ? [`${stuckCount} stopped`] : []),
+    ...(running > 0 ? [`${running} running`] : []),
   ];
   if (needs > 0 || autoWaiting !== null) {
     return { state: 'waiting', tone: 'warning', sentence: parts.join(', ') };
   }
-  if (stuckCount > 0 || autoStuck !== null) {
-    return { state: 'stuck', tone: 'danger', sentence: parts.join(', ') };
+  if (stuckCount > 0 || failedCount > 0 || autoHeld !== null) {
+    return {
+      state: 'stuck',
+      tone: autoHeld?.state === 'paused' ? 'warning' : 'danger',
+      sentence: parts.join(', '),
+    };
   }
   if (running > 0) {
     return { state: 'working', tone: 'info', sentence: parts.join(', ') };

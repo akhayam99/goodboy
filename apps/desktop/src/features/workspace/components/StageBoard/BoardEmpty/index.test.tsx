@@ -28,7 +28,7 @@ describe('the empty board', () => {
     expect(lanes.map((lane) => lane.querySelectorAll('p').length)).toEqual([1, 1, 1, 1, 1]);
     const sentences = lanes.map((lane) => lane.querySelector('p')?.textContent);
     expect(new Set(sentences).size).toBe(5);
-    expect(sentences[2]).toBe('Blocked until you act');
+    expect(sentences[2]).toBe('Nothing moves until you act');
     expect(sentences[4]).toBe('Finished sessions show what shipped');
   });
 

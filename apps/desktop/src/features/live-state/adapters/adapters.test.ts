@@ -330,7 +330,7 @@ describe('autoChildLive', () => {
       lastTool: null,
       project: null,
     });
-    expect(facts).toMatchObject({ state: 'needsYou', phrase: 'Asked a question' });
+    expect(facts).toMatchObject({ state: 'needsYou', phrase: 'Needs your answer' });
     expect(idsOf(facts)).toEqual([]);
   });
 
@@ -354,7 +354,7 @@ describe('autoChildLive', () => {
       lastTool: null,
       project: null,
     });
-    expect(facts).toMatchObject({ state: 'working', phrase: 'Working' });
+    expect(facts).toMatchObject({ state: 'working', phrase: 'Running' });
     expect(idsOf(facts)).toEqual(['stopAgent']);
   });
 

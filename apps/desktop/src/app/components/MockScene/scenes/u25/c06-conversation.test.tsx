@@ -82,7 +82,7 @@ describe('the c06 conversation scenes', () => {
     expect(within(row).getByRole('heading', { level: 1 }).textContent).not.toContain('Sonnet 5.5');
     expect(within(row).queryByRole('button', { name: /^Model/ })).toBeNull();
     const settings = screen.getByRole('button', { name: 'Run settings' });
-    expect(screen.getByText('Working')).toBeDefined();
+    expect(screen.getByText('Running')).toBeDefined();
     expect(settings.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(settings);
     expect(settings.getAttribute('aria-expanded')).toBe('true');

@@ -21,7 +21,7 @@ import {
 import { aSession, aWorkflowRun } from '@goodboy/types/testing';
 import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
-import { aView } from '../auto/testing/autoViewFixtures';
+import { aPlanRow, aView } from '../auto/testing/autoViewFixtures';
 import { attentionPlace } from './attentionPlace';
 import type { NotificationPlaceReason } from './notificationPlaceReason';
 
@@ -36,6 +36,16 @@ type BlockedViewParams = {
 };
 
 const blockedViewOf = ({ rootAgentId }: BlockedViewParams) => {
+  const view = aView({ phase: 'waiting', artifacts: [aPlanRow()] });
+  return { ...view, tree: { ...view.tree, sessionId: SESSION_ID, rootAgentId } };
+};
+
+const limitViewOf = ({ rootAgentId }: BlockedViewParams) => {
+  const view = aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 });
+  return { ...view, tree: { ...view.tree, sessionId: SESSION_ID, rootAgentId } };
+};
+
+const failedViewOf = ({ rootAgentId }: BlockedViewParams) => {
   const view = aView({ phase: 'blocked' });
   return { ...view, tree: { ...view.tree, sessionId: SESSION_ID, rootAgentId } };
 };
@@ -376,6 +386,30 @@ describe('attentionPlace and Auto or Slack', () => {
     expect(
       attentionPlace({ state: autoState, sessionId: SESSION_ID, reason: 'auto-needs-you' }),
     ).toEqual({ at: 'agent', sessionId: SESSION_ID, agentId: root.id });
+  });
+
+  it('opens the Auto agent that paused at its limit behind run-paused-at-limit', () => {
+    const limited = {
+      ...state,
+      sessionPhaseRuns: { [SESSION_ID]: [...AGENTS, root] },
+      autoTreeViews: { [SESSION_ID]: [limitViewOf({ rootAgentId: root.id })] },
+    };
+
+    expect(
+      attentionPlace({ state: limited, sessionId: SESSION_ID, reason: 'run-paused-at-limit' }),
+    ).toEqual({ at: 'agent', sessionId: SESSION_ID, agentId: root.id });
+  });
+
+  it('opens the Auto agent that stopped replying behind agent-error', () => {
+    const failed = {
+      ...state,
+      sessionPhaseRuns: { [SESSION_ID]: [...AGENTS, root] },
+      autoTreeViews: { [SESSION_ID]: [failedViewOf({ rootAgentId: root.id })] },
+    };
+
+    expect(attentionPlace({ state: failed, sessionId: SESSION_ID, reason: 'agent-error' })).toEqual(
+      { at: 'agent', sessionId: SESSION_ID, agentId: root.id },
+    );
   });
 
   it('opens the session when the Auto tree no longer waits', () => {

@@ -75,7 +75,7 @@ describe('central next scenes', () => {
 
   it('leads with a Fixer that never started and offers Open Auto beside the retry', () => {
     show({ name: 'u26-central-next-stuck-dark' });
-    expect(titlesOf()[0]).toBe('Auto is stuck');
+    expect(titlesOf()[0]).toBe('Auto needs you');
     const first = screen.getAllByTestId(/^action-card-/)[0];
     if (first === undefined) {
       throw new Error('Expected a card');

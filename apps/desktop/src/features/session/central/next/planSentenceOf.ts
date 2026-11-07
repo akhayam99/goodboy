@@ -20,7 +20,7 @@ export const planSentenceOf = ({ plan, questionCount }: Params): string => {
     questionCount > 0
       ? `, and ${countOf({ count: questionCount, one: 'question', many: 'questions' })}`
       : '';
-  const head = `${who} waits on your OK${questions}.`;
+  const head = `${who} needs approval${questions}.`;
   if (plan === null || plan.branchCount === 0) {
     return head;
   }

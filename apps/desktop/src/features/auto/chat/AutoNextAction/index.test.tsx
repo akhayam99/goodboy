@@ -84,7 +84,7 @@ describe('the next step card', () => {
     renderCard();
 
     expect(screen.getAllByRole('option')).toHaveLength(3);
-    expect(pickedLabel()).toContain('Spawn implementer');
+    expect(pickedLabel()).toContain('Start implementer');
     expect(pickedLabel()).toContain('Recommended');
     screen.getByText('Spawn a tester first');
     screen.getByText('Ask a reviewer to look');
@@ -128,7 +128,7 @@ describe('the next step card', () => {
     expect(pickedLabel()).toContain('Spawn a tester first');
     expect(document.activeElement).toBe(second);
     fireEvent.keyDown(second ?? document.body, { key: 'ArrowLeft' });
-    expect(pickedLabel()).toContain('Spawn implementer');
+    expect(pickedLabel()).toContain('Start implementer');
   });
 
   it('sends the hint after it is opened and the Enter key is pressed in it', async () => {
@@ -159,7 +159,7 @@ describe('the next step card', () => {
     fireEvent.keyDown(hintBox(), { key: '1' });
     expect(pickedLabel()).toContain('Ask a reviewer to look');
     fireEvent.keyDown(card, { key: '1' });
-    expect(pickedLabel()).toContain('Spawn implementer');
+    expect(pickedLabel()).toContain('Start implementer');
   });
 
   it('confirms the primary with the hint and without a model turn', async () => {
@@ -254,7 +254,7 @@ describe('the next step card', () => {
 
     await screen.findByText(/database is locked/);
     expect(hintBox().getAttribute('value')).toBe('small diff');
-    expect(pickedLabel()).toContain('Spawn implementer');
+    expect(pickedLabel()).toContain('Start implementer');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(port).toHaveBeenCalledTimes(2));

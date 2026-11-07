@@ -191,7 +191,7 @@ describe('c07 Auto scenes', () => {
     if (glance === null) {
       throw new Error('no glance line');
     }
-    expect(glance.dataset.glance).toBe('working');
+    expect(glance.dataset.glance).toBe('running');
     expect(within(glance).getByRole('status').textContent).not.toContain('running');
     expect(glance.textContent).not.toContain('Implementer');
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');

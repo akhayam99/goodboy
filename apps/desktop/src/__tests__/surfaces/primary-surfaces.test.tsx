@@ -330,7 +330,7 @@ describe('primary surfaces mount on real store selectors', () => {
     });
 
     expect(useAppStore.getState().branchTab[sessionId]).toBe('files');
-    expect(screen.queryByText('No worktree for this session')).toBeNull();
+    expect(screen.queryByText('No branch in this session')).toBeNull();
     expectNoRenderLoop();
   });
 

@@ -26,7 +26,7 @@ const STATUS_WORD: Record<AgentStatus, string> = {
   running: 'Running',
   pending: 'Queued',
   failed: 'Failed',
-  blocked: 'Blocked',
+  blocked: 'Needs you',
   stopped: 'Stopped',
   skipped: 'Skipped',
 };
