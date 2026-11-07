@@ -1,5 +1,5 @@
 import { inlineMarkdownText } from '@goodboy/ui';
-import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
+import { RESOLVE_COMMENT_NO_TEXT, RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { commentPreviewOf } from './commentPreviewOf';
 import { firstSentence } from './firstSentence';
 import type { ReviewEntry } from './useReviewEntries';
@@ -15,5 +15,5 @@ export const entryTitleOf = ({ entry }: { readonly entry: ReviewEntry }): string
     return RESOLVE_COMMENT_UNAVAILABLE;
   }
   const preview = commentPreviewOf({ text: note.body });
-  return firstSentence({ text: preview.length > 0 ? preview : (entryBodyOf({ entry }) ?? '') });
+  return preview.length > 0 ? firstSentence({ text: preview }) : RESOLVE_COMMENT_NO_TEXT;
 };

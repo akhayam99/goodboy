@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { ReviewScopeBar } from './ReviewScopeBar';
+import { ReviewScopeBar } from '.';
 
 afterEach(cleanup);
 

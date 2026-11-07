@@ -15,23 +15,59 @@ export type CommentStateCounts = {
   readonly needYou: number;
 };
 
-type EntriesParams = {
-  readonly entries: ReadonlyArray<ReviewEntry>;
+export type CountableEntry = {
+  readonly resolveWord: ReviewEntry['resolveWord'];
+  readonly row: {
+    readonly thread: Pick<
+      ReviewEntry['row']['thread'],
+      'stage' | 'state' | 'stateReason' | 'originKind'
+    >;
+  };
 };
 
-export const commentStateCountsOf = ({ entries }: EntriesParams): CommentStateCounts => {
+type EntriesParams<T extends CountableEntry> = {
+  readonly entries: ReadonlyArray<T>;
+};
+
+export const commentStateCountsOf = ({
+  entries,
+}: EntriesParams<CountableEntry>): CommentStateCounts => {
   const resolved = entries.filter((entry) => isSettledWord({ word: entry.resolveWord })).length;
   const counts = reviewCounts({ threads: entries.map((entry) => entry.row.thread) });
   return { open: entries.length - resolved, resolved, needYou: counts.needYou };
 };
+
+type ScopeParams<T extends CountableEntry> = EntriesParams<T> & {
+  readonly scope: CommentScope;
+};
+
+type InScopeParams = {
+  readonly entry: CountableEntry;
+  readonly scope: CommentScope;
+};
+
+const isInScope = ({ entry, scope }: InScopeParams): boolean => {
+  const isNote = entry.row.thread.originKind === 'diff_comment';
+  return !((scope === 'notes' && !isNote) || (scope === 'comments' && isNote));
+};
+
+const entriesInScopeOf = <T extends CountableEntry>({
+  entries,
+  scope,
+}: ScopeParams<T>): ReadonlyArray<T> => entries.filter((entry) => isInScope({ entry, scope }));
+
+export const stateCountsInScopeOf = <T extends CountableEntry>({
+  entries,
+  scope,
+}: ScopeParams<T>): CommentStateCounts =>
+  commentStateCountsOf({ entries: entriesInScopeOf({ entries, scope }) });
 
 export const groupsInViewOf = ({ groups, scope, state }: ViewParams): ReadonlyArray<ReviewGroup> =>
   groups
     .map(({ group, entries }) => ({
       group,
       entries: entries.filter((entry) => {
-        const isNote = entry.row.thread.originKind === 'diff_comment';
-        if ((scope === 'notes' && !isNote) || (scope === 'comments' && isNote)) {
+        if (!isInScope({ entry, scope })) {
           return false;
         }
         const isSettled = isSettledWord({ word: entry.resolveWord });

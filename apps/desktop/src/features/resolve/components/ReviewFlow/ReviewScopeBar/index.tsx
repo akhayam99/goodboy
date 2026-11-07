@@ -1,6 +1,6 @@
 import { cn, SegmentedTabs } from '@goodboy/ui';
-import type { CommentStateCounts } from '../../commentGroupsView';
-import type { ReviewEntryCounts } from './useReviewEntries';
+import type { CommentStateCounts } from '../../../commentGroupsView';
+import type { ReviewEntryCounts } from '../useReviewEntries';
 
 export type CommentScope = 'branch' | 'notes' | 'comments';
 

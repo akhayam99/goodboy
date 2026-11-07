@@ -30,4 +30,15 @@ describe('markdownPreview', () => {
   it('returns an empty string for missing text', () => {
     expect(markdownPreview({ text: null })).toBe('');
   });
+
+  it('keeps code span content and survives an unterminated comment', () => {
+    expect(markdownPreview({ text: 'Use `Array<string>` here <!-- open' })).toBe(
+      'Use Array<string> here',
+    );
+  });
+
+  it('drops tilde fences and images with parentheses in the url', () => {
+    const text = '~~~ts\nconst a = 1;\n~~~\n![x](https://example.test/a(b).svg) done';
+    expect(markdownPreview({ text })).toBe('done');
+  });
 });

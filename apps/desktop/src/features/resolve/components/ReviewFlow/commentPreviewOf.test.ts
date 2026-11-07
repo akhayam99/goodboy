@@ -40,4 +40,58 @@ describe('commentPreviewOf', () => {
     expect(commentPreviewOf({ text: '' })).toBe('');
     expect(commentPreviewOf({ text: '<!-- only a marker -->\n---' })).toBe('');
   });
+
+  it('keeps code span content literally, comment syntax and angle brackets included', () => {
+    expect(commentPreviewOf({ text: 'Use `Array<string>` for the result.' })).toBe(
+      'Use Array<string> for the result.',
+    );
+    expect(commentPreviewOf({ text: 'Write `<!--` to open a comment.' })).toBe(
+      'Write <!-- to open a comment.',
+    );
+  });
+
+  it('does not let an unterminated comment swallow the rest', () => {
+    expect(commentPreviewOf({ text: '<!-- never closed\nThe retry loop has no cap.' })).toBe(
+      'The retry loop has no cap.',
+    );
+  });
+
+  it('skips a multi-line comment that does close', () => {
+    expect(commentPreviewOf({ text: '<!--\nmarker\n-->\nCache key ignores the tenant.' })).toBe(
+      'Cache key ignores the tenant.',
+    );
+  });
+
+  it('never shows a fence delimiter or language as the preview', () => {
+    expect(commentPreviewOf({ text: '```typescript\nconst a = 1;\n```\nPlease rename it.' })).toBe(
+      'Please rename it.',
+    );
+    expect(commentPreviewOf({ text: '~~~ts\nconst a = 1;\n~~~\nPlease rename it.' })).toBe(
+      'Please rename it.',
+    );
+  });
+
+  it('removes images with balanced parentheses or very long urls', () => {
+    expect(
+      commentPreviewOf({ text: '![badge](https://example.test/badge(v2).svg)\nReal comment.' }),
+    ).toBe('Real comment.');
+    const long = `![alt text](https://example.test/${'a'.repeat(900)}.svg)\nReal comment.`;
+    expect(commentPreviewOf({ text: long })).toBe('Real comment.');
+    const img = `<img src="https://example.test/${'b'.repeat(600)}.png" alt="x">\nReal comment.`;
+    expect(commentPreviewOf({ text: img })).toBe('Real comment.');
+  });
+
+  it('keeps ordinary instructions that start like boilerplate', () => {
+    expect(commentPreviewOf({ text: 'Reply with an error when the token expires.' })).toBe(
+      'Reply with an error when the token expires.',
+    );
+    expect(commentPreviewOf({ text: 'This is an automatic retry loop; cap it.' })).toBe(
+      'This is an automatic retry loop; cap it.',
+    );
+  });
+
+  it('finishes on hostile input', () => {
+    const hostile = `${'<a '.repeat(5000)}\n${'`'.repeat(5000)}\n${'[x]('.repeat(3000)}\n${'<!--'.repeat(3000)}\nend`;
+    expect(commentPreviewOf({ text: hostile })).toContain('end');
+  });
 });
