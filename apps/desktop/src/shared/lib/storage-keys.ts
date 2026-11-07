@@ -31,6 +31,7 @@ export const STORAGE_PREFIXES = {
   diffFolds: `${PREFIX}diff-folds:v1:`,
   sessionView: `${PREFIX}session-view:`,
   sessionFilters: `${PREFIX}session-filters:`,
+  sessionGrouping: `${PREFIX}session-grouping:v1:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   taskListView: `${PREFIX}task-list-view:v1:`,

@@ -19,16 +19,10 @@ type RunParams = {
   readonly runId: string | null | undefined;
 };
 
-const presetRunOf = ({ runs, runId }: RunParams): WorkflowRun | null => {
-  if (runId === null || runId === undefined) {
-    return null;
-  }
-  const run = runs.find((candidate) => candidate.id === runId) ?? null;
-  if (run === null || run.executionMode === 'dynamic') {
-    return null;
-  }
-  return run;
-};
+const runOf = ({ runs, runId }: RunParams): WorkflowRun | null =>
+  runId === null || runId === undefined
+    ? null
+    : (runs.find((candidate) => candidate.id === runId) ?? null);
 
 export const presetRunFocusOf = ({
   lens,
@@ -39,15 +33,15 @@ export const presetRunFocusOf = ({
 }: Params): PresetRunFocus | null => {
   if (selectedAgentId !== null) {
     const root = resolveRootAgent({ agents, agentId: selectedAgentId });
-    const run = presetRunOf({ runs, runId: root?.workflowRunId });
-    if (run !== null) {
-      return { runId: run.id, agentId: selectedAgentId };
+    const run = runOf({ runs, runId: root?.workflowRunId });
+    if (run === null || (run.executionMode === 'dynamic' && root?.stepId == null)) {
+      return null;
     }
-    return null;
+    return { runId: run.id, agentId: selectedAgentId };
   }
   if (lens !== 'workflows') {
     return null;
   }
-  const run = presetRunOf({ runs, runId: focusedRunId });
-  return run === null ? null : { runId: run.id, agentId: null };
+  const run = runOf({ runs, runId: focusedRunId });
+  return run === null || run.executionMode === 'dynamic' ? null : { runId: run.id, agentId: null };
 };

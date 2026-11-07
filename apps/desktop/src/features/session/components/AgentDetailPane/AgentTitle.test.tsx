@@ -20,7 +20,7 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../store/storyHarness';
-import { requestRename } from '../../../actions/renameRequest';
+import { requestRename } from '../../../../shared/utils/renameRequest';
 import { agentObjectKey } from '../../../actions/agentObjectKey';
 import { AgentTitle } from './AgentTitle';
 

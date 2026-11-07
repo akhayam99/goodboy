@@ -3,7 +3,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { ROW_INTERACTIVE, UNREAD_TITLE, cn, tintClasses } from '@goodboy/ui';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useSelectRequest } from '../../../actions/useSelectRequest';
 import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';

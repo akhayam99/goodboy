@@ -28,7 +28,7 @@ type StatusParams = {
   readonly turn: TurnState | null | undefined;
 };
 
-const STOPPED_CONTINUE_WORD = 'Stopped, Continue';
+export const STOPPED_WORD = 'Stopped';
 
 export const NEEDS_PERMISSION_WORD = 'Needs permission';
 
@@ -120,7 +120,7 @@ const wordOf = ({ row, status, isClosed }: WordParams): string => {
   if (status === 'stopped') {
     return row.reason?.kind === 'agentStopped' && row.reason.isCutStep === true
       ? NOT_FINISHED
-      : STOPPED_CONTINUE_WORD;
+      : STOPPED_WORD;
   }
   return describeAgentStatus({ status }).label;
 };

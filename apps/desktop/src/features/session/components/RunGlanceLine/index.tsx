@@ -58,28 +58,32 @@ export const RunGlanceLine = ({ id, glance, spend, settings, revealEvent }: Prop
         </span>
         <span className="flex-1" />
         {spend === null ? null : <span className="shrink-0 text-faint-foreground">{spend}</span>}
-        <Button
-          variant="quiet"
-          size="xs"
-          aria-expanded={isOpen}
-          aria-label="Run settings"
-          aria-controls={settingsId}
-          onClick={() => setIsOpen((wasOpen) => !wasOpen)}
-        >
-          Settings
-          <ChevronDown size={ICON_SIZE.row} aria-hidden className={cn(isOpen && 'rotate-180')} />
-        </Button>
-      </div>
-      <div
-        id={settingsId}
-        data-open={isOpen}
-        className={cn(
-          'min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-3 py-2',
-          isOpen ? 'flex' : 'hidden',
+        {settings === null ? null : (
+          <Button
+            variant="quiet"
+            size="xs"
+            aria-expanded={isOpen}
+            aria-label="Run settings"
+            aria-controls={settingsId}
+            onClick={() => setIsOpen((wasOpen) => !wasOpen)}
+          >
+            Settings
+            <ChevronDown size={ICON_SIZE.row} aria-hidden className={cn(isOpen && 'rotate-180')} />
+          </Button>
         )}
-      >
-        {settings}
       </div>
+      {settings === null ? null : (
+        <div
+          id={settingsId}
+          data-open={isOpen}
+          className={cn(
+            'min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-3 py-2',
+            isOpen ? 'flex' : 'hidden',
+          )}
+        >
+          {settings}
+        </div>
+      )}
     </div>
   );
 };

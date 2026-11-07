@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { forgetScrollMemory } from '@goodboy/ui';
 import { SESSION_EVICTION, type EvictionMode, type EvictionScope } from '../../sessionEviction';
 import { storedAgentDraft } from '../agents/storedAgentDraft';
+import { storedGroupBy } from '../session-grouping/storedGroupBy';
 import { dropSession } from '../navigation/history';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
@@ -70,6 +71,7 @@ export const evictSession = ({ set, get }: Params) => {
     if (mode === 'delete') {
       forgetScrollMemory({ scopeId: sessionId });
       storedAgentDraft.forget({ agentIds });
+      storedGroupBy.forget({ sessionId });
     }
   };
 };

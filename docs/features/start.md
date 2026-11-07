@@ -7,9 +7,9 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 Write what you want done and press Start. Goodboy picks how to run it.
 
 - The **Start a run** field sits at the top of a session's Runs page.
-- On the **New session** page, the same form routes the goal you wrote the same way until you press a kind.
-- Its hint reads "Auto picks how to run it. ~ lists presets, @ lists roles."
-- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a preset or a role and its kind is pressed under the field.
+- On the **New session** page, the same form routes the goal you wrote the same way until you pick a kind.
+- Its hint reads "~ presets, @ roles".
+- Typing `~` or `@` in an empty field opens the same menu as the chat box. Pick a preset or a role and the **How** chip shows its kind.
 - A name typed in the text still wins over the kind.
 - The kinds and the settings under the box are [one start form](#one-start-form).
 - Under the box, a line reads "Starts as ..." with the reason and the model. It changes as you type, before you press Start. Once you press a kind, the line says what that kind does.
@@ -40,9 +40,9 @@ The pick is a rule table in the app, with no model call. Goodboy reads it top to
 
 Every door draws the same form: the New session page, a session's Runs page (and so the New menu's **Start a run**), ⌘K, and the setup Scout run.
 
-- Four kinds sit in one row: **Auto**, **Agent**, **Orchestrated** and **Preset**. One line under them says what the pressed kind does.
-- Auto is pressed by default and picks by the table above. Press the pressed kind again to give the choice back to Auto.
-- **Preset** is off until the workspace has a preset. A pressed Preset shows the picker with its steps and **Follow it** or **Adapt as it goes**.
+- The goal comes first. Under it the **How** chip holds the four kinds, **Auto**, **Agent**, **Orchestrated** and **Preset**, with one line for each in its menu. The action row ends the form.
+- Auto is picked by default and picks by the table above. Pick the same kind again to give the choice back to Auto.
+- **Preset** is off until the workspace has a preset. A pressed Preset shows the picker with its steps and **Keep steps** or **May change steps**.
 - One row of chips holds the settings, each written "Label: value". Each chip opens its own popover, anchored to it, so it stays inside the window. The source of a value ("from Harborline") sits in the popover header, and a chip is tinted when its value is not the default.
 - **Projects**, **Model** and **Edits** are always in the row. **Asks you**, **Limit** and **Guidance** sit under **More** until they differ from their default.
 - A kind shows only the settings it uses. **Projects** shows on the New session page only, **Role** on Agent only. **Limit** and **Asks you** do not show on Agent: a plain agent has no limit to enforce and no step to stop at.
@@ -59,7 +59,7 @@ Every door draws the same form: the New session page, a session's Runs page (and
 - Switching kind keeps the guidance you wrote. A start that fails keeps it, and Retry sends it again.
 - Switching kind keeps what you typed and the values that still apply.
 - The primary always reads **Start**, whatever the kind.
-- Setup's Scout run is pinned to Agent, so it draws no kind tabs and no role chip, and the same chips as every other form.
+- Setup's Scout run is pinned to Agent, so it draws no **How** chip and no role chip, and the same chips as every other form.
 - Start work from chat drafts the brief in the drawer, makes the session, then opens this form on the session with the goal filled in.
 
 ### The Kind chip
@@ -71,7 +71,7 @@ The chip opens one popover. It shows:
 - the kind and "set at start";
 - one line on what that kind does;
 - why it was picked ("you picked it" when you chose it on the page), with how many steps Auto changed in the preset;
-- **With the preset** (Follow it, Adapt as it goes) on a preset run;
+- **With the preset** (Keep steps, May change steps) on a preset run;
 - the other kinds a run can be (Workflow · Orchestrated, each preset, Agent · Auto agent).
 
 Its last line says what a pick does.
@@ -222,6 +222,7 @@ This part is for contributors and agents who change the feature.
 - Auto guidance: `autoSystemPromptOf` adds a guidance block to the system prompt on every turn. `resolveDelegateChild` puts a `**Guidance**` section before the `**Task**` of each child.
 - Unset guidance leaves every prompt as it was. `changeRunRoute`, `continueWithRole` and `moveToAuto` carry it to the run they start.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
+- Branch arrival: `openBranchRuns` carries the requested group to `useRunsFolds`, which unfolds its finished and archived rows in either grouping. `rowControls.test.tsx` covers bare state rows past the cap, focus and scrolling.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.
 
 `StartFailure` owns the recovery line shared by `StartForm`.

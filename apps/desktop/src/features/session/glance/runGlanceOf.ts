@@ -1,6 +1,6 @@
 import { NAMES } from '../../../shared/utils/names';
-import { pluralize } from '../../../shared/utils/pluralize';
 import type { RunPrimaryKind } from '../../workflows/runPrimaryOf';
+import { runStepCountWordOf } from '../../workflows/runStepCountOf';
 import { glanceOf, type Glance } from './glanceOf';
 
 type Params = {
@@ -15,10 +15,13 @@ type Params = {
 type StepsParams = Pick<Params, 'doneCount' | 'stepCount' | 'isDynamic'>;
 
 const stepsSentenceOf = ({ doneCount, stepCount, isDynamic }: StepsParams): string => {
-  if (isDynamic || stepCount === 0) {
-    return doneCount === 0 ? 'Nothing ran yet' : `${pluralize(doneCount, 'agent')} finished`;
+  if ((isDynamic || stepCount === 0) && doneCount === 0) {
+    return 'Nothing ran yet';
   }
-  return `${doneCount} of ${pluralize(stepCount, 'step')}`;
+  return runStepCountWordOf({
+    done: doneCount,
+    total: isDynamic || stepCount === 0 ? null : stepCount,
+  });
 };
 
 const PLAN_HOLD = glanceOf({

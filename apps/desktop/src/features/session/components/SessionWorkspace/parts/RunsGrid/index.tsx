@@ -1,19 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Agent, AgentId, Session } from '@goodboy/types';
-import { ListGrid, ListGridGroup, FOCUS_RING, cn } from '@goodboy/ui';
+import { useMemo, type ReactNode } from 'react';
+import type { Agent, AgentId, MountId, Session } from '@goodboy/types';
+import { ListGrid } from '@goodboy/ui';
 import { agentPlace, useAppStore } from '../../../../../../store';
 import { useNow } from '../../../../../../shared/hooks/useNow';
+import { GroupBySwitch } from '../../../../../../shared/components/GroupBySwitch';
 import { openAgentRevealEvent } from '../../../../../../shared/utils/openAgentReveal';
+import { branchPlace } from '../../../../../../store/slices/navigation/place';
+import { useGroupBy } from '../../../../../../store/slices/session-grouping/hooks/useGroupBy';
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
-import { useRowReturn } from '../../../../../../shared/hooks/useRowReturn';
 import { NAMES } from '../../../../../../shared/utils/names';
-import { VISIBLE_FINISHED_COUNT } from '../../../../finishedRunsCap';
+import { branchGroupsOf } from '../../../../branchGroupsOf';
+import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
-import { InProgressAction } from './InProgressAction';
+import { useMountRows } from '../../../SessionOverviewPane/ProjectMountRows/useMountRows';
+import { ContinueAllAction } from './ContinueAllAction';
+import { RunsByBranch } from './RunsByBranch';
+import { RunsByState } from './RunsByState';
 import { RunsGridAgentRow } from './RunsGridAgentRow';
 import { RunsGridRow } from './RunsGridRow';
+import { StopAllAction } from './StopAllAction';
 import { RUNS_GRID_COLUMNS } from './runsGridColumns';
+import { useRunVerbPress } from './useRunVerbPress';
+import { useRunsFolds } from './useRunsFolds';
 
 type Props = {
   readonly session: Session;
@@ -22,6 +31,15 @@ type Props = {
 
 type RowParams = {
   readonly run: SessionRun;
+  readonly rowKey: string;
+};
+
+type RenderParams = RowParams & {
+  readonly titleSuffix: ReactNode;
+};
+
+type MountParams = {
+  readonly mountId: MountId;
 };
 
 type AgentParams = {
@@ -34,50 +52,36 @@ const NO_AGENTS: ReadonlyArray<Agent> = [];
 const agentOf = ({ agents, agentId }: AgentParams): Agent | null =>
   agents.find((candidate) => candidate.id === agentId) ?? null;
 
-const FOLD_BUTTON = cn(
-  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
-  FOCUS_RING,
-);
-
 export const RunsGrid = ({ session, runs }: Props) => {
   const sessionId = session.id;
   const now = useNow(30_000);
   const navigate = useAppStore((state) => state.navigate);
+  const setGroupBy = useAppStore((state) => state.setGroupBy);
+  const verbPress = useRunVerbPress({ sessionId });
   const { aggregatesByAgentId } = useAgentMetrics({ sessionId });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? NO_AGENTS);
-  const [isEarlierShown, setIsEarlierShown] = useState(false);
-  const [isArchivedShown, setIsArchivedShown] = useState(false);
-  const archived = runs.filter((run) => run.isArchived);
-  const live = runs.filter((run) => !run.isArchived);
-  const active = live.filter((run) => !run.isFinished);
-  const finished = live.filter((run) => run.isFinished);
-  const shownFinished = isEarlierShown ? finished : finished.slice(0, VISIBLE_FINISHED_COUNT);
-  const earlierCount = Math.max(0, finished.length - VISIBLE_FINISHED_COUNT);
-  const rowIds = useMemo(() => runs.map((run) => run.id), [runs]);
-  const rowReturn = useRowReturn({ listKey: 'runs', rowIds, rowAttribute: 'data-row-key' });
-  const { returnRowId } = rowReturn;
-  const isReturnEarlier =
-    returnRowId !== null &&
-    finished.slice(VISIBLE_FINISHED_COUNT).some((run) => run.id === returnRowId);
-  const isReturnArchived = returnRowId !== null && archived.some((run) => run.id === returnRowId);
-  const unfoldedFor = useRef<string | null>(null);
+  const mountGroups = useMountRows({ sessionId });
+  const mounts = useMemo(
+    () => mountGroups.flatMap((group) => [...group.rows, ...group.finishedRows]),
+    [mountGroups],
+  );
+  const branchCount = useMemo(
+    () => new Set(runs.flatMap((run) => run.branches.map((branch) => branch.mountId))).size,
+    [runs],
+  );
+  const groupBy = useGroupBy({ sessionId, branchCount });
+  const stateGroups = useMemo(() => runGroupsOf({ runs }), [runs]);
+  const branchGroups = useMemo(() => branchGroupsOf({ runs, mounts }), [runs, mounts]);
+  const folds = useRunsFolds({ groupBy, runs, branchGroups });
+  const { rowReturn, revealRun } = folds;
 
-  useEffect(() => {
-    if (returnRowId === null || unfoldedFor.current === returnRowId) {
-      return;
-    }
-    if (isReturnEarlier) {
-      unfoldedFor.current = returnRowId;
-      setIsEarlierShown(true);
-    }
-    if (isReturnArchived) {
-      unfoldedFor.current = returnRowId;
-      setIsArchivedShown(true);
-    }
-  }, [returnRowId, isReturnEarlier, isReturnArchived]);
+  const openBranch = ({ mountId }: MountParams) => {
+    const mount = mounts.find((candidate) => candidate.mountId === mountId);
+    navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+  };
 
-  const open = ({ run }: RowParams) => {
-    rowReturn.remember({ rowId: run.id });
+  const open = ({ run, rowKey }: RowParams) => {
+    rowReturn.remember({ rowId: rowKey });
     switch (run.open.kind) {
       case 'run':
         navigate({ to: runPlace({ sessionId, runId: run.open.runId }) });
@@ -96,7 +100,7 @@ export const RunsGrid = ({ session, runs }: Props) => {
     }
   };
 
-  const renderRow = ({ run }: RowParams) => {
+  const renderRow = ({ run, rowKey, titleSuffix }: RenderParams) => {
     const aggregates = run.agentIds.map((agentId) => aggregatesByAgentId.get(agentId));
     const isCostTracked = aggregates.some((aggregate) => (aggregate?.turns ?? 0) > 0);
     const agent =
@@ -109,81 +113,72 @@ export const RunsGrid = ({ session, runs }: Props) => {
     if (agent === null) {
       return (
         <RunsGridRow
-          key={run.id}
-          sessionId={sessionId}
+          key={rowKey}
+          session={session}
           run={run}
+          rowKey={rowKey}
           modelLine={null}
           costUsd={costUsd}
+          titleSuffix={titleSuffix}
           now={now}
-          onOpen={() => open({ run })}
+          isVerbBusy={verbPress.isBusy({ run })}
+          onOpen={() => open({ run, rowKey })}
+          onVerb={() => verbPress.press({ run })}
         />
       );
     }
     return (
       <RunsGridAgentRow
-        key={run.id}
-        sessionId={sessionId}
+        key={rowKey}
+        session={session}
         run={run}
+        rowKey={rowKey}
         agent={agent}
         costUsd={costUsd}
+        titleSuffix={titleSuffix}
         now={now}
-        onOpen={() => open({ run })}
+        isVerbBusy={verbPress.isBusy({ run })}
+        onOpen={() => open({ run, rowKey })}
+        onVerb={() => verbPress.press({ run })}
       />
     );
   };
 
   return (
-    <ListGrid label={NAMES.runs} columns={RUNS_GRID_COLUMNS} isGrouped>
-      {active.length > 0 ? (
-        <ListGridGroup
-          headingLevel={2}
-          label="In progress"
-          count={active.length}
-          action={<InProgressAction sessionId={sessionId} runs={active} />}
-        >
-          {active.map((run) => renderRow({ run }))}
-        </ListGridGroup>
-      ) : null}
-      {finished.length > 0 ? (
-        <ListGridGroup
-          headingLevel={2}
-          label="Finished"
-          count={finished.length}
-          action={
-            earlierCount === 0 ? null : (
-              <button
-                type="button"
-                className={FOLD_BUTTON}
-                aria-expanded={isEarlierShown}
-                onClick={() => setIsEarlierShown((isShown) => !isShown)}
-              >
-                {isEarlierShown ? 'Show fewer' : 'Show all'}
-              </button>
-            )
-          }
-        >
-          {shownFinished.map((run) => renderRow({ run }))}
-        </ListGridGroup>
-      ) : null}
-      {archived.length > 0 ? (
-        <ListGridGroup
-          headingLevel={2}
-          label="Archived"
-          count={archived.length}
-          action={
-            <button
-              type="button"
-              className={FOLD_BUTTON}
-              aria-expanded={isArchivedShown}
-              onClick={() => setIsArchivedShown((isShown) => !isShown)}
-            >
-              {isArchivedShown ? 'Hide' : 'Show'}
-            </button>
-          }
-        >
-          {isArchivedShown ? archived.map((run) => renderRow({ run })) : null}
-        </ListGridGroup>
-      ) : null}
-    </ListGrid>
+    <div className="flex min-w-0 flex-col gap-3">
+      <div data-runs-actions="" className="flex items-center justify-end gap-3 empty:hidden">
+        <StopAllAction sessionId={sessionId} />
+        <ContinueAllAction sessionId={sessionId} runs={runs} />
+        {branchCount < 2 ? null : (
+          <GroupBySwitch
+            value={groupBy}
+            onChange={(next) => setGroupBy({ sessionId, groupBy: next })}
+          />
+        )}
+      </div>
+      <ListGrid label={NAMES.runs} columns={RUNS_GRID_COLUMNS} isGrouped>
+        {groupBy === 'branch' ? (
+          <RunsByBranch
+            groups={branchGroups}
+            mounts={mounts}
+            openGroups={folds.openGroups}
+            onToggleGroup={folds.toggleGroup}
+            onOpenBranch={openBranch}
+            onRevealRun={revealRun}
+            renderRow={renderRow}
+          />
+        ) : (
+          <RunsByState
+            groups={stateGroups}
+            isEarlierShown={folds.isEarlierShown}
+            isArchivedShown={folds.isArchivedShown}
+            onToggleEarlier={folds.toggleEarlier}
+            onToggleArchived={folds.toggleArchived}
+            onOpenBranch={openBranch}
+            renderRow={renderRow}
+          />
+        )}
+      </ListGrid>
+    </div>
   );
 };

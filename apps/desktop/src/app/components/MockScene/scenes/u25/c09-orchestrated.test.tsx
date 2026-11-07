@@ -141,16 +141,11 @@ describe('the c09 orchestrated scenes', () => {
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
     expect(within(tail()).getByText(/^Step 3 is running: Tester/)).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Stop step 3' })).toBeDefined();
-    act(() => {
-      within(tail()).getByRole('button', { name: 'Why this step' }).click();
-    });
-    expect(
-      within(tail()).getByText('The batching must be proven on 12,000 rows before any CSV work.'),
-    ).toBeDefined();
+    expect(within(tail()).queryByRole('button', { name: 'Why this step' })).toBeNull();
     const queued = screen.getByRole('list', { name: 'Queued hints' });
-    expect(screen.getAllByText('Queued hints 1, read at the next decision')).toHaveLength(1);
+    expect(screen.getAllByText('Queued, read at the next decision')).toHaveLength(1);
     expect(nodeOf('[data-slot="pane-dock"]').contains(queued)).toBe(false);
-    expect(nodeOf('[data-hint-queue-line]').textContent).toMatch(/^1 hint queued/);
+    expect(document.querySelector('[data-hint-queue-line]')).toBeNull();
     expect(within(queued).getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     const dock = nodeOf('[data-slot="pane-dock"]');
@@ -159,15 +154,11 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
   });
 
-  it('c09-orch-step opens the step in the pane, the latest reason stays under the tail only', async () => {
+  it('c09-orch-step opens the step in the pane with its reason there', async () => {
     await mount('c09-orch-step');
 
     expect(screen.getByText('Step 3 · Tester')).toBeDefined();
-    expect(document.querySelector('[data-step-reason]')).toBeNull();
-    act(() => {
-      within(tail()).getByRole('button', { name: 'Why this step' }).click();
-    });
-    within(nodeOf('[data-orchestrated-reason]')).getByText(
+    expect(nodeOf('[data-step-reason]').textContent).toContain(
       'The batching must be proven on 12,000 rows before any CSV work.',
     );
     const pane = nodeOf('[data-run-step-pane]');
@@ -237,7 +228,8 @@ describe('the c09 orchestrated scenes', () => {
   it('c09-orch-done shows the result with Done, Left and the next moves', async () => {
     await mount('c09-orch-done');
 
-    expect(within(tail()).getByText('Run complete')).toBeDefined();
+    expect(document.querySelector('[data-orchestrated-tail]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Run settings' })).toBeNull();
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
     const resume = screen.getByRole('form', { name: 'Continue with a hint' });
     expect(within(resume).getByRole('textbox', { name: 'Continue with a hint' })).toBeDefined();
@@ -304,7 +296,6 @@ describe('the c09 orchestrated scenes', () => {
     expect(alert.textContent).toContain('database is locked');
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(field).toHaveProperty('value', 'Also cover the ledger-core refund path');
-    expect(within(tail()).getByText('Run complete')).toBeDefined();
   });
 
   it('c09-orch-done starts an empty hint box when another complete run takes the page', async () => {
@@ -366,7 +357,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(menu).queryByText('Asks you')).toBeNull();
     expect(within(menu).getByText('Step routing')).toBeDefined();
     expect(within(menu).getByText('Skip step 3')).toBeDefined();
-    expect(within(menu).getByText('Copy run summary')).toBeDefined();
+    expect(within(menu).getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
     expect(within(menu).queryByText('Pause run')).toBeNull();
     const live = within(
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
@@ -377,15 +368,7 @@ describe('the c09 orchestrated scenes', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent?.replace(/…$/, '')),
-    ).toEqual([
-      'Skip step 3',
-      'Step routing',
-      'Save as preset',
-      'Copy run summary',
-      'Stop run',
-      'Archive run',
-      'Delete run',
-    ]);
+    ).toEqual(['Skip step 3', 'Rename', 'Step routing', 'Stop run', 'Archive run']);
   });
   it('c09-orch-guidance shows the process and the standing guidance under Hide guidance', async () => {
     await mount('c09-orch-guidance');

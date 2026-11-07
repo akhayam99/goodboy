@@ -144,7 +144,7 @@ describe('foldSpawnedRowsOf', () => {
     });
 
     expect(failed.find(({ row }) => row.id === 'lead')?.urgency).toEqual({
-      word: 'Failed',
+      word: '1 of 2 helpers failed',
       tone: 'danger',
       isNeedsYou: false,
     });
@@ -185,7 +185,10 @@ describe('foldSpawnedRowsOf', () => {
     const shown = foldSpawnedRowsOf({ rows, expanded: {}, isOpenByDefault: false });
 
     expect(shown).toHaveLength(1);
-    expect(shown[0]?.urgency).toMatchObject({ word: 'Failed', isNeedsYou: false });
+    expect(shown[0]?.urgency).toMatchObject({
+      word: '1 of 4 helpers failed',
+      isNeedsYou: false,
+    });
   });
 
   it('lets the user close a fold that opened itself', () => {

@@ -165,6 +165,7 @@ describe('orchestratedTailOf', () => {
       agents: [DONE, blocked],
     });
     expect(tail.blockedAgentId).toBe(blocked.id);
+    expect(tail.phrase).toBe('Not finished');
     expect(tail.verbs).toEqual([
       { kind: 'restartStep' },
       { kind: 'openAgentChat', agentId: blocked.id },
@@ -178,6 +179,7 @@ describe('orchestratedTailOf', () => {
       agents: [DONE, failed],
     });
     expect(tail.blockedAgentId).toBeNull();
+    expect(tail.phrase).toBe('Paused on failed step 2');
     expect(tail.verbs).toEqual([{ kind: 'restartStep' }]);
   });
 

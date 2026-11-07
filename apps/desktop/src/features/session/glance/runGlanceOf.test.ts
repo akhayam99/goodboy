@@ -27,19 +27,15 @@ describe('runGlanceOf', () => {
     expect(glance.sentence).toBe('3 of 3 steps');
   });
 
-  it('counts the agents of a dynamic run and starts with a plain word', () => {
+  it('counts the steps done of a dynamic run and starts with a plain word', () => {
     expect(runGlanceOf({ ...BASE, isDynamic: true, doneCount: 0 }).sentence).toBe(
       'Getting started',
     );
-    expect(runGlanceOf({ ...BASE, isDynamic: true, doneCount: 2 }).sentence).toBe(
-      '2 agents finished',
-    );
+    expect(runGlanceOf({ ...BASE, isDynamic: true, doneCount: 2 }).sentence).toBe('2 steps done');
   });
 
   it('says one agent and one step in the singular', () => {
-    expect(runGlanceOf({ ...BASE, isDynamic: true, doneCount: 1 }).sentence).toBe(
-      '1 agent finished',
-    );
+    expect(runGlanceOf({ ...BASE, isDynamic: true, doneCount: 1 }).sentence).toBe('1 step done');
     expect(runGlanceOf({ ...BASE, stepCount: 1 }).sentence).toBe('1 of 1 step');
   });
 

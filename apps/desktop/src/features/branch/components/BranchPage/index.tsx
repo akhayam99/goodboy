@@ -456,7 +456,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             />
             <BranchTabStrip tabs={tabs} facts={entryFacts} value={tab} onSelect={selectTab} />
             <BranchWorkLines
-              sessionId={sessionId}
+              session={session}
               checkWork={controls.checkWork}
               run={branchReview.run}
               lane={branchReview.lane}

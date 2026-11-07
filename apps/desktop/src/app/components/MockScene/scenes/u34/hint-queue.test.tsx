@@ -21,8 +21,22 @@ import { MOCK_SCENES } from '../..';
 import { HINT_NODE_SEED } from '../surfaces/hint-node/hintNodeSeed';
 import { U34_HINT_QUEUE_SCENES } from './hint-queue';
 
+type QueueReport = {
+  readonly isIntersecting: boolean;
+};
+
+let reportQueue: (report: QueueReport) => void = () => undefined;
+
+class QueueObserver {
+  constructor(callback: (entries: ReadonlyArray<QueueReport>) => void) {
+    reportQueue = (report) => callback([report]);
+  }
+  observe(): void {}
+  disconnect(): void {}
+}
+
 const WAIT = { timeout: 15_000 };
-const HEADING_TEN = 'Queued hints 10, read at the next decision';
+const HEADING_TEN = 'Queued, read at the next decision';
 
 const Scene = U34_HINT_QUEUE_SCENES['u34-p24-ten-hints'];
 const ReadingScene = U34_HINT_QUEUE_SCENES['u34-p24-ten-hints-reading'];
@@ -76,6 +90,29 @@ const composerOf = (): HTMLElement => {
 const queueOf = () => within(screen.getByRole('list', { name: 'Queued hints' }));
 
 describe('the queued hints on the run line', () => {
+  beforeEach(() => {
+    vi.stubGlobal('IntersectionObserver', QueueObserver);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('shows the dock line only while the queue is out of view', async () => {
+    render(<Scene />);
+    await screen.findByText(HEADING_TEN, undefined, WAIT);
+    expect(document.querySelector('[data-hint-queue-line]')).toBeNull();
+
+    act(() => reportQueue({ isIntersecting: false }));
+    const input = screen.getByPlaceholderText('Hint the orchestrator');
+    const line = document.querySelector<HTMLElement>('[data-hint-queue-line]');
+    expect(line?.getAttribute('data-hint-queue-line')).toBe('over-the-input');
+    expect(line?.contains(input)).toBe(false);
+
+    act(() => reportQueue({ isIntersecting: true }));
+    expect(document.querySelector('[data-hint-queue-line]')).toBeNull();
+  });
+
   it('registers both scenes', () => {
     expect(MOCK_SCENES['u34-p24-ten-hints']).toBe(Scene);
     expect(MOCK_SCENES['u34-p24-ten-hints-reading']).toBe(ReadingScene);
@@ -89,7 +126,6 @@ describe('the queued hints on the run line', () => {
     expect(composerOf().contains(list)).toBe(false);
     expect(within(list).getAllByRole('listitem')).toHaveLength(10);
     expect(within(composerOf()).queryAllByRole('list')).toHaveLength(0);
-    within(composerOf()).getByText(/^10 hints queued/);
     screen.getByPlaceholderText('Hint the orchestrator');
   });
 
@@ -125,6 +161,8 @@ describe('the queued hints on the run line', () => {
       ),
     ).toHaveLength(0);
 
+    act(() => reportQueue({ isIntersecting: false }));
+    within(composerOf()).getByText(/hints queued/);
     fireEvent.click(within(composerOf()).getByRole('button', { name: 'View' }));
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(
       document.querySelector(`[data-hint-queue="${HINT_NODE_SEED.runId}"]`),
@@ -164,7 +202,6 @@ describe('the queued hints on the run line', () => {
     const row = within(reading);
     row.getByText('Reading now');
     expect(row.getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(true);
-    within(composerOf()).getByText(/^10 hints queued/);
   });
 
   it('follows a second window that removed a hint', async () => {
@@ -193,8 +230,7 @@ describe('the queued hints on the run line', () => {
         ],
       }),
     );
-    await screen.findByText('Queued hints 9, read at the next decision');
-    within(composerOf()).getByText(/^9 hints queued/);
+    await screen.findByText('Queued, read at the next decision');
     expect(queueOf().queryByText('Add a test for the 502 from payments-api.')).toBeNull();
   });
 

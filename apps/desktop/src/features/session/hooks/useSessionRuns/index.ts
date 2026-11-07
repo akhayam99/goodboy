@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, Session, TurnState } from '@goodboy/types';
+import type { Agent, Session, SessionMountView, TurnState } from '@goodboy/types';
 import { planRevisingStartIn } from '../../../plans/planRevisingStartIn';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
@@ -16,6 +16,9 @@ type Params = {
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
 const NO_AUTO_VIEWS: ReadonlyArray<AutoTreeView> = [];
+
+const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
+
 export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> => {
   const sessionId = session.id;
   const attachedRuns = useAttachedWorkflowRuns({ session });
@@ -24,6 +27,8 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
   const autoViews = useAppStore((state) => state.autoTreeViews[sessionId] ?? NO_AUTO_VIEWS);
   const orchestrating = useAppStore((state) => state.orchestratingWorkflowRuns);
   const questions = useSessionOpenQuestions(sessionId);
+  const mounts = useAppStore((state) => state.sessionMounts[sessionId] ?? NO_MOUNTS);
+  const projects = useAppStore((state) => state.projects);
   const turnByAgentId = useLiveAgentTurns({ agents });
   const revisingStarts = useAppStore(
     useShallow((state) => {
@@ -61,6 +66,8 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
         rootTurns,
         turnByAgentId,
         revisingStarts,
+        mounts,
+        projects,
       }),
     [
       attachedRuns,
@@ -72,6 +79,8 @@ export const useSessionRuns = ({ session }: Params): ReadonlyArray<SessionRun> =
       rootTurns,
       turnByAgentId,
       revisingStarts,
+      mounts,
+      projects,
     ],
   );
 };

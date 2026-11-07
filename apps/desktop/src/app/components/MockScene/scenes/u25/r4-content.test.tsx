@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type SessionId } from '@goodboy/types';
-import { requestRename } from '../../../../../features/actions/renameRequest';
+import { requestRename } from '../../../../../shared/utils/renameRequest';
 import { sessionObjectKey } from '../../../../../features/actions/kinds/session';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';

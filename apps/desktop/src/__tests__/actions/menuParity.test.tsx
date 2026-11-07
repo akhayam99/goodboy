@@ -374,14 +374,11 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(registry);
     expect(fromContext).not.toContain('Open run');
     expect(fromOverflow).toEqual([
-      'View diff',
       'Skip step 1',
+      'Rename',
       'Step routing',
-      'Save as preset',
-      'Copy run summary',
       'Stop run',
       'Archive run',
-      'Delete run',
     ]);
     const live = screen
       .getAllByRole('button')

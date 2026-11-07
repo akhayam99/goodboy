@@ -1,8 +1,9 @@
 import { resolveRootAgent } from '../../../features/session/agent-kind';
 import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
-import { sessionPlace } from './place';
+import { branchPlace, sessionPlace } from './place';
 import { placeBeforeDraft } from './placeBeforeDraft';
+import { runGroupFocusOf } from './runGroupFocusOf';
 import type { Place } from './types';
 
 type Params = {
@@ -80,6 +81,12 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
   }
   if (view.target !== null && view.target.kind !== 'diff' && view.target.kind !== 'thread') {
     return { ...place, view: { ...view, target: null } };
+  }
+  if (view.lens === 'workflows' && view.target === null) {
+    const runGroup = runGroupFocusOf({ state });
+    if (runGroup !== null) {
+      return branchPlace({ sessionId, mountPath: runGroup.mountPath });
+    }
   }
   if (view.lens !== null) {
     return sessionPlace({ sessionId });

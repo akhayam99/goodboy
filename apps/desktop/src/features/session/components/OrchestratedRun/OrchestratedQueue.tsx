@@ -69,9 +69,9 @@ export const OrchestratedQueue = ({
         </span>
         <p
           data-hint-queue-heading=""
-          className="min-w-0 flex-1 truncate px-2 text-ui tabular-nums text-faint-foreground"
+          className="min-w-0 flex-1 truncate px-2 text-ui text-faint-foreground"
         >
-          {ORCHESTRATED_COPY.queuedHintsHeading({ count: hints.length })}
+          {ORCHESTRATED_COPY.queuedHintsHeading}
         </p>
       </div>
       <ul aria-label="Queued hints" className="flex min-w-0 flex-col">

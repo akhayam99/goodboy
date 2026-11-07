@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ChatId } from '@goodboy/types';
-import { RENAME_REQUEST_EVENT } from '../renameRequest';
+import { RENAME_REQUEST_EVENT } from '../../../shared/utils/renameRequest';
 import { resolveActions } from '../resolveActions';
 import type { ActionEnv } from '../types';
 import { CHAT_KIND, chatObjectKey, type ChatFacts } from './chat';

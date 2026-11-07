@@ -2,11 +2,13 @@ import type {
   Agent,
   AgentId,
   OpenQuestion,
+  SessionMountView,
   TurnEvent,
   TurnState,
+  WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { agentStateOf } from '../workTreeModel/agentStateOf';
+import { agentStateOf, STOPPED_WORD } from '../workTreeModel/agentStateOf';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
@@ -14,7 +16,8 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { autoTreeWordOf, type AutoTreeState, type AutoTreeWord } from '../auto/autoTreeWordOf';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
 import { splitWorkflowRuns } from '../workflows/activeWorkflowRuns';
-import { runRowFactsOf } from '../workflows/runRowFactsOf';
+import { cutStepIdOf } from '../workflows/cutStepIdOf';
+import { runRowFactsOf, type RunRowFacts } from '../workflows/runRowFactsOf';
 import { workflowKindName } from '../workflows/workflowKindName';
 import {
   agentKindPalette,
@@ -27,6 +30,7 @@ import { autoRootTitleOf } from './components/AutoAgentsPane/autoRootTitleOf';
 import { agentCountLabelOf } from './agentCountLabelOf';
 import { descendantAgentsOf } from './descendantAgentsOf';
 import { runAgentCountOf } from './runAgentCountOf';
+import { workBranchesOf, type WorkBranch, type WorkBranchProject } from './workBranchesOf';
 
 type SessionRunKind = 'preset' | 'orchestrated' | 'auto' | 'agent';
 
@@ -36,6 +40,13 @@ type SessionRunOpen = Readonly<
   | { kind: 'run'; runId: WorkflowRunId }
   | { kind: 'auto'; agentId: AgentId }
   | { kind: 'agent'; agentId: AgentId }
+>;
+
+export type SessionRunVerb = Readonly<
+  | { kind: 'continue'; agentId: AgentId }
+  | { kind: 'start'; agentId: AgentId }
+  | { kind: 'continueRun'; runId: WorkflowRunId }
+  | { kind: 'startRun'; runId: WorkflowRunId }
 >;
 
 export type SessionRun = Readonly<{
@@ -57,7 +68,11 @@ export type SessionRun = Readonly<{
   revisingSince: number | null;
   agentIds: ReadonlyArray<AgentId>;
   open: SessionRunOpen;
+  verb: SessionRunVerb | null;
+  branches: ReadonlyArray<WorkBranch>;
 }>;
+
+type SessionRunRow = Omit<SessionRun, 'branches'>;
 
 type Params = {
   readonly attachedRuns: ReadonlyArray<AttachedRun>;
@@ -69,6 +84,8 @@ type Params = {
   readonly rootTurns: Readonly<Record<string, TurnState | undefined>>;
   readonly turnByAgentId: ReadonlyMap<string, TurnState>;
   readonly revisingStarts: Readonly<Record<string, number>>;
+  readonly mounts: ReadonlyArray<SessionMountView>;
+  readonly projects: ReadonlyArray<WorkBranchProject>;
 };
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
@@ -122,6 +139,56 @@ type UnreadParams = {
 const isUnreadOf = ({ agents, agentIds }: UnreadParams): boolean =>
   agents.some((agent) => agentIds.includes(agent.id) && agentHasUnread(agent, false));
 
+type StartParams = {
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+const startVerbOf = ({ agents }: StartParams): SessionRunVerb | null => {
+  const next = agents
+    .filter((agent) => agent.status === 'pending' && agent.parentAgentId == null)
+    .sort((left, right) => left.ordinal - right.ordinal)[0];
+  return next === undefined ? null : { kind: 'start', agentId: next.id };
+};
+
+type ContinueAgentParams = {
+  readonly agent: Agent;
+};
+
+const continueAgentVerbOf = ({ agent }: ContinueAgentParams): SessionRunVerb | null =>
+  agent.status === 'stopped' && agent.doneAt == null
+    ? { kind: 'continue', agentId: agent.id }
+    : null;
+
+type WorkflowVerbParams = {
+  readonly run: WorkflowRun;
+  readonly facts: RunRowFacts;
+  readonly stepAgents: ReadonlyArray<Agent>;
+};
+
+const continueRunVerbOf = ({
+  run,
+  stepAgents,
+}: Omit<WorkflowVerbParams, 'facts'>): SessionRunVerb | null => {
+  const cutStepId = cutStepIdOf({ agents: stepAgents, workflowRunId: run.id });
+  if (cutStepId !== null) {
+    return { kind: 'continue', agentId: cutStepId };
+  }
+  if (run.executionMode === 'dynamic') {
+    return { kind: 'continueRun', runId: run.id };
+  }
+  return startVerbOf({ agents: stepAgents });
+};
+
+const workflowVerbOf = ({ run, facts, stepAgents }: WorkflowVerbParams): SessionRunVerb | null => {
+  if (facts.isQueuedManual) {
+    return { kind: 'startRun', runId: run.id };
+  }
+  if (facts.isStartable) {
+    return startVerbOf({ agents: stepAgents });
+  }
+  return facts.isContinuable ? continueRunVerbOf({ run, stepAgents }) : null;
+};
+
 type WorkflowRowsParams = Pick<
   Params,
   'attachedRuns' | 'agents' | 'orchestrating' | 'questions' | 'revisingStarts'
@@ -133,7 +200,7 @@ const workflowRowsOf = ({
   orchestrating,
   questions,
   revisingStarts,
-}: WorkflowRowsParams): ReadonlyArray<SessionRun> => {
+}: WorkflowRowsParams): ReadonlyArray<SessionRunRow> => {
   const { agentsByRunId } = splitWorkflowRuns({ attachedRuns, agents });
   const nameByRunId = new Map(
     attachedRuns.map(({ run, workflow }) => [run.id, run.title ?? workflowKindName({ workflow })]),
@@ -177,6 +244,7 @@ const workflowRowsOf = ({
       revisingSince: revisingStarts[run.id] ?? null,
       agentIds,
       open: { kind: 'run', runId: run.id },
+      verb: workflowVerbOf({ run, facts, stepAgents }),
     };
   });
 };
@@ -212,7 +280,7 @@ type AutoRowParams = {
   readonly rootTurns: Params['rootTurns'];
 };
 
-const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRun => {
+const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): SessionRunRow => {
   const view = autoViews.find((candidate) => candidate.tree.rootAgentId === root.id);
   const resting: Pick<AutoTreeWord, 'state' | 'word'> =
     root.status === 'running'
@@ -243,6 +311,7 @@ const autoRowOf = ({ root, agents, autoViews, rootTurns }: AutoRowParams): Sessi
     revisingSince: null,
     agentIds,
     open: { kind: 'auto', agentId: root.id },
+    verb: dot === 'stopped' ? continueAgentVerbOf({ agent: root }) : null,
   };
 };
 
@@ -254,7 +323,7 @@ type AgentRowParams = {
   readonly turn: TurnState | undefined;
 };
 
-const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): SessionRun => {
+const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): SessionRunRow => {
   const state = agentStateOf({
     agent,
     turn,
@@ -282,6 +351,7 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     revisingSince: null,
     agentIds,
     open: { kind: 'agent', agentId: agent.id },
+    verb: state.word === STOPPED_WORD ? continueAgentVerbOf({ agent }) : null,
   };
 };
 
@@ -314,6 +384,8 @@ export const sessionRunsOf = ({
   rootTurns,
   turnByAgentId,
   revisingStarts,
+  mounts,
+  projects,
 }: Params): ReadonlyArray<SessionRun> => {
   const standalone = agents.filter((agent) => isStandaloneAgent({ agent }));
   const kinds = standalone.map((agent) => ({
@@ -332,5 +404,10 @@ export const sessionRunsOf = ({
     ...workflowRowsOf({ attachedRuns, agents, orchestrating, questions, revisingStarts }),
     ...autoRows,
     ...agentRows,
-  ].sort(compareRuns);
+  ]
+    .map((row) => ({
+      ...row,
+      branches: workBranchesOf({ agentIds: row.agentIds, agents, mounts, projects }),
+    }))
+    .sort(compareRuns);
 };

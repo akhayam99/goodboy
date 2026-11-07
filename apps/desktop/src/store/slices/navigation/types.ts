@@ -47,10 +47,16 @@ export type PlaceRequest =
       readonly agentId: AgentId;
     };
 
+export type RunGroupFocus = {
+  readonly groupKey: string;
+  readonly mountPath: string | null;
+};
+
 export type Focus = {
   readonly drawer: OpenDrawer | null;
   readonly scroll: Readonly<Record<string, number>>;
   readonly returnRows?: Readonly<Record<string, string>>;
+  readonly runGroup?: RunGroupFocus;
 };
 
 export type Location = {

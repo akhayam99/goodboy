@@ -9,6 +9,7 @@ export type ListGridColumn = {
   readonly isShrinkable?: boolean;
   readonly canSpanEmpty?: boolean;
   readonly hideBelow?: number;
+  readonly yieldsTo?: string;
 };
 
 type Params = {

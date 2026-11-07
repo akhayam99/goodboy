@@ -355,7 +355,7 @@ describe('primary surfaces mount on real store selectors', () => {
     await mountSurface({ ui: <SessionDraftPane workspaceId={WORKSPACE_ID} /> });
 
     screen.getByRole('textbox', { name: 'Goal' });
-    screen.getByRole('tablist', { name: 'What kind of run?' });
+    screen.getByRole('button', { name: 'How: Auto' });
     expect(screen.queryByRole('tablist', { name: 'How do you want to start?' })).toBeNull();
     expectNoRenderLoop();
   });

@@ -46,6 +46,39 @@ const renderGrid = ({ onSelect }: RenderParams) =>
   );
 
 describe('ListGrid', () => {
+  it('draws an overlay as a sibling of the row button, in its own column', () => {
+    const onSelect = vi.fn();
+    const onChip = vi.fn();
+    render(
+      <ListGrid label="Runs" columns={COLUMNS}>
+        <ListGridRow
+          ariaLabel="Open the export"
+          onSelect={onSelect}
+          cells={['', 'Implementer', '', '1:12']}
+          overlays={[
+            {
+              column: 'title',
+              node: (
+                <button type="button" onClick={onChip}>
+                  feat/retry-budget
+                </button>
+              ),
+            },
+            { column: 'state', node: null },
+          ]}
+        />
+      </ListGrid>,
+    );
+
+    const row = screen.getByRole('button', { name: 'Open the export' });
+    const chip = screen.getByRole('button', { name: 'feat/retry-budget' });
+    expect(row.contains(chip)).toBe(false);
+    expect(document.querySelectorAll('[data-list-grid-aside]')).toHaveLength(1);
+    fireEvent.click(chip);
+    expect(onChip).toHaveBeenCalledTimes(1);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it('shares one column template with fixed leading and trailing columns and a fill title', () => {
     renderGrid({ onSelect: () => undefined });
     const list = screen.getByRole('list', { name: 'Agents' });
@@ -153,6 +186,30 @@ describe('ListGrid', () => {
     expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 56px 0px');
     expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(0);
     rect.mockRestore();
+  });
+
+  it('drops a column that yields to another while the other is shown', () => {
+    const columns: ReadonlyArray<ListGridColumn> = [
+      { key: 'title', width: 'fill', isTitle: true },
+      { key: 'origin', width: 200, shouldHideWhenEmpty: true, yieldsTo: 'model' },
+      { key: 'model', width: 152, shouldHideWhenEmpty: true },
+    ];
+    const { rerender } = render(
+      <ListGrid label="Runs" columns={columns}>
+        <ListGridRow key="a" cells={['Fix flaky tests', 'Workflow', 'Sonnet 5.5']} />
+      </ListGrid>,
+    );
+    const list = screen.getByRole('list', { name: 'Runs' });
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 152px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(0);
+
+    rerender(
+      <ListGrid label="Runs" columns={columns}>
+        <ListGridRow key="a" cells={['Fix flaky tests', 'Workflow', '']} />
+      </ListGrid>,
+    );
+    expect(list.style.gridTemplateColumns).toBe('0px minmax(0,1fr) 200px 0px');
+    expect(list.querySelectorAll('[data-list-grid-cell="origin"]')).toHaveLength(1);
   });
 
   it('lets a title cell take the empty cells after it when the column opts in', () => {

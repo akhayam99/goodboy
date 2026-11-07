@@ -6,7 +6,6 @@ import {
 } from '../../../../../features/context/components/QuestionsTab/useOpenQuestions';
 import {
   AGENT_BACKFILL_ID,
-  AGENT_ROUNDING_ID,
   CHAT_AGENTS,
   CHAT_AGENT_RESOLVER_ID,
   CHAT_ARTIFACTS,
@@ -207,7 +206,7 @@ export const seedWorkflowRun = () => {
       },
     },
     orchestratingWorkflowRuns: { [DYNAMIC_RUN_ID]: false },
-    selectedAgentId: { [FLOW_SESSION_ID]: AGENT_ROUNDING_ID },
+    selectedAgentId: {},
     focusedWorkflowRunId: { [FLOW_SESSION_ID]: DYNAMIC_RUN_ID },
     sessionOpenQuestions: { [FLOW_SESSION_ID]: [] },
     budgetAlerts: [],
@@ -223,19 +222,18 @@ export const seedWorkflowRunFinished = () => {
     sessionPhaseRuns: { [FLOW_SESSION_ID]: FINISHED_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
     sessionTelemetry: { [FLOW_SESSION_ID]: FLOW_TELEMETRY },
     agentTurnState: {},
-    selectedAgentId: { [FLOW_SESSION_ID]: AGENT_ROUNDING_ID },
+    selectedAgentId: {},
   });
 };
 
 export const seedWorkflowRunParallel = () => {
   seedWorkflowRun();
-  const running = PARALLEL_AGENTS.find((agent) => agent.status === 'running');
   useAppStore.setState({
     sessions: PARALLEL_SESSIONS,
     sessionPhaseRuns: { [FLOW_SESSION_ID]: PARALLEL_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
     sessionTelemetry: { [FLOW_SESSION_ID]: PARALLEL_TELEMETRY },
     agentTurnState: PARALLEL_TURNS,
-    selectedAgentId: { [FLOW_SESSION_ID]: running?.id ?? AGENT_ROUNDING_ID },
+    selectedAgentId: {},
   });
 };
 

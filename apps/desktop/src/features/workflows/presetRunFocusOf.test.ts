@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { AgentId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, StepId, WorkflowRunId } from '@goodboy/types';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { presetRunFocusOf } from './presetRunFocusOf';
 
@@ -10,6 +10,8 @@ const STEP: AgentId = JSON.parse('"agent-step"');
 const CHILD: AgentId = JSON.parse('"agent-child"');
 const LOOSE: AgentId = JSON.parse('"agent-loose"');
 const ORCHESTRATED_STEP: AgentId = JSON.parse('"agent-orchestrated-step"');
+const ORCHESTRATED_HELPER: AgentId = JSON.parse('"agent-orchestrated-helper"');
+const ORCHESTRATED_STEP_ID: StepId = JSON.parse('"step-orchestrated"');
 
 const RUNS = [
   aWorkflowRun({ id: PRESET, executionMode: 'static' }),
@@ -20,7 +22,8 @@ const AGENTS = [
   anAgent({ id: STEP, workflowRunId: PRESET }),
   anAgent({ id: CHILD, parentAgentId: STEP }),
   anAgent({ id: LOOSE }),
-  anAgent({ id: ORCHESTRATED_STEP, workflowRunId: ORCHESTRATED }),
+  anAgent({ id: ORCHESTRATED_STEP, workflowRunId: ORCHESTRATED, stepId: ORCHESTRATED_STEP_ID }),
+  anAgent({ id: ORCHESTRATED_HELPER, workflowRunId: ORCHESTRATED }),
 ];
 
 type FocusParams = {
@@ -45,9 +48,16 @@ describe('presetRunFocusOf', () => {
     expect(focusOf({ selectedAgentId: CHILD })).toEqual({ runId: PRESET, agentId: CHILD });
   });
 
-  it('never drills for an orchestrated run, a loose agent or another lens', () => {
+  it('lands a step of an orchestrated run on the same step page', () => {
+    expect(focusOf({ selectedAgentId: ORCHESTRATED_STEP })).toEqual({
+      runId: ORCHESTRATED,
+      agentId: ORCHESTRATED_STEP,
+    });
+  });
+
+  it('leaves the orchestrated overview, a loose agent and another lens alone', () => {
     expect(focusOf({ lens: 'workflows', focusedRunId: ORCHESTRATED })).toBeNull();
-    expect(focusOf({ selectedAgentId: ORCHESTRATED_STEP })).toBeNull();
+    expect(focusOf({ selectedAgentId: ORCHESTRATED_HELPER })).toBeNull();
     expect(focusOf({ selectedAgentId: LOOSE })).toBeNull();
     expect(focusOf({ lens: 'agents', focusedRunId: PRESET })).toBeNull();
   });

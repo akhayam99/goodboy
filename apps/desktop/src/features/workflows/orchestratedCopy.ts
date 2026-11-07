@@ -44,12 +44,10 @@ export const ORCHESTRATED_COPY = {
   hintImagesRetry: 'Retry',
   hintImagesLoadFailed: "Couldn't load the hint images",
   why: ({ reason }: ReasonParams): string => `Why: ${reason}`,
-  whyThisStep: 'Why this step',
   done: 'Done',
   left: 'Left',
   composerPlaceholder: 'Hint the orchestrator',
-  queuedHintsHeading: ({ count }: CountParams): string =>
-    `Queued hints ${count}, read at the next decision`,
+  queuedHintsHeading: 'Queued, read at the next decision',
   queuedHintsLine: ({ count }: CountParams): string =>
     `${countNoun({ count, one: 'hint' })} queued`,
   queuedHintsView: 'View',

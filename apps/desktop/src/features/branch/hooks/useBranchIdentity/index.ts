@@ -11,7 +11,7 @@ import {
   sessionPullRequestOf,
 } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
-import { resolveDiffMount } from '../../../session/components/SessionWorkspace/parts/resolveDiffMount';
+import { resolveDiffMount } from '../../../session/resolveDiffMount';
 
 type Params = {
   readonly sessionId: SessionId;

@@ -1,11 +1,9 @@
 import { PANE_RHYTHM, PaneShell, TERMINAL_DIM, cn } from '@goodboy/ui';
 import type { Session, Workflow, WorkflowRun } from '@goodboy/types';
-import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { AgentHeader } from '../AgentDetailPane/AgentHeader';
 import { RunWorkTime } from '../AgentTree/RunWorkTime';
 import { RunWriteDestination } from '../AgentTree/RunWriteDestination';
 import { useRunView } from '../AgentTree/useRunView';
-import { RunPageActions } from '../PresetRun/RunPageActions';
+import { RunPageHead } from '../RunPage/RunPageHead';
 import { OrchestratedChecklist } from './OrchestratedChecklist';
 import { OrchestratedComposer } from './OrchestratedComposer';
 import { OrchestratedContinue } from './OrchestratedContinue';
@@ -30,11 +28,6 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
     view.agents.find((agent) => agent.parentAgentId == null && agent.status === 'running') ?? null;
   const phase = view.orchestrator.state.phase;
   const isDone = phase === 'done';
-  const titleMenu = useObjectMenuTrigger({
-    target: { kind: 'workflowRun', sessionId, runId: run.id, stepAgentId: runningStep?.id ?? null },
-    anchorKey: `workflow-run-title:${run.id}`,
-    viewing: { kind: 'workflowRun', id: run.id },
-  });
   const composer = view.isDiscarded ? null : isDone || phase === 'blocked' ? (
     <OrchestratedContinue
       key={run.id}
@@ -52,24 +45,7 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
         <PaneShell
           page="run"
           header={
-            <AgentHeader
-              title={
-                <span
-                  className="min-w-0 truncate"
-                  onContextMenu={titleMenu.onContextMenu}
-                  onKeyDown={titleMenu.onKeyDown}
-                >
-                  {view.name}
-                </span>
-              }
-              actions={
-                <RunPageActions
-                  session={session}
-                  view={view}
-                  stepAgentId={runningStep?.id ?? null}
-                />
-              }
-            />
+            <RunPageHead session={session} view={view} stepAgentId={runningStep?.id ?? null} />
           }
           headerRhythm="section"
           scroll="body"

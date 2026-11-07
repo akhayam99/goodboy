@@ -21,16 +21,22 @@ type Props = {
   readonly sessionId: SessionId;
   readonly rootAgentId: AgentId;
   readonly selectedAgentId: AgentId | null;
+  readonly isAlwaysOpen?: boolean;
 };
 
-export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Props) => {
+export const SpawnedAutoGroup = ({
+  sessionId,
+  rootAgentId,
+  selectedAgentId,
+  isAlwaysOpen = false,
+}: Props) => {
   const { rows, isLoaded } = useAutoSpawnedRows({ sessionId, rootAgentId });
   const isLiveNow = rows.some((row) => row.isLive);
   const [wasLiveAtLoad, setWasLiveAtLoad] = useState<boolean | null>(isLoaded ? isLiveNow : null);
   if (wasLiveAtLoad === null && isLoaded) {
     setWasLiveAtLoad(isLiveNow);
   }
-  const isOpenByDefault = wasLiveAtLoad ?? isLiveNow;
+  const isOpenByDefault = isAlwaysOpen || (wasLiveAtLoad ?? isLiveNow);
   const [expanded, setExpanded] = useState<Readonly<Record<string, boolean>>>({});
   const shown = useMemo(
     () => foldSpawnedRowsOf({ rows, expanded, isOpenByDefault }),
@@ -58,7 +64,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
     [shown],
   );
   return (
-    <div ref={rootRef} data-spawned-launch="" className="flex min-w-0 flex-col-reverse">
+    <div ref={rootRef} data-spawned-launch="" className="flex min-w-0 flex-col">
       {shown.map(({ row, count, isExpanded, isFoldable, urgency, summary }) => {
         const rowRail = rail.railById.get(row.id);
         if (rowRail === undefined) {
