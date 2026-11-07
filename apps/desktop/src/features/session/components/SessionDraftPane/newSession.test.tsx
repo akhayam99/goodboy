@@ -228,8 +228,14 @@ type KindParams = {
   readonly name: RegExp;
 };
 
-const kindTab = ({ name }: KindParams): HTMLElement =>
-  within(screen.getByRole('tablist', { name: KINDS })).getByRole('tab', { name });
+const howChip = (): HTMLElement => screen.getByRole('button', { name: /^How: / });
+
+const kindTab = ({ name }: KindParams): HTMLElement => {
+  if (screen.queryByRole('tablist', { name: KINDS }) === null) {
+    fireEvent.click(howChip());
+  }
+  return within(screen.getByRole('tablist', { name: KINDS })).getByRole('tab', { name });
+};
 
 const pickKind = async ({ name }: KindParams): Promise<void> => {
   fireEvent.click(kindTab({ name }));
@@ -237,7 +243,7 @@ const pickKind = async ({ name }: KindParams): Promise<void> => {
 };
 
 const isPicked = ({ name }: KindParams): boolean =>
-  kindTab({ name }).getAttribute('aria-selected') === 'true';
+  name.test((howChip().getAttribute('aria-label') ?? '').replace(/^How: /, ''));
 
 describe('New session page', () => {
   it('opens on the task first, with Tasks in its bottom row and Where in the settings row', async () => {
@@ -260,20 +266,20 @@ describe('New session page', () => {
   it('shows four kinds on one row, Auto picked, and says Auto picks until another is', async () => {
     await openPage();
 
+    fireEvent.click(howChip());
     const kinds = within(screen.getByRole('tablist', { name: KINDS }));
-    expect(kinds.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'Auto',
-      'Agent',
-      'Orchestrated',
-      'Preset',
-    ]);
+    for (const name of [/^Auto/, /^Agent/, /^Orchestrated/, /^Preset/]) {
+      kinds.getByRole('tab', { name });
+    }
     expect(kinds.getAllByRole('tab').map((tab) => tab.getAttribute('aria-selected'))).toEqual([
       'true',
       'false',
       'false',
       'false',
     ]);
-    screen.getByText('Auto picks how to run it. Or pick a kind.');
+    expect(screen.getAllByText('Auto picks how to run it. Or pick a kind.').length).toBeGreaterThan(
+      0,
+    );
   });
 
   it('keeps the button reading Start whatever the kind', async () => {
@@ -527,7 +533,7 @@ describe('New session page', () => {
     await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
     const steps = screen.getByRole('list', { name: 'Preset steps' });
     expect(within(steps).getAllByRole('listitem')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('tab', { name: 'Follow it' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Keep steps' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));

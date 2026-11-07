@@ -103,7 +103,6 @@ export type {
   MenuPoint,
 } from './components/ContextMenu/menuTypes';
 export { PanelLoading } from './components/PanelLoading';
-export { RailCard } from './components/RailCard';
 export { RefreshIconButton } from './components/RefreshIconButton';
 export { Sparkline } from './components/Sparkline';
 export { StateBadge } from './components/StateBadge';
@@ -165,8 +164,6 @@ export { ClampedProse, estimateRenderedLines } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
 export type { CollapsibleProps } from './components/Collapsible';
-export { CountToggle } from './components/CountToggle';
-export type { Props as CountToggleProps } from './components/CountToggle';
 export { CopyButton } from './components/CopyButton';
 export type { CopyButtonProps } from './components/CopyButton';
 export { Dialog } from './components/Dialog';

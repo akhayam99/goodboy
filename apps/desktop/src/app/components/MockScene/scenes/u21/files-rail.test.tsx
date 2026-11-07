@@ -53,21 +53,21 @@ describe('the u21 files rail scene', () => {
     expect(Object.keys(U21_FILES_RAIL_SCENES)).toEqual(['branch-files-docked']);
   });
 
-  it('opens the Files entry in the sidebar with its six files and the tree on the right', async () => {
+  it('opens the Changes entry in the sidebar with its six files and the tree on the right', async () => {
     renderScene({ name: 'branch-files-docked', paneWidth: 1676 });
 
     const rail = await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
-    const files = within(rail).getByRole('tab', { name: /^Files/ });
+    const files = within(rail).getByRole('tab', { name: /^Changes/ });
     expect(files.getAttribute('aria-selected')).toBe('true');
-    expect(files.textContent).toBe('Files');
+    expect(files.textContent).toBe('Changes');
     expect(within(rail).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     const fileRail = within(screen.getByRole('complementary', { name: 'Files' }));
     expect(fileRail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();
     expect(fileRail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
-    expect(within(toolbar()).queryByRole('tab', { name: /^Files/ })).toBeNull();
+    expect(within(toolbar()).queryByRole('tab', { name: /^Changes/ })).toBeNull();
     const title = screen.getByRole('heading', { level: 1 });
     expect(title.textContent).toMatch(/fix-duplicate-credit/);
-    expect(title.textContent).not.toBe('Files');
+    expect(title.textContent).not.toBe('Changes');
     expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
   });
 });

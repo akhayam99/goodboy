@@ -129,7 +129,7 @@ drawn as an empty list.
    names the fix. A failure is never an empty state, and an empty state is
    never shown while a load failed.
 5. **Not connected.** The tool behind the page is not connected. The
-   `ConnectIntegrationEmptyState` pattern for one tool, a `page` state with
+   `IntegrationConnectPanel` pattern for one tool, a `page` state with
    `Connect a tool` where several tools feed the page (Tasks).
 
 ### The primitives

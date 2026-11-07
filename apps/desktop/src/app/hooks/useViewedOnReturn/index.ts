@@ -13,6 +13,7 @@ export const useViewedOnReturn = (): void => {
       if (sessionId === null) {
         return;
       }
+      void state.loadSessionContextSeen(sessionId);
       const agentId = state.selectedAgentId[sessionId] ?? null;
       if (agentId === null) {
         return;

@@ -41,7 +41,7 @@ const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict
   checkedAt: 1,
 });
 
-const OPEN = ['reviewComment.openInDiff menu Open in Files'];
+const OPEN = ['reviewComment.openInDiff menu Open in Changes'];
 const TRANSCRIPT = ['reviewComment.transcript menu Agent transcript'];
 const GITHUB = ['reviewComment.openOnGithub menu Open'];
 const BITBUCKET: Partial<ReviewCommentFacts> = {

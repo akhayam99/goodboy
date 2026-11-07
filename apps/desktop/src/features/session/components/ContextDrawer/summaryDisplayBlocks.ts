@@ -3,6 +3,7 @@ import {
   type SummaryDocument,
   type SummarySectionKey,
 } from '@goodboy/core/context';
+import { stateBodyHasMore } from '../../central/summary/stateBodyHasMore';
 
 const SUMMARY_NOTES_TITLE = 'Notes';
 
@@ -41,6 +42,12 @@ export const summaryDisplayBlocks = ({ document }: Params): ReadonlyArray<Summar
 
   const sections = SUMMARY_DISPLAY_KEYS.flatMap<SummaryDisplayBlock>((sectionKey) => {
     const block = document.blocks.find((candidate) => candidate.sectionKey === sectionKey);
+    if (
+      sectionKey === 'state' &&
+      (block == null || !stateBodyHasMore({ body: block.body ?? '' }))
+    ) {
+      return [];
+    }
     if (block != null) {
       return [
         {

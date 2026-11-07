@@ -160,7 +160,7 @@ const TABLE: ReadonlyArray<Row> = [
     false,
     {
       phase: 'waiting',
-      word: 'Stopped, Continue',
+      word: 'Stopped',
       node: 'stopped',
       label: 'Stopped by you',
       dot: 'stopped',

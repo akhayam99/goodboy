@@ -33,7 +33,7 @@ import {
 import { lastReplyOf } from '../../session/lastReplyOf';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { agentObjectKey } from '../agentObjectKey';
-import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
+import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
 import { OPEN_AGENT_INTENT } from '../../../shared/utils/openAgentReveal';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';

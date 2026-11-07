@@ -36,7 +36,7 @@ type Props = {
 };
 
 const RECOVERY_LABEL = {
-  open_diff: `Open ${NAMES.files}`,
+  open_diff: `Open ${NAMES.changes}`,
   view_work: 'Open agent',
   see_missing: 'Open comment',
   sync: SYNC_COPY.action,

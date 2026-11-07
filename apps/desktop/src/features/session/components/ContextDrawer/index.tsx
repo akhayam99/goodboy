@@ -11,22 +11,27 @@ import {
   useSlotHistoryCount,
   useSummarizerStatus,
 } from '../../../../store';
-import type { ContextDrawerTab, ContextDrawerView } from '../../../../store/slices/drawer/state';
+import type {
+  ContextDrawerSection,
+  ContextDrawerView,
+} from '../../../../store/slices/drawer/state';
 import { decisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
+import { selectContextBaseline } from '../../../../store/slices/contextDrawer/selectContextBaseline';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/utils/names';
 import { shareableContext } from '../../context/shareableContext';
-import { CONTEXT_TAB_LABEL, CONTEXT_TAB_SLOT, type ContextSlotTab } from './contextTabs';
+import { CONTEXT_SECTION_LABEL } from './contextSections';
+import { CONTEXT_SECTION_SLOT } from './contextSectionSlots';
 import { GoalTab } from './GoalTab';
 import { DecisionsSection } from './DecisionsSection';
 import { SummarySection } from './SummarySection';
 import { VersionsView } from './VersionsView';
 import { ContextUpdates } from './ContextUpdates';
 import { ContextLoadFailure } from './ContextLoadFailure';
+import { MarkContextRead } from './MarkContextRead';
 import { ContextSection } from './ContextSection';
-import { SlotSourceActions } from './SlotSourceActions';
 import { slotVisibility, youOnlyVisibility } from './roleVisibility';
-import { LearnedTab } from './LearnedTab';
+import { ExplanationsSection } from './ExplanationsSection';
 import { useLearningList } from '../../../../shared/hooks/useLearningList';
 
 type SlotValueParams = {
@@ -42,8 +47,10 @@ const NO_DECISIONS: ReadonlyArray<SessionDecision> = [];
 const slotValue = ({ slots, key }: SlotValueParams): string =>
   slots.find((slot) => slot.key === key)?.value ?? '';
 
+type ContextSlotSection = Exclude<ContextDrawerSection, 'explanations'>;
+
 type SectionParams = {
-  readonly section: ContextSlotTab;
+  readonly section: ContextSlotSection;
 };
 
 type WriteParams = SectionParams & {
@@ -52,7 +59,7 @@ type WriteParams = SectionParams & {
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly tab: ContextDrawerTab;
+  readonly section: ContextDrawerSection;
   readonly view: ContextDrawerView;
   readonly highlight?: ReadonlyArray<number>;
   readonly onClose: () => void;
@@ -60,7 +67,7 @@ type Props = {
 
 export const ContextDrawer = ({
   sessionId,
-  tab,
+  section,
   view,
   highlight = NO_HIGHLIGHT,
   onClose,
@@ -70,23 +77,23 @@ export const ContextDrawer = ({
   const slotsLoad = useSessionSlotsLoad(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
-  const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const baseline = useAppStore((state) => selectContextBaseline({ state, sessionId }));
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
   const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const loadSessionOpenQuestions = useAppStore((state) => state.loadSessionOpenQuestions);
   const loadSessionContextSeen = useAppStore((state) => state.loadSessionContextSeen);
-  const markSessionContextSeen = useAppStore((state) => state.markSessionContextSeen);
+  const reportError = useAppStore((state) => state.reportError);
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
-  const versionsTab: ContextSlotTab = tab === 'learned' ? 'summary' : tab;
+  const versionsSection: ContextSlotSection = section === 'explanations' ? 'summary' : section;
   const learnings = useAppStore((state) => state.sessionContextItems[sessionId] ?? NO_ITEMS);
   const loadSessionContextItems = useAppStore((state) => state.loadSessionContextItems);
   const learningList = useLearningList({ items: learnings });
-  const goalHistory = useSlotHistoryCount(sessionId, CONTEXT_TAB_SLOT.goal);
-  const decisionsHistory = useSlotHistoryCount(sessionId, CONTEXT_TAB_SLOT.decisions);
-  const summaryHistory = useSlotHistoryCount(sessionId, CONTEXT_TAB_SLOT.summary);
-  const [rawTab, setRawTab] = useState<ContextSlotTab | null>(null);
+  const goalHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.goal);
+  const decisionsHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.decisions);
+  const summaryHistory = useSlotHistoryCount(sessionId, CONTEXT_SECTION_SLOT.summary);
+  const [rawSection, setRawSection] = useState<ContextSlotSection | null>(null);
   const [pendingRemovals, setPendingRemovals] = useState<ReadonlySet<number>>(NO_PENDING_REMOVALS);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -129,26 +136,21 @@ export const ContextDrawer = ({
   }, [hasLedger, loadSessionDecisions, sessionId]);
 
   useEffect(() => {
-    void markSessionContextSeen(sessionId);
-    return () => {
-      void markSessionContextSeen(sessionId);
-    };
-  }, [markSessionContextSeen, sessionId]);
-
-  useEffect(() => {
-    setRawTab(null);
+    setRawSection(null);
   }, [view]);
 
   useEffect(() => {
     if (view !== 'current') {
       return;
     }
-    const target = scrollRef.current?.querySelector<HTMLElement>(`[data-context-section="${tab}"]`);
+    const target = scrollRef.current?.querySelector<HTMLElement>(
+      `[data-context-section="${section}"]`,
+    );
     if (target === null || target === undefined || typeof target.scrollIntoView !== 'function') {
       return;
     }
     target.scrollIntoView({ block: 'start' });
-  }, [tab, view]);
+  }, [section, view]);
 
   const openQuestionTexts = useMemo(
     () =>
@@ -160,32 +162,32 @@ export const ContextDrawer = ({
   const brief = shareableContext({ goal, decisions, summary, openQuestions: openQuestionTexts });
 
   const openVersions = ({ section }: SectionParams) =>
-    openContextDrawer({ sessionId, tab: section, view: 'versions' });
+    openContextDrawer({ sessionId, section: section, view: 'versions' });
 
-  const writeSlot = ({
-    section,
-    next,
-  }: {
-    readonly section: ContextSlotTab;
-    readonly next: string;
-  }) => {
-    void upsertSessionSlot(sessionId, CONTEXT_TAB_SLOT[section], next);
+  const writeSlot = async ({ section, next }: WriteParams): Promise<boolean> => {
+    try {
+      await upsertSessionSlot(sessionId, CONTEXT_SECTION_SLOT[section], next);
+      return true;
+    } catch (error: unknown) {
+      void reportError({ title: "Couldn't save the context", error, sessionId });
+      return false;
+    }
   };
 
   const toggleRaw = ({ section }: SectionParams) =>
-    setRawTab((current) => (current === section ? null : section));
+    setRawSection((current) => (current === section ? null : section));
 
   const visibilityOf = ({ section }: SectionParams) =>
-    slotVisibility({ slot: CONTEXT_TAB_SLOT[section] });
+    slotVisibility({ slot: CONTEXT_SECTION_SLOT[section] });
 
   const sections = (() => {
     if (view === 'versions') {
       return (
         <VersionsView
           sessionId={sessionId}
-          slotKey={CONTEXT_TAB_SLOT[versionsTab]}
-          backLabel={CONTEXT_TAB_LABEL[versionsTab]}
-          onBack={() => openContextDrawer({ sessionId, tab: versionsTab, view: 'current' })}
+          slotKey={CONTEXT_SECTION_SLOT[versionsSection]}
+          backLabel={CONTEXT_SECTION_LABEL[versionsSection]}
+          onBack={() => openContextDrawer({ sessionId, section: versionsSection, view: 'current' })}
         />
       );
     }
@@ -211,26 +213,22 @@ export const ContextDrawer = ({
         <ContextSection
           section="decisions"
           count={activeDecisionCount}
+          action={<MarkContextRead sessionId={sessionId} changes={changes} />}
           visibility={visibilityOf({ section: 'decisions' })}
-          action={
-            <SlotSourceActions
-              isLocked={isLocked}
-              isRawEditing={rawTab === 'decisions'}
-              historyCount={decisionsHistory}
-              onToggleRaw={() => toggleRaw({ section: 'decisions' })}
-              onOpenVersions={() => openVersions({ section: 'decisions' })}
-            />
-          }
+          isLocked={isLocked}
+          historyCount={decisionsHistory}
+          onEdit={() => toggleRaw({ section: 'decisions' })}
+          onOpenVersions={() => openVersions({ section: 'decisions' })}
         >
           <DecisionsSection
             sessionId={sessionId}
             changes={changes}
             highlight={highlight}
             isLocked={isLocked}
-            isRawEditing={rawTab === 'decisions'}
+            isRawEditing={rawSection === 'decisions'}
             sourceValue={decisions}
             onWriteSource={(next) => writeSlot({ section: 'decisions', next })}
-            onCloseRawEditor={() => setRawTab(null)}
+            onCloseRawEditor={() => setRawSection(null)}
             pendingRemovals={pendingRemovals}
             onMarkRemoved={(number) =>
               setPendingRemovals((current) => new Set(current).add(number))
@@ -248,38 +246,31 @@ export const ContextDrawer = ({
         <ContextSection
           section="summary"
           visibility={visibilityOf({ section: 'summary' })}
-          action={
-            <SlotSourceActions
-              isLocked={isLocked}
-              isRawEditing={rawTab === 'summary'}
-              historyCount={summaryHistory}
-              onToggleRaw={() => toggleRaw({ section: 'summary' })}
-              onOpenVersions={() => openVersions({ section: 'summary' })}
-            />
-          }
+          isLocked={isLocked}
+          historyCount={summaryHistory}
+          onEdit={() => toggleRaw({ section: 'summary' })}
+          onOpenVersions={() => openVersions({ section: 'summary' })}
         >
-          {summary.trim() === '' && !isLoading && rawTab !== 'summary' ? (
+          {summary.trim() === '' && !isLoading && rawSection !== 'summary' ? (
             <p className="text-body text-muted-foreground">
               A summary appears after the first agent reply.
             </p>
           ) : (
             <SummarySection
-              openQuestions={openQuestionTexts}
               value={summary}
               isLoading={isLoading}
-              isLocked={isLocked}
-              isRawEditing={rawTab === 'summary'}
+              isRawEditing={rawSection === 'summary'}
               onWrite={(next) => writeSlot({ section: 'summary', next })}
-              onCloseRawEditor={() => setRawTab(null)}
+              onCloseRawEditor={() => setRawSection(null)}
             />
           )}
         </ContextSection>
         <ContextSection
-          section="learned"
+          section="explanations"
           count={learningList.visible.length}
           visibility={youOnlyVisibility()}
         >
-          <LearnedTab list={learningList} />
+          <ExplanationsSection list={learningList} />
         </ContextSection>
       </>
     );
@@ -293,7 +284,7 @@ export const ContextDrawer = ({
       closeLabel={view === 'versions' ? 'Back to current' : 'Close'}
       onClose={
         view === 'versions'
-          ? () => openContextDrawer({ sessionId, tab: versionsTab, view: 'current' })
+          ? () => openContextDrawer({ sessionId, section: versionsSection, view: 'current' })
           : onClose
       }
       scroll="self"

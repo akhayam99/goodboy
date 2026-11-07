@@ -73,7 +73,7 @@
   stops the session's live agents first: with live work the button asks once,
   inline, **Stop 2 agents and archive**, and with none it archives at once with
   Undo. An agent that does not stop keeps the session where it was. Undo brings
-  the session back with its agents reading Stopped, Continue (`archiveTask`,
+  the session back with its agents reading Stopped (`archiveTask`,
   `archiveConfirmOf`).
 - **Three surfaces, three jobs, no competition.** The top bar is now ("what is
   happening, where am I and what is it costing"). The left column is access and

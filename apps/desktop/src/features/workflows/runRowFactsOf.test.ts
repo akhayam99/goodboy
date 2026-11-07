@@ -53,15 +53,15 @@ const progressOf = ({ stepCount, statuses }: FactsParams): string =>
   }).progress;
 
 describe('runRowFactsOf progress', () => {
-  it('says which step runs while the run lives', () => {
+  it('counts the steps done while the run lives', () => {
     expect(progressOf({ stepCount: 3, statuses: ['completed', 'running', 'pending'] })).toBe(
-      'Step 2 of 3',
+      '1 of 3 steps',
     );
   });
 
   it.each([
-    [1, ['completed'], '1 step'],
-    [3, ['completed', 'completed', 'completed'], '3 steps'],
+    [1, ['completed'], '1 of 1 step'],
+    [3, ['completed', 'completed', 'completed'], '3 of 3 steps'],
   ] as const)('counts the %i steps of a finished run once', (stepCount, statuses, word) => {
     expect(progressOf({ stepCount, statuses })).toBe(word);
   });

@@ -32,7 +32,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('u28 step ended scene', () => {
-  it('shows the ended step with Continue and Mark step done on the run page', async () => {
+  it('reads the ended step as Not finished on the run page and keeps the reason for its own page', async () => {
     const Scene = U28_STEP_ENDED_SCENES['u28-step-ended-run'];
     if (Scene === undefined) {
       throw new Error('no scene');
@@ -43,9 +43,11 @@ describe('u28 step ended scene', () => {
       </ToastProvider>,
     );
 
-    await screen.findByText('This step ended without a result', undefined, WAIT);
-    screen.getByRole('button', { name: 'Continue' });
-    screen.getByRole('button', { name: 'Mark step done' });
+    await screen.findByText('Not finished', undefined, WAIT);
+    screen.getByRole('button', { name: 'Retry step' });
+    screen.getByRole('button', { name: 'Keep working' });
+    expect(screen.queryByText('This step ended without a result')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark step done' })).toBeNull();
     expect(
       screen.queryByText('The step stopped without saying why. Tell it what to do next.'),
     ).toBeNull();

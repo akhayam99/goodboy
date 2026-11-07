@@ -69,7 +69,7 @@ export const SpawnedRunGroup = ({ session, run, workflow, isHeaded, selectedAgen
   );
   const headRail = rail.railById.get(headId);
   return (
-    <div data-spawned-launch="" className="flex min-w-0 flex-col-reverse">
+    <div data-spawned-launch="" className="flex min-w-0 flex-col">
       {isHeaded && headRail !== undefined ? (
         <SpawnedRunHead
           session={session}

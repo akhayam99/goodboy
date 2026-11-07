@@ -35,7 +35,7 @@ export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
   },
   files: {
     id: 'files',
-    label: NAMES.files,
+    label: NAMES.changes,
     address: 'files',
     shortcut: 'lens.files',
     isAvailable: true,

@@ -166,6 +166,7 @@ describe('agent rows stay reachable from the one conversation', () => {
     await mount({ name: 'c06-agents-list' });
 
     expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Start a run' }));
     expect(screen.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
   });
 

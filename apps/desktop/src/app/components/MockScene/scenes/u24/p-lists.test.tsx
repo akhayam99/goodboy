@@ -61,7 +61,7 @@ describe('the list scenes', () => {
     );
     expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(dialog.closest('[data-slot="pane-title-row"]')).toBeNull();
-    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeDefined();
+    within(dialog).getByRole('button', { name: 'Cancel' });
   });
 
   it('activity-mark-seen shows Mark as read as a button, with no menu', async () => {
@@ -69,7 +69,7 @@ describe('the list scenes', () => {
 
     const activity = await screen.findByRole('region', { name: 'Log entries' }, WAIT);
     await within(activity).findByRole('button', { name: 'Mark as read' }, WAIT);
-    expect(within(activity).getByRole('button', { name: 'Mark as read' })).toBeDefined();
+    within(activity).getByRole('button', { name: 'Mark as read' });
     expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
   });
 

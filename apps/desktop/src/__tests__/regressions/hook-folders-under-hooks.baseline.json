@@ -3,7 +3,6 @@
   "apps/desktop/src/features/actions/useActionEnv": 1,
   "apps/desktop/src/features/actions/useObjectActions": 1,
   "apps/desktop/src/features/actions/useObjectMenuTrigger": 1,
-  "apps/desktop/src/features/actions/useRenameRequest": 1,
   "apps/desktop/src/features/actions/useSelectRequest": 1,
   "apps/desktop/src/features/artifacts/useArtifactScoutRoster": 1,
   "apps/desktop/src/features/auto/chat/useAutoChat": 1,

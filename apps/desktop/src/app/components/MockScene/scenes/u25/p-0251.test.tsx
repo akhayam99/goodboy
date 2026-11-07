@@ -10,16 +10,10 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
-import {
-  STORE_IMPORT_TIMEOUT_MS,
-  importStore,
-  resetStoryStore,
-} from '../../../../../store/storyHarness';
+import { importStore, resetStoryStore } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
 import { U25_P_0251_SCENES } from './p-0251';
-
-const WAIT = { timeout: 6000 };
 
 const BULK_STATS: Readonly<
   Record<'rounding' | 'postings', { additions: number; deletions: number }>
@@ -30,7 +24,7 @@ const BULK_STATS: Readonly<
 
 beforeAll(async () => {
   await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   installFakeResizeObserver();
@@ -71,7 +65,7 @@ describe('the p-0251 scenes', () => {
       </ToastProvider>,
     );
 
-    const context = await screen.findByRole('region', { name: 'Context' }, WAIT);
+    const context = await screen.findByRole('region', { name: 'Context' });
     expect(screen.queryByRole('region', { name: 'Changed since you last looked' })).toBeNull();
     expect(within(context).queryByRole('button', { name: 'Mark as read' })).toBeNull();
   });
@@ -85,8 +79,8 @@ describe('the p-0251 scenes', () => {
       </ToastProvider>,
     );
 
-    const panel = await screen.findByRole('region', { name: 'Ask' }, WAIT);
+    const panel = await screen.findByRole('region', { name: 'Ask' });
     within(panel).getByRole('button', { name: 'New question' });
-    await waitFor(() => expect(screen.getAllByTestId('ask-turn')).toHaveLength(2), WAIT);
+    await waitFor(() => expect(screen.getAllByTestId('ask-turn')).toHaveLength(2));
   });
 });

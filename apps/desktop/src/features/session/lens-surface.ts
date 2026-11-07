@@ -1,5 +1,4 @@
 import type { LensKind } from '../../store';
-import { isContextLens } from '../../store/slices/navigation/contextLensTab';
 
 export type LensSurface = LensKind | 'overview';
 
@@ -8,7 +7,7 @@ type LensSurfaceParams = {
 };
 
 export const resolveLensSurface = ({ lens }: LensSurfaceParams): LensSurface => {
-  if (lens === null || isContextLens({ lens })) {
+  if (lens === null) {
     return 'overview';
   }
   return lens;

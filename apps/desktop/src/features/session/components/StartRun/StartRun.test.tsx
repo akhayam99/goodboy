@@ -100,15 +100,24 @@ type KindParams = {
   readonly name: string;
 };
 
+const howChip = (): HTMLElement => screen.getByRole('button', { name: /^How: / });
+
+const kindCards = (): HTMLElement => {
+  if (screen.queryByRole('tablist', { name: 'What kind of run?' }) === null) {
+    fireEvent.click(howChip());
+  }
+  return screen.getByRole('tablist', { name: 'What kind of run?' });
+};
+
 const kindTab = ({ name }: KindParams): HTMLElement =>
-  within(screen.getByRole('tablist', { name: 'What kind of run?' })).getByRole('tab', { name });
+  within(kindCards()).getByRole('tab', { name: new RegExp(`^${name}`) });
 
 const pickKind = ({ name }: KindParams): void => {
   fireEvent.click(kindTab({ name }));
 };
 
 const isPicked = ({ name }: KindParams): boolean =>
-  kindTab({ name }).getAttribute('aria-selected') === 'true';
+  howChip().getAttribute('aria-label') === `How: ${name}`;
 
 type RenderParams = {
   readonly sessionId: SessionId;
@@ -539,9 +548,9 @@ describe('StartRun run as', () => {
     renderField({ sessionId: SESSION.id });
 
     expect(
-      within(screen.getByRole('tablist', { name: 'What kind of run?' }))
+      within(kindCards())
         .getAllByRole('tab')
-        .map((tab) => tab.textContent),
+        .map((tab) => tab.textContent?.split(/(?=[A-Z])/)[0]),
     ).toEqual(['Auto', 'Agent', 'Orchestrated', 'Preset']);
     expect(kindTab({ name: 'Preset' }).hasAttribute('disabled')).toBe(true);
     cleanup();
@@ -567,7 +576,7 @@ describe('StartRun run as', () => {
     pickKind({ name: 'Preset' });
     screen.getByRole('list', { name: 'Preset steps' });
     expect(
-      screen.getByRole('tab', { name: 'Adapt as it goes' }).getAttribute('aria-selected'),
+      screen.getByRole('tab', { name: 'May change steps' }).getAttribute('aria-selected'),
     ).toBe('true');
     ask({ text: QUESTION });
 

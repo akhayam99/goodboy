@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { Inbox } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
-import type { SessionId, WorkflowRunId } from '@goodboy/types';
+import { brandId, type SessionId, type WorkflowRunId } from '@goodboy/types';
 import { aWorkflowRun } from '@goodboy/types/testing';
 import type { WorkflowRunFacts } from '../../actions/kinds/workflowRun';
 import type { PaletteEntry } from '../types';
@@ -14,7 +14,7 @@ const facts = (
   state: WorkflowRunFacts['state'],
   overrides: Partial<WorkflowRunFacts> = {},
 ): WorkflowRunFacts => ({
-  run: aWorkflowRun({ id: id as WorkflowRunId }),
+  run: aWorkflowRun({ id: brandId<WorkflowRunId>({ value: id }) }),
   sessionId: SESSION,
   name: `Run ${id}`,
   state,
@@ -31,6 +31,7 @@ const facts = (
   summary: '',
   skipStep: null,
   autonomy: 'step',
+  stepAgentId: null,
   ...overrides,
 });
 

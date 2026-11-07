@@ -42,11 +42,13 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/ui')>()),
   PaneShell: (props: { title: string; meta?: string; children: ReactNode }) => (
     <div data-testid="pane-shell" data-title={props.title} data-meta={props.meta}>
+      <h1>{props.title}</h1>
       {props.children}
     </div>
   ),
 }));
 
+import { PaneSwap } from '@goodboy/ui';
 import { questionPlace } from '../../../../../store/slices/navigation/place';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
@@ -149,6 +151,30 @@ const setup = (params: SeedParams = {}) => {
   render(<QuestionsPane session={SESSION} />);
 };
 
+type PaneParams = {
+  readonly isQuestionsOpen: boolean;
+};
+
+const pane = ({ isQuestionsOpen }: PaneParams) => (
+  <PaneSwap
+    activeKey={isQuestionsOpen ? 'questions' : 'overview'}
+    layers={[
+      { key: 'overview', content: <div /> },
+      ...(isQuestionsOpen
+        ? [{ key: 'questions', content: <QuestionsPane session={SESSION} /> }]
+        : []),
+    ]}
+    shouldFocusTitle
+  />
+);
+
+const setupInPaneSwap = (params: SeedParams = {}) => {
+  seed(params);
+  const view = render(pane({ isQuestionsOpen: false }));
+  view.rerender(pane({ isQuestionsOpen: true }));
+  return view;
+};
+
 type DrawerParams = SeedParams & {
   readonly questionId: OpenQuestionId;
 };
@@ -160,7 +186,10 @@ const setupDrawer = ({ questionId, ...params }: DrawerParams) => {
   );
 };
 
-const row = (name: string) => screen.getByRole('button', { name });
+const row = (name: string) =>
+  screen.getByRole('button', {
+    name: (accessibleName) => accessibleName === name || accessibleName.startsWith(`${name}, `),
+  });
 const group = (name: string) => screen.getByRole('list', { name });
 const ANSWERED_A1 = question('a1', 'Which branch should the fix land on?', 'reviewer', {
   status: 'answered',
@@ -214,32 +243,90 @@ describe('QuestionsPane', () => {
     expect(screen.queryByText('No questions')).toBeNull();
   });
 
-  it('keeps answered rows with no centered empty state beside them', () => {
+  it('folds Answered behind its count once nothing waits, and Show opens it', () => {
     setup({ open: [], answered: [ANSWERED_A1, ANSWERED_A2] });
     expect(screen.queryByText('No questions yet')).toBeNull();
     expect(screen.queryByText('No questions')).toBeNull();
-    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
     expect(screen.getAllByRole('heading', { level: 2 })[0]?.textContent).toBe('Answered');
     expect(document.querySelector('[data-list-grid-count]')?.textContent).toBe('2');
+    expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('reads a row as the question with its answer on a second line, the asker role and the age', () => {
+  it('keeps Answered open while something waits, and Hide folds it', () => {
+    setup({ answered: [ANSWERED_A1, ANSWERED_A2] });
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(within(group('Answered')).queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('opens the fold on the answered question the drawer shows', () => {
+    setup({ open: [], answered: [ANSWERED_A1, ANSWERED_A2], openedId: ANSWERED_A1.id });
+    expect(within(group('Answered')).getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('names the run on the second line of a waiting row, and says nothing twice', () => {
+    const run = agent('implementer-run', 'Add the stuck-delivery banner');
+    const asked = question('q-run', 'Which copy should the banner use?', 'implementer-run');
+    setup({ open: [asked, Q1], agents: [PLANNER, run] });
+    const named = row('Which copy should the banner use?');
+    expect(named.getAttribute('aria-label')).toBe(
+      'Which copy should the banner use?, Generalist · Add the stuck-delivery banner',
+    );
+    expect(row('Which queue should retries run on?').getAttribute('aria-label')).toBe(
+      'Which queue should retries run on?, Planner',
+    );
+  });
+
+  it('puts keyboard focus on the first waiting row once, and not when a question is open', () => {
+    setup();
+    expect(document.activeElement).toBe(row('Which queue should retries run on?'));
+    cleanup();
+    setup({ openedId: Q2.id });
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('moves focus from the pane title to the first waiting row on a normal door', () => {
+    setupInPaneSwap();
+    expect(document.activeElement).toBe(row('Which queue should retries run on?'));
+  });
+
+  it('does not take focus from a field the user is typing in', () => {
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    setupInPaneSwap();
+    expect(document.activeElement).toBe(field);
+    field.remove();
+  });
+
+  it('does not take focus back from a row the user moved to when it rerenders', () => {
+    const { rerender } = setupInPaneSwap();
+    const second = row('Which events should be retried?');
+    act(() => second.focus());
+    seed({ open: [Q2, Q1, Q3] });
+    rerender(pane({ isQuestionsOpen: true }));
+    expect(document.activeElement).toBe(second);
+  });
+
+  it('reads a row as the question with its answer and the asker on a second line, and the age', () => {
     setup({ answered: [ANSWERED_A1] });
-    const answered = row('Which branch should the fix land on?, You: main');
+    const answered = row('Which branch should the fix land on?');
     const cells = Array.from(answered.querySelectorAll<HTMLElement>('[data-list-grid-cell]'));
     expect(cells.map((cell) => cell.getAttribute('data-list-grid-cell'))).toEqual([
       'state',
       'question',
-      'asker',
       'age',
     ]);
     const lines = Array.from(cells[1]?.querySelectorAll<HTMLElement>('.truncate') ?? []).map(
       (line) => line.textContent,
     );
-    expect(lines).toEqual(['Which branch should the fix land on?', 'You: main']);
+    expect(lines).toEqual(['Which branch should the fix land on?', 'You: main · Reviewer']);
     expect(cells.map((cell) => cell.textContent).filter((_, index) => index !== 1)).toEqual([
       '',
-      'Reviewer',
       formatAge({ from: NOW, now: Date.now() }),
     ]);
   });
@@ -285,7 +372,7 @@ describe('QuestionsPane', () => {
     setup({ agents: [PLANNER, REVIEWER, delegate] });
     expect(
       within(group('Needs you')).getByRole('button', {
-        name: 'Keep the old dispatch path?, An agent is answering',
+        name: 'Keep the old dispatch path?, An agent is answering · Reviewer',
       }),
     ).toBeDefined();
     expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBeNull();

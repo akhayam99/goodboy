@@ -257,7 +257,7 @@ without motion, counted in "N sessions need you" and sorted ahead of what runs. 
 session's **needs-approval** reason in the attention registry reads the same
 fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
 so the agent word and the session count never disagree. A stopped
-agent that is not closed stays in progress as **Stopped, Continue**, and
+agent that is not closed reads **Stopped**, with a **Continue** on its row, and
 **Blocked** is a warning, never a failure.
 
 Needs you counts three units, and each tooltip names its own: sessions ("2

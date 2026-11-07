@@ -2,7 +2,7 @@ import { Input, StateDot, Tooltip, FOCUS_RING, cn } from '@goodboy/ui';
 import type { Session, Workflow, WorkflowRun } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../store';
 import { useRunView } from '../../../features/session/components/AgentTree/useRunView';
-import { useWorkflowRunTitleRename } from '../../../features/workflows/hooks/useWorkflowRunTitleRename';
+import { useRunTitleRename } from '../../../features/session/hooks/useRunTitleRename';
 import { runRowFactsOf } from '../../../features/workflows/runRowFactsOf';
 
 type Props = {
@@ -23,7 +23,7 @@ export const RunIdentityRow = ({ session, run, workflow }: Props) => {
     questions,
     isPlanRevising: view.isPlanRevising,
   });
-  const rename = useWorkflowRunTitleRename({
+  const rename = useRunTitleRename({
     sessionId: session.id,
     workflowRunId: run.id,
     currentTitle: view.name,

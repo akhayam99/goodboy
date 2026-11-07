@@ -1,6 +1,7 @@
+import { brandId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 import type {
   Agent,
@@ -62,57 +63,60 @@ type PaneShellMockProps = {
   readonly children: React.ReactNode;
 };
 
-const { store, hooks } = vi.hoisted(() => ({
-  store: {
-    sessions: [] as ReadonlyArray<Session>,
-    currentSessionId: null,
-    workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
-    projects: [],
-    activeLens: {},
-    selectedAgentId: {},
-    sessionWorktrees: {},
-    sessionBranches: {},
-    sessionProjectMounts: {},
-    sessionActiveProject: {},
-    artifactConversationAgentId: {},
-    sessionPhaseRuns: {},
-    sessionPlans: {},
-    sessionArtifacts: {},
-    focusedArtifactId: {},
-    sessionTelemetry: {},
-    messages: {},
-    agentRunHistory: {},
-    focusedWorkflowRunId: {},
-    phaseTemplates: {},
-    sessionWorkflows: {},
-    artifactCreation: {},
-    focusedGithubIssueNumber: {},
-    sessionExternalTasks: {},
-    sessionGithub: {},
-    sessionRequests: {},
-    agentTurnState: {},
-    agentKindOverride: {},
-    sessionLoading: {},
-    resolveAgentReturn: {},
-    pullRequestModes: {},
-    setPullRequestMode: vi.fn(),
-    navigate: vi.fn(),
-    up: vi.fn(),
-    loadAgentTranscript: vi.fn(async () => undefined),
-    returnFromResolveAgent: vi.fn(),
-    setFocusedWorkflowRun: vi.fn(),
-    reconcileSessionBranch: vi.fn(async () => undefined),
-    loadPhaseRunsForSession: vi.fn(async () => undefined),
-    loadSessionPlans: vi.fn(async () => undefined),
-  } as Store,
-  hooks: {
-    openQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
-    answeredQuestions: [] as ReadonlyArray<{ readonly createdByAgentId?: string }>,
+const { store, hooks } = vi.hoisted(() => {
+  const store: Store = {
+    ...{
+      sessions: new Array<Session>(),
+      currentSessionId: null,
+      workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
+      projects: [],
+      activeLens: {},
+      selectedAgentId: {},
+      sessionWorktrees: {},
+      sessionBranches: {},
+      sessionProjectMounts: {},
+      sessionActiveProject: {},
+      artifactConversationAgentId: {},
+      sessionPhaseRuns: {},
+      sessionPlans: {},
+      sessionArtifacts: {},
+      focusedArtifactId: {},
+      sessionTelemetry: {},
+      messages: {},
+      agentRunHistory: {},
+      focusedWorkflowRunId: {},
+      phaseTemplates: {},
+      sessionWorkflows: {},
+      artifactCreation: {},
+      focusedGithubIssueNumber: {},
+      sessionExternalTasks: {},
+      sessionGithub: {},
+      sessionRequests: {},
+      agentTurnState: {},
+      agentKindOverride: {},
+      sessionLoading: {},
+      resolveAgentReturn: {},
+      pullRequestModes: {},
+      setPullRequestMode: vi.fn(),
+      navigate: vi.fn(),
+      up: vi.fn(),
+      loadAgentTranscript: vi.fn(async () => undefined),
+      returnFromResolveAgent: vi.fn(),
+      setFocusedWorkflowRun: vi.fn(),
+      reconcileSessionBranch: vi.fn(async () => undefined),
+      loadPhaseRunsForSession: vi.fn(async () => undefined),
+      loadSessionPlans: vi.fn(async () => undefined),
+    },
+  };
+  const hooks = {
+    openQuestions: new Array<{ readonly createdByAgentId?: string }>(),
+    answeredQuestions: new Array<{ readonly createdByAgentId?: string }>(),
     agentsLaneMounts: 0,
     agentsLaneUnmounts: 0,
     escapeLadder: vi.fn(),
-  },
-}));
+  };
+  return { store, hooks };
+});
 
 vi.mock('../../escapeLadder', () => ({ escapeLadder: hooks.escapeLadder }));
 
@@ -234,16 +238,19 @@ import { SessionWorkspace } from './index';
 
 const trailBands = (): number => document.querySelectorAll('[data-slot="trail-bar"]').length;
 
-const SESSION_ID = 'session-1' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
 const selectedAgent = anAgent({
-  id: 'agent-1' as AgentId,
+  id: brandId<AgentId>({ value: 'agent-1' }),
   sessionId: SESSION_ID,
   name: 'Selected agent',
   status: 'running',
-  stepId: 'step-1' as StepId,
-  workflowRunId: 'run-1' as WorkflowRunId,
+  stepId: brandId<StepId>({ value: 'step-1' }),
+  workflowRunId: brandId<WorkflowRunId>({ value: 'run-1' }),
 });
-const session = aSession({ id: SESSION_ID, workspaceId: 'workspace-1' as WorkspaceId });
+const session = aSession({
+  id: SESSION_ID,
+  workspaceId: brandId<WorkspaceId>({ value: 'workspace-1' }),
+});
 
 beforeEach(() => {
   store.sessions = [session];
@@ -286,8 +293,8 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} />);
     expect(trailBands()).toBe(0);
     expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
-    expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
-    expect(screen.getByTestId('agents-lane')).toBeDefined();
+    screen.getByTestId('agent-detail-pane');
+    screen.getByTestId('agents-lane');
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 
@@ -303,7 +310,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
+    screen.getByTestId('agent-detail-pane');
     expect(screen.queryByRole('separator', { name: 'Resize workflow step inspector' })).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
@@ -311,7 +318,7 @@ describe('SessionWorkspace agent overlay', () => {
   it('shows a standalone resolver in the overlay', () => {
     const standaloneResolver = anAgent({
       ...selectedAgent,
-      id: 'resolver-1' as AgentId,
+      id: brandId<AgentId>({ value: 'resolver-1' }),
       name: 'Standalone resolver',
       kind: 'resolver',
       stepId: undefined,
@@ -331,7 +338,7 @@ describe('SessionWorkspace agent overlay', () => {
     const linkedAgent = anAgent({
       ...selectedAgent,
       stepId: undefined,
-      workflowRunId: 'run-1' as WorkflowRunId,
+      workflowRunId: brandId<WorkflowRunId>({ value: 'run-1' }),
     });
     store.selectedAgentId = { [SESSION_ID]: linkedAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [linkedAgent] };
@@ -348,8 +355,8 @@ describe('SessionWorkspace agent overlay', () => {
       ...session,
       workflowRuns: [
         aWorkflowRun({
-          id: 'run-1' as WorkflowRunId,
-          workflowId: 'workflow-1' as WorkflowId,
+          id: brandId<WorkflowRunId>({ value: 'run-1' }),
+          workflowId: brandId<WorkflowId>({ value: 'workflow-1' }),
           autoRun: true,
         }),
       ],
@@ -364,7 +371,7 @@ describe('SessionWorkspace agent overlay', () => {
   it('shows the selected resolver in the overlay without an inspector rail', () => {
     const standaloneResolver = anAgent({
       ...selectedAgent,
-      id: 'resolver-1' as AgentId,
+      id: brandId<AgentId>({ value: 'resolver-1' }),
       name: 'Markerless resolver',
       kind: 'resolver',
       status: 'completed',
@@ -391,7 +398,7 @@ describe('SessionWorkspace agent overlay', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
     render(<SessionWorkspace session={session} />);
     expect(screen.queryByRole('separator', { name: 'resize agent list' })).toBeNull();
-    expect(screen.getByTestId('agents-lane')).toBeDefined();
+    screen.getByTestId('agents-lane');
     expect(screen.getByTestId('agent-detail-pane').textContent).toBe(standaloneAgent.id);
     expect(screen.queryByTestId('agent-inspector')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
@@ -404,8 +411,8 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByRole('status', { name: 'Loading branch' })).toBeDefined();
-    expect(await screen.findByTestId('branch-page')).toBeDefined();
+    screen.getByRole('status', { name: 'Loading branch' });
+    await screen.findByTestId('branch-page');
     expect(screen.queryByRole('status', { name: 'Loading branch' })).toBeNull();
   });
 
@@ -415,7 +422,7 @@ describe('SessionWorkspace agent overlay', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(await screen.findByTestId('branch-page')).toBeDefined();
+    await screen.findByTestId('branch-page');
   });
 });
 
@@ -427,7 +434,7 @@ describe('SessionWorkspace code host routing', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(await screen.findByTestId('branch-page')).toBeDefined();
+    await screen.findByTestId('branch-page');
   });
 
   it('mounts the Branch page for a Bitbucket session', async () => {
@@ -437,7 +444,7 @@ describe('SessionWorkspace code host routing', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(await screen.findByTestId('branch-page')).toBeDefined();
+    await screen.findByTestId('branch-page');
   });
 });
 
@@ -445,7 +452,7 @@ describe('SessionWorkspace agents lens', () => {
   it('renders the agents lens without an inspector rail', () => {
     const standalone = anAgent({
       ...selectedAgent,
-      id: 'agent-standalone' as AgentId,
+      id: brandId<AgentId>({ value: 'agent-standalone' }),
       stepId: undefined,
       workflowRunId: undefined,
     });
@@ -454,7 +461,7 @@ describe('SessionWorkspace agents lens', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByTestId('agents-lane')).toBeDefined();
+    screen.getByTestId('agents-lane');
     expect(screen.queryByRole('separator', { name: 'Resize inspector panel' })).toBeNull();
     expect(screen.queryByTestId('agent-inspector')).toBeNull();
   });
@@ -469,7 +476,7 @@ describe('SessionWorkspace pane metadata', () => {
         { ...selectedAgent, stepId: undefined, workflowRunId: undefined },
         anAgent({
           ...selectedAgent,
-          id: 'agent-2' as AgentId,
+          id: brandId<AgentId>({ value: 'agent-2' }),
           name: 'Done agent',
           status: 'completed',
           stepId: undefined,
@@ -477,7 +484,7 @@ describe('SessionWorkspace pane metadata', () => {
         }),
         anAgent({
           ...selectedAgent,
-          id: 'agent-3' as AgentId,
+          id: brandId<AgentId>({ value: 'agent-3' }),
           name: 'Failed agent',
           status: 'failed',
           stepId: undefined,
@@ -529,7 +536,7 @@ describe('SessionWorkspace page header', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByRole('status', { name: 'Loading' })).toBeDefined();
+    screen.getByRole('status', { name: 'Loading' });
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
   });
 
@@ -540,7 +547,7 @@ describe('SessionWorkspace page header', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByText('This agent is no longer in this session')).toBeDefined();
+    screen.getByText('This agent is no longer in this session');
     expect(screen.queryByTestId('agent-detail-pane')).toBeNull();
   });
 
@@ -555,7 +562,7 @@ describe('SessionWorkspace page header', () => {
 
     expect(hooks.agentsLaneMounts).toBe(1);
     expect(hooks.agentsLaneUnmounts).toBe(0);
-    expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
+    screen.getByTestId('agent-detail-pane');
   });
 
   it('hands Escape to the one session ladder only while the session is shown', () => {
@@ -574,8 +581,8 @@ describe('SessionWorkspace page header', () => {
   it('draws a run step without a Part of line', () => {
     const workflowAgent = anAgent({
       ...selectedAgent,
-      stepId: 'step-1' as StepId,
-      workflowRunId: 'run-1' as WorkflowRunId,
+      stepId: brandId<StepId>({ value: 'step-1' }),
+      workflowRunId: brandId<WorkflowRunId>({ value: 'run-1' }),
     });
     store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
@@ -587,8 +594,8 @@ describe('SessionWorkspace page header', () => {
       ...session,
       workflowRuns: [
         aWorkflowRun({
-          id: 'run-1' as WorkflowRunId,
-          workflowId: 'workflow-1' as WorkflowId,
+          id: brandId<WorkflowRunId>({ value: 'run-1' }),
+          workflowId: brandId<WorkflowId>({ value: 'workflow-1' }),
           autoRun: true,
         }),
       ],
@@ -624,7 +631,7 @@ describe('SessionWorkspace overview', () => {
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
     showSkeleton();
-    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    screen.getByRole('status', { name: 'Loading session overview' });
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
   });
 
@@ -636,7 +643,7 @@ describe('SessionWorkspace overview', () => {
     render(<SessionWorkspace session={session} />);
     showSkeleton();
 
-    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    screen.getByRole('status', { name: 'Loading session overview' });
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
   });
 
@@ -650,7 +657,7 @@ describe('SessionWorkspace overview', () => {
     render(<SessionWorkspace session={session} />);
     showSkeleton();
 
-    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    screen.getByRole('status', { name: 'Loading session overview' });
     expect(screen.queryByRole('region', { name: 'Session overview' })).toBeNull();
   });
 
@@ -661,7 +668,7 @@ describe('SessionWorkspace overview', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
+    screen.getByRole('region', { name: 'Session overview' });
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
   });
 
@@ -675,14 +682,14 @@ describe('SessionWorkspace overview', () => {
     render(<SessionWorkspace session={session} />);
     showSkeleton();
 
-    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    screen.getByRole('status', { name: 'Loading session overview' });
 
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-    expect(screen.getByText('This session did not load')).toBeDefined();
+    screen.getByText('This session did not load');
 
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
     expect(store.loadPhaseRunsForSession).toHaveBeenCalledWith(SESSION_ID);
@@ -730,7 +737,7 @@ describe('SessionWorkspace github issue lens', () => {
 
     render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByText('No GitHub issue linked')).toBeDefined();
+    screen.getByText('No GitHub issue linked');
     expect(screen.queryByTestId('github-task-detail')).toBeNull();
     expect(screen.getByTestId('link-work-action').textContent).toBe('Link work from github');
   });
@@ -762,7 +769,7 @@ describe('SessionWorkspace github issue lens', () => {
 
     const { rerender } = render(<SessionWorkspace session={session} />);
 
-    expect(screen.getByText('No GitHub issue linked')).toBeDefined();
+    screen.getByText('No GitHub issue linked');
     fireEvent.click(screen.getByTestId('link-work-action'));
 
     store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
@@ -799,18 +806,4 @@ describe('SessionWorkspace integration lenses', () => {
 
     expect(screen.getByTestId('integration-pane').textContent).toBe(provider);
   });
-});
-
-describe('SessionWorkspace context routing', () => {
-  it.each(['context', 'goal', 'decisions', 'last_output_summary'] as const)(
-    'shows the Overview for the old %s page, never a Context page',
-    (lens) => {
-      store.activeLens = { [SESSION_ID]: lens };
-      store.selectedAgentId = {};
-
-      render(<SessionWorkspace session={session} />);
-
-      expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
-    },
-  );
 });

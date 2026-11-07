@@ -82,7 +82,7 @@ describe('runTailOf', () => {
     });
   });
 
-  it('offers Ask it to continue after a quiet stretch', () => {
+  it('offers Continue after a quiet stretch', () => {
     expect(tailOf({ quiet: { agentId: IMPLEMENTER, minutes: 15 } })).toMatchObject({
       phrase: 'No output for 15 min',
       verb: { kind: 'quiet', agentId: IMPLEMENTER },
@@ -194,46 +194,92 @@ describe('runTailOf', () => {
     });
   });
 
-  it('ends a finished or a stopped run without a verb, the rail Add step is its home', () => {
-    expect(tailOf({ isCompleted: true })).toMatchObject({
-      phrase: 'Run finished',
-      verb: null,
-    });
+  it('draws no tail on a finished run and no verb on a stopped one', () => {
+    expect(tailOf({ isCompleted: true })).toBeNull();
     expect(
       tailOf({ run: aWorkflowRun({ orchestrationStop: { kind: 'closed', message: 'Closed' } }) }),
     ).toMatchObject({ phrase: 'Stopped by you', verb: null });
-  });
-
-  it('ends a finished run with a step not finished as finished with a gap, never plain done', () => {
-    const agents: ReadonlyArray<Agent> = [
-      anAgent({
-        id: SCOUT,
-        stepId: STEP_ONE,
-        status: 'skipped',
-        ordinal: 0,
-        outputSummary: 'the notify-relay token is missing',
-      }),
-      anAgent({ id: IMPLEMENTER, stepId: STEP_TWO, status: 'completed', ordinal: 1 }),
-    ];
-
-    const tail = tailOf({ isCompleted: true, agents });
-
-    expect(tail).toMatchObject({ phrase: 'Finished, 1 step not finished', verb: null });
-    expect(JSON.stringify(tail)).not.toContain('notify-relay token');
-  });
-
-  it('keeps Run finished when the user skipped the step', () => {
-    expect(
-      tailOf({
-        isCompleted: true,
-        agents: agentsOf({ scout: 'skipped', implementer: 'completed' }),
-      }),
-    ).toMatchObject({ phrase: 'Run finished' });
   });
 
   it('draws no tail on an archived run, whose Restore is in the header', () => {
     expect(
       tailOf({ run: aWorkflowRun({ discardedAt: JSON.parse('"2026-10-16T10:00:00.000Z"') }) }),
     ).toBeNull();
+  });
+
+  it.each([
+    ['continue', 'Continue', 'stopped', 'Stopped'],
+    ['retry', 'Retry', 'failed', 'Failed'],
+    ['hint', 'Add a hint and continue', 'needsYou', 'Needs you'],
+    ['decide-next', 'Decide next step', 'idle', 'Ready'],
+  ] as const)(
+    'reads %s as a state word with one link to the run on a step page',
+    (kind, label, state, phrase) => {
+      expect(
+        tailOf({
+          agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+          primary: { kind, label },
+          selectedRootId: SCOUT,
+        }),
+      ).toEqual({ state, phrase, stepAgentId: null, verb: { kind: 'openRun' } });
+    },
+  );
+
+  it('leaves the verb of a run kind to the header on the run page itself', () => {
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'pending' }),
+        primary: { kind: 'retry', label: 'Retry' },
+      }),
+    ).toMatchObject({
+      phrase: 'Failed',
+      verb: { kind: 'primary', primary: { kind: 'retry' } },
+    });
+  });
+
+  it('reads a blocked step as Not finished and keeps the Retry step door', () => {
+    const step = WORKFLOW.steps[1];
+    if (step === undefined) {
+      throw new Error('no step');
+    }
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'blocked' }),
+        nextAction: {
+          kind: 'recover',
+          subjectAgentId: IMPLEMENTER,
+          step,
+          isBlocked: true,
+          sentence:
+            'Fix stopped without finishing and without asking you anything. Tell it what to do next.',
+          cause: 'The run finishes once this step is done.',
+        },
+      }),
+    ).toEqual({
+      state: 'failed',
+      phrase: 'Not finished',
+      stepAgentId: null,
+      verb: { kind: 'recover' },
+    });
+  });
+
+  it('keeps the sentence of a failed step', () => {
+    const step = WORKFLOW.steps[1];
+    if (step === undefined) {
+      throw new Error('no step');
+    }
+    expect(
+      tailOf({
+        agents: agentsOf({ scout: 'completed', implementer: 'failed' }),
+        nextAction: {
+          kind: 'recover',
+          subjectAgentId: IMPLEMENTER,
+          step,
+          isBlocked: false,
+          sentence: 'Fix stopped before finishing.',
+          cause: 'The run finishes once this step is done.',
+        },
+      }),
+    ).toMatchObject({ phrase: 'Fix stopped before finishing.', verb: { kind: 'recover' } });
   });
 });

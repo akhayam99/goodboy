@@ -1,21 +1,17 @@
-export type TreeOrder = 'children-first' | 'parent-first';
-
 type Params = {
   readonly key: string;
   readonly levels: ReadonlyArray<number>;
   readonly from: number;
-  readonly order?: TreeOrder;
 };
 
 type StepParams = Omit<Params, 'key'>;
 
-const parentIndexOf = ({ levels, from, order = 'children-first' }: StepParams): number | null => {
+const parentIndexOf = ({ levels, from }: StepParams): number | null => {
   const level = levels[from];
   if (level === undefined) {
     return null;
   }
-  const step = order === 'children-first' ? 1 : -1;
-  for (let index = from + step; index >= 0 && index < levels.length; index += step) {
+  for (let index = from - 1; index >= 0; index -= 1) {
     const candidate = levels[index];
     if (candidate !== undefined && candidate < level) {
       return index;
@@ -24,9 +20,9 @@ const parentIndexOf = ({ levels, from, order = 'children-first' }: StepParams): 
   return null;
 };
 
-const childIndexOf = ({ levels, from, order = 'children-first' }: StepParams): number | null => {
+const childIndexOf = ({ levels, from }: StepParams): number | null => {
   const level = levels[from];
-  const next = order === 'children-first' ? from - 1 : from + 1;
+  const next = from + 1;
   const neighbour = levels[next];
   if (level === undefined || neighbour === undefined || neighbour <= level) {
     return null;
@@ -34,12 +30,7 @@ const childIndexOf = ({ levels, from, order = 'children-first' }: StepParams): n
   return next;
 };
 
-export const treeKeyTargetOf = ({
-  key,
-  levels,
-  from,
-  order = 'children-first',
-}: Params): number | null => {
+export const treeKeyTargetOf = ({ key, levels, from }: Params): number | null => {
   const last = levels.length - 1;
   if (last < 0) {
     return null;
@@ -54,9 +45,9 @@ export const treeKeyTargetOf = ({
     case 'End':
       return last;
     case 'ArrowLeft':
-      return parentIndexOf({ levels, from, order });
+      return parentIndexOf({ levels, from });
     case 'ArrowRight':
-      return childIndexOf({ levels, from, order });
+      return childIndexOf({ levels, from });
     default:
       return null;
   }

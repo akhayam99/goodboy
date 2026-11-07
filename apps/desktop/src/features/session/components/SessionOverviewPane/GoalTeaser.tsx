@@ -52,7 +52,7 @@ export const GoalTeaser = ({ session }: Props) => {
   }
 
   const isEmpty = value.trim() === '';
-  const open = () => openContextDrawer({ sessionId, tab: 'goal' });
+  const open = () => openContextDrawer({ sessionId, section: 'goal' });
 
   if (proposal.isReading) {
     return (

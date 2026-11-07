@@ -50,12 +50,18 @@ export const ListGrid = ({
     const narrow = columns.filter(
       (column) => column.hideBelow !== undefined && width > 0 && width < column.hideBelow,
     );
-    if (narrow.length === 0) {
+    const hidden = new Set([...filled.hiddenKeys, ...narrow.map((column) => column.key)]);
+    const keys = new Set(columns.map((column) => column.key));
+    const yielded = columns.filter(
+      (column) =>
+        column.yieldsTo !== undefined && keys.has(column.yieldsTo) && !hidden.has(column.yieldsTo),
+    );
+    if (narrow.length === 0 && yielded.length === 0) {
       return filled;
     }
     return {
       ...filled,
-      hiddenKeys: new Set([...filled.hiddenKeys, ...narrow.map((column) => column.key)]),
+      hiddenKeys: new Set([...hidden, ...yielded.map((column) => column.key)]),
     };
   }, [columns, filled, width]);
   return (

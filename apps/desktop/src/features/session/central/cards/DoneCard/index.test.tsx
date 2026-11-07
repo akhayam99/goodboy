@@ -15,12 +15,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import {
-  importStore,
-  resetStoryStore,
-  storySpies,
-  STORE_IMPORT_TIMEOUT_MS,
-} from '../../../../../store/storyHarness';
+import { importStore, resetStoryStore, storySpies } from '../../../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/runtime/worktreeStatuses/cache';
@@ -39,7 +34,7 @@ beforeAll(async () => {
   Element.prototype.scrollIntoView = vi.fn();
   useAppStore = await importStore();
   ({ SessionOverviewPane } = await import('../../../components/SessionOverviewPane'));
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   await resetStoryStore();

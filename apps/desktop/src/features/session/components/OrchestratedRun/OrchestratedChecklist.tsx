@@ -3,11 +3,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { SectionLabel } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { AgentId, Session } from '@goodboy/types';
+import { runPlace } from '../../../workflows/runPlace';
 import { useAppStore } from '../../../../store';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { RunTree } from '../../../workflows/components/RunTree';
 import type { RunTreeInsert } from '../../../workflows/runTreeInsert';
 import { useRunTree } from '../../../workflows/components/RunTree/useRunTree';
+import { hintQueueOf } from '../../../workflows/hintQueueOf';
 import { isBetweenStepsPhase } from '../../../workflows/isBetweenStepsPhase';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { orchestratedChecklistOf } from '../../../workflows/orchestratedChecklistOf';
@@ -26,6 +28,8 @@ type Props = {
 
 const CHECKLIST_EMPTY_SLOT = 28;
 
+const NO_READING: ReadonlyArray<string> = [];
+
 const FOCUSABLE = 'button, [href], [tabindex]:not([tabindex="-1"])';
 
 type AgentParams = {
@@ -37,12 +41,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
   const sessionId = session.id;
   const sectionRef = useRef<HTMLElement | null>(null);
   const roleModels = useSessionRoleModels({ sessionId });
-  const openDrawer = useAppStore((state) => state.openDrawer);
-  const openStepId = useAppStore((state) =>
-    state.drawer?.kind === 'run-step' && state.drawer.payload.runId === run.id
-      ? state.drawer.payload.agentId
-      : null,
-  );
+  const navigate = useAppStore((state) => state.navigate);
   const agentKindOverride = useAppStore(
     useShallow((state) => {
       const overrides: Record<string, AgentKind> = {};
@@ -56,28 +55,38 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     }),
   );
   const tree = useRunTree({ session, run, workflow, agentKindOverride });
+  const readingIds = useAppStore((state) => state.orchestratorReadingHints[run.id] ?? NO_READING);
   const isDone = view.orchestrator.state.phase === 'done';
   const checklist = orchestratedChecklistOf({
     agents,
     hints: run.orchestratorHints ?? [],
     summary: parseRunSummaryText(run.orchestratorSummary?.trim() ?? ''),
     isBetweenSteps:
-      !view.isDiscarded && isBetweenStepsPhase({ phase: view.orchestrator.state.phase }),
+      view.isDynamic &&
+      !view.isDiscarded &&
+      isBetweenStepsPhase({ phase: view.orchestrator.state.phase }),
     isDone,
   });
-  const queuedHints = (run.orchestratorHints ?? []).filter((hint) => hint.consumedAt == null);
-  const stepCount = agents.filter((agent) => agent.parentAgentId == null).length;
+  const queuedHints = hintQueueOf({ run, readingIds }).waiting;
+  const planned = view.isDynamic
+    ? []
+    : [...workflow.steps]
+        .sort((left, right) => left.ordinal - right.ordinal)
+        .filter((step) => !agents.some((agent) => agent.stepId === step.id));
   const skipped = (run.rulesSnapshot?.planChanges ?? []).filter(
     (change) => change.kind === 'skipped',
   );
 
-  const openStep = ({ agentId }: AgentParams) => {
+  const openStep = ({ agentId }: AgentParams) =>
+    navigate({ to: runPlace({ sessionId, runId: run.id, agentId }) });
+
+  const showStepRow = ({ agentId }: AgentParams) => {
     const row = sectionRef.current?.querySelector<HTMLElement>(
       `[data-testid="run-tree-row-${agentId}"]`,
     );
     const target = row?.querySelector<HTMLElement>(FOCUSABLE);
     if (row == null || target == null) {
-      openDrawer({ kind: 'run-step', sessionId, payload: { runId: run.id, agentId } });
+      openStep({ agentId });
       return;
     }
     row.scrollIntoView({ block: 'nearest' });
@@ -96,7 +105,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
         slotWidth={slotWidth}
         ink={ink}
         hasLineBelow={hasLineBelow}
-        onOpenStep={agentId === null ? null : () => openStep({ agentId })}
+        onOpenStep={agentId === null ? null : () => showStepRow({ agentId })}
       />
     ));
   };
@@ -136,6 +145,14 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
           slotWidth={slotWidth}
         />
       ))}
+      {planned.map((step) => (
+        <OrchestratedPlanRow
+          key={`planned-${step.id}`}
+          kind="left"
+          label={step.name}
+          slotWidth={slotWidth}
+        />
+      ))}
       {checklist.left.map((item) => (
         <OrchestratedPlanRow
           key={`left-${item.text}`}
@@ -154,6 +171,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     checklist.notes.length === 0 &&
     skipped.length === 0 &&
     queuedHints.length === 0 &&
+    planned.length === 0 &&
     !checklist.isNextShown
   ) {
     return null;
@@ -165,11 +183,7 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
       aria-label={ORCHESTRATED_COPY.checklist}
       className="flex min-w-0 flex-col gap-2"
     >
-      <SectionLabel
-        label={ORCHESTRATED_COPY.steps}
-        headingLevel={2}
-        count={stepCount === 0 ? undefined : stepCount}
-      />
+      <SectionLabel label={ORCHESTRATED_COPY.steps} headingLevel={2} />
       {agents.length > 0 ? (
         <RunTree
           density="checklist"
@@ -183,14 +197,12 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
             sessionEffort: session.effort ?? null,
             run,
           }}
-          selectedAgentId={openStepId}
+          selectedAgentId={null}
           highlightedStepId={null}
           beforeRow={beforeRow}
           trailing={trailing}
           onHighlight={() => undefined}
-          onSelect={(agentId) =>
-            openDrawer({ kind: 'run-step', sessionId, payload: { runId: run.id, agentId } })
-          }
+          onSelect={(agentId) => openStep({ agentId })}
           onAnswer={() => undefined}
         />
       ) : (

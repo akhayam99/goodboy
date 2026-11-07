@@ -166,6 +166,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
     const { attachWorkflowToSession } = spies();
     open();
 
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     pickCursor();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
@@ -180,6 +181,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('starts the Auto agent of a picked shape on the model picked for that run', async () => {
     const { spawnAgent } = spies();
     open();
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
 
     pickCursor();
@@ -195,6 +197,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('starts the orchestrator of a picked shape on the model picked for that run', async () => {
     const { attachWorkflowToSession } = spies();
     open();
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
 
     pickCursor();
@@ -209,6 +212,7 @@ describe('journey: pick the model of a run at the kickoff', () => {
   it('leaves the model to the defaults when none is picked', async () => {
     const { spawnAgent } = spies();
     open();
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
     expect(modelChip().getAttribute('data-run-model')).toBe('auto');
 

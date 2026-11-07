@@ -67,7 +67,7 @@ export type C09State =
   | 'needs-answers'
   | 'blocked';
 
-export type C09Page = 'document' | 'list' | 'empty' | 'step';
+export type C09Page = 'document' | 'list' | 'empty' | 'step' | 'stepPage';
 
 type SeedParams = {
   readonly state: C09State;
@@ -658,14 +658,14 @@ export const seedC09 = ({
   isRouted = false,
 }: SeedParams): Session => {
   const session = sessionOf({ state, page, isRouted });
-  const isDocument = page === 'document' || page === 'step';
+  const isDocument = page === 'document' || page === 'step' || page === 'stepPage';
   useAppStore.setState({
     currentWorkspaceId: C09_WORKSPACE_ID,
     sessions: [session],
     currentSessionId: C09_SESSION_ID,
     activeLens: { [C09_SESSION_ID]: isDocument ? 'workflows' : 'orchestrated' },
     focusedWorkflowRunId: { [C09_SESSION_ID]: isDocument ? C09_RUN_ID : null },
-    selectedAgentId: { [C09_SESSION_ID]: null },
+    selectedAgentId: { [C09_SESSION_ID]: page === 'stepPage' ? C09_TESTER_ID : null },
     sessionWorkflows: {
       [C09_SESSION_ID]: [workflowOf({ state, isGuidanceRepeated }), PRESET_WORKFLOW],
     },

@@ -54,7 +54,7 @@ const ROUTE: RunRoute = {
   presetName: 'Fix a layout',
   closeness: 'follow',
   role: null,
-  choice: 'Plan from Fix a layout · Follow it',
+  choice: 'Plan from Fix a layout · Keep steps',
   why: 'Your ask matches the preset',
   ask: 'Fix the billing table',
 };

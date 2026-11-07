@@ -28,9 +28,15 @@
 - **Questions is a list, like Artifacts.** One `ListGrid` (`parts/QuestionsGrid`) with two
   groups, **Needs you** then **Answered**, each counted from two; the grouping is
   `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
-  Needs you and says so in gray). A row reads the question with its answer in gray on a
-  second line (`You:` or `Agent:`), then the asker's role and the age; there is no answer
-  column. A blocking ask is one warning dot in the leading cell. The row
+  Needs you and says so in gray). A row reads the question with a gray second line that
+  names the run: the answer (`You:` or `Agent:`) when there is one, then the asker's role
+  and its agent name (`questionRunLine`; the name is left out when it only repeats the
+  role), and the age; there is no answer or asker column. Answered folds behind its count
+  (Show and Hide on its heading) once nothing waits, and stays open while something does or
+  while the open question is one of its rows. The first Needs you row takes keyboard focus
+  when the page opens, once, and only when nothing else has focus (the pane title that
+  `PaneSwap` focuses first counts as free) and no question is open; a later rerender never
+  takes focus back. A blocking ask is one warning dot in the leading cell. The row
   opens the question on its address: Questions with that question open, the `question`
   target of the session address (`questionPlace`, one function for every door: a run row's
   Answer, a Needs you row, the run menu, a search hit, an Ask chip, the board, the
@@ -101,11 +107,11 @@
   second `Answer` on the timeline row.
 - **The focused issue page says where the issue lives.** The issue is an
   address (`external-task` target, `focusedExternalTask`): a card opens it
-  through `openExternalTaskLens`, so the back row above it reads `Back to` its
-  tool and returns to the list, and Back does too. The page draws no back
+  through `openExternalTaskLens`, so the back row reads `Back to overview`.
+  The rail owns the linked work list and its history fold. The page draws no back
   button of its own. `Remove link from this session` sits in the record's `⋯`, asks first and
   leaves an Undo toast; once the unlink lands, the address is replaced by the
-  lens list, unless the user already moved on. A `Placed on` property in the Links group shows
+  Overview, unless the user already moved on. A failure keeps the record and its error. A `Placed on` property in the Links group shows
   `This session` or the branches; its value (`TaskPlacementMenu`) opens the
   same `Move to` menu as the linked task row, `This session` and one entry per open
   branch of the issue's project (`project · branch`, middle cut), the current
@@ -219,7 +225,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
-  lands on the first note (`noteLandingPlace`): the Files section at its card,
+  lands on the first note (`noteLandingPlace`): the Changes section at its card,
   scrolled to it, when the branch has no pull request, and its thread in
   Comments when it has one. No drawer opens. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
@@ -228,6 +234,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+  Provider entries open **Link work** on that provider (the event carries the source), unfold a folded session rail first, and are not offered on an archived session; a provider list address restores to Overview.
   Explore is always listed, opens as a pane (see The session tools), and
   browses one project of the session at a time as a tree (`role="tree"`). It
   draws the shared page header (`PaneShell` `page="explore"` inside the
@@ -259,7 +266,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px.
   A 16px slot before the size carries the change marks. Changed means what the
-  Files tab means: against the base branch, with uncommitted and untracked
+  Changes tab means: against the base branch, with uncommitted and untracked
   work (`worktree_changed_files`, whose `entries` give each path a status:
   added, modified, deleted or renamed, untracked files count as added). A
   changed file shows the diff's letter (`M`, `A`, `R`; `D` in the Changed
@@ -277,7 +284,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   deleted files as faint struck rows that do not open; with nothing left it
   says "No changes against main". A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
-  presentation with the head's Open page (tooltip Open in Changes) that opens the Files tab on the file. The folders you opened
+  presentation with the head's Open page (tooltip Open in Changes) that opens the Changes tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
   keyed by session, mount path and folder) and open again when you come back,
   and a file opened from elsewhere opens the folders above it. The file drawer

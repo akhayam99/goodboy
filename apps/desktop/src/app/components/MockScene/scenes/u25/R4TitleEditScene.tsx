@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { brandId, type SessionId } from '@goodboy/types';
-import { requestRename } from '../../../../../features/actions/renameRequest';
+import { requestRename } from '../../../../../shared/utils/renameRequest';
 import {
   SESSION_HEADER_ANCHOR,
   sessionObjectKey,

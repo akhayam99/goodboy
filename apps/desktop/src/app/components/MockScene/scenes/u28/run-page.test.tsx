@@ -87,25 +87,23 @@ describe('the u28 run page scenes', () => {
     }
   });
 
-  it('u28-run-step-blocked shows the question inline with Answer first and Retry step second', async () => {
+  it('u28-run-step-blocked reads Not finished with the doors and no reason on the run page', async () => {
     await mount('u28-run-step-blocked');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('step-failed');
-    within(tail()).getByText('Paused on blocked step 3');
-    const question = nodeOf('[data-blocked-question]');
-    expect(question.textContent).toContain('The step asked');
-    expect(question.textContent).toContain(
-      'Should I keep the report in the repo or only attach it to the notes?',
-    );
+    within(tail()).getByText('Not finished');
+    expect(document.querySelector('[data-blocked-question]')).toBeNull();
+    expect(tail().textContent).not.toContain('The benchmark script writes its report');
     const form = within(tail()).getByRole('form', { name: 'Answer the step' });
     const verbs = within(tail())
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(verbs.indexOf('Retry step')).toBeGreaterThan(-1);
+    expect(verbs).toContain('Retry step');
     expect(verbs).toContain('Open agent');
-    const answer = within(form).getByRole('button', { name: 'Keep working' });
-    expect(answer.hasAttribute('disabled')).toBe(true);
-    within(tail()).getByRole('button', { name: 'Retry step' });
+    expect(
+      within(form).getByRole('button', { name: 'Keep working' }).hasAttribute('disabled'),
+    ).toBe(true);
+    within(checklist()).getByRole('button', { name: /^Skip step/ });
     expect(header().textContent).not.toContain('Retry step');
   });
 

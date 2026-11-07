@@ -25,7 +25,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { requestRename } from '../../../actions/renameRequest';
+import { requestRename } from '../../../../shared/utils/renameRequest';
 import { sessionObjectKey } from '../../../actions/kinds/session';
 import { renderBar, seedColumn, sessionOf } from '../../testing/sessionColumn';
 

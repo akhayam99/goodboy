@@ -1,12 +1,16 @@
 import { Check, CircleDashed } from 'lucide-react';
-import { Markdown } from '@goodboy/ui';
+import { Button, Markdown } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core/orchestrator';
 import type { Session } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { RunFinishedActions } from '../AgentTree/RunFinishedActions';
 import { RunNotFinishedLinks } from '../RunNotFinishedLinks';
 import type { RunView } from '../AgentTree/useRunView';
 import { decisionEntries } from '../../../workflows/decisionEntries';
+import { runOutcomeTextOf } from '../../../workflows/runOutcomeTextOf';
+import { useSessionRuns } from '../../hooks/useSessionRuns';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import { OrchestratedResultGroup } from './OrchestratedResultGroup';
 
@@ -18,7 +22,11 @@ type Props = {
 export const OrchestratedResult = ({ session, view }: Props) => {
   const { run, workflow } = view;
   const reason = decisionEntries({ run, steps: workflow.steps }).closing?.reason ?? '';
-  const text = run.orchestratorSummary?.trim() ?? '';
+  const text = runOutcomeTextOf({ run, agents: view.agents });
+  const navigate = useAppStore((state) => state.navigate);
+  const runs = useSessionRuns({ session });
+  const branch =
+    runs.find(({ open }) => open.kind === 'run' && open.runId === run.id)?.branches[0] ?? null;
   const summary = parseRunSummaryText(text);
   const landing = useFreshLanding({ liveKey: run.id, text });
 
@@ -49,9 +57,27 @@ export const OrchestratedResult = ({ session, view }: Props) => {
           />
         </div>
       )}
-      <RunNotFinishedLinks session={session} view={view} isPhraseShown />
+      <RunNotFinishedLinks session={session} view={view} />
       {view.isDiscarded ? null : (
-        <RunFinishedActions sessionId={session.id} workflowRunId={run.id} />
+        <RunFinishedActions
+          sessionId={session.id}
+          workflowRunId={run.id}
+          trailing={
+            branch === null ? null : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  navigate({
+                    to: branchPlace({ sessionId: session.id, mountPath: branch.worktreePath }),
+                  })
+                }
+              >
+                Open branch
+              </Button>
+            )
+          }
+        />
       )}
     </section>
   );

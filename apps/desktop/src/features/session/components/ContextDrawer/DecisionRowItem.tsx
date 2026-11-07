@@ -4,9 +4,7 @@ import { Button, Chip, ClampedProse, cn, ICON_SIZE, Markdown, FOCUS_RING } from 
 import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { BlockEditor } from './BlockEditor';
 import { DecisionNumber } from './DecisionNumber';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
-const RewordIcon = CONCEPT_ICONS.enhance;
 const CHARS_PER_LINE = 72;
 
 type OverflowParams = {
@@ -24,7 +22,8 @@ type Props = {
   readonly liveKey: string | null;
   readonly why: string | null;
   readonly byline: string;
-  readonly isNew: boolean;
+  readonly changeLabel: string | null;
+  readonly isClosed: boolean;
   readonly reworded: { readonly age: string; readonly previousText: string } | null;
   readonly isLocked: boolean;
   readonly isHighlighted: boolean;
@@ -43,7 +42,8 @@ export const DecisionRowItem = ({
   liveKey,
   why,
   byline,
-  isNew,
+  changeLabel,
+  isClosed,
   reworded,
   isLocked,
   isHighlighted,
@@ -96,7 +96,7 @@ export const DecisionRowItem = ({
         className="flex items-start gap-3 rounded-lg px-2 py-2"
       >
         <span className="opacity-60">
-          <DecisionNumber number={number} />
+          <DecisionNumber number={number} isClosed={isClosed} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="line-clamp-2 text-faint-foreground line-through [overflow-wrap:anywhere]">
@@ -132,7 +132,7 @@ export const DecisionRowItem = ({
         isOpen ? 'bg-fill' : isHighlighted ? 'bg-selected' : 'hover:bg-hover',
       )}
     >
-      <DecisionNumber number={number} />
+      <DecisionNumber number={number} isClosed={isClosed} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <button
           type="button"
@@ -151,6 +151,7 @@ export const DecisionRowItem = ({
             className={cn(
               '[overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap',
               !isOpen && 'line-clamp-2',
+              isClosed && 'text-faint-foreground line-through',
               isSwapped && 'motion-safe:animate-text-swap',
             )}
           >
@@ -167,13 +168,15 @@ export const DecisionRowItem = ({
             <ClampedProse text={why} lines={2} className="text-meta text-muted-foreground" />
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
-            {isNew ? <Chip tone="primary" kind="state" label="New" /> : null}
+            {changeLabel === null ? null : (
+              <Chip tone={isClosed ? 'neutral' : 'primary'} kind="state" label={changeLabel} />
+            )}
             {byline}
           </p>
-          {isOpen && !isLocked ? (
-            <div className="ml-auto flex items-center gap-1">
+          {isOpen && !isLocked && !isClosed ? (
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -200,8 +203,7 @@ export const DecisionRowItem = ({
         </div>
         {reworded === null ? null : (
           <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
-            <RewordIcon size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
-            {`Reworded by Goodboy · ${reworded.age}`}
+            {`Goodboy · ${reworded.age}`}
             <button
               type="button"
               aria-expanded={isPreviousShown}

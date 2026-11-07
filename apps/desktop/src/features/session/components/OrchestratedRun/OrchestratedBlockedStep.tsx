@@ -11,9 +11,10 @@ import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 type Props = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly isReasonShown: boolean;
 };
 
-export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
+export const OrchestratedBlockedStep = ({ sessionId, agentId, isReasonShown }: Props) => {
   const question = useBlockedQuestion({ sessionId, agentId });
   const answerBlockedStep = useAppStore((state) => state.answerBlockedStep);
   const [text, setText] = useState('');
@@ -47,20 +48,22 @@ export const OrchestratedBlockedStep = ({ sessionId, agentId }: Props) => {
         void send();
       }}
     >
-      <StepEndedNotice
-        sessionId={sessionId}
-        agentId={agentId}
-        fallback={
-          question?.isQuestion === true ? (
-            <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
-              <span className="text-meta text-faint-foreground">
-                {ORCHESTRATED_COPY.blockedAsked}
-              </span>
-              <Markdown text={question.text} className="text-prose text-foreground" />
-            </div>
-          ) : null
-        }
-      />
+      {isReasonShown ? (
+        <StepEndedNotice
+          sessionId={sessionId}
+          agentId={agentId}
+          fallback={
+            question?.isQuestion === true ? (
+              <div data-blocked-question="" className="flex min-w-0 flex-col gap-1 px-2">
+                <span className="text-meta text-faint-foreground">
+                  {ORCHESTRATED_COPY.blockedAsked}
+                </span>
+                <Markdown text={question.text} className="text-prose text-foreground" />
+              </div>
+            ) : null
+          }
+        />
+      ) : null}
       {error === null ? null : (
         <Notice
           tone="danger"

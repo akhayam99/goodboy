@@ -69,9 +69,15 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('comments'),
   },
   {
-    name: 'palette: Open files finds the Files tab',
-    covers: ['navigate', 'palette:Open files'],
-    open: () => openPalette(/^Open files/, 'Open files'),
+    name: 'palette: Open changes finds the Changes tab',
+    covers: ['navigate', 'palette:Open changes'],
+    open: () => openPalette(/^Open changes/, 'Open changes'),
+    lands: branchTab('files'),
+  },
+  {
+    name: 'palette: the former name Files still finds the Changes tab',
+    covers: ['navigate', 'palette:Open changes'],
+    open: () => openPalette(/^Open changes/, 'Files'),
     lands: branchTab('files'),
   },
   {

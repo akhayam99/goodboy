@@ -334,5 +334,12 @@
     "count": 77,
     "reason": "first measure of the guard that ux34 PR 96 adds; the ledger only falls from here",
     "release": "0.31.0"
+  },
+  {
+    "rule": "former-names-guard",
+    "file": "Files",
+    "count": 1,
+    "reason": "Files stays searchable as the former name of Changes, and the word is still drawn on the file rail",
+    "release": "0.31.12"
   }
 ]

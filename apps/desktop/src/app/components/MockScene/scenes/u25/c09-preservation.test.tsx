@@ -157,7 +157,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(Object.keys(NEW_DRAWER_FORMS)).toEqual(['report', 'wireframe']);
   });
 
-  it('Run header: Pause run; overflow: View diff, Step routing, Save as preset, Copy run summary, Stop run confirmed, Archive, Delete', async () => {
+  it('Run header: Pause run; overflow: Rename, Step routing, Skip step, Stop run confirmed, Archive, five rows at most', async () => {
     await mount('c09-orch-running');
     act(() => {
       useAppStore.setState({ sessionProjectMounts: { [C09_SESSION_ID]: [mountOf({ index: 0 })] } });
@@ -169,12 +169,10 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
     const menu = within(await openMenu());
     expect(menu.queryByText('Pause run')).toBeNull();
-    expect(menu.getByText('Step routing')).toBeDefined();
-    expect(menu.getByText('View diff')).toBeDefined();
-    expect(menu.getByText('Copy run summary')).toBeDefined();
-    expect(menu.getByText('Archive run')).toBeDefined();
-    expect(menu.getByText('Delete run')).toBeDefined();
-    expect(menu.getByText('Save as preset')).toBeDefined();
+    menu.getByText('Rename');
+    menu.getByText('Step routing');
+    menu.getByText('Archive run');
+    expect(menu.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
     expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
     await press(menu.getByRole('menuitem', { name: /^Stop run/ }));
     expect(screen.getByText('Stop this run?')).toBeDefined();
@@ -201,8 +199,8 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(screen.getByTestId('orchestrator-hint-queue').textContent).toContain('Queue');
     expect(screen.getByTestId('orchestrator-hint-now').textContent).toContain('Send now');
     const queued = within(screen.getByRole('list', { name: 'Queued hints' }));
-    expect(screen.getAllByText('Queued hints 1, read at the next decision')).toHaveLength(1);
-    expect(nodeOf('[data-hint-queue-line]').textContent).toMatch(/^1 hint queued/);
+    expect(screen.getAllByText('Queued, read at the next decision')).toHaveLength(1);
+    expect(document.querySelector('[data-hint-queue-line]')).toBeNull();
     expect(queued.getByRole('button', { name: 'Remove' })).toBeDefined();
     expect(checklist().getByText('Read at step 3')).toBeDefined();
   });
@@ -237,27 +235,15 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
-  it('Why each step: the latest reason folded under the tail, older ones in the step pane', async () => {
-    await mount('c09-orch-step');
+  it('Why each step: the reason reads in the step, never on the run page', async () => {
+    await mount('c09-orch-running');
     expect(document.querySelector('[data-orchestrated-reason]')).toBeNull();
-    act(() => {
-      tail().getByRole('button', { name: 'Why this step' }).click();
-    });
-    expect(
-      tail().getByText('The batching must be proven on 12,000 rows before any CSV work.'),
-    ).toBeDefined();
-    expect(document.querySelector('[data-step-reason]')).toBeNull();
-    act(() => {
-      useAppStore.setState({
-        drawer: {
-          kind: 'run-step',
-          sessionId: C09_SESSION_ID,
-          payload: { runId: C09_RUN_ID, agentId: C09_IMPLEMENTER_ID },
-        },
-      });
-    });
-    await settle();
-    expect(nodeOf('[data-step-reason]').textContent).toMatch(/^Why: /);
+    expect(tail().queryByRole('button', { name: 'Why this step' })).toBeNull();
+    cleanup();
+    await mount('c09-orch-step');
+    expect(nodeOf('[data-step-reason]').textContent).toContain(
+      'The batching must be proven on 12,000 rows before any CSV work.',
+    );
   });
 
   it('The closing decision and the Recap with Done and Left sit in the result', async () => {
@@ -346,13 +332,11 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(tail().getByText(/stopped when Goodboy closed/)).toBeDefined();
   });
 
-  it('Step drawer: a checklist row opens the step in the pane, Open full goes to the agent', async () => {
+  it('Step page: a checklist row opens the page of the step', async () => {
     await mount('c09-orch-running');
     await press(checklist().getByRole('button', { name: /^Step 3, Run the 12k export benchmark/ }));
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'run-step',
-      payload: { runId: C09_RUN_ID, agentId: C09_TESTER_ID },
-    });
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().selectedAgentId[C09_SESSION_ID]).toBe(C09_TESTER_ID);
   });
 
   it('Limit and spent: the Limit chip opens the run limit alone', async () => {

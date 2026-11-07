@@ -3,8 +3,10 @@ import {
   ListChecks,
   MessageCircleQuestion,
   Pause,
+  Pencil,
   Play,
   RotateCcw,
+  ScrollText,
   SkipForward,
   SlidersHorizontal,
   Square,
@@ -36,9 +38,12 @@ import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { isRunPaused } from '../../workflows/isRunPaused';
 import { STEP_ROUTING_REQUEST_EVENT, requestStepRouting } from '../../workflows/requestStepRouting';
 import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
+import { resolveRootAgent } from '../../session/agent-kind';
 import { openQuestion } from '../../session/openQuestion';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
+import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
+import { runObjectKey, runTitleAnchorKey } from '../runObjectKey';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
@@ -61,6 +66,7 @@ export type WorkflowRunFacts = {
   readonly summary: string;
   readonly skipStep: SkipStepFacts | null;
   readonly autonomy: WorkflowAutonomy;
+  readonly stepAgentId: AgentId | null;
 };
 
 type SkipStepFacts = {
@@ -77,7 +83,7 @@ type SkipParams = {
 };
 
 const skipStepOf = ({ run, agents, steps, stepAgentId }: SkipParams): SkipStepFacts | null => {
-  const agent = agents.find((candidate) => candidate.id === stepAgentId) ?? null;
+  const agent = stepAgentId === null ? null : resolveRootAgent({ agents, agentId: stepAgentId });
   if (
     agent === null ||
     agent.parentAgentId != null ||
@@ -243,6 +249,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
             stepAgentId: target.stepAgentId ?? null,
           }),
       autonomy: runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key,
+      stepAgentId: target.stepAgentId ?? null,
     };
   },
   actions: [
@@ -392,6 +399,41 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         await env.getState().skipStuckStepAndAdvance(facts.sessionId, facts.run.id, {
           force: true,
           agentId: facts.skipStep.agent.id,
+        });
+      },
+    },
+    {
+      id: 'workflowRun.stepTranscript',
+      label: NAMES.openTranscript,
+      icon: ScrollText,
+      group: 'open',
+      when: ({ facts }) => facts.stepAgentId !== null,
+      run: ({ facts, env }) => {
+        if (facts.stepAgentId === null) {
+          return;
+        }
+        env.getState().openDrawer({
+          kind: 'transcript',
+          sessionId: facts.sessionId,
+          payload: { agentId: facts.stepAgentId },
+        });
+      },
+    },
+    {
+      id: 'workflowRun.rename',
+      label: 'Rename',
+      icon: Pencil,
+      group: 'act',
+      when: () => true,
+      run: ({ facts, env }) => {
+        const objectKey = runObjectKey({ runId: facts.run.id });
+        if (requestRename({ objectKey, anchorKey: env.anchorKey })) {
+          return;
+        }
+        openRun({ env, facts });
+        dispatchAfterNavigation({
+          name: RENAME_REQUEST_EVENT,
+          detail: { objectKey, anchorKey: runTitleAnchorKey({ runId: facts.run.id }) },
         });
       },
     },

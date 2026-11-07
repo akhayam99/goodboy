@@ -21,7 +21,7 @@ It reads top to bottom:
 
 An empty card is not drawn. An archived session keeps only **Done**.
 
-**New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar. Click a branch to open its pull request, comments, files, commits and checks.
+**New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar. Click a branch to open its pull request, comments, changes, commits and checks.
 
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list. Six things hold, in this order:
 

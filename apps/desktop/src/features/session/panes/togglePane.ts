@@ -1,6 +1,5 @@
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { selectHasContextChange } from '../../../store/slices/contextDrawer/selectHasContextChange';
 import { openExplorePane } from '../../explore/openExplorePane';
 import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { toggleSessionTerminal } from '../../terminal/toggleSessionTerminal';
@@ -31,7 +30,7 @@ export const togglePane = ({ sessionId, pane }: Params): void => {
     case 'context':
       state.openContextDrawer({
         sessionId,
-        ...(selectHasContextChange({ state, sessionId }) && { tab: 'decisions' }),
+        section: 'goal',
       });
       return;
     case 'scripts':

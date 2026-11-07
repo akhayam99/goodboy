@@ -135,7 +135,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openDiff',
-    label: `Open ${NAMES.files}`,
+    label: `Open ${NAMES.changes}`,
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',

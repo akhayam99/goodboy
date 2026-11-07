@@ -1,11 +1,11 @@
 import { Button, Notice } from '@goodboy/ui';
-import type { Agent, ProviderId, ProviderName, Session } from '@goodboy/types';
-import { useAppStore, useExecutedAgentRouting } from '../../../../store';
+import type { Agent, Session } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { DockStateLine } from '../../../../shared/components/DockStateLine';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { NAMES } from '../../../../shared/utils/names';
 import { glanceOf } from '../../glance/glanceOf';
-import { agentStoppedCopy } from './agentStoppedCopy';
+import { useAgentStoppedCopy } from './useAgentStoppedCopy';
 
 type Props = {
   readonly session: Session;
@@ -15,40 +15,15 @@ type Props = {
   readonly isRunStep: boolean;
 };
 
-type ProviderParams = Pick<Props, 'session'> & {
-  readonly executedProvider: ProviderName | null;
-  readonly providerOverride: ProviderId | null;
-};
-
 const STOPPED_TONE = glanceOf({ state: 'stopped', sentence: '' }).tone;
-
-const stoppedProvider = ({
-  session,
-  executedProvider,
-  providerOverride,
-}: ProviderParams): ProviderId =>
-  executedProvider == null || executedProvider === 'openai'
-    ? (providerOverride ?? session.providerPreference.defaultProvider)
-    : executedProvider;
 
 export const AgentStoppedNotice = ({ session, agent, isAutoChild, isDocked, isRunStep }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
-  const authResults = useAppStore((state) => state.authResults);
   const pending = usePendingAction({ sessionId: session.id });
-  const executed = useExecutedAgentRouting({ agent });
-  const providerOverride = useAppStore(
-    (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
-  );
+  const { copy } = useAgentStoppedCopy({ session, agent, isAutoChild, isRunStep });
   if (agent.status !== 'stopped') {
     return null;
   }
-  const provider = stoppedProvider({
-    session,
-    executedProvider: executed?.provider ?? null,
-    providerOverride,
-  });
-  const isProviderConnected = authResults?.[provider]?.state !== 'disconnected';
-  const copy = agentStoppedCopy({ agent, provider, isProviderConnected, isAutoChild, isRunStep });
   const action = copy.canContinue ? (
     <Button
       variant={isDocked ? 'primary' : 'secondary'}

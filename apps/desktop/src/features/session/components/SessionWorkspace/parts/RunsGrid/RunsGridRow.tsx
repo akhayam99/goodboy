@@ -1,21 +1,30 @@
-import { formatUsd, ICON_SIZE, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import { formatUsd, ICON_SIZE, ListGridRow, StateDot } from '@goodboy/ui';
 import { NAMES } from '../../../../../../shared/utils/names';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { AgentModelLine } from '../../../../../providers/modelLine/AgentModelLine';
 import type { ModelLine } from '../../../../../providers/modelLine/modelLineOf';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { formatSpan } from '../../../../../../shared/utils/time/formatSpan';
+import type { ObjectTarget } from '../../../../../actions/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { SessionRun, SessionRunShape } from '../../../../sessionRunsOf';
+import { RunRowTitle } from './RunRowTitle';
+import { RunRowVerb } from './RunRowVerb';
+import { runRowAnchorKey } from './runRowAnchorKey';
 
 type Props = {
-  readonly sessionId: SessionId;
+  readonly session: Session;
   readonly run: SessionRun;
+  readonly rowKey: string;
   readonly modelLine: ModelLine | null;
   readonly costUsd: number | null;
+  readonly titleSuffix: ReactNode;
   readonly now: number;
+  readonly isVerbBusy: boolean;
   readonly onOpen: () => void;
+  readonly onVerb: () => void;
 };
 
 const SHAPE_ICON = {
@@ -28,12 +37,15 @@ const SHAPE_LABEL: Readonly<Record<SessionRunShape, string>> = {
   lead: NAMES.runKind.agent,
 };
 
-type MenuAgentParams = {
+type MenuParams = {
   readonly run: SessionRun;
+  readonly session: Session;
 };
 
-const menuAgentOf = ({ run }: MenuAgentParams): AgentId | null =>
-  run.open.kind === 'run' ? null : run.open.agentId;
+const menuTargetOf = ({ run, session }: MenuParams): ObjectTarget =>
+  run.open.kind === 'run'
+    ? { kind: 'runRow', sessionId: session.id, runId: run.open.runId }
+    : { kind: 'agent', sessionId: session.id, agentId: run.open.agentId };
 
 type TimeParams = {
   readonly run: SessionRun;
@@ -47,20 +59,51 @@ const timeCellOf = ({ run, now }: TimeParams): string => {
   return run.startedAt === 0 ? '' : formatAge({ from: new Date(run.startedAt).toISOString(), now });
 };
 
-export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }: Props) => {
-  const agentId = menuAgentOf({ run });
+export const RunsGridRow = ({
+  session,
+  run,
+  rowKey,
+  modelLine,
+  costUsd,
+  titleSuffix,
+  now,
+  isVerbBusy,
+  onOpen,
+  onVerb,
+}: Props) => {
   const menu = useObjectMenuTrigger({
-    target:
-      agentId === null ? { kind: 'session', sessionId } : { kind: 'agent', sessionId, agentId },
-    anchorKey: `run:${run.id}`,
+    target: menuTargetOf({ run, session }),
+    anchorKey: runRowAnchorKey({ rowKey }),
   });
   const Icon = SHAPE_ICON[run.shape];
   return (
     <ListGridRow
       ariaLabel={`Open ${run.title}, ${SHAPE_LABEL[run.shape]}, ${run.stateWord}${run.isUnread ? ', unread' : ''}`}
       onSelect={onOpen}
-      rowKey={run.id}
-      {...(agentId !== null && { onContextMenu: menu.onContextMenu, onKeyDown: menu.onKeyDown })}
+      rowKey={rowKey}
+      overlays={[
+        {
+          column: 'title',
+          node: (
+            <RunRowTitle
+              sessionId={session.id}
+              run={run}
+              rowKey={rowKey}
+              suffix={titleSuffix}
+              onOpen={onOpen}
+            />
+          ),
+        },
+        {
+          column: 'verb',
+          node:
+            run.verb === null ? null : (
+              <RunRowVerb session={session} verb={run.verb} isBusy={isVerbBusy} onPress={onVerb} />
+            ),
+        },
+      ]}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       cells={[
         <StateDot state={run.dot} label={run.stateWord} isLive={run.dot === 'running'} />,
         <Icon
@@ -68,20 +111,14 @@ export const RunsGridRow = ({ sessionId, run, modelLine, costUsd, now, onOpen }:
           aria-label={SHAPE_LABEL[run.shape]}
           className="text-muted-foreground"
         />,
-        run.isUnread ? (
-          <>
-            <StateDot state="unread" label="Unread" />
-            <TruncatedText className="min-w-0">{run.title}</TruncatedText>
-          </>
-        ) : (
-          run.title
-        ),
+        '',
         run.origin,
         modelLine === null ? '' : <AgentModelLine line={modelLine} />,
         run.stateWord,
         run.progress,
         costUsd === null ? '' : formatUsd(costUsd),
         timeCellOf({ run, now }),
+        run.verb === null ? '' : <span aria-hidden />,
       ]}
     />
   );

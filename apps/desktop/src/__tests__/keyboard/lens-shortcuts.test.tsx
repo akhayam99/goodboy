@@ -3,9 +3,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { brandId, type SessionId } from '@goodboy/types';
+import { isRecord } from '@goodboy/types/helpers';
 import { act, cleanup, render } from '@testing-library/react';
 
-const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+const { platform } = vi.hoisted(() => {
+  const platform: { current: 'darwin' | 'linux' } = { current: 'darwin' };
+  return { platform };
+});
 
 vi.mock('../../shared/platform', () => ({ currentPlatform: () => platform.current }));
 
@@ -15,51 +19,74 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
     { id: 'session-1', workspaceId: 'workspace-1' },
   ];
   const noFocus = (): Record<string, string | null> => ({});
+  const initialState = {
+    hydrate: vi.fn(async () => undefined),
+    checkForUpdates: vi.fn(async () => undefined),
+    hydrated: false,
+    bootPhase: 'loading' as const,
+    error: null,
+    workspaceIntegrations: {},
+    workspaces: [
+      {
+        id: 'workspace-1',
+        name: 'Workspace',
+        rootPath: '/repo',
+        kind: 'repo' as const,
+      },
+    ],
+    sessions,
+    sessionProjectMounts: {},
+    sessionActiveProject: {},
+    sessionBranches: { 'session-1': 'feature/branch' },
+    settings: {},
+    loadSetting: vi.fn(async () => null),
+    navigate: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    openWorkspace: vi.fn(),
+    currentWorkspaceId: 'workspace-1',
+    currentSessionId: 'session-1',
+    activeLens: {},
+    selectedAgentId: {},
+    focusedWorkflowRunId: noFocus(),
+    focusedArtifactId: noFocus(),
+    sessionPhaseRuns: {},
+    agentKindOverride: {},
+    sessionWorktrees: {},
+    appStudio: null,
+    openStudio: vi.fn(),
+    amendStudio: vi.fn(),
+    closeStudio: vi.fn(),
+    toggleContextDrawer: vi.fn(),
+    openDrawer: vi.fn(),
+    drawer: null,
+  };
+  type State = Omit<
+    typeof initialState,
+    | 'workspaceIntegrations'
+    | 'workspaces'
+    | 'sessionBranches'
+    | 'settings'
+    | 'currentWorkspaceId'
+    | 'currentSessionId'
+    | 'activeLens'
+    | 'selectedAgentId'
+  > & {
+    workspaceIntegrations: Record<string, ReadonlyArray<{ provider: string }>>;
+    workspaces: Array<{ id: string; name: string; rootPath: string; kind: 'repo' | 'simple' }>;
+    sessionBranches: Record<string, string>;
+    settings: Record<string, string | undefined>;
+    currentWorkspaceId: string | null;
+    currentSessionId: string | null;
+    activeLens: Record<string, string | null>;
+    selectedAgentId: Record<string, string | null>;
+  };
+  const state: State = initialState;
+  const sidebarOrder: { current: ReadonlyArray<string> | null } = { current: null };
   return {
     sessionList: { current: sessions },
-    sidebarOrder: { current: null as ReadonlyArray<string> | null },
-    state: {
-      hydrate: vi.fn(async () => undefined),
-      checkForUpdates: vi.fn(async () => undefined),
-      hydrated: false,
-      bootPhase: 'loading' as const,
-      error: null,
-      workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-      workspaces: [
-        {
-          id: 'workspace-1',
-          name: 'Workspace',
-          rootPath: '/repo',
-          kind: 'repo' as 'repo' | 'simple',
-        },
-      ],
-      sessions,
-      sessionProjectMounts: {},
-      sessionActiveProject: {},
-      sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
-      settings: {} as Record<string, string | undefined>,
-      loadSetting: vi.fn(async () => null),
-      navigate: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      openWorkspace: vi.fn(),
-      currentWorkspaceId: 'workspace-1' as string | null,
-      currentSessionId: 'session-1' as string | null,
-      activeLens: {} as Record<string, string | null>,
-      selectedAgentId: {} as Record<string, string | null>,
-      focusedWorkflowRunId: noFocus(),
-      focusedArtifactId: noFocus(),
-      sessionPhaseRuns: {},
-      agentKindOverride: {},
-      sessionWorktrees: {},
-      appStudio: null,
-      openStudio: vi.fn(),
-      amendStudio: vi.fn(),
-      closeStudio: vi.fn(),
-      toggleContextDrawer: vi.fn(),
-      openDrawer: vi.fn(),
-      drawer: null,
-    },
+    sidebarOrder,
+    state,
   };
 });
 
@@ -170,8 +197,8 @@ const reload = vi.fn();
 
 const lensCalls = (): ReadonlyArray<ReadonlyArray<unknown>> =>
   state.navigate.mock.calls.map(([params]) => {
-    const place = (params as { to: { sessionId?: string; view?: { lens: unknown } } }).to;
-    return [place.sessionId, place.view?.lens];
+    const place = isRecord(params) && isRecord(params.to) ? params.to : null;
+    return [place?.sessionId, isRecord(place?.view) ? place.view.lens : undefined];
   });
 
 type KeyInit = {
@@ -234,7 +261,10 @@ describe('App lens shortcuts off darwin', () => {
     press({ code: 'KeyQ', key: 'Q', ctrlKey: true, shiftKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+      to: sessionPlace({
+        sessionId: brandId<SessionId>({ value: 'session-1' }),
+        lens: 'questions',
+      }),
     });
   });
 
@@ -257,7 +287,7 @@ describe('App lens shortcuts off darwin', () => {
     press({ code: 'BracketLeft', key: '{', ctrlKey: true, shiftKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-0' as SessionId }),
+      to: sessionPlace({ sessionId: brandId<SessionId>({ value: 'session-0' }) }),
     });
   });
 
@@ -287,7 +317,10 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyQ', key: 'q', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+      to: sessionPlace({
+        sessionId: brandId<SessionId>({ value: 'session-1' }),
+        lens: 'questions',
+      }),
     });
   });
 
@@ -346,7 +379,7 @@ describe('App lens shortcuts on darwin', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('toggles the Context drawer on the page where you are, on the tab each chord names', () => {
+  it('toggles the Context drawer on the page where you are, with one chord and retires the three section chords', () => {
     render(<App />);
 
     press({ code: 'KeyC', key: 'c', metaKey: true, altKey: true });
@@ -355,12 +388,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyU', key: 'u', metaKey: true, altKey: true });
 
     expect(lensCalls()).toEqual([]);
-    expect(state.toggleContextDrawer.mock.calls).toEqual([
-      [{ sessionId: 'session-1' }],
-      [{ sessionId: 'session-1', tab: 'goal' }],
-      [{ sessionId: 'session-1', tab: 'decisions' }],
-      [{ sessionId: 'session-1', tab: 'summary' }],
-    ]);
+    expect(state.toggleContextDrawer.mock.calls).toEqual([[{ sessionId: 'session-1' }]]);
   });
 
   it('reaches the integration lenses of the tools that are connected', () => {
@@ -376,9 +404,9 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'Digit6', key: '6', metaKey: true, altKey: true });
 
     expect(lensCalls()).toEqual([
-      ['session-1', 'linear'],
-      ['session-1', 'gitlab_issues'],
-      ['session-1', 'slack_threads'],
+      ['session-1', null],
+      ['session-1', null],
+      ['session-1', null],
     ]);
   });
 
@@ -399,7 +427,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'BracketLeft', key: '{', metaKey: true, shiftKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-0' as SessionId }),
+      to: sessionPlace({ sessionId: brandId<SessionId>({ value: 'session-0' }) }),
     });
   });
 
@@ -410,7 +438,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'BracketRight', key: '}', metaKey: true, shiftKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-0' as SessionId }),
+      to: sessionPlace({ sessionId: brandId<SessionId>({ value: 'session-0' }) }),
     });
   });
 
@@ -500,7 +528,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyR', key: 'r', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
+      to: branchPlace({ sessionId: brandId<SessionId>({ value: 'session-1' }), tab: 'comments' }),
     });
     expect(reload).not.toHaveBeenCalled();
   });

@@ -153,7 +153,7 @@ describe('palette verbs follow the session state', () => {
   it('offers every live verb on a session with a project, a worktree and a pull request', () => {
     expect(sessionView({ facts: LIVE, query: '' })).toEqual([
       'Open comments',
-      'Open files',
+      'Open changes',
       'Open in editor',
       'Open in terminal app',
       'Open the full log',
@@ -172,7 +172,7 @@ describe('palette verbs follow the session state', () => {
     ]);
   });
 
-  it('hides Files and the editor on a session with no project until they are searched', () => {
+  it('hides Changes and the editor on a session with no project until they are searched', () => {
     const facts = {
       ...LIVE,
       hasMount: false,
@@ -194,8 +194,8 @@ describe('palette verbs follow the session state', () => {
       'Link work',
       'Copy title',
     ]);
-    expect(sessionView({ facts, query: 'files' })).toEqual([
-      'Open files (Add a folder to this session first)',
+    expect(sessionView({ facts, query: 'changes' })).toEqual([
+      'Open changes (Add a folder to this session first)',
     ]);
     expect(sessionView({ facts, query: 'editor' })).toEqual([
       'Open in editor (This session has no worktree yet)',
@@ -442,7 +442,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Link work',
       'Open ledger-core in terminal',
       'Open in editor',
-      'Open files',
+      'Open changes',
       'Rename',
       'Copy branch name',
       'Open comments',
@@ -465,7 +465,7 @@ describe('the empty palette ranks the session verbs by state', () => {
     expect(labelsOf(screen, 'For this session').slice(0, 5)).toEqual([
       'Stop Implementer',
       'Message Implementer',
-      'Open files',
+      'Open changes',
       'Open ledger-core in terminal',
       'Start a run',
     ]);
@@ -474,7 +474,7 @@ describe('the empty palette ranks the session verbs by state', () => {
   it('ready to ship: review and diff come first', () => {
     expect(labelsOf(emptyScreen({ tier: 'ship' }), 'For this session').slice(0, 4)).toEqual([
       'Open comments',
-      'Open files',
+      'Open changes',
       'Open in editor',
       'Open ledger-core in terminal',
     ]);
@@ -484,7 +484,7 @@ describe('the empty palette ranks the session verbs by state', () => {
     expect(labelsOf(emptyScreen({ tier: 'finished' }), 'For this session').slice(0, 3)).toEqual([
       'Copy PR link',
       'Open comments',
-      'Open files',
+      'Open changes',
     ]);
   });
 

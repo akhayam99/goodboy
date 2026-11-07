@@ -5,20 +5,25 @@ import type { GetFn, SetFn } from './types';
 
 export const loadSessionContextSeen = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
-    if (get().sessionContextSeenAt[sessionId] !== undefined) {
-      return;
-    }
     const stored = await getSessionContextSeenAt(tauriDatabase, sessionId).catch(() => null);
-    if (get().sessionContextSeenAt[sessionId] !== undefined) {
+    const current = get().sessionContextSeenAt[sessionId];
+    if (stored !== null) {
+      if (typeof current === 'string' && current >= stored) {
+        return;
+      }
+      set((state) => ({
+        sessionContextSeenAt: { ...state.sessionContextSeenAt, [sessionId]: stored },
+        sessionDecisionsBaseline: { ...state.sessionDecisionsBaseline, [sessionId]: stored },
+      }));
       return;
     }
-    const seenAt = stored ?? (new Date().toISOString() as IsoDateTime);
+    if (current !== undefined) {
+      return;
+    }
+    const seenAt = new Date().toISOString() as IsoDateTime;
     set((state) => ({
       sessionContextSeenAt: { ...state.sessionContextSeenAt, [sessionId]: seenAt },
     }));
-    if (stored !== null) {
-      return;
-    }
     await setSessionContextSeenAt(tauriDatabase, sessionId, seenAt).catch(() => undefined);
   };
 };

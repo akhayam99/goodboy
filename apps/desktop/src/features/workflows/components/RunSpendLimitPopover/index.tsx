@@ -20,14 +20,9 @@ import { useRunLimitDraft } from '../RunSettingsLine/useRunLimitDraft';
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
-  readonly variant: 'primary' | 'meta' | 'foot';
+  readonly variant: 'primary' | 'meta';
   readonly buttonVariant?: 'primary' | 'secondary';
 };
-
-const FOOT_TRIGGER = cn(
-  'inline-flex h-6 items-center rounded-md text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
-  FOCUS_RING,
-);
 
 export const RunSpendLimitPopover = ({
   sessionId,
@@ -58,17 +53,7 @@ export const RunSpendLimitPopover = ({
       className="flex flex-col bg-subtle"
       anchorClassName="inline-flex"
       trigger={
-        variant === 'foot' ? (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={open}
-            data-testid="run-spend-limit-trigger"
-            className={FOOT_TRIGGER}
-          >
-            {metaLabel}
-          </button>
-        ) : variant === 'meta' ? (
+        variant === 'meta' ? (
           <button
             type="button"
             onClick={toggle}

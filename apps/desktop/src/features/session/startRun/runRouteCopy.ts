@@ -21,7 +21,7 @@ export const RUN_ROUTE_COPY = {
   label: 'Start a run',
   fromPreset: ({ name }: NameParams) => `Start from ${name}`,
   placeholder: 'Describe what you want done. Auto picks how to run it.',
-  hint: 'Auto picks how to run it. ~ lists presets, @ lists roles.',
+  hint: '~ presets, @ roles',
   runAs: {
     startsAs: 'Starts as',
     emptyPresets: 'No presets yet. Create one in the workspace settings.',
@@ -41,8 +41,8 @@ export const RUN_ROUTE_COPY = {
     lead: AUTO_AGENT_LINE,
   },
   closeness: {
-    follow: 'Follow it',
-    adapt: 'Adapt as it goes',
+    follow: 'Keep steps',
+    adapt: 'May change steps',
   },
   kind: 'Kind',
   setAtStart: 'set at start',
