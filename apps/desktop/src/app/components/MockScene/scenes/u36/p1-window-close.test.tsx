@@ -101,10 +101,10 @@ describe('the window close scenes', () => {
     sheet.getByRole('button', { name: 'Stop 1 agent and 1 run' });
   });
 
-  it("u36-p1-window-close-stuck says the agent didn't stop and offers Close anyway", async () => {
+  it('u36-p1-window-close-stuck says the agent did not stop and offers Close anyway', async () => {
     await mount({ name: 'u36-p1-window-close-stuck' });
 
-    const sheet = within(screen.getByRole('dialog', { name: "1 agent didn't stop" }));
+    const sheet = within(screen.getByRole('dialog', { name: '1 agent did not stop' }));
     sheet.getByRole('button', { name: 'Close anyway' });
   });
 });

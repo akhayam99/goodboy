@@ -152,7 +152,7 @@ describe('error states', () => {
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
-    expect(screen.getByText("This session didn't load")).toBeDefined();
+    expect(screen.getByText('This session did not load')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalledOnce();
     vi.useRealTimers();

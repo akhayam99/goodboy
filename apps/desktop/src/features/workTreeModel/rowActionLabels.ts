@@ -8,7 +8,7 @@ export const ROW_ACTION_LABEL = {
   push: 'Push',
   continue: 'Continue',
   retry: 'Retry',
-  viewDiff: 'Open',
+  viewDiff: 'View diff',
   copyPath: 'Copy path',
   copied: 'Copied',
   copyFailed: 'Failed',

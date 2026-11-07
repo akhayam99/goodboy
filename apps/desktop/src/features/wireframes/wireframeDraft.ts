@@ -35,7 +35,7 @@ export const draftFailure = ({
       /^the wireframe document does not match the contract:\s*/,
       '',
     );
-    return { reason: `It didn't pass the checks: ${reason}`, detail: capture.message };
+    return { reason: `It did not pass the checks: ${reason}`, detail: capture.message };
   }
   const error = [...recent].reverse().find((event) => event.kind === 'error');
   if (error !== undefined && error.kind === 'error') {

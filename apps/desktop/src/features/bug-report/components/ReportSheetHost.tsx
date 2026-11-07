@@ -159,7 +159,7 @@ export const ReportSheetHost = () => {
           url == null
             ? undefined
             : {
-                label: filed.kind === 'comment' ? 'Open comment' : 'Open issue',
+                label: filed.kind === 'comment' ? 'View comment' : 'View issue',
                 onClick: () => void openUrl(url),
               },
       });
@@ -174,7 +174,7 @@ export const ReportSheetHost = () => {
         kind: 'info',
         title: 'Finish on GitHub',
         message: overflows
-          ? "The rest didn't fit the link and is on your clipboard. Paste it into the issue, then submit."
+          ? 'The rest did not fit the link and is on your clipboard. Paste it into the issue, then submit.'
           : 'Submit the form in your browser to file the issue.',
       });
     },

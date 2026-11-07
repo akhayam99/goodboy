@@ -437,7 +437,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(sendTurn).not.toHaveBeenCalled();
   });
 
-  it("keeps the plan unused when the kickoff is refused, and says the agent didn't start", async () => {
+  it('keeps the plan unused when the kickoff is refused, and says the agent did not start', async () => {
     const { sendTurn, reportError, spawn } = buildHarness([makePlan()]);
     sendTurn.mockImplementationOnce(async () => ({ blockedOverBudget: true }));
 

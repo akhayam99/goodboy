@@ -19,7 +19,7 @@ const RETRY = [TAIL_ACTION.retryThroughAuto];
 const CONTINUE = [{ ...TAIL_ACTION.retryThroughAuto, label: NAMES.continue }];
 
 const FAILURE_REASON = {
-  failed: "the agent didn't finish",
+  failed: 'the agent did not finish',
   blocked: 'the agent needs you',
   timed_out: 'the agent ran out of time',
 } as const satisfies Record<Exclude<AutoOutcome, 'completed' | 'stopped'>, string>;

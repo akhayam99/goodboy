@@ -13,7 +13,7 @@ type BitbucketFailure = Readonly<{
 
 const BAD_CREDENTIALS_MESSAGE = 'Check the email and API token';
 const DENIED_MESSAGE = 'The API token lacks the pull request scope';
-const NETWORK_MESSAGE = "Bitbucket didn't answer, check the connection";
+const NETWORK_MESSAGE = 'Bitbucket did not answer, check the connection';
 
 type BodyParams = {
   readonly body: string;
@@ -89,7 +89,7 @@ const messageOf = ({ failure }: FailureParams): string => {
         return failure.detail;
       }
       return failure.status === null
-        ? "Bitbucket didn't answer"
+        ? 'Bitbucket did not answer'
         : `Bitbucket answered ${failure.status}`;
     default: {
       const exhaustive: never = failure.kind;

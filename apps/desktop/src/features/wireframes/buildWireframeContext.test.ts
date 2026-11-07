@@ -467,7 +467,7 @@ describe('buildWireframeContext agent budgets', () => {
       expect(context.sourceIds).not.toContain(id);
     });
     expect(context.inventory.find((row) => row.id === 'agents')?.detail).toContain(
-      `${dropped.length} didn't fit and were dropped`,
+      `${dropped.length} did not fit and were dropped`,
     );
     expect(context.text.length).toBeLessThanOrEqual(WIREFRAME_CONTEXT_LIMITS.total);
   });

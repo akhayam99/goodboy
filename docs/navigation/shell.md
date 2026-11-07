@@ -26,7 +26,7 @@ never exists on one surface only.
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
 - **The sidebar session row.** Its right click (and Shift+F10) opens the
-  session kind's menu, the full set of session verbs: **Open** (a submenu
+  session kind's menu, the full set of session verbs: **Go to** (a submenu
   with Open, Comments, Files, Open in editor and Open in terminal app; a verb
   that cannot run stays in it with its reason as a tooltip), Open the full log,
   Limit, Rename, Pin session or Unpin session, **Refresh session** (`session.refresh`, the
@@ -73,7 +73,7 @@ never exists on one surface only.
   Let Auto take it from here on an old standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
   and the name; Delete agent. A
-  workflow run: Open run, Open changes; Answer, Start run, Continue, Restart
+  workflow run: Open run, View diff; Answer, Start run, Continue, Restart
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already

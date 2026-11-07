@@ -19,7 +19,7 @@ export const summarizeForWorkViaAux = async ({
     invokeFn: invokeCommand,
   });
   if ((result.exitCode ?? 0) !== 0) {
-    throw new Error(result.stderr.trim() === '' ? "The summary didn't finish" : result.stderr);
+    throw new Error(result.stderr.trim() === '' ? 'The summary did not finish' : result.stderr);
   }
   return extractAuxOutput({ providerId: provider, stdout: result.stdout }).text;
 };

@@ -66,7 +66,7 @@ it('shows a failure with the first line only, then the answer time after a good 
   await act(async () => {
     await store.getState().testProviderConnection({ providerId: 'cursor' });
   });
-  expect(screen.getByText("Cursor didn't accept the call: Not logged in.")).toBeDefined();
+  expect(screen.getByText('Cursor did not accept the call: Not logged in.')).toBeDefined();
   expect(screen.queryByText(/Private diagnostic/)).toBeNull();
   expect(screen.queryByRole('button')).toBeNull();
 

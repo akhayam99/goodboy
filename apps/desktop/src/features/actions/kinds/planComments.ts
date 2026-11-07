@@ -30,7 +30,7 @@ export const PLAN_COMMENTS_KIND: ObjectKindDefinition<PlanCommentsActionTarget, 
       },
       {
         id: 'planComments.discard',
-        label: 'Discard your comments',
+        label: 'Discard my comments',
         icon: Trash2,
         group: 'danger',
         when: () => true,

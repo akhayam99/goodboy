@@ -84,7 +84,7 @@ describe('resolve queue copy guard', () => {
       contents: readFileSync(join(HERE, 'resolvePublishCopy.ts'), 'utf8'),
     });
     expect(sentences).toContain('Worktree has uncommitted changes');
-    expect(sentences).toContain("The branch carries a commit you didn't approve");
+    expect(sentences).toContain('The branch carries a commit you did not approve');
   });
 
   it('keeps the engineering vocabulary out of every sentence a user reads', () => {

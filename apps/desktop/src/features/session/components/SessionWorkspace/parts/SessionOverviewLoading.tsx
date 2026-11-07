@@ -29,7 +29,7 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
         <EmptyState
           icon={TriangleAlert}
           tone="warning"
-          title="This session didn't load"
+          title="This session did not load"
           description="Retry, or reopen it from the board."
           action={
             <Button size="md" onClick={onRetry}>

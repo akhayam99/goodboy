@@ -9,6 +9,7 @@ export type CopyString = {
   readonly prop: string | null;
   readonly text: string;
   readonly hasLeadingExpression?: boolean;
+  readonly isConditionalBranch?: boolean;
   readonly element?: string;
 };
 
@@ -45,6 +46,18 @@ const copyPropOf = ({ node }: NodeParams): string | null => {
     return parent.name.getText().replace(/['"]/g, '');
   }
   return null;
+};
+
+const isConditionalBranch = ({ node }: NodeParams): boolean => {
+  let current = node;
+  while (ts.isParenthesizedExpression(current.parent)) {
+    current = current.parent;
+  }
+  return (
+    ts.isConditionalExpression(current.parent) &&
+    current.parent.condition !== current &&
+    copyPropOf({ node }) !== null
+  );
 };
 
 const elementOf = ({ node }: NodeParams): string | undefined => {
@@ -110,6 +123,7 @@ export const scanCopySource = ({ path, text }: Params): ReadonlyArray<CopyString
         line: line + 1,
         prop: copyPropOf({ node }),
         text: text.trim().replace(/\s+/g, ' '),
+        ...(isConditionalBranch({ node }) ? { isConditionalBranch: true } : {}),
         ...(ts.isTemplateExpression(node) && node.head.text.trim() === ''
           ? { hasLeadingExpression: true }
           : {}),

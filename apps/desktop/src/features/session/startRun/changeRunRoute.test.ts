@@ -334,7 +334,7 @@ describe('changeRunRoute', () => {
     expect(runOf()?.rulesSnapshot?.route).toEqual(PLAN_ROUTE);
   });
 
-  it("says so when the old run didn't end, and keeps the new run", async () => {
+  it('says so when the old run did not end, and keeps the new run', async () => {
     seedPlanRun({ hasWork: true });
     const engines = mockEngines();
     engines.closeWorkflowRun.mockResolvedValueOnce('failed');
@@ -345,7 +345,7 @@ describe('changeRunRoute', () => {
         choice: { shape: 'lead', presetId: null, closeness: 'adapt' },
         shouldEndRun: true,
       }),
-    ).rejects.toThrow("didn't end");
+    ).rejects.toThrow('did not end');
 
     expect(engines.spawnAgent).toHaveBeenCalledTimes(1);
     expect(engines.discardWorkflow).not.toHaveBeenCalled();

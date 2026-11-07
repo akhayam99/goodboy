@@ -40,7 +40,7 @@ export const LevelFolder = ({ session }: Props) => {
   return (
     <LevelCard
       id={LABEL_ID}
-      label={folders.length === 1 ? 'Plain folder' : 'Plain folders'}
+      label={folders.length === 1 ? 'Folder' : 'Folders'}
       isOpen={fold.isOpen}
       onToggle={fold.toggle}
     >

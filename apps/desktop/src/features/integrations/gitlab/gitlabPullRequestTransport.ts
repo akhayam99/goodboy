@@ -37,7 +37,7 @@ const gitlabPortErrorOf = ({ error }: { readonly error: unknown }): PullRequestP
   const details = failure.body.trim();
   return new PullRequestPortError({
     kind: pullRequestFailureKindOf({ kind: failure.kind }),
-    message: details === '' ? "GitLab didn't answer" : details,
+    message: details === '' ? 'GitLab did not answer' : details,
     details,
   });
 };

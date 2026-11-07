@@ -43,7 +43,7 @@ const whatOf = ({ roles }: NounsParams): string => {
 export const refusalNoticeOf = ({ refusal }: Params): string => {
   const reason = autoRefusalUserReason({ code: refusal.code });
   if (refusal.action === 'answer') {
-    return `Auto's answer to an agent wasn't sent: ${reason}. Auto is choosing again.`;
+    return `Auto's answer to an agent was not sent: ${reason}. Auto is choosing again.`;
   }
   if (refusal.action === 'finish') {
     return `Auto tried to finish. Not finished: ${reason}. Auto is choosing again.`;

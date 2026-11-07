@@ -19,7 +19,7 @@ describe('updateCardCopy', () => {
         failure: { phase: 'download', message: 'The download was cut off.' },
       }),
     ).toEqual({
-      title: "Goodboy 0.27.2 didn't install",
+      title: 'Goodboy 0.27.2 did not install',
       body: 'Nothing changed on this Mac.',
       detail: 'The download was cut off.',
     });

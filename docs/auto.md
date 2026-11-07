@@ -378,7 +378,7 @@ writing to it reopens it to **Deciding**.
   row, a next step that revises the plan hides **Approve**, and a project ask
   waits behind a plan. **Comments not sent** reads "2 comments on plan v1 not
   sent to the Planner" with a filled **Send to planner**; **Approve anyway** and
-  **Discard your comments** sit in its menu (`AutoDockPlanComments`, the rule comes
+  **Discard my comments** sit in its menu (`AutoDockPlanComments`, the rule comes
   from `planPrimaryOf`); Discard asks first inside the menu and names a failure.
   Review changes stays out while a project ask, a next step or a plan waits
   (`isAutoTreeAtRestOf`). Once the tree rests, "Plan v1 approved" leaves the dock.

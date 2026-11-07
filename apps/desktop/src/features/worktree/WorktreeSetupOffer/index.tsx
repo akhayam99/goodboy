@@ -1,4 +1,9 @@
-import { NOTHING_CHANGED, READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
+import {
+  CHECK_STATE,
+  NOTHING_CHANGED,
+  READ_FAILED,
+  type ErrorRecovery,
+} from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
 import { Button, Notice } from '@goodboy/ui';
@@ -21,6 +26,8 @@ type Props = {
 
 type SaveParams = {
   readonly next: SetupOffer;
+  readonly title: string;
+  readonly recovery: ErrorRecovery;
 };
 
 type LineParams = {
@@ -82,16 +89,16 @@ export const WorktreeSetupOffer = ({
     return null;
   }
 
-  const save = ({ next }: SaveParams) =>
+  const save = ({ next, title: failureTitle, recovery }: SaveParams) =>
     saveSetting(key, setupOfferValueOf({ offer: next })).catch((error: unknown) =>
-      reportError({
-        recovery: NOTHING_CHANGED,
-        title: "Couldn't save the setup offer",
-        error,
-        sessionId,
-      }),
+      reportError({ recovery, title: failureTitle, error, sessionId }),
     );
-  const dismiss = () => void save({ next: { ...offer, state: 'dismissed' } });
+  const dismiss = () =>
+    void save({
+      next: { ...offer, state: 'dismissed' },
+      title: "Couldn't save the setup offer",
+      recovery: NOTHING_CHANGED,
+    });
   const command = offer.command;
   const run = async () => {
     if (command === null) {
@@ -108,7 +115,11 @@ export const WorktreeSetupOffer = ({
         mountId,
       });
       if (result.exitCode === 0) {
-        await save({ next: { ...offer, state: 'done' } });
+        await save({
+          next: { ...offer, state: 'done' },
+          title: "Setup ran, but its completion wasn't saved",
+          recovery: CHECK_STATE,
+        });
       }
     } finally {
       setIsRunning(false);

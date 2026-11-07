@@ -133,7 +133,7 @@ export const pushResultOf = ({
   if (outcome.failed > 0) {
     return {
       tone: landed === 0 ? 'failed' : 'partial',
-      sentence: `${landed} of ${outcome.total} landed${where}. ${outcome.failed} didn't: see ${outcome.failed === 1 ? 'the comment' : 'the comments'}.`,
+      sentence: `${landed} of ${outcome.total} landed${where}. ${outcome.failed} did not: see ${outcome.failed === 1 ? 'the comment' : 'the comments'}.`,
     };
   }
   const lead = [

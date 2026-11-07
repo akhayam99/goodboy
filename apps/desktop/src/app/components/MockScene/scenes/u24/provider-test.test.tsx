@@ -63,7 +63,7 @@ describe('provider test scenes', () => {
   });
   it('shows refusal recovery', async () => {
     await mount({ id: 'providertest-refused' });
-    expect(screen.getByText(/Cursor didn't accept the call: Not logged in/)).toBeDefined();
+    expect(screen.getByText(/Cursor did not accept the call: Not logged in/)).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Sign in again' }).length).toBeGreaterThan(0);
   });
   it('opens the history from the header menu', async () => {

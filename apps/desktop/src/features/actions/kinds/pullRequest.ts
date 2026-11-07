@@ -480,8 +480,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     confirm: ({ facts }) => ({
       title: `Close ${numberLabel({ facts })} without merging?`,
       description: can({ facts, capability: 'canReopen' })
-        ? 'Closes it for reviewers. Commits stay. Reopen brings it back.'
-        : `Declines it for reviewers permanently. Commits stay. ${hostLabel({ facts })} can't reopen it.`,
+        ? 'Reviewers see it closed. The branch and its commits stay, and Reopen brings it back.'
+        : `Reviewers see it declined. The branch and its commits stay. ${hostLabel({ facts })} can't reopen a declined ${nounsOf({ facts }).long}.`,
       confirmLabel: `Close ${nounsOf({ facts }).long}`,
       role: 'danger',
     }),

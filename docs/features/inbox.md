@@ -12,7 +12,7 @@ Agents on any provider can read and act on the tools you connected, without hold
 
 ### Tasks
 
-Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open beside it. Tasks opens on **For you**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
+Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and your pull and merge requests sit together, and the header reads **Tasks** with how many are open beside it. Tasks opens on **For me**: issues assigned to you, what you starred and what is linked to your sessions. **All** next to it shows everything your tools sent.
 
 Items come in groups, by source unless you pick **Status**, **Project** or **None** from the grouping button, which names the current one (**Group: Source**). Each group names its total once, beside its label, shows its first five rows and **Show all**, and a starred item still counts in its source group; an expanded group draws only the rows on screen and names where you are ("41 of 312"), so a thousand open items never scroll forever. Every row has the same columns: source, key, title, status, priority and age. The key shows what tells rows apart (a Sentry error shows its number, a Slack thread has none), and a thread has no status. Rows carry no buttons: the row is the button.
 
@@ -24,7 +24,7 @@ Click a row or press **Enter** to open it in the pane on the right, and move wit
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Tasks page with the For you and All switch, the search box, the Filters button and Group: Source, listing 10 items from Linear, GitHub, Jira, Sentry and Slack, with Linear issue CAS-231 open on the right with Start session, Link to a session and its conversation">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Tasks page with the For me and All switch, the search box, the Filters button and Group: Source, listing 10 items from Linear, GitHub, Jira, Sentry and Slack, with Linear issue CAS-231 open on the right with Start session, Link to a session and its conversation">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

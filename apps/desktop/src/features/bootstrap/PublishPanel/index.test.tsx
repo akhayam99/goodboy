@@ -350,7 +350,7 @@ describe('PublishPanel with an address', () => {
 
     await screen.findByText('Publishing main failed');
     screen.getByText(
-      /The repository exists at https:\/\/github.com\/dana-reyes\/cascadia and wasn't removed/,
+      /The repository exists at https:\/\/github.com\/dana-reyes\/cascadia and was not removed/,
     );
     expect(screen.queryByText('remote: Permission denied')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));

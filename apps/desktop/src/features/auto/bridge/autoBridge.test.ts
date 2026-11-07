@@ -302,7 +302,7 @@ describe('Auto in a window without the runtime', () => {
 
     const stopped = client.ports.stop({ treeId: 'tree-harborline' });
     const said = client.ports.userTurn(TURN);
-    const caught = expect(stopped).rejects.toThrow("The main window didn't answer");
+    const caught = expect(stopped).rejects.toThrow('The main window did not answer');
     await vi.advanceTimersByTimeAsync(1_000);
 
     await caught;

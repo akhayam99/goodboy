@@ -204,7 +204,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses the rows and the list keys but not the day
   grouping or a rail: its facets (source, show, type, project) sit in one Filter
-  menu of the header, next to the For you and All switch, the search, the grouping button (`Group: Source`) and
+  menu of the header, next to the For me and All switch, the search, the grouping button (`Group: Source`) and
   `⋯` (Refresh, Manage tools: the `taskList` kind of the action registry), and its rows are one `ListGrid` with a group per
   source, status or project (`taskGroupsOf`), the total on the label (`taskGroupTotalsOf`, starred rows included), five rows each until Show all, and
   each group is its own listbox of options. J and K move a cursor through the

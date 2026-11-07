@@ -689,7 +689,7 @@ describe('SessionWorkspace overview', () => {
     });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-    screen.getByText("This session didn't load");
+    screen.getByText('This session did not load');
 
     fireEvent.click(screen.getByRole('button', { name: /retry/i }));
     expect(store.loadPhaseRunsForSession).toHaveBeenCalledWith(SESSION_ID);

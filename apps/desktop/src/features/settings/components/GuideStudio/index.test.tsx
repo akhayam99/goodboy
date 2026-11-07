@@ -199,7 +199,7 @@ describe('HelpStudio on the Guide', () => {
     render(<HelpStudio initialTab="guide" onClose={vi.fn()} onOpenScreen={vi.fn()} />);
 
     fireEvent.click(chapterButton('Board'));
-    fireEvent.click(within(page('Board')).getByRole('button', { name: 'Open board' }));
+    fireEvent.click(within(page('Board')).getByRole('button', { name: 'Go to the board' }));
 
     expect(useAppStore.getState().appStudio).toBeNull();
   });

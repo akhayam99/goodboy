@@ -184,7 +184,7 @@ export const NEVER_SENT =
   'Never sent: prompts and replies, transcripts, diffs, file contents, logs, screenshots, folder, repository and branch names, ids, the clipboard, environment variables and keys.';
 
 const OVERFLOW_NOTICE =
-  "\n\n[The rest didn't fit the link. It is on your clipboard: paste it here.]";
+  '\n\n[The rest did not fit the link. It is on your clipboard: paste it here.]';
 
 type ReportLinkParams = {
   readonly title: string;

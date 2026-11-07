@@ -193,10 +193,10 @@ describe('the push result line', () => {
     ).toBe('Pushed 1 commit to origin and posted 1 reply on GitHub.');
   });
 
-  it("says how many landed and points at the one that didn't", () => {
+  it('says how many landed and points at the one that did not', () => {
     expect(pushResultOf({ outcome: outcomeOf({ failed: 1, error: 'locked' }) })).toEqual({
       tone: 'partial',
-      sentence: "2 of 3 landed in a41c9e2. 1 didn't: see the comment.",
+      sentence: '2 of 3 landed in a41c9e2. 1 did not: see the comment.',
     });
   });
 

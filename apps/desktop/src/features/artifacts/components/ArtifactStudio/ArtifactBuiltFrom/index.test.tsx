@@ -147,7 +147,7 @@ describe('ArtifactBuiltFrom', () => {
       },
       wireframe,
     );
-    screen.getByText("Run run-1. Agents were scoped to that run, session plans weren't");
+    screen.getByText('Run run-1. Agents were scoped to that run, session plans were not');
     screen.getByText('Run run-1');
     expect(screen.queryByTestId('built-from-design-profile')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'design profile' }));

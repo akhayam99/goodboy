@@ -23,7 +23,7 @@ type Params = {
 };
 
 const SHORT_SHA_LENGTH = 7;
-const FAILED_FALLBACK = "The fix didn't finish";
+const FAILED_FALLBACK = 'The fix did not finish';
 
 type VerdictParams = {
   readonly verdict: ResolveVerdict | null;

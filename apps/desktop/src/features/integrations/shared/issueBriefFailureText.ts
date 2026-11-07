@@ -1,7 +1,7 @@
 import type { IssueBriefFailure } from '@goodboy/core/summarizer';
 
 const FAILURE_TEXT = {
-  provider_failed: "The model didn't answer.",
+  provider_failed: 'The model did not answer.',
   empty_answer: 'The model answered with nothing.',
   not_json: 'The model answered in prose instead of a brief.',
   missing_title: 'The model answered without a title.',

@@ -294,7 +294,7 @@ describe('the job banner', () => {
     const region = screen.getByRole('region', { name: 'Rebase job' });
     expect(region.textContent).toContain('Rebased on main');
     expect(region.textContent).toContain(
-      "7 commits. Your 11 files weren't touched. Backup kept for 30 days.",
+      '7 commits. Your 11 files were not touched. Backup kept for 30 days.',
     );
     expect(screen.getByRole('button', { name: 'Undo rewrite' })).toBeDefined();
   });

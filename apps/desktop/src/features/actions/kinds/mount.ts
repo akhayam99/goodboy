@@ -292,7 +292,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     pendingLabel: () => 'Aborting…',
     confirm: () => ({
       title: 'Abort the rebase?',
-      description: 'Restores the branch before the rebase. Conflict fixes are lost.',
+      description:
+        'The branch goes back to where it was before the rebase started. Conflict fixes made so far are lost.',
       confirmLabel: 'Abort rebase',
       role: 'danger',
     }),
@@ -493,7 +494,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       description:
         facts.keptPath === null
           ? 'The branch is already deleted. This only clears the row from the session.'
-          : 'Removes its kept folder unless it holds uncommitted work. The branch is gone.',
+          : 'The branch is already deleted. Its kept folder is removed too, unless it holds uncommitted work.',
       confirmLabel: 'Remove',
       role: 'danger',
     }),

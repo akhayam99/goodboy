@@ -52,7 +52,7 @@ export const ChecksDeniedNotice = ({
         placement="inline"
         role="alert"
         title={`Goodboy can't read checks for ${repoName}`}
-        body={error ?? `${label} didn't let Goodboy read checks`}
+        body={error ?? `${label} did not let Goodboy read checks`}
         actions={
           <>
             <Button variant="secondary" size="sm" onClick={onOpenSettings}>

@@ -34,13 +34,20 @@ const walk = ({ directory }: WalkParams): ReadonlyArray<string> => {
   });
 };
 
-export const scanCopy = (): ReadonlyArray<CopyString> =>
-  SCANNED_ROOTS.flatMap((root) => walk({ directory: join(SRC_ROOT, root) })).flatMap((path) =>
-    scanCopySource({
-      path: relative(SRC_ROOT, path).split(sep).join('/'),
-      text: readFileSync(path, 'utf8'),
-    }),
+export const copySourcePaths = (): ReadonlyArray<string> =>
+  SCANNED_ROOTS.flatMap((root) => walk({ directory: join(SRC_ROOT, root) })).map((path) =>
+    relative(SRC_ROOT, path).split(sep).join('/'),
   );
+
+type ReadParams = {
+  readonly path: string;
+};
+
+export const readCopySource = ({ path }: ReadParams): string =>
+  readFileSync(join(SRC_ROOT, path), 'utf8');
+
+export const scanCopy = (): ReadonlyArray<CopyString> =>
+  copySourcePaths().flatMap((path) => scanCopySource({ path, text: readCopySource({ path }) }));
 
 type DescribeParams = {
   readonly copy: CopyString;

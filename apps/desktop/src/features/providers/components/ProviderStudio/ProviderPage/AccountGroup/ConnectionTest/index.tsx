@@ -23,7 +23,7 @@ const outcomeSentenceOf = ({ label, result }: SentenceParams): string => {
     case 'unsupported':
       return `${label} has no account test.`;
     case 'refused':
-      return `${label} didn't accept the call: ${result.detail.split('\n')[0] ?? 'No answer'}.`;
+      return `${label} did not accept the call: ${result.detail.split('\n')[0] ?? 'No answer'}.`;
     default: {
       const unreachable: never = result.outcome;
       return unreachable;

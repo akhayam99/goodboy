@@ -20,7 +20,7 @@ export const AutoPlanToolbar = ({ model }: Props) => {
       {model.isToldFailed ? (
         <>
           <span className="min-w-0 truncate text-meta text-muted-foreground">
-            Approved, Auto didn't hear it
+            Approved, Auto did not hear it
           </span>
           <Button
             size="sm"

@@ -109,6 +109,6 @@ describe('pull request on Bitbucket', () => {
     );
     expect(mergeConfirm?.description).toContain('Bitbucket checks this when you merge');
     expect(mergeConfirm?.description).not.toContain('GitHub');
-    expect(closeConfirm?.description).toContain("Bitbucket can't reopen it");
+    expect(closeConfirm?.description).toContain("Bitbucket can't reopen a declined pull request");
   });
 });

@@ -25,7 +25,7 @@ export type DispatchTurnParams = {
 
 export type DispatchOutcome = 'sent' | 'kept' | 'unwritten';
 
-const NOT_DELIVERED = "The message wasn't delivered. It is back in the box.";
+const NOT_DELIVERED = 'The message was not delivered. It is back in the box.';
 
 export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDispatchArgs) => {
   const sendAgentMessage = useAppStore((s) => s.sendAgentMessage);

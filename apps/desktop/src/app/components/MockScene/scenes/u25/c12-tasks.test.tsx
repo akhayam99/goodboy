@@ -88,7 +88,7 @@ describe('c12 task scenes', () => {
     await mount('c12-tasks-forme');
 
     expect(groupNames()).toEqual(['Starred', 'GitHub', 'Linear', 'Jira']);
-    expect(screen.getByRole('tab', { name: 'For you' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('button', { name: 'Show all' }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /^Show all \d/ })).toBeNull();
     expect(within(list()).getAllByRole('option').length).toBeLessThanOrEqual(16);

@@ -207,7 +207,7 @@ describe('the port kind, live verbs', () => {
 
     expect(resolved.map((action) => action.id)).not.toContain('port.stop');
     expect(resolved.find((action) => action.id === 'port.forceStop')?.description).toBe(
-      "It didn't stop on its own",
+      'It did not stop on its own',
     );
   });
 });

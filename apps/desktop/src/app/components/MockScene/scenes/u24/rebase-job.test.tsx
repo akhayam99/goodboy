@@ -82,7 +82,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
   'checking-result': ['Rebasing payments-api on main', 'Checking the result against your branch'],
   moving: ['Rebasing payments-api on main', 'Moving the branch. A backup is saved first.'],
   'updating-online': ['Rebasing payments-api on main', 'Updating origin with a safe force push'],
-  done: ['Rebased on main', "7 commits. Your 11 files weren't touched. Backup kept for 30 days."],
+  done: ['Rebased on main', '7 commits. Your 11 files were not touched. Backup kept for 30 days.'],
   stuck: ['The rebase needs you', "It couldn't merge webhook.ts."],
   'origin-moved': ['Rebased here, but', 'Nothing was pushed.'],
   'head-moved': ['The branch moved', 'Nothing was changed.'],
@@ -93,7 +93,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
     '11 files have changes that are not committed',
     'Commit or stash them, then retry the rebase.',
   ],
-  'result-differs': ["The result didn't match your branch", 'Nothing was changed.'],
+  'result-differs': ['The result did not match your branch', 'Nothing was changed.'],
   failed: ["Couldn't rebase payments-api on main", "Couldn't reach origin: connection reset."],
 };
 

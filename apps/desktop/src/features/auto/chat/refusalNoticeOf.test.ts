@@ -5,7 +5,7 @@ import { refusalNoticeOf } from './refusalNoticeOf';
 import { waitingTextOf } from './waitingTextOf';
 
 describe('the notice of a refused hand over', () => {
-  it("names the role that wasn't started and why, in the user voice", () => {
+  it('names the role that was not started and why, in the user voice', () => {
     expect(
       refusalNoticeOf({
         refusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
@@ -36,7 +36,7 @@ describe('the notice of a refused hand over', () => {
     expect(
       refusalNoticeOf({ refusal: { action: 'answer', code: 'question_unknown', roles: [] } }),
     ).toBe(
-      "Auto's answer to an agent wasn't sent: it answered a question nobody asked. Auto is choosing again.",
+      "Auto's answer to an agent was not sent: it answered a question nobody asked. Auto is choosing again.",
     );
     expect(
       refusalNoticeOf({ refusal: { action: 'finish', code: 'tree_busy', roles: [] } }),

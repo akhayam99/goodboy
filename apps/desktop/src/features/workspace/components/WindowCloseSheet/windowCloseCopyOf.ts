@@ -28,7 +28,7 @@ export const windowCloseCopyOf = ({ count, runCount = 0, isStuck }: Params): Win
   const work = workLabelOf({ count, runCount });
   if (isStuck) {
     return {
-      title: `${work} didn't stop`,
+      title: `${work} did not stop`,
       description:
         count === 1
           ? 'It is still running. Close anyway and it goes on without this window.'
@@ -40,8 +40,8 @@ export const windowCloseCopyOf = ({ count, runCount = 0, isStuck }: Params): Win
     title: `${work} still working in this window`,
     description:
       count + runCount === 1
-        ? 'Stop it to close. Its work stays. Continue picks it up.'
-        : 'Stop them to close. Their work stays. Continue picks them up.',
+        ? 'Stop it to close the window. What it wrote is kept, and Continue picks it up.'
+        : 'Stop them to close the window. What they wrote is kept, and Continue picks them up.',
     confirmLabel: `Stop ${work}`,
   };
 };

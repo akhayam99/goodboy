@@ -782,7 +782,7 @@ describe('buildReportContext agent budget allocation', () => {
     expect(context.text).not.toContain('### older 0 (agent agent-older-0, completed)');
     expect(context.truncations).toContain('agent agent-older-0: final message dropped to fit');
     expect(context.inventory.find((entry) => entry.id === 'agents')?.detail).toContain(
-      "1 didn't fit and were dropped",
+      '1 did not fit and were dropped',
     );
   });
 

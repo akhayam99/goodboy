@@ -72,7 +72,7 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
         actions={
           url == null ? undefined : (
             <Button variant="secondary" size="sm" onClick={() => void openUrl(url)}>
-              Open issue
+              View issue
               <SquareArrowOutUpRight size={ICON_SIZE.row} aria-hidden />
             </Button>
           )
@@ -90,7 +90,7 @@ export const CrashReport = ({ heading, initialLine, errorPart }: Props) => {
         title="Finish on GitHub"
         body={
           outcome.opened.overflows
-            ? 'Paste the rest from your clipboard into the issue, then submit.'
+            ? 'The rest did not fit the link and is on your clipboard. Paste it into the issue, then submit.'
             : 'Submit the form in your browser to file the issue.'
         }
       />

@@ -5,7 +5,7 @@ import { REPORT_TYPES, REPORT_TYPE_LABEL } from '../reports/reportTypes';
 import { WIREFRAME_FIDELITIES, WIREFRAME_FIDELITY_LABEL } from '../wireframes/wireframeFidelity';
 import type { ArtifactGeneration } from './artifactCollection';
 
-export const ARTIFACT_RETRY_MISSING_BRIEF = "the brief of this generation wasn't recorded";
+export const ARTIFACT_RETRY_MISSING_BRIEF = 'the brief of this generation was not recorded';
 
 type Params = Readonly<{
   generation: ArtifactGeneration;

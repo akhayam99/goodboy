@@ -106,7 +106,7 @@ describe('FirstLapBanner', () => {
     const { container } = render(<FirstLapBanner sessionId={session.id} />);
 
     screen.getByText('Main is on the remote now. Move your work into a session called bootstrap');
-    screen.getByRole('button', { name: 'Move your work' });
+    screen.getByRole('button', { name: 'Move my work' });
     expect(screen.queryByText(/Your work is in the project folder/)).toBeNull();
     expect(container.querySelectorAll('[data-placement]')).toHaveLength(1);
   });

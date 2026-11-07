@@ -44,6 +44,6 @@ describe('lastRunStep', () => {
   });
 
   it('marks a command the run never finished', () => {
-    expect(lastRunStep({ items: [tool({ ended: false })] })?.result).toBe("didn't finish");
+    expect(lastRunStep({ items: [tool({ ended: false })] })?.result).toBe('did not finish');
   });
 });

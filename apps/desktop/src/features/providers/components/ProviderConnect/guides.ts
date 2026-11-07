@@ -167,7 +167,7 @@ const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
       },
       {
         title: 'Token is long-lived',
-        body: "After this you shouldn't need to sign in again unless you log out manually.",
+        body: 'After this you should not need to sign in again unless you log out manually.',
       },
     ],
     docsUrl: CURSOR_DOCS,

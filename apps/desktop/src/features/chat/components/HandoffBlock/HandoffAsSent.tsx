@@ -38,7 +38,7 @@ export const HandoffAsSent = ({ handoff }: Props) => {
       <div className="flex min-w-0 items-center gap-2">
         <GhostActionButton
           icon={Code}
-          label={open ? `Hide text as sent to ${provider}` : `Show text as sent to ${provider}`}
+          label={open ? `Hide text as sent to ${provider}` : `View as sent to ${provider}`}
           pressed={open}
           onClick={() => setOpen((value) => !value)}
         />

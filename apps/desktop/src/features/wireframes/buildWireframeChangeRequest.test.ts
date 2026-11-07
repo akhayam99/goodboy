@@ -17,7 +17,7 @@ describe('buildWireframeChangeRequest', () => {
     expect(prompt).toContain('the request: Show who owns each exception\n');
     expect(prompt).toContain('only the screen "Review batch" (id review-batch)');
     expect(prompt).toContain('Exception list (id exception-list)');
-    expect(prompt).toContain("keep the id of every node you didn't change");
+    expect(prompt).toContain('keep the id of every node you did not change');
     expect(prompt).toContain('"version": 2');
   });
 

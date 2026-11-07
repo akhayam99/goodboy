@@ -165,10 +165,10 @@ describe('AutoDock', () => {
     const retry = vi.fn(async () => ({ kind: 'retried' as const }));
     registerTreeRetryPort({ port: retry });
     const base = aView({ phase: 'blocked' });
-    const view = { ...base, tree: { ...base.tree, blockedReason: "The provider didn't answer." } };
+    const view = { ...base, tree: { ...base.tree, blockedReason: 'The provider did not answer.' } };
     renderDock({ view });
 
-    screen.getByText("The provider didn't answer.");
+    screen.getByText('The provider did not answer.');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(retry).toHaveBeenCalledWith({ treeId: view.tree.id }));
@@ -180,13 +180,13 @@ describe('AutoDock', () => {
       port: vi.fn(async () => ({ kind: 'refused' as const, message: 'The tree moved on.' })),
     });
     const base = aView({ phase: 'blocked' });
-    const view = { ...base, tree: { ...base.tree, blockedReason: "The provider didn't answer." } };
+    const view = { ...base, tree: { ...base.tree, blockedReason: 'The provider did not answer.' } };
     renderDock({ view });
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await screen.findByText('The tree moved on.');
-    screen.getByText("The provider didn't answer.");
+    screen.getByText('The provider did not answer.');
     registerTreeRetryPort({ port: null });
   });
 
@@ -238,7 +238,7 @@ describe('AutoDock', () => {
     expect(button.getAttribute('data-variant')).toBe('primary');
     fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
     await screen.findByRole('menuitem', { name: 'Approve anyway' });
-    screen.getByRole('menuitem', { name: 'Discard your comments' });
+    screen.getByRole('menuitem', { name: 'Discard my comments' });
   });
 
   it('hides Approve while the next step revises that plan', () => {
@@ -307,7 +307,7 @@ describe('AutoDock', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard your comments' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard my comments' }));
     expect(remove).not.toHaveBeenCalled();
     screen.getByText('Discard 2 comments?');
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
@@ -339,7 +339,7 @@ describe('AutoDock', () => {
     renderDock({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) });
 
     fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard your comments' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Discard my comments' }));
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
 
     await waitFor(() =>

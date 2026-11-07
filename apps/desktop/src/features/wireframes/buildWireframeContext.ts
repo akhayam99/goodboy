@@ -201,7 +201,7 @@ const renderAgents = ({
           ? [`only the last ${WIREFRAME_CONTEXT_LIMITS.agents} fit, earlier agents are missing`]
           : []),
         ...(silent > 0 ? [`${silent} had no final message recorded`] : []),
-        ...(droppedCount > 0 ? [`${droppedCount} didn't fit and were dropped`] : []),
+        ...(droppedCount > 0 ? [`${droppedCount} did not fit and were dropped`] : []),
         ...(clippedCount > 0
           ? [`${clippedCount} final message(s) were shortened to fit the budget`]
           : []),

@@ -455,10 +455,10 @@ describe('WireframeFlowOverview', () => {
       />,
     );
     expect(screen.getByTestId('wireframe-flow-overview')).toBeDefined();
-    const target = screen.getByRole('button', { name: 'Open Ledger Board' });
+    const target = screen.getByRole('button', { name: 'Go to Ledger Board' });
     fireEvent.keyDown(target, { key: 'Enter' });
     expect(onSelectScreen).toHaveBeenCalledWith('ledger');
-    fireEvent.click(screen.getByRole('button', { name: 'Open Entry Detail' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Go to Entry Detail' }));
     expect(onSelectScreen).toHaveBeenCalledWith('entry');
   });
 });

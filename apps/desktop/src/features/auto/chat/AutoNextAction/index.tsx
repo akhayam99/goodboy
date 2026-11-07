@@ -46,7 +46,7 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
       </div>
       {untold !== null ? (
         <FormActions error={model.error}>
-          <p className="min-w-0 flex-1 text-muted-foreground">Declined. Auto wasn't told.</p>
+          <p className="min-w-0 flex-1 text-muted-foreground">Declined. Auto was not told.</p>
           <Button
             size="sm"
             isBusy={model.isBusy}

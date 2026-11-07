@@ -95,7 +95,7 @@ describe('PlanEditor', () => {
     expect(onSaved).toHaveBeenCalledWith({ revision: 5 });
   });
 
-  it("writes nothing when the text didn't change", () => {
+  it('writes nothing when the text did not change', () => {
     const updatePlanBody = stubSave({ kind: 'saved', revision: 3 });
     render(<Harness />);
     start();

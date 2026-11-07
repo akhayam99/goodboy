@@ -50,7 +50,7 @@ const outputTextOf = ({ output }: { readonly output: unknown }): string => {
 
 const resultOf = ({ item }: { readonly item: ToolCallItem }): string => {
   if (!item.ended) {
-    return "didn't finish";
+    return 'did not finish';
   }
   if (!item.isError) {
     return 'passed';

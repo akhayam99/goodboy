@@ -31,7 +31,7 @@ const OPTION_PROPS: ReadonlySet<string> = new Set([
   'aria-label',
   'ariaLabel',
 ]);
-const OPTION_FIRST_PERSON = /\b(?:my|me|myself)\b/i;
+const OPTION_FIRST_PERSON = /\bmyself\b/i;
 const BUTTON_RETRY = /\btry (?:the push )?again\b/i;
 const WAITING_TITLE = /\b(?:waiting for you|waits on you|waiting for your (?:OK|answer))\b/i;
 const TITLE_PROPS: ReadonlySet<string> = new Set(['title', 'label', 'word', 'short', 'phrase']);
@@ -78,6 +78,9 @@ const RULES: ReadonlyArray<Rule> = [
     id: `retired-${retired.id}`,
     fix: `say "${retired.use}" instead`,
     matches: (copy) => {
+      if (retired.id === 'folders-noun' && copy.isConditionalBranch === true) {
+        return false;
+      }
       if (retired.id === 'try-again' && copy.prop !== null && OPTION_PROPS.has(copy.prop)) {
         return BUTTON_RETRY.test(copy.text);
       }
@@ -96,7 +99,12 @@ const RULES: ReadonlyArray<Rule> = [
 type Counts = Record<string, Record<string, number>>;
 
 const measure = (): Counts => {
-  const strings = scanCopy();
+  const strings = scanCopy().flatMap((copy): ReadonlyArray<CopyString> => {
+    if (copy.isConditionalBranch !== true) {
+      return [copy];
+    }
+    return [/\s/.test(copy.text) ? { ...copy, prop: null } : copy];
+  });
   return Object.fromEntries(
     RULES.map((rule) => [
       rule.id,
@@ -150,11 +158,23 @@ describe('on-screen copy stays short and plain', () => {
     ).toBe(false);
   });
 
-  it.each(['Move my work', 'Help me', 'Resolve myself'])(
-    'catches first person in an option: %s',
+  it('leaves a plain-folder noun in a conditional label alone', () => {
+    const rule = RULES.find(({ id }) => id === 'retired-folders-noun');
+    const copy = { path: 'Harborline.tsx', line: 1, prop: 'label', text: 'Folders' };
+    expect(rule?.matches(copy)).toBe(true);
+    expect(rule?.matches({ ...copy, isConditionalBranch: true })).toBe(false);
+  });
+
+  it.each(['Resolve myself', 'Fix it myself'])('catches the self verb in an option: %s', (text) => {
+    const rule = RULES.find(({ id }) => id === 'first-person');
+    expect(rule?.matches({ path: 'Harborline.ts', line: 1, prop: 'label', text })).toBe(true);
+  });
+
+  it.each(['Move my work', 'For me', 'All my repositories'])(
+    'leaves a possessive label alone: %s',
     (text) => {
       const rule = RULES.find(({ id }) => id === 'first-person');
-      expect(rule?.matches({ path: 'Harborline.ts', line: 1, prop: 'label', text })).toBe(true);
+      expect(rule?.matches({ path: 'Harborline.ts', line: 1, prop: 'label', text })).toBe(false);
     },
   );
 

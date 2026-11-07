@@ -32,7 +32,7 @@ const worldOf = ({ outcomes, idleTurns = [] }: WorldParams) => {
   const cancel = vi.fn(async (params: { readonly agentId: AgentId }) => {
     const outcome = outcomes[params.agentId];
     if (outcome === undefined) {
-      throw new Error("stopped an agent that wasn't running");
+      throw new Error('stopped an agent that was not running');
     }
     if (outcome instanceof Error) {
       throw outcome;
@@ -88,7 +88,7 @@ describe('stopAllRunningAgents', () => {
     expect(result).toEqual({ stopped: 2, stillRunning: 0 });
   });
 
-  it("counts an agent whose process didn't exit as still running", async () => {
+  it('counts an agent whose process did not exit as still running', async () => {
     const { getState } = worldOf({
       outcomes: {
         'agent-a': EXITED,

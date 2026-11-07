@@ -467,7 +467,7 @@ read top to bottom at the conversation measure:
   the tail then says Paused by you with no verb of its own, so Continue shows
   once.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
-  the header carry, in the order See, Steer, Settings, Copy, End: Open changes,
+  the header carry, in the order See, Steer, Settings, Copy, End: View diff,
   **Skip step N** for the step in flight (and Pause or Continue while the
   header holds another primary), Step routing (opens the model per step panel,
   `OrchestratedRouting`), Save as preset, Copy run summary, **Stop run** (asks
@@ -709,9 +709,9 @@ tooltip line.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
   the header carry, five rows at most (`RunPageActions`): while a run lives
   **Skip step N**, Rename, Step routing, Stop run, Archive run; once it ended
-  Rename, Open changes, Save as preset, Archive run, Delete run. Everything else
+  Rename, View diff, Save as preset, Archive run, Delete run. Everything else
   stays on the right click of the title, which takes focus, so Shift+F10 opens
-  it from the keyboard (Open changes, Save as preset, Copy run
+  it from the keyboard (View diff, Save as preset, Copy run
   summary, Delete run on a live run). An ended run, also one whose steps are all done
   but a helper failed, never offers Stop run. Asks you (a `choices` item) is left out of
   the run pages' menus since its chip holds it.

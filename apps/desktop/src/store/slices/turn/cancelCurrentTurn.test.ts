@@ -84,7 +84,7 @@ describe('cancelCurrentTurn', () => {
   });
 
   it('logs a stop the process refused', async () => {
-    cancelTurn.mockRejectedValueOnce(new Error("the process didn't exit"));
+    cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
     listLiveRunIds.mockResolvedValue(new Set(['run-1']));
     const { cancel } = harness();
 
@@ -93,13 +93,13 @@ describe('cancelCurrentTurn', () => {
     expect(reportError).toHaveBeenCalledWith({
       recovery: { clause: 'check-state' },
       title: "Couldn't stop the agent",
-      error: new Error("the process didn't exit"),
+      error: new Error('the process did not exit'),
       sessionId: SESSION_ID,
     });
   });
 
   it('keeps the stop on record while the process refuses to exit, so the tail can say Still stopping', async () => {
-    cancelTurn.mockRejectedValueOnce(new Error("the process didn't exit"));
+    cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
     listLiveRunIds.mockResolvedValue(new Set(['run-1']));
     const { cancel } = harness();
 
@@ -119,7 +119,7 @@ describe('cancelCurrentTurn', () => {
   });
 
   it('stays quiet when a teardown cancel fails', async () => {
-    cancelTurn.mockRejectedValueOnce(new Error("the process didn't exit"));
+    cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
     const { cancel } = harness();
 
     await cancel(SESSION_ID, AGENT_ID, 'teardown');

@@ -31,7 +31,7 @@ type Params = {
   readonly onAccepted?: () => void;
 };
 
-const ALREADY_ANALYZING = "A Debugger is already analyzing this check. Your hint wasn't applied.";
+const ALREADY_ANALYZING = 'A Debugger is already analyzing this check. Your hint was not applied.';
 
 const STARTING_ELSEWHERE = 'A Debugger is already starting on another check of this branch';
 

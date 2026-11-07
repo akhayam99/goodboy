@@ -867,13 +867,13 @@ const linearMany = (count: number): ReadonlyArray<InboxRecord> =>
   }));
 
 describe('InboxStudio at scale', () => {
-  it('opens on For you: assigned issues and linked work, not every error and thread', () => {
+  it('opens on For me: assigned issues and linked work, not every error and thread', () => {
     localStorage.removeItem(VIEW_KEY);
     h.records = [sentryError, linkedSentryError, linearIssue, slackThread, githubIssue];
 
     renderStudio();
 
-    expect(screen.getByRole('tab', { name: 'For you' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'For me' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('RangeError boom')).toBeDefined();
     expect(screen.getByText('Ship the inbox')).toBeDefined();
     expect(screen.queryByText('TypeError boom')).toBeNull();
@@ -983,7 +983,7 @@ describe('InboxStudio at scale', () => {
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 
-  it("puts a source that didn't load in its group as one line with retry", () => {
+  it('puts a source that did not load in its group as one line with retry', () => {
     saveView({ scope: 'all', groupBy: 'source' });
     h.errors = { ...h.errors, jira: 'Jira answered 429: rate limited' };
 

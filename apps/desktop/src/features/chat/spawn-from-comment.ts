@@ -212,7 +212,7 @@ export type PriorContext = {
 };
 
 const INTENT_SENTENCE: Record<PriorContextIntent, string> = {
-  retry: "An earlier try on this thread didn't finish. Read it again and decide from scratch.",
+  retry: 'An earlier try on this thread did not finish. Read it again and decide from scratch.',
   recheck:
     'The commit recorded for this thread is no longer reachable on the branch. Find out whether the change it made is on the branch under another commit, was removed on purpose, or still has to be made.',
   answer:

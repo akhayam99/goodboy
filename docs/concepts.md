@@ -1591,7 +1591,7 @@ checklist opens it. It has four fields:
 
 Each agent reads only the fields its job needs. The matrix is
 `PROFILE_ACCESS` in `packages/core/src/profile/profileAccess.ts`, and the form
-shows it under "Show who reads what".
+shows it under "See who reads what".
 
 - Planner, orchestrator and the question delegate read roles, work and rules
 - Scout, investigator, report and wireframe read roles, work and topics
@@ -1731,7 +1731,7 @@ token on Sentry. A key saved for another workspace can be picked instead.
 Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record on the shared task grid (`taskColumns`:
-source, key, title, status glyph, priority, age). It opens on For you
+source, key, title, status glyph, priority, age). It opens on For me
 (`isForMeRecord`: tracker issues with an assignee, pull requests, starred
 records, records linked to a session) and switches to All in the header. The
 page title is the open count, since the studio bar already names Tasks. The
