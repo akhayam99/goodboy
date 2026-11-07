@@ -5,12 +5,11 @@ import {
 } from '../../timeline/historyBatchesOf';
 import {
   historyBatchBaseOf,
-  historyBatchBranchFactOf,
   historyBatchFactsOf,
   historyBatchSubOf,
   historyBatchTitleOf,
 } from '../../timeline/historyBatchText';
-import type { DoneBranchLine, DoneModel, DoneRowModel } from './doneTypes';
+import type { DoneModel, DoneRowModel } from './doneTypes';
 import { isEventOwnedByRow } from './isEventOwnedByRow';
 
 type Params = {
@@ -22,8 +21,6 @@ type BatchParams = {
   readonly batch: HistoryBatch;
   readonly model: DoneModel;
 };
-
-const NO_STEPS: DoneRowModel['detail']['steps'] = [];
 
 const foldedRowOf = ({ batch, model }: BatchParams) => {
   const rewrites = batch.events.filter(
@@ -41,12 +38,6 @@ const foldedRowOf = ({ batch, model }: BatchParams) => {
   if (newest === undefined || first === undefined) {
     return null;
   }
-  const lines = branches.map((branch): DoneBranchLine => ({
-    id: branch.key,
-    project: branch.projectName,
-    branch: branch.branch ?? branch.key,
-    fact: historyBatchBranchFactOf({ branch, origin: batch.origin }),
-  }));
   const row: DoneRowModel = {
     id: `batch:${batch.key}`,
     entryId: batch.entryId,
@@ -59,20 +50,7 @@ const foldedRowOf = ({ batch, model }: BatchParams) => {
     kind: null,
     leadAgentId: null,
     at: newest.createdAt,
-    mountId: null,
-    retryAgentId: null,
     agentIds: [],
-    detail: {
-      model: null,
-      effort: null,
-      duration: null,
-      costUsd: null,
-      fullText: null,
-      steps: NO_STEPS,
-      auto: null,
-      branches: lines,
-      files: null,
-    },
   };
   return { row, firstId: first.id, rewriteIds: rewrites.map((event) => event.id) };
 };

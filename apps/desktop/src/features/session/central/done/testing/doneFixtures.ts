@@ -161,7 +161,6 @@ export const modelOf = ({
     autoTrees,
     agents,
     checkNameByAgentId,
-    turnFiles: new Map(),
     now: NOW.getTime(),
   };
 };

@@ -12,7 +12,6 @@ const historyBatchesOf = ({ events }: BatchesParams): ReadonlyArray<HistoryBatch
   Array.from(new Set(historyBatchByEventIdOf({ events }).values()));
 import {
   historyBatchBaseOf,
-  historyBatchBranchFactOf,
   historyBatchFactsOf,
   historyBatchSubOf,
   historyBatchTitleOf,
@@ -221,29 +220,6 @@ describe('historyBatchText', () => {
     expect(historyBatchTitleOf({ origin: 'plan', facts: rewrites, base: null })).toBe(
       'Rewrote 3 branches',
     );
-  });
-
-  it('says what happened to each branch', () => {
-    const first = batch?.branches[0];
-    const last = batch?.branches.at(-1);
-    const unpushed = historyBatchesOf({
-      events: [
-        ...stepEvents({ id: 'u1', branch: 'ledger-core/a', minute: 0, isPushed: false }),
-        ...stepEvents({ id: 'u2', branch: 'ledger-core/b', minute: 1, isPushed: false }),
-      ],
-    })[0]?.branches[0];
-
-    expect(
-      first === undefined ? '' : historyBatchBranchFactOf({ branch: first, origin: 'rebase' }),
-    ).toBe('Pushed · PR #300 updated');
-    expect(
-      last === undefined ? '' : historyBatchBranchFactOf({ branch: last, origin: 'rebase' }),
-    ).toBe('Pushed');
-    expect(
-      unpushed === undefined
-        ? ''
-        : historyBatchBranchFactOf({ branch: unpushed, origin: 'rebase' }),
-    ).toBe('Rebased, not pushed');
   });
 
   it('reads the base only when every rebase of the batch had the same one', () => {
