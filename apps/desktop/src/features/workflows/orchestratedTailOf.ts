@@ -4,7 +4,7 @@ import type { MountBlockedStep } from '../../store/slices/workflows/runMount/sel
 import type { TailState } from '../live-state/tailFacts';
 import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
 import { NAMES } from '../../shared/utils/names';
-import { modelNamesIn } from './modelNamesIn';
+import { decisionFailureOf } from './decisionFailureOf';
 import type { RunPrimary } from './runPrimaryOf';
 
 export type OrchestratedVerb =
@@ -74,11 +74,8 @@ type PhraseParams = {
 };
 
 const phraseOf = ({ orchestrator }: PhraseParams): string => {
-  const detail = orchestrator.detail?.trim() ?? '';
-  if (orchestrator.phase !== 'failed' || detail === '') {
-    return orchestrator.sentence;
-  }
-  return `${orchestrator.sentence}: ${modelNamesIn({ text: detail })}`;
+  const failure = decisionFailureOf({ orchestrator });
+  return failure === null ? orchestrator.sentence : `${orchestrator.sentence}: ${failure}`;
 };
 
 export const orchestratedTailOf = ({

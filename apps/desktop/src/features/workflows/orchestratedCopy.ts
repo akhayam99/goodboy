@@ -1,5 +1,4 @@
 import { countNoun } from '../../shared/utils/countNoun';
-import { NAMES } from '../../shared/utils/names';
 
 type StepParams = {
   readonly step: number;
@@ -67,7 +66,7 @@ export const ORCHESTRATED_COPY = {
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",
   blockedAsked: 'The step asked',
-  openAgentChat: NAMES.openAgent,
+  noFailureReason: 'no reason was recorded.',
   continueFailed: "Couldn't continue the run",
   leftOpen: ({ count }: CountParams): string => `Left open (${count})`,
 } as const;

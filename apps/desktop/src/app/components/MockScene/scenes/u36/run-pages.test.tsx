@@ -233,6 +233,31 @@ describe('one run page', () => {
     );
   });
 
+  it('names the failure of Retry, keeps the step page and lets the same button try again', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const recoverStuckStep = vi.fn(async () => undefined);
+    recoverStuckStep.mockRejectedValueOnce(new Error('The step could not be restarted.'));
+    const reportError = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ recoverStuckStep, reportError });
+    });
+
+    await act(async () => {
+      fireEvent.click(within(nodeOf('[data-run-tail]')).getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't retry the step", sessionId: C09_SESSION_ID }),
+    );
+    expect(nodeOf('[data-blocked-question]').textContent).toContain('Should I keep the report');
+
+    await act(async () => {
+      fireEvent.click(within(nodeOf('[data-run-tail]')).getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(recoverStuckStep).toHaveBeenCalledTimes(2);
+  });
+
   it('answers the blocked step with the text of the one field and clears it', async () => {
     await mount('u36-p12-orch-step-blocked');
     const answerBlockedStep = vi.fn(async () => undefined);

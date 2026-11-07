@@ -381,8 +381,8 @@ read top to bottom at the conversation measure:
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
   end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and no Stop verb (the one Stop is in the dock; **Continue** brings the cut step back), "Choosing the next step", "Waiting
   for your go", "Waiting for your answer on step 4", "Paused at the limit",
-  "Last decision failed: ..." (model ids read as display
-  names, `modelNamesIn`) with **Open
+  "Last decision failed: ..." (the stop message, or "no reason was recorded.", through `decisionFailureOf`; model ids read as display
+  names, `modelNamesIn`; the run glance says it too) with **Open
   transcript**; the move each of those waits for is the header primary, never a
   second button on the tail. A halted step (failed, or blocked on a question
   or an ended turn) reads **Needs you** on the tail and **Open step 3** in the
@@ -585,7 +585,7 @@ the row before the title is cut, then the model (below 920) and the origin
 (below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents panel reads. The page opens on the list with a quiet **Start a run** row that opens
+of the Agents panel reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with a quiet **Start a run** row that opens
 the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
 a session with no run shows the field alone.
 

@@ -1,6 +1,7 @@
 import type { Agent, Session, Workflow, WorkflowRunId } from '@goodboy/types';
 import { splitWorkflowRuns } from '../../../features/workflows/activeWorkflowRuns';
-import { runRowFactsOf, type RunWait } from '../../../features/workflows/runRowFactsOf';
+import { runRowFactsOf } from '../../../features/workflows/runRowFactsOf';
+import type { RunWait } from '../../../features/workflows/runStateOf';
 import type { AppState } from '../../types';
 import {
   isRunRevisingPlanIn,

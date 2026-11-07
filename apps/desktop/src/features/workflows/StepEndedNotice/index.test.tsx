@@ -127,6 +127,49 @@ describe('StepEndedNotice', () => {
     expect(markStepDone).toHaveBeenCalledTimes(1);
   });
 
+  it('names the failure of Mark step done, keeps the notice and lets the same button try again', async () => {
+    const { markStepDone } = setup();
+    const reportError = vi.fn<StoryState['reportError']>(async () => undefined);
+    useAppStore.setState({ reportError });
+    markStepDone.mockRejectedValueOnce(new Error('The step is no longer waiting.'));
+    render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark step done' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't mark the step done", sessionId: SESSION.id }),
+      ),
+    );
+    screen.getByText('This step ended without a result');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Mark step done' }).hasAttribute('disabled')).toBe(
+        false,
+      ),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark step done' }));
+
+    await waitFor(() => expect(markStepDone).toHaveBeenCalledTimes(2));
+  });
+
+  it('names the failure of Continue and keeps the notice', async () => {
+    const { askAgentToContinue } = setup();
+    const reportError = vi.fn<StoryState['reportError']>(async () => undefined);
+    useAppStore.setState({ reportError });
+    askAgentToContinue.mockRejectedValueOnce(new Error('The agent is gone.'));
+    render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't continue the step" }),
+      ),
+    );
+    screen.getByText('This step ended without a result');
+  });
+
   it('shows nothing for a block the silent end watch did not record, so the real reason stays', () => {
     setup({ silentEndMark: '2026-10-18T08:00:00.000Z' });
     const { container } = render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);

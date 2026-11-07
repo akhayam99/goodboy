@@ -152,6 +152,14 @@ describe('orchestratedTailOf', () => {
     ]);
   });
 
+  it('says no reason was recorded when the last decision failed without one', () => {
+    const tail = tailOf({
+      orchestrator: stateOf({ phase: 'failed', sentence: 'Last decision failed', detail: null }),
+      primary: RETRY,
+    });
+    expect(tail.phrase).toBe('Last decision failed: no reason was recorded.');
+  });
+
   it.each([
     ['failed', 'failed'],
     ['blocked', 'blocked'],

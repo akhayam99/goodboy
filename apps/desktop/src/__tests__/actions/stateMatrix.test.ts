@@ -277,6 +277,61 @@ describe('Stop all running agents', () => {
   });
 });
 
+describe('Stop all running agents keeps a stop for every running state of a run', () => {
+  const OTHER = brandId<AgentId>({ value: 'agent-reviewer-northwind' });
+
+  const RUNNING_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<AgentId>]> = [
+    [
+      'a step that is running',
+      {
+        agents: [stepAgent({ id: AGENT, stepId: STEP_BUILD, status: 'running' })],
+        turnStates: { [AGENT]: RUNNING },
+      },
+      [AGENT],
+    ],
+    [
+      'a step marked running before its turn started',
+      { agents: [stepAgent({ id: AGENT, stepId: STEP_BUILD, status: 'running' })] },
+      [AGENT],
+    ],
+    [
+      'a step with a live turn after it was marked blocked',
+      {
+        agents: [stepAgent({ id: AGENT, stepId: STEP_BUILD, status: 'blocked' })],
+        turnStates: { [AGENT]: RUNNING },
+      },
+      [AGENT],
+    ],
+    [
+      'two steps running at once',
+      {
+        agents: [
+          stepAgent({ id: AGENT, stepId: STEP_PLAN, status: 'running' }),
+          stepAgent({ id: OTHER, stepId: STEP_BUILD, status: 'running' }),
+        ],
+        turnStates: { [AGENT]: RUNNING, [OTHER]: RUNNING },
+      },
+      [AGENT, OTHER],
+    ],
+  ];
+
+  it.each(RUNNING_STATES)('stops %s from the session menu', async (_name, value, stopped) => {
+    seed({ ...value, mounts: [mountFixture()], branch: 'hl/payout-export' });
+    const stoppedIds: Array<AgentId> = [];
+    useAppStore.setState({
+      cancelTurnConfirmed: async ({ agentId }) => {
+        stoppedIds.push(agentId);
+        return { outcome: 'exited', exitedAt: null };
+      },
+    });
+    expect(matrixOf(SESSION_TARGET)).toContain('session.stopAll');
+
+    await run(SESSION_TARGET, 'session.stopAll');
+
+    expect([...stoppedIds].sort()).toEqual([...stopped].sort());
+  });
+});
+
 describe('session menu in every state', () => {
   it.each(SESSION_STATES)('%s', (_state, value, expected) => {
     if (value !== null) {
