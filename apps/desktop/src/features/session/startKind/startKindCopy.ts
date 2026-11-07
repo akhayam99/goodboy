@@ -103,7 +103,7 @@ export const START_KIND_COPY = {
     agent: {
       icon: CONCEPT_ICONS.agents,
       what: 'One role you pick, on the model you pick.',
-      whileRuns: 'While it runs, you answer between replies.',
+      whileRuns: 'While it runs, you answer between turns.',
     },
     autoAgent: {
       icon: CONCEPT_ICONS.auto,

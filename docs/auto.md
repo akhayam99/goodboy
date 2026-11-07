@@ -455,7 +455,7 @@ writing to it reopens it to **Deciding**.
   `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out child shows
   the outcome line and no body. When the child produced an artifact (`deliveredResultsOf`
   reads the `artifacts` of the result entry), the card leads with the same artifact rows as
-  the delegation lines and the agent's own prose goes behind a closed **Notes, N lines**
+  the delegation lines and the agent's own prose goes behind a closed **Earlier in this reply, N lines**
   (`ReadingNotes` fed by `summaryNotesOf`, which drops the outcome line and artifact blocks);
   a plan that waits for approval has no row on the card, its ask is on the line. The cards read data, never
   Auto's prose: an accepted `results` row of the outbox keeps the root run that
@@ -474,7 +474,12 @@ writing to it reopens it to **Deciding**.
   through `glanceOf`). **Settings** unfolds the unchanged chip row
   inline, never a popover; the row stays mounted so the asks and model slots
   keep their portals. Each cluster of agents is one soft card (`AutoTurnCard`,
-  head `autoCardHeadOf`): name, agent count and a state word, then flat rows.
+  head `autoCardHeadOf`): the noun of the work it holds (**Plan**, **Build** or **Review**),
+  the agent count and one word that follows the loudest child (**Needs you**, **Failed**,
+  **Running**, then the settled word such as **Done**), then flat rows. A row is one
+  target in one shape, settled or not (`AutoChildCard`): the whole row opens the child
+  page, a finished row shows its outcome in one line under it, and the clock sits in a
+  fixed right column.
   Your plan approval is a quiet line at the head of the card that follows it,
   **You · Approved plan v1**, never a right aligned bubble: an insertion that sets
   `claimsReply` receives the replies `claimedRepliesOf` gives it (the first card
@@ -524,7 +529,7 @@ writing to it reopens it to **Deciding**.
   `DelegationResult`: the outcome line first, where a red check or a failed push replaces the
   child's own sentence; then chips for files changed, the checks verdict, each failing check,
   **Run checks again**, the push state with **Try the push again** and **Put back**, and each
-  open question, four at most then **+N**; last a closed **Notes, N lines** with the summary
+  open question, four at most then **+N**; last a closed **Earlier in this reply, N lines** with the summary
   as markdown, open only when the outcome is red, any artifact block dropped by
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
   accepted it and not started it, its live line with **Stop agent**, **Waiting for

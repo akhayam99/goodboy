@@ -9,7 +9,8 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { brandId, type Agent, type ProviderRunId } from '@goodboy/types';
+import { brandId, type Agent, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
+import { aDelegation, aTree, aView } from '../../auto/testing/autoViewFixtures';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -184,4 +185,62 @@ describe('AgentHeaderActions', () => {
       cleanup();
     }
   });
+
+  it.each(['plain', 'adopted', 'autoRoot'] as const)(
+    'keeps the %s Auto state within five rows and names every row it keeps',
+    (state) => {
+      const agent = agentFixture({ status: 'completed', kind: 'implementer', name: 'Harborline' });
+      seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+      const view = aView({
+        delegations:
+          state === 'adopted'
+            ? [
+                {
+                  ...aDelegation({ key: 'adopted', role: 'implementer', state: 'settled' }),
+                  childAgentId: agent.id,
+                  isAdopted: true,
+                },
+              ]
+            : [],
+      });
+      useAppStore.setState({
+        agentKindOverride: { [agent.id]: state === 'autoRoot' ? 'auto' : 'implementer' },
+        autoTreeViews:
+          state === 'plain'
+            ? {}
+            : {
+                [SESSION]: [
+                  {
+                    ...view,
+                    tree: {
+                      ...aTree(),
+                      rootAgentId: state === 'autoRoot' ? agent.id : view.tree.rootAgentId,
+                    },
+                  },
+                ],
+              },
+        transcripts: {
+          [agent.id]: [
+            {
+              kind: 'assistant_text',
+              runId: brandId<ProviderRunId>({ value: 'run-ledger-core' }),
+              delta: 'The retry is fixed.',
+              at: brandId<IsoDateTime>({ value: '2026-10-13T12:00:00.000Z' }),
+            },
+          ],
+        },
+      });
+      render(<AgentHeaderActions agent={agent} sessionId={SESSION} hasStateButton={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+      const labels = screen
+        .getAllByRole('menuitem')
+        .map((item) => item.getAttribute('data-menu-label'));
+      const expected = {
+        plain: ['Rename', 'Let Auto take it from here', 'Copy last reply', 'Delete agent'],
+        adopted: ['Rename', 'Detach from Auto', 'Copy last reply', 'Delete agent'],
+        autoRoot: ['Rename', 'Mark finished', 'Copy last reply', 'Delete agent'],
+      } as const;
+      expect(labels).toEqual(expected[state]);
+    },
+  );
 });

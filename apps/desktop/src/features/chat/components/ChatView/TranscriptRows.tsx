@@ -1,5 +1,5 @@
 import type { RetryRunParams } from '../../retryRun';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type {
   AgentId,
@@ -12,7 +12,7 @@ import type {
 import type { ConversationRow } from '../../utils/conversationRows';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { ReadingNotes } from '../../readingOrder/ReadingNotes';
-import { useReadingOrder } from '../../readingOrder/useReadingOrder';
+import { useReadingOrder } from '../../hooks/useReadingOrder';
 import { TranscriptSteps } from './TranscriptSteps';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import { ThinkingIndicator } from '../ThinkingIndicator';
@@ -62,6 +62,7 @@ type Props = {
   isStepsOnly?: boolean;
   errorDock?: ErrorDock | null;
   newFromKey?: string | null;
+  scrollerRef?: RefObject<HTMLElement | null>;
 };
 
 const RAIL_ROW_PX = 56;
@@ -93,6 +94,7 @@ export const TranscriptRows = ({
   isStepsOnly = false,
   errorDock = null,
   newFromKey = null,
+  scrollerRef,
 }: Props) => {
   const { rows, insertions } = placedRowsOf({ rows: givenRows, insertions: givenInsertions });
   const out: ReactNode[] = [];
@@ -102,6 +104,7 @@ export const TranscriptRows = ({
   const { roles: readingRoles, register } = useReadingOrder({
     rows,
     activeRunId: activeRunId ?? null,
+    ...(scrollerRef !== undefined && { scrollerRef }),
   });
   const placedRunIds = new Set<ProviderRunId>();
   const briefRow =
@@ -260,11 +263,7 @@ export const TranscriptRows = ({
     out.push(
       <li
         key={row.key}
-        ref={
-          row.kind === 'item' && row.item.kind === 'assistant_text'
-            ? (element) => register({ key: row.key, element })
-            : undefined
-        }
+        ref={(element) => register({ key: row.key, element })}
         {...rowAnchorOf({ row, heightKey })}
         {...stepHead}
         style={rowVisibilityStyle({
@@ -291,7 +290,7 @@ export const TranscriptRows = ({
         ) : row === briefRow && briefLabel !== undefined && row.item.kind === 'handoff' ? (
           <BriefCard label={briefLabel} text={row.item.text} />
         ) : reading?.kind === 'notes' ? (
-          <ReadingNotes role={reading} label="Earlier in this reply" />
+          <ReadingNotes role={reading} />
         ) : (
           <TranscriptCard
             {...(reading?.kind === 'answer' && { clampLines: reading.clampLines })}

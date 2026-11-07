@@ -77,15 +77,15 @@ const openAgentMenu = async (): Promise<HTMLElement> => {
 };
 
 describe('agent rows stay reachable from the one conversation', () => {
-  it('Agent menu: five rows keep Copy name and Delete without a duplicate reply copy', async () => {
+  it('Agent menu: four rows keep Rename, Copy last reply and Delete', async () => {
     await mount({ name: 'c06-agent-finished' });
 
     const menu = await openAgentMenu();
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(5);
-    for (const label of [/^Copy name/, /^Delete agent/]) {
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(4);
+    for (const label of [/^Rename/, /^Copy last reply/, /^Delete agent/]) {
       within(menu).getByRole('menuitem', { name: label });
     }
-    expect(within(menu).queryByRole('menuitem', { name: /^Copy last reply/ })).toBeNull();
+    expect(within(menu).queryByRole('menuitem', { name: /^Copy name/ })).toBeNull();
   });
 
   it('Stop: one Stop on screen, in the dock, and none in the header menu', async () => {

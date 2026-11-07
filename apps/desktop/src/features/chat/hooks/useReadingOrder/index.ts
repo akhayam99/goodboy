@@ -1,11 +1,12 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { ProviderRunId } from '@goodboy/types';
 import type { ConversationRow } from '../../utils/conversationRows';
-import { readingOrderOf } from '../readingOrderOf';
+import { readingOrderOf } from '../../readingOrder/readingOrderOf';
 
 type Params = {
   readonly rows: ReadonlyArray<ConversationRow>;
   readonly activeRunId: ProviderRunId | null;
+  readonly scrollerRef?: RefObject<HTMLElement | null>;
 };
 
 type RegisterParams = {
@@ -13,7 +14,7 @@ type RegisterParams = {
   readonly element: HTMLLIElement | null;
 };
 
-export const useReadingOrder = ({ rows, activeRunId }: Params) => {
+export const useReadingOrder = ({ rows, activeRunId, scrollerRef }: Params) => {
   const elements = useRef(new Map<string, HTMLLIElement>());
   const [unfoldedKeys, setUnfoldedKeys] = useState<ReadonlySet<string>>(new Set());
   useLayoutEffect(() => {
@@ -35,9 +36,8 @@ export const useReadingOrder = ({ rows, activeRunId }: Params) => {
   }, [rows, activeRunId, unfoldedKeys]);
 
   useLayoutEffect(() => {
-    const first = elements.current.values().next().value;
-    const viewport = first?.closest<HTMLElement>('[data-chat-scroll]');
-    if (viewport == null || activeRunId !== null || unfoldedKeys.size === 0) {
+    const viewport = scrollerRef?.current ?? null;
+    if (viewport === null || activeRunId !== null || unfoldedKeys.size === 0) {
       return;
     }
     const foldOffscreen = () => {
@@ -54,7 +54,7 @@ export const useReadingOrder = ({ rows, activeRunId }: Params) => {
     foldOffscreen();
     viewport.addEventListener('scroll', foldOffscreen, { passive: true });
     return () => viewport.removeEventListener('scroll', foldOffscreen);
-  }, [activeRunId, unfoldedKeys, rows]);
+  }, [activeRunId, unfoldedKeys, rows, scrollerRef]);
 
   const register = ({ key, element }: RegisterParams) => {
     if (element === null) {

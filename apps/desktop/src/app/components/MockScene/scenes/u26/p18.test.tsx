@@ -51,7 +51,7 @@ const mount = ({ id }: MountParams) => {
 const drawerOf = async (): Promise<HTMLElement> => {
   const notes = await waitFor(() => {
     const found = screen
-      .getAllByRole('button', { name: /^Notes, \d+ lines?$/ })
+      .getAllByRole('button', { name: /^Earlier in this reply, \d+ lines?$/ })
       .find((button) => button.closest('[data-auto-child-end]') !== null);
     if (found === undefined) {
       throw new Error('no notes button at the end of the page');

@@ -4,10 +4,9 @@ import type { NotesRole } from './readingOrderOf';
 
 type Props = {
   role: NotesRole;
-  label?: string;
 };
 
-export const ReadingNotes = ({ role, label = 'Notes' }: Props) => {
+export const ReadingNotes = ({ role }: Props) => {
   const [isOpen, setIsOpen] = useState(role.isOpen);
   useEffect(() => {
     if (role.isOpen) {
@@ -17,7 +16,7 @@ export const ReadingNotes = ({ role, label = 'Notes' }: Props) => {
   return (
     <Disclosure
       label={
-        <span className="text-meta text-muted-foreground">{`${label}, ${role.lineCount} ${
+        <span className="text-meta text-muted-foreground">{`Earlier in this reply, ${role.lineCount} ${
           role.lineCount === 1 ? 'line' : 'lines'
         }`}</span>
       }

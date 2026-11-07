@@ -164,6 +164,7 @@ describe('AgentTitle', () => {
 
     expect(renameAgent).not.toHaveBeenCalled();
   });
+
   it('opens the full brief from the title and keeps double click rename', () => {
     render(
       <AgentTitle
@@ -172,12 +173,44 @@ describe('AgentTitle', () => {
         brief={'Check ledger-core.\nKeep the second credit out of payments-api.'}
       />,
     );
-    const title = screen.getByRole('button', { name: 'Read full brief' });
-    expect(title.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(title);
-    expect(title.getAttribute('aria-expanded')).toBe('true');
-    expect(title.textContent).toContain('Keep the second credit out of payments-api.');
-    fireEvent.doubleClick(title);
+    screen.getByText('Check ledger-core.');
+    expect(screen.queryByText(/Keep the second credit/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Read full brief' }));
+    const full = screen.getByText(/Keep the second credit out of payments-api\./);
+    screen.getByRole('button', { name: 'Hide full brief' });
+    fireEvent.doubleClick(full);
     screen.getByRole('textbox', { name: 'Rename agent' });
+  });
+
+  it('keeps the title a plain name, with no brief button, once the agent is named', () => {
+    render(
+      <AgentTitle
+        agent={{ ...agent, name: 'Ledger retry review' }}
+        sessionId={sessionId}
+        brief="Check ledger-core."
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Read full brief' })).toBeNull();
+    screen.getByText('Ledger retry review');
+  });
+
+  it('keeps the field and the old name when the save fails, then retries on Enter and cancels on Escape', async () => {
+    renameAgent.mockRejectedValueOnce(new Error('disk is full'));
+    render(<AgentTitle agent={agent} sessionId={sessionId} />);
+    askToRename();
+
+    const field = screen.getByRole('textbox');
+    fireEvent.change(field, { target: { value: 'Ship the chat dock' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    await vi.waitFor(() => expect(field.getAttribute('aria-invalid')).toBe('true'));
+    expect(screen.getByRole('textbox')).toBe(field);
+
+    fireEvent.keyDown(field, { key: 'Enter' });
+    await vi.waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(renameAgent).toHaveBeenCalledTimes(2);
+
+    askToRename();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    screen.getByText('Implement chat');
   });
 });

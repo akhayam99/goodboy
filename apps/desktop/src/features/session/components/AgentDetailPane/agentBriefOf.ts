@@ -5,9 +5,9 @@ type Params = {
 };
 
 export const agentBriefOf = ({ events }: Params): string | null => {
-  const brief = events.find((event) => event.kind === 'user_text' || event.kind === 'handoff');
-  if (brief?.kind !== 'user_text' && brief?.kind !== 'handoff') {
+  const brief = events.find((event) => event.kind === 'user_text');
+  if (brief?.kind !== 'user_text') {
     return null;
   }
-  return brief.text.trim() === '' ? null : brief.text;
+  return brief.text.trim() === '' ? null : brief.text.trim();
 };

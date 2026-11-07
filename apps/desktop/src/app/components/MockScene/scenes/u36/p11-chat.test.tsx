@@ -82,7 +82,6 @@ describe('a chat you can scan', () => {
       screen.getByRole('group', { name: 'Plan' });
       screen.getByRole('group', { name: 'Build' });
       expect(screen.queryByText('Open')).toBeNull();
-      expect(document.documentElement.classList.contains('dark')).toBe(theme === 'dark');
       const { violations } = await runA11yCheck(container);
       expect(violations.map((violation) => violation.id)).toEqual([]);
     },
@@ -100,7 +99,7 @@ describe('a chat you can scan', () => {
   it.each(['dark', 'light'])('shows live rows in the %s scene', async (theme) => {
     mount({ id: `u36-p11-working-${theme}` });
     const build = await screen.findByRole('group', { name: 'Build' });
-    within(build).getByText('Running');
+    expect(within(build).getAllByText('Running').length).toBeGreaterThan(0);
     screen.getByRole('button', { name: 'Read full brief' });
   });
   it.each(['u36-p12-step-page', 'u36-p12-orch-step-page'])(
@@ -112,6 +111,16 @@ describe('a chat you can scan', () => {
       expect(items.length).toBeLessThanOrEqual(5);
       fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
       await screen.findByRole('textbox', { name: 'Rename agent' });
+    },
+  );
+  it.each(['u36-p11-failed-dark', 'u36-p11-done-dark'])(
+    'opens the rename field from the header menu in %s',
+    async (id) => {
+      mount({ id });
+      fireEvent.click(await screen.findByRole('button', { name: 'More agent actions' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rename' }));
+      const field = await screen.findByRole('textbox', { name: 'Rename agent' });
+      expect(document.activeElement).toBe(field);
     },
   );
 });

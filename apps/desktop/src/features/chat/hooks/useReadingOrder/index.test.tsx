@@ -20,17 +20,18 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
+const START: { readonly activeRunId: ProviderRunId | null } = { activeRunId: RUN };
+
 type OpenParams = { readonly isAbove: boolean };
 
 const open = ({ isAbove }: OpenParams) => {
   const viewport = document.createElement('div');
-  viewport.className = 'overflow-y-auto';
   document.body.append(viewport);
   vi.spyOn(viewport, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 100, 500, 500));
   const { result, rerender } = renderHook(
     ({ activeRunId }: { readonly activeRunId: ProviderRunId | null }) =>
-      useReadingOrder({ rows: ROWS, activeRunId }),
-    { initialProps: { activeRunId: RUN } },
+      useReadingOrder({ rows: ROWS, activeRunId, scrollerRef: { current: viewport } }),
+    { initialProps: START },
   );
   const rectangles = { isAbove };
   for (const row of ROWS) {

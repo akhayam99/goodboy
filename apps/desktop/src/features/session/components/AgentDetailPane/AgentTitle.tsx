@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tooltip, cn, TruncatedText } from '@goodboy/ui';
+import { InteractiveRow, Tooltip, cn, TruncatedText } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
@@ -9,6 +9,7 @@ import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
 import { agentHeadingOf } from './agentHeadingOf';
+import { firstLineOf } from './firstLineOf';
 
 type Props = {
   readonly agent: Agent;
@@ -60,19 +61,23 @@ export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) =
 
   if (brief !== null && displayName === brief) {
     return (
-      <button
-        type="button"
-        aria-label="Read full brief"
-        aria-expanded={isBriefOpen}
-        className={cn(
-          'min-w-0 text-left',
-          isBriefOpen ? 'whitespace-pre-wrap break-words' : 'truncate',
-        )}
-        onClick={() => setIsBriefOpen((wasOpen) => !wasOpen)}
-        onDoubleClick={rename.start}
+      <InteractiveRow
+        label={isBriefOpen ? 'Hide full brief' : 'Read full brief'}
+        isSelected={false}
+        onOpen={() => setIsBriefOpen((wasOpen) => !wasOpen)}
+        frameClassName="min-w-0"
+        className="min-w-0"
       >
-        {brief}
-      </button>
+        <TruncatedText
+          className={cn(
+            'block min-w-0 text-left',
+            isBriefOpen ? 'whitespace-pre-wrap break-words' : 'truncate',
+          )}
+          onDoubleClick={rename.start}
+        >
+          {isBriefOpen ? brief : (firstLineOf({ text: brief }) ?? brief)}
+        </TruncatedText>
+      </InteractiveRow>
     );
   }
 

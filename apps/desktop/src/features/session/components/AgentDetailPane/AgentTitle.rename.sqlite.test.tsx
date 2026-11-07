@@ -11,8 +11,16 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { brandId, type Agent, type StepId, type WorkflowId } from '@goodboy/types';
-import { aSession, aWorkflow } from '@goodboy/types/testing';
+import {
+  brandId,
+  type Agent,
+  type IsoDateTime,
+  type StepId,
+  type Workflow,
+  type WorkflowId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import {
   AUTO_SEED_ROOT,
   AUTO_SEED_SESSION,
@@ -119,10 +127,15 @@ describe('agent title rename through the real menu and database', () => {
       throw new Error('Harborline step missing');
     }
     useAppStore.setState({ sessionPhaseRuns: { [AUTO_SEED_SESSION]: [agent] } });
-    const workflow = aWorkflow({
+    const workflow: Workflow = {
       id: workflowId,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      name: 'Harborline',
+      description: '',
       steps: [{ id: stepId, workflowId, ordinal: 0, name: 'Implementer', promptPrefix: '' }],
-    });
+      createdAt: brandId<IsoDateTime>({ value: '2026-07-25T00:00:00.000Z' }),
+      updatedAt: brandId<IsoDateTime>({ value: '2026-07-25T00:00:00.000Z' }),
+    };
     render(<RunStepHeading agent={agent} stepAgent={agent} workflow={workflow} />);
     fireEvent.doubleClick(screen.getByText('Step 1 · Implementer'));
     const input = screen.getByRole('textbox', { name: 'Rename agent' });

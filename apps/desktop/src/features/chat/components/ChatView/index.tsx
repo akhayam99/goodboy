@@ -315,9 +315,6 @@ export const ChatView = ({
     },
     [diffWorktreePath, isBranchless, openDrawer, session.id],
   );
-  const handleRefreshAuth = useCallback(() => {
-    void refreshProviders();
-  }, [refreshProviders]);
   const { retryingRunId, retryRun } = useRetryRun({
     sessionId: session.id,
     agentId: selectedAgentId,
@@ -524,7 +521,7 @@ export const ChatView = ({
                       sessionId={session.id}
                       selectedAgentId={selectedAgentId}
                       workingDir={worktreePath}
-                      onRefreshAuth={handleRefreshAuth}
+                      onRefreshAuth={() => void refreshProviders()}
                       onOpenDiff={handleOpenDiff}
                       isThinking={isThinking && !canStop}
                       thinkingPhrase={thinkingPhrase}
@@ -539,6 +536,7 @@ export const ChatView = ({
                       {...(onOpenTranscript !== undefined && { onOpenTranscript })}
                       isStepsOnly={mode === 'steps'}
                       errorDock={errorDock}
+                      scrollerRef={scrollerRef}
                     />
                   </ChatImageLoaderProvider>
                 </ul>

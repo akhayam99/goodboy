@@ -1,4 +1,4 @@
-import { Button, Notice, StatusDot } from '@goodboy/ui';
+import { Button, Notice, StatusDot, Tooltip } from '@goodboy/ui';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
@@ -54,16 +54,18 @@ export const TranscriptErrorRow = ({
 
   if (!isReadOnly && isRecordOnly && (!hasLimitStop || runId === dockRunId)) {
     return (
-      <Button
-        variant="quiet"
-        size="xs"
-        data-failed-here=""
-        disabled={!canViewTranscript}
-        onClick={viewTranscript}
-      >
-        <StatusDot tone="danger" size="sm" />
-        Failed here
-      </Button>
+      <Tooltip content={body}>
+        <Button
+          variant="quiet"
+          size="xs"
+          data-failed-here=""
+          disabled={sessionId === null || agentId === null}
+          onClick={viewTranscript}
+        >
+          <StatusDot tone="danger" size="sm" />
+          Failed here
+        </Button>
+      </Tooltip>
     );
   }
 
@@ -71,7 +73,7 @@ export const TranscriptErrorRow = ({
     <Notice
       tone="danger"
       placement="transcript"
-      title={hasLimitStop ? 'Reply stopped' : 'Reply failed'}
+      title={hasLimitStop ? 'The turn stopped' : 'The turn failed'}
       body={body}
       detail={detail}
       iconTestId="transcript-error-icon"

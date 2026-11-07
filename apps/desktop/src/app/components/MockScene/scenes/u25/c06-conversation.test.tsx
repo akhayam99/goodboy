@@ -265,12 +265,10 @@ describe('the c06 conversation scenes', () => {
     expect(line.textContent).toMatch(/^[A-Z]/);
   });
 
-  it('c06-agent-finished folds the brief to one Asked line after the first answer', async () => {
+  it('c06-agent-finished keeps the first message in its own shape after the first answer', async () => {
     await mount({ name: 'c06-agent-finished' });
 
-    const brief = screen.getByRole('button', { name: /^Asked: Reinstall dependencies/ });
-    expect(brief.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(brief);
+    expect(screen.queryByRole('button', { name: /^Asked: / })).toBeNull();
     expect(screen.getByText(/The lockfile changed on main\./)).toBeDefined();
   });
 

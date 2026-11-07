@@ -139,6 +139,7 @@ export const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyA
       'agent.open',
       'agent.changes',
       'agent.message',
+      'agent.rename',
       'agent.stop',
       'agent.copyName',
       'agent.delete',

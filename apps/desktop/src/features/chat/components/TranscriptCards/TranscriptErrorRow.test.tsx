@@ -202,3 +202,64 @@ describe('View transcript on a failed turn', () => {
     expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
   });
 });
+
+describe('an older failure kept as one quiet line', () => {
+  beforeEach(() => {
+    useAppStore.setState({ currentSessionId: SESSION, drawer: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ drawer: null });
+  });
+
+  it('says Failed here with no Retry and opens the failing call', () => {
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        runId={RUN}
+        sessionId={SESSION}
+        agentId={AGENT}
+        failedToolUseId="toolu-harborline-3"
+        onRetry={() => undefined}
+        isRecordOnly
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Failed here' }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'transcript',
+      sessionId: SESSION,
+      payload: { agentId: AGENT, toolUseId: 'toolu-harborline-3' },
+    });
+  });
+
+  it('still opens another failing call while the steps already show this agent', () => {
+    useAppStore.setState({
+      drawer: {
+        kind: 'transcript',
+        sessionId: SESSION,
+        payload: { agentId: AGENT, toolUseId: 'toolu-harborline-1' },
+      },
+    });
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        runId={RUN}
+        sessionId={SESSION}
+        agentId={AGENT}
+        failedToolUseId="toolu-harborline-3"
+        isRecordOnly
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Failed here' }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'transcript',
+      sessionId: SESSION,
+      payload: { agentId: AGENT, toolUseId: 'toolu-harborline-3' },
+    });
+  });
+});

@@ -786,12 +786,11 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
           ...second,
           ...approved,
           {
-            ...userText({
-              time: '12:14:45',
-              text: 'The Implementer, Tester and Reviewer returned their results.',
-              run: RUN_FOUR,
-            }),
+            kind: 'user_text',
+            runId: RUN_FOUR,
+            text: 'The Implementer, Tester and Reviewer returned their results.',
             deliveredBy: 'auto',
+            at: at({ time: '12:14:45' }),
           },
           reply({ time: '12:14:50', text: FINAL_REPLY, run: RUN_FOUR }),
         ],
