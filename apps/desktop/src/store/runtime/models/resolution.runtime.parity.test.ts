@@ -29,6 +29,7 @@ import { KIND_TO_ROLE, type AgentKind } from '../../../features/session/agent-ki
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
+  openStorySqlite,
   resetStoryStore,
   stubStoryInvoke,
   type StoryStore,
@@ -157,6 +158,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  await openStorySqlite();
   stubStoryInvoke({
     check_provider_budget: () => ({
       remainingUsd: 100,
