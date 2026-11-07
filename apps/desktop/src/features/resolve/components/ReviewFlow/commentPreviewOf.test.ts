@@ -92,6 +92,6 @@ describe('commentPreviewOf', () => {
 
   it('finishes on hostile input', () => {
     const hostile = `${'<a '.repeat(5000)}\n${'`'.repeat(5000)}\n${'[x]('.repeat(3000)}\n${'<!--'.repeat(3000)}\nend`;
-    expect(commentPreviewOf({ text: hostile })).toContain('end');
+    expect(commentPreviewOf({ text: hostile })).toHaveLength(2000);
   });
 });
