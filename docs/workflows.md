@@ -558,12 +558,14 @@ several branches stands in each of them, keyed by group and run, with the chip
 **Also on feat/retry-budget** (**Also on 2 branches** for more). The chip reveals
 the same run in its next group, and the branch chip opens the Branch page. The
 title and the chips are siblings of the row button (`ListGridRow` `overlays`),
-so a row never nests a button. A click on the title opens the run after the
-double click window (`useTitleClick`), a double click renames in place (leaving the box on the same text writes nothing, `useInlineRename`), and the
-row's right click is the run's own menu (the `runRow` kind, five rows at most),
+so a row never nests a button. A click on the title opens the run immediately.
+**Rename** in the row's right click menu edits the title in place (leaving the
+box on the same text writes nothing, `useInlineRename`). The menu is the run's own (the `runRow` kind, five rows at most),
 never the session's. On the Branch page the line **On this branch** with **3 runs**
 (`branchRunLinkOf`, `BranchRunsLine`) lands on Runs, By branch, with that group
-open; Back returns to the branch (`Focus.runGroup` on the history entry) and to the
+open, or reveals its runs under By state with fewer than two branches
+(`useRunsFolds` unfolds finished and archived rows before scrolling and focusing
+the first matching row); Back returns to the branch (`Focus.runGroup` on the history entry) and to the
 row you left, not to the top of the group. The link counts what the group header
 counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
 the runs of all its parts) and is absent at zero. The page

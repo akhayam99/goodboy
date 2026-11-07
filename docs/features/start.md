@@ -219,6 +219,7 @@ This part is for contributors and agents who change the feature.
 - Auto guidance: `autoSystemPromptOf` adds a guidance block to the system prompt on every turn. `resolveDelegateChild` puts a `**Guidance**` section before the `**Task**` of each child.
 - Unset guidance leaves every prompt as it was. `changeRunRoute`, `continueWithRole` and `moveToAuto` carry it to the run they start.
 - Last kind you started: the setting `newSession.lastStart.<workspaceId>`, written after a start succeeds.
+- Branch arrival: `openBranchRuns` carries the requested group to `useRunsFolds`, which unfolds its finished and archived rows in either grouping. `rowControls.test.tsx` covers bare state rows past the cap, focus and scrolling.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.
 
 `StartFailure` owns the recovery line shared by `StartForm`.

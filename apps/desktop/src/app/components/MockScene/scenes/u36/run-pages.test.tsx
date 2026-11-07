@@ -352,7 +352,7 @@ describe('the form and the row', () => {
     within(kinds).getByText('Plans each next step as it goes.');
   });
 
-  it('opens the rename field in the row on a double click', async () => {
+  it('shows the rename field requested for the row', async () => {
     await mount('u36-f5-row-rename');
 
     screen.getByRole('textbox', { name: 'Rename run' });
