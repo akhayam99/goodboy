@@ -941,6 +941,7 @@ describe('Branch page tab and head facts', () => {
     seedWorktree({ isDiffLoaded: false });
     seedWorktreeRecord();
     const held = holdReads();
+    observers = installFakeResizeObserver();
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={WORKTREE} />
@@ -951,6 +952,10 @@ describe('Branch page tab and head facts', () => {
     expect(stripCount(/^Changes/)).toBe('');
     expect(stripCount(/^Commits/)).toBe('');
 
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 1400, 600),
+    );
+    act(() => observers?.resizeAll());
     held.release();
     await settle();
     act(() => {
@@ -960,6 +965,7 @@ describe('Branch page tab and head facts', () => {
 
     expect(stripCount(/^Changes/)).toBe('2+2 -0');
     expect(stripCount(/^Commits/)).toBe('3');
+
     const rail = document.querySelector<HTMLElement>(
       '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
     );
@@ -967,6 +973,13 @@ describe('Branch page tab and head facts', () => {
     within(rail!).getByText(/Viewed 0 of 2/);
     screen.getByText('· All 3 commits');
     expect(stripCount(/^Changes/)).toBe('2+2 -0');
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 700, 600),
+    );
+    act(() => observers?.resizeAll());
+    await settle();
+    const toggle = screen.getByRole('button', { name: /^Files/ });
+    expect((toggle.textContent ?? '').replace(/^Files/, '')).toBe(stripCount(/^Changes/));
   });
 
   it('keeps the rail on the loaded diff when the polled summary disagrees', async () => {
@@ -992,5 +1005,49 @@ describe('Branch page tab and head facts', () => {
       '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
     );
     within(rail!).getByText(/Viewed 0 of 2/);
+  });
+
+  it('keeps the Changes tab on the branch when the summary fails and the scope changes', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
+    seedWorktree({ isDiffLoaded: false });
+    seedWorktreeRecord();
+    const held = holdReads();
+    const base = vi.mocked(invoke).getMockImplementation();
+    vi.mocked(invoke).mockImplementation(
+      async (command: string, args?: Parameters<typeof invoke>[1]) => {
+        if (command === 'worktree_changed_files') {
+          throw new Error('summary failed');
+        }
+        if (command === 'worktree_diff_working' || command === 'worktree_diff_commit') {
+          return PATCH.split('diff --git a/src/webhook.ts')[0] ?? '';
+        }
+        return base?.(command, args);
+      },
+    );
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    held.release();
+    await settle();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
+    await settle();
+    expect(stripCount(/^Changes/)).toBe('2');
+
+    const pick = async (label: string): Promise<void> => {
+      fireEvent.click(screen.getByRole('button', { name: /^(Compared with|Working tree|Commit)/ }));
+      fireEvent.click(screen.getByText(label));
+      await settle();
+    };
+    await pick('Commit 1');
+    expect(stripCount(/^Changes/)).toBe('');
+    await pick('working tree');
+    expect(stripCount(/^Changes/)).toBe('');
+    await pick('branch vs main');
+    expect(stripCount(/^Changes/)).toBe('2');
   });
 });

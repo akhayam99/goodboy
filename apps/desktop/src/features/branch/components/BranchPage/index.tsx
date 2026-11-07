@@ -41,6 +41,7 @@ import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
+import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
 import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
@@ -299,7 +300,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     : requestReason === null
       ? { kind: 'allowed' }
       : { kind: 'disabled', reason: requestReason };
-  const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
 
   const body = () => {
     if ((tab === 'pr' || tab === 'comments') && sources.length === 0 && repo === null) {
@@ -414,7 +414,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     pullRequestState: scope.state,
     commentsNeedYou: threadCounts.needYou,
     commentsOpen: threadCounts.unresolved,
-    files: mountStat?.files ?? filesCount,
+    files: mountStat?.files ?? loadedBranchFilesOf({ diff: { ...diff, isLoading: diff.loading } }),
     diff: mountStat,
     commits: start.step.ahead,
     notPushed: pushCount,
