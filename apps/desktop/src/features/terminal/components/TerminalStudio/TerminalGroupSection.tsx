@@ -26,7 +26,8 @@ export const TerminalGroupSection = ({
   onSelect,
   onCloseAll,
 }: Props) => {
-  const isOpen = useAppStore((state) => state.isTerminalArchivedOpen);
+  const workspaceId = useAppStore((state) => state.currentWorkspaceId ?? '');
+  const isOpen = useAppStore((state) => state.terminalArchivedOpen[workspaceId] === true);
   const setArchivedOpen = useAppStore((state) => state.setTerminalArchivedOpen);
   const rowCount = group.worktrees.length;
   const isArchived = group.key === ARCHIVED_GROUP_KEY;
@@ -40,7 +41,7 @@ export const TerminalGroupSection = ({
       {...(isArchived && {
         fold: {
           label: isShown ? 'Hide' : `Show ${rowCount}`,
-          onToggle: () => setArchivedOpen({ isOpen: !isShown }),
+          onToggle: () => setArchivedOpen({ workspaceId, isOpen: !isShown }),
         },
         action: <CloseGroupButton group={group} onCloseAll={onCloseAll} />,
       })}

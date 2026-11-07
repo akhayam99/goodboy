@@ -3,6 +3,7 @@ import type { TerminalTabId } from '../../../shared/types/terminal';
 import type { ImpactScope } from '../../../features/impact/lib';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { SettingsFocus } from '../../../features/settings/settingsFocus';
+import type { MonitoringTarget } from '../../../features/monitoring/monitoringTarget';
 
 export type InboxStudioFocus = {
   readonly provider: InboxProvider | null;
@@ -20,7 +21,7 @@ export type StudioPlace =
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
   | { readonly kind: 'notifications' }
-  | { readonly kind: 'monitoring'; readonly branch?: string | null }
+  | { readonly kind: 'monitoring'; readonly target?: MonitoringTarget | null }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
   | {
       readonly kind: 'terminal';
@@ -55,7 +56,12 @@ export const studioKey = ({ studio }: KeyParams): string => {
     case 'addWorkspace':
       return 'add-workspace';
     case 'monitoring':
-      return joined(['monitoring', studio.branch]);
+      return joined([
+        'monitoring',
+        studio.target?.workspaceId,
+        studio.target?.projectId,
+        studio.target?.branch,
+      ]);
     case 'guide':
     case 'changelog':
     case 'notifications':

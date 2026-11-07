@@ -1,10 +1,14 @@
 import { useMemo } from 'react';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import { useAppStore } from '../../../../store';
+import { EMPTY_MONITORING_VIEW } from '../../../../store/slices/monitoring-view/state';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
+import { selectOwnedMounts } from '../../../../store/slices/monitoring/selectOwnedMounts';
 import { selectPortRows } from '../../../../store/slices/monitoring/selectPortRows';
 import { filterPortRows } from '../../filterPortRows';
-import { isOnBranch } from '../../isOnBranch';
+import { isOnTarget } from '../../isOnTarget';
+import type { MonitoringTarget } from '../../monitoringTarget';
+import { portMountOf } from '../../portMountOf';
 import { portSummary, type PortSummary } from '../../portSummary';
 import { splitPortRows } from '../../splitPortRows';
 import { startedByGoodboy, type StartedRow } from '../../startedByGoodboy';
@@ -27,7 +31,8 @@ export type MonitoringModel = {
   readonly isTrackedEmpty: boolean;
   readonly processOf: (pid: number | null) => MonitorProcess | null;
   readonly query: string;
-  readonly branch: string | null;
+  readonly target: MonitoringTarget | null;
+  readonly workspaceId: string;
   readonly isBranchEmpty: boolean;
 };
 
@@ -46,6 +51,10 @@ const statusOf = ({
   return isSupported ? 'ready' : 'unsupported';
 };
 
+type RowParams = {
+  readonly row: PortRow;
+};
+
 export const useMonitoringModel = (): MonitoringModel => {
   const snapshot = useAppStore((state) => state.monitorSnapshot);
   const ledger = useAppStore((state) => state.monitorLedger);
@@ -55,10 +64,13 @@ export const useMonitoringModel = (): MonitoringModel => {
   const pinned = useAppStore((state) => state.monitorPinned);
   const hidden = useAppStore((state) => state.monitorHidden);
   const projects = useAppStore((state) => state.projects);
-  const sessionMounts = useAppStore((state) => state.sessionMounts);
-  const query = useAppStore((state) => state.monitoringView.query);
-  const branch = useAppStore((state) =>
-    state.appStudio?.kind === 'monitoring' ? (state.appStudio.branch ?? null) : null,
+  const mounts = useAppStore((state) => selectOwnedMounts({ state }));
+  const workspaceId = useAppStore((state) => state.currentWorkspaceId ?? '');
+  const query = useAppStore(
+    (state) => (state.monitoringViews[workspaceId] ?? EMPTY_MONITORING_VIEW).query,
+  );
+  const target = useAppStore((state) =>
+    state.appStudio?.kind === 'monitoring' ? (state.appStudio.target ?? null) : null,
   );
 
   return useMemo(() => {
@@ -74,28 +86,31 @@ export const useMonitoringModel = (): MonitoringModel => {
     for (const process of snapshot?.processes ?? []) {
       processes.set(process.pid, process);
     }
+    const ledgerBySpawn = new Map(ledger.map((entry) => [entry.spawnId, entry]));
+    const isOnPage = ({ row }: RowParams): boolean =>
+      isOnTarget({ mount: portMountOf({ row, ledgerBySpawn, mounts }), target });
     const tracked = [...split.pinned, ...split.goodboy, ...split.workspace];
     const processRows = unmatchedStarted({
-      started: startedByGoodboy({ snapshot, ledger, projects, sessionMounts }),
+      started: startedByGoodboy({ snapshot, ledger, projects, mounts }),
       rows,
-    }).filter((row) => branch === null || row.branch === branch);
+    }).filter((row) => isOnTarget({ mount: row.mount, target }));
     const pinnedRows = filterPortRows({
-      rows: split.pinned.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      rows: split.pinned.filter((row) => isOnPage({ row })),
       query,
       projectNameOf,
     });
     const goodboyRows = filterPortRows({
-      rows: split.goodboy.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      rows: split.goodboy.filter((row) => isOnPage({ row })),
       query,
       projectNameOf,
     });
     const workspaceRows = filterPortRows({
-      rows: split.workspace.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      rows: split.workspace.filter((row) => isOnPage({ row })),
       query,
       projectNameOf,
     });
     const listeningRows = filterPortRows({
-      rows: split.listening.filter((row) => isOnBranch({ row, branch, sessionMounts })),
+      rows: split.listening.filter((row) => isOnPage({ row })),
       query,
       projectNameOf,
     });
@@ -117,9 +132,10 @@ export const useMonitoringModel = (): MonitoringModel => {
       isTrackedEmpty: tracked.length === 0 && split.hiddenCount === 0,
       processOf: (pid) => (pid === null ? null : (processes.get(pid) ?? null)),
       query,
-      branch,
+      target,
+      workspaceId,
       isBranchEmpty:
-        branch !== null &&
+        target !== null &&
         pinnedRows.length + goodboyRows.length + workspaceRows.length + listeningRows.length ===
           0 &&
         processRows.length === 0,
@@ -133,8 +149,9 @@ export const useMonitoringModel = (): MonitoringModel => {
     pinned,
     hidden,
     projects,
-    sessionMounts,
+    mounts,
+    workspaceId,
     query,
-    branch,
+    target,
   ]);
 };

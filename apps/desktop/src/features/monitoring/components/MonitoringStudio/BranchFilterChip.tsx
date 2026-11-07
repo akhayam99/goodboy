@@ -19,7 +19,7 @@ export const BranchFilterChip = ({ branch }: Props) => {
         label={branch}
         trailing={<X size={ICON_SIZE.row} aria-hidden />}
         ariaLabel={`Show every port, not only ${branch}`}
-        onClick={() => amendStudio({ studio: { kind: 'monitoring', branch: null } })}
+        onClick={() => amendStudio({ studio: { kind: 'monitoring', target: null } })}
       />
     </div>
   );

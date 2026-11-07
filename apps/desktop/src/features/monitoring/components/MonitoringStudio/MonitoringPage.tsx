@@ -14,6 +14,7 @@ import { useIdleCounts } from '../../hooks/useIdleCounts';
 import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
+import { monitoringTargetKey } from '../../monitoringTarget';
 import type { PortSummary } from '../../portSummary';
 import { summaryMeta } from '../../summaryMeta';
 import { BranchFilterChip } from './BranchFilterChip';
@@ -56,10 +57,14 @@ export const MonitoringPage = () => {
   const idleCounts = useIdleCounts();
   const sweptCount = useAppStore((state) => state.monitorSweptCount);
   const isReady = model.status === 'ready';
-  const leftovers = model.branch === null ? allLeftovers : NO_LEFTOVERS;
+  const leftovers = model.target === null ? allLeftovers : NO_LEFTOVERS;
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const onScroll = useScrollMemory({ memoryKey: 'monitoring', isLoaded: isReady, viewportRef });
-  const isEmpty = isReady && model.query === '' && model.isTrackedEmpty && model.branch === null;
+  const onScroll = useScrollMemory({
+    memoryKey: `monitoring:${model.workspaceId}:${monitoringTargetKey({ target: model.target })}`,
+    isLoaded: isReady,
+    viewportRef,
+  });
+  const isEmpty = isReady && model.query === '' && model.isTrackedEmpty && model.target === null;
   const hasGoodboy = model.goodboy.length > 0 || model.processes.length > 0 || leftovers.length > 0;
 
   return (
@@ -76,7 +81,7 @@ export const MonitoringPage = () => {
                 ariaLabel="Filter ports"
                 placeholder="Port or folder"
                 value={model.query}
-                onChange={(query) => setMonitoringQuery({ query })}
+                onChange={(query) => setMonitoringQuery({ workspaceId: model.workspaceId, query })}
                 className="w-56"
               />
             ) : null
@@ -90,7 +95,7 @@ export const MonitoringPage = () => {
         viewportRef={viewportRef}
         onViewportScroll={onScroll}
       >
-        {model.branch === null ? null : <BranchFilterChip branch={model.branch} />}
+        {model.target === null ? null : <BranchFilterChip branch={model.target.branch} />}
         {isReady && model.isBranchEmpty ? (
           <EmptyState
             icon={CONCEPT_ICONS.monitoring}

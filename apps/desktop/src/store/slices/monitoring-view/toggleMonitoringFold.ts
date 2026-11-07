@@ -1,3 +1,4 @@
+import { EMPTY_MONITORING_VIEW } from './state';
 import type { SetFn } from './types';
 
 type Props = {
@@ -5,17 +6,20 @@ type Props = {
 };
 
 type Params = {
+  readonly workspaceId: string;
   readonly foldKey: string;
 };
 
 export const toggleMonitoringFold = ({ set }: Props) => {
-  return ({ foldKey }: Params): void => {
+  return ({ workspaceId, foldKey }: Params): void => {
     set((state) => {
-      const { openFolds } = state.monitoringView;
-      const next = openFolds.includes(foldKey)
-        ? openFolds.filter((key) => key !== foldKey)
-        : [...openFolds, foldKey];
-      return { monitoringView: { ...state.monitoringView, openFolds: next } };
+      const view = state.monitoringViews[workspaceId] ?? EMPTY_MONITORING_VIEW;
+      const openFolds = view.openFolds.includes(foldKey)
+        ? view.openFolds.filter((key) => key !== foldKey)
+        : [...view.openFolds, foldKey];
+      return {
+        monitoringViews: { ...state.monitoringViews, [workspaceId]: { ...view, openFolds } },
+      };
     });
   };
 };

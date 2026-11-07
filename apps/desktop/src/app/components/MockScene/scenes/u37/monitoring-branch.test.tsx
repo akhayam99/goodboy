@@ -63,7 +63,10 @@ describe('the u37 monitoring branch scene', () => {
 
     await waitFor(() => expect(hasPortRow(5173)).toBe(true), { timeout: 4000 });
     expect(hasPortRow(5005)).toBe(true);
-    expect(store.getState().appStudio).toEqual({ kind: 'monitoring', branch: BRANCH });
+    expect(store.getState().appStudio).toMatchObject({
+      kind: 'monitoring',
+      target: { branch: BRANCH },
+    });
     screen.getByRole('button', { name: `Show every port, not only ${BRANCH}` });
   });
 
@@ -79,6 +82,6 @@ describe('the u37 monitoring branch scene', () => {
       expect(screen.queryByRole('region', { name: 'Listening on this Mac' })).not.toBeNull(),
     );
     expect(screen.queryByRole('button', { name: /^Show every port/ })).toBeNull();
-    expect(store.getState().appStudio).toEqual({ kind: 'monitoring', branch: null });
+    expect(store.getState().appStudio).toEqual({ kind: 'monitoring', target: null });
   });
 });

@@ -3,6 +3,7 @@ import { ROW_HOVER, StatusDot, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
 import type { PortLayer } from '../../../actions/kinds/port';
 import { portAnchorKey } from '../../../actions/portAnchorKey';
+import { processFoldKey } from '../../../../store/slices/monitoring-view/processFoldKey';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { usePortTarget } from '../../hooks/usePortTarget';
@@ -32,7 +33,9 @@ export const PortRowView = ({
   nameSlot,
   isNested = false,
 }: Props) => {
-  const command = useMonitoringFold({ foldKey: `command:${row.key}` });
+  const command = useMonitoringFold({
+    foldKey: processFoldKey({ process, rest: `command:${row.key}` }),
+  });
   const target = usePortTarget({ row, layer });
   const menu = useObjectMenuTrigger({ target, anchorKey: portAnchorKey({ target }) });
   const hasCollision = row.collision !== undefined;

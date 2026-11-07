@@ -4,15 +4,17 @@ import type {
   MonitorProcess,
   MonitorSnapshot,
 } from '@goodboy/core/monitoring';
-import type { Project, SessionMountView } from '@goodboy/types';
+import type { Project } from '@goodboy/types';
 import { projectById } from '../../store/slices/projects/projectIndex';
 import { ledgerKindWord } from './ledgerKindWord';
+import { mountContaining } from './mountContaining';
+import type { OwnedMount } from './ownedMountsOf';
 
 type Params = {
   readonly snapshot: MonitorSnapshot | null;
   readonly ledger: ReadonlyArray<LedgerRow>;
   readonly projects: ReadonlyArray<Project>;
-  readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
+  readonly mounts: ReadonlyArray<OwnedMount>;
 };
 
 export type StartedRow = {
@@ -22,7 +24,7 @@ export type StartedRow = {
   readonly kindWord: string;
   readonly processName: string;
   readonly where: string;
-  readonly branch: string | null;
+  readonly mount: OwnedMount | null;
   readonly startedAt: number;
   readonly rssBytes: number;
   readonly pid: number;
@@ -30,33 +32,23 @@ export type StartedRow = {
 
 type WhereParams = {
   readonly entry: LedgerRow;
+  readonly mount: OwnedMount | null;
   readonly projects: Params['projects'];
-  readonly sessionMounts: Params['sessionMounts'];
 };
 
-const whereOf = ({ entry, projects, sessionMounts }: WhereParams): string => {
-  const mounts = entry.sessionId === null ? [] : (sessionMounts[entry.sessionId] ?? []);
-  const mount = mounts.find((item) => item.worktreePath === entry.mountPath);
-  if (mount === undefined) {
+const whereOf = ({ entry, mount, projects }: WhereParams): string => {
+  if (mount === null) {
     return entry.cwd ?? 'Workspace';
   }
   const project = projectById(projects, mount.projectId);
   return project === undefined ? mount.branch : `${project.name} · ${mount.branch}`;
 };
 
-const branchOf = ({
-  entry,
-  sessionMounts,
-}: Pick<WhereParams, 'entry' | 'sessionMounts'>): string | null => {
-  const mounts = entry.sessionId === null ? [] : (sessionMounts[entry.sessionId] ?? []);
-  return mounts.find((item) => item.worktreePath === entry.mountPath)?.branch ?? null;
-};
-
 export const startedByGoodboy = ({
   snapshot,
   ledger,
   projects,
-  sessionMounts,
+  mounts,
 }: Params): ReadonlyArray<StartedRow> => {
   if (snapshot === null) {
     return [];
@@ -69,14 +61,19 @@ export const startedByGoodboy = ({
     .filter((entry) => entry.kind !== 'probe' && processes.has(entry.pid))
     .map((entry) => {
       const process = processes.get(entry.pid);
+      const mount = mountContaining({
+        mounts,
+        sessionId: entry.sessionId,
+        path: entry.mountPath ?? entry.cwd,
+      });
       return {
         spawnId: entry.spawnId,
         kind: entry.kind,
         name: `${ledgerKindWord({ kind: entry.kind })} · ${process?.name ?? 'process'}`,
         kindWord: ledgerKindWord({ kind: entry.kind }),
         processName: process?.name ?? 'process',
-        where: whereOf({ entry, projects, sessionMounts }),
-        branch: branchOf({ entry, sessionMounts }),
+        where: whereOf({ entry, mount, projects }),
+        mount,
         startedAt: entry.startedAt,
         rssBytes: process?.rssBytes ?? 0,
         pid: entry.pid,

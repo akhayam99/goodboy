@@ -5,11 +5,14 @@ type Props = {
 };
 
 type Params = {
+  readonly workspaceId: string;
   readonly isOpen: boolean;
 };
 
 export const setTerminalArchivedOpen = ({ set }: Props) => {
-  return ({ isOpen }: Params): void => {
-    set({ isTerminalArchivedOpen: isOpen });
+  return ({ workspaceId, isOpen }: Params): void => {
+    set((state) => ({
+      terminalArchivedOpen: { ...state.terminalArchivedOpen, [workspaceId]: isOpen },
+    }));
   };
 };

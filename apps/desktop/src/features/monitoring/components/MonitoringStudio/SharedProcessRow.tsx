@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_HOVER, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core/monitoring';
+import { processFoldKey } from '../../../../store/slices/monitoring-view/processFoldKey';
 import { useMonitoringFold } from '../../hooks/useMonitoringFold';
 import { portListText } from '../../portListText';
 import type { PortLayer } from '../../../actions/kinds/port';
@@ -28,7 +29,9 @@ type Props = {
 const PORTS_SHOWN = 3;
 
 export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: Props) => {
-  const { isOpen, toggle } = useMonitoringFold({ foldKey: `shared:${layer}:${pid}` });
+  const { isOpen, toggle } = useMonitoringFold({
+    foldKey: processFoldKey({ process, rest: `shared:${layer}:${pid}` }),
+  });
   const first = rows[0];
   if (first === undefined) {
     return null;

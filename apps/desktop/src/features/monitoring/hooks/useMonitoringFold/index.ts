@@ -11,8 +11,14 @@ type Fold = {
 };
 
 export const useMonitoringFold = ({ foldKey }: Params): Fold => {
-  const isOpen = useAppStore((state) => state.monitoringView.openFolds.includes(foldKey));
+  const workspaceId = useAppStore((state) => state.currentWorkspaceId ?? '');
+  const isOpen = useAppStore((state) =>
+    (state.monitoringViews[workspaceId]?.openFolds ?? []).includes(foldKey),
+  );
   const toggleFold = useAppStore((state) => state.toggleMonitoringFold);
-  const toggle = useCallback(() => toggleFold({ foldKey }), [toggleFold, foldKey]);
+  const toggle = useCallback(
+    () => toggleFold({ workspaceId, foldKey }),
+    [toggleFold, workspaceId, foldKey],
+  );
   return { isOpen, toggle };
 };

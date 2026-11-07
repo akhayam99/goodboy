@@ -4,11 +4,13 @@ export type MonitoringView = {
 };
 
 export type MonitoringViewState = {
-  readonly monitoringView: MonitoringView;
-  readonly isTerminalArchivedOpen: boolean;
+  readonly monitoringViews: Readonly<Record<string, MonitoringView>>;
+  readonly terminalArchivedOpen: Readonly<Record<string, boolean>>;
 };
 
+export const EMPTY_MONITORING_VIEW: MonitoringView = { query: '', openFolds: [] };
+
 export const monitoringViewInitialState: MonitoringViewState = {
-  monitoringView: { query: '', openFolds: [] },
-  isTerminalArchivedOpen: false,
+  monitoringViews: {},
+  terminalArchivedOpen: {},
 };

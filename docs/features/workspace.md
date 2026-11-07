@@ -152,4 +152,8 @@ This part is for contributors and agents who change the feature.
 
 - Attention count of an open workspace: the window that shows it sends its count to the other windows on `goodboy:attention`.
 
-- Page memory: the `monitoringView` slice (`store/slices/monitoring-view/`) holds the Monitoring search text and open fold keys. `isTerminalArchivedOpen` holds the Terminal Archived fold. The scroll comes from `useScrollMemory` under the key `monitoring`. The branch lives in the address, `{ kind: 'monitoring', branch }` in `store/slices/navigation/studio.ts`, and `portBranchOf` maps a port to its branch through the session mounts.
+- Page memory: the `monitoring-view` slice (`store/slices/monitoring-view/`) holds the Monitoring search text and open folds (`monitoringViews`) and the Terminal Archived fold (`terminalArchivedOpen`). Both are stored per workspace, and every write names its workspace.
+- Process folds: a fold on a process is keyed `proc:<pid>:<startedAt>:...` (`processFoldKey`). A reused pid starts closed. A full snapshot drops the keys of processes it no longer lists (`pruneProcessFolds`, called from `createMonitorRefresh`).
+- Scroll: `useScrollMemory` keys it `monitoring:<workspace>:<target>`, so the full list and each branch keep their own position.
+- Address: `{ kind: 'monitoring', target: { workspaceId, projectId, branch } }` in `store/slices/navigation/studio.ts`. The same branch name in another workspace or repository never matches.
+- Ownership: `ownedMountsOf` merges `sessionMounts` with the hydrated `sessionProjectMounts`, and `selectPortRows` and the page both read it. `mountContaining` maps a process or terminal to the mount whose worktree holds its path (cwd included) and never matches a null path.
