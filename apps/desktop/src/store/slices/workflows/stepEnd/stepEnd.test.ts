@@ -133,6 +133,17 @@ describe('the step end watch', () => {
     ).toBe(true);
   });
 
+  it('tells the user the step is not finished and gives no reason', async () => {
+    arm();
+    await vi.advanceTimersByTimeAsync(4100);
+
+    const entry = useAppStore
+      .getState()
+      .notifications.find((candidate) => candidate.title.includes('Scout'));
+    expect(entry?.title).toContain('Not finished');
+    expect(entry?.body).toBe('Open the step to go on.');
+  });
+
   it('records no silent end for a step it leaves alone', async () => {
     useAppStore.setState({ sessionOpenQuestions: { [session.id]: [question()] } });
     arm();

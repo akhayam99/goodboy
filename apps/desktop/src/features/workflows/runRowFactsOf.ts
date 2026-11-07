@@ -1,6 +1,7 @@
 import type { Agent, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflows';
 import type { DotState } from '@goodboy/ui';
+import { NAMES } from '../../shared/utils/names';
 import { workflowRunOpenQuestions } from '../context/openQuestionsGate';
 import { isRunPaused } from './isRunPaused';
 import { isRunQueuedManual } from './isRunQueuedManual';
@@ -114,8 +115,11 @@ const stateOf = ({
   if (workflowRunOpenQuestions({ questions, run }).length > 0) {
     return { dot: 'needsYou', word: 'Needs you' };
   }
-  if (agents.some((agent) => isAgentStatusHalted({ status: agent.status }))) {
-    return { dot: 'failed', word: 'Failed' };
+  const halted = agents.find((agent) => isAgentStatusHalted({ status: agent.status }));
+  if (halted !== undefined) {
+    return halted.status === 'blocked'
+      ? { dot: 'needsYou', word: NAMES.notFinished, wait: 'stopped' }
+      : { dot: 'failed', word: NAMES.failed, wait: 'stopped' };
   }
   if (agents.length === 0 && run.triggerMode === 'after_run') {
     return { dot: 'idle', word: `After ${predecessorName}` };

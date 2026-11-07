@@ -117,6 +117,14 @@ describe('attentionWaitsOf and the runs of a session', () => {
     });
   });
 
+  it.each(['blocked', 'failed'] as const)('raises a run with a %s step', (status) => {
+    const halted = run({ id: brandId<WorkflowRunId>({ value: 'run-halted' }) });
+    const agent = { ...stepAgentOf({ runId: halted.id }), status };
+    const state = { sessionPhaseRuns: { [SESSION_ID]: [agent] } };
+
+    expect(waitsOf({ state, workflowRuns: [halted] })).toEqual({ ...NONE, hasStoppedRun: true });
+  });
+
   it('raises nothing for a run whose workflow is not loaded', () => {
     const stopped = run({ orchestrationStop: { kind: 'failure', message: 'Failed.' } });
 

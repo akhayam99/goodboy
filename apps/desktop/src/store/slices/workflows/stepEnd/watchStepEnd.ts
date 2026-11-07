@@ -4,6 +4,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../../features/w
 import { pendingMountContinuations } from '../../turn/mountContinuations';
 import { isTurnActive } from '../../turn/turnSettled';
 import type { GetFn, SetFn } from '../types';
+import { NAMES } from '../../../../shared/utils/names';
 import { logStepEnd } from './logStepEnd';
 import { silentStepEndReason } from './silentStepEndReason';
 
@@ -50,8 +51,8 @@ const checkStepEnd = async ({ set, get, sessionId, agentId }: Params): Promise<v
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `${agent.name} ended without a result`,
-      body: 'The agent stopped without saying it was done and without asking you anything. Continue it, or mark the step done.',
+      title: `${agent.name}: ${NAMES.notFinished}`,
+      body: 'Open the step to go on.',
       sessionId,
     });
   } catch (error) {
