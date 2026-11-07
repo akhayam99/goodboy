@@ -19,10 +19,12 @@ import type { PlaceRequest } from '../../store/slices/navigation/types';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { resolveAttentionOf } from '../../store/slices/resolve/resolveAttention';
+import { autoFailedRootsOf } from '../../store/slices/session-view/autoRoots/autoFailedRootsOf';
+import { autoLimitRootsOf } from '../../store/slices/session-view/autoRoots/autoLimitRootsOf';
 import {
   autoWaitRootsOf,
   type AutoWaitState,
-} from '../../store/slices/session-view/autoWaitRootsOf';
+} from '../../store/slices/session-view/autoRoots/autoWaitRootsOf';
 import {
   runWaitEntriesOf,
   type RunWaitEntry,
@@ -105,6 +107,13 @@ export const attentionPlace = ({
             agents: state.sessionPhaseRuns[sessionId] ?? [],
           }).find((candidate) => candidate.wait === runWait);
     if (entry === undefined) {
+      const [limitRoot] =
+        reason === 'run-paused-at-limit' && session !== undefined
+          ? autoLimitRootsOf({ state, session, agents: state.sessionPhaseRuns[sessionId] ?? [] })
+          : [];
+      if (limitRoot !== undefined) {
+        return agentPlace({ sessionId, agentId: limitRoot.id });
+      }
       return sessionPlace({ sessionId, lens: 'workflows' });
     }
     return sessionPlace({
@@ -183,6 +192,10 @@ export const attentionPlace = ({
   }
 
   const agents = state.sessionPhaseRuns[sessionId] ?? [];
+  const errorSession =
+    reason === 'agent-error' ? sessionById(state.sessions, sessionId) : undefined;
+  const [failedAutoRoot] =
+    errorSession === undefined ? [] : autoFailedRootsOf({ state, session: errorSession, agents });
   const target =
     reason === 'needs-approval'
       ? latestAgent({
@@ -191,7 +204,8 @@ export const attentionPlace = ({
           ),
         })
       : reason === 'agent-error'
-        ? latestAgent({ agents: agents.filter((agent) => agent.status === 'failed') })
+        ? (failedAutoRoot ??
+          latestAgent({ agents: agents.filter((agent) => agent.status === 'failed') }))
         : reason === 'unread-reply'
           ? latestAgent({ agents: agents.filter((agent) => agentHasUnread(agent, false)) })
           : reason === 'slack-reply-waiting'

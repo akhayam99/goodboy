@@ -19,11 +19,11 @@ const agentAsk = (status: 'running' | 'failed' | 'stopped' | 'completed' | 'pend
 
 describe('conversationAskOf', () => {
   it.each([
-    ['running', 'Working', ''],
-    ['failed', 'Stuck', 'The agent failed'],
+    ['running', 'Running', ''],
+    ['failed', 'Failed', 'The agent ended on an error'],
     ['stopped', 'Stopped', 'Stopped by you. What it wrote is kept.'],
     ['completed', 'Idle', ''],
-    ['pending', 'Idle', 'Queued'],
+    ['pending', 'Queued', 'Write to start'],
   ] as const)('an agent %s reads %s and says the sentence once', (status, word, sentence) => {
     expect(agentAsk(status)).toMatchObject({ word, sentence });
   });
@@ -38,8 +38,8 @@ describe('conversationAskOf', () => {
   });
 
   it.each([
-    ['a failed agent', glanceOf({ state: 'stuck', sentence: 'No route' })],
-    ['a running Auto', glanceOf({ state: 'working', sentence: 'Waiting for the Tester' })],
+    ['a failed agent', glanceOf({ state: 'failed', sentence: 'No route' })],
+    ['a running Auto', glanceOf({ state: 'running', sentence: 'Waiting for the Tester' })],
     ['an idle agent', glanceOf({ state: 'idle', sentence: '' })],
   ])('an open ask wins over %s, for the dock and the header alike', (_name, glance) => {
     expect(conversationAskOf({ glance, askSentence: ASK })).toMatchObject({

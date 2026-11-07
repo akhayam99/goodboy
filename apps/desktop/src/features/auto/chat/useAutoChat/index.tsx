@@ -4,6 +4,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
+import { useAutoChildChat } from '../../hooks/useAutoChildChat';
 import type { ConversationStop } from '../../../../shared/types/conversationStop';
 import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
@@ -28,6 +29,7 @@ export type AutoChat = Readonly<{
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
   dock: ReactNode | undefined;
   composerPlaceholder: string | undefined;
+  childTask: string | null;
   stop: ConversationStop | null;
   isFailureOwned: boolean;
   isTreeAtRest: boolean;
@@ -41,6 +43,7 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
   const { openChild, openArtifact } = actions;
   const tree = useMemo(() => autoTreeOfAgent({ views, agentId: agent.id }), [views, agent.id]);
   const view = tree?.kind === 'root' ? tree.view : null;
+  const child = useAutoChildChat({ session, agent, tree });
 
   const insertions = useMemo(() => {
     if (view === null) {
@@ -114,9 +117,11 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
 
   return {
     tree,
-    insertions,
+    insertions: insertions ?? child.insertions,
     dock,
-    composerPlaceholder: view === null ? undefined : composerPlaceholderOf({ view }),
+    composerPlaceholder:
+      view === null ? child.composerPlaceholder : composerPlaceholderOf({ view }),
+    childTask: child.task,
     stop,
     isFailureOwned: view?.tree.phase === 'blocked',
     isTreeAtRest: view !== null && isAutoTreeAtRestOf({ view }),

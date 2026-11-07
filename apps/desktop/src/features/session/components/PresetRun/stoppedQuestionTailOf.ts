@@ -18,9 +18,9 @@ const TAIL_BY_STOP: Readonly<
   operator: { state: 'stopped', phrase: 'Stopped by you' },
   closed: { state: 'stopped', phrase: 'Stopped by you' },
   paused: { state: 'stopped', phrase: 'Paused by you' },
-  'needs-approval': { state: 'waiting', phrase: 'Paused · needs your approval' },
-  'plan-approval': { state: 'waiting', phrase: 'The plan waits for your review' },
-  'preset-change': { state: 'waiting', phrase: 'Paused · the preset needs your call' },
+  'needs-approval': { state: 'waiting', phrase: 'Needs approval' },
+  'plan-approval': { state: 'waiting', phrase: 'The plan needs approval' },
+  'preset-change': { state: 'waiting', phrase: 'Needs you' },
 };
 
 export const stoppedQuestionTailOf = ({ stop }: Params): StoppedQuestionTail | null =>

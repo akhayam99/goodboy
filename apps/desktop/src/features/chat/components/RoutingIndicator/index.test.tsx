@@ -40,7 +40,7 @@ describe('RoutingIndicator', () => {
         connectedProviders={[]}
       />,
     );
-    await waitFor(() => screen.getByText(/all provider budgets exceeded/i));
+    await waitFor(() => screen.getByText(/every provider is at its limit/i));
   });
 
   it('wires the send anyway button when the escape hatch is passed', async () => {
@@ -68,7 +68,7 @@ describe('RoutingIndicator', () => {
         connectedProviders={[]}
       />,
     );
-    await waitFor(() => screen.getByText(/all provider budgets exceeded/i));
+    await waitFor(() => screen.getByText(/every provider is at its limit/i));
     expect(screen.queryByRole('button')).toBeNull();
   });
 
@@ -89,7 +89,7 @@ describe('RoutingIndicator', () => {
     await waitFor(() =>
       expect(document.querySelector('[data-model-id="cursor-pro"]')).not.toBeNull(),
     );
-    expect(screen.getByText(/budget exceeded for claude/i)).toBeTruthy();
+    expect(screen.getByText(/claude is at its limit/i)).toBeTruthy();
   });
 
   it('renders the threshold warning, worded apart from the over-cap one', async () => {
@@ -109,7 +109,7 @@ describe('RoutingIndicator', () => {
     await waitFor(() =>
       expect(document.querySelector('[data-model-id="cursor-pro"]')).not.toBeNull(),
     );
-    expect(screen.getByText(/claude past its budget threshold/i)).toBeTruthy();
-    expect(screen.queryByText(/budget exceeded/i)).toBeNull();
+    expect(screen.getByText(/claude is near its limit/i)).toBeTruthy();
+    expect(screen.queryByText(/is at its limit/i)).toBeNull();
   });
 });

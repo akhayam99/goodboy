@@ -466,7 +466,7 @@ describe('the Runs grid order and the states it files', () => {
       agents: [aNowAgent({ key: 'blocked', name: 'Blocked agent', status: 'blocked' })],
     });
 
-    expect(row).toMatchObject({ dot: 'needsYou', stateWord: 'Blocked', isWaiting: true });
+    expect(row).toMatchObject({ dot: 'needsYou', stateWord: 'Needs you', isWaiting: true });
   });
 });
 
@@ -621,7 +621,7 @@ describe('sessionRunsOf auto dot', () => {
 
     words.isRenamed = true;
 
-    expect(before).toEqual(['needsYou', 'running', 'done', 'stopped', 'idle']);
+    expect(before).toEqual(['failed', 'running', 'done', 'stopped', 'idle']);
     expect(dotsOf()).toEqual(before);
   });
 });

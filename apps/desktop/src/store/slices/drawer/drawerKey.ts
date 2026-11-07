@@ -30,14 +30,10 @@ export const drawerKey = (content: DrawerContent): string => {
       return 'new';
     case 'transcript':
       return `transcript:${content.payload.agentId}`;
-    case 'auto-child':
-      return `auto-child:${content.payload.agentId}`;
     case 'spawned':
       return 'spawned';
     case 'session-log':
       return `session-log:${content.payload.focusEntryId ?? ''}`;
-    case 'run-step':
-      return `run-step:${content.payload.runId}:${content.payload.agentId}`;
     case 'fix-comments':
       return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'terminal':

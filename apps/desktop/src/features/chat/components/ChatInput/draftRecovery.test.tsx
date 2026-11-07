@@ -22,7 +22,7 @@ import {
 } from '../../../../store/storyHarness';
 import { NAMES } from '../../../../shared/utils/names';
 import { queueOnlyInvoke } from '../../../../test/queueOnlyInvoke';
-import { P21DrawerComposerScene } from '../../../../app/components/MockScene/scenes/u26/P21DrawerComposerScene';
+import { P10ChildComposerScene } from '../../../../app/components/MockScene/scenes/u36/P10ChildComposerScene';
 import { IMPLEMENTER_ID } from '../../../../app/components/MockScene/scenes/u24/autoSceneSeed';
 
 const WAIT = { timeout: 15_000 };
@@ -59,7 +59,7 @@ type MountParams = {
 const renderScene = () =>
   render(
     <ToastProvider>
-      <P21DrawerComposerScene theme="light" />
+      <P10ChildComposerScene theme="light" />
     </ToastProvider>,
   );
 

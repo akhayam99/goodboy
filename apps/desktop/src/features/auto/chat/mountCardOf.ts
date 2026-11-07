@@ -20,8 +20,8 @@ export const mountCardOf = ({ project, branch, baseBranch }: Params): MountCard 
     title: `To do this, add ${project}`,
     line:
       branch === null
-        ? `A worktree is created from ${base}.`
-        : `A worktree on ${branch} is created from ${base}.`,
+        ? `A branch starts from ${base}.`
+        : `A branch on ${branch} starts from ${base}.`,
     label: `Add ${project}`,
     busyLabel: `Adding ${project}`,
     message: `Added ${project}${onBranch}. Go on with my request.`,

@@ -44,6 +44,7 @@ export const AUTO_PLAN_ID = brandId<ArtifactId>({ value: 'mock-auto-plan-retries
 const RUN_ONE = brandId<ProviderRunId>({ value: 'mock-auto-run-1' });
 const RUN_TWO = brandId<ProviderRunId>({ value: 'mock-auto-run-2' });
 const RUN_THREE = brandId<ProviderRunId>({ value: 'mock-auto-run-3' });
+const RUN_FOUR = brandId<ProviderRunId>({ value: 'mock-auto-run-4' });
 const TREE_ID = brandId<AutoTreeId>({ value: 'mock-auto-tree' });
 
 type LabelParams = {
@@ -784,7 +785,14 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
           ...first,
           ...second,
           ...approved,
-          reply({ time: '12:14:50', text: FINAL_REPLY, run: RUN_THREE }),
+          {
+            kind: 'user_text',
+            runId: RUN_FOUR,
+            text: 'The Implementer, Tester and Reviewer returned their results.',
+            deliveredBy: 'auto',
+            at: at({ time: '12:14:45' }),
+          },
+          reply({ time: '12:14:50', text: FINAL_REPLY, run: RUN_FOUR }),
         ],
         rootTurn: IDLE,
         hasPlanArtifact: true,

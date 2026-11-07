@@ -184,7 +184,7 @@ const ACCEPTANCE: ReadonlyArray<Acceptance> = [
       await show({ kind: 'stuck' });
 
       const needsYou = cardOf({ name: 'Needs you' });
-      expect(needsYou.textContent).toContain('Auto is stuck');
+      expect(needsYou.textContent).toContain('Auto needs you');
       expect(needsYou.textContent).toContain('The implementer never started');
     },
   },

@@ -57,7 +57,7 @@ describe('runStepCardOf', () => {
 
     expect(card.title).toBe('Center the page wrapper');
     expect(card.sub).toBe('Step 2 of 3');
-    expect(card.state).toEqual({ tone: 'info', words: 'Implementer working', isRunning: true });
+    expect(card.state).toEqual({ tone: 'info', words: 'Implementer running', isRunning: true });
     expect(card.facts).toEqual([
       { label: 'Workflow', value: 'Preset', note: 'Center the profile page' },
       { label: 'Role', value: 'Implementer' },
@@ -75,7 +75,7 @@ describe('runStepCardOf', () => {
       time: null,
     });
 
-    expect(card.state).toEqual({ tone: 'warning', words: 'Waits for your go' });
+    expect(card.state).toEqual({ tone: 'warning', words: 'Ready' });
     expect(card.facts.map((fact) => fact.label)).toEqual(['Workflow', 'Role', 'Next']);
     expect(card.footnote).toBe('Start step 2 starts the implementer.');
   });

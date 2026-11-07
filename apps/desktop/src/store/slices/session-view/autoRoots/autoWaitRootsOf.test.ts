@@ -4,18 +4,19 @@ import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import {
   aDelegation,
+  aPlanRow,
   aView,
   FIXTURE_NOW,
   FIXTURE_ROOT,
   FIXTURE_SESSION,
-} from '../../../features/auto/testing/autoViewFixtures';
-import type { AutoTreeView } from '../auto-view/state';
+} from '../../../../features/auto/testing/autoViewFixtures';
+import type { AutoTreeView } from '../../auto-view/state';
 import { autoWaitRootsOf } from './autoWaitRootsOf';
 
 const words = vi.hoisted(() => ({ isRenamed: false }));
 
-vi.mock('../../../features/auto/autoTreeWordOf', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../features/auto/autoTreeWordOf')>();
+vi.mock('../../../../features/auto/autoTreeWordOf', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../features/auto/autoTreeWordOf')>();
   return {
     ...actual,
     autoTreeWordOf: (params: Parameters<typeof actual.autoTreeWordOf>[0]) => {
@@ -55,9 +56,10 @@ afterEach(() => {
 });
 
 describe('autoWaitRootsOf', () => {
-  it('counts an Auto that is blocked or asks you, never one that runs or rests', () => {
-    expect(waitsOf({ view: aView({ phase: 'blocked' }) })).toEqual([FIXTURE_ROOT]);
-    expect(waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 }) })).toEqual([
+  it('counts an Auto that asks you, never one that runs, rests, failed or sits at its limit', () => {
+    expect(waitsOf({ view: aView({ phase: 'blocked' }) })).toEqual([]);
+    expect(waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 }) })).toEqual([]);
+    expect(waitsOf({ view: aView({ phase: 'waiting', artifacts: [aPlanRow()] }) })).toEqual([
       FIXTURE_ROOT,
     ]);
     expect(waitsOf({ view: aView({ phase: 'deciding' }) })).toEqual([]);
@@ -72,6 +74,15 @@ describe('autoWaitRootsOf', () => {
     });
 
     expect(waitsOf({ view })).toEqual([FIXTURE_ROOT]);
+  });
+
+  it('counts no stuck child under a tree that paused at its limit or stopped replying', () => {
+    const stuck = [aDelegation({ key: 'fixer', role: 'implementer', state: 'settled' })];
+
+    expect(
+      waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1, delegations: stuck }) }),
+    ).toEqual([]);
+    expect(waitsOf({ view: aView({ phase: 'blocked', delegations: stuck }) })).toEqual([]);
   });
 
   it('reads the real clock: a child that never started counts as stuck after a minute', () => {

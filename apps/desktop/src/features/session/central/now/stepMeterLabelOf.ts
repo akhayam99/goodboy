@@ -9,7 +9,7 @@ type Params = {
 const STATE_PHRASE: Record<RunStepState, string> = {
   done: 'done',
   running: 'running',
-  waiting: 'waits on you',
+  waiting: 'ready',
   failed: 'failed',
   notStarted: 'not started',
 };
@@ -24,5 +24,5 @@ export const stepMeterLabelOf = ({ group }: Params): string => {
   const head = `${position}, ${currentStep.title} ${STATE_PHRASE[currentState]}`;
   return waitingStepNumber === null || waitingStepNumber === currentStep.number
     ? head
-    : `${head}, step ${waitingStepNumber} waits on you`;
+    : `${head}, step ${waitingStepNumber} is ready`;
 };

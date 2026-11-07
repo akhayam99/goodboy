@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
 
 const storeState: { sessionPhaseRuns: Record<string, ReadonlyArray<unknown>> } = {
   sessionPhaseRuns: {},
@@ -12,12 +14,21 @@ vi.mock('../../../../../store', () => ({
   useAppStore: (selector: (s: typeof storeState) => unknown) => selector(storeState),
 }));
 vi.mock('../../AgentDetailPane', () => ({
-  AgentDetailPane: () => <div>agent detail</div>,
+  AgentDetailPane: () => {
+    const [isBriefOpen, setIsBriefOpen] = useState(false);
+    return (
+      <button type="button" onClick={() => setIsBriefOpen(true)}>
+        {isBriefOpen ? 'brief open' : 'brief closed'}
+      </button>
+    );
+  },
 }));
 import { AgentOverlay } from './AgentOverlay';
 
-const sessionId = 'sess-1' as SessionId;
-const session = { id: sessionId } as unknown as Session;
+const session = aSession();
+const sessionId: SessionId = session.id;
+const first = anAgent({ id: brandId<AgentId>({ value: 'agent-1' }), sessionId });
+const second = anAgent({ id: brandId<AgentId>({ value: 'agent-2' }), sessionId });
 
 afterEach(() => {
   cleanup();
@@ -31,7 +42,7 @@ describe('AgentOverlay', () => {
         session={session}
         sessionId={sessionId}
         isChatActive={false}
-        selectedAgentId={'agent-1' as AgentId}
+        selectedAgentId={first.id}
         onBack={vi.fn()}
       />,
     );
@@ -49,7 +60,7 @@ describe('AgentOverlay', () => {
         session={session}
         sessionId={sessionId}
         isChatActive={false}
-        selectedAgentId={'agent-1' as AgentId}
+        selectedAgentId={first.id}
         onBack={onBack}
       />,
     );
@@ -59,5 +70,25 @@ describe('AgentOverlay', () => {
     expect(screen.getByTestId('agent-header-title-row')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /back/i }));
     expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  it('starts the next agent with a closed brief and no leftover edit', () => {
+    storeState.sessionPhaseRuns = { [sessionId]: [first, second] };
+    const view = (selectedAgentId: AgentId) => (
+      <AgentOverlay
+        session={session}
+        sessionId={sessionId}
+        isChatActive={false}
+        selectedAgentId={selectedAgentId}
+        onBack={vi.fn()}
+      />
+    );
+    const { rerender } = render(view(first.id));
+    fireEvent.click(screen.getByRole('button', { name: 'brief closed' }));
+    screen.getByRole('button', { name: 'brief open' });
+
+    rerender(view(second.id));
+
+    screen.getByRole('button', { name: 'brief closed' });
   });
 });

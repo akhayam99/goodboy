@@ -293,7 +293,7 @@ describe('RunTree', () => {
     expect(within(rowOf('agent-2')).getByRole('img', { name: 'Running' }).className).toContain(
       'spin-border',
     );
-    const queued = within(rowOf('agent-3')).getByRole('img', { name: 'Not started' });
+    const queued = within(rowOf('agent-3')).getByRole('img', { name: 'Queued' });
     expect(queued.textContent).toBe('');
   });
 

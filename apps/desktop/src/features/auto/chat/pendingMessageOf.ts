@@ -55,7 +55,7 @@ export const pendingMessageLineOf = ({ view }: Params): PendingMessageLine => {
     return { tone: 'waits', text: WAITS_FOR_TURN, reason: null, action: null };
   }
   const reason =
-    blockedReason === null || blockedReason === '' ? 'Auto is blocked.' : blockedReason;
+    blockedReason === null || blockedReason === '' ? "Auto couldn't reply." : blockedReason;
   if (blockedReason === AUTO_BLOCK_TEXT.budget) {
     return { tone: 'notDelivered', text: NOT_DELIVERED, reason, action: 'raiseLimit' };
   }

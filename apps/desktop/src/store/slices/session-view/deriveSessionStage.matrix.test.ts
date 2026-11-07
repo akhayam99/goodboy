@@ -108,11 +108,11 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'an unread reply alone',
     params: { ...base, pr: livePr(), hasUnread: true },
-    before: { stage: 'attention', attention: 'unread-reply', reason: 'unread agent reply' },
+    before: { stage: 'attention', attention: 'unread-reply', reason: 'Unread reply' },
     after: {
       stage: 'attention',
       attention: 'unread-reply',
-      reason: 'unread agent reply',
+      reason: 'Unread reply',
       isRunning: false,
     },
   },
@@ -210,11 +210,11 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'an agent error',
     params: { ...base, session: errored, pr: livePr() },
-    before: { stage: 'attention', attention: 'agent-error', reason: 'agent errored' },
+    before: { stage: 'attention', attention: 'agent-error', reason: 'An agent failed' },
     after: {
       stage: 'attention',
       attention: 'agent-error',
-      reason: 'agent errored',
+      reason: 'An agent failed',
       isRunning: false,
     },
   },
@@ -272,11 +272,11 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'approved with an agent error',
     params: { ...base, session: errored, pr: approvedPr },
-    before: { stage: 'attention', attention: 'agent-error', reason: 'agent errored' },
+    before: { stage: 'attention', attention: 'agent-error', reason: 'An agent failed' },
     after: {
       stage: 'attention',
       attention: 'agent-error',
-      reason: 'agent errored',
+      reason: 'An agent failed',
       isRunning: false,
     },
   },
@@ -321,7 +321,7 @@ const ROWS: ReadonlyArray<Row> = [
     after: {
       stage: 'attention',
       attention: 'plan-approval',
-      reason: 'plan waiting for approval',
+      reason: 'The plan needs approval',
       isRunning: false,
     },
   },
@@ -332,7 +332,7 @@ const ROWS: ReadonlyArray<Row> = [
     after: {
       stage: 'attention',
       attention: 'plan-approval',
-      reason: 'plan waiting for approval',
+      reason: 'The plan needs approval',
       isRunning: true,
     },
   },
@@ -361,11 +361,11 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'running with an agent error',
     params: { ...base, session: errored, pr: livePr(), hasRunningAgent: true },
-    before: { stage: 'attention', attention: 'agent-error', reason: 'agent errored' },
+    before: { stage: 'attention', attention: 'agent-error', reason: 'An agent failed' },
     after: {
       stage: 'attention',
       attention: 'agent-error',
-      reason: 'agent errored',
+      reason: 'An agent failed',
       isRunning: false,
     },
   },
@@ -508,7 +508,7 @@ const ROWS: ReadonlyArray<Row> = [
     after: {
       stage: 'attention',
       attention: 'unread-reply',
-      reason: 'unread agent reply',
+      reason: 'Unread reply',
       isRunning: false,
     },
   },

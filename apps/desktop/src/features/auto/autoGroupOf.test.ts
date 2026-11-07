@@ -123,7 +123,7 @@ describe('autoGroupOf', () => {
 
     expect(group?.children.map((child) => child.reason)).toEqual([
       'The design notes are not in harbor-portal.',
-      'It reported that it is blocked.',
+      "It said it can't go on.",
       null,
     ]);
   });
@@ -348,6 +348,17 @@ describe('autoGroupOf', () => {
       expect(group?.children[0]?.isGone).toBeUndefined();
     });
 
+    it('stays stuck under a tree that stopped replying, which still reads Failed', () => {
+      const base = failed();
+      const group = autoGroupOf({
+        view: { ...base, tree: { ...base.tree, phase: 'blocked' } },
+        agents: [ROOT, anAgent({ id: childId('scout'), parentAgentId: FIXTURE_ROOT })],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group).toMatchObject({ isStuck: true, phase: 'failed', word: 'Failed' });
+    });
+
     it('stays stuck when its agent could not be created, since there was none to delete', () => {
       const group = autoGroupOf({
         view: aView({
@@ -364,8 +375,23 @@ describe('autoGroupOf', () => {
       });
 
       expect(group?.isStuck).toBe(true);
-      expect(group?.word).toBe('Stuck');
+      expect(group?.word).toBe('Needs you');
       expect(group?.children[0]?.isGone).toBeUndefined();
+    });
+
+    it('keeps Paused for a tree spent at its limit, whatever its child did', () => {
+      const group = autoGroupOf({
+        view: aView({
+          phase: 'waiting',
+          capUsd: 1,
+          spentUsd: 1,
+          delegations: [aDelegation({ key: 'fixer', role: 'implementer', state: 'settled' })],
+        }),
+        agents: [ROOT, anAgent({ id: childId('fixer'), parentAgentId: FIXTURE_ROOT })],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group).toMatchObject({ word: 'Paused', phase: 'waiting', isStuck: false });
     });
 
     it('never counts a child that has not started, since it has no agent yet', () => {

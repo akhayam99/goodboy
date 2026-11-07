@@ -37,8 +37,6 @@ export const DRAWER_KINDS = {
   'check-analysis': READER,
   conversation: READER,
   transcript: READER,
-  'auto-child': READER,
-  'run-step': READER,
   'session-log': READER,
   'history-versions': READER,
   'file-diff': WIDE_READER,

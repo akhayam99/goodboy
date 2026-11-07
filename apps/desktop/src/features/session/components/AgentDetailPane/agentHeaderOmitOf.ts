@@ -1,6 +1,6 @@
 const STOP_VERB = 'agent.stop';
 
-const PLAIN_OMIT: ReadonlyArray<string> = [STOP_VERB];
+const PLAIN_OMIT: ReadonlyArray<string> = [STOP_VERB, 'agent.model'];
 
 const AUTO_OMIT: ReadonlyArray<string> = [
   STOP_VERB,

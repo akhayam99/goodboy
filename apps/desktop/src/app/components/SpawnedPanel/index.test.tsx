@@ -78,7 +78,7 @@ describe('the Agents panel', () => {
     fireEvent.click(within(panel()).getByRole('button', { name: 'All runs' }));
     await settle();
 
-    const launches = within(panel()).getByRole('tree', { name: 'Launches' });
+    const launches = within(panel()).getByRole('tree', { name: 'Agents' });
     const heads = within(launches)
       .getAllByRole('treeitem')
       .filter((item) => item.getAttribute('aria-level') === '1');

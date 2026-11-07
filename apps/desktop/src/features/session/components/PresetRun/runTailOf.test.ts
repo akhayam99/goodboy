@@ -96,7 +96,7 @@ describe('runTailOf', () => {
         restartStoppedCount: 2,
       }),
     ).toMatchObject({
-      phrase: '2 agents stopped when Goodboy closed',
+      phrase: '2 agents stopped by restart',
       verb: { kind: 'resumeAll', count: 2 },
     });
   });
@@ -113,10 +113,10 @@ describe('runTailOf', () => {
     });
   });
 
-  it('says a queued run waits to start, or names the run it follows', () => {
+  it('says a manual run is ready on your press, or names the run it follows', () => {
     const primary = { kind: 'start-run', label: 'Start run' } as const;
     const agents = agentsOf({ scout: 'pending', implementer: 'pending' });
-    expect(tailOf({ agents, primary })?.phrase).toBe('Waits to start');
+    expect(tailOf({ agents, primary })?.phrase).toBe('Ready to start');
     expect(
       tailOf({
         agents,
@@ -153,9 +153,9 @@ describe('runTailOf', () => {
     ['failure', 'failed', 'The run stopped on an error'],
     ['operator', 'stopped', 'Stopped by you'],
     ['paused', 'stopped', 'Paused by you'],
-    ['needs-approval', 'waiting', 'Paused · needs your approval'],
-    ['plan-approval', 'waiting', 'The plan waits for your review'],
-    ['preset-change', 'waiting', 'Paused · the preset needs your call'],
+    ['needs-approval', 'waiting', 'Needs approval'],
+    ['plan-approval', 'waiting', 'The plan needs approval'],
+    ['preset-change', 'waiting', 'Needs you'],
   ] as const)(
     'names the %s stop instead of waiting for an answer when questions wait on it',
     (kind, state, phrase) => {

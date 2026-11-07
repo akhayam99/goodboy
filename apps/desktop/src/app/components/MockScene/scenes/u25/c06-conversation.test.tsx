@@ -82,7 +82,7 @@ describe('the c06 conversation scenes', () => {
     expect(within(row).getByRole('heading', { level: 1 }).textContent).not.toContain('Sonnet 5.5');
     expect(within(row).queryByRole('button', { name: /^Model/ })).toBeNull();
     const settings = screen.getByRole('button', { name: 'Run settings' });
-    expect(screen.getByText('Working')).toBeDefined();
+    expect(screen.getByText('Running')).toBeDefined();
     expect(settings.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(settings);
     expect(settings.getAttribute('aria-expanded')).toBe('true');
@@ -183,7 +183,7 @@ describe('the c06 conversation scenes', () => {
     screen.getByText('Asking you');
   });
 
-  it('c06-agent-delegating writes one line per child and opens the child in the pane', async () => {
+  it('c06-agent-delegating writes one line per child and opens the child on its page', async () => {
     await mount({ name: 'c06-agent-delegating' });
 
     const lines = screen.getByRole('list', { name: 'Delegations' });
@@ -195,15 +195,15 @@ describe('the c06 conversation scenes', () => {
         name: 'Open Run the export tests on 12,000 rows',
       }),
     );
-    const drawer = useAppStore.getState().drawer;
-    expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe('mock-c06-tester');
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().selectedAgentId[C06_SESSION_ID]).toBe('mock-c06-tester');
   });
 
-  it('c06-agent-transcript shows the steps per turn only, titled Transcript, with no second composer', async () => {
+  it('c06-agent-transcript shows the steps per turn only, titled Steps, with no second composer', async () => {
     await mount({ name: 'c06-agent-transcript' });
 
     const pane = screen.getByRole('complementary', { name: 'Transcript pane' });
-    expect(within(pane).getByRole('heading', { name: 'Transcript' })).toBeDefined();
+    expect(within(pane).getByRole('heading', { name: 'Steps' })).toBeDefined();
     expect(within(pane).queryByText('Checking the lockfiles first.')).toBeNull();
     expect(pane.querySelectorAll('[data-turn-heading]').length).toBeGreaterThan(0);
     expect(within(pane).queryByRole('button', { name: 'Turn detail' })).toBeNull();
@@ -265,12 +265,10 @@ describe('the c06 conversation scenes', () => {
     expect(line.textContent).toMatch(/^[A-Z]/);
   });
 
-  it('c06-agent-finished folds the brief to one Asked line after the first answer', async () => {
+  it('c06-agent-finished keeps the first message in its own shape after the first answer', async () => {
     await mount({ name: 'c06-agent-finished' });
 
-    const brief = screen.getByRole('button', { name: /^Asked: Reinstall dependencies/ });
-    expect(brief.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(brief);
+    expect(screen.queryByRole('button', { name: /^Asked: / })).toBeNull();
     expect(screen.getByText(/The lockfile changed on main\./)).toBeDefined();
   });
 
@@ -290,13 +288,12 @@ describe('the c06 conversation scenes', () => {
     expect(screen.getByText(/estimated at API prices/)).toBeDefined();
   });
 
-  it('c06-agent-transcript opens the transcript from the header menu, not from a header button', async () => {
+  it('c06-agent-finished keeps Open transcript out of the header and its menu', async () => {
     await mount({ name: 'c06-agent-finished' });
 
     expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Open transcript' }));
-    expect(useAppStore.getState().drawer?.kind).toBe('transcript');
+    expect(screen.queryByRole('menuitem', { name: 'Open transcript' })).toBeNull();
   });
 
   it('c06-agents-empty shows the empty Runs page as the Start a run field, no Start an agent', async () => {

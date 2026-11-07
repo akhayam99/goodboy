@@ -31,6 +31,7 @@ import { ArtifactShellActions } from '../../features/artifacts/components/Artifa
 import { bindTarget } from '../../features/actions/registry';
 import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
+import { agentHeaderOmitOf } from '../../features/session/components/AgentDetailPane/agentHeaderOmitOf';
 import type {
   ArtifactActionTarget,
   CommitActionTarget,
@@ -387,10 +388,17 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromOverflow.filter((label) => !fromContext.includes(label))).toEqual([]);
   });
 
-  it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
+  it('agent header: the ⋯ keeps five rows at most, in the right click order, never Open agent', async () => {
     const agent = agentFixture({ status: 'failed' });
     seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowStop />);
+    withMenus(
+      <AgentHeaderActions
+        agent={agent}
+        sessionId={SESSION}
+        hasStateButton={false}
+        omit={agentHeaderOmitOf({ isAutoRoot: false })}
+      />,
+    );
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
@@ -401,7 +409,28 @@ describe('every ⋯ menu and its right click list the same actions in the same o
 
     expect(menuLabels()).not.toContain('Open agent');
     expect(menuLabels()).toContain('Delete agent');
-    expect(menuLabels()).toEqual(registry);
+    expect(menuLabels().length).toBeLessThanOrEqual(5);
+    expect(registry.filter((label) => menuLabels().includes(label))).toEqual(menuLabels());
+  });
+
+  it.each([
+    { state: 'finished', agent: { status: 'failed' as const }, row: 'Close' },
+    { state: 'closed', agent: { status: 'failed' as const, doneAt: FIXTURE_NOW }, row: 'Reopen' },
+  ])('agent page: a $state agent offers $row in the ⋯ within five rows', ({ agent, row }) => {
+    const shown = agentFixture(agent);
+    seedActionState({ useAppStore, seed: { agents: [shown], mounts: [mountFixture()] } });
+    withMenus(
+      <AgentHeaderActions
+        agent={shown}
+        sessionId={SESSION}
+        hasStateButton={false}
+        omit={agentHeaderOmitOf({ isAutoRoot: false })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+
+    expect(menuLabels()).toContain(row);
+    expect(menuLabels().length).toBeLessThanOrEqual(5);
   });
 
   it('record header: the ⋯ holds Open in tool, and the right click lists the same', async () => {

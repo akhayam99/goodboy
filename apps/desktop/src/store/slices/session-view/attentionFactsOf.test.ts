@@ -287,4 +287,8 @@ describe('attentionFactsOf and a deferred reason', () => {
 
     expect(attentionFactsOf({ ...holding, deferredReasons: deferred(reason) })).toEqual([reason]);
   });
+
+  it('raises agent-error for a failed Auto, as for a failed agent', () => {
+    expect(attentionFactsOf({ ...base, hasAutoFailed: true })).toEqual(['agent-error']);
+  });
 });

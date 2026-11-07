@@ -77,7 +77,7 @@ describe('the mount card scenes', () => {
 
     expect(await screen.findByText('To do this, add notify-relay', undefined, WAIT)).toBeDefined();
     expect(
-      await screen.findByText('A worktree on ak/feat-new-explore is created from main.'),
+      await screen.findByText('A branch on ak/feat-new-explore starts from main.'),
     ).toBeDefined();
     expect(await screen.findByRole('button', { name: 'Add notify-relay' })).toBeDefined();
     expect(await screen.findByRole('button', { name: 'Add project' })).toBeDefined();

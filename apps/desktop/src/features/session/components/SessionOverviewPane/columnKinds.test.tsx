@@ -138,7 +138,7 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'stuck',
     facts: {
-      cards: ['needs-you', 'running', 'done'],
+      cards: ['needs-you', 'done'],
       primary: 'Retry',
       done: null,
     },
@@ -325,14 +325,6 @@ const showStuck = async (): Promise<StuckSpies> => {
   return { retry, navigate };
 };
 
-const stuckLine = () => {
-  const line = document.querySelector<HTMLElement>('[data-now-actions]');
-  if (line === null) {
-    throw new Error('The stuck line must be drawn');
-  }
-  return within(line);
-};
-
 const stuckView = () => {
   const [view] = useAppStore.getState().autoTreeViews[COLUMN_SESSION_ID] ?? [];
   if (view === undefined) {
@@ -360,13 +352,13 @@ describe('the stuck line in Running', () => {
     expect(document.querySelector('[data-now-actions]')).toBeNull();
   });
 
-  it('offers Answer and Stop under the sentence, and Retry once, in Needs you', async () => {
+  it('offers Open Auto, Stop and Retry once, as one block in Needs you', async () => {
     await showStuck();
-    const line = stuckLine();
 
-    expect(line.queryByRole('button', { name: RETRY_NAME })).toBeNull();
-    line.getByRole('button', { name: 'Answer Auto in its chat' });
-    line.getByRole('button', { name: 'Stop Auto and its agents' });
+    needsYou().getByRole('button', { name: 'Open Auto' });
+    needsYou().getByRole('button', { name: 'Stop Auto and its agents' });
+    expect(needsYou().queryByRole('button', { name: 'Answer Auto in its chat' })).toBeNull();
+    expect(document.querySelector('[data-now-actions]')).toBeNull();
     expect(screen.getAllByRole('button', { name: RETRY_NAME })).toHaveLength(1);
     expect(needsYou().getByRole('button', { name: RETRY_NAME }).textContent).toBe('Retry');
   });
@@ -389,8 +381,6 @@ describe('the stuck line in Running', () => {
     expect(screen.getByRole('region', { name: 'Needs you' }).textContent).toContain(
       'Auto is not running yet.',
     );
-    expect(stuckLine().queryByRole('alert')).toBeNull();
-
     await pressRetry();
 
     expect(retry).toHaveBeenCalledTimes(2);
@@ -399,10 +389,10 @@ describe('the stuck line in Running', () => {
     );
   });
 
-  it('opens the Auto chat from Answer', async () => {
+  it('opens the Auto chat from Open Auto', async () => {
     const { navigate } = await showStuck();
 
-    fireEvent.click(stuckLine().getByRole('button', { name: 'Answer Auto in its chat' }));
+    fireEvent.click(needsYou().getByRole('button', { name: 'Open Auto' }));
 
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(navigate.mock.calls[0])).toContain(stuckView().tree.rootAgentId);
@@ -414,11 +404,11 @@ describe('the stuck line in Running', () => {
     registerTreeStopPort({ port: stop });
 
     await act(async () => {
-      fireEvent.click(stuckLine().getByRole('button', { name: 'Stop Auto and its agents' }));
+      fireEvent.click(needsYou().getByRole('button', { name: 'Stop Auto and its agents' }));
     });
 
     expect(stop).toHaveBeenCalledWith({ treeId: stuckView().tree.id });
-    expect(stuckLine().getByRole('alert').textContent).toBe(
+    expect(needsYou().getByRole('alert').textContent).toBe(
       "Couldn't stop the Auto agents. Some agents are still running. Press Stop again to retry.",
     );
   });

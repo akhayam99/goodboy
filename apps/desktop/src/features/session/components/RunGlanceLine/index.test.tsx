@@ -11,7 +11,7 @@ const mount = ({ spend }: { readonly spend: string | null }) =>
   render(
     <RunGlanceLine
       id="agent-ledger-core"
-      glance={glanceOf({ state: 'working', sentence: '1 of 3 steps' })}
+      glance={glanceOf({ state: 'running', sentence: '1 of 3 steps' })}
       spend={spend}
       settings={<span>Model chips</span>}
     />,
@@ -21,7 +21,7 @@ describe('RunGlanceLine', () => {
   it('draws the state word, the sentence and the spend of the limit', () => {
     mount({ spend: '$1.20 of $5.00' });
 
-    expect(screen.getByText('Working').textContent).toBe('Working');
+    expect(screen.getByText('Running').textContent).toBe('Running');
     expect(screen.getByText('1 of 3 steps').textContent).toBe('1 of 3 steps');
     expect(screen.getByText('$1.20 of $5.00').textContent).toBe('$1.20 of $5.00');
   });
@@ -30,20 +30,20 @@ describe('RunGlanceLine', () => {
     render(
       <RunGlanceLine
         id="agent-ledger-core"
-        glance={glanceOf({ state: 'working', sentence: '' })}
+        glance={glanceOf({ state: 'running', sentence: '' })}
         spend={null}
         settings={<span>Model chips</span>}
       />,
     );
 
-    expect(screen.getByRole('status').textContent).toBe('Working');
+    expect(screen.getByRole('status').textContent).toBe('Running');
   });
 
   it('announces the word and the sentence, not the spend or the Settings button', () => {
     mount({ spend: '$1.20 of $5.00' });
 
     const status = screen.getByRole('status');
-    expect(status.textContent).toBe('Working·1 of 3 steps');
+    expect(status.textContent).toBe('Running·1 of 3 steps');
     expect(status.contains(screen.getByText('$1.20 of $5.00'))).toBe(false);
     expect(status.contains(screen.getByRole('button', { name: 'Run settings' }))).toBe(false);
   });
@@ -67,7 +67,7 @@ describe('RunGlanceLine', () => {
     const { container } = render(
       <RunGlanceLine
         id="agent-ledger-core"
-        glance={glanceOf({ state: 'working', sentence: '' })}
+        glance={glanceOf({ state: 'running', sentence: '' })}
         spend={null}
         settings={<span>Model chips</span>}
         revealEvent="goodboy:test-open-limit"

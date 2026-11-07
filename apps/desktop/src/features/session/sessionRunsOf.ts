@@ -8,7 +8,8 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { agentStateOf, STOPPED_WORD } from '../workTreeModel/agentStateOf';
+import { agentStateOf } from '../workTreeModel/agentStateOf';
+import { NAMES } from '../../shared/utils/names';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
@@ -256,9 +257,12 @@ type AutoDotParams = {
 const autoDotOf = ({ state }: AutoDotParams): DotState => {
   switch (state) {
     case 'asking':
-    case 'blocked':
+    case 'paused':
       return 'needsYou';
+    case 'failed':
+      return 'failed';
     case 'running':
+    case 'stopping':
       return 'running';
     case 'done':
       return 'done';
@@ -351,7 +355,7 @@ const agentRowOf = ({ agent, kind, agents, questions, turn }: AgentRowParams): S
     revisingSince: null,
     agentIds,
     open: { kind: 'agent', agentId: agent.id },
-    verb: state.word === STOPPED_WORD ? continueAgentVerbOf({ agent }) : null,
+    verb: state.word === NAMES.stopped ? continueAgentVerbOf({ agent }) : null,
   };
 };
 

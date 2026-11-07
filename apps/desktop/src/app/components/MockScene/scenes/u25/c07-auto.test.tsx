@@ -163,7 +163,7 @@ describe('c07 Auto scenes', () => {
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
     ).toBeDefined();
     screen.getByTestId('agent-header-title-row');
-    screen.getByText('Started by Auto. Auto sees what you tell it.');
+    screen.getByText('Auto started this agent and reads your messages to it.');
     expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull();
     expect(levelStack().dataset.levelStack).toBe('session');
     expect((await treeRow(/^Implementer, /)).getAttribute('aria-selected')).toBe('true');
@@ -191,7 +191,7 @@ describe('c07 Auto scenes', () => {
     if (glance === null) {
       throw new Error('no glance line');
     }
-    expect(glance.dataset.glance).toBe('working');
+    expect(glance.dataset.glance).toBe('running');
     expect(within(glance).getByRole('status').textContent).not.toContain('running');
     expect(glance.textContent).not.toContain('Implementer');
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
@@ -261,13 +261,16 @@ describe('c07 Auto scenes', () => {
     expect(screen.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
   });
 
-  it('c07-auto-child opens the Implementer in the pane with its why, its tail and a composer', async () => {
+  it('c07-auto-child opens the Implementer on its page with its why, its tail and one box', async () => {
     mount({ id: 'c07-auto-child' });
 
     expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('Started by Auto. Auto sees what you tell it.')).toBeDefined();
+    expect(
+      screen.getByText('Auto started this agent and reads your messages to it.'),
+    ).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open page' })).toBeDefined();
+    expect(screen.queryByPlaceholderText('Message Auto')).toBeNull();
+    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();
     expect(
@@ -275,7 +278,7 @@ describe('c07 Auto scenes', () => {
     ).toBeGreaterThan(1);
   });
 
-  it('a delegation line reveals the child, then tree rows open the child and Auto', async () => {
+  it('a delegation line opens the child page, and tree rows hop between the child and Auto', async () => {
     mount({ id: 'c07-auto-working' });
 
     const lists = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
@@ -286,7 +289,7 @@ describe('c07 Auto scenes', () => {
       throw new Error('no Tester line');
     }
     fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
-    expect(await screen.findByPlaceholderText('Message Auto', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
     expect((await treeRow(/^Tester, /)).getAttribute('aria-selected')).toBe('true');
 
     fireEvent.click(await treeRow(/^Implementer, /));
@@ -295,18 +298,15 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
 
     fireEvent.click(await treeRow(/^Auto agent, /));
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull());
+    expect(await screen.findByPlaceholderText('Message Auto', undefined, WAIT)).toBeDefined();
     expect(await autoTree()).toBeDefined();
   });
 
-  it('Open page puts the child in the center and keeps the rail on the session', async () => {
+  it('keeps the rail on the session on a child page', async () => {
     mount({ id: 'c07-auto-child' });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Open page' }, WAIT));
-
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Open page' })).toBeNull());
+    await screen.findByPlaceholderText('Message Implementer', undefined, WAIT);
     expect(levelStack().dataset.levelStack).toBe('session');
-    expect(await screen.findByRole('button', { name: 'Open Auto' }, WAIT)).toBeDefined();
   });
 
   it('c07-auto-child-done shows what came back and says Returned to Auto', async () => {
@@ -386,9 +386,6 @@ describe('c07 Auto scenes', () => {
     const shots = await screen.findByRole('list', { name: 'Images Auto passed on' }, WAIT);
     expect(within(shots).getByText('banner-wide.png')).toBeDefined();
     expect(within(shots).getByText('banner-narrow.png')).toBeDefined();
-    expect(
-      screen.getByText('The banner overlaps the totals on narrow screens, see both shots.'),
-    ).toBeDefined();
   });
 
   it('c07-auto-capped pauses at the limit with Raise to and Change limit in the dock', async () => {
@@ -417,14 +414,15 @@ describe('c07 Auto scenes', () => {
     expect(within(popover).getByRole('form', { name: 'Limit for this Auto' })).toBeDefined();
   });
 
-  it('c07-auto-working titles the Auto root with its goal and keeps Open transcript in the menu', async () => {
+  it('c07-auto-working titles the Auto root with its goal and holds no Open transcript in the menu', async () => {
     mount({ id: 'c07-auto-working' });
 
     const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
     expect(within(title).queryByText(/^Auto$/)).toBeNull();
     expect(within(title).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
-    expect(await screen.findByRole('menuitem', { name: 'Open transcript' }, WAIT)).toBeDefined();
+    await screen.findByRole('menu', undefined, WAIT);
+    expect(screen.queryByRole('menuitem', { name: 'Open transcript' })).toBeNull();
   });
 
   it('closes the Agents panel and opens it again from the tools column, Runs stays selected', async () => {

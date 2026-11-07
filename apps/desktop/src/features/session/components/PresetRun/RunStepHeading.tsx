@@ -2,6 +2,7 @@ import type { Agent, Workflow } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { agentKindPalette, classifyAgent } from '../../agent-kind';
+import { AgentTitle } from '../AgentDetailPane/AgentTitle';
 import { stepHeadingOf } from './stepHeadingOf';
 
 type Props = {
@@ -17,9 +18,11 @@ export const RunStepHeading = ({ agent, stepAgent, workflow }: Props) => {
   return (
     <span data-run-step-heading="" className="flex min-w-32 items-center gap-2">
       <AgentKindChip kind={kind} density="glyph" isDecorative />
-      <span className="min-w-0 break-words">
-        {stepHeadingOf({ agent, stepAgent, workflow, role })}
-      </span>
+      <AgentTitle
+        agent={agent}
+        sessionId={agent.sessionId}
+        heading={stepHeadingOf({ agent, stepAgent, workflow, role })}
+      />
     </span>
   );
 };

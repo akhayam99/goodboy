@@ -127,7 +127,7 @@ describe('AutoResultCards', () => {
       }),
     ]);
 
-    const blocked = screen.getByRole('article', { name: 'Scout, Blocked' });
+    const blocked = screen.getByRole('article', { name: 'Scout, Needs you' });
     expect(within(blocked).getByText('notify-relay is not mounted.')).toBeDefined();
   });
 
@@ -192,7 +192,7 @@ describe('AutoResultCards', () => {
       within(card).getByText('v2');
       within(card).getByText('One race left in ledger-core, the rest is safe to merge.');
       expect(within(card).queryByText(/Comparing the ledger-core branch/)).toBeNull();
-      const notes = within(card).getByRole('button', { name: 'Notes, 3 lines' });
+      const notes = within(card).getByRole('button', { name: 'Earlier in this reply, 3 lines' });
       expect(notes.getAttribute('aria-expanded')).toBe('false');
       expect(card.querySelector('[data-clamped]')).toBeNull();
       fireEvent.click(row);
@@ -205,9 +205,9 @@ describe('AutoResultCards', () => {
         artifacts: new Map([['delegation-first', [REPORT_LINK]]]),
       });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Notes, 3 lines' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Earlier in this reply, 3 lines' }));
 
-      const notes = screen.getByRole('button', { name: 'Notes, 3 lines' });
+      const notes = screen.getByRole('button', { name: 'Earlier in this reply, 3 lines' });
       expect(notes.getAttribute('aria-expanded')).toBe('true');
       screen.getByText(/Comparing the ledger-core branch/);
     });
@@ -227,7 +227,7 @@ describe('AutoResultCards', () => {
       });
 
       expect(screen.queryByRole('list', { name: 'Artifacts' })).toBeNull();
-      screen.getByRole('button', { name: 'Notes, 3 lines' });
+      screen.getByRole('button', { name: 'Earlier in this reply, 3 lines' });
     });
 
     it('leads with the model outcome line and shows no state word beside the title', () => {
@@ -247,7 +247,7 @@ describe('AutoResultCards', () => {
       expect(outcome.textContent).toBe('Changes needed: 1 blocker');
       expect(card.textContent).not.toContain('<<outcome>>');
       expect(within(card).queryByText('Done')).toBeNull();
-      within(card).getByRole('button', { name: 'Notes, 3 lines' });
+      within(card).getByRole('button', { name: 'Earlier in this reply, 3 lines' });
     });
 
     it('marks an approved plan with its tone word', () => {
@@ -279,7 +279,7 @@ describe('AutoResultCards', () => {
         artifacts: new Map([['delegation-first', [REPORT_LINK]]]),
       });
 
-      expect(screen.queryByRole('button', { name: /^Notes, / })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Earlier in this reply, / })).toBeNull();
       screen.getByRole('button', { name: /^Open report/ });
     });
   });
@@ -290,7 +290,7 @@ describe('AutoResultCards', () => {
     ]);
 
     const card = screen.getByRole('article', { name: 'Reviewer 1, Done' });
-    expect(within(card).queryByRole('button', { name: /^Notes, / })).toBeNull();
+    expect(within(card).queryByRole('button', { name: /^Earlier in this reply, / })).toBeNull();
     expect(within(card).queryByRole('list', { name: 'Artifacts' })).toBeNull();
     expect(card.querySelector('[data-clamped="true"]')).not.toBeNull();
     within(card).getByRole('button', { name: 'Show more' });

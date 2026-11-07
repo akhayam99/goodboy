@@ -249,7 +249,7 @@ describe('deriveSessionStage', () => {
     };
     const info = deriveSessionStage({ session, pr: makePr(), ...signals, hasUnread: true });
     expect(info.stage).toBe('attention');
-    expect(info.reason).toBe('agent errored');
+    expect(info.reason).toBe('An agent failed');
   });
 
   it('running state beats attention signals that are not waiting for you', () => {
@@ -379,7 +379,7 @@ describe('deriveSessionStage', () => {
     });
     expect(info).toMatchObject({
       stage: 'attention',
-      reason: 'unread agent reply',
+      reason: 'Unread reply',
       attention: 'unread-reply',
       addsFact: true,
       prState: null,
@@ -455,7 +455,7 @@ describe('deriveSessionStage', () => {
     };
     const info = deriveSessionStage({ session, pr: null, ...signals, hasRunningAgent: true });
     expect(info.stage).toBe('attention');
-    expect(info.reason).toBe('agent errored');
+    expect(info.reason).toBe('An agent failed');
   });
 
   it('running agent + CI failure on live PR → running (agent outranks CI attention)', () => {
@@ -543,7 +543,7 @@ describe('deriveSessionStage', () => {
     });
     expect(unread).toMatchObject({
       stage: 'attention',
-      reason: 'unread agent reply',
+      reason: 'Unread reply',
       attention: 'unread-reply',
       addsFact: true,
       prState: null,

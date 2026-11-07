@@ -75,7 +75,7 @@ describe('c01 tail scenes', () => {
   it('reads a child that asked a question as needing you, with nothing to stop', () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-childasked'];
     render(<Scene />);
-    screen.getByText('Asked a question');
+    screen.getByText('Needs your answer');
     expect(screen.queryByText('Queued')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });

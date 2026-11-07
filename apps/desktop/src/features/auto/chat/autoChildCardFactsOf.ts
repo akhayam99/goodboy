@@ -12,6 +12,9 @@ type Params = {
 };
 
 const cardToneOf = ({ card }: Params): Tone => {
+  if (card.status.tone === 'danger') {
+    return 'danger';
+  }
   if (card.status.tone === 'warning') {
     return AUTO_STATE_TONE.waitingOnYou;
   }

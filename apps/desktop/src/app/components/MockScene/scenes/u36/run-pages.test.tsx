@@ -277,7 +277,7 @@ describe('one run page', () => {
     within(menu).getByRole('menuitem', { name: 'Copy run summary' });
   });
 
-  it('opens the transcript of a subagent from its own page, not the one of its step', async () => {
+  it('leaves Open transcript out of the page it would only reopen', async () => {
     render(
       <ToastProvider>
         <ObjectMenuProvider>
@@ -293,17 +293,11 @@ describe('one run page', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
-    fireEvent.click(
-      within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Open transcript' }),
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
 
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'transcript',
-      payload: { agentId: HELPER_ID },
-    });
+    expect(
+      within(screen.getByRole('menu')).queryByRole('menuitem', { name: 'Open transcript' }),
+    ).toBeNull();
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });
 
   it.each(['u36-p12-step-page', 'u36-p12-orch-step-page'] as const)(

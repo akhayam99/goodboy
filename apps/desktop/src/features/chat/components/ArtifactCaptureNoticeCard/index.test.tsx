@@ -31,7 +31,7 @@ describe('ArtifactCaptureNoticeCard', () => {
     render(<ArtifactCaptureNoticeCard item={item} />);
     const header = screen.getByTestId('artifact-capture-notice');
     expect(header.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: /retry capture/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /rewrite/i })).toBeNull();
   });
 
   it('sends one bounded repair prompt and then disables the action', () => {
@@ -44,7 +44,7 @@ describe('ArtifactCaptureNoticeCard', () => {
     );
     fireEvent.click(screen.getByTestId('artifact-capture-notice'));
     expect(screen.getByText('the artifact body is not valid JSON')).toBeDefined();
-    const retry = screen.getByRole('button', { name: /retry capture/i });
+    const retry = screen.getByRole('button', { name: /rewrite/i });
     fireEvent.click(retry);
     expect(state.sendTurn).toHaveBeenCalledWith({
       sessionId: 'sess-1',
@@ -53,13 +53,13 @@ describe('ArtifactCaptureNoticeCard', () => {
     });
     fireEvent.click(retry);
     expect(state.sendTurn).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('repair requested')).toBeDefined();
+    expect(screen.getByText('Asked')).toBeDefined();
   });
 
   it('cannot repair without an agent in scope', () => {
     render(<ArtifactCaptureNoticeCard item={item} sessionId={'sess-1' as never} />);
     fireEvent.click(screen.getByTestId('artifact-capture-notice'));
-    fireEvent.click(screen.getByRole('button', { name: /retry capture/i }));
+    fireEvent.click(screen.getByRole('button', { name: /rewrite/i }));
     expect(state.sendTurn).not.toHaveBeenCalled();
   });
 });

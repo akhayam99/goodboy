@@ -5,7 +5,7 @@ export const U25_C09_ORCHESTRATED_SCENES = {
   'c09-orchestrated-list': () => <C09OrchestratedScene state="running" page="list" />,
   'c09-orchestrated-empty': () => <C09OrchestratedScene state="running" page="empty" />,
   'c09-orch-running': () => <C09OrchestratedScene state="running" page="document" />,
-  'c09-orch-step': () => <C09OrchestratedScene state="running" page="step" />,
+  'c09-orch-step': () => <C09OrchestratedScene state="running" page="stepPage" />,
   'c09-orch-reading': () => <C09OrchestratedScene state="reading" page="document" />,
   'c09-orch-ready': () => <C09OrchestratedScene state="ready" page="document" />,
   'c09-orch-failed': () => <C09OrchestratedScene state="failed" page="document" />,

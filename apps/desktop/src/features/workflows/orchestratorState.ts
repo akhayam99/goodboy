@@ -108,13 +108,13 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   'needs-approval': {
     phase: 'needs-approval',
     tone: 'warning',
-    sentence: 'Paused · needs your approval',
+    sentence: 'Needs approval',
     showsMessage: true,
   },
   'plan-approval': {
     phase: 'plan-approval',
     tone: 'warning',
-    sentence: 'Plan ready · waiting for you',
+    sentence: 'Plan needs approval',
     showsMessage: false,
   },
   paused: {
@@ -126,7 +126,7 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   'preset-change': {
     phase: 'needs-approval',
     tone: 'warning',
-    sentence: 'Paused · the preset needs your call',
+    sentence: 'Needs you',
     showsMessage: true,
   },
 };
@@ -251,14 +251,14 @@ export const resolveOrchestratorState = ({
     };
   }
   if (run.orchestrationOutcome === 'done') {
-    return { ...base, phase: 'done', tone: 'success', sentence: 'Run complete' };
+    return { ...base, phase: 'done', tone: 'success', sentence: 'Done' };
   }
   if (run.orchestrationOutcome === 'blocked') {
     return {
       ...base,
       phase: 'blocked',
       tone: 'warning',
-      sentence: 'Stopped · needs a human call',
+      sentence: 'Needs you',
     };
   }
   if (isRunHeldForPlan({ run }) && plan.kind === 'question') {
@@ -353,7 +353,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'automatic',
       tone: 'info',
-      sentence: 'Continuing automatically',
+      sentence: 'Continuing',
     };
   }
   if (ordered.length === 0) {
@@ -369,7 +369,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'ready-mid',
       tone: 'neutral',
-      sentence: 'Waiting for your go',
+      sentence: 'Ready',
     };
   }
   return {

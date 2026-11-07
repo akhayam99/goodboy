@@ -9,9 +9,8 @@
   "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestActivity.tsx": 252,
   "apps/desktop/src/features/bug-report/components/ReportComposer.tsx": 288,
   "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 281,
-  "apps/desktop/src/features/chat/components/ChatView/index.tsx": 592,
-  "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 376,
-  "apps/desktop/src/features/chat/components/OperationsCluster/index.tsx": 254,
+  "apps/desktop/src/features/chat/components/ChatView/index.tsx": 590,
+  "apps/desktop/src/features/chat/components/ChatView/TranscriptRows.tsx": 367,
   "apps/desktop/src/features/companion/commandExecutor.ts": 777,
   "apps/desktop/src/features/diff/components/ChangeTree/index.tsx": 363,
   "apps/desktop/src/features/diff/components/DiffView/DiffFile.tsx": 458,
@@ -38,7 +37,7 @@
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 715,
   "apps/desktop/src/features/search/components/SearchMode/index.tsx": 318,
   "apps/desktop/src/features/session/agent-kind.ts": 725,
-  "apps/desktop/src/features/session/components/AgentDetailPane/index.tsx": 295,
+  "apps/desktop/src/features/session/components/AgentDetailPane/index.tsx": 272,
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": 393,
   "apps/desktop/src/features/session/components/ContextDrawer/index.tsx": 296,
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx": 302,
@@ -84,5 +83,5 @@
   "packages/ui/src/components/Markdown/index.tsx": 678,
   "packages/ui/src/components/ReportSheet/index.tsx": 306,
   "packages/ui/src/components/Tooltip.tsx": 319,
-  "scripts/validate-scenes.mjs": 915
+  "scripts/validate-scenes.mjs": 893
 }

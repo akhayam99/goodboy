@@ -13,18 +13,18 @@ export const LIVE_TONE: Readonly<{
   phase: Readonly<Record<RowPhase, Spec>>;
 }> = {
   state: {
-    stuck: { tone: 'danger', word: 'Stuck' },
+    failed: { tone: 'danger', word: NAMES.failed },
     waiting: { tone: 'warning', word: NAMES.needsYou },
-    deciding: { tone: 'info', word: 'Deciding' },
-    working: { tone: 'info', word: 'Working' },
+    deciding: { tone: 'info', word: NAMES.running },
+    working: { tone: 'info', word: NAMES.running },
   },
   phase: {
-    queued: { tone: 'neutral', word: 'Queued' },
-    running: { tone: 'info', word: 'Working' },
+    queued: { tone: 'neutral', word: NAMES.queued },
+    running: { tone: 'info', word: NAMES.running },
     waiting: { tone: 'warning', word: NAMES.needsYou },
-    failed: { tone: 'danger', word: 'Failed' },
-    done: { tone: 'neutral', word: 'Done' },
-    closed: { tone: 'neutral', word: 'Closed' },
-    skipped: { tone: 'neutral', word: 'Skipped' },
+    failed: { tone: 'danger', word: NAMES.failed },
+    done: { tone: 'neutral', word: NAMES.done },
+    closed: { tone: 'neutral', word: NAMES.closed },
+    skipped: { tone: 'neutral', word: NAMES.skipped },
   },
 };

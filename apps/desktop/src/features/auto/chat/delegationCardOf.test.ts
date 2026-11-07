@@ -106,9 +106,9 @@ describe('delegationCardOf', () => {
     expect(wordOf('paused')).toBe('Needs you');
     expect(wordOf('settled', 'completed')).toBe('Done');
     expect(wordOf('settled', 'failed')).toBe('Failed');
-    expect(wordOf('settled', 'blocked')).toBe('Blocked');
+    expect(wordOf('settled', 'blocked')).toBe('Needs you');
     expect(wordOf('settled', 'stopped')).toBe('Stopped');
-    expect(wordOf('settled', 'timed_out')).toBe('Timed out');
+    expect(wordOf('settled', 'timed_out')).toBe('Failed');
   });
 
   it('reads the settled result: summary, files, checks with their source, artifacts, questions, cost', () => {

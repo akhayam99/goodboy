@@ -2,6 +2,7 @@ import { parseAutoDelegationRole } from '@goodboy/core/auto';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { textOf } from '@goodboy/types/helpers';
+import { NAMES } from '../../shared/utils/names';
 import type { AutoDeliveredResult, AutoTreeView } from '../../store/slices/auto-view/state';
 import { AGENT_KIND_META, classifyAgent, kindForRole, type AgentKind } from '../session/agent-kind';
 import type { RowPhase } from '../workTreeModel/rowState';
@@ -51,8 +52,6 @@ export type AutoGroup = Readonly<{
   isStuck: boolean;
   children: ReadonlyArray<AutoGroupChild>;
 }>;
-
-const STUCK_WORD = 'Stuck';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -316,13 +315,14 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
       ? { ...child, isGone: true }
       : child,
   );
-  const isLive = facts.phase === 'running' || facts.phase === 'waiting';
+  const isRunning = facts.phase === 'running';
+  const isLive = isRunning || facts.phase === 'failed';
   const isStuck = isLive && children.some((child) => isAutoChildStuck({ child }));
   return {
     sessionId: view.tree.sessionId,
     rootAgentId,
     title: textOf({ value: byId.get(rootAgentId)?.name }),
-    word: isStuck ? STUCK_WORD : facts.word,
+    word: isStuck && isRunning ? NAMES.needsYou : facts.word,
     phase: facts.phase,
     isStuck,
     children,

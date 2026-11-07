@@ -327,11 +327,4 @@ export const seedC07 = ({
       to: lensPlace({ state: store, sessionId: AUTO_SESSION.id, lens: 'workflows' }),
     });
   }
-  if (pane !== undefined && place !== 'child') {
-    useAppStore.getState().openDrawer({
-      kind: 'auto-child',
-      sessionId: AUTO_SESSION.id,
-      payload: { agentId: CHILD_ID[pane] },
-    });
-  }
 };

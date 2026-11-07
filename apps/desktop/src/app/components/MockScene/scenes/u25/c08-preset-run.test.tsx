@@ -120,8 +120,8 @@ describe('the c08 preset run scenes', () => {
     expect(panel.getByRole('tree', { name: 'Run agents' })).toBeDefined();
     expect(panel.queryByText('Add step')).toBeNull();
     expect(document.querySelector('[data-run-spend-foot]')).toBeNull();
-    expect(document.querySelector('[data-run-step-heading]')?.textContent).toBe(
-      'Step 2 · Implementer',
+    expect(document.querySelector('[data-run-step-heading]')?.textContent).toMatch(
+      /^Step 2 · Implementer/,
     );
     expect(document.querySelector('[data-run-tail]')).toBeNull();
     const line = document.querySelector<HTMLElement>('[data-dock-live]');
@@ -135,7 +135,9 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-working-other points the tail at the step that works', async () => {
     await mount('c08-run-working-other');
 
-    expect(document.querySelector('[data-run-step-heading]')?.textContent).toBe('Step 1 · Scout');
+    expect(document.querySelector('[data-run-step-heading]')?.textContent).toMatch(
+      /^Step 1 · Scout/,
+    );
     expect(tail().getAttribute('data-run-tail')).toBe('openStep');
     expect(within(tail()).getByText('Step 2 · Implementer is working')).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Open step 2' })).toBeDefined();
@@ -176,7 +178,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-approval says the plan waits and asks for it on the quiet line of the step', async () => {
     await mount('c08-run-approval');
 
-    expect(within(tail()).getByText('The plan waits for your review')).toBeDefined();
+    expect(within(tail()).getByText('The plan needs approval')).toBeDefined();
     expect(
       within(tail()).getByRole('button', { name: 'Approve and start Fix the batching' }),
     ).toBeDefined();

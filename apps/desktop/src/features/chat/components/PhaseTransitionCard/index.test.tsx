@@ -63,18 +63,18 @@ describe('PhaseTransitionCard', () => {
     expect(screen.getByText('step 0 (scope): Requirements settled.')).toBeDefined();
   });
 
-  it('renders the partial brief badge only when degraded', () => {
+  it('renders the short summary badge only when degraded', () => {
     const { rerender } = render(<PhaseTransitionCard item={item} />);
-    expect(screen.queryByText('partial brief')).toBeNull();
+    expect(screen.queryByText('Short summary')).toBeNull();
 
     const degradedItem = {
       ...item,
       degraded: true,
     } satisfies Extract<TranscriptItem, { kind: 'step_transition' }>;
     rerender(<PhaseTransitionCard item={degradedItem} />);
-    expect(screen.getByText('partial brief')).toBeDefined();
+    expect(screen.getByText('Short summary')).toBeDefined();
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText(/received a deterministic copy/i)).toBeDefined();
+    expect(screen.getByText(/got a short copy of the last result/i)).toBeDefined();
   });
 
   it('retries a degraded summary from the transition card', () => {
