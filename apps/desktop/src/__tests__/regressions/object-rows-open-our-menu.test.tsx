@@ -42,7 +42,6 @@ const ROW_CASES: ReadonlyArray<RowCase> = [
     selector: '[aria-label^="Include the comment by"]',
   },
   { row: 'check run', scene: 'branch-checks', selector: '[data-check-row] button' },
-  { row: 'decision change', scene: 'context-drawer', selector: 'button[data-change]' },
   { row: 'question card', scene: 'r4-questions-drawer', selector: '[data-oq-anchor]' },
   {
     row: 'other workspace',

@@ -101,7 +101,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
   {
     name: 'door: Files lands on the Branch with its worktree row current',
     covers: ['navigate', 'sidebar:files-door'],
-    open: () => openPalette(/^Open files/),
+    open: () => openPalette(/^Open changes/),
     lands: both(branchTab('files'), worktreeMarked),
   },
   {

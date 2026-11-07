@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Agent, AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { ListGrid, ListGridGroup } from '@goodboy/ui';
 import { useNow } from '../../../../../../shared/hooks/useNow';
@@ -6,6 +7,7 @@ import type { AgentKind } from '../../../../agent-kind';
 import { questionMetaOf } from '../questionMetaOf';
 import type { QuestionGroups, QuestionRow } from '../questionsLensModel';
 import { QuestionsGridRow } from './QuestionsGridRow';
+import { questionRunLine } from './questionRunLine';
 import { QUESTIONS_GRID_COLUMNS } from './questionsGridColumns';
 
 type OpenQuestionParams = {
@@ -34,6 +36,35 @@ export const QuestionsGrid = ({
   onOpen,
 }: Props) => {
   const now = useNow(30_000);
+  const [isAnsweredShownByUser, setIsAnsweredShownByUser] = useState<boolean | null>(null);
+  const hasFocusedFirst = useRef(false);
+  const firstWaitingId = groups.waiting[0]?.question.id ?? null;
+  const isSelectedAnswered = groups.answered.some((row) => row.question.id === selectedId);
+  const isAnsweredShown =
+    isAnsweredShownByUser ?? (groups.waiting.length > 0 || isSelectedAnswered);
+
+  useEffect(() => {
+    if (hasFocusedFirst.current) {
+      return;
+    }
+    hasFocusedFirst.current = true;
+    if (firstWaitingId === null || selectedId !== null) {
+      return;
+    }
+    const first = [...document.querySelectorAll<HTMLElement>('[data-list-grid-row]')].find(
+      (element) => element.getAttribute('data-row-key') === firstWaitingId,
+    );
+    if (first === undefined) {
+      return;
+    }
+    const active = document.activeElement;
+    const layer = first.closest('[data-pane-layer]');
+    const isPaneTitle = active instanceof HTMLHeadingElement && layer?.contains(active) === true;
+    if (active !== null && active !== document.body && !isPaneTitle) {
+      return;
+    }
+    first.focus();
+  }, [firstWaitingId, selectedId]);
 
   const renderRow = ({ row }: RowParams) => {
     const { question } = row;
@@ -43,7 +74,7 @@ export const QuestionsGrid = ({
         key={question.id}
         sessionId={sessionId}
         row={row}
-        askerKind={meta.askerKind}
+        runLine={questionRunLine({ askerKind: meta.askerKind, runName: meta.runName })}
         age={meta.age}
         isSelected={question.id === selectedId}
         onOpen={() => onOpen({ questionId: question.id })}
@@ -59,8 +90,16 @@ export const QuestionsGrid = ({
         </ListGridGroup>
       ) : null}
       {groups.answered.length > 0 ? (
-        <ListGridGroup headingLevel={2} label="Answered" count={groups.answered.length}>
-          {groups.answered.map((row) => renderRow({ row }))}
+        <ListGridGroup
+          headingLevel={2}
+          label="Answered"
+          count={groups.answered.length}
+          fold={{
+            label: isAnsweredShown ? 'Hide' : 'Show',
+            onToggle: () => setIsAnsweredShownByUser(!isAnsweredShown),
+          }}
+        >
+          {isAnsweredShown ? groups.answered.map((row) => renderRow({ row })) : null}
         </ListGridGroup>
       ) : null}
     </ListGrid>

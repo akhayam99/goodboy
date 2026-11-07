@@ -1,26 +1,25 @@
 import type { SessionId } from '@goodboy/types';
-import type { ContextDrawerTab, ContextDrawerView } from '../drawer/state';
+import type { ContextDrawerSection, ContextDrawerView } from '../drawer/state';
 import { selectOpenDrawer } from '../drawer/selectOpenDrawer';
-import { DEFAULT_CONTEXT_TAB } from './state';
+import { DEFAULT_CONTEXT_SECTION } from './state';
 import type { GetFn, SetFn } from './types';
 
 export type OpenContextDrawerParams = {
   readonly sessionId: SessionId;
-  readonly tab?: ContextDrawerTab;
+  readonly section?: ContextDrawerSection;
   readonly view?: ContextDrawerView;
   readonly highlight?: ReadonlyArray<number>;
 };
 
 export const openContextDrawer = (set: SetFn, get: GetFn) => {
-  return ({ sessionId, tab, view = 'current', highlight }: OpenContextDrawerParams): void => {
+  return ({ sessionId, section, view = 'current', highlight }: OpenContextDrawerParams): void => {
     const state = get();
-    const nextTab = tab ?? state.contextDrawerTab[sessionId] ?? DEFAULT_CONTEXT_TAB;
+    const nextSection = section ?? DEFAULT_CONTEXT_SECTION;
     const current = selectOpenDrawer(state);
     const isAlreadyOpen =
       current !== null && current.kind === 'context' && current.sessionId === sessionId;
     const seenAt = state.sessionContextSeenAt[sessionId];
     set({
-      contextDrawerTab: { ...state.contextDrawerTab, [sessionId]: nextTab },
       ...(!isAlreadyOpen &&
         seenAt !== undefined && {
           sessionDecisionsBaseline: { ...state.sessionDecisionsBaseline, [sessionId]: seenAt },
@@ -30,7 +29,7 @@ export const openContextDrawer = (set: SetFn, get: GetFn) => {
       kind: 'context',
       sessionId,
       payload: {
-        tab: nextTab,
+        section: nextSection,
         view,
         ...(highlight !== undefined && highlight.length > 0 && { highlight }),
       },

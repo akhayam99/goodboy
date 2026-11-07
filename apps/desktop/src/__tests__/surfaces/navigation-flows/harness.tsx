@@ -1,8 +1,18 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { StrictMode } from 'react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  act,
+  cleanup,
+  configure,
+  fireEvent,
+  getConfig,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { ErrorBoundary } from '@goodboy/ui';
 import {
   brandId,
@@ -616,7 +626,7 @@ type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
   pr: /^Pull request/,
   comments: /^Comments/,
-  files: /^Files/,
+  files: /^Changes/,
   commits: /^Commits/,
   checks: /^Checks/,
 };
@@ -710,7 +720,7 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Files', lens: 'branch', lands: branchTab('files') },
+  { label: 'Changes', lens: 'branch', lands: branchTab('files') },
   {
     label: 'Pull request',
     lens: 'branch',
@@ -727,7 +737,7 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
 
 export const openBranchFiles = async (): Promise<void> => {
   await openCrumb(/^Branch/);
-  await click(await findSection(/^Files/));
+  await click(await findSection(/^Changes/));
 };
 
 const expectNoCrash = (): void => {
@@ -738,7 +748,9 @@ const expectNoCrash = (): void => {
 };
 
 export const installNavigationHooks = (): void => {
+  const defaultTimeout = getConfig().asyncUtilTimeout;
   beforeAll(async () => {
+    configure({ asyncUtilTimeout: WAIT.timeout });
     useAppStore = await importStore();
     await Promise.all([
       import('../../../features/settings/components/SettingsStudio'),
@@ -766,6 +778,9 @@ export const installNavigationHooks = (): void => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+  });
+  afterAll(() => {
+    configure({ asyncUtilTimeout: defaultTimeout });
   });
 };
 

@@ -416,7 +416,7 @@ describe('SettingsStudio', () => {
     for (const group of ['General', 'Workspaces', 'Navigate', 'Session', 'Views', 'Window']) {
       expect(screen.getByRole('heading', { name: group })).toBeDefined();
     }
-    for (const group of ['Comments', 'Files']) {
+    for (const group of ['Comments', 'Changes']) {
       expect(screen.getByRole('heading', { name: group })).toBeDefined();
     }
     expect(screen.queryByRole('heading', { name: 'Review' })).toBeNull();

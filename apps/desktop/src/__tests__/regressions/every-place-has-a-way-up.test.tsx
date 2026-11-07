@@ -74,13 +74,14 @@ const NOT_A_WAY_UP: Readonly<Record<string, string>> = {
     'a view inside the context drawer; moves to the DrawerFrame back when touched (plan P5)',
 };
 
-const CONTEXT_DRAWER = 'opens the context drawer on the Overview; a drawer is not an address';
+const LINKED_WORK =
+  'opens the Overview; a linked record is reached from the Linked card, with no list page';
 
 const PAGELESS: Readonly<Record<string, string>> = {
-  'the context page': CONTEXT_DRAWER,
-  'the goal page': CONTEXT_DRAWER,
-  'the decisions page': CONTEXT_DRAWER,
-  'the last_output_summary page': CONTEXT_DRAWER,
+  'the linear page': LINKED_WORK,
+  'the gitlab_issues page': LINKED_WORK,
+  'the jira_issues page': LINKED_WORK,
+  'the slack_threads page': LINKED_WORK,
 };
 
 const PLACES: ReadonlyArray<readonly [string, PlaceRequest]> = [

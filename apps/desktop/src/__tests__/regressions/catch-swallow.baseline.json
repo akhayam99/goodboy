@@ -94,7 +94,6 @@
   "apps/desktop/src/store/slices/branch-cleanup/repoDeletesMergedBranches.ts": 1,
   "apps/desktop/src/store/slices/branch-cleanup/runAfterMergeCleanup.ts": 4,
   "apps/desktop/src/store/slices/contextDrawer/loadSessionContextSeen.ts": 2,
-  "apps/desktop/src/store/slices/contextDrawer/markSessionContextSeen.ts": 1,
   "apps/desktop/src/store/slices/github/postThreadReply.ts": 1,
   "apps/desktop/src/store/slices/github/prWriteContext.ts": 1,
   "apps/desktop/src/store/slices/github/pushSessionBranch.ts": 1,

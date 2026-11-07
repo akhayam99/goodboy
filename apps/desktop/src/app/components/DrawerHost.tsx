@@ -50,7 +50,7 @@ const renderDrawer = ({
         <ContextDrawer
           key={drawer.sessionId}
           sessionId={drawer.sessionId}
-          tab={drawer.payload.tab}
+          section={drawer.payload.section}
           view={drawer.payload.view}
           highlight={drawer.payload.highlight ?? NO_HIGHLIGHT}
           onClose={closeDrawer}

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { brandId } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AgentId, SessionId } from '@goodboy/types';
@@ -7,7 +8,6 @@ import { ToastProvider } from '../../components/Toast';
 import {
   importStore,
   resetStoryStore,
-  STORE_IMPORT_TIMEOUT_MS,
   stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
@@ -62,7 +62,7 @@ const showFollow = (params: FollowParams) => {
 const contextDrawer = (): OpenDrawer => ({
   kind: 'context',
   sessionId,
-  payload: { tab: 'goal', view: 'current' },
+  payload: { section: 'goal', view: 'current' },
 });
 
 let startCount = 0;
@@ -74,7 +74,7 @@ const nextStartKey = (): string => {
 
 beforeAll(async () => {
   useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -93,8 +93,8 @@ describe('useFollowToast', () => {
 
     showFollow({ title: 'Run started', target: { place: BOARD_PLACE } });
 
-    expect(screen.getByText('Run started')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Follow' })).toBeDefined();
+    screen.getByText('Run started');
+    screen.getByRole('button', { name: 'Follow' });
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -115,7 +115,7 @@ describe('useFollowToast', () => {
       target: { place: BOARD_PLACE },
     });
 
-    expect(screen.getByText('Implement started')).toBeDefined();
+    screen.getByText('Implement started');
   });
 
   it('takes a caller label for a target that is not the thing the title names', () => {
@@ -127,7 +127,7 @@ describe('useFollowToast', () => {
       label: 'Follow the run',
     });
 
-    expect(screen.getByRole('button', { name: 'Follow the run' })).toBeDefined();
+    screen.getByRole('button', { name: 'Follow the run' });
     expect(screen.queryByRole('button', { name: 'Follow' })).toBeNull();
   });
 
@@ -151,7 +151,9 @@ describe('useFollowToast', () => {
 
     showFollow({
       title: 'Agent started',
-      target: { place: agentPlace({ sessionId, agentId: 'agent-follow' as AgentId }) },
+      target: {
+        place: agentPlace({ sessionId, agentId: brandId<AgentId>({ value: 'agent-follow' }) }),
+      },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Follow' }));
 
@@ -200,7 +202,7 @@ describe('useFollowToast', () => {
 
     showFollow({ title: 'Run started', target: { place: sessionPlace({ sessionId }) } });
 
-    expect(screen.getByRole('button', { name: 'Follow' })).toBeDefined();
+    screen.getByRole('button', { name: 'Follow' });
   });
 
   it('drops the action beside a push drawer, which leaves the page visible', () => {
@@ -245,7 +247,7 @@ describe('useFollowToast', () => {
       },
     });
 
-    expect(screen.getByRole('button', { name: 'Follow' })).toBeDefined();
+    screen.getByRole('button', { name: 'Follow' });
   });
 
   it('keeps the action while a studio covers the page', () => {
@@ -254,7 +256,7 @@ describe('useFollowToast', () => {
 
     showFollow({ title: 'Run started', target: { place: sessionPlace({ sessionId }) } });
 
-    expect(screen.getByRole('button', { name: 'Follow' })).toBeDefined();
+    screen.getByRole('button', { name: 'Follow' });
   });
 
   it('shows one toast for two calls with the same start key', () => {
@@ -266,7 +268,7 @@ describe('useFollowToast', () => {
 
     expect(screen.getAllByRole('status')).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Follow' })).toHaveLength(1);
-    expect(screen.getByText('×2')).toBeDefined();
+    screen.getByText('×2');
   });
 
   it('shows a toast per start when the keys differ', () => {

@@ -66,7 +66,7 @@ export const HANDOFF_SECTION_LABEL: Readonly<Record<HandoffSectionKind, string>>
   goal: NAMES.goal,
   earlierSteps: 'Earlier steps',
   plan: NAMES.plan,
-  files: NAMES.files,
+  files: NAMES.changes,
   threads: 'Threads',
   scope: 'Scope and rules',
   profile: 'About you',

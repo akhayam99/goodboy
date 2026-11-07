@@ -32,7 +32,7 @@ describe('summaryStateOf', () => {
   it('reads the first sentence of the State section, without the list marker', () => {
     expect(stateOf()).toEqual({
       sentence: 'Limits are enforced on payout creation',
-      label: 'Written 1h ago',
+      label: 'Updated 1h ago',
       isStale: false,
       why: null,
     });
@@ -48,7 +48,7 @@ describe('summaryStateOf', () => {
     expect(stateOf({ updatedAtMs: NOW - SUMMARY_STALE_AFTER_MS - 1 })).toMatchObject({
       isStale: true,
       why: 'old',
-      label: 'Written 1d ago, may be out of date',
+      label: 'Updated 1d ago, may be out of date',
     });
     expect(stateOf({ updatedAtMs: NOW - SUMMARY_STALE_AFTER_MS })?.isStale).toBe(false);
   });
@@ -59,7 +59,7 @@ describe('summaryStateOf', () => {
     expect(stateOf({ updatedAtMs, branchChangedAtMs: NOW - HOUR_MS })).toMatchObject({
       isStale: true,
       why: 'branches',
-      label: 'Written 2h ago, a branch is newer',
+      label: 'Updated 2h ago, a branch is newer',
     });
     expect(
       stateOf({ updatedAtMs, branchChangedAtMs: updatedAtMs + SUMMARY_BRANCH_GRACE_MS })?.isStale,

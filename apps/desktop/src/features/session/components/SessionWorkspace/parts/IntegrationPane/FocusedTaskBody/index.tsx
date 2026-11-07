@@ -6,15 +6,16 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { openUrl } from '../../../../../../shared/lib/editor';
-import { RecordProperties } from '../../../../../../shared/components/StudioDetail/RecordProperties';
-import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
-import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
-import { LinearTaskDetail } from './LinearTaskDetail';
-import { GithubTaskDetail } from './GithubTaskDetail';
-import { GitlabTaskDetail } from './GitlabTaskDetail';
-import { JiraTaskDetail } from './JiraTaskDetail';
-import { SlackTaskDetail } from './SlackTaskDetail';
+import { openUrl } from '../../../../../../../shared/lib/editor';
+import { ExternalTaskChip } from '../../../../../../integrations/components/ExternalTaskChip';
+import { integrationLabel } from '../../../../../../../shared/utils/integrationLabel';
+import { RecordHeader } from '../../../../../../../shared/components/StudioDetail/RecordHeader';
+import { useSessionRepo } from '../../../../../../../store/slices/worktrees/useSessionRepo';
+import { LinearTaskDetail } from '../LinearTaskDetail';
+import { GithubTaskDetail } from '../GithubTaskDetail';
+import { GitlabTaskDetail } from '../GitlabTaskDetail';
+import { JiraTaskDetail } from '../JiraTaskDetail';
+import { SlackTaskDetail } from '../SlackTaskDetail';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
@@ -60,10 +61,15 @@ export const FocusedTaskBody = ({
   return (
     <PaneShell
       scroll="body"
-      title={task.title}
-      meta={<span className="font-mono">{task.identifier}</span>}
+      header={
+        <RecordHeader
+          provider={provider}
+          identifier={task.identifier}
+          title={task.title}
+          externalRef={{ url: task.url, label: `Open in ${integrationLabel({ provider })}` }}
+        />
+      }
     >
-      <RecordProperties facts={[]} />
       <ExternalTaskChip
         task={task}
         appearance="row"
@@ -71,6 +77,9 @@ export const FocusedTaskBody = ({
         ariaLabel={`Open ${task.identifier}`}
         onClick={() => void openUrl(task.url)}
       />
+      <p className="text-meta text-muted-foreground">
+        Connection lost. Open the record in its provider or reconnect in Settings.
+      </p>
     </PaneShell>
   );
 };

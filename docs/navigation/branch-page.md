@@ -6,7 +6,7 @@
 
 One page per branch (`features/branch`) replaces the PR, Review and Diff
 pages. Every diff in the app is still one `DiffView` (`features/diff`): the
-Files tab, Write review, the Bitbucket pull request changes and the
+Changes tab, Write review, the Bitbucket pull request changes and the
 `file-diff` drawer. Each one lists its files through `orderLikeTree`
 (`features/diff/lib/changeTree.ts`), so the order is the tree's everywhere. The
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
@@ -222,22 +222,22 @@ Copy patch, and Rebase and Request review have their own place on Commits and Ov
 
 **Sections and landing.** The tab strip lists the sections the state has, in this order
 (`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
-pull request and no comment `Pull request`, `Files`, `Commits`; with a local note or a thread
+pull request and no comment `Pull request`, `Changes`, `Commits`; with a local note or a thread
 and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, Merged and
-Closed show all five, `Pull request`, `Comments`, `Files`, `Commits`, `Checks`. The first is
+Closed show all five, `Pull request`, `Comments`, `Changes`, `Commits`, `Checks`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
-Comments ⌥⌘R, Files ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
+Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
 request. A pick replaces the address. A tab badge means this many want you (`wantsYouFactsOf` over `worktreeEntryFactsOf`): `Comments` the ones that need you, `Checks` the failing ones, nothing else. The counts of files, commits and not pushed commits, the state of the request and the running checks stay in the tooltip of their tab, and the file count and the commit count are said in their page (the file rail, the line `N commits` above the list). Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
-`Pull request` when the active mount has a pull request, else `Files`; then the door resolver
+`Pull request` when the active mount has a pull request, else `Changes`; then the door resolver
 above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
 `Create PR` land on `Overview`; a comment, a thread, a fix run, a note, ⌥⌘R
 (`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
-request and no comment they land on `Files`), `Files`
+request and no comment they land on `Changes`), `Changes`
 and `Commits` doors name theirs, and a CI failure names `Checks` (with no pull request,
 `Overview`). The chosen section
 is stored per session and is read through `branchTabOf` (`useBranchTab` in a
@@ -351,14 +351,14 @@ the author and its age, its `path:line`, the first line of the body and a `Note`
 while the list mixes sources. A note keeps `Post to GitHub` (it moves the note into
 the pull request's review draft and closes it) and `Delete` under its thread, and a
 note shows even while the host is still loading or failed to load. The open thread has the code
-around the commented line above it (`hunkAround`, linking to Files), all inside the comment drawer. Comments exists when a pull
+around the commented line above it (`hunkAround`, linking to Changes), all inside the comment drawer. Comments exists when a pull
 request exists or at least one comment exists, a local note or a thread open or resolved; its count is
 the notes alone while there is no pull request. The
 properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
 actions of the comment sit at the end of the drawer content through `FormActions` (`CommentDrawerActions`), never in a bar pinned to the page bottom; the `⋯` in the drawer header holds the transcript, Resolve without a reply, Open on the host and Copy link, and shows only with two or more of them (one rare verb shows as a quiet button instead).
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
-moves from one section to the next, except that Files gives up the width of its file rail
+moves from one section to the next, except that Changes gives up the width of its file rail
 on the right and the column re-centres in what is left. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
 opened stays marked after the drawer closes. The entry slots read nothing until the data arrives and nothing at zero:
@@ -374,10 +374,10 @@ source tabs drop a zero badge the same way). All three arrive without a visit: `
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
 
-**Files.** The branch against its base, with the changed file list in a rail on the
+**Changes.** The branch against its base, with the changed file list in a rail on the
 right of the Branch page, dedicated to the diff (`FileRail` in `features/diff/components`).
 `BranchPage` draws an empty slot (`data-slot="diff-file-rail"`) after the page column only
-while Files is the entry and hands it, with the page element, to `SessionDiffPane` through
+while Changes is the entry and hands it, with the page element, to `SessionDiffPane` through
 `DiffRailContext` (`features/diff/diffRailHost.ts`); `SessionDiffPane` portals the rail with
 `ChangeTree` into it, so the tree and the diff still share one `useReviewState` and the keys
 stay in `useDiffKeys`. Without a slot (a test, a scene of the pane alone) the rail sits beside
@@ -386,11 +386,11 @@ diff, so the column re-centres in the space left of it the way it slides for a r
 It opens at 320px, its left edge resizes it from 260 to 560 (`Resize the file list`, a double
 click resets it) and the width is kept in `goodboy:diff-file-rail-width:v1`. `Fold the file
 list` in its head folds it and `goodboy:diff-file-rail-folded:v1` remembers that; folded, the
-diff toolbar starts with `Files N`, which opens it again, and `F` or `/` open it too (`useFileRail`).
+diff toolbar starts with `Changes N`, which opens it again, and `F` or `/` open it too (`useFileRail`).
 The rail belongs to the page, not to the drawer slot: a side or reader drawer pushes or lies
 over the whole page (rail included) by the push rule of Drawers below. The rail docks while
 the page is 1224px or wider (880 for the code, the 320 rail and the gutters, so split stays open beside it); a narrower page (a pushing drawer,
-a small window) folds it without writing the saved choice, and `Files N`, `F` or `/` then open it
+a small window) folds it without writing the saved choice, and `Changes N`, `F` or `/` then open it
 over the right edge of the diff (`data-file-rail="overlay"`) until a pick, `Esc` or Fold
 closes it. Folding and opening move like the session rail (`FileRail` over `useFoldPhase`,
 the page as its frame): the width eases on the 220ms fold token while the list, held at its
@@ -443,7 +443,7 @@ new file or another view never undoes them. A click in the tree, next unviewed,
 walk every file in diff order, also those in closed folders, and leave the folds
 as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
 scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
-link from another page such as `Open in Files`. A refresh keeps the tree and
+link from another page such as `Open in Changes`. A refresh keeps the tree and
 the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
 on the first load and when the scope changes. On the branch scope the tree and
 the file counts come first from one cheap call, `worktree_diff_files`: a list of
@@ -623,7 +623,7 @@ fails over 100ms, the point where a worker earns its cost). While the diff loads
 (`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
 when the other scope has files, one button that switches to it (`Show branch vs
 main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`
-counts them). Files opens on the branch against its base when the working tree
+counts them). Changes opens on the branch against its base when the working tree
 is clean and the branch has commits ahead, unless the scope was picked in the
 picker. The `brand-diff-large` scene is the 512-file case, `brand-diff-many`
 the 40-file one, `brand-diff-empty` the clean branch and `brand-diff-edits-only`
@@ -661,7 +661,7 @@ mount (`diff_comments.project_id` and `branch`, m223). A note shows `Edit`,
 `updateDiffCommentBody`; Delete acts at once and offers Undo, which posts the same note again); the one fix action is `Fix comments` in the toolbar. While a fixer
 works on a note, Edit, Close note and Delete are disabled with "A fixer is working on
 this note". Close note goes through `closeResolvedNote`, the same path
-Comments uses. The Files tab shows only the notes of its own branch; a note
+Comments uses. The Changes tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
 mount used it, and the rest wait in `Unassigned notes` on the Session overview,
 each with `Move to` and `Discard`. `Move to` names the branch when the session
@@ -677,10 +677,10 @@ its form under the last file: the line comments with Edit and Delete visible at 
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`
 in the diff toolbar holds Discard review, which confirms. The actions are
-the `writeReview` kind of the action registry. Files mount in batches of 20 as the
+the `writeReview` kind of the action registry. Changes mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
-**Notes and host threads in Files.** The diff draws both kinds of thread under their line, in one
+**Notes and host threads in Changes.** The diff draws both kinds of thread under their line, in one
 card shell (`CommentThread`), told apart by words and glyph, never by colour alone. A
 note is the `You` tile, the chip `Note`, its state and its age, with `Edit`, `Close note` and
 `Delete`; a host thread is the host's glyph, the author's avatar and name, the chip `On GitHub`
@@ -691,9 +691,9 @@ carries an outcome slot after its kind chip, which `Fix comments` fills with the
 Outdated host threads stay out of the diff and read `Outdated` in Comments. Threads of every host
 with threads show, not only GitHub's (`useDiffReviewThreads`). There is no
 Notes drawer: a note's home is its line, and Comments lists every thread. The doors that used to land
-a note in a drawer land on the note: Files at its card (the card scrolls into view and takes focus) when
+a note in a drawer land on the note: Changes at its card (the card scrolls into view and takes focus) when
 the branch has no pull request, its thread in Comments when it has one (`openReviewTarget` for a
-`notes` destination, `reviewRequest` for a compose request, `Open in Files` from a thread).
-Opening the run transcript of a note keeps its drawer beside Files.
+`notes` destination, `reviewRequest` for a compose request, `Open in Changes` from a thread).
+Opening the run transcript of a note keeps its drawer beside Changes.
 
 The numbers on the Comments surfaces each count one thing, and each comes from one function. `commentsCountOf` counts the threads of a pull request: `open threads` is every thread that is not resolved and not left open on the host, `need you` is the asking, proposed, failed and fixable ones. The Comments tab count is the same `need you` over every thread on the branch, notes included. While a fix run works, `Fixing 1 of 4 threads` (`fixingCountText`, used by the header button and by `fixRunTitle`) says how many of the run are still being fixed out of all its threads, and reads `Fixing 4 threads` when all of them are. The drawer position reads `1 of 8 comments`: the length of the list being walked, which includes the comment left open on the host that `open threads` leaves out.

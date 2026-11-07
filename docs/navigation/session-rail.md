@@ -242,10 +242,10 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   title before it truncates (`BranchRowLine`). Rebase actions live on the
   Branch page; Rebase all stays on the Projects header. A branch is one row
   and has no rows under it: its five pages (Pull request, or Merge request on
-  GitLab, Comments, Files, Commits, Checks) are the tab strip under the title
+  GitLab, Comments, Changes, Commits, Checks) are the tab strip under the title
   of the Branch page, each tab with its count from `worktreeEntryFactsOf`. The
   row carries the one pill, and the failing count in it is the number the
-  Checks tab shows (`checksCountsOf`). Files opens the diff in the center,
+  Checks tab shows (`checksCountsOf`). Changes opens the diff in the center,
   whose changed file list sits in its own rail on the right of that page,
   never in the session rail. The branch switch (Switch branch…), Link work to this branch, Copy
   branch name, Copy path, Open in editor, Close branch and the rest are the
@@ -537,7 +537,7 @@ primary button. The goal, the notices, Needs you, Next and Activity are peer
 sections in the pane body, one `PANE_RHYTHM.stack` gap apart: the header passes
 `headerRhythm="section"`, so the gap under it is the same. Space separates
 sections, never a `<Divider />`, and a section never has a border. The Activity
-header holds the **Activity | Log** switch, **Mark all seen** while an agent has
+header holds the **Activity | Log** switch, **Mark as read** while an agent has
 an unread reply and the session cost on the right; the Log adds a search field
 under it, and there is no description line. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
@@ -935,7 +935,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the branch lists and in the Branch header alike
-  (`isMountRequestMerged`). The Files tab opened without a branch lands on the active mount.
+  (`isMountRequestMerged`). The Changes tab opened without a branch lands on the active mount.
 - **Files can reveal unchanged context.** Each hidden range offers the next 20
   lines beside either hunk, or all of its lines. Small ranges use one action.
   The file's final range stays uncounted until its sides load. Expansion stays

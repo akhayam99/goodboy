@@ -31,7 +31,8 @@ const renderDecision = ({ liveKey }: { readonly liveKey: string | null }) =>
       liveKey={liveKey}
       why={null}
       byline="by implementer"
-      isNew
+      changeLabel="New"
+      isClosed={false}
       reworded={null}
       isLocked={false}
       isHighlighted={false}

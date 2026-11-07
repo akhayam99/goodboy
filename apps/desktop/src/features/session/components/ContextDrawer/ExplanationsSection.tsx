@@ -8,7 +8,7 @@ type Props = {
   readonly list: LearningList;
 };
 
-export const LearnedTab = ({ list }: Props) => {
+export const ExplanationsSection = ({ list }: Props) => {
   const now = useNow(60_000);
   if (list.visible.length === 0) {
     return (
@@ -18,7 +18,7 @@ export const LearnedTab = ({ list }: Props) => {
     );
   }
   return (
-    <div className="-mx-2 flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5">
       {list.visible.map((item: SessionContextItem) => (
         <LearningRow
           key={item.id}

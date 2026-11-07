@@ -17,9 +17,14 @@ import { seedChatSurfaces } from './seeds';
 type Props = {
   readonly drawerQuestionId?: OpenQuestionId | null;
   readonly theme?: 'light' | 'dark';
+  readonly isAllAnswered?: boolean;
 };
 
-export const OpenQuestionsScene = ({ drawerQuestionId = null, theme }: Props) => {
+export const OpenQuestionsScene = ({
+  drawerQuestionId = null,
+  theme,
+  isAllAnswered = false,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export const OpenQuestionsScene = ({ drawerQuestionId = null, theme }: Props) =>
     });
     useAppStore.setState({
       sessionOpenQuestions: {
-        [CHAT_SESSION_ID]: LENS_QUESTIONS,
+        [CHAT_SESSION_ID]: isAllAnswered ? [] : LENS_QUESTIONS,
       },
       sessionAnsweredQuestions: { [CHAT_SESSION_ID]: ANSWERED_QUESTIONS },
       sessionDismissedQuestions: { [CHAT_SESSION_ID]: [] },
@@ -53,7 +58,7 @@ export const OpenQuestionsScene = ({ drawerQuestionId = null, theme }: Props) =>
       });
     }
     setIsReady(true);
-  }, [drawerQuestionId, theme]);
+  }, [drawerQuestionId, isAllAnswered, theme]);
 
   if (!isReady) {
     return null;

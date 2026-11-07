@@ -39,7 +39,7 @@ export const DrawerHeadersScene = () => {
       <DrawerCard>
         <ContextDrawer
           sessionId={SESSION_ID}
-          tab="goal"
+          section="goal"
           view="versions"
           highlight={[]}
           onClose={noop}

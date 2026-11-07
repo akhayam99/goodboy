@@ -98,10 +98,10 @@ describe('PaletteOverlay, the commands mode', () => {
     const chip = scopeChipOf({ label: 'Speed up the payout export for large merchants' });
     expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this session')).toBeDefined();
-    expect(optionNames()[0]).toBe('Open files');
+    expect(optionNames()[0]).toBe('Open changes');
     expect(optionNames()[0]).not.toMatch(/^Message /);
     expect(optionNames()[1]).toBe('Message Implementer');
-    expect(selectedName()).toBe('Open files');
+    expect(selectedName()).toBe('Open changes');
     expect(optionNames()).toContain('All actions for this session');
     expect(optionNames()).not.toContain('Delete…');
   });

@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
 
+import { brandId } from '@goodboy/types';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
 import { consumeReloadIntent, writeReloadIntent } from './windowView';
 
 const KEY = 'goodboy:window-reload-intent';
 
-const ws = 'ws-1' as WorkspaceId;
-const session = 'sess-1' as SessionId;
-const agent = 'agent-1' as AgentId;
+const ws = brandId<WorkspaceId>({ value: 'ws-1' });
+const session = brandId<SessionId>({ value: 'sess-1' });
+const agent = brandId<AgentId>({ value: 'agent-1' });
 
 describe('windowView reload intent', () => {
   afterEach(() => {
@@ -42,7 +43,7 @@ describe('windowView reload intent', () => {
         drawer: {
           kind: 'context' as const,
           sessionId: session,
-          payload: { tab: 'summary' as const, view: 'current' as const },
+          payload: { section: 'summary' as const, view: 'current' as const },
         },
         scroll: { timeline: 240 },
       },

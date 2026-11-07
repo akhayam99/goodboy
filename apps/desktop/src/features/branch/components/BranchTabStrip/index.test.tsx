@@ -32,10 +32,10 @@ const draw = ({ notPushed }: DrawParams) =>
 describe('the facts on the branch tabs', () => {
   afterEach(cleanup);
 
-  it('draws no count on Files, the file count lives in the page', () => {
+  it('draws no count on Changes, the file count lives in the page', () => {
     draw({ notPushed: 0 });
 
-    expect(screen.getByRole('tab', { name: /^Files/ }).textContent).toBe('Files');
+    expect(screen.getByRole('tab', { name: /^Changes/ }).textContent).toBe('Changes');
   });
 
   it('draws no count and no arrow on Commits, however many are not pushed', () => {
