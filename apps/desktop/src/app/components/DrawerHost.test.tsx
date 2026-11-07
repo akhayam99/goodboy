@@ -47,12 +47,6 @@ import {
 } from './MockScene/scenes/resolveSeed';
 import { SESSION_ID as RESOLVE_SESSION_ID } from './MockScene/scenes/resolveSeed';
 import { seedBulkScene } from './MockScene/scenes/bulkSeed';
-import {
-  C09_RUN_ID,
-  C09_SESSION_ID,
-  C09_TESTER_ID,
-  seedC09,
-} from './MockScene/scenes/u25/c09OrchestratedSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { brandedId } from '../../features/history/testing/brandedId';
@@ -159,12 +153,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'transcript', sessionId: SESSION, payload: { agentId: AGENT } },
   },
   {
-    kind: 'auto-child',
-    region: 'Agent',
-    seed: seedSession,
-    drawer: { kind: 'auto-child', sessionId: SESSION, payload: { agentId: AGENT } },
-  },
-  {
     kind: 'spawned',
     region: 'Agents',
     seed: seedSession,
@@ -175,18 +163,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
     region: 'Log',
     seed: seedSession,
     drawer: { kind: 'session-log', sessionId: SESSION, payload: { focusEntryId: null } },
-  },
-  {
-    kind: 'run-step',
-    region: 'Step 3 · Tester',
-    seed: () => {
-      seedC09({ state: 'running', page: 'document' });
-    },
-    drawer: {
-      kind: 'run-step',
-      sessionId: C09_SESSION_ID,
-      payload: { runId: C09_RUN_ID, agentId: C09_TESTER_ID },
-    },
   },
   {
     kind: 'explore-file',

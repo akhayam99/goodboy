@@ -10,15 +10,15 @@ const SESSION: C07Seed = { state: 'working', place: 'session' };
 const LIST: C07Seed = { state: 'done', place: 'list' };
 const START: C07Seed = { state: 'working', place: 'start' };
 const PROJECT: C07Seed = { state: 'refused', place: 'auto' };
-const CHILD: C07Seed = { state: 'working', place: 'auto', pane: 'implementer' };
-const CHILD_DONE: C07Seed = { state: 'done', place: 'auto', pane: 'tester' };
-const CHILD_PUSH: C07Seed = { state: 'done', place: 'auto', pane: 'implementer' };
+const CHILD: C07Seed = { state: 'working', place: 'child', pane: 'implementer' };
+const CHILD_DONE: C07Seed = { state: 'done', place: 'child', pane: 'tester' };
+const CHILD_PUSH: C07Seed = { state: 'done', place: 'child', pane: 'implementer' };
 const CAPPED: C07Seed = { state: 'working', place: 'auto', isCapped: true };
 const LIMIT_CLICKS: ReadonlyArray<string> = ['Run settings', 'Limit: $10.00'];
 const BLOCKED: C07Seed = { state: 'blocked', place: 'auto' };
 const STOP_CLICKS: ReadonlyArray<string> = ['Change approach'];
 const SUBSTEP: C07Seed = { state: 'working', place: 'auto', isSubstep: true };
-const IMAGES: C07Seed = { state: 'working', place: 'auto', pane: 'implementer', hasImages: true };
+const IMAGES: C07Seed = { state: 'working', place: 'child', pane: 'implementer', hasImages: true };
 
 export const U25_C07_AUTO_SCENES = {
   'c07-auto-working': () => <C07AutoFrame seed={WORKING} />,

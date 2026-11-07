@@ -23,7 +23,6 @@ import {
 import { aDelegation, aTree } from '../../../../../../features/auto/testing/autoViewFixtures';
 import { presetSnapshotOf } from '../../../../../../features/session/startRun/presetSnapshotOf';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
-import type { OpenDrawer } from '../../../../../../store/slices/drawer/state';
 import { useAppStore, type LensKind } from '../../../../../../store';
 import { sceneClock } from '../../../sceneClock';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../../activityRunSeed';
@@ -699,7 +698,6 @@ const PLACES: Readonly<Record<OneFlowPlace, PlaceState>> = {
 
 export type SeedParams = EraParams & {
   readonly place: OneFlowPlace;
-  readonly drawerStepKey?: string;
   readonly isJustStarted?: boolean;
 };
 
@@ -730,21 +728,7 @@ const startedRunOf = (): WorkflowRun => ({
   orchestratorSummary: JSON.stringify({ done: [], left: [] }),
 });
 
-const drawerOf = ({ drawerStepKey }: Pick<SeedParams, 'drawerStepKey'>): OpenDrawer | null =>
-  drawerStepKey === undefined
-    ? null
-    : {
-        kind: 'run-step',
-        sessionId: SESSION_ID,
-        payload: { runId: PLAN_RUN_ID, agentId: agentIdOf({ key: drawerStepKey }) },
-      };
-
-export const seedOneFlow = ({
-  era,
-  place,
-  drawerStepKey,
-  isJustStarted = false,
-}: SeedParams): Session => {
+export const seedOneFlow = ({ era, place, isJustStarted = false }: SeedParams): Session => {
   seedActivityRunScene();
   const state = useAppStore.getState();
   const [baseProject] = state.projects;
@@ -823,7 +807,7 @@ export const seedOneFlow = ({
     activeLens: { [SESSION_ID]: placeState.lens },
     focusedWorkflowRunId: { [SESSION_ID]: placeState.runId },
     selectedAgentId: { [SESSION_ID]: placeState.agentId },
-    drawer: drawerOf({ drawerStepKey }),
+    drawer: null,
   });
   return session;
 };

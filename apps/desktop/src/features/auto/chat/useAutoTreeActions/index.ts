@@ -147,8 +147,8 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   );
 
   const openChild = useCallback(
-    (agentId: AgentId) => openDrawer({ kind: 'spawned', sessionId, payload: { agentId } }),
-    [openDrawer, sessionId],
+    (agentId: AgentId) => navigate({ to: agentPlace({ sessionId, agentId }) }),
+    [navigate, sessionId],
   );
 
   const openRow = useCallback(

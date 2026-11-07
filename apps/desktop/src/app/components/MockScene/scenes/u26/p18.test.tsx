@@ -54,7 +54,7 @@ const drawerOf = async (): Promise<HTMLElement> => {
       .getAllByRole('button', { name: /^Notes, \d+ lines?$/ })
       .find((button) => button.closest('[data-auto-child-end]') !== null);
     if (found === undefined) {
-      throw new Error('no notes button in the drawer');
+      throw new Error('no notes button at the end of the page');
     }
     return found;
   }, WAIT);
@@ -62,12 +62,12 @@ const drawerOf = async (): Promise<HTMLElement> => {
   const answer = await screen.findByText('Trailer grep:', undefined, WAIT);
   const drawer = answer.closest('[data-auto-child-end]');
   if (!(drawer instanceof HTMLElement)) {
-    throw new Error('no child end in the drawer');
+    throw new Error('no child end on the page');
   }
   return drawer;
 };
 
-describe('the u26 p18 child drawer scenes', () => {
+describe('the u26 p18 child page scenes', () => {
   it('registers a light and a dark shot', () => {
     expect(Object.keys(U26_P18_SCENES)).toEqual(['u26-p18-drawer-light', 'u26-p18-drawer-dark']);
     for (const [id, Scene] of Object.entries(U26_P18_SCENES)) {
@@ -82,17 +82,6 @@ describe('the u26 p18 child drawer scenes', () => {
     expect(end.textContent).not.toContain('**');
     expect(within(end).getByText('Trailer grep:').tagName).toBe('STRONG');
     expect(end.querySelectorAll('ul:not([aria-label]) > li').length).toBe(3);
-  });
-
-  it('keeps the composer toolbar names when the labels collapse', async () => {
-    mount({ id: 'u26-p18-drawer-dark' });
-
-    await drawerOf();
-    const accessButtons = screen.getAllByRole('button', { name: 'Edits: Full access' });
-    const modelButtons = screen.getAllByRole('button', { name: /^Model routing:/ });
-    expect(accessButtons).toHaveLength(1);
-    expect(modelButtons.length).toBeGreaterThanOrEqual(2);
-    expect(modelButtons.at(-1)?.getAttribute('aria-label')).toContain('Opus');
   });
 
   it.each(Object.keys(U26_P18_SCENES))('%s has no accessibility violations', async (id) => {

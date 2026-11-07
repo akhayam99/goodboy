@@ -933,8 +933,6 @@ u26-nogit-writer-wait-dark
 u26-nogit-writer-wait-light
 u26-p18-drawer-dark
 u26-p18-drawer-light
-u26-p21-drawer-composer-dark
-u26-p21-drawer-composer-light
 u26-rail-foot-archive
 u26-rail-projects
 u26-rail-projects-focus
@@ -1206,6 +1204,11 @@ u36-p1-run-stopping
 u36-p1-window-close
 u36-p1-window-close-run
 u36-p1-window-close-stuck
+u36-p10-child-composer-dark
+u36-p10-child-composer-light
+u36-p10-child-page
+u36-p10-child-result
+u36-p10-steps
 u36-p12-orch-done
 u36-p12-orch-page
 u36-p12-orch-step-blocked

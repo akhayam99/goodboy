@@ -248,7 +248,7 @@ on the echo (`operator_text` with
 `attachments`). The delivery that reads the row hands them to Auto's turn (`storedAttachments` on
 `sendTurn`, listed by full path in the prompt, never written again), and every child Auto starts
 after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
-of the tree's generation up to the delegation); the child pane names them as chips. An image that
+of the tree's generation up to the delegation); the child page names them as chips. An image that
 cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
@@ -334,7 +334,7 @@ writing to it reopens it to **Deciding**.
   no role, Experimental or state chip; **Mark finished** shows there as a
   word only while Auto rests and its own turn is not running (the registry verb
   `agent.markAutoFinished`, left out of the `⋯` then so it is said once), next
-  to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
+  to `⋯`, which holds **Rename**. Steps open from a turn's summary line.
 - **Delegation lines.** Each delegation is in the conversation
   (`AutoDelegationLines`). A settled one is one bare line: its role chip, the
   task Auto gave and **Open**. A child still in flight is one line too
@@ -435,7 +435,7 @@ writing to it reopens it to **Deciding**.
   child's card, right after the **What Auto was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
   `AutoResultCards`): the role glyph, the name, the model
-  with its provider and **Open**, which opens the child pane. Under that header the card
+  with its provider and **Open**, which opens the child page. Under that header the card
   reads in the reading order of [turns.md](./turns.md): one outcome line (the child's own
   `<<outcome>>` line, or the one `outcomeLineOf` computes: Done, Failed or Timed out; red checks or a failed push override the model line, the same as on the delegation card, because `deliveredResultsOf` computes the line once with `delegationResultOf` and the card only draws it), the
   artifact rows, then the notes. The state word is the outcome line, not a second label, and
@@ -496,16 +496,16 @@ writing to it reopens it to **Deciding**.
   filled button (**Approve plan**) and the next step card's **Continue** is
   secondary. Each card row shows the short task title,
   role glyph and elapsed active time (`DelegationClock`, shared with the rail).
-  A delegation line's **Open** reveals that child in Agents without
-  changing the main agent or its draft (`useAutoTreeActions`, the `spawned` drawer
-  payload and `useSpawnedFocus`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
+  A delegation line's **Open** opens that child's page (`useAutoTreeActions`
+  `openChild`). While a plan waits for approval the ask is the state. The composer says "Message Auto" while Auto
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
   first** like any agent composer.
-- **A child preview opens in the pane** (drawer kind `auto-child`, `AutoChildPane`)
-  from a preview door, so the main conversation stays in view. Another child
-  swaps in place and Esc closes it. Picking a row in Agents opens the child in
-  the center; **Open** in Auto's chat only reveals its row in Agents. The pane title is the task
-  Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its
+- **A child opens on its page, from every door** (`useAutoChildChat`, `AgentDetailPane`):
+  a tree row, a delegation line, the Overview, a notification and the palette land on one
+  page with one box, and the back row reads **Back to Auto**. A saved window that held the
+  old panel opens this page (`withoutRemovedPages`). The page title is the task
+  Auto gave it (the first line of the brief when the task is missing); on top, the line
+  "Auto started this agent and reads your messages to it.", why Auto chose that role, the model it runs on with its
   provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
@@ -518,22 +518,20 @@ writing to it reopens it to **Deciding**.
   accepted it and not started it, its live line with **Stop agent**, **Waiting for
   your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
   conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
-  **Returned to Auto**). A pane opened from the Agents panel shows **Back to
-  agents**. **Open page** puts the child in the center; there the notice reads
-  the same and **Open Auto** goes back.
-- **Talking to a child.** The pane and the child page carry a composer,
-  "Message Implementer", under the line "Started by Auto. Auto sees what you
-  tell it." A message is a plain turn on the child (queued while its turn
+  **Returned to Auto**). A stopped child has no tail line: the page's stopped notice
+  owns **Continue**.
+- **Talking to a child.** The child page carries one composer,
+  "Message Implementer". A message is a plain turn on the child (queued while its turn
   runs), and `noticeAutoOfChildTurn` (called by `sendTurn`) also hands Auto a
   note through the user turn port: "I wrote to the Implementer you started:
   ...", read with Auto's next delivery. A lost note is reported and the
-  message still goes to the child. The drawer composer names its agent: `ChatView`
+  message still goes to the child. The page composer names its agent: `ChatView`
   hands its `agentId` to `ChatInput`, which keys the draft, the queue, the
   attachments, the routing and the send by that id and remounts per agent, so a
   child's draft never shows in the main Auto composer, two children never share
   one, and a send or a Queue or Send now reaches the child (a stopped or done
   one takes the turn through the normal resume path). The store's selected
-  agent of the session is Auto's root and is not the drawer's target.
+  agent of the session never decides the target.
   **Retry through Auto** asks Auto to continue
   a stopped child, naming its delegation so Auto sends `retryOf` and the same
   agent goes on in its worktree; it never runs a plain turn on it

@@ -321,7 +321,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   Runs, a list page to the Overview. The Overview has no row and Esc does
   nothing there. No page registers an Esc of its own to leave; the artifact
   run page, which has no address yet, is the one exception. A step row of the document opens the step
-  in the pane (drawer kind `run-step`), never the center.
+  on its page, under its run, for every kind of run (`presetRunFocusOf`).
 - **Auto keeps the rail on the session.** An Auto row of Runs opens that
   conversation and opens no tool, and Runs stays
   selected on the rail while an Auto agent is in the center. ⌘⌥W opens Runs;
@@ -752,10 +752,11 @@ Folding the rail leaves the column in place.
   per hop. A run head opens its run page the same way. **j** and **k** with
   focus on a row of the tree open the next and the previous agent in screen
   order (`SpawnedTree`, `hopTargetOf`), stop at the ends, and leave focus on
-  the row; **Up** and **Down** still only move focus, and Enter opens. The `auto-child` and
-  `run-step` drawers remain for the doors that preview a child while the
-  center stays elsewhere (Now, the delegation lines, the orchestrated
-  document) and carry no way back to the panel.
+  the row; **Up** and **Down** still only move focus, and Enter opens. The other
+  doors (the Overview, a delegation line, a run step, Who asked, a notification,
+  the palette) land on the same page: no agent opens in a side panel, and a
+  window saved with the old `auto-child` or `run-step` drawer opens the page
+  (`withoutRemovedPages`).
 - **A saved level 2 lands on its page.** A window saved on a run or on the
   Auto level before the panel opens on the same page and opens no panel
   (`withoutRemovedPages` drops the retired `sidebar-level` key); a tool it had

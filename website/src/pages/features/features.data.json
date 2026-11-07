@@ -1198,7 +1198,7 @@
         },
         {
           "title": "Agent header",
-          "text": "Read who an agent is at a glance. Its role, name and provider share one row with View transcript and its menu.",
+          "text": "Read who an agent is at a glance. Its role, name and provider share one row with its menu.",
           "group": "Agents",
           "also": "agent header"
         },

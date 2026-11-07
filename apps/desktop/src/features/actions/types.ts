@@ -24,7 +24,6 @@ import type { PortFacts } from './kinds/port';
 import type { TerminalTabFacts } from './kinds/terminalTab';
 import type { NewFormFacts } from './kinds/newForm';
 import type { TaskListFacts } from './kinds/taskList';
-import type { RunStepFacts } from './kinds/runStep';
 import type { WorkflowListFacts } from './kinds/workflowList';
 import type { NotificationsFacts } from './kinds/notifications';
 import type { NotificationFacts } from './kinds/notification';
@@ -413,11 +412,6 @@ export type TaskListActionTarget = {
   readonly facts: TaskListFacts;
 };
 
-export type RunStepActionTarget = {
-  readonly kind: 'runStep';
-  readonly facts: RunStepFacts;
-};
-
 export type WorkflowListActionTarget = {
   readonly kind: 'workflowList';
   readonly facts: WorkflowListFacts;
@@ -559,7 +553,6 @@ export type ObjectTarget =
   | TerminalTabActionTarget
   | NewFormActionTarget
   | TaskListActionTarget
-  | RunStepActionTarget
   | WorkflowListActionTarget
   | NotificationsActionTarget
   | NotificationActionTarget

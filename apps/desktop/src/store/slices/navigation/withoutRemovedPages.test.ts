@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { brandId, type AgentId, type WorkflowRunId } from '@goodboy/types';
 import { nextSessionId } from '@goodboy/types/testing';
 import type { Location } from './types';
 import { withoutRemovedPages } from './withoutRemovedPages';
 
 const SESSION_ID = nextSessionId();
+const AGENT_ID = brandId<AgentId>({ value: 'agent-saved' });
+const RUN_ID = brandId<WorkflowRunId>({ value: 'run-saved' });
 
 type LocationParams = {
   readonly lens: string;
@@ -60,6 +63,83 @@ describe('withoutRemovedPages', () => {
 
   it('keeps a live studio as it was', () => {
     const location: Location = { ...storedAt({ lens: 'questions' }), studio: { kind: 'guide' } };
+
+    expect(withoutRemovedPages({ location })).toBe(location);
+  });
+
+  it('opens the agent page in place of a saved Auto child panel', () => {
+    const stored: Location = JSON.parse(
+      JSON.stringify({
+        ...storedAt({ lens: 'questions' }),
+        focus: {
+          drawer: { kind: 'auto-child', sessionId: SESSION_ID, payload: { agentId: AGENT_ID } },
+          scroll: {},
+        },
+      }),
+    );
+
+    const next = withoutRemovedPages({ location: stored });
+
+    expect(next.place).toEqual({
+      at: 'session',
+      sessionId: SESSION_ID,
+      view: { lens: 'workflows', agentId: AGENT_ID, target: null },
+    });
+    expect(next.focus.drawer).toBeNull();
+  });
+
+  it('opens the step page in place of a saved run step panel', () => {
+    const stored: Location = JSON.parse(
+      JSON.stringify({
+        ...storedAt({ lens: 'workflows' }),
+        focus: {
+          drawer: {
+            kind: 'run-step',
+            sessionId: SESSION_ID,
+            payload: { runId: RUN_ID, agentId: AGENT_ID },
+          },
+          scroll: {},
+        },
+      }),
+    );
+
+    const next = withoutRemovedPages({ location: stored });
+
+    expect(next.place).toEqual({
+      at: 'session',
+      sessionId: SESSION_ID,
+      view: { lens: 'workflows', agentId: AGENT_ID, target: { kind: 'run', runId: RUN_ID } },
+    });
+    expect(next.focus.drawer).toBeNull();
+  });
+
+  it('lands a saved panel with no agent on its session', () => {
+    const stored: Location = JSON.parse(
+      JSON.stringify({
+        ...storedAt({ lens: 'workflows' }),
+        focus: {
+          drawer: { kind: 'auto-child', sessionId: SESSION_ID, payload: null },
+          scroll: {},
+        },
+      }),
+    );
+
+    const next = withoutRemovedPages({ location: stored });
+
+    expect(next.place).toMatchObject({ at: 'session', sessionId: SESSION_ID });
+    expect(next.focus.drawer).toBeNull();
+  });
+
+  it('keeps a live drawer open on its page', () => {
+    const drawer: Location['focus']['drawer'] = {
+      kind: 'spawned',
+      sessionId: SESSION_ID,
+      payload: null,
+    };
+    const location: Location = {
+      ...storedAt({ lens: 'questions' }),
+      focus: { ...storedAt({ lens: 'questions' }).focus, drawer },
+    };
 
     expect(withoutRemovedPages({ location })).toBe(location);
   });

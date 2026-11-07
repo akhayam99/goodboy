@@ -367,8 +367,7 @@ read top to bottom at the conversation measure:
   the same role column as the decided steps; a plain string entry leaves the
   column empty. A row opens the page of the step, as for every
   kind of run (`presetRunFocusOf`, `RunStepPage`), with the reason the
-  orchestrator gave for it at the top (`stepReasonOf`). The `run-step` drawer
-  kind stays only for saved windows until it goes with the Auto panel.
+  orchestrator gave for it at the top (`stepReasonOf`).
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
   end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and **Stop step
@@ -851,8 +850,8 @@ the workflow run row and at the top of the agent detail body, right under its
 header, and the conversation does not repeat it at the bottom. Every door
 (Activity, Workflow, the board, a toast) opens the agent on its one
 conversation (`AgentDetailPane`, `ChatView` `mode="conversation"`); there is no
-Brief and no Transcript tab, and **View transcript** opens the full record in
-the `transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
+Brief and no Transcript tab, and a turn's summary line opens **Steps** in the
+`transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs say the same states on
 their tail ([The orchestrated document](#the-orchestrated-document)), with **Skip step N** in the
 run `⋯` and **Answer** when the run waits on a question.

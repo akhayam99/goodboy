@@ -51,13 +51,6 @@ import {
   headerLineFailures,
   headerLineProbe,
 } from './validateScenesHeaderLine.mjs';
-import {
-  DRAWER_COMPOSER_READY,
-  DRAWER_COMPOSER_SCENES,
-  DRAWER_COMPOSER_WIDTHS,
-  drawerComposerFailures,
-  drawerComposerProbe,
-} from './validateScenesDrawerComposer.mjs';
 import { runUpdatePill } from './validateScenesUpdatePill.mjs';
 import {
   CHAT_MEASURE_READY,
@@ -549,17 +542,6 @@ const measureHeaderLine = async ({ send, scene }) => {
   return { failures, wraps: 0 };
 };
 
-const measureDrawerComposer = async ({ send, scene }) => {
-  const failures = [];
-  for (const width of DRAWER_COMPOSER_WIDTHS) {
-    await open({ send, scene, width, zoom: 1, readySelector: DRAWER_COMPOSER_READY });
-    const measured = await run(send, drawerComposerProbe, null);
-    failures.push(...drawerComposerFailures({ scene, width, measured }));
-  }
-  console.log(`${scene}: ${DRAWER_COMPOSER_WIDTHS.length} widths, ${failures.length} overflows`);
-  return { failures, wraps: 0 };
-};
-
 const measureInbox = async ({ send, width }) => {
   const failures = [];
   await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-list-grid-row]' });
@@ -870,11 +852,6 @@ const main = async () => {
     }
     await runUpdatePill({ send, only, measure, open, run });
     await runFitProbes({ send, only, measure, open, run });
-    for (const scene of only === undefined || only === 'drawer-composer'
-      ? DRAWER_COMPOSER_SCENES
-      : []) {
-      await measure({ scene, task: () => measureDrawerComposer({ send, scene }) });
-    }
     if (only === undefined || only === 'chat') {
       await measure({ scene: CHAT_MEASURE_SCENE, task: () => measureChatRoom({ send }) });
     }

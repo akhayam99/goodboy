@@ -13,9 +13,7 @@ import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
-import { AutoChildPane } from './AutoChildPane';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
-import { RunStepDrawer } from '../../features/session/components/RunStepDrawer';
 import { SpawnedPanel } from './SpawnedPanel';
 import { LogDrawer } from '../../features/session/central/log/LogDrawer';
 import { ExploreAddFolder } from './ExploreAddFolder';
@@ -166,15 +164,6 @@ const renderDrawer = ({
           onClose={closeDrawer}
         />
       );
-    case 'auto-child':
-      return (
-        <AutoChildPane
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          agentId={drawer.payload.agentId}
-          onClose={closeDrawer}
-        />
-      );
     case 'spawned':
       return (
         <SpawnedPanel key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
@@ -185,16 +174,6 @@ const renderDrawer = ({
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           focusEntryId={drawer.payload.focusEntryId}
-          onClose={closeDrawer}
-        />
-      );
-    case 'run-step':
-      return (
-        <RunStepDrawer
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          runId={drawer.payload.runId}
-          agentId={drawer.payload.agentId}
           onClose={closeDrawer}
         />
       );

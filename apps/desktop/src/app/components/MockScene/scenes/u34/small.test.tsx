@@ -99,10 +99,12 @@ describe('the small flows scenes', () => {
     expect(rows.some((text) => text.includes('harborline/'))).toBe(false);
   });
 
-  it('names the list on the step back row and draws no trail', async () => {
+  it('names the run on the step back row and draws no trail', async () => {
     mount({ name: 'u34-u56-step' });
     await waitFor(() =>
-      expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to runs'),
+      expect(document.querySelector('[data-session-back]')?.textContent).toBe(
+        'Back to Speed up the export end to end',
+      ),
     );
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });

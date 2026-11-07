@@ -39,7 +39,6 @@ const childToneOf = ({ child }: ChildParams): Tone => {
 export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useAppStore((state) => state.navigate);
-  const openDrawer = useAppStore((state) => state.openDrawer);
   const auto = group.group;
   const isGenericTitle = auto.title === null || auto.title.toLowerCase() === 'auto';
   const title = isGenericTitle ? NAMES.runKind.autoAgent : auto.title;
@@ -108,12 +107,7 @@ export const LiveAutoBlock = ({ sessionId, group, where }: Props) => {
               isSectionState: group.state === 'working' && child.state === 'running',
               time: <DelegationClock agentId={child.agentId} isLive={copy.isLive} />,
               openLabel: `${child.label}, ${copy.word.toLowerCase()}`,
-              onOpen: () =>
-                openDrawer({
-                  kind: 'auto-child',
-                  sessionId,
-                  payload: { agentId: child.agentId },
-                }),
+              onOpen: () => navigate({ to: agentPlace({ sessionId, agentId: child.agentId }) }),
             };
           })}
         />

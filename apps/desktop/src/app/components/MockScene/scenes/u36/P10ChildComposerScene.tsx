@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { RIGHT_DRAWER_MIN, RIGHT_DRAWER_STORAGE_KEY } from '@goodboy/ui';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { AppFrame } from '../audit/AppFrame';
@@ -13,12 +12,11 @@ type Props = {
 
 const DRAFT = 'Also cover the repeated key in applyCredit.';
 
-export const P21DrawerComposerScene = ({ theme }: Props) => {
+export const P10ChildComposerScene = ({ theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     applyDocumentTheme({ theme });
-    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, String(RIGHT_DRAWER_MIN));
-    seedC07({ state: 'working', place: 'auto', pane: 'implementer' });
+    seedC07({ state: 'working', place: 'child', pane: 'implementer' });
     const current = useAppStore.getState();
     useAppStore.setState({
       sessions: [{ ...SESSION, permissionMode: 'bypassPermissions' }],

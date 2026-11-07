@@ -88,17 +88,12 @@ describe('the u27 one flow scenes', () => {
     expect(popover.textContent).not.toContain('Start every run in this session');
   });
 
-  it('shows the step Auto added to the preset with its reason', async () => {
+  it('shows the step Auto added to the preset with its change', async () => {
     mount({ id: 'u27-one-flow-after-preset' });
 
-    expect(
-      await screen.findByText(
-        'Why: Added to the preset: the scout found the billing table scrolls sideways at 390px',
-        { exact: false },
-        WAIT,
-      ),
-    ).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /^Kind: Workflow · Preset Fix a layout/ }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^Kind: Workflow · Preset Fix a layout/ }, WAIT),
+    );
     const popover = await screen.findByRole('dialog', { name: 'Kind' }, WAIT);
     expect(popover.querySelector('[data-run-kind-why]')?.textContent).toContain('· 1 change');
     expect(document.querySelector('[data-preset-facts]')).toBeNull();

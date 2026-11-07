@@ -29,6 +29,7 @@ export type AutoChat = Readonly<{
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
   dock: ReactNode | undefined;
   composerPlaceholder: string | undefined;
+  childTask: string | null;
 }>;
 
 export const useAutoChat = ({ session, agent }: Params): AutoChat => {
@@ -111,5 +112,6 @@ export const useAutoChat = ({ session, agent }: Params): AutoChat => {
     dock,
     composerPlaceholder:
       view === null ? child.composerPlaceholder : composerPlaceholderOf({ view }),
+    childTask: child.task,
   };
 };

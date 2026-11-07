@@ -53,7 +53,6 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
-  readonly isPinned?: boolean;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -71,7 +70,6 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
-  isPinned = false,
 }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
@@ -94,7 +92,8 @@ export const AgentDetailPane = ({
   const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const events = useTranscript(agent.id);
-  const brief = useMemo(() => briefLineOf({ events }), [events]);
+  const briefLine = useMemo(() => briefLineOf({ events }), [events]);
+  const brief = autoChat.childTask ?? briefLine;
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
   const executed = useExecutedAgentRouting({ agent });
   const routing = useAgentHeaderRouting({ session, agent });
@@ -244,7 +243,7 @@ export const AgentDetailPane = ({
     >
       <ChatView
         session={session}
-        {...(isPinned && { agentId: agent.id })}
+        agentId={agent.id}
         isActive={isChatActive}
         topInset="tight"
         mode="conversation"
@@ -253,7 +252,7 @@ export const AgentDetailPane = ({
         {...(runStep === undefined && { controlSlots: { asks: asksSlot, models: modelsSlot } })}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
         {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
-        hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}
+        hasComposer={!isRewriterFinished && adoption === null && !isMoveOpen}
         composerPlaceholder={
           rewriter?.isLive === true ? REWRITER_PLACEHOLDER : autoChat.composerPlaceholder
         }

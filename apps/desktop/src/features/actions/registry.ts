@@ -21,7 +21,6 @@ import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
 import { RUN_ROW_KIND } from './kinds/runRow';
-import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { NOTIFICATIONS_KIND } from './kinds/notifications';
 import { NOTIFICATION_KIND } from './kinds/notification';
@@ -175,8 +174,6 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: NEW_FORM_KIND, state, target });
     case 'taskList':
       return bind({ definition: TASK_LIST_KIND, state, target });
-    case 'runStep':
-      return bind({ definition: RUN_STEP_KIND, state, target });
     case 'workflowList':
       return bind({ definition: WORKFLOW_LIST_KIND, state, target });
     case 'notifications':

@@ -19,9 +19,14 @@ type Params = {
 export type AutoChildChat = Readonly<{
   insertions: ReadonlyArray<TranscriptInsertion> | undefined;
   composerPlaceholder: string | undefined;
+  task: string | null;
 }>;
 
-const NOT_A_CHILD: AutoChildChat = { insertions: undefined, composerPlaceholder: undefined };
+const NOT_A_CHILD: AutoChildChat = {
+  insertions: undefined,
+  composerPlaceholder: undefined,
+  task: null,
+};
 
 export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildChat => {
   const events = useTranscript(agent.id);
@@ -64,6 +69,7 @@ export const useAutoChildChat = ({ session, agent, tree }: Params): AutoChildCha
         },
       ],
       composerPlaceholder: `Message ${card.roleLabel}`,
+      task: card.task,
     };
   }, [agent, delegation, executed, images, session.id]);
 };

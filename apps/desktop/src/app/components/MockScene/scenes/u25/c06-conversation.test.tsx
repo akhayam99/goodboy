@@ -183,7 +183,7 @@ describe('the c06 conversation scenes', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });
 
-  it('c06-agent-delegating writes one line per child and opens the child in the pane', async () => {
+  it('c06-agent-delegating writes one line per child and opens the child on its page', async () => {
     await mount({ name: 'c06-agent-delegating' });
 
     const lines = screen.getByRole('list', { name: 'Delegations' });
@@ -195,15 +195,15 @@ describe('the c06 conversation scenes', () => {
         name: 'Open Run the export tests on 12,000 rows',
       }),
     );
-    const drawer = useAppStore.getState().drawer;
-    expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe('mock-c06-tester');
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().selectedAgentId[C06_SESSION_ID]).toBe('mock-c06-tester');
   });
 
-  it('c06-agent-transcript shows the steps per turn only, titled Transcript, with no second composer', async () => {
+  it('c06-agent-transcript shows the steps per turn only, titled Steps, with no second composer', async () => {
     await mount({ name: 'c06-agent-transcript' });
 
     const pane = screen.getByRole('complementary', { name: 'Transcript pane' });
-    expect(within(pane).getByRole('heading', { name: 'Transcript' })).toBeDefined();
+    expect(within(pane).getByRole('heading', { name: 'Steps' })).toBeDefined();
     expect(within(pane).queryByText('Checking the lockfiles first.')).toBeNull();
     expect(pane.querySelectorAll('[data-turn-heading]').length).toBeGreaterThan(0);
     expect(within(pane).queryByRole('button', { name: 'Turn detail' })).toBeNull();
@@ -291,13 +291,12 @@ describe('the c06 conversation scenes', () => {
     expect(screen.getByText(/estimated at API prices/)).toBeDefined();
   });
 
-  it('c06-agent-transcript opens the transcript from the header menu, not from a header button', async () => {
+  it('c06-agent-finished keeps View transcript out of the header and its menu', async () => {
     await mount({ name: 'c06-agent-finished' });
 
     expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'View transcript' }));
-    expect(useAppStore.getState().drawer?.kind).toBe('transcript');
+    expect(screen.queryByRole('menuitem', { name: 'View transcript' })).toBeNull();
   });
 
   it('c06-agents-empty shows the empty Runs page as the Start a run field, no Start an agent', async () => {
