@@ -1,7 +1,6 @@
 import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
 import { agentStatusWord } from '../../agentStatusWord';
 import { NEEDS_PERMISSION_WORD, effectiveAgentStatusOf } from '../../../workTreeModel/agentStateOf';
-import { pluralize } from '../../../../shared/utils/pluralize';
 import { humanTurnErrorOf } from '../../../chat/humanTurnErrorOf';
 
 type AgentNowState = {
@@ -32,7 +31,6 @@ type NowStateParams = {
   readonly agent: Agent;
   readonly turnState: TurnState | null;
   readonly transcript: ReadonlyArray<TurnEvent>;
-  readonly activeChildren?: number;
   readonly isWaitingForWriter?: boolean;
 };
 
@@ -48,7 +46,6 @@ export const agentNowState = ({
   agent,
   turnState,
   transcript,
-  activeChildren = 0,
   isWaitingForWriter = false,
 }: NowStateParams): AgentNowState => {
   if (isWaitingForWriter) {
@@ -74,9 +71,7 @@ export const agentNowState = ({
     return { label: agentStatusWord({ status: agent.status }) };
   }
   if (agent.status === 'running') {
-    return {
-      label: activeChildren === 0 ? null : `Waiting on ${pluralize(activeChildren, 'subagent')}`,
-    };
+    return { label: null };
   }
   return { label: 'ready' };
 };

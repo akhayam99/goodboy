@@ -10,6 +10,7 @@ import type {
   TimelineEventEntry,
   TimelineRunEntry,
 } from '../../timeline/buildTimelineGroups';
+import { runAgentEntriesOf } from '../../timeline/runAgentEntriesOf';
 import type { DoneModel, DoneSource } from './doneTypes';
 import { agentCountLabelOf } from '../../agentCountLabelOf';
 import { descendantAgentsOf } from '../../descendantAgentsOf';
@@ -203,13 +204,6 @@ const lastSummaryOf = ({
     .filter((summary) => summary !== null)
     .at(-1) ?? null;
 
-const stepAgentsOf = ({
-  entry,
-}: {
-  readonly entry: TimelineRunEntry;
-}): ReadonlyArray<TimelineAgentEntry> =>
-  entry.children.flatMap((child) => (child.kind === 'agent' ? [child] : []));
-
 type RunEntryParams = {
   readonly entry: TimelineRunEntry;
 };
@@ -219,7 +213,7 @@ export const isRunEntryFinished = ({ entry }: RunEntryParams): boolean =>
   isWorkflowRunComplete({
     run: entry.run,
     workflow: entry.workflow,
-    agents: stepAgentsOf({ entry }).map((child) => child.agent),
+    agents: runAgentEntriesOf({ entry }).map((child) => child.agent),
   });
 
 type ProgressParams = {
@@ -255,7 +249,7 @@ const runLineOf = ({
       leadAgentId: null,
     };
   }
-  const steps = stepAgentsOf({ entry });
+  const steps = runAgentEntriesOf({ entry });
   const done = steps.filter(
     (step) => step.agent.status !== 'pending' && step.agent.status !== 'skipped',
   ).length;

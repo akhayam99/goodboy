@@ -10,6 +10,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
+import { orderedChildAgentsOf } from '../../../shared/utils/orderedChildAgentsOf';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactAttachment } from '../../../features/artifacts/artifactAttachments';
 import {
@@ -124,13 +125,12 @@ const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skippe
 
 const RECOVERABLE_KINDS: ReadonlyArray<Agent['kind']> = ['wireframe', 'report'];
 
-const childrenOf = ({
-  agents,
-  containerId,
-}: Readonly<{ agents: ReadonlyArray<Agent>; containerId: AgentId }>): ReadonlyArray<Agent> =>
-  agents
-    .filter((agent) => agent.parentAgentId === containerId && agent.deletedAt == null)
-    .sort((left, right) => left.ordinal - right.ordinal);
+type ChildrenParams = Readonly<{ agents: ReadonlyArray<Agent>; containerId: AgentId }>;
+
+const liveChildrenOf = ({ agents, containerId }: ChildrenParams): ReadonlyArray<Agent> =>
+  orderedChildAgentsOf({ agents, parentId: containerId }).filter(
+    (agent) => agent.deletedAt == null,
+  );
 
 const clearDeadline = ({ containerId }: Readonly<{ containerId: AgentId }>): void => {
   const handle = deadlines.get(containerId);
@@ -380,7 +380,7 @@ const settleChildren = async ({
   reason: string;
 }>): Promise<void> => {
   const agents = get().sessionPhaseRuns?.[sessionId] ?? [];
-  const pending = childrenOf({ agents, containerId }).filter(
+  const pending = liveChildrenOf({ agents, containerId }).filter(
     (child) => !TERMINAL.includes(child.status),
   );
   if (pending.length === 0) {
@@ -438,7 +438,7 @@ const verifyReports = async ({
 }>): Promise<ReadonlyArray<VerifiedEntry>> => {
   const reports = collectWireframeScoutReports({
     scouts: scoutsOf({ picks: context.picks }),
-    children: childrenOf({ agents, containerId }),
+    children: liveChildrenOf({ agents, containerId }),
   });
   const verified: Array<VerifiedEntry> = [];
   for (const [index, report] of reports.entries()) {
@@ -531,7 +531,7 @@ const recoveredContext = ({
   }
   const picks = recoveredPicks({
     provenance,
-    children: childrenOf({ agents, containerId }),
+    children: liveChildrenOf({ agents, containerId }),
   });
   const base = {
     sessionId,
@@ -734,7 +734,7 @@ export const stopArtifactGeneration = (set: SetFn, get: GetFn) => {
       });
     }
     const agents = get().sessionPhaseRuns?.[sessionId] ?? [];
-    for (const child of childrenOf({ agents, containerId: agentId })) {
+    for (const child of liveChildrenOf({ agents, containerId: agentId })) {
       if (TERMINAL.includes(child.status)) {
         continue;
       }
@@ -826,7 +826,7 @@ export const recoverArtifactScouts = (set: SetFn, get: GetFn) => {
       (agent) =>
         isStalledContainer({ container: agent }) &&
         !containers.has(agent.id) &&
-        childrenOf({ agents, containerId: agent.id }).length > 0,
+        liveChildrenOf({ agents, containerId: agent.id }).length > 0,
     );
     if (stalled.length === 0) {
       return;
@@ -835,7 +835,7 @@ export const recoverArtifactScouts = (set: SetFn, get: GetFn) => {
     for (const container of stalled) {
       const provenance = await loadArtifactProvenance(container.id).catch(() => null);
       const kind: ArtifactRunKind = container.kind === 'report' ? 'report' : 'wireframe';
-      const children = childrenOf({ agents, containerId: container.id });
+      const children = liveChildrenOf({ agents, containerId: container.id });
       const decision: ArtifactRunRecovery =
         provenance === null
           ? 'abandon-scouts'

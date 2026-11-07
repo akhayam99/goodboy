@@ -1230,11 +1230,6 @@ When a provider ships or retires a model, update these together:
   offered or estimated there, even when it is the session default; the test also
   fails on a step routing call without its scope. Resolve, its next-step card,
   and Start work from chat now follow the workspace default provider
-- **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
-  Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`
-  under the button (`shared/components/RunsOn`). Change opens the routing picker
-  body for that one launch; nothing is saved. Cheaper follow-ups name the model in
-  the toast after the launch
 - **Re-checks** are the `recheck` task in Models, Review group. A re-check no
   longer pins the cheapest model of the draft's provider by hand
 - **Project model settings** no longer apply. Before 0.24.0 a project could pin its

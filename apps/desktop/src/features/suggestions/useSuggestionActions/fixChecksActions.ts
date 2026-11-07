@@ -52,10 +52,6 @@ export const fixChecksActions = ({ sessionId, payload, lock }: Params): Suggesti
       ...blocked,
       failureTitle: action.failureTitle,
       run: () => action.run({}),
-      runsOn: {
-        kind: 'debugger',
-        runWith: (routing) => action.run({ routing }),
-      },
     },
     onDismiss: null,
   };

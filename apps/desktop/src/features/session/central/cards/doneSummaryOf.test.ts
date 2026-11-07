@@ -41,20 +41,7 @@ const rowOf = ({ id }: RowParams): DoneRowModel => ({
   kind: 'implementer',
   leadAgentId: null,
   at: '09:00',
-  mountId: null,
-  retryAgentId: null,
   agentIds: [],
-  detail: {
-    model: null,
-    effort: null,
-    duration: null,
-    costUsd: null,
-    fullText: null,
-    steps: [],
-    auto: null,
-    branches: [],
-    files: null,
-  },
 });
 
 const DAY: DoneDay = { key: 'today', label: null, rows: [rowOf({ id: 'a' }), rowOf({ id: 'b' })] };

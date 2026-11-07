@@ -2,7 +2,6 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { tintClasses } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -15,7 +14,6 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WorkflowNextStepCta } from './index';
 
@@ -142,19 +140,6 @@ describe('WorkflowNextStepCta', () => {
     expect(screen.getByTestId('workflow-next-step-cta').textContent).toMatch(
       /run next step: scout/i,
     );
-  });
-
-  it('uses the shared plan tone for an active plan marker', () => {
-    render(
-      <WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={vi.fn()} consumesActivePlan />,
-    );
-
-    const cta = screen.getByTestId('workflow-next-step-cta');
-    const icons = cta.querySelectorAll('svg');
-    expect(icons[icons.length - 1]?.getAttribute('class')).toContain(
-      tintClasses(CONCEPT_TONE.plans).icon,
-    );
-    expect(tooltipTextOf({ element: cta })).toMatch(/Advancing will consume the active plan/);
   });
 
   it('renders nothing while a failed step blocks the chain, the next action strip owns it', () => {

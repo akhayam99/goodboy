@@ -18,6 +18,7 @@ import type {
 import { classifyAgent, type AgentKind } from '../agent-kind';
 import { ciFixRoleOf } from '../../branch/checks/ciFixRole';
 import { isAgentMissingArtifact } from '../../artifacts/turnArtifactOutcome';
+import { childAgentsByParent } from '../../../shared/utils/childAgentsByParent';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
@@ -308,18 +309,16 @@ export const buildTimelineGroups = ({
   const creations = resolveAgentCreation({ agents: liveAgents });
   const byOrdinal = [...liveAgents].sort((first, second) => first.ordinal - second.ordinal);
 
-  const childrenByParentId = new Map<string, ReadonlyArray<Agent>>();
-  for (const agent of byOrdinal) {
-    if (agent.parentAgentId == null) {
-      continue;
-    }
-    const kind = classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
-    if (ciFixRoleOf({ agent, kind }) === 'fix') {
-      continue;
-    }
-    const siblings = childrenByParentId.get(agent.parentAgentId) ?? [];
-    childrenByParentId.set(agent.parentAgentId, [...siblings, agent]);
-  }
+  const childrenByParentId = childAgentsByParent({
+    agents: byOrdinal.filter(
+      (agent) =>
+        agent.parentAgentId == null ||
+        ciFixRoleOf({
+          agent,
+          kind: classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
+        }) !== 'fix',
+    ),
+  });
 
   const liveAgentById = new Map(byOrdinal.map((agent) => [agent.id, agent]));
   const chainRootIdByAgentId = new Map<string, Agent['id']>();

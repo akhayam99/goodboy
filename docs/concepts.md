@@ -588,33 +588,26 @@ whether you clicked it on the board or in the session overview.
   suggestions: a suggestion is not activity, it is a pointer to what activity
   should happen next. **Needs you** holds the Decide and Fix groups, **Next**
   the Update and Ship groups (`OVERVIEW_CARD_OF_GROUP`).
-- A `NextStepRow` has the same five columns (`NEXT_STEP_GRID` and `NEXT_STEP_CELLS`
-  in `features/suggestions/nextStepGrid.ts`): tile,
-  text, primary, **Not now**, **⋯**. The primary and **Not now** have a fixed
-  width, so they line up across rows; every primary is `secondary`, never
-  filled (filled buttons stay on forms). A busy row fades
-  **Not now** and keeps its column. A short visible verb (`shortLabel`: Start,
-  Fix, Rebase) sits over the full `label`, which stays the accessible name
-  ("Continue with Reviewer").
-- When the primary starts an agent, its `agentKind` picks the tile
-  (`NextStepTile`): the role icon in the role color from `agentKindPalette`
-  (the same source as the role picker), on a `bg-current/12` disc, and the
-  primary carries the same small icon. Suggestions that start no agent keep
-  the `SUGGESTION_ICONS` glyph with the band tone, in the same disc and with the
-  same glyph on the primary, so every row of the grid reads alike. A cut
-  `Runs on` line (`RunsOn`, `TruncatedText`) shows the whole route on hover. The alternatives (such as Start
-  tester instead, or one rebase target each) are items of the **⋯** menu. The
-  menu is the `suggestion` kind of the action registry
+- A Next card is an `ActionCard` (`features/session/central/next/ActionCard.tsx`): glyph, title and detail,
+  then the main verb, an optional second verb and the **⋯** menu, in the columns of
+  `ROW_COLUMNS`. Only the first card of a stack carries a filled primary; later cards
+  keep a `secondary` verb. A short visible verb (`shortLabel`: Start, Fix, Rebase) sits
+  over the full `label`, which stays the accessible name ("Continue with Reviewer").
+  **Not now** lives in the **⋯** menu.
+- When the primary starts an agent, its `agentKind` picks the glyph: the role icon in
+  the role color from `agentKindPalette` (the same source as the role picker).
+  Suggestions that start no agent keep the `SUGGESTION_ICONS` glyph with the band tone.
+  The alternatives (such as Start tester instead, or one rebase target each) are items of
+  the **⋯** menu. The menu is the `suggestion` kind of the action registry
   (`features/actions/kinds/suggestion.ts`), drawn by `SuggestionOverflowMenu`
-  from `NextStepMenu`; `NextStepRow` builds its target from the suggestion, the
+  from `NextStepMenu`; `useActionCardActions` builds its target from the suggestion, the
   role the primary starts (`agentKind`) and `useIsAutoOn`, so the alternatives
   come from the card and not from closures of `useSuggestionActions`. Hovering
-  or focusing one shows its `preview` role on the tile, and closing the menu
+  or focusing one shows its `preview` role on the glyph, and closing the menu
   puts the primary's role back. `useSuggestionRunner` wraps each alternative with
   `track` (the accepted outcome, a pending key per action id, the failure title
-  of the primary), so the primary and the menu are held while one runs. With
-  fewer than two entries the cell stays empty, because the menu needs two
-  rows.
+  of the primary), so the primary and the menu are held while one runs.
+  `menuParity.test.tsx` holds the menu of a Next card to the registry set of its suggestion.
 - **Not now** registers an `undoable` operation on the app undo stack
   (`useSuggestionRunner`), so the toast says Dismissed with **Undo** and the
   `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse

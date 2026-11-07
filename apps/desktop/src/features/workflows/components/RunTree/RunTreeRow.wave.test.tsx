@@ -57,7 +57,6 @@ const renderRow = ({ id, density, waveLabel }: Params): void => {
       parentStepName={null}
       isSelected={false}
       isHighlighted={false}
-      skip={null}
       onSelect={vi.fn()}
       onAnswer={vi.fn()}
     />,

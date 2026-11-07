@@ -67,7 +67,7 @@ type Props = {
 export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
-  const storedTab = useBranchTab({ sessionId, mountPath: identity.mountPath });
+  const storedTab = useBranchTab({ sessionId });
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const navigate = useAppStore((s) => s.navigate);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);

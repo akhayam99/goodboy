@@ -566,11 +566,7 @@ describe('Analyze with the real store and SQLite', () => {
     });
     expect(actions.primary?.label).toBe('Analyze');
     await act(async () => {
-      await actions.primary?.runsOn?.runWith({
-        provider: 'anthropic',
-        model: 'claude-sonnet-5',
-        effort: 'high',
-      });
+      await actions.primary?.run();
     });
     expect(spawn).toHaveBeenCalledTimes(1);
     const prompt = spawn.mock.calls[0]?.[1].initialPrompt ?? '';
@@ -578,6 +574,5 @@ describe('Analyze with the real store and SQLite', () => {
     expect(prompt).toContain('notify-relay / test');
     expect(prompt).toContain('ledger-core / cancelled');
     expect(prompt).not.toContain('Check: lint');
-    expect(spawn.mock.calls[0]?.[1].effort).toBe('high');
   });
 });

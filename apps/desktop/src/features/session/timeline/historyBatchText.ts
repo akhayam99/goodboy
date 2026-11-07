@@ -57,18 +57,6 @@ export const historyBatchSubOf = ({ origin, facts }: SubParams): string => {
   return parts.length === 0 ? prefix : `${prefix} · ${parts.join(', ')}`;
 };
 
-type BranchParams = {
-  readonly branch: HistoryBatchBranch;
-  readonly origin: HistoryBatchOrigin;
-};
-
-export const historyBatchBranchFactOf = ({ branch, origin }: BranchParams): string => {
-  if (!branch.isPushed) {
-    return origin === 'rebase' ? 'Rebased, not pushed' : 'Rewritten, not pushed';
-  }
-  return branch.prNumber === null ? 'Pushed' : `Pushed · PR #${branch.prNumber} updated`;
-};
-
 type BaseParams = {
   readonly batch: HistoryBatch;
   readonly events: ReadonlyArray<SessionEvent>;

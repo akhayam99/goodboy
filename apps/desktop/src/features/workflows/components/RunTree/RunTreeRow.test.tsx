@@ -69,7 +69,6 @@ const slotOf = ({ laid, id, density = 'rail' }: SlotParams): number => {
       parentStepName={null}
       isSelected={false}
       isHighlighted={false}
-      skip={null}
       onSelect={vi.fn()}
       onAnswer={vi.fn()}
     />,

@@ -5,7 +5,6 @@ import { waveLabelsOf } from '../../../plans/waves/waveLabelsOf';
 import type { RunTreeRouting } from './RunTreeRow';
 import { RunTreeRows } from './RunTreeRows';
 import type { RunTreeInsert } from '../../runTreeInsert';
-import type { RunStepSkipAction } from './RunStepSkip';
 import { plansByAgentId } from './plansByAgentId';
 import { useFoldedRunTree } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
@@ -19,7 +18,6 @@ type Props = {
   readonly routing: RunTreeRouting;
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId: string | null;
-  readonly skip?: RunStepSkipAction | null;
   readonly beforeRow?: (insert: RunTreeInsert) => ReactNode;
   readonly trailing?: (insert: RunTreeInsert) => ReactNode;
   readonly onHighlight: (stepId: string | null) => void;
@@ -35,7 +33,6 @@ export const RunTree = ({
   routing,
   selectedAgentId,
   highlightedStepId,
-  skip = null,
   beforeRow,
   trailing,
   onHighlight,
@@ -72,7 +69,6 @@ export const RunTree = ({
       routing={routing}
       selectedAgentId={selectedAgentId}
       highlightedStepId={highlightedStepId}
-      skip={skip}
       folds={folded.folds}
       plans={plans}
       waveLabels={waveLabels}

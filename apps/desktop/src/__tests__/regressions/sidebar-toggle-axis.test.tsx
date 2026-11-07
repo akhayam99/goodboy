@@ -4,7 +4,6 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { SidebarToggleButton } from '../../features/session/components/SessionNavSidebar/parts/SidebarToggleButton';
 import { ColumnToggleButton } from '../../app/components/SideColumn/ColumnToggleButton';
 import { shortcutGlyphs } from '../../shared/keyboard/registry';
 import { tooltipTextOf } from '../helpers/tooltip';
@@ -31,13 +30,6 @@ const COLUMN_RAIL = readFileSync(
 afterEach(cleanup);
 
 describe('the sidebar toggle axis', () => {
-  it('draws the sessions list toggle as the size-8 button that names the sessions', () => {
-    const open = render(<SidebarToggleButton isCollapsed={false} onToggle={vi.fn()} />);
-    const openToggle = open.container.querySelector('[data-sidebar-toggle]') as HTMLElement;
-    expect(openToggle.className).toContain('size-8');
-    expect(openToggle.getAttribute('aria-label')).toMatch(/^Hide sessions/);
-  });
-
   it('draws one column toggle that names the sidebar and the chord', () => {
     const open = render(<ColumnToggleButton isCollapsed={false} onToggle={vi.fn()} />);
     const openToggle = open.container.querySelector('[data-sidebar-toggle]') as HTMLElement;

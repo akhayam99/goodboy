@@ -176,8 +176,7 @@ describe('selectBitbucketRequest', () => {
 
 describe('the branch landing tab of a Bitbucket session', () => {
   it('lands on the Pull request tab before and after the request is known', () => {
-    const tabNow = () =>
-      branchTabOf({ state: useAppStore.getState(), sessionId: SESSION_ID, mountPath: null });
+    const tabNow = () => branchTabOf({ state: useAppStore.getState(), sessionId: SESSION_ID });
 
     expect(tabNow()).toBe('pr');
 
@@ -194,8 +193,6 @@ describe('the branch landing tab of a Bitbucket session', () => {
       branchTab: { [SESSION_ID]: 'checks' },
     });
 
-    expect(
-      branchTabOf({ state: useAppStore.getState(), sessionId: SESSION_ID, mountPath: null }),
-    ).toBe('checks');
+    expect(branchTabOf({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe('checks');
   });
 });

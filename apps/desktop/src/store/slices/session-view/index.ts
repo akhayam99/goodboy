@@ -23,7 +23,7 @@ import {
   setFocusedGithubIssueNumber,
   setFocusedWorkflowRun,
 } from './workSurface';
-import { openResolveDiff, setResolveQueueView } from './resolveSurface';
+import { setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { setFocusedRunAgent } from './setFocusedRunAgent';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
@@ -59,7 +59,6 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setDiffFocus: setDiffFocus(set),
     openDiffLens: openDiffLens(get),
     setResolveQueueView: setResolveQueueView(set),
-    openResolveDiff: openResolveDiff(set, get),
     setResolveItemDraft: setResolveItemDraft(set),
     openMountDiff: openMountDiff(get),
     openRewriteHistory: openRewriteHistory(get),

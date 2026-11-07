@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { SegmentedTabs, formatError, useDropdown } from '@goodboy/ui';
+import { SegmentedTabs, useDropdown } from '@goodboy/ui';
 import type { WorkflowAutonomy, WorkflowRules } from '@goodboy/types';
 import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../runAutonomy';
+import { useAutonomyPick } from '../../hooks/useAutonomyPick';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 
 type PatchRules = (next: Partial<WorkflowRules>) => Promise<void>;
@@ -11,31 +11,15 @@ type Props = {
   readonly patch: PatchRules;
 };
 
-type PickParams = {
-  readonly next: WorkflowAutonomy;
-};
-
 const HELP = 'When a new run stops and waits for your go. Runs already going keep theirs.';
 
 export const DefaultAsksSetting = ({ autonomy, patch }: Props) => {
   const dropdown = useDropdown({ expectedHeight: 200, expectedWidth: 320, width: 'w-80' });
-  const [error, setError] = useState<string | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
   const current = runAutonomyOf({ autoRun: false, autonomy });
-  const pick = async ({ next }: PickParams) => {
-    if (next === autonomy || isBusy) {
-      return;
-    }
-    setIsBusy(true);
-    setError(null);
-    try {
-      await patch({ autonomy: next });
-    } catch (failure) {
-      setError(`Couldn't change it. ${formatError(failure)}`);
-    } finally {
-      setIsBusy(false);
-    }
-  };
+  const { error, isBusy, pick } = useAutonomyPick({
+    current: autonomy,
+    save: ({ next }) => patch({ autonomy: next }),
+  });
   return (
     <SettingChip
       dropdown={dropdown}

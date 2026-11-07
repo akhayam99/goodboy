@@ -16,8 +16,7 @@ import { REBASE_ALL_MIN_BRANCHES } from '../../history/behindBranchesOf';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { UnsentCommentsConfirm } from '../../plans/unsentCommentsConfirmOf';
-import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
-import { showsRunsOn } from '../../session/showsRunsOn';
+import type { AgentKind } from '../../session/agent-kind';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
@@ -61,13 +60,7 @@ type SuggestionAction = {
   readonly run: () => Promise<void>;
   readonly requiresConfirm?: boolean;
   readonly confirm?: UnsentCommentsConfirm;
-  readonly runsOn?: SuggestionRunsOn;
   readonly shouldOpenPicker?: boolean;
-};
-
-type SuggestionRunsOn = {
-  readonly kind: AgentKind;
-  readonly runWith: (routing: AgentKindRouting) => Promise<void>;
 };
 
 export type SuggestionActions = {
@@ -366,18 +359,6 @@ export const useSuggestionActions = ({
               focus: 'none',
             });
           },
-          ...(showsRunsOn({ kind: suggestion.payload.agentKind }) && {
-            runsOn: {
-              kind: suggestion.payload.agentKind,
-              runWith: async (routing: AgentKindRouting) => {
-                await spawnAgent(sessionId, {
-                  kindOverride: suggestion.payload.agentKind,
-                  focus: 'none',
-                  ...routing,
-                });
-              },
-            },
-          }),
         },
         onDismiss: null,
       };

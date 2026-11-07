@@ -16,6 +16,8 @@ import { seedSessionWithMounts } from '../../../../__tests__/helpers/seedSession
 import { captureLocation } from '../../../../store/slices/navigation/captureLocation';
 import { locationKey } from '../../../../store/slices/navigation/locationKey';
 import { BOARD_PLACE, sessionPlace } from '../../../../store/slices/navigation/place';
+import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
+import { makeGate } from '../../../../store/runtime/auto/testing/makeGate';
 import { WorkflowRunStartButton } from './WorkflowRunStartButton';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -37,13 +39,18 @@ const runPage = () =>
 const currentKey = (): string =>
   locationKey({ place: captureLocation({ state: useAppStore.getState() }).place });
 
-const renderButton = ({ onStart }: { readonly onStart: () => void | Promise<void> }) =>
+type RenderParams = {
+  readonly onStart: () => void | Promise<void>;
+  readonly blockReason?: WorkflowBlockReason | null;
+};
+
+const renderButton = ({ onStart, blockReason = null }: RenderParams) =>
   render(
     <ToastProvider>
       <WorkflowRunStartButton
         sessionId={sessionId}
         runId={runId}
-        blockReason={null}
+        blockReason={blockReason}
         onStart={onStart}
       />
     </ToastProvider>,
@@ -175,5 +182,61 @@ describe('WorkflowRunStartButton', () => {
     );
     expect(screen.queryByText('Run started')).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the button busy while the start is pending and frees it after', async () => {
+    useAppStore.getState().navigate({ to: runPage() });
+    const gate = makeGate();
+    renderButton({
+      onStart: async () => {
+        await gate.promise;
+      },
+    });
+
+    await pressStart();
+
+    expect(screen.getByRole('button', { name: 'Start run' }).getAttribute('aria-busy')).toBe(
+      'true',
+    );
+
+    await act(async () => {
+      gate.open();
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Start run' }).getAttribute('aria-busy'),
+      ).toBeNull(),
+    );
+  });
+
+  it('asks before starting while a blocker stands, and starts only on Start anyway', async () => {
+    useAppStore.getState().navigate({ to: runPage() });
+    const onStart = vi.fn(async () => undefined);
+    renderButton({ onStart, blockReason: 'questions' });
+
+    await pressStart();
+
+    expect(onStart).not.toHaveBeenCalled();
+    screen.getByText('Start this run anyway?');
+    screen.getByText('Open questions are waiting for an answer.');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));
+    });
+
+    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+  });
+
+  it('leaves the run unstarted when the user picks Wait', async () => {
+    useAppStore.getState().navigate({ to: runPage() });
+    const onStart = vi.fn(async () => undefined);
+    renderButton({ onStart, blockReason: 'questions' });
+    await pressStart();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wait' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.queryByText('Start this run anyway?')).toBeNull();
   });
 });

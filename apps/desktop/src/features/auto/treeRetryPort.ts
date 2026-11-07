@@ -1,3 +1,5 @@
+import { createPort } from './createPort';
+
 export type TreeRetryResult =
   Readonly<{ kind: 'retried' }> | Readonly<{ kind: 'refused'; message: string }>;
 
@@ -7,18 +9,8 @@ type RetryParams = {
 
 export type TreeRetryPort = (params: RetryParams) => Promise<TreeRetryResult>;
 
-type Registry = {
-  port: TreeRetryPort | null;
-};
+const slot = createPort<TreeRetryPort>();
 
-const registry: Registry = { port: null };
+export const registerTreeRetryPort = slot.register;
 
-type RegisterParams = {
-  readonly port: TreeRetryPort | null;
-};
-
-export const registerTreeRetryPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentTreeRetryPort = (): TreeRetryPort | null => registry.port;
+export const currentTreeRetryPort = slot.current;

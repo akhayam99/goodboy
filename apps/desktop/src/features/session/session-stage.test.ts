@@ -154,10 +154,7 @@ describe('attentionWordsOf', () => {
     );
   });
 
-  it('names the plan version when it is known and the plan otherwise', () => {
-    expect(attentionWordsOf({ reason: 'plan-approval', planVersion: 2 })).toBe(
-      'Plan v2 needs approval',
-    );
+  it('names the plan when it needs approval', () => {
     expect(attentionWordsOf({ reason: 'plan-approval' })).toBe('The plan needs approval');
   });
 });
