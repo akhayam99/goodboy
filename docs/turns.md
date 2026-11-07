@@ -162,11 +162,11 @@ database.
   is in [architecture.md](architecture.md).
 - The chat ends each writing turn of a plain folder in a card
   (`TurnChangesCard`, under the turn's usage row): "Changed 2 files in
-  acme-notes · saved before this turn", the files with their line counts from
+  acme-notes · saved before this reply", the files with their line counts from
   `textChangesOf`, **Open changes** (opens Changes on the turn's first file
-  through `sessionFileVersionSelectedPath`) and **Restore turn**, which asks
+  through `sessionFileVersionSelectedPath`) and **Undo this reply**, which asks
   in the card when a file changed since. A run in `folderCaptureFailures`
-  shows "Changes from this turn couldn't be saved" with Retry
+  shows "Changes from this reply couldn't be saved" with Retry
   (`retryFolderCapture`) in its place.
 - A turn in a session that already writes in a `sessions/<name>` folder mount
   keeps it, takes no folder lease and captures a recoverable file version

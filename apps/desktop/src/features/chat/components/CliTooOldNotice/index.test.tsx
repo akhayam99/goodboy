@@ -187,7 +187,7 @@ describe('CliTooOldNotice', () => {
     expect(screen.getByRole('button', { name: 'Update Claude CLI' }).hasAttribute('disabled')).toBe(
       true,
     );
-    expect(screen.getByText(/Wait for running turns to finish\./)).toBeDefined();
+    expect(screen.getByText(/Wait for running replies to finish\./)).toBeDefined();
   });
 
   it('turns into a success with Retry the turn once the CLI is new enough', () => {
@@ -211,7 +211,7 @@ describe('CliTooOldNotice', () => {
         isRetrying={false}
       />,
     );
-    expect(screen.getByText(/This turn ran on Opus 5 instead\./)).toBeDefined();
+    expect(screen.getByText(/This reply ran on Opus 5 instead\./)).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use Opus 5 instead' })).toBeNull();
   });
 });

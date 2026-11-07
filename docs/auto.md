@@ -208,7 +208,7 @@ id in `outboxIds`, right before it, so it never jumps above rows that happened b
 and a pending or withdrawn echo is never drawn, after a restart too. A row dropped for another reason (`droppedMessageIds` of the tree view) keeps its echo where it was written, so its words stay in the chat. Events written before
 the ids existed have no `outboxId` and stay where they were written.
 
-A row reads one status word and nothing else: "Waits for this turn", "Waits for <task of the
+A row reads one status word and nothing else: "Waits for this reply", "Waits for <task of the
 child>" or "Waits for 2 agents" while the tree waits for running agents (`pendingMessageLineOf`,
 `waitingForOf`), and "Not delivered" for a blocked or stopped tree, with the reason in its tooltip.
 **Send now** (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that

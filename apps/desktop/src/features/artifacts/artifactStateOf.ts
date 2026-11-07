@@ -112,7 +112,7 @@ const ARTIFACT_STATE_PRESENTATION = {
   stopped: {
     key: 'stopped',
     label: 'Stopped',
-    reason: 'The turn ended without producing it',
+    reason: 'The agent ended without writing it',
     tone: 'warning',
     icon: Square,
     group: 'needs',

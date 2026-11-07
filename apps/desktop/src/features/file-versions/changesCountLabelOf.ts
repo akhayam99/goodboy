@@ -8,6 +8,6 @@ export const changesCountLabelOf = ({ counts }: Params): string | null => {
     return null;
   }
   const files = `${countNoun({ count: counts.fileCount, one: 'file' })}`;
-  const turns = `${countNoun({ count: counts.turnCount, one: 'turn' })}`;
+  const turns = `${countNoun({ count: counts.turnCount, one: 'reply', many: 'replies' })}`;
   return `${files} over ${turns}`;
 };

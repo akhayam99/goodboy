@@ -71,7 +71,7 @@ export const CliTooOldNotice = ({ payload, runId, onRetryRun, isRetrying }: Prop
         body={
           fallback === null
             ? `${modelLabel} is ready in this session.`
-            : `${modelLabel} is ready. This turn already ran on ${fallback.label}.`
+            : `${modelLabel} is ready. This reply already ran on ${fallback.label}.`
         }
         actions={
           fallback === null &&
@@ -92,9 +92,9 @@ export const CliTooOldNotice = ({ payload, runId, onRetryRun, isRetrying }: Prop
   }
 
   const outcome =
-    fallback === null ? 'Your message is kept.' : `This turn ran on ${fallback.label} instead.`;
+    fallback === null ? 'Your message is kept.' : `This reply ran on ${fallback.label} instead.`;
   const waitNote =
-    update.isBlockedByTurn && !update.isUpdating ? ' Wait for running turns to finish.' : '';
+    update.isBlockedByTurn && !update.isUpdating ? ' Wait for running replies to finish.' : '';
   const failedNote = update.hasFailed ? " The update didn't finish." : '';
   const unchanged = update.isUnchanged ? update.result : null;
 

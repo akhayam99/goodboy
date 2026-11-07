@@ -62,7 +62,7 @@ export const CliUpdateNotice = ({ providerId, autoStart }: Props) => {
 
   const required = newestCliVersion({ versions: gates.map((gate) => gate.requiredVersion) });
   const installed = gates[0]?.installedVersion ?? '';
-  const waitNote = isBlockedByTurn && !isUpdating ? ' Wait for running turns to finish.' : '';
+  const waitNote = isBlockedByTurn && !isUpdating ? ' Wait for running replies to finish.' : '';
   const failedNote = update.hasFailed ? " The update didn't finish." : '';
   const unchanged = update.isUnchanged ? update.result : null;
   const showTerminal =

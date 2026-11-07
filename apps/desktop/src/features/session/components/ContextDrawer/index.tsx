@@ -260,7 +260,7 @@ export const ContextDrawer = ({
         >
           {summary.trim() === '' && !isLoading && rawTab !== 'summary' ? (
             <p className="text-body text-muted-foreground">
-              A summary appears after the first agent turn.
+              A summary appears after the first agent reply.
             </p>
           ) : (
             <SummarySection

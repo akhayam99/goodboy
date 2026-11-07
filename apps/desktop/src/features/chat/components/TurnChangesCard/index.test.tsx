@@ -115,11 +115,11 @@ describe('TurnChangesCard', () => {
   it('restores the whole turn in place and undoes it', async () => {
     render(<TurnChangesCard sessionId={session.id} runId={RUN_ID} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /Restore turn/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Undo this reply/ }));
 
-    expect(await screen.findByText('Restored turn 1.')).toBeDefined();
+    expect(await screen.findByText('Restored reply 1.')).toBeDefined();
     await waitFor(() => expect(screen.getAllByText('restored')).toHaveLength(2));
-    fireEvent.click(screen.getByRole('button', { name: 'Undo restore of turn 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bring it back' }));
     await waitFor(() => expect(screen.queryAllByText('restored')).toHaveLength(0));
   });
 
@@ -131,7 +131,7 @@ describe('TurnChangesCard', () => {
     });
     render(<TurnChangesCard sessionId={session.id} runId={RUN_ID} />);
 
-    expect(screen.getByText("Changes from this turn couldn't be saved")).toBeDefined();
+    expect(screen.getByText("Changes from this reply couldn't be saved")).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(world.finalized).toBe(1));

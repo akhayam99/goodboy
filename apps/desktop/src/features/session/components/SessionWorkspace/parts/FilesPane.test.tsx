@@ -77,7 +77,7 @@ describe('FilesPane', () => {
 
     render(<FilesPane sessionId={session.id} sessionDir={null} onClose={() => undefined} />);
 
-    expect(await screen.findByRole('button', { name: 'launch-memo.md, turn 1' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'launch-memo.md, reply 1' })).toBeDefined();
     expect(storySpies.tauriInvoke).toHaveBeenCalledWith('file_versions_folder_list_turns', {
       args: { folderPath: notes.rootPath, sessionId: session.id },
     });
@@ -91,7 +91,7 @@ describe('FilesPane', () => {
 
     render(<FilesPane sessionId={session.id} sessionDir={null} onClose={() => undefined} />);
 
-    expect(await screen.findByRole('button', { name: 'launch-memo.md, turn 1' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'launch-memo.md, reply 1' })).toBeDefined();
   });
 
   it('explains itself when an older session folder is missing', () => {

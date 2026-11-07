@@ -22,8 +22,8 @@ type Props = {
 };
 
 const SENT_VIA_LABEL: Record<UserTurnSentVia, string> = {
-  queued: 'Queued · sent after the turn',
-  interrupt: 'Sent now · interrupted the turn',
+  queued: 'Queued',
+  interrupt: 'Sent now',
 };
 
 export const UserText = ({

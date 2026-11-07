@@ -192,7 +192,7 @@ describe('the Auto chat scenes', () => {
     const rows = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
     expect(rows.map((row) => row.getAttribute('data-source'))).toEqual(['auto', 'agent']);
     expect(rows[0]?.textContent).toMatch(/Waits for /);
-    expect(rows[1]?.textContent).toContain('Waits for this turn');
+    expect(rows[1]?.textContent).toContain('Waits for this reply');
     expect(rows[0]?.querySelectorAll('[data-attachment-control]')).toHaveLength(2);
     expect(rows[1]?.querySelectorAll('[data-attachment-control]')).toHaveLength(1);
     expect(queueRows().getAllByRole('button', { name: 'Send now' })).toHaveLength(2);

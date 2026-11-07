@@ -37,7 +37,7 @@ const writersLineOf = ({ names, turnNumber }: WritersParams): string => {
     names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
   return turnNumber === null
     ? `${who} wrote there since. `
-    : `${who} wrote there after turn ${turnNumber}. `;
+    : `${who} wrote there after reply ${turnNumber}. `;
 };
 
 const askOf = ({ target, changedSince, otherWriters }: AskParams): RestoreCopy => {
@@ -47,8 +47,8 @@ const askOf = ({ target, changedSince, otherWriters }: AskParams): RestoreCopy =
   });
   if (target.scope === 'turn') {
     return {
-      title: `${listOf({ paths: changedSince })} changed after turn ${target.turnNumber}.`,
-      body: `${writers}Your current text is saved as a version before the turn goes back.`,
+      title: `${listOf({ paths: changedSince })} changed after reply ${target.turnNumber}.`,
+      body: `${writers}Your current text is saved as a version before the reply goes back.`,
       confirm: 'Restore anyway',
     };
   }
@@ -61,13 +61,13 @@ const askOf = ({ target, changedSince, otherWriters }: AskParams): RestoreCopy =
   }
   if (target.isNewFile) {
     return {
-      title: `${target.subject} changed after this turn.`,
+      title: `${target.subject} changed after this reply.`,
       body: `${writers}Removing it saves its current text as a version first.`,
       confirm: 'Remove anyway',
     };
   }
   return {
-    title: `${target.subject} changed after this turn.`,
+    title: `${target.subject} changed after this reply.`,
     body: `${writers}Your current text is saved as a version before it goes back.`,
     confirm: 'Restore anyway',
   };
@@ -76,7 +76,7 @@ const askOf = ({ target, changedSince, otherWriters }: AskParams): RestoreCopy =
 const doneOf = ({ target }: TargetParams): RestoreCopy => {
   if (target.scope === 'turn') {
     return {
-      title: `Restored turn ${target.turnNumber}.`,
+      title: `Restored reply ${target.turnNumber}.`,
       body: 'What its files had a moment ago is saved as a version too.',
       confirm: '',
     };
@@ -89,7 +89,7 @@ const doneOf = ({ target }: TargetParams): RestoreCopy => {
     };
   }
   return {
-    title: `Restored ${target.subject} to before turn ${target.turnNumber}.`,
+    title: `Restored ${target.subject} to before reply ${target.turnNumber}.`,
     body: 'The text it had a moment ago is saved as a version too.',
     confirm: '',
   };
@@ -99,15 +99,15 @@ const nothingOf = ({ target }: TargetParams): RestoreCopy => ({
   title: 'Nothing to restore.',
   body:
     target.scope === 'turn'
-      ? `Every file of turn ${target.turnNumber} already matches how it was before it.`
-      : `${target.subject} already matches how it was before turn ${target.turnNumber}.`,
+      ? `Every file of reply ${target.turnNumber} already matches how it was before it.`
+      : `${target.subject} already matches how it was before reply ${target.turnNumber}.`,
   confirm: '',
 });
 
 const failedOf = ({ target }: TargetParams): RestoreCopy => {
   if (target.scope === 'turn') {
     return {
-      title: `Couldn't restore turn ${target.turnNumber}`,
+      title: `Couldn't restore reply ${target.turnNumber}`,
       body: 'Files restored before the error read Restored in the list.',
       confirm: '',
     };

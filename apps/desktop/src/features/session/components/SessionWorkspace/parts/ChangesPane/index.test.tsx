@@ -201,13 +201,13 @@ describe('ChangesPane', () => {
   it('lists each turn with its files and line counts, and shows the change of the picked file', async () => {
     render(<ChangesPane sessionId={sessionId} />);
 
-    expect(await screen.findByText('3 files over 2 turns', { exact: false })).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Turn 2' })).toBeDefined();
+    expect(await screen.findByText('3 files over 2 replies', { exact: false })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Reply 2' })).toBeDefined();
     await waitFor(() =>
-      expect(row({ name: 'launch-memo.md, turn 2' }).textContent).toContain('+1'),
+      expect(row({ name: 'launch-memo.md, reply 2' }).textContent).toContain('+1'),
     );
-    expect(row({ name: 'launch-memo.md, turn 2' }).textContent).toContain('-1');
-    expect(row({ name: 'interviews/summary.md, turn 1' }).textContent).toContain('new');
+    expect(row({ name: 'launch-memo.md, reply 2' }).textContent).toContain('-1');
+    expect(row({ name: 'interviews/summary.md, reply 1' }).textContent).toContain('new');
     const memo = await screen.findByRole('region', { name: 'launch-memo.md' });
     await waitFor(() => expect(memo.textContent).toContain('Teams of 5 to 200 people'));
     const added = memo.querySelector('[data-line-kind="add"]');
@@ -238,15 +238,15 @@ describe('ChangesPane', () => {
     });
     render(<ChangesPane sessionId={sessionId} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'launch-memo.md, turn 1' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'launch-memo.md, reply 1' }));
     fireEvent.click(
       await (
         await detail({ name: 'launch-memo.md' })
-      ).findByRole('button', { name: /Restore to before turn 1/ }),
+      ).findByRole('button', { name: /Restore to before reply 1/ }),
     );
 
-    await screen.findByText('launch-memo.md changed after this turn.');
-    screen.getByText(/Scout wrote there after turn 1/);
+    await screen.findByText('launch-memo.md changed after this reply.');
+    screen.getByText(/Scout wrote there after reply 1/);
   });
 
   it('asks before restoring over newer text, restores anyway, then undoes the restore', async () => {
@@ -255,24 +255,24 @@ describe('ChangesPane', () => {
     const memo = await (
       await detail({ name: 'launch-memo.md' })
     ).findByRole('button', {
-      name: /Restore to before turn 2/,
+      name: /Restore to before reply 2/,
     });
 
     fireEvent.click(memo);
-    expect(await screen.findByText('launch-memo.md changed after this turn.')).toBeDefined();
+    expect(await screen.findByText('launch-memo.md changed after this reply.')).toBeDefined();
     expect(world.turns.some((turn) => turn.kind === 'restore')).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Restore anyway' }));
-    expect(await screen.findByText('Restored launch-memo.md to before turn 2.')).toBeDefined();
+    expect(await screen.findByText('Restored launch-memo.md to before reply 2.')).toBeDefined();
     await waitFor(() =>
-      expect(row({ name: 'launch-memo.md, turn 2' }).textContent).toContain('Restored'),
+      expect(row({ name: 'launch-memo.md, reply 2' }).textContent).toContain('Restored'),
     );
 
     fireEvent.click(
       (await detail({ name: 'launch-memo.md' })).getByRole('button', { name: 'Undo restore' }),
     );
     await waitFor(() =>
-      expect(row({ name: 'launch-memo.md, turn 2' }).textContent).toContain('+1'),
+      expect(row({ name: 'launch-memo.md, reply 2' }).textContent).toContain('+1'),
     );
     const undo = world.restores.at(-1);
     expect(undo?.runId).toBe(world.turns[1]?.runId);
@@ -281,7 +281,7 @@ describe('ChangesPane', () => {
 
   it('removes a file the agent created after saving it, and names the action', async () => {
     render(<ChangesPane sessionId={sessionId} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'interviews/summary.md, turn 1' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'interviews/summary.md, reply 1' }));
 
     fireEvent.click(
       await (
@@ -291,7 +291,7 @@ describe('ChangesPane', () => {
 
     expect(await screen.findByText('Removed interviews/summary.md.')).toBeDefined();
     await waitFor(() =>
-      expect(row({ name: 'interviews/summary.md, turn 1' }).textContent).toContain('Removed'),
+      expect(row({ name: 'interviews/summary.md, reply 1' }).textContent).toContain('Removed'),
     );
   });
 
@@ -302,22 +302,22 @@ describe('ChangesPane', () => {
     fireEvent.click(
       await (
         await detail({ name: 'launch-memo.md' })
-      ).findByRole('button', { name: /Restore to before turn 2/ }),
+      ).findByRole('button', { name: /Restore to before reply 2/ }),
     );
 
     expect(await screen.findByText("Couldn't restore launch-memo.md")).toBeDefined();
     expect(
       screen.getByText('A turn is writing in this folder. The file is as it was.'),
     ).toBeDefined();
-    expect(row({ name: 'launch-memo.md, turn 2' }).textContent).not.toContain('Restored');
+    expect(row({ name: 'launch-memo.md, reply 2' }).textContent).not.toContain('Restored');
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(await screen.findByText('Restored launch-memo.md to before turn 2.')).toBeDefined();
+    expect(await screen.findByText('Restored launch-memo.md to before reply 2.')).toBeDefined();
   });
 
   it('reads the turns again when the window gets focus, so another window shows', async () => {
     render(<ChangesPane sessionId={sessionId} />);
-    expect(await screen.findByRole('button', { name: 'faq.md, turn 2' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'faq.md, reply 2' })).toBeDefined();
 
     world.turns = [
       testTurn({
@@ -330,17 +330,17 @@ describe('ChangesPane', () => {
     ];
     fireEvent.focus(window);
 
-    expect(await screen.findByRole('button', { name: 'pricing.md, turn 3' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'pricing.md, reply 3' })).toBeDefined();
   });
 
   it('restores a whole turn and undoes it from the band', async () => {
     render(<ChangesPane sessionId={sessionId} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /Restore turn 2/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Undo this reply/ }));
 
-    expect(await screen.findByText('Restored turn 2.')).toBeDefined();
-    await waitFor(() => expect(row({ name: 'faq.md, turn 2' }).textContent).toContain('Restored'));
-    fireEvent.click(screen.getByRole('button', { name: 'Undo restore of turn 2' }));
-    await waitFor(() => expect(row({ name: 'faq.md, turn 2' }).textContent).toContain('+1'));
+    expect(await screen.findByText('Restored reply 2.')).toBeDefined();
+    await waitFor(() => expect(row({ name: 'faq.md, reply 2' }).textContent).toContain('Restored'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bring it back' }));
+    await waitFor(() => expect(row({ name: 'faq.md, reply 2' }).textContent).toContain('+1'));
   });
 });

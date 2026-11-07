@@ -220,4 +220,10 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'skip-and-go-on', pattern: /^Skip and go on$/, use: NAMES.skipStep },
   { id: 'discard-request', pattern: /^Discard request$/, use: NAMES.decline },
   { id: 'mark-all-seen', pattern: /^Mark all seen$/, use: NAMES.markAsRead },
+  { id: 'restore-turn', pattern: /^Restore turn(?: \d+)?$/, use: NAMES.undoReply },
+  { id: 'undo-restore-of-turn', pattern: /^Undo restore of turn\b/, use: 'Bring it back' },
+  { id: 'waits-for-this-turn', pattern: /^Waits for this turn\b/, use: 'Waits for this reply' },
+  { id: 'new-turns-start-in', pattern: /\bNew turns start in\b/, use: 'Starts in' },
+  { id: 'the-turn-failed', pattern: /^The turn (?:failed|stopped)$/, use: 'Failed' },
+  { id: 'turn-finished', pattern: /^Turn finished\b/, use: 'Reply finished' },
 ];

@@ -79,7 +79,7 @@ export const FolderCard = ({ sessionId }: Props) => {
             <dl className="grid min-w-0 grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-4 gap-y-2 text-ui">
               <dt className="text-muted-foreground">Where agents write</dt>
               <dd className="text-foreground">In the folder itself, one session at a time</dd>
-              <dt className="text-muted-foreground">Before each turn</dt>
+              <dt className="text-muted-foreground">Before each reply</dt>
               <dd className="text-foreground">
                 Goodboy saves the files it may change, so any turn can be restored
               </dd>

@@ -322,7 +322,7 @@ describe('ContextDrawer', () => {
       node.getAttribute('data-decision'),
     );
     expect(numbers).toEqual(['2', '1']);
-    expect(screen.getByText(/^Implementer · turn 9/)).toBeDefined();
+    expect(screen.getByText(/^Implementer · reply 9/)).toBeDefined();
     expect(screen.getByText(/^You · /)).toBeDefined();
   });
 
@@ -577,7 +577,7 @@ describe('ContextDrawer', () => {
     unmount();
 
     const summary = renderDrawer('summary');
-    expect(screen.getByText('A summary appears after the first agent turn.')).toBeDefined();
+    expect(screen.getByText('A summary appears after the first agent reply.')).toBeDefined();
     summary.unmount();
 
     store.sessionDecisions = { [SID]: [] };
@@ -613,14 +613,14 @@ describe('ContextDrawer', () => {
     fireEvent.click(contextUpdatesRow());
 
     const panel = screen.getByRole('definition', { name: 'Last update' });
-    expect(panel.textContent).toContain('after 3 turns');
+    expect(panel.textContent).toContain('after 3 replies');
     expect(screen.getByRole('definition', { name: 'Model' }).textContent).toContain(
       'Haiku 4.5 · low effort',
     );
     expect(screen.getByRole('definition', { name: 'Used' }).textContent).toBe(
       '3,184 in · 412 out · about <$0.01',
     );
-    expect(screen.getByText(/2 new turns since the last update\./).tagName).toBe('SPAN');
+    expect(screen.getByText(/2 new replies since the last update\./).tagName).toBe('SPAN');
     fireEvent.click(screen.getByRole('button', { name: '2 decisions' }));
     expect(store.openContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
     expect(screen.getByRole('button', { name: 'Goal' }).textContent).toBe('Goal');

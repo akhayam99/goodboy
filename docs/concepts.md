@@ -180,7 +180,7 @@ the rail's **Folder** card names the folder and what agents do there
 has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
-chat ends in a card with Open changes and Restore turn
+chat ends in a card with Open changes and Undo this reply
 (`features/chat/components/TurnChangesCard/`). The git verbs are not
 registered for a session without a branch: Comments (`session.review`) and
 Files (`session.diff`) leave the menus and the palette, and **Changes**
@@ -431,7 +431,7 @@ own terminal, diff and pull request links.
 A turn **starts in** one mount: that is where it opens its terminal, runs git
 and shows its pull request. It can still write in every mount of the session.
 The chat header names the start ("Starts in") and lists the rest of the reach
-in its tooltip. With two or more mounts, you pick where new turns start there
+in its tooltip. With two or more mounts, you pick where replies start there
 or from a row's menu, and each row shows the agents working in it right now.
 Once a turn ends, Goodboy records which mounts it changed, so an agent's row in
 Activity names every worktree it changed, not only the one it started in.
@@ -729,8 +729,7 @@ the saved copy, only once the provider has accepted it (the turn started, or
 the Resolve lane took it over). Until then it reads **Sending now**, and a send
 that ends before a provider turn starts, by an error, a cancelled start, an
 unresolved step agent or a refused lease, puts it back at the head. When the queue cannot be saved, an error says so and the messages stay
-in the queue for this session. Once sent, the bubble in the chat says "Queued ·
-sent after the turn" or "Sent now · interrupted the turn".
+in the queue for this session. Once sent, the bubble in the chat says "Queued" or "Sent now".
 
 **Close** is only for an agent outside a workflow that is stuck on a failed
 turn or on its own question. It means "stop waiting on this agent": the agent
