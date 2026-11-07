@@ -102,33 +102,33 @@ describe('the u27 Agents tree scenes', () => {
     expect(labelsOf({ tree })).toHaveLength(13 + 2 + 2);
   });
 
-  it('names every child by its title, its task sentence or its role, newest on top', async () => {
+  it('names every child by its title, its task sentence or its role, top down', async () => {
     mount({ id: 'u27-agents-tree-dark' });
 
     const tree = await launches();
     const live = visualLabelsOf({ tree }).slice(0, 13);
     expect(live).toEqual([
-      'Scout, Check notify-relay for duplicate retries, Queued',
-      'Tester, Run the retry tests in payments-api, Queued',
-      'Docs, Write the retry section of the payments-api guide, Queued',
-      'Implementer, Fix the applyCredit race, Running',
-      'Reviewer, Review the ledger-core side, Running',
-      'Reviewer, Review the payments-api side, Done',
-      'Implementer 4, Done',
-      'Implementer, Dedupe notify-relay webhooks by event id, Done',
-      'Implementer, Insert ledger-core credits under a unique key, Done',
-      'Implementer, Build the idempotency key once, Done',
-      'Scout, Find every caller of postCredit in payments-api, Done',
-      'Planner, Plan the retry safe credit flow, Done',
       `Auto agent, ${LIVE_BRIEF}, Running`,
+      'Planner, Plan the retry safe credit flow, Done',
+      'Scout, Find every caller of postCredit in payments-api, Done',
+      'Implementer, Build the idempotency key once, Done',
+      'Implementer, Insert ledger-core credits under a unique key, Done',
+      'Implementer, Dedupe notify-relay webhooks by event id, Done',
+      'Implementer 4, Done',
+      'Reviewer, Review the payments-api side, Done',
+      'Reviewer, Review the ledger-core side, Running',
+      'Implementer, Fix the applyCredit race, Running',
+      'Docs, Write the retry section of the payments-api guide, Queued',
+      'Tester, Run the retry tests in payments-api, Queued',
+      'Scout, Check notify-relay for duplicate retries, Queued',
     ]);
   });
 
-  it('joins every child to its root on the rail under one Now marker', async () => {
+  it('joins every child to its root on the rail, with no Now marker', async () => {
     const { container } = mount({ id: 'u27-agents-tree-light' });
 
     const tree = await launches();
-    expect(container.querySelectorAll('[data-spawned-now]')).toHaveLength(1);
+    expect(container.querySelector('[data-spawned-now]')).toBeNull();
     const rails = tree.querySelectorAll('[data-spawned-rail]');
     expect(rails).toHaveLength(labelsOf({ tree }).length);
     const root = within(tree).getAllByRole('treeitem')[0];
@@ -236,99 +236,32 @@ describe('the focused Auto launch', () => {
     document.head.querySelector('[data-test-scroll]')?.remove();
   });
 
-  it('groups the launch by state: Running, Queued, then Done folded, with no Now marker', async () => {
+  it('draws the focused launch top down like a run, with no state groups', async () => {
     const { container } = mount({ id: FOCUSED });
 
     const tree = await focusedTree();
-    expect(screen.getByRole('button', { name: 'All runs' })).toBeDefined();
-    expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
-      '2 running, 3 queued, 7 done',
-    );
-    expect(visualLabelsOf({ tree })).toEqual([
-      ROOT,
-      'Running, 2',
-      TOP,
-      'Reviewer, Review the ledger-core side, Running',
-      'Queued, 3',
-      'Scout, Check notify-relay for duplicate retries, Queued',
-      READER,
-      'Docs, Write the retry section of the payments-api guide, Queued',
-      'Done, 7',
-    ]);
-    expect(
-      within(tree).getByRole('treeitem', { name: 'Done, 7' }).getAttribute('aria-expanded'),
-    ).toBe('false');
+    screen.getByRole('button', { name: 'All runs' });
+    expect(visualLabelsOf({ tree })[0]).toBe(ROOT);
+    expect(visualLabelsOf({ tree })).toContain(TOP);
+    expect(visualLabelsOf({ tree })).toContain(READER);
+    expect(container.querySelector('[data-spawned-states]')).toBeNull();
     expect(container.querySelector('[data-spawned-now]')).toBeNull();
-    expect(tree.querySelectorAll('[data-spawned-rail]')).toHaveLength(0);
     expect(container.querySelector('[data-auto-limit-foot]')).toBeNull();
   });
 
-  it('moves with the arrows in screen order, Home on the Auto row, End on the Done group', async () => {
+  it('moves with the arrows in screen order, Home on the Auto row', async () => {
     mount({ id: FOCUSED });
 
     const tree = await focusedTree();
     const auto = within(tree).getByRole('treeitem', { name: ROOT });
     expect(auto.tabIndex).toBe(0);
-    const first = within(tree).getByRole('treeitem', { name: 'Running, 2' });
-    expect(first.tabIndex).toBe(-1);
-    act(() => first.focus());
-    fireEvent.keyDown(first, { key: 'ArrowDown' });
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(TOP);
-    fireEvent.keyDown(document.activeElement ?? first, { key: 'ArrowLeft' });
-    expect(document.activeElement).toBe(first);
-    fireEvent.keyDown(first, { key: 'End' });
-    const done = within(tree).getByRole('treeitem', { name: 'Done, 7' });
-    expect(document.activeElement).toBe(done);
-    fireEvent.keyDown(done, { key: 'Home' });
-    expect(document.activeElement?.getAttribute('aria-label')).toBe(ROOT);
-    expect(document.activeElement).toBe(spawnedTreeItemsOf({ element: tree })[0]);
-    fireEvent.keyDown(done, { key: 'End' });
-    expect(document.activeElement).toBe(done);
-    fireEvent.keyDown(done, { key: 'ArrowRight' });
-    expect(done.getAttribute('aria-expanded')).toBe('true');
-    expect(visualLabelsOf({ tree })).toHaveLength(9 + 7);
-    fireEvent.keyDown(done, { key: 'ArrowLeft' });
-    expect(done.getAttribute('aria-expanded')).toBe('false');
-    expect(visualLabelsOf({ tree })).toHaveLength(9);
-  });
-
-  it('takes a new live child in at the top and keeps the scroll and the focus of a reader below', async () => {
-    mount({ id: FOCUSED });
-
-    const tree = await focusedTree();
-    layOut({ tree });
-    const scroller = scrollerOf({ tree });
-    act(() => {
-      scroller.scrollTop = ROW_PX * 4;
-      scroller.dispatchEvent(new Event('scroll'));
-    });
-    const reader = within(tree).getByRole('treeitem', { name: READER });
-    act(() => reader.focus());
-
-    startChild({ key: 'live-late', title: 'Trace the notify-relay retry storm' });
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(visualLabelsOf({ tree })[2]).toBe('Scout, Trace the notify-relay retry storm, Running');
-    expect(scroller.scrollTop).toBe(ROW_PX * 5);
-    expect(document.activeElement).toBe(reader);
-  });
-
-  it('shows the new child at once when the reader sits on Now', async () => {
-    mount({ id: FOCUSED });
-
-    const tree = await focusedTree();
-    layOut({ tree });
-    const scroller = scrollerOf({ tree });
-    expect(scroller.scrollTop).toBe(0);
-
-    startChild({ key: 'live-late', title: 'Trace the notify-relay retry storm' });
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(visualLabelsOf({ tree })[2]).toBe('Scout, Trace the notify-relay retry storm, Running');
-    expect(scroller.scrollTop).toBe(0);
+    act(() => auto.focus());
+    fireEvent.keyDown(auto, { key: 'End' });
+    const last = spawnedTreeItemsOf({ element: tree }).at(-1);
+    expect(document.activeElement).toBe(last);
+    fireEvent.keyDown(document.activeElement ?? auto, { key: 'Home' });
+    expect(document.activeElement).toBe(auto);
+    fireEvent.keyDown(auto, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(spawnedTreeItemsOf({ element: tree })[1]);
   });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { startSettingsRowOf } from '../helpers/startSettingsRowOf';
 import { insertProject, insertWorkspace } from '@goodboy/db';
 import {
@@ -174,6 +174,7 @@ describe('journey: the limit chip at the kickoff', () => {
   it('gives the agent kind no limit chip, since a plain agent has no limit to enforce', async () => {
     spies();
     open();
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Agent/ }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),
@@ -186,6 +187,7 @@ describe('journey: the limit chip at the kickoff', () => {
   it('names a run, not Auto, in the popover of a workflow kind, which starts from the Run defaults', async () => {
     spies();
     open();
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Orchestrated/ }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),
@@ -199,6 +201,7 @@ describe('journey: the limit chip at the kickoff', () => {
   it('starts the Auto kind from the same Run defaults limit and links to its page', async () => {
     spies();
     open();
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     fireEvent.click(screen.getByRole('tab', { name: /^Auto/ }));
     const row = startSettingsRowOf({
       group: await screen.findByRole('group', { name: 'Run settings' }),

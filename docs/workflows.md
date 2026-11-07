@@ -373,13 +373,10 @@ read top to bottom at the conversation measure:
   role (`{"text": ..., "role": "tester"}` in the run summary, kept in
   `leftRoles`; an unknown role is dropped) shows that role's glyph and word in
   the same role column as the decided steps; a plain string entry leaves the
-  column empty. A row opens the step in the pane (drawer kind
-  `run-step`, `RunStepDrawer`): the step conversation (`AgentDetailPane`,
-  pinned to that agent) under the reason the orchestrator gave for it when that
-  reason is not the latest decision (the latest sits under the tail), with
-  **View transcript** and **Open full** in its `⋯` (the `runStep` kind of the
-  action registry). The page keeps the one composer; you
-  talk to the step from **Open full**.
+  column empty. A row opens the page of the step, as for every
+  kind of run (`presetRunFocusOf`, `RunStepPage`), with the reason the
+  orchestrator gave for it at the top (`stepReasonOf`). The `run-step` drawer
+  kind stays only for saved windows until it goes with the Auto panel.
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
   end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and **Stop step
@@ -389,10 +386,12 @@ read top to bottom at the conversation measure:
   names, `modelNamesIn`) with **View
   transcript**; the move each of those waits for is the header primary, never a
   second button on the tail, a failed step with **Restart step**, a step blocked
-  on a question with the question inline (what the step agent closed with,
-  `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
-  field with **Answer** as its primary action, **Restart step** as a secondary
-  button and **Open agent chat** next to it. A real open question (phase
+  on a question reads **Not finished** with **Restart step** and **Open agent
+  chat** next to it, an **Answer the step** field with **Keep working**, and no
+  reason: the question (what the step agent closed with, `blockedQuestionOf` on
+  its last reply, as markdown) and the "This step ended without a result" notice
+  show only on the step page (`OrchestratedBlockedStep` `isReasonShown`). A real
+  open question (phase
   `needs-answer`, a preset run's tail too) shows the same card as the transcript
   (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
   recommended one tagged, one pick or many, **Something else** for free text and
@@ -417,14 +416,15 @@ read top to bottom at the conversation measure:
   to continue, and a step that asks again in a later turn replaces its earlier
   blocking questions of that run: they close as "Resolved by the agent" and are
   never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
-  The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
-  secondary **Restart step**, and the restart prompt asks the agent to repeat a
+  The header **Answer** still opens the drawer. A preset run's blocked step reads **Not finished** with a
+  secondary **Restart step** on the run page, and gets the inline question on its
+  own step page. The restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
   send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
   **Continue**, "No output for 15 min" with **Ask it to continue**, agents
-  a restart stopped with **Continue**, "Run complete" on a
-  finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
+  a restart stopped with **Continue**. A finished run has no tail, only the
+  result under the list. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
   **Stop step** the verb is **Continue and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **View transcript** on its tail (`orchestratedTailOf`, the
@@ -432,14 +432,14 @@ read top to bottom at the conversation measure:
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing
-  refused all leave the queued hints unread). Under
-  the line, a folded **Why this step** (`Disclosure`) opens the latest decision's
-  reason as markdown, hidden while the run is failed or blocked; older reasons sit at the top of each step's pane. While the
+  refused all leave the queued hints unread). The reason for a step reads on
+  the step's page, never on the run page. While the
   plan pane is open, **Review plan** in the header goes quiet. The verbs of `runPrimaryOf` go through
   today's `RunPrimaryAction`, so their gates and confirms are the same.
-- **Result** (`OrchestratedResult`), on a finished run: the closing reason (markdown),
-  the recap's **Done** and **Left** lists, **Create report** and **Create
-  wireframe**. An orchestrated run never offers **Add step**, in the document
+- **Result** (`OrchestratedResult`), on a finished run of any kind: the closing reason (markdown),
+  the recap's **Done** and **Left** lists, or the last finished step's summary on a preset run
+  (`runOutcomeTextOf`), **Create report**, **Create wireframe** and **Open branch** when the run
+  touched one. A finished run hides Settings. An orchestrated run never offers **Add step**, in the document
   or in its rail level: the orchestrator picks the steps. **Add step** stays on
   preset runs.
 - **Continue with a hint** (`OrchestratedContinue`), docked in place of the
@@ -457,10 +457,11 @@ read top to bottom at the conversation measure:
   orchestrator". A queued hint is a dashed node with its first line, and
   **Show more** when that line is cut or the hint has a second line.
   Waiting hints sit on the run's line under the steps, under one heading,
-  **Queued hints 3, read at the next decision**, each row with **Remove**;
-  a row being read says **Reading now** with **Remove** disabled. The
-  composer keeps one fixed line, **3 hints queued** with **View**, over the
-  input. Enter queues,
+  **Queued, read at the next decision**, each row with **Remove**;
+  a row being read says **Reading now** with **Remove** disabled. While the
+  queue is out of view (`useIsQueueOutOfView`) one line, **3 hints queued** with
+  **View**, floats over the input without moving it, and it counts from
+  `hintQueueOf`, a hint being read left out. Enter queues,
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
@@ -532,14 +533,60 @@ from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
 the agents you started by hand, newest first. The columns: state dot, shape
 glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
 "Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
-Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
-agents"), cost and age, every row the same columns. Groups:
-**In progress** (running, waiting on you or failed), **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button;
+Scout"), model by name and effort (agent and Auto rows only, hidden when no row has one), state word, progress from `runStepCountOf` ("2 of 3 steps", or "2 steps done"
+when the run has no known total), cost and age, every row the same columns. A row names its work as
+`workBranchesOf` (`features/session`) reads it: the agents of the run through
+`Agent.mountId`, the mount a step inherits from the step before it
+(`inheritedMountIdOf`, shared with `selectRunStepMountId`) and the Auto tree.
+A read only agent counts, and a detached mount leaves the run without a branch.
+`SessionRun.branches` carries the result, and every row, group and count reads
+it. Under two branches the page groups **By state**: **Needs you**,
+**Running**, **Idle** (stopped, paused, ready), **Finished** (the first 30, then
+**Show all**) and **Archived** folded behind **Show** (`runGroupsOf`). The row
+shows its first branch before the cut of the title and the rest as `+N`, with a
+tooltip that lists project and branch. With two or more branches a switch, **By
+branch** or **By state**, is remembered for the session, also after a reload
+(`groupBySession` in memory and `storedGroupBy` under
+`goodboy:session-grouping:v1:<sessionId>`, dropped when the session is deleted;
+`selectGroupBy`, which Questions and Artifacts read too), and starts on **By
+branch**. **By branch** (`branchGroupsOf`) draws one group per branch, one per
+pull request series from `store/slices/pr-series` with its parts as rows,
+and **No branch** last. A group that holds something that needs you goes
+first, its finished runs fold into **N finished**, its archived runs fold apart
+behind **N archived** and come last (`branchGroupRunsOf`), and a run that touches
+several branches stands in each of them, keyed by group and run, with the chip
+**Also on feat/retry-budget** (**Also on 2 branches** for more). The chip reveals
+the same run in its next group, and the branch chip opens the Branch page. The
+title and the chips are siblings of the row button (`ListGridRow` `overlays`),
+so a row never nests a button. A click on the title opens the run immediately.
+**Rename** in the row's right click menu edits the title in place (leaving the
+box on the same text writes nothing, `useInlineRename`). The menu is the run's own (the `runRow` kind, five rows at most),
+never the session's. On the Branch page the line **On this branch** with **3 runs**
+(`branchRunLinkOf`, `BranchRunsLine`) lands on Runs, By branch, with that group
+open, or reveals its runs under By state with fewer than two branches
+(`useRunsFolds` unfolds finished and archived rows before scrolling and focusing
+the first matching row); Back returns to the branch (`Focus.runGroup` on the history entry) and to the
+row you left, not to the top of the group. The link counts what the group header
+counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
+the runs of all its parts) and is absent at zero. The page
+count stays one per run. Words say state and verbs are verbs: an agent you
+stopped reads **Stopped** and a run that has not started reads **Ready**, and
+the row always shows the real verb its page offers (`SessionRun.verb`):
+**Continue** on a stopped agent, a stopped Auto, or a run you stopped (its cut
+step, or the run itself when the orchestrator waits), **Start** on the next step
+of a preset or on a queued manual run of either kind. With the provider signed
+out **Continue** reads **Connect** and opens its settings (`useAgentStoppedCopy`,
+the same predicate as the notice on the agent page). One press guard per run
+covers every copy of the row (`useRunVerbPress`). An unread reply reads in the
+title, with no dot. **Stop all** and **Continue all** sit in one action row at
+the top of the page, in both views, with the switch. Cost, step and age leave
+the row before the title is cut, then the model (below 920) and the origin
+(below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents panel reads. The page opens on the **Start a run** field (`StartRun`, see
-[Start a run](features/start.md#start-a-run)), the one start on the page; a session with no run shows
-the field alone.
+of the Agents panel reads. The page opens on the list with a quiet **Start a run** row that opens
+the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
+a session with no run shows the field alone.
 
 A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
 engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`
@@ -617,48 +664,60 @@ to the list (`leaveRunLevel`), and so does going up (`upTo`).
 
 ## The preset run page
 
-A preset run is a recipe the user advances: the center shows the selected
-entry (`PresetRunPage`, in `features/session/components/PresetRun`) and the
-Agents panel of the session tools holds the run's identity row, its agents as
-a tree, **Add step** and the limit foot
-([The session tools](navigation/session-rail.md#the-session-tools)). A row there opens the
-step's transcript in the drawer (`run-step`); hovering it opens a fact card
-with the name and the state (`runHeadCardOf` for the run, `runAgentCardOf` for
-an agent, with its role glyph), never a joined tooltip line.
+A preset run is a recipe the user advances, and it draws the same page as an
+orchestrated run: one head (`RunPageHead`: the title, double click or Rename to
+rename it, the branch chips, one primary, the run `⋯`), the goal and the glance
+line (`OrchestratedGoal`), the step list top down (`OrchestratedChecklist`), then
+what only that kind has. A step opens one way for every kind, as its page. The
+Agents panel of the session tools holds the run's identity row and its agents as
+a tree ([The session tools](navigation/session-rail.md#the-session-tools)).
+Hovering a row opens a fact card with the name and the state (`runHeadCardOf` for
+the run, `runAgentCardOf` for an agent, with its role glyph), never a joined
+tooltip line.
 
-- **Overview** (`RunOverviewPage`): the run title as the header with the run
-  `⋯`, the goal and its attachments (`RunGoal`), the write destination ("Writes
-  to ...") while 2 or more worktrees can be written (`RunWriteDestination`), **Create report**
-  and **Create wireframe** on a finished run (`RunFinishedActions`), the step
-  draft when **Add step** was asked for, then the run tail. An archived run
-  shows **Restore** as its one header primary and reads dimmed.
+- **Overview** (`RunOverviewPage`): the head, the goal, the write destination
+  ("Writes to ...") while 2 or more worktrees can be written
+  (`RunWriteDestination`), the step list with **Add step** under it, the result on
+  a finished run, then the run tail. **Add step** stays on a finished run: it is
+  the way to extend one. An archived run shows **Restore** as its one header
+  primary and reads dimmed.
 - **A step** (`RunStepPage`): the step's agent conversation, embedded
-  (`AgentDetailPane` with a `runStep` frame). The header reads "Step 2 ·
-  Implementer" with the provider mark, then the run `⋯`. The agent's own menu
-  stays on the right click of the title. No next action card above the
-  conversation and no Start chip above the composer. The step's thinking line
-  ends in **Stop step 2**, not a bare Stop (`stepStopLabelOf`, through
-  `RunStepFrame.stopLabel`; the step pane passes it too).
+  (`AgentDetailPane` with a `runStep` frame), for a preset and an orchestrated
+  run alike. The header reads "Step 2 · Implementer" with the provider mark, then
+  the step `⋯` (`RunStepActions`: View transcript, which opens the transcript of the agent on screen, a helper's own on a helper's page, and Skip step N, which skips the step the helper belongs to). The run's verbs
+  leave the head: its next move reads on the quiet line at the end, such as
+  "Step 2 done" with **Start step 3**. The agent's own menu stays on the right
+  click of the title. No next action card above the conversation and no Start
+  chip above the composer. The step's thinking line ends in **Stop step 2**, not
+  a bare Stop (`stepStopLabelOf`, through `RunStepFrame.stopLabel`; the step pane
+  passes it too).
 - **The run tail** (`RunTail`, phrases in `runTailOf`) speaks for the run at
   the end of the content, once: nothing while the step on screen runs (its
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open
   step 2**, "No output for 15 min" with **Ask it to continue**, the open
-  question, a failed or stuck step with **Restart step**, "Paused
+  question, a failed step with **Restart step** (a blocked one reads **Not finished**, one
+  word: its reason is on its step page), "Paused
   at the limit" (a step that never started also reads "Not
   started, the run paused at the limit."), the step that is ready, a stopped
-  step with **Continue**, "Done" or "Stopped by you"
-  with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. The header holds the one primary
+  step with **Continue**, or "Stopped by you" with no verb. A finished run and an
+  archived run have no tail. On the overview the header holds the one primary
   (`runHeaderPrimaryOf`: **Answer**, **Raise limit**, the `runPrimaryOf` verb
   with today's gates, `StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve and continue**, or else **Pause
-  run** and **Continue**); every other verb is on the tail or in the menu.
+  run** and **Continue**); on a step page the same verb sits on the tail, as a
+  secondary button. The moves of an orchestrated run (**Continue**, **Retry**,
+  **Add a hint and continue**, **Decide next step**) stay on its run page: on a step
+  page its tail reads one word, **Stopped**, **Failed**, **Needs you** or **Ready**,
+  with one link, **Open run** (`runTailOf`, `openRun`).
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
-  the header carry: View diff, Asks you (Every step, After the plan, Never, a
-  `choices` item, left out of the run pages' menus since its chip holds it), **Skip step N** for the selected step while it has not
-  finished (asks first, `skipStepDescription`), Copy run summary, Save as
-  preset, Archive run, Delete run.
-- **Add step** in the Agents panel opens the Overview and asks `WorkflowAddStep`
-  to open its draft there (`requestRunAddStep`, after the navigation settles).
+  the header carry, five rows at most (`RunPageActions`): while a run lives
+  **Skip step N**, Rename, Step routing, Stop run, Archive run; once it ended
+  Rename, View diff, Save as preset, Archive run, Delete run. Everything else
+  stays on the right click of the title, which takes focus, so Shift+F10 opens
+  it from the keyboard (View diff, Save as preset, Copy run
+  summary, Delete run on a live run). An ended run, also one whose steps are all done
+  but a helper failed, never offers Stop run. Asks you (a `choices` item) is left out of
+  the run pages' menus since its chip holds it.
 
 ## How a run advances
 
@@ -1540,8 +1599,9 @@ two states:
   to continue and Skip.
 
 A step that `watchStepEnd` set to `blocked` reads "This step ended without a result" on
-the run page (`OrchestratedBlockedStep`, the preset `RunTail`) and on the
-agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. It offers
+its step page (`OrchestratedBlockedStep` in `RunTail`, only for the step on screen)
+and on the agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. The run
+page reads only **Not finished** for it, with the answer field and **Restart step**. It offers
 **Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
 which finalizes the step with `force` from the agent's last words and lets the
 run advance). `watchStepEnd` records the end time it set in

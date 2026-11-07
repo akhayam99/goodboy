@@ -1,6 +1,7 @@
 import type { MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { AppState } from '../../../types';
 import { selectWritableMounts } from '../../project-mounts/selectors';
+import { inheritedMountIdOf } from './inheritedMountIdOf';
 
 type State = Pick<AppState, 'sessionMounts' | 'sessionProjectMounts' | 'sessionPhaseRuns'>;
 
@@ -24,11 +25,8 @@ export const selectRunStepMountId = ({
   if (named !== undefined) {
     return named.mountId;
   }
-  if (workflowRunId === null) {
-    return null;
-  }
-  const previous = (state.sessionPhaseRuns[sessionId] ?? [])
-    .filter((agent) => agent.workflowRunId === workflowRunId && agent.mountId != null)
-    .sort((left, right) => right.ordinal - left.ordinal)[0];
-  return previous?.mountId ?? null;
+  return inheritedMountIdOf({
+    agents: state.sessionPhaseRuns[sessionId] ?? [],
+    workflowRunId,
+  });
 };

@@ -177,7 +177,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'What kind of run?',
-        desc: 'Pick Auto, Agent, Orchestrated or Preset. One form shows only what that kind needs.',
+        desc: 'How picks Auto, Agent, Orchestrated or Preset. One form shows only what that kind needs.',
       },
       {
         term: NAMES.startARun,
@@ -330,7 +330,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Agents beside a run holds its steps, Add step and the limit. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
+        desc: 'A run lists its steps, with Add step under them. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
       },
       {
         term: 'Orchestrated',
@@ -438,7 +438,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Files, Commits and Checks. Rebase sits on its row. The palette, a notification or the board open the same page.',
+        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Changes, Commits and Checks. Rebase sits on its row. The palette, a notification or the board open the same page.',
       },
       {
         term: 'Pull request',
@@ -453,7 +453,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'In the Branch header, it runs one agent through the comments you check, in its own copy of the branch. Each ends in a fix, a reply or a question, and nothing leaves until you push.',
       },
       {
-        term: 'Files',
+        term: 'Changes',
         desc: 'The diff, with the file list behind Files and Viewed N of M on top. Comment on a line or a file, then review with Approve, Request changes or Submit comments.',
       },
       {

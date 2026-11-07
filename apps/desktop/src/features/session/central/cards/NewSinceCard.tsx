@@ -48,7 +48,7 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
         })
       }
     >
-      Mark all seen
+      Mark as read
     </Button>
   );
   if (!isOpen) {

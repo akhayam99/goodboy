@@ -1,28 +1,9 @@
 // @vitest-environment happy-dom
 
-const { bridge } = vi.hoisted(() => ({
-  bridge: {
-    answer: (_command: string, _args?: { sql?: string }): Promise<unknown> =>
-      new Promise<never>(() => undefined),
-  },
-}));
-
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn((command: string, args?: { sql?: string }) => bridge.answer(command, args)),
-}));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { IsoDateTime, SessionDecision } from '@goodboy/types';
-import {
-  STORE_IMPORT_TIMEOUT_MS,
-  importStore,
-  resetStoryStore,
-  type StoryStore,
-} from '../../store/storyHarness';
-import { nowIso } from '../../store/slices/project-mounts/nowIso';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { SessionDecision } from '@goodboy/types';
+import { importStore, resetStoryStore, type StoryStore } from '../../store/storyHarness';
 import { DrawerHost } from '../../app/components/DrawerHost';
 import { SessionTools } from '../../features/session/components/SessionTools';
 import {
@@ -30,256 +11,96 @@ import {
   seedActivityRunScene,
 } from '../../app/components/MockScene/scenes/activityRunSeed';
 
-let useAppStore: StoryStore;
+const h = vi.hoisted(() => {
+  const ledger: ReadonlyArray<SessionDecision> = [];
+  return { ledger, persistRead: vi.fn(async () => undefined) };
+});
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../store/storyHarness')).dbModuleMock({
+    setSessionContextSeenAt: h.persistRead,
+    listSessionDecisions: async () => h.ledger,
+  }),
+);
 
+let store: StoryStore;
 beforeAll(async () => {
-  useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
-
+  store = await importStore();
+});
 beforeEach(async () => {
-  bridge.answer = () => new Promise<never>(() => undefined);
   await resetStoryStore();
   seedActivityRunScene();
+  h.ledger = store.getState().sessionDecisions[SESSION_ID] ?? [];
+  h.persistRead.mockReset();
+  h.persistRead.mockResolvedValue(undefined);
 });
+afterEach(cleanup);
 
-afterEach(() => {
-  cleanup();
-});
-
-const renderSurface = () =>
+const mount = () =>
   render(
     <>
       <SessionTools sessionId={SESSION_ID} />
       <DrawerHost />
     </>,
   );
+const toggle = () => fireEvent.click(screen.getByTestId('pane-toggle-context'));
 
-const settle = async (): Promise<void> => {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
-};
-
-const dot = () => screen.queryByTestId('tool-signal');
-
-const openContext = async (): Promise<void> => {
-  fireEvent.click(await screen.findByTestId('pane-toggle-context'));
-};
-
-const seenAt = (): string | null | undefined =>
-  useAppStore.getState().sessionContextSeenAt[SESSION_ID];
-
-const ledger = (): ReadonlyArray<SessionDecision> =>
-  useAppStore.getState().sessionDecisions[SESSION_ID] ?? [];
-
-describe('Context drawer change marks', () => {
-  it('shows the dot only after a real change since the last look', async () => {
-    const lookedAt = new Date(Date.now() - 60_000).toISOString() as IsoDateTime;
-    useAppStore.setState((state) => ({
-      sessionContextSeenAt: { ...state.sessionContextSeenAt, [SESSION_ID]: lookedAt },
-    }));
-    renderSurface();
-    await settle();
-
-    expect(dot()).toBeNull();
-
-    const template = ledger()[0]!;
-    const arrived = new Date().toISOString() as IsoDateTime;
-    act(() => {
-      useAppStore.setState((state) => ({
-        sessionDecisions: {
-          ...state.sessionDecisions,
-          [SESSION_ID]: [
-            ...ledger(),
-            {
-              ...template,
-              id: 'arrived',
-              number: 9,
-              text: 'Retry deliveries with a jittered backoff',
-              previousText: null,
-              rewordedAt: null,
-              createdAt: arrived,
-              updatedAt: arrived,
-            },
-          ],
-        },
-      }));
-    });
-
-    expect(dot()).not.toBeNull();
-  });
-
-  it('marks it seen on open and lists what was added, removed and reworded', async () => {
-    const before = seenAt();
-    renderSurface();
-    await settle();
-    expect(dot()).not.toBeNull();
-
-    await openContext();
-    await settle();
-
-    expect(seenAt()).not.toBe(before);
-    expect(dot()).toBeNull();
-    const drawer = screen.getByRole('region', { name: 'Context' });
-    expect(within(drawer).queryByRole('tab', { name: /Decisions/ })).toBeNull();
-    expect(within(drawer).getByRole('region', { name: 'Decision records' })).toBeDefined();
-    const changed = within(drawer).getByRole('region', { name: 'Changed since you last looked' });
-    const labels = within(changed)
-      .getAllByRole('button', { name: /: decision \d+$/ })
-      .map((button) => button.getAttribute('aria-label'));
-    expect(labels).toEqual([
-      'Added: decision 7',
-      'Replaced by 7: decision 5',
-      'Withdrawn: decision 8',
-      'Reworded: decision 1',
-    ]);
-  });
-
-  it('starts clean on the next open once the drawer was closed', async () => {
-    renderSurface();
-    await settle();
-
-    await openContext();
-    await settle();
-    await openContext();
-    await settle();
-
+describe('Context from the session tools', () => {
+  it('opens on Goal and keeps marks until an explicit read, including close and reopen', async () => {
+    mount();
+    const before = store.getState().sessionContextSeenAt[SESSION_ID];
+    toggle();
+    const drawer = await screen.findByRole('region', { name: 'Context' });
+    expect(store.getState().drawer).toMatchObject({ payload: { section: 'goal' } });
+    within(drawer).getByText('Added');
+    within(drawer).getByText('Withdrawn');
+    expect(store.getState().sessionContextSeenAt[SESSION_ID]).toBe(before);
+    expect(screen.queryByRole('region', { name: 'Changed since you last looked' })).toBeNull();
+    toggle();
     expect(screen.queryByRole('region', { name: 'Context' })).toBeNull();
-    expect(dot()).toBeNull();
-
-    await openContext();
-    await settle();
-
-    const drawer = screen.getByRole('region', { name: 'Context' });
-    expect(
-      within(drawer).queryByRole('region', { name: 'Changed since you last looked' }),
-    ).toBeNull();
-  });
-});
-
-const changesRegion = () => screen.queryByRole('region', { name: 'Changed since you last looked' });
-
-const persistSeenAt = () => {
-  const writes: unknown[] = [];
-  bridge.answer = (command, args) => {
-    if (command === 'db_execute' && args?.sql?.includes('context_seen_at') === true) {
-      writes.push(args);
-      return Promise.resolve({ rowsAffected: 1, rows: [] });
-    }
-    return new Promise<never>(() => undefined);
-  };
-  return writes;
-};
-
-describe('Context drawer mark as read', () => {
-  it('clears the changes section without closing the drawer, the signal said once', async () => {
-    const writes = persistSeenAt();
-    renderSurface();
-    await settle();
-    await openContext();
-    await settle();
-    const drawer = screen.getByRole('region', { name: 'Context' });
-    expect(changesRegion()).not.toBeNull();
-    expect(within(drawer).queryByRole('img', { name: 'Changed since you last looked' })).toBeNull();
-
-    fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
-
-    await waitFor(() => expect(changesRegion()).toBeNull());
-    expect(screen.getByRole('region', { name: 'Context' })).toBeDefined();
-    expect(
-      within(screen.getByRole('region', { name: 'Context' })).queryByRole('img', {
-        name: 'Changed since you last looked',
-      }),
-    ).toBeNull();
-    expect(writes).toHaveLength(2);
+    toggle();
+    await screen.findByText('Added');
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
+    expect(h.persistRead).toHaveBeenCalledOnce();
+    toggle();
+    toggle();
+    screen.getByRole('region', { name: 'Context' });
+    expect(screen.queryByText('Added')).toBeNull();
   });
 
-  it('brings the section back when a newer change arrives', async () => {
-    persistSeenAt();
-    renderSurface();
-    await settle();
-    await openContext();
-    await settle();
-    fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
-    await waitFor(() => expect(changesRegion()).toBeNull());
-
-    const template = ledger()[0]!;
-    await new Promise((resolve) => setTimeout(resolve, 5));
-    const arrived = nowIso({});
-    act(() => {
-      useAppStore.setState((state) => ({
-        sessionDecisions: {
-          ...state.sessionDecisions,
-          [SESSION_ID]: [
-            ...ledger(),
-            {
-              ...template,
-              id: 'decision-new-after-read',
-              number: 99,
-              author: 'agent',
-              status: 'active',
-              createdAt: arrived,
-              updatedAt: arrived,
-            },
-          ],
-        },
-      }));
-    });
-
-    await waitFor(() => expect(changesRegion()).not.toBeNull());
-    within(changesRegion()!).getByRole('button', { name: 'Added: decision 99' });
+  it('keeps a failed read visible and retries it in place', async () => {
+    h.persistRead.mockRejectedValueOnce(new Error('disk full'));
+    mount();
+    toggle();
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as read' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Mark as read' }).hasAttribute('disabled')).toBe(
+        false,
+      ),
+    );
+    screen.getByText('Added');
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    await waitFor(() => expect(screen.queryByText('Added')).toBeNull());
   });
 
-  it('keeps the section and says why when the marker cannot be saved', async () => {
-    bridge.answer = (command) =>
-      command === 'db_execute'
-        ? Promise.reject(new Error('disk full'))
-        : new Promise<never>(() => undefined);
-    renderSurface();
-    await settle();
-    await openContext();
-    await settle();
-
-    fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    expect(changesRegion()).not.toBeNull();
-    expect(
-      within(changesRegion()!)
-        .getByRole('button', { name: 'Mark as read' })
-        .hasAttribute('disabled'),
-    ).toBe(false);
-  });
-});
-
-describe('Context drawer summary', () => {
-  it('reads the summary by section, counted from two, key line first and the rest collapsed', async () => {
-    act(() => {
-      useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, tab: 'summary' });
-    });
-    renderSurface();
-    await settle();
-
-    const drawer = screen.getByRole('region', { name: 'Context' });
+  it('draws State beyond the Overview sentence and keeps the complete context for copying', async () => {
+    mount();
+    toggle();
+    const drawer = await screen.findByRole('region', { name: 'Context' });
     const summary = within(drawer).getByRole('region', { name: 'Summary' });
-    const sections = within(summary)
-      .getAllByRole('heading', { level: 3 })
-      .map((heading) => heading.textContent);
-    expect(sections).toEqual(['State4', 'Next3', 'Open questions', 'Learned2']);
-
-    const state = within(drawer).getByRole('region', { name: 'State' });
+    within(summary).getByRole('region', { name: 'State' });
+    within(summary).getByRole('region', { name: 'Next' });
+    within(summary).getByRole('region', { name: 'Learned' });
+    screen.getByRole('button', { name: 'Copy context' });
     expect(
-      within(state).getByText('Dedupe check and idempotency column are live in payments-api'),
-    ).toBeDefined();
-    expect(within(state).queryByText('42 tests pass on the webhook handler')).toBeNull();
-
-    fireEvent.click(within(state).getByRole('button', { name: 'Show 3 more' }));
-    expect(within(state).getByText('42 tests pass on the webhook handler')).toBeDefined();
-    expect(within(state).getByRole('button', { name: 'Show less' })).toBeDefined();
-
-    const questions = within(drawer).getByRole('region', { name: 'Open questions' });
-    expect(
-      within(questions).getByText('Which failures should count toward a stuck delivery?'),
-    ).toBeDefined();
+      store.getState().sessionSlots[SESSION_ID]?.find((slot) => slot.key === 'last_output_summary')
+        ?.value,
+    ).toContain('State');
   });
 });

@@ -15,6 +15,11 @@ import { TruncatedText } from '../TruncatedText';
 import { ListGridColumnsContext } from './ListGridColumnsContext';
 import type { ListGridColumn } from './listGridTemplate';
 
+export type ListGridOverlay = {
+  readonly column: string;
+  readonly node: ReactNode;
+};
+
 export type ListGridRowProps = {
   readonly cells: ReadonlyArray<ReactNode>;
   readonly onSelect?: () => void;
@@ -26,6 +31,7 @@ export type ListGridRowProps = {
   readonly isCursor?: boolean;
   readonly optionId?: string;
   readonly rowKey?: string;
+  readonly overlays?: ReadonlyArray<ListGridOverlay>;
   readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   readonly onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
 };
@@ -122,6 +128,7 @@ export const ListGridRow = ({
   isCursor = false,
   optionId,
   rowKey,
+  overlays,
   onContextMenu,
   onKeyDown,
 }: ListGridRowProps) => {
@@ -171,8 +178,29 @@ export const ListGridRow = ({
       </li>
     );
   }
+  const overlayNodes = (overlays ?? []).flatMap(({ column, node }) => {
+    const index = visible.findIndex((shownCell) => shownCell.column?.key === column);
+    const shownColumn = visible[index]?.column;
+    return node === undefined || node === null || index === -1
+      ? []
+      : [
+          <span
+            key={column}
+            data-list-grid-aside=""
+            style={{ gridColumn: index + 2, gridRow: 1 }}
+            onContextMenu={onContextMenu}
+            className={cn(
+              cellClass({ column: shownColumn, cell: node, isFirst: false }),
+              'pointer-events-none z-10 [&>*]:pointer-events-auto',
+            )}
+          >
+            {node}
+          </span>,
+        ];
+  });
+  const hasOverlay = overlayNodes.length > 0;
   return (
-    <li role={itemRole} className="col-span-full grid grid-cols-subgrid">
+    <li role={itemRole} className="group/grid-row col-span-full grid grid-cols-subgrid">
       <OptionalTooltip content={tooltip}>
         <button
           type="button"
@@ -187,6 +215,7 @@ export const ListGridRow = ({
           aria-current={!isOption && isSelected ? 'true' : undefined}
           aria-label={ariaLabel}
           onClick={onSelect}
+          style={hasOverlay ? { gridRow: 1, gridColumn: '1 / -1' } : undefined}
           onContextMenu={onContextMenu}
           onKeyDown={onKeyDown}
           className={cn(
@@ -195,11 +224,13 @@ export const ListGridRow = ({
             ROW_INTERACTIVE,
             SELECTED_ROW_CLASSES,
             isCursor && !isSelected && 'bg-hover',
+            hasOverlay && 'group-has-[[data-list-grid-aside]:hover]/grid-row:bg-hover',
           )}
         >
           {body}
         </button>
       </OptionalTooltip>
+      {overlayNodes}
     </li>
   );
 };

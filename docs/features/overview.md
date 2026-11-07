@@ -13,7 +13,7 @@ It reads top to bottom:
 - The goal, then one status block: a line that says what is happening and, under it, one sentence of where the work stands. A chat the session came from sits under them.
 - No setup line: a new worktree's setup (**Run** and **Not now**) is offered on the Branch page.
 - **Needs you** comes first. It holds what a branch needs you to decide. Examples: a branch that moved, a branch off its pull request's commits, a project not yet published. Each of these counts as an item in the header and in the line under the title. The notices sit in one place above the cards and keep their state when the count changes. A closed worktree shows a notice with **Reopen** too. It does not count, because you closed it on purpose. A stopped rebase is the only notice a worktree draws while it lasts.
-- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark all seen** are quiet buttons, so **Answer** stays the one filled button.
+- Each card names itself in bold with its count in gray, and the cards sit 32px apart. **Full log** and **Mark as read** are quiet buttons, so **Answer** stays the one filled button.
 - The line under the goal says what is happening. It counts what waits for you (amber), what works (blue) and what is stuck (red). With only **Next** rows left it reads **Next:** and the step. It says **Nothing needs you** (green) only when nothing is left to press.
 - The line reads the same counts as the card headers and, for Auto, the same words as the Auto chat.
 - One card per question you ask: **Needs you** (what do I do), **Running** (what is moving), **Branches** (what can I do next) and **Done** (what finished), in that order. **Next** is one heading over the steps in **Branches**. A folder card sits under **Branches**.
@@ -21,7 +21,7 @@ It reads top to bottom:
 
 An empty card is not drawn. An archived session keeps only **Done**.
 
-**New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar. Click a branch to open its pull request, comments, files, commits and checks.
+**New** in the header starts an agent, a workflow or a write-up. The projects, branches and linked work of the session sit in the sidebar. Click a branch to open its pull request, comments, changes, commits and checks.
 
 **Reading the task without a diff.** A product manager understands where a task stands from the page alone, never from a raw diff or a file list. Six things hold, in this order:
 
@@ -51,7 +51,7 @@ Follow what happened in a session in one list. **Full log** on the **Done** card
 - Plain facts get a row too, such as context changes, branch events and links.
 - Rows go newest first, with a search box.
 - Every row carries the glyph its concept has in the sidebar and the **New** menu. A workflow run has the Workflows glyph, an orchestrated run the orchestrator glyph, and an agent its role.
-- **Mark all seen** clears the unread marks.
+- **Mark as read** clears the unread marks.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
@@ -75,7 +75,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **Running**
 
-- It groups the agents and runs in two parts. **Running** works or decides, **Stopped** failed or was stopped by you, and keeps its **Continue**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
+- It groups the agents and runs in two parts. **Running** works or decides, **Stopped** holds what you stopped and keeps its **Continue**. When everything in it failed, the part reads **Failed**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
 - The Auto agent row says **Auto agent** once and shows what it waits for under its title, so a long sentence is never cut in the state column. A right click on it opens the same menu as the agent.
 - Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to, only when the session has two or more branches. It is blank when the run writes nowhere. It shows the project only across two projects.
@@ -107,7 +107,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 - It sits right after **Needs you** while something is unread, as one row with the count and the latest item. **Show** opens it in place and lists the three newest unread items. You do not need the full log to see what is new. Each row reads like a row of **Done**.
 - A click opens the item and marks it seen. Showing it does not.
-- **Mark all seen** clears them all.
+- **Mark as read** clears them all.
 - The blue dot on a session in the sidebar says what is new when you hover it, as in "1 new: Step 1 result of the Harborline ledger". It counts the same items as this card.
 
 **Branches**
@@ -267,7 +267,7 @@ This part is for contributors and agents who change the feature.
 - Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**. `OverviewCard`, `NewSinceCard`, `LiveSection` and the Branches list draw their label with `SectionLabel`, level 2, and `CentralColumn` spaces the cards with `PANE_RHYTHM.groups`.
 - Loading skeleton: `SessionOverviewSkeleton` draws its cards from the same `overviewCardsOf` and the same surface (`OVERVIEW_CARD_SURFACE`) with the real card labels, so the first card sits where the real one lands. `SessionWorkspace` shows it through `SkeletonSwap`: nothing for the first 120 ms, then at least 160 ms. The Needs you slot animates its height with `HeightMotion` when its count changes.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
-- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause. `liveOwnStateOf` marks a row in the part's own state, and `LiveStateWord` then draws nothing. Child rows of a working row follow it. `useWhereOf` returns no branch under two branches. `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
+- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Running** and **Stopped** (titled **Failed** when every row failed). `liveStatusOf` splits a status word from its cause. `liveOwnStateOf` marks a row in the part's own state, and `LiveStateWord` then draws nothing. Child rows of a working row follow it. `useWhereOf` returns no branch under two branches. `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
 - Status block: `overviewGlanceOf` words the line, `nextLeadTitleOf` names the step it reads for **Next:**, and `OverviewStatusBlock` draws it with the summary line.
 - Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the last card before **Done**.

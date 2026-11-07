@@ -2,6 +2,7 @@ import { Textarea } from '@goodboy/ui';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
+  readonly isDisabled?: boolean;
   readonly value: string;
   readonly label: string;
   readonly minRows?: number;
@@ -10,9 +11,18 @@ type Props = {
   readonly onCancel: () => void;
 };
 
-export const BlockEditor = ({ value, label, minRows = 3, onChange, onCommit, onCancel }: Props) => (
+export const BlockEditor = ({
+  value,
+  label,
+  minRows = 3,
+  isDisabled = false,
+  onChange,
+  onCommit,
+  onCancel,
+}: Props) => (
   <Textarea
     autoFocus
+    disabled={isDisabled}
     aria-label={label}
     value={value}
     onChange={(event) => onChange(event.target.value)}

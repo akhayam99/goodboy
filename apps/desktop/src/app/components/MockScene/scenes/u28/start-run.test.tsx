@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { fireEvent, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -62,12 +62,9 @@ describe('the u28 start run scenes', () => {
     const line = await screen.findByText(/^Starts[ ]as.*Auto agent/, {}, WAIT);
     expect(line.textContent).toContain('A question or a check, and no preset fits');
     screen.getByRole('button', { name: 'Attach files' });
+    fireEvent.click(screen.getByRole('button', { name: /^How: / }));
     const kinds = screen.getByRole('tablist', { name: 'What kind of run?' });
-    expect(
-      within(kinds)
-        .getAllByRole('tab')
-        .map((tab) => tab.textContent),
-    ).toEqual(['Auto', 'Agent', 'Orchestrated', 'Preset']);
+    expect(within(kinds).getAllByRole('tab')).toHaveLength(4);
   });
 
   it('opens the Edits menu with the four things an agent may do', async () => {

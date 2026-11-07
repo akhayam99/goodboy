@@ -5,7 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSlotHistory } from '../../../../store';
 
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
-import type { ContextSlotKey } from './contextTabs';
+import type { SlotKey as ContextSlotKey } from '@goodboy/core/context';
 
 type Props = {
   readonly sessionId: SessionId;

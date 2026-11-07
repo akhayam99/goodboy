@@ -65,9 +65,7 @@ describe('the u30 model lines scene', () => {
     expect(cards.length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-auto-child-card] [data-model-line]')).toHaveLength(0);
     const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
-    const rowLines = Array.from(
-      tree.querySelectorAll('[data-spawned-state-row] [data-model-line]'),
-    );
+    const rowLines = Array.from(tree.querySelectorAll('[data-model-line]'));
     expect(rowLines.length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toMatch(/sonnet-5\.5|opus-5\.5/);
   });

@@ -1,40 +1,27 @@
-import { useMemo, useState } from 'react';
-import { gitlabSessionOf } from '../../../../../../store/slices/mount-request/requestOf';
-import { Check, Unlink } from 'lucide-react';
+import { useState } from 'react';
 import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { cn, CountToggle, formatError, PaneShell, SkeletonRow, useSkeletonGate } from '@goodboy/ui';
-import { EmptyState } from '@goodboy/ui';
+import { PaneShell, cn, formatError } from '@goodboy/ui';
+import { Unlink } from 'lucide-react';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import { selectSessionById } from '../../../../../../store/slices/sessions/selectSessionById';
-import { selectActiveProjectPrs } from '../../../../../../store/slices/github/activeProjectPrs';
-import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
-import { branchRequests } from '../../../../branchRequests';
-import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
-import { integrationTaskKey } from './integrationTaskKey';
 import { PROVIDER_META } from './providerMeta';
 import { isTaskOnScreen } from './isTaskOnScreen';
 import { TaskPlacementMenu } from './TaskPlacementMenu';
 import { RecordFrameContext } from '../../../../../../shared/components/StudioDetail/RecordFrameContext';
 import type { RecordFrame } from '../../../../../../shared/components/StudioDetail/RecordActions/types';
+import { GoneObject } from '../../../../../../shared/components/GoneObject';
+import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../../../shared/utils/names';
-import { WorkItemList } from './WorkItemList';
 import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
-import { PROVIDER_LENS } from '../../../../../integrations/providerLens';
 import { sessionPlace } from '../../../../../../store/slices/navigation/place';
-import { LinkIssueAction } from '../../../SessionOverviewPane/LinkIssueAction';
-
-const INTEGRATION_CHECK_ROWS = [0, 1];
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,33 +33,21 @@ type UnlinkParams = {
   readonly task: SessionExternalTask;
 };
 
-type OpenTaskParams = {
-  readonly taskKey: string;
-};
-
 export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
   const openedTask = useAppStore((state) => state.focusedExternalTask[sessionId] ?? null);
-  const openExternalTaskLens = useAppStore((state) => state.openExternalTaskLens);
   const navigate = useAppStore((state) => state.navigate);
   const unlinkSessionExternalTask = useAppStore((state) => state.unlinkSessionExternalTask);
   const integrations = useAppStore(
     (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
   );
   const githubConnection = useGithubConnection({ workspaceId });
-  const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
   const projectScope = useSessionProjectScope({ sessionId });
-  const branchPrs = useAppStore((state) => selectActiveProjectPrs({ state, sessionId }));
-  const mergeRequest = useAppStore((state) => gitlabSessionOf({ state, sessionId })?.mr ?? null);
-  const tasks = useMemo(
-    () => externalTasks.filter((task) => task.provider === provider),
-    [externalTasks, provider],
-  );
+  const tasks = externalTasks.filter((task) => task.provider === provider);
   const meta = PROVIDER_META[provider];
   const connection = resolveIntegrationConnection({
     provider,
@@ -81,19 +56,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     isGithubAuthenticated:
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
   });
-  const hasTasks = tasks.length > 0;
-  const hasLoadedIntegrations = useAppStore(
-    (state) => state.workspaceIntegrations[workspaceId] !== undefined,
-  );
-  const checkPhase = useSkeletonGate({
-    gateKey: `${workspaceId}:${provider}`,
-    isLoaded: hasLoadedIntegrations,
-  });
-  const isCheckShown = checkPhase === 'skeleton' || checkPhase === 'fading';
-  const isCheckSettled = checkPhase === 'ready';
-  const session = useAppStore((state) => selectSessionById(state, sessionId));
-  const linkAction =
-    session === null ? undefined : <LinkIssueAction session={session} initialSource={provider} />;
   const focusedTask =
     openedTask === null || openedTask.provider !== provider
       ? null
@@ -102,19 +64,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
             task.externalId === openedTask.externalId &&
             (task.projectId ?? null) === openedTask.projectId,
         ) ?? null);
-  const openTask = ({ taskKey }: OpenTaskParams) => {
-    const task = tasks.find((candidate) => integrationTaskKey({ task: candidate }) === taskKey);
-    if (task === undefined) {
-      return;
-    }
-    openExternalTaskLens(sessionId, task);
-  };
-  const workItems = buildWorkItems({
-    tasks,
-    currentBranch: sessionBranch,
-    branchPrs: branchRequests({ prs: branchPrs, mr: mergeRequest, branch: sessionBranch }),
-  });
-
   const handleUnlink = async ({ task }: UnlinkParams) => {
     setUnlinkError(null);
     setIsUnlinking(true);
@@ -124,7 +73,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       if (!isTaskOnScreen({ state, workspaceId, sessionId, provider, task })) {
         return;
       }
-      navigate({ to: sessionPlace({ sessionId, lens: PROVIDER_LENS[provider] }), mode: 'replace' });
+      navigate({ to: sessionPlace({ sessionId, lens: null }), mode: 'replace' });
     } catch (error) {
       setUnlinkError(formatError(error));
     } finally {
@@ -184,50 +133,12 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   }
 
   return (
-    <PaneShell
-      title={meta.label}
-      actions={connection.isConnected && hasTasks ? linkAction : undefined}
-    >
-      {isCheckShown
-        ? INTEGRATION_CHECK_ROWS.map((row) => (
-            <SkeletonRow key={row} label="Checking the connection" />
-          ))
-        : null}
-      {isCheckSettled && !connection.isConnected ? (
-        <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
-      ) : null}
-      {isCheckSettled && connection.isConnected && !hasTasks ? (
-        <EmptyState
-          size="section"
-          icon={CONCEPT_ICONS.integrations}
-          tone={CONCEPT_TONE.integrations}
-          title={`No ${meta.label} ${meta.nounPlural} linked`}
-          description={meta.linkHint}
-          action={linkAction}
-        />
-      ) : null}
-      <WorkItemList
-        items={workItems.current}
-        providerLabel={meta.label}
-        onSelect={(taskKey) => openTask({ taskKey })}
+    <PaneShell title={meta.label}>
+      <GoneObject
+        noun="record"
+        icon={CONCEPT_ICONS.integrations}
+        onBack={() => navigate({ to: sessionPlace({ sessionId, lens: null }), mode: 'replace' })}
       />
-      <div className="flex justify-center">
-        <CountToggle
-          label="completed"
-          count={workItems.history.length}
-          isShown={showHistory}
-          icon={Check}
-          onChange={setShowHistory}
-        />
-      </div>
-      {showHistory && workItems.history.length > 0 ? (
-        <WorkItemList
-          items={workItems.history}
-          providerLabel={meta.label}
-          onSelect={(taskKey) => openTask({ taskKey })}
-        />
-      ) : null}
-      {unlinkError != null ? <p className="text-meta text-danger">{unlinkError}</p> : null}
     </PaneShell>
   );
 };

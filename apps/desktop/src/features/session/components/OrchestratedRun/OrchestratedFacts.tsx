@@ -47,9 +47,24 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
     () => ({ kind: 'plan' as const, sessionId, runId: run.id }),
     [sessionId, run.id],
   );
+  const changeCount = run.rulesSnapshot?.planChanges?.length ?? 0;
+  const routeChip =
+    route === undefined ? null : (
+      <RunKindChip
+        workspaceId={session.workspaceId}
+        target={routeTarget}
+        route={route}
+        changeCount={changeCount}
+        phase={runKindPhaseOf({
+          agentCount: agents.length,
+          isFinished: view.isCompleted,
+          phase: view.orchestrator.state.phase,
+          status: null,
+        })}
+      />
+    );
   const preset = hasRouteLine ? undefined : run.rulesSnapshot?.preset;
   const closeness = run.rulesSnapshot?.route?.closeness ?? 'follow';
-  const changeCount = run.rulesSnapshot?.planChanges?.length ?? 0;
   const words = [
     preset === undefined
       ? null
@@ -74,30 +89,18 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
               id={run.id}
               glance={glance}
               spend={spendTextOf({ spentUsd })}
-              settings={chips}
+              settings={isOpen ? chips : null}
             />
           )}
           kind={
             <>
-              {route === undefined ? null : (
-                <RunKindChip
-                  workspaceId={session.workspaceId}
-                  target={routeTarget}
-                  route={route}
-                  changeCount={changeCount}
-                  phase={runKindPhaseOf({
-                    agentCount: agents.length,
-                    isFinished: view.isCompleted,
-                    phase: view.orchestrator.state.phase,
-                    status: null,
-                  })}
-                />
-              )}
+              {routeChip}
               <OrchestratorModelChip session={session} run={run} isOpen={isOpen} />
             </>
           }
         />
       )}
+      {view.isCompleted && routeChip !== null ? <div className="flex">{routeChip}</div> : null}
       {words.length === 0 && timeLeft === null ? null : (
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground">
           {words.length === 0 ? null : <span data-preset-facts="">{words.join(' · ')}</span>}

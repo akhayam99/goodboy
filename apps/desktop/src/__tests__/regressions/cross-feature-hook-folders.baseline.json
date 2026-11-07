@@ -31,7 +31,7 @@
   "review -> actions": 4,
   "scripts -> actions": 2,
   "search -> actions": 2,
-  "session -> actions": 20,
+  "session -> actions": 18,
   "session -> auto": 10,
   "session -> bootstrap": 1,
   "session -> file-versions": 6,
@@ -51,9 +51,9 @@
   "terminal -> monitoring": 2,
   "workflows -> actions": 1,
   "workflows -> plans": 1,
-  "workspace -> actions": 9,
+  "workspace -> actions": 7,
   "workspace -> onboarding": 2,
   "workspace -> resolve": 1,
   "workspace -> workflows": 2,
-  "workspace-chat -> actions": 3
+  "workspace-chat -> actions": 2
 }

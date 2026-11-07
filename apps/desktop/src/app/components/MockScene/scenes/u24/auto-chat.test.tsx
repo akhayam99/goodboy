@@ -149,7 +149,7 @@ describe('the Auto chat scenes', () => {
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
     const work = rail();
-    expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(3);
+    expect(work.querySelectorAll('[data-agent-id]')).toHaveLength(4);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
     expect(document.querySelector('[data-dock-live]')?.textContent).toContain('Implementer');
     expect(document.querySelector('[data-glance]')?.textContent).toContain('$0.27');

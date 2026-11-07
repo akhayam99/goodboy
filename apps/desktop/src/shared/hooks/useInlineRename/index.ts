@@ -49,6 +49,10 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
       setCanRetry(false);
       return;
     }
+    if (next === value) {
+      cancel();
+      return;
+    }
     if (maxLength !== undefined && next.length > maxLength) {
       setError('name is too long');
       setCanRetry(false);

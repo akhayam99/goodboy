@@ -3,8 +3,12 @@ import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core/workflo
 import type { DotState } from '@goodboy/ui';
 import { workflowRunOpenQuestions } from '../context/openQuestionsGate';
 import { isRunPaused } from './isRunPaused';
+import { isRunQueuedManual } from './isRunQueuedManual';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
+import { runStepCountOf, runStepCountWordOf } from './runStepCountOf';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
+
+export const READY_WORD = 'Ready';
 
 export type RunWait = 'stopped' | 'limit' | 'go';
 
@@ -15,14 +19,12 @@ export type RunRowFacts = {
   readonly isWordRead: boolean;
   readonly progress: string;
   readonly isActive: boolean;
+  readonly isStartable: boolean;
+  readonly isQueuedManual: boolean;
+  readonly isContinuable: boolean;
 };
 
-const DOT_ONLY_WORDS: ReadonlySet<string> = new Set([
-  'Running',
-  'Done',
-  'Archived',
-  'Waits to start',
-]);
+const DOT_ONLY_WORDS: ReadonlySet<string> = new Set(['Running', 'Done', 'Archived', READY_WORD]);
 
 type Params = {
   readonly run: WorkflowRun;
@@ -38,6 +40,7 @@ type StateFacts = {
   readonly dot: DotState;
   readonly word: string;
   readonly wait?: RunWait;
+  readonly isContinuable?: boolean;
 };
 
 type RunParams = {
@@ -60,20 +63,8 @@ const isRunDone = ({ run, workflow, agents }: RunParams): boolean => {
 };
 
 const progressOf = ({ run, workflow, agents }: RunParams): string => {
-  const steps = stepAgentsOf({ agents });
-  const started = steps.filter((agent) => agent.status !== 'pending').length;
-  if (started === 0) {
-    return '';
-  }
-  if (run.executionMode === 'dynamic') {
-    return `${started} ${started === 1 ? 'step' : 'steps'}`;
-  }
-  const total = workflow.steps.length;
-  const settled = steps.filter((agent) => isAgentStatusSettled({ status: agent.status })).length;
-  if (settled >= total) {
-    return `${total} ${total === 1 ? 'step' : 'steps'}`;
-  }
-  return `Step ${Math.min(settled + 1, total)} of ${total}`;
+  const hasStarted = stepAgentsOf({ agents }).some((agent) => agent.status !== 'pending');
+  return hasStarted ? runStepCountWordOf(runStepCountOf({ run, workflow, agents })) : '';
 };
 
 const stateOf = ({
@@ -107,7 +98,7 @@ const stateOf = ({
   if (stop?.kind === 'operator') {
     return isOrchestrating || isRunning
       ? { dot: 'running', word: 'Stopping' }
-      : { dot: 'idle', word: 'Stopped' };
+      : { dot: 'idle', word: 'Stopped', isContinuable: true };
   }
   if (stop?.kind === 'budget' && !isRunning) {
     return { dot: 'needsYou', word: 'Paused at the limit', wait: 'limit' };
@@ -130,7 +121,7 @@ const stateOf = ({
     return { dot: 'idle', word: `After ${predecessorName}` };
   }
   if (agents.every((agent) => agent.status === 'pending')) {
-    return { dot: 'idle', word: 'Waits to start' };
+    return { dot: 'idle', word: READY_WORD };
   }
   return { dot: 'needsYou', word: 'Waits for you', wait: 'go' };
 };
@@ -144,7 +135,11 @@ export const runRowFactsOf = ({
   questions,
   isPlanRevising,
 }: Params): RunRowFacts => {
-  const { wait = null, ...state } = stateOf({
+  const {
+    wait = null,
+    isContinuable = false,
+    ...state
+  } = stateOf({
     run,
     workflow,
     agents,
@@ -158,6 +153,9 @@ export const runRowFactsOf = ({
     wait,
     isWordRead: !DOT_ONLY_WORDS.has(state.word),
     progress: progressOf({ run, workflow, agents }),
+    isStartable: state.word === READY_WORD && run.executionMode !== 'dynamic',
+    isQueuedManual: state.word === READY_WORD && isRunQueuedManual({ run, agents }),
+    isContinuable,
     isActive:
       run.discardedAt == null &&
       !isWorkflowRunClosedByUser({ run }) &&

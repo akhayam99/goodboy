@@ -4,7 +4,9 @@ import { AgentDetailPane } from '../AgentDetailPane';
 import type { RunView } from '../AgentTree/useRunView';
 import { resolveRootAgent } from '../../agent-kind';
 import { leaveRunLevel } from '../../../workflows/leaveRunLevel';
-import { RunPageActions } from './RunPageActions';
+import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
+import { stepReasonOf } from '../../../workflows/stepReasonOf';
+import { RunStepActions } from './RunStepActions';
 import { RunStepHeading } from './RunStepHeading';
 import { RunTail } from './RunTail';
 import { stepStopLabelOf } from './stepStopLabelOf';
@@ -18,6 +20,7 @@ type Props = {
 export const RunStepPage = ({ session, view, agent }: Props) => {
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const stepAgent = resolveRootAgent({ agents: phaseRuns, agentId: agent.id });
+  const reason = stepReasonOf({ run: view.run, workflow: view.workflow, agent, stepAgent });
   return (
     <AgentDetailPane
       key={agent.id}
@@ -25,10 +28,17 @@ export const RunStepPage = ({ session, view, agent }: Props) => {
       agent={agent}
       isChatActive
       onBack={() => leaveRunLevel({ sessionId: session.id })}
+      context={
+        reason === '' ? null : (
+          <p data-step-reason="" className="text-ui text-muted-foreground">
+            {ORCHESTRATED_COPY.why({ reason })}
+          </p>
+        )
+      }
       runStep={{
         heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={view.workflow} />,
         actions: (
-          <RunPageActions session={session} view={view} stepAgentId={stepAgent?.id ?? null} />
+          <RunStepActions sessionId={session.id} runId={view.run.id} stepAgentId={agent.id} />
         ),
         tail: <RunTail session={session} view={view} selectedAgentId={agent.id} />,
         ...stepStopLabelOf({ agent, stepAgent, workflow: view.workflow }),

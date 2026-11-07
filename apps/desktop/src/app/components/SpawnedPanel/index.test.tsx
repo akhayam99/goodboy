@@ -135,12 +135,12 @@ describe('the Agents panel', () => {
     await settle();
     const start = useAppStore.getState().selectedAgentId[C08_SESSION_ID];
 
-    fireEvent.keyDown(document.activeElement ?? first, { key: 'k', code: 'KeyK' });
-    await settle();
-    const above = useAppStore.getState().selectedAgentId[C08_SESSION_ID];
-    expect(above).not.toBe(start);
-
     fireEvent.keyDown(document.activeElement ?? first, { key: 'j', code: 'KeyJ' });
+    await settle();
+    const below = useAppStore.getState().selectedAgentId[C08_SESSION_ID];
+    expect(below).not.toBe(start);
+
+    fireEvent.keyDown(document.activeElement ?? first, { key: 'k', code: 'KeyK' });
     await settle();
     expect(useAppStore.getState().selectedAgentId[C08_SESSION_ID]).toBe(start);
     expect(useAppStore.getState().drawer?.kind).toBe('spawned');

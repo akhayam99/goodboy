@@ -13,7 +13,6 @@ import { planAsArtifact } from '../../../../../features/plans/planAsArtifact';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
 import {
-  AGENT_ROUNDING_ID,
   CHAT_PLANS,
   DYNAMIC_RUN_ID,
   FLOW_AGENTS,
@@ -143,7 +142,7 @@ const seedHold = ({ session }: HoldParams): void => {
     sessions: SESSIONS.map((candidate) => (candidate.id === FLOW_SESSION_ID ? session : candidate)),
     sessionPhaseRuns: { [FLOW_SESSION_ID]: PLAN_HOLD_AGENTS },
     agentTurnState: {},
-    selectedAgentId: { [FLOW_SESSION_ID]: AGENT_ROUNDING_ID },
+    selectedAgentId: {},
     sessionPlans: { ...state.sessionPlans, [FLOW_SESSION_ID]: [PLAN_HOLD_PLAN] },
     sessionArtifacts: { ...state.sessionArtifacts, [FLOW_SESSION_ID]: [PLAN_HOLD_ARTIFACT] },
   });

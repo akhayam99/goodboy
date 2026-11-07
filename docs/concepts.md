@@ -257,7 +257,7 @@ without motion, counted in "N sessions need you" and sorted ahead of what runs. 
 session's **needs-approval** reason in the attention registry reads the same
 fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
 so the agent word and the session count never disagree. A stopped
-agent that is not closed stays in progress as **Stopped**.
+agent that is not closed reads **Stopped**, with a **Continue** on its row.
 
 One table of words, `NAMES` in `shared/utils/names.ts`, read by `glanceOf`
 and every row: **Needs you**, **Needs approval**, **Not finished**,

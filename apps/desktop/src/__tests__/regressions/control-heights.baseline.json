@@ -40,7 +40,6 @@
   "apps/desktop/src/shared/components/ProfileForm/ChipsInput.tsx": 1,
   "apps/desktop/src/shared/components/RoutingPicker/ModelVisibilityLink.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordSections/RecordSectionBlock.tsx": 1,
-  "packages/ui/src/components/CountToggle.tsx": 1,
   "packages/ui/src/components/Dialog.tsx": 1,
   "packages/ui/src/components/MenuTriggerButton.tsx": 1,
   "packages/ui/src/components/ReportSheet/AttachmentChip.tsx": 2,

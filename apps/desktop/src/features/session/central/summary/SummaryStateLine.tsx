@@ -18,7 +18,7 @@ export const SummaryStateLine = ({ sessionId }: Props) => {
     <InteractiveRow
       label={`State: ${name}`}
       isSelected={false}
-      onOpen={() => openContextDrawer({ sessionId, tab: 'summary' })}
+      onOpen={() => openContextDrawer({ sessionId, section: 'summary' })}
       dataAttributes={{
         'data-summary-state': '',
         'data-stale': state.isStale ? (state.why ?? 'old') : 'false',

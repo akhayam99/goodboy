@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import {
   EmptyLine,
@@ -13,13 +13,12 @@ import {
 import type { DecisionOp } from '@goodboy/core/context';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectContextBaseline } from '../../../../store/slices/contextDrawer/selectContextBaseline';
 
-import {
-  hasDecisionChanges,
-  type DecisionChangesSince,
-} from '../../../../store/slices/contextDrawer/decisionChangesSince';
+import { type DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
+import { decisionChangeLabelOf } from './decisionChangeLabelOf';
+import { decisionRowsOf } from './decisionRowsOf';
 import { AddDecisionRow } from './AddDecisionRow';
-import { DecisionChangesList, type ReadParams } from './DecisionChangesList';
 import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
 import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
@@ -39,10 +38,15 @@ const NO_NUMBERS: ReadonlySet<number> = new Set();
 
 type ClosedFilter = 'removed' | 'replaced';
 
-const isRemovedByYou = (row: SessionDecision): boolean =>
+type RowParams = { readonly row: SessionDecision };
+type SearchParams = RowParams & { readonly query: string };
+type WriteParams = { readonly op: DecisionOp };
+type NumberParams = { readonly number: number };
+
+const isRemovedByYou = ({ row }: RowParams): boolean =>
   row.status === 'withdrawn' && row.closedBy === 'user';
 
-const matchesClosedSearch = (row: SessionDecision, query: string): boolean => {
+const matchesClosedSearch = ({ row, query }: SearchParams): boolean => {
   const trimmed = query.trim().toLowerCase().replace(/^#/, '');
   if (trimmed === '') {
     return true;
@@ -57,7 +61,7 @@ type Props = {
   readonly isLocked: boolean;
   readonly isRawEditing: boolean;
   readonly sourceValue: string;
-  readonly onWriteSource: (next: string) => void;
+  readonly onWriteSource: (next: string) => Promise<boolean>;
   readonly onCloseRawEditor: () => void;
   readonly pendingRemovals: ReadonlySet<number>;
   readonly onMarkRemoved: (number: number) => void;
@@ -80,11 +84,10 @@ export const DecisionsSection = ({
   onClearRemovals,
 }: Props) => {
   const ledger = useAppStore((state) => state.sessionDecisions[sessionId]);
-  const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const baseline = useAppStore((state) => selectContextBaseline({ state, sessionId }));
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId]);
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const applySessionDecisionOps = useAppStore((state) => state.applySessionDecisionOps);
-  const markContextRead = useAppStore((state) => state.markContextRead);
   const reportError = useAppStore((state) => state.reportError);
   const [isClosedOpen, setIsClosedOpen] = useState(false);
   const [closedFilter, setClosedFilter] = useState<ClosedFilter>('removed');
@@ -109,12 +112,9 @@ export const DecisionsSection = ({
 
   const hasLedger = ledger !== undefined;
   const decisions = ledger ?? EMPTY_LEDGER;
-  const closed = useMemo(
-    () =>
-      decisions
-        .filter((row) => row.status !== 'active' && !pendingRemovals.has(row.number))
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [decisions, pendingRemovals],
+  const { activeRows, closed } = useMemo(
+    () => decisionRowsOf({ decisions, changes, pendingRemovals }),
+    [decisions, changes, pendingRemovals],
   );
 
   useEffect(() => {
@@ -126,8 +126,8 @@ export const DecisionsSection = ({
     if (closedWanted.length > 0) {
       setIsClosedOpen(true);
       setClosedQuery('');
-      const hasRemoved = closedWanted.some((row) => isRemovedByYou(row));
-      const hasReplaced = closedWanted.some((row) => !isRemovedByYou(row));
+      const hasRemoved = closedWanted.some((row) => isRemovedByYou({ row }));
+      const hasReplaced = closedWanted.some((row) => !isRemovedByYou({ row }));
       if (hasRemoved && !hasReplaced) {
         setClosedFilter('removed');
       }
@@ -150,23 +150,12 @@ export const DecisionsSection = ({
     () => new Map<AgentId, string>((agents ?? []).map((agent) => [agent.id, agent.name])),
     [agents],
   );
-  const activeRows = useMemo(
-    () =>
-      decisions
-        .filter((row) => row.status === 'active' || pendingRemovals.has(row.number))
-        .sort((a, b) => b.number - a.number),
-    [decisions, pendingRemovals],
-  );
-  const removedByYou = useMemo(() => closed.filter((row) => isRemovedByYou(row)), [closed]);
-  const replaced = useMemo(() => closed.filter((row) => !isRemovedByYou(row)), [closed]);
+  const removedByYou = useMemo(() => closed.filter((row) => isRemovedByYou({ row })), [closed]);
+  const replaced = useMemo(() => closed.filter((row) => !isRemovedByYou({ row })), [closed]);
   const closedRows = closedFilter === 'removed' ? removedByYou : replaced;
   const filteredClosedRows = useMemo(
-    () => closedRows.filter((row) => matchesClosedSearch(row, closedQuery)),
+    () => closedRows.filter((row) => matchesClosedSearch({ row, query: closedQuery })),
     [closedRows, closedQuery],
-  );
-  const addedNumbers = useMemo(
-    () => new Set(changes.added.map((row) => row.number)),
-    [changes.added],
   );
   const replacedBy = useMemo(() => {
     const map = new Map<number, number>();
@@ -177,19 +166,6 @@ export const DecisionsSection = ({
     }
     return map;
   }, [decisions]);
-
-  const markRead = useCallback(
-    async ({ readAt }: ReadParams): Promise<boolean> => {
-      try {
-        await markContextRead({ sessionId, readAt });
-        return true;
-      } catch (error: unknown) {
-        void reportError({ title: "Couldn't mark the changes as read", error, sessionId });
-        return false;
-      }
-    },
-    [markContextRead, reportError, sessionId],
-  );
 
   if (isRawEditing) {
     return (
@@ -212,10 +188,16 @@ export const DecisionsSection = ({
   const seenAtFirst = firstNumbers.current;
   const nowMs = Date.now();
   const actor = { author: 'user' as const, agentId: null, turnOrdinal: null };
-  const write = (op: DecisionOp) => {
-    void applySessionDecisionOps({ sessionId, ops: [op], actor });
+  const write = async ({ op }: WriteParams): Promise<boolean> => {
+    try {
+      await applySessionDecisionOps({ sessionId, ops: [op], actor });
+      return true;
+    } catch (error: unknown) {
+      void reportError({ title: "Couldn't save the decision", error, sessionId });
+      return false;
+    }
   };
-  const jumpTo = (number: number) => {
+  const jumpTo = ({ number }: NumberParams) => {
     const isClosed = closed.some((row) => row.number === number);
     if (isClosed) {
       if (!isClosedOpen) {
@@ -224,7 +206,7 @@ export const DecisionsSection = ({
       setClosedQuery('');
       const row = closed.find((candidate) => candidate.number === number);
       if (row !== undefined) {
-        setClosedFilter(isRemovedByYou(row) ? 'removed' : 'replaced');
+        setClosedFilter(isRemovedByYou({ row }) ? 'removed' : 'replaced');
       }
     }
     window.requestAnimationFrame(() => {
@@ -233,35 +215,44 @@ export const DecisionsSection = ({
     setHighlightMs(HIGHLIGHT_MS);
     setHighlighted(new Set([number]));
   };
-  const refFor = (number: number) => (element: HTMLDivElement | null) => {
-    if (element === null) {
-      rows.current.delete(number);
+  const refFor =
+    ({ number }: NumberParams) =>
+    (element: HTMLDivElement | null) => {
+      if (element === null) {
+        rows.current.delete(number);
+        return;
+      }
+      rows.current.set(number, element);
+    };
+  const removeDecision = async ({ number }: NumberParams) => {
+    const isSaved = await write({ op: { kind: 'withdraw', number, reason: null } });
+    if (!isSaved) {
       return;
     }
-    rows.current.set(number, element);
-  };
-  const removeDecision = (number: number) => {
-    write({ kind: 'withdraw', number, reason: null });
     onMarkRemoved(number);
-    if (openNumber === number) {
-      setOpenNumber(null);
+    setOpenNumber((current) => (current === number ? null : current));
+  };
+  const undoRemove = async ({ number }: NumberParams) => {
+    const isSaved = await write({ op: { kind: 'restore', number } });
+    if (isSaved) {
+      onUnmarkRemoved(number);
     }
   };
-  const undoRemove = (number: number) => {
-    write({ kind: 'restore', number });
-    onUnmarkRemoved(number);
-  };
-  const undoAllRemovals = () => {
+  const undoAllRemovals = async () => {
     const numbers = [...pendingRemovals];
     if (numbers.length === 0) {
       return;
     }
-    void applySessionDecisionOps({
-      sessionId,
-      ops: numbers.map((number) => ({ kind: 'restore' as const, number })),
-      actor,
-    });
-    onClearRemovals();
+    try {
+      await applySessionDecisionOps({
+        sessionId,
+        ops: numbers.map((number) => ({ kind: 'restore' as const, number })),
+        actor,
+      });
+      onClearRemovals();
+    } catch (error: unknown) {
+      void reportError({ title: "Couldn't restore the decisions", error, sessionId });
+    }
   };
 
   const closedFilterOptions: ReadonlyArray<SegmentedTabOption<ClosedFilter>> = [
@@ -271,9 +262,6 @@ export const DecisionsSection = ({
 
   return (
     <div className="flex flex-col gap-3">
-      {hasDecisionChanges(changes) ? (
-        <DecisionChangesList changes={changes} onJump={jumpTo} onRead={markRead} />
-      ) : null}
       {activeRows.length === 0 ? (
         <EmptyLine className="text-body text-muted-foreground">
           No decisions yet. Agents record one when they settle a choice; you can add your own.
@@ -286,7 +274,7 @@ export const DecisionsSection = ({
               <span aria-hidden>·</span>
               <button
                 type="button"
-                onClick={undoAllRemovals}
+                onClick={() => void undoAllRemovals()}
                 className={cn(
                   'inline-flex items-center gap-2 rounded-sm px-1 py-0.5 text-foreground hover:bg-hover',
                   FOCUS_RING,
@@ -315,13 +303,12 @@ export const DecisionsSection = ({
                     replaces: replacedBy.get(row.number) ?? null,
                     nowMs,
                   })}
-                  isNew={addedNumbers.has(row.number)}
+                  changeLabel={decisionChangeLabelOf({ row, changes })}
+                  isClosed={row.status !== 'active'}
                   reworded={
                     row.previousText !== null &&
                     row.rewordedAt !== null &&
-                    (baseline === null ||
-                      baseline === undefined ||
-                      isAfterBaseline({ iso: row.rewordedAt, baseline }))
+                    (baseline === null || isAfterBaseline({ iso: row.rewordedAt, baseline }))
                       ? {
                           age: decisionAge({ iso: row.rewordedAt, nowMs }),
                           previousText: row.previousText,
@@ -332,13 +319,15 @@ export const DecisionsSection = ({
                   isHighlighted={highlighted.has(row.number)}
                   isOpen={openNumber === row.number}
                   isRemoved={pendingRemovals.has(row.number)}
-                  rowRef={refFor(row.number)}
+                  rowRef={refFor({ number: row.number })}
                   onToggleOpen={() =>
                     setOpenNumber((current) => (current === row.number ? null : row.number))
                   }
-                  onReword={(text) => write({ kind: 'reword', number: row.number, text })}
-                  onRemove={() => removeDecision(row.number)}
-                  onUndoRemove={() => undoRemove(row.number)}
+                  onReword={(text) =>
+                    void write({ op: { kind: 'reword', number: row.number, text } })
+                  }
+                  onRemove={() => void removeDecision({ number: row.number })}
+                  onUndoRemove={() => void undoRemove({ number: row.number })}
                 />
               </EnteringRow>
             ))}
@@ -394,15 +383,15 @@ export const DecisionsSection = ({
                       key={row.id}
                       number={row.number}
                       isHighlighted={highlighted.has(row.number)}
-                      rowRef={refFor(row.number)}
+                      rowRef={refFor({ number: row.number })}
                       text={row.text}
                       reason={row.reason}
                       byline={closedDecisionByline({ decision: row, agentNames })}
                       isLocked={isLocked}
-                      onJump={jumpTo}
+                      onJump={(number) => jumpTo({ number })}
                       onRestore={
-                        isRemovedByYou(row)
-                          ? () => write({ kind: 'restore', number: row.number })
+                        isRemovedByYou({ row })
+                          ? () => void write({ op: { kind: 'restore', number: row.number } })
                           : null
                       }
                     />
@@ -413,7 +402,10 @@ export const DecisionsSection = ({
           ) : null}
         </div>
       )}
-      <AddDecisionRow isLocked={isLocked} onAdd={(text) => write({ kind: 'add', text })} />
+      <AddDecisionRow
+        isLocked={isLocked}
+        onAdd={(text) => void write({ op: { kind: 'add', text } })}
+      />
     </div>
   );
 };

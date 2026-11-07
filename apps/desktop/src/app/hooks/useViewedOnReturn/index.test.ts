@@ -27,6 +27,7 @@ const AGENT_ID = nextAgentId();
 
 let useAppStore: StoryStore;
 const markAgentSeen = vi.fn(async () => undefined);
+const loadSessionContextSeen = vi.fn(async () => undefined);
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -35,10 +36,12 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   markAgentSeen.mockClear();
+  loadSessionContextSeen.mockClear();
   useAppStore.setState({
     currentSessionId: SESSION_ID,
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     markAgentSeen,
+    loadSessionContextSeen,
   });
 });
 
@@ -69,6 +72,13 @@ describe('useViewedOnReturn', () => {
     vi.spyOn(document, 'hasFocus').mockReturnValue(false);
     document.dispatchEvent(new Event('visibilitychange'));
     expect(markAgentSeen).not.toHaveBeenCalled();
+  });
+
+  it('rereads when the context was last read, so another window mark shows here', () => {
+    useAppStore.setState({ selectedAgentId: {} });
+    renderHook(() => useViewedOnReturn());
+    window.dispatchEvent(new Event('focus'));
+    expect(loadSessionContextSeen).toHaveBeenCalledWith(SESSION_ID);
   });
 
   it('stamps nothing when no agent is open', () => {

@@ -64,14 +64,6 @@ const runPanel = (): HTMLElement => {
   return panel;
 };
 
-const runDock = (): HTMLElement => {
-  const foot = document.querySelector<HTMLElement>('[data-run-spend-foot]');
-  if (foot === null) {
-    throw new Error('no run foot');
-  }
-  return foot;
-};
-
 const header = (): HTMLElement => {
   const node = document.querySelector<HTMLElement>('[data-run-header-actions]');
   if (node === null) {
@@ -101,7 +93,8 @@ describe('the c08 preset run scenes', () => {
     expect(levelOf()).toBe('session');
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     const grid = screen.getByRole('list', { name: 'Runs' });
-    expect(within(grid).getByRole('heading', { name: 'In progress' })).toBeDefined();
+    expect(within(grid).getByRole('heading', { name: 'Running' })).toBeDefined();
+    within(grid).getByRole('heading', { name: 'Idle' });
     expect(within(grid).getByRole('heading', { name: 'Finished' })).toBeDefined();
     expect(within(grid).getByRole('heading', { name: 'Archived' })).toBeDefined();
     expect(
@@ -111,7 +104,7 @@ describe('the c08 preset run scenes', () => {
     ).toBeDefined();
     expect(
       within(grid).getByRole('button', {
-        name: 'Open Document the export batching, Workflow, Waits to start',
+        name: 'Open Document the export batching, Workflow, Ready',
       }),
     ).toBeDefined();
     expect(within(grid).queryByText('First try at the flaky export tests')).toBeNull();
@@ -125,8 +118,8 @@ describe('the c08 preset run scenes', () => {
     expect(panel.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
     expect(panel.getByText('Fix flaky tests in the ledger export')).toBeDefined();
     expect(panel.getByRole('tree', { name: 'Run agents' })).toBeDefined();
-    expect(panel.getByText('Add step')).toBeDefined();
-    expect(within(runDock()).getByText('Limit $3.00 · this run')).toBeDefined();
+    expect(panel.queryByText('Add step')).toBeNull();
+    expect(document.querySelector('[data-run-spend-foot]')).toBeNull();
     expect(document.querySelector('[data-run-step-heading]')?.textContent).toBe(
       'Step 2 · Implementer',
     );
@@ -171,29 +164,29 @@ describe('the c08 preset run scenes', () => {
     expect(document.querySelectorAll('[data-glance]')).toHaveLength(1);
   });
 
-  it('c08-run-ready says the step is done on the tail and carries Start step 3 in the header', async () => {
+  it('c08-run-ready says the step is done and keeps Start step 3 on one quiet line', async () => {
     await mount('c08-run-ready');
 
-    expect(within(tail()).getByText('Step 2 done · ready to continue')).toBeDefined();
-    expect(within(header()).getByRole('button', { name: 'Start step 3' })).toBeDefined();
+    expect(within(tail()).getByText('Step 2 done')).toBeDefined();
+    within(tail()).getByRole('button', { name: 'Start step 3' });
     expect(screen.getAllByRole('button', { name: 'Start step 3' })).toHaveLength(1);
+    expect(document.querySelector('[data-run-header-actions]')).toBeNull();
   });
 
-  it('c08-run-approval says the plan waits on the tail and asks for it in the header', async () => {
+  it('c08-run-approval says the plan waits and asks for it on the quiet line of the step', async () => {
     await mount('c08-run-approval');
 
     expect(within(tail()).getByText('The plan needs approval')).toBeDefined();
     expect(
-      within(header()).getByRole('button', { name: 'Approve and start Fix the batching' }),
+      within(tail()).getByRole('button', { name: 'Approve and start Fix the batching' }),
     ).toBeDefined();
   });
 
-  it('c08-run-capped says it paused at the limit, offers to raise it in the header and shows the foot', async () => {
+  it('c08-run-capped says it paused at the limit and offers to raise it on the quiet line', async () => {
     await mount('c08-run-capped');
 
     expect(within(tail()).getByText('Paused at the limit')).toBeDefined();
-    expect(within(header()).getByRole('button', { name: 'Raise limit' })).toBeDefined();
-    expect(within(runDock()).getByText('$3.00 spent')).toBeDefined();
+    within(tail()).getByRole('button', { name: 'Raise limit' });
   });
 
   it('c08-run-capped opens the session limit editor for a session cap on the run page', async () => {
@@ -211,12 +204,14 @@ describe('the c08 preset run scenes', () => {
     expect(within(dialog).getByLabelText('Limit in dollars')).toBeDefined();
   });
 
-  it('c08-run-done offers report and wireframe, and leaves Add step to the Agents panel', async () => {
+  it('c08-run-done hides Settings and the tail, keeps Add step and offers the outcome', async () => {
     await mount('c08-run-done');
 
-    expect(within(tail()).getByText('Done')).toBeDefined();
-    expect(within(tail()).queryByRole('button')).toBeNull();
-    expect(within(runPanel()).getByText('Add step')).toBeDefined();
+    expect(document.querySelector('[data-run-tail]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Run settings' })).toBeNull();
+    const overview = document.querySelector<HTMLElement>('[data-run-overview]');
+    within(overview ?? document.body).getByRole('button', { name: 'Add step' });
+    expect(within(runPanel()).queryByText('Add step')).toBeNull();
     expect(screen.getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });
@@ -225,7 +220,7 @@ describe('the c08 preset run scenes', () => {
     await mount('c08-run-archived');
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
-    expect(within(runPanel()).queryByText('Add step')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add step' })).toBeNull();
     expect(document.querySelector('[data-run-tail]')).toBeNull();
   });
 
@@ -234,7 +229,6 @@ describe('the c08 preset run scenes', () => {
 
     const menu = screen.getByRole('menu');
     expect(within(menu).queryByText('Asks you')).toBeNull();
-    expect(within(menu).getByText('Skip step 2')).toBeDefined();
     expect(within(menu).getByText('Stop run')).toBeDefined();
     const live = within(
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,

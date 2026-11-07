@@ -1,10 +1,19 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, PullRequestState, SessionExternalTask, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type ProjectId,
+  type PullRequestState,
+  type SessionExternalTask,
+  type SessionId,
+} from '@goodboy/types';
 import { buildWorkItems } from './workItems';
 
 const SESSION_ID = 'session-1' as SessionId;
 const DATE = '2026-07-22T10:00:00.000Z' as IsoDateTime;
+const LEDGER = brandId<ProjectId>({ value: 'project-ledger-core' });
+const NOTIFY = brandId<ProjectId>({ value: 'project-notify-relay' });
 
 type TaskParams = {
   readonly overrides?: Partial<SessionExternalTask>;
@@ -84,6 +93,56 @@ describe('buildWorkItems', () => {
 
     expect(current).toEqual([]);
     expect(history[0]?.isCompleted).toBe(true);
+  });
+
+  it('keeps an issue stamped on another branch of the session among the current work', () => {
+    const onOtherMount = makeTask({ overrides: { branch: 'ak/second-mount' } });
+
+    const { current, history } = buildWorkItems({
+      tasks: [onOtherMount],
+      currentBranch: 'ak/current',
+      branchPrs: [makePr({})],
+      mountBranches: [
+        { branch: 'ak/current', projectId: LEDGER, state: 'open' },
+        { branch: 'ak/second-mount', projectId: LEDGER, state: 'open' },
+      ],
+    });
+
+    expect(history).toEqual([]);
+    expect(current[0]?.isOnCurrentBranch).toBe(true);
+    expect(current[0]?.prs).toEqual([]);
+  });
+
+  it('moves an issue to the history once the pull request of its own mount merged', () => {
+    const onOtherMount = makeTask({ overrides: { branch: 'ak/second-mount' } });
+
+    const { current, history } = buildWorkItems({
+      tasks: [onOtherMount],
+      currentBranch: 'ak/current',
+      branchPrs: [makePr({})],
+      mountBranches: [
+        { branch: 'ak/current', projectId: LEDGER, state: 'open' },
+        { branch: 'ak/second-mount', projectId: LEDGER, state: 'merged' },
+      ],
+    });
+
+    expect(current).toEqual([]);
+    expect(history[0]?.isCompleted).toBe(true);
+  });
+
+  it('matches a stamped link to the branch of its own project, not its namesake', () => {
+    const onLedger = makeTask({ overrides: { branch: 'hl/retry', projectId: LEDGER } });
+
+    const { current, history } = buildWorkItems({
+      tasks: [onLedger],
+      currentBranch: 'ak/current',
+      branchPrs: [],
+      mountBranches: [{ branch: 'hl/retry', projectId: NOTIFY, state: 'merged' }],
+    });
+
+    expect(current).toEqual([]);
+    expect(history[0]?.isOnCurrentBranch).toBe(false);
+    expect(history[0]?.isCompleted).toBe(false);
   });
 
   it('keeps an unstamped link on the current branch instead of hiding it', () => {

@@ -57,7 +57,7 @@ describe('the u30 Agents fold scene', () => {
     expect(MOCK_SCENES[SCENE]).toBe(U30_AGENTS_FOLD_SCENES[SCENE]);
   });
 
-  it('never folds a root, and opens the one with a helper that needs you', async () => {
+  it('never folds a root, and opens the one with a subagent that needs you', async () => {
     mount();
 
     const tree = await launches();
@@ -76,29 +76,31 @@ describe('the u30 Agents fold scene', () => {
 
     const tree = await launches();
     expect(labelsOf({ tree })).toEqual([
-      'Scout, Read the ledger-core diff, Done',
-      'Scout, Ask which ledger-core table owns the key, Needs you',
-      'Reviewer, Review the ledger-core side, Done',
-      'Implementer, Fix the applyCredit race, 2 subagents, Failed, Done',
-      'Implementer, Build the idempotency key once, 2 subagents, Done',
-      'Planner, Plan the retry safe credit flow, Done',
-      '10 subagents, Needs you',
       'Auto agent, Make the payments-api retry safe end to end., Idle',
-      '3 subagents, Failed',
+      '10 subagents, Needs you',
+      'Planner, Plan the retry safe credit flow, Done',
+      'Implementer, Build the idempotency key once, 2 subagents, Done',
+      'Implementer, Fix the applyCredit race, 2 subagents, 1 of 2 subagents failed, Done',
+      'Reviewer, Review the ledger-core side, Done',
+      'Scout, Ask which ledger-core table owns the key, Needs you',
+      'Scout, Read the ledger-core diff, Done',
       'Auto agent, Why does the Harborline cache miss on every deploy?, Idle',
-      '2 subagents',
+      '3 subagents, 1 of 3 subagents failed',
       'Auto agent, Write the Northwind release notes for 2.4., Idle',
+      '2 subagents',
     ]);
   });
 
-  it('shows the count and the state of a folded helper, and opens it on a click', async () => {
+  it('shows the count and the state of a folded subagent, and opens it on a click', async () => {
     mount();
 
     const tree = await launches();
     const race = within(tree).getByRole('treeitem', { name: /Fix the applyCredit race/ });
     expect(race.getAttribute('aria-expanded')).toBe('false');
     expect(race.querySelector('[data-spawned-count]')?.textContent).toBe('2 subagents');
-    expect(race.querySelector('[data-spawned-urgency]')?.textContent).toBe('Failed');
+    expect(race.querySelector('[data-spawned-urgency]')?.textContent).toBe(
+      '1 of 2 subagents failed',
+    );
     fireEvent.click(within(race).getByTestId('spawned-fold-toggle'));
     expect(race.getAttribute('aria-expanded')).toBe('true');
     expect(race.querySelector('[data-spawned-count]')).toBeNull();
@@ -125,8 +127,12 @@ describe('the u30 Agents fold scene', () => {
     mount();
 
     const tree = await launches();
-    const summary = within(tree).getByRole('treeitem', { name: '3 subagents, Failed' });
-    expect(summary.querySelector('[data-spawned-urgency]')?.textContent).toBe('Failed');
+    const summary = within(tree).getByRole('treeitem', {
+      name: '3 subagents, 1 of 3 subagents failed',
+    });
+    expect(summary.querySelector('[data-spawned-urgency]')?.textContent).toBe(
+      '1 of 3 subagents failed',
+    );
     fireEvent.click(summary);
     expect(summary.getAttribute('aria-expanded')).toBe('true');
     within(tree).getByRole('treeitem', {

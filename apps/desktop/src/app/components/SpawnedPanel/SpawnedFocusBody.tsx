@@ -1,10 +1,7 @@
-import { Plus } from 'lucide-react';
-import { Button, EmptyLine, ICON_SIZE } from '@goodboy/ui';
+import { EmptyLine } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
 
-import { requestRunAddStep } from '../../../features/workflows/requestRunAddStep';
 import { useAttachedWorkflowRuns } from '../../../features/workflows/useAttachedWorkflowRuns';
-import { openSpawned } from '../../../features/session/openSpawned';
 import { RunIdentityRow } from './RunIdentityRow';
 import type { SpawnedFocus } from './spawnedFocus';
 import { SpawnedAutoFocus } from './SpawnedAutoFocus';
@@ -33,7 +30,6 @@ export const SpawnedFocusBody = ({ session, focus, selectedAgentId }: Props) => 
     return <EmptyLine className="px-2">This run is gone</EmptyLine>;
   }
   const { run, workflow } = found;
-  const isAddable = run.discardedAt == null && run.executionMode !== 'dynamic';
   return (
     <>
       <RunIdentityRow session={session} run={run} workflow={workflow} />
@@ -46,21 +42,6 @@ export const SpawnedFocusBody = ({ session, focus, selectedAgentId }: Props) => 
           selectedAgentId={selectedAgentId}
         />
       </SpawnedTree>
-      {isAddable ? (
-        <div data-run-add-step="" className="flex">
-          <Button
-            variant="quiet"
-            size="sm"
-            onClick={() => {
-              openSpawned({ sessionId: session.id, target: { kind: 'run', runId: run.id } });
-              requestRunAddStep({ runId: run.id });
-            }}
-          >
-            <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            Add step
-          </Button>
-        </div>
-      ) : null}
     </>
   );
 };

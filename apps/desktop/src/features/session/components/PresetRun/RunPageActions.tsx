@@ -21,6 +21,20 @@ const OFF_THE_MENU: ReadonlyArray<string> = [
   'workflowRun.nextStep',
   'workflowRun.restore',
   'workflowRun.autonomy',
+  'workflowRun.stepTranscript',
+];
+
+const PAST_FIVE_ROWS_LIVE: ReadonlyArray<string> = [
+  'workflowRun.diff',
+  'workflowRun.saveAsPreset',
+  'workflowRun.copySummary',
+  'workflowRun.delete',
+];
+
+const PAST_FIVE_ROWS_ENDED: ReadonlyArray<string> = [
+  'workflowRun.routing',
+  'workflowRun.close',
+  'workflowRun.copySummary',
 ];
 
 export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
@@ -40,7 +54,11 @@ export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
         target={target}
         viewing={viewing}
         name={name}
-        omit={header.kind === 'live' ? [...OFF_THE_MENU, ...RUN_LIVE_VERB_IDS] : OFF_THE_MENU}
+        omit={[
+          ...OFF_THE_MENU,
+          ...(view.isCompleted || view.isDiscarded ? PAST_FIVE_ROWS_ENDED : PAST_FIVE_ROWS_LIVE),
+          ...(header.kind === 'live' ? RUN_LIVE_VERB_IDS : ['workflowRun.routing']),
+        ]}
       />
     </div>
   );

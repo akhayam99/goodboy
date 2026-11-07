@@ -71,9 +71,6 @@
     }
   },
   "apps/desktop/src/__tests__/keyboard/lens-shortcuts.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 17
-    },
     "@typescript-eslint/naming-convention": {
       "count": 4
     }
@@ -270,11 +267,6 @@
       "count": 4
     }
   },
-  "apps/desktop/src/__tests__/surfaces/context-drawer.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/__tests__/surfaces/main-flows.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9
@@ -316,9 +308,6 @@
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/cross-place.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 16
-    },
     "@typescript-eslint/naming-convention": {
       "count": 1
     }
@@ -331,11 +320,6 @@
   "apps/desktop/src/__tests__/surfaces/navigation-flows/drawers.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/__tests__/surfaces/navigation-flows/exits-and-doors.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/files-rail.rows.tsx": {
@@ -366,11 +350,6 @@
   "apps/desktop/src/__tests__/surfaces/navigation-flows/keys-rows.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/__tests__/surfaces/navigation-flows/keys.rows.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 26
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/lens-entries.rows.tsx": {
@@ -453,11 +432,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/__tests__/surfaces/report-sheet.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -471,11 +445,6 @@
   "apps/desktop/src/__tests__/surfaces/session-marks.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/__tests__/surfaces/task-links.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 21
     }
   },
   "apps/desktop/src/__tests__/transcript-items.test.ts": {
@@ -546,11 +515,6 @@
   "apps/desktop/src/app/components/ArtifactReadingDrawer/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
-    }
-  },
-  "apps/desktop/src/app/components/DrawerHost.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
     }
   },
   "apps/desktop/src/app/components/KeepAliveWorkSurface/index.test.tsx": {
@@ -3268,16 +3232,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/integrations/ConnectIntegrationEmptyState.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/integrations/ConnectIntegrationEmptyState.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/features/integrations/bitbucket/BitbucketFormBody.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9
@@ -4167,7 +4121,7 @@
   },
   "apps/desktop/src/features/palette/sources/runEntries.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/palette/sources/scriptPinEntries.test.ts": {
@@ -5228,11 +5182,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunStartButton.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -5241,14 +5190,6 @@
   "apps/desktop/src/features/session/components/ContextDrawer/decisionByline.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
-    }
-  },
-  "apps/desktop/src/features/session/components/ContextDrawer/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 23
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/ContextDrawer/roleVisibility.ts": {
@@ -5407,9 +5348,6 @@
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 21
-    },
     "@typescript-eslint/naming-convention": {
       "count": 2
     }
@@ -5455,11 +5393,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/FocusedTaskBody.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -5478,16 +5411,6 @@
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/SlackTaskDetail.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.test.tsx": {
@@ -5577,11 +5500,6 @@
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/questionsLensModel.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 10
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/resolveDiffMount.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/session/components/TaskPlacement/taskLinkControls.sqlite.test.tsx": {
@@ -5686,11 +5604,6 @@
   },
   "apps/desktop/src/features/session/kindAutoContext.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/session/lens-destinations.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },
@@ -7259,11 +7172,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/workspace/windowView.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/workspace/windowView.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -7642,11 +7550,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/shared/hooks/useFollowToast/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/shared/hooks/useInlineRename/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -7745,9 +7648,6 @@
     }
   },
   "apps/desktop/src/shared/keyboard/dispatcher.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 5
     }
@@ -8385,17 +8285,7 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/contextDrawer/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
-    }
-  },
   "apps/desktop/src/store/slices/contextDrawer/loadSessionContextSeen.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/contextDrawer/markSessionContextSeen.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
@@ -8431,16 +8321,6 @@
   "apps/desktop/src/store/slices/diff-comments/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 12
-    }
-  },
-  "apps/desktop/src/store/slices/drawer/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 15
-    }
-  },
-  "apps/desktop/src/store/slices/drawer/selectDrawerSizing.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
     }
   },
   "apps/desktop/src/store/slices/durationEstimates/index.test.ts": {
@@ -8754,11 +8634,6 @@
   "apps/desktop/src/store/slices/mount-request/state.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/store/slices/navigation/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
     }
   },
   "apps/desktop/src/store/slices/navigation/place.test.ts": {
@@ -13544,11 +13419,6 @@
   "packages/ui/src/components/PaneShell/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
-    }
-  },
-  "packages/ui/src/components/RailCard.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "packages/ui/src/components/ReportSheet/AttachmentChip.tsx": {

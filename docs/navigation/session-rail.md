@@ -242,10 +242,10 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   title before it truncates (`BranchRowLine`). Rebase actions live on the
   Branch page; Rebase all stays on the Projects header. A branch is one row
   and has no rows under it: its five pages (Pull request, or Merge request on
-  GitLab, Comments, Files, Commits, Checks) are the tab strip under the title
+  GitLab, Comments, Changes, Commits, Checks) are the tab strip under the title
   of the Branch page, each tab with its count from `worktreeEntryFactsOf`. The
   row carries the one pill, and the failing count in it is the number the
-  Checks tab shows (`checksCountsOf`). Files opens the diff in the center,
+  Checks tab shows (`checksCountsOf`). Changes opens the diff in the center,
   whose changed file list sits in its own rail on the right of that page,
   never in the session rail. The branch switch (Switch branch…), Link work to this branch, Copy
   branch name, Copy path, Open in editor, Close branch and the rest are the
@@ -537,7 +537,7 @@ primary button. The goal, the notices, Needs you, Next and Activity are peer
 sections in the pane body, one `PANE_RHYTHM.stack` gap apart: the header passes
 `headerRhythm="section"`, so the gap under it is the same. Space separates
 sections, never a `<Divider />`, and a section never has a border. The Activity
-header holds the **Activity | Log** switch, **Mark all seen** while an agent has
+header holds the **Activity | Log** switch, **Mark as read** while an agent has
 an unread reply and the session cost on the right; the Log adds a search field
 under it, and there is no description line. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
@@ -693,8 +693,7 @@ Folding the rail leaves the column in place.
   Runs page (`openLens` workflows) and the panel stays open. Its body follows the page (`useSpawnedFocus`): on a preset run (from
   Runs, the Running card, the Done card or a link to a step, read through
   `presetRunFocusOf`) it shows the run's identity row (the state dot and the
-  title, which renames inline on click), the run's agents as a tree, **Add
-  step** and the foot "Limit $3.00 · $1.12 spent" (`RunSpendFoot`); on an Auto
+  title, which renames inline on click), and the run's agents as a tree; on an Auto
   agent or one of its children it shows Auto and its children as a tree, "No
   agents started yet" while Auto has none; Auto's limit sits on the Auto page's
   settings line (`AgentSettingsLine`), not in this panel. With no run or Auto
@@ -711,22 +710,18 @@ Folding the rail leaves the column in place.
   Overview's Now run header (`LiveRunBlock`) opens that exact run page,
   including an orchestrated run, and Back returns to the Overview. Its step
   rows and status sentence are status, not parallel links to the Runs list.
-  The tree is drawn on the Activity rail, in the Activity orientation: a **Now**
-  marker on top (`SpawnedNowRow`), the spine running down to the oldest
-  launch, and inside each launch the children above their parent, newest on
-  top, each joined to its parent's lane by the same branch curve
-  (`spawnedRailOf` lays the rows out with `layoutTimelineRail`, `SpawnedRailCell`
-  draws them with `TimelineRail`; a queued child dashes its lane). The DOM keeps
-  each launch parent first for assistive tech and reverses it on screen
-  (`flex-col-reverse` on `[data-spawned-launch]`); every reader of the screen
-  order goes through `spawnedTreeItemsOf`. A focused Auto launch is the same
-  `SpawnedAutoGroup` as the list, so it reads the same way: Now, the newest
-  child, down to the oldest, Auto at the foot. A child
-  that starts while you read lower in the list moves in at the top and the rows
-  you read stay where they are (`useSpawnedScrollHold` keeps the first visible
-  row's offset across the change; at the top, on Now, the new row simply shows).
-  Focus stays on its row. The run page's step tree (`OrchestratedChecklist`)
-  stays top down, the first step on top. A row is one 28px line: the
+  The tree reads top down, like the step list of the run page: each parent
+  above its children, the first step on top, each child joined to its parent's
+  lane by the fork curve (`spawnedRailOf` lays the rows out with
+  `layoutTimelineRail`, `SpawnedRailCell` draws them with `TimelineRail`; a
+  queued child dashes its lane). Every reader of the order goes through
+  `spawnedTreeItemsOf`, which is DOM order. A focused Auto launch is the same
+  `SpawnedAutoGroup` as the list, always open, so Auto and a run share one
+  layout. There is no Now row, no state grouping and no spend foot: limit and
+  spend live on the glance line of the page. A row opened from a done parent
+  says how many helpers failed (`helperUrgencyOf`, "1 of 2 helpers failed").
+  Focus stays on its row and `useSpawnedScrollHold` keeps the first visible
+  row's offset when a row lands above it. A row is one 28px line: the
   state node on the rail, role glyph (the noun in its tooltip), title, a
   fixed chevron slot and a fixed time column (`DelegationClock`, the clock
   every work row reads), so icons and times line up down the list. The
@@ -935,7 +930,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the branch lists and in the Branch header alike
-  (`isMountRequestMerged`). The Files tab opened without a branch lands on the active mount.
+  (`isMountRequestMerged`). The Changes tab opened without a branch lands on the active mount.
 - **Files can reveal unchanged context.** Each hidden range offers the next 20
   lines beside either hunk, or all of its lines. Small ranges use one action.
   The file's final range stays uncounted until its sides load. Expansion stays

@@ -55,12 +55,29 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
 
   switch (verb.kind) {
     case 'primary':
-      return <RunPrimaryAction session={session} view={view} primary={verb.primary} />;
+      return (
+        <RunPrimaryAction
+          session={session}
+          view={view}
+          primary={verb.primary}
+          variant={isSecondary ? 'secondary' : 'primary'}
+        />
+      );
     case 'raiseCap':
-      return <RaiseCapPrimary session={session} view={view} variant="primary" />;
+      return (
+        <RaiseCapPrimary
+          session={session}
+          view={view}
+          variant={isSecondary ? 'secondary' : 'primary'}
+        />
+      );
     case 'answer':
       return (
-        <Button size="sm" variant="primary" onClick={() => answer({ question: verb.question })}>
+        <Button
+          size="sm"
+          variant={isSecondary ? 'secondary' : 'primary'}
+          onClick={() => answer({ question: verb.question })}
+        >
           Answer
         </Button>
       );
@@ -122,6 +139,16 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
           }
         >
           {NAMES.continue}
+        </Button>
+      );
+    case 'openRun':
+      return (
+        <Button
+          size="xs"
+          variant="quiet"
+          onClick={() => navigate({ to: runPlace({ sessionId, runId }) })}
+        >
+          Open run
         </Button>
       );
     case 'resumeAll':

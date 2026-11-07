@@ -90,93 +90,18 @@ describe('the u31 rail scene', () => {
     expect(frame?.firstElementChild?.contains(tree)).toBe(true);
   });
 
-  it('groups the agents by state with one count per group and one summary line', async () => {
+  it('draws the agents top down with the Auto row first and no state groups', async () => {
     const { container } = mount();
 
     const tree = await railTree();
-    expect(container.querySelector('[data-spawned-summary]')?.textContent).toBe(
-      '3 running, 2 queued, 6 done',
-    );
-    headOf({ tree, name: 'Running, 3' });
-    headOf({ tree, name: 'Queued, 2' });
-    headOf({ tree, name: 'Done, 6' });
-    const working = container.querySelector<HTMLElement>('[data-spawned-state="working"]');
-    if (working === null) {
-      throw new Error('no Working group');
-    }
+    expect(container.querySelector('[data-spawned-summary]')).toBeNull();
+    expect(container.querySelector('[data-spawned-state]')).toBeNull();
+    expect(labelsOf({ tree })[0]).toBe('Auto agent, Make the payments-api retry safe, Running');
     expect(
-      within(working)
-        .getAllByRole('treeitem')
-        .map((item) => item.getAttribute('aria-label')),
-    ).toEqual([
-      'Running, 3',
-      'Docs, Write the retry summary, Running',
-      'Reviewer, Review the ledger-core diff, Running',
-      'Implementer, Fix the applyCredit retry, Running',
-    ]);
-    expect(working.contains(within(tree).getAllByRole('treeitem')[0] ?? null)).toBe(false);
-    expect(within(tree).getAllByRole('treeitem')[0]?.getAttribute('aria-label')).toBe(
-      'Auto agent, Make the payments-api retry safe, Running',
-    );
-  });
-
-  it('folds Done by default and keeps its rows out of the tree', async () => {
-    mount();
-
-    const tree = await railTree();
-    const done = headOf({ tree, name: 'Done, 6' });
-    expect(done.getAttribute('aria-expanded')).toBe('false');
-    expect(labelsOf({ tree })).toHaveLength(3 + 4 + 2);
-    expect(labelsOf({ tree }).some((label) => label.includes('Plan the retry safe'))).toBe(false);
-  });
-
-  it('unfolds Done with a click and with the arrow keys, then folds it again', async () => {
-    mount();
-
-    const tree = await railTree();
-    const done = headOf({ tree, name: 'Done, 6' });
-    fireEvent.click(done);
-    expect(done.getAttribute('aria-expanded')).toBe('true');
-    expect(labelsOf({ tree })).toHaveLength(3 + 4 + 2 + 6);
-    within(tree).getByRole('treeitem', { name: 'Planner, Plan the retry safe credit flow, Done' });
-    fireEvent.keyDown(done, { key: 'ArrowLeft' });
-    expect(done.getAttribute('aria-expanded')).toBe('false');
-    expect(labelsOf({ tree })).toHaveLength(3 + 4 + 2);
-    fireEvent.keyDown(done, { key: 'ArrowRight' });
-    expect(done.getAttribute('aria-expanded')).toBe('true');
-    fireEvent.keyDown(done, { key: 'Enter' });
-    expect(done.getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it('keeps Working and Waiting open with no chevron to fold them', async () => {
-    mount();
-
-    const tree = await railTree();
-    for (const name of ['Running, 3', 'Queued, 2']) {
-      const head = headOf({ tree, name });
-      expect(head.getAttribute('aria-expanded')).toBeNull();
-      fireEvent.click(head);
-      expect(labelsOf({ tree })).toHaveLength(3 + 4 + 2);
-    }
-  });
-
-  it('reads two lines per row: the title, then the role, who asked and the time', async () => {
-    mount();
-
-    const tree = await railTree();
-    const fix = within(tree).getByRole('treeitem', {
-      name: 'Implementer, Fix the applyCredit retry, Running',
-    });
-    expect(fix.getAttribute('aria-selected')).toBe('true');
-    expect(fix.querySelector('[data-spawned-meta]')?.textContent).toBe('Implementer · 6m');
-    const relay = within(tree).getByRole('treeitem', {
-      name: 'Scout, Check notify-relay callers, Queued',
-    });
-    expect(relay.querySelector('[data-spawned-meta]')?.textContent).toBe(
-      'Scout · from Implementer · queued',
-    );
-    expect(fix.getAttribute('data-spawned-state-row')).toBe('working');
-    expect(relay.getAttribute('data-spawned-state-row')).toBe('resting');
+      within(tree)
+        .getByRole('treeitem', { name: 'Implementer, Fix the applyCredit retry, Running' })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
   });
 
   it('has no accessibility violations', async () => {

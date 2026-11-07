@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DrawerColumn } from '@goodboy/ui';
+import { requestRename } from '../../../../../shared/utils/renameRequest';
+import { runObjectKey } from '../../../../../features/actions/runObjectKey';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore, useSessionById } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
@@ -13,19 +15,21 @@ import { showDemoNotice } from '../../demo/director/showDemoNotice';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import {
   C08_SESSION_ID,
+  C08_RUN_ID,
   C08_WORKSPACE_ID,
   seedC08,
   type C08Selection,
   type C08State,
 } from './c08RunSeed';
 
-type C08Click = 'none' | 'menu' | 'addStep';
+type C08Click = 'none' | 'menu' | 'addStep' | 'startRun' | 'how' | 'rowRename';
 
 type Props = {
   readonly state: C08State;
   readonly selection: C08Selection | 'list';
   readonly click?: C08Click;
   readonly isFolded?: boolean;
+  readonly extra?: () => void;
   readonly isToolOpen?: boolean;
   readonly theme?: 'light' | 'dark';
 };
@@ -65,7 +69,10 @@ const CLICK_DELAY_MS = 200;
 
 const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
-  addStep: '[data-spawned-panel] [data-run-add-step] button',
+  addStep: '[data-run-overview] [data-run-add-step] button',
+  startRun: '[data-start-run-row] button',
+  how: '[data-setting-chip="How"]',
+  rowRename: `[data-row-key$="/${C08_RUN_ID}"]`,
 };
 
 export const C08RunScene = ({
@@ -73,6 +80,7 @@ export const C08RunScene = ({
   selection,
   click = 'none',
   isFolded = false,
+  extra,
   isToolOpen = false,
   theme,
 }: Props) => {
@@ -87,20 +95,32 @@ export const C08RunScene = ({
       applyDocumentTheme({ theme });
     }
     seedC08({ state, selection });
+    extra?.();
     if (selection !== 'list' || isToolOpen) {
       useAppStore
         .getState()
         .openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
     }
     setIsSeeded(true);
-  }, [state, selection, isToolOpen, theme]);
+  }, [state, selection, extra, isToolOpen, theme]);
 
   useEffect(() => {
     if (!isSeeded || click === 'none') {
       return;
     }
     const timer = window.setTimeout(() => {
-      document.querySelector<HTMLButtonElement>(SELECTOR[click])?.click();
+      const target = document.querySelector<HTMLElement>(SELECTOR[click]);
+      if (click === 'rowRename') {
+        const rowKey = target?.getAttribute('data-row-key');
+        if (rowKey != null) {
+          requestRename({
+            objectKey: runObjectKey({ runId: C08_RUN_ID }),
+            anchorKey: `run:${rowKey}`,
+          });
+        }
+        return;
+      }
+      target?.click();
     }, CLICK_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [isSeeded, click]);

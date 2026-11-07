@@ -7,7 +7,7 @@ import { caretOffsetAt } from '../../../../shared/utils/caretOffsetAt';
 import { sessionRowTitle } from '../../../../shared/utils/sessionTitle';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { overviewTitleHost } from '../../overviewTitleHost';
-import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { useRenameRequest } from '../../../../shared/hooks/useRenameRequest';
 import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];

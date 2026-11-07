@@ -137,7 +137,7 @@ describe('search hit target', () => {
       searchHitTarget({
         hit: hit({ kind: 'branch', mountId: 'm1' as MountId, status: 'detached' }),
       }),
-    ).toMatchObject({ kind: 'blocked', label: 'Open files' });
+    ).toMatchObject({ kind: 'blocked', label: 'Open changes' });
   });
 
   it('opens a workflow in the workflow studio and a comment in the Diff notes', () => {

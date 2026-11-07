@@ -259,7 +259,7 @@ describe('journey: a preset run advanced by hand', () => {
     await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
     expect(held.turns).toHaveLength(3);
     const finished = showPage(view);
-    expect(finished).toContain('Done');
+    expect(finished).toContain('Create report');
     expect(finished).not.toContain('ready to continue');
     expect(finished).not.toContain('is working');
     expect(within(view.container).queryByRole('button', { name: /Start step/ })).toBeNull();

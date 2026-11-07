@@ -219,7 +219,7 @@ const planRunOf = ({ era }: EraParams): WorkflowRun => ({
             presetName: PRESET_NAME,
             closeness: 'adapt',
             role: null,
-            choice: `Plan from ${PRESET_NAME}, 3 steps · Adapt as it goes`,
+            choice: `Plan from ${PRESET_NAME}, 3 steps · May change steps`,
             why: 'Your ask matches the preset',
           },
           preset: presetSnapshotOf({ preset: PRESET }),

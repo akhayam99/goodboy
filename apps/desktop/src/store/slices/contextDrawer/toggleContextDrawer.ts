@@ -8,7 +8,7 @@ export const toggleContextDrawer = (get: GetFn) => {
     const current = selectOpenDrawer(state);
     const isOpen =
       current !== null && current.kind === 'context' && current.sessionId === params.sessionId;
-    if (isOpen && (params.tab === undefined || current.payload.tab === params.tab)) {
+    if (isOpen && (params.section === undefined || current.payload.section === params.section)) {
       state.closeDrawer();
       return;
     }

@@ -68,7 +68,7 @@ const RULES: WorkflowRules = {
     presetName: 'Fix a layout',
     closeness: 'follow',
     role: null,
-    choice: 'Workflow · Preset Fix a layout · Follow it',
+    choice: 'Workflow · Preset Fix a layout · Keep steps',
     why: 'Your ask matches the preset',
   },
   preset: {

@@ -6,10 +6,11 @@ import {
   type AgentId,
   type IsoDateTime,
   type OpenQuestion,
+  type SessionMountView,
   type ProviderRunId,
   type TurnState,
 } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
+import { aProject, anAgent } from '@goodboy/types/testing';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { aDelegation, aView, FIXTURE_NOW, FIXTURE_ROOT } from '../auto/testing/autoViewFixtures';
 import type { AttachedRun } from '../workflows/activeWorkflowRuns';
@@ -19,6 +20,8 @@ import {
   aNowRun,
   aNowStepAgent,
   aNowWorkflow,
+  NOW_MOUNT_API,
+  NOW_MOUNT_LEDGER,
   NOW_SESSION,
   NOW_STARTED_AT,
   nowModelOf,
@@ -28,6 +31,11 @@ import { buildTimelineStream } from './timeline/buildTimelineStream';
 import { runSpawnedRowsOf } from '../../app/components/SpawnedPanel/runSpawnedRowsOf';
 import { sessionRunCountsOf } from './sessionRunCountsOf';
 import { sessionRunsOf } from './sessionRunsOf';
+import { aMountView } from './testing/aMountView';
+
+const PAYMENTS_PROJECT = aProject({ name: 'payments-api' });
+
+const LEDGER_PROJECT = aProject({ name: 'ledger-core' });
 
 const words = vi.hoisted(() => ({ isRenamed: false }));
 
@@ -52,6 +60,7 @@ type WorldParams = {
   readonly autoViews?: ReadonlyArray<AutoTreeView>;
   readonly questions?: ReadonlyArray<OpenQuestion>;
   readonly turns?: ReadonlyMap<string, TurnState>;
+  readonly mounts?: ReadonlyArray<SessionMountView>;
 };
 
 const BLOCKED: TurnState = {
@@ -66,6 +75,7 @@ const runsOf = ({
   autoViews = [],
   questions = [],
   turns = new Map(),
+  mounts = [],
 }: WorldParams) =>
   sessionRunsOf({
     attachedRuns: runs,
@@ -77,6 +87,8 @@ const runsOf = ({
     rootTurns: {},
     turnByAgentId: turns,
     revisingStarts: {},
+    mounts,
+    projects: [PAYMENTS_PROJECT, LEDGER_PROJECT],
   });
 
 const presetRun = () =>
@@ -418,7 +430,7 @@ describe('the Runs grid order and the states it files', () => {
     ]);
   });
 
-  it('keeps an agent a restart stopped in progress with a Continue word', () => {
+  it('keeps an agent a restart stopped as Stopped, with Continue as its verb', () => {
     const stopped = aNowAgent({
       key: 'stopped',
       name: 'Stopped by restart',
@@ -434,6 +446,7 @@ describe('the Runs grid order and the states it files', () => {
       isFinished: false,
       isInProgress: false,
       isRestartStopped: true,
+      verb: { kind: 'continue', agentId: stopped.id },
     });
   });
 
@@ -457,6 +470,143 @@ describe('the Runs grid order and the states it files', () => {
   });
 });
 
+describe('the verb on a stopped or ready run', () => {
+  const OPERATOR_STOP = { kind: 'operator', message: 'You stopped this run.' } as const;
+
+  const rowOf = (world: WorldParams) => {
+    const [row] = runsOf(world);
+    return row;
+  };
+
+  it('continues the step an operator stop cut in a preset run', () => {
+    const preset = aNowRun({
+      key: 'preset',
+      title: 'Center the profile page',
+      workflow: aNowWorkflow({
+        key: 'preset',
+        name: 'Fix a layout',
+        stepNames: ['Find', 'Center'],
+      }),
+      overrides: { orchestrationStop: OPERATOR_STOP },
+    });
+    const cut = aNowStepAgent({ attached: preset, stepIndex: 0, status: 'stopped', name: 'Find' });
+    const next = aNowStepAgent({
+      attached: preset,
+      stepIndex: 1,
+      status: 'pending',
+      name: 'Center',
+    });
+
+    expect(rowOf({ runs: [preset], agents: [cut, next] })).toMatchObject({
+      stateWord: 'Stopped',
+      verb: { kind: 'continue', agentId: cut.id },
+    });
+  });
+
+  it('continues the cut step of an orchestrated run, or the run when no step was cut', () => {
+    const plan = aNowRun({
+      key: 'plan',
+      title: 'Center every member page',
+      isDynamic: true,
+      workflow: aNowWorkflow({
+        key: 'plan',
+        name: 'Orchestrated',
+        stepNames: ['Find', 'Center'],
+        origin: 'orchestrated',
+      }),
+      overrides: { orchestrationStop: OPERATOR_STOP },
+    });
+    const cut = aNowStepAgent({ attached: plan, stepIndex: 0, status: 'stopped', name: 'Find' });
+    const done = aNowStepAgent({ attached: plan, stepIndex: 0, status: 'completed', name: 'Find' });
+
+    expect(rowOf({ runs: [plan], agents: [cut] })?.verb).toEqual({
+      kind: 'continue',
+      agentId: cut.id,
+    });
+    expect(rowOf({ runs: [plan], agents: [done] })).toMatchObject({
+      stateWord: 'Stopped',
+      verb: { kind: 'continueRun', runId: plan.run.id },
+    });
+  });
+
+  it('gives a run the person closed no verb', () => {
+    const closed = aNowRun({
+      key: 'closed',
+      title: 'Center the profile page',
+      workflow: aNowWorkflow({ key: 'closed', name: 'Fix a layout', stepNames: ['Find'] }),
+      overrides: { orchestrationStop: { kind: 'closed', message: 'Closed.' } },
+    });
+
+    expect(rowOf({ runs: [closed] })).toMatchObject({ stateWord: 'Stopped', verb: null });
+  });
+
+  it('continues a stopped Auto through its root, and gives a closed one nothing', () => {
+    const view = aView({ phase: 'stopped' });
+
+    expect(
+      runsOf({ agents: [autoRoot({ status: 'stopped' })], autoViews: [view] }).find(
+        (run) => run.kind === 'auto',
+      ),
+    ).toMatchObject({ stateWord: 'Stopped', verb: { kind: 'continue', agentId: FIXTURE_ROOT } });
+    expect(
+      runsOf({
+        agents: [{ ...autoRoot({ status: 'stopped' }), doneAt: NOW_STARTED_AT }],
+        autoViews: [view],
+      }).find((run) => run.kind === 'auto')?.verb,
+    ).toBeNull();
+  });
+
+  it('starts a queued manual run as a run, whether it is a preset or orchestrated', () => {
+    const preset = aNowRun({
+      key: 'preset',
+      title: 'Center the profile page',
+      workflow: aNowWorkflow({ key: 'preset', name: 'Fix a layout', stepNames: ['Find'] }),
+      overrides: { triggerMode: 'manual' },
+    });
+    const plan = aNowRun({
+      key: 'plan',
+      title: 'Center every member page',
+      isDynamic: true,
+      workflow: aNowWorkflow({
+        key: 'plan',
+        name: 'Orchestrated',
+        stepNames: ['Find'],
+        origin: 'orchestrated',
+      }),
+      overrides: { triggerMode: 'manual' },
+    });
+
+    const rows = runsOf({ runs: [preset, plan] });
+
+    expect(rows.map((row) => [row.kind, row.stateWord, row.verb])).toEqual(
+      expect.arrayContaining([
+        ['preset', 'Ready', { kind: 'startRun', runId: preset.run.id }],
+        ['orchestrated', 'Ready', { kind: 'startRun', runId: plan.run.id }],
+      ]),
+    );
+  });
+
+  it('starts the next step of a started preset run, never the run', () => {
+    const preset = aNowRun({
+      key: 'preset',
+      title: 'Center the profile page',
+      workflow: aNowWorkflow({ key: 'preset', name: 'Fix a layout', stepNames: ['Find'] }),
+      overrides: { triggerMode: 'manual' },
+    });
+    const pending = aNowStepAgent({
+      attached: preset,
+      stepIndex: 0,
+      status: 'pending',
+      name: 'Find',
+    });
+
+    expect(rowOf({ runs: [preset], agents: [pending] })?.verb).toEqual({
+      kind: 'start',
+      agentId: pending.id,
+    });
+  });
+});
+
 describe('sessionRunsOf auto dot', () => {
   const dotsOf = () =>
     (['blocked', 'deciding', 'finished', 'stopped', 'done'] as const).map(
@@ -473,5 +623,50 @@ describe('sessionRunsOf auto dot', () => {
 
     expect(before).toEqual(['failed', 'running', 'done', 'stopped', 'idle']);
     expect(dotsOf()).toEqual(before);
+  });
+});
+
+describe('the branches a run works on', () => {
+  const API = aMountView({
+    key: 'payments-api',
+    sessionId: NOW_SESSION,
+    projectId: PAYMENTS_PROJECT.id,
+    projectName: 'payments-api',
+    branch: 'fix/duplicate-credit',
+  });
+  const LEDGER = aMountView({
+    key: 'ledger-core',
+    sessionId: NOW_SESSION,
+    projectId: LEDGER_PROJECT.id,
+    projectName: 'ledger-core',
+    branch: 'rec/2-backfill',
+  });
+
+  it('reads every kind of run through the same owner', () => {
+    const plan = orchestratedRun();
+    const agents = [
+      aNowStepAgent({
+        attached: plan,
+        stepIndex: 0,
+        status: 'completed',
+        name: 'Find',
+        mountId: NOW_MOUNT_API,
+      }),
+      aNowStepAgent({ attached: plan, stepIndex: 1, status: 'running', name: 'Center' }),
+      { ...autoRoot({ status: 'running' }), mountId: NOW_MOUNT_LEDGER },
+      handScout({ status: 'completed' }),
+    ];
+    const runs = runsOf({
+      runs: [plan],
+      agents,
+      autoViews: [aView({ phase: 'waiting' })],
+      mounts: [API, LEDGER],
+    });
+    const branchesOf = (kind: string) =>
+      runs.find((run) => run.kind === kind)?.branches.map((branch) => branch.branch);
+
+    expect(branchesOf('orchestrated')).toEqual(['fix/duplicate-credit']);
+    expect(branchesOf('auto')).toEqual(['rec/2-backfill']);
+    expect(branchesOf('agent')).toEqual([]);
   });
 });

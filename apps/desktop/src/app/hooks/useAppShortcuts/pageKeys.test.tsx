@@ -13,7 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import type { AgentId, ArtifactId } from '@goodboy/types';
+import type { AgentId, ArtifactId, IntegrationBinding } from '@goodboy/types';
 import { aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -24,6 +24,7 @@ import {
 } from '../../../store/storyHarness';
 import type { StudioPlace } from '../../../store/slices/navigation/studio';
 import { pressShortcut } from '../../../__tests__/helpers/pressKey';
+import { linkIssueEventName } from '../../../features/actions/kinds/session';
 import { useAppShortcuts } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -80,6 +81,38 @@ const press = ({ id }: { readonly id: 'lens.workflows' | 'lens.plans' }) => {
   render(<Harness />);
   pressShortcut({ id });
 };
+
+describe('a provider key over a record of that provider', () => {
+  it('opens Link work instead of only going back to Overview', async () => {
+    const binding: IntegrationBinding = {
+      id: JSON.parse(JSON.stringify('page-keys-linear')),
+      workspaceId: workspace.id,
+      projectId: null,
+      credentialId: JSON.parse(JSON.stringify('page-keys-credential')),
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+      provider: 'linear',
+      config: {
+        workspaceUrlKey: 'harborline',
+        viewerUserId: 'harborline',
+        viewerName: 'Harborline',
+      },
+    };
+    useAppStore.setState({
+      activeLens: { [session.id]: 'linear' },
+      workspaceIntegrations: { [workspace.id]: [binding] },
+    });
+    const heard = vi.fn();
+    const name = linkIssueEventName({ sessionId: session.id });
+    window.addEventListener(name, heard);
+
+    render(<Harness />);
+    pressShortcut({ id: 'lens.linear' });
+
+    await vi.waitFor(() => expect(heard).toHaveBeenCalledTimes(1));
+    window.removeEventListener(name, heard);
+  });
+});
 
 describe.each([
   { id: 'lens.workflows', lens: 'workflows' },

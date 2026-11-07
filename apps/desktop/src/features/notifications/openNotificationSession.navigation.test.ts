@@ -163,7 +163,7 @@ describe('openNotificationSession with the real navigation', () => {
     expect(order).toEqual(expect.arrayContaining(['refresh', 'comments', 'resolve']));
   });
 
-  it('lands a note fix on Files, the place its Open Files label says', async () => {
+  it('lands a note fix on Changes, the place its Open Changes label says', async () => {
     const notification = notificationOf({ reason: 'fix-needs-you', subject: 'note' });
     const label = openPlaceLabelOf({
       state: useAppStore.getState(),
@@ -176,7 +176,7 @@ describe('openNotificationSession with the real navigation', () => {
     openNotificationSession({ notification });
 
     await vi.waitFor(() => expect(keyOfCurrent()).toContain(`s/${SESSION}/branch`));
-    expect(label).toBe('Open Files');
+    expect(label).toBe('Open Changes');
     expect(keyOfCurrent()).toContain('files');
   });
 

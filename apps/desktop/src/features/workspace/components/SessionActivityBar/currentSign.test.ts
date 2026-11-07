@@ -17,10 +17,6 @@ const ALL_LENSES: ReadonlyArray<LensKind | null> = [
   'gitlab_issues',
   'jira_issues',
   'slack_threads',
-  'context',
-  'goal',
-  'decisions',
-  'last_output_summary',
   'github_issue',
 ];
 

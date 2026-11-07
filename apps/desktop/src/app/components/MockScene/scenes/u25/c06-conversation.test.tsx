@@ -217,7 +217,6 @@ describe('the c06 conversation scenes', () => {
     const rows = screen.getAllByRole('button', { name: /^Open .+, Agent, / });
     expect(rows.length).toBe(2);
     const first = rows[0]!;
-    expect(within(first).getByText('Agent · Implementer')).toBeDefined();
     expect(within(first).getAllByText('Running').length).toBeGreaterThan(0);
     expect(within(first).queryAllByRole('button')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();

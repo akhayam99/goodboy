@@ -194,7 +194,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     const goTo = within(screen.getByRole('menu', { name: 'Go to' }))
       .getAllByRole('menuitem')
       .map((item) => item.getAttribute('data-menu-label') ?? '');
-    expect(goTo).toEqual(['Open', 'Comments', 'Files', 'Open in editor', 'Open in terminal app']);
+    expect(goTo).toEqual(['Open', 'Comments', 'Changes', 'Open in editor', 'Open in terminal app']);
     const surfaceOwned = new Set(['Go to', 'Select']);
     expect([...topLevel.filter((label) => !surfaceOwned.has(label)), ...goTo].sort()).toEqual(
       [...registry].sort(),
@@ -374,14 +374,11 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(registry);
     expect(fromContext).not.toContain('Open run');
     expect(fromOverflow).toEqual([
-      'View diff',
       'Skip step 1',
+      'Rename',
       'Step routing',
-      'Save as preset',
-      'Copy run summary',
       'Stop run',
       'Archive run',
-      'Delete run',
     ]);
     const live = screen
       .getAllByRole('button')

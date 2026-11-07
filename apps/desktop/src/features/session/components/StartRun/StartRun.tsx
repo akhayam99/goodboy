@@ -71,7 +71,9 @@ export const StartRun = ({
       if (file !== null) {
         setFile(file);
       }
-      sectionRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+      window.requestAnimationFrame(() =>
+        sectionRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus(),
+      );
     };
     const name = startRunEventName({ sessionId });
     window.addEventListener(name, onOpen);

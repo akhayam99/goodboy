@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Disclosure, Markdown } from '@goodboy/ui';
+import { Markdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
@@ -7,10 +6,10 @@ import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRes
 import { useQuietStep } from '../../../workflows/hooks/useQuietStep';
 import { TailLine } from '../../../live-state/TailLine';
 import { decisionEntries } from '../../../workflows/decisionEntries';
+import { hintQueueOf } from '../../../workflows/hintQueueOf';
 import { isBetweenStepsPhase } from '../../../workflows/isBetweenStepsPhase';
 import { orchestratedTailOf } from '../../../workflows/orchestratedTailOf';
 import { runQuestionsPlacementOf } from '../../../workflows/runQuestionsPlacement';
-import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunOpenQuestion } from '../RunOpenQuestion';
 import { RunPendingDelivery } from '../RunPendingDelivery';
@@ -33,13 +32,10 @@ const MINUTE_MS = 60_000;
 export const OrchestratedTail = ({ session, view }: Props) => {
   const { run, workflow, agents } = view;
   const readingIds = useAppStore((state) => state.orchestratorReadingHints[run.id] ?? NO_READING);
-  const queuedCount = (run.orchestratorHints ?? []).filter(
-    (hint) => hint.consumedAt == null && !readingIds.includes(hint.id),
-  ).length;
+  const { queuedCount } = hintQueueOf({ run, readingIds });
   const autoTreeViews = useAppStore((state) => state.autoTreeViews[session.id] ?? NO_VIEWS);
   const quiet = useQuietStep({ agents });
   const mountBlock = useMountBlockedStep({ sessionId: session.id, workflowRunId: run.id });
-  const [isWhyOpen, setIsWhyOpen] = useState(false);
   const tail = orchestratedTailOf({
     orchestrator: view.orchestrator.state,
     agents,
@@ -59,17 +55,13 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     return <RunPendingDelivery sessionId={session.id} />;
   }
   const tailVerbs = tail.verbs.filter((verb) => verb.kind !== 'primary');
+  if (view.orchestrator.state.phase === 'done' && tailVerbs.length === 0) {
+    return <RunPendingDelivery sessionId={session.id} />;
+  }
   const isMountBlocked = mountBlock !== null && tail.blockedAgentId === mountBlock.agentId;
   const phase = view.orchestrator.state.phase;
   const entries = decisionEntries({ run, steps: workflow.steps });
-  const latest = entries.decisions[0] ?? null;
   const blockedReason = phase === 'blocked' ? (entries.closing?.reason ?? '') : '';
-  const isReasonShown =
-    latest !== null &&
-    phase !== 'done' &&
-    phase !== 'failed' &&
-    phase !== 'step-failed' &&
-    phase !== 'blocked';
 
   const placement = runQuestionsPlacementOf({
     phase,
@@ -116,27 +108,17 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         {isMountBlocked ? (
           <OrchestratedMountBlock sessionId={session.id} block={mountBlock} />
         ) : tail.blockedAgentId === null ? null : (
-          <OrchestratedBlockedStep sessionId={session.id} agentId={tail.blockedAgentId} />
+          <OrchestratedBlockedStep
+            sessionId={session.id}
+            agentId={tail.blockedAgentId}
+            isReasonShown={false}
+          />
         )}
         {blockedReason === '' ? null : (
           <div data-orchestrated-block="" className="min-w-0 px-2">
             <Markdown text={blockedReason} className="text-ui text-muted-foreground" />
           </div>
         )}
-        {isReasonShown ? (
-          <Disclosure
-            label={
-              <span className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.whyThisStep}</span>
-            }
-            isOpen={isWhyOpen}
-            onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
-            className="self-start"
-          >
-            <div data-orchestrated-reason="" className="min-w-0">
-              <Markdown text={latest.reason} className="text-ui text-muted-foreground" />
-            </div>
-          </Disclosure>
-        ) : null}
       </div>
       {placement === 'after-state' ? questionCluster : null}
     </section>

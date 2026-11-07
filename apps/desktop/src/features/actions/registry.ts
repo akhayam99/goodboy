@@ -20,6 +20,7 @@ import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
 import { TASK_LIST_KIND } from './kinds/taskList';
+import { RUN_ROW_KIND } from './kinds/runRow';
 import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { NOTIFICATIONS_KIND } from './kinds/notifications';
@@ -27,6 +28,7 @@ import { NOTIFICATION_KIND } from './kinds/notification';
 import { PROVIDER_KIND } from './kinds/provider';
 import { INTEGRATION_KIND } from './kinds/integration';
 import { BRANCH_KIND } from './kinds/branch';
+import { CONTEXT_SLOT_KIND } from './kinds/contextSlot';
 import { PLAN_COMMENTS_KIND } from './kinds/planComments';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
@@ -133,6 +135,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: AGENT_KIND, state, target });
     case 'workflowRun':
       return bind({ definition: WORKFLOW_RUN_KIND, state, target });
+    case 'runRow':
+      return bind({ definition: RUN_ROW_KIND, state, target });
     case 'planPart':
       return bind({ definition: PLAN_PART_KIND, state, target });
     case 'question':
@@ -189,6 +193,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: BRANCH_KIND, state, target });
     case 'planComments':
       return bind({ definition: PLAN_COMMENTS_KIND, state, target });
+    case 'contextSlot':
+      return bind({ definition: CONTEXT_SLOT_KIND, state, target });
     case 'projectAsk':
       return bind({ definition: PROJECT_ASK_KIND, state, target });
     case 'link':

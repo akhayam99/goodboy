@@ -9,13 +9,11 @@ import {
   type Row,
   WAIT,
   studio,
-  both,
   branchTab,
   click,
   clickButton,
   findBackArrow,
   openWorktreeEntry,
-  heading,
   lens,
   openBranchFiles,
   settle,
@@ -120,7 +118,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
           expect(useAppStore.getState().drawer).toMatchObject({
             kind: 'context',
             sessionId: ctx.sessionId,
-            payload: { tab: 'decisions', highlight: [1] },
+            payload: { section: 'decisions', highlight: [1] },
           }),
         WAIT,
       );
@@ -181,7 +179,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
   {
     name: 'worktree level: the Files entry opens the branch diff',
     covers: ['lens:branch'],
-    open: () => openWorktreeEntry(/^Files/),
+    open: () => openWorktreeEntry(/^Changes/),
     lands: branchTab('files'),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({
@@ -213,13 +211,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
       expect(screen.queryByRole('region', { name: 'Run a workflow' })).toBeNull();
-      const kinds = within(screen.getByRole('tablist', { name: 'What kind of run?' }));
-      expect(kinds.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-        'Auto',
-        'Agent',
-        'Orchestrated',
-        'Preset',
-      ]);
+      screen.getByRole('button', { name: 'How: Auto' });
       const settings = startSettingsRowOf({
         group: screen.getByRole('group', { name: 'Run settings' }),
       });
