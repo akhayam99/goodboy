@@ -85,7 +85,7 @@ describe('the u23 comments scenes', () => {
       Done: 1,
       'Left open on GitHub': 1,
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Resolved' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));
     expect(regionTitles()).toEqual(['Done']);
     expect(
       within(within(list()).getByRole('region', { name: 'Done' })).getAllByRole('listitem'),
@@ -157,7 +157,7 @@ describe('the u23 comments scenes', () => {
     );
     await renderScene({ name: 'comments-ready-to-push' });
 
-    expect(screen.getAllByRole('tab', { name: /^Comments\s*7$/ })).toHaveLength(1);
+    expect(screen.getAllByRole('tab', { name: /^Comments\s*8$/ })).toHaveLength(1);
     expect(screen.getAllByText('Fixing 1 of 4 comments').length).toBeGreaterThan(0);
     expect(screen.queryByText('Fixing 4 comments')).toBeNull();
     const first = within(list())
