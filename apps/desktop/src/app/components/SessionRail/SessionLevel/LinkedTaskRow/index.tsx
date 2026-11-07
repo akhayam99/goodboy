@@ -1,14 +1,14 @@
 import { SelectableRow, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
-import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
-import { taskKeyOf } from '../../../../features/actions/kinds/task';
-import type { ObjectTarget } from '../../../../features/actions/types';
-import { useTaskDrag } from '../../../../features/session/hooks/useTaskDrag';
-import { LinkedKey } from './LinkedKey';
-import { CARD_ROW_INSET } from './railInset';
-import { taskPlacementLabel } from '../../../../shared/utils/taskPlacementLabel';
+import { useAppStore } from '../../../../../store';
+import { IntegrationGlyph } from '../../../../../features/integrations/components/IntegrationGlyph';
+import { ObjectMenuArea } from '../../../../../features/actions/components/ObjectMenuArea';
+import { taskKeyOf } from '../../../../../features/actions/kinds/task';
+import type { ObjectTarget } from '../../../../../features/actions/types';
+import { useTaskDrag } from '../../../../../features/session/hooks/useTaskDrag';
+import { LinkedKey } from '../LinkedKey';
+import { CARD_ROW_INSET } from '../railInset';
+import { taskPlacementLabel } from '../../../../../shared/utils/taskPlacementLabel';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -29,7 +29,14 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
     projectId: task.projectId ?? null,
     branch,
   } satisfies ObjectTarget;
+  const openLabel =
+    task.provider === 'sentry' ? `Open ${task.identifier} in Tasks` : `Open ${task.identifier}`;
   const placement = branches.length === 0 ? null : taskPlacementLabel({ branches });
+  const titleParts = [
+    `${task.identifier} ${task.title}`,
+    ...(placement === null ? [] : [placement]),
+    ...(task.provider === 'sentry' ? ['Opens in Tasks'] : []),
+  ];
 
   return (
     <ObjectMenuArea target={target} anchorKey={taskKeyOf(target)}>
@@ -38,15 +45,9 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
           selected={isShown}
           ariaCurrent={isShown ? 'page' : undefined}
           ariaLabel={
-            placement === null
-              ? `Open ${task.identifier}`
-              : `Open ${task.identifier} ${placement.replace('On ', 'on ')}`
+            placement === null ? openLabel : `${openLabel} ${placement.replace('On ', 'on ')}`
           }
-          title={
-            placement === null
-              ? `${task.identifier} ${task.title}`
-              : `${task.identifier} ${task.title}. ${placement}`
-          }
+          title={titleParts.join('. ')}
           onClick={() => openExternalTaskLens(sessionId, task)}
           className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
         >

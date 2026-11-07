@@ -1,21 +1,21 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { brandId } from '@goodboy/types';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ArtifactId, SessionId } from '@goodboy/types';
-import type { AppState } from '../../types';
-import { setActiveLens, setFocusedArtifactId } from '../session-view/workSurface';
-import { createDrawerSlice } from './index';
+import { aSession } from '@goodboy/types/testing';
+import { importStore, resetStoryStore, type StoryStore } from '../../storyHarness';
 import { selectDrawerSizing } from './selectDrawerSizing';
 import { selectOpenDrawer } from './selectOpenDrawer';
 import type { DrawerRequest } from './state';
 
-const SESSION_ID = 'session-1' as SessionId;
-const OTHER_SESSION_ID = 'session-2' as SessionId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const OTHER_SESSION_ID = brandId<SessionId>({ value: 'session-2' });
 
 const GOAL_HISTORY: DrawerRequest = {
   kind: 'context',
   sessionId: SESSION_ID,
-  payload: { tab: 'goal', view: 'versions' },
+  payload: { section: 'goal', view: 'versions' },
 };
 
 const readmeIn = ({ sessionDir }: { readonly sessionDir: string }): DrawerRequest => ({
@@ -35,48 +35,44 @@ const readmeIn = ({ sessionDir }: { readonly sessionDir: string }): DrawerReques
 
 const README_PREVIEW = readmeIn({ sessionDir: '/work/ledger-core' });
 
-type Harness = {
-  readonly get: () => AppState;
-  readonly set: (patch: Partial<AppState>) => void;
-  readonly slice: ReturnType<typeof createDrawerSlice>;
-  readonly setLens: ReturnType<typeof setActiveLens>;
-  readonly focusArtifact: ReturnType<typeof setFocusedArtifactId>;
-};
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
 
+type AppState = ReturnType<StoryStore['getState']>;
+type Harness = {
+  readonly get: StoryStore['getState'];
+  readonly set: StoryStore['setState'];
+  readonly slice: AppState;
+  readonly setLens: AppState['setActiveLens'];
+  readonly focusArtifact: AppState['setFocusedArtifactId'];
+};
+let store: StoryStore;
+beforeAll(async () => {
+  store = await importStore();
+});
 const harness = (): Harness => {
-  let state = {
-    drawer: null,
+  store.setState({
+    sessions: [aSession({ id: SESSION_ID }), aSession({ id: OTHER_SESSION_ID })],
     currentSessionId: SESSION_ID,
-    activeLens: { [SESSION_ID]: 'explore' },
-    lensHistory: {},
-    selectedAgentId: {},
-    focusedWorkflowRunId: {},
-    diffFocus: {},
-    diffMountPath: {},
-    terminalMountPath: {},
-    focusedArtifactId: {},
-    focusedGithubIssueNumber: {},
-    focusedExternalTask: {},
-  } as unknown as AppState;
-  const set = (patch: Partial<AppState> | ((current: AppState) => Partial<AppState>)) => {
-    state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
-  };
-  const get = () => state;
-  const slice = createDrawerSlice({ set: set as never, get: get as never });
-  state = { ...state, ...slice };
+  });
   return {
-    get,
-    set,
-    slice,
-    setLens: setActiveLens(set as never),
-    focusArtifact: setFocusedArtifactId(set as never),
+    get: store.getState,
+    set: store.setState,
+    slice: store.getState(),
+    setLens: store.getState().setActiveLens,
+    focusArtifact: store.getState().setFocusedArtifactId,
   };
 };
 
 describe('drawer slice', () => {
-  let h = harness();
+  let h: Harness;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await resetStoryStore();
     localStorage.clear();
     h = harness();
   });
@@ -124,7 +120,7 @@ describe('drawer slice', () => {
   });
 
   it('keeps the artifact drawer with its artifact and closes it when another one opens', () => {
-    const report = 'artifact-report' as ArtifactId;
+    const report = brandId<ArtifactId>({ value: 'artifact-report' });
     h.focusArtifact(SESSION_ID, report);
     h.slice.openDrawer({
       kind: 'artifact',
@@ -144,7 +140,7 @@ describe('drawer slice', () => {
   });
 
   it('closes a plan part drawer when another artifact takes the focus', () => {
-    const plan = 'plan-1' as ArtifactId;
+    const plan = brandId<ArtifactId>({ value: 'plan-1' });
     h.focusArtifact(SESSION_ID, plan);
     h.slice.openDrawer({
       kind: 'plan-part',
@@ -153,18 +149,18 @@ describe('drawer slice', () => {
     });
     h.focusArtifact(SESSION_ID, plan);
     expect(h.get().drawer).not.toBeNull();
-    h.focusArtifact(SESSION_ID, 'artifact-report' as ArtifactId);
+    h.focusArtifact(SESSION_ID, brandId<ArtifactId>({ value: 'artifact-report' }));
     expect(h.get().drawer).toBeNull();
   });
 
   it('keeps a plan document drawer open while the focused artifact changes underneath it', () => {
-    const plan = 'plan-1' as ArtifactId;
+    const plan = brandId<ArtifactId>({ value: 'plan-1' });
     h.slice.openDrawer({
       kind: 'artifact-document',
       sessionId: SESSION_ID,
       payload: { artifactId: plan, revision: null },
     });
-    h.focusArtifact(SESSION_ID, 'artifact-report' as ArtifactId);
+    h.focusArtifact(SESSION_ID, brandId<ArtifactId>({ value: 'artifact-report' }));
     expect(selectOpenDrawer(h.get())?.kind).toBe('artifact-document');
   });
 
@@ -172,7 +168,7 @@ describe('drawer slice', () => {
     h.slice.openDrawer({
       kind: 'artifact-document',
       sessionId: SESSION_ID,
-      payload: { artifactId: 'plan-1' as ArtifactId, revision: null },
+      payload: { artifactId: brandId<ArtifactId>({ value: 'plan-1' }), revision: null },
     });
     expect(selectDrawerSizing(h.get())).toBe('reader');
 
@@ -180,7 +176,7 @@ describe('drawer slice', () => {
     h.slice.openDrawer({
       kind: 'artifact-document',
       sessionId: SESSION_ID,
-      payload: { artifactId: 'plan-2' as ArtifactId, revision: null },
+      payload: { artifactId: brandId<ArtifactId>({ value: 'plan-2' }), revision: null },
     });
     expect(selectDrawerSizing(h.get())).toBe('reader');
   });

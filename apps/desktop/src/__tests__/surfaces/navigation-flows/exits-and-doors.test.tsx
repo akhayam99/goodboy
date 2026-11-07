@@ -9,6 +9,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
+import { brandId } from '@goodboy/types';
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
@@ -45,7 +46,7 @@ const historyButton = (verb: 'Previous' | 'Forward'): HTMLElement => {
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
   expect(found).toBeDefined();
-  return found as HTMLElement;
+  return requireValue({ value: found });
 };
 
 const closeControl = (): HTMLElement => {
@@ -113,7 +114,7 @@ const openDoor = async ({ door }: { readonly door: Door }) => {
     `[data-side-column] [data-column-door="${id}"]`,
   );
   expect(control).not.toBeNull();
-  await click(control as HTMLElement);
+  await click(requireValue({ value: control }));
 };
 
 const fireOpenSettings = async (detail: Readonly<Record<string, unknown>>): Promise<void> => {
@@ -130,27 +131,23 @@ describe('every studio exits the same way', () => {
         (exit) => [`${door.name} by ${exit.name}`, door, exit] as const,
       ),
     ),
-  )(
-    '%s lands where it started with the same forward',
-    async (_name, door, exit) => {
-      await boot({ seed: 'pr' });
-      const startSession = useAppStore.getState().currentSessionId;
-      const startIndex = stack()?.index ?? 0;
+  )('%s lands where it started with the same forward', async (_name, door, exit) => {
+    await boot({ seed: 'pr' });
+    const startSession = useAppStore.getState().currentSessionId;
+    const startIndex = stack()?.index ?? 0;
 
-      await openDoor({ door });
-      expect(appStudioKind()).toBe(door.kind);
+    await openDoor({ door });
+    expect(appStudioKind()).toBe(door.kind);
 
-      await exit.run();
+    await exit.run();
 
-      expect(appStudioKind()).toBeNull();
-      expect(useAppStore.getState().currentSessionId).toBe(startSession);
-      expect(stack()?.index).toBe(startIndex);
+    expect(appStudioKind()).toBeNull();
+    expect(useAppStore.getState().currentSessionId).toBe(startSession);
+    expect(stack()?.index).toBe(startIndex);
 
-      await click(historyButton('Forward'));
-      expect(appStudioKind()).toBe(door.kind);
-    },
-    30_000,
-  );
+    await click(historyButton('Forward'));
+    expect(appStudioKind()).toBe(door.kind);
+  });
 });
 
 describe('the Board door leaves an open studio for the board', () => {
@@ -168,7 +165,6 @@ describe('the Board door leaves an open studio for the board', () => {
       expect(appStudioKind()).toBeNull();
       expect(useAppStore.getState().currentSessionId).toBeNull();
     },
-    30_000,
   );
 });
 
@@ -230,7 +226,6 @@ describe('exactly one door in the frame is marked current', () => {
         );
       }
     },
-    30_000,
   );
 
   it('marks one door at a time while the doors replace each other', async () => {
@@ -276,14 +271,16 @@ type Route = {
 const drawerRoute = (kind: 'context' | 'ask'): Route => ({
   name: `${kind} drawer`,
   open: async () => {
-    const sessionId = useAppStore.getState().currentSessionId as SessionId;
+    const sessionId = brandId<SessionId>({
+      value: requireValue({ value: useAppStore.getState().currentSessionId }),
+    });
     act(() => {
       useAppStore
         .getState()
         .openDrawer(
           kind === 'ask'
             ? { kind, sessionId, payload: null }
-            : { kind, sessionId, payload: { tab: 'goal', view: 'current' } },
+            : { kind, sessionId, payload: { section: 'goal', view: 'current' } },
         );
     });
     await settle();
@@ -327,7 +324,7 @@ describe('every route has exactly one way back', () => {
       const isSidebarPage = route.isSidebarPage === true;
       expect(ways).toHaveLength(isSidebarPage ? 0 : 1);
 
-      await click(isSidebarPage ? historyButton('Previous') : (ways[0] as HTMLElement));
+      await click(isSidebarPage ? historyButton('Previous') : requireValue({ value: ways[0] }));
       await settle(8);
 
       expect(route.isOpen()).toBe(false);
@@ -335,6 +332,14 @@ describe('every route has exactly one way back', () => {
       expect(useAppStore.getState().currentSessionId).toBe(startSession);
       expect(stack()?.index ?? 0).toBe(startIndex);
     },
-    30_000,
   );
 });
+
+type ValueParams<Value> = { readonly value: Value | null | undefined };
+
+const requireValue = <Value,>({ value }: ValueParams<Value>): Value => {
+  if (value == null) {
+    throw new Error('Missing test value');
+  }
+  return value;
+};

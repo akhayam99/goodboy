@@ -68,7 +68,7 @@ export const attentionPlaceLabelOf = ({
     return `Open ${requestNounLabel({ host }).toLowerCase()}`;
   }
   if (FIX_REASONS.has(reason) && isFilesPlace({ place })) {
-    return `Open ${NAMES.files}`;
+    return `Open ${NAMES.changes}`;
   }
   return LABEL_BY_REASON.get(reason) ?? SESSION_LABEL;
 };

@@ -19,6 +19,7 @@ vi.mock('../../features/chat/components/ChatView', () => ({
   ChatView: () => <div data-testid="drawer-transcript" />,
 }));
 
+import { brandId } from '@goodboy/types';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -53,17 +54,17 @@ import { brandedId } from '../../features/history/testing/brandedId';
 import { DrawerHost } from './DrawerHost';
 
 const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
-const SESSION = 'session-harborline' as SessionId;
-const REPORT = 'artifact-report' as ArtifactId;
-const AGENT = 'agent-resolver' as AgentId;
+const SESSION = brandId<SessionId>({ value: 'session-harborline' });
+const REPORT = brandId<ArtifactId>({ value: 'artifact-report' });
+const AGENT = brandId<AgentId>({ value: 'agent-resolver' });
 const TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION}::t1` });
 const QUESTION = brandedId<OpenQuestionId>({ value: 'question-retry-queue' });
-const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;
+const AT = brandId<IsoDateTime>({ value: '2026-10-05T10:00:00.000Z' });
 
 const REPORT_ARTIFACT: ReportArtifact = {
   id: REPORT,
   sessionId: SESSION,
-  agentId: 'agent-scout' as AgentId,
+  agentId: brandId<AgentId>({ value: 'agent-scout' }),
   workflowRunId: null,
   schemaVersion: 1,
   title: 'Rounding drift in ledger-core',
@@ -143,7 +144,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: {
       kind: 'context',
       sessionId: SESSION,
-      payload: { tab: 'goal', view: 'current' },
+      payload: { section: 'goal', view: 'current' },
     },
   },
   {
@@ -376,7 +377,7 @@ describe('every drawer names its close control Close', () => {
       renderHost();
 
       const region = await screen.findByRole('region', { name: entry.region });
-      expect(within(region).getByRole('button', { name: 'Close' })).toBeDefined();
+      within(region).getByRole('button', { name: 'Close' });
       const namedCloses = within(region)
         .queryAllByRole('button', { name: /^Close .+/ })
         .filter((button) => button.closest('[data-terminal-tab]') === null);
@@ -391,10 +392,13 @@ describe('every drawer names its close control Close', () => {
       ),
       (match) => match[1],
     );
-    const covered = new Set([...ENTRIES.map((entry) => entry.kind), ...PAGE_OWNED_KINDS]);
+    const covered: ReadonlySet<string> = new Set([
+      ...ENTRIES.map((entry) => entry.kind),
+      ...PAGE_OWNED_KINDS,
+    ]);
 
     expect(hosted.length).toBeGreaterThan(0);
-    expect(hosted.filter((kind) => !covered.has(kind as DrawerRequest['kind']))).toEqual([]);
+    expect(hosted.filter((kind) => kind === undefined || !covered.has(kind))).toEqual([]);
   });
 });
 
@@ -429,14 +433,14 @@ describe('the Context drawer in its versions view', () => {
       drawer: {
         kind: 'context',
         sessionId: SESSION,
-        payload: { tab: 'goal', view: 'versions' },
+        payload: { section: 'goal', view: 'versions' },
       },
     });
 
     renderHost();
 
     const region = screen.getByRole('region', { name: 'Context' });
-    expect(within(region).getByRole('button', { name: 'Back to current' })).toBeDefined();
+    within(region).getByRole('button', { name: 'Back to current' });
     expect(within(region).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 });
@@ -450,7 +454,7 @@ describe('the Ask drawer header', () => {
 
     const header = within(screen.getByRole('region', { name: 'Ask' })).getByRole('banner');
     expect(header.textContent).not.toContain('Fix webhook retries');
-    expect(within(header).getByRole('heading', { name: 'Ask' })).toBeDefined();
+    within(header).getByRole('heading', { name: 'Ask' });
   });
 });
 
@@ -485,7 +489,7 @@ describe('the explore file drawer across sessions', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^Open/ }));
     await waitFor(() => {
-      expect(screen.getByText(/Couldn't open README.md/)).toBeDefined();
+      screen.getByText(/Couldn't open README.md/);
     });
 
     act(() => {

@@ -65,7 +65,7 @@ between them instead of mixing one surface through opacity.
 | 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
 | 2    | panel    | `bg-subtle`     | grouped content on the sheet                          |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
-| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
+| 4    | raised   | `bg-elevated`   | cards: board cards                                    |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
 | 6    | tooltip  | `bg-floating`   | the label tooltip, one line on the floating surface   |
 
@@ -137,7 +137,7 @@ selected is 13% and 12%, so a selected row always reads above a hovered one.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
-`SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
+`SelectableRow`). `SegmentedTabs` follows it too: a
 hairline track, `bg-selected` on the active segment, no raised pill. A
 selected nav entry also lights its icon in its own kind color, never the
 label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
@@ -542,7 +542,7 @@ together, and there is no arbitrary shadow.
 | 0 frame    | `chrome`                        | none        | none                          | n/a                        | top bar, left column, rail       |
 | 1 sheet    | `background`                    | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
 | 2 band     | `fill` (band), `subtle` (panel) | none        | none                          | `lg`                       | groups, panels on the sheet      |
-| 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
+| 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards                      |
 | 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
 | 5 tooltip  | `floating`                      | `shadow-lg` | `border-soft`                 | `md`                       | label tooltips                   |
 

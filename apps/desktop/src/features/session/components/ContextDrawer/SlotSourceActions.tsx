@@ -1,36 +1,33 @@
-import { Code } from 'lucide-react';
-import { Button, ICON_SIZE } from '@goodboy/ui';
+import { ObjectOverflowMenu } from '../../../actions/ObjectOverflowMenu';
 
 type Props = {
+  readonly label: string;
   readonly isLocked: boolean;
-  readonly isRawEditing: boolean;
   readonly historyCount: number;
-  readonly onToggleRaw: () => void;
+  readonly onEdit: () => void;
   readonly onOpenVersions: () => void;
+  readonly onToggleVisibility: () => void;
 };
 
 export const SlotSourceActions = ({
+  label,
   isLocked,
-  isRawEditing,
   historyCount,
-  onToggleRaw,
+  onEdit,
   onOpenVersions,
+  onToggleVisibility,
 }: Props) => (
-  <div className="flex items-center gap-1">
-    {historyCount > 0 ? (
-      <Button variant="ghost" size="sm" onClick={onOpenVersions}>
-        {`Versions ${historyCount}`}
-      </Button>
-    ) : null}
-    <Button
-      variant="ghost"
-      size="sm"
-      disabled={isLocked}
-      aria-pressed={isRawEditing}
-      onClick={onToggleRaw}
-    >
-      <Code size={ICON_SIZE.row} aria-hidden />
-      {isRawEditing ? 'Done' : 'Edit source'}
-    </Button>
-  </div>
+  <ObjectOverflowMenu
+    label={`${label} actions`}
+    target={{
+      kind: 'contextSlot',
+      facts: {
+        isLocked,
+        hasVersions: historyCount > 0,
+        onEdit,
+        onOpenVersions,
+        onToggleVisibility,
+      },
+    }}
+  />
 );

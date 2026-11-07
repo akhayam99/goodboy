@@ -338,7 +338,6 @@ export const BrandContextScene = () => {
       loadSessionSlots: async () => undefined,
       loadSessionDecisions: async () => undefined,
       loadSessionContextSeen: async () => undefined,
-      markSessionContextSeen: async () => undefined,
       loadSessionEvents: async () => undefined,
       loadSessionOpenQuestions: async () => undefined,
       loadSessionAnsweredQuestions: async () => undefined,
@@ -349,7 +348,7 @@ export const BrandContextScene = () => {
       ensureProjectMounted: async () => undefined,
       recordSessionEvent: async () => undefined,
     } as never);
-    useAppStore.getState().openContextDrawer({ sessionId: CTX_SESSION_ID, tab: 'decisions' });
+    useAppStore.getState().openContextDrawer({ sessionId: CTX_SESSION_ID, section: 'decisions' });
     setIsReady(true);
   }, []);
 

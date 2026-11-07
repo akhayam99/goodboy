@@ -1,5 +1,5 @@
 import { formatUsd } from '@goodboy/ui';
-import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
+import type { ContextDrawerSection } from '../../../../store/slices/drawer/state';
 import type {
   SummarizerPending,
   SummarizerRound,
@@ -61,18 +61,18 @@ export const roundModel = ({ round }: RoundParams): string => {
 export const roundUsage = ({ round }: RoundParams): string =>
   `${formatInteger(round.inputTokens)} in · ${formatInteger(round.outputTokens)} out · about ${formatUsd(round.costUsd)}`;
 
-export type RoundChange = Readonly<{ label: string; tab: ContextDrawerTab }>;
+export type RoundChange = Readonly<{ label: string; section: ContextDrawerSection }>;
 
 export const roundChanges = ({ round }: RoundParams): ReadonlyArray<RoundChange> => {
   const changes: Array<RoundChange> = [];
   if (round.changed.goal) {
-    changes.push({ label: 'Goal', tab: 'goal' });
+    changes.push({ label: 'Goal', section: 'goal' });
   }
   if (round.changed.decisions > 0) {
-    changes.push({ label: pluralize(round.changed.decisions, 'decision'), tab: 'decisions' });
+    changes.push({ label: pluralize(round.changed.decisions, 'decision'), section: 'decisions' });
   }
   if (round.changed.summary) {
-    changes.push({ label: 'Summary', tab: 'summary' });
+    changes.push({ label: 'Summary', section: 'summary' });
   }
   return changes;
 };
@@ -88,13 +88,13 @@ export const contextUpdateHint = ({ phase, pendingTurns, hasContext }: HintParam
     return 'Waiting for its turn in the session queue.';
   }
   if (phase === 'running') {
-    return 'One update at a time, in the session queue.';
+    return '';
   }
   if (phase === 'done') {
     return 'Context is current.';
   }
   if (phase === 'failed') {
-    return 'Retry joins the queue like any update.';
+    return '';
   }
   if (!hasContext) {
     return 'Updates start after the first agent turn.';
@@ -103,5 +103,5 @@ export const contextUpdateHint = ({ phase, pendingTurns, hasContext }: HintParam
     pendingTurns === 0
       ? 'No new turns since the last update.'
       : `${pluralize(pendingTurns, 'new turn')} since the last update.`;
-  return `${since} Joins the queue, one update at a time.`;
+  return since;
 };

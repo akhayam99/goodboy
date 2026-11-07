@@ -123,3 +123,5 @@ The branch header counts commits ahead of origin through `branchPushFactsOf`,
 as does the Push action. A branch with nothing left to push reads Up to date
 with origin; a diverged branch names both sides (`branchStartLineOf`). The
 request summary calls its total commits on this branch (the Commits tab).
+
+A disconnected linked record stays readable in the session with its provider link. Reconnect from Settings; the session does not embed a connection form (`FocusedTaskBody`).

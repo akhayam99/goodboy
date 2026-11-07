@@ -2,12 +2,11 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { LensKind } from '../session-view/types';
 import { agentHomeFor } from './agentHomeFor';
+import { isProviderListLens } from './isProviderListLens';
 import { doorMountPath } from './doorMountPath';
 import { foldedLensOf } from './foldedLensOf';
 import { branchPlace, fixRunTranscript, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
-import { CONTEXT_LENS_TAB } from './contextLensTab';
-import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
 import { resolveBranchTab } from '../../../features/branch/branchTabs';
 import { branchScopeOf } from '../session-view/branchScopeOf';
@@ -201,33 +200,14 @@ const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
     request: { ...asked, view: { ...asked.view, lens: foldedLensOf({ lens: asked.view.lens }) } },
   });
   const { view, sessionId } = request;
+  if (isProviderListLens({ lens: view.lens }) && view.target === null) {
+    return sessionPlace({ sessionId });
+  }
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {
     return branch;
   }
   return request;
-};
-
-const canonicalContext = ({ state, request }: PlaceParams): CanonicalPlace | null => {
-  if (request.at !== 'session' || request.view.lens === null) {
-    return null;
-  }
-  const tab = CONTEXT_LENS_TAB[request.view.lens];
-  if (tab === undefined) {
-    return null;
-  }
-  const { sessionId } = request;
-  return {
-    place: sessionPlace({ sessionId }),
-    drawer: {
-      kind: 'context',
-      sessionId,
-      payload: {
-        tab: tab ?? state.contextDrawerTab?.[sessionId] ?? DEFAULT_CONTEXT_TAB,
-        view: 'current',
-      },
-    },
-  };
 };
 
 const isAskHandOver = ({ state, sessionId }: SessionParams): boolean => {
@@ -261,7 +241,6 @@ export const canonicalLocation = ({ state, request }: Params): CanonicalPlace =>
   }
   return (
     formerFixRunPage({ state, request }) ??
-    canonicalContext({ state, request }) ??
     canonicalQuestion({ state, request }) ?? {
       place: canonicalPlace({ state, request }),
       drawer: null,

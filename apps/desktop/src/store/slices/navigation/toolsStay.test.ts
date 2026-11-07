@@ -48,7 +48,7 @@ beforeEach(async () => {
 const state = () => store.getState();
 
 const TOOLS: ReadonlyArray<readonly [string, DrawerRequest]> = [
-  ['Context', { kind: 'context', sessionId: S1, payload: { tab: 'goal', view: 'current' } }],
+  ['Context', { kind: 'context', sessionId: S1, payload: { section: 'goal', view: 'current' } }],
   ['Explore', { kind: 'explore', sessionId: S1, payload: null }],
   ['Scripts', { kind: 'scripts', sessionId: S1, payload: null }],
   ['Agents', { kind: 'spawned', sessionId: S1, payload: null }],

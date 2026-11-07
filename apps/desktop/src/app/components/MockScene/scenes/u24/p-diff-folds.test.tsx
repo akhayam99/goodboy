@@ -47,12 +47,12 @@ describe('the u24 diff folds scene', () => {
     expect(Object.keys(MOCK_SCENES)).toContain('branch-files-deep');
   });
 
-  it('draws 39 files in a deep tree in the file rail of the Files entry', async () => {
+  it('draws 39 files in a deep tree in the file rail of the Changes entry', async () => {
     renderScene();
 
     const rail = await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
-    const files = within(rail).getByRole('tab', { name: /^Files/ });
-    expect(files.textContent).toBe('Files');
+    const files = within(rail).getByRole('tab', { name: /^Changes/ });
+    expect(files.textContent).toBe('Changes');
     expect(
       within(fileRail()).getAllByRole('treeitem', { name: /roundHalfEven\.ts/ }).length,
     ).toBeGreaterThan(0);

@@ -1,33 +1,25 @@
 // @vitest-environment happy-dom
 
-import { useInheritedPaneActions } from '@goodboy/ui';
-import type { ReactNode } from 'react';
-import { RecordHeader } from '../../../../../../shared/components/StudioDetail/RecordHeader';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type {
-  IsoDateTime,
-  PullRequestState,
-  SessionExternalTask,
-  SessionId,
-  WorkspaceId,
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  brandId,
+  type IsoDateTime,
+  type SessionExternalTask,
+  type SessionId,
+  type WorkspaceId,
 } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import {
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../../store/storyHarness';
+import { sessionPlace, BOARD_PLACE } from '../../../../../../store/slices/navigation/place';
+import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
+import { IntegrationPane } from '.';
 
-type Props = {
-  readonly title: string;
-  readonly children: ReactNode;
-  readonly actions?: ReactNode;
-};
-
-type TaskDetailProps = {
-  readonly task: SessionExternalTask;
-};
-
-const h = vi.hoisted(() => ({
-  openUrl: vi.fn(async () => undefined),
-  replaceTaskLinks: vi.fn(async (_params: unknown) => true),
-}));
-
+const h = vi.hoisted(() => ({ replaceLinks: vi.fn(async () => true) }));
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../../../store/storyHarness')).tauriCoreModuleMock(),
 );
@@ -36,671 +28,112 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../../../store/storyHarness')).dbModuleMock({
-    replaceSessionTaskLinks: h.replaceTaskLinks,
+    replaceSessionTaskLinks: h.replaceLinks,
   }),
 );
-vi.mock('../../../../../integrations/linear/client', async () =>
-  (await import('../../../../../../store/storyHarness')).linearClientModuleMock(),
-);
 
-vi.mock('../../../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
-  useWorkspaceIssueLookup: () => ({ code: null, settled: null, loadingProviders: [] }),
-}));
-
-vi.mock('../../../../../../shared/lib/editor', () => ({
-  openUrl: h.openUrl,
-}));
-
-vi.mock('./LinearTaskDetail', () => ({
-  LinearTaskDetail: ({ task }: TaskDetailProps) => (
-    <div data-testid="task-detail">
-      <a href="https://linear.app/GB-42" aria-label="Open in Linear">
-        Linear detail {task.externalId}
-      </a>
-      <button type="button" aria-label="Copy issue link" />
-      <div data-testid="task-detail-actions">
-        <RecordHeader provider="linear" identifier={task.identifier} title={task.title} />
-      </div>
-    </div>
-  ),
-}));
-
-vi.mock('./GitlabTaskDetail', () => ({
-  GitlabTaskDetail: ({ task }: TaskDetailProps) => (
-    <div data-testid="task-detail">
-      <a href="https://gitlab.com/acme/web/-/issues/3" aria-label="Open in GitLab">
-        GitLab detail {task.externalId}
-      </a>
-      <button type="button" aria-label="Copy issue link" />
-      <div data-testid="task-detail-actions">{useInheritedPaneActions()}</div>
-    </div>
-  ),
-}));
-
-vi.mock('@goodboy/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/ui')>()),
-  PaneShell: ({ title, children, actions }: Props) => (
-    <div>
-      <h1>{title}</h1>
-      {actions}
-      {children}
-    </div>
-  ),
-}));
-
-import { IntegrationPane } from './index';
-import { ToastProvider } from '../../../../../../shared/components/Toast';
-import { UndoToastBridge } from '../../../../../../app/components/UndoToastBridge';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
-import type {
-  IntegrationBindingId,
-  IntegrationCredentialId,
-  ProjectId,
-  MountId,
-} from '@goodboy/types';
-import {
-  importStore,
-  resetStoryStore,
-  storySpies,
-  stubStoryInvoke,
-  STORE_IMPORT_TIMEOUT_MS,
-  type StoryStore,
-} from '../../../../../../store/storyHarness';
-
-let useAppStore: StoryStore;
-
-beforeAll(async () => {
-  useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
-import { parseIntegrationTaskUrl } from './parseIntegrationTaskUrl';
-import { BOARD_PLACE, sessionPlace } from '../../../../../../store/slices/navigation/place';
-import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
-
-const SESSION_ID = 'session-1' as SessionId;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const CREATED_AT = '2026-07-22T12:00:00.000Z' as IsoDateTime;
+const SESSION_ID = brandId<SessionId>({ value: 'session-harborline' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-harborline' });
 const TASK: SessionExternalTask = {
   sessionId: SESSION_ID,
   provider: 'linear',
-  externalId: 'GB-42',
-  identifier: 'GB-42',
-  title: 'Refactor integration storage',
-  url: 'https://linear.app/goodboy/issue/GB-42/refactor-integration-storage',
-  createdAt: CREATED_AT,
+  externalId: 'HAR-42',
+  identifier: 'HAR-42',
+  title: 'Keep one linked work list',
+  url: 'https://linear.app/harborline/issue/HAR-42',
+  createdAt: brandId<IsoDateTime>({ value: '2026-11-01T09:00:00.000Z' }),
 };
-const SECOND_TASK: SessionExternalTask = {
-  sessionId: SESSION_ID,
-  provider: 'linear',
-  externalId: 'GB-43',
-  identifier: 'GB-43',
-  title: 'Trim the integration pane',
-  url: 'https://linear.app/goodboy/issue/GB-43/trim-the-integration-pane',
-  createdAt: CREATED_AT,
-};
-const MERGED_PR: PullRequestState = {
-  number: 42,
-  title: 'Refactor integration storage',
-  url: 'https://github.com/acme/goodboy/pull/42',
-  state: 'merged',
-  mergeable: null,
-  checks: 'success',
-  baseBranch: 'main',
-  headBranch: 'ak/current',
-  isDraft: false,
-  reviewDecision: 'approved',
-  body: '',
-  updatedAt: CREATED_AT,
-};
-const GITLAB_TASK: SessionExternalTask = {
-  sessionId: SESSION_ID,
-  provider: 'gitlab',
-  externalId: 'acme/web#3',
-  identifier: 'acme/web#3',
-  title: 'Restore the pipeline',
-  url: 'https://gitlab.com/acme/web/-/issues/3',
-  createdAt: CREATED_AT,
-};
-const PROJECT_ID = 'project-ledger-core' as ProjectId;
+let store: StoryStore;
 
+beforeAll(async () => {
+  store = await importStore();
+});
 beforeEach(async () => {
   await resetStoryStore();
-  storySpies.linearValidateConnection.mockResolvedValue({
-    id: 'viewer-northwind',
-    name: 'Northwind',
-    organization: { id: 'org-northwind', name: 'Northwind', urlKey: 'northwind' },
-  });
-  storySpies.linearConnect.mockResolvedValue(undefined);
-  useAppStore.setState({
-    sessionExternalTasks: { [SESSION_ID]: [TASK] },
+  h.replaceLinks.mockReset();
+  h.replaceLinks.mockResolvedValue(true);
+  store.setState({
     sessions: [aSession({ id: SESSION_ID, workspaceId: WORKSPACE_ID })],
-    workspaces: [aWorkspace({ id: WORKSPACE_ID })],
-    projects: [aProject({ id: PROJECT_ID, workspaceId: WORKSPACE_ID, kind: 'repo' })],
-    sessionProjectMounts: {
-      [SESSION_ID]: [
-        {
-          mountId: 'mount-ledger-core' as MountId,
-          sessionId: SESSION_ID,
-          projectId: PROJECT_ID,
-          mountName: 'ledger-core',
-          worktreePath: '/tmp/ledger-core/current',
-          lastWorktreePath: null,
-          repoRoot: '/tmp/ledger-core',
-          branch: 'ak/current',
-          baseBranch: 'main',
-          parallelIndex: 0,
-          isAttached: true,
-          diskState: 'present',
-          revision: 1,
-        },
-      ],
-    },
-    sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
-    githubWorkspaceStatus: { [WORKSPACE_ID]: null },
-    workspaceIntegrations: {
-      [WORKSPACE_ID]: [
-        {
-          id: 'binding-linear' as IntegrationBindingId,
-          workspaceId: WORKSPACE_ID,
-          projectId: null,
-          credentialId: 'credential-linear' as IntegrationCredentialId,
-          provider: 'linear',
-          config: {
-            workspaceUrlKey: 'northwind',
-            viewerUserId: 'viewer-northwind',
-            viewerName: 'Northwind',
-          },
-          createdAt: CREATED_AT,
-          updatedAt: CREATED_AT,
-        },
-        {
-          id: 'binding-gitlab' as IntegrationBindingId,
-          workspaceId: WORKSPACE_ID,
-          projectId: null,
-          credentialId: 'credential-gitlab' as IntegrationCredentialId,
-          provider: 'gitlab',
-          config: { userName: 'Northwind', userId: 'viewer-northwind', host: 'gitlab.com' },
-          createdAt: CREATED_AT,
-          updatedAt: CREATED_AT,
-        },
-      ],
-    },
+    currentWorkspaceId: WORKSPACE_ID,
+    currentSessionId: SESSION_ID,
+    sessionExternalTasks: { [SESSION_ID]: [TASK] },
+    workspaceIntegrations: { [WORKSPACE_ID]: [] },
   });
-  stubStoryInvoke({
-    gh_run: '',
-    gitlab_fetch_assigned_issues: [],
-    gitlab_fetch_assigned_mrs: [],
+  store.getState().navigate({
+    to: sessionPlace({
+      sessionId: SESSION_ID,
+      lens: 'linear',
+      target: {
+        kind: 'external-task',
+        task: { provider: 'linear', externalId: TASK.externalId, projectId: null },
+      },
+    }),
   });
-  h.openUrl.mockClear();
-  h.replaceTaskLinks.mockReset();
-  h.replaceTaskLinks.mockImplementation(async () => true);
 });
-
 afterEach(cleanup);
 
-describe('parseIntegrationTaskUrl', () => {
-  it('parses provider URLs and falls back to their trailing segment', () => {
-    expect(
-      parseIntegrationTaskUrl({
-        provider: 'linear',
-        rawUrl: 'linear.app/goodboy/issue/GB-42/refactor-integration-storage',
-      }),
-    ).toMatchObject({ externalId: 'GB-42', identifier: 'GB-42', title: 'GB-42' });
-    expect(
-      parseIntegrationTaskUrl({
-        provider: 'sentry',
-        rawUrl: 'https://sentry.io/organizations/goodboy/issues/12345/events/latest/',
-      }),
-    ).toMatchObject({ externalId: '12345', identifier: '12345' });
-    expect(
-      parseIntegrationTaskUrl({
-        provider: 'gitlab',
-        rawUrl: 'https://gitlab.com/acme/web/-/issues/7',
-      }),
-    ).toMatchObject({ externalId: 'acme/web#7', identifier: 'acme/web#7' });
-    expect(
-      parseIntegrationTaskUrl({
-        provider: 'jira',
-        rawUrl: 'https://acme.atlassian.net/browse/ENG-142',
-      }),
-    ).toMatchObject({ externalId: 'ENG-142', identifier: 'ENG-142', title: 'ENG-142' });
-    expect(
-      parseIntegrationTaskUrl({
-        provider: 'linear',
-        rawUrl: 'not a valid URL/item-9',
-      }),
-    ).toMatchObject({
-      externalId: 'not a valid URL/item-9',
-      identifier: 'item-9',
-      url: 'not a valid URL/item-9',
-    });
-  });
-});
+const mount = () =>
+  render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+const requestUnlink = async () => {
+  fireEvent.click(screen.getByRole('button', { name: `More actions for ${TASK.identifier}` }));
+  expect(screen.getAllByRole('menuitem').length).toBeLessThanOrEqual(5);
+  fireEvent.click(await screen.findByRole('menuitem', { name: /Remove link from this session/ }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
+};
 
-describe('IntegrationPane', () => {
-  it.each([['linear', TASK, 'Linear']] as const)(
-    'shows one open and copy affordance for a linked %s task with detail',
-    (provider, task, host) => {
-      useAppStore.setState({ sessionExternalTasks: { [SESSION_ID]: [task] } });
-
-      render(
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
-      );
-      fireEvent.click(screen.getByRole('button', { name: `View ${task.identifier}` }));
-
-      expect(screen.getAllByRole('link', { name: `Open in ${host}` })).toHaveLength(1);
-      expect(screen.getAllByRole('button', { name: 'Copy issue link' })).toHaveLength(1);
-    },
-  );
-
-  it.each([
-    ['linear', TASK, 'Linear detail GB-42'],
-    ['gitlab', GITLAB_TASK, 'GitLab detail acme/web#3'],
-  ] as const)(
-    'opens the %s issue the session focused from another surface',
-    (provider, task, detailText) => {
-      useAppStore.setState({ sessionExternalTasks: { [SESSION_ID]: [task] } });
-      useAppStore.setState({
-        focusedExternalTask: {
-          [SESSION_ID]: { provider, externalId: task.externalId, projectId: null },
-        },
-      });
-
-      render(
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
-      );
-
-      expect(screen.getByText(detailText)).toBeDefined();
-      expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
-    },
-  );
-
-  it.each([
-    ['linear', TASK, 'Linear detail GB-42'],
-    ['gitlab', GITLAB_TASK, 'GitLab detail acme/web#3'],
-  ] as const)(
-    'lists the %s issues when the lens opens with nothing focused',
-    (provider, task, detailText) => {
-      useAppStore.setState({ sessionExternalTasks: { [SESSION_ID]: [task] } });
-
-      render(
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
-      );
-
-      expect(screen.getByRole('button', { name: `View ${task.identifier}` })).toBeDefined();
-      expect(screen.queryByText(detailText)).toBeNull();
-    },
-  );
-
-  it.each([0, 1, 2] as const)('states its section title with %i linked records', (count) => {
-    useAppStore.setState({
-      sessionExternalTasks: { [SESSION_ID]: [TASK, SECOND_TASK].slice(0, count) },
-    });
-
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
-    expect(screen.queryAllByRole('button', { name: /^View GB-/ })).toHaveLength(count);
-    expect(screen.queryByTestId('task-detail')).toBeNull();
+describe('Linked work record', () => {
+  it('keeps the record with one connection line and an external link when disconnected', () => {
+    mount();
+    screen.getByRole('heading', { name: TASK.title });
+    screen.getByText('Connection lost. Open the record in its provider or reconnect in Settings.');
+    screen.getByRole('button', { name: `Open ${TASK.identifier}` });
+    expect(screen.queryByRole('button', { name: `View ${TASK.identifier}` })).toBeNull();
   });
 
-  it('hands its actions to the focused record header, with no eyebrow row above it', () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-
-    const actions = screen.getByTestId('task-detail-actions');
-
-    expect(screen.queryByText('Linear')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
-    expect(within(actions).getByRole('button', { name: 'More actions for GB-42' })).toBeDefined();
-    expect(within(actions).queryByRole('button', { name: 'All issues' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
+  it('returns a provider list address to Overview', () => {
+    store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'linear' }) });
+    expect(store.getState().activeLens[SESSION_ID]).toBeNull();
+    expect(store.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
   });
 
-  it('shows where the focused issue lives as a Links property and moves it from there', async () => {
-    const moveSessionExternalTask = vi.fn(async () => undefined);
-    useAppStore.setState({ moveSessionExternalTask });
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-
-    expect(
-      within(screen.getByRole('region', { name: 'Links' })).getByText('Placed on'),
-    ).toBeDefined();
-    expect(screen.queryByText('Linked to')).toBeNull();
-    const value = screen.getByRole('button', { name: 'Move GB-42 from This session' });
-    expect(value.textContent).toContain('This session');
-    fireEvent.click(value);
-
-    const menu = screen.getByRole('menu', { name: 'Move to' });
-    expect(
-      within(menu)
-        .getAllByRole('menuitem')
-        .map((item) => item.textContent),
-    ).toEqual(['This session', 'ledger-core · ak/current']);
+  it('unlinks after success and lands on Overview, with app Undo restoring the link', async () => {
+    mount();
+    await requestUnlink();
+    await waitFor(() => expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([]));
+    expect(store.getState().activeLens[SESSION_ID]).toBeNull();
     await act(async () => {
-      fireEvent.click(within(menu).getByRole('menuitem', { name: 'ledger-core · ak/current' }));
+      await store.getState().undoLastOperation({});
     });
-    expect(moveSessionExternalTask).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: SESSION_ID,
-        to: { kind: 'branch', projectId: PROJECT_ID, branch: 'ak/current' },
-      }),
-    );
+    expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
   });
 
-  it('stays on the focused issue when a move changes where it lives', () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-
-    act(() => {
-      useAppStore.setState({
-        sessionExternalTasks: {
-          [SESSION_ID]: [{ ...TASK, scope: 'branch', branch: 'ak/current' }],
-        },
-      });
-    });
-
-    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Move GB-42 from / })).toBeDefined();
+  it('stays on the record on failure and retries Unlink', async () => {
+    h.replaceLinks.mockRejectedValueOnce(new Error('disk full'));
+    mount();
+    await requestUnlink();
+    await screen.findByText('disk full');
+    expect(store.getState().focusedExternalTask[SESSION_ID]?.externalId).toBe(TASK.externalId);
+    expect(store.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
+    await requestUnlink();
+    await waitFor(() => expect(store.getState().activeLens[SESSION_ID]).toBeNull());
   });
 
-  it('opens a branch only issue from its chip on the issue page', () => {
-    useAppStore.setState({
-      sessionExternalTasks: { [SESSION_ID]: [{ ...TASK, scope: 'branch', branch: 'ak/current' }] },
-      focusedExternalTask: {
-        [SESSION_ID]: { provider: 'linear', externalId: TASK.externalId, projectId: null },
-      },
-    });
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-  });
-
-  it('names the branch in Linked to once the issue sits on one', () => {
-    useAppStore.setState({
-      sessionExternalTasks: {
-        [SESSION_ID]: [{ ...TASK, scope: 'branch', branch: 'ak/current', projectId: PROJECT_ID }],
-      },
-    });
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-
-    const value = screen.getByRole('button', { name: /^Move GB-42 from / });
-    expect(value.textContent).toContain('ledger-core · ak/current');
-  });
-
-  it('puts Link work in the tracker list header and leaves it out of a focused issue', () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-
-    expect(screen.queryByRole('button', { name: 'Link work' })).toBeNull();
-  });
-
-  it('lists every linked task as a card and focuses the clicked one', () => {
-    useAppStore.setState({ sessionExternalTasks: { [SESSION_ID]: [TASK, SECOND_TASK] } });
-
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.getAllByRole('button', { name: /^View GB-/ })).toHaveLength(2);
-    expect(screen.getByText('Trim the integration pane')).toBeDefined();
-    expect(screen.queryByText('Linear detail GB-42')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-43' }));
-
-    expect(screen.getByText('Linear detail GB-43')).toBeDefined();
-    expect(useAppStore.getState().focusedExternalTask[SESSION_ID]).toEqual({
-      provider: 'linear',
-      externalId: SECOND_TASK.externalId,
-      projectId: SECOND_TASK.projectId ?? null,
-    });
-  });
-
-  it.each(['back', 'up'] as const)('returns to the list when %s leaves the issue', (move) => {
-    act(() =>
-      useAppStore
-        .getState()
-        .navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'linear' }) }),
-    );
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-
-    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
-
-    act(() => useAppStore.getState()[move]());
-
-    expect(useAppStore.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
-    expect(screen.getByRole('button', { name: 'View GB-42' })).toBeDefined();
-  });
-
-  it('folds a merged work item behind a completed count until expanded', () => {
-    useAppStore.setState({
-      sessionExternalTasks: {
-        [SESSION_ID]: [
-          { ...TASK, branch: 'ak/current' },
-          { ...SECOND_TASK, branch: 'ak/shipped' },
-        ],
-      },
-    });
-    useAppStore.setState({ sessionProjectPrs: { [SESSION_ID]: { [PROJECT_ID]: [MERGED_PR] } } });
-
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    const toggle = screen.getByRole('button', { name: 'Show completed (2)' });
-    expect(screen.queryByText('ak/shipped')).toBeNull();
-
-    fireEvent.click(toggle);
-
-    expect(screen.getAllByText('Completed')).toHaveLength(1);
-    expect(screen.getByText('ak/shipped')).toBeDefined();
-  });
-
-  it('renders no completed toggle when nothing is completed', () => {
-    useAppStore.setState({
-      sessionExternalTasks: { [SESSION_ID]: [{ ...TASK, branch: 'ak/current' }] },
-    });
-
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.queryByRole('button', { name: /^Completed/ })).toBeNull();
-  });
-
-  it('unlinks the focused task from its menu after a confirm and restores it through app Undo', async () => {
-    useAppStore.setState({ currentWorkspaceId: WORKSPACE_ID });
-    render(
-      <ToastProvider>
-        <UndoToastBridge />
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />
-      </ToastProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for GB-42' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Remove link from this session/ }));
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
-    await act(async () => {
-      fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
-    });
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([]);
-    expect(screen.queryByRole('group', { name: /Unlink/ })).toBeNull();
-    expect(screen.getByText('Unlinked GB-42')).toBeDefined();
-    expect(useAppStore.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    });
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
-  });
-
-  it('leaves the user where they went when an unlink resolves after they left the issue', async () => {
-    let commit: (isCommitted: boolean) => void = () => undefined;
-    h.replaceTaskLinks.mockImplementation(
+  it('keeps a later destination when unlink resolves after leaving the record', async () => {
+    let finish: (isCommitted: boolean) => void = () => undefined;
+    h.replaceLinks.mockImplementationOnce(
       () =>
         new Promise<boolean>((resolve) => {
-          commit = resolve;
+          finish = resolve;
         }),
     );
-    useAppStore.setState({ currentWorkspaceId: WORKSPACE_ID });
-    render(
-      <ToastProvider>
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />
-      </ToastProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
-    fireEvent.click(screen.getByRole('button', { name: 'More actions for GB-42' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: /Remove link from this session/ }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
-    await waitFor(() => expect(h.replaceTaskLinks).toHaveBeenCalledOnce());
+    mount();
+    await requestUnlink();
     act(() => {
-      useAppStore.getState().navigate({ to: BOARD_PLACE });
+      store.getState().navigate({ to: BOARD_PLACE });
     });
-    expect(useAppStore.getState().focusedExternalTask[SESSION_ID]?.externalId).toBe('GB-42');
-
     await act(async () => {
-      commit(true);
+      finish(true);
     });
-
-    await waitFor(() =>
-      expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([]),
-    );
-    expect(captureLocation({ state: useAppStore.getState() }).place).toEqual(BOARD_PLACE);
+    expect(captureLocation({ state: store.getState() }).place).toEqual(BOARD_PLACE);
   });
-
-  const pasteLinearLink = () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Search work to link' }), {
-      target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
-    });
-  };
-
-  it('links a pasted provider URL from Link work with the closing line kept', async () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    pasteLinearLink();
-    expect(screen.getByText('Will close GB-99 when merged ·')).toBeDefined();
-    fireEvent.click(screen.getByRole('option', { name: 'Link GB-99' }));
-
-    await waitFor(() =>
-      expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toHaveLength(2),
-    );
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toContainEqual(
-      expect.objectContaining({
-        provider: 'linear',
-        externalId: 'GB-99',
-        identifier: 'GB-99',
-        relation: 'closes',
-        url: 'https://linear.app/goodboy/issue/GB-99/new-link',
-      }),
-    );
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Link work' })).toBeNull());
-  });
-
-  it('writes part-of when the closing line is switched off', async () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    pasteLinearLink();
-    fireEvent.click(screen.getByRole('button', { name: 'Don’t close' }));
-    fireEvent.click(screen.getByRole('option', { name: 'Link GB-99' }));
-
-    await waitFor(() =>
-      expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toHaveLength(2),
-    );
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toContainEqual(
-      expect.objectContaining({ externalId: 'GB-99', relation: 'part-of' }),
-    );
-  });
-
-  it('opens the empty state link picker filtered to the tracker', async () => {
-    useAppStore.setState({ sessionExternalTasks: {} });
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="gitlab" />);
-
-    expect(screen.getByText('No GitLab issues linked')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Link work' })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Open GitLab studio' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
-
-    expect(screen.getByRole('dialog', { name: 'Link work' })).toBeDefined();
-    expect(screen.getByRole('combobox', { name: 'Search work to link' })).toBeDefined();
-    const filter = await screen.findByRole('tablist', { name: 'Filter by source' });
-    expect(
-      within(filter)
-        .getByRole('tab', { name: /GitLab/ })
-        .getAttribute('aria-selected'),
-    ).toBe('true');
-  });
-
-  it('shows the provider connection form inline when disconnected', async () => {
-    useAppStore.setState({ sessionExternalTasks: {} });
-    useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] } });
-    const listener = vi.fn();
-    window.addEventListener('goodboy:open-linear-studio', listener);
-
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
-    fireEvent.change(screen.getByLabelText('API key'), {
-      target: { value: 'lin_api_test' },
-    });
-    await waitFor(
-      () =>
-        expect(useAppStore.getState().workspaceIntegrations[WORKSPACE_ID]).toContainEqual(
-          expect.objectContaining({
-            provider: 'linear',
-            config: expect.objectContaining({ viewerUserId: 'viewer-northwind' }),
-          }),
-        ),
-      { timeout: 2000 },
-    );
-    expect(listener).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-linear-studio', listener);
-  });
-
-  it('draws a connection skeleton, never the connect form, until the integrations load', () => {
-    vi.useFakeTimers();
-    try {
-      useAppStore.setState({ sessionExternalTasks: {}, workspaceIntegrations: {} });
-
-      render(
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />,
-      );
-      expect(screen.queryByLabelText('API key')).toBeNull();
-      expect(screen.queryByRole('status', { name: 'Checking the connection' })).toBeNull();
-
-      act(() => {
-        vi.advanceTimersByTime(130);
-      });
-      expect(screen.getAllByRole('status', { name: 'Checking the connection' })).toHaveLength(2);
-      expect(screen.queryByLabelText('API key')).toBeNull();
-
-      act(() => {
-        useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] } });
-      });
-      act(() => {
-        vi.advanceTimersByTime(200);
-      });
-      act(() => {
-        vi.advanceTimersByTime(200);
-      });
-      expect(screen.queryByRole('status', { name: 'Checking the connection' })).toBeNull();
-      screen.getByLabelText('API key');
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it.each([['linear', TASK, 'Linear detail GB-42']] as const)(
-    'keeps linked %s rows without rendering live detail while disconnected',
-    (provider, task, detailText) => {
-      useAppStore.setState({ sessionExternalTasks: { [SESSION_ID]: [task] } });
-      useAppStore.setState({ workspaceIntegrations: {} });
-
-      render(
-        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider={provider} />,
-      );
-
-      expect(screen.getByText(task.title)).toBeDefined();
-      expect(screen.queryByText(detailText)).toBeNull();
-    },
-  );
 });

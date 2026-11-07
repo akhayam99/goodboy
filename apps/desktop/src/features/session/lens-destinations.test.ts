@@ -3,16 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { lensDestinations, type ConnectedLensTools } from './lens-destinations';
 import { SHORTCUTS, type ShortcutId } from '../../shared/keyboard/registry';
 
-const LENS_SHORTCUT_IDS = (Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>).filter((id) =>
-  id.startsWith('lens.'),
-);
+const LENS_SHORTCUT_IDS = Object.keys(SHORTCUTS)
+  .filter((id): id is ShortcutId => id in SHORTCUTS)
+  .filter((id) => id.startsWith('lens.'));
 
-const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>([
-  'lens.context',
-  'lens.goal',
-  'lens.decisions',
-  'lens.summary',
-]);
+const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>(['lens.context']);
 
 const NO_CONNECTED_TOOLS: ConnectedLensTools = {
   linear: false,
@@ -25,11 +20,16 @@ const ALL_TOOLS: ConnectedLensTools = { linear: true, gitlab: true, jira: true, 
 
 type LensesParams = {
   readonly isBranchless?: boolean;
+  readonly isArchived?: boolean;
   readonly connectedTools?: ConnectedLensTools;
 };
 
-const lenses = ({ isBranchless = false, connectedTools = NO_CONNECTED_TOOLS }: LensesParams = {}) =>
-  lensDestinations({ isBranchless, connectedTools }).map((d) => d.pane ?? d.lens);
+const lenses = ({
+  isBranchless = false,
+  isArchived = false,
+  connectedTools = NO_CONNECTED_TOOLS,
+}: LensesParams = {}) =>
+  lensDestinations({ isBranchless, isArchived, connectedTools }).map((d) => d.pane ?? d.lens);
 
 describe('lensDestinations', () => {
   it('offers every destination chord, and leaves the context parts to their region', () => {
@@ -100,6 +100,19 @@ describe('lensDestinations', () => {
     expect(branchless).not.toContain('linear');
     expect(branchless).not.toContain('terminal');
     expect(branchless).toContain('plans');
+  });
+
+  it('offers no link-work destination for an archived session', () => {
+    const live = lenses({ connectedTools: ALL_TOOLS });
+    const archived = lenses({ isArchived: true, connectedTools: ALL_TOOLS });
+
+    expect(live).toContain('linear');
+    expect(live).toContain('slack_threads');
+    expect(archived).not.toContain('linear');
+    expect(archived).not.toContain('gitlab_issues');
+    expect(archived).not.toContain('jira_issues');
+    expect(archived).not.toContain('slack_threads');
+    expect(archived).toContain('review');
   });
 
   it('always offers the overview first', () => {

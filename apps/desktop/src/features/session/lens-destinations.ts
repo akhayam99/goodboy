@@ -1,6 +1,7 @@
 import type { LensKind } from '../../store';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import { SIMPLE_LENSES } from './lens-labels';
+import { isProviderListLens } from '../../store/slices/navigation/isProviderListLens';
 import type { ToolPaneDestination } from './panes/openToolPane';
 
 export type LensDestination =
@@ -37,6 +38,7 @@ const TOOL_OF_LENS: Partial<Record<LensKind, LensTool>> = {
 
 type Params = {
   readonly isBranchless: boolean;
+  readonly isArchived?: boolean;
   readonly connectedTools: ConnectedLensTools;
 };
 
@@ -44,7 +46,12 @@ type DestinationParams = Params & {
   readonly destination: LensDestination;
 };
 
-const isReachable = ({ destination, isBranchless, connectedTools }: DestinationParams): boolean => {
+const isReachable = ({
+  destination,
+  isBranchless,
+  isArchived = false,
+  connectedTools,
+}: DestinationParams): boolean => {
   if (destination.pane !== undefined) {
     return destination.pane !== 'scripts' || !isBranchless;
   }
@@ -55,6 +62,9 @@ const isReachable = ({ destination, isBranchless, connectedTools }: DestinationP
   if (lens === 'files') {
     return !isBranchless;
   }
+  if (isArchived && isProviderListLens({ lens })) {
+    return false;
+  }
   if (isBranchless && !SIMPLE_LENSES.has(lens)) {
     return false;
   }
@@ -64,6 +74,9 @@ const isReachable = ({ destination, isBranchless, connectedTools }: DestinationP
 
 export const lensDestinations = ({
   isBranchless,
+  isArchived = false,
   connectedTools,
 }: Params): ReadonlyArray<LensDestination> =>
-  DESTINATIONS.filter((destination) => isReachable({ destination, isBranchless, connectedTools }));
+  DESTINATIONS.filter((destination) =>
+    isReachable({ destination, isBranchless, isArchived, connectedTools }),
+  );

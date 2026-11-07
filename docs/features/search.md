@@ -17,7 +17,7 @@ Click a session and its row stays selected. The session opens with its own rail 
 
 - **Pin**, **Refresh** and **⋯**
 - its pages (**Overview**, **Runs**, **Artifacts** and **Questions**) with their counts
-- a **Projects** card that folds each folder and branch. Every branch is led by its pull request icon in its color and holds its pull request, comments, files and checks.
+- a **Projects** card that folds each folder and branch. Every branch is led by its pull request icon in its color and holds its pull request, comments, changes and checks.
 - a **Linked** card with the work linked to it
 
 The **⋯** holds **Limit**, **Archive** and **Delete** with the session's other actions.

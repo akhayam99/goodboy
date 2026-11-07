@@ -91,9 +91,9 @@ describe('the r4 content scenes', () => {
     await mount('r4-context-summary');
 
     const summary = screen.getByRole('region', { name: 'Summary' });
-    expect(within(summary).getByText('State')).toBeDefined();
+    within(summary).getByText('State');
     expect(screen.getAllByText('Learned')).toHaveLength(1);
-    expect(within(summary).getByText('Learned')).toBeDefined();
+    within(summary).getByText('Learned');
   });
 
   it('r4-overview-title titles the page with the session name after its linked key', async () => {
@@ -119,7 +119,7 @@ describe('the r4 content scenes', () => {
   it('r4-questions-drawer opens the first question in the drawer', async () => {
     await mount('r4-questions-drawer');
 
-    expect(screen.getByRole('article')).toBeDefined();
+    screen.getByRole('article');
     expect(document.querySelector('[data-list-grid-row][aria-current="true"]')).not.toBeNull();
   });
 
@@ -216,7 +216,7 @@ describe('the r4 content scenes', () => {
       fireEvent.contextMenu(row);
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
-    expect(screen.getByRole('menuitem', { name: 'Open question' })).toBeDefined();
+    screen.getByRole('menuitem', { name: 'Open question' });
     expect(screen.queryByRole('menuitem', { name: 'Open the agent' })).toBeNull();
   });
 

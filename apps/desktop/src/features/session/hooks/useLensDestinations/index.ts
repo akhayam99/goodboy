@@ -17,12 +17,16 @@ export const useLensDestinations = ({ sessionId }: Params): ReadonlyArray<LensDe
   const workspaceId = useAppStore((s) =>
     sessionId === null ? null : (sessionById(s.sessions, sessionId)?.workspaceId ?? null),
   );
+  const isArchived = useAppStore((s) =>
+    sessionId === null ? false : sessionById(s.sessions, sessionId)?.archivedAt != null,
+  );
   const connected = useConnectedIntegrations({ workspaceId });
 
   return useMemo(
     () =>
       lensDestinations({
         isBranchless,
+        isArchived,
         connectedTools: {
           linear: connected.linear,
           gitlab: connected.gitlab,
@@ -30,6 +34,6 @@ export const useLensDestinations = ({ sessionId }: Params): ReadonlyArray<LensDe
           slack: connected.slack,
         },
       }),
-    [isBranchless, connected.linear, connected.gitlab, connected.jira, connected.slack],
+    [isBranchless, isArchived, connected.linear, connected.gitlab, connected.jira, connected.slack],
   );
 };

@@ -1,6 +1,5 @@
 import { loadSessionContextSeen } from './loadSessionContextSeen';
 import { markContextRead } from './markContextRead';
-import { markSessionContextSeen } from './markSessionContextSeen';
 import { openContextDrawer } from './openContextDrawer';
 import { toggleContextDrawer } from './toggleContextDrawer';
 import type { SliceDeps } from '../../slice-types';
@@ -10,7 +9,6 @@ export const createContextDrawerSlice = ({ set, get }: SliceDeps) => {
     openContextDrawer: openContextDrawer(set, get),
     toggleContextDrawer: toggleContextDrawer(get),
     loadSessionContextSeen: loadSessionContextSeen(set, get),
-    markSessionContextSeen: markSessionContextSeen(set),
     markContextRead: markContextRead({ set }),
   };
 };

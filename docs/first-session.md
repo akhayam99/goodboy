@@ -30,7 +30,7 @@ The Sessions page shows every session in lanes: **Building**, **Running**, **Nee
 
 ### 4. Review in place
 
-When the work is ready, Next in the session offers **Open a pull request for hl/fix-duplicate-credit**. Open the branch under **Projects** to reach the Branch page. Read the diff in **Files**. Check the review comments you want fixed and press **Fix**. An agent works in its own copy of the branch, and you accept, edit or skip each result.
+When the work is ready, Next in the session offers **Open a pull request for hl/fix-duplicate-credit**. Open the branch under **Projects** to reach the Branch page. Read the diff in **Changes**. Check the review comments you want fixed and press **Fix**. An agent works in its own copy of the branch, and you accept, edit or skip each result.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-dark.webp">

@@ -242,7 +242,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
       await branchPageReady();
-      await click(await findSection(/^Files/));
+      await click(await findSection(/^Changes/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await addNoteOnFile({ file: SECOND_FILE, body: 'Log the duplicate once' });
@@ -273,7 +273,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
       await branchPageReady();
-      await click(await findSection(/^Files/));
+      await click(await findSection(/^Changes/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await click(await findSection(/^Commits/));
@@ -296,7 +296,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
       await branchPageReady();
-      await click(await findSection(/^Files/));
+      await click(await findSection(/^Changes/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await click(await findSection(/^Commits/));
@@ -320,7 +320,7 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       installNotesStore(ctx);
       await openCrumb(/^Branch/);
       await branchPageReady();
-      await click(await findSection(/^Files/));
+      await click(await findSection(/^Changes/));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await startFakeNoteFix({
