@@ -178,10 +178,9 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(screen.getByText('Stop this run?')).toBeDefined();
   });
 
-  it('Orchestrator state ladder: Stop step on the tail asks before it stops', async () => {
+  it('Orchestrator state ladder: the running tail has no Stop step verb', async () => {
     await mount('c09-orch-running');
-    await press(tail().getByRole('button', { name: 'Stop step 3' }));
-    expect(screen.getByText('Stop Run the 12k export benchmark?')).toBeDefined();
+    expect(tail().queryByRole('button', { name: /^Stop step/ })).toBeNull();
   });
 
   it('Orchestrator model and effort: the routing pill sits in the composer', async () => {
@@ -212,7 +211,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(queued.getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('Read N queued on a finished run, Continue and read N queued after Stop step', async () => {
+  it('Read N queued on a finished run, Continue and read N queued after a stop', async () => {
     await mount('c09-orch-done');
     patchRun({
       patch: {
