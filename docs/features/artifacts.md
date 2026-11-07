@@ -6,6 +6,10 @@ Plans, reports and wireframes live next to the task, not inside a chat. You can 
 
 Keep everything a session made in one list. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter it, and the rows group under plain labels by what needs you first: **Needs you** (for a plan, only while its own planner waits for your answer), **Running**, **Ready** (plans), **To read** (reports and wireframes), **Used** (a plan that ran, or a version a newer one replaced) and **Recently deleted**, every row in view except the deleted ones, behind **Show**. Each row shows one action, such as **Run plan**, **Approve** or **Answer**, and **Delete** moves an artifact to **Recently deleted**, where **Restore** brings it back. Resting on the state of a row opens a fact card.
 
+With two or more branches among the artifacts a switch groups the list **By branch** or **By state**, the same choice as on Runs and Questions. A branch comes from the mounts the artifact was made for, else its agent, else its run. Each branch or series is a group, with the ones that need you first and **No branch** for what is not tied to one.
+
+The state is a word on the row, used ones fold into **N used**, and **Recently deleted** stays its own group at the end. The tabs stay on top and filter over the groups. An artifact on two branches is drawn in both with **Also on**, and a plan on a series sits once in the series group. Each copy has its own row key, so Stop, Delete and the row menu act on the one artifact you press.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-list-light.webp" alt="The Artifacts list of the Harborline session under the tabs All, Plans, Reports and Wireframes: a Needs you group with a plan marked Partly ran, a Ready group of wireframes, reports and plans with Ready to run, a Running group with a wireframe and a plan with Stop, a Consumed group and Recently deleted with Show">
@@ -111,3 +115,5 @@ This part is for contributors and agents who change the feature.
 
 - Fact card on a row: `artifactStateCardOf` builds the card that opens on the state of a row.
 - A plan's Needs you: `artifactStateOf` reads only `plannerQuestionCount`, the open questions of the plan's own planner (`plannerQuestionsOf`). The list rows, the reader and the plan model pass the same count, so a question from another agent leaves every plan where it was.
+
+- Branch return: `ArtifactBranchList` unfolds the saved row before `useRowReturn` scrolls to it. `useArtifactBranchItems` keys provenance retries by state, and `useArtifactMountIds` follows a pending empty or failed read with the latest requested phase. The Back regression is in `apps/desktop/src/features/artifacts/components/ArtifactStudio/byBranch.test.tsx`; retry coverage is in `apps/desktop/src/features/artifacts/hooks/useArtifactBranchItems/index.test.ts`.

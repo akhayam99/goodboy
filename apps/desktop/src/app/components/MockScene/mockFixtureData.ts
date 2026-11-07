@@ -1,4 +1,11 @@
-import type { AgentId, ArtifactProvenance, IsoDateTime, MountId, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ArtifactProvenance,
+  type IsoDateTime,
+  type MountId,
+  type SessionId,
+} from '@goodboy/types';
 import type { MockFixtureReaders, MockMountDiffStat } from '../../../shared/lib/mockFixtures';
 
 type MountDiffStatParams = Parameters<MockFixtureReaders['mountDiffStat']>[0];
@@ -70,6 +77,30 @@ const MOCK_ARTIFACT_PROVENANCE = new Map<string, ArtifactProvenance>([
     },
   ],
 ]);
+
+const U36_SHARED_WRITER = brandId<AgentId>({ value: 'mock-u36-c19-shared-writer' });
+
+MOCK_ARTIFACT_PROVENANCE.set(U36_SHARED_WRITER, {
+  agentId: U36_SHARED_WRITER,
+  sessionId: brandId<SessionId>({ value: 'mock-c08-session' }),
+  kind: 'report',
+  brief: 'Explain how a retried webhook credits an account once.',
+  evidence: [],
+  omissions: [],
+  designProfileSummary: null,
+  hasDesignEvidence: false,
+  phase: 'done',
+  scoutPlan: [],
+  mountIds: [
+    brandId<MountId>({ value: 'mock-u36-mount-duplicate-credit' }),
+    brandId<MountId>({ value: 'mock-u36-mount-retry-budget' }),
+  ],
+  target: null,
+  deadlineAt: null,
+  sourceWorkflowRunId: null,
+  executingWorkflowRunId: null,
+  createdAt: brandId<IsoDateTime>({ value: '2026-10-16T14:40:00.000Z' }),
+});
 
 export const mockArtifactProvenance = ({
   agentId,

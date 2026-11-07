@@ -1194,6 +1194,9 @@ u35-agent-chain-sub-sub
 u35-auto-plan-used
 u35-branch-setup-offer
 u35-preset-run-glance
+u36-c19-artifacts-by-branch
+u36-c19-branch-links
+u36-c19-questions-by-branch
 u36-f3-branch-runs
 u36-f5-row-rename
 u36-p1-run-stopped

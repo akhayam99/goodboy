@@ -30,6 +30,31 @@ type MountParams = {
 const stepMountIdOf = ({ agent, agents }: MountParams): MountId | null =>
   agent.mountId ?? inheritedMountIdOf({ agents, workflowRunId: agent.workflowRunId ?? null });
 
+type MountBranchParams = {
+  readonly mountId: MountId;
+  readonly mounts: ReadonlyArray<SessionMountView>;
+  readonly projects: ReadonlyArray<WorkBranchProject>;
+};
+
+export const workBranchOf = ({
+  mountId,
+  mounts,
+  projects,
+}: MountBranchParams): WorkBranch | null => {
+  const mount = mounts.find((candidate) => candidate.id === mountId);
+  if (mount === undefined || !mount.isAttached) {
+    return null;
+  }
+  const project = projectById(projects, mount.projectId);
+  return {
+    mountId,
+    projectId: mount.projectId,
+    projectName: project?.name ?? mount.mountName,
+    branch: mount.branch,
+    worktreePath: mount.worktreePath,
+  };
+};
+
 export const workBranchesOf = ({
   agentIds,
   agents,
@@ -46,18 +71,11 @@ export const workBranchesOf = ({
     if (mountId === null || found.has(mountId)) {
       continue;
     }
-    const mount = mounts.find((candidate) => candidate.id === mountId);
-    if (mount === undefined || !mount.isAttached) {
+    const branch = workBranchOf({ mountId, mounts, projects });
+    if (branch === null) {
       continue;
     }
-    const project = projectById(projects, mount.projectId);
-    found.set(mountId, {
-      mountId,
-      projectId: mount.projectId,
-      projectName: project?.name ?? mount.mountName,
-      branch: mount.branch,
-      worktreePath: mount.worktreePath,
-    });
+    found.set(mountId, branch);
   }
   return [...found.values()];
 };

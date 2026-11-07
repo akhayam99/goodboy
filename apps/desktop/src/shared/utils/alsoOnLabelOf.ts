@@ -1,7 +1,7 @@
-import type { WorkBranch } from '../../../../workBranchesOf';
+import type { AlsoOnBranch } from './branchListLabelOf';
 
 type Params = {
-  readonly branches: ReadonlyArray<WorkBranch>;
+  readonly branches: ReadonlyArray<AlsoOnBranch>;
 };
 
 export const alsoOnLabelOf = ({ branches }: Params): string => {

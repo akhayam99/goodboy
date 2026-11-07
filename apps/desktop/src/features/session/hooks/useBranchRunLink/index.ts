@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { MountId, Session } from '@goodboy/types';
 import { branchRunLinkOf, type BranchRunLink } from '../../branchRunLinkOf';
-import { useMountRows } from '../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../shared/hooks/useMountRows';
 import { useSessionRuns } from '../useSessionRuns';
 
 type Params = {
