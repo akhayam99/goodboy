@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
-import { traceImageOf } from './traceImage';
+import { traceImageOf } from './traceImageOf';
 import { FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './fixtures';
 import { FINISHED_SESSION } from './finishedRun';
 import { PARALLEL_SESSION } from './parallelRun';
