@@ -93,28 +93,6 @@ fn tick_birth_id(boot_secs: u64, start_ticks: u64) -> String {
     format!("{boot_secs}-{start_ticks}")
 }
 
-#[cfg(target_os = "macos")]
-fn birth_of(pid: u32) -> Option<(u64, u64)> {
-    let raw_pid = i32::try_from(pid).ok()?;
-    let size = std::mem::size_of::<libc::proc_bsdinfo>();
-    let buffer_size = i32::try_from(size).ok()?;
-    let mut info = std::mem::MaybeUninit::<libc::proc_bsdinfo>::zeroed();
-    let written = unsafe {
-        libc::proc_pidinfo(
-            raw_pid,
-            libc::PROC_PIDTBSDINFO,
-            0,
-            info.as_mut_ptr().cast(),
-            buffer_size,
-        )
-    };
-    if written != buffer_size {
-        return None;
-    }
-    let info = unsafe { info.assume_init() };
-    Some((info.pbi_start_tvsec, info.pbi_start_tvusec))
-}
-
 fn assemble(
     rows: Vec<parse::RawProcess>,
     mut cwds: HashMap<u32, String>,
@@ -209,7 +187,7 @@ fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, Str
     let rows: Vec<parse::RawProcess> = parse::parse_ps_rows(&table)
         .into_iter()
         .filter(|row| is_in_scope(&scope, row))
-        .map(|row| match birth_of(row.pid) {
+        .map(|row| match crate::proc::signal::process_birth_of(row.pid) {
             Some((secs, micros)) => parse::RawProcess {
                 born_secs: secs,
                 birth_id: Some(micro_birth_id(secs, micros)),
@@ -563,9 +541,9 @@ mod tests {
     #[test]
     fn birth_of_this_process_is_stable_and_in_the_past() {
         let pid = std::process::id();
-        let first = birth_of(pid).expect("own process is readable");
+        let first = crate::proc::signal::process_birth_of(pid).expect("own process is readable");
         assert!(first.0 > 0);
-        assert_eq!(Some(first), birth_of(pid));
+        assert_eq!(Some(first), crate::proc::signal::process_birth_of(pid));
         assert!(first.0 * 1000 <= crate::util::now_millis_u64());
     }
 

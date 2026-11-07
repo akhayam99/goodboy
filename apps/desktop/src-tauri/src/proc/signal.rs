@@ -60,6 +60,28 @@ pub(crate) fn session_of(pid: u32) -> Option<u32> {
     u32::try_from(session).ok()
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn process_birth_of(pid: u32) -> Option<(u64, u64)> {
+    let raw_pid = i32::try_from(pid).ok()?;
+    let size = std::mem::size_of::<libc::proc_bsdinfo>();
+    let buffer_size = i32::try_from(size).ok()?;
+    let mut info = std::mem::MaybeUninit::<libc::proc_bsdinfo>::zeroed();
+    let written = unsafe {
+        libc::proc_pidinfo(
+            raw_pid,
+            libc::PROC_PIDTBSDINFO,
+            0,
+            info.as_mut_ptr().cast(),
+            buffer_size,
+        )
+    };
+    if written != buffer_size {
+        return None;
+    }
+    let info = unsafe { info.assume_init() };
+    Some((info.pbi_start_tvsec, info.pbi_start_tvusec))
+}
+
 pub(crate) fn effective_uid() -> u32 {
     unsafe { libc::geteuid() }
 }
