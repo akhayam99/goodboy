@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Agent, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
+import { useCallback, useEffect, useMemo } from 'react';
+import type { Agent, MountId, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -9,19 +9,21 @@ import {
   agentPlace,
 } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { branchPlace } from '../../../../store/slices/navigation/place';
+import { useGroupBy } from '../../../../store/slices/session-grouping/hooks/useGroupBy';
+import type { GroupBy } from '../../../../store/slices/session-grouping/state';
 import { ArtifactList } from '../ArtifactList';
+import type { ArtifactOpenParams } from '../ArtifactList/artifactBranchProps';
 import { ArtifactShell } from '../ArtifactShell';
 import type { ArtifactShellSubject } from '../ArtifactShell/artifactShellSubject';
-import { askingAgentIdsOf } from '../../../plans/askingAgentIdsOf';
-import { useRevisingPlans } from '../../../plans/useRevisingPlans';
-import { useNow } from '../../../../shared/hooks/useNow';
-import { keepEqualById } from '../../../../shared/utils/keepEqualById';
 import {
-  buildArtifactListRows,
   countArtifactRows,
   filterArtifactRows,
-  type ArtifactListRow,
+  groupArtifactRowsByBranch,
 } from '../../artifactListRows';
+import { artifactBranchRowKeyOf } from '../../artifactBranchRowKeys';
+import { useArtifactBranchItems } from '../../hooks/useArtifactBranchItems';
+import { useArtifactRows } from '../../hooks/useArtifactRows';
 import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact';
 import { PaneShell, useEscapeLayer } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -30,24 +32,23 @@ import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { openArtifactPage } from '../../openArtifactPage';
 import { useRowReturn } from '../../../../shared/hooks/useRowReturn';
 import { useArtifactGenerations } from './useArtifactGenerations';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
+};
+
+type OpenBranchParams = {
+  readonly mountId: MountId;
+};
+
+type GroupByParams = {
+  readonly groupBy: GroupBy;
 };
 
 export const ArtifactStudio = ({ sessionId }: Props) => {
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const autoViews = useAppStore((s) => s.autoTreeViews[sessionId] ?? EMPTY_ARRAY);
-  const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
-  const runs = session?.workflowRuns ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowRun>);
-  const templates = useAppStore(
-    (s) =>
-      (session === null ? undefined : s.phaseTemplates[session.workspaceId]) ??
-      (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
@@ -122,59 +123,55 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     return focusedRun === null ? null : { kind: 'generation', generation: focusedRun };
   }, [focusedArtifactId, plans, artifacts, focusedRun]);
 
-  const askingAgentIds = useMemo(
-    () => askingAgentIdsOf({ questions: openQuestions }),
-    [openQuestions],
-  );
-  const now = useNow(60_000);
-  const revising = useRevisingPlans(sessionId);
-  const rowCache = useRef<ReadonlyMap<string, ArtifactListRow>>(new Map());
-  const rows = useMemo(() => {
-    const kept = keepEqualById({
-      previous: rowCache.current,
-      next: buildArtifactListRows({
-        plans,
-        artifacts,
-        generations,
-        agents,
-        runs,
-        templates,
-        openQuestions,
-        askingAgentIds,
-        revising,
-        autoViews,
-        now,
-      }),
-    });
-    rowCache.current = new Map(kept.map((row) => [row.id, row]));
-    return kept;
-  }, [
-    plans,
-    artifacts,
-    generations,
-    agents,
-    runs,
-    templates,
-    openQuestions,
-    askingAgentIds,
-    revising,
-    autoViews,
-    now,
-  ]);
+  const rows = useArtifactRows({ sessionId, generations });
   const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
   const visibleRows = useMemo(() => filterArtifactRows({ rows, filter }), [rows, filter]);
 
-  const rowIds = useMemo(() => rows.map((row) => row.id), [rows]);
+  const setGroupBy = useAppStore((s) => s.setGroupBy);
+  const branchItems = useArtifactBranchItems({ sessionId, rows, plans, artifacts, agents });
+  const groupBy = useGroupBy({ sessionId, branchCount: branchItems.branchCount });
+  const branchView = useMemo(() => {
+    const visibleIds = new Set(visibleRows.map((row) => row.id));
+    return groupArtifactRowsByBranch({
+      items: branchItems.items.filter((item) => visibleIds.has(item.row.id)),
+      mounts: branchItems.mounts,
+    });
+  }, [visibleRows, branchItems.items, branchItems.mounts]);
+  const rowIds = useMemo(
+    () =>
+      groupBy === 'branch'
+        ? [
+            ...branchView.groups.flatMap((group) =>
+              group.items.map((item) =>
+                artifactBranchRowKeyOf({ groupKey: group.key, rowId: item.row.id }),
+              ),
+            ),
+            ...branchView.deleted.map((row) => row.id),
+          ]
+        : rows.map((row) => row.id),
+    [groupBy, branchView, rows],
+  );
   const rowReturn = useRowReturn({
     listKey: 'artifacts',
     rowIds,
     rowAttribute: 'data-artifact-row',
   });
   const { remember } = rowReturn;
+  const changeGroupBy = useCallback(
+    ({ groupBy: next }: GroupByParams) => setGroupBy({ sessionId, groupBy: next }),
+    [setGroupBy, sessionId],
+  );
+  const openBranch = useCallback(
+    ({ mountId }: OpenBranchParams) => {
+      const mount = branchItems.mounts.find((candidate) => candidate.mountId === mountId);
+      navigate({ to: branchPlace({ sessionId, mountPath: mount?.worktreePath ?? null }) });
+    },
+    [branchItems.mounts, navigate, sessionId],
+  );
   const openRow = useCallback(
-    (row: ArtifactListRow) => {
+    ({ row, rowKey }: ArtifactOpenParams) => {
       if (row.target.kind === 'artifact') {
-        remember({ rowId: row.id });
+        remember({ rowId: rowKey });
         openArtifactPage({ sessionId, artifactId: row.target.artifactId });
         return;
       }
@@ -219,6 +216,14 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       filter={filter}
       onFilterChange={(next) => setArtifactFilter({ sessionId, filter: next })}
       onOpen={openRow}
+      branch={{
+        view: branchView,
+        mounts: branchItems.mounts,
+        groupBy,
+        branchCount: branchItems.branchCount,
+        onGroupByChange: changeGroupBy,
+        onOpenBranch: openBranch,
+      }}
       onImported={(artifactId) => openArtifactPage({ sessionId, artifactId })}
     />
   );

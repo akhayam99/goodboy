@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { ARTIFACT_GROUP_LABEL, type ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactGroup } from '../../artifactStateOf';
 import { ArtifactListRow } from './ArtifactListRow';
+import type { ArtifactOpenParams } from './artifactBranchProps';
 import { FOCUS_RING, cn } from '@goodboy/ui';
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly openPartsIds: ReadonlySet<string>;
   readonly onTogglePartsOf: (rowId: string) => void;
-  readonly onOpenRow: (row: Row) => void;
+  readonly onOpenRow: (params: ArtifactOpenParams) => void;
   readonly hasActionColumn: boolean;
 };
 
