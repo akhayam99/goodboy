@@ -581,8 +581,10 @@ after `filterArtifactRows`, keeps the trash apart and leaves the state groups
 untouched. A replicated row has one key per group (`artifactBranchRowKeyOf`,
 `questionBranchRowKeyOf`) and the open question is marked only in its first
 group. The Branch page line holds a link per kind (`branchWorkLinkOf`,
-`openBranchWork`), counted by the group functions, and Back from Questions or
-Artifacts returns to the branch (`parentPlace`). In the Agents panel an agent row
+`useBranchWorkLinks`, `openBranchWork`), counted by the group functions, and Back
+from Questions or Artifacts returns to the branch (`parentPlace`). The Artifacts
+link is not there yet: it needs an artifacts hook on the Branch page, which the
+cross feature ratchets do not allow to grow. In the Agents panel an agent row
 names its branch only when its run touches two or more (`agentBranchLabelsOf`).
 Words say state and verbs are verbs: an agent you
 stopped reads **Stopped** and a run that has not started reads **Ready**, and

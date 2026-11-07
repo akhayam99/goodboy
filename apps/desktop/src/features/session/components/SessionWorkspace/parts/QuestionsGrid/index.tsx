@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Agent, AgentId, MountId, OpenQuestionId, SessionId } from '@goodboy/types';
-import { ListGrid, ListGridGroup } from '@goodboy/ui';
+import { ListGrid } from '@goodboy/ui';
 import { GroupBySwitch } from '../../../../../../shared/components/GroupBySwitch';
 import { useGroupArrival } from '../../../../../../shared/hooks/useGroupArrival';
 import { useNow } from '../../../../../../shared/hooks/useNow';
-import { NAMES } from '../../../../../../shared/utils/names';
 import type { MountRowView } from '../../../../../../store/slices/project-mounts/mountRowModel';
 import type { GroupBy } from '../../../../../../store/slices/session-grouping/state';
 import type { AgentKind } from '../../../../agent-kind';
 import { questionMetaOf } from '../questionMetaOf';
 import type { QuestionBranchGroup, QuestionGroups, QuestionRow } from '../questionsLensModel';
 import { QuestionsByBranch, type QuestionBranchRowParams } from './QuestionsByBranch';
+import { QuestionsByState } from './QuestionsByState';
 import { QuestionsGridRow } from './QuestionsGridRow';
 import { questionRunLine } from './questionRunLine';
 import { questionBranchRowKeyOf, selectedQuestionRowKeyOf } from './questionRowKeys';
@@ -228,40 +228,13 @@ export const QuestionsGrid = ({
             }
           />
         ) : (
-          <>
-            {groups.waiting.length > 0 ? (
-              <ListGridGroup headingLevel={2} label={NAMES.needsYou} count={groups.waiting.length}>
-                {groups.waiting.map((row) =>
-                  renderRow({
-                    row,
-                    rowKey: row.question.id,
-                    isSelected: row.question.id === selectedId,
-                  }),
-                )}
-              </ListGridGroup>
-            ) : null}
-            {groups.answered.length > 0 ? (
-              <ListGridGroup
-                headingLevel={2}
-                label="Answered"
-                count={groups.answered.length}
-                fold={{
-                  label: isAnsweredShown ? 'Hide' : 'Show',
-                  onToggle: () => setIsAnsweredShownByUser(!isAnsweredShown),
-                }}
-              >
-                {isAnsweredShown
-                  ? groups.answered.map((row) =>
-                      renderRow({
-                        row,
-                        rowKey: row.question.id,
-                        isSelected: row.question.id === selectedId,
-                      }),
-                    )
-                  : null}
-              </ListGridGroup>
-            ) : null}
-          </>
+          <QuestionsByState
+            groups={groups}
+            isAnsweredShown={isAnsweredShown}
+            selectedKey={selectedId}
+            onToggleAnswered={() => setIsAnsweredShownByUser(!isAnsweredShown)}
+            renderRow={renderRow}
+          />
         )}
       </ListGrid>
     </div>

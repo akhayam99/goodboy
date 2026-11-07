@@ -1,7 +1,5 @@
 import type { Session } from '@goodboy/types';
-import { useBranchArtifactLink } from '../../artifacts/hooks/useBranchArtifactLink';
-import { useBranchQuestionLink } from '../../session/hooks/useBranchQuestionLink';
-import { useBranchRunLink } from '../../session/hooks/useBranchRunLink';
+import { useBranchWorkLinks } from '../../session/hooks/useBranchWorkLinks';
 import { openBranchRuns } from '../../session/openBranchRuns';
 import { openBranchWork } from '../../session/openBranchWork';
 import { useBranchIdentity } from '../hooks/useBranchIdentity';
@@ -14,10 +12,8 @@ type Props = {
 export const BranchRunsLine = ({ session }: Props) => {
   const { mount, mountPath } = useBranchIdentity({ sessionId: session.id });
   const mountId = mount?.mountId ?? null;
-  const runs = useBranchRunLink({ session, mountId });
-  const questions = useBranchQuestionLink({ session, mountId });
-  const artifacts = useBranchArtifactLink({ sessionId: session.id, mountId });
-  if (runs === null && questions === null && artifacts === null) {
+  const { runs, questions } = useBranchWorkLinks({ session, mountId });
+  if (runs === null && questions === null) {
     return null;
   }
   const sessionId = session.id;
@@ -32,12 +28,6 @@ export const BranchRunsLine = ({ session }: Props) => {
         link={questions}
         onOpen={({ link }) =>
           openBranchWork({ sessionId, lens: 'questions', groupKey: link.groupKey, mountPath })
-        }
-      />
-      <BranchWorkLinkButton
-        link={artifacts}
-        onOpen={({ link }) =>
-          openBranchWork({ sessionId, lens: 'plans', groupKey: link.groupKey, mountPath })
         }
       />
     </p>

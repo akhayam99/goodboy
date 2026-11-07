@@ -13,7 +13,6 @@ import { aProject, anAgent, nextSessionId, nextWorkflowRunId } from '@goodboy/ty
 import { aMountRow } from '../session/central/branches/testing/aMountRow';
 import { aMountView } from '../session/testing/aMountView';
 import type { WorkBranch } from '../session/workBranchesOf';
-import { artifactBranchLinkOf } from './artifactBranchLinkOf';
 import { artifactBranchesOf } from './artifactBranchesOf';
 import {
   groupArtifactRowsByBranch,
@@ -172,32 +171,6 @@ describe('groupArtifactRowsByBranch', () => {
       'artifact:ready',
       'artifact:used',
     ]);
-  });
-});
-
-describe('artifactBranchLinkOf', () => {
-  it('counts a replicated artifact once on each branch and leaves the trash out', () => {
-    const view = groupArtifactRowsByBranch({
-      mounts: MOUNT_ROWS,
-      items: [
-        itemOf({ id: 'both', branches: [branchOf(DUP), branchOf(RETRY)] }),
-        itemOf({ id: 'dup-only', branches: [branchOf(DUP)] }),
-        itemOf({ id: 'gone', group: 'deleted', branches: [branchOf(DUP)] }),
-      ],
-    });
-
-    expect(artifactBranchLinkOf({ view, mounts: MOUNT_ROWS, mountId: DUP.id })?.label).toBe(
-      '2 artifacts',
-    );
-    expect(artifactBranchLinkOf({ view, mounts: MOUNT_ROWS, mountId: RETRY.id })?.label).toBe(
-      '1 artifact',
-    );
-  });
-
-  it('is absent for a branch with no artifact', () => {
-    const view = groupArtifactRowsByBranch({ mounts: MOUNT_ROWS, items: [] });
-
-    expect(artifactBranchLinkOf({ view, mounts: MOUNT_ROWS, mountId: DUP.id })).toBeNull();
   });
 });
 

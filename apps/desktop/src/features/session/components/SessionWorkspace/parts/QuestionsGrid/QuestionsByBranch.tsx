@@ -4,7 +4,7 @@ import { Button, ListGridGroup } from '@goodboy/ui';
 import type { MountRowView } from '../../../../../../store/slices/project-mounts/mountRowModel';
 import { alsoOnBranchesOf } from '../../../../branchGroupsOf';
 import { branchHeadLabelOf, branchHeadMarkOf } from '../../../../branchHeadOf';
-import { RunAlsoOnChip } from '../RunsGrid/RunAlsoOnChip';
+import { AlsoOnChip } from '../../../../../../shared/components/AlsoOnChip';
 import type { QuestionBranchGroup, QuestionBranchRow } from '../questionsLensModel';
 import { questionBranchRowKeyOf, questionGroupSummaryOf } from './questionRowKeys';
 
@@ -53,7 +53,7 @@ const alsoOnChipOf = ({ item, groupKey, mounts, onReveal }: ChipParams): ReactNo
     return undefined;
   }
   return (
-    <RunAlsoOnChip
+    <AlsoOnChip
       branches={branches}
       onReveal={() => onReveal({ questionId: item.row.question.id, fromGroupKey: groupKey })}
     />

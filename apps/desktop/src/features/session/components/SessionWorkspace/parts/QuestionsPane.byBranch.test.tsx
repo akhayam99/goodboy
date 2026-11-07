@@ -174,7 +174,7 @@ describe('Questions by branch', () => {
       expect(rowsTitled('Should the limit apply per endpoint\\?')).toHaveLength(2),
     );
     expect(screen.getAllByTestId('run-also-on')).toHaveLength(2);
-    expect(screen.getByRole('heading', { name: 'No branch' })).toBeDefined();
+    screen.getByRole('heading', { name: 'No branch' });
   });
 
   it('folds the answered ones of a branch behind their count', async () => {
@@ -195,7 +195,7 @@ describe('Questions by branch', () => {
     await waitFor(() =>
       expect(rowsTitled('Should the limit apply per endpoint\\?')).toHaveLength(1),
     );
-    expect(screen.getByRole('button', { name: '2 answered' })).toBeDefined();
+    screen.getByRole('button', { name: '2 answered' });
   });
 
   it('marks the open question in its first group only', async () => {
@@ -226,7 +226,7 @@ describe('Questions by branch', () => {
 
     await screen.findByRole('heading', { name: 'Needs you' });
     expect(screen.queryByRole('tablist', { name: 'Group by' })).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Answered' })).toBeDefined();
+    screen.getByRole('heading', { name: 'Answered' });
   });
 
   it('goes back to the state groups from the switch', async () => {
@@ -253,7 +253,7 @@ describe('Questions by branch', () => {
     if (section === null) {
       throw new Error('missing group');
     }
-    expect(within(section).getByText('Which queue retries run on?')).toBeDefined();
+    within(section).getByText('Which queue retries run on?');
   });
 
   it('opens the group named by the address with its answered rows unfolded', async () => {
@@ -267,7 +267,7 @@ describe('Questions by branch', () => {
     );
     render(<QuestionsPane session={SESSION} />);
 
-    await waitFor(() => expect(screen.getByText('Keep the old table for a month?')).toBeDefined());
+    await screen.findByText('Keep the old table for a month?');
     expect(useAppStore.getState().groupBySession[SESSION.id]).toBe('branch');
   });
 

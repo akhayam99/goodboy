@@ -12,7 +12,7 @@ import {
 import { branchHeadLabelOf, branchHeadMarkOf } from '../../../../branchHeadOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import type { WorkBranch } from '../../../../workBranchesOf';
-import { RunAlsoOnChip } from './RunAlsoOnChip';
+import { AlsoOnChip } from '../../../../../../shared/components/AlsoOnChip';
 import { RunBranchChip } from './RunBranchChip';
 import { archivedFoldKeyOf, branchGroupRunsOf } from './branchGroupRunsOf';
 
@@ -153,7 +153,7 @@ export const RunsByBranch = ({
                     branches={partBranchesOf({ run, head })}
                     onOpenBranch={onOpenBranch}
                   />
-                  <RunAlsoOnChip
+                  <AlsoOnChip
                     branches={alsoOnOf({ run, groupKey: group.key, mounts })}
                     onReveal={() => onRevealRun({ run, fromGroupKey: group.key })}
                   />

@@ -101,7 +101,7 @@ describe('the u36 work by branch scenes', () => {
     ).toHaveLength(2);
   });
 
-  it('u36-c19-branch-links names the questions and the artifacts on this branch', async () => {
+  it('u36-c19-branch-links names the questions on this branch', async () => {
     await mount('u36-c19-branch-links');
 
     const line = document.querySelector<HTMLElement>('[data-branch-runs-line]');
@@ -109,6 +109,5 @@ describe('the u36 work by branch scenes', () => {
       throw new Error('missing the work line');
     }
     within(line).getByRole('button', { name: '2 questions' });
-    within(line).getByRole('button', { name: '3 artifacts' });
   });
 });

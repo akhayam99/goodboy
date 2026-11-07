@@ -36,12 +36,12 @@ import type { MountGithubState } from '../../../../store/types';
 
 let useAppStore: StoryStore;
 let SessionCostChip: typeof import('./SessionCostChip').SessionCostChip;
-let useMountRows: typeof import('./ProjectMountRows/useMountRows').useMountRows;
+let useMountRows: typeof import('../../../../shared/hooks/useMountRows').useMountRows;
 
 beforeAll(async () => {
   useAppStore = await importStore();
   ({ SessionCostChip } = await import('./SessionCostChip'));
-  ({ useMountRows } = await import('./ProjectMountRows/useMountRows'));
+  ({ useMountRows } = await import('../../../../shared/hooks/useMountRows'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;

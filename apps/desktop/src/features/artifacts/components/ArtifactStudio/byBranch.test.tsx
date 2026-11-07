@@ -228,8 +228,8 @@ describe('Artifacts by branch', () => {
 
     act(() => useAppStore.getState().setArtifactFilter({ sessionId: SESSION_ID, filter: 'plan' }));
 
-    await waitFor(() => expect(screen.getByText('No plans in this session.')).toBeDefined());
-    expect(screen.getByRole('tablist', { name: 'Artifact kind' })).toBeDefined();
+    await screen.findByText('No plans in this session.');
+    screen.getByRole('tablist', { name: 'Artifact kind' });
   });
 
   it('shows the switch with two branches and goes back to the state groups from it', async () => {
@@ -251,11 +251,8 @@ describe('Artifacts by branch', () => {
     });
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
-    const noBranch = await screen.findByRole('heading', { name: 'No branch' });
-    expect(noBranch).toBeDefined();
-    expect(
-      within(screen.getByTestId('artifact-branch-group-none')).getByText('Credits explained'),
-    ).toBeDefined();
+    await screen.findByRole('heading', { name: 'No branch' });
+    within(screen.getByTestId('artifact-branch-group-none')).getByText('Credits explained');
   });
 
   it('reads as it does today with one work branch', async () => {
@@ -315,6 +312,6 @@ describe('Artifacts by branch', () => {
     );
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
-    await waitFor(() => expect(screen.getByText('Old credit notes')).toBeDefined());
+    await screen.findByText('Old credit notes');
   });
 });

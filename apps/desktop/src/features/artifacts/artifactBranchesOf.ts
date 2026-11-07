@@ -26,7 +26,7 @@ type ArtifactSource = Readonly<{
   workflowRunId: WorkflowRunId | null;
 }>;
 
-const sourceOf = ({ row, plans, artifacts }: SourceParams): ArtifactSource | null => {
+const artifactSourceOf = ({ row, plans, artifacts }: SourceParams): ArtifactSource | null => {
   if (row.target.kind === 'generation') {
     return { agentId: row.target.generation.agentId, workflowRunId: null };
   }
@@ -57,7 +57,7 @@ export const artifactBranchesOf = ({
   sessionMounts,
   projects,
 }: Params): ReadonlyArray<WorkBranch> => {
-  const source = sourceOf({ row, plans, artifacts });
+  const source = artifactSourceOf({ row, plans, artifacts });
   if (source === null) {
     return [];
   }

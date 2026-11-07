@@ -1,10 +1,10 @@
 import { useId, type ReactNode } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
-import { Button, FOCUS_RING, cn } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { alsoOnBranchesOf } from '../../../session/branchGroupsOf';
 import { branchHeadLabelOf, branchHeadMarkOf } from '../../../session/branchHeadOf';
-import { RunAlsoOnChip } from '../../../session/components/SessionWorkspace/parts/RunsGrid/RunAlsoOnChip';
+import { AlsoOnChip } from '../../../../shared/components/AlsoOnChip';
 import {
   artifactBranchCountOf,
   artifactBranchRowKeyOf,
@@ -41,11 +41,6 @@ type Props = {
   readonly onOpenBranch: (params: OpenBranchParams) => void;
 };
 
-const FOLD_BUTTON = cn(
-  'inline-flex h-6 shrink-0 items-center rounded-md px-2 text-ui text-muted-foreground hover:bg-hover hover:text-foreground',
-  FOCUS_RING,
-);
-
 const NO_BRANCH_NOTE = 'not tied to a branch';
 
 type ChipParams = {
@@ -55,14 +50,14 @@ type ChipParams = {
   readonly onReveal: (params: RevealParams) => void;
 };
 
-const chipOf = ({ item, groupKey, mounts, onReveal }: ChipParams): ReactNode => {
+const branchChipOf = ({ item, groupKey, mounts, onReveal }: ChipParams): ReactNode => {
   const branches = alsoOnBranchesOf({ branches: item.branches, groupKey, mounts });
   if (branches.length === 0) {
     return undefined;
   }
   return (
     <span className="flex min-w-0 max-w-[35%] shrink-0">
-      <RunAlsoOnChip
+      <AlsoOnChip
         branches={branches}
         onReveal={() => onReveal({ rowId: item.row.id, fromGroupKey: groupKey })}
       />
@@ -119,9 +114,9 @@ export const ArtifactBranchSection = ({
             ) : null}
           </h2>
           {isFoldable ? (
-            <button type="button" className={FOLD_BUTTON} aria-expanded={isOpen} onClick={onToggle}>
+            <Button variant="quiet" size="xs" aria-expanded={isOpen} onClick={onToggle}>
               {isFolded ? `${used.length} ${usedWord}` : `Hide ${usedWord}`}
-            </button>
+            </Button>
           ) : null}
         </div>
         <span className="flex shrink-0 items-center gap-2 text-ui text-faint-foreground">
@@ -147,7 +142,7 @@ export const ArtifactBranchSection = ({
                 row={item.row}
                 rowKey={rowKey}
                 isStateShown
-                titleSuffix={chipOf({
+                titleSuffix={branchChipOf({
                   item,
                   groupKey: group.key,
                   mounts,

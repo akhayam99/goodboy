@@ -3,7 +3,7 @@ import type { MountId, Session, SessionMountView } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { BranchWorkLink } from '../../branchWorkLinkOf';
 import { questionBranchGroupsOf } from '../../components/SessionWorkspace/parts/questionsLensModel';
-import { useMountRows } from '../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../shared/hooks/useMountRows';
 import { questionBranchLinkOf } from '../../questionBranchLinkOf';
 import { useQuestionsLens } from '../useQuestionsLens';
 

@@ -10,7 +10,7 @@ import { liveDismissalsOf } from '../liveDismissalsOf';
 import { mismatchDismissalKeyOf } from '../mismatchDismissalKeyOf';
 import { overviewNoticesOf, type OverviewNotice } from '../overviewNoticesOf';
 import { useForeignCommitsByMount } from '../ProjectMountRows/useForeignCommitsByMount';
-import { useMountRows } from '../ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../../shared/hooks/useMountRows';
 
 type Params = {
   readonly sessionId: SessionId;

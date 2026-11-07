@@ -8,7 +8,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
-import { useMountRows } from '../../../session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../shared/hooks/useMountRows';
 import { artifactBranchesOf } from '../../artifactBranchesOf';
 import type { ArtifactBranchItem, ArtifactListRow } from '../../artifactListRows';
 import { useArtifactMountIds } from '../useArtifactMountIds';

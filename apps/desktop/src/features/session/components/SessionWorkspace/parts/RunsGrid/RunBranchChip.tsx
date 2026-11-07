@@ -1,7 +1,7 @@
 import { Chip, OptionalTooltip, cn } from '@goodboy/ui';
 import type { MountId } from '@goodboy/types';
 import type { WorkBranch } from '../../../../workBranchesOf';
-import { branchListLabelOf } from './branchListLabelOf';
+import { branchListLabelOf } from '../../../../../../shared/utils/branchListLabelOf';
 
 type OpenParams = {
   readonly mountId: MountId;

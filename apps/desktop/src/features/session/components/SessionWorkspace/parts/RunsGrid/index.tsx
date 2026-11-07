@@ -13,7 +13,7 @@ import { NAMES } from '../../../../../../shared/utils/names';
 import { branchGroupsOf } from '../../../../branchGroupsOf';
 import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
-import { useMountRows } from '../../../SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../../../shared/hooks/useMountRows';
 import { ContinueAllAction } from './ContinueAllAction';
 import { RunsByBranch } from './RunsByBranch';
 import { RunsByState } from './RunsByState';

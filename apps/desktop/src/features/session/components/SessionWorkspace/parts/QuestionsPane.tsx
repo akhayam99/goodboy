@@ -6,7 +6,7 @@ import { useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { useGroupBy } from '../../../../../store/slices/session-grouping/hooks/useGroupBy';
-import { useMountRows } from '../../SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../../shared/hooks/useMountRows';
 import type { AgentKind } from '../../../agent-kind';
 import { useQuestionsLens } from '../../../hooks/useQuestionsLens';
 import { openQuestion } from '../../../openQuestion';

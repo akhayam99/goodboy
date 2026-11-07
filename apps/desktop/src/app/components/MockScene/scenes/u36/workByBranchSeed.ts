@@ -389,42 +389,7 @@ export const seedBranchLinks = ({ sessionId }: BranchLinksParams): void => {
       ],
     },
     sessionAnsweredQuestions: { [sessionId]: [] },
-    sessionPlans: {
-      [sessionId]: present({
-        items: [
-          planOf({
-            id: 'branch-plan',
-            title: 'Retry policy for notify-relay webhooks',
-            agentId: on.id,
-            status: 'active',
-            minute: '30',
-            sessionId,
-          }),
-        ],
-      }),
-    },
-    sessionArtifacts: {
-      [sessionId]: present({
-        items: [
-          reportOf({
-            id: 'branch-report-a',
-            title: 'Retried webhooks no longer double credit',
-            agentId: on.id,
-            minute: '50',
-            sessionId,
-          }),
-          reportOf({
-            id: 'branch-report-b',
-            title: 'How retries work',
-            agentId: on.id,
-            minute: '15',
-            sessionId,
-          }),
-        ],
-      }),
-    },
     loadSessionOpenQuestions: async () => undefined,
     loadSessionAnsweredQuestions: async () => undefined,
-    loadSessionArtifacts: async () => undefined,
   });
 };
