@@ -1637,7 +1637,7 @@ dependencies = [
 
 [[package]]
 name = "goodboy-desktop"
-version = "0.31.11"
+version = "0.31.12"
 dependencies = [
  "base64 0.22.1",
  "core-foundation-sys",
