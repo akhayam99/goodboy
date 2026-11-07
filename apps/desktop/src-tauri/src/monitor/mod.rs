@@ -75,6 +75,38 @@ fn is_in_scope(scope: &Scope, row: &parse::RawProcess) -> bool {
     scope.pids.contains(&row.pid) || scope.pgids.contains(&row.pgid)
 }
 
+fn started_at_of(row: &parse::RawProcess, now: u64) -> u64 {
+    if row.born_secs > 0 {
+        return row.born_secs.saturating_mul(1000);
+    }
+    now.saturating_sub(row.elapsed_secs.saturating_mul(1000))
+}
+
+#[cfg(target_os = "macos")]
+fn born_secs_of(pid: u32) -> u64 {
+    let Ok(raw_pid) = i32::try_from(pid) else {
+        return 0;
+    };
+    let size = std::mem::size_of::<libc::proc_bsdinfo>();
+    let Ok(buffer_size) = i32::try_from(size) else {
+        return 0;
+    };
+    let mut info = std::mem::MaybeUninit::<libc::proc_bsdinfo>::zeroed();
+    let written = unsafe {
+        libc::proc_pidinfo(
+            raw_pid,
+            libc::PROC_PIDTBSDINFO,
+            0,
+            info.as_mut_ptr().cast(),
+            buffer_size,
+        )
+    };
+    if written != buffer_size {
+        return 0;
+    }
+    unsafe { info.assume_init() }.pbi_start_tvsec
+}
+
 fn assemble(
     rows: Vec<parse::RawProcess>,
     mut cwds: HashMap<u32, String>,
@@ -82,17 +114,20 @@ fn assemble(
     now: u64,
 ) -> Vec<ProcessInfo> {
     rows.into_iter()
-        .map(|row| ProcessInfo {
-            pid: row.pid,
-            ppid: row.ppid,
-            pgid: row.pgid,
-            name: row.name,
-            cwd: cwds.remove(&row.pid),
-            started_at: now.saturating_sub(row.elapsed_secs.saturating_mul(1000)),
-            cpu_percent: row.cpu_percent,
-            rss_bytes: row.rss_kib.saturating_mul(1024),
-            uid: row.uid,
-            args_masked: mask::mask_args(&args.remove(&row.pid).unwrap_or_default()),
+        .map(|row| {
+            let started_at = started_at_of(&row, now);
+            ProcessInfo {
+                pid: row.pid,
+                ppid: row.ppid,
+                pgid: row.pgid,
+                name: row.name,
+                cwd: cwds.remove(&row.pid),
+                started_at,
+                cpu_percent: row.cpu_percent,
+                rss_bytes: row.rss_kib.saturating_mul(1024),
+                uid: row.uid,
+                args_masked: mask::mask_args(&args.remove(&row.pid).unwrap_or_default()),
+            }
         })
         .collect()
 }
@@ -165,6 +200,10 @@ fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, Str
     let rows: Vec<parse::RawProcess> = parse::parse_ps_rows(&table)
         .into_iter()
         .filter(|row| is_in_scope(&scope, row))
+        .map(|row| parse::RawProcess {
+            born_secs: born_secs_of(row.pid),
+            ..row
+        })
         .collect();
     let list = csv(rows.iter().map(|row| row.pid));
     let (cwds, args) = details(&list)?;
@@ -365,6 +404,7 @@ mod linux {
             pgid: fields.get(2)?.parse().ok()?,
             uid,
             elapsed_secs,
+            born_secs: started_secs,
             cpu_percent,
             rss_kib: rss_pages * page_size() / 1024,
             name,
@@ -469,6 +509,7 @@ mod tests {
             pgid: 5,
             uid: 501,
             elapsed_secs: 10,
+            born_secs: 0,
             cpu_percent: 1.5,
             rss_kib: 2,
             name: "node".to_string(),
@@ -479,6 +520,37 @@ mod tests {
         assert_eq!(out[0].rss_bytes, 2048);
         assert_eq!(out[0].args_masked, "node --token=***");
         assert_eq!(out[0].cwd, None);
+    }
+
+    #[test]
+    fn started_at_uses_the_os_birth_time_and_ignores_drift() {
+        let row = parse::RawProcess {
+            pid: 5,
+            ppid: 1,
+            pgid: 5,
+            uid: 501,
+            elapsed_secs: 10,
+            born_secs: 1_700,
+            cpu_percent: 0.0,
+            rss_kib: 0,
+            name: "node".to_string(),
+        };
+        assert_eq!(started_at_of(&row, 100_000), 1_700_000);
+        let drifted = parse::RawProcess {
+            elapsed_secs: 15,
+            ..row.clone()
+        };
+        assert_eq!(started_at_of(&drifted, 105_000), 1_700_000);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn born_secs_of_this_process_is_stable_and_in_the_past() {
+        let pid = std::process::id();
+        let first = born_secs_of(pid);
+        assert!(first > 0);
+        assert_eq!(first, born_secs_of(pid));
+        assert!(first * 1000 <= crate::util::now_millis_u64());
     }
 
     #[test]
@@ -500,6 +572,7 @@ mod tests {
             pgid,
             uid: 0,
             elapsed_secs: 0,
+            born_secs: 0,
             cpu_percent: 0.0,
             rss_kib: 0,
             name: "x".to_string(),

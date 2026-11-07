@@ -307,6 +307,36 @@ describe('a fold belongs to one run of a process', () => {
     expect(screen.queryByText('node server.js')).toBeNull();
   });
 
+  it('keeps the fold open across successive refreshes of the same live process', async () => {
+    const first = await mountPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Show command line' }));
+    first.unmount();
+    const folds = () => useAppStore.getState().monitoringViews['w-harborline']?.openFolds ?? [];
+    const before = folds();
+    expect(before.some((key) => key.startsWith('proc:4100:'))).toBe(true);
+
+    for (const step of [1, 2, 3]) {
+      const live: MonitorSnapshot = {
+        ...SNAPSHOT,
+        takenAt: TAKEN_AT + step * 5000,
+        processes: SNAPSHOT.processes.map((item) => ({
+          ...item,
+          cpuPercent: item.cpuPercent + step,
+        })),
+      };
+      stubStoryInvoke({
+        monitor_snapshot: live,
+        process_ledger_list: [],
+        monitor_watched_ports: [],
+      });
+      await useAppStore.getState().refreshMonitorSnapshot();
+    }
+
+    expect(folds()).toEqual(before);
+    await mountPage();
+    expect(screen.queryByText('node server.js')).not.toBeNull();
+  });
+
   it('drops the fold when a full snapshot no longer has the process', async () => {
     const first = await mountPage();
     fireEvent.click(screen.getByRole('button', { name: 'Show command line' }));
