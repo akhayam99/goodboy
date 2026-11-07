@@ -102,7 +102,7 @@ export const RecordHeader = ({
         {frame?.primary ?? null}
         {onOpenFull === null ? null : (
           <Button variant="ghost" size="sm" onClick={onOpenFull}>
-            Open full
+            Open
           </Button>
         )}
         <ObjectOverflowMenu

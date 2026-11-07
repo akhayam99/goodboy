@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { settleStopping as settle } from './settleStopping';
 import type { GetFn, SetFn, StopProcessParams, StopResult } from './types';
@@ -10,6 +11,7 @@ export const stopProcess = (set: SetFn, get: GetFn) => {
       set(settle({ pid, progress: result.outcome === 'still-running' ? 'still-running' : null }));
       if (result.outcome === 'refused') {
         void get().reportError({
+          recovery: CHECK_STATE,
           title: "Couldn't stop the process",
           error: new Error(result.reason ?? 'Goodboy refused to stop it.'),
           severity: 'warning',
@@ -19,7 +21,7 @@ export const stopProcess = (set: SetFn, get: GetFn) => {
       return result;
     } catch (error) {
       set(settle({ pid, progress: null }));
-      void get().reportError({ title: "Couldn't stop the process", error });
+      void get().reportError({ recovery: CHECK_STATE, title: "Couldn't stop the process", error });
       return null;
     }
   };

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
@@ -41,7 +42,7 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
         message: `Restored ${entry.branch} to ${projectNameOf(entry)}.`,
       });
     } catch (error) {
-      void reportError({ title: "Couldn't restore the branch", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't restore the branch", error });
     } finally {
       setBusyId(null);
     }
@@ -54,7 +55,7 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
       setConfirmId(null);
       showToast({ kind: 'success', message: `Deleted ${entry.branch} permanently.` });
     } catch (error) {
-      void reportError({ title: "Couldn't delete the branch", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't delete the branch", error });
     } finally {
       setBusyId(null);
     }

@@ -97,7 +97,7 @@ describe('RecordHeader', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open full' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     expect(onOpenFull).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('button', { name: 'Star HBL-412' }));
     expect(onToggle).toHaveBeenCalledOnce();

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Bug } from 'lucide-react';
 import { Button, DrawerFrame, HeaderActions } from '@goodboy/ui';
@@ -64,7 +65,12 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
       });
     } catch (error: unknown) {
       if (!isReportedError(error)) {
-        void reportError({ title: "Couldn't start the Implementer", error, sessionId });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't start the Implementer",
+          error,
+          sessionId,
+        });
       }
     } finally {
       setIsStarting(false);

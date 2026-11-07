@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button, EmptyLine, ICON_SIZE, SelectionBar, SelectionConfirm } from '@goodboy/ui';
@@ -79,6 +80,7 @@ export const ArtifactBulkDeleteBar = ({
       const failure = outcome.failed[0];
       if (failure !== undefined) {
         void reportError({
+          recovery: CHECK_STATE,
           title: `Couldn't delete ${pluralize(outcome.failed.length, 'artifact')}`,
           error: new Error(failure.message),
         });

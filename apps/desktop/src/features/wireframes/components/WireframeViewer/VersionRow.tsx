@@ -51,7 +51,7 @@ export const VersionRow = ({
       <span className="flex shrink-0 items-center gap-1">
         {isViewing ? null : (
           <Button variant="ghost" size="sm" onClick={onView}>
-            View
+            Open
           </Button>
         )}
         {isCurrent ? null : (

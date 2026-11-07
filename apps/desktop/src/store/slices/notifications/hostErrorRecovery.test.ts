@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { CommandError } from '../../../shared/lib/invokeCommand';
 import type { HostFailure, HostFailureKind } from '../../../shared/lib/hostFailure';
+import { CHECK_STATE } from './errorRecovery';
 import { hostErrorRecoveryOf } from './hostErrorRecovery';
 
-const failureOf = ({ kind }: { kind: HostFailureKind }): HostFailure => ({
+type Params = {
+  readonly kind: HostFailureKind;
+};
+
+const failureOf = ({ kind }: Params): HostFailure => ({
   kind,
   status: null,
   retryAfterSeconds: null,
   detail: null,
 });
 
-const commandErrorOf = ({ kind }: { kind: HostFailureKind }): CommandError =>
+const commandErrorOf = ({ kind }: Params): CommandError =>
   new CommandError({ kind: 'host', message: 'request failed', failure: failureOf({ kind }) });
 
 describe('hostErrorRecoveryOf', () => {
@@ -26,10 +31,10 @@ describe('hostErrorRecoveryOf', () => {
   it('promises nothing for a failure that signing in again would not fix', () => {
     expect(
       hostErrorRecoveryOf({ error: commandErrorOf({ kind: 'network' }), tool: 'gitlab' }),
-    ).toBeUndefined();
+    ).toEqual(CHECK_STATE);
     expect(
       hostErrorRecoveryOf({ error: commandErrorOf({ kind: 'rate_limited' }), tool: 'gitlab' }),
-    ).toBeUndefined();
-    expect(hostErrorRecoveryOf({ error: new Error('boom'), tool: 'gitlab' })).toBeUndefined();
+    ).toEqual(CHECK_STATE);
+    expect(hostErrorRecoveryOf({ error: new Error('boom'), tool: 'gitlab' })).toEqual(CHECK_STATE);
   });
 });

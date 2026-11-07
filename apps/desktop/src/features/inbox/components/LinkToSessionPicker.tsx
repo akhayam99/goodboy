@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useMemo, useState } from 'react';
 import { Link2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -40,7 +41,7 @@ export const LinkToSessionPicker = ({ workspaceId, task }: Props) => {
         createdAt: new Date().toISOString() as IsoDateTime,
       });
     } catch (error: unknown) {
-      void reportError({ title: "Couldn't link the session", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't link the session", error });
     } finally {
       setIsLinking(false);
     }

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
@@ -26,6 +27,7 @@ export const markStoppedByUser = async ({
     });
   } catch (error) {
     void get().reportError({
+      recovery: CHECK_STATE,
       title: "Couldn't mark the agent as stopped",
       error,
       severity: 'warning',

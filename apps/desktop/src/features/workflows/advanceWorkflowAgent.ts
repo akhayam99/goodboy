@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { Agent, SessionId } from '@goodboy/types';
 import type { useAppStore } from '../../store';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
@@ -43,6 +44,11 @@ export const advanceWorkflowAgent = async ({
     if (isReportedError(error)) {
       return;
     }
-    void actions.reportError({ title: "The next step didn't start", error, sessionId });
+    void actions.reportError({
+      recovery: CHECK_STATE,
+      title: "The next step didn't start",
+      error,
+      sessionId,
+    });
   }
 };

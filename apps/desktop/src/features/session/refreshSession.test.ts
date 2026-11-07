@@ -28,6 +28,7 @@ describe('refreshSession', () => {
 
     expect(reportError).toHaveBeenCalledOnce();
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't refresh this session",
       error: failure,
       sessionId: SESSION_ID,

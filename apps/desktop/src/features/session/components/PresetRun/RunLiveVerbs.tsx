@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -41,6 +42,7 @@ export const RunLiveVerbs = ({ target }: Props) => {
       await run({ actionId: action.id });
     } catch (error) {
       await reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't ${action.label.toLowerCase()}`,
         error,
         sessionId: target.sessionId,

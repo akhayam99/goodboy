@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import {
@@ -146,6 +147,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
                 onDisconnect={() => {
                   disconnectWorkspace(workspace.id).catch((error: unknown) => {
                     void reportError({
+                      recovery: CHECK_STATE,
                       title: "Couldn't disconnect the workspace",
                       error,
                       workspaceId: workspace.id,

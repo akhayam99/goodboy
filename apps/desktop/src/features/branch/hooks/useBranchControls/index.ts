@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProjectId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -274,6 +275,7 @@ export const useBranchControls = ({
         const [first] = result.failures;
         if (first !== undefined) {
           void reportError({
+            recovery: CHECK_STATE,
             title: REVIEW_BULK_LABEL.acceptFailed,
             error: new Error(
               bulkAcceptFailureLine({ count: result.failures.length, message: first.message }),
@@ -283,7 +285,12 @@ export const useBranchControls = ({
         }
       } catch (error: unknown) {
         if (!isReportedError(error)) {
-          void reportError({ title: REVIEW_BULK_LABEL.acceptFailed, error, sessionId });
+          void reportError({
+            recovery: CHECK_STATE,
+            title: REVIEW_BULK_LABEL.acceptFailed,
+            error,
+            sessionId,
+          });
         }
       }
     },

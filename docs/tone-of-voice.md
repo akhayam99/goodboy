@@ -98,6 +98,12 @@ talking to a market. There are two voices:
   [concepts.md](concepts.md) → Vocabulary rules. A failed action offers
   "Retry", never "Try again". Advice inside a sentence may still say "try
   again".
+  The scanner follows conditional labels and counts single words in state and
+  copy properties. Option labels also reject "myself".
+  `state-words.test.ts` checks the state maps and tooltip meanings against the
+  table in concepts. `verb-words.test.ts` rejects Open full, View, See, View transcript,
+  Go to chat and See what it did on controls, also when a control takes the label
+  from a copy table; a View facet heading remains a noun.
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
   Settings, Slack, after-merge cleanup and limits.
 - **One form for a settings path and for a key.** Write a path as

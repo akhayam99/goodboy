@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { HistoryPlanArgs, HistoryRebasePlan } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
@@ -199,7 +200,12 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
           worktreePath: target.worktreePath,
           copyPath: trial.copyPath,
         }).catch((error: unknown) =>
-          get().reportError({ title: "Couldn't remove the rebase copy", error, sessionId }),
+          get().reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't remove the rebase copy",
+            error,
+            sessionId,
+          }),
         );
       }
       return conflictWith({

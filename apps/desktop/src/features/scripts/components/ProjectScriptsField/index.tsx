@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { Button, EmptyLine, Notice } from '@goodboy/ui';
@@ -51,12 +52,12 @@ export const ProjectScriptsField = ({ project }: Props) => {
 
   const toggleCheck = (pinId: string) =>
     void toggleAutoCheck({ projectId: project.id, pinId }).catch((error: unknown) =>
-      reportError({ title: "Couldn't change the Auto checks", error }),
+      reportError({ recovery: CHECK_STATE, title: "Couldn't change the Auto checks", error }),
     );
 
   const togglePin = (pinId: string) =>
     void toggleScriptPin({ projectId: project.id, pinId }).catch((error: unknown) =>
-      reportError({ title: "Couldn't pin the script", error }),
+      reportError({ recovery: CHECK_STATE, title: "Couldn't pin the script", error }),
     );
 
   return (

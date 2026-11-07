@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
@@ -26,7 +27,12 @@ export const ContinueAllAction = ({ sessionId, runs }: Props) => {
     try {
       await resumeStoppedAgents({ sessionId });
     } catch (error) {
-      await reportError({ title: "Couldn't continue the stopped agents", error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't continue the stopped agents",
+        error,
+        sessionId,
+      });
     } finally {
       setIsResuming(false);
     }

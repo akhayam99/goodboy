@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import type { BaseDivergence, Project } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { repoBaseDivergence } from '../../../shared/lib/repo';
@@ -66,6 +67,10 @@ export const readRepoDivergence = async ({
   await get()
     .loadProjectGitStatus({ projectId: project.id })
     .catch((error: unknown) =>
-      get().reportError({ title: `Couldn't read the git status of ${project.name}`, error }),
+      get().reportError({
+        recovery: READ_FAILED,
+        title: `Couldn't read the git status of ${project.name}`,
+        error,
+      }),
     );
 };

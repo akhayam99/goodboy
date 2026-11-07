@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore, useAttentionElsewhere, useCurrentWorkspace } from '../../../../store';
@@ -29,7 +30,9 @@ type ReportParams = {
 };
 
 const reportOnce = ({ title, error }: ReportParams): void => {
-  void useAppStore.getState().reportError({ title, error, coalesceKey: 'away-alerts' });
+  void useAppStore
+    .getState()
+    .reportError({ recovery: CHECK_STATE, title, error, coalesceKey: 'away-alerts' });
 };
 
 type OpenTapParams = {

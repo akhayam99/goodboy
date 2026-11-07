@@ -1,3 +1,4 @@
+import { OPEN_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { Chip, Tooltip } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { openUrl } from '../../../shared/lib/editor';
@@ -18,7 +19,11 @@ export const PortChip = ({ port }: Props) => {
         ariaLabel={`Open localhost:${port}`}
         onClick={() => {
           openUrl(url).catch((error: unknown) =>
-            reportError({ title: `Couldn't open localhost:${port}`, error }),
+            reportError({
+              recovery: OPEN_FAILED,
+              title: `Couldn't open localhost:${port}`,
+              error,
+            }),
           );
         }}
       />

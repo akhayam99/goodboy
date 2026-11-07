@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { Listbox } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
@@ -16,7 +17,7 @@ export const StorageSuggestAfterPicker = () => {
 
   const onDays = (next: string) =>
     void saveSetting(STORAGE_SUGGEST_AFTER_KEY, next).catch((error: unknown) =>
-      reportError({ title: "Couldn't save the cleanup setting", error }),
+      reportError({ recovery: NOTHING_CHANGED, title: "Couldn't save the cleanup setting", error }),
     );
 
   return (

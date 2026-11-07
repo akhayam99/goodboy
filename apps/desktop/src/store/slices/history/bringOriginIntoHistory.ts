@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { formatError } from '@goodboy/ui';
 import {
   discardHistoryCopy,
@@ -99,7 +100,12 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
           worktreePath: target.worktreePath,
           copyPath: trial.copyPath,
         }).catch((error: unknown) =>
-          get().reportError({ title: "Couldn't remove the bring in copy", error, sessionId }),
+          get().reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't remove the bring in copy",
+            error,
+            sessionId,
+          }),
         );
       }
       setHistoryRun({

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -33,7 +34,12 @@ export const useWorkspaceField = ({ workspaceId, field }: Params): WorkspaceFiel
         writes: [def.write(null)],
       });
     } catch (error) {
-      void reportError({ title: `Couldn't reset ${def.label.toLowerCase()}`, error, workspaceId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: `Couldn't reset ${def.label.toLowerCase()}`,
+        error,
+        workspaceId,
+      });
     }
   }, [def, reportError, workspaceId]);
 

@@ -499,7 +499,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve myself or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve myself starts the rebase in the terminal.',
+        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve in terminal or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve in terminal starts the rebase there.',
       },
       {
         term: 'Rebase all',

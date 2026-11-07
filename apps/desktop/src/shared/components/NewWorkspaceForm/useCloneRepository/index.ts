@@ -1,3 +1,4 @@
+import { CHECK_STATE, READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../../../../store';
 import { CommandError } from '../../../lib/invokeCommand';
@@ -107,6 +108,7 @@ export const useCloneRepository = ({ onCloned }: Params): CloneRepository => {
       if (active?.isInvoked === true) {
         void cloneCancel({ requestId: active.requestId }).catch((cause: unknown) =>
           reportErrorRef.current({
+            recovery: CHECK_STATE,
             title: "Couldn't stop the clone",
             error: cause,
             severity: 'warning',
@@ -156,6 +158,7 @@ export const useCloneRepository = ({ onCloned }: Params): CloneRepository => {
       return await cloneFreeDestination({ path });
     } catch (cause) {
       await reportError({
+        recovery: READ_FAILED,
         title: "Couldn't suggest another folder name",
         error: cause,
         severity: 'warning',

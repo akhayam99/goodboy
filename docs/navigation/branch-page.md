@@ -521,7 +521,7 @@ branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
 `Rebase on main · N conflicts`. A conflict stops the rebase with the branch as
 it was and asks in the panel (`RebaseConflictPrompt` inside `RebaseStopPanel`): **Resolve with
-Auto**, **Resolve myself** (`resolveRebaseMyself`: `worktree_start_rebase` in the worktree, then the
+Auto**, **Resolve in terminal** (`resolveRebaseMyself`: `worktree_start_rebase` in the worktree, then the
 terminal; `worktree_rebase_conflicts` reads each file's markers and `worktree_continue_rebase` finishes
 it) or **Keep branch as it was** (`keepRebaseStop`: it records `history_restored`
 with `reason: 'kept'`, which settles the stop in every window, and only then drops the run; a

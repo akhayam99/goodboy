@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { usePoll } from '../../../../shared/lib/usePoll';
@@ -32,7 +33,11 @@ export const useRepoDivergenceCheck = ({ workspaceId }: Params): void => {
       return;
     }
     void loadSetting(SETTING_REPO_CHECK_MINUTES).catch((error: unknown) =>
-      reportError({ title: "Couldn't read how often to check the repositories", error }),
+      reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read how often to check the repositories",
+        error,
+      }),
     );
   }, [raw, loadSetting, reportError]);
 

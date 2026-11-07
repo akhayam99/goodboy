@@ -199,7 +199,7 @@ Each branch, pull request or Auto plan shows once per kind of work.
 
 - Its row is titled by its branch. It says in one sentence what stopped ("2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.").
 - It leads with the verb that fixes it: **Resolve with Auto**, **Bring them in**, **Retry rebase** or **Fix with an agent**.
-- **Resolve myself**, **Keep branch as it was**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
+- **Resolve in terminal**, **Keep branch as it was**, **Undo rebase** and **Open branch** sit in its **⋯** menu as they apply.
 - A click on its title opens the branch with the rebase panel.
 - A diverged card of the same branch folds into that row, and its verb goes into the **⋯** menu. It never shows as "and 1 more".
 - Stopped rebases of other branches fold into the **⋯** menu of the Update card that counts them. Each shows a title ("Rebase of hl/feat-center-home-page stopped") and a short second line that wraps and clamps at three lines ("Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more", "Origin moved"). The full sentence with the file paths stays in Needs you.

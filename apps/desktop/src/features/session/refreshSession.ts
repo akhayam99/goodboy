@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import type { SessionId } from '@goodboy/types';
 import type { ReportErrorParams } from '../../store/slices/notifications/reportError';
 import type { ResyncSessionParams } from '../../store/slices/session-sync/types';
@@ -18,6 +19,6 @@ export const refreshSession = async ({
   try {
     await resyncSession({ sessionId });
   } catch (error) {
-    await reportError({ title: REFRESH_FAILED_TITLE, error, sessionId });
+    await reportError({ recovery: CHECK_STATE, title: REFRESH_FAILED_TITLE, error, sessionId });
   }
 };

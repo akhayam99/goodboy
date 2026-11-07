@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useState } from 'react';
 import type { HistoryBackup, HistoryBackupFacts, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -40,6 +41,7 @@ export const useHistoryVersions = ({
 
     const report = ({ error }: ReportParams) => {
       void reportError({
+        recovery: READ_FAILED,
         title: "Couldn't read the previous versions",
         error,
         severity: 'warning',

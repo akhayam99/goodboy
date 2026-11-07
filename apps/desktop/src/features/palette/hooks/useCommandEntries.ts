@@ -1,9 +1,11 @@
+import { pullPaletteRepos } from '../pullPaletteRepos';
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { destinationEntryOf } from '../destinationEntryOf';
 import { contextPaletteEntryOf } from '../contextPaletteEntryOf';
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
-import type { AgentId, Project, ProjectScript, SessionId, Workflow } from '@goodboy/types';
+import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {
   BOARD_PLACE,
   EMPTY_ARRAY,
@@ -57,8 +59,6 @@ import { workspaceEntries } from '../sources/workspaceEntries';
 import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
 import { useScriptPins } from '../../scripts';
 import { runPinnedScript } from '../../scripts/runPinnedScript';
-import { pullBaseInRepos } from '../../workspace/pullBase/pullBaseInRepos';
-import { pullBaseSummary } from '../../workspace/pullBase/pullBaseSummary';
 import { repoEntries } from '../sources/repoEntries';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
@@ -428,7 +428,9 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           }
           showToast({ kind: 'success', message: `${target.name} finished.` });
         })
-        .catch((error: unknown) => reportError({ title: failureTitle, error, sessionId }));
+        .catch((error: unknown) =>
+          reportError({ recovery: CHECK_STATE, title: failureTitle, error, sessionId }),
+        );
     };
     out.push(
       ...scriptPinEntries({
@@ -439,32 +441,12 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       }),
     );
 
-    const pullRepos = (repos: ReadonlyArray<Project>): void => {
-      showToast({
-        kind: 'info',
-        title: `Pulling in ${repos.length} ${repos.length === 1 ? 'repo' : 'repos'}…`,
-        message: repos.map((repo) => repo.name).join(', '),
-        dedupeKey: 'pull-base',
-      });
-      void pullBaseInRepos({ projects: repos })
-        .then((outcomes) => {
-          const summary = pullBaseSummary({ outcomes });
-          showToast({
-            kind: summary.kind,
-            title: summary.title,
-            message: summary.lines.join('\n'),
-            dedupeKey: 'pull-base',
-          });
-          for (const outcome of outcomes) {
-            if (outcome.kind === 'updated') {
-              void useAppStore.getState().loadProjectGitStatus({ projectId: outcome.projectId });
-            }
-          }
-        })
-        .catch((error: unknown) => reportError({ title: "Couldn't pull the base branch", error }));
-    };
     out.push(
-      ...repoEntries({ projects: workspaceProjects, statuses: projectGitStatus, pull: pullRepos }),
+      ...repoEntries({
+        projects: workspaceProjects,
+        statuses: projectGitStatus,
+        pull: (projects) => pullPaletteRepos({ projects, showToast }),
+      }),
     );
 
     for (const script of scripts) {
@@ -495,7 +477,9 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
               }
               showToast({ kind: 'success', message: `${script.name} finished.` });
             })
-            .catch((error: unknown) => reportError({ title: failureTitle, error, sessionId }));
+            .catch((error: unknown) =>
+              reportError({ recovery: CHECK_STATE, title: failureTitle, error, sessionId }),
+            );
         },
       });
     }

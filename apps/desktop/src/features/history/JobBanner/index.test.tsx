@@ -299,7 +299,7 @@ describe('the job banner', () => {
     expect(screen.getByRole('button', { name: 'Undo rewrite' })).toBeDefined();
   });
 
-  it('names the new online commit and offers Bring them in, Resolve myself and Undo rebase', async () => {
+  it('names the new online commit and offers Bring them in, Resolve in terminal and Undo rebase', async () => {
     await showRun({
       phase: 'stopped',
       backupRef: 'refs/goodboy/backup/1',
@@ -309,7 +309,11 @@ describe('the job banner', () => {
     const panel = screen.getByRole('region', { name: 'Rebase' });
     expect(panel.textContent).toContain('Rebased here, but origin has 1 new commit');
     expect(panel.textContent).toContain('Fix the avatar size on narrow screens');
-    expect(verbsIn({ node: panel })).toEqual(['Bring them in', 'Resolve myself', 'Undo rebase']);
+    expect(verbsIn({ node: panel })).toEqual([
+      'Bring them in',
+      'Resolve in terminal',
+      'Undo rebase',
+    ]);
   });
 
   it('retries the rebase when the branch moved', async () => {
@@ -679,7 +683,11 @@ describe('a stop saved before a restart', () => {
     const saved = screen.getByRole('alert');
     expect(saved.textContent).toBe(liveTitle);
     expect(verbsIn({ node: saved })).toEqual(liveVerbs);
-    expect(liveVerbs).toEqual(['Resolve with Auto', 'Resolve myself', 'Keep branch as it was']);
+    expect(liveVerbs).toEqual([
+      'Resolve with Auto',
+      'Resolve in terminal',
+      'Keep branch as it was',
+    ]);
   });
 
   it('starts Auto from the saved stop and then says Auto has it', async () => {
@@ -768,7 +776,7 @@ describe('the rebase stop panel', () => {
     expect(fileStates()).toEqual(['conflict', 'conflict']);
     expect(verbsIn({ node: panel() })).toEqual([
       'Resolve with Auto',
-      'Resolve myself',
+      'Resolve in terminal',
       'Keep branch as it was',
     ]);
     expect(
@@ -776,14 +784,14 @@ describe('the rebase stop panel', () => {
     ).toBe(true);
   });
 
-  it('starts the rebase in the worktree on Resolve myself, then holds Continue until no file conflicts', async () => {
+  it('starts the rebase in the worktree on Resolve in terminal, then holds Continue until no file conflicts', async () => {
     await showRun(conflictRun());
 
     conflictsNow.files = [
       { path: 'src/settlement/batch.ts', hasMarkers: true, isStageOnly: false },
       { path: 'src/settlement/ledger.ts', hasMarkers: true, isStageOnly: false },
     ];
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve myself' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve in terminal' }));
     await settle();
 
     expect(gitCalls).toEqual(['worktree_start_rebase']);
@@ -838,7 +846,7 @@ describe('the rebase stop panel', () => {
       { path: 'src/settlement/batch.ts', hasMarkers: false, isStageOnly: true },
       { path: 'src/settlement/ledger.ts', hasMarkers: true, isStageOnly: false },
     ];
-    fireEvent.click(screen.getByRole('button', { name: 'Resolve myself' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve in terminal' }));
     await settle();
 
     expect(fileStates()).toEqual(['conflict', 'conflict']);
@@ -1133,9 +1141,9 @@ describe('the banner on a session with two branches', () => {
     view.rerender(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={OTHER_WORKTREE} />);
     await settle();
 
-    expect(screen.getByRole('button', { name: 'Resolve myself' }).hasAttribute('disabled')).toBe(
-      false,
-    );
+    expect(
+      screen.getByRole('button', { name: 'Resolve in terminal' }).hasAttribute('disabled'),
+    ).toBe(false);
     release();
     await settle();
   });

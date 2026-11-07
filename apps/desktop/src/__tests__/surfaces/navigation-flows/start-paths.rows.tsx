@@ -173,7 +173,7 @@ const openFullRecord = async (): Promise<void> => {
   await clickButton('Tasks');
   await waitFor(() => inboxRowButton('#318'), WAIT);
   fireEvent.click(inboxRowButton('#318'));
-  fireEvent.click(await screen.findByRole('button', { name: 'Open full' }, WAIT));
+  fireEvent.click(await screen.findByRole('button', { name: 'Open' }, WAIT));
 };
 
 type StartOnParams = {
@@ -343,7 +343,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'Open full on a Tasks record stays on the record once its trail claims the band',
+    name: 'Open on a Tasks record stays on the record once its trail claims the band',
     covers: [],
     open: async (ctx) => {
       installFakes(ctx);

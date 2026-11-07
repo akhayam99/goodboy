@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { RefreshCw } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -13,7 +14,7 @@ export const StorageCheckAgain = () => {
   const reportError = useAppStore((state) => state.reportError);
   const onCheck = () =>
     void loadStorage({ isForced: true }).catch((error: unknown) =>
-      reportError({ title: "Couldn't read storage usage", error }),
+      reportError({ recovery: READ_FAILED, title: "Couldn't read storage usage", error }),
     );
   return (
     <span className="flex items-center gap-2 text-meta text-faint-foreground">

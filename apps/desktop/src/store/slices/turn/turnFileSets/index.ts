@@ -1,3 +1,5 @@
+import type { ReportErrorParams } from '../../notifications/reportError';
+import { CHECK_STATE } from '../../notifications/errorRecovery';
 import { insertTurnFileSet } from '@goodboy/db';
 import type { Project, ProviderRunId, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
@@ -36,13 +38,8 @@ export const beginTurnFileSets = ({ mounts }: BeginParams): Promise<ReadonlyArra
       }),
   );
 
-type ReportParams = {
-  readonly title: string;
-  readonly error: unknown;
-};
-
 type RecordParams = {
-  readonly reportError: (params: ReportParams) => Promise<void>;
+  readonly reportError: (params: ReportErrorParams) => Promise<void>;
   readonly sessionId: SessionId;
   readonly runId: ProviderRunId;
   readonly projects: ReadonlyArray<Project>;
@@ -96,6 +93,10 @@ export const recordTurnFileSets = async ({
   }
   const first = failures[0];
   if (first !== undefined) {
-    await reportError({ title: "Couldn't record what this turn changed", error: first });
+    await reportError({
+      recovery: CHECK_STATE,
+      title: "Couldn't record what this turn changed",
+      error: first,
+    });
   }
 };

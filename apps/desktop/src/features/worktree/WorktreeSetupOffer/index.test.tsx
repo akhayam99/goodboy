@@ -29,6 +29,7 @@ const offerJson = (patch: Record<string, unknown> = {}): string =>
   JSON.stringify({ command: 'pnpm install', carried: 2, skipped: 0, state: 'offered', ...patch });
 
 const runDiscoveredScript = vi.fn();
+const reportError = vi.fn(async () => undefined);
 const saveSetting = vi.fn(async () => undefined);
 
 let useAppStore: StoryStore;
@@ -61,6 +62,7 @@ beforeEach(async () => {
     loadSetting: async () => null,
     saveSetting,
     runDiscoveredScript,
+    reportError,
   });
 });
 
@@ -101,6 +103,26 @@ describe('WorktreeSetupOffer', () => {
     );
     await waitFor(() =>
       expect(saveSetting).toHaveBeenCalledWith(KEY, expect.stringContaining('"done"')),
+    );
+  });
+
+  it('says the setup ran when saving its done state fails', async () => {
+    saveSetting.mockRejectedValueOnce(new Error('disk full'));
+    show();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Setup ran, but its completion wasn't saved",
+          recovery: { clause: 'check-state' },
+          sessionId: SESSION,
+        }),
+      ),
+    );
+    expect(reportError).not.toHaveBeenCalledWith(
+      expect.objectContaining({ recovery: { clause: 'nothing-changed' } }),
     );
   });
 

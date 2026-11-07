@@ -39,6 +39,7 @@ describe('useAdvanceWorkflowAgent', () => {
 
     expect(state.reportError).toHaveBeenCalledTimes(1);
     expect(state.reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "The next step didn't start",
       error: new Error('the worktree is gone'),
       sessionId: SESSION_ID,

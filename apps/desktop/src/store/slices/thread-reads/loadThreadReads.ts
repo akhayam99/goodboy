@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import { listThreadReads } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -27,6 +28,7 @@ export const loadThreadReads = ({ set, get }: SliceDeps) => {
       });
     } catch (error) {
       void get().reportError({
+        recovery: READ_FAILED,
         title: 'Could not read which comments you have seen',
         error,
         severity: 'warning',

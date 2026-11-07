@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -55,6 +56,7 @@ export const usePendingAction = ({
       } catch (error) {
         if (!isReportedError(error)) {
           void reportError({
+            recovery: CHECK_STATE,
             title: failureTitle,
             error,
             ...(sessionId !== null && { sessionId }),

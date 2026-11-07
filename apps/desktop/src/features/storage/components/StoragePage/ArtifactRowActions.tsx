@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { Bookmark, ChevronDown, Clock, Eye } from 'lucide-react';
 import { Button, cn, ICON_SIZE, OverflowMenu, tintClasses, type MenuEntry } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -23,7 +24,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
   const reportError = useAppStore((state) => state.reportError);
 
   const attempt = ({ title, action }: AttemptParams) =>
-    void action().catch((error: unknown) => reportError({ title, error }));
+    void action().catch((error: unknown) => reportError({ recovery: CHECK_STATE, title, error }));
 
   const keepEntries: ReadonlyArray<MenuEntry> = [
     {

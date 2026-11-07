@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useState, type ReactNode } from 'react';
 import { Check, MessageCircle } from 'lucide-react';
 import { Button, ICON_SIZE, Notice } from '@goodboy/ui';
@@ -41,7 +42,7 @@ export const StepEndedNotice = ({ sessionId, agentId, fallback = null }: Props) 
       }
       await markStepDone({ sessionId, agentId });
     } catch (error) {
-      await reportError({ title: failure, error, sessionId });
+      await reportError({ recovery: CHECK_STATE, title: failure, error, sessionId });
     } finally {
       setBusy(null);
     }

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import { markOpenQuestionAnswersDelivered } from '@goodboy/db';
 import { wrapOpenQuestionAnswers } from '@goodboy/core/context';
@@ -77,7 +78,12 @@ const deliverToAgent = async ({
         throw error;
       }
       if (!isReportedError(error)) {
-        void get().reportError({ title: AFTER_START_FAILURE, error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: AFTER_START_FAILURE,
+          error,
+          sessionId,
+        });
       }
       return FAILED_AFTER_START;
     });

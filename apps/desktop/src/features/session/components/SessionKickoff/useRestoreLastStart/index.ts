@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -42,7 +43,12 @@ export const useRestoreLastStart = ({ workspaceId }: Params): void => {
       })
       .catch((error: unknown) => {
         if (isCurrent) {
-          void reportError({ title: START_KIND_COPY.lastStartFailed, error, workspaceId });
+          void reportError({
+            recovery: READ_FAILED,
+            title: START_KIND_COPY.lastStartFailed,
+            error,
+            workspaceId,
+          });
         }
       });
     return () => {

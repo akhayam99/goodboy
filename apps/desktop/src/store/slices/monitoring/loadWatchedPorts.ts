@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import type { WatchedPort } from '@goodboy/core/monitoring';
 import { getSetting } from '@goodboy/db';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
@@ -39,7 +40,11 @@ export const loadWatchedPorts = (set: SetFn, get: GetFn) => {
           const { pinned, hidden } = await loadPinnedPorts();
           set({ monitorPinned: pinned, monitorHidden: hidden });
         } catch (error) {
-          await get().reportError({ title: "Couldn't read pinned ports", error });
+          await get().reportError({
+            recovery: READ_FAILED,
+            title: "Couldn't read pinned ports",
+            error,
+          });
         }
       },
     });

@@ -471,7 +471,7 @@ describe('a stopped rebase in Next', () => {
       name: 'Resolve with Auto on hl/feat-center-members-page',
     });
     expect(main.textContent).toBe('Resolve with Auto');
-    expect(menuOf()).toEqual(['Resolve myself', 'Keep branch as it was', 'Open branch']);
+    expect(menuOf()).toEqual(['Resolve in terminal', 'Keep branch as it was', 'Open branch']);
   });
 
   it.each([

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { WorkspaceId } from '@goodboy/types';
 import { restoreWorkflowLibrary } from '@goodboy/core/workflows';
 import { formatError } from '@goodboy/ui';
@@ -19,6 +20,7 @@ export const resetWorkflows = ({ get }: FactoryParams) => {
       await restoreWorkflowLibrary({ db: tauriDatabase }, { workspaceId, slugs });
     } catch (error) {
       await get().reportError({
+        recovery: CHECK_STATE,
         title: "Couldn't restore built-in workflows",
         error: new Error(formatError(error)),
         workspaceId,

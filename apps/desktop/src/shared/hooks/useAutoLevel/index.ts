@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_AUTO_LEVEL, type AutoLevel } from '@goodboy/core/auto';
 import { formatError } from '@goodboy/ui';
@@ -38,7 +39,12 @@ export const useAutoLevel = ({ workspaceId, sessionId }: Params): AutoLevelModel
 
   useEffect(() => {
     loadWorkspaceValue({ workspaceId, key: LEVEL_KEY }).catch((failure: unknown) => {
-      void reportError({ title: "Couldn't read the Auto level", error: failure, workspaceId });
+      void reportError({
+        recovery: READ_FAILED,
+        title: "Couldn't read the Auto level",
+        error: failure,
+        workspaceId,
+      });
     });
   }, [workspaceId, loadWorkspaceValue, reportError]);
 

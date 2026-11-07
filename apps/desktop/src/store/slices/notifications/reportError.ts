@@ -11,26 +11,34 @@ export type ReportErrorParams = {
   severity?: 'error' | 'warning';
   sessionId?: SessionId;
   workspaceId?: WorkspaceId;
-  recovery?: ErrorRecovery | undefined;
+  recovery: ErrorRecovery;
   coalesceKey?: string;
 };
 
-const truncateBody = ({ text }: { text: string }): string =>
+type TruncateParams = {
+  readonly text: string;
+};
+
+const truncateBody = ({ text }: TruncateParams): string =>
   text.length > REPORT_ERROR_BODY_LIMIT ? `${text.slice(0, REPORT_ERROR_BODY_LIMIT - 1)}…` : text;
 
 type BodyParams = {
   readonly text: string;
-  readonly recovery: ErrorRecovery | undefined;
+  readonly recovery: ErrorRecovery;
 };
 
 const errorBodyOf = ({ text, recovery }: BodyParams): string | null => {
   const cause = text === '' ? '' : truncateBody({ text });
-  const clause = recovery?.clause === undefined ? '' : ERROR_CLAUSE_TEXT[recovery.clause];
+  const clause = recovery.clause === undefined ? '' : ERROR_CLAUSE_TEXT[recovery.clause];
   const body = [cause, clause].filter((part) => part !== '').join('\n');
   return body === '' ? null : body;
 };
 
-export const reportError = (get: GetFn) => {
+type FactoryParams = {
+  readonly get: GetFn;
+};
+
+export const reportError = ({ get }: FactoryParams) => {
   return async ({ title, error, severity = 'error', recovery, ...target }: ReportErrorParams) => {
     const text = formatError(error).trim();
     await get().emitNotification({
@@ -38,7 +46,7 @@ export const reportError = (get: GetFn) => {
       severity,
       title,
       body: errorBodyOf({ text, recovery }),
-      ...(recovery?.action !== undefined && { action: recovery.action }),
+      ...(recovery.action !== undefined && { action: recovery.action }),
       ...target,
     });
   };
