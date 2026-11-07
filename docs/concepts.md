@@ -180,7 +180,7 @@ the rail's **Folder** card names the folder and what agents do there
 has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
-chat ends in a card with Review changes and Restore turn
+chat ends in a card with Open changes and Undo changes from this reply
 (`features/chat/components/TurnChangesCard/`). The git verbs are not
 registered for a session without a branch: Comments (`session.review`) and
 Files (`session.diff`) leave the menus and the palette, and **Changes**
@@ -431,7 +431,7 @@ own terminal, diff and pull request links.
 A turn **starts in** one mount: that is where it opens its terminal, runs git
 and shows its pull request. It can still write in every mount of the session.
 The chat header names the start ("Starts in") and lists the rest of the reach
-in its tooltip. With two or more mounts, you pick where new turns start there
+in its tooltip. With two or more mounts, you pick where replies start there
 or from a row's menu, and each row shows the agents working in it right now.
 Once a turn ends, Goodboy records which mounts it changed, so an agent's row in
 Activity names every worktree it changed, not only the one it started in.
@@ -656,7 +656,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   why (`payments-api · 5 commits ahead`); it leads with the branch whose Scribe text is under way, then the most commits
   ahead, then project and branch name, skips a branch put away with **Not
   now**, and lists every branch without a pull request in **⋯** once there
-  are two; **Open PR** opens the worktree the payload names, never one looked
+  are two; **Create pull request** opens the worktree the payload names, never one looked
   up at click time), mark a green draft ready, merge an approved
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
@@ -671,7 +671,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   `mountId`), never the session's active mount. One simplification from the
   design: the demotion window (above) reads the session, not the workspace. A failed
   workflow step has no suggestion: its own row in Activity carries the one
-  **Restart the step**, which opens the step where Ask it to continue and
+  **Retry step**, which opens the step where Continue and
   Skip live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
   same `goodboy:open-settings` event the palette's "Connect a provider"
@@ -729,8 +729,7 @@ the saved copy, only once the provider has accepted it (the turn started, or
 the Resolve lane took it over). Until then it reads **Sending now**, and a send
 that ends before a provider turn starts, by an error, a cancelled start, an
 unresolved step agent or a refused lease, puts it back at the head. When the queue cannot be saved, an error says so and the messages stay
-in the queue for this session. Once sent, the bubble in the chat says "Queued ·
-sent after the turn" or "Sent now · interrupted the turn".
+in the queue for this session. Once sent, the bubble in the chat says "Queued" or "Sent now".
 
 **Close** is only for an agent outside a workflow that is stuck on a failed
 turn or on its own question. It means "stop waiting on this agent": the agent
@@ -797,7 +796,7 @@ pick it when you start the agent.
   `settleScribe` hands the text to `openScribePullRequest`, and the work moves
   `writing`, `creating`, then `created` with the request number, or `failed`
   with the reason and the text kept, and `Retry` runs the same step again. The
-  Next row's Open PR opens the create form and never creates; while the job
+  Next row's Create pull request opens the create form and never creates; while the job
   writes or creates its line shows the state with no button, and `Review text`
   once it is ready. It can also
   write a commit message for a squash or a reword and a changelog entry. It
@@ -1149,7 +1148,7 @@ count is a count of comments, never of agents:
   limit, you stopped it (shown as Stopped), the app closed while it was working, it
   conflicts with a fix you accepted before, the worktree is gone, or the fix
   couldn't be saved from its copy of the branch. A comment written before m225
-  reads "Cause not recorded". A failed run also shows the last command it ran
+  reads "Goodboy didn't record why". A failed run also shows the last command it ran
   with its result, such as `pnpm test src/webhooks · 2 failing`, and a link to
   the transcript. A push that failed stays here as Push failed
 - **Done**: a quiet sub-word says how: Accepted (waiting for the push), Answered
@@ -1337,7 +1336,7 @@ for this session`, else `Resolver default`); launching does not turn the
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push
-  result there offers `Sync and try again`. The comment keeps `Open` (the host logo, named `Open on GitHub`)
+  result there offers `Sync and retry`. The comment keeps `Open` (the host logo, named `Open on GitHub`)
   when Goodboy could not confirm the reply landed
 - A fix run is one agent in its own copy of the branch, so it never fights the
   branch you are on. Separate runs go up to four at a time (the session limit)
@@ -1856,6 +1855,29 @@ session up again in Goodboy.
   palette, Add folder finds Add project, Dev project); a former name is a
   search alias, never a label drawn on a screen. The retired names guard fails
   `Folders` and `Add folder` as labels
+- One verb per move and one verb per act. A label is the verb plus the
+  target's own name, and a bare **Open** lives only inside a row that names its
+  target (`NAMES.openTranscript`, `NAMES.openAgent`, **Open on GitHub**, **Open
+  pull request**). The retired labels fail the retired names guard.
+
+  | Verb              | Means                   | Retires                                              |
+  | ----------------- | ----------------------- | ---------------------------------------------------- |
+  | Open              | Go to a place           | Open full, View, See, Go to chat, See what it did    |
+  | Show, Hide        | Fold in place           | Expand, Collapse                                     |
+  | Follow            | Track what just started | Open the run                                         |
+  | Create            | Make a new thing        | Open PR, where it opens the create form              |
+  | Retry             | Repeat what failed      | Restart step, Retry through Auto, Try the push again |
+  | Continue          | Go on and keep the work | Ask it to continue, Resume                           |
+  | Skip step         | Pass over a step        | Skip and go on                                       |
+  | Decline           | Refuse Auto's next step | Discard request                                      |
+  | Mark as read      | Clear what is new       | Mark all seen                                        |
+  | Fix with an agent | Give work to an agent   | Hand it to an agent                                  |
+
+  **Stop step** stays: it stops the step and **Continue** resumes it, so it is
+  not a **Skip step**. **Keep working** stays on a step that was already
+  skipped: it sends a new turn, it does not resume the cut one. A reply is a
+  reply on screen; turn stays in usage detail only.
+
 - **Task** means one thing: a work item that lives in another tool, such as a
   Linear or Jira issue, a GitHub issue or pull request, or a Sentry error. It
   is what the **Tasks** door lists and what a task link attaches to a
@@ -1994,7 +2016,7 @@ before a change adds a word.
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
 - **Push**: sends commits (**Push 2 commits**, **Retry push** after a failure).
-  **Publish 2 replies** sends replies without a push. **Sync and try again** is
+  **Publish 2 replies** sends replies without a push. **Sync and retry** is
   about the remote branch that moved, not the base.
 - **Apply**: accepts the fixes a run made (**Apply 3 fixes**, **Apply fix** for one),
   in the Branch header and in the selection bar. The old **Apply and resolve** is retired.

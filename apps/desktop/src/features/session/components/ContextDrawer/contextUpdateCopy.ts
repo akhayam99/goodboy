@@ -7,6 +7,7 @@ import type {
 } from '../../../../store/slices/summaries/state';
 import { EFFORT_LABEL, modelLabel } from '../../../chat/utils/chat-constants';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
+import { countNoun } from '../../../../shared/utils/countNoun';
 import { pluralize } from '../../../../shared/utils/pluralize';
 
 export type ContextUpdatePhase = 'idle' | 'queued' | 'running' | 'done' | 'failed';
@@ -47,7 +48,7 @@ export const roundTrigger = ({ round }: RoundParams): string => {
   if (round.mode === 'consolidate') {
     return 'a full pass';
   }
-  return `after ${pluralize(round.turns, 'turn')}`;
+  return `after ${countNoun({ count: round.turns, one: 'reply', many: 'replies' })}`;
 };
 
 export const roundModel = ({ round }: RoundParams): string => {
@@ -97,11 +98,11 @@ export const contextUpdateHint = ({ phase, pendingTurns, hasContext }: HintParam
     return '';
   }
   if (!hasContext) {
-    return 'Updates start after the first agent turn.';
+    return 'Updates start after the first agent reply.';
   }
   const since =
     pendingTurns === 0
-      ? 'No new turns since the last update.'
-      : `${pluralize(pendingTurns, 'new turn')} since the last update.`;
+      ? 'No new replies since the last update.'
+      : `${countNoun({ count: pendingTurns, one: 'new reply', many: 'new replies' })} since the last update.`;
   return since;
 };

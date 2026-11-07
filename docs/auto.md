@@ -208,7 +208,7 @@ id in `outboxIds`, right before it, so it never jumps above rows that happened b
 and a pending or withdrawn echo is never drawn, after a restart too. A row dropped for another reason (`droppedMessageIds` of the tree view) keeps its echo where it was written, so its words stay in the chat. Events written before
 the ids existed have no `outboxId` and stay where they were written.
 
-A row reads one status word and nothing else: "Waits for this turn", "Waits for <task of the
+A row reads one status word and nothing else: "Waits for this reply", "Waits for <task of the
 child>" or "Waits for 2 agents" while the tree waits for running agents (`pendingMessageLineOf`,
 `waitingForOf`), and "Not delivered" for a blocked or stopped tree, with the reason in its tooltip.
 **Send now** (`runtime.sendNow`, through `registerSendNowPort` and the window bridge) delivers that
@@ -253,8 +253,8 @@ cannot be written refuses the message with "Auto could not keep the images. Atta
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
-`routeAutoUserTurn` refuses it with "Auto is not running yet. Send it again in a
-moment." and the composer keeps its text.
+`routeAutoUserTurn` refuses it with "Auto is still starting. Retry in a
+moment." (one constant, `AUTO_STARTING_SENTENCE`, shared by every Auto action that finds no door) and the composer keeps its text.
 
 ## Overview
 
@@ -334,7 +334,7 @@ writing to it reopens it to **Deciding**.
   no role, Experimental or state chip; **Mark finished** sits in its menu
   while Auto rests and its own turn is not running (the registry verb
   `agent.markAutoFinished`, left out of the `⋯` then so it is said once), next
-  to `⋯`, which holds **View transcript** (`agent.transcript`) and **Rename**.
+  to `⋯`, which holds **Open transcript** (`agent.transcript`) and **Rename**.
 - **Delegation lines.** Each delegation is in the conversation
   (`AutoDelegationLines`). A settled one is one bare line: its role chip, the
   task Auto gave and **Open**. A child still in flight is one line too
@@ -490,7 +490,7 @@ writing to it reopens it to **Deciding**.
   popover on the Auto page) and **Stop Auto**, plus a line on the agents still
   running when there are any, the block reason with a filled **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
-  and **Stop** instead, one at the time limit only **View transcript**). The
+  and **Stop** instead, one at the time limit only **Open transcript**). The
   reason is never cut to one line: the phrase wraps to two lines and, when it is
   longer, the whole text opens in a tooltip on hover and on keyboard focus
   (`TailLine` with `TruncatedText` `lines={2}` and `isFocusable`). Only `deciding` reads
@@ -524,7 +524,7 @@ writing to it reopens it to **Deciding**.
   came back (summary, files changed, checks with their source, open questions,
   `DelegationResult`: the outcome line first, where a red check or a failed push replaces the
   child's own sentence; then chips for files changed, the checks verdict, each failing check,
-  **Run checks again**, the push state with **Try the push again** and **Put back**, and each
+  **Retry checks**, the push state with **Retry push** and **Put back**, and each
   open question, four at most then **+N**; last a closed **Notes, N lines** with the summary
   as markdown, open only when the outcome is red, any artifact block dropped by
   `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
@@ -608,7 +608,7 @@ colour (`AUTO_STATE_TONE.waitingOnYou`) with an inner tone bar, not a side borde
   structured message: `Next step: <role>` on the first line, the hint after it.
   If the decline lost, no message is sent. If the message fails, the card stays as
   "Declined. Auto was not told." with **Tell Auto**, which sends only the message.
-- **Not now** declines and tells nothing.
+- **Decline** declines and tells nothing.
 - A failed start keeps the pick and the hint, shows the reason in the card and
   reads **Retry** on the same delegation. A `lost` answer reads "No longer open".
 - Without a port the card says Auto can't take the answer in this window yet.
@@ -1092,7 +1092,7 @@ marks its worktree, and every check there reads `unknown` without starting until
 ends, which the user can force from the Scripts page), then reads the
 snapshot again: a different head or any change reads `tree_moved` and drops the results. Runs on one
 worktree path go through one keyed queue, so two checks of one repo never overlap, the settle's and
-the rerun's alike. `unknown` and `timed_out` never read green. **Run checks again** on the card
+the rerun's alike. `unknown` and `timed_out` never read green. **Retry checks** on the card
 (`rerunChecks`, forwarded over the Auto bridge to the main window with a 30 minute wait instead of
 30 seconds) runs the same scripts against the recorded `commit`: if the head moved, the tree is
 dirty or nothing is ticked any more the rerun is refused with a sentence and the old verdict stays;
@@ -1140,7 +1140,7 @@ no migration, outcome still `completed`:
   recorded online sha, so a commit made after the checks is not pushed. On a failure it cannot
   classify it reads the online sha back before it writes anything. A lost lease reads the shipped
   "Origin changed. Check again before force pushing." Any failure is retryable once
-  (`PUBLISH_MAX_TRIES`). **Try the push again** always plans from the attempt's own commit (the
+  (`PUBLISH_MAX_TRIES`). **Retry push** always plans from the attempt's own commit (the
   record's sha, never the head of now) and the exit and completion stored in its result. A force
   retry reads origin again, keeps a new backup of it and waits for a new **Force push** with
   the new lease; a plain retry pushes the recorded sha again.
@@ -1193,7 +1193,7 @@ of the workspace that is not added yet (`refusalMountNote`), and the project is 
 "To do this, add payments-api", one line ("A worktree on ak/feat-new-explore is created from
 main."), the primary **Add payments-api** (the button reads "Adding payments-api" while it
 runs, a failure keeps the card with the reason), then **Add project**, **Answer without a
-project** and **Discard request**. The screens say "add", never "mount" (the `jargon-copy` guard
+project** and **Decline**. The screens say "add", never "mount" (the `jargon-copy` guard
 bans it); the block, the port and the code keep `mount`. The click mounts on the named branch and
 sends Auto "Added payments-api on ak/feat-new-explore. Go on with my request.", so nothing is
 retyped. A mount done at once (Never, or After the plan inside the allowance) draws one line,
@@ -1202,7 +1202,7 @@ retyped. A mount done at once (Never, or After the plan inside the allowance) dr
 project** opens a filter over the workspace's other projects ("Not in this session. A worktree
 is created from main."), and the primary follows the choice (**Use this project** disabled, **Use
 payments-api**, **Use both**, **Use 3 projects**) next to **Answer without a project**, one
-action row under the list, with **Discard request** as a quiet verb (the `projectAsk` kind of
+action row under the list, with **Decline** as a quiet verb (the `projectAsk` kind of
 the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a project, or write
 to Auto", so a reply in the chat answers too. The answer is a message to Auto through
 `sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not

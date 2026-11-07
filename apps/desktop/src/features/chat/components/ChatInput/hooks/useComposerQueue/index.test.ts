@@ -92,7 +92,7 @@ describe('useComposerQueue', () => {
     expect(statusLineOf({ status: 'skipped' })).toBe('Sends when you Continue');
   });
 
-  it('reads Waits for this turn while the agent can still take it', () => {
-    expect(statusLineOf({ status: 'running' })).toBe('Waits for this turn');
+  it('reads Waits for this reply while the agent can still take it', () => {
+    expect(statusLineOf({ status: 'running' })).toBe('Waits for this reply');
   });
 });

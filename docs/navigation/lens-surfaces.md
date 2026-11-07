@@ -220,7 +220,7 @@ comments`; the Needs you row for the pull request calls `openReview` with the
 on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`AgentDetailPane`): every door lands on it, and its address names the
   agent only (`agentPlace({ sessionId, agentId })`). The full record opens beside it in the `transcript` drawer, from
-  **View transcript**, from "Open in transcript" under a turn's summary line,
+  **Open transcript**, from "Open in transcript" under a turn's summary line,
   and from a delegation line's **See more** for a child agent. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
@@ -333,7 +333,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   starts. With auto-run off, nothing advances without a click.
 - **The Agent page always has its header.** Every agent page (the planner,
   Scribe, a missing or loading agent) renders one header row: role chip, title,
-  provider mark, overflow (which holds View transcript). The composer model chip always names
+  provider mark, overflow (which holds Open transcript). The composer model chip always names
   the model the next turn will use, with its provider mark, never a bare
   `Model` word. Each turn footer shows the model chip, the duration and the
   cost; tokens, cache share and context window sit in its detail popover. The

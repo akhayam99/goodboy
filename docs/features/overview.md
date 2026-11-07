@@ -247,12 +247,12 @@ See and undo what agents changed in a session without a branch.
 - In a plain folder agents edit in place. Every writing turn saves what it may change first, shell commands such as `rm` and `mv` and new files included.
 - **Changes** in the session rail lists each turn, newest first, with the files it added, changed or removed and their line counts.
 - Pick a file to see its text before and after, with the changed words marked.
-- **Restore to before turn 3** puts one file back. **Restore turn 3** puts back the whole turn. **Remove this new file** takes out a file the agent created.
+- **Restore to before reply 3** puts one file back. **Undo changes from this reply** puts back the whole reply. **Remove this new file** takes out a file the agent created.
 - Each restore first saves the text you have now, so **Undo restore** puts it back.
 - A restore over text that changed after the turn asks in place before it writes. It names the other agent when a later turn of one wrote the same file (**Scout wrote there after turn 3.**).
 - The rail's **Folder** group names the folder and what agents do there.
 - The Overview has a card that says where agents write and what is saved. It sits under **Branches**.
-- Each writing turn in the chat ends in a card with **Review changes** and **Restore turn**.
+- Each writing turn in the chat ends in a card with **Open changes** and **Undo changes from this reply**.
 - Versions are kept until 30 days after the session ends. The cap per folder is 1 GB or the folder's own size, whichever is larger.
 - The page shows how much they use and what was left out: files over 15 MB, links that leave the folder, dependencies and build output.
 - Storage shows their size under **Saved versions**.

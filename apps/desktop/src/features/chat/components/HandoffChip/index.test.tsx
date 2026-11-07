@@ -207,7 +207,7 @@ describe('HandoffChip', () => {
     );
 
     expect(screen.getByText('running')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Go to chat' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start implementer' })).toBeNull();
   });
 

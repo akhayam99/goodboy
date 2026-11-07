@@ -162,11 +162,11 @@ database.
   is in [architecture.md](architecture.md).
 - The chat ends each writing turn of a plain folder in a card
   (`TurnChangesCard`, under the turn's usage row): "Changed 2 files in
-  acme-notes · saved before this turn", the files with their line counts from
-  `textChangesOf`, **Review changes** (opens Changes on the turn's first file
-  through `sessionFileVersionSelectedPath`) and **Restore turn**, which asks
+  acme-notes · saved before this reply", the files with their line counts from
+  `textChangesOf`, **Open changes** (opens Changes on the turn's first file
+  through `sessionFileVersionSelectedPath`) and **Undo changes from this reply**, which asks
   in the card when a file changed since. A run in `folderCaptureFailures`
-  shows "Changes from this turn couldn't be saved" with Retry
+  shows "Changes from this reply couldn't be saved" with Retry
   (`retryFolderCapture`) in its place.
 - A turn in a session that already writes in a `sessions/<name>` folder mount
   keeps it, takes no folder lease and captures a recoverable file version
@@ -930,7 +930,7 @@ behavior beyond rendering:
 - `step_transition` reports a workflow run advancing, with the context it
   carried forward.
 - `error` carries `retryable`; only a retryable error offers Retry in the
-  transcript. The failed turn notice also offers **View transcript** (not inside
+  transcript. The failed turn notice also offers **Open transcript** (not inside
   the transcript drawer of the same agent). `reduceTranscript` gives the error row
   `failedToolUseId`, the last failed call of its run (`failedToolUseIdOf`); the
   drawer payload `toolUseId` makes the drawer scroll to the row that holds it

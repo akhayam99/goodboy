@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import { useAnswerQuestion } from '../../useAnswerQuestion';
 
 import type { NextAction } from '../../resolveNextAction';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -59,7 +60,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
             size="sm"
             variant="primary"
             isBusy={isChecking}
-            busyLabel="Asking"
+            busyLabel="Continuing"
             disabled={isBusy}
             data-testid="workflow-recover-step-cta"
             title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
@@ -70,7 +71,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
               })
             }
           >
-            Ask it to continue
+            {NAMES.continue}
           </Button>
           <ConfirmPopover
             role="alert"

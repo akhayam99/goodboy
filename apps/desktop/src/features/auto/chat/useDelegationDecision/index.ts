@@ -28,7 +28,7 @@ export const useDelegationDecision = (): DelegationDecisionModel => {
       if (port === null) {
         await reportError({
           title: NOT_READY_TITLE,
-          error: new Error('Auto cannot take this answer in this window yet.'),
+          error: new Error("Auto can't take this answer here yet."),
         });
         return;
       }

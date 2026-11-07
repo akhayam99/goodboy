@@ -224,7 +224,7 @@ describe('Retry all from Fix', () => {
     mount({ group: groupOf({ autoTargets: [HOME_CHILD, BILLING_CHILD] }) });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Retry the 2 stuck agents' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry 2 agents' }));
     });
 
     expect(continueStoppedAgent.mock.calls.map(([call]) => call?.agentId).sort()).toEqual(
@@ -234,7 +234,7 @@ describe('Retry all from Fix', () => {
     expect(failed.map((alert) => alert.textContent)).toEqual(['Auto is not running']);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Retry the 2 stuck agents' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry 2 agents' }));
     });
 
     expect(continueStoppedAgent).toHaveBeenCalledTimes(4);
@@ -251,7 +251,7 @@ describe('Retry all from Fix', () => {
 
     expect(screen.getAllByRole('button', { name: /Retry .*"/ })).toHaveLength(2);
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Retry the 3 stuck agents' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry 3 agents' }));
     });
 
     expect(continueStoppedAgent.mock.calls.map(([call]) => call?.agentId).sort()).toEqual(
@@ -260,14 +260,14 @@ describe('Retry all from Fix', () => {
     expect(screen.getAllByRole('alert').map((alert) => alert.textContent)).toEqual([
       'Auto is not running',
     ]);
-    expect(screen.getByRole('button', { name: 'Retry the 3 stuck agents' })).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Retry 3 agents' })).not.toBeNull();
   });
 
   it('retries two stuck agents folded into one branch row', async () => {
     mount({ group: groupOf({ autoTargets: [HOME_CHILD, HOME_BUILDER] }) });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Retry the 2 stuck agents' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Retry 2 agents' }));
     });
 
     expect(continueStoppedAgent.mock.calls.map(([call]) => call?.agentId).sort()).toEqual(
@@ -278,7 +278,7 @@ describe('Retry all from Fix', () => {
   it('offers no bulk retry for one stuck row', () => {
     mount({ group: groupOf({ autoTargets: [HOME_CHILD] }) });
 
-    expect(screen.queryByRole('button', { name: /stuck agents/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Retry \d+ agents$/ })).toBeNull();
   });
 });
 

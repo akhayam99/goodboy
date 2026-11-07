@@ -5,4 +5,4 @@ type Params = Readonly<{
 }>;
 
 export const turnNameOf = ({ turn }: Params): string =>
-  turn.title === null ? `Turn ${turn.number}` : `Turn ${turn.number} · ${turn.title}`;
+  turn.title === null ? `Reply ${turn.number}` : `Reply ${turn.number} · ${turn.title}`;

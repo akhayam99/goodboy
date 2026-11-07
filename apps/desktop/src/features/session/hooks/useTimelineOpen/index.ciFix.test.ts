@@ -196,7 +196,7 @@ describe('the verb of a CI fix row', () => {
     });
     target?.open();
 
-    expect(target?.label).toBe('Open chat');
+    expect(target?.label).toBe('Open agent');
     expect(openDrawer).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledTimes(1);
   });
@@ -210,7 +210,7 @@ describe('the verb of a CI fix row', () => {
 
     const target = result.current({ entry: entryOf({ agents: [own] }) });
 
-    expect(target?.label).toBe('Open chat');
+    expect(target?.label).toBe('Open agent');
   });
 });
 
@@ -340,7 +340,7 @@ describe('the CI fix row when the pull request detail is not loaded', () => {
 
     const target = rowOf();
 
-    expect(target?.label).toBe('Open chat');
+    expect(target?.label).toBe('Open agent');
     expect(openDrawer).not.toHaveBeenCalled();
   });
 });

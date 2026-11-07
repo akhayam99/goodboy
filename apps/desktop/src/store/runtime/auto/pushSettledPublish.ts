@@ -21,10 +21,9 @@ export type PushSettledOutcome = 'pushed' | 'failed' | 'fenced' | 'interrupted' 
 
 const ABORT_CLAIM = 'publish_claim';
 const ABORT_SETTLE = 'publish_settle';
-const FENCED =
-  'Auto moved on or stopped before the push, so nothing was pushed. Try the push again';
+const FENCED = 'Auto moved on or stopped before the push, so nothing was pushed. Retry the push';
 const INTERRUPTED =
-  'Goodboy closed while it was pushing. Try the push again to check the branch online';
+  'Goodboy closed while it was pushing. Retry the push to check the branch online';
 
 type AttemptParams = {
   readonly attempt: AutoAttempt;

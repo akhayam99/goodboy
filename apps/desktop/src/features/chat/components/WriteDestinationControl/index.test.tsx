@@ -34,7 +34,7 @@ import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WriteDestinationControl } from './index';
 
 const trigger = () =>
-  screen.getByRole('button', { name: /Where turns start/ }) as HTMLButtonElement;
+  screen.getByRole('button', { name: /Where replies start/ }) as HTMLButtonElement;
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -181,7 +181,7 @@ describe('WriteDestinationControl', () => {
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
     expect(tooltipTextOf({ element: trigger() })).toBe(
-      'This turn runs in web / main / ak/feat-thing (/sessions/one/main). New turns start there too.',
+      'This reply runs in web / main / ak/feat-thing (/sessions/one/main). Starts there too.',
     );
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
@@ -201,16 +201,16 @@ describe('WriteDestinationControl', () => {
       'Starts in web / main / ak/feat-thing (/sessions/one/main). Can also write in web / feature.',
     );
     fireEvent.click(trigger());
-    expect(screen.getByText('New turns start in')).toBeDefined();
+    expect(screen.getAllByText('Starts in').length).toBeGreaterThan(0);
     expect(
       screen.getByText(
-        'Every agent can write in all of them. This picks where a new turn opens its terminal, runs git and shows its pull request.',
+        'Every agent can write in all of them. This picks where a new reply opens its terminal, runs git and shows its pull request.',
       ),
     ).toBeDefined();
     fireEvent.click(screen.getByText('web / feature'));
     expect(store.setSessionActiveMount).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start new turns here' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start replies here' }));
 
     await waitFor(() => {
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({
@@ -261,7 +261,7 @@ describe('WriteDestinationControl with siblings and no choice', () => {
 
     fireEvent.click(trigger());
     fireEvent.click(screen.getByText('web / feature'));
-    fireEvent.click(screen.getByText('Start new turns here'));
+    fireEvent.click(screen.getByText('Start replies here'));
 
     await waitFor(() =>
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({

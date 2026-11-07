@@ -117,7 +117,7 @@ describe('the limit panel in a stopped turn', () => {
   });
 });
 
-describe('View transcript on a failed turn', () => {
+describe('Open transcript on a failed turn', () => {
   beforeEach(() => {
     useAppStore.setState({ currentSessionId: SESSION, drawer: null });
   });
@@ -138,8 +138,8 @@ describe('View transcript on a failed turn', () => {
     );
 
     const labels = screen.getAllByRole('button').map((button) => button.textContent);
-    expect(labels).toEqual(['Retry', 'View transcript']);
-    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+    expect(labels).toEqual(['Retry', 'Open transcript']);
+    fireEvent.click(screen.getByRole('button', { name: 'Open transcript' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'transcript',
@@ -159,7 +159,7 @@ describe('View transcript on a failed turn', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open transcript' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'transcript',
@@ -178,13 +178,13 @@ describe('View transcript on a failed turn', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'View transcript' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).not.toBeNull();
   });
 
   it('is not offered where the agent is unknown', () => {
     render(<TranscriptErrorRow message="The provider closed the connection." runId={RUN} />);
 
-    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
   });
 
   it('is not offered inside the transcript drawer of the same agent', () => {
@@ -199,6 +199,6 @@ describe('View transcript on a failed turn', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
   });
 });

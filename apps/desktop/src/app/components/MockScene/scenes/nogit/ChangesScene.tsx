@@ -180,9 +180,9 @@ type Step = Readonly<{ label: string }>;
 
 const STEPS: Readonly<Record<ChangesSceneView, ReadonlyArray<Step>>> = {
   list: [],
-  conflict: [{ label: 'Restore to before turn 3' }],
-  restored: [{ label: 'Restore to before turn 3' }, { label: 'Restore anyway' }],
-  added: [{ label: 'interviews/summary.md, turn 2' }],
+  conflict: [{ label: 'Restore to before reply 3' }],
+  restored: [{ label: 'Restore to before reply 3' }, { label: 'Restore anyway' }],
+  added: [{ label: 'interviews/summary.md, reply 2' }],
   overview: [],
   chat: [],
 };

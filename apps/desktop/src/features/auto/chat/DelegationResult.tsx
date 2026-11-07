@@ -7,6 +7,7 @@ import type { DelegationResultView } from './delegationResultOf';
 import { DelegationResultChips } from './DelegationResultChips';
 import { summaryNotesOf } from './summaryNotesOf';
 import { countNoun } from '../../../shared/utils/countNoun';
+import { NAMES } from '../../../shared/utils/names';
 
 const SUMMARY_ITEM_KEY = 'delegation-summary';
 
@@ -128,7 +129,7 @@ const chipsOf = ({
   if (result.canRerunChecks && onRerunChecks !== undefined) {
     chips.push(
       actionChip({
-        label: isRerunningChecks ? 'Running checks' : 'Run checks again',
+        label: isRerunningChecks ? 'Running checks' : 'Retry checks',
         isDisabled: isRerunningChecks,
         onClick: onRerunChecks,
       }),
@@ -148,7 +149,7 @@ const chipsOf = ({
     if (result.publish.canRetry && onRetryPublish !== undefined) {
       chips.push(
         actionChip({
-          label: 'Try the push again',
+          label: NAMES.retryPush,
           isDisabled: isActingPublish,
           onClick: onRetryPublish,
         }),

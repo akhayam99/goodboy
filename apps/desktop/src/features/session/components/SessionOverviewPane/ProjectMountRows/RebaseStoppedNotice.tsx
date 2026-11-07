@@ -8,6 +8,7 @@ import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { ensure, worktreeStatusKey } from '../../../../../store/runtime/worktreeStatuses/cache';
 
 import { rebaseStoppedBody } from './rebaseStoppedBody';
+import { NAMES } from '../../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -35,7 +36,7 @@ export const RebaseStoppedNotice = ({
     status,
     onError: (message) =>
       void reportError({
-        title: "Couldn't hand the rebase to an agent",
+        title: "Couldn't start the agent",
         error: message,
         sessionId,
       }),
@@ -72,7 +73,7 @@ export const RebaseStoppedNotice = ({
             disabled={!rebase.canResume}
             onClick={() => void rebase.resume({ mountId })}
           >
-            Hand it to an agent
+            {NAMES.fixPushWithAgent}
           </Button>
           <Button size="sm" variant="ghost" onClick={onOpenTerminal}>
             Open terminal

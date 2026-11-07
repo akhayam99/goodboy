@@ -151,7 +151,7 @@ describe('projectResolveComment', () => {
   it("gives every recorded cause its own sentence under Couldn't fix", () => {
     const expected: Record<ResolveFailureCause, string> = {
       start_failed: "The fix didn't start",
-      provider_error: 'The model provider stopped the run',
+      provider_error: 'The provider stopped the run',
       spend_cap: 'Every provider is over its limit',
       stopped: 'You stopped it',
       app_closed: 'The app closed while it was working',
@@ -175,9 +175,11 @@ describe('projectResolveComment', () => {
       projectResolveComment(
         facts({ state: 'failed', attempt: { phase: 'failed', failureCause: null } }),
       ).sentence,
-    ).toBe('Cause not recorded');
-    expect(projectResolveComment(facts({ state: 'failed' })).sentence).toBe('Cause not recorded');
-    expect(failureSentence({ cause: null })).toBe('Cause not recorded');
+    ).toBe("Goodboy didn't record why");
+    expect(projectResolveComment(facts({ state: 'failed' })).sentence).toBe(
+      "Goodboy didn't record why",
+    );
+    expect(failureSentence({ cause: null })).toBe("Goodboy didn't record why");
   });
 
   it("labels a push-side failure Push failed, never Couldn't fix, without a run cause sentence", () => {

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { CircleStop } from 'lucide-react';
-import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, cn } from '@goodboy/ui';
+import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
+import { pluralize } from '../../../../shared/utils/pluralize';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
 
@@ -107,15 +108,15 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           size="xs"
           variant="secondary"
           isBusy={isBusy}
-          busyLabel="Restarting"
+          busyLabel="Retrying"
           onClick={() =>
             void press({
               task: () => recoverStuckStep({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't restart the step",
+              failure: "Couldn't retry the step",
             })
           }
         >
-          Restart step
+          {NAMES.retryStep}
         </Button>
       );
     case 'viewTranscript':
@@ -127,7 +128,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             openDrawer({ kind: 'transcript', sessionId, payload: { agentId: verb.agentId } })
           }
         >
-          View transcript
+          Open transcript
         </button>
       );
     case 'openAgentChat':
@@ -143,8 +144,8 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           {ORCHESTRATED_COPY.openAgentChat}
         </Button>
       );
-    case 'readQueued':
-      return (
+    case 'readQueued': {
+      const button = (
         <Button
           size="xs"
           variant="secondary"
@@ -152,28 +153,37 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           onClick={() =>
             void press({
               task: () => readQueuedWorkflowHints({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't read the queued hints",
+              failure: verb.isStopped
+                ? "Couldn't continue the step"
+                : "Couldn't read the queued hints",
             })
           }
         >
-          {verb.isStopped ? `Continue and read ${verb.count} queued` : `Read ${verb.count} queued`}
+          {verb.isStopped ? NAMES.continue : `Read ${verb.count} queued`}
         </Button>
       );
+      if (verb.isStopped === false) {
+        return button;
+      }
+      return (
+        <Tooltip content={`Goes on with ${pluralize(verb.count, 'queued hint')}`}>{button}</Tooltip>
+      );
+    }
     case 'quiet':
       return (
         <Button
           size="xs"
           variant="secondary"
           isBusy={isBusy}
-          busyLabel="Asking"
+          busyLabel="Continuing"
           onClick={() =>
             void press({
               task: () => askAgentToContinue({ sessionId, agentId: verb.agentId }),
-              failure: "Couldn't ask the step to continue",
+              failure: "Couldn't continue the step",
             })
           }
         >
-          Ask it to continue
+          {NAMES.continue}
         </Button>
       );
     case 'resumeAll':

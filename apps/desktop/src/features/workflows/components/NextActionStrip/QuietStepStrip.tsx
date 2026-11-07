@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 
 import type { QuietStep } from '../../hooks/useQuietStep';
 import { skipStepDescription, skipStepTitle } from '../../skipStepCopy';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -48,7 +49,7 @@ export const QuietStepStrip = ({ sessionId, run, agents, quiet }: Props) => {
               size="sm"
               variant="secondary"
               isBusy={isBusy}
-              busyLabel="Asking"
+              busyLabel="Continuing"
               data-testid="quiet-step-ask"
               title="Send it a message to check where it stands and finish"
               onClick={() =>
@@ -56,7 +57,7 @@ export const QuietStepStrip = ({ sessionId, run, agents, quiet }: Props) => {
               }
             >
               <MessageCircle size={ICON_SIZE.row} aria-hidden />
-              Ask it to continue
+              {NAMES.continue}
             </Button>
             <ConfirmPopover
               role="alert"

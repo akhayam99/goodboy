@@ -120,7 +120,7 @@ describe('resolveOrchestratorState', () => {
     expect(state.tone).toBe('warning');
     expect(state.sentence).toBe('Paused by you');
     expect(state.detail).toBe(
-      'Reviewer finishes its turn. Nothing new starts until you resume. The pause survives a restart.',
+      'Reviewer finishes its turn. Nothing new starts until you continue. The pause survives a restart.',
     );
   });
 
@@ -132,7 +132,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('paused');
-    expect(state.detail).toBe('Nothing new starts until you resume. Next: Tester.');
+    expect(state.detail).toBe('Nothing new starts until you continue. Next: Tester.');
   });
 
   it('never claims the run is stopped before the decision returns', () => {
@@ -215,6 +215,22 @@ describe('resolveOrchestratorState', () => {
     expect(resolved.map((state) => state.detail !== null)).toEqual(
       kinds.map(([, , showsMessage]) => showsMessage),
     );
+  });
+
+  it('reads an unrecognized stop as Stopped with its message below, and says so when there is none', () => {
+    type SavedStopParams = { readonly message: string };
+    const savedStop = ({ message }: SavedStopParams): WorkflowOrchestrationStop =>
+      Object.assign({ kind: 'failure' as const, message }, { kind: 'retired-kind' });
+    const withMessage = resolve({
+      run: makeRun({ orchestrationStop: savedStop({ message: 'The planner lost the thread' }) }),
+    });
+    const withoutMessage = resolve({
+      run: makeRun({ orchestrationStop: savedStop({ message: '' }) }),
+    });
+
+    expect(withMessage.sentence).toBe('Stopped.');
+    expect(withMessage.detail).toBe('The planner lost the thread');
+    expect(withoutMessage.sentence).toBe('Stopped. No reason given.');
   });
 
   it('reads a limit stop in its own words', () => {

@@ -2,6 +2,7 @@ import type { AgentId } from '@goodboy/types';
 import { getAutoTreeByRootAgent } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { currentTreeStopPort } from '../../../features/auto/treeStopPort';
+import { AUTO_STARTING_SENTENCE } from '../../../features/auto/autoStartingSentence';
 
 type Params = {
   readonly agentId: AgentId;
@@ -14,7 +15,7 @@ export const stopAutoTreeForDelete = async ({ agentId }: Params): Promise<void> 
   }
   const port = currentTreeStopPort();
   if (port === null) {
-    throw new Error('Auto is not running yet. Delete this agent again in a moment.');
+    throw new Error(AUTO_STARTING_SENTENCE);
   }
   const result = await port({ treeId: tree.id });
   if (result === 'stuck') {

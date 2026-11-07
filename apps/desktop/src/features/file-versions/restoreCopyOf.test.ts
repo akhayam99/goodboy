@@ -7,7 +7,7 @@ const target = (patch: Partial<RestoreTarget>): RestoreTarget => ({
   scope: 'turn',
   runId: 'run-1',
   fileKey: null,
-  subject: 'turn 3',
+  subject: 'reply 3',
   turnNumber: 3,
   isNewFile: false,
   steps: [],
@@ -28,9 +28,9 @@ describe('restoreCopyOf', () => {
   it('names the other agent in the question that already exists', () => {
     const copy = restoreCopyOf({ outcome: ask({}, ['Scout']) });
 
-    expect(copy.title).toBe('pricing.md changed after turn 3.');
+    expect(copy.title).toBe('pricing.md changed after reply 3.');
     expect(copy.body).toBe(
-      'Scout wrote there after turn 3. Your current text is saved as a version before the turn goes back.',
+      'Scout wrote there after reply 3. Your current text is saved as a version before the reply goes back.',
     );
     expect(copy.confirm).toBe('Restore anyway');
   });
@@ -41,13 +41,13 @@ describe('restoreCopyOf', () => {
     });
 
     expect(copy.body).toBe(
-      'Scout and Reviewer wrote there after turn 3. Your current text is saved as a version before it goes back.',
+      'Scout and Reviewer wrote there after reply 3. Your current text is saved as a version before it goes back.',
     );
   });
 
   it('keeps the question as it was when nobody else wrote there', () => {
     expect(restoreCopyOf({ outcome: ask({}, []) }).body).toBe(
-      'Your current text is saved as a version before the turn goes back.',
+      'Your current text is saved as a version before the reply goes back.',
     );
   });
 });

@@ -87,7 +87,7 @@ describe('Fix run status line', () => {
     expect(status.getByText('Fixing 1 of 4 comments')).toBeDefined();
     expect(status.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
     expect(status.queryByText('Sonnet 5 · Medium')).toBeNull();
-    expect(status.getByRole('button', { name: 'View transcript' })).toBeDefined();
+    expect(status.getByRole('button', { name: 'Open transcript' })).toBeDefined();
     expect(status.getByRole('button', { name: 'Stop' })).toBeDefined();
   });
 

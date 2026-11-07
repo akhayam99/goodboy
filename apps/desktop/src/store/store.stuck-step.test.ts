@@ -325,7 +325,7 @@ describe('a stuck step in a run that asks every step', () => {
     expect(activateWorkflowAgent).not.toHaveBeenCalled();
   });
 
-  it('goes on after Skip and go on, and a second window pressing it changes nothing', async () => {
+  it('goes on after Skip step, and a second window pressing it changes nothing', async () => {
     const { session, run, activateWorkflowAgent } = seed({
       run: { autoRun: true },
       agents: [{ id: SCOUT, status: 'blocked' }, { id: BUILD }],
@@ -343,7 +343,7 @@ describe('a stuck step in a run that asks every step', () => {
     expect(skips).toHaveLength(1);
   });
 
-  it('starts the next step from Skip and go on when the run asks every step', async () => {
+  it('starts the next step from Skip step when the run asks every step', async () => {
     const { session, run, activateWorkflowAgent } = seed({
       run: { autoRun: false },
       agents: [{ id: SCOUT, status: 'blocked' }, { id: BUILD }],

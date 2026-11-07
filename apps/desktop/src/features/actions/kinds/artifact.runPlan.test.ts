@@ -151,7 +151,7 @@ describe('Run plan from the palette and the menu', () => {
     expect(showToast.mock.calls[0]?.[0]).toMatchObject({
       title: 'Plan not started',
       message: 'The run has no step left for this plan',
-      action: { label: 'Open the run' },
+      action: { label: 'Follow' },
     });
   });
 

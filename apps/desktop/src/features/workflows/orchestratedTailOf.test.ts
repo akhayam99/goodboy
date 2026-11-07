@@ -134,7 +134,7 @@ describe('orchestratedTailOf', () => {
     expect(tail?.verbs).toEqual([{ kind: 'primary', primary: DECIDE }]);
   });
 
-  it('says why the last decision failed and offers Retry and View transcript', () => {
+  it('says why the last decision failed and offers Retry and Open transcript', () => {
     const tail = tailOf({
       orchestrator: stateOf({
         phase: 'failed',
@@ -158,7 +158,7 @@ describe('orchestratedTailOf', () => {
     expect(tail?.verbs).toEqual([{ kind: 'restartStep' }]);
   });
 
-  it('keeps Restart step secondary and adds Open agent chat on a step blocked on a question', () => {
+  it('keeps Retry step secondary and adds Open agent on a step blocked on a question', () => {
     const blocked = agentOf({ key: 'verify', ordinal: 1, status: 'blocked' });
     const tail = tailOf({
       orchestrator: stateOf({ phase: 'step-failed', sentence: 'Paused on blocked step 2' }),
@@ -183,7 +183,7 @@ describe('orchestratedTailOf', () => {
     expect(tail.verbs).toEqual([{ kind: 'restartStep' }]);
   });
 
-  it('leaves the hint to the run page and offers View transcript on a human call', () => {
+  it('leaves the hint to the run page and offers Open transcript on a human call', () => {
     const tail = tailOf({
       orchestrator: stateOf({ phase: 'blocked', sentence: 'Stopped · needs a human call' }),
       primary: { kind: 'hint', label: 'Add a hint and continue' },

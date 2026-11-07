@@ -26,7 +26,7 @@ export const ChangeRow = ({ sessionId, file, turnNumber, isSelected, onSelect }:
       <SelectableRow
         selected={isSelected}
         ariaCurrent={isSelected ? 'true' : undefined}
-        ariaLabel={`${file.label}, turn ${turnNumber}`}
+        ariaLabel={`${file.label}, reply ${turnNumber}`}
         onClick={onSelect}
         className="h-8 items-center gap-2 px-2 text-ui text-foreground"
       >

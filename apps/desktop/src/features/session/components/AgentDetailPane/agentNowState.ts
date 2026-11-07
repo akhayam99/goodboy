@@ -2,6 +2,7 @@ import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
 import { agentStatusWord } from '../../agentStatusWord';
 import { NEEDS_PERMISSION_WORD, effectiveAgentStatusOf } from '../../../workTreeModel/agentStateOf';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import { humanTurnErrorOf } from '../../../chat/humanTurnErrorOf';
 
 type AgentNowState = {
   readonly label: string | null;
@@ -61,7 +62,7 @@ export const agentNowState = ({
     return { label: NEEDS_PERMISSION_WORD };
   }
   if (turnState?.kind === 'error') {
-    return { label: turnState.message };
+    return { label: humanTurnErrorOf({ message: turnState.message, agent }) };
   }
   if (agent.status === 'pending') {
     return { label: 'queued' };

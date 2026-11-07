@@ -110,8 +110,8 @@ export const WriteDestinationControl = ({
     running === null
       ? `${verb} ${nextDetail}.${isAutomatic ? ' Picked automatically.' : ''}${reachSentence}`
       : diverges
-        ? `This turn runs in ${runningDetail}. New turns start in ${nextDetail}.`
-        : `This turn runs in ${nextDetail}. New turns start there too.${reachSentence}`;
+        ? `This reply runs in ${runningDetail}. Starts in ${nextDetail}.`
+        : `This reply runs in ${nextDetail}. Starts there too.${reachSentence}`;
 
   const Icon =
     next.kind === 'scratch'
@@ -138,7 +138,7 @@ export const WriteDestinationControl = ({
       await setSessionActiveMount({ sessionId, mountId: pendingMountId });
       dropdown.close();
     } catch (error) {
-      void reportError({ title: "Couldn't change where new turns start", error, sessionId });
+      void reportError({ title: "Couldn't change where replies start", error, sessionId });
     } finally {
       setIsApplying(false);
     }
@@ -161,7 +161,7 @@ export const WriteDestinationControl = ({
         </span>
       }
       title={primaryTitle}
-      ariaLabel={`Where turns start. ${primaryTitle}`}
+      ariaLabel={`Where replies start. ${primaryTitle}`}
       hasPopup="dialog"
       expanded={dropdown.open}
       onClick={openPicker}
@@ -175,17 +175,17 @@ export const WriteDestinationControl = ({
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
-        ariaLabel="Choose where new turns start"
+        ariaLabel="Choose where replies start"
         anchorClassName="flex min-w-0"
         trigger={trigger}
       >
         <div className="flex flex-col gap-3 p-3">
-          <span className="text-heading text-foreground">New turns start in</span>
+          <span className="text-heading text-foreground">Starts in</span>
 
           {running !== null && diverges ? (
             <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1 text-chip">
-              <span className="text-muted-foreground">This turn runs in {runningLabel}</span>
-              <span className="text-muted-foreground">New turns start in {nextLabel}</span>
+              <span className="text-muted-foreground">This reply runs in {runningLabel}</span>
+              <span className="text-muted-foreground">Starts in {nextLabel}</span>
             </div>
           ) : null}
 
@@ -200,7 +200,7 @@ export const WriteDestinationControl = ({
           >
             <ListboxList
               id={listId}
-              ariaLabel="Places a turn can start"
+              ariaLabel="Places a reply can start"
               entries={entries}
               activeIndex={activeIndex}
               selectedValues={pendingMountId === null ? [] : [pendingMountId]}
@@ -215,7 +215,7 @@ export const WriteDestinationControl = ({
           </div>
 
           <span className="text-meta text-muted-foreground">
-            Every agent can write in all of them. This picks where a new turn opens its terminal,
+            Every agent can write in all of them. This picks where a new reply opens its terminal,
             runs git and shows its pull request.
           </span>
 
@@ -225,7 +225,7 @@ export const WriteDestinationControl = ({
               disabled={!canApply || isApplying}
               onClick={() => void applyPending()}
             >
-              {isApplying ? 'Applying…' : 'Start new turns here'}
+              {isApplying ? 'Applying…' : 'Start replies here'}
             </Button>
           </div>
         </div>
@@ -236,7 +236,7 @@ export const WriteDestinationControl = ({
           kind="state"
           bordered={false}
           label={<span className="max-w-40 truncate">{`Next: ${nextLabel}`}</span>}
-          title={`New turns start in ${nextDetail}.`}
+          title={`Starts in ${nextDetail}.`}
         />
       ) : null}
     </span>

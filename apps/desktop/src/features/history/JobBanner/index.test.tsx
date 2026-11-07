@@ -284,7 +284,7 @@ describe('the job banner', () => {
       stop: { reason: 'conflict', message: '', files: ['webhook.ts'], sha: null },
     });
 
-    expect(screen.getByRole('button', { name: 'See what it did' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
   });
 
   it('says what a finished rebase did and offers the undo', async () => {
@@ -421,7 +421,7 @@ describe('the job banner', () => {
 
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Retry with a note',
-      'See what it did',
+      'Open agent',
       'Dismiss',
     ]);
     expect(screen.queryByRole('textbox')).toBeNull();
@@ -544,7 +544,7 @@ describe('the job banner', () => {
 
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry push' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'See what it did' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
   });
 
   it('opens the output of a failed push on Details', async () => {
@@ -921,7 +921,7 @@ describe('the rebase stop panel', () => {
     );
 
     expect(panel().textContent).toContain('Rebased on main');
-    expect(verbsIn({ node: panel() })).toEqual(['Push', 'See what Auto did']);
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open Auto']);
 
     gitNow.upstreamAhead = 0;
     await refresh();
@@ -946,7 +946,7 @@ describe('the rebase stop panel', () => {
       }),
     );
 
-    expect(verbsIn({ node: panel() })).toEqual(['Push', 'See what Auto did']);
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'Open Auto']);
 
     fireEvent.click(within(panel()).getByRole('button', { name: 'Push' }));
     await settle();

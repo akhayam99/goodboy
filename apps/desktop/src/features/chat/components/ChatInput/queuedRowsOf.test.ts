@@ -96,11 +96,11 @@ describe('queuedRowsOf', () => {
     expect(queuedRowsOf({ queue: [], view: clock, ...AT_REST })[0]?.action).toBeNull();
   });
 
-  it('says Waits for this turn when the tree takes a turn and no child runs', () => {
+  it('says Waits for this reply when the tree takes a turn and no child runs', () => {
     const view = aView({ phase: 'deciding', pendingMessages: [message('a', 0)] });
 
     expect(queuedRowsOf({ queue: [], view, ...AT_REST })[0]).toMatchObject({
-      statusText: 'Waits for this turn',
+      statusText: 'Waits for this reply',
       action: null,
     });
   });

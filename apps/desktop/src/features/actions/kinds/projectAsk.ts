@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import type { ObjectKindDefinition, ProjectAskActionTarget } from '../types';
+import { NAMES } from '../../../shared/utils/names';
 
 export type ProjectAskFacts = {
   readonly isBusy: boolean;
@@ -12,7 +13,7 @@ export const PROJECT_ASK_KIND: ObjectKindDefinition<ProjectAskActionTarget, Proj
   actions: [
     {
       id: 'projectAsk.discard',
-      label: 'Discard request',
+      label: NAMES.decline,
       icon: X,
       group: 'act',
       description: () => 'Tells Auto to start nothing',

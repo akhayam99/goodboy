@@ -137,7 +137,10 @@ describe('the first turn of Auto after a move', () => {
 
     expect(outcome.kind).toBe('adopted');
     expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Auto hit a problem', sessionId: AUTO_SEED_SESSION }),
+      expect.objectContaining({
+        title: "Auto didn't start right away",
+        sessionId: AUTO_SEED_SESSION,
+      }),
     );
     expect(await db.select('SELECT id FROM auto_trees')).toHaveLength(1);
   });

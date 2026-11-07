@@ -167,9 +167,9 @@ describe('commentOutcomeOf', () => {
       commentOutcomeOf({
         ...rowOf({ stage: 'failed' }),
         question: null,
-        failure: 'The model provider stopped the run',
+        failure: 'The provider stopped the run',
       }),
-    ).toEqual({ kind: 'failed', sentence: 'The model provider stopped the run' });
+    ).toEqual({ kind: 'failed', sentence: 'The provider stopped the run' });
     expect(commentOutcomeOf({ ...rowOf({ stage: 'failed' }), question: null })?.kind).toBe(
       'failed',
     );

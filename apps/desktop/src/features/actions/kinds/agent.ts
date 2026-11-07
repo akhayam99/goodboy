@@ -189,7 +189,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     },
     {
       id: 'agent.transcript',
-      label: 'View transcript',
+      label: 'Open transcript',
       icon: ScrollText,
       group: 'open',
       when: ({ facts }) => !facts.isWorkflowStep,
