@@ -195,8 +195,8 @@ export const ChatInput = ({
     hasDraft: !isEmpty,
     hasAttachments: attachments.length > 0,
     isBlocked,
-    basePlaceholder:
-      isBlocked || placeholderOverride === undefined ? defaultPlaceholder : placeholderOverride,
+    override: routing.routingOverride,
+    basePlaceholder: isBlocked ? defaultPlaceholder : (placeholderOverride ?? defaultPlaceholder),
     onSend,
   });
 

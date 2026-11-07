@@ -1,12 +1,14 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { composeStepBoundary } from '../turn/kickoff';
 import { throwIfRefused } from '../turn/refusal/throwIfRefused';
+import { clearWorkflowTurns } from '../turn/workflowTurnBreaker';
 import type { GetFn } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly text: string;
+  readonly override?: TurnProviderOverride;
 };
 
 type FactoryParams = {
@@ -20,6 +22,8 @@ type PromptParams = {
 
 const NOT_BLOCKED = 'This step is no longer waiting for an answer.';
 
+const NOT_STARTED = 'The step did not start a turn. Your answer is back in the box.';
+
 const answerPrompt = ({ agentId, answer }: PromptParams): string =>
   [
     'The operator answered you:',
@@ -29,7 +33,7 @@ const answerPrompt = ({ agentId, answer }: PromptParams): string =>
   ].join('\n');
 
 export const answerBlockedStep = ({ get }: FactoryParams) => {
-  return async ({ sessionId, agentId, text }: Params): Promise<void> => {
+  return async ({ sessionId, agentId, text, override }: Params): Promise<void> => {
     const answer = text.trim();
     if (answer === '') {
       return;
@@ -42,13 +46,21 @@ export const answerBlockedStep = ({ get }: FactoryParams) => {
     if (agent === undefined || agent.status !== 'blocked' || isTurnLive) {
       throw new Error(NOT_BLOCKED);
     }
-    throwIfRefused({
-      result: await get().sendTurn({
-        sessionId,
-        agentId,
-        content: answerPrompt({ agentId, answer }),
-        origin: 'workflow',
-      }),
+    clearWorkflowTurns({ agentId });
+    let isStarted = false;
+    const result = await get().sendTurn({
+      sessionId,
+      agentId,
+      content: answerPrompt({ agentId, answer }),
+      origin: 'workflow',
+      onStarted: () => {
+        isStarted = true;
+      },
+      ...(override !== undefined && { override }),
     });
+    throwIfRefused({ result });
+    if (!isStarted && result.isLaneQueued !== true && result.isAlreadySent !== true) {
+      throw new Error(NOT_STARTED);
+    }
   };
 };

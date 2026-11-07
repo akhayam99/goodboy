@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, SessionId, TurnProviderOverride, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { useConversationAsks } from '../../../../../../store/hooks/useConversationAsks';
 import { restoreDraftOnFailedSend } from '../../../../../../shared/utils/restoreDraftOnFailedSend';
 import { ORCHESTRATED_COPY } from '../../../../../workflows/orchestratedCopy';
 
@@ -11,6 +12,7 @@ type Params = {
   readonly hasDraft: boolean;
   readonly hasAttachments: boolean;
   readonly isBlocked: boolean;
+  readonly override: TurnProviderOverride | undefined;
   readonly basePlaceholder: string;
   readonly onSend: () => Promise<void>;
 };
@@ -36,6 +38,7 @@ export const useBlockedStepAnswer = ({
   hasDraft,
   hasAttachments,
   isBlocked,
+  override,
   basePlaceholder,
   onSend,
 }: Params): Result => {
@@ -51,7 +54,14 @@ export const useBlockedStepAnswer = ({
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const isInFlight = useRef(false);
-  const target = agent?.status === 'blocked' && agent.parentAgentId == null ? agent : undefined;
+  const isTurnLive = useAppStore((state) => {
+    const kind = agentId === null ? undefined : state.agentTurnState[agentId]?.kind;
+    return kind === 'running' || kind === 'starting';
+  });
+  const { permissions, questions } = useConversationAsks({ sessionId, agentId });
+  const isAnswerable = !isTurnLive && permissions.length + questions.length === 0;
+  const target =
+    isAnswerable && agent?.status === 'blocked' && agent.parentAgentId == null ? agent : undefined;
   const targetId = target?.id ?? null;
 
   const send = useCallback(async (): Promise<void> => {
@@ -68,12 +78,21 @@ export const useBlockedStepAnswer = ({
     const sent = useAppStore.getState().agentDraft[targetId] ?? '';
     try {
       if (sent.trim() === '') {
-        await askAgentToContinue({ sessionId, agentId: targetId });
+        await askAgentToContinue({
+          sessionId,
+          agentId: targetId,
+          ...(override !== undefined && { override }),
+        });
         return;
       }
       useAppStore.getState().clearAgentDraft(targetId);
       try {
-        await answerBlockedStep({ sessionId, agentId: targetId, text: sent });
+        await answerBlockedStep({
+          sessionId,
+          agentId: targetId,
+          text: sent,
+          ...(override !== undefined && { override }),
+        });
       } catch (cause) {
         const current = useAppStore.getState().agentDraft[targetId] ?? '';
         useAppStore.getState().setAgentDraft(targetId, restoreDraftOnFailedSend({ sent, current }));
@@ -85,7 +104,15 @@ export const useBlockedStepAnswer = ({
       isInFlight.current = false;
       setIsSending(false);
     }
-  }, [targetId, isBlocked, hasAttachments, sessionId, answerBlockedStep, askAgentToContinue]);
+  }, [
+    targetId,
+    isBlocked,
+    hasAttachments,
+    sessionId,
+    override,
+    answerBlockedStep,
+    askAgentToContinue,
+  ]);
 
   const step: BlockedStepAnswer | null =
     target === undefined || target.workflowRunId == null

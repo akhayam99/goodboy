@@ -1,8 +1,8 @@
-import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import { Button } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
 import { agentPlace, useAppStore } from '../../../../../store';
+import { haltedStepOf } from '../../../../workflows/haltedStepOf';
 import type { RunView } from '../useRunView';
 import type { RunPrimaryVariant } from './RunPrimaryAction';
 
@@ -15,10 +15,8 @@ type Props = {
 
 export const OpenStepPrimary = ({ session, view, label, variant }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
-  const halted = [...view.agents]
-    .sort((left, right) => left.ordinal - right.ordinal)
-    .find((agent) => isAgentStatusHalted({ status: agent.status }));
-  if (halted === undefined) {
+  const halted = haltedStepOf({ agents: view.agents });
+  if (halted === null) {
     return null;
   }
   return (

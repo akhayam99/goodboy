@@ -284,6 +284,7 @@ describe('one run page', () => {
       sessionId: C09_SESSION_ID,
       agentId: C09_TESTER_ID,
       text: 'Attach it to the notes only.',
+      override: expect.objectContaining({ explicit: false }),
     });
     expect(screen.getByPlaceholderText('Answer the step')).toHaveProperty('value', '');
   });
@@ -307,6 +308,7 @@ describe('one run page', () => {
     expect(askAgentToContinue).toHaveBeenCalledWith({
       sessionId: C09_SESSION_ID,
       agentId: C09_TESTER_ID,
+      override: expect.objectContaining({ explicit: false }),
     });
     expect(answerBlockedStep).not.toHaveBeenCalled();
   });

@@ -32,11 +32,16 @@ type DynamicFlow = {
   readonly haltedStepNumber?: number | null;
 };
 
+type HaltedStep = {
+  readonly number: number | null;
+};
+
 type StaticFlow = {
   readonly kind: 'static';
   readonly isPaused: boolean;
   readonly nextStepNumber: number | null;
   readonly nextStepName?: string | null;
+  readonly haltedStep?: HaltedStep | null;
 };
 
 export type RunFlow = DynamicFlow | StaticFlow;
@@ -166,6 +171,9 @@ export const runPrimaryOf = ({
   }
   if (flow.isPaused) {
     return fixed({ kind: 'resume' });
+  }
+  if (flow.haltedStep != null) {
+    return { kind: 'open-step', label: openStepLabelOf({ number: flow.haltedStep.number }) };
   }
   if (flow.nextStepNumber === null) {
     return null;

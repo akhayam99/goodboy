@@ -105,6 +105,24 @@ describe('runPrimaryOf on a halted step', () => {
   });
 });
 
+describe('runPrimaryOf on a static run with a halted step', () => {
+  it('names the step to open instead of the next step', () => {
+    const primary = live({
+      flow: { kind: 'static', isPaused: false, nextStepNumber: 3, haltedStep: { number: 2 } },
+    });
+
+    expect(primary).toEqual({ kind: 'open-step', label: 'Open step 2' });
+  });
+
+  it('lets a pause by the user come first', () => {
+    const primary = live({
+      flow: { kind: 'static', isPaused: true, nextStepNumber: 3, haltedStep: { number: 2 } },
+    });
+
+    expect(primary?.kind).toBe('resume');
+  });
+});
+
 describe('runPrimaryOf edges', () => {
   it('offers Restore on an archived run whatever its phase says', () => {
     const primary = runPrimaryOf({

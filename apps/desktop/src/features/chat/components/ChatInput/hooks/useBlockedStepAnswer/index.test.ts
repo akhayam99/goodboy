@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { brandId, type Agent, type WorkflowRunId } from '@goodboy/types';
+import { brandId, type Agent, type TurnProviderOverride, type WorkflowRunId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -8,6 +8,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../../store/storyHarness';
+import { aPlannerQuestion } from '../../../../../../test/planDrawerFixtures';
 import { useBlockedStepAnswer } from '.';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -47,9 +48,10 @@ const pendingAnswer = (): PendingAnswer => {
 type HookParams = {
   readonly hasAttachments?: boolean;
   readonly isBlocked?: boolean;
+  readonly override?: TurnProviderOverride;
 };
 
-const setup = ({ hasAttachments = false, isBlocked = false }: HookParams = {}) => {
+const setup = ({ hasAttachments = false, isBlocked = false, override }: HookParams = {}) => {
   const onSend = vi.fn(async () => undefined);
   const view = renderHook(() =>
     useBlockedStepAnswer({
@@ -58,6 +60,7 @@ const setup = ({ hasAttachments = false, isBlocked = false }: HookParams = {}) =
       hasDraft: true,
       hasAttachments,
       isBlocked,
+      override,
       basePlaceholder: 'Message',
       onSend,
     }),
@@ -190,5 +193,89 @@ describe('useBlockedStepAnswer', () => {
     expect(askAgentToContinue).not.toHaveBeenCalled();
     expect(onSend).toHaveBeenCalledTimes(1);
     expect(view.result.current.step?.isComposerBlocked).toBe(true);
+  });
+
+  it('falls back to normal dispatch while the store holds a live turn of the step', async () => {
+    const answerBlockedStep = vi.fn(async () => undefined);
+    useAppStore.setState({
+      answerBlockedStep,
+      agentTurnState: {
+        [blockedAgent.id]: {
+          kind: 'starting',
+          startedAt: JSON.parse('"2026-10-16T15:00:00.000Z"'),
+        },
+      },
+    });
+    const { view, onSend } = setup();
+
+    await act(async () => {
+      view.result.current.sendDraft();
+    });
+
+    expect(view.result.current.step).toBeNull();
+    expect(answerBlockedStep).not.toHaveBeenCalled();
+    expect(onSend).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to normal dispatch while a question is open', async () => {
+    const answerBlockedStep = vi.fn(async () => undefined);
+    useAppStore.setState({
+      answerBlockedStep,
+      loadSessionOpenQuestions: async () => undefined,
+      sessionOpenQuestions: {
+        [session.id]: [
+          aPlannerQuestion({ sessionId: session.id, createdByAgentId: blockedAgent.id }),
+        ],
+      },
+    });
+    const { view, onSend } = setup();
+
+    await act(async () => {
+      view.result.current.sendDraft();
+    });
+
+    expect(view.result.current.step).toBeNull();
+    expect(answerBlockedStep).not.toHaveBeenCalled();
+    expect(onSend).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards the composer route to the answer and to Continue', async () => {
+    const override: TurnProviderOverride = {
+      providerId: 'codex',
+      model: 'gpt-6',
+      selection: { model: 'gpt-6' },
+    };
+    const answerBlockedStep = vi.fn(async () => undefined);
+    const askAgentToContinue = vi.fn(async () => undefined);
+    useAppStore.setState({ answerBlockedStep, askAgentToContinue });
+    const { view } = setup({ override });
+
+    await act(async () => {
+      await view.result.current.step?.send();
+    });
+    act(() => {
+      useAppStore.getState().setAgentDraft(blockedAgent.id, '');
+    });
+    await act(async () => {
+      await view.result.current.step?.send();
+    });
+
+    expect(answerBlockedStep).toHaveBeenCalledWith(expect.objectContaining({ override }));
+    expect(askAgentToContinue).toHaveBeenCalledWith(expect.objectContaining({ override }));
+  });
+
+  it('restores the answer and tells why when the step starts no turn', async () => {
+    const answerBlockedStep = vi.fn(async () => {
+      throw new Error('The step did not start a turn. Your answer is back in the box.');
+    });
+    useAppStore.setState({ answerBlockedStep });
+    const { view } = setup();
+
+    await act(async () => {
+      await view.result.current.step?.send();
+    });
+
+    expect(draftOf()).toBe('Attach it to the notes only.');
+    expect(view.result.current.step?.error).toContain('back in the box');
   });
 });
