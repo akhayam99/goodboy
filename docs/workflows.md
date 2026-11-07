@@ -567,7 +567,24 @@ the first matching row); Back returns to the branch (`Focus.runGroup` on the his
 row you left, not to the top of the group. The link counts what the group header
 counts (`branchGroupShownCountOf`: archived runs are left out, a series group counts
 the runs of all its parts) and is absent at zero. The page
-count stays one per run. Words say state and verbs are verbs: an agent you
+count stays one per run. Questions and Artifacts group by the same function
+(`branchKeyedGroupsOf` in `branchGroupsOf.ts`, which `branchGroupsOf` also uses) and
+read the same switch (`useGroupBy`, `GroupBySwitch`) and the same address
+(`Focus.runGroup`, read by `useGroupArrival`, which opens the group and focuses
+its first row). A question finds its branches through its asker and the asker's
+descendants, else its run (`questionBranchesOf`); `questionBranchGroupsOf` sits
+next to `questionGroupsOf` and draws the one question model twice, so a staged,
+answered or dismissed question moves in every group. An artifact finds its
+branches from `ArtifactProvenance.mountIds` (`useArtifactMountIds`), else the
+agent, else the run (`artifactBranchesOf`); `groupArtifactRowsByBranch` runs
+after `filterArtifactRows`, keeps the trash apart and leaves the state groups
+untouched. A replicated row has one key per group (`artifactBranchRowKeyOf`,
+`questionBranchRowKeyOf`) and the open question is marked only in its first
+group. The Branch page line holds a link per kind (`branchWorkLinkOf`,
+`openBranchWork`), counted by the group functions, and Back from Questions or
+Artifacts returns to the branch (`parentPlace`). In the Agents panel an agent row
+names its branch only when its run touches two or more (`agentBranchLabelsOf`).
+Words say state and verbs are verbs: an agent you
 stopped reads **Stopped** and a run that has not started reads **Ready**, and
 the row always shows the real verb its page offers (`SessionRun.verb`):
 **Continue** on a stopped agent, a stopped Auto, or a run you stopped (its cut

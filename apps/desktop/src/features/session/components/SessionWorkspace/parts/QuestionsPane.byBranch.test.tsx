@@ -51,7 +51,10 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { backOf } from '../../../../../store/slices/navigation/backOf';
+import { captureLocation } from '../../../../../store/slices/navigation/captureLocation';
 import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
+import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { openBranchWork } from '../../../openBranchWork';
 import { aMountView } from '../../../testing/aMountView';
 import { QuestionsPane } from './QuestionsPane';
@@ -265,5 +268,23 @@ describe('Questions by branch', () => {
     render(<QuestionsPane session={SESSION} />);
 
     await waitFor(() => expect(screen.getByText('Keep the old table for a month?')).toBeDefined());
+    expect(useAppStore.getState().groupBySession[SESSION.id]).toBe('branch');
+  });
+
+  it('goes Back from the questions page to the branch it came from', () => {
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId: SESSION.id }) });
+
+    act(() =>
+      openBranchWork({
+        sessionId: SESSION.id,
+        lens: 'questions',
+        groupKey: `mount:${DUP.id}`,
+        mountPath: DUP.worktreePath,
+      }),
+    );
+
+    const state = useAppStore.getState();
+    const here = captureLocation({ state }).place;
+    expect(backOf({ state, place: here })?.label).toBe('Back to branch');
   });
 });
