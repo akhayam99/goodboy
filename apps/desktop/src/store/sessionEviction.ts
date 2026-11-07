@@ -84,7 +84,6 @@ export const SESSION_EVICTION = [
   { key: 'sessionContextItems', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDecisions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDecisionsBaseline', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'contextDrawerTab', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountRequests', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'sessionRequests', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewDrafts', keyedBy: 'session', evictOn: 'archive' },

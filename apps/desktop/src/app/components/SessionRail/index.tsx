@@ -18,6 +18,7 @@ import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
+import { useUnfoldForLink } from './useUnfoldForLink';
 import {
   SESSION_RAIL_WIDTH_VAR,
   useSessionRailSizing,
@@ -37,6 +38,7 @@ export const SessionRail = ({ session, sizing }: Props) => {
   useDrawerContentInset({
     width: (fold.isFolded ? COLLAPSED_RAIL_WIDTH : resizable.width) + SESSION_TOOL_RAIL_WIDTH,
   });
+  useUnfoldForLink({ sessionId, fold });
   const isStudioOver = place !== null;
   useInnerColumn({
     id: 'session-rail',

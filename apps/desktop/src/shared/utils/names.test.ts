@@ -22,12 +22,9 @@ describe('names', () => {
     expect(LENS_LABEL.workflows).toBe(NAMES.runs);
     expect(LENS_LABEL.review).toBe(NAMES.comments);
     expect(LENS_LABEL.plans).toBe(NAMES.artifacts);
-    expect(LENS_LABEL.context).toBe(NAMES.context);
-    expect(LENS_LABEL.goal).toBe(NAMES.goal);
-    expect(LENS_LABEL.decisions).toBe(NAMES.decisions);
     expect(HANDOFF_SECTION_LABEL.goal).toBe(NAMES.goal);
     expect(HANDOFF_SECTION_LABEL.plan).toBe(NAMES.plan);
-    expect(HANDOFF_SECTION_LABEL.files).toBe(NAMES.files);
+    expect(HANDOFF_SECTION_LABEL.files).toBe(NAMES.changes);
     expect(SESSION_STAGE_META.attention.label).toBe(NAMES.needsYou.toLowerCase());
     expect(SESSION_STAGE_META.running.label).toBe(NAMES.running.toLowerCase());
     expect(SESSION_STAGE_META.review.label).toBe(NAMES.inReview.toLowerCase());

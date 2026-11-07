@@ -100,7 +100,7 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
               }
             >
               <CheckCheck size={ICON_SIZE.row} aria-hidden />
-              Mark all seen
+              Mark as read
             </Button>
           ) : null}
         </div>

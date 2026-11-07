@@ -23,7 +23,6 @@
   "apps/desktop/src/store/slices/chats/sendChatMessage.ts": 1,
   "apps/desktop/src/store/slices/chats/stopChatReply.ts": 1,
   "apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts": 1,
-  "apps/desktop/src/store/slices/contextDrawer/markSessionContextSeen.ts": 1,
   "apps/desktop/src/store/slices/file-versions/loadSessionFileVersions.ts": 1,
   "apps/desktop/src/store/slices/file-versions/prepareFolderVersions.ts": 1,
   "apps/desktop/src/store/slices/github/refreshSessionPrDetail.ts": 1,

@@ -248,7 +248,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
   actions: [
     {
       id: 'reviewComment.openInDiff',
-      label: `Open in ${NAMES.files}`,
+      label: `Open in ${NAMES.changes}`,
       icon: FileCode,
       group: 'open',
       when: ({ facts }) => facts.path !== null,

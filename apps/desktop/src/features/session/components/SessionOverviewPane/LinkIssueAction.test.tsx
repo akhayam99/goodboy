@@ -36,6 +36,7 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
 }));
 
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { linkIssueEventName } from '../../../actions/kinds/session';
 import { LinkIssueAction } from './LinkIssueAction';
 
 const SESSION_ID = 'sess-1' as SessionId;
@@ -140,6 +141,24 @@ describe('LinkIssueAction', () => {
 
     fireEvent.keyDown(document.body, { code: 'KeyL', key: 'l' });
     expect(search()).toBeDefined();
+  });
+
+  it('opens on the source a palette entry names, and on all after a plain click', () => {
+    render(<LinkIssueAction session={session} />);
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(linkIssueEventName({ sessionId: SESSION_ID }), {
+          detail: { source: 'sentry' },
+        }),
+      );
+    });
+    expect(optionNames()).toEqual(['Timeout in ledger sync job (LEDGER-2M)']);
+    expect(screen.getByRole('tab', { name: 'Sentry' }).getAttribute('aria-selected')).toBe('true');
+
+    fireEvent.keyDown(search(), { key: 'Escape' });
+    fireEvent.click(trigger());
+    expect(optionNames()).toHaveLength(4);
   });
 
   it('puts the recent inbox items on top, the rest under results', () => {

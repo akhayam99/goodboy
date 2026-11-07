@@ -1,8 +1,14 @@
-import { useMemo } from 'react';
-import { SelectableRow, cn } from '@goodboy/ui';
+import { useMemo, useState } from 'react';
+import { Button, SelectableRow, cn } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
+import { buildWorkItems } from '../../../../features/session/workItems';
+import { branchRequests } from '../../../../features/session/branchRequests';
+import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
+import { gitlabSessionOf } from '../../../../store/slices/mount-request/requestOf';
+import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
+import { taskIdentityKey } from '../../../../shared/utils/taskIdentityKey';
 import { distinctTasks } from '../../../../shared/utils/distinctTasks';
 import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
 import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
@@ -48,6 +54,10 @@ export const LevelLinked = ({ session, isActive }: Props) => {
   );
   const allExternalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const groups = useMountRows({ sessionId });
+  const [isHistoryShown, setIsHistoryShown] = useState(false);
+  const currentBranch = useSessionRepo({ sessionId })?.branch ?? null;
+  const branchPrs = useAppStore((state) => selectActiveProjectPrs({ state, sessionId }));
+  const mr = useAppStore((state) => gitlabSessionOf({ state, sessionId })?.mr ?? null);
   const ownedRefs = useMemo(
     () =>
       new Set(
@@ -80,12 +90,32 @@ export const LevelLinked = ({ session, isActive }: Props) => {
       : null,
   );
   const isOverview = useAppStore((s) => (s.activeLens[sessionId] ?? null) === null);
-  const tasks = [...distinctTasks({ tasks: externalTasks })].sort(
+  const mountBranches = groups.flatMap((group) =>
+    [...group.rows, ...group.finishedRows].map((row) => ({
+      branch: row.branch,
+      projectId: row.projectId,
+      state: row.request?.state ?? null,
+    })),
+  );
+  const workItems = buildWorkItems({
+    tasks: externalTasks,
+    currentBranch,
+    branchPrs: branchRequests({ prs: branchPrs, mr, branch: currentBranch }),
+    mountBranches,
+  });
+  const currentKeys = new Set(workItems.current.map(({ task }) => taskIdentityKey({ task })));
+  const allTasks = [...distinctTasks({ tasks: externalTasks })].sort(
     (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
   );
+  const currentTasks = allTasks.filter(({ task }) => currentKeys.has(taskIdentityKey({ task })));
+  const historyTasks = allTasks.filter(({ task }) => !currentKeys.has(taskIdentityKey({ task })));
+  const tasks = [...currentTasks, ...(isHistoryShown ? historyTasks : [])];
   const isArchived = session.archivedAt != null;
   const fold = useLevelCardFold({ card: 'linked' });
-  const count = countSlotText({ count: linkedIssues.length + tasks.length, isBesideGlyph: true });
+  const count = countSlotText({
+    count: linkedIssues.length + currentTasks.length + historyTasks.length,
+    isBesideGlyph: true,
+  });
 
   return (
     <LevelCard
@@ -143,6 +173,17 @@ export const LevelLinked = ({ session, isActive }: Props) => {
           </li>
         ))}
       </ul>
+      {historyTasks.length === 0 ? null : (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          aria-expanded={isHistoryShown}
+          onClick={() => setIsHistoryShown((isShown) => !isShown)}
+        >
+          {`${isHistoryShown ? 'Hide' : 'Show'} history (${historyTasks.length})`}
+        </Button>
+      )}
     </LevelCard>
   );
 };

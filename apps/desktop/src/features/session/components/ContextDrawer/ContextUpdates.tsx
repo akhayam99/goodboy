@@ -57,6 +57,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
     done: 'Updated just now',
     failed: "Couldn't update",
   }[phase];
+  const hint = contextUpdateHint({ phase, pendingTurns: pending.turns, hasContext });
   const changes = round === null ? [] : roundChanges({ round });
 
   const onUpdate = () => {
@@ -103,7 +104,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
             </dd>
             <dt className={TERM}>Model</dt>
             <dd aria-label="Model" className={VALUE}>
-              <span>{round === null ? 'Step summaries in Models' : roundModel({ round })}</span>
+              <span>{round === null ? 'Set in Models' : roundModel({ round })}</span>
               <button
                 type="button"
                 onClick={() => openSettings({ scope: 'providers', section: 'summarizer' })}
@@ -130,7 +131,9 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                           {index > 0 ? ', ' : null}
                           <button
                             type="button"
-                            onClick={() => openContextDrawer({ sessionId, tab: change.tab })}
+                            onClick={() =>
+                              openContextDrawer({ sessionId, section: change.section })
+                            }
                             className={cn(
                               'rounded-sm text-meta text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground',
                               FOCUS_RING,
@@ -158,9 +161,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
               <ContextUpdateGlyph phase={phase} placement="button" />
               {BUTTON_LABEL[phase]}
             </Button>
-            <span className="text-meta text-muted-foreground">
-              {contextUpdateHint({ phase, pendingTurns: pending.turns, hasContext })}
-            </span>
+            {hint === '' ? null : <span className="text-meta text-muted-foreground">{hint}</span>}
           </div>
         </div>
       ) : null}

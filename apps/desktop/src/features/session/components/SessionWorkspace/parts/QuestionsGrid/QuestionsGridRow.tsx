@@ -1,14 +1,13 @@
 import { cn, ListGridRow, StateDot, TruncatedText } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { AGENT_KIND_META, type AgentKind } from '../../../../agent-kind';
 import { questionRowTitle, type QuestionRow } from '../questionsLensModel';
 import { questionAnswerLine } from './questionAnswerLine';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly row: QuestionRow;
-  readonly askerKind: AgentKind | null;
+  readonly runLine: string;
   readonly age: string;
   readonly isSelected: boolean;
   readonly onOpen: () => void;
@@ -16,7 +15,7 @@ type Props = {
 
 const BLOCKING = 'Blocking';
 
-export const QuestionsGridRow = ({ sessionId, row, askerKind, age, isSelected, onOpen }: Props) => {
+export const QuestionsGridRow = ({ sessionId, row, runLine, age, isSelected, onOpen }: Props) => {
   const menu = useObjectMenuTrigger({
     target: {
       kind: 'question',
@@ -29,7 +28,7 @@ export const QuestionsGridRow = ({ sessionId, row, askerKind, age, isSelected, o
   const title = questionRowTitle({ row });
   const isSettled = row.kind !== 'waiting' && row.kind !== 'delegated';
   const isBlocking = row.kind === 'waiting' && row.question.isBlocking;
-  const answer = questionAnswerLine({ row });
+  const detail = [questionAnswerLine({ row }), runLine].filter((part) => part !== '').join(' · ');
   const titleCell = (
     <TruncatedText className={cn('min-w-0', isSettled && 'text-muted-foreground')}>
       {title}
@@ -38,26 +37,25 @@ export const QuestionsGridRow = ({ sessionId, row, askerKind, age, isSelected, o
 
   return (
     <ListGridRow
-      ariaLabel={answer === '' ? title : `${title}, ${answer}`}
+      ariaLabel={detail === '' ? title : `${title}, ${detail}`}
       isSelected={isSelected}
       rowKey={row.question.id}
-      rowHeight={answer === '' ? 32 : 'stack'}
+      rowHeight={detail === '' ? 32 : 'stack'}
       onSelect={onOpen}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       cells={[
         isBlocking ? <StateDot state="needsYou" label={BLOCKING} /> : null,
-        answer === '' ? (
+        detail === '' ? (
           titleCell
         ) : (
           <span className="flex min-w-0 flex-1 flex-col">
             {titleCell}
             <TruncatedText className="min-w-0 text-meta text-muted-foreground">
-              {answer}
+              {detail}
             </TruncatedText>
           </span>
         ),
-        askerKind === null ? '' : AGENT_KIND_META[askerKind].noun,
         age,
       ]}
     />

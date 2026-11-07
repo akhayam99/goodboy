@@ -21,7 +21,6 @@
   "apps/desktop/src/features/session/ask/components/AskDrawer/AskSuggestions.tsx": 1,
   "apps/desktop/src/features/session/central/branches/BranchList/index.tsx": 1,
   "apps/desktop/src/features/session/central/now/StepMeter.tsx": 1,
-  "apps/desktop/src/features/session/components/ContextDrawer/DecisionChangesList.tsx": 1,
   "apps/desktop/src/features/session/components/RunRoute/RunKindChoices.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ConnectProjectRow.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx": 1,
@@ -47,6 +46,5 @@
   "apps/desktop/src/shared/components/StudioDetail/RecordProperties/PropertyRow.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordSections/RecordSectionBlock.tsx": 1,
   "packages/ui/src/components/Collapsible.tsx": 1,
-  "packages/ui/src/components/ListGrid/ListGridRow.tsx": 1,
-  "packages/ui/src/components/RailCard.tsx": 1
+  "packages/ui/src/components/ListGrid/ListGridRow.tsx": 1
 }

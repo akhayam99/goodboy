@@ -92,7 +92,7 @@ The Branch page holds one branch: its pull request, review comments, changed fil
 - **Resolve**: Turn review comments into commits without writing the fixes yourself.
 - **Review sources**: Read pull request comments and your own notes in one list in the Comments section.
 - **Close on GitHub**: Finish a review with Push N fixes in the Branch header.
-- **Read the code**: Read the branch against its base in Files, unified or split.
+- **Read the code**: Read the branch against its base in Changes, unified or split.
 
 [More on review and resolve on the branch page](docs/features/review.md)
 

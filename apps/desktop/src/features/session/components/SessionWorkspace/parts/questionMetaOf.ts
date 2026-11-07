@@ -12,6 +12,7 @@ type Params = {
 
 type QuestionMeta = {
   readonly askerKind: AgentKind | null;
+  readonly runName: string | null;
   readonly age: string;
 };
 
@@ -26,6 +27,7 @@ export const questionMetaOf = ({ row, agents, kindOverrides, now }: Params): Que
       asker === null
         ? null
         : classifyAgent({ agent: asker, override: kindOverrides[asker.id] ?? null }),
+    runName: asker?.name ?? null,
     age: formatAge({ from: askedOrAnsweredAt, now }),
   };
 };

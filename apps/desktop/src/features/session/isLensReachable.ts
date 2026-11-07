@@ -13,12 +13,14 @@ type Params = {
 };
 
 export const isLensReachable = ({ state, sessionId, lens }: Params): boolean => {
-  const workspaceId = sessionById(state.sessions, sessionId)?.workspaceId ?? null;
+  const session = sessionById(state.sessions, sessionId);
+  const workspaceId = session?.workspaceId ?? null;
   const bindings = workspaceId === null ? [] : (state.workspaceIntegrations[workspaceId] ?? []);
   const isBound = (provider: string): boolean =>
     bindings.some((binding) => binding.provider === provider);
   return lensDestinations({
     isBranchless: isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
+    isArchived: session?.archivedAt != null,
     connectedTools: {
       linear: isBound('linear'),
       gitlab: isBound('gitlab'),

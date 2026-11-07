@@ -20,6 +20,10 @@ vi.mock('../../store', async () => ({
   sessionPlace: (await import('../../store/slices/navigation/place')).sessionPlace,
 }));
 
+vi.mock('../actions/dispatchAfterNavigation', () => ({ dispatchAfterNavigation: vi.fn() }));
+
+import { dispatchAfterNavigation } from '../actions/dispatchAfterNavigation';
+import { linkIssueEventName } from '../actions/kinds/session';
 import { openLens } from './openLens';
 import { openToolPane } from './panes/openToolPane';
 
@@ -62,6 +66,15 @@ describe('openLens and openToolPane', () => {
       kind: 'explore',
       sessionId: SESSION_ID,
       payload: null,
+    });
+  });
+
+  it('asks Link work from the provider, on the overview, with that source in the event', () => {
+    openLens({ sessionId: SESSION_ID, lens: 'jira_issues' });
+    expect(state.navigate).toHaveBeenCalledWith(toLens(null));
+    expect(dispatchAfterNavigation).toHaveBeenCalledWith({
+      name: linkIssueEventName({ sessionId: SESSION_ID }),
+      detail: { source: 'jira' },
     });
   });
 

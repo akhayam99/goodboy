@@ -1237,6 +1237,14 @@ u36-p18-explore-head
 u36-p18-scripts-suggested
 u36-p18-terminal-head
 u36-p18-tools-column
+u36-p19-changed
+u36-p19-menu
+u36-p19-read
+u36-p19-summary
+u36-p19b-disconnected
+u36-p19b-linked
+u36-p19b-questions-answered
+u36-p19b-questions-waiting
 u36-p2-send-held
 u36-p2-send-stopped
 u36-p3-board-facts-failed-dark

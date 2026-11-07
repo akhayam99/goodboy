@@ -17,12 +17,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { brandId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../shared/components/Toast';
-import {
-  importStore,
-  resetStoryStore,
-  storySpies,
-  STORE_IMPORT_TIMEOUT_MS,
-} from '../../../store/storyHarness';
+import { importStore, resetStoryStore, storySpies } from '../../../store/storyHarness';
 import { installFakeResizeObserver } from '../../../test/fakeResizeObserver';
 import { sceneInvoke, clearSceneInvoke } from '../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../store/runtime/worktreeStatuses/cache';
@@ -41,7 +36,7 @@ beforeAll(async () => {
   Element.prototype.scrollIntoView = vi.fn();
   useAppStore = await importStore();
   ({ SessionOverviewPane } = await import('../components/SessionOverviewPane'));
-}, STORE_IMPORT_TIMEOUT_MS);
+});
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -178,7 +173,7 @@ const ACCEPTANCE: ReadonlyArray<Acceptance> = [
 
       const line = stateLine();
       expect(line.getAttribute('aria-label')).toBe(
-        'State: Limits are enforced on payout creation and the retry fix waits on a review. Written 2m ago',
+        'State: Limits are enforced on payout creation and the retry fix waits on a review. Updated 2m ago',
       );
       expect(line.getAttribute('data-stale')).toBe('false');
     },
@@ -256,7 +251,7 @@ describe('the state sentence and its age', () => {
 
     const line = stateLine();
     expect(line.getAttribute('data-stale')).toBe('old');
-    expect(line.getAttribute('aria-label')).toContain('Written 2d ago, may be out of date');
+    expect(line.getAttribute('aria-label')).toContain('Updated 2d ago, may be out of date');
   });
 
   it('lets the branch story win when a pull request moved after the summary', async () => {

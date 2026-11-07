@@ -127,6 +127,8 @@ Start a session from an issue in Tasks, with the issue linked and its goal writt
 
 A task is never a kind: **Pick from Tasks** works the same on every kind. Press Start. The session is created with the issue linked. The run starts as the kind you picked, or is routed like any other from Auto picks. If the start fails, the page keeps the issue and your text and Start becomes **Retry**.
 
+The session rail holds the linked work list, with older work under **Show history**. A row opens its record, with **Back to overview** above it. Unlink returns there after saving; a failure keeps the record open. Sentry rows open in **Tasks**, which their tooltip says, and name their issue, as in **Open PAYMENTS-42 in Tasks**. Work on any branch the session holds counts as current whichever branch is active; only work of a branch the session no longer holds, or already merged, goes under history. The palette and provider shortcuts open **Link work** on that provider, also when the rail is folded, and are not offered on an archived session.
+
 ### Review a pull request
 
 A pull request waiting on you in Tasks shows **Review pull request** in place of Start. It opens a session with a read-only PR reviewer and the pull request checked out, on the Branch page where **Write review** waits.
@@ -155,6 +157,7 @@ The tools you reach from anywhere in the session sit as icons in a thin column a
 | **Scripts**  | ⌘⌥S |
 | **Terminal** | ⌘⌥T |
 
+- **Context** opens on Goal; its cards share one menu for editing, versions and who reads them.
 - Hover one to read its name and key. The active tool shows its name below its icon.
 - **Agents** lists every agent of the session as a tree, the same set as the Runs page. Runs and Auto sit with their agents under them, and an agent you started yourself is a launch of one row with its state word.
 - The tree follows the run or Auto you have open, or shows only what is live when nothing is open. **All runs** goes to the Runs page.
@@ -223,3 +226,5 @@ This part is for contributors and agents who change the feature.
 - Page intro: the two lines live in `SESSION_PAGE_INTRO` in `apps/desktop/src/features/session/sessionPageIntro.ts`, drawn by `SessionPageIntro` in the page header.
 
 `StartFailure` owns the recovery line shared by `StartForm`.
+
+- Linked work: `LevelLinked` owns the list and history fold. `IntegrationPane` returns to Overview after unlink succeeds. `openLens` routes provider shortcuts to Link work with the provider as the event source, `useUnfoldForLink` unfolds a folded rail first, and `buildWorkItems` compares a link with every mount branch.

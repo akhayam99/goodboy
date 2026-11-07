@@ -10,6 +10,6 @@ export const SHORTCUT_GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   lists: 'Lists',
   selection: 'Selection',
   review: NAMES.comments,
-  diff: NAMES.files,
+  diff: NAMES.changes,
   window: 'Window',
 };
