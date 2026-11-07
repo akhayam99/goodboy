@@ -229,7 +229,15 @@ export const pushSuggestion = (): SessionSuggestion => ({
   },
 });
 
-const REBASE_NAMES = ['ledger-core', 'notify-relay', 'payments-api'] as const;
+const REBASE_NAMES = [
+  'ledger-core',
+  'notify-relay',
+  'payments-api',
+  'harbor-gateway',
+  'cascadia-sync',
+  'northwind-audit',
+  'acme-billing',
+] as const;
 
 type RebaseCountParams = {
   readonly count: number;

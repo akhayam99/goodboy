@@ -199,7 +199,7 @@ describe('the c04 worktree level scenes', () => {
   it('c04-worktree-menu opens the worktree menu', async () => {
     await mount('c04-worktree-menu');
 
-    expect(screen.getByRole('menuitem', { name: /Link work to this branch/ })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: /Close branch/ })).toBeDefined();
   });
 
   it('c04-worktree-folded keeps the session pages as icons', async () => {

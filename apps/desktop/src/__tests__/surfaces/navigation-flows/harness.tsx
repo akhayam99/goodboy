@@ -551,10 +551,12 @@ export const openWorktreeMenu = async (): Promise<void> => {
   const trigger = level.querySelector<HTMLElement>(
     '[data-worktree-current] [data-worktree-actions] button',
   );
-  if (trigger === null) {
+  const row = trigger?.closest('[data-worktree-actions]')?.parentElement ?? null;
+  if (row === null) {
     throw new Error('the current branch row draws no menu button');
   }
-  await click(trigger);
+  fireEvent.contextMenu(row);
+  await settle();
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {

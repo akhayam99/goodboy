@@ -17,6 +17,7 @@ import type {
   ObjectKindDefinition,
   SuggestionActionTarget,
 } from '../types';
+import { MAX_OVERFLOW_ROWS } from '../overflowCutOf';
 import { foldedVerbActions } from './actionCard';
 
 export const TALK_ACTION_ID = 'suggestion.talkWithAuto';
@@ -135,6 +136,15 @@ const openPrTargetAction = ({
   },
 });
 
+type FixedRowsParams = {
+  readonly facts: SuggestionFacts;
+};
+
+const fixedRowsOf = ({ facts }: FixedRowsParams): number =>
+  (facts.suggestion.kind === 'check-changes' ? 2 : 0) +
+  (facts.isAutoOn && facts.startsRole !== null ? 1 : 0) +
+  (facts.onNotNow !== null ? 1 : 0);
+
 export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, SuggestionFacts> = {
   noun: 'suggestion',
   facts: ({ target }) => ({
@@ -145,15 +155,25 @@ export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, Sugge
     onNotNow: target.onNotNow ?? null,
     foldedVerbs: target.foldedVerbs ?? NO_VERBS,
   }),
-  adapted: ({ facts }) => [
-    ...foldedVerbActions<SuggestionFacts>({ verbs: facts.foldedVerbs, kind: 'suggestion' }),
-    ...rebaseTargetsOf({ suggestion: facts.suggestion }).map((target) =>
-      rebaseTargetAction({ target }),
-    ),
-    ...openPrTargetsOf({ suggestion: facts.suggestion }).map((target) =>
-      openPrTargetAction({ target }),
-    ),
-  ],
+  adapted: ({ facts }) => {
+    const folded = foldedVerbActions<SuggestionFacts>({
+      verbs: facts.foldedVerbs,
+      kind: 'suggestion',
+      room: MAX_OVERFLOW_ROWS - fixedRowsOf({ facts }),
+    });
+    const targetRoom = MAX_OVERFLOW_ROWS - fixedRowsOf({ facts }) - folded.length;
+    return [
+      ...folded,
+      ...[
+        ...rebaseTargetsOf({ suggestion: facts.suggestion }).map((target) =>
+          rebaseTargetAction({ target }),
+        ),
+        ...openPrTargetsOf({ suggestion: facts.suggestion }).map((target) =>
+          openPrTargetAction({ target }),
+        ),
+      ].slice(0, Math.max(0, targetRoom)),
+    ];
+  },
   actions: [
     roleAlternative({
       id: 'suggestion.startTester',

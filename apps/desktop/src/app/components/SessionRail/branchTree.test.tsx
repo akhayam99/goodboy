@@ -230,7 +230,7 @@ describe('one tree for every branch', () => {
     expect(document.querySelector('[data-rail-level="session"]')).not.toBeNull();
   });
 
-  it('opens the same menu from the row dots, a right click and Shift+F10', async () => {
+  it('opens five rows from the row dots, and every row from a right click and Shift+F10', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 6 }) });
     await mountRail();
     const row = rowButton('payments-api', /#418/);
@@ -249,11 +249,11 @@ describe('one tree for every branch', () => {
     fireEvent.keyDown(row, { key: 'F10', shiftKey: true });
     const fromKeys = await menuLabels();
 
-    expect(fromDots.some((label) => label.includes('Copy branch name'))).toBe(true);
-    expect(fromDots.some((label) => label.includes('Link work to this branch'))).toBe(true);
+    expect(fromDots.length).toBeLessThanOrEqual(5);
     expect(fromDots.some((label) => label.includes('Rebase on main'))).toBe(true);
-    expect(fromClick).toEqual(fromDots);
-    expect(fromKeys).toEqual(fromDots);
+    expect(fromClick.length).toBeGreaterThan(fromDots.length);
+    expect(fromClick.filter((label) => fromDots.includes(label))).toEqual(fromDots);
+    expect(fromKeys).toEqual(fromClick);
   });
 
   it('keeps the dots empty at rest on a row that is not current, and always drawn on the current one', async () => {
@@ -273,11 +273,11 @@ describe('one tree for every branch', () => {
     ).toBe('hidden');
   });
 
-  it('opens the put on a branch picker from the row menu, which also offers the branch switch', async () => {
+  it('opens the put on a branch picker from the right click, which also offers the branch switch', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: ACTIONS }));
+    fireEvent.contextMenu(rowButton('payments-api', /#418/));
     expect(await screen.findByRole('menuitem', { name: /Switch branch/ })).toBeDefined();
     fireEvent.click(await screen.findByRole('menuitem', { name: /Link work to this branch/ }));
     await settle();

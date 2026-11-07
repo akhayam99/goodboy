@@ -121,11 +121,33 @@
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
+- **A `⋯` holds five rows at most, in any one state, a destructive row
+  included.** A row with another home (a button on the page, a control beside
+  it, a card in the page) leaves the menu and stays on the right click menu,
+  which is not bound. `overflowCutOf` (`features/actions/overflowCutOf.ts`)
+  names the rows to drop only when a state would draw a sixth:
+  `artifactHeaderOmitOf` for the artifact header (the buttoned verbs, then Show
+  in Finder, which the saved copy block offers), `RECORD_HEADER_CUTS` for the
+  record header (Copy key, then Refresh) and `drawerMenuOmitOf` for the comment
+  drawer (Copy link, then Agent transcript). The agent, run, session and
+  branch menus cut by list (`AGENT_HEADER_MENU_IDS`, `runPageOmitOf`,
+  `sessionMenuOf`, `branchMenuRowsOf`). The hover row menus cut the same way
+  through the `cuts` prop: the rail branch row (`MOUNT_ROW_CUTS`, keeping Open
+  pull request, Open changes, Open in editor, Switch branch and Close branch,
+  or the state's own primary in place of the least needed), the commit row
+  (`HISTORY_ROW_CUTS`: Move up, Move down and Copy subject, since the drag
+  handle moves a commit), the stored worktree row (`WORKTREE_ROW_CUTS`) and the
+  port row (`portRowMenuOf`: a row with a stop control omits Stop and Force
+  stop, a nested row has none and keeps them). The right click of each lists
+  every row. `overflowRows.test.ts` and `overflowRows.drawer.test.tsx` in
+  `src/__tests__/actions` walk every state of these headers and row menus
+  through the real menu code and fail on a sixth row.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
   the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
-  and an object you work on is a child page in the trail. See
+  and an object you work on is a child page under one back row, not a trail
+  ([Back row](session-rail.md#back-row)). See
   [The right drawer](home-and-drawer.md#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](branch-page.md#the-branch-page).
@@ -315,8 +337,8 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
-- **A lens surface is reached from the overview or from the trail's
-  destination switcher, never from a rail.** Rows and chips inside the
+- **A lens surface is reached from the overview or from the palette, never
+  from a rail, and the page it opens has one back row, no trail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts
   and dots are read-only signals on the row that routes there. Session
   lifecycle actions are not navigation and do not belong on those rows. A

@@ -94,7 +94,7 @@ describe('the secondary Monitoring scenes', () => {
 
     const menu = await screen.findByRole('menu', { name: 'Actions for :4001' }, WAIT);
 
-    expect(within(menu).getByRole('menuitem', { name: 'Stop' })).toBeDefined();
+    expect(within(menu).queryByRole('menuitem', { name: 'Stop' })).toBeNull();
     expect(within(menu).getByRole('menuitem', { name: 'Copy address' })).toBeDefined();
   });
 
