@@ -63,12 +63,17 @@ const answerWith = ({ behind, unpushed = 0, isRebasing = false }: AnswerParams):
 
 const properties = (): HTMLElement => screen.getByRole('group', { name: 'Properties' });
 
-type CellParams = {
+type RowParams = {
   readonly id: string;
 };
 
-const cellText = ({ id }: CellParams): string =>
-  document.querySelector(`[data-pr-status-strip] [data-cell="${id}"]`)?.textContent ?? '';
+const rowText = ({ id }: RowParams): string =>
+  document.querySelector(`[data-merge-box] [data-testid="merge-row-${id}"]`)?.textContent ?? '';
+
+const verdictText = (): string =>
+  document.querySelector('[data-merge-box] [data-verdict]')?.textContent ?? '';
+
+const boxText = (): string => document.querySelector('[data-merge-box]')?.textContent ?? '';
 
 describe('the pull request page scenes', () => {
   it('registers the nine scenes of the plan', () => {
@@ -109,23 +114,27 @@ describe('the pull request page scenes', () => {
     );
   });
 
-  it('branch-pr-github says checks, review, merge and branch once in the strip, people and links on the side', async () => {
+  it('branch-pr-github ranks what blocks the merge in one box, people and links on the side', async () => {
     draw({ name: 'branch-pr-github' });
     await screen.findByRole('group', { name: 'Properties' });
     const side = within(properties());
 
-    await waitFor(() => expect(cellText({ id: 'checks' })).toContain('1 failing'));
-    expect(cellText({ id: 'checks' })).toContain('lint');
-    expect(cellText({ id: 'review' })).toContain('Changes requested');
-    expect(cellText({ id: 'merge' })).toContain('Blocked');
-    expect(cellText({ id: 'branch' })).toContain('3 behind main');
+    await waitFor(() => expect(rowText({ id: 'checks' })).toContain('1 check failing'));
+    expect(rowText({ id: 'checks' })).toContain('lint');
+    expect(rowText({ id: 'review' })).toContain('Changes requested');
+    expect(verdictText()).toContain('Not ready to merge');
+    expect(rowText({ id: 'branch' })).toContain('3 commits behind main');
+    const order = [
+      ...document.querySelectorAll('[data-merge-box] [data-testid^="merge-row-"]'),
+    ].map((row) => row.getAttribute('data-testid'));
+    expect(order).toEqual(['merge-row-checks', 'merge-row-review', 'merge-row-branch']);
     expect(side.getByText('#412')).toBeDefined();
     expect(side.getByText('Closes')).toBeDefined();
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.queryByRole('region', { name: 'Base' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Readiness' })).toBeNull();
     expect(side.queryByRole('button', { name: /Rebase/ })).toBeNull();
-    expect(side.queryByRole('region', { name: 'Status' })).toBeNull();
+    expect(side.queryByRole('region', { name: 'Merge status' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });
 
@@ -195,8 +204,8 @@ describe('the pull request page scenes', () => {
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
       ).toBe('diff.push'),
     );
-    await waitFor(() => expect(cellText({ id: 'merge' })).toContain('3 commits not pushed'));
-    expect(cellText({ id: 'merge' })).toContain('Blocked');
+    await waitFor(() => expect(rowText({ id: 'unpushed' })).toContain('3 commits not pushed'));
+    expect(verdictText()).toContain('Not ready to merge');
     expect(document.querySelector('[data-branch-secondary]')).toBeNull();
   });
 
@@ -215,7 +224,7 @@ describe('the pull request page scenes', () => {
     store.setState({ pushBranch: async () => ({ ok: true }) });
     fireEvent.click(push);
 
-    await waitFor(() => expect(cellText({ id: 'merge' })).not.toContain('not pushed'));
+    await waitFor(() => expect(boxText()).not.toContain('not pushed'));
     expect(document.querySelector('[data-branch-primary="diff.push"]')).toBeNull();
   });
 
@@ -223,7 +232,7 @@ describe('the pull request page scenes', () => {
     answerWith({ behind: 0 });
     draw({ name: 'branch-pr-merge-blocked' });
 
-    await waitFor(() => expect(cellText({ id: 'checks' })).toContain('lint, contract tests'));
+    await waitFor(() => expect(rowText({ id: 'checks' })).toContain('lint, contract tests'));
     await waitFor(() =>
       expect(
         document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
@@ -306,7 +315,7 @@ describe('the branch page of a branch with no pull request', () => {
     );
     const create = screen.getByRole('button', { name: 'Create pull request' });
     expect(create.getAttribute('data-create-submit')).toBe('secondary');
-    expect(screen.queryByRole('group', { name: 'Status' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Merge status' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Summary' })).toBeNull();
   });
 

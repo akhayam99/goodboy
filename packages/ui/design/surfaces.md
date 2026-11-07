@@ -53,13 +53,18 @@ no hover. The title is the page's `h1` in the fixed 32px title row
 the page never jumps. The side column is 224px beside a reading column of at most a prose measure (`max-w-prose`, 65ch) from an 880px page
 container (`@container` query, not the window); below it the side column sits above the
 reading column as one wrapping row. Each block is a faint `text-meta` label over its value rows
-of 28px or more and nothing else: Reviewers (the verdict right after the name, not pinned to
-the edge), Bots that commented (no verdict), Author and Linked issues with their relation.
-The state is the chip in the line under the title, never a block, and the status strip sits
-between the header and the columns: four cells on `bg-subtle` split by 1px `border-soft`
-gaps in one `rounded-lg` frame, each a `text-meta` label, a `text-label` word after a
-`StatusDot` and one faint `text-meta` detail; the cells take their tones from the branch state
-map (conflicts `warning`, a failing check `danger`). Labels are not headings, so the outline reads `h1`, then
+of 28px or more and nothing else: Reviewers (people only, the verdict right after the name, not pinned to
+the edge), Bots (each with one word: `1 issue`, `2 resolved` or its review state), Linked issues with their relation and Author.
+The state is the chip in the line under the title, never a block, and the merge box sits
+between the header and the columns: one `rounded-lg` `bg-subtle` frame with a `border-soft`
+hairline, a verdict (a 32px `bg-fill` round glyph in the verdict's tone, a `text-heading`
+sentence and one muted `text-meta` line that says the next steps or what the header button will do), then
+one 36px row per thing that holds the merge, worst tone first (danger, warning, info, neutral), each
+a tone glyph, a `text-ui` title, a muted detail and the faint name of where it leads, and last one
+quiet line that folds everything that passes and opens in place. The box never holds a button that
+acts: the header keeps the page's one primary. Tones come from the branch state map (conflicts
+`warning`, a failing check `danger`). The description folds after five lines of prose behind
+`Show all`. Labels are not headings, so the outline reads `h1`, then
 the `h2`s of Description and Activity.
 
 **The capability rule.** The page never branches on the host. It reads the
@@ -71,7 +76,7 @@ confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`)
 the option cards carry the effect sentence, draw no icon tile when they have no
 icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is the branch page
 (the branch as the title, its pushed state and distance as the line under it, the
-status strip, then the create form with the Commits and Changes summary cards under it), the activity
+create form with the Commits and Changes summary cards under it), the activity
 loads as a `SkeletonRow`, a failed read is an inline danger `Notice` with Retry.
 
 ## Workspace chat

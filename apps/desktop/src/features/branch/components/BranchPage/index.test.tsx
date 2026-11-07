@@ -384,16 +384,18 @@ describe('Branch page sections by state', () => {
     expect(states).toHaveLength(1);
     expect(states[0]?.closest('[data-pr-header-line]')).not.toBeNull();
     expect(states[0]?.getAttribute('data-tone')).toBe('merged');
-    expect(document.querySelector('[data-cell="merge"]')?.textContent).toContain('Merged');
+    expect(document.querySelector('[data-merge-box] [data-verdict]')?.textContent).toContain(
+      'Merged',
+    );
   });
 
-  it('shows the queue in the Merge cell of a queued pull request and no primary', async () => {
+  it('shows the queue in the merge box of a queued pull request and no primary', async () => {
     await mount();
     patchRequest({ state: 'queued', isDraft: false, mergeQueue: { position: 3 } });
     await visit(/^Pull request/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
-    const merge = document.querySelector('[data-cell="merge"]');
+    const merge = document.querySelector('[data-merge-box] [data-verdict]');
     expect(merge?.textContent).toContain('Queued');
     expect(merge?.textContent).toContain('Queued to merge, 3rd in line');
   });

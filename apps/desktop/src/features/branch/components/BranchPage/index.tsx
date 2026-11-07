@@ -333,7 +333,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               onConnected={() => void githubConnection.refresh()}
               onReload={reloadPullRequestView}
               onSelectTab={selectTab}
-              onMerge={controls.merge}
             />
           </PageColumn>
         </BranchScroll>

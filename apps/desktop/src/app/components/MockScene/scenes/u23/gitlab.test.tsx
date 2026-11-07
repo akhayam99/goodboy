@@ -77,7 +77,9 @@ describe('the gitlab page scenes', () => {
     expect(side.getByText('omar-t')).toBeDefined();
     expect(side.getByText('priya-n')).toBeDefined();
     expect(
-      await screen.findByText(/1 failing/, { selector: '[data-cell="checks"] *' }),
+      await screen.findByText(/1 check failing/, {
+        selector: '[data-testid="merge-row-checks"] *',
+      }),
     ).toBeDefined();
   });
 

@@ -2050,7 +2050,7 @@ before a change adds a word.
 - **Fix with an agent**: the one verb that hands a failed push to an agent (it was
   Let an agent fix the push and Fix with agent).
 - **The rebase needs you**: a rebase job that stopped (it was History rewriter needs you).
-- **Blocked**: the Merge cell says **Blocked**, then the reason on its own line
+- **Not ready to merge**: the merge box verdict, then each reason on its own row
   (**3 commits not pushed**), never the word twice.
 - **Rebase on main**: brings the base in, with the base branch's own name.
   **Update 2** is for local clones only.

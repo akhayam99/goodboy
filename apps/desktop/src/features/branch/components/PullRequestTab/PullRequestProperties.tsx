@@ -1,5 +1,11 @@
 import type { PullRequestPort, PullRequestReviewerGroups } from '@goodboy/core/review-source';
-import type { MountId, PullRequestState, PullRequestView, SessionId } from '@goodboy/types';
+import type {
+  MountId,
+  PrComment,
+  PullRequestState,
+  PullRequestView,
+  SessionId,
+} from '@goodboy/types';
 import { BotsProperty } from './BotsProperty';
 import { PROPERTY_ROW as ROW } from './propertyRow';
 import { PropertyField } from './PropertyField';
@@ -14,6 +20,8 @@ type Props = {
   readonly port: PullRequestPort | null;
   readonly request: ReviewerRequest;
   readonly reviewers: PullRequestReviewerGroups;
+  readonly comments: ReadonlyArray<PrComment> | null;
+  readonly isLoaded: boolean;
   readonly canEdit: boolean;
   readonly onMutated: () => void;
 };
@@ -26,6 +34,8 @@ export const PullRequestProperties = ({
   port,
   request,
   reviewers,
+  comments,
+  isLoaded,
   canEdit,
   onMutated,
 }: Props) => (
@@ -41,18 +51,12 @@ export const PullRequestProperties = ({
       prNumber={pr.number}
       people={reviewers.people}
       bots={reviewers.bots}
+      isLoaded={isLoaded}
       port={port}
       request={request}
       onMutated={onMutated}
     />
-    <BotsProperty bots={reviewers.bots} />
-    {pr.author == null ? null : (
-      <PropertyField label="Author">
-        <div className={ROW}>
-          <span className="min-w-0 truncate text-foreground">{pr.author}</span>
-        </div>
-      </PropertyField>
-    )}
+    <BotsProperty bots={reviewers.bots} comments={comments} />
     <ResolvesProperty
       sessionId={sessionId}
       mountId={mountId}
@@ -60,5 +64,12 @@ export const PullRequestProperties = ({
       view={view}
       canEdit={canEdit}
     />
+    {pr.author == null ? null : (
+      <PropertyField label="Author">
+        <div className={ROW}>
+          <span className="min-w-0 truncate text-foreground">{pr.author}</span>
+        </div>
+      </PropertyField>
+    )}
   </div>
 );

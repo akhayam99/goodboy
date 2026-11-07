@@ -437,12 +437,12 @@ describe('the Overview grid', () => {
   };
 
   it.each(['github', 'draft', 'merged'] as const)(
-    'puts the status strip on top, then the reading column and the side column in the %s state',
+    'puts the merge box on top, then the reading column and the side column in the %s state',
     async (variant) => {
       await show({ variant });
 
       const children = [...grid().children];
-      expect(children[0]).toBe(screen.getByRole('group', { name: 'Status' }));
+      expect(children[0]).toBe(screen.getByRole('region', { name: 'Merge status' }));
       const columns = children.find((child) => child.getAttribute('data-slot') === 'page-columns');
       expect(children.at(-1)).toBe(columns);
       const reading = columns?.querySelector('[data-slot="reading-column"]');
@@ -457,15 +457,15 @@ describe('the Overview grid', () => {
     },
   );
 
-  it('keeps Reviewers, Author and Linked issues on the side, with no State, Base, Checks or Readiness', async () => {
+  it('keeps Reviewers, Linked issues and Author on the side, with no State, Base, Checks or Readiness', async () => {
     await show();
 
     const properties = screen.getByRole('group', { name: 'Properties' });
     const names = [...properties.querySelectorAll('section')].map((field) =>
       field.getAttribute('aria-label'),
     );
-    expect(names).toContain('Reviewers');
-    expect(names).toContain('Author');
+    expect(names[0]).toBe('Reviewers');
+    expect(names.at(-1)).toBe('Author');
     for (const name of ['State', 'Base', 'Checks', 'Readiness']) {
       expect(names).not.toContain(name);
     }
@@ -551,12 +551,12 @@ describe('the Overview grid', () => {
     expect(rows[0]?.getAttribute('data-reviewer-state')).toBe('pending');
     expect(rows[0]?.textContent).toContain('Asked');
     expect(within(reviewers).queryByText('portal-preview[bot]')).toBeNull();
-    const bots = screen.getByRole('region', { name: 'Bots that commented' });
+    const bots = screen.getByRole('region', { name: 'Bots' });
     within(bots).getByText('portal-preview[bot]');
-    expect(within(bots).queryByText('Commented')).toBeNull();
+    within(bots).getByText('Commented');
   });
 
-  it('says the queue of a queued pull request in the Merge cell', async () => {
+  it('says the queue of a queued pull request in the merge box', async () => {
     await show();
     act(() => {
       patchShownPr({
@@ -564,23 +564,51 @@ describe('the Overview grid', () => {
       });
     });
 
-    await waitFor(() =>
-      expect(document.querySelector('[data-cell="merge"]')?.textContent).toContain(
-        'Queued to merge, 3rd in line',
-      ),
-    );
+    await waitFor(() => {
+      const box = screen.getByRole('region', { name: 'Merge status' });
+      expect(box.querySelector('[data-verdict]')?.getAttribute('data-verdict')).toBe('queued');
+      expect(box.textContent).toContain('Queued to merge, 3rd in line');
+    });
   });
 
-  it('opens the Checks section from the Checks cell of the strip', async () => {
+  it('opens the place that fixes a row of the merge box, and repeats no merge button', async () => {
     await show();
     useAppStore.setState({ branchTab: { [SESSION.id]: 'pr' } });
 
-    const strip = screen.getByRole('group', { name: 'Status' });
-    const checks = within(strip).getByRole('button', { name: /^Checks:/ });
-    expect(checks.textContent).toMatch(/passed|failing|Running|No checks|Unknown/);
+    const box = screen.getByRole('region', { name: 'Merge status' });
+    expect(within(box).queryByRole('button', { name: /merge/i })).toBeNull();
+    expect(box.querySelector('[data-verdict]')?.textContent).toContain('Not ready to merge');
+    const first = within(box).getAllByRole('listitem')[0];
+    const checks = within(first ?? box).getByRole('button', { name: /check.* failing/ });
+    expect(checks.textContent).toContain('Checks');
     fireEvent.click(checks);
 
     await waitFor(() => expect(useAppStore.getState().branchTab[SESSION.id]).toBe('checks'));
+  });
+
+  it('folds a long description after about five lines and opens it in place', async () => {
+    const tall = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockReturnValue(400);
+    const short = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(120);
+    try {
+      await show();
+
+      const toggle = await within(description()).findByRole('button', { name: 'Show all' });
+      expect(description().querySelector('[data-folded="true"]')).not.toBeNull();
+      fireEvent.click(toggle);
+
+      const less = within(description()).getByRole('button', { name: 'Show less' });
+      expect(less.getAttribute('aria-expanded')).toBe('true');
+      expect(description().querySelector('[data-folded]')).toBeNull();
+    } finally {
+      tall.mockRestore();
+      short.mockRestore();
+    }
+  });
+
+  it('keeps a short description whole, with nothing to unfold', async () => {
+    await show();
+
+    expect(within(description()).queryByRole('button', { name: 'Show all' })).toBeNull();
   });
 
   it('names the state, the number and the base once, in the line under the title', async () => {

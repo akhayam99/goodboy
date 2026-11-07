@@ -35,7 +35,7 @@ import { useThreadVisit } from '../../../resolve/hooks/useThreadVisit';
 import { queueRowAt } from '../../../resolve/testing/queueRow';
 import { gitlabMrFixture } from '../../../../store/slices/mount-request/testing/gitlabMrFixture';
 import { PULL_REQUEST_KIND } from '../../../actions/kinds/pullRequest';
-import { pullRequestCellsOf } from '../../components/PullRequestTab/pullRequestCellsOf';
+import { mergeBoxOf } from '../../components/PullRequestTab/MergeBox/mergeBoxOf';
 import { mergeIsClear } from '../../../review/prMergeReadiness';
 import { withPullRequestViewEntry } from '../../../../store/slices/pull-request-view/pullRequestViewAt';
 import { usePullRequestReadiness } from './index';
@@ -286,7 +286,7 @@ describe('usePullRequestReadiness and the action kind read one source of checks'
     });
   };
 
-  it('blocks the Merge cell on GitLab while its jobs read denied, like the merge action', () => {
+  it('blocks the merge box on GitLab while its jobs read denied, like the merge action', () => {
     seedGitlabDenied();
 
     const { readiness, facts } = readinessOf({ mountId: MOUNT_LEDGER }).result.current;
@@ -305,20 +305,23 @@ describe('usePullRequestReadiness and the action kind read one source of checks'
     expect(kindFacts?.checks).toBe('unknown');
     expect(readiness.blockers).toEqual(['Checks unknown.']);
     expect(mergeIsClear({ readiness })).toBe(false);
-    const merge = pullRequestCellsOf({
+    const box = mergeBoxOf({
       state: 'open',
-      pr: { baseBranch: 'main', reviewDecision: null },
+      pr: { baseBranch: 'main', reviewDecision: null, mergeable: true },
       runs: null,
       isChecksUnread: true,
-      people: [],
+      reviewers: [],
       readiness,
       hasConflicts: false,
       mergeWord: 'Merge commit',
       queueLine: null,
       branch: { ahead: 0, behind: 0, onlineAhead: 0, isRebasing: false },
-    }).find((cell) => cell.id === 'merge');
-    expect(merge?.word).toBe('Blocked');
-    expect(merge?.opens).toBe('checks');
+      threads: { unresolved: 0, needYou: 0, unread: 0 },
+      unpushed: 0,
+      canRequestReview: false,
+    });
+    expect(box.verdict).toMatchObject({ kind: 'blocked', line: 'Checks unknown.' });
+    expect(box.rows.find((row) => row.id === 'checks')?.opens).toBe('checks');
   });
 
   it('keeps reading the pipeline when the host has no jobs to read', () => {

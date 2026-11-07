@@ -110,7 +110,9 @@ describe('the c04 worktree level scenes', () => {
     expect(level.queryByRole('button', { name: /^Rebase on main/ })).toBeNull();
     expect(stripNames()).toEqual(['Pull request', 'Comments', 'Changes', 'Commits', 'Checks']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
-    expect(screen.getByRole('group', { name: 'Status' }).textContent).toContain('6 behind main');
+    expect(screen.getByRole('region', { name: 'Merge status' }).textContent).toContain(
+      '6 commits behind main',
+    );
   });
 
   it('c04-worktree-pr-draft reads Draft in the entry and the State property', async () => {
