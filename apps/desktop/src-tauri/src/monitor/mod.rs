@@ -304,7 +304,7 @@ mod linux {
     use std::collections::HashMap;
     use std::fs;
 
-    use super::parse;
+    use super::{parse, tick_birth_id};
 
     pub(super) fn listening_sockets() -> Vec<(String, u16, u64)> {
         ["/proc/net/tcp", "/proc/net/tcp6"]
