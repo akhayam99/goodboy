@@ -1,4 +1,5 @@
 import type { WorkNodeState } from '@goodboy/ui';
+import { NAMES } from '../../../shared/utils/names';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { AutoChildState, AutoGroupChild } from '../autoGroupOf';
 
@@ -19,20 +20,20 @@ type StateCopy = Readonly<{
 }>;
 
 const STATE_COPY: Readonly<Record<AutoChildState, StateCopy>> = {
-  running: { node: 'running', word: 'Working', isDanger: false, fallback: 'Working' },
-  done: { node: 'done', word: 'Done', isDanger: false, fallback: 'Done' },
-  failed: { node: 'failed', word: 'Failed', isDanger: true, fallback: 'Failed' },
-  stopped: { node: 'skipped', word: 'Stopped', isDanger: false, fallback: 'Stopped' },
-  timedOut: { node: 'failed', word: 'Timed out', isDanger: true, fallback: 'Timed out' },
-  blocked: { node: 'failed', word: 'Blocked', isDanger: true, fallback: 'Blocked' },
+  running: { node: 'running', word: NAMES.running, isDanger: false, fallback: NAMES.running },
+  done: { node: 'done', word: NAMES.done, isDanger: false, fallback: NAMES.done },
+  failed: { node: 'failed', word: NAMES.failed, isDanger: true, fallback: NAMES.failed },
+  stopped: { node: 'skipped', word: NAMES.stopped, isDanger: false, fallback: NAMES.stopped },
+  timedOut: { node: 'failed', word: NAMES.failed, isDanger: true, fallback: 'Timed out' },
+  blocked: { node: 'alert', word: NAMES.needsYou, isDanger: false, fallback: NAMES.needsYou },
   neverStarted: {
     node: 'failed',
-    word: 'Never started',
+    word: NAMES.notStarted,
     isDanger: true,
     fallback: 'Never started',
   },
   retried: { node: 'skipped', word: 'Retried', isDanger: false, fallback: 'Retried' },
-  queued: { node: 'queued', word: 'Queued', isDanger: false, fallback: 'Queued' },
+  queued: { node: 'queued', word: NAMES.queued, isDanger: false, fallback: NAMES.queued },
 };
 
 type ChildParams = {
@@ -49,8 +50,8 @@ const subOf = ({ child }: ChildParams): string | null => {
   if (child.state === 'done') {
     return null;
   }
-  const isDanger = STATE_COPY[child.state].isDanger;
-  return isDanger && child.reason !== null ? child.reason : askedOf({ child });
+  const shouldShowReason = STATE_COPY[child.state].isDanger || child.state === 'blocked';
+  return shouldShowReason && child.reason !== null ? child.reason : askedOf({ child });
 };
 
 export const autoChildCopyOf = ({ child }: ChildParams): AutoChildCopy => {

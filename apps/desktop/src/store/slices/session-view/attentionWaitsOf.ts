@@ -1,6 +1,8 @@
 import type { Agent, Session } from '@goodboy/types';
 import type { AppState } from '../../types';
-import { autoWaitRootsOf, type AutoWaitState } from './autoWaitRootsOf';
+import { autoFailedRootsOf } from './autoRoots/autoFailedRootsOf';
+import { autoLimitRootsOf } from './autoRoots/autoLimitRootsOf';
+import { autoWaitRootsOf, type AutoWaitState } from './autoRoots/autoWaitRootsOf';
 import { runWaitEntriesOf, type RunWaitState } from './runWaitEntriesOf';
 
 type AttentionWaitsState = Pick<AppState, 'sessionPhaseRuns'> &
@@ -13,6 +15,7 @@ export type AttentionWaits = {
   readonly hasLimitPausedRun: boolean;
   readonly hasRunWaitingForGo: boolean;
   readonly hasAutoNeedsYou: boolean;
+  readonly hasAutoFailed: boolean;
   readonly hasSlackReplyWaiting: boolean;
 };
 
@@ -29,9 +32,12 @@ export const attentionWaitsOf = ({ state, session }: Params): AttentionWaits => 
   const runWaits = runWaitEntriesOf({ state, session, agents });
   return {
     hasStoppedRun: runWaits.some((entry) => entry.wait === 'stopped'),
-    hasLimitPausedRun: runWaits.some((entry) => entry.wait === 'limit'),
+    hasLimitPausedRun:
+      runWaits.some((entry) => entry.wait === 'limit') ||
+      autoLimitRootsOf({ state, session, agents }).length > 0,
     hasRunWaitingForGo: runWaits.some((entry) => entry.wait === 'go'),
     hasAutoNeedsYou: autoWaitRootsOf({ state, session, agents }).length > 0,
+    hasAutoFailed: autoFailedRootsOf({ state, session, agents }).length > 0,
     hasSlackReplyWaiting: (state.sessionSlackDrafts?.[sessionId] ?? []).some(
       (draft) => draft.status === 'pending',
     ),

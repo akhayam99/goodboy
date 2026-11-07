@@ -399,7 +399,7 @@ describe('action cards in a stack', () => {
 
     const fix = within(region).getByRole('region', { name: 'Fix' });
     const stuck = within(within(fix).getByTestId('action-card-auto:agent-fixer:neverStarted'));
-    stuck.getByText('Auto is stuck');
+    stuck.getByText('Auto needs you');
     stuck.getByText(
       'The fixer never started. Auto created it at 10:21, no first message reached it.',
     );

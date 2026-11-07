@@ -287,7 +287,7 @@ describe('TimelineStreamRow', () => {
 
     expect(marker?.className).toContain(runIdentity({ laneIndex: 0, seed: 0 }).spin);
     expect(screen.getByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeDefined();
-    expect(screen.queryByLabelText('Not started')).toBeNull();
+    expect(screen.queryByLabelText('Queued')).toBeNull();
   });
 
   it('leaves a run with no decision in flight on the idle clock and no sentence', () => {
@@ -302,7 +302,7 @@ describe('TimelineStreamRow', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Not started')).toBeDefined();
+    expect(screen.getByLabelText('Queued')).toBeDefined();
     expect(container.querySelector('[class*="spin-border"]')).toBeNull();
     expect(screen.queryByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeNull();
   });

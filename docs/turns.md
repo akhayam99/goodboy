@@ -1263,7 +1263,7 @@ a completed report or wireframe agent back to `blocked` once the capture
 error lands (`sendTurn`). A plan that fails to save keeps the step moving. A step that has not said it is done and
 emitted no block keeps the usual continue path. The missing-block case also
 emits `artifact_capture_failed` with code `missing`, so the transcript shows
-the Retry capture card. A captured artifact of the expected kind counts as the
+the Rewrite card. A captured artifact of the expected kind counts as the
 step output, so the repair turn completes the step without a step-done marker
 (`apps/desktop/src/features/artifacts/turnArtifactOutcome.ts`). A blocked
 report or wireframe agent that owns no artifact reads "No artifact" in amber

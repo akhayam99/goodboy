@@ -8,7 +8,7 @@ const VERB: Readonly<Record<AutoStuckKind, string>> = {
   neverStarted: 'never started',
   failed: 'failed',
   timedOut: 'timed out',
-  childBlocked: 'is blocked',
+  childBlocked: 'needs you',
 };
 
 export const autoStuckVerbOf = ({ kind }: Params): string => VERB[kind];

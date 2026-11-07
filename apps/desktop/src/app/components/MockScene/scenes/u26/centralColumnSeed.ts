@@ -1,3 +1,4 @@
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import {
   brandId,
   type Agent,
@@ -36,7 +37,16 @@ import { centralAutoSeedOf } from './centralAutoSeed';
 export const COLUMN_SESSION_ID = SESSION_ID;
 
 export type ColumnKind =
-  'mid' | 'finished' | 'stuck' | 'blocked' | 'failed' | 'orchestrated' | 'agent' | 'branches';
+  | 'mid'
+  | 'finished'
+  | 'stuck'
+  | 'blocked'
+  | 'failed'
+  | 'noreply'
+  | 'limit'
+  | 'orchestrated'
+  | 'agent'
+  | 'branches';
 
 type SeedParams = {
   readonly kind: ColumnKind;
@@ -602,6 +612,18 @@ const autoPartsOf = ({ variant }: AutoPartsParams): AutoParts => {
   };
 };
 
+type StoppedAutoParams = {
+  readonly reason: string | null;
+};
+
+const stoppedAutoPartsOf = ({ reason }: StoppedAutoParams): AutoParts => {
+  const auto = autoPartsOf({ variant: 'working' });
+  return {
+    ...auto,
+    view: { ...auto.view, tree: { ...auto.view.tree, phase: 'blocked', blockedReason: reason } },
+  };
+};
+
 type Parts = {
   readonly agents: ReadonlyArray<Agent>;
   readonly workflows: ReadonlyArray<Workflow>;
@@ -682,6 +704,22 @@ const partsOf = ({ kind }: SeedParams): Parts => {
     case 'blocked':
     case 'failed': {
       const auto = autoPartsOf({ variant: kind });
+      return {
+        ...NO_PARTS,
+        agents: auto.agents,
+        views: [auto.view],
+        extraSpans: auto.spans,
+        pr: prOf({ checks: 'pending' }),
+        runningIds: auto.agents
+          .filter((agent) => agent.status === 'running')
+          .map((agent) => agent.id),
+      };
+    }
+    case 'noreply':
+    case 'limit': {
+      const auto = stoppedAutoPartsOf({
+        reason: kind === 'limit' ? AUTO_BLOCK_TEXT.budget : null,
+      });
       return {
         ...NO_PARTS,
         agents: auto.agents,

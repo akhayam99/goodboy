@@ -16,9 +16,16 @@ type Params = {
 
 const SECTION_ORDER: ReadonlyArray<RunningSectionId> = ['running', 'stopped'];
 
-const SECTION_TITLE: Readonly<Record<RunningSectionId, string>> = {
-  running: NAMES.running,
-  stopped: 'Stopped',
+type TitleParams = {
+  readonly id: RunningSectionId;
+  readonly groups: ReadonlyArray<LiveGroupModel>;
+};
+
+const sectionTitleOf = ({ id, groups }: TitleParams): string => {
+  if (id === 'running') {
+    return NAMES.running;
+  }
+  return groups.every((group) => group.state === 'failed') ? NAMES.failed : NAMES.stopped;
 };
 
 export const liveSectionsOf = ({ groups }: Params): ReadonlyArray<LiveSection> =>
@@ -26,5 +33,7 @@ export const liveSectionsOf = ({ groups }: Params): ReadonlyArray<LiveSection> =
     const inSection = groups
       .filter((group) => liveSectionIdOf({ group }) === id)
       .sort((first, second) => first.startedAt - second.startedAt);
-    return inSection.length === 0 ? [] : [{ id, title: SECTION_TITLE[id], groups: inSection }];
+    return inSection.length === 0
+      ? []
+      : [{ id, title: sectionTitleOf({ id, groups: inSection }), groups: inSection }];
   });

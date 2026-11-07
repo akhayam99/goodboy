@@ -152,7 +152,7 @@ const TABLE: ReadonlyArray<Row> = [
     'blocked',
     'none',
     false,
-    { phase: 'waiting', word: 'Blocked', node: 'approval', label: 'Blocked', dot: 'needsYou' },
+    { phase: 'waiting', word: 'Needs you', node: 'approval', label: 'Needs you', dot: 'needsYou' },
   ],
   [
     'stopped',
@@ -184,7 +184,7 @@ const TABLE: ReadonlyArray<Row> = [
     'pending',
     'none',
     false,
-    { phase: 'queued', word: 'Pending', node: 'queued', label: 'Not started', dot: 'idle' },
+    { phase: 'queued', word: 'Queued', node: 'queued', label: 'Queued', dot: 'idle' },
   ],
 ];
 

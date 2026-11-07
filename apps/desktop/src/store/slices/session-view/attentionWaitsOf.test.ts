@@ -12,6 +12,7 @@ import {
   type WorkflowRunId,
   type WorkspaceId,
 } from '@goodboy/types';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import {
   FIXTURE_ROOT,
@@ -51,6 +52,7 @@ const NONE = {
   hasLimitPausedRun: false,
   hasRunWaitingForGo: false,
   hasAutoNeedsYou: false,
+  hasAutoFailed: false,
   hasSlackReplyWaiting: false,
 };
 
@@ -161,11 +163,41 @@ describe('attentionWaitsOf and Auto', () => {
     autoTreeViews: { [SESSION_ID]: views },
   });
 
-  it('raises an Auto tree that is blocked', () => {
-    expect(
-      waitsOf({ state: stateOf({ views: [aView({ phase: 'blocked' })], agents: [ROOT] }) })
-        .hasAutoNeedsYou,
-    ).toBe(true);
+  it('raises an Auto tree that stopped replying as a failure, not as Needs you', () => {
+    const waits = waitsOf({
+      state: stateOf({ views: [aView({ phase: 'blocked' })], agents: [ROOT] }),
+    });
+
+    expect(waits.hasAutoFailed).toBe(true);
+    expect(waits.hasAutoNeedsYou).toBe(false);
+    expect(waits.hasLimitPausedRun).toBe(false);
+  });
+
+  it('raises an Auto tree at its limit as a paused run, never as a failure', () => {
+    const spent = waitsOf({
+      state: stateOf({
+        views: [aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 })],
+        agents: [ROOT],
+      }),
+    });
+    const blocked = aView({ phase: 'blocked' });
+    const walled = waitsOf({
+      state: stateOf({
+        views: [
+          {
+            ...blocked,
+            tree: { ...blocked.tree, blockedReason: AUTO_BLOCK_TEXT.limit_wall_clock },
+          },
+        ],
+        agents: [ROOT],
+      }),
+    });
+
+    for (const waits of [spent, walled]) {
+      expect(waits.hasLimitPausedRun).toBe(true);
+      expect(waits.hasAutoFailed).toBe(false);
+      expect(waits.hasAutoNeedsYou).toBe(false);
+    }
   });
 
   it('raises an Auto tree whose plan waits for approval', () => {

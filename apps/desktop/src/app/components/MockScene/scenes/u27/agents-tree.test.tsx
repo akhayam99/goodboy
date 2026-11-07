@@ -53,7 +53,7 @@ const mount = ({ id }: MountParams) => {
 };
 
 const launches = async (): Promise<HTMLElement> =>
-  screen.findByRole('tree', { name: 'Launches' }, WAIT);
+  screen.findByRole('tree', { name: 'Agents' }, WAIT);
 
 type TreeParams = {
   readonly tree: HTMLElement;
@@ -96,9 +96,9 @@ describe('the u27 Agents tree scenes', () => {
     expect(roots.map((root) => root.getAttribute('aria-expanded'))).toEqual(['true', null, null]);
     expect(
       within(tree)
-        .getAllByRole('treeitem', { name: /helpers$/ })
+        .getAllByRole('treeitem', { name: /subagents$/ })
         .map((item) => item.getAttribute('aria-label')),
-    ).toEqual(['3 helpers', '2 helpers']);
+    ).toEqual(['3 subagents', '2 subagents']);
     expect(labelsOf({ tree })).toHaveLength(13 + 2 + 2);
   });
 
@@ -141,7 +141,7 @@ describe('the u27 Agents tree scenes', () => {
     const tree = await launches();
     const cache = within(tree).getByRole('treeitem', { name: /Harborline cache/ });
     expect(within(cache).queryByTestId('spawned-fold-toggle')).toBeNull();
-    const summary = within(tree).getByRole('treeitem', { name: '3 helpers' });
+    const summary = within(tree).getByRole('treeitem', { name: '3 subagents' });
     act(() => summary.focus());
     fireEvent.keyDown(summary, { key: 'ArrowRight' });
     expect(summary.getAttribute('aria-expanded')).toBe('true');

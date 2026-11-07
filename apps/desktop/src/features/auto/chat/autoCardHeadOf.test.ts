@@ -5,7 +5,7 @@ import { autoCardHeadOf } from './autoCardHeadOf';
 
 const OUTCOMES: ReadonlyArray<{ outcome: AutoOutcome; word: string }> = [
   { outcome: 'failed', word: 'Failed' },
-  { outcome: 'blocked', word: 'Blocked' },
+  { outcome: 'blocked', word: 'Needs you' },
   { outcome: 'stopped', word: 'Stopped' },
   { outcome: 'timed_out', word: 'Failed' },
 ];

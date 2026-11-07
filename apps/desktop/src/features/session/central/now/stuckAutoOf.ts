@@ -13,8 +13,7 @@ type Params = {
 
 export const stuckAutoOf = ({ groups, views }: Params): StuckAuto | null => {
   const group = groups.find(
-    (candidate): candidate is LiveAutoGroup =>
-      candidate.kind === 'auto' && candidate.state === 'stuck',
+    (candidate): candidate is LiveAutoGroup => candidate.kind === 'auto' && candidate.group.isStuck,
   );
   if (group === undefined) {
     return null;

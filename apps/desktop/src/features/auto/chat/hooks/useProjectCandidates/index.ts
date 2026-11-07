@@ -5,7 +5,7 @@ import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import type { ProjectCandidate } from '../../projectCandidate';
 
-const ANOTHER_LINE = 'Not in this session. A worktree is created from main.';
+const ANOTHER_LINE = 'Not in this session. A branch starts from main.';
 
 type Params = {
   readonly sessionId: SessionId;

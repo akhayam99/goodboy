@@ -62,7 +62,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
                 <span
                   className={`shrink-0 rounded-md px-1 py-px text-chip ${warningTint.bg} ${warningTint.text}`}
                 >
-                  partial brief
+                  Short summary
                 </span>
               )
             }
@@ -93,7 +93,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             tone="warning"
             placement="inline"
             title="The step summary failed"
-            body="This step received a deterministic copy of the previous output. Long output omits its middle. A retry repairs the summary for later steps, but can't replace context already sent to this step."
+            body="This step got a short copy of the last result and keeps it. Retry writes a proper summary for the steps after it."
             actions={
               <Button
                 variant="secondary"
@@ -106,7 +106,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
             }
           />
         ) : null}
-        <Eyebrow label="carried forward" />
+        <Eyebrow label="Passed on" />
         <ScrollFade orientation="horizontal" className="text-meta text-foreground">
           <Markdown text={context} />
         </ScrollFade>

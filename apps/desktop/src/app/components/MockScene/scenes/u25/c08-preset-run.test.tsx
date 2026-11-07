@@ -178,7 +178,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-approval says the plan waits and asks for it on the quiet line of the step', async () => {
     await mount('c08-run-approval');
 
-    expect(within(tail()).getByText('The plan waits for your review')).toBeDefined();
+    expect(within(tail()).getByText('The plan needs approval')).toBeDefined();
     expect(
       within(tail()).getByRole('button', { name: 'Approve and start Fix the batching' }),
     ).toBeDefined();

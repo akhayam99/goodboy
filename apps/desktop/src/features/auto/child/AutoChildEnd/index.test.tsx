@@ -83,7 +83,7 @@ describe('the end of an Auto child page', () => {
     const delegation = aDelegation({ key: 'impl', role: 'implementer', state: 'paused' });
     show({ delegation });
 
-    screen.getByText('Asked a question');
+    screen.getByText('Needs your answer');
     expect(screen.queryByText('Queued')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
   });

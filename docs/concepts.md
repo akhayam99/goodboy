@@ -257,8 +257,16 @@ without motion, counted in "N sessions need you" and sorted ahead of what runs. 
 session's **needs-approval** reason in the attention registry reads the same
 fact through `isTurnStatePermissionBlocked` in `features/session/agent-lifecycle.ts`,
 so the agent word and the session count never disagree. A stopped
-agent that is not closed reads **Stopped**, with a **Continue** on its row, and
-**Blocked** is a warning, never a failure.
+agent that is not closed reads **Stopped**, with a **Continue** on its row.
+
+One table of words, `NAMES` in `shared/utils/names.ts`, read by `glanceOf`
+and every row: **Needs you**, **Needs approval**, **Not finished**,
+**Running**, **Queued**, **Ready**, **Paused**, **Failed**, **Stopping**,
+**Stopped**, **Done**, **Idle**, **Not started**, **Skipped**, **Closed**.
+**Stuck**, **Blocked** (outside a pull request's merge state), **Working**,
+**Planning** and **Pending** are not words on screen. An error reads **Failed**,
+a limit reads **Paused**, a hint, a stopped Auto or an agent that stopped
+unfinished reads **Needs you** with one sentence.
 
 Needs you counts three units, and each tooltip names its own: sessions ("2
 sessions need you") on the Sessions door, the dock badge and the palette; questions ("3 questions") on the Questions entry of the session rail;
@@ -707,7 +715,7 @@ yourself.
 
 An agent of a role you name starts from **Start a run** with `@` and the
 role: it starts at once with the rest of the ask as its first message. An
-agent with no first message yet reads "Waiting for your first message" and
+agent with no first message yet reads "Write to start" and
 does not count as needing you.
 
 An agent finishes on its own. Once its last turn succeeded, it has no open

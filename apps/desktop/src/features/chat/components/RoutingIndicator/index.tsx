@@ -58,7 +58,7 @@ export const RoutingIndicator = ({
         className={`flex items-center gap-2 text-meta ${warningAccent.text}`}
       >
         <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span className="flex-1">All provider budgets exceeded</span>
+        <span className="flex-1">Every provider is at its limit</span>
         {onSendAnyway !== undefined ? (
           <button
             type="button"
@@ -83,8 +83,8 @@ export const RoutingIndicator = ({
 
   const fromLabel = PROVIDER_LABEL[decision.fallbackFrom];
   const causeByReason: Partial<Record<RoutingReason, string>> = {
-    'fallback-budget': `Budget exceeded for ${fromLabel}`,
-    'fallback-threshold': `${fromLabel} past its budget threshold`,
+    'fallback-budget': `${fromLabel} is at its limit`,
+    'fallback-threshold': `${fromLabel} is near its limit`,
     'fallback-disconnected': `${fromLabel} disconnected`,
     'fallback-cooldown': `${fromLabel} at its usage limit`,
   };

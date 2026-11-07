@@ -1,5 +1,6 @@
 import { cn, tintClasses } from '@goodboy/ui';
 import { DockStopButton } from '../../../../shared/components/DockStopButton';
+import { NAMES } from '../../../../shared/utils/names';
 import type { ConversationLive, ConversationStop } from '../../../../shared/types/conversationStop';
 import { TailClock } from '../../../live-state/TailClock';
 import { glanceOf } from '../../../session/glance/glanceOf';
@@ -11,7 +12,7 @@ type Props = {
   readonly isStopArmed: boolean;
 };
 
-const RUNNING_TONE = glanceOf({ state: 'working', sentence: '' }).tone;
+const RUNNING_TONE = glanceOf({ state: 'running', sentence: '' }).tone;
 
 export const DockLiveLine = ({ live, stop, isStopArmed }: Props) => {
   const isStopIdle = stop.phase === 'idle';
@@ -33,7 +34,7 @@ export const DockLiveLine = ({ live, stop, isStopArmed }: Props) => {
           )}
         />
       )}
-      <span role="status" aria-label="Agent working" className="min-w-0 truncate text-foreground">
+      <span role="status" aria-label={NAMES.running} className="min-w-0 truncate text-foreground">
         {sentence}
       </span>
       <TailClock startedAt={live.startedAt} stepAgentId={live.stepAgentId} isRunning={isStopIdle} />

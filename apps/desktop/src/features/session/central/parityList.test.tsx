@@ -136,49 +136,47 @@ const usualTimes = (): DurationHistory => ({
 });
 
 describe('the parity list of the Overview, walked on the cards', () => {
-  it('1: a stuck agent is reachable from Running, with its state and the way to open it', async () => {
+  it('1: a stuck agent is reachable from Needs you, with its state and the way to open it', async () => {
     await show({ kind: 'stuck' });
 
-    const auto = within(cardOf({ name: 'Running' })).getByRole('region', {
-      name: /^Auto agent: Harden retries/,
-    });
-    expect(auto.getAttribute('data-state')).toBe('stuck');
-    expect(auto.textContent).toContain('Stuck');
-    fireEvent.click(within(auto).getByRole('button', { name: /agents?$/ }));
-    expect(auto.textContent).toContain('Never started');
-    within(auto).getByRole('button', { name: 'Open Auto chat' });
+    const needsYou = cardOf({ name: 'Needs you' });
+    expect(needsYou.textContent).toContain('Auto needs you');
+    expect(needsYou.textContent).not.toContain('Stuck');
+    fireEvent.click(within(needsYou).getByRole('button', { name: /^\d+ agents?$/ }));
+    expect(needsYou.textContent).toContain('Not started');
+    within(needsYou).getByRole('button', { name: 'Open Auto' });
   });
 
   it('1: a child row of the Auto block opens the agent page, never a panel', async () => {
     await show({ kind: 'stuck' });
 
-    const auto = within(cardOf({ name: 'Running' })).getByRole('region', {
+    const auto = within(cardOf({ name: 'Needs you' })).getByRole('region', {
       name: /^Auto agent: Harden retries/,
     });
     fireEvent.click(within(auto).getByRole('button', { name: /agents?$/ }));
     const before = useAppStore.getState().selectedAgentId[COLUMN_SESSION_ID] ?? null;
-    fireEvent.click(within(auto).getByRole('button', { name: /never started$/i }));
+    fireEvent.click(within(auto).getByRole('button', { name: /not started$/i }));
 
     expect(useAppStore.getState().selectedAgentId[COLUMN_SESSION_ID]).not.toBe(before);
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('1: an agent that timed out stays in Running and asks in Needs you', async () => {
+  it('1: an agent that timed out asks in Needs you, never under the word Stuck', async () => {
     await show({ kind: 'failed' });
 
-    expect(cardOf({ name: 'Running' }).textContent).toContain('Stuck');
-    expect(cardOf({ name: 'Needs you' }).textContent).toContain('Auto is stuck');
+    expect(cardOf({ name: 'Needs you' }).textContent).toContain('Auto needs you');
+    expect(cardOf({ name: 'Needs you' }).textContent).not.toContain('Stuck');
   });
 
-  it('1: a child that declared itself blocked says Blocked on the Auto row', async () => {
+  it('1: a child that declared itself blocked says Needs you on the Auto row', async () => {
     await show({ kind: 'blocked' });
 
-    for (const toggle of within(cardOf({ name: 'Running' })).getAllByRole('button', {
+    for (const toggle of within(cardOf({ name: 'Needs you' })).getAllByRole('button', {
       name: /agents?$/,
     })) {
       fireEvent.click(toggle);
     }
-    expect(cardOf({ name: 'Running' }).textContent).toContain('Blocked');
+    expect(cardOf({ name: 'Needs you' }).textContent).not.toContain('Blocked');
   });
 
   it('2: the Needs you ask keeps its group, its sentence and the button that opens it', async () => {
@@ -190,7 +188,7 @@ describe('the parity list of the Overview, walked on the cards', () => {
 
     const needsYou = cardOf({ name: 'Needs you' });
     expect(needsYou.querySelector('[data-next-group-head]')).toBeNull();
-    expect(needsYou.textContent).toContain('Auto is stuck');
+    expect(needsYou.textContent).toContain('Auto needs you');
     fireEvent.click(within(needsYou).getByRole('button', { name: 'Open Auto' }));
 
     expect(navigate).toHaveBeenCalledTimes(1);
@@ -251,19 +249,16 @@ describe('the parity list of the Overview, walked on the cards', () => {
     expect(run.textContent).toMatch(/\d+m/);
   });
 
-  it('5: the stuck Auto line offers Answer and Stop, and Retry sits once in Needs you', async () => {
+  it('5: the stuck Auto is one block with Open Auto, Stop and Retry once, and no Answer line', async () => {
     await show({ kind: 'stuck' });
 
-    const line = document.querySelector<HTMLElement>('[data-now-actions]');
-    if (line === null) {
-      throw new Error('The stuck line must be drawn');
-    }
-    const actions = within(line);
-    expect(actions.queryByRole('button', { name: /^Retry "/ })).toBeNull();
+    expect(document.querySelector('[data-now-actions]')).toBeNull();
     expect(screen.getAllByRole('button', { name: /^Retry "/ })).toHaveLength(1);
-    within(cardOf({ name: 'Needs you' })).getByRole('button', { name: /^Retry "/ });
-    actions.getByRole('button', { name: 'Answer Auto in its chat' });
-    actions.getByRole('button', { name: 'Stop Auto and its agents' });
+    const card = within(cardOf({ name: 'Needs you' }));
+    card.getByRole('button', { name: /^Retry "/ });
+    card.getByRole('button', { name: 'Open Auto' });
+    card.getByRole('button', { name: 'Stop Auto and its agents' });
+    expect(card.queryByRole('button', { name: 'Answer Auto in its chat' })).toBeNull();
   });
 
   it('6: an archived session keeps the Done card and its Full log, nothing else', async () => {

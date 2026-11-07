@@ -401,10 +401,10 @@ describe('a row click opens its place', () => {
     };
     mount({ group: groupOf({ autoTargets: [BILLING_CHILD], suggestions: [checks] }) });
 
-    fireEvent.click(screen.getByText('Auto is stuck'));
+    fireEvent.click(screen.getByText('Auto needs you'));
     fireEvent.click(screen.getByText('Fix failing checks on #9995'));
     fireEvent.click(
-      within(rowOf({ title: 'Auto is stuck' })).getByRole('button', { name: /Retry/ }),
+      within(rowOf({ title: 'Auto needs you' })).getByRole('button', { name: /Retry/ }),
     );
 
     expect(navigate.mock.calls.map(([call]) => call.to)).toEqual([
@@ -419,8 +419,8 @@ describe('a row click opens its place', () => {
   it('opens the place from the keyboard once', () => {
     mount({ group: groupOf({ autoTargets: [BILLING_CHILD] }) });
 
-    fireEvent.keyDown(screen.getByRole('link', { name: 'Auto is stuck' }), { key: 'Enter' });
-    fireEvent.keyDown(screen.getByRole('link', { name: 'Auto is stuck' }), { key: 'Tab' });
+    fireEvent.keyDown(screen.getByRole('link', { name: 'Auto needs you' }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('link', { name: 'Auto needs you' }), { key: 'Tab' });
 
     expect(navigate.mock.calls.map(([call]) => call.to)).toEqual([
       { at: 'agent', sessionId: FIXTURE_SESSION, agentId: BILLING_CHILD.agentId },

@@ -206,7 +206,7 @@ describe('the c09 orchestrated scenes', () => {
   it('c09-orch-ready waits for your go on the tail with Decide next step in the header', async () => {
     await mount('c09-orch-ready');
 
-    expect(within(tail()).getByText('Waiting for your go')).toBeDefined();
+    expect(within(tail()).getByText('Ready')).toBeDefined();
     expect(within(header()).getByRole('button', { name: 'Decide next step' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Decide next step' })).toHaveLength(1);
   });

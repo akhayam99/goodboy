@@ -3,4 +3,4 @@ type Params = {
 };
 
 export const helpersWordOf = ({ count }: Params): string =>
-  count === 1 ? '1 helper' : `${count} helpers`;
+  count === 1 ? '1 subagent' : `${count} subagents`;

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core/auto';
 import type { AutoOutcome } from '@goodboy/db';
 import { brandId, type AgentId } from '@goodboy/types';
+import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { anAgent } from '@goodboy/types/testing';
 import {
   aDelegation,
@@ -34,6 +36,10 @@ type ChildAgentParams = {
 
 const childAgentOf = ({ key }: ChildAgentParams) =>
   anAgent({ id: brandId<AgentId>({ value: `agent-${key}` }), parentAgentId: FIXTURE_ROOT });
+
+type TargetsParams = {
+  readonly view: AutoTreeView;
+};
 
 describe('autoRetryTargetsOf', () => {
   it('targets a child that never started', () => {
@@ -69,6 +75,19 @@ describe('autoRetryTargetsOf', () => {
     ).toEqual([]);
   });
 
+  it('targets an Auto that stopped replying, but not one blocked by a limit', () => {
+    const failed = aView({ phase: 'blocked' });
+    const limited = {
+      ...failed,
+      tree: { ...failed.tree, blockedReason: AUTO_BLOCK_TEXT.limit_wall_clock },
+    };
+    const targetsOf = ({ view }: TargetsParams) =>
+      autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW });
+
+    expect(targetsOf({ view: failed }).map((target) => target.kind)).toEqual(['blocked']);
+    expect(targetsOf({ view: limited })).toEqual([]);
+  });
+
   it('targets failed, timed out and blocked children with their reason', () => {
     const view = aView({
       phase: 'waiting',
@@ -93,7 +112,7 @@ describe('autoRetryTargetsOf', () => {
     expect(targets.map((target) => [target.kind, target.reason])).toEqual([
       ['failed', 'The agent ended with an error.'],
       ['timedOut', 'It ran out of time.'],
-      ['childBlocked', 'It reported that it is blocked.'],
+      ['childBlocked', "It said it can't go on."],
     ]);
   });
 

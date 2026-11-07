@@ -20,7 +20,7 @@ import type {
 } from '../../timeline/buildTimelineGroups';
 import type { SessionWorkModel } from '../useSessionWorkModel';
 
-export type LiveGroupState = 'stuck' | 'waiting' | 'working' | 'deciding';
+export type LiveGroupState = 'failed' | 'waiting' | 'working' | 'deciding';
 
 export type LiveChild = Readonly<{
   agentId: AgentId;
@@ -136,7 +136,7 @@ const stateOfPhase = ({ phase }: PhaseParams): LiveGroupState | null => {
     case 'waiting':
       return 'waiting';
     case 'failed':
-      return 'stuck';
+      return 'failed';
     case 'queued':
     case 'done':
     case 'closed':
@@ -282,11 +282,14 @@ type AutoParams = {
 };
 
 const autoStateOf = ({ group }: Pick<AutoParams, 'group'>): LiveGroupState | null => {
+  if (group.phase === 'failed') {
+    return 'failed';
+  }
   if (group.phase !== 'running' && group.phase !== 'waiting') {
     return null;
   }
   if (group.isStuck) {
-    return 'stuck';
+    return 'waiting';
   }
   return group.phase === 'waiting' ? 'waiting' : 'working';
 };
@@ -360,7 +363,7 @@ const groupOfEntry = ({ entry, rowState, model }: EntryParams): LiveGroupModel |
 };
 
 const STATE_RANK: Readonly<Record<LiveGroupState, number>> = {
-  stuck: 0,
+  failed: 0,
   waiting: 1,
   deciding: 2,
   working: 3,

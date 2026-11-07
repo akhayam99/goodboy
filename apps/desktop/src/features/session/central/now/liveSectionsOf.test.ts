@@ -47,6 +47,17 @@ describe('liveSectionsOf', () => {
     expect(sections.map(([id]) => id)).toEqual(['stopped']);
   });
 
+  it('titles the section after the word its rows read: Failed for errors, Stopped otherwise', () => {
+    const titlesOf = ({ statuses }: StatusParams) => {
+      const agents = statuses.map(([name, status]) => aNowAgent({ key: name, name, status }));
+      const groups = liveGroupsOf({ model: nowModelOf({ agents }), agents, now: FIXTURE_NOW });
+      return liveSectionsOf({ groups }).map((section) => section.title);
+    };
+
+    expect(titlesOf({ statuses: [['Retry the import', 'failed']] })).toEqual(['Failed']);
+    expect(titlesOf({ statuses: [['Rebuild the index', 'running']] })).toEqual(['Running']);
+  });
+
   it('leaves out a section with nothing in it', () => {
     expect(sectionsOf({ statuses: [['Rebuild the index', 'running']] })).toEqual([
       ['running', ['Rebuild the index']],

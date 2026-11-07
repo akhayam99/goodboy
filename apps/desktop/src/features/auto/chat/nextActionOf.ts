@@ -30,7 +30,7 @@ const primaryLabelOf = ({ view, delegation, card }: Params): string => {
       ? undefined
       : view.artifacts.find((candidate) => candidate.artifact.artifactId === delegation.reviseOf);
   return row === undefined
-    ? `Spawn ${card.roleLabel.toLowerCase()}`
+    ? `Start ${card.roleLabel.toLowerCase()}`
     : `Revise ${row.title} to v${row.revision + 1}`;
 };
 

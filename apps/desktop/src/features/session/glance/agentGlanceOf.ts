@@ -1,5 +1,6 @@
 import { notFinishedKindOf } from '@goodboy/core/workflows';
 import type { Agent, TurnState } from '@goodboy/types';
+import { isAwaitingFirstMessage } from '../../workTreeModel/rowState';
 import { effectiveAgentStatusOf } from '../../workTreeModel/agentStateOf';
 import { glanceOf, type Glance } from './glanceOf';
 import { stoppedSentenceOf } from './stoppedSentenceOf';
@@ -22,25 +23,28 @@ const skippedSentenceOf = ({ agent }: SkippedParams): string => {
 };
 
 export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
+  if (turnState?.kind === 'blocked') {
+    return glanceOf({ state: 'waiting', sentence: 'Needs permission' });
+  }
   const isBlockedAtRest = agent.status === 'blocked' && turnState?.kind !== 'running';
-  if (turnState?.kind === 'blocked' || isBlockedAtRest) {
-    return glanceOf({ state: 'waiting', sentence: 'Waiting for your OK to go on' });
+  if (isBlockedAtRest) {
+    return glanceOf({ state: 'waiting', sentence: 'Tell it what to do next' });
   }
   if (turnState?.kind === 'error') {
     return glanceOf({
-      state: 'stuck',
+      state: 'failed',
       sentence: humanTurnErrorOf({ message: turnState.message, agent }),
     });
   }
   if (turnState?.kind === 'starting') {
-    return glanceOf({ state: 'working', sentence: 'Starting' });
+    return glanceOf({ state: 'running', sentence: 'Starting' });
   }
   const status = effectiveAgentStatusOf({ agent, turn: turnState });
   if (status === 'running') {
-    return glanceOf({ state: 'working', sentence: '' });
+    return glanceOf({ state: 'running', sentence: '' });
   }
   if (status === 'failed') {
-    return glanceOf({ state: 'stuck', sentence: 'The agent failed' });
+    return glanceOf({ state: 'failed', sentence: 'The agent ended on an error' });
   }
   if (status === 'stopped') {
     return glanceOf({ state: 'stopped', sentence: stoppedSentenceOf({ agent }) });
@@ -49,10 +53,16 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
     return glanceOf({ state: 'idle', sentence: '' });
   }
   if (status === 'skipped') {
-    return glanceOf({ state: 'idle', sentence: skippedSentenceOf({ agent }) });
+    return glanceOf({ state: 'skipped', sentence: skippedSentenceOf({ agent }) });
   }
   if (status === 'pending') {
-    return glanceOf({ state: 'idle', sentence: 'Queued' });
+    if (isAwaitingFirstMessage({ agent })) {
+      return glanceOf({ state: 'queued', sentence: 'Write to start' });
+    }
+    return glanceOf({
+      state: 'queued',
+      sentence: agent.parentAgentId == null ? 'Not started yet' : 'Starts on its own',
+    });
   }
   return glanceOf({ state: 'idle', sentence: '' });
 };

@@ -34,7 +34,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'errors',
     tone: 'danger',
     mark: '!',
-    words: 'An agent stopped on an error',
+    words: 'An agent failed',
   }),
   'push-failed': entryOf({
     icon: 'review',
@@ -108,19 +108,19 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'runStopped',
     tone: 'warning',
     mark: 'approval',
-    words: 'A run waits for you to continue',
+    words: 'Step is ready',
   }),
   'auto-needs-you': entryOf({
     icon: 'auto',
     tone: 'warning',
     mark: 'approval',
-    words: 'Auto waits for you',
+    words: 'Auto needs you',
   }),
   'slack-reply-waiting': entryOf({
     icon: 'slack',
     tone: 'warning',
     mark: 'approval',
-    words: 'A Slack reply waits for your OK',
+    words: 'A Slack reply needs approval',
   }),
 };
 
@@ -208,11 +208,11 @@ type SessionStageEntry = {
 export const SESSION_STAGE_META: Record<SessionStage, SessionStageEntry> = {
   attention: {
     label: NAMES.needsYou.toLowerCase(),
-    reason: 'Blocked until you act',
+    reason: 'Nothing moves until you act',
   },
   running: {
     label: NAMES.running.toLowerCase(),
-    reason: 'An agent is working right now',
+    reason: 'An agent is running',
   },
   review: {
     label: NAMES.inReview.toLowerCase(),

@@ -67,7 +67,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 **Needs you**
 
 - It is the one card for everything that waits for you. First come runs and agents that paused for an answer, oldest first.
-- Then come the rows that ask a decision or a fix: a plan that waits on your OK, a question, a stuck agent, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
+- Then come the rows that ask a decision or a fix: a plan that needs approval, a question, an agent that needs you, a failing check, review conversations. They sit in one list with no **Decide** or **Fix** label.
 - Its header counts the rows drawn. With nothing waiting the card is gone and the line under the goal says **Nothing needs you**.
 - The first row holds the one filled button. Every other row has one quiet verb and no **⋯** at rest; the rest of its moves sit in the right click menu.
 - A run or agent that waits is not drawn again when a row above already asks the same thing.
@@ -75,7 +75,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 
 **Running**
 
-- It groups the agents and runs in two parts. **Running** works or decides, **Stopped** failed or was stopped by you, and keeps its **Continue**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
+- It groups the agents and runs in two parts. **Running** works or decides, **Stopped** holds what you stopped and keeps its **Continue**. When everything in it failed, the part reads **Failed**. Work that waits for you is in **Needs you**, never here. A part with nothing in it is not drawn. Inside a part the items keep the order they started in.
 - The Auto agent row says **Auto agent** once and shows what it waits for under its title, so a long sentence is never cut in the state column. A right click on it opens the same menu as the agent.
 - Every row is one line: one round icon (the role colors the icon, nothing else), the kind (**Workflow**, the role of an agent, **Auto agent**), then the title.
 - One **Where** column names the branch it writes to, only when the session has two or more branches. It is blank when the run writes nowhere. It shows the project only across two projects.
@@ -84,7 +84,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
 - The agents a run or an agent started hang under it on one thin line. Auto shows one row with a button such as **2 agents**, which opens its agents.
-- When an agent Auto started is stuck, the Auto row says **Stuck**. One line under it offers **Answer** and **Stop**. **Retry** is on the **Needs you** card, once.
+- When an agent Auto started is stuck, the Needs you card draws one block for that Auto. It holds the sentence and, on its right, **Open Auto**, **Stop** and **Retry**. Its agents fold sits under it, with no second row. **Answer** is gone. An Auto that a card already speaks for counts once, with no second card. One stuck child reads "1 needs you". A tree that stopped replying reads Failed on its one Needs you row. The glance reads "Auto failed", never "1 needs you" beside it. An Auto without a card keeps its own row.
 - **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 
 **Next**
@@ -191,7 +191,7 @@ Each branch, pull request or Auto plan shows once per kind of work.
 - Say an agent Auto started is stuck on a branch that also has a failing check, or two of its agents are stuck there. Next shows one row led by the worst blocker: blocked, then timed out, then never started, then a check.
 - That row says "and 1 more" in its sentence and puts the others in its **⋯** menu.
 - A stuck agent reads by its role and state, as in "The tester timed out. It ran out of time." It never quotes the request Auto sent it.
-- A row's title is its subject. A plan that waits on your OK is titled by the plan's name. Its sentence reads "Plan v3 waits on your OK. The run covers 4 branches." These are the branches its agents work on.
+- A row's title is its subject. A plan that waits on your OK is titled by the plan's name. Its sentence reads "Plan v3 needs approval. The run covers 4 branches." These are the branches its agents work on.
 - A **Fix** row on a known branch is titled by the branch and its open pull request, as in "hl/feat-center-home-page · #9995". One sentence sits under it, such as "4 comments to fix."
 - Rows in **Update** and **Ship** keep their verb titles, except a stopped rebase.
 
@@ -267,7 +267,7 @@ This part is for contributors and agents who change the feature.
 - Overview cards: `overviewCardsOf` picks the cards, and an archived session keeps only **Done**. `OverviewCard`, `NewSinceCard`, `LiveSection` and the Branches list draw their label with `SectionLabel`, level 2, and `CentralColumn` spaces the cards with `PANE_RHYTHM.groups`.
 - Loading skeleton: `SessionOverviewSkeleton` draws its cards from the same `overviewCardsOf` and the same surface (`OVERVIEW_CARD_SURFACE`) with the real card labels, so the first card sits where the real one lands. `SessionWorkspace` shows it through `SkeletonSwap`: nothing for the first 120 ms, then at least 160 ms. The Needs you slot animates its height with `HeightMotion` when its count changes.
 - Reading the task without a diff: `central/pmReading.test.tsx` walks each of the six points against the cards. `summaryStateOf` words the state line.
-- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Running** and **Stopped**. `liveStatusOf` splits a status word from its cause. `liveOwnStateOf` marks a row in the part's own state, and `LiveStateWord` then draws nothing. Child rows of a working row follow it. `useWhereOf` returns no branch under two branches. `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
+- Running card: `liveGroupsOf` orders the rows and `liveSectionsOf` groups them into **Running** and **Stopped** (titled **Failed** when every row failed). `liveStatusOf` splits a status word from its cause. `liveOwnStateOf` marks a row in the part's own state, and `LiveStateWord` then draws nothing. Child rows of a working row follow it. `useWhereOf` returns no branch under two branches. `LiveRow` draws a row and its children with `ROW_COLUMNS`, the same columns `ActionCard` uses.
 - Done card: `doneSummaryOf` writes the one-line summary, `latestDoneOf` lists the last three items and `DoneCard` draws them.
 - Status block: `overviewGlanceOf` words the line, `nextLeadTitleOf` names the step it reads for **Next:**, and `OverviewStatusBlock` draws it with the summary line.
 - Empty session: `useIsEmptySession` is the one rule for the start form, and `CentralColumn` places `FolderCard` after the last card before **Done**.
@@ -276,7 +276,7 @@ This part is for contributors and agents who change the feature.
 - `overviewHasContentOf` decides when the start form leaves: a card is drawn, a branch has commits, a request or a run. A folder card, an unassigned note or a closed worktree notice also keeps it away.
 - Needs you card: `waitingGroupsOf` takes the live groups `liveSectionIdOf` calls waiting, and `NeedsYouCard` draws them above the Decide and Fix rows. `liveSectionsOf` keeps only Running and Stopped.
 - Row copy of **Done** and **New since you last looked**: `outcomeLineOf` writes the title (`plainTitleOf`, rule based, no model) and the meta line (`stepsLabelOf`). `runAgentCountOf` is the one agent count that the Runs grid, the subagent summaries and these rows share. `LatestDoneRow` draws the role icon and the provider mark.
-- Stuck Auto agent: `StuckActions` offers **Retry**, **Answer** and **Stop**.
+- Stuck Auto agent with a card: the card offers **Open Auto**, **Stop** and **Retry** (`autoActions`), its agents fold is `LiveAutoAgents`. Without a card `StuckActions` offers **Answer** and **Stop**.
 - Branches card: `RANK_OF_STATE` in `branchStoryOf` orders the rows, `seriesStripsOf` and `SeriesStrip` draw a series, `mergeSeriesInOrder` merges it and `useMountMenuTarget` opens the branch menu.
 - Tracker move suggestion: `trackerMoveSuggestionOf`.
 - Archive suggestion: `archiveSuggestionOf`.
