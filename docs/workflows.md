@@ -1608,8 +1608,14 @@ the agent's last words and lets the run advance). **Continue** and **Retry**
 live only in the dock of a blocked step (`DockStepLine`). The composer reads
 "Answer the step"; with text, **Continue** or Enter answers the step
 (`answerBlockedStep`, through `useBlockedStepAnswer`), with no text
-**Continue** asks it to go on (`askAgentToContinue`). A failed answer keeps the
-text and names the failure on the dock line. `watchStepEnd` records the end time it set in
+**Continue** asks it to go on (`askAgentToContinue`). The text leaves the
+field before the turn starts and comes back (`restoreDraftOnFailedSend`) with
+the failure on the dock line when the answer fails; one press at a time goes
+through. With attachments in the field the answer is not sent and the dock line
+says to remove them. An open ask or a blocked composer (archived session,
+provider signed out) hides the line or disables **Continue**. The Sessions
+reason of a run with a halted step reads the word of `runStateOf` for that run
+(**Not finished** or **Failed**), through `stoppedRunWord`. `watchStepEnd` records the end time it set in
 `silentlyEndedSteps`, and the notice shows only while the agent's `completedAt`
 still equals it. A step blocked for any other reason (a missing artifact, a
 question, the unattended-turn breaker, a budget stop) keeps its own copy.

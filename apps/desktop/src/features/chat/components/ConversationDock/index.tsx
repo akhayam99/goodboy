@@ -44,7 +44,8 @@ export const ConversationDock = ({
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
   const stopped = useStoppedAnswer({ agentId });
-  useDockAskFocus({ dockRef, askCount: hasAsks ? permissions.length + questions.length : 0 });
+  const askCount = hasAsks ? permissions.length + questions.length : 0;
+  useDockAskFocus({ dockRef, askCount });
   return (
     <div
       ref={dockRef}
@@ -68,10 +69,10 @@ export const ConversationDock = ({
         {stopped === null || agentId === null || failure !== null ? null : (
           <DockStoppedLine sessionId={session.id} agentId={agentId} stopped={stopped} />
         )}
-        {step === null || failure !== null ? null : (
+        {step === null || failure !== null || askCount > 0 ? null : (
           <DockStepLine sessionId={session.id} step={step} />
         )}
-        {hasAsks && agentId !== null && failure === null && step === null ? (
+        {hasAsks && agentId !== null && failure === null ? (
           <ConversationDockLine sessionId={session.id} agentId={agentId} />
         ) : null}
       </ScrollFade>

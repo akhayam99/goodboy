@@ -49,6 +49,7 @@ const CHILD = anAgent({
 
 const NONE = {
   hasStoppedRun: false,
+  stoppedRunWord: null,
   hasLimitPausedRun: false,
   hasRunWaitingForGo: false,
   hasAutoNeedsYou: false,
@@ -98,7 +99,11 @@ describe('attentionWaitsOf and the runs of a session', () => {
   it('raises a run that stopped on a failure', () => {
     const stopped = run({ orchestrationStop: { kind: 'failure', message: 'Failed.' } });
 
-    expect(waitsOf({ workflowRuns: [stopped] })).toEqual({ ...NONE, hasStoppedRun: true });
+    expect(waitsOf({ workflowRuns: [stopped] })).toEqual({
+      ...NONE,
+      hasStoppedRun: true,
+      stoppedRunWord: 'Failed',
+    });
   });
 
   it('raises a run that paused at its limit', () => {
@@ -117,12 +122,19 @@ describe('attentionWaitsOf and the runs of a session', () => {
     });
   });
 
-  it.each(['blocked', 'failed'] as const)('raises a run with a %s step', (status) => {
+  it.each([
+    ['blocked', 'Not finished'],
+    ['failed', 'Failed'],
+  ] as const)('raises a run with a %s step and reads the word of the table', (status, word) => {
     const halted = run({ id: brandId<WorkflowRunId>({ value: 'run-halted' }) });
     const agent = { ...stepAgentOf({ runId: halted.id }), status };
     const state = { sessionPhaseRuns: { [SESSION_ID]: [agent] } };
 
-    expect(waitsOf({ state, workflowRuns: [halted] })).toEqual({ ...NONE, hasStoppedRun: true });
+    expect(waitsOf({ state, workflowRuns: [halted] })).toEqual({
+      ...NONE,
+      hasStoppedRun: true,
+      stoppedRunWord: word,
+    });
   });
 
   it('raises nothing for a run whose workflow is not loaded', () => {

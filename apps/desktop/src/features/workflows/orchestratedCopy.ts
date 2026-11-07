@@ -60,6 +60,7 @@ export const ORCHESTRATED_COPY = {
   continueAction: 'Continue',
   hintLabel: 'Add a hint and continue',
   blockedAnswerLabel: 'Answer the step',
+  blockedAnswerAttachments: 'Remove the attachments to answer the step',
   blockedAnswerFailed: "Couldn't send the answer",
   answersNotDeliveredLabel: 'Answers not delivered',
   answersNotDeliveredTitle: "The agent didn't get your answers",

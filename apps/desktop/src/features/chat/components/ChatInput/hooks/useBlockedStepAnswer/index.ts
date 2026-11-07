@@ -1,13 +1,15 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { restoreDraftOnFailedSend } from '../../../../../../shared/utils/restoreDraftOnFailedSend';
 import { ORCHESTRATED_COPY } from '../../../../../workflows/orchestratedCopy';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId | null;
   readonly hasDraft: boolean;
+  readonly hasAttachments: boolean;
   readonly isBlocked: boolean;
   readonly basePlaceholder: string;
   readonly onSend: () => Promise<void>;
@@ -17,6 +19,7 @@ export type BlockedStepAnswer = Readonly<{
   agentId: AgentId;
   runId: WorkflowRunId;
   isSending: boolean;
+  isComposerBlocked: boolean;
   error: string | null;
   send: () => Promise<void>;
 }>;
@@ -31,6 +34,7 @@ export const useBlockedStepAnswer = ({
   sessionId,
   agentId,
   hasDraft,
+  hasAttachments,
   isBlocked,
   basePlaceholder,
   onSend,
@@ -46,42 +50,64 @@ export const useBlockedStepAnswer = ({
   const askAgentToContinue = useAppStore((state) => state.askAgentToContinue);
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const isInFlight = useRef(false);
   const target = agent?.status === 'blocked' && agent.parentAgentId == null ? agent : undefined;
   const targetId = target?.id ?? null;
 
   const send = useCallback(async (): Promise<void> => {
-    if (targetId === null || isSending) {
+    if (targetId === null || isBlocked || isInFlight.current) {
       return;
     }
+    if (hasAttachments) {
+      setError(ORCHESTRATED_COPY.blockedAnswerAttachments);
+      return;
+    }
+    isInFlight.current = true;
     setIsSending(true);
     setError(null);
+    const sent = useAppStore.getState().agentDraft[targetId] ?? '';
     try {
-      const text = (useAppStore.getState().agentDraft[targetId] ?? '').trim();
-      if (text === '') {
+      if (sent.trim() === '') {
         await askAgentToContinue({ sessionId, agentId: targetId });
         return;
       }
-      await answerBlockedStep({ sessionId, agentId: targetId, text });
       useAppStore.getState().clearAgentDraft(targetId);
+      try {
+        await answerBlockedStep({ sessionId, agentId: targetId, text: sent });
+      } catch (cause) {
+        const current = useAppStore.getState().agentDraft[targetId] ?? '';
+        useAppStore.getState().setAgentDraft(targetId, restoreDraftOnFailedSend({ sent, current }));
+        throw cause;
+      }
     } catch (cause) {
       setError(formatError(cause));
     } finally {
+      isInFlight.current = false;
       setIsSending(false);
     }
-  }, [targetId, isSending, sessionId, answerBlockedStep, askAgentToContinue]);
+  }, [targetId, isBlocked, hasAttachments, sessionId, answerBlockedStep, askAgentToContinue]);
 
   const step: BlockedStepAnswer | null =
     target === undefined || target.workflowRunId == null
       ? null
-      : { agentId: target.id, runId: target.workflowRunId, isSending, error, send };
+      : {
+          agentId: target.id,
+          runId: target.workflowRunId,
+          isSending,
+          isComposerBlocked: isBlocked,
+          error,
+          send,
+        };
   const sendDraft = () => {
-    if (step !== null && hasDraft) {
+    if (step !== null && !isBlocked && hasDraft) {
       void step.send();
       return;
     }
     void onSend();
   };
   const placeholder =
-    !isBlocked && step !== null ? ORCHESTRATED_COPY.blockedAnswerLabel : basePlaceholder;
+    !isBlocked && step !== null && !hasAttachments
+      ? ORCHESTRATED_COPY.blockedAnswerLabel
+      : basePlaceholder;
   return { step, placeholder, sendDraft };
 };

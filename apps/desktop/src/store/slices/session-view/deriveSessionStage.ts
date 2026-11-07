@@ -31,6 +31,7 @@ type Params = AttentionFactsParams & {
   readonly remainingWork?: number;
   readonly remainingReason?: string | null;
   readonly hasRun?: boolean;
+  readonly stoppedRunWord?: string | null;
 };
 
 type StageWithoutRequest = Pick<SessionStageInfo, 'stage' | 'reason' | 'attention'> & {
@@ -46,6 +47,7 @@ type ReasonTextParams = {
   readonly pushFailedCount: number;
   readonly noteNeedsYouCount: number;
   readonly noteCouldntFixCount: number;
+  readonly stoppedRunWord: string | null;
 };
 
 const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => string> = {
@@ -64,7 +66,8 @@ const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => 
   'pr-queued': ({ label }) => `${label} in the merge queue`,
   'pr-approved': ({ label }) => `${label} approved, ready to merge`,
   'unread-reply': () => 'Unread reply',
-  'run-stopped': () => ATTENTION_REASON_META['run-stopped'].words,
+  'run-stopped': ({ stoppedRunWord }) =>
+    stoppedRunWord ?? ATTENTION_REASON_META['run-stopped'].words,
   'run-paused-at-limit': () => ATTENTION_REASON_META['run-paused-at-limit'].words,
   'run-waits-for-go': () => ATTENTION_REASON_META['run-waits-for-go'].words,
   'auto-needs-you': () => ATTENTION_REASON_META['auto-needs-you'].words,
@@ -97,6 +100,7 @@ const deriveStage = (params: Params): StageWithoutRequest => {
     remainingWork = 0,
     remainingReason = null,
     hasRun = true,
+    stoppedRunWord = null,
     isBranchless = false,
     settledOutcome = null,
   } = params;
@@ -113,6 +117,7 @@ const deriveStage = (params: Params): StageWithoutRequest => {
       pushFailedCount,
       noteNeedsYouCount,
       noteCouldntFixCount,
+      stoppedRunWord,
     });
   const blocker = facts.find(
     (reason) => isErrorReason({ reason }) || isHumanInputReason({ reason }),

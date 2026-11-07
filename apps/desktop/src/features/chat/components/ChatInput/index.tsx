@@ -28,8 +28,7 @@ import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
 import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
 import { ComposerBox } from './parts/ComposerBox';
-import { ComposerCliGate } from './parts/ComposerCliGate';
-import { WriterWaitBand } from '../WriteDestinationControl/WriterWaitBand';
+import { ComposerGates } from './parts/ComposerGates';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
@@ -193,7 +192,8 @@ export const ChatInput = ({
   } = useBlockedStepAnswer({
     sessionId: session.id,
     agentId: selectedAgentId,
-    hasDraft: attachments.length === 0 && !isEmpty,
+    hasDraft: !isEmpty,
+    hasAttachments: attachments.length > 0,
     isBlocked,
     basePlaceholder:
       isBlocked || placeholderOverride === undefined ? defaultPlaceholder : placeholderOverride,
@@ -247,11 +247,7 @@ export const ChatInput = ({
             failure={dock?.failure ?? null}
             step={blockedStep}
           />
-          <ComposerCliGate
-            provider={routing.effectiveProvider}
-            modelId={routing.effectiveModelId}
-          />
-          <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
+          <ComposerGates sessionId={session.id} agentId={selectedAgentId} routing={routing} />
           <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
           <div className="relative" ref={wrapperRef} data-composer-field="">
             {popoverOpen ? (

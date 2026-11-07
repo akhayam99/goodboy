@@ -56,7 +56,7 @@ export const DockStepLine = ({ sessionId, step }: Props) => {
         variant="primary"
         size="sm"
         isBusy={step.isSending}
-        disabled={isBusy}
+        disabled={isBusy || step.isComposerBlocked}
         onClick={() => void step.send()}
       >
         {NAMES.continue}
