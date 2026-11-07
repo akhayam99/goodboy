@@ -140,13 +140,7 @@ type CountParams = {
 };
 
 export const questionBranchCountOf = ({ groups }: CountParams): number =>
-  new Set(
-    groups.flatMap((group) =>
-      [...group.waiting, ...group.answered].flatMap((item) =>
-        item.branches.map((branch) => branch.mountId),
-      ),
-    ),
-  ).size;
+  groups.filter((group) => group.key !== NO_BRANCH_KEY).length;
 
 export const questionRowsOf = ({ model }: ModelParams): ReadonlyArray<QuestionRow> => {
   const groups = questionGroupsOf({ model });

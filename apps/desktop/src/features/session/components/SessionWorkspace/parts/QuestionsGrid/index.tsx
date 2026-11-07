@@ -103,6 +103,12 @@ export const QuestionsGrid = ({
     pickedRowKey,
   });
 
+  useEffect(() => {
+    setPickedRowKey((picked) =>
+      picked === null || (selectedId !== null && picked.endsWith(`/${selectedId}`)) ? picked : null,
+    );
+  }, [selectedId]);
+
   const arrivalGroups = useMemo(
     () =>
       branchGroups.map((group) => {

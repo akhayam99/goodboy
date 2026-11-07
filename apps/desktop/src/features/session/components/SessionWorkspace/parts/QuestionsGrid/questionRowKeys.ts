@@ -9,6 +9,14 @@ type RowKeyParams = {
 export const questionBranchRowKeyOf = ({ groupKey, questionId }: RowKeyParams): string =>
   `${groupKey}/${questionId}`;
 
+type HeldParams = {
+  readonly group: QuestionBranchGroup;
+  readonly questionId: OpenQuestionId;
+};
+
+const isHeldBy = ({ group, questionId }: HeldParams): boolean =>
+  [...group.waiting, ...group.answered].some((item) => item.row.question.id === questionId);
+
 type SelectedParams = {
   readonly groups: ReadonlyArray<QuestionBranchGroup>;
   readonly selectedId: OpenQuestionId | null;
@@ -23,12 +31,17 @@ export const selectedQuestionRowKeyOf = ({
   if (selectedId === null) {
     return null;
   }
-  if (pickedRowKey !== null && pickedRowKey.endsWith(`/${selectedId}`)) {
-    return pickedRowKey;
+  const first = groups.find((group) => isHeldBy({ group, questionId: selectedId }));
+  if (pickedRowKey !== null) {
+    const picked = groups.find(
+      (group) =>
+        isHeldBy({ group, questionId: selectedId }) &&
+        pickedRowKey === questionBranchRowKeyOf({ groupKey: group.key, questionId: selectedId }),
+    );
+    if (picked !== undefined) {
+      return pickedRowKey;
+    }
   }
-  const first = groups.find((group) =>
-    [...group.waiting, ...group.answered].some((item) => item.row.question.id === selectedId),
-  );
   return first === undefined
     ? null
     : questionBranchRowKeyOf({ groupKey: first.key, questionId: selectedId });

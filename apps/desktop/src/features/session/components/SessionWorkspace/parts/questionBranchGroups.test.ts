@@ -185,4 +185,24 @@ describe('questionBranchGroupsOf', () => {
     expect(groups.map((group) => group.key)).toEqual(['series:series-rec']);
     expect(idsOf(groups[0]?.waiting ?? [])).toEqual(['shared']);
   });
+
+  it('counts the two parts of a series as one group of the lens', () => {
+    const series = {
+      seriesId: 'series-rec',
+      name: 'Ledger reconciliation',
+      position: 1,
+      plannedCount: 2,
+      label: '1',
+    };
+    const mounts = [
+      { ...DUP_ROW, series },
+      { ...RETRY_ROW, series: { ...series, position: 2, label: '2' } },
+    ];
+    const groups = groupsOf({
+      open: [questionOf({ id: 'shared', askerId: LEAD.id })],
+      mounts,
+    });
+
+    expect(questionBranchCountOf({ groups })).toBe(1);
+  });
 });

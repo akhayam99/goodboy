@@ -10,7 +10,7 @@ import { useGroupBy } from '../../../../../../store/slices/session-grouping/hook
 import { runPlace } from '../../../../../workflows/runPlace';
 import { useAgentMetrics } from '../../../../hooks/useAgentMetrics';
 import { NAMES } from '../../../../../../shared/utils/names';
-import { branchGroupsOf } from '../../../../branchGroupsOf';
+import { branchGroupsOf, namedBranchGroupCountOf } from '../../../../branchGroupsOf';
 import { runGroupsOf } from '../../../../runGroupsOf';
 import type { SessionRun } from '../../../../sessionRunsOf';
 import { useMountRows } from '../../../../../../shared/hooks/useMountRows';
@@ -66,8 +66,8 @@ export const RunsGrid = ({ session, runs }: Props) => {
     [mountGroups],
   );
   const branchCount = useMemo(
-    () => new Set(runs.flatMap((run) => run.branches.map((branch) => branch.mountId))).size,
-    [runs],
+    () => namedBranchGroupCountOf({ branchLists: runs.map((run) => run.branches), mounts }),
+    [runs, mounts],
   );
   const groupBy = useGroupBy({ sessionId, branchCount });
   const stateGroups = useMemo(() => runGroupsOf({ runs }), [runs]);

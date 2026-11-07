@@ -67,6 +67,18 @@ export const branchKeysOf = ({ branches, mounts }: BranchKeysParams): ReadonlyAr
   return [...new Set(branches.map((branch) => keyOfBranch({ branch, mounts })))];
 };
 
+type CountKeysParams = {
+  readonly branchLists: ReadonlyArray<ReadonlyArray<WorkBranch>>;
+  readonly mounts: ReadonlyArray<MountRowView>;
+};
+
+export const namedBranchGroupCountOf = ({ branchLists, mounts }: CountKeysParams): number =>
+  new Set(
+    branchLists.flatMap((branches) =>
+      branches.map((branch) => branchGroupKeyOfMount({ mountId: branch.mountId, mounts })),
+    ),
+  ).size;
+
 type RunKeysParams = {
   readonly run: SessionRun;
   readonly mounts: ReadonlyArray<MountRowView>;

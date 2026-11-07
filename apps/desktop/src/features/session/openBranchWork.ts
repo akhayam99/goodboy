@@ -3,7 +3,7 @@ import { useAppStore } from '../../store';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import type { LensKind } from '../../store/slices/session-view/types';
 
-export type BranchWorkLens = Extract<LensKind, 'workflows' | 'questions' | 'plans'>;
+export type BranchWorkLens = Extract<LensKind, 'workflows' | 'questions'>;
 
 type Params = {
   readonly sessionId: SessionId;

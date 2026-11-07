@@ -4,6 +4,7 @@ import { loadArtifactProvenance } from '../../artifactProvenance';
 
 type Params = {
   readonly agentIds: ReadonlyArray<AgentId>;
+  readonly phaseKey: string;
 };
 
 type OneParams = {
@@ -12,20 +13,28 @@ type OneParams = {
 
 type MountIdsByAgentId = ReadonlyMap<AgentId, ReadonlyArray<MountId>>;
 
-const NONE: MountIdsByAgentId = new Map();
+export type ArtifactMountIds = Readonly<{
+  mountIdsByAgentId: MountIdsByAgentId;
+  isSettled: boolean;
+}>;
 
-const mountIdsOf = async ({ agentId }: OneParams): Promise<ReadonlyArray<MountId>> => {
+const NONE: MountIdsByAgentId = new Map();
+const NONE_ATTEMPTED: ReadonlySet<AgentId> = new Set();
+
+const mountIdsOf = async ({ agentId }: OneParams): Promise<ReadonlyArray<MountId> | null> => {
   try {
     const provenance = await loadArtifactProvenance(agentId);
-    return provenance?.mountIds ?? [];
+    return provenance === null || provenance.mountIds.length === 0 ? null : provenance.mountIds;
   } catch {
-    return [];
+    return null;
   }
 };
 
-export const useArtifactMountIds = ({ agentIds }: Params): MountIdsByAgentId => {
+export const useArtifactMountIds = ({ agentIds, phaseKey }: Params): ArtifactMountIds => {
   const [loaded, setLoaded] = useState<MountIdsByAgentId>(NONE);
-  const requested = useRef<ReadonlySet<AgentId>>(new Set());
+  const [attempted, setAttempted] = useState<ReadonlySet<AgentId>>(NONE_ATTEMPTED);
+  const inFlight = useRef<ReadonlySet<AgentId>>(new Set());
+  const found = useRef<ReadonlySet<AgentId>>(new Set());
   const isMounted = useRef(true);
   const wantedKey = useMemo(() => [...new Set(agentIds)].sort().join(','), [agentIds]);
   const wanted = useMemo(
@@ -43,18 +52,27 @@ export const useArtifactMountIds = ({ agentIds }: Params): MountIdsByAgentId => 
 
   useEffect(() => {
     for (const agentId of wanted) {
-      if (requested.current.has(agentId)) {
+      if (inFlight.current.has(agentId) || found.current.has(agentId)) {
         continue;
       }
-      requested.current = new Set([...requested.current, agentId]);
+      inFlight.current = new Set([...inFlight.current, agentId]);
       void mountIdsOf({ agentId }).then((mountIds) => {
+        inFlight.current = new Set([...inFlight.current].filter((id) => id !== agentId));
         if (!isMounted.current) {
           return;
         }
+        setAttempted((previous) => new Set([...previous, agentId]));
+        if (mountIds === null) {
+          return;
+        }
+        found.current = new Set([...found.current, agentId]);
         setLoaded((previous) => new Map([...previous, [agentId, mountIds]]));
       });
     }
-  }, [wanted]);
+  }, [wanted, phaseKey]);
 
-  return loaded;
+  return {
+    mountIdsByAgentId: loaded,
+    isSettled: wanted.every((agentId) => attempted.has(agentId)),
+  };
 };

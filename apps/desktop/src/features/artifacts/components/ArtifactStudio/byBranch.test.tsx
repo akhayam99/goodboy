@@ -3,12 +3,16 @@
 const provenance = vi.hoisted(() => ({
   mountIds: new Map<string, ReadonlyArray<string>>(),
   hanging: new Set<string>(),
+  failing: new Set<string>(),
 }));
 
 vi.mock('../../artifactProvenance', () => ({
   loadArtifactProvenance: vi.fn(async (agentId: string) => {
     if (provenance.hanging.has(agentId)) {
       return new Promise<null>(() => undefined);
+    }
+    if (provenance.failing.has(agentId)) {
+      throw new Error('read failed');
     }
     const mountIds = provenance.mountIds.get(agentId);
     return mountIds === undefined ? null : { mountIds };
@@ -68,7 +72,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { openBranchWork } from '../../../session/openBranchWork';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { aMountView } from '../../../session/testing/aMountView';
 import { ArtifactStudio } from './index';
 
@@ -137,6 +141,13 @@ const reportOf = ({ id, title, agentId, status = 'active' }: ReportParams): Repo
   openedAt: AT,
 });
 
+const HUNG = anAgent({ sessionId: SESSION_ID, name: 'Slow writer' });
+const RETRY_NOTES = reportOf({
+  id: 'report-retry',
+  title: 'Retry budget notes',
+  agentId: ON_RETRY.id,
+});
+const HUNG_NOTES = reportOf({ id: 'report-hung', title: 'Slow notes', agentId: HUNG.id });
 const PLAIN = reportOf({ id: 'report-plain', title: 'Credits explained', agentId: ON_DUP.id });
 const SYNC_NOTES = reportOf({ id: 'report-sync', title: 'Sync window notes', agentId: ON_SYNC.id });
 const USED: PlanWithCount = {
@@ -161,6 +172,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   provenance.mountIds.clear();
   provenance.hanging.clear();
+  provenance.failing.clear();
   provenance.mountIds.set(WRITER.id, [DUP.id, RETRY.id]);
   provenance.mountIds.set(GENERATOR.id, [DUP.id, RETRY.id]);
   await resetStoryStore();
@@ -197,8 +209,8 @@ describe('Artifacts by branch', () => {
     expect(screen.getAllByRole('button', { name: /^Open branch$/ })).toHaveLength(2);
   });
 
-  it('lets one provenance read that never answers leave the others alone', async () => {
-    provenance.hanging.add(ON_DUP.id);
+  it('lets one provenance read that fails leave the others alone', async () => {
+    provenance.failing.add(ON_DUP.id);
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
     await waitFor(() => expect(branchSections()).toHaveLength(2));
@@ -302,16 +314,52 @@ describe('Artifacts by branch', () => {
 
   it('opens the group named by the address, with its used rows unfolded', async () => {
     useAppStore.setState({ sessionPlans: { [SESSION_ID]: [USED] } });
-    act(() =>
-      openBranchWork({
-        sessionId: SESSION_ID,
-        lens: 'plans',
-        groupKey: `mount:${DUP.id}`,
-        mountPath: DUP.worktreePath,
-      }),
-    );
+    act(() => {
+      useAppStore
+        .getState()
+        .navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }) });
+      useAppStore.getState().amendFocus({
+        patch: { runGroup: { groupKey: `mount:${DUP.id}`, mountPath: DUP.worktreePath } },
+      });
+    });
     render(<ArtifactStudio sessionId={SESSION_ID} />);
 
     await screen.findByText('Old credit notes');
+  });
+
+  it('reads a provenance that came back empty again when the artifacts change', async () => {
+    provenance.mountIds.delete(WRITER.id);
+    useAppStore.setState({ sessionArtifacts: { [SESSION_ID]: [PLAIN, SHARED, RETRY_NOTES] } });
+    render(<ArtifactStudio sessionId={SESSION_ID} />);
+
+    await waitFor(() => expect(branchSections()).toHaveLength(3));
+    within(screen.getByTestId('artifact-branch-group-none')).getByText('Retries and credits');
+
+    provenance.mountIds.set(WRITER.id, [DUP.id, RETRY.id]);
+    act(() =>
+      useAppStore.setState({
+        sessionArtifacts: { [SESSION_ID]: [PLAIN, SHARED, RETRY_NOTES, SYNC_NOTES] },
+      }),
+    );
+
+    await waitFor(() =>
+      expect(
+        rowKeys().filter((key) => (key ?? '').endsWith('/artifact:report-shared')),
+      ).toHaveLength(2),
+    );
+  });
+
+  it('keeps the state groups until every provenance read has answered', async () => {
+    provenance.hanging.add(HUNG.id);
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION_ID]: [ON_DUP, ON_RETRY, WRITER, HUNG] },
+      sessionArtifacts: { [SESSION_ID]: [PLAIN, SHARED, HUNG_NOTES] },
+    });
+    render(<ArtifactStudio sessionId={SESSION_ID} />);
+
+    await screen.findByTestId('artifact-group-read');
+    await act(async () => undefined);
+    expect(screen.queryByRole('group', { name: 'Group by' })).toBeNull();
+    expect(screen.queryAllByTestId(/^artifact-branch-group-/)).toHaveLength(0);
   });
 });

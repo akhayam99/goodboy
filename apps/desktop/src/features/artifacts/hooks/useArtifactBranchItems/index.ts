@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type {
   Agent,
+  AgentId,
+  MountId,
   PlanWithCount,
   SessionArtifact,
   SessionId,
@@ -9,6 +11,7 @@ import type {
 import { useAppStore } from '../../../../store';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { useMountRows } from '../../../../shared/hooks/useMountRows';
+import { namedBranchGroupCountOf } from '../../../session/branchGroupsOf';
 import { artifactBranchesOf } from '../../artifactBranchesOf';
 import type { ArtifactBranchItem, ArtifactListRow } from '../../artifactListRows';
 import { useArtifactMountIds } from '../useArtifactMountIds';
@@ -28,6 +31,12 @@ export type ArtifactBranchItems = Readonly<{
 }>;
 
 const NO_MOUNTS: ReadonlyArray<SessionMountView> = [];
+const NO_DECLARED: ReadonlyMap<AgentId, ReadonlyArray<MountId>> = new Map();
+
+type BranchesParams = {
+  readonly row: ArtifactListRow;
+  readonly declared: ReadonlyMap<AgentId, ReadonlyArray<MountId>>;
+};
 
 export const useArtifactBranchItems = ({
   sessionId,
@@ -53,25 +62,45 @@ export const useArtifactBranchItems = ({
     ],
     [plans, artifacts, rows],
   );
-  const mountIdsByAgentId = useArtifactMountIds({ agentIds });
+  const phaseKey = useMemo(
+    () => rows.map((row) => `${row.id}:${row.group}:${row.state ?? ''}`).join(','),
+    [rows],
+  );
+  const { mountIdsByAgentId, isSettled } = useArtifactMountIds({ agentIds, phaseKey });
   return useMemo(() => {
-    const items = rows.map((row) => ({
-      row,
-      branches: artifactBranchesOf({
+    const branchesOf = ({ row, declared }: BranchesParams) =>
+      artifactBranchesOf({
         row,
         plans,
         artifacts,
-        mountIdsByAgentId,
+        mountIdsByAgentId: declared,
         agents,
         sessionMounts,
         projects,
-      }),
+      });
+    const items = rows.map((row) => ({
+      row,
+      branches: branchesOf({ row, declared: mountIdsByAgentId }),
     }));
-    const branchCount = new Set(
-      items
+    const counted = isSettled
+      ? items
+      : rows.map((row) => ({ row, branches: branchesOf({ row, declared: NO_DECLARED }) }));
+    const branchCount = namedBranchGroupCountOf({
+      branchLists: counted
         .filter((item) => item.row.group !== 'deleted')
-        .flatMap((item) => item.branches.map((branch) => branch.mountId)),
-    ).size;
+        .map((item) => item.branches),
+      mounts,
+    });
     return { items, mounts, branchCount };
-  }, [rows, plans, artifacts, mountIdsByAgentId, agents, sessionMounts, projects, mounts]);
+  }, [
+    rows,
+    plans,
+    artifacts,
+    mountIdsByAgentId,
+    isSettled,
+    agents,
+    sessionMounts,
+    projects,
+    mounts,
+  ]);
 };
