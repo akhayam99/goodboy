@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef } from 'react';
 import { useAppStore, useCurrentWorkspace } from '../../../store';
 import { useNowSessions } from '../useNowSessions';
@@ -17,7 +18,9 @@ type ReportParams = {
 };
 
 const reportOnce = ({ title, error }: ReportParams): void => {
-  void useAppStore.getState().reportError({ title, error, coalesceKey: ATTENTION_ERROR_KEY });
+  void useAppStore
+    .getState()
+    .reportError({ recovery: CHECK_STATE, title, error, coalesceKey: ATTENTION_ERROR_KEY });
 };
 
 export const useAttentionSync = (): void => {

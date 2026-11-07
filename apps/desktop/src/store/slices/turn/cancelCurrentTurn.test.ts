@@ -91,6 +91,7 @@ describe('cancelCurrentTurn', () => {
     await cancel(SESSION_ID, AGENT_ID, 'user');
 
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't stop the agent",
       error: new Error('the process did not exit'),
       sessionId: SESSION_ID,

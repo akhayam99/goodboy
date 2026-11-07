@@ -158,6 +158,7 @@ describe('PlanEditor', () => {
     expect(screen.getByTestId('state').textContent).toBe('editing');
     expect(reportError).toHaveBeenCalledTimes(1);
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't save the plan",
       error: expect.objectContaining({ message: 'The database is locked' }),
       sessionId: PLAN_FIXTURE_SESSION,

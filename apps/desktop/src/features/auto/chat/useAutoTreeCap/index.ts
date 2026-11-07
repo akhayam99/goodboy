@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
@@ -35,6 +36,7 @@ export const useAutoTreeCap = ({ sessionId, treeId }: Params): AutoTreeCapSave =
           drive: currentAutoDrivePort(),
           onDriveError: (error) => {
             void reportError({
+              recovery: CHECK_STATE,
               title: "Auto didn't restart after the limit change",
               error,
               sessionId,

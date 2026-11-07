@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { countUserTextEvents } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
@@ -89,7 +90,7 @@ export const deliverQueuedTurn = async ({
     if (turn.isDirect === true) {
       return { isDelivered: false, failure: message };
     }
-    void get().reportError({ title, error, sessionId });
+    void get().reportError({ recovery: CHECK_STATE, title, error, sessionId });
     return { isDelivered: false, failure: null };
   };
   const deliveryId = `queue:${turn.id}`;
@@ -137,7 +138,12 @@ export const deliverQueuedTurn = async ({
   } catch (error) {
     if (isAccepted) {
       if (!isTranscriptOwnedTurnError({ error })) {
-        void get().reportError({ title: "Couldn't send the queued message", error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't send the queued message",
+          error,
+          sessionId,
+        });
       }
       await accept();
       return DELIVERED;

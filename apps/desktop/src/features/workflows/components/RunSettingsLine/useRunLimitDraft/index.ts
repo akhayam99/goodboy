@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
@@ -74,7 +75,12 @@ export const useRunLimitDraft = ({ sessionId, run, isOpen }: Params) => {
       await setWorkflowRunSpendLimit(sessionId, run.id, limit, next.mode);
     } catch (error) {
       if (isClosing) {
-        await reportError({ title: "Couldn't change the run limit", error, sessionId });
+        await reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't change the run limit",
+          error,
+          sessionId,
+        });
       }
       if (!isClosing) {
         setFailure(`Couldn't change it. ${formatError(error)}`);

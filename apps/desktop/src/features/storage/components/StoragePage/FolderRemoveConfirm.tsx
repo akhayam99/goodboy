@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Trash2, TriangleAlert } from 'lucide-react';
 import type { WorktreeRemovalMode } from '@goodboy/types';
@@ -95,7 +96,7 @@ export const FolderRemoveConfirm = ({ folder, intent, onClose }: Props) => {
       await removeStorageFolders({ paths: [folder.path], mode: copy.mode });
       onClose();
     } catch (error) {
-      void reportError({ title: "Couldn't remove this folder", error });
+      void reportError({ recovery: CHECK_STATE, title: "Couldn't remove this folder", error });
       setIsBusy(false);
     }
   };

@@ -1,3 +1,4 @@
+import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useState } from 'react';
 import { useAppStore } from '../../../../store';
 import {
@@ -27,6 +28,7 @@ export const useDelegationDecision = (): DelegationDecisionModel => {
       const port = currentDelegationDecisionPort();
       if (port === null) {
         await reportError({
+          recovery: NOTHING_CHANGED,
           title: NOT_READY_TITLE,
           error: new Error("Auto can't take this answer here yet."),
         });
@@ -37,12 +39,13 @@ export const useDelegationDecision = (): DelegationDecisionModel => {
         const result = await port({ delegationId, decision });
         if (result === 'lost') {
           await reportError({
+            recovery: CHECK_STATE,
             title: LOST_TITLE,
             error: new Error('This question is no longer open.'),
           });
         }
       } catch (error) {
-        await reportError({ title: NOT_READY_TITLE, error });
+        await reportError({ recovery: CHECK_STATE, title: NOT_READY_TITLE, error });
       } finally {
         setBusyId(null);
       }

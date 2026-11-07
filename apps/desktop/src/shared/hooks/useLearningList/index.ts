@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback, useMemo, useState } from 'react';
 import type { SessionContextItem, SessionContextItemId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -43,7 +44,7 @@ export const useLearningList = ({ items }: Params): LearningList => {
       setDismissedHere((current) => new Set([...current, id]));
       setOpenId((current) => (current === id ? null : current));
       void setContextItemStatus({ id, status: 'dismissed' }).catch((error: unknown) =>
-        reportError({ title: "Couldn't dismiss it", error }),
+        reportError({ recovery: CHECK_STATE, title: "Couldn't dismiss it", error }),
       );
     },
     [reportError, setContextItemStatus],
@@ -52,7 +53,7 @@ export const useLearningList = ({ items }: Params): LearningList => {
   const undo = useCallback(
     (id: SessionContextItemId) => {
       void setContextItemStatus({ id, status: 'active' }).catch((error: unknown) =>
-        reportError({ title: "Couldn't bring it back", error }),
+        reportError({ recovery: CHECK_STATE, title: "Couldn't bring it back", error }),
       );
     },
     [reportError, setContextItemStatus],

@@ -45,7 +45,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
             aria-expanded={open}
             className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
-            {open ? 'Hide thread' : 'View thread'}
+            {open ? 'Hide thread' : 'Show thread'}
             <TranscriptChevron open={open} />
           </button>
         ) : link !== '' ? (

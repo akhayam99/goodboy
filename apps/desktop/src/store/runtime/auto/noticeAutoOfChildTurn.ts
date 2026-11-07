@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
 import type { ReportErrorParams } from '../../slices/notifications/reportError';
@@ -49,6 +50,7 @@ export const noticeAutoOfChildTurn = async ({ get, input }: Params): Promise<voi
     }
   } catch (error) {
     await state.reportError({
+      recovery: CHECK_STATE,
       title: `Auto did not see what you told ${child.name}`,
       error,
       sessionId: input.sessionId,

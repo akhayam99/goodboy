@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { selectKindRouting } from '../agents/selectKindRouting';
 import { TurnRefused } from '../turn/refusal/TurnRefused';
@@ -43,7 +44,12 @@ export const spawnPushFixer = async ({
     await get()
       .deleteAgent(sessionId, agentId)
       .catch((error: unknown) => {
-        void get().reportError({ title: "Couldn't remove the push fixer", error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't remove the push fixer",
+          error,
+          sessionId,
+        });
       });
     return null;
   }
@@ -53,7 +59,12 @@ export const spawnPushFixer = async ({
     await get()
       .deleteAgent(sessionId, agentId)
       .catch((error: unknown) => {
-        void get().reportError({ title: "Couldn't remove the push fixer", error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't remove the push fixer",
+          error,
+          sessionId,
+        });
       });
   };
   void get()
@@ -76,6 +87,7 @@ export const spawnPushFixer = async ({
         }
         await dropFix();
         void get().reportError({
+          recovery: CHECK_STATE,
           title: "The agent didn't start",
           error: new TurnRefused({ refusal }),
           sessionId,
@@ -83,7 +95,12 @@ export const spawnPushFixer = async ({
       },
       async (error: unknown) => {
         await dropFix();
-        void get().reportError({ title: "The agent didn't start", error, sessionId });
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "The agent didn't start",
+          error,
+          sessionId,
+        });
       },
     );
   return agentId;

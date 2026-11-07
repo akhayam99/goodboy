@@ -233,7 +233,7 @@ describe('store contract', () => {
         expect.objectContaining({
           severity: 'warning',
           title: "Couldn't move saved integration keys to the keychain",
-          body: 'keychain is locked',
+          body: 'keychain is locked\nCheck the current state before trying again.',
           coalesceKey: 'boot:integration-key-adoption',
         }),
       );

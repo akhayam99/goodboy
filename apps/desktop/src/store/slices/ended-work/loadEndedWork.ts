@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { parseEndedWork } from './parseEndedWork';
@@ -23,6 +24,7 @@ export const loadEndedWork = ({ set, get }: SliceDeps) => {
       set({ endedWork: work });
     } catch (error) {
       void get().reportError({
+        recovery: CHECK_STATE,
         title: 'Could not read what was running when Goodboy quit',
         error,
         severity: 'warning',

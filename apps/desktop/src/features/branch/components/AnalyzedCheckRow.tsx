@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -106,7 +107,12 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
       });
     } catch (error: unknown) {
       if (!isReportedError(error)) {
-        void reportError({ title: "Couldn't start the Debugger", error, sessionId });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't start the Debugger",
+          error,
+          sessionId,
+        });
       }
     } finally {
       setIsStarting(false);

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import { AUTO_GATES } from '@goodboy/core/auto';
 import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
@@ -223,7 +224,11 @@ export const startAutoRuntime = async ({
     bus,
     ports: REGISTERED_PORTS,
     onError: (error) => {
-      void getState().reportError({ title: 'Auto could not answer another window', error });
+      void getState().reportError({
+        recovery: CHECK_STATE,
+        title: 'Auto could not answer another window',
+        error,
+      });
     },
   });
   const unregister = (): void => {
@@ -309,7 +314,7 @@ export const startAutoRuntime = async ({
     isTicking = true;
     void tick()
       .catch((error: unknown) => {
-        void getState().reportError({ title: 'Auto hit a problem', error });
+        void getState().reportError({ recovery: CHECK_STATE, title: 'Auto hit a problem', error });
       })
       .finally(() => {
         isTicking = false;

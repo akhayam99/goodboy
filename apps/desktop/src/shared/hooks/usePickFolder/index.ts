@@ -1,3 +1,4 @@
+import { NOTHING_CHANGED } from '../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import { useAppStore } from '../../../store';
 import { pickFolder } from '../../lib/pickFolder';
@@ -8,7 +9,11 @@ export const usePickFolder = (): (() => Promise<string | null>) => {
     try {
       return await pickFolder();
     } catch (error) {
-      void reportError({ title: "Couldn't open the folder picker", error });
+      void reportError({
+        recovery: NOTHING_CHANGED,
+        title: "Couldn't open the folder picker",
+        error,
+      });
       return null;
     }
   }, [reportError]);

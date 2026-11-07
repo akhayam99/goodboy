@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import { detectTerminals } from '../../../shared/lib/terminalApp';
 import type { SliceDeps } from '../../slice-types';
 
@@ -9,6 +10,7 @@ export const loadDetectedTerminals = ({ set, get }: SliceDeps) => {
     } catch (error) {
       set({ detectedTerminals: [] });
       void get().reportError({
+        recovery: READ_FAILED,
         title: "Couldn't read which terminal apps are installed",
         error,
         severity: 'warning',

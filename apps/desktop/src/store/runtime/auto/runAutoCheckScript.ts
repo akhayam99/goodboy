@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import type { CheckReport } from '@goodboy/core/auto';
 import { scriptPinId } from '../../../features/scripts/scriptPinId';
 import { startRunnableScript } from '../../../features/scripts/startRunnableScript';
@@ -107,7 +108,11 @@ export const runAutoCheckScript = async ({
         worktreePath: params.worktreePath,
         stop: () => getState().cancelScript(params.sessionId, scriptKey),
         onStopError: (error) => {
-          void getState().reportError({ title: "Couldn't stop a check that ran too long", error });
+          void getState().reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't stop a check that ran too long",
+            error,
+          });
         },
       });
       return 'timed_out';

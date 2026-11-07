@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { Project } from '@goodboy/types';
 import type { GetFn } from './types';
 
@@ -14,6 +15,7 @@ export const prepareLinkedFolder = ({ get, project }: Params): void => {
     .prepareFolderVersions({ folder: project })
     .catch((error: unknown) =>
       get().reportError({
+        recovery: CHECK_STATE,
         title: `Saved versions of ${project.name} couldn't start`,
         error,
         severity: 'warning',

@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -20,7 +21,12 @@ export const useBlockedQuestion = ({ sessionId, agentId }: Params): BlockedQuest
     }
     void loadAgentTranscript(sessionId, agentId, { isSelecting: false }).catch((error: unknown) => {
       if (!isReportedError(error)) {
-        void reportError({ title: "Couldn't read what the step asked", error, sessionId });
+        void reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read what the step asked",
+          error,
+          sessionId,
+        });
       }
     });
   }, [isLoaded, loadAgentTranscript, reportError, sessionId, agentId]);

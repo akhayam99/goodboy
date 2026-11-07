@@ -1,3 +1,4 @@
+import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -27,6 +28,7 @@ export const usePublishAct = (): PublishActModel => {
       const port = currentPublishPort();
       if (port === null) {
         await reportError({
+          recovery: NOTHING_CHANGED,
           title: FAILED_TITLE,
           error: new Error(AUTO_STARTING_SENTENCE),
         });
@@ -37,12 +39,16 @@ export const usePublishAct = (): PublishActModel => {
         const result = await port({ act: name, delegationIds });
         for (const row of result.rows) {
           if ((row.state === 'failed' || row.state === 'refused') && row.message !== null) {
-            await reportError({ title: FAILED_TITLE, error: new Error(row.message) });
+            await reportError({
+              recovery: CHECK_STATE,
+              title: FAILED_TITLE,
+              error: new Error(row.message),
+            });
           }
         }
         await loadAutoTrees({ sessionId });
       } catch (error) {
-        await reportError({ title: FAILED_TITLE, error });
+        await reportError({ recovery: CHECK_STATE, title: FAILED_TITLE, error });
       } finally {
         setBusyIds((current) => current.filter((id) => !delegationIds.includes(id)));
       }

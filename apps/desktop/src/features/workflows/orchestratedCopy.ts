@@ -52,7 +52,7 @@ export const ORCHESTRATED_COPY = {
   queuedHintsHeading: 'Queued, read at the next decision',
   queuedHintsLine: ({ count }: CountParams): string =>
     `${countNoun({ count, one: 'hint' })} queued`,
-  queuedHintsView: 'View',
+  queuedHintsView: 'Show',
   skippedStep: ({ step, reason }: SkippedParams): string =>
     reason === '' ? `Skipped: ${step}` : `Skipped: ${step} · ${reason}`,
   fromPreset: ({ name, closeness }: PresetParams): string => `From ${name} · ${closeness}`,

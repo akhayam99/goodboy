@@ -606,6 +606,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await vi.waitFor(() =>
       expect(reportError).toHaveBeenCalledWith({
+        recovery: { clause: 'check-state' },
         title: "The agent didn't start",
         error: new Error('every provider is signed out'),
         sessionId: SESSION_ID,

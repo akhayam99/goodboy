@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import {
   buildResolverKickoffParts,
@@ -145,11 +146,21 @@ export const continueResolveLaunch = async ({
       get,
       input: { sessionId, agentId: agent.id, content, resolveThreadIds: threadIds },
       onLateError: (error) =>
-        void get().reportError({ title: "Couldn't continue the fix run", error, sessionId }),
+        void get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't continue the fix run",
+          error,
+          sessionId,
+        }),
     });
     if (onStarted === undefined) {
       await started.catch((error: unknown) =>
-        get().reportError({ title: "Couldn't continue the fix run", error, sessionId }),
+        get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't continue the fix run",
+          error,
+          sessionId,
+        }),
       );
       continue;
     }

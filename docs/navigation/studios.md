@@ -73,7 +73,7 @@ workspace) shows `Back to app` with the Esc chip at the top left
   add the 12px a bare page adds; a bandless page sits on the 12px header inset
   (`frameGeometryOf`), like a session page. The provider wraps the body whether
   or not the band is drawn, only its value changes: a trail that claims the
-  band must not remount the page that drew it (Tasks Open full lost its record
+  band must not remount the page that drew it (Tasks Open lost its record
   that way). The frame root carries
   `data-studio-title` for the journey tests.
 - **Every studio draws the grid's title row.** Each studio has one

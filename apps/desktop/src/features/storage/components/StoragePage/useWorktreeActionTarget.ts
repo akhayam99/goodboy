@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useAppStore } from '../../../../store';
 import { storageFolderBucket } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
@@ -42,7 +43,7 @@ export const useWorktreeActionTarget = ({ folder, status, onRemove }: Params) =>
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
 
   const attempt = ({ title, action }: AttemptParams) =>
-    void action().catch((error: unknown) => reportError({ title, error }));
+    void action().catch((error: unknown) => reportError({ recovery: CHECK_STATE, title, error }));
 
   const onEditor = () =>
     attempt({

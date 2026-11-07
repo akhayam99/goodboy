@@ -555,6 +555,7 @@ describe('Approve from the palette, the menu and the Artifacts page', () => {
 
     expect(showToast).not.toHaveBeenCalled();
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't approve the plan",
       error: new Error('disk full'),
       sessionId: PLAN_FIXTURE_SESSION,

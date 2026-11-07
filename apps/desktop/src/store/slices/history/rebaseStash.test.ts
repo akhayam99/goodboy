@@ -371,7 +371,9 @@ describe('dirty rebase policy through the real store', () => {
       store.getState().restoreHistory({ ...input, backupRef: 'backup', shouldPush: false }),
     ).resolves.toBe('restored');
     expect(store.getState().historyRuns[A_REBASE_MOUNT_ID]?.phase).toBe('restored');
-    expect(store.getState().notifications[0]?.body).toBe('Stash kept.');
+    expect(store.getState().notifications[0]?.body).toBe(
+      'Stash kept.\nCheck the current state before trying again.',
+    );
   });
   it('does not apply crash-saved files twice after a cleanup failure', async () => {
     const savedStash = { sha: 'a'.repeat(40), identity, expectedHead: 'old-head', files: [] };

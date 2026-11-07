@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import {
   listAgentQueuedMessages,
   replaceAgentQueuedMessages,
@@ -81,6 +82,7 @@ export const persistAgentQueue = async ({ get, agentId }: AgentParams): Promise<
   } catch (error) {
     const sessionId = sessionOfAgent({ get, agentId });
     void get().reportError({
+      recovery: CHECK_STATE,
       title: "Couldn't save the message queue",
       error,
       ...(sessionId !== undefined && { sessionId }),

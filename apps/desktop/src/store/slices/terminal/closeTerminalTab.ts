@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
 import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import type { TerminalOwner, TerminalTabId } from '../../../shared/types/terminal';
@@ -60,6 +61,7 @@ export const closeTerminalTab = (set: SetFn, get: GetFn) => {
     if (hasName) {
       persistTerminalNames({ names: get().terminalNames }).catch((error) =>
         get().reportError({
+          recovery: CHECK_STATE,
           title: 'Could not forget the terminal name',
           error,
           ...(owner.kind === 'session'

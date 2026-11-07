@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
 import { AUTO_GATES, autoTreeCapUsd, isUsableMount, type PickableMount } from '@goodboy/core/auto';
 import type { Database } from '@goodboy/db';
 import {
@@ -63,9 +64,12 @@ const driveAtOnce = async ({ treeId, sessionId }: DriveAtOnceParams): Promise<vo
   try {
     await port({ treeId });
   } catch (error) {
-    await useAppStore
-      .getState()
-      .reportError({ title: "Auto didn't start right away", error, sessionId });
+    await useAppStore.getState().reportError({
+      recovery: CHECK_STATE,
+      title: "Auto didn't start right away",
+      error,
+      sessionId,
+    });
   }
 };
 

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { ShowToast, ShowToastParams } from '../../../shared/components/Toast/toastContext';
 import type { SliceDeps } from '../../slice-types';
 import type { UndoOperation } from './state';
@@ -111,7 +112,11 @@ export const createUndoSlice = ({ set, get }: SliceDeps) => {
         }
         return true;
       } catch (error) {
-        await get().reportError({ title: "Couldn't undo the operation", error });
+        await get().reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't undo the operation",
+          error,
+        });
         return false;
       } finally {
         set({ pendingUndoId: null });

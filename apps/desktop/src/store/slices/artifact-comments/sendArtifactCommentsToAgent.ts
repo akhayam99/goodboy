@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { setArtifactCommentsStatus } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
@@ -85,6 +86,7 @@ export const sendArtifactCommentsToAgent = ({ set, get }: Deps) => {
           return true;
         } catch (error) {
           void get().reportError({
+            recovery: CHECK_STATE,
             title: "Couldn't mark the comments as sent",
             error,
             sessionId,

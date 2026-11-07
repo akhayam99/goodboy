@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import type { ProviderRunId } from '@goodboy/types';
 import { cancelTurn } from '../../../features/chat/turn';
 import type { AppStore } from '../../store';
@@ -75,6 +76,7 @@ export const stopWork = async ({ getState, scope, reason }: Params): Promise<Sto
       stillRunning += 1;
       if (isReported) {
         void getState().reportError({
+          recovery: CHECK_STATE,
           title: "Couldn't stop the agent",
           error: outcome.reason,
           sessionId: target?.sessionId,

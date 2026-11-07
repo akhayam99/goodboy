@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../shared/utils/names';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -58,6 +59,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
       onDone();
     } catch (error) {
       void reportError({
+        recovery: CHECK_STATE,
         title: `Couldn't create a branch for ${task.identifier}`,
         error,
         sessionId,

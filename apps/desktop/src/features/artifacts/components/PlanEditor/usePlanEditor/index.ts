@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useState } from 'react';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -107,7 +108,12 @@ export const usePlanEditor = ({ sessionId, plan, revision, onSaved }: Params): P
       onSaved?.({ revision: result.revision });
     } catch (cause) {
       setError(SAVE_FAILED_INLINE);
-      await reportError({ title: SAVE_FAILED_TITLE, error: cause, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: SAVE_FAILED_TITLE,
+        error: cause,
+        sessionId,
+      });
     } finally {
       setIsSaving(false);
     }

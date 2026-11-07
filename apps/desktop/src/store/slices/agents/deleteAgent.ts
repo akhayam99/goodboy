@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../notifications/errorRecovery';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
@@ -55,7 +56,12 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
     await get()
       .loadAutoTrees({ sessionId })
       .catch((error: unknown) => {
-        void get().reportError({ title: "Couldn't read the Auto agents", error, sessionId });
+        void get().reportError({
+          recovery: READ_FAILED,
+          title: "Couldn't read the Auto agents",
+          error,
+          sessionId,
+        });
       });
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     dropPendingTurnEvents({ agentIds: [agentId] });

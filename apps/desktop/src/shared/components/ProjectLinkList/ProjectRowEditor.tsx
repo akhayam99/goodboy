@@ -12,7 +12,11 @@ import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
 import { ProjectDescriptionField } from './ProjectDescriptionField';
-import { OPEN_APP_SETTINGS_GENERAL } from '../../../store/slices/notifications/errorRecovery';
+import {
+  CHECK_STATE,
+  OPEN_APP_SETTINGS_GENERAL,
+  OPEN_FAILED,
+} from '../../../store/slices/notifications/errorRecovery';
 
 type Props = {
   readonly project: Project;
@@ -44,7 +48,11 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
     try {
       await revealInFileManager({ path: project.rootPath });
     } catch (error) {
-      void reportError({ title: `Couldn't reveal ${project.name}`, error });
+      void reportError({
+        recovery: OPEN_FAILED,
+        title: `Couldn't reveal ${project.name}`,
+        error,
+      });
     }
   };
 
@@ -57,7 +65,11 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
         updateProjectBaseBranch,
       });
     } catch (error) {
-      void reportError({ title: `Couldn't update the base branch of ${project.name}`, error });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: `Couldn't update the base branch of ${project.name}`,
+        error,
+      });
     }
   };
 

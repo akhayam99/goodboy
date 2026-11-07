@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Button, cn, ConfirmPopover, Eyebrow, FieldRow, ICON_SIZE, tintClasses } from '@goodboy/ui';
@@ -20,7 +21,11 @@ export const AppResetSection = () => {
       setWipeState('done');
     } catch (err) {
       setWipeState('confirm');
-      void reportError({ title: "Couldn't delete the local data", error: err });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't delete the local data",
+        error: err,
+      });
     }
   };
 

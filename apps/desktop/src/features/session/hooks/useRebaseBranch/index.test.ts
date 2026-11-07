@@ -122,6 +122,7 @@ describe('useRebaseBranch', () => {
     });
 
     expect(state.reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: "Couldn't rebase the branch",
       error: new Error('no mount for this session'),
       sessionId,

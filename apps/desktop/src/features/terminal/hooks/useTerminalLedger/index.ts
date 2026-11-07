@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePoll } from '../../../../shared/lib/usePoll';
 import { useAppStore } from '../../../../store';
@@ -50,6 +51,7 @@ export const useTerminalLedger = ({ isEnabled }: Params): TerminalLedger => {
         }
         hasReported.current = true;
         void useAppStore.getState().reportError({
+          recovery: READ_FAILED,
           title: "Couldn't read which terminals are busy",
           error,
           severity: 'warning',

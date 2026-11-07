@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../slices/notifications/errorRecovery';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { GetFn } from '../../slice-types';
 import { isReportedError } from '../../slices/notifications/reportedError';
@@ -31,7 +32,7 @@ export const commitAfterConfirm = async <Value>({
     value = await step();
   } catch (error) {
     if (!isReportedError(error)) {
-      await get().reportError({ title: failureTitle, error, ...target });
+      await get().reportError({ recovery: CHECK_STATE, title: failureTitle, error, ...target });
     }
     return { isOk: false, error };
   }

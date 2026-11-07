@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -70,6 +71,7 @@ export const useTerminalFinishSignal = ({
         }
         hasReported.current = true;
         void useAppStore.getState().reportError({
+          recovery: READ_FAILED,
           title: "Couldn't read which terminals finished",
           error,
           severity: 'warning',

@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   AnchoredPopover,
@@ -138,7 +139,12 @@ export const WriteDestinationControl = ({
       await setSessionActiveMount({ sessionId, mountId: pendingMountId });
       dropdown.close();
     } catch (error) {
-      void reportError({ title: "Couldn't change where replies start", error, sessionId });
+      void reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't change where replies start",
+        error,
+        sessionId,
+      });
     } finally {
       setIsApplying(false);
     }

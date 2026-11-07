@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -47,7 +48,12 @@ export const useResolveAgain = ({
         await continueResolveThreads({ sessionId, threadIds: [threadId], hint: instruction });
         return 'started';
       } catch (error) {
-        void reportError({ title: "Couldn't retry the fix", error, sessionId });
+        void reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't retry the fix",
+          error,
+          sessionId,
+        });
         return 'failed';
       }
     },

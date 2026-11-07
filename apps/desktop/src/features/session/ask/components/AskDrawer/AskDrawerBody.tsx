@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NAMES } from '../../../../../shared/utils/names';
 import { useAskFollow } from '../../hooks/useAskFollow';
@@ -102,6 +103,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
       void startWorkFromAsk({ sessionId, thread, messages, anchorMessageId, createSession }).catch(
         (error: unknown) =>
           reportError({
+            recovery: CHECK_STATE,
             title: "Couldn't start the work",
             error,
             workspaceId: thread.workspaceId,

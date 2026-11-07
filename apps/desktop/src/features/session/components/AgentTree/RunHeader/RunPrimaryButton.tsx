@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Check, Play, RotateCcw, Undo2, type LucideIcon } from 'lucide-react';
 import { Button, ICON_SIZE, Tooltip } from '@goodboy/ui';
@@ -129,7 +130,7 @@ export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props)
     try {
       await spec.run();
     } catch (error) {
-      await reportError({ title: spec.failure, error, sessionId });
+      await reportError({ recovery: CHECK_STATE, title: spec.failure, error, sessionId });
     } finally {
       setIsBusy(false);
     }

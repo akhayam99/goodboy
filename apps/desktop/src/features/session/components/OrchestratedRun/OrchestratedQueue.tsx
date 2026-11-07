@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import type { OrchestratorHint, SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
@@ -40,7 +41,12 @@ export const OrchestratedQueue = ({
     try {
       await removeWorkflowOrchestratorHint(sessionId, run.id, hint.id);
     } catch (error) {
-      await reportError({ title: "Couldn't remove the hint", error, sessionId });
+      await reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't remove the hint",
+        error,
+        sessionId,
+      });
     }
   };
 

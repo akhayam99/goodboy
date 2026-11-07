@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useCallback, useState } from 'react';
 import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
@@ -58,7 +59,12 @@ export const useRetryRun = ({ sessionId, agentId, events, worktreePath }: Params
         });
       } catch (error) {
         if (!isReportedError(error)) {
-          void reportError({ title: "Couldn't retry the turn", error, sessionId });
+          void reportError({
+            recovery: CHECK_STATE,
+            title: "Couldn't retry the turn",
+            error,
+            sessionId,
+          });
         }
       } finally {
         setRetryingRunId(null);

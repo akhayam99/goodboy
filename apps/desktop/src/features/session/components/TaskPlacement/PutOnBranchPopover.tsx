@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../shared/utils/names';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -91,6 +92,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch, anch
                 await assignSessionExternalTask({ sessionId, task, branch, projectId });
               } catch (error) {
                 await reportError({
+                  recovery: CHECK_STATE,
                   title: `Couldn't put ${task.identifier} on ${branch}`,
                   error,
                   sessionId,

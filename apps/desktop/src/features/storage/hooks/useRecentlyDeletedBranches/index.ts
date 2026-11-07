@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo } from 'react';
 import type { DeletedBranch, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -23,7 +24,7 @@ export const useRecentlyDeletedBranches = ({ scope }: Params): ReadonlyArray<Del
     const ids = workspaceKey === '' ? [] : (workspaceKey.split(LIST_SEPARATOR) as WorkspaceId[]);
     for (const workspaceId of ids) {
       void loadDeletedBranches({ workspaceId }).catch((error: unknown) =>
-        reportError({ title: "Couldn't read the deleted branches", error }),
+        reportError({ recovery: READ_FAILED, title: "Couldn't read the deleted branches", error }),
       );
     }
   }, [workspaceKey, loadDeletedBranches, reportError]);

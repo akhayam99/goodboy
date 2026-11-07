@@ -1,3 +1,4 @@
+import { READ_FAILED } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { BandRow, Button, ICON_SIZE } from '@goodboy/ui';
@@ -20,7 +21,7 @@ export const ScanRepositoryRow = () => {
     try {
       await scanStorageRepository({ repoRoot: picked });
     } catch (error) {
-      void reportError({ title: "Couldn't scan that repository", error });
+      void reportError({ recovery: READ_FAILED, title: "Couldn't scan that repository", error });
     } finally {
       setIsScanning(false);
     }

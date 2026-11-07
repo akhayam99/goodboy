@@ -1,3 +1,4 @@
+import { CHECK_STATE } from '../../../../../store/slices/notifications/errorRecovery';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -116,6 +117,7 @@ export const MountActionsMenu = ({
 
   const fail = ({ title, error }: { title: string; error: unknown }) => {
     void reportError({
+      recovery: CHECK_STATE,
       title,
       error,
       severity: 'warning',
