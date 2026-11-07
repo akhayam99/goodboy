@@ -1,9 +1,9 @@
 type Params = {
   readonly text: string | null | undefined;
+  readonly shouldKeepOpenFence?: boolean;
 };
 
-const MAX_LINE = 2000;
-const MAX_COMMENT_LOOKAHEAD = 40;
+const MAX_LINK_FAILURES = 8;
 const MAX_NESTING = 3;
 const COMMENT_OPEN = '<!--';
 const COMMENT_CLOSE = '-->';
@@ -12,19 +12,16 @@ const BLOCK_MARKER = /^(?:#{1,6}[ \t]+|>[ \t]?|[-*+][ \t]+|\d{1,9}\.[ \t]+)+/;
 const BOLD_RE = /\*\*([^*]+)\*\*|__([^_]+)__/g;
 const ITALIC_RE = /(?<![*\w])\*([^*]+)\*(?!\*)|(?<![_\w])_([^_]+)_(?!_)/g;
 
-type LinesParams = {
-  readonly lines: ReadonlyArray<string>;
-};
-
 type ScanParams = {
-  readonly lines: ReadonlyArray<string>;
-  readonly index: number;
+  readonly line: string;
+  readonly lineStart: number;
+  readonly lastClose: number;
   readonly depth: number;
 };
 
 type ScanResult = {
   readonly text: string;
-  readonly next: number;
+  readonly isCommentOpen: boolean;
 };
 
 type CloseParams = {
@@ -76,36 +73,33 @@ type LinkParams = {
   readonly at: number;
 };
 
-const linkEndsOf = ({ line, at }: LinkParams): { readonly label: number; readonly url: number } => {
+type LinkEnds = {
+  readonly label: number;
+  readonly url: number;
+  readonly isExpensiveMiss: boolean;
+};
+
+const NO_LINK: LinkEnds = { label: -1, url: -1, isExpensiveMiss: false };
+
+const linkEndsOf = ({ line, at }: LinkParams): LinkEnds => {
   const start = line[at] === '!' ? at + 2 : at + 1;
   const label = bracketCloseOf({ line, from: start });
-  if (label < 0 || line[label + 1] !== '(') {
-    return { label: -1, url: -1 };
+  if (label < 0) {
+    return { label, url: -1, isExpensiveMiss: true };
   }
-  return { label, url: balancedCloseOf({ line, from: label + 2 }) };
-};
-
-type CommentParams = {
-  readonly lines: ReadonlyArray<string>;
-  readonly from: number;
-};
-
-const commentCloseRowOf = ({ lines, from }: CommentParams): number => {
-  const limit = Math.min(lines.length, from + MAX_COMMENT_LOOKAHEAD);
-  for (let row = from; row < limit; row += 1) {
-    if ((lines[row] ?? '').includes(COMMENT_CLOSE)) {
-      return row;
-    }
+  if (line[label + 1] !== '(') {
+    return NO_LINK;
   }
-  return -1;
+  const url = balancedCloseOf({ line, from: label + 2 });
+  return { label, url, isExpensiveMiss: url < 0 };
 };
 
-const scanInline = ({ lines, index, depth }: ScanParams): ScanResult => {
-  const line = (lines[index] ?? '').slice(0, MAX_LINE);
+const scanInline = ({ line, lineStart, lastClose, depth }: ScanParams): ScanResult => {
   let out = '';
-  let nextLine = index + 1;
   let i = 0;
   let nextGt = -2;
+  let linkFailures = 0;
+  const failedRuns = new Set<number>();
   while (i < line.length) {
     const char = line[i];
     if (char === '`') {
@@ -114,8 +108,9 @@ const scanInline = ({ lines, index, depth }: ScanParams): ScanResult => {
         run += 1;
       }
       const delimiter = '`'.repeat(run);
-      const close = line.indexOf(delimiter, i + run);
+      const close = failedRuns.has(run) ? -1 : line.indexOf(delimiter, i + run);
       if (close < 0) {
+        failedRuns.add(run);
         out += delimiter;
         i += run;
         continue;
@@ -130,29 +125,24 @@ const scanInline = ({ lines, index, depth }: ScanParams): ScanResult => {
         i = close + COMMENT_CLOSE.length;
         continue;
       }
-      const row = commentCloseRowOf({ lines, from: index + 1 });
-      if (row >= 0) {
-        const tail = lines[row] ?? '';
-        out += ` ${tail.slice(tail.indexOf(COMMENT_CLOSE) + COMMENT_CLOSE.length)}`;
-        nextLine = row + 1;
-      }
-      i = line.length;
-      continue;
+      return { text: out, isCommentOpen: lastClose >= lineStart + i + COMMENT_OPEN.length };
     }
     if ((char === '!' && line[i + 1] === '[') || char === '[') {
-      const ends = depth < MAX_NESTING ? linkEndsOf({ line, at: i }) : { label: -1, url: -1 };
+      const isTried = depth < MAX_NESTING && linkFailures < MAX_LINK_FAILURES;
+      const ends = isTried ? linkEndsOf({ line, at: i }) : NO_LINK;
+      linkFailures += ends.isExpensiveMiss ? 1 : 0;
       if (ends.url < 0) {
         out += char;
         i += 1;
         continue;
       }
       if (char === '[') {
-        const inner = scanInline({
-          lines: [line.slice(i + 1, ends.label)],
-          index: 0,
+        out += scanInline({
+          line: line.slice(i + 1, ends.label),
+          lineStart: 0,
+          lastClose: -1,
           depth: depth + 1,
-        });
-        out += inner.text;
+        }).text;
       }
       i = ends.url + 1;
       continue;
@@ -173,27 +163,21 @@ const scanInline = ({ lines, index, depth }: ScanParams): ScanResult => {
     out += char;
     i += 1;
   }
-  return { text: out, next: nextLine };
+  return { text: out, isCommentOpen: false };
 };
 
-const withoutFencesOf = ({ lines }: LinesParams): ReadonlyArray<string> => {
-  const kept: Array<string> = [];
-  let fence: string | null = null;
-  for (const line of lines) {
-    const marker = FENCE_OPEN.exec(line)?.[1];
-    if (fence === null) {
-      fence = marker ?? null;
-      kept.push(marker === undefined ? line : '');
-      continue;
-    }
-    const isClose =
-      marker !== undefined &&
-      marker[0] === fence[0] &&
-      marker.length >= fence.length &&
-      line.trim() === marker;
-    fence = isClose ? null : fence;
-  }
-  return kept;
+type EmitParams = {
+  readonly line: string;
+  readonly start: number;
+};
+
+type FlatParams = {
+  readonly text: string;
+};
+
+const flatLineOf = ({ text }: FlatParams): string => {
+  const unmarked = text.replace(/\s+/g, ' ').trim().replace(BLOCK_MARKER, '');
+  return emphasisFreeOf({ text: unmarked }).replace(/\s+/g, ' ').trim();
 };
 
 type EmphasisParams = {
@@ -205,27 +189,67 @@ const emphasisFreeOf = ({ text }: EmphasisParams): string =>
     .replace(BOLD_RE, (_match, a: string | undefined, b: string | undefined) => a ?? b ?? '')
     .replace(ITALIC_RE, (_match, a: string | undefined, b: string | undefined) => a ?? b ?? '');
 
-export const markdownPlainLinesOf = ({ text }: Params): ReadonlyArray<string> => {
+export const markdownPlainLinesOf = ({
+  text,
+  shouldKeepOpenFence = true,
+}: Params): ReadonlyArray<string> => {
   if (text == null) {
     return [];
   }
-  const lines = withoutFencesOf({ lines: text.split('\n') });
+  const lastClose = text.lastIndexOf(COMMENT_CLOSE);
   const out: Array<string> = [];
-  let index = 0;
-  while (index < lines.length) {
-    const scanned = scanInline({ lines, index, depth: 0 });
-    const flat = emphasisFreeOf({
-      text: scanned.text.replace(/\s+/g, ' ').trim().replace(BLOCK_MARKER, ''),
-    })
-      .replace(/\s+/g, ' ')
-      .trim();
+  let fence: string | null = null;
+  let fenceLines: Array<EmitParams> = [];
+  let isInComment = false;
+  let lineStart = 0;
+  const emit = ({ line, start }: EmitParams): void => {
+    const scanned = scanInline({ line, lineStart: start, lastClose, depth: 0 });
+    isInComment = scanned.isCommentOpen;
+    const flat = flatLineOf({ text: scanned.text });
     if (flat.length > 0) {
       out.push(flat);
     }
-    index = scanned.next;
+  };
+  for (const line of text.split('\n')) {
+    const start = lineStart;
+    lineStart += line.length + 1;
+    if (isInComment) {
+      const close = line.indexOf(COMMENT_CLOSE);
+      isInComment = close < 0;
+      if (close >= 0) {
+        emit({
+          line: line.slice(close + COMMENT_CLOSE.length),
+          start: start + close + COMMENT_CLOSE.length,
+        });
+      }
+      continue;
+    }
+    const marker = FENCE_OPEN.exec(line)?.[1];
+    if (fence === null) {
+      if (marker === undefined) {
+        emit({ line, start });
+        continue;
+      }
+      fence = marker;
+      fenceLines = [];
+      continue;
+    }
+    const isClose =
+      marker !== undefined &&
+      marker[0] === fence[0] &&
+      marker.length >= fence.length &&
+      line.trim() === marker;
+    if (isClose) {
+      fence = null;
+      continue;
+    }
+    fenceLines.push({ line, start });
+  }
+  if (fence !== null && shouldKeepOpenFence) {
+    fenceLines.forEach((entry) => emit(entry));
   }
   return out;
 };
 
-export const markdownPreview = ({ text }: Params): string =>
-  markdownPlainLinesOf({ text }).join(' ');
+export const markdownPreview = ({ text, shouldKeepOpenFence = true }: Params): string =>
+  markdownPlainLinesOf({ text, shouldKeepOpenFence }).join(' ');

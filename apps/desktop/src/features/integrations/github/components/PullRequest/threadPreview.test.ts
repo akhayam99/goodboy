@@ -21,4 +21,11 @@ describe('threadPreview', () => {
   it('returns an empty string for a blank body', () => {
     expect(threadPreview({ body: '   ' })).toBe('');
   });
+
+  it('drops a long img tag and a long balanced image from the first line', () => {
+    const img = `<img src="https://example.test/${'a'.repeat(2500)}.png"> Real comment.`;
+    expect(threadPreview({ body: img })).toBe('Real comment.');
+    const md = `![badge](https://example.test/${'b'.repeat(2500)}(v2).svg) Real comment.`;
+    expect(threadPreview({ body: md })).toBe('Real comment.');
+  });
 });

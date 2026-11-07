@@ -3,6 +3,7 @@ import { markdownPlainLinesOf } from '../../../../shared/utils/markdownPreview';
 const RULE_LINE = /^[-*_=\s]{3,}$/;
 const SEVERITY_SPLIT = /[|,·:]/;
 const MAX_BOILERPLATE_WORDS = 8;
+const MAX_PREVIEW = 2000;
 const SEVERITY_WORDS: ReadonlySet<string> = new Set([
   'low',
   'medium',
@@ -56,9 +57,11 @@ const isBoilerplateLine = ({ text }: TextParams): boolean => {
 };
 
 export const commentPreviewOf = ({ text }: TextParams): string =>
-  markdownPlainLinesOf({ text }).find(
-    (line) =>
-      !RULE_LINE.test(line) &&
-      !isSeverityLine({ text: line }) &&
-      !isBoilerplateLine({ text: line }),
-  ) ?? '';
+  (
+    markdownPlainLinesOf({ text, shouldKeepOpenFence: false }).find(
+      (line) =>
+        !RULE_LINE.test(line) &&
+        !isSeverityLine({ text: line }) &&
+        !isBoilerplateLine({ text: line }),
+    ) ?? ''
+  ).slice(0, MAX_PREVIEW);

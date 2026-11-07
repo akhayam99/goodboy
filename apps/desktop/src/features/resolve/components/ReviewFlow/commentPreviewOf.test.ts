@@ -94,4 +94,20 @@ describe('commentPreviewOf', () => {
     const hostile = `${'<a '.repeat(5000)}\n${'`'.repeat(5000)}\n${'[x]('.repeat(3000)}\n${'<!--'.repeat(3000)}\nend`;
     expect(commentPreviewOf({ text: hostile })).toHaveLength(2000);
   });
+
+  it('drops a long img tag and a long balanced image', () => {
+    const img = `<img src="https://example.test/${'a'.repeat(2500)}.png">\nReal comment.`;
+    expect(commentPreviewOf({ text: img })).toBe('Real comment.');
+    const md = `![badge](https://example.test/${'b'.repeat(2500)}(v2).svg)\nReal comment.`;
+    expect(commentPreviewOf({ text: md })).toBe('Real comment.');
+  });
+
+  it('hides a closed comment of any length', () => {
+    const hidden = Array.from({ length: 80 }, (_, row) => `hidden ${row}`).join('\n');
+    expect(commentPreviewOf({ text: `<!--\n${hidden}\n-->\nReal comment.` })).toBe('Real comment.');
+  });
+
+  it('drops a fence that never closes', () => {
+    expect(commentPreviewOf({ text: '```ts\nconst a = 1;' })).toBe('');
+  });
 });

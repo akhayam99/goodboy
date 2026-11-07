@@ -41,4 +41,19 @@ describe('markdownPreview', () => {
     const text = '~~~ts\nconst a = 1;\n~~~\n![x](https://example.test/a(b).svg) done';
     expect(markdownPreview({ text })).toBe('done');
   });
+
+  it('keeps the content of a fence that never closes, without its delimiter', () => {
+    expect(markdownPreview({ text: '```ts\nconst retryLimit = 3;' })).toBe('const retryLimit = 3;');
+    expect(markdownPreview({ text: '```ts\nconst a = 1;', shouldKeepOpenFence: false })).toBe('');
+  });
+
+  it('hides a closed comment of any length and keeps text around it', () => {
+    const hidden = Array.from({ length: 80 }, (_, row) => `hidden ${row}`).join('\n');
+    expect(markdownPreview({ text: `before <!--\n${hidden}\n--> after` })).toBe('before after');
+  });
+
+  it('removes long tags and images whole', () => {
+    const img = `<img src="https://example.test/${'a'.repeat(5000)}.png"> kept`;
+    expect(markdownPreview({ text: img })).toBe('kept');
+  });
 });

@@ -17,7 +17,7 @@ const LIST_ITEM = /^\s*(?:[-*+]|\d+\.)\s+(.+)$/;
 
 type DraftParams = {
   readonly title: string;
-  readonly messages: ReadonlyArray<ChatMessage>;
+  readonly messages: ReadonlyArray<Pick<ChatMessage, 'role' | 'content' | 'reads'>>;
   readonly projectNames: ReadonlyArray<string>;
 };
 
