@@ -134,7 +134,7 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(
       within(card).getAllByText('Revise Retry-safe credit retries to v2').length,
     ).toBeGreaterThan(0);
-    expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Decline' })).toBeDefined();
   });
 
   it('Auto plan approval: the dock asks with the approve label and keeps Open plan one click away', async () => {

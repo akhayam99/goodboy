@@ -575,7 +575,7 @@ describe('story: a run step blocked on a detached mount', () => {
     ).rejects.toThrow('not waiting for a branch');
   });
 
-  it('keeps Restart step on the same block instead of starting a turn', async () => {
+  it('keeps Retry step on the same block instead of starting a turn', async () => {
     seed({ isDetached: true });
     await hint('Cover refunds too.');
     await vi.waitFor(() => {

@@ -26,12 +26,12 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   branch_restored: { lens: 'files', label: 'Open changes' },
   issue_linked: { lens: null, label: 'Open overview' },
   issue_unlinked: { lens: null, label: 'Re-link' },
-  pr_created: { lens: 'pr', label: 'Open PR' },
-  pr_discovered: { lens: 'pr', label: 'Open PR' },
-  pr_ready: { lens: 'pr', label: 'Open PR' },
-  pr_approved: { lens: 'pr', label: 'Open PR' },
-  pr_merged: { lens: 'pr', label: 'Open PR' },
-  pr_closed: { lens: 'pr', label: 'Open PR' },
+  pr_created: { lens: 'pr', label: 'Open pull request' },
+  pr_discovered: { lens: 'pr', label: 'Open pull request' },
+  pr_ready: { lens: 'pr', label: 'Open pull request' },
+  pr_approved: { lens: 'pr', label: 'Open pull request' },
+  pr_merged: { lens: 'pr', label: 'Open pull request' },
+  pr_closed: { lens: 'pr', label: 'Open pull request' },
   workflow_started: { lens: 'workflows', label: 'Open runs' },
   workflow_discarded: { lens: 'workflows', label: 'Open runs' },
   workflow_restored: { lens: 'workflows', label: 'Open runs' },
@@ -146,9 +146,8 @@ export const useTimelineOpen = ({
         }
       }
       if (entry.kind === 'agent') {
-        const isResolver = entry.agentKind === 'resolver';
         return {
-          label: isResolver ? 'Open fix run' : 'Open chat',
+          label: 'Open agent',
           open: () => {
             store.navigate({ to: agentPlace({ sessionId, agentId: entry.agent.id }) });
           },

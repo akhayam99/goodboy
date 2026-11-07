@@ -200,7 +200,7 @@ describe('NextStackView', () => {
     show({ cards: FIX, log });
 
     expect(headsOf()).toEqual(['Retry 2']);
-    await userEvent.click(screen.getByRole('button', { name: 'Retry the 2 stuck agents' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Retry 2 agents' }));
 
     expect([...log.runs].sort()).toEqual(FIX.map((card) => card.id).sort());
   });
@@ -210,7 +210,7 @@ describe('NextStackView', () => {
 
     expect(
       within(screen.getByRole('region', { name: 'Fix' })).getByRole('button', {
-        name: 'Retry the 2 stuck agents',
+        name: 'Retry 2 agents',
       }),
     ).toHaveProperty('textContent', 'Retry 2');
     expect(
@@ -234,7 +234,7 @@ describe('NextStackView', () => {
     expect(fixCards).toHaveLength(2);
     expect(order).toEqual([
       `Go ${decideCard?.id}`,
-      'Retry the 2 stuck agents',
+      'Retry 2 agents',
       `Go ${fixCards[0]?.id}`,
       `Go ${fixCards[1]?.id}`,
     ]);

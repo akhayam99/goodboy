@@ -567,7 +567,7 @@ describe('useSuggestionActions', () => {
     expect(toast).toMatchObject({
       title: 'Plan not started',
       message: 'The next step (Review) does not run plans',
-      action: { label: 'Open the run' },
+      action: { label: 'Follow' },
     });
     expect(spies.showToast).not.toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Implementer started' }),
@@ -905,7 +905,7 @@ describe('useSuggestionActions', () => {
     it('opens the create form for the named mount and never creates blind', () => {
       const actions = actionsFor({ suggestion: openPrSuggestion({}) });
 
-      expect(actions.primary?.label).toBe('Open PR');
+      expect(actions.primary?.label).toBe('Create pull request');
       void actions.primary?.run();
 
       expect(spies.navigate).toHaveBeenCalledWith({

@@ -338,7 +338,7 @@ describe('Context drawer', () => {
     expect(contextUpdateHint({ phase: 'running', pendingTurns: 0, hasContext: true })).toBe('');
     expect(contextUpdateHint({ phase: 'failed', pendingTurns: 0, hasContext: true })).toBe('');
     expect(contextUpdateHint({ phase: 'idle', pendingTurns: 2, hasContext: true })).toBe(
-      '2 new turns since the last update.',
+      '2 new replies since the last update.',
     );
   });
 
@@ -516,7 +516,7 @@ describe('Context drawer sections', () => {
     store.setState({ sessionContextItems: { [SESSION_ID]: [] } });
     mount();
     screen.getByText('No goal yet. Every agent starts from it.');
-    screen.getByText('A summary appears after the first agent turn.');
+    screen.getByText('A summary appears after the first agent reply.');
     screen.getByText(
       'No decisions yet. Agents record one when they settle a choice; you can add your own.',
     );
@@ -572,7 +572,7 @@ describe('Context updates in the drawer', () => {
     mount();
     fireEvent.click(contextUpdatesRow());
     expect(screen.getByRole('definition', { name: 'Last update' }).textContent).toContain(
-      'after 3 turns',
+      'after 3 replies',
     );
     expect(screen.getByRole('definition', { name: 'Model' }).textContent).toContain(
       'Haiku 4.5 · low effort',

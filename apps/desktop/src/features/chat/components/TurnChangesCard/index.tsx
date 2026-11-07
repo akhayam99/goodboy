@@ -82,8 +82,8 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
         tone="danger"
         placement="transcript"
         role="alert"
-        title="Changes from this turn couldn't be saved"
-        body="The text from before this turn is still kept."
+        title="Changes from this reply couldn't be saved"
+        body="The text from before this reply is still kept."
         detail={retryError ?? failure.message}
         actions={
           <Button
@@ -150,7 +150,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
           disabled={isBusy}
           onClick={() => run({ target: undoTargetOf({ outcome }), isForced: false })}
         >
-          Undo restore of turn {outcome.target.turnNumber}
+          Bring it back
         </Button>
       );
     }
@@ -171,7 +171,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
 
   return (
     <section
-      aria-label={`Changes from this turn in ${folderName}`}
+      aria-label={`Changes from this reply in ${folderName}`}
       className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-3"
     >
       <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -182,10 +182,10 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
         />
         <p className="min-w-0 flex-1 text-meta text-foreground">
           Changed {count} {count === 1 ? 'file' : 'files'} in {folderName}
-          <span className="text-muted-foreground"> · saved before this turn</span>
+          <span className="text-muted-foreground"> · saved before this reply</span>
         </p>
         <Button variant="secondary" size="xs" onClick={onReview}>
-          Review changes
+          Open changes
         </Button>
         <Button
           variant="ghost"
@@ -195,7 +195,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
           onClick={() => run({ target: turnRestoreTargetOf({ turn }), isForced: false })}
         >
           <CONCEPT_ICONS.versionRestore size={ICON_SIZE.row} aria-hidden />
-          Restore turn
+          Undo changes from this reply
         </Button>
       </div>
       <ul className="flex min-w-0 flex-col gap-1">

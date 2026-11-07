@@ -58,9 +58,9 @@ describe('the Changes scenes of acme-notes', () => {
   it('lists the three turns with their titles and the history size', async () => {
     await mount({ name: 'u26-nogit-changes-list-light' });
 
-    expect(screen.getByText('Turn 3 · Tighten the intro')).toBeDefined();
-    expect(screen.getByText('Turn 1 · Fix typos')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'pricing.md, turn 1' }).textContent).toContain(
+    expect(screen.getByText('Reply 3 · Tighten the intro')).toBeDefined();
+    expect(screen.getByText('Reply 1 · Fix typos')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'pricing.md, reply 1' }).textContent).toContain(
       'Restored',
     );
     expect(screen.getByText('Saved versions use 18 MB of 1.0 GB')).toBeDefined();
@@ -69,17 +69,17 @@ describe('the Changes scenes of acme-notes', () => {
   it('asks in place when launch-memo.md changed after the turn', async () => {
     await mount({ name: 'u26-nogit-changes-conflict-dark' });
 
-    expect(screen.getByText('launch-memo.md changed after this turn.')).toBeDefined();
+    expect(screen.getByText('launch-memo.md changed after this reply.')).toBeDefined();
   });
 
   it('restores anyway and offers Undo restore, which puts the text back', async () => {
     await mount({ name: 'u26-nogit-changes-restored-light' });
 
-    expect(screen.getByText('Restored launch-memo.md to before turn 3.')).toBeDefined();
+    expect(screen.getByText('Restored launch-memo.md to before reply 3.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Undo restore' }));
     await settle();
     expect(
-      screen.getByRole('button', { name: 'launch-memo.md, turn 3' }).textContent,
+      screen.getByRole('button', { name: 'launch-memo.md, reply 3' }).textContent,
     ).not.toContain('Restored');
   });
 
@@ -94,7 +94,7 @@ describe('the Changes scenes of acme-notes', () => {
     await mount({ name: 'u26-nogit-session-overview-light' });
 
     expect(screen.getByText('In the folder itself, one session at a time')).toBeDefined();
-    expect(screen.getByText('4 files over 3 turns')).toBeDefined();
+    expect(screen.getByText('4 files over 3 replies')).toBeDefined();
   });
 
   it('ends each writing turn in the chat with what it changed', async () => {

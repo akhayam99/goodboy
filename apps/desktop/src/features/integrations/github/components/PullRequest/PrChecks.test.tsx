@@ -108,15 +108,15 @@ describe('PrChecks with nothing reported', () => {
 
     expect(screen.getByText('No checks have reported on this pull request.')).toBeDefined();
     expect(screen.queryByText(/runs no checks/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /View on GitHub/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Open on GitHub/ }));
     expect(onOpenUrl).toHaveBeenCalledWith(FALLBACK);
   });
 
   it('names the host it was given only to a screen reader', () => {
     draw({ checks: [], host: 'bitbucket' });
 
-    const button = screen.getByRole('button', { name: /View on Bitbucket/ });
-    expect(button.textContent).toBe('View');
+    const button = screen.getByRole('button', { name: /Open on Bitbucket/ });
+    expect(button.textContent).toBe('Open');
     expect(screen.queryByRole('button', { name: /GitHub/ })).toBeNull();
   });
 });

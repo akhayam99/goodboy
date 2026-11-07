@@ -218,12 +218,12 @@ describe('one run page', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Stop run' })).toBeNull();
   });
 
-  it('reads the reason of a blocked step on its own page, with Restart step', async () => {
+  it('reads the reason of a blocked step on its own page, with Retry step', async () => {
     await mount('u36-p12-orch-step-blocked');
 
     const tail = within(nodeOf('[data-run-tail]'));
     tail.getByText('Not finished');
-    tail.getByRole('button', { name: 'Restart step' });
+    tail.getByRole('button', { name: 'Retry step' });
     expect(nodeOf('[data-blocked-question]').textContent).toContain(
       'Should I keep the report in the repo or only attach it to the notes?',
     );
@@ -277,7 +277,7 @@ describe('one run page', () => {
     within(menu).getByRole('menuitem', { name: 'Copy run summary' });
   });
 
-  it('leaves View transcript out of the page it would only reopen', async () => {
+  it('leaves Open transcript out of the page it would only reopen', async () => {
     render(
       <ToastProvider>
         <ObjectMenuProvider>
@@ -295,7 +295,7 @@ describe('one run page', () => {
     });
 
     expect(
-      within(screen.getByRole('menu')).queryByRole('menuitem', { name: 'View transcript' }),
+      within(screen.getByRole('menu')).queryByRole('menuitem', { name: 'Open transcript' }),
     ).toBeNull();
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });

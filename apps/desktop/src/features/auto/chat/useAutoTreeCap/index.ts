@@ -34,7 +34,11 @@ export const useAutoTreeCap = ({ sessionId, treeId }: Params): AutoTreeCapSave =
           nowMs: Date.now(),
           drive: currentAutoDrivePort(),
           onDriveError: (error) => {
-            void reportError({ title: 'Auto hit a problem', error, sessionId });
+            void reportError({
+              title: "Auto didn't restart after the limit change",
+              error,
+              sessionId,
+            });
           },
         });
         await loadAutoTrees({ sessionId });

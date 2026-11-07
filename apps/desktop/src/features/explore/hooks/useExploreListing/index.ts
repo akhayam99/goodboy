@@ -39,7 +39,7 @@ const reasonOf = (error: unknown): string => {
   if (error instanceof Error && error.message.trim() !== '') {
     return error.message;
   }
-  return 'Unknown error';
+  return 'No reason given';
 };
 
 export const useExploreListing = ({ sessionDir }: Params): ExploreListingControls => {

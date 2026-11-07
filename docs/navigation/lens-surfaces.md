@@ -220,7 +220,7 @@ comments`; the Needs you row for the pull request calls `openReview` with the
 on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`AgentDetailPane`): every door lands on it, and its address names the
   agent only (`agentPlace({ sessionId, agentId })`). Its steps open beside it in the `transcript` drawer, from a turn's summary
-  line and from **View transcript** on a failure. The `threads` destination needs no
+  line and from **Open transcript** on a failure. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,

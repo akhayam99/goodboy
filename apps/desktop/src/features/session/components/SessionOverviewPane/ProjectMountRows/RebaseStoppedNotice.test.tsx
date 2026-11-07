@@ -95,7 +95,7 @@ describe('RebaseStoppedNotice', () => {
   it('hands the rebase to an agent on this mount', () => {
     renderNotice(statusOf());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hand it to an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fix with an agent' }));
 
     expect(rebase.resume).toHaveBeenCalledWith({ mountId: 'mount-1' });
   });

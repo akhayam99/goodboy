@@ -87,7 +87,7 @@ export const RestoreBand = ({ outcome, isBusy, onConfirm, onRetry, onUndo, onDis
       actions={
         outcome.target.scope === 'turn' ? (
           <Button variant="secondary" size="xs" isBusy={isBusy} disabled={isBusy} onClick={onUndo}>
-            Undo restore of turn {outcome.target.turnNumber}
+            Bring it back
           </Button>
         ) : null
       }

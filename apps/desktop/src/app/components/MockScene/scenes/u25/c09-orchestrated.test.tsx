@@ -211,14 +211,14 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.getAllByRole('button', { name: 'Decide next step' })).toHaveLength(1);
   });
 
-  it('c09-orch-failed says why and offers Retry and View transcript', async () => {
+  it('c09-orch-failed says why and offers Retry and Open transcript', async () => {
     await mount('c09-orch-failed');
 
     expect(
       within(tail()).getByText('Last decision failed: the orchestrator returned no step.'),
     ).toBeDefined();
     expect(within(header()).getByRole('button', { name: 'Retry' })).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'View transcript' })).toBeDefined();
+    expect(within(tail()).getByRole('button', { name: 'Open transcript' })).toBeDefined();
   });
 
   it('c09-orch-done shows the result with Done, Left and the next moves', async () => {

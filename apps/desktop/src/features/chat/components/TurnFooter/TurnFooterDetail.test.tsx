@@ -55,8 +55,7 @@ type MountParams = {
   readonly data: TurnFooterData;
 };
 
-const mount = ({ data }: MountParams) =>
-  render(<TurnFooterDetail data={data} duration={null} startedAt={null} endedAt={null} />);
+const mount = ({ data }: MountParams) => render(<TurnFooterDetail data={data} duration={null} />);
 
 type ValueParams = {
   readonly label: string;

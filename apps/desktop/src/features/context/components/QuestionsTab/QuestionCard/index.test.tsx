@@ -189,9 +189,11 @@ describe('QuestionCard', () => {
     expect(onUndo).toHaveBeenCalledOnce();
   });
 
-  it('turns Answer into Hand off once an agent decides', () => {
+  it('turns Answer into Send to agent once an agent decides', () => {
     renderCard({ delegate: delegateWith('chosen') });
-    expect(screen.getByRole('button', { name: 'Hand off' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Send to agent' }).hasAttribute('disabled')).toBe(
+      false,
+    );
     screen.getByText(QUESTION_DELEGATE_COPY.chosen);
   });
 

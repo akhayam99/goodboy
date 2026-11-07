@@ -149,7 +149,7 @@ describe('PartCommentFrame', () => {
     expect(screen.getByText('Sent')).toBeDefined();
     expect(screen.getByText('Addressed')).toBeDefined();
     expect(screen.getByText('Not changed in v2')).toBeDefined();
-    expect(screen.getByText('No new version in this turn')).toBeDefined();
+    expect(screen.getByText('No new version')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Remove comment' })).toBeNull();
   });
 

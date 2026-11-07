@@ -43,7 +43,7 @@ describe('usePlanRun', () => {
 
     screen.getByText('Plan not started');
     screen.getByText('The next step (Review) does not run plans');
-    screen.getByRole('button', { name: 'Open the run' });
+    screen.getByRole('button', { name: 'Follow' });
     expect(screen.queryByText('Implementer started')).toBeNull();
   });
 

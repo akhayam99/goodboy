@@ -74,7 +74,7 @@ describe('DelegationResult summary', () => {
     const { rerender } = render(<DelegationResult result={result} onRerunChecks={onRerunChecks} />);
 
     screen.getByText('Not checked: timed out');
-    fireEvent.click(screen.getByRole('button', { name: 'Run checks again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry checks' }));
     expect(onRerunChecks).toHaveBeenCalledTimes(1);
 
     rerender(<DelegationResult result={result} onRerunChecks={onRerunChecks} isRerunningChecks />);
@@ -96,7 +96,7 @@ describe('DelegationResult summary', () => {
     );
 
     screen.getByText('Checks green: typecheck');
-    expect(screen.queryByRole('button', { name: 'Run checks again' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry checks' })).toBeNull();
   });
 
   it('says what happened to the push and offers the one try again that can still pass', () => {
@@ -115,14 +115,12 @@ describe('DelegationResult summary', () => {
     );
 
     screen.getByText('Not pushed: connection reset');
-    fireEvent.click(screen.getByRole('button', { name: 'Try the push again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
     expect(onRetryPublish).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Put back' })).toBeNull();
 
     rerender(<DelegationResult result={result} onRetryPublish={onRetryPublish} isActingPublish />);
-    expect(
-      screen.getByRole('button', { name: 'Try the push again' }).hasAttribute('disabled'),
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Retry push' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('offers Put back after a force push and nothing after a push that cannot be undone', () => {

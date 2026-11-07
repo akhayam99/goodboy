@@ -241,7 +241,7 @@ to the drafts and the delegate controls; every place uses that one.
   (`DelegateAnswerRow`): "Let an agent decide", then the routing pill, hints
   and Cancel once chosen, and the tiles dim.
 - **Actions** end the card through `FormActions` (`AnswerSubmitButton`): the
-  key hint in `leading`, Skip as `ghost`, Answer (or Hand off) as the one
+  key hint in `leading`, Skip as `ghost`, Answer (or Send to agent) as the one
   primary. `1` to `9` pick, Enter answers, Escape leaves a field.
 - **Answered.** A staged answer keeps the picked tile and swaps the actions for
   a done line with Undo (`QuestionAnswerDone`); a sent one shows the answer in

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { currentPublishPort, type PublishAct } from '../../publishPort';
+import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
 
 const FAILED_TITLE = "Couldn't finish the push";
 
@@ -27,7 +28,7 @@ export const usePublishAct = (): PublishActModel => {
       if (port === null) {
         await reportError({
           title: FAILED_TITLE,
-          error: new Error('Auto is not running yet. Try again in a moment.'),
+          error: new Error(AUTO_STARTING_SENTENCE),
         });
         return;
       }

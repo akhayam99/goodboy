@@ -205,7 +205,7 @@ export const ChangesPane = ({ sessionId }: Props) => {
             onClick={() => run({ target: turnTarget, isForced: false })}
           >
             <CONCEPT_ICONS.versionRestore size={ICON_SIZE.row} aria-hidden />
-            Restore turn {turnTarget.turnNumber}
+            Undo changes from this reply
           </Button>
         )
       }

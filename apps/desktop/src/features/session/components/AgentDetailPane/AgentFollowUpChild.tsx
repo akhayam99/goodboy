@@ -63,7 +63,7 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
           FOCUS_RING,
         )}
       >
-        Go to chat
+        Open agent
       </button>
     </div>
   );

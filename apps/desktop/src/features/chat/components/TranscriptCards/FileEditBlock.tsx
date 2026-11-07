@@ -47,8 +47,8 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
         as="button"
         type="button"
         onClick={() => onOpenDiff(path)}
-        title="View file"
-        aria-label="View file"
+        title="Open file"
+        aria-label="Open file"
         tone="info"
         variant="boxed"
         className="group inline-flex w-fit max-w-full cursor-pointer items-center gap-2 transition-opacity hover:opacity-80"

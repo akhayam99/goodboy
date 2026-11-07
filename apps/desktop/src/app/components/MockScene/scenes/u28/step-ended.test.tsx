@@ -44,7 +44,7 @@ describe('u28 step ended scene', () => {
     );
 
     await screen.findByText('Not finished', undefined, WAIT);
-    screen.getByRole('button', { name: 'Restart step' });
+    screen.getByRole('button', { name: 'Retry step' });
     screen.getByRole('button', { name: 'Keep working' });
     expect(screen.queryByText('This step ended without a result')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark step done' })).toBeNull();

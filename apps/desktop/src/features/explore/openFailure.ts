@@ -21,7 +21,7 @@ const reasonOf = ({ error }: ReasonParams): string => {
   if (error instanceof Error && error.message.trim() !== '') {
     return error.message;
   }
-  return 'Unknown error';
+  return 'No reason given';
 };
 
 export const openFailureOf = ({ name, action, isReveal, error }: Params): ExploreOpenFailure => {

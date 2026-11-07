@@ -82,7 +82,7 @@ describe('TailLine', () => {
         onAction={onAction}
       />,
     );
-    await userEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open transcript' }));
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(onAction.mock.calls).toEqual([['viewTranscript'], ['retry']]);
   });

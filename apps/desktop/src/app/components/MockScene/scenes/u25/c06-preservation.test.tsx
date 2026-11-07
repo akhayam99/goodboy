@@ -155,7 +155,7 @@ describe('agent rows stay reachable from the one conversation', () => {
     await mount({ name: 'c06-agent-failed' });
 
     expect(screen.getByText('Failed here')).toBeDefined();
-    expect(screen.queryByText('The turn stopped')).toBeNull();
+    expect(screen.queryByText('Stopped')).toBeNull();
     expect(screen.getByRole('button', { name: /^Retry/ })).toBeDefined();
   });
 

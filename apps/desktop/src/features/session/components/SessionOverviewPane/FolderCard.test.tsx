@@ -72,10 +72,10 @@ describe('FolderCard', () => {
     const card = within(screen.getByRole('region', { name: 'acme-notes, where agents write' }));
     expect(card.getByText('Documents')).toBeDefined();
     expect(card.getByText('In the folder itself, one session at a time')).toBeDefined();
-    expect(await card.findByText('2 files over 2 turns')).toBeDefined();
+    expect(await card.findByText('2 files over 2 replies')).toBeDefined();
     expect(card.getByText('Word, PDF, Pages, Keynote, Numbers and Excel files')).toBeDefined();
     expect(card.getByText(notes.rootPath)).toBeDefined();
-    expect(card.getByRole('button', { name: 'Open Changes' })).toBeDefined();
+    expect(card.getByRole('button', { name: 'Open changes' })).toBeDefined();
   });
 
   it('shows git found in a documents folder where the user looks, and Keep as documents answers it', async () => {

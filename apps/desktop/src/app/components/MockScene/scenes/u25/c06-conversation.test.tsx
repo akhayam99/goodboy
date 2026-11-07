@@ -75,7 +75,7 @@ describe('the c06 conversation scenes', () => {
     expect(mark.getAttribute('aria-label')).toBe('Claude');
     expect(mark.textContent).toBe('');
     expect(within(row).queryByRole('button', { name: 'Rename agent' })).toBeNull();
-    expect(within(row).queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(within(row).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByText('Running')).toBeNull();
     expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
@@ -288,12 +288,12 @@ describe('the c06 conversation scenes', () => {
     expect(screen.getByText(/estimated at API prices/)).toBeDefined();
   });
 
-  it('c06-agent-finished keeps View transcript out of the header and its menu', async () => {
+  it('c06-agent-finished keeps Open transcript out of the header and its menu', async () => {
     await mount({ name: 'c06-agent-finished' });
 
-    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    expect(screen.queryByRole('menuitem', { name: 'View transcript' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Open transcript' })).toBeNull();
   });
 
   it('c06-agents-empty shows the empty Runs page as the Start a run field, no Start an agent', async () => {

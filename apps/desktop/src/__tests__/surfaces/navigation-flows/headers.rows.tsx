@@ -172,11 +172,11 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       const menu = await screen.findByRole('button', { name: 'More agent actions' }, WAIT);
       expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
       expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
 
       await click(menu);
       await screen.findByRole('menuitem', { name: 'Rename' }, WAIT);
-      expect(screen.queryByRole('menuitem', { name: 'View transcript' })).toBeNull();
+      expect(screen.queryByRole('menuitem', { name: 'Open transcript' })).toBeNull();
 
       state().navigate({ to: agentPlace({ sessionId: ctx.sessionId, agentId: OTHER_AGENT }) });
       await settle();

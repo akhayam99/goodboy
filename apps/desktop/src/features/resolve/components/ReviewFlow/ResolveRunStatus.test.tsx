@@ -84,7 +84,7 @@ describe('ResolveRunStatus', () => {
     expect(document.querySelector('[data-tail]')).not.toBeNull();
   });
 
-  it('keeps the actions slot before View transcript', () => {
+  it('keeps the actions slot before Open transcript', () => {
     renderStatus({
       words: ['ready'],
       actions: <button type="button">Accept 1</button>,
@@ -93,13 +93,13 @@ describe('ResolveRunStatus', () => {
     const names = within(screen.getByTestId('resolve-run-status'))
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(names.indexOf('Accept 1')).toBeLessThan(names.indexOf('View transcript'));
+    expect(names.indexOf('Accept 1')).toBeLessThan(names.indexOf('Open transcript'));
   });
 
-  it('drops View transcript while the transcript of the run is already open', () => {
+  it('drops Open transcript while the transcript of the run is already open', () => {
     renderStatus({ words: ['ready'], onOpenTranscript: null });
 
-    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
   });
 
   it('offers Stop only while the run works, and asks before stopping', () => {

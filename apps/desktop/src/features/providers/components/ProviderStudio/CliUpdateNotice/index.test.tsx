@@ -124,7 +124,7 @@ describe('CliUpdateNotice', () => {
     expect(screen.getByRole('button', { name: 'Update Claude CLI' }).hasAttribute('disabled')).toBe(
       true,
     );
-    expect(screen.getByText(/Wait for running turns to finish\./)).toBeDefined();
+    expect(screen.getByText(/Wait for running replies to finish\./)).toBeDefined();
   });
 
   it('ends on a warning with the PATH binary and keeps the terminal when nothing changed', () => {

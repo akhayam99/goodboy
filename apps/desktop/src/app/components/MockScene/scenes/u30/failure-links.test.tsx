@@ -87,11 +87,11 @@ describe('the u30 failure link scenes', () => {
     if (tail === null || tail === undefined) {
       throw new Error('no tail');
     }
-    within(tail).getByRole('button', { name: 'View transcript' });
+    within(tail).getByRole('button', { name: 'Open transcript' });
     within(tail).getByRole('button', { name: 'Retry' });
   });
 
-  it('u30-human-call offers View transcript on a run that needs a human call', async () => {
+  it('u30-human-call offers Open transcript on a run that needs a human call', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
     mount({ name: 'u30-human-call' });
     await act(async () => {
@@ -102,7 +102,7 @@ describe('the u30 failure link scenes', () => {
     if (tail === null) {
       throw new Error('no tail');
     }
-    fireEvent.click(within(tail).getByRole('button', { name: 'View transcript' }));
+    fireEvent.click(within(tail).getByRole('button', { name: 'Open transcript' }));
     expect(useAppStore.getState().activeLens[C09_SESSION_ID]).toBe('workflows');
     expect(useAppStore.getState().drawer).toBeNull();
     expect(screen.queryByText('Something went wrong')).toBeNull();

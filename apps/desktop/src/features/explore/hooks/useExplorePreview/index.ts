@@ -19,7 +19,7 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
   if (error instanceof Error && error.message.trim() !== '') {
     return error.message;
   }
-  return 'Unknown error';
+  return 'No reason given';
 };
 
 type Params = {

@@ -29,7 +29,7 @@ describe('previousAttemptsOf', () => {
       id: 'a1',
       number: 1,
       outcome: 'failed',
-      reason: 'The model provider stopped the run',
+      reason: 'The provider stopped the run',
     });
   });
 
@@ -41,7 +41,7 @@ describe('previousAttemptsOf', () => {
 
     const previous = previousAttemptsOf({ attempts, threadId: 'PRRT_1', activeAttemptId: 'a2' });
 
-    expect(previous[0]).toMatchObject({ outcome: 'failed', reason: 'Cause not recorded' });
+    expect(previous[0]).toMatchObject({ outcome: 'failed', reason: "Goodboy didn't record why" });
   });
 
   it('marks a stopped attempt and a finished one', () => {

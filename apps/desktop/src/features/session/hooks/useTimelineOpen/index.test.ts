@@ -95,7 +95,7 @@ describe('useTimelineOpen', () => {
     const { result } = renderHook(() => useTimelineOpen({ sessionId }));
     const target = result.current({ entry: agentEntry({ agentKind: 'resolver' }) });
 
-    expect(target?.label).toBe('Open fix run');
+    expect(target?.label).toBe('Open agent');
     target?.open();
     expect(state.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId, agentId: 'agent-1' },
@@ -108,7 +108,7 @@ describe('useTimelineOpen', () => {
     const { result } = renderHook(() => useTimelineOpen({ sessionId }));
     const target = result.current({ entry: agentEntry({ agentKind: 'implementer' }) });
 
-    expect(target?.label).toBe('Open chat');
+    expect(target?.label).toBe('Open agent');
     expect(state.markAgentSeen).not.toHaveBeenCalled();
     target?.open();
     expect(state.markAgentSeen).toHaveBeenCalledWith(sessionId, 'agent-1');
@@ -119,7 +119,7 @@ describe('useTimelineOpen', () => {
     const { result } = renderHook(() => useTimelineOpen({ sessionId }));
     const target = result.current({ entry: agentEntry({ agentKind: 'implementer' }) });
 
-    expect(target?.label).toBe('Open chat');
+    expect(target?.label).toBe('Open agent');
     target?.open();
     expect(state.navigate).toHaveBeenLastCalledWith({
       to: { at: 'agent', sessionId, agentId: 'agent-1' },

@@ -325,7 +325,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.restartStep',
-      label: 'Restart step',
+      label: NAMES.retryStep,
       icon: RotateCcw,
       group: 'act',
       when: ({ facts }) => facts.state === 'failed',
@@ -405,7 +405,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.stepTranscript',
-      label: 'View transcript',
+      label: NAMES.openTranscript,
       icon: ScrollText,
       group: 'open',
       when: ({ facts }) => facts.stepAgentId !== null,

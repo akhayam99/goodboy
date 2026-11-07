@@ -74,7 +74,7 @@ export const planRunToast = ({ result, sessionId, navigate }: Params): ShowToast
           ? {}
           : {
               action: {
-                label: 'Open the run',
+                label: 'Follow',
                 onClick: () =>
                   navigate({
                     to: sessionPlace({

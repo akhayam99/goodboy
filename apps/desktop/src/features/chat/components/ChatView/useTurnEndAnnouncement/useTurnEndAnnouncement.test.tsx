@@ -67,18 +67,18 @@ afterEach(cleanup);
 describe('turnEndAnnouncement', () => {
   it('turns the last finished turn into one sentence', () => {
     expect(turnEndAnnouncement({ rows: [{ kind: 'user' }, SUMMARY_ROW] })).toBe(
-      'Turn finished: Ran 2 commands',
+      'Reply finished: Ran 2 commands',
     );
   });
 
   it('counts the errors in the sentence', () => {
     expect(turnEndAnnouncement({ rows: [FAILED_ROW] })).toBe(
-      'Turn finished: Ran a command, 1 error',
+      'Reply finished: Ran a command, 1 error',
     );
   });
 
   it('falls back to the bare sentence when the turn used no tool', () => {
-    expect(turnEndAnnouncement({ rows: [{ kind: 'assistant_text' }] })).toBe('Turn finished');
+    expect(turnEndAnnouncement({ rows: [{ kind: 'assistant_text' }] })).toBe('Reply finished');
   });
 });
 
@@ -109,7 +109,7 @@ describe('the finished turn in the shared polite region', () => {
       );
     });
 
-    expect(sentence()).toBe('Turn finished: Ran 2 commands');
+    expect(sentence()).toBe('Reply finished: Ran 2 commands');
     expect(useAnnouncementStore.getState().sequence).toBe(1);
   });
 
