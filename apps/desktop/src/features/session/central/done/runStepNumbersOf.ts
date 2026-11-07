@@ -1,4 +1,5 @@
 import type { TimelineAgentEntry, TimelineRunEntry } from '../../timeline/buildTimelineGroups';
+import { runAgentEntriesOf } from '../../timeline/runAgentEntriesOf';
 import { runStepCounts } from '../../timeline/runStepProgress';
 
 type Params = {
@@ -11,9 +12,7 @@ export type RunStepNumbers = {
 };
 
 const stepAgentsOf = ({ entry }: Params): ReadonlyArray<TimelineAgentEntry> =>
-  entry.children
-    .flatMap((child) => (child.kind === 'agent' ? [child] : []))
-    .filter((child) => child.agent.parentAgentId == null);
+  runAgentEntriesOf({ entry }).filter((child) => child.agent.parentAgentId == null);
 
 export const runStepNumbersOf = ({ entry }: Params): RunStepNumbers => {
   const numberOf = new Map<string, number>();

@@ -25,16 +25,13 @@ import { skipDependentsOfStuck } from './clusterWaves/skipDependentsOfStuck';
 import { startChild } from './clusterWaves/startChild';
 import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
+import { orderedChildAgentsOf } from '../../../shared/utils/orderedChildAgentsOf';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import { blockUnreadablePart } from './clusterWaves/blockUnreadablePart';
 import { clusterLaunching } from './clusterWaves/clusterLaunching';
 import { clusterOrderBlocks } from './clusterWaves/clusterOrderBlocks';
 import { launchableChildren } from './clusterWaves/launchableChildren';
 import { composeClusterChecks } from './clusterWaves/composeClusterChecks';
-
-function childrenOf(runs: ReadonlyArray<Agent>, containerId: AgentId): ReadonlyArray<Agent> {
-  return runs.filter((r) => r.parentAgentId === containerId).sort((a, b) => a.ordinal - b.ordinal);
-}
 
 export const clusterBoundaryMarker = (childId: AgentId): string =>
   `<<cluster-done id="${childId}">>`;
@@ -123,7 +120,7 @@ export const fanOutClusters = async (
     return;
   }
   const existing = get().sessionPhaseRuns[sessionId] ?? [];
-  if (childrenOf(existing, container.id).length > 0) {
+  if (orderedChildAgentsOf({ agents: existing, parentId: container.id }).length > 0) {
     return;
   }
 
@@ -215,7 +212,7 @@ export const fanOutClusters = async (
     };
   });
 
-  const children = childrenOf(materialized.agents, container.id);
+  const children = orderedChildAgentsOf({ agents: materialized.agents, parentId: container.id });
   for (const child of launchableChildren({ children, clusters })) {
     const index = children.indexOf(child);
     clusterLaunching.claim({ childId: child.id });
@@ -366,7 +363,9 @@ export const unsettledClusterChildren = (
   runs: ReadonlyArray<Agent>,
   containerId: AgentId,
 ): ReadonlyArray<Agent> =>
-  childrenOf(runs, containerId).filter((child) => !isAgentStatusSettled({ status: child.status }));
+  orderedChildAgentsOf({ agents: runs, parentId: containerId }).filter(
+    (child) => !isAgentStatusSettled({ status: child.status }),
+  );
 
 type ResumeClusterChildrenParams = {
   readonly set: SetFn;
@@ -382,7 +381,7 @@ export const resumeClusterChildren = async ({
   container,
 }: ResumeClusterChildrenParams): Promise<boolean> => {
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
-  const children = childrenOf(runs, container.id);
+  const children = orderedChildAgentsOf({ agents: runs, parentId: container.id });
   if (!children.some((child) => child.status === 'pending')) {
     return false;
   }
@@ -480,7 +479,9 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     });
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
-    const found = childrenOf(runs, containerId).findIndex((c) => c.id === childAgentId);
+    const found = orderedChildAgentsOf({ agents: runs, parentId: containerId }).findIndex(
+      (c) => c.id === childAgentId,
+    );
     const index = Math.max(0, found);
 
     let justDoneId: AgentId | undefined = childAgentId;
@@ -515,7 +516,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       if (outcome !== 'stuck') {
         return;
       }
-      const siblings = childrenOf(runs, containerId);
+      const siblings = orderedChildAgentsOf({ agents: runs, parentId: containerId });
       await invokeAgentUpdateStatus(childAgentId, {
         status: 'skipped',
         completedAt: isoNow(),
@@ -553,7 +554,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
-    const children = childrenOf(refreshed, containerId);
+    const children = orderedChildAgentsOf({ agents: refreshed, parentId: containerId });
     const isDone = (c: Agent): boolean =>
       c.id === childAgentId || isAgentStatusSettled({ status: c.status });
     const settledCount = children.filter(isDone).length;

@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core/providers';
 import type {
   Agent,
+  AgentId,
   ProviderName,
   ProviderRunId,
   SessionId,
@@ -11,6 +12,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../components/AgentTree/ContextWindowBar';
 import type { AgentAggregate } from '../../agentAggregate';
+import { childAgentsByParent } from '../../../../shared/utils/childAgentsByParent';
 
 export type AgentMetrics = {
   readonly aggregatesByAgentId: ReadonlyMap<string, AgentAggregate>;
@@ -77,23 +79,6 @@ const aggregatesByRunId = ({ telemetry }: TelemetryParams): Map<string, MutableA
     aggregate.inputTokens += inputTokensForUsage(record);
     aggregate.outputTokens += record.outputTokens;
     aggregate.turns = 1;
-  }
-  return map;
-};
-
-type AgentParams = {
-  readonly agents: ReadonlyArray<Agent>;
-};
-
-const childIdsByParentId = ({ agents }: AgentParams): Map<string, ReadonlyArray<string>> => {
-  const map = new Map<string, string[]>();
-  for (const agent of agents) {
-    if (agent.parentAgentId == null) {
-      continue;
-    }
-    const bucket = map.get(agent.parentAgentId) ?? [];
-    bucket.push(agent.id);
-    map.set(agent.parentAgentId, bucket);
   }
   return map;
 };
@@ -173,9 +158,9 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
       }
       map.set(run.id, totals);
     }
-    const childIds = childIdsByParentId({ agents: phaseRuns });
+    const childrenOf = childAgentsByParent({ agents: phaseRuns });
     const rolled = new Set<string>();
-    const rollup = (id: string) => {
+    const rollup = (id: AgentId) => {
       if (rolled.has(id)) {
         return;
       }
@@ -184,7 +169,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
       if (self == null) {
         return;
       }
-      for (const childId of childIds.get(id) ?? []) {
+      for (const { id: childId } of childrenOf.get(id) ?? []) {
         rollup(childId);
         const child = map.get(childId);
         if (child == null) {

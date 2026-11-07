@@ -14,6 +14,7 @@ import type {
 } from '../buildTimelineGroups';
 import type { RailGroupDirection, RailGroupInput } from '../../../workTreeModel/railGeometry';
 import type { RunIdentity } from '../runIdentity';
+import { runAgentEntriesOf } from '../runAgentEntriesOf';
 import type { JobActivityFacts } from '../../../../store/slices/history/jobFactsByAgentId';
 import type { AutoRowFacts } from '../../../auto/autoRowFacts';
 import { jobRowState } from '../jobActivity';
@@ -71,8 +72,7 @@ export const stepAgentsOf = ({
   entry,
 }: {
   readonly entry: TimelineRunEntry;
-}): ReadonlyArray<Agent> =>
-  entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
+}): ReadonlyArray<Agent> => runAgentEntriesOf({ entry }).map((child) => child.agent);
 
 const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
 
