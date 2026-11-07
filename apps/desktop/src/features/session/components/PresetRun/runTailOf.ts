@@ -67,24 +67,25 @@ type DynamicWord = {
   readonly phrase: string;
 };
 
-const DYNAMIC_STATES = {
-  continue: 'stopped',
-  retry: 'failed',
-  hint: 'needsYou',
-} as const satisfies Readonly<Record<string, TailState>>;
-
-const DECIDE_NEXT_WORD: DynamicWord = { state: 'idle', phrase: 'Ready' };
-
 type DynamicParams = {
   readonly kind: 'continue' | 'retry' | 'hint' | 'decide-next';
 };
+
+const dynamicStateOf = ({ kind }: DynamicParams): TailState => {
+  if (kind === 'continue') {
+    return 'stopped';
+  }
+  return kind === 'retry' ? 'failed' : 'needsYou';
+};
+
+const DECIDE_NEXT_WORD: DynamicWord = { state: 'idle', phrase: 'Ready' };
 
 const dynamicWordOf = ({ kind }: DynamicParams): DynamicWord => {
   if (kind === 'decide-next') {
     return DECIDE_NEXT_WORD;
   }
   return {
-    state: DYNAMIC_STATES[kind],
+    state: dynamicStateOf({ kind }),
     phrase: runStateOfPrimary({ primary: kind }).pageWord,
   };
 };

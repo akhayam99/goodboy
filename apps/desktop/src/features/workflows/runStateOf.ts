@@ -109,24 +109,40 @@ type PrimaryParams = {
   readonly primary: RunPrimaryKind;
 };
 
-const KIND_OF_PRIMARY: Readonly<Record<RunPrimaryKind, RunStateKind>> = {
-  'review-plan': 'plan-hold',
-  'approve-plan': 'plan-hold',
-  answer: 'question',
-  resume: 'paused',
-  continue: 'stopped',
-  retry: 'failed',
-  hint: 'question',
-  'raise-cap': 'limit',
-  'decide-next': 'waits-go',
-  'start-step': 'ready',
-  'open-step': 'halted-blocked',
-  'start-run': 'ready',
-  restore: 'archived',
+const kindOfPrimary = ({ primary }: PrimaryParams): RunStateKind => {
+  switch (primary) {
+    case 'review-plan':
+    case 'approve-plan':
+      return 'plan-hold';
+    case 'answer':
+    case 'hint':
+      return 'question';
+    case 'resume':
+      return 'paused';
+    case 'continue':
+      return 'stopped';
+    case 'retry':
+      return 'failed';
+    case 'raise-cap':
+      return 'limit';
+    case 'decide-next':
+      return 'waits-go';
+    case 'start-step':
+    case 'start-run':
+      return 'ready';
+    case 'open-step':
+      return 'halted-blocked';
+    case 'restore':
+      return 'archived';
+    default: {
+      const exhaustive: never = primary;
+      return exhaustive;
+    }
+  }
 };
 
 export const runStateOfPrimary = ({ primary }: PrimaryParams): RunState =>
-  runStateFromKind({ kind: KIND_OF_PRIMARY[primary] });
+  runStateFromKind({ kind: kindOfPrimary({ primary }) });
 
 type RunParams = {
   readonly run: WorkflowRun;
@@ -154,7 +170,7 @@ type Params = RunParams & {
   readonly isPlanRevising: boolean;
 };
 
-const kindOf = ({
+const runStateKindOf = ({
   run,
   workflow,
   agents,
@@ -208,4 +224,4 @@ const kindOf = ({
 };
 
 export const runStateOf = ({ predecessorName, ...facts }: Params): RunState =>
-  runStateFromKind({ kind: kindOf({ ...facts, predecessorName }), predecessorName });
+  runStateFromKind({ kind: runStateKindOf({ ...facts, predecessorName }), predecessorName });

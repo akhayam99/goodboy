@@ -98,7 +98,7 @@ describe('the u28 run page scenes', () => {
     for (const name of ['Restart step', 'Open agent chat', 'Keep working', 'Stop step']) {
       expect(within(tail()).queryByRole('button', { name })).toBeNull();
     }
-    within(checklist()).getByRole('button', { name: /^Skip and go on/ });
+    within(checklist()).getByRole('button', { name: /^Skip step/ });
     expect(header().textContent).not.toContain('Restart step');
   });
 

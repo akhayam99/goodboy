@@ -61,7 +61,7 @@ A step that cannot finish ends as **Not finished**, and the level you picked dec
 
 An agent that cannot finish a step says so. Goodboy also decides it for an agent that forgot to: a step that stops twice without saying it is done is not finished. With **Never** or **After the plan** the step ends as **Not finished** in amber, the run goes on, and the next steps are told what is missing. The rows after it say "without step 2", and a part that depends on it does not start. The run ends as "Finished, 1 step not finished", never plain Done, with a link to the step. **Keep working** on the row sends the same agent back to the step. **Skipped** stays the word for a step you skipped yourself.
 
-With **Every step** the step stops as blocked and **Skip and go on** sits on its row. The field on the step page, whose button reads **Continue**, is the only place to type. Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
+With **Every step** the step stops as blocked and **Skip step** sits on its row. The field on the step page, whose button reads **Continue**, is the only place to type. Two steps in a row that do not finish stop the run at any level, and it asks. The reason shows only on the agent's own page, never on the run page or in a notification.
 
 ### Run defaults
 
