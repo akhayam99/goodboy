@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { RevealRegion, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
+import { StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -42,18 +42,17 @@ export const TerminalStudioBody = ({ model, isActive }: Props) => {
   };
   return (
     <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-      <RevealRegion header={<TerminalPageHeader />}>
-        <StudioRailLayout
-          railLabel="Terminals"
-          railWidth="standard"
-          surface="terminal"
-          placement="page"
-          isCollapsed={fold.isCollapsed}
-          onCollapsedChange={fold.setFolded}
-          rail={model.groups.length === 0 ? null : <TerminalRail model={model} />}
-          detail={<TerminalDetail model={model} isActive={isActive} />}
-        />
-      </RevealRegion>
+      <TerminalPageHeader />
+      <StudioRailLayout
+        railLabel="Terminals"
+        railWidth="standard"
+        surface="terminal"
+        placement="page"
+        isCollapsed={fold.isCollapsed}
+        onCollapsedChange={fold.setFolded}
+        rail={model.groups.length === 0 ? null : <TerminalRail model={model} />}
+        detail={<TerminalDetail model={model} isActive={isActive} />}
+      />
     </div>
   );
 };
