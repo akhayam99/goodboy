@@ -552,8 +552,11 @@ describe('the Overview grid', () => {
     expect(rows[0]?.textContent).toContain('Asked');
     expect(within(reviewers).queryByText('portal-preview[bot]')).toBeNull();
     const bots = screen.getByRole('region', { name: 'Bots' });
-    within(bots).getByText('portal-preview[bot]');
-    within(bots).getByText('Commented');
+    const portal = within(bots).getByText('portal-preview[bot]').closest('li');
+    expect(portal?.textContent).toBe('portal-preview[bot]Commented');
+    expect(within(bots).getByText('acme-review').closest('li')?.textContent).toBe(
+      'acme-reviewCommented',
+    );
   });
 
   it('says the queue of a queued pull request in the merge box', async () => {

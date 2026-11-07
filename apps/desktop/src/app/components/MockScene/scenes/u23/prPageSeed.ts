@@ -158,6 +158,16 @@ const REVIEWS_BLOCKING: ReadonlyArray<PrReview> = [
     minutes: 2 * DAY,
     body: 'The event id is the right key.',
   }),
+  {
+    ...reviewOf({
+      id: 'review-acme',
+      author: 'acme-review',
+      state: 'commented',
+      minutes: 180,
+      body: 'File structure, error handling, naming and queries: no issues in 4 areas.',
+    }),
+    isAuthorBot: true,
+  },
 ];
 
 const REVIEWS_APPROVED: ReadonlyArray<PrReview> = [
@@ -327,7 +337,12 @@ const viewOf = ({ shape }: { readonly shape: Shape }): PullRequestView | null =>
     reviewDecision: pr.reviewDecision,
     reviewers: [
       ...shape.reviews.map((review) => ({
-        person: { login: review.author, name: null, avatarUrl: null },
+        person: {
+          login: review.author,
+          name: null,
+          avatarUrl: null,
+          ...(review.isAuthorBot === undefined ? {} : { isBot: review.isAuthorBot }),
+        },
         state: review.state,
       })),
       ...shape.requests.map((request) => ({
