@@ -12,15 +12,21 @@ export const pruneProcessFolds = ({
   views,
   snapshot,
 }: Params): Readonly<Record<string, MonitoringView>> => {
-  const alive = new Set(snapshot.processes.map((item) => `${item.pid}:${item.startedAt}`));
+  const alive = new Set(
+    snapshot.processes.map((item) =>
+      item.birthId === undefined || item.birthId === null
+        ? `${item.pid}:-`
+        : `${item.pid}:${item.birthId}`,
+    ),
+  );
   let next: Record<string, MonitoringView> | null = null;
   for (const [workspaceId, view] of Object.entries(views)) {
     const kept = view.openFolds.filter((key) => {
       if (!key.startsWith(PROCESS_PREFIX)) {
         return true;
       }
-      const [pid, startedAt] = key.slice(PROCESS_PREFIX.length).split(':');
-      return alive.has(`${pid}:${startedAt}`);
+      const [pid, birth] = key.slice(PROCESS_PREFIX.length).split(':');
+      return alive.has(`${pid}:${birth}`);
     });
     if (kept.length === view.openFolds.length) {
       continue;

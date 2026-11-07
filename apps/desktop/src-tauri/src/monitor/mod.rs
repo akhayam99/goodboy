@@ -38,6 +38,7 @@ pub(crate) struct ProcessInfo {
     pub(crate) name: String,
     pub(crate) cwd: Option<String>,
     pub(crate) started_at: u64,
+    pub(crate) birth_id: Option<String>,
     pub(crate) cpu_percent: f64,
     pub(crate) rss_bytes: u64,
     pub(crate) uid: u32,
@@ -82,15 +83,21 @@ fn started_at_of(row: &parse::RawProcess, now: u64) -> u64 {
     now.saturating_sub(row.elapsed_secs.saturating_mul(1000))
 }
 
+#[cfg_attr(not(any(target_os = "macos", test)), allow(dead_code))]
+fn micro_birth_id(secs: u64, micros: u64) -> String {
+    format!("{secs}.{micros:06}")
+}
+
+#[cfg_attr(not(any(target_os = "linux", test)), allow(dead_code))]
+fn tick_birth_id(boot_secs: u64, start_ticks: u64) -> String {
+    format!("{boot_secs}-{start_ticks}")
+}
+
 #[cfg(target_os = "macos")]
-fn born_secs_of(pid: u32) -> u64 {
-    let Ok(raw_pid) = i32::try_from(pid) else {
-        return 0;
-    };
+fn birth_of(pid: u32) -> Option<(u64, u64)> {
+    let raw_pid = i32::try_from(pid).ok()?;
     let size = std::mem::size_of::<libc::proc_bsdinfo>();
-    let Ok(buffer_size) = i32::try_from(size) else {
-        return 0;
-    };
+    let buffer_size = i32::try_from(size).ok()?;
     let mut info = std::mem::MaybeUninit::<libc::proc_bsdinfo>::zeroed();
     let written = unsafe {
         libc::proc_pidinfo(
@@ -102,9 +109,10 @@ fn born_secs_of(pid: u32) -> u64 {
         )
     };
     if written != buffer_size {
-        return 0;
+        return None;
     }
-    unsafe { info.assume_init() }.pbi_start_tvsec
+    let info = unsafe { info.assume_init() };
+    Some((info.pbi_start_tvsec, info.pbi_start_tvusec))
 }
 
 fn assemble(
@@ -123,6 +131,7 @@ fn assemble(
                 name: row.name,
                 cwd: cwds.remove(&row.pid),
                 started_at,
+                birth_id: row.birth_id,
                 cpu_percent: row.cpu_percent,
                 rss_bytes: row.rss_kib.saturating_mul(1024),
                 uid: row.uid,
@@ -200,9 +209,13 @@ fn collect(ledger: &[LedgerEntry], ports: &[u16]) -> Result<MonitorSnapshot, Str
     let rows: Vec<parse::RawProcess> = parse::parse_ps_rows(&table)
         .into_iter()
         .filter(|row| is_in_scope(&scope, row))
-        .map(|row| parse::RawProcess {
-            born_secs: born_secs_of(row.pid),
-            ..row
+        .map(|row| match birth_of(row.pid) {
+            Some((secs, micros)) => parse::RawProcess {
+                born_secs: secs,
+                birth_id: Some(micro_birth_id(secs, micros)),
+                ..row
+            },
+            None => row,
         })
         .collect();
     let list = csv(rows.iter().map(|row| row.pid));
@@ -405,6 +418,7 @@ mod linux {
             uid,
             elapsed_secs,
             born_secs: started_secs,
+            birth_id: Some(tick_birth_id(boot_secs()?, start_ticks)),
             cpu_percent,
             rss_kib: rss_pages * page_size() / 1024,
             name,
@@ -510,6 +524,7 @@ mod tests {
             uid: 501,
             elapsed_secs: 10,
             born_secs: 0,
+            birth_id: None,
             cpu_percent: 1.5,
             rss_kib: 2,
             name: "node".to_string(),
@@ -531,6 +546,7 @@ mod tests {
             uid: 501,
             elapsed_secs: 10,
             born_secs: 1_700,
+            birth_id: None,
             cpu_percent: 0.0,
             rss_kib: 0,
             name: "node".to_string(),
@@ -545,12 +561,38 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
-    fn born_secs_of_this_process_is_stable_and_in_the_past() {
+    fn birth_of_this_process_is_stable_and_in_the_past() {
         let pid = std::process::id();
-        let first = born_secs_of(pid);
-        assert!(first > 0);
-        assert_eq!(first, born_secs_of(pid));
-        assert!(first * 1000 <= crate::util::now_millis_u64());
+        let first = birth_of(pid).expect("own process is readable");
+        assert!(first.0 > 0);
+        assert_eq!(Some(first), birth_of(pid));
+        assert!(first.0 * 1000 <= crate::util::now_millis_u64());
+    }
+
+    #[test]
+    fn birth_ids_keep_native_precision_within_one_second() {
+        assert_ne!(micro_birth_id(1_700, 10), micro_birth_id(1_700, 90_000));
+        assert_eq!(micro_birth_id(1_700, 42), "1700.000042");
+        assert_ne!(tick_birth_id(1_000, 10_010), tick_birth_id(1_000, 10_090));
+        assert_eq!(tick_birth_id(1_000, 10_010), "1000-10010");
+    }
+
+    #[test]
+    fn assemble_carries_a_missing_birth_id_as_none() {
+        let row = parse::RawProcess {
+            pid: 5,
+            ppid: 1,
+            pgid: 5,
+            uid: 1,
+            elapsed_secs: 10,
+            born_secs: 0,
+            birth_id: None,
+            cpu_percent: 0.0,
+            rss_kib: 0,
+            name: "node".to_string(),
+        };
+        let out = assemble(vec![row], HashMap::new(), HashMap::new(), 100_000);
+        assert_eq!(out[0].birth_id, None);
     }
 
     #[test]
@@ -573,6 +615,7 @@ mod tests {
             uid: 0,
             elapsed_secs: 0,
             born_secs: 0,
+            birth_id: None,
             cpu_percent: 0.0,
             rss_kib: 0,
             name: "x".to_string(),
