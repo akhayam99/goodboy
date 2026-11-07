@@ -15,7 +15,10 @@ export const branchCommitsLabel = ({ listed, total }: Params): string | null => 
     return null;
   }
   if (listed >= COMMIT_LIST_CAP) {
-    return `Latest ${COMMIT_LIST_CAP} commits`;
+    return 'All commits';
   }
   return `All ${countNoun({ count: listed, one: 'commit' })}`;
 };
+
+export const isCommitListCapped = ({ listed, total }: Params): boolean =>
+  listed >= COMMIT_LIST_CAP || (total !== null && total > listed);

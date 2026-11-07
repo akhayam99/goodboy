@@ -18,6 +18,7 @@ import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveA
 
 import { useNow } from '../../../../shared/hooks/useNow';
 import { branchCommitsLabel } from '../../lib/branchCommitsLabel';
+import { CommitListCap } from './CommitListCap';
 
 type Props = {
   readonly view: DiffView;
@@ -449,6 +450,7 @@ export const DiffViewSelector = ({
               </div>
             </PickerSection>
           ))}
+          <CommitListCap listed={commits.length} total={commitTotal} />
           {hasQuery && !hasCommitMatch ? (
             <span className="px-4 py-1 text-meta italic text-faint-foreground">
               no commits match

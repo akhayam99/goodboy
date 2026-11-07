@@ -1,4 +1,4 @@
-import type { DiffView, FileDiff, PrCheckRun } from '@goodboy/types';
+import type { FileDiff, PrCheckRun } from '@goodboy/types';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 import { countNoun } from '../../shared/utils/countNoun';
@@ -127,10 +127,5 @@ const scopedFilesFactOf = ({ files }: ScopedFilesParams): BranchTabFact => {
   }).files;
 };
 
-type FilesHeadParams = ScopedFilesParams & {
-  readonly view: DiffView;
-  readonly tabFact: BranchTabFact;
-};
-
-export const filesHeadFactOf = ({ view, tabFact, files }: FilesHeadParams): BranchTabFact =>
-  view.kind === 'branch' ? tabFact : scopedFilesFactOf({ files });
+export const filesHeadFactOf = ({ files }: ScopedFilesParams): BranchTabFact =>
+  scopedFilesFactOf({ files });

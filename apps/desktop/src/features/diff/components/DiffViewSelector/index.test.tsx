@@ -69,9 +69,11 @@ describe('DiffViewSelector', () => {
     );
 
     screen.getByText('· All 137 commits');
+    fireEvent.click(screen.getByRole('button', { name: /Compared with/ }));
+    screen.getByText('Showing latest 100');
   });
 
-  it('shows a capped list as the latest 100 when no total is known', () => {
+  it('keeps the scope as All commits and notes the cap when no total is known', () => {
     const capped = Array.from({ length: 100 }, (_, index) => ({
       ...commits[0]!,
       sha: `sha${index}`,
@@ -87,7 +89,7 @@ describe('DiffViewSelector', () => {
       />,
     );
 
-    screen.getByText('· Latest 100 commits');
+    screen.getByText('· All commits');
   });
 
   it('names the base branch in the branch option of the picker, never main by default', () => {

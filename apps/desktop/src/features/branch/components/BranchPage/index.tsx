@@ -362,7 +362,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           diff={diff}
           hasPullRequest={pr !== null && pr.state === 'open'}
           isReadOnly={isReadOnly}
-          filesFact={entryFacts.files}
           commitTotal={entryFacts.commits.count}
         />
       );

@@ -434,22 +434,22 @@ describe('SessionDiffPane with the file rail folded', () => {
 });
 
 const BRANCH_FACT: FilesFact = {
-  text: '12',
-  diff: { additions: 90, deletions: 40 },
-  count: 12,
+  text: '2',
+  diff: { additions: 6, deletions: 2 },
+  count: 2,
 };
 
 describe('SessionDiffPane files fact', () => {
   it('shows the fact it is given, with its line totals', () => {
     renderPane({ diff: diffOf(FILES), pageWidth: 700, filesFact: BRANCH_FACT });
 
-    expect(toolbarFiles()?.textContent).toBe('Files12+90 -40');
+    expect(toolbarFiles()?.textContent).toBe('Files2+6 -2');
   });
 
   it('gives the rail the same total as the toolbar', () => {
     renderPane({ diff: diffOf(FILES), pageWidth: 1400, filesFact: BRANCH_FACT });
 
-    within(railOf()).getByText(/Viewed 0 of 12/);
+    within(railOf()).getByText(/Viewed 0 of 2/);
   });
 
   it('counts the files it shows when it is given no fact', () => {

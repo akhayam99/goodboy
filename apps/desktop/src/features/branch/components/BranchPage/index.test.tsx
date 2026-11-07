@@ -800,6 +800,26 @@ describe('Branch page entries in the sidebar', () => {
   });
 });
 
+const seedWorktreeRecord = (): void => {
+  useAppStore.setState({
+    sessionWorktreeRecords: {
+      [SESSION.id]: [
+        {
+          id: 'worktree-payments-api',
+          sessionId: SESSION.id,
+          worktreePath: WORKTREE,
+          branch: MOUNT.branch,
+          parallelIndex: 0,
+          projectId: PROJECT_ID,
+          mountName: 'payments-api',
+          repoSlug: 'harborline/payments-api',
+          createdAt: 1,
+        },
+      ],
+    },
+  });
+};
+
 const stripTab = (name: RegExp): HTMLElement =>
   within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', { name });
 
@@ -879,7 +899,7 @@ describe('Branch page tab and head facts', () => {
     inProgress: null,
   };
 
-  const holdReads = () => {
+  const holdReads = ({ summaryFiles = 2 }: { readonly summaryFiles?: number } = {}) => {
     const held: { release: () => void } = { release: () => undefined };
     const gate = new Promise<void>((resolve) => {
       held.release = resolve;
@@ -900,6 +920,16 @@ describe('Branch page tab and head facts', () => {
       if (command === 'worktree_diff_files') {
         return [];
       }
+      if (command === 'worktree_changed_files') {
+        await gate;
+        return {
+          paths: Array.from({ length: summaryFiles }, (_, index) => `src/file${index}.ts`),
+          entries: [],
+          additions: summaryFiles,
+          deletions: 0,
+          numstat: '',
+        };
+      }
       return new Promise<never>(() => undefined);
     });
     return held;
@@ -909,6 +939,7 @@ describe('Branch page tab and head facts', () => {
     seedResolveScene({ expandedThreadId: null });
     seedShownPullRequest();
     seedWorktree({ isDiffLoaded: false });
+    seedWorktreeRecord();
     const held = holdReads();
     render(
       <ToastProvider>
@@ -927,7 +958,7 @@ describe('Branch page tab and head facts', () => {
     });
     await settle();
 
-    expect(stripCount(/^Changes/).startsWith('2')).toBe(true);
+    expect(stripCount(/^Changes/)).toBe('2+2 -0');
     expect(stripCount(/^Commits/)).toBe('3');
     const rail = document.querySelector<HTMLElement>(
       '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
@@ -935,5 +966,31 @@ describe('Branch page tab and head facts', () => {
     expect(rail).not.toBeNull();
     within(rail!).getByText(/Viewed 0 of 2/);
     screen.getByText('· All 3 commits');
+    expect(stripCount(/^Changes/)).toBe('2+2 -0');
+  });
+
+  it('keeps the rail on the loaded diff when the polled summary disagrees', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
+    seedWorktree({ isDiffLoaded: false });
+    seedWorktreeRecord();
+    const held = holdReads({ summaryFiles: 5 });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    held.release();
+    await settle();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
+    await settle();
+
+    expect(stripCount(/^Changes/)).toBe('5+5 -0');
+    const rail = document.querySelector<HTMLElement>(
+      '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
+    );
+    within(rail!).getByText(/Viewed 0 of 2/);
   });
 });

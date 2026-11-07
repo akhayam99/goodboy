@@ -5,7 +5,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/WriteReview';
-import { filesHeadFactOf, type BranchTabFact } from '../branchTabFactsOf';
+import { filesHeadFactOf } from '../branchTabFactsOf';
 import { BranchBodyColumn } from './BranchBodyColumn';
 
 type Props = {
@@ -15,7 +15,6 @@ type Props = {
   readonly diff: SessionDiff;
   readonly hasPullRequest: boolean;
   readonly isReadOnly: boolean;
-  readonly filesFact: BranchTabFact;
   readonly commitTotal: number | null;
 };
 
@@ -26,7 +25,6 @@ export const BranchFiles = ({
   diff,
   hasPullRequest,
   isReadOnly,
-  filesFact,
   commitTotal,
 }: Props) => {
   const sessionId = session.id as SessionId;
@@ -58,7 +56,7 @@ export const BranchFiles = ({
         worktreePath={worktreePath}
         diff={diff}
         isReadOnly={isReadOnly}
-        filesFact={filesHeadFactOf({ view: diff.view, tabFact: filesFact, files: diff.files })}
+        filesFact={filesHeadFactOf({ files: diff.files })}
         commitTotal={commitTotal}
       />
     </BranchBodyColumn>
