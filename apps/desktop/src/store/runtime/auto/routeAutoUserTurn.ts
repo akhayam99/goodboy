@@ -23,6 +23,7 @@ import { sessionById } from '../../slices/sessions/sessionIndex';
 import { ReportedError } from '../../slices/notifications/reportedError';
 import { AUTO_CONFINED_ROLE } from '../../slices/turn/confinedRoleOf';
 import type { SendTurnInput, SendTurnResult } from '../../slices/turn/types';
+import { AUTO_STARTING_SENTENCE } from '../../../features/auto/autoStartingSentence';
 
 type LoadTreesParams = {
   readonly sessionId: SessionId;
@@ -51,7 +52,7 @@ const AUTO_ATTACHMENTS_MESSAGE = 'Auto takes images in a message, not other file
 const AUTO_IMAGES_LOST_MESSAGE = 'Auto could not keep the images. Attach them again.';
 const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
 
-const AUTO_NO_RUNTIME_MESSAGE = 'Auto is not running yet. Send it again in a moment.';
+const AUTO_NO_RUNTIME_MESSAGE = AUTO_STARTING_SENTENCE;
 
 const REFUSED_TITLE = "Auto didn't get your message";
 

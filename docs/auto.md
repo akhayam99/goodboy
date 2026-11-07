@@ -253,8 +253,8 @@ cannot be written refuses the message with "Auto could not keep the images. Atta
 nothing is dropped silently. A turn that is not an operator message or
 a child is left to the plain turn. A message to the root of an Auto tree is never a
 plain turn: with no Auto door registered at all (the runtime has not started yet)
-`routeAutoUserTurn` refuses it with "Auto is not running yet. Send it again in a
-moment." and the composer keeps its text.
+`routeAutoUserTurn` refuses it with "Auto is still starting. Retry in a
+moment." (one constant, `AUTO_STARTING_SENTENCE`, shared by every Auto action that finds no door) and the composer keeps its text.
 
 ## Overview
 

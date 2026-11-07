@@ -1149,7 +1149,7 @@ count is a count of comments, never of agents:
   limit, you stopped it (shown as Stopped), the app closed while it was working, it
   conflicts with a fix you accepted before, the worktree is gone, or the fix
   couldn't be saved from its copy of the branch. A comment written before m225
-  reads "Cause not recorded". A failed run also shows the last command it ran
+  reads "Goodboy didn't record why". A failed run also shows the last command it ran
   with its result, such as `pnpm test src/webhooks · 2 failing`, and a link to
   the transcript. A push that failed stays here as Push failed
 - **Done**: a quiet sub-word says how: Accepted (waiting for the push), Answered

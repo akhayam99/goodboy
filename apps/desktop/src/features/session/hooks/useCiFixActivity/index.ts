@@ -29,7 +29,7 @@ export const useCiFixActivity = ({ sessionId }: Params): ReadonlyMap<string, Job
       void loadAgentTranscript(sessionId, agentId, { isSelecting: false }).catch(
         (error: unknown) => {
           if (!isReportedError(error)) {
-            void reportError({ title: "Couldn't read the CI fix", error, sessionId });
+            void reportError({ title: "Couldn't load the check fix", error, sessionId });
           }
         },
       );

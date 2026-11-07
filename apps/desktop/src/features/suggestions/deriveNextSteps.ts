@@ -374,7 +374,7 @@ export const deriveNextSteps = ({
       priority: 11,
       band: 1,
       title: `Retry ${lastStandaloneAgent.label}`,
-      detail: 'Stopped: the run failed',
+      detail: 'The run failed',
       sessionId,
       targetKey: `agent:${lastStandaloneAgent.id}`,
       fingerprint: `retry-agent:${lastStandaloneAgent.id}`,

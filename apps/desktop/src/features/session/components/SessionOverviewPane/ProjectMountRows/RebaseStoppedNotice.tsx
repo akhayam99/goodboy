@@ -36,7 +36,7 @@ export const RebaseStoppedNotice = ({
     status,
     onError: (message) =>
       void reportError({
-        title: "Couldn't hand the rebase to an agent",
+        title: "Couldn't start the agent",
         error: message,
         sessionId,
       }),

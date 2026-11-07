@@ -1,6 +1,4 @@
 import { formatTokens, formatUsd } from '@goodboy/ui';
-import type { IsoDateTime } from '@goodboy/types';
-import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { NAMES } from '../../../../shared/utils/names';
 import type { UsageFigures } from '../../utils/usageFigures';
@@ -17,8 +15,6 @@ type Params = {
   readonly data: TurnFooterData;
   readonly figures: UsageFigures;
   readonly duration: string | null;
-  readonly startedAt: IsoDateTime | null;
-  readonly endedAt: IsoDateTime | null;
   readonly outcome: string | null;
   readonly turns: number | null;
 };
@@ -55,8 +51,6 @@ export const usageDetailRows = ({
   data,
   figures,
   duration,
-  startedAt,
-  endedAt,
   outcome,
   turns,
 }: Params): ReadonlyArray<UsageDetailRow> => {
@@ -104,11 +98,11 @@ export const usageDetailRows = ({
           }),
     );
   }
-  if (duration !== null && startedAt !== null && endedAt !== null) {
+  if (duration !== null) {
     rows.push(
       present({
         label: 'Duration',
-        value: `${duration} (${formatClock({ at: startedAt })} to ${formatClock({ at: endedAt })})`,
+        value: duration,
       }),
     );
   }

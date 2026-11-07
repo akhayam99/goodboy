@@ -8,7 +8,7 @@ const base = {
   isLeftOpen: false,
   pushedSha: null,
   pushError: null,
-  runFailure: 'Cause not recorded',
+  runFailure: "Goodboy didn't record why",
 } as const;
 
 const EXPECTED: Record<ResolveStage, ResolveUiState> = {

@@ -63,7 +63,9 @@ const driveAtOnce = async ({ treeId, sessionId }: DriveAtOnceParams): Promise<vo
   try {
     await port({ treeId });
   } catch (error) {
-    await useAppStore.getState().reportError({ title: 'Auto hit a problem', error, sessionId });
+    await useAppStore
+      .getState()
+      .reportError({ title: "Auto didn't start right away", error, sessionId });
   }
 };
 

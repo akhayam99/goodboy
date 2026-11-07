@@ -4,6 +4,7 @@ import { formatClock } from '../../../shared/utils/time/formatClock';
 import { TAIL_ACTION } from '../tailAction';
 import type { TailAction, TailFacts } from '../tailFacts';
 import { workingPhraseOf, type LastTool } from '../workingPhraseOf';
+import { humanTurnErrorOf } from '../../chat/humanTurnErrorOf';
 
 export type AgentTurnLiveParams = Readonly<{
   turn: TurnState | null;
@@ -58,7 +59,7 @@ export const agentTurnLive = ({
   if (turn?.kind === 'error') {
     return {
       state: 'failed',
-      phrase: `Failed: ${turn.message}`,
+      phrase: `Failed: ${humanTurnErrorOf({ message: turn.message })}`,
       startedAt: null,
       actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript],
     };

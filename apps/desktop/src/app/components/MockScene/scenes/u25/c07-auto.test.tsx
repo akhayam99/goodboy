@@ -550,7 +550,7 @@ describe('c07 Auto scenes', () => {
     const title = await screen.findByText("Couldn't stop the Auto agents", undefined, WAIT);
     const alert = title.closest('[role="alert"]');
     expect(alert?.closest('[data-conversation-dock]')).not.toBeNull();
-    expect(alert?.textContent).toContain('Auto is not running yet. Stop it again in a moment.');
+    expect(alert?.textContent).toContain('Auto is still starting. Retry in a moment.');
   });
 
   it('c07-auto-list lists every Auto conversation on one grid and opens one', async () => {

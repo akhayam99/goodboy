@@ -2,7 +2,7 @@ import type { ResolveAttempt, ResolveFailureCause } from '@goodboy/types';
 
 const FAILURE_CAUSE_SENTENCE: Readonly<Record<ResolveFailureCause, string>> = {
   start_failed: "The fix didn't start",
-  provider_error: 'The model provider stopped the run',
+  provider_error: 'The provider stopped the run',
   spend_cap: 'Every provider is over its limit',
   stopped: 'You stopped it',
   app_closed: 'The app closed while it was working',
@@ -11,7 +11,7 @@ const FAILURE_CAUSE_SENTENCE: Readonly<Record<ResolveFailureCause, string>> = {
   capture_failed: "The fix couldn't be saved from its copy of the branch",
 };
 
-const UNRECORDED_CAUSE_SENTENCE = 'Cause not recorded';
+const UNRECORDED_CAUSE_SENTENCE = "Goodboy didn't record why";
 
 export const causeOfAttempt = ({
   attempt,

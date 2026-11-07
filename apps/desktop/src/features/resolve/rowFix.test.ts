@@ -48,7 +48,10 @@ describe('rowFixOf', () => {
   });
 
   it('says failed with the cause when the run did not finish', () => {
-    expect(fixOf({ stage: 'failed' })).toEqual({ kind: 'failed', sentence: 'Cause not recorded' });
+    expect(fixOf({ stage: 'failed' })).toEqual({
+      kind: 'failed',
+      sentence: "Goodboy didn't record why",
+    });
   });
 
   it('reads each state as one line', () => {

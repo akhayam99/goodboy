@@ -157,7 +157,7 @@ const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {
 const UNKNOWN_STOP: StopPresentation = {
   phase: 'failed',
   tone: 'danger',
-  sentence: 'Stopped · reason not recognized',
+  sentence: 'Stopped. No reason given.',
   showsMessage: true,
 };
 

@@ -663,7 +663,7 @@ describe('Review of a failed run', () => {
     await mountFailed({ failure: 'run' });
 
     const failed = within(comment());
-    expect(failed.getByText('The model provider stopped the run')).toBeDefined();
+    expect(failed.getByText('The provider stopped the run')).toBeDefined();
     expect(failed.getByText(/pnpm test src\/webhooks · 2 failing/)).toBeDefined();
     expect(failed.getByRole('button', { name: /^Retry/ })).toBeDefined();
     expect(failed.getByRole('button', { name: 'Start over with a new agent' })).toBeDefined();

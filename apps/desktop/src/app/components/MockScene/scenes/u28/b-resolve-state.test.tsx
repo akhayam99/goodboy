@@ -153,8 +153,8 @@ describe('resolve-state scenes', () => {
       [
         'Fixed in 90b1d57 · Review the fix',
         'Fixed in 90b1d57 · Review the fix',
-        'The model provider stopped the run',
-        'The model provider stopped the run',
+        'The provider stopped the run',
+        'The provider stopped the run',
       ].sort(),
     );
     screen.getByText('Fix run finished: 2 fixes ready for you');

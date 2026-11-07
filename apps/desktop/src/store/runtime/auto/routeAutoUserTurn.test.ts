@@ -409,7 +409,7 @@ describe('a message typed to an Auto agent', () => {
     const { get, reportError, appendTurnEvent } = harness({ agents: [autoRow] });
 
     await expect(routeAutoUserTurn({ get, input: inputOf() })).rejects.toThrow(
-      'Auto is not running yet. Send it again in a moment.',
+      'Auto is still starting. Retry in a moment.',
     );
     expect(reportError).toHaveBeenCalledTimes(1);
     expect(appendTurnEvent).not.toHaveBeenCalled();

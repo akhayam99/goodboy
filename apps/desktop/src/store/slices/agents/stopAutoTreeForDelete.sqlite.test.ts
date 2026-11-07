@@ -123,7 +123,7 @@ describe('deleting the root agent of an Auto tree', () => {
     registerTreeStopPort({ port: null });
 
     await expect(stopAutoTreeForDelete({ agentId: ROOT })).rejects.toThrow(
-      'Auto is not running yet',
+      'Auto is still starting',
     );
     expect((await treeOf())?.phase).not.toBe('stopped');
   });
