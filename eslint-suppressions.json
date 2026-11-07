@@ -4167,7 +4167,7 @@
   },
   "apps/desktop/src/features/palette/sources/runEntries.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/palette/sources/scriptPinEntries.test.ts": {
