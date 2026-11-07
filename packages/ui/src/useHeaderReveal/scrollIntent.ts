@@ -30,6 +30,15 @@ type KeyParams = ViewportParams & {
   readonly event: KeyboardEvent;
 };
 
+type TouchParams = ViewportParams & {
+  readonly event: TouchEvent;
+};
+
+type TouchMark = {
+  readonly y: number;
+  readonly sign: Sign;
+};
+
 type ClassifyParams = ViewportParams & {
   readonly delta: number;
 };
@@ -37,9 +46,10 @@ type ClassifyParams = ViewportParams & {
 export type ScrollIntent = {
   readonly onWheel: (params: WheelParams) => void;
   readonly onKey: (params: KeyParams) => void;
-  readonly onTouch: (params: ViewportParams) => void;
-  readonly onDragStart: (params: ViewportParams) => void;
-  readonly onDragEnd: () => void;
+  readonly onTouchStart: (params: TouchParams) => void;
+  readonly onTouchMove: (params: TouchParams) => void;
+  readonly onTouchEnd: (params: ViewportParams) => void;
+  readonly onTrackPress: (params: ViewportParams) => void;
   readonly hold: () => void;
   readonly isUserScroll: (params: ClassifyParams) => boolean;
 };
@@ -64,8 +74,9 @@ const isPressable = ({ target }: TargetParams): boolean =>
 
 export const scrollIntent = (): ScrollIntent => {
   const grants = new Map<HTMLElement, Grant>();
-  let dragged: HTMLElement | null = null;
-  let heldUntilFrame = false;
+  const touches = new Map<HTMLElement, TouchMark>();
+  let isHeld = false;
+  let holdVersion = 0;
 
   const grant = ({ viewport, sign, budget }: GrantParams) => {
     const now = performance.now();
@@ -119,38 +130,62 @@ export const scrollIntent = (): ScrollIntent => {
     }
   };
 
-  const onTouch = ({ viewport }: ViewportParams) => {
-    grant({ viewport, sign: 0, budget: Number.POSITIVE_INFINITY });
-  };
-
-  const onDragStart = ({ viewport }: ViewportParams) => {
-    dragged = viewport;
-  };
-
-  const onDragEnd = () => {
-    if (dragged === null) {
+  const onTouchStart = ({ viewport, event }: TouchParams) => {
+    const touch = event.touches[0];
+    if (touch === undefined) {
       return;
     }
-    grant({ viewport: dragged, sign: 0, budget: Number.POSITIVE_INFINITY });
-    dragged = null;
+    touches.set(viewport, { y: touch.clientY, sign: 0 });
+  };
+
+  const onTouchMove = ({ viewport, event }: TouchParams) => {
+    const touch = event.touches[0];
+    const last = touches.get(viewport);
+    if (touch === undefined || last === undefined) {
+      return;
+    }
+    const deltaY = last.y - touch.clientY;
+    if (deltaY === 0) {
+      return;
+    }
+    const sign = signOf({ value: deltaY });
+    touches.set(viewport, { y: touch.clientY, sign });
+    if (isNestedScroll({ target: event.target, viewport, deltaY })) {
+      return;
+    }
+    grant({ viewport, sign, budget: Math.abs(deltaY) });
+  };
+
+  const onTouchEnd = ({ viewport }: ViewportParams) => {
+    const last = touches.get(viewport);
+    touches.delete(viewport);
+    if (last === undefined || last.sign === 0) {
+      return;
+    }
+    grant({ viewport, sign: last.sign, budget: viewport.clientHeight });
+  };
+
+  const onTrackPress = ({ viewport }: ViewportParams) => {
+    grant({ viewport, sign: 0, budget: viewport.clientHeight });
   };
 
   const hold = () => {
     grants.clear();
-    heldUntilFrame = true;
+    holdVersion += 1;
+    const version = holdVersion;
+    isHeld = true;
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        heldUntilFrame = false;
+        if (version === holdVersion) {
+          isHeld = false;
+        }
       }),
     );
   };
 
   const isUserScroll = ({ viewport, delta }: ClassifyParams): boolean => {
-    if (heldUntilFrame || delta === 0) {
+    if (isHeld || delta === 0) {
       return false;
-    }
-    if (dragged === viewport) {
-      return true;
     }
     const live = grants.get(viewport);
     if (live === undefined || live.until < performance.now()) {
@@ -163,9 +198,23 @@ export const scrollIntent = (): ScrollIntent => {
       grants.delete(viewport);
       return false;
     }
-    grants.set(viewport, { ...live, budget: Math.max(0, live.budget - Math.abs(delta)) });
+    const budget = live.budget - Math.abs(delta);
+    if (budget <= 0) {
+      grants.delete(viewport);
+      return true;
+    }
+    grants.set(viewport, { ...live, budget });
     return true;
   };
 
-  return { onWheel, onKey, onTouch, onDragStart, onDragEnd, hold, isUserScroll };
+  return {
+    onWheel,
+    onKey,
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onTrackPress,
+    hold,
+    isUserScroll,
+  };
 };

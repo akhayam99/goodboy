@@ -263,6 +263,29 @@ describe('PaneShell header reveal', () => {
     expect(headerState()).toBe('hidden');
   });
 
+  it('holds the header and the layout still while the thumb drags, then settles on release', () => {
+    const viewport = mountPage();
+    const root = viewport.parentElement as HTMLElement;
+
+    fireEvent.pointerDown(root);
+    [10, 11, 300, 700].forEach((top) => {
+      viewport.scrollTop = top;
+      fireEvent.scroll(viewport);
+      resizeAll();
+      expect(headerState()).toBe('shown');
+      expect(region().style.getPropertyValue('--reveal-shift')).toBe('0px');
+    });
+    fireEvent.pointerUp(window);
+    expect(headerState()).toBe('hidden');
+
+    fireEvent.pointerDown(root);
+    viewport.scrollTop = 680;
+    fireEvent.scroll(viewport);
+    expect(headerState()).toBe('hidden');
+    fireEvent.pointerUp(window);
+    expect(headerState()).toBe('shown');
+  });
+
   it('keeps the header in place when nothing in the body scrolls', () => {
     render(
       <PaneShell title="Comments" headerMode="reveal" scroll="self">

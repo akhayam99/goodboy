@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useHoldAppScroll } from '@goodboy/ui';
 import { anchorShift } from './anchorShift';
 import { pickAnchor } from './pickAnchor';
 
@@ -42,6 +43,9 @@ export const useScrollAnchor = ({
   holdRef.current = shouldHold;
   const measuredRef = useRef(onRowMeasured);
   measuredRef.current = onRowMeasured;
+  const holdAppScroll = useHoldAppScroll();
+  const holdAppScrollRef = useRef(holdAppScroll);
+  holdAppScrollRef.current = holdAppScroll;
   const isSuspended = useRef(false);
   const releaseRef = useRef<(() => void) | null>(null);
 
@@ -96,6 +100,7 @@ export const useScrollAnchor = ({
           isHeld: isHeld(),
         }) + topShift();
       if (shift !== 0) {
+        holdAppScrollRef.current();
         viewport.scrollTop += shift;
       }
       record();

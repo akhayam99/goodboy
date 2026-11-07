@@ -27,6 +27,11 @@ type EvaluateParams = ViewportParams & {
   readonly isUserScroll: boolean;
 };
 
+type Drag = {
+  readonly viewport: HTMLElement;
+  readonly startTop: number;
+};
+
 type ExtendParams = {
   readonly region: HTMLElement;
   readonly shift: string;
@@ -50,6 +55,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
   let isFocusHeld = false;
   let isSettling = false;
   let observer: ResizeObserver | null = null;
+  let drag: Drag | null = null;
   let extendTimer: ReturnType<typeof setTimeout> | null = null;
 
   const paintExtend = ({ region, shift, isShown }: ExtendParams) => {
@@ -143,7 +149,13 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
       state = { isShown: true, anchor: source === null ? 0 : clampedTopOf({ viewport: source }) };
     }
     paint();
-    if (isSliding && source !== null && !isSettling && isLive({ viewport: source })) {
+    if (
+      isSliding &&
+      source !== null &&
+      !isSettling &&
+      drag === null &&
+      isLive({ viewport: source })
+    ) {
       evaluate({ viewport: source, isUserScroll: false });
     }
   };
@@ -152,7 +164,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     const top = clampedTopOf({ viewport });
     const before = lastTops.get(viewport) ?? top;
     lastTops.set(viewport, top);
-    if (!isSliding || !isLive({ viewport })) {
+    if (!isSliding || !isLive({ viewport }) || drag?.viewport === viewport) {
       return;
     }
     const isUserScroll = intent.isUserScroll({ viewport, delta: top - before });
@@ -167,6 +179,26 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     evaluate({ viewport, isUserScroll });
   };
 
+  const endDrag = () => {
+    if (drag === null) {
+      return;
+    }
+    const { viewport, startTop } = drag;
+    drag = null;
+    const top = clampedTopOf({ viewport });
+    lastTops.set(viewport, top);
+    if (top === startTop) {
+      intent.onTrackPress({ viewport });
+      return;
+    }
+    if (!isSliding || !isLive({ viewport }) || isSettling) {
+      return;
+    }
+    source = viewport;
+    state = { isShown: state.isShown, anchor: startTop };
+    evaluate({ viewport, isUserScroll: true });
+  };
+
   const register = ({ root, viewport }: PageScroller): (() => void) => {
     const scroller = { root, viewport };
     const controller = new AbortController();
@@ -174,7 +206,13 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     const passive = { passive: true, signal };
     viewport.addEventListener('scroll', () => onScroll({ viewport }), passive);
     root.addEventListener('wheel', (event) => intent.onWheel({ viewport, event }), passive);
-    root.addEventListener('touchmove', () => intent.onTouch({ viewport }), passive);
+    root.addEventListener(
+      'touchstart',
+      (event) => intent.onTouchStart({ viewport, event }),
+      passive,
+    );
+    root.addEventListener('touchmove', (event) => intent.onTouchMove({ viewport, event }), passive);
+    root.addEventListener('touchend', () => intent.onTouchEnd({ viewport }), passive);
     root.addEventListener('keydown', (event) => intent.onKey({ viewport, event }), { signal });
     root.addEventListener(
       'pointerdown',
@@ -182,7 +220,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
         if (event.target instanceof Node && viewport.contains(event.target)) {
           return;
         }
-        intent.onDragStart({ viewport });
+        drag = { viewport, startTop: clampedTopOf({ viewport }) };
       },
       { signal },
     );
@@ -216,8 +254,8 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
     const body = bodyRef.current;
     const controller = new AbortController();
     const { signal } = controller;
-    window.addEventListener('pointerup', intent.onDragEnd, { signal });
-    window.addEventListener('pointercancel', intent.onDragEnd, { signal });
+    window.addEventListener('pointerup', endDrag, { signal });
+    window.addEventListener('pointercancel', endDrag, { signal });
     header?.addEventListener(
       'focusin',
       (event) => {
@@ -259,7 +297,7 @@ export const revealEngine = ({ regionRef, headerRef, bodyRef }: Params): RevealE
         clearTimeout(extendTimer);
         extendTimer = null;
       }
-      intent.onDragEnd();
+      drag = null;
       isFocusHeld = false;
     };
   };

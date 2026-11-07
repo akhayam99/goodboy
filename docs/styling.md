@@ -456,11 +456,14 @@ need nothing. A page with less than 24px left to scroll once the header is gone
 never hides it, and a hidden page that runs out of room brings it back, so a
 short diff never strands the header. Only the reader moves the header
 (`scrollIntent.ts`): a scroll counts when it follows a wheel, a scroll key on
-the content (never one typed into a field), a touch or a thumb drag on that
-same viewport, in that direction and no larger than the input asked for. A
-jump the app makes right after (`scrollIntoView`, a restored position, the
-clamp when the body grows at the end of a list) reads as the app, and code
-that scrolls on purpose calls `holdAppScroll` first (`useScrollMemory` does).
+the content (never one typed into a field), a touch move or a track press on
+that same viewport, in that direction and no larger than the input asked for;
+real movement spends that budget, so a later app move is not counted. A thumb
+drag holds the header and the layout still until the pointer lifts, then
+settles once on the whole move, so the drag never reverses. Code that scrolls
+on purpose holds the header first with `useHoldAppScroll` (`useScrollMemory`,
+the diff file jump in `useSnapToTop` and `useScrollAnchor` do); holds are
+versioned, so an older one never ends a newer one.
 The slide uses `--duration-base` and `--ease-enter` to arrive,
 `--duration-quick` and `--ease-exit` to leave, and is off under reduced motion.
 A body with no scroller keeps the header in place. The terminal output (xterm)

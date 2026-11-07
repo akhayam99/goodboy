@@ -46,6 +46,10 @@ const key = ({ key: name, target }: KeyParams): KeyboardEvent => {
   return event;
 };
 
+type TouchAtParams = {
+  readonly y: number;
+};
+
 afterEach(() => {
   document.body.replaceChildren();
   vi.useRealTimers();
@@ -132,6 +136,70 @@ describe('scrollIntent', () => {
     expect(intent.isUserScroll({ viewport: other, delta: 50 })).toBe(false);
   });
 
+  it('spends the wheel budget on real movement, so a later app move is not counted', () => {
+    vi.stubGlobal('requestAnimationFrame', () => 0);
+    const intent = scrollIntent();
+    const viewport = viewportOf();
+    intent.onWheel({ viewport, event: wheel({ deltaY: 100, target: viewport }) });
+
+    expect(intent.isUserScroll({ viewport, delta: 20 })).toBe(true);
+    intent.hold();
+    expect(intent.isUserScroll({ viewport, delta: 60 })).toBe(false);
+  });
+
+  it('stops counting once the budget is spent, small moves included', () => {
+    const intent = scrollIntent();
+    const viewport = viewportOf();
+    intent.onWheel({ viewport, event: wheel({ deltaY: 40, target: viewport }) });
+
+    expect(intent.isUserScroll({ viewport, delta: 40 })).toBe(true);
+    expect(intent.isUserScroll({ viewport, delta: 4 })).toBe(false);
+    expect(intent.isUserScroll({ viewport, delta: 4 })).toBe(false);
+  });
+
+  it('keeps a newer hold when an older one ends', () => {
+    const frames: Array<FrameRequestCallback> = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const runFrames = () => {
+      frames.splice(0).forEach((callback) => callback(0));
+    };
+    const intent = scrollIntent();
+    const viewport = viewportOf();
+    intent.hold();
+    runFrames();
+    intent.hold();
+    runFrames();
+    intent.onWheel({ viewport, event: wheel({ deltaY: 100, target: viewport }) });
+
+    expect(intent.isUserScroll({ viewport, delta: 20 })).toBe(false);
+    runFrames();
+    runFrames();
+    intent.onWheel({ viewport, event: wheel({ deltaY: 100, target: viewport }) });
+    expect(intent.isUserScroll({ viewport, delta: 20 })).toBe(true);
+  });
+
+  it('reads a touch drag by its direction and size, on its own viewport', () => {
+    const intent = scrollIntent();
+    const viewport = viewportOf();
+    const other = viewportOf();
+    const touchAt = ({ y }: TouchAtParams): TouchEvent => {
+      const event = new TouchEvent('touchmove', { bubbles: true });
+      Object.defineProperty(event, 'touches', { value: [{ clientY: y }] });
+      Object.defineProperty(event, 'target', { value: viewport });
+      return event;
+    };
+    intent.onTouchStart({ viewport, event: touchAt({ y: 400 }) });
+    intent.onTouchMove({ viewport, event: touchAt({ y: 340 }) });
+
+    expect(intent.isUserScroll({ viewport: other, delta: 30 })).toBe(false);
+    expect(intent.isUserScroll({ viewport, delta: -30 })).toBe(false);
+    expect(intent.isUserScroll({ viewport, delta: 60 })).toBe(true);
+    expect(intent.isUserScroll({ viewport, delta: 200 })).toBe(false);
+  });
+
   it('reads every scroll as the app while a hold lasts', () => {
     vi.stubGlobal('requestAnimationFrame', () => 0);
     const intent = scrollIntent();
@@ -142,13 +210,12 @@ describe('scrollIntent', () => {
     expect(intent.isUserScroll({ viewport, delta: 50 })).toBe(false);
   });
 
-  it('counts a thumb drag as the reader until the pointer lifts', () => {
+  it('counts a track press as one page in either direction', () => {
     const intent = scrollIntent();
     const viewport = viewportOf();
-    intent.onDragStart({ viewport });
+    intent.onTrackPress({ viewport });
 
-    expect(intent.isUserScroll({ viewport, delta: 1200 })).toBe(true);
-    intent.onDragEnd();
-    expect(intent.isUserScroll({ viewport, delta: -300 })).toBe(true);
+    expect(intent.isUserScroll({ viewport, delta: -580 })).toBe(true);
+    expect(intent.isUserScroll({ viewport, delta: 300 })).toBe(false);
   });
 });
