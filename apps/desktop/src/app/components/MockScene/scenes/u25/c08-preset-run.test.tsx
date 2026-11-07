@@ -182,7 +182,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-approval says the plan waits on the tail and asks for it in the header', async () => {
     await mount('c08-run-approval');
 
-    expect(within(tail()).getByText('The plan waits for your review')).toBeDefined();
+    expect(within(tail()).getByText('The plan needs approval')).toBeDefined();
     expect(
       within(header()).getByRole('button', { name: 'Approve and start Fix the batching' }),
     ).toBeDefined();
@@ -214,7 +214,7 @@ describe('the c08 preset run scenes', () => {
   it('c08-run-done offers report and wireframe, and leaves Add step to the Agents panel', async () => {
     await mount('c08-run-done');
 
-    expect(within(tail()).getByText('Run finished')).toBeDefined();
+    expect(within(tail()).getByText('Done')).toBeDefined();
     expect(within(tail()).queryByRole('button')).toBeNull();
     expect(within(runPanel()).getByText('Add step')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create report' })).toBeDefined();

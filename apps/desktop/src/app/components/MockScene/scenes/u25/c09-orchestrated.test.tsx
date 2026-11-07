@@ -219,7 +219,7 @@ describe('the c09 orchestrated scenes', () => {
   it('c09-orch-ready waits for your go on the tail with Decide next step in the header', async () => {
     await mount('c09-orch-ready');
 
-    expect(within(tail()).getByText('Waiting for your go')).toBeDefined();
+    expect(within(tail()).getByText('Ready')).toBeDefined();
     expect(within(header()).getByRole('button', { name: 'Decide next step' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Decide next step' })).toHaveLength(1);
   });
@@ -237,7 +237,7 @@ describe('the c09 orchestrated scenes', () => {
   it('c09-orch-done shows the result with Done, Left and the next moves', async () => {
     await mount('c09-orch-done');
 
-    expect(within(tail()).getByText('Run complete')).toBeDefined();
+    expect(within(tail()).getByText('Done')).toBeDefined();
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
     const resume = screen.getByRole('form', { name: 'Continue with a hint' });
     expect(within(resume).getByRole('textbox', { name: 'Continue with a hint' })).toBeDefined();
@@ -304,7 +304,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(alert.textContent).toContain('database is locked');
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(field).toHaveProperty('value', 'Also cover the ledger-core refund path');
-    expect(within(tail()).getByText('Run complete')).toBeDefined();
+    expect(within(tail()).getByText('Done')).toBeDefined();
   });
 
   it('c09-orch-done starts an empty hint box when another complete run takes the page', async () => {

@@ -101,7 +101,7 @@ const stateOf = ({
   }
   if (isRunHeldForPlan({ run })) {
     return isPlanRevising
-      ? { dot: 'running', word: 'Revising plan' }
+      ? { dot: 'running', word: 'Running' }
       : { dot: 'needsYou', word: 'Needs approval' };
   }
   if (stop?.kind === 'operator') {

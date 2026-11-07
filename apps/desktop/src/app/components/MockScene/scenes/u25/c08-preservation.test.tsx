@@ -219,7 +219,7 @@ describe('run rows stay reachable from the preset run level', () => {
   it('Queued manual run: the list says it waits, its one header primary starts it', async () => {
     await mount('c08-runs');
     await press(screen.getByRole('button', { name: /^Open Document the export batching/ }));
-    expect(tail().getByText('Waits to start')).toBeDefined();
+    expect(tail().getByText('Queued')).toBeDefined();
     expect(header().getByRole('button', { name: 'Start run' })).toBeDefined();
     expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
   });
@@ -316,7 +316,7 @@ describe('run rows stay reachable from the preset run level', () => {
     await mount('c08-run-working');
     patchAgent({ id: C08_IMPLEMENTER_ID, patch: { status: 'stopped', stoppedBy: 'app' } });
     await settle();
-    expect(tail().getByText('1 agent stopped when Goodboy closed')).toBeDefined();
+    expect(tail().getByText('1 agent stopped by restart')).toBeDefined();
     expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 

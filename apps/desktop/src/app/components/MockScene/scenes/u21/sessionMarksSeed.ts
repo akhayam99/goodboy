@@ -375,7 +375,7 @@ const autoRootFor = ({ slug }: SlugParams): Agent => ({
 });
 
 const AUTO_VIEW: AutoTreeView = (() => {
-  const view = aView({ phase: 'blocked' });
+  const view = aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 });
   return {
     ...view,
     tree: {

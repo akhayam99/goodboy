@@ -12,7 +12,7 @@ const REASON_TEXT: ReadonlyMap<string, string> = new Map([
   ['no_closing_envelope', 'It ended without saying whether the work was done.'],
   ['artifact_persistence_failed', 'Its result could not be saved.'],
   ['report_missing', 'It ended without writing its report.'],
-  ['declared_blocked', 'It reported that it is blocked.'],
+  ['declared_blocked', "It said it can't go on."],
   ['missing_tool', 'It had no shell to run the commands of the task.'],
   ['no_new_version', 'It did not write a new version.'],
   ['lost_structure', 'Its new version lost the structure of the plan.'],

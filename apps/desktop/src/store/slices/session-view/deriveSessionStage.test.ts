@@ -278,7 +278,7 @@ describe('deriveSessionStage error against running', () => {
       });
       expect(info).toMatchObject({
         stage: 'attention',
-        reason: 'agent errored',
+        reason: 'An agent failed',
         addsFact: true,
         attention: 'agent-error',
         prState: null,

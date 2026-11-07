@@ -36,7 +36,7 @@ type BlockedViewParams = {
 };
 
 const blockedViewOf = ({ rootAgentId }: BlockedViewParams) => {
-  const view = aView({ phase: 'blocked' });
+  const view = aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 });
   return { ...view, tree: { ...view.tree, sessionId: SESSION_ID, rootAgentId } };
 };
 

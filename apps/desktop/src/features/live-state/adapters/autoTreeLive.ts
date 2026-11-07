@@ -99,7 +99,7 @@ const blocked = ({ view }: ViewParams): TailFacts => {
   }
   return {
     state: 'failed',
-    phrase: reason === null || reason === '' ? 'Auto is blocked' : reason,
+    phrase: reason === null || reason === '' ? "Auto couldn't reply" : reason,
     startedAt: null,
     actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript, ...stopOf({ view })],
   };
@@ -169,7 +169,7 @@ export const autoTreeLive = ({
     };
   }
   if (phase === 'finished') {
-    return { state: 'idle', phrase: 'Finished. Write to reopen.', startedAt: null, actions: [] };
+    return { state: 'idle', phrase: 'Done. Write to continue.', startedAt: null, actions: [] };
   }
   return { state: 'idle', phrase: 'Idle', startedAt: null, actions: [] };
 };

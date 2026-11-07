@@ -646,7 +646,7 @@ an agent, with its role glyph), never a joined tooltip line.
   question, a failed or stuck step with **Restart step**, "Paused
   at the limit" (a step that never started also reads "Not
   started, the run paused at the limit."), the step that is ready, a stopped
-  step with **Continue**, "Run finished" or "Stopped by you"
+  step with **Continue**, "Done" or "Stopped by you"
   with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. The header holds the one primary
   (`runHeaderPrimaryOf`: **Answer**, **Raise limit**, the `runPrimaryOf` verb
   with today's gates, `StartStepPrimary` and its Start anyway confirm,

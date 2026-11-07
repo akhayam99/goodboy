@@ -110,12 +110,12 @@ describe('the reason table', () => {
   });
 
   it.each<[SessionAttentionReason, string, string, string]>([
-    ['agent-error', '!', 'danger', 'An agent stopped on an error'],
+    ['agent-error', '!', 'danger', 'An agent failed'],
     ['push-failed', '!', 'danger', "1 comment didn't go out"],
     ['ci-failed', '!', 'danger', 'Checks failing'],
     ['open-question', '?', 'warning', '1 question for you'],
     ['fix-needs-you', '?', 'warning', '1 comment needs you'],
-    ['needs-approval', 'approval', 'warning', 'Waiting for your permission'],
+    ['needs-approval', 'approval', 'warning', 'Needs permission'],
     ['plan-approval', 'approval', 'warning', 'The plan needs approval'],
     ['changes-requested', '!', 'warning', 'Changes requested'],
     ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],
@@ -123,9 +123,9 @@ describe('the reason table', () => {
     ['unread-reply', 'none', 'info', 'New reply'],
     ['run-stopped', '!', 'danger', 'A run stopped'],
     ['run-paused-at-limit', '!', 'warning', 'A run paused at its limit'],
-    ['run-waits-for-go', 'approval', 'warning', 'A run waits for you to continue'],
-    ['auto-needs-you', 'approval', 'warning', 'Auto waits for you'],
-    ['slack-reply-waiting', 'approval', 'warning', 'A Slack reply waits for your OK'],
+    ['run-waits-for-go', 'approval', 'warning', 'Step is ready'],
+    ['auto-needs-you', 'approval', 'warning', 'Auto needs you'],
+    ['slack-reply-waiting', 'approval', 'warning', 'A Slack reply needs approval'],
   ])('gives %s the mark %s in %s with the words "%s"', (reason, mark, tone, words) => {
     expect(ATTENTION_REASON_META[reason]).toMatchObject({ mark, tone, words, reason: words });
   });

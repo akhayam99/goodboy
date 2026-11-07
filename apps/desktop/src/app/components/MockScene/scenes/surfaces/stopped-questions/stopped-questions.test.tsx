@@ -63,12 +63,12 @@ const STOP_CASES: ReadonlyArray<StopCase> = [
   {
     name: 'needs-approval',
     stop: { kind: 'needs-approval', message: 'Deploy to Cascadia needs a go' },
-    phrase: 'Paused · needs your approval',
+    phrase: 'Needs approval',
   },
   {
     name: 'plan-approval',
     stop: { kind: 'plan-approval', message: 'The plan is ready' },
-    phrase: 'Plan ready · waiting for you',
+    phrase: 'Plan needs approval',
   },
   {
     name: 'paused',
@@ -78,7 +78,7 @@ const STOP_CASES: ReadonlyArray<StopCase> = [
   {
     name: 'preset-change',
     stop: { kind: 'preset-change', message: 'The preset changed under the run' },
-    phrase: 'Paused · the preset needs your call',
+    phrase: 'Needs you',
   },
 ];
 

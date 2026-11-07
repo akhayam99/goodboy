@@ -100,10 +100,10 @@ describe('runRowFactsOf plan hold', () => {
     expect(waitOf({ run: heldRun })).toMatchObject({ dot: 'needsYou', word: 'Needs approval' });
   });
 
-  it('says Revising plan, as running, while the planner reworks it', () => {
+  it('says Running while the planner reworks the plan', () => {
     expect(waitOf({ run: heldRun, isPlanRevising: true })).toMatchObject({
       dot: 'running',
-      word: 'Revising plan',
+      word: 'Running',
     });
   });
 });

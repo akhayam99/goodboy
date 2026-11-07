@@ -20,7 +20,7 @@ const CONTINUE = [{ ...TAIL_ACTION.retryThroughAuto, label: NAMES.continue }];
 
 const FAILURE_REASON = {
   failed: 'the agent did not finish',
-  blocked: 'the agent was blocked',
+  blocked: 'the agent needs you',
   timed_out: 'the agent ran out of time',
 } as const satisfies Record<Exclude<AutoOutcome, 'completed' | 'stopped'>, string>;
 
@@ -40,14 +40,14 @@ const WAITS_FOR_OK: TailFacts = {
 
 const ASKED: TailFacts = {
   state: 'needsYou',
-  phrase: 'Asked a question',
+  phrase: 'Needs your answer',
   startedAt: null,
   actions: [],
 };
 
 const WORKING: TailFacts = {
   state: 'working',
-  phrase: 'Working',
+  phrase: NAMES.running,
   startedAt: null,
   actions: [TAIL_ACTION.stopAgent],
 };

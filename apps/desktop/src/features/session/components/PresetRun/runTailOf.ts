@@ -94,8 +94,7 @@ const primaryTailOf = ({
     case 'start-run':
       return {
         state: 'queued',
-        phrase:
-          run.triggerMode === 'after_run' ? `Starts after ${predecessorName}` : 'Waits to start',
+        phrase: run.triggerMode === 'after_run' ? `Starts after ${predecessorName}` : 'Queued',
         stepAgentId: null,
         verb,
       };
@@ -107,7 +106,7 @@ const primaryTailOf = ({
     case 'approve-plan':
       return {
         state: 'waiting',
-        phrase: 'The plan waits for your review',
+        phrase: 'The plan needs approval',
         stepAgentId: null,
         verb,
       };
@@ -151,9 +150,7 @@ export const runTailOf = ({
     return {
       state: 'idle',
       phrase:
-        notFinished.length === 0
-          ? 'Run finished'
-          : finishedWithGapsPhrase({ count: notFinished.length }),
+        notFinished.length === 0 ? 'Done' : finishedWithGapsPhrase({ count: notFinished.length }),
       stepAgentId: null,
       verb: null,
     };
@@ -189,8 +186,8 @@ export const runTailOf = ({
       state: 'stopped',
       phrase:
         restartStoppedCount === 1
-          ? '1 agent stopped when Goodboy closed'
-          : `${restartStoppedCount} agents stopped when Goodboy closed`,
+          ? '1 agent stopped by restart'
+          : `${restartStoppedCount} agents stopped by restart`,
       stepAgentId: null,
       verb: { kind: 'resumeAll', count: restartStoppedCount },
     };
@@ -221,7 +218,7 @@ export const runTailOf = ({
     };
   }
   if (nextAction.kind === 'summarizing') {
-    return { state: 'working', phrase: 'Writing the next brief', stepAgentId: null, verb: null };
+    return { state: 'working', phrase: 'Preparing the next step', stepAgentId: null, verb: null };
   }
   if (run.orchestrationStop?.kind === 'budget') {
     return {
