@@ -2,7 +2,7 @@ import { SegmentedTabs, cn, tintClasses, type SegmentedTabOption } from '@goodbo
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchTabEntry } from '../../branchTabs';
 import type { BranchTabFacts } from '../../branchTabFactsOf';
-import { DiffStatText } from '../DiffStatText';
+import { DiffStatText } from '../../../../shared/components/DiffStatText';
 
 type Props = {
   readonly tabs: ReadonlyArray<BranchTabEntry>;

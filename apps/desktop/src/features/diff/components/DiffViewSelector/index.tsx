@@ -17,6 +17,7 @@ import { PickerSection } from '../../../../shared/components/RoutingPicker/Picke
 import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
 
 import { useNow } from '../../../../shared/hooks/useNow';
+import { branchCommitsLabel } from '../../lib/branchCommitsLabel';
 
 type Props = {
   readonly view: DiffView;
@@ -25,6 +26,7 @@ type Props = {
   readonly status: WorktreeStatus | null;
   readonly baseBranch?: string | null;
   readonly loading?: boolean;
+  readonly commitTotal?: number | null;
 };
 
 type OptionRow = {
@@ -94,17 +96,6 @@ const viewLabel = ({ view, commits, baseBranch }: ViewLabelParams): string => {
   return `Compared with ${baseWord(baseBranch)}`;
 };
 
-const commitsLabel = ({
-  view,
-  commits,
-}: Pick<ViewLabelParams, 'view' | 'commits'>): string | null => {
-  if (view.kind !== 'branch' || commits.length === 0) {
-    return null;
-  }
-
-  return `All ${commits.length} ${commits.length === 1 ? 'commit' : 'commits'}`;
-};
-
 const viewEquals = ({ left, right }: ViewEqualsParams): boolean => {
   if (left.kind !== right.kind) {
     return false;
@@ -141,6 +132,7 @@ export const DiffViewSelector = ({
   status,
   baseBranch = null,
   loading,
+  commitTotal = null,
 }: Props) => {
   const now = useNow(30_000);
   const dropdown = useDropdown({
@@ -327,7 +319,10 @@ export const DiffViewSelector = ({
   };
 
   const label = viewLabel({ view, commits, baseBranch });
-  const countLabel = commitsLabel({ view, commits });
+  const countLabel =
+    view.kind === 'branch'
+      ? branchCommitsLabel({ listed: commits.length, total: commitTotal })
+      : null;
   let optionIndex = -1;
 
   return (

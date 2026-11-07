@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { branchTabFactsOf } from './branchTabFactsOf';
+import { branchTabFactsOf, filesHeadFactOf } from './branchTabFactsOf';
 
 const BASE = {
   pullRequestState: 'open',
@@ -35,5 +35,44 @@ describe('branchTabFactsOf', () => {
     expect(facts.files.text).toBeNull();
     expect(facts.commits.text).toBeNull();
     expect(facts.comments.text).toBeNull();
+  });
+});
+
+describe('filesHeadFactOf', () => {
+  const tabFact = branchTabFactsOf(BASE).files;
+  const files = [
+    { additions: 3, deletions: 1 },
+    { additions: 2, deletions: 0 },
+  ];
+
+  it('keeps the branch total on the branch view', () => {
+    expect(filesHeadFactOf({ view: { kind: 'branch' }, tabFact, files })).toBe(tabFact);
+  });
+
+  it('counts the files and lines of one commit', () => {
+    const fact = filesHeadFactOf({ view: { kind: 'commit', sha: 'abc1234' }, tabFact, files });
+
+    expect(fact.text).toBe('2');
+    expect(fact.count).toBe(2);
+    expect(fact.diff).toEqual({ additions: 5, deletions: 1 });
+  });
+
+  it('counts the files and lines of the working tree', () => {
+    const fact = filesHeadFactOf({
+      view: { kind: 'working', scope: 'all' },
+      tabFact,
+      files: [{ additions: 4, deletions: 4 }],
+    });
+
+    expect(fact.text).toBe('1');
+    expect(fact.count).toBe(1);
+    expect(fact.diff).toEqual({ additions: 4, deletions: 4 });
+  });
+
+  it('draws nothing for an empty diff', () => {
+    const fact = filesHeadFactOf({ view: { kind: 'commit', sha: 'abc1234' }, tabFact, files: [] });
+
+    expect(fact.text).toBeNull();
+    expect(fact.diff).toBeNull();
   });
 });

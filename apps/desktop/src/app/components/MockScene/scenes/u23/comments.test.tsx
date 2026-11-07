@@ -157,7 +157,7 @@ describe('the u23 comments scenes', () => {
     );
     await renderScene({ name: 'comments-ready-to-push' });
 
-    expect(screen.getAllByRole('tab', { name: /^Comments\s*3$/ })).toHaveLength(1);
+    expect(screen.getAllByRole('tab', { name: /^Comments\s*7$/ })).toHaveLength(1);
     expect(screen.getAllByText('Fixing 1 of 4 comments').length).toBeGreaterThan(0);
     expect(screen.queryByText('Fixing 4 comments')).toBeNull();
     const first = within(list())

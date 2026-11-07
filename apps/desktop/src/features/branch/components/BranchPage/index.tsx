@@ -41,6 +41,7 @@ import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { reviewCounts } from '../../../resolve/reviewCounts';
 import { requestNounLabel } from '../../requestNounLabel';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
+import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
@@ -362,6 +363,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
           hasPullRequest={pr !== null && pr.state === 'open'}
           isReadOnly={isReadOnly}
           filesFact={entryFacts.files}
+          commitTotal={entryFacts.commits.count}
         />
       );
     }
@@ -399,23 +401,16 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       />
     ) : null;
 
-  const matchedDetail =
-    pr !== null && github?.detail?.prNumber === pr.number ? github.detail : null;
   const checksRuns = pullRequestRunsOf({
     pr,
     detail: github?.detail ?? null,
     view: pullRequestView.view,
   });
-  const checksUnreadReason =
-    pr === null
-      ? null
-      : pr.checksUnknown === true || matchedDetail?.checksRead === 'denied'
-        ? 'Checks unknown: this token cannot read them'
-        : matchedDetail?.checksRead === 'failed'
-          ? "Checks unknown: couldn't read them"
-          : null;
+  const checksUnreadReason = checksUnreadReasonOf({ pr, detail: github?.detail ?? null });
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
-  const threadCounts = reviewCounts({ threads: entries.map((e) => e.row.thread) });
+  const threadCounts = reviewCounts({
+    threads: branchReview.branchEntries.map((e) => e.row.thread),
+  });
   const entryFacts = branchTabFactsOf({
     pullRequestState: scope.state,
     commentsNeedYou: threadCounts.needYou,

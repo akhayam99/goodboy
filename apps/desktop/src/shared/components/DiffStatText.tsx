@@ -1,7 +1,8 @@
-import type { EntryDiffStat } from '../worktreeEntryFacts';
-
 type Props = {
-  readonly diff: EntryDiffStat;
+  readonly diff: {
+    readonly additions: number;
+    readonly deletions: number;
+  };
 };
 
 export const DiffStatText = ({ diff }: Props) => (

@@ -20,6 +20,7 @@ type Params = {
 
 type BranchReview = {
   readonly entries: ReadonlyArray<ReviewEntry>;
+  readonly branchEntries: ReadonlyArray<ReviewEntry>;
   readonly push: ReviewPush;
   readonly comments: BranchStepComments;
   readonly run: FixRun | null;
@@ -61,5 +62,5 @@ export const useBranchReview = ({ sessionId, mountId }: Params): BranchReview =>
     }),
     [fixableThreadIds, isRunLive, questionThreadId, readyThreadIds],
   );
-  return { entries, push, comments, run, lane, isSelecting: selectedCount > 0 };
+  return { entries, branchEntries, push, comments, run, lane, isSelecting: selectedCount > 0 };
 };

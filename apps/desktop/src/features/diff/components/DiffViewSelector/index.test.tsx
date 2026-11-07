@@ -51,6 +51,45 @@ describe('DiffViewSelector', () => {
     expect(screen.queryByText(/\bmain\b/)).toBeNull();
   });
 
+  it('says 137 for a branch of 137 commits when the list is capped at 100', () => {
+    const capped = Array.from({ length: 100 }, (_, index) => ({
+      ...commits[0]!,
+      sha: `sha${index}`,
+      shortSha: `s${index}`,
+    }));
+    render(
+      <DiffViewSelector
+        view={{ kind: 'branch' }}
+        onChange={vi.fn()}
+        commits={capped}
+        status={null}
+        baseBranch="develop"
+        commitTotal={137}
+      />,
+    );
+
+    screen.getByText('· All 137 commits');
+  });
+
+  it('shows a capped list as the latest 100 when no total is known', () => {
+    const capped = Array.from({ length: 100 }, (_, index) => ({
+      ...commits[0]!,
+      sha: `sha${index}`,
+      shortSha: `s${index}`,
+    }));
+    render(
+      <DiffViewSelector
+        view={{ kind: 'branch' }}
+        onChange={vi.fn()}
+        commits={capped}
+        status={null}
+        baseBranch="develop"
+      />,
+    );
+
+    screen.getByText('· Latest 100 commits');
+  });
+
   it('names the base branch in the branch option of the picker, never main by default', () => {
     render(
       <DiffViewSelector

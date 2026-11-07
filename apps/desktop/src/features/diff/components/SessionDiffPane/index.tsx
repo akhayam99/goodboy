@@ -17,7 +17,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { DiffViewSelector } from '../DiffViewSelector';
 import { useDiffKeys } from '../../hooks/useDiffKeys';
 import { useFileRail } from '../../hooks/useFileRail';
-import { useOpenDiffFileInEditor } from '../../hooks/useOpenDiffFileInEditor';
+import { useDiffFileActions } from '../../hooks/useDiffFileActions';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { useTreeFocus } from '../../hooks/useTreeFocus';
@@ -26,12 +26,11 @@ import { nextUnviewedPath } from '../../lib/fileOrder';
 import { ChangeTree } from '../ChangeTree';
 import { FileRail } from '../FileRail';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
-import { worktreeFileSides } from '../../../worktree/worktree';
 import type { PeekOpenParams } from '../IdentifierPeek/PeekHost';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
-import type { BranchTabFact } from '../../../branch/branchTabFactsOf';
-import { DiffStatText } from '../../../branch/components/DiffStatText';
+import { DiffStatText } from '../../../../shared/components/DiffStatText';
+import type { FilesFact } from '../../filesFact';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -40,7 +39,8 @@ type Props = {
   readonly diff: SessionDiff;
   readonly isReadOnly?: boolean;
   readonly toolbarEnd?: ReactNode;
-  readonly filesFact?: BranchTabFact;
+  readonly filesFact?: FilesFact;
+  readonly commitTotal?: number | null;
 };
 
 export const SessionDiffPane = ({
@@ -51,6 +51,7 @@ export const SessionDiffPane = ({
   isReadOnly = false,
   toolbarEnd,
   filesFact,
+  commitTotal = null,
 }: Props) => {
   const review = useReviewState({ sessionId, worktreePath, diff });
   const baseBranch = useAppStore((s) =>
@@ -115,7 +116,6 @@ export const SessionDiffPane = ({
     [panel, review],
   );
 
-  const openInEditor = useOpenDiffFileInEditor({ sessionId, workingDir });
   const isCommitView = diff.view.kind === 'commit';
   const identifierPeek = useMemo(
     () =>
@@ -137,65 +137,28 @@ export const SessionDiffPane = ({
     [isCommitView, openDrawer, sessionId, worktreePath],
   );
 
-  const revs = useMemo(() => {
-    const oldRev =
-      diff.view.kind === 'commit'
-        ? `${diff.view.sha}^`
-        : diff.view.kind === 'working'
-          ? diff.view.scope === 'unstaged'
-            ? ':0'
-            : 'HEAD'
-          : null;
-    const newRev =
-      diff.view.kind === 'commit'
-        ? diff.view.sha
-        : diff.view.kind === 'working' && diff.view.scope === 'staged'
-          ? ':0'
-          : null;
-    return { oldRev, newRev };
-  }, [diff.view]);
-  const loadFileSides = useCallback(
-    (file: FileDiff) =>
-      worktreeFileSides({
-        worktreePath,
-        path: file.path,
-        oldRev: revs.oldRev,
-        newRev: revs.newRev,
-        baseBranch,
-      }),
-    [baseBranch, revs, worktreePath],
-  );
-  const showWhole = useCallback(
-    (file: FileDiff) =>
-      openDrawer({
-        kind: 'file-diff',
-        sessionId,
-        payload: {
-          source: { kind: 'worktree', worktreePath },
-          path: file.path,
-          whole: { file, oldRev: revs.oldRev, newRev: revs.newRev, baseBranch },
-        },
-      }),
-    [baseBranch, openDrawer, revs, sessionId, worktreePath],
-  );
-  const fileActions = useMemo(
-    () => ({
-      onShowWhole: showWhole,
-      ...(workingDir !== null && { onOpenInEditor: (path: string) => void openInEditor(path) }),
-    }),
-    [openInEditor, showWhole, workingDir],
-  );
+  const { fileActions, loadFileSides } = useDiffFileActions({
+    sessionId,
+    workingDir,
+    worktreePath,
+    view: diff.view,
+    baseBranch,
+  });
 
+  const filesHead = filesFact ?? {
+    text: String(review.allFiles.length),
+    count: review.allFiles.length,
+    diff: null,
+  };
+  const filesTotal = filesHead.count ?? review.allFiles.length;
   const filesToggle =
     rail.isShown || !hasTree ? null : (
       <Button size="sm" variant="quiet" onClick={panel.focus}>
         <PanelRightOpen size={ICON_SIZE.row} aria-hidden />
         Files
         <span className="flex items-center gap-1 tabular-nums text-faint-foreground">
-          {filesFact === undefined ? review.allFiles.length : filesFact.text}
-          {filesFact?.diff === undefined || filesFact.diff === null ? null : (
-            <DiffStatText diff={filesFact.diff} />
-          )}
+          {filesHead.text}
+          {filesHead.diff === null ? null : <DiffStatText diff={filesHead.diff} />}
         </span>
       </Button>
     );
@@ -209,6 +172,7 @@ export const SessionDiffPane = ({
         status={diff.status}
         baseBranch={baseBranch}
         loading={diff.loading}
+        commitTotal={commitTotal}
       />
     </>
   );
@@ -311,6 +275,7 @@ export const SessionDiffPane = ({
     <ChangeTree
       tree={review.tree}
       allFiles={review.allFiles}
+      total={filesTotal}
       filter={filter}
       filterRef={filterRef}
       activePath={review.activePath}

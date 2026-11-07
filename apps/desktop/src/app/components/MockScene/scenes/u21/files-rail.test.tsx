@@ -59,7 +59,7 @@ describe('the u21 files rail scene', () => {
     const rail = await screen.findByRole('tablist', { name: 'Branch pages' }, WAIT);
     const files = within(rail).getByRole('tab', { name: /^Changes/ });
     expect(files.getAttribute('aria-selected')).toBe('true');
-    expect(files.textContent).toBe('Changes');
+    expect(files.textContent).toBe('Changes6');
     expect(within(rail).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     const fileRail = within(screen.getByRole('complementary', { name: 'Files' }));
     expect(fileRail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();

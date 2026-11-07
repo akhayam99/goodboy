@@ -573,3 +573,77 @@ describe('useSessionDiff file bodies', () => {
     );
   });
 });
+
+describe('useSessionDiff target switch', () => {
+  const OTHER = '/repo/notify-relay';
+
+  const commitOf = (sha: string) => ({
+    sha,
+    shortSha: sha.slice(0, 7),
+    subject: 'Tighten the refund rounding',
+    timestamp: 1_700_000_000,
+    pushed: false,
+  });
+
+  const switchable = () => {
+    const held: { release: () => void; fail: () => void } = {
+      release: () => undefined,
+      fail: () => undefined,
+    };
+    stubStoryInvoke({
+      worktree_diff_files: [],
+      worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
+      worktree_status: ({ worktreePath }: BaseArgs) =>
+        worktreePath === OTHER
+          ? new Promise<WorktreeStatus>((resolve, reject) => {
+              held.release = () => resolve(statusFor('other'));
+              held.fail = () => reject(new Error('git status failed'));
+            })
+          : cleanBranchAhead(),
+      worktree_commits: ({ worktreePath }: BaseArgs) =>
+        worktreePath === OTHER ? [] : [commitOf('aaaaaaa1'), commitOf('bbbbbbb2')],
+    });
+    return held;
+  };
+
+  const mountedOn = (initial: string) => {
+    const project = aProject({ baseBranch: 'main' });
+    useAppStore.setState({ projects: [project], sessions: [session] });
+    return renderHook(
+      ({ path }: { readonly path: string }) =>
+        useSessionDiff({ sessionId: SESSION_ID, worktreePath: path }),
+      { initialProps: { path: initial } },
+    );
+  };
+
+  it('shows no commit or status of the previous target while the new read is pending', async () => {
+    const held = switchable();
+    const { result, rerender } = mountedOn(WORKTREE);
+    await waitFor(() => expect(result.current.commits).toHaveLength(2));
+    await waitFor(() => expect(result.current.status?.mainDistance.kind).toBe('known'));
+
+    rerender({ path: OTHER });
+
+    expect(result.current.commits).toHaveLength(0);
+    expect(result.current.status).toBeNull();
+    expect(result.current.loading).toBe(true);
+
+    act(() => held.release());
+
+    await waitFor(() => expect(result.current.status?.branch).toBe('against-other'));
+    expect(result.current.commits).toHaveLength(0);
+  });
+
+  it('keeps the count unknown and shows the error when the new read fails', async () => {
+    const held = switchable();
+    const { result, rerender } = mountedOn(WORKTREE);
+    await waitFor(() => expect(result.current.commits).toHaveLength(2));
+
+    rerender({ path: OTHER });
+    act(() => held.fail());
+
+    await waitFor(() => expect(result.current.metaError).not.toBeNull());
+    expect(result.current.status).toBeNull();
+    expect(result.current.commits).toHaveLength(0);
+  });
+});

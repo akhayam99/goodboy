@@ -1,4 +1,4 @@
-import type { PrCheckRun } from '@goodboy/types';
+import type { DiffView, FileDiff, PrCheckRun } from '@goodboy/types';
 import type { PullRequestPresentationState } from '../../shared/utils/pullRequestPresentation';
 import type { BranchTab } from '../../store/slices/navigation/types';
 import { countNoun } from '../../shared/utils/countNoun';
@@ -15,6 +15,7 @@ export type BranchTabFact = {
   readonly tone: 'danger' | 'warning' | 'info' | null;
   readonly tooltip: string | null;
   readonly diff: EntryDiffStat | null;
+  readonly count: number | null;
 };
 
 export type BranchTabFacts = Readonly<Record<BranchTab, BranchTabFact>>;
@@ -33,23 +34,25 @@ type Params = {
 
 type EntryParams = {
   readonly entry: WorktreeEntryFacts[BranchTab];
+  readonly count?: number | null;
 };
 
-const plainOf = ({ entry }: EntryParams): BranchTabFact => ({
+const tabFactOf = ({ entry, count = null }: EntryParams): BranchTabFact => ({
   text: entry.text,
   tone: entry.tone,
   tooltip: entry.tooltip,
   diff: entry.diff,
+  count,
 });
 
 type ChecksParams = EntryParams & Pick<Params, 'checks'>;
 
 const checksFactOf = ({ checks, entry }: ChecksParams): BranchTabFact => {
   if (entry.text !== null || checks === null) {
-    return plainOf({ entry });
+    return tabFactOf({ entry });
   }
   const passed = checksCountsOf({ checks }).passed;
-  return { ...plainOf({ entry }), text: countSlotText({ count: passed }) };
+  return { ...tabFactOf({ entry }), text: countSlotText({ count: passed }) };
 };
 
 type CommentsParams = Pick<Params, 'commentsNeedYou' | 'commentsOpen'>;
@@ -62,6 +65,7 @@ const commentsFactOf = ({ commentsNeedYou, commentsOpen }: CommentsParams): Bran
       tone: 'warning',
       tooltip: `${commentsNeedYou} need you`,
       diff: null,
+      count: commentsOpen,
     };
   }
   return {
@@ -69,6 +73,7 @@ const commentsFactOf = ({ commentsNeedYou, commentsOpen }: CommentsParams): Bran
     tone: null,
     tooltip: open === null ? null : `${countNoun({ count: commentsOpen, one: 'comment' })} open`,
     diff: null,
+    count: commentsOpen,
   };
 };
 
@@ -94,10 +99,38 @@ export const branchTabFactsOf = ({
     checksUnreadReason,
   });
   return {
-    pr: plainOf({ entry: entries.pr }),
+    pr: tabFactOf({ entry: entries.pr }),
     comments: commentsFactOf({ commentsNeedYou, commentsOpen }),
-    files: plainOf({ entry: entries.files }),
-    commits: plainOf({ entry: entries.commits }),
+    files: tabFactOf({ entry: entries.files, count: files }),
+    commits: tabFactOf({ entry: entries.commits, count: commits }),
     checks: checksFactOf({ checks, entry: entries.checks }),
   };
 };
+
+type ScopedFilesParams = {
+  readonly files: ReadonlyArray<Pick<FileDiff, 'additions' | 'deletions'>>;
+};
+
+const scopedFilesFactOf = ({ files }: ScopedFilesParams): BranchTabFact => {
+  const additions = files.reduce((sum, file) => sum + file.additions, 0);
+  const deletions = files.reduce((sum, file) => sum + file.deletions, 0);
+  return branchTabFactsOf({
+    pullRequestState: 'none',
+    commentsNeedYou: 0,
+    commentsOpen: 0,
+    files: files.length,
+    diff: { additions, deletions },
+    commits: null,
+    notPushed: null,
+    checks: null,
+    checksUnreadReason: null,
+  }).files;
+};
+
+type FilesHeadParams = ScopedFilesParams & {
+  readonly view: DiffView;
+  readonly tabFact: BranchTabFact;
+};
+
+export const filesHeadFactOf = ({ view, tabFact, files }: FilesHeadParams): BranchTabFact =>
+  view.kind === 'branch' ? tabFact : scopedFilesFactOf({ files });

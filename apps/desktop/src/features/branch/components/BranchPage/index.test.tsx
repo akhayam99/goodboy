@@ -38,6 +38,10 @@ import {
   SESSION,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import {
+  NOTE_IDS,
+  resolveNotesFor,
+} from '../../../../app/components/MockScene/scenes/resolveNotesSeed';
 import { railOf, sectionNames } from '../../../../test/branchRail';
 import { BranchPage } from './index';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
@@ -793,5 +797,143 @@ describe('Branch page entries in the sidebar', () => {
     await settle();
 
     expect(screen.getAllByText(/credit\.ts/).length).toBeGreaterThan(0);
+  });
+});
+
+const stripTab = (name: RegExp): HTMLElement =>
+  within(screen.getByRole('tablist', { name: 'Branch pages' })).getByRole('tab', { name });
+
+const stripCount = (name: RegExp): string =>
+  (stripTab(name).textContent ?? '').replace(/^[A-Za-z ]+/, '').trim();
+
+const NOTE_PLACE = { filePath: 'src/credit.ts', line: 1 };
+const NOTE_PLACES = {
+  open: NOTE_PLACE,
+  openSecond: NOTE_PLACE,
+  working: NOTE_PLACE,
+  needs: NOTE_PLACE,
+  ready: NOTE_PLACE,
+  failed: NOTE_PLACE,
+  done: NOTE_PLACE,
+};
+const OPEN_NOTE_IDS = [NOTE_IDS.open, NOTE_IDS.openSecond, NOTE_IDS.working];
+
+const seedOpenNotes = ({ isKeepingThreads }: { readonly isKeepingThreads: boolean }): void => {
+  const seeded = resolveNotesFor({ sessionId: SESSION.id, places: NOTE_PLACES });
+  const wanted = new Set(OPEN_NOTE_IDS);
+  const notes = seeded.notes
+    .filter((note) => wanted.has(note.id))
+    .map((note) => ({ ...note, projectId: PROJECT_ID, branch: MOUNT.branch }));
+  const entries = seeded.entries.filter((entry) => wanted.has(entry.thread.diffCommentId ?? ''));
+  const attempts = seeded.attempts.filter((attempt) =>
+    attempt.threadIds.some((threadId) =>
+      entries.some((entry) => entry.thread.threadId === threadId),
+    ),
+  );
+  act(() => {
+    useAppStore.setState((state) => ({
+      diffComments: { [SESSION.id]: notes },
+      sessionResolveQueueItems: {
+        ...state.sessionResolveQueueItems,
+        [SESSION.id]: [
+          ...(isKeepingThreads ? (state.sessionResolveQueueItems[SESSION.id] ?? []) : []),
+          ...entries,
+        ],
+      },
+      sessionResolveAttempts: { ...state.sessionResolveAttempts, [SESSION.id]: attempts },
+    }));
+  });
+};
+
+describe('Branch page Comments count', () => {
+  it('counts the local notes the Comments page lists when there is no pull request', async () => {
+    await mount();
+    dropRequest();
+    seedOpenNotes({ isKeepingThreads: false });
+    await settle();
+
+    expect(stripCount(/^Comments/)).toBe('3');
+  });
+
+  it('counts host threads and local notes together', async () => {
+    await mount();
+    const hostOnly = Number(stripCount(/^Comments/));
+    seedWorktree({ isDiffLoaded: false });
+    seedOpenNotes({ isKeepingThreads: true });
+    await settle();
+
+    expect(hostOnly).toBeGreaterThan(0);
+    expect(Number(stripCount(/^Comments/))).toBe(hostOnly + 3);
+  });
+});
+
+describe('Branch page tab and head facts', () => {
+  const STATUS = {
+    branch: MOUNT.branch,
+    head: COMMITS[0]?.sha ?? null,
+    headSubject: 'Commit 1',
+    upstreamDistance: { kind: 'known', ahead: 3, behind: 0 },
+    mainDistance: { kind: 'known', ahead: 3, behind: 0 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+    upstream: 'origin/hl/fix-duplicate-credit',
+    inProgress: null,
+  };
+
+  const holdReads = () => {
+    const held: { release: () => void } = { release: () => undefined };
+    const gate = new Promise<void>((resolve) => {
+      held.release = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (command: string) => {
+      if (command === 'worktree_diff') {
+        await gate;
+        return PATCH;
+      }
+      if (command === 'worktree_status') {
+        await gate;
+        return STATUS;
+      }
+      if (command === 'worktree_commits') {
+        await gate;
+        return COMMITS;
+      }
+      if (command === 'worktree_diff_files') {
+        return [];
+      }
+      return new Promise<never>(() => undefined);
+    });
+    return held;
+  };
+
+  it('shows the same files and commits on the tab and in the Changes head, before and after loading', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
+    seedWorktree({ isDiffLoaded: false });
+    const held = holdReads();
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(stripCount(/^Changes/)).toBe('');
+    expect(stripCount(/^Commits/)).toBe('');
+
+    held.release();
+    await settle();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId: SESSION.id, tab: 'files' }) });
+    });
+    await settle();
+
+    expect(stripCount(/^Changes/).startsWith('2')).toBe(true);
+    expect(stripCount(/^Commits/)).toBe('3');
+    const rail = document.querySelector<HTMLElement>(
+      '[data-slot="diff-file-rail"] aside[aria-label="Files"]',
+    );
+    expect(rail).not.toBeNull();
+    within(rail!).getByText(/Viewed 0 of 2/);
+    screen.getByText('· All 3 commits');
   });
 });

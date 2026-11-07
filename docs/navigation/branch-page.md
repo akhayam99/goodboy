@@ -227,7 +227,7 @@ and still no pull request `Comments` joins them; Draft, Open, Approved, Queued, 
 Closed show all five, `Pull request`, `Comments`, `Changes`, `Commits`, `Checks`. The first is
 labelled with the host's noun (`Pull request`, `Merge request` on GitLab; its key is ⌥⌘1,
 Comments ⌥⌘R, Changes ⌥⌘F, shown in the row's tooltip) and Checks never appears without a pull
-request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you (`branchTabFactsOf`, one function for the tab and for the head of its page): `Pull request` the state word of a draft, merged or closed request, `Comments` the open ones (warning tone when some need you), `Changes` the files and `+added -removed`, `Commits` the count (`↑N` when only unpushed ones are known), `Checks` the passed count, or the failing (danger) or running (info) count. The Files toggle of the Changes toolbar reads the same fact (`filesFact`), so the tab and the head never drift. Merged and
+request. A pick replaces the address. Every tab carries its count in faint ink, and color only for what wants you; the counts and their scope are written once, under the entry slots below. Merged and
 Closed make the page read only (`isBranchReadOnly`): Commits shows its list without editing or Rebase. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
 `features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
@@ -361,16 +361,7 @@ Every Branch section sits on the 960px column (`PaneShell width="column"`, bodie
 moves from one section to the next, except that Changes gives up the width of its file rail
 on the right and the column re-centres in what is left. The Comments section is one full-width
 list at every pane width, with no back link; the open comment is the drawer, and the last row
-opened stays marked after the drawer closes. The entry slots read nothing until the data arrives and nothing at zero:
-Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you (it never counts unread threads, which only the page line and the row dots show); Files the
-count; Commits `↑2` (tooltip `2 not pushed`, `branchPushFactsOf(...).toPush`: the history draft's unpushed
-commits once the branch has an upstream, else the status: the upstream's ahead count, a
-diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed
-its commits over main, so it reads `↑3` too. `branchPushFactsOf` in `shared/lib/branchPushState.ts`
-is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action
-registry facts and the rail all read it, so a diverged branch never reads `Pushed`); Checks the failing or
-running count (`branchTabFactsOf`; the comment
-source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
+opened stays marked after the drawer closes. The entry slots read nothing until the data for the current branch arrives and nothing at zero (`branchTabFactsOf`, one function for the tab and the head of its page). After a branch or mount switch a count read for the previous target is never shown: `useSessionDiff` keys its commits and status by worktree path and base, so the count stays unknown, and a failed read shows the error with no count. Pull request: `Draft`, `Merged` or `Closed`. Comments: the open ones of the branch scope, the same entries the Comments page lists (host threads and local notes, `useBranchReview().branchEntries`), in warning tone when some need you. Changes: the file count and `+added -removed` of the branch; inside Changes the Files toggle and the file rail show the files of the displayed diff (branch, working tree or one commit, `scopedFilesFactOf`) while the tab keeps the branch total. Commits: the branch's commit total (the ahead count), `↑N` (tooltip `N not pushed`) only when no total is known and some are unpushed; the diff selector says `All N commits` with the same total, and `Latest 100 commits` when only the capped list (`branchCommitsLabel`) is known. The unpushed count is `branchPushFactsOf(...).toPush`: the history draft's unpushed commits once the branch has an upstream, else the status: the upstream's ahead count, a diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed its commits over main. `branchPushFactsOf` in `shared/lib/branchPushState.ts` is the one owner of `{ state, toPush, canForce }`: the strip, the form, the header step, the action registry facts and the rail all read it, so a diverged branch never reads `Pushed`. Checks: the failing (danger) or running (info) count, else the passed count. All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
 draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
 
