@@ -442,8 +442,10 @@ the `lead` pinned at the top; the rest of the header sits above the body and
 steps aside while you read. The first vertical `ScrollFade` of the body to
 mount is the page scroller: it finds the header through `HeaderRevealContext`
 (`packages/ui/src/useHeaderReveal`) and claims the role, so a nested scroller or
-a later sibling (the Changes file rail before it moves to its own column) never
-drives the header and a page adds nothing. The role frees only when that
+a later sibling never drives the header and a page adds nothing. A scroller that
+is not the reader (the Changes file tree in `ChangeTree`, a side list) passes
+`isPageScroller={false}`: it never claims the role, whatever order the body
+mounts in, and the scrollers inside it stay out too. The role frees only when that
 scroller unmounts, and the next claim starts clean: no wheel, touch or thumb
 drag from before counts, and a settle still waiting for its frames is dropped
 (`revealEngine.ts`). One pure function,

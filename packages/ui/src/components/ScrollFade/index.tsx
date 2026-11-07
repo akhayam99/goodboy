@@ -23,6 +23,7 @@ export type ScrollFadeProps = {
   readonly scrollbar?: 'overlay' | 'none';
   readonly fadeEdges?: 'both' | 'end';
   readonly edge?: 'fade' | 'line' | 'shade';
+  readonly isPageScroller?: boolean;
 };
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
@@ -51,6 +52,7 @@ export const ScrollFade = ({
   scrollbar = 'overlay',
   fadeEdges = 'both',
   edge: edgeProp,
+  isPageScroller: canBePageScroller = true,
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -58,7 +60,7 @@ export const ScrollFade = ({
   const horizontal = orientation === 'horizontal';
   const reveal = useContext(HeaderRevealContext);
   const isClaimed = useContext(ClaimedScrollerContext);
-  const isPageScroller = reveal !== null && !isClaimed && !horizontal;
+  const isPageScroller = canBePageScroller && reveal !== null && !isClaimed && !horizontal;
   const edge = edgeProp ?? (isPageScroller ? 'shade' : 'fade');
   const isLineEdge = edge === 'line';
   const isShadeEdge = edge === 'shade';
@@ -149,7 +151,7 @@ export const ScrollFade = ({
         )}
         data-page-scroller={isPageScroller ? '' : undefined}
       >
-        <ClaimedScrollerContext.Provider value={isClaimed || isPageScroller}>
+        <ClaimedScrollerContext.Provider value={isClaimed || isPageScroller || !canBePageScroller}>
           {children}
         </ClaimedScrollerContext.Provider>
       </div>

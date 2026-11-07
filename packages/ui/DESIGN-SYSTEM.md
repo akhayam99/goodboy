@@ -517,7 +517,8 @@ one hairline between rows and `tabular-nums` on a number column.
 `ScrollFade` takes one of three top edges: `fade` (the default), `line` (a
 hairline once scrolled) or `shade` (the `scroll-edge` band once scrolled, for
 content that goes under a page header; the page scroller under a
-`PaneShell headerMode="reveal"` takes it by default). `PaneShell` has two
+`PaneShell headerMode="reveal"` takes it by default; a side list that is not the
+reader passes `isPageScroller={false}` and never drives the header). `PaneShell` has two
 header modes: `static` (the default) and `reveal`, which pins the back row and
 the `lead` and lets the rest of the header step aside while you read
 ([styling.md](../../docs/styling.md#a-header-that-steps-aside-while-you-read)).

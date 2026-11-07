@@ -121,6 +121,7 @@ type PageProps = {
   readonly isKeyed?: boolean;
   readonly hasToolbar?: boolean;
   readonly hasRail?: boolean;
+  readonly isRailFirst?: boolean;
 };
 
 const Page = ({
@@ -128,6 +129,7 @@ const Page = ({
   isKeyed = false,
   hasToolbar = false,
   hasRail = false,
+  isRailFirst = false,
 }: PageProps) => (
   <PageTrailContext.Provider value={<button type="button">Back to overview</button>}>
     <PaneShell
@@ -139,13 +141,21 @@ const Page = ({
       lead={<p>Push failed</p>}
     >
       {hasToolbar ? <div>Compared with main</div> : null}
+      {hasRail && isRailFirst ? (
+        <ScrollFade className="min-h-0 w-64" isPageScroller={false}>
+          <p>ledger-core/src/credit.ts</p>
+          <ScrollFade className="max-h-20">
+            <p>Nested rail list</p>
+          </ScrollFade>
+        </ScrollFade>
+      ) : null}
       <ScrollFade key={isKeyed ? tab : 'page'} className="min-h-0 flex-1">
         <p>Diff body</p>
         <ScrollFade className="max-h-40">
           <p>Inner list</p>
         </ScrollFade>
       </ScrollFade>
-      {hasRail ? (
+      {hasRail && !isRailFirst ? (
         <ScrollFade className="min-h-0 w-64">
           <p>ledger-core/src/credit.ts</p>
         </ScrollFade>
@@ -194,6 +204,25 @@ describe('PaneShell header reveal', () => {
     expect(headerState()).toBe('hidden');
     scrollTo({ viewport, top: 880 });
     expect(headerState()).toBe('shown');
+  });
+
+  it('keeps a rail that mounts before the diff out of the header', () => {
+    const viewport = mountPage({ hasRail: true, isRailFirst: true });
+    const rail = htmlElementOf({
+      node: screen.getByText('ledger-core/src/credit.ts').parentElement,
+    });
+    Object.defineProperty(rail, 'scrollHeight', { value: CONTENT_PX, configurable: true });
+    Object.defineProperty(rail, 'clientHeight', { value: VIEW_PX, configurable: true });
+
+    expect(document.querySelectorAll('[data-page-scroller]')).toHaveLength(1);
+    expect(pageViewport()).toBe(viewport);
+    expect(rail.hasAttribute('data-page-scroller')).toBe(false);
+    scrollTo({ viewport: rail, top: 600 });
+    expect(headerState()).toBe('shown');
+    scrollTo({ viewport, top: 900 });
+    expect(headerState()).toBe('hidden');
+    scrollTo({ viewport: rail, top: 0 });
+    expect(headerState()).toBe('hidden');
   });
 
   it.each([false, true])(

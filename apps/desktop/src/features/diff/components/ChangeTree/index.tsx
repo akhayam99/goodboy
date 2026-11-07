@@ -298,7 +298,12 @@ export const ChangeTree = ({
         isFiltering={filter.isFiltering}
         onClear={filter.onClear}
       />
-      <ScrollFade className="min-h-0 flex-1" fadeSize="h-6" viewportRef={viewportRef}>
+      <ScrollFade
+        className="min-h-0 flex-1"
+        fadeSize="h-6"
+        viewportRef={viewportRef}
+        isPageScroller={false}
+      >
         {rows.length === 0 && filter.isFiltering ? (
           <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta text-muted-foreground">
             <EmptyLine>No files match.</EmptyLine>
