@@ -1855,6 +1855,29 @@ session up again in Goodboy.
   palette, Add folder finds Add project, Dev project); a former name is a
   search alias, never a label drawn on a screen. The retired names guard fails
   `Folders` and `Add folder` as labels
+- One verb per move and one verb per act. A label is the verb plus the
+  target's own name, and a bare **Open** lives only inside a row that names its
+  target (`NAMES.openTranscript`, `NAMES.openAgent`, **Open on GitHub**, **Open
+  pull request**). The retired labels fail the retired names guard.
+
+  | Verb              | Means                   | Retires                                              |
+  | ----------------- | ----------------------- | ---------------------------------------------------- |
+  | Open              | Go to a place           | Open full, View, See, Go to chat, See what it did    |
+  | Show, Hide        | Fold in place           | Expand, Collapse                                     |
+  | Follow            | Track what just started | Open the run                                         |
+  | Create            | Make a new thing        | Open PR, where it opens the create form              |
+  | Retry             | Repeat what failed      | Restart step, Retry through Auto, Try the push again |
+  | Continue          | Go on and keep the work | Ask it to continue, Resume                           |
+  | Skip step         | Pass over a step        | Skip and go on                                       |
+  | Decline           | Refuse Auto's next step | Discard request                                      |
+  | Mark as read      | Clear what is new       | Mark all seen                                        |
+  | Fix with an agent | Give work to an agent   | Hand it to an agent                                  |
+
+  **Stop step** stays: it stops the step and **Continue** resumes it, so it is
+  not a **Skip step**. **Keep working** stays on a step that was already
+  skipped: it sends a new turn, it does not resume the cut one. A reply is a
+  reply on screen; turn stays in usage detail only.
+
 - **Task** means one thing: a work item that lives in another tool, such as a
   Linear or Jira issue, a GitHub issue or pull request, or a Sentry error. It
   is what the **Tasks** door lists and what a task link attaches to a
