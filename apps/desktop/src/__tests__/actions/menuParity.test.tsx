@@ -27,6 +27,7 @@ import { FileHeader } from '../../features/diff/components/DiffView/FileHeader';
 import { ScriptRow } from '../../features/scripts/components/ScriptRow';
 import { RecordHeader } from '../../shared/components/StudioDetail/RecordHeader';
 import { ArtifactShellHeader } from '../../features/artifacts/components/ArtifactShell/ArtifactShellHeader';
+import { artifactHeaderOmitOf } from '../../features/artifacts/components/ArtifactShell/artifactHeaderOmitOf';
 import { ArtifactShellActions } from '../../features/artifacts/components/ArtifactShell/ArtifactShellActions';
 import { bindTarget } from '../../features/actions/registry';
 import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
@@ -279,7 +280,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(menuLabels()).toEqual(['Show output', 'Run', 'Pin', 'Save as script', 'Copy command']);
   });
 
-  it('artifact viewer header: the ⋯ and the right click list every action, buttons included, in registry order', async () => {
+  it('artifact viewer header: the right click lists every action, the ⋯ the same minus what the page already shows, in registry order', async () => {
     seedActionState({ useAppStore, seed: {} });
     useAppStore.setState({
       sessionPlans: { [SESSION]: [] },
@@ -330,10 +331,17 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       context: screen.getByTestId('artifact-title'),
     });
 
+    const cut = new Set(
+      artifactHeaderOmitOf({ actions: resolved }).flatMap((id) => {
+        const found = resolved.find((action) => action.id === id);
+        return found === undefined ? [] : [found.label];
+      }),
+    );
     expect(buttoned.length).toBeGreaterThan(0);
     expect(fromOverflow).not.toContain('Open');
-    expect(fromOverflow).toEqual(registry);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(fromOverflow.length).toBeLessThanOrEqual(5);
+    expect(fromOverflow).toEqual(registry.filter((label) => !cut.has(label)));
+    expect(fromContext).toEqual(registry);
   });
 
   it('run page: the right click lists every action, the header shows Pause, and the ⋯ keeps the rest in See, Steer, Settings, Copy, End order', async () => {

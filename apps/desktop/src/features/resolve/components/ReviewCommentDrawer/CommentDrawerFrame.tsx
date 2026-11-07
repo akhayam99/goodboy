@@ -13,6 +13,7 @@ import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { NoteThreadActions } from '../ReviewFlow/NoteThreadActions';
 import { ReviewComment } from '../ReviewFlow/ReviewComment';
 import { ThreadOverflowMenu } from '../ReviewFlow/ThreadOverflowMenu';
+import { drawerMenuOmitOf } from './drawerMenuOmitOf';
 import type { ReviewPush } from '../ReviewFlow/useReviewPush';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import { CommentDrawerActions } from './CommentDrawerActions';
@@ -95,7 +96,11 @@ export const CommentDrawerFrame = ({
   });
   const menu =
     plan.rare.length === 0 || lone !== null ? undefined : (
-      <ThreadOverflowMenu target={plan.target} label={BAR_COPY.more} omit={plan.shown} />
+      <ThreadOverflowMenu
+        target={plan.target}
+        label={BAR_COPY.more}
+        omit={drawerMenuOmitOf({ shown: plan.shown, rare: plan.rare })}
+      />
     );
   return (
     <DrawerFrame

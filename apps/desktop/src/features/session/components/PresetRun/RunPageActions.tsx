@@ -4,39 +4,13 @@ import { RunOverflowMenu } from '../AgentTree/RunOverflowMenu';
 import type { RunView } from '../AgentTree/useRunView';
 import { RunHeaderPrimary } from './RunHeaderPrimary';
 import { runHeaderPrimaryOf } from './runHeaderPrimaryOf';
-import { RUN_LIVE_VERB_IDS } from './runLiveVerbIds';
+import { runPageOmitOf } from './runPageOmitOf';
 
 type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly stepAgentId: AgentId | null;
 };
-
-const OFF_THE_MENU: ReadonlyArray<string> = [
-  'workflowRun.open',
-  'workflowRun.answer',
-  'workflowRun.start',
-  'workflowRun.continue',
-  'workflowRun.restartStep',
-  'workflowRun.nextStep',
-  'workflowRun.restore',
-  'workflowRun.autonomy',
-  'workflowRun.stepTranscript',
-  'workflowRun.stepRename',
-];
-
-const PAST_FIVE_ROWS_LIVE: ReadonlyArray<string> = [
-  'workflowRun.diff',
-  'workflowRun.saveAsPreset',
-  'workflowRun.copySummary',
-  'workflowRun.delete',
-];
-
-const PAST_FIVE_ROWS_ENDED: ReadonlyArray<string> = [
-  'workflowRun.routing',
-  'workflowRun.close',
-  'workflowRun.copySummary',
-];
 
 export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
   const { run, name } = view;
@@ -55,11 +29,10 @@ export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
         target={target}
         viewing={viewing}
         name={name}
-        omit={[
-          ...OFF_THE_MENU,
-          ...(view.isCompleted || view.isDiscarded ? PAST_FIVE_ROWS_ENDED : PAST_FIVE_ROWS_LIVE),
-          ...(header.kind === 'live' ? RUN_LIVE_VERB_IDS : ['workflowRun.routing']),
-        ]}
+        omit={runPageOmitOf({
+          isEnded: view.isCompleted || view.isDiscarded,
+          isLive: header.kind === 'live',
+        })}
       />
     </div>
   );

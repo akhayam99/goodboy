@@ -14,11 +14,12 @@ export const GuardedObjectOverflowMenu = (props: ObjectOverflowMenuProps) => {
     viewing = null,
     omit = NO_OMISSIONS,
     only = null,
+    cuts,
     minEntries = DEFAULT_MIN_DRAWN_ENTRIES,
   } = props;
   const env = useActionEnv({ origin: 'overflow', anchorKey, viewing });
   const { actions, run } = useObjectActions({ target, env });
-  const visible = visibleActionsOf({ actions, omit, only, relabel: null });
+  const visible = visibleActionsOf({ actions, omit, only, relabel: null, cuts });
   const drawn = toMenuEntries({ actions: visible, env, run }).filter(
     (entry) => entry.kind === 'item',
   );
