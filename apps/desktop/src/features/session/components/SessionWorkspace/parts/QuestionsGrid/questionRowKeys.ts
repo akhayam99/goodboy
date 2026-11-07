@@ -36,15 +36,8 @@ export const selectedQuestionRowKeyOf = ({
 
 type SummaryParams = {
   readonly waiting: number;
-  readonly answered: number;
   readonly fact: string | null;
 };
 
-export const questionGroupSummaryOf = ({ waiting, answered, fact }: SummaryParams): string =>
-  [
-    fact,
-    waiting === 0 ? null : `${waiting} waiting`,
-    answered === 0 ? null : `${answered} answered`,
-  ]
-    .filter((part) => part !== null)
-    .join(', ');
+export const questionGroupSummaryOf = ({ waiting, fact }: SummaryParams): string =>
+  [fact, waiting === 0 ? null : `${waiting} waiting`].filter((part) => part !== null).join(', ');

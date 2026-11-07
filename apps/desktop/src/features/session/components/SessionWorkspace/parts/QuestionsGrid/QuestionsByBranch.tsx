@@ -84,7 +84,6 @@ export const QuestionsByBranch = ({
       const mark = branchHeadMarkOf({ head });
       const summary = questionGroupSummaryOf({
         waiting: group.waiting.length,
-        answered: group.answered.length,
         fact: head.kind === 'branch' ? head.fact : null,
       });
       return (

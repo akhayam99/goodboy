@@ -61,10 +61,12 @@ const chipOf = ({ item, groupKey, mounts, onReveal }: ChipParams): ReactNode => 
     return undefined;
   }
   return (
-    <RunAlsoOnChip
-      branches={branches}
-      onReveal={() => onReveal({ rowId: item.row.id, fromGroupKey: groupKey })}
-    />
+    <span className="flex min-w-0 max-w-[35%] shrink-0">
+      <RunAlsoOnChip
+        branches={branches}
+        onReveal={() => onReveal({ rowId: item.row.id, fromGroupKey: groupKey })}
+      />
+    </span>
   );
 };
 

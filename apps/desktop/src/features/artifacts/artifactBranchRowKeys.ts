@@ -15,14 +15,7 @@ type SummaryParams = {
 
 export const artifactBranchSummaryOf = ({ rows, fact }: SummaryParams): string => {
   const needing = rows.filter((row) => row.group === 'needs').length;
-  const used = rows.filter((row) => row.group === 'consumed').length;
-  const open = rows.length - needing - used;
-  return [
-    fact,
-    needing === 0 ? null : `${needing} ${needing === 1 ? 'needs' : 'need'} you`,
-    open === 0 ? null : `${open} open`,
-    used === 0 ? null : `${used} used`,
-  ]
+  return [fact, needing === 0 ? null : `${needing} ${needing === 1 ? 'needs' : 'need'} you`]
     .filter((part) => part !== null)
     .join(', ');
 };
