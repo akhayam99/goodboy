@@ -20,7 +20,13 @@ type Props = {
 export const RunStepPage = ({ session, view, agent }: Props) => {
   const phaseRuns = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
   const stepAgent = resolveRootAgent({ agents: phaseRuns, agentId: agent.id });
-  const reason = stepReasonOf({ run: view.run, workflow: view.workflow, agent, stepAgent });
+  const reason = stepReasonOf({
+    run: view.run,
+    workflow: view.workflow,
+    agent,
+    stepAgent,
+    runAgents: view.agents,
+  });
   return (
     <AgentDetailPane
       key={agent.id}

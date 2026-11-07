@@ -12,6 +12,7 @@ type AttentionWaitsState = Pick<AppState, 'sessionPhaseRuns'> &
 
 export type AttentionWaits = {
   readonly hasStoppedRun: boolean;
+  readonly stoppedRunWord: string | null;
   readonly hasLimitPausedRun: boolean;
   readonly hasRunWaitingForGo: boolean;
   readonly hasAutoNeedsYou: boolean;
@@ -30,8 +31,10 @@ export const attentionWaitsOf = ({ state, session }: Params): AttentionWaits => 
   const sessionId = session.id;
   const agents = state.sessionPhaseRuns[sessionId] ?? NO_AGENTS;
   const runWaits = runWaitEntriesOf({ state, session, agents });
+  const stoppedRun = runWaits.find((entry) => entry.wait === 'stopped');
   return {
-    hasStoppedRun: runWaits.some((entry) => entry.wait === 'stopped'),
+    hasStoppedRun: stoppedRun !== undefined,
+    stoppedRunWord: stoppedRun?.word ?? null,
     hasLimitPausedRun:
       runWaits.some((entry) => entry.wait === 'limit') ||
       autoLimitRootsOf({ state, session, agents }).length > 0,

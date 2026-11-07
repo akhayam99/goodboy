@@ -1,14 +1,10 @@
 import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { useState } from 'react';
-import { CircleStop } from 'lucide-react';
-import { Button, ConfirmPopover, ICON_SIZE, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { Button, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
 import { pluralize } from '../../../../shared/utils/pluralize';
-import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
-import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
-
 import type { OrchestratedVerb } from '../../../workflows/orchestratedTailOf';
 import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import type { RunView } from '../AgentTree/useRunView';
@@ -32,9 +28,7 @@ const QUIET_VERB = cn(
 export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
   const sessionId = session.id;
   const runId = view.run.id;
-  const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
-  const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const readQueuedWorkflowHints = useAppStore((state) => state.readQueuedWorkflowHints);
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const navigate = useAppStore((state) => state.navigate);
@@ -60,33 +54,6 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
   switch (verb.kind) {
     case 'primary':
       return <RunPrimaryAction session={session} view={view} primary={verb.primary} />;
-    case 'stopStep':
-      return (
-        <ConfirmPopover
-          role="danger"
-          icon={<CircleStop size={ICON_SIZE.control} aria-hidden />}
-          title={`Stop ${verb.agent.name}?`}
-          description={`Step ${verb.number} stops. What it wrote is kept, and Continue picks it up.`}
-          confirmLabel={`Stop step ${verb.number}`}
-          onConfirm={() =>
-            void press({
-              task: () => stopWorkflowRunNow(sessionId, runId),
-              failure: "Couldn't stop the step",
-            })
-          }
-          trigger={({ arm }) => (
-            <button
-              type="button"
-              className={QUIET_VERB}
-              onClick={arm}
-              disabled={isBusy}
-              aria-busy={isBusy}
-            >
-              {isBusy ? NAMES.stopping : `Stop step ${verb.number}`}
-            </button>
-          )}
-        />
-      );
     case 'continueStep':
       return (
         <Button
@@ -103,23 +70,6 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           {NAMES.continue}
         </Button>
       );
-    case 'restartStep':
-      return (
-        <Button
-          size="xs"
-          variant="secondary"
-          isBusy={isBusy}
-          busyLabel="Retrying"
-          onClick={() =>
-            void press({
-              task: () => recoverStuckStep({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't retry the step",
-            })
-          }
-        >
-          {NAMES.retryStep}
-        </Button>
-      );
     case 'viewTranscript':
       return (
         <button
@@ -132,19 +82,6 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
         >
           Open transcript
         </button>
-      );
-    case 'openAgentChat':
-      return (
-        <Button
-          size="xs"
-          variant="quiet"
-          onClick={() => {
-            navigate({ to: agentPlace({ sessionId, agentId: verb.agentId }) });
-            window.dispatchEvent(openAgentRevealEvent());
-          }}
-        >
-          {ORCHESTRATED_COPY.openAgentChat}
-        </Button>
       );
     case 'readQueued': {
       const button = (

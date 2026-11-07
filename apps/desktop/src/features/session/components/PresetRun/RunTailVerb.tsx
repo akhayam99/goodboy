@@ -96,7 +96,7 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
             })
           }
         >
-          {NAMES.retryStep}
+          {NAMES.retry}
         </Button>
       );
     case 'quiet':
