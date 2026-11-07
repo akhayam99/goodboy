@@ -29,7 +29,7 @@ import { isReportedError } from '../../../../store/slices/notifications/reported
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
-import { groupsInViewOf, settledCountOf } from '../../commentGroupsView';
+import { commentStateCountsOf, groupsInViewOf } from '../../commentGroupsView';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { LaneNotices } from './LaneNotices';
@@ -113,8 +113,8 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   const [pickedScope, setScope] = useState<CommentScope>('branch');
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
   const [pickedState, setCommentState] = useState<CommentState>('open');
-  const resolvedCount = useMemo(() => settledCountOf({ groups: branchGroups }), [branchGroups]);
-  const commentState: CommentState = resolvedCount > 0 ? pickedState : 'open';
+  const stateCounts = useMemo(() => commentStateCountsOf({ entries }), [entries]);
+  const commentState: CommentState = stateCounts.resolved > 0 ? pickedState : 'open';
   const allGroups = useMemo(
     () => groupsInViewOf({ groups: branchGroups, scope, state: commentState }),
     [branchGroups, commentState, scope],
@@ -669,7 +669,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
           state={commentState}
           onState={setCommentState}
           counts={counts}
-          resolvedCount={resolvedCount}
+          stateCounts={stateCounts}
           hostLabel={provider}
         />
         {run === null ? null : (

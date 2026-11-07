@@ -1,5 +1,6 @@
 import { inlineMarkdownText } from '@goodboy/ui';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
+import { commentPreviewOf } from './commentPreviewOf';
 import { firstSentence } from './firstSentence';
 import type { ReviewEntry } from './useReviewEntries';
 
@@ -9,6 +10,10 @@ export const entryBodyOf = ({ entry }: { readonly entry: ReviewEntry }): string 
 };
 
 export const entryTitleOf = ({ entry }: { readonly entry: ReviewEntry }): string => {
-  const body = entryBodyOf({ entry });
-  return body === null ? RESOLVE_COMMENT_UNAVAILABLE : firstSentence({ text: body });
+  const note = entry.row.reviewerNote;
+  if (note === null) {
+    return RESOLVE_COMMENT_UNAVAILABLE;
+  }
+  const preview = commentPreviewOf({ text: note.body });
+  return firstSentence({ text: preview.length > 0 ? preview : (entryBodyOf({ entry }) ?? '') });
 };

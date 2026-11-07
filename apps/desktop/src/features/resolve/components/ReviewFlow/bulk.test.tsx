@@ -356,7 +356,7 @@ describe('accept in bulk', () => {
     expect(within(ready).queryByText('Applied')).toBeNull();
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Resolved' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));
     const done = within(list()).getByRole('region', { name: 'Done' });
     expect(within(done).queryByText('Accepted')).toBeNull();
     expect(within(done).getAllByRole('listitem')).toHaveLength(3);

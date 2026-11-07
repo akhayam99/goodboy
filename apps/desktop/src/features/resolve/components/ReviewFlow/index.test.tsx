@@ -158,7 +158,7 @@ const drawerOf = (): HTMLElement =>
   })();
 
 const showResolved = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: 'Resolved' }));
+  fireEvent.click(screen.getByRole('tab', { name: /^Resolved/ }));
 };
 
 const focusedThread = (): string | null => comment().getAttribute('data-review-comment');

@@ -38,7 +38,7 @@ import { branchScopeOf } from '../../../../store/slices/session-view/branchScope
 import { pullRequestKindOf } from '../../../../shared/utils/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { checksUnreadReasonOf } from '../../checksUnreadReasonOf';
-import { reviewCounts } from '../../../resolve/reviewCounts';
+import { commentStateCountsOf } from '../../../resolve/commentGroupsView';
 import { requestNounLabel } from '../../requestNounLabel';
 import { branchTabFactsOf } from '../../branchTabFactsOf';
 import { loadedBranchFilesOf } from '../../loadedBranchFilesOf';
@@ -392,13 +392,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     view: pullRequestView.view,
   });
   const mountStat = mountDiffStats.get(identity.mountPath ?? '') ?? null;
-  const threadCounts = reviewCounts({
-    threads: branchReview.branchEntries.map((e) => e.row.thread),
-  });
+  const commentStateCounts = commentStateCountsOf({ entries: branchReview.branchEntries });
   const entryFacts = branchTabFactsOf({
     pullRequestState: scope.state,
-    commentsNeedYou: threadCounts.needYou,
-    commentsOpen: threadCounts.unresolved,
+    commentsNeedYou: commentStateCounts.needYou,
+    commentsOpen: commentStateCounts.open,
     files: mountStat?.files ?? loadedBranchFilesOf({ diff: { ...diff, isLoading: diff.loading } }),
     diff: mountStat,
     commits: start.step.ahead,

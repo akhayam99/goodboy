@@ -1,20 +1,29 @@
 import { isSettledWord } from './commentStates';
-import type { ReviewGroup } from './components/ReviewFlow/useReviewEntries';
+import { reviewCounts } from './reviewCounts';
+import type { ReviewEntry, ReviewGroup } from './components/ReviewFlow/useReviewEntries';
 import type { CommentScope, CommentState } from './components/ReviewFlow/ReviewScopeBar';
 
-type GroupsParams = {
+type ViewParams = {
   readonly groups: ReadonlyArray<ReviewGroup>;
-};
-
-type ViewParams = GroupsParams & {
   readonly scope: CommentScope;
   readonly state: CommentState;
 };
 
-export const settledCountOf = ({ groups }: GroupsParams): number =>
-  groups
-    .flatMap((group) => group.entries)
-    .filter((entry) => isSettledWord({ word: entry.resolveWord })).length;
+export type CommentStateCounts = {
+  readonly open: number;
+  readonly resolved: number;
+  readonly needYou: number;
+};
+
+type EntriesParams = {
+  readonly entries: ReadonlyArray<ReviewEntry>;
+};
+
+export const commentStateCountsOf = ({ entries }: EntriesParams): CommentStateCounts => {
+  const resolved = entries.filter((entry) => isSettledWord({ word: entry.resolveWord })).length;
+  const counts = reviewCounts({ threads: entries.map((entry) => entry.row.thread) });
+  return { open: entries.length - resolved, resolved, needYou: counts.needYou };
+};
 
 export const groupsInViewOf = ({ groups, scope, state }: ViewParams): ReadonlyArray<ReviewGroup> =>
   groups

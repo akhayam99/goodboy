@@ -1,4 +1,5 @@
-import { Button, SegmentedTabs } from '@goodboy/ui';
+import { cn, SegmentedTabs } from '@goodboy/ui';
+import type { CommentStateCounts } from '../../commentGroupsView';
 import type { ReviewEntryCounts } from './useReviewEntries';
 
 export type CommentScope = 'branch' | 'notes' | 'comments';
@@ -11,23 +12,23 @@ type Props = {
   readonly state: CommentState;
   readonly onState: (next: CommentState) => void;
   readonly counts: ReviewEntryCounts;
-  readonly resolvedCount: number;
+  readonly stateCounts: CommentStateCounts;
   readonly hostLabel: string | null;
 };
-
-type StateOption = {
-  readonly value: CommentState;
-  readonly label: string;
-};
-
-const STATE_OPTIONS: ReadonlyArray<StateOption> = [
-  { value: 'open', label: 'Open' },
-  { value: 'resolved', label: 'Resolved' },
-];
 
 type BadgeParams = {
   readonly count: number;
 };
+
+type StateBadgeParams = BadgeParams & {
+  readonly isWarm?: boolean;
+};
+
+const stateBadge = ({ count, isWarm = false }: StateBadgeParams) => (
+  <span className={cn('tabular-nums', isWarm ? 'text-warning' : 'text-faint-foreground')}>
+    {count}
+  </span>
+);
 
 const countBadge = ({ count }: BadgeParams) =>
   count === 0 ? undefined : <span className="tabular-nums text-faint-foreground">{count}</span>;
@@ -38,11 +39,11 @@ export const ReviewScopeBar = ({
   state,
   onState,
   counts,
-  resolvedCount,
+  stateCounts,
   hostLabel,
 }: Props) => {
   const isSourceSwitchShown = hostLabel !== null && counts.notes > 0 && counts.host > 0;
-  const isStateSwitchShown = resolvedCount > 0;
+  const isStateSwitchShown = stateCounts.open + stateCounts.resolved > 0;
   if (!isSourceSwitchShown && !isStateSwitchShown) {
     return null;
   }
@@ -66,19 +67,24 @@ export const ReviewScopeBar = ({
         />
       ) : null}
       {isStateSwitchShown ? (
-        <div role="group" aria-label="Comment state" className="flex items-center gap-1">
-          {STATE_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              variant={state === option.value ? 'ghost' : 'quiet'}
-              size="xs"
-              aria-pressed={state === option.value}
-              onClick={() => onState(option.value)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
+        <SegmentedTabs<CommentState>
+          ariaLabel="Comment state"
+          size="xs"
+          value={state}
+          onChange={onState}
+          options={[
+            {
+              value: 'open',
+              label: 'Open',
+              badge: stateBadge({ count: stateCounts.open, isWarm: stateCounts.needYou > 0 }),
+            },
+            {
+              value: 'resolved',
+              label: 'Resolved',
+              badge: stateBadge({ count: stateCounts.resolved }),
+            },
+          ]}
+        />
       ) : null}
     </div>
   );
