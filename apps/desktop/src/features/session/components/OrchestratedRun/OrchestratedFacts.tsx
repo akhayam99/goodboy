@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { RunSettingsLine } from '../../../workflows/components/RunSettingsLine';
+import { decisionFailureOf } from '../../../workflows/decisionFailureOf';
 import { runGlanceOf } from '../../glance/runGlanceOf';
 import { spendTextOf } from '../../glance/spendTextOf';
 import { RunGlanceLine } from '../RunGlanceLine';
@@ -29,6 +30,7 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
     doneCount: view.doneCount,
     stepCount: view.stepCount,
     primary: view.primary?.kind ?? null,
+    failure: decisionFailureOf({ orchestrator: view.orchestrator.state }),
   });
   const timeLeft = useRunTimeLeft({
     run,

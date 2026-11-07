@@ -22,6 +22,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
+import { C09_SESSION_ID, C09_TESTER_ID } from '../u25/c09OrchestratedSeed';
 import { C08RunScene } from '../u25/C08RunScene';
 import { C09OrchestratedScene } from '../u25/C09OrchestratedScene';
 import { C08_IMPLEMENTER_ID, C08_REVIEWER_ID, C08_SESSION_ID } from '../u25/c08RunSeed';
@@ -218,14 +219,123 @@ describe('one run page', () => {
     expect(within(menu).queryByRole('menuitem', { name: 'Stop run' })).toBeNull();
   });
 
-  it('reads the reason of a blocked step on its own page, with Retry step', async () => {
+  it('reads a blocked step as one dock line with Retry and one Continue, and the question once', async () => {
     await mount('u36-p12-orch-step-blocked');
 
-    const tail = within(nodeOf('[data-run-tail]'));
-    tail.getByText('Not finished');
-    tail.getByRole('button', { name: 'Retry step' });
-    expect(nodeOf('[data-blocked-question]').textContent).toContain(
-      'Should I keep the report in the repo or only attach it to the notes?',
+    const dock = within(nodeOf('[data-dock-line="step-not-finished"]'));
+    dock.getByText('Not finished');
+    dock.getByRole('button', { name: 'Retry' });
+    dock.getByRole('button', { name: 'Continue' });
+    expect(screen.getAllByRole('button', { name: 'Continue' })).toHaveLength(1);
+    expect(screen.getAllByText('Not finished')).toHaveLength(1);
+    expect(document.querySelector('[data-blocked-question]')).toBeNull();
+    expect(screen.queryByRole('form', { name: 'Answer the step' })).toBeNull();
+    expect(
+      screen.getAllByText(/Should I keep the report in the repo or only attach it to the notes\?/),
+    ).toHaveLength(1);
+    screen.getByPlaceholderText('Answer the step');
+  });
+
+  it('names the failure of Retry, keeps the step page and lets the same button try again', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const recoverStuckStep = vi.fn(async () => undefined);
+    recoverStuckStep.mockRejectedValueOnce(new Error('The step could not be restarted.'));
+    const reportError = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ recoverStuckStep, reportError });
+    });
+    const dock = within(nodeOf('[data-dock-line="step-not-finished"]'));
+
+    await act(async () => {
+      fireEvent.click(dock.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't retry the step", sessionId: C09_SESSION_ID }),
+    );
+    dock.getByText('Not finished');
+
+    await act(async () => {
+      fireEvent.click(dock.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(recoverStuckStep).toHaveBeenCalledTimes(2);
+  });
+
+  it('answers the blocked step with the text of the one field and clears it', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const answerBlockedStep = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ answerBlockedStep });
+    });
+    fireEvent.change(screen.getByPlaceholderText('Answer the step'), {
+      target: { value: 'Attach it to the notes only.' },
+    });
+
+    await act(async () => {
+      fireEvent.click(
+        within(nodeOf('[data-dock-line="step-not-finished"]')).getByRole('button', {
+          name: 'Continue',
+        }),
+      );
+    });
+
+    expect(answerBlockedStep).toHaveBeenCalledWith({
+      sessionId: C09_SESSION_ID,
+      agentId: C09_TESTER_ID,
+      text: 'Attach it to the notes only.',
+      override: expect.objectContaining({ explicit: false }),
+    });
+    expect(screen.getByPlaceholderText('Answer the step')).toHaveProperty('value', '');
+  });
+
+  it('asks the step to continue when Continue is pressed with no text', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const askAgentToContinue = vi.fn(async () => undefined);
+    const answerBlockedStep = vi.fn(async () => undefined);
+    act(() => {
+      useAppStore.setState({ askAgentToContinue, answerBlockedStep });
+    });
+
+    await act(async () => {
+      fireEvent.click(
+        within(nodeOf('[data-dock-line="step-not-finished"]')).getByRole('button', {
+          name: 'Continue',
+        }),
+      );
+    });
+
+    expect(askAgentToContinue).toHaveBeenCalledWith({
+      sessionId: C09_SESSION_ID,
+      agentId: C09_TESTER_ID,
+      override: expect.objectContaining({ explicit: false }),
+    });
+    expect(answerBlockedStep).not.toHaveBeenCalled();
+  });
+
+  it('keeps the text and says why when the answer fails', async () => {
+    await mount('u36-p12-orch-step-blocked');
+    const answerBlockedStep = vi.fn(async () => {
+      throw new Error('This step is no longer waiting for an answer.');
+    });
+    act(() => {
+      useAppStore.setState({ answerBlockedStep });
+    });
+    fireEvent.change(screen.getByPlaceholderText('Answer the step'), {
+      target: { value: 'Attach it to the notes only.' },
+    });
+    const dock = within(nodeOf('[data-dock-line="step-not-finished"]'));
+
+    await act(async () => {
+      fireEvent.click(dock.getByRole('button', { name: 'Continue' }));
+    });
+
+    expect(nodeOf('[data-dock-line="step-not-finished"]').textContent).toContain(
+      'no longer waiting',
+    );
+    expect(screen.getByPlaceholderText('Answer the step')).toHaveProperty(
+      'value',
+      'Attach it to the notes only.',
     );
   });
 

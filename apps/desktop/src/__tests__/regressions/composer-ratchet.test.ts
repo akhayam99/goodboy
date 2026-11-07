@@ -16,7 +16,6 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/history/JobBanner/JobBannerNote.tsx': ['document'],
   'shared/components/MessageComposer.tsx': ['message'],
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
-  'features/session/components/OrchestratedRun/OrchestratedBlockedStep.tsx': ['message'],
   'features/session/components/OrchestratedRun/OrchestratedContinue.tsx': ['message'],
   'features/session/components/StartRun/StartRun.tsx': ['message'],
   'features/session/components/StartForm/StartGuidanceChip.tsx': ['document'],

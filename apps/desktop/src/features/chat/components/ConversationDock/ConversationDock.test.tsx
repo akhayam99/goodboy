@@ -66,6 +66,7 @@ const renderDock = ({ hasAsks = true }: { readonly hasAsks?: boolean } = {}) =>
       stop={null}
       isStopArmed={false}
       failure={null}
+      step={null}
     />,
   );
 
@@ -82,6 +83,7 @@ describe('ConversationDock', () => {
         stop={null}
         isStopArmed={false}
         failure={null}
+        step={null}
       />,
     );
 
@@ -105,6 +107,7 @@ describe('ConversationDock', () => {
         }}
         isStopArmed={false}
         failure={null}
+        step={null}
       />,
     );
 
@@ -259,6 +262,7 @@ describe('Auto child recovery through the dock', () => {
       render(
         <ConversationDock
           session={targetSession}
+          step={null}
           agentId={agentId}
           lead={null}
           hasAsks={false}
@@ -349,6 +353,7 @@ describe('Auto child recovery by outcome', () => {
     render(
       <ConversationDock
         session={session}
+        step={null}
         agentId={AGENT_ID}
         lead={null}
         hasAsks={false}

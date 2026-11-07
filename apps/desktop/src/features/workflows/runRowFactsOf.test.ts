@@ -120,6 +120,18 @@ describe('runRowFactsOf wait', () => {
     expect(facts).toMatchObject({ word: 'Failed', wait: 'stopped' });
   });
 
+  it.each([
+    ['blocked', 'Not finished', 'needsYou'],
+    ['failed', 'Failed', 'failed'],
+  ] as const)('reaches Needs you when a step is %s', (status, word, dot) => {
+    const facts = waitOf({
+      run: aWorkflowRun({ workflowId: WORKFLOW_ID }),
+      statuses: ['completed', status],
+    });
+
+    expect(facts).toMatchObject({ word, dot, wait: 'stopped' });
+  });
+
   it('names a run that paused at its limit', () => {
     const facts = waitOf({
       run: aWorkflowRun({

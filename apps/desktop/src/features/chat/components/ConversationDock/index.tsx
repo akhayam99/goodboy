@@ -9,7 +9,9 @@ import { ConversationDockLine } from './ConversationDockLine';
 import type { DockFailure } from './dockFailureOf';
 import { DockFailureLine } from './DockFailureLine';
 import { DockLiveLine } from './DockLiveLine';
+import { DockStepLine } from './DockStepLine';
 import { DockStoppedLine } from './DockStoppedLine';
+import type { BlockedStepAnswer } from '../ChatInput/hooks/useBlockedStepAnswer';
 import { useAutoChildRecovery } from './useAutoChildRecovery';
 import { useDockAskFocus } from './useDockAskFocus';
 
@@ -23,6 +25,7 @@ type Props = {
   readonly stop: ConversationStop | null;
   readonly isStopArmed: boolean;
   readonly failure: DockFailure | null;
+  readonly step: BlockedStepAnswer | null;
 };
 
 export const ConversationDock = ({
@@ -35,12 +38,14 @@ export const ConversationDock = ({
   stop,
   isStopArmed,
   failure: givenFailure,
+  step,
 }: Props) => {
   const failure = useAutoChildRecovery({ sessionId: session.id, agentId, failure: givenFailure });
   const dockRef = useRef<HTMLDivElement>(null);
   const { permissions, questions } = useConversationAsks({ sessionId: session.id, agentId });
   const stopped = useStoppedAnswer({ agentId });
-  useDockAskFocus({ dockRef, askCount: hasAsks ? permissions.length + questions.length : 0 });
+  const askCount = hasAsks ? permissions.length + questions.length : 0;
+  useDockAskFocus({ dockRef, askCount });
   return (
     <div
       ref={dockRef}
@@ -63,6 +68,9 @@ export const ConversationDock = ({
         {failure === null ? null : <DockFailureLine failure={failure} />}
         {stopped === null || agentId === null || failure !== null ? null : (
           <DockStoppedLine sessionId={session.id} agentId={agentId} stopped={stopped} />
+        )}
+        {step === null || failure !== null || askCount > 0 ? null : (
+          <DockStepLine sessionId={session.id} step={step} />
         )}
         {hasAsks && agentId !== null && failure === null ? (
           <ConversationDockLine sessionId={session.id} agentId={agentId} />

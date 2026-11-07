@@ -68,4 +68,15 @@ describe('runGlanceOf', () => {
 
     expect(glance.state).toBe('stopped');
   });
+
+  it('names what broke when the last decision failed', () => {
+    expect(
+      runGlanceOf({
+        ...BASE,
+        isDynamic: true,
+        primary: 'retry',
+        failure: 'the orchestrator returned no step.',
+      }).sentence,
+    ).toBe("Couldn't pick the next step: the orchestrator returned no step.");
+  });
 });
