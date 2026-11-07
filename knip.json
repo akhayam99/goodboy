@@ -37,7 +37,6 @@
         "src/store/slices/turn/workflowTurnBreaker.ts": ["exports"],
         "src/app/hooks/useAppOverlays/overlayState.ts": ["types"],
         "src/features/history/historyBackupRef.ts": ["exports"],
-        "src/features/suggestions/components/NextStepSlot/NextStepRow.tsx": ["exports"],
         "src/store/slices/budget/index.ts": ["types"],
         "src/store/slices/session-view/index.ts": ["exports"],
         "src/store/slices/session-view/types.ts": ["exports"],

@@ -505,7 +505,6 @@ mounts
 new-drawer-narrow
 new-drawer-write
 new-drawer-write-wireframe
-next-step-rebase
 notifications
 notifications-delete-all
 notifications-empty
@@ -747,7 +746,6 @@ run-header-failed
 run-header-held
 run-header-paused
 runs-list-empty
-runs-on-codex-default
 scribe-failed
 scribe-proposal-creating
 scribe-proposal-failed

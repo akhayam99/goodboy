@@ -224,7 +224,6 @@
   "apps/desktop/src/shared/components/RoutingPicker/ProviderGrid.tsx": 2,
   "apps/desktop/src/shared/components/RoutingPicker/RecommendationRow.tsx": 1,
   "apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx": 1,
-  "apps/desktop/src/shared/components/RunsOn/index.tsx": 1,
   "apps/desktop/src/shared/components/ScribeProposalView/ScribeProposalChip.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordProperties/PropertyRow.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordSections/RecordSectionBlock.tsx": 1,

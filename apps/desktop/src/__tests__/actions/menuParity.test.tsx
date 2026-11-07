@@ -37,7 +37,8 @@ import type {
   CommitActionTarget,
   SuggestionActionTarget,
 } from '../../features/actions/types';
-import { NextStepRow } from '../../features/suggestions/components/NextStepSlot/NextStepRow';
+import { ActionCard } from '../../features/session/central/next/ActionCard';
+import { actionCardsOf } from '../../features/session/central/next/actionCardsOf';
 import type { SessionSuggestion } from '../../features/suggestions/types';
 import { AutoReleaseContext } from '../../features/auto/autoReleaseContext';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
@@ -643,42 +644,47 @@ type NextCardParams = {
 };
 
 const nextCardMenu = ({ suggestion, startsRole }: NextCardParams) => {
+  const target: SuggestionActionTarget = {
+    kind: 'suggestion',
+    sessionId: SESSION,
+    suggestion,
+    startsRole,
+    isAutoOn: true,
+  };
+  const [card] = actionCardsOf({ owners: [], suggestions: [suggestion], autoTargets: [] });
+  if (card === undefined) {
+    throw new Error('the suggestion made no card');
+  }
   render(
     <ToastProvider>
       <AutoReleaseContext.Provider value>
-        <NextStepRow
-          suggestion={suggestion}
+        <ActionCard
+          card={card}
+          isFirst
           actions={{
-            primary: {
-              label: 'Continue with Reviewer',
+            main: null,
+            second: null,
+            failure: null,
+            isBusy: false,
+            agentKind: startsRole,
+            menu: {
+              target,
+              pendingChoiceIds: new Set(),
+              isHeld: false,
               isDisabled: false,
-              failureTitle: 'Failed',
-              ...(startsRole !== null && { agentKind: startsRole }),
-              run: vi.fn(async () => undefined),
+              trackChoice: async ({ task }) => task(),
             },
-            onDismiss: null,
+            foldedTarget: null,
           }}
-          compact={false}
-          isPending={false}
-          onNotNow={vi.fn()}
         />
       </AutoReleaseContext.Provider>
     </ToastProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: `More options for ${suggestion.title}` }));
   const drawn = menuLabels();
-  const registry = (
-    bindTarget({
-      state: useAppStore.getState(),
-      target: {
-        kind: 'suggestion',
-        sessionId: SESSION,
-        suggestion,
-        startsRole,
-        isAutoOn: true,
-      },
-    })?.resolve() ?? []
-  ).map((action) => action.label);
+  const registry = (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
+    (action) => action.label,
+  );
   return { drawn, registry };
 };
 
