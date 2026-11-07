@@ -33,6 +33,8 @@ import { splitTurns } from './splitTurns';
 import { lastRowIndexByRun } from './lastRowIndexByRun';
 import { rowEstimatePx } from './rowEstimatePx';
 import { rowHeightCache } from './rowHeightCache';
+import { heightKeyOf } from './heightKeyOf';
+import { NoStepsRow } from './NoStepsRow';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { InsertionRow } from './InsertionRow';
@@ -70,15 +72,6 @@ type Props = {
 };
 
 const RAIL_ROW_PX = 56;
-
-type CacheKeyParams = {
-  readonly agentId: AgentId | null;
-  readonly isStepsOnly: boolean;
-  readonly key: string;
-};
-
-const heightKeyOf = ({ agentId, isStepsOnly, key }: CacheKeyParams): string =>
-  `${agentId ?? 'none'}:${isStepsOnly ? 'steps' : 'record'}:${key}`;
 
 type FlushParams = {
   readonly beforeMs: number | null;
@@ -379,11 +372,7 @@ export const TranscriptRows = ({
     );
   }
   if (isStepsOnly && !isThinking && !rows.some((row) => row.kind === 'operations')) {
-    out.push(
-      <li key="no-steps" className="text-meta text-muted-foreground">
-        No steps yet
-      </li>,
-    );
+    out.push(<NoStepsRow key="no-steps" />);
   }
   if (isThinking) {
     out.push(

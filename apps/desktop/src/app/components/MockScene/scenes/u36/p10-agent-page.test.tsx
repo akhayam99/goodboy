@@ -160,7 +160,7 @@ describe('one agent, one page', () => {
     mount({ id: 'u36-p10-child-result' });
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('1 file changed')).toBeDefined();
+    screen.getByText('1 file changed');
     expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
   });
 

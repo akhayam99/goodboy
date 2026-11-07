@@ -6,9 +6,9 @@ import type { AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { delegationCardOf } from '../../chat/delegationCardOf';
 import { executedRoutingOf } from '../../executedRoutingOf';
 import { useExecutedRoutingOf } from '../../useExecutedRoutingOf';
-import { AutoChildBrief } from '../AutoChildBrief';
-import { AutoChildEnd } from '../AutoChildEnd';
-import { briefImagesOf } from '../briefImagesOf';
+import { AutoChildBrief } from '../../child/AutoChildBrief';
+import { AutoChildEnd } from '../../child/AutoChildEnd';
+import { briefImagesOf } from '../../child/briefImagesOf';
 
 type Params = {
   readonly session: Session;

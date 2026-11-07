@@ -65,7 +65,7 @@ describe('OperationsCluster', () => {
     );
 
     expect(screen.getAllByTestId('card').map((card) => card.textContent)).toEqual(['tool-a']);
-    expect(screen.getByRole('button', { name: /waiting for your permission/ })).toBeDefined();
+    screen.getByRole('button', { name: /waiting for your permission/ });
   });
 
   it('renders collapsed with no eyebrow or count badge and hides children', () => {

@@ -4,7 +4,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
 import { useAutoTrees } from '../../useAutoTrees';
-import { useAutoChildChat } from '../../child/useAutoChildChat';
+import { useAutoChildChat } from '../../hooks/useAutoChildChat';
 import { approvedPlanLabelOf } from '../../plan/approvedPlanReply';
 import { AutoDelegationLines } from '../AutoDelegationLines';
 import { AutoDock } from '../AutoDock';
