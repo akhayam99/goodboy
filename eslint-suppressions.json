@@ -5456,7 +5456,7 @@
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/useTimelineRows/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -6491,7 +6491,7 @@
   },
   "apps/desktop/src/features/workflows/hooks/useAgentSpendById/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/workflows/hooks/useRemovedBuiltins/index.test.ts": {
