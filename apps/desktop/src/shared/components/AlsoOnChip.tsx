@@ -1,14 +1,13 @@
 import { Chip, OptionalTooltip } from '@goodboy/ui';
-import type { WorkBranch } from '../../../../workBranchesOf';
-import { alsoOnLabelOf } from './alsoOnLabelOf';
-import { branchListLabelOf } from './branchListLabelOf';
+import { alsoOnLabelOf } from '../utils/alsoOnLabelOf';
+import { branchListLabelOf, type AlsoOnBranch } from '../utils/branchListLabelOf';
 
 type Props = {
-  readonly branches: ReadonlyArray<WorkBranch>;
+  readonly branches: ReadonlyArray<AlsoOnBranch>;
   readonly onReveal: () => void;
 };
 
-export const RunAlsoOnChip = ({ branches, onReveal }: Props) => {
+export const AlsoOnChip = ({ branches, onReveal }: Props) => {
   if (branches.length === 0) {
     return null;
   }

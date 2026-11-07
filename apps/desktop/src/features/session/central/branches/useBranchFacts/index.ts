@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { branchPushStateOf } from '../../../../../shared/lib/branchPushState';
 import { changedCount, distanceAhead, mainBehindOf } from '../../../../../shared/lib/gitStatus';
-import { useMountRows } from '../../../components/SessionOverviewPane/ProjectMountRows/useMountRows';
+import { useMountRows } from '../../../../../shared/hooks/useMountRows';
 import { useSessionMountHosts } from '../../../../../shared/hooks/useSessionMountHosts';
 import { useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
 import type { LiveGroupModel } from '../../now/liveGroupsOf';
