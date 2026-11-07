@@ -13,6 +13,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../../store/storyHarness';
 import {
@@ -40,6 +41,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  stubStoryInvoke({
+    db_select: [],
+    db_execute: 1,
+    db_transaction: { status: 'committed', results: [] },
+  });
   seedActionState({
     useAppStore,
     seed: {
@@ -57,6 +63,7 @@ beforeEach(async () => {
       ],
     },
   });
+  useAppStore.setState({ currentSessionId: SESSION });
 });
 
 const env: ActionEnv = {
@@ -76,7 +83,7 @@ const helperPage: ObjectTarget = {
 };
 
 describe('the step verbs on the page of a subagent', () => {
-  it('opens the transcript of the subagent, not of its step', async () => {
+  it('opens the subagent page from View transcript', async () => {
     await runObjectAction({
       target: helperPage,
       actionId: 'workflowRun.stepTranscript',
@@ -84,10 +91,9 @@ describe('the step verbs on the page of a subagent', () => {
       choice: null,
     });
 
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'transcript',
-      payload: { agentId: HELPER },
-    });
+    expect(useAppStore.getState().selectedAgentId[SESSION]).toBe(HELPER);
+    expect(useAppStore.getState().drawer).toBeNull();
+    await vi.waitFor(() => expect(useAppStore.getState().transcripts[HELPER]).toEqual([]));
   });
 
   it('keeps Skip step on the step the subagent belongs to', async () => {

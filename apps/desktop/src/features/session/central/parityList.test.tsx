@@ -147,6 +147,18 @@ describe('the parity list of the Overview, walked on the cards', () => {
     within(needsYou).getByRole('button', { name: 'Open Auto' });
   });
 
+  it('1: a child row of the Auto block opens the agent page, never a panel', async () => {
+    await show({ kind: 'stuck' });
+
+    const needsYou = cardOf({ name: 'Needs you' });
+    fireEvent.click(within(needsYou).getByRole('button', { name: /^\d+ agents?$/ }));
+    const before = useAppStore.getState().selectedAgentId[COLUMN_SESSION_ID] ?? null;
+    fireEvent.click(within(needsYou).getByRole('button', { name: /not started$/i }));
+
+    expect(useAppStore.getState().selectedAgentId[COLUMN_SESSION_ID]).not.toBe(before);
+    expect(useAppStore.getState().drawer).toBeNull();
+  });
+
   it('1: an agent that timed out asks in Needs you, never under the word Stuck', async () => {
     await show({ kind: 'failed' });
 

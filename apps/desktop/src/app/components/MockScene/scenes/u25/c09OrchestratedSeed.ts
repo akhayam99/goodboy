@@ -67,7 +67,7 @@ export type C09State =
   | 'needs-answers'
   | 'blocked';
 
-export type C09Page = 'document' | 'list' | 'empty' | 'step' | 'stepPage';
+export type C09Page = 'document' | 'list' | 'empty' | 'stepPage';
 
 type SeedParams = {
   readonly state: C09State;
@@ -658,7 +658,7 @@ export const seedC09 = ({
   isRouted = false,
 }: SeedParams): Session => {
   const session = sessionOf({ state, page, isRouted });
-  const isDocument = page === 'document' || page === 'step' || page === 'stepPage';
+  const isDocument = page === 'document' || page === 'stepPage';
   useAppStore.setState({
     currentWorkspaceId: C09_WORKSPACE_ID,
     sessions: [session],
@@ -702,14 +702,7 @@ export const seedC09 = ({
       [C09_SESSION_ID]: openQuestionsOf({ state }),
     },
     sessionAnsweredQuestions: { [C09_SESSION_ID]: [] },
-    drawer:
-      page === 'step'
-        ? {
-            kind: 'run-step',
-            sessionId: C09_SESSION_ID,
-            payload: { runId: C09_RUN_ID, agentId: C09_TESTER_ID },
-          }
-        : null,
+    drawer: null,
   });
   return session;
 };

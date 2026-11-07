@@ -4,7 +4,6 @@ import { PaneShell } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import {
-  agentPlace,
   useAppStore,
   useExecutedAgentRouting,
   useSessionAnsweredQuestions,
@@ -14,7 +13,7 @@ import {
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import { executedRoutingOf } from '../../../auto/executedRoutingOf';
 import { agentHeadingOf } from './agentHeadingOf';
-import { briefLineOf } from './briefLineOf';
+import { agentBriefOf } from './agentBriefOf';
 import type { OpenTranscriptAt } from '../../../chat/openTranscriptAt';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentProviderMark } from './AgentProviderMark';
@@ -30,15 +29,12 @@ import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 import { AgentStoppedNotice } from './AgentStoppedNotice';
 import { AgentDockLead } from './AgentDockLead';
+import { AgentComposerNotice } from './AgentComposerNotice';
 import { agentHeaderOmitOf } from './agentHeaderOmitOf';
-import { RewriterFinishedNotice } from './RewriterFinishedNotice';
 import { useRewriterComposer } from '../../hooks/useRewriterComposer';
-import { AdoptedNotice } from '../../../auto/adopt/AdoptedNotice';
-import { MoveToAutoPanel } from '../../../auto/adopt/MoveToAutoPanel';
 import { MOVE_TO_AUTO_EVENT, isMoveToAutoFor } from '../../../auto/adopt/moveToAutoEvent';
 import { useAutoChat } from '../../../auto/chat/useAutoChat';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
-import { isTurnStateLive } from '../../agent-lifecycle';
 
 type RunStepFrame = {
   readonly heading: ReactNode;
@@ -55,7 +51,6 @@ type Props = {
   readonly onBack: () => void;
   readonly context?: ReactNode;
   readonly runStep?: RunStepFrame;
-  readonly isPinned?: boolean;
 };
 
 const REWRITER_PLACEHOLDER = 'Tell History rewriter what to do next';
@@ -67,9 +62,7 @@ export const AgentDetailPane = ({
   onBack,
   context,
   runStep,
-  isPinned = false,
 }: Props) => {
-  const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
   const rewriter = useRewriterComposer({
@@ -81,17 +74,16 @@ export const AgentDetailPane = ({
   const autoChat = useAutoChat({ session, agent });
   const isAutoChild = autoChat.tree?.kind === 'child';
   const isAutoRoot = kind === 'auto';
-  const autoRootAgentId = autoChat.tree?.view.tree.rootAgentId ?? null;
   const membership = useAutoMembership({ sessionId: session.id, agentId: agent.id });
   const adoption = membership.adoption;
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [hasNextAction, setHasNextAction] = useState(false);
   const [asksSlot, setAsksSlot] = useState<HTMLElement | null>(null);
   const [modelsSlot, setModelsSlot] = useState<HTMLElement | null>(null);
-  const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const events = useTranscript(agent.id);
-  const brief = useMemo(() => briefLineOf({ events }), [events]);
+  const briefLine = useMemo(() => agentBriefOf({ events }), [events]);
+  const brief = autoChat.childTask ?? briefLine;
   const runs = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? null);
   const executed = useExecutedAgentRouting({ agent });
   const routing = useAgentHeaderRouting({ session, agent });
@@ -163,14 +155,14 @@ export const AgentDetailPane = ({
   const openTranscript: OpenTranscriptAt = ({ turn }) =>
     openDrawer({ kind: 'transcript', sessionId: session.id, payload: { agentId: agent.id, turn } });
   const heading = agentHeadingOf({ name: agent.name, kind, brief });
-  const isChipShown = !isAutoRoot && heading !== AGENT_KIND_META[kind].noun;
+  const isChipShown = !isAutoRoot && heading !== brief && heading !== AGENT_KIND_META[kind].noun;
   const shownRouting = executedRoutingOf({ executed, fallback: routing });
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
     anchorKey: `agent-header:${agent.id}`,
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
-  const hasComposer = !isPinned && !isRewriterFinished && adoption === null && !isMoveOpen;
+  const hasComposer = !isRewriterFinished && adoption === null && !isMoveOpen;
   const isDocked = hasComposer && session.state.kind !== 'ended';
   const stoppedNotice =
     hasNextAction && runStep === undefined ? null : (
@@ -228,27 +220,25 @@ export const AgentDetailPane = ({
             </span>
           }
           actions={
-            <>
-              {runStep === undefined ? (
-                <AgentHeaderActions
-                  key={agent.id}
-                  agent={agent}
-                  sessionId={session.id}
-                  hasStateButton={false}
-                  omit={agentHeaderOmitOf({ isAutoRoot })}
-                  onDeleted={onBack}
-                />
-              ) : (
-                runStep.actions
-              )}
-            </>
+            runStep === undefined ? (
+              <AgentHeaderActions
+                key={agent.id}
+                agent={agent}
+                sessionId={session.id}
+                hasStateButton={false}
+                omit={agentHeaderOmitOf({ isAutoRoot })}
+                onDeleted={onBack}
+              />
+            ) : (
+              runStep.actions
+            )
           }
         />
       }
     >
       <ChatView
         session={session}
-        {...(isPinned && { agentId: agent.id })}
+        agentId={agent.id}
         isActive={isChatActive}
         topInset="tight"
         mode="conversation"
@@ -268,7 +258,6 @@ export const AgentDetailPane = ({
           <AgentDockLead
             session={session}
             agent={agent}
-            autoRootAgentId={isAutoChild ? autoRootAgentId : null}
             autoDock={autoChat.dock}
             stopped={stoppedNotice}
             isDocked={isDocked}
@@ -277,26 +266,14 @@ export const AgentDetailPane = ({
           />
         }
         composerNotice={
-          isRewriterFinished ? (
-            <RewriterFinishedNotice sessionId={session.id} mountId={rewriter.mountId} />
-          ) : isMoveOpen && adoption === null ? (
-            <MoveToAutoPanel
-              sessionId={session.id}
-              agent={agent}
-              onClose={() => setIsMoveOpen(false)}
-            />
-          ) : adoption !== null ? (
-            <AdoptedNotice
-              sessionId={session.id}
-              agentId={agent.id}
-              isTurnLive={isTurnStateLive({ turnState })}
-              onOpenAuto={() =>
-                navigateTo({
-                  to: agentPlace({ sessionId: session.id, agentId: adoption.autoAgentId }),
-                })
-              }
-            />
-          ) : undefined
+          <AgentComposerNotice
+            session={session}
+            agent={agent}
+            rewriter={rewriter}
+            adoption={adoption}
+            isMoveOpen={isMoveOpen}
+            onCloseMove={() => setIsMoveOpen(false)}
+          />
         }
         insertions={insertions}
       />

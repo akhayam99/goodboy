@@ -1,27 +1,31 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', async () => {
-  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
-  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
-});
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
-import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
-import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { clearSceneInvoke, sceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_C06_CONVERSATION_SCENES } from './c06-conversation';
 import { C06_AGENT_ID } from './c06ConversationSeed';
 
 const SETTLE_MS = 1_500;
+
+let useAppStore: StoryStore;
 
 type SceneName = keyof typeof U25_C06_CONVERSATION_SCENES;
 
@@ -30,11 +34,17 @@ type MountParams = {
 };
 
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
   await resetStoryStore();
+  storySpies.tauriInvoke.mockImplementation((command, args) => {
+    if (typeof command !== 'string') {
+      throw new Error('The scene command must be a string.');
+    }
+    return sceneInvoke({ command, args });
+  });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 });
 
@@ -67,13 +77,15 @@ const openAgentMenu = async (): Promise<HTMLElement> => {
 };
 
 describe('agent rows stay reachable from the one conversation', () => {
-  it('Agent menu full list: the header menu keeps the registry list, Copy and Delete included', async () => {
+  it('Agent menu: four rows keep Rename, Copy last reply and Delete', async () => {
     await mount({ name: 'c06-agent-finished' });
 
     const menu = await openAgentMenu();
-    for (const label of [/^Copy last reply/, /^Copy name/, /^Delete agent/]) {
-      expect(within(menu).getByRole('menuitem', { name: label })).toBeDefined();
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(4);
+    for (const label of [/^Rename/, /^Copy last reply/, /^Delete agent/]) {
+      within(menu).getByRole('menuitem', { name: label });
     }
+    expect(within(menu).queryByRole('menuitem', { name: /^Copy name/ })).toBeNull();
   });
 
   it('Stop: one Stop on screen, in the dock, and none in the header menu', async () => {

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { AgentId, Session, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core/providers';
 import { useAppStore } from '../../../../../../store';
@@ -7,6 +7,7 @@ import {
   toStoredAttachment,
   type PendingAttachment,
 } from '../../../../../attachments/pendingAttachment';
+import { restoreFailedAttachments } from './restoreFailedAttachments';
 import type { QueuedTurn } from '../../lib';
 import type { useRightSizeNudge } from '../useRightSizeNudge';
 import type { useScopeNudge } from '../useScopeNudge';
@@ -32,7 +33,7 @@ type Params = {
   readonly value: string;
   readonly setValue: (next: string) => void;
   readonly attachments: ReadonlyArray<PendingAttachment>;
-  readonly setAttachments: (next: ReadonlyArray<PendingAttachment>) => void;
+  readonly setAttachments: Dispatch<SetStateAction<ReadonlyArray<PendingAttachment>>>;
   readonly routing: ReturnType<typeof useTurnRouting>;
   readonly dispatch: ReturnType<typeof useTurnDispatch>;
   readonly scope: ReturnType<typeof useScopeNudge>;
@@ -110,7 +111,7 @@ export const useComposerSend = ({
       }
       const current = useAppStore.getState().agentDraft[selectedAgentId] ?? '';
       setValue(restoreDraftOnFailedSend({ sent: content, current }));
-      setAttachments(atts);
+      restoreFailedAttachments({ agentId: selectedAgentId, sent: atts, setAttachments });
     },
     [
       routing.allowOverride,

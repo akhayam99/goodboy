@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { RIGHT_DRAWER_MIN, RIGHT_DRAWER_STORAGE_KEY } from '@goodboy/ui';
+import { useEffect, useState } from 'react';
 import { brandId, type IsoDateTime } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { turnRefusalMessage } from '../../../../../store/slices/turn/refusal/turnRefusalMessage';
@@ -41,7 +41,7 @@ const SendScene = ({ isStopped }: SceneProps) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, String(RIGHT_DRAWER_MIN));
-    seedC07({ state: 'working', place: 'auto', pane: 'implementer' });
+    seedC07({ state: 'working', place: 'child', pane: 'implementer' });
     const current = useAppStore.getState();
     useAppStore.setState({
       sessions: [{ ...SESSION, permissionMode: 'bypassPermissions' }],

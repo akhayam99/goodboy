@@ -1,6 +1,6 @@
 import { Button, TruncatedText, WorkNode, type WorkNodeState } from '@goodboy/ui';
 import type { Agent, AgentStatus, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, useAppStore } from '../../../../store';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { classifyAgent } from '../../agent-kind';
 import { describeAgentStatus } from '../../agent-status';
@@ -22,7 +22,7 @@ const NODE_STATE: Record<AgentStatus, WorkNodeState> = {
 
 export const DelegationLines = ({ sessionId, agents }: Props) => {
   const overrides = useAppStore((state) => state.agentKindOverride);
-  const openDrawer = useAppStore((state) => state.openDrawer);
+  const navigate = useAppStore((state) => state.navigate);
   if (agents.length === 0) {
     return null;
   }
@@ -54,9 +54,7 @@ export const DelegationLines = ({ sessionId, agents }: Props) => {
               variant="quiet"
               size="xs"
               aria-label={`Open ${child.name}`}
-              onClick={() =>
-                openDrawer({ kind: 'transcript', sessionId, payload: { agentId: child.id } })
-              }
+              onClick={() => navigate({ to: agentPlace({ sessionId, agentId: child.id }) })}
             >
               Open
             </Button>

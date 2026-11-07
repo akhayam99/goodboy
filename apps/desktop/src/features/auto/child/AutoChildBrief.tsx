@@ -10,8 +10,11 @@ type Props = {
   readonly images: ReadonlyArray<MessageAttachment>;
 };
 
+const AUTO_CHILD_LINE = 'Auto started this agent and reads your messages to it.';
+
 export const AutoChildBrief = ({ card, routing, images }: Props) => (
   <section aria-label="Why Auto started it" className="flex min-w-0 flex-col gap-1 text-ui">
+    <p className="text-muted-foreground">{AUTO_CHILD_LINE}</p>
     {card.reason === null ? null : (
       <p className="text-foreground">
         <span className="text-muted-foreground">Why Auto chose {card.roleLabel}: </span>

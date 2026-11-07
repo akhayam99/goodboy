@@ -1,11 +1,12 @@
 import { isProviderListLens } from './isProviderListLens';
 import { contextSectionOf } from './contextSectionOf';
-import type { SessionId } from '@goodboy/types';
+import { brandId, type AgentId, type SessionId, type WorkflowRunId } from '@goodboy/types';
 import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import type { OpenDrawer } from '../drawer/state';
 import type { LensKind } from '../session-view/types';
+import { sessionPlace } from './place';
 import type { StudioPlace } from './studio';
-import type { Location, SessionTarget } from './types';
+import type { Location, Place, SessionTarget } from './types';
 
 type Params = {
   readonly location: Location;
@@ -37,6 +38,8 @@ const REMOVED_LENSES: ReadonlySet<string> = new Set([
 const RETIRED_RUNS_LENSES: ReadonlySet<string> = new Set(['agents', 'auto']);
 
 const REMOVED_TARGETS: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts', 'agent']);
+
+const REMOVED_DRAWERS: ReadonlySet<string> = new Set(['auto-child', 'run-step']);
 
 const REMOVED_STUDIOS: ReadonlyMap<string, StudioPlace> = new Map<string, StudioPlace>([
   ['companion', IPHONE_SETTINGS_PLACE],
@@ -82,6 +85,10 @@ type LensParams = {
   readonly lens: LensKind | null;
 };
 
+type DrawerParams = {
+  readonly drawer: OpenDrawer | null;
+};
+
 const lensStillThere = ({ lens }: LensParams): LensKind | null => {
   const name = String(lens);
   if (REMOVED_LENSES.has(name)) {
@@ -113,6 +120,30 @@ const withoutRemovedLens = ({ location }: Params): Location => {
     },
     focus: { ...location.focus, drawer: location.focus.drawer ?? pane },
   };
+};
+
+const pageOfRemovedDrawer = ({ drawer }: DrawerParams): Place | null => {
+  if (drawer === null || !REMOVED_DRAWERS.has(String(drawer.kind))) {
+    return null;
+  }
+  const { sessionId } = drawer;
+  const saved: object | null = drawer.payload;
+  if (saved === null || !('agentId' in saved) || typeof saved.agentId !== 'string') {
+    return sessionPlace({ sessionId });
+  }
+  const agentId = brandId<AgentId>({ value: saved.agentId });
+  if (!('runId' in saved) || typeof saved.runId !== 'string') {
+    return sessionPlace({ sessionId, lens: 'workflows', agentId });
+  }
+  const runId = brandId<WorkflowRunId>({ value: saved.runId });
+  return sessionPlace({ sessionId, lens: 'workflows', agentId, target: { kind: 'run', runId } });
+};
+
+const withoutRemovedDrawer = ({ location }: Params): Location => {
+  const place = pageOfRemovedDrawer({ drawer: location.focus.drawer });
+  return place === null
+    ? location
+    : { ...location, place, focus: { ...location.focus, drawer: null } };
 };
 
 const withoutFormerSection = ({ location }: Params): Location => {
@@ -155,5 +186,7 @@ const withoutFormerSection = ({ location }: Params): Location => {
 
 export const withoutRemovedPages = ({ location }: Params): Location =>
   withoutRemovedLens({
-    location: withoutFormerSection({ location: withoutRemovedStudio({ location }) }),
+    location: withoutFormerSection({
+      location: withoutRemovedDrawer({ location: withoutRemovedStudio({ location }) }),
+    }),
   });

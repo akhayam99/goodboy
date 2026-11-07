@@ -57,7 +57,7 @@ describe('the u23 agent brief scenes', () => {
     expect(screen.queryByText(/\b0 turns\b/u)).toBeNull();
   });
 
-  it('opens a subagent in the pane from Open, and the transcript door lands on the same page', async () => {
+  it('opens a subagent on its page from Open, the same page as every other door', async () => {
     renderScene('agent-brief-door-transcript');
 
     const more = await screen.findByRole(
@@ -66,8 +66,8 @@ describe('the u23 agent brief scenes', () => {
       WAIT,
     );
     fireEvent.click(more);
-    const drawer = useAppStore.getState().drawer;
-    expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(Object.values(useAppStore.getState().selectedAgentId)).toContain(
       'mock-agent-doors-done',
     );
     expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();

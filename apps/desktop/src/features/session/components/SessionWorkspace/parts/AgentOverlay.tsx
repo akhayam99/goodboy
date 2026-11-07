@@ -50,6 +50,7 @@ export const AgentOverlay = ({
         ) : (
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
             <AgentDetailPane
+              key={selectedAgent.id}
               session={session}
               agent={selectedAgent}
               isChatActive={isChatActive}

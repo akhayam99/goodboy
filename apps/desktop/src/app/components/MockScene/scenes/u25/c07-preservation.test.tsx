@@ -86,14 +86,14 @@ describe('Auto: every capability keeps a home in Auto', () => {
     expect(within(popover).getByText('Turns')).toBeDefined();
   });
 
-  it('Delegation reason and model changed note, no Reserved up to: the child pane brief', async () => {
+  it('Delegation reason and model changed note, no Reserved up to: the child page brief', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child'] });
 
     expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
   });
 
-  it('Delegation result and Returned to Auto: the end of the child pane', async () => {
+  it('Delegation result and Returned to Auto: the end of the child page', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child-done'] });
 
     expect(await screen.findByText('Returned to Auto', undefined, WAIT)).toBeDefined();
@@ -152,12 +152,17 @@ describe('Auto: every capability keeps a home in Auto', () => {
     );
   });
 
-  it('Child page notice with Open Auto, after Open page', async () => {
+  it('Child page notice: the started by Auto line sits in the brief, the back row goes to Auto', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child'] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Open page' }, WAIT));
-
-    expect(await screen.findByText('Open Auto', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('Started by Auto. Auto sees what you tell it.')).toBeDefined();
+    expect(
+      await screen.findByText(
+        'Auto started this agent and reads your messages to it.',
+        undefined,
+        WAIT,
+      ),
+    ).toBeDefined();
+    expect(screen.queryByText('Open Auto')).toBeNull();
+    expect(document.querySelector('[data-session-back]')?.textContent).toBe('Back to Auto');
   });
 });

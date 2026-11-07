@@ -28,7 +28,7 @@ import { skipStepDescription, skipStepTitle } from '../../workflows/skipStepCopy
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/utils/names';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { notifyWorkflowGateBlock } from '../../../store/slices/workflows/notifyWorkflowGateBlock';
 import { resolveWorkflowAdvance } from '../../workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../workflows/workflowAdvanceView';
@@ -44,6 +44,7 @@ import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '.
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../../../shared/utils/renameRequest';
 import { runObjectKey, runTitleAnchorKey } from '../runObjectKey';
+import { STEP_RENAME_ACTION } from './stepRenameAction';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
@@ -412,13 +413,13 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         if (facts.stepAgentId === null) {
           return;
         }
-        env.getState().openDrawer({
-          kind: 'transcript',
-          sessionId: facts.sessionId,
-          payload: { agentId: facts.stepAgentId },
+        env.getState().closeDrawer();
+        env.getState().navigate({
+          to: agentPlace({ sessionId: facts.sessionId, agentId: facts.stepAgentId }),
         });
       },
     },
+    STEP_RENAME_ACTION,
     {
       id: 'workflowRun.rename',
       label: 'Rename',

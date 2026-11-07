@@ -2,6 +2,7 @@ import type { Agent } from '@goodboy/types';
 
 export const TRANSCRIPT_DRAWER_COPY = {
   title: 'Transcript',
+  steps: 'Steps',
   fixRun: 'Fix run',
   tabsLabel: 'Fix run views',
   leadTab: 'Fix',

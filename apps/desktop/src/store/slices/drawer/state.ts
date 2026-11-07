@@ -6,7 +6,6 @@ import type {
   OpenQuestionId,
   ProjectId,
   SessionId,
-  WorkflowRunId,
 } from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 import type { TerminalTabId } from '../../../shared/types/terminal';
@@ -103,23 +102,12 @@ export type DrawerContent =
       };
     }
   | {
-      readonly kind: 'auto-child';
-      readonly payload: { readonly agentId: AgentId };
-    }
-  | {
       readonly kind: 'spawned';
       readonly payload: { readonly agentId: AgentId } | null;
     }
   | {
       readonly kind: 'session-log';
       readonly payload: { readonly focusEntryId: string | null };
-    }
-  | {
-      readonly kind: 'run-step';
-      readonly payload: {
-        readonly runId: WorkflowRunId;
-        readonly agentId: AgentId;
-      };
     }
   | {
       readonly kind: 'fix-comments';

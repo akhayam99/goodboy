@@ -6,9 +6,10 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { brandId, type AgentId } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { useAppStore } from '../../../../../store';
+import { agentPlace, useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -16,9 +17,11 @@ import {
 } from '../../../../../store/storyHarness';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { MOCK_SCENES } from '../..';
+import { RESULTS_SESSION } from './autoResultsSeed';
 import { U26_P11_SCENES } from './p11';
 
 const WAIT = { timeout: 15_000 };
+const SECOND_REVIEWER_ID = brandId<AgentId>({ value: 'mock-results-reviewer-2' });
 const FIRST_REVIEW = 'Review the retry fix in payments-api';
 const SECOND_REVIEW = 'Review the ledger-core side of the retry fix';
 const TESTS = 'Run the retry tests in payments-api';
@@ -86,7 +89,7 @@ describe('the u26 p11 Auto result scenes', () => {
       name: 'Open report Certify the ledger-core retry fix, branch vs main',
     });
     within(second).getByText(/One race left in ledger-core/);
-    within(second).getByRole('button', { name: /^Notes, \d+ lines?$/ });
+    within(second).getByRole('button', { name: /^Earlier in this reply, \d+ lines?$/ });
     expect(within(second).queryByText(/Comparing the ledger-core branch/)).toBeNull();
     const tester = within(cards).getByRole('article', { name: `${TESTS}, Failed` });
     expect(tester.querySelector('[data-clamped]')).toBeNull();
@@ -121,16 +124,18 @@ describe('the u26 p11 Auto result scenes', () => {
     });
   });
 
-  it('opens the child that wrote a report from its card', async () => {
+  it('opens the page of the child that wrote a report from its card', async () => {
     mount({ id: 'u26-auto-results-dark' });
 
     const cards = await screen.findByRole('list', { name: 'What the agents reported' }, WAIT);
+    const navigate = vi.fn();
+    act(() => useAppStore.setState({ navigate }));
     fireEvent.click(within(cards).getByRole('button', { name: `Open ${SECOND_REVIEW}` }));
 
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'spawned',
-      payload: { agentId: 'mock-results-reviewer-2' },
+    expect(navigate).toHaveBeenCalledWith({
+      to: agentPlace({ sessionId: RESULTS_SESSION.id, agentId: SECOND_REVIEWER_ID }),
     });
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 
   it.each(Object.keys(U26_P11_SCENES))('%s has no accessibility violations', async (id) => {
