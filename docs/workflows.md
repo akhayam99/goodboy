@@ -417,20 +417,20 @@ read top to bottom at the conversation measure:
   to continue, and a step that asks again in a later turn replaces its earlier
   blocking questions of that run: they close as "Resolved by the agent" and are
   never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
-  The header **Answer** still opens the drawer. A preset run's halted step reads **Needs you** with **Open step 2** on the run page, and gets
+  The header **Answer** still opens the drawer. A preset run's halted step reads **Needs you** with **Open step 2** on the run page (`runPrimaryOf` gives a static run an `open-step` primary through `haltedStepOf`), and gets
   **Not finished**, the inline question, one **Continue** field and **Retry** on its own step
   page. The restart prompt asks the agent to repeat a
   question it had asked. **Continue** with text sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step, with no text it asks
   the step to continue (`askAgentToContinue`); a
-  send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
+  send that fails, that the session budget or a busy folder stops, or that starts no turn (`answerBlockedStep` waits for `onStarted`), keeps the text and says so inline. A stopped step with
   **Continue**, "No output for 15 min" with **Continue**, agents
   a restart stopped with **Continue**. A finished run has no tail, only the
   result under the list. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
   a stop the verb is **Continue and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **Open transcript** on its tail (`orchestratedTailOf`, the
-  last step's page, same as a failed decision) and **Add a hint and continue** at the dock
+  last step's page, same as a failed decision); that page carries the reason as its "Why:" line (`stepReasonOf`) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing
@@ -1631,8 +1631,11 @@ live only in the dock of a blocked step (`DockStepLine`). The composer reads
 field before the turn starts and comes back (`restoreDraftOnFailedSend`) with
 the failure on the dock line when the answer fails; one press at a time goes
 through. With attachments in the field the answer is not sent and the dock line
-says to remove them. An open ask or a blocked composer (archived session,
-provider signed out) hides the line or disables **Continue**. The Sessions
+says to remove them. An open ask, a live turn of the step or a blocked composer (archived session,
+provider signed out) hides the line or disables **Continue**, and Enter then goes through
+the normal composer path (queue, permission answer). The press counts as attended: both
+commands clear the unattended-turn count of the step (`clearWorkflowTurns`) and carry
+the route the composer shows (`routingOverride`) to `sendTurn`. The Sessions
 reason of a run with a halted step reads the word of `runStateOf` for that run
 (**Not finished** or **Failed**), through `stoppedRunWord`. `watchStepEnd` records the end time it set in
 `silentlyEndedSteps`, and the notice shows only while the agent's `completedAt`

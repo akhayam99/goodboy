@@ -240,11 +240,7 @@ describe('useBlockedStepAnswer', () => {
   });
 
   it('forwards the composer route to the answer and to Continue', async () => {
-    const override: TurnProviderOverride = {
-      providerId: 'codex',
-      model: 'gpt-6',
-      selection: { model: 'gpt-6' },
-    };
+    const override: TurnProviderOverride = { providerId: 'codex', model: 'gpt-6' };
     const answerBlockedStep = vi.fn(async () => undefined);
     const askAgentToContinue = vi.fn(async () => undefined);
     useAppStore.setState({ answerBlockedStep, askAgentToContinue });

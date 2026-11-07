@@ -158,7 +158,26 @@ const ROWS: Readonly<Record<RunStateKind, Expected>> = {
   },
 };
 
-const KINDS = Object.keys(ROWS) as ReadonlyArray<RunStateKind>;
+const KINDS: ReadonlyArray<RunStateKind> = [
+  'archived',
+  'closed',
+  'done',
+  'paused',
+  'plan-hold',
+  'plan-revising',
+  'stopping',
+  'stopped',
+  'limit',
+  'failed-stop',
+  'failed',
+  'running',
+  'question',
+  'halted-blocked',
+  'halted-failed',
+  'after-run',
+  'ready',
+  'waits-go',
+];
 
 const PRIMARIES = [
   'review-plan',
@@ -177,6 +196,10 @@ const PRIMARIES = [
 ] as const satisfies ReadonlyArray<RunPrimaryKind>;
 
 describe('runStateOf', () => {
+  it('lists every kind of the table', () => {
+    expect([...KINDS].sort()).toEqual(Object.keys(ROWS).sort());
+  });
+
   it.each(KINDS)('reads %s as one word, tone, primary and wait', (kind) => {
     expect(runStateFromKind({ kind })).toMatchObject(ROWS[kind]);
   });
