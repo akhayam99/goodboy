@@ -7,10 +7,10 @@ import {
   type SessionId,
   type WorkspaceId,
 } from '@goodboy/types';
-import { useJiraIssue } from '../../../../../integrations/jira/useJiraIssue';
-import { JiraTaskDetail } from './JiraTaskDetail';
+import { useJiraIssue } from '../../../../../../integrations/jira/useJiraIssue';
+import { JiraTaskDetail } from '.';
 
-vi.mock('../../../../../integrations/jira/useJiraIssue', () => ({
+vi.mock('../../../../../../integrations/jira/useJiraIssue', () => ({
   useJiraIssue: vi.fn(),
 }));
 
@@ -40,9 +40,9 @@ describe('JiraTaskDetail', () => {
 
     render(<JiraTaskDetail workspaceId={WORKSPACE_ID} task={TASK} />);
 
-    expect(screen.getByRole('status', { name: 'Loading Jira issue' })).toBeDefined();
-    expect(screen.getByText('Fix the thing')).toBeDefined();
-    expect(screen.getByText('LEDGER-12')).toBeDefined();
+    screen.getByRole('status', { name: 'Loading Jira issue' });
+    screen.getByText('Fix the thing');
+    screen.getByText('LEDGER-12');
   });
 
   it('shows an error with a retry action that calls refetch', () => {
@@ -56,7 +56,7 @@ describe('JiraTaskDetail', () => {
 
     render(<JiraTaskDetail workspaceId={WORKSPACE_ID} task={TASK} />);
 
-    expect(screen.getByRole('alert')).toBeDefined();
+    screen.getByRole('alert');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(refetch).toHaveBeenCalledOnce();
   });

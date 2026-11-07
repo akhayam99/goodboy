@@ -89,7 +89,9 @@ export const startRoutedRun = async ({
   const workflowId = brandId<WorkflowId>({ value: `wf_run_${crypto.randomUUID()}` });
   const name = uniqueNameOf({
     requested: preset === null ? ORCHESTRATED_WORKFLOW_NAME : `Plan from ${preset.name}`,
-    taken: existing.filter((workflow) => !workflow.deletedAt).map((workflow) => workflow.name),
+    taken: existing
+      .filter((workflow) => workflow.deletedAt == null)
+      .map((workflow) => workflow.name),
   });
   const process = preset?.processText?.trim() ?? '';
   const workflow: Workflow = {

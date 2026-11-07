@@ -1,7 +1,7 @@
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { JiraIssueDetail } from '../../../../../integrations/jira/JiraIssueDetail';
-import { useJiraIssue } from '../../../../../integrations/jira/useJiraIssue';
-import { TaskDetailFallback } from './TaskDetailFallback';
+import { JiraIssueDetail } from '../../../../../../integrations/jira/JiraIssueDetail';
+import { useJiraIssue } from '../../../../../../integrations/jira/useJiraIssue';
+import { TaskDetailFallback } from '../TaskDetailFallback';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

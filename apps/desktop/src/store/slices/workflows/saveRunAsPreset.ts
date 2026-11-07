@@ -28,7 +28,7 @@ export const saveRunAsPreset = (get: GetFn) => {
     const name = uniqueNameOf({
       requested: run.title ?? workflow.name,
       taken: (get().phaseTemplates[workflow.workspaceId] ?? [])
-        .filter((existing) => !existing.deletedAt)
+        .filter((existing) => existing.deletedAt == null)
         .map((existing) => existing.name),
     });
     return get().savePhaseTemplate(

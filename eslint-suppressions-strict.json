@@ -459,11 +459,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/agent-row-format.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/central/branches/branchStoryOf.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -582,11 +577,6 @@
   "apps/desktop/src/features/workflows/savedSteps.test.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/workflows/uniqueWorkflowName.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/workspace/components/RepoEntry/repoGroupsOf.ts": {

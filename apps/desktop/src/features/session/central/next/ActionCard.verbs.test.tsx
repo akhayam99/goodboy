@@ -80,7 +80,7 @@ describe('the main verb of an action card', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
 
     expect(run).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'Merge?' })).toBeTruthy();
+    screen.getByRole('dialog', { name: 'Merge?' });
   });
 
   it('acts once the popover confirm is clicked', () => {
@@ -122,7 +122,7 @@ describe('the main verb of an action card', () => {
     const actions = actionsOf(verbOf({ confirmRole: 'primary' }));
     const { rerender } = render(<ActionCard card={cardOf('a')} actions={actions} isFirst />);
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    screen.getByRole('button', { name: 'Cancel' });
 
     rerender(<ActionCard card={cardOf('b')} actions={actions} isFirst />);
 

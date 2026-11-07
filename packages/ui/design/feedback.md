@@ -95,8 +95,8 @@ a quiet no-op: the pull request writes resolve their target through
 workspace, pull request or repository is missing. Every next-step suggestion
 runs through the runner: `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
 `useSuggestionRunner` owns the runner (`useSuggestionActions` test guards every kind).
-A suggestion's `choices` (a rebase target, "Start tester instead") render as
-ghost buttons beside the primary in `NextStepRow`, run through the same runner
+A suggestion's `choices` (a rebase target, "Start tester instead") are items of
+the `⋯` menu of `ActionCard`, run through the same runner
 under their own key, and hold the row's other controls while one runs.
 
 ## Empty states
