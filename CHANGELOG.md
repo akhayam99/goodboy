@@ -12,6 +12,136 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.31.12
+
+Every session page, run and agent reads the same way: one page, one dock, one word per state, and an error that says what to do next.
+
+### Improved
+
+#### One page for every agent
+<!-- gb area=agents image=one-page-per-agent pr=2119 -->
+
+Every door to an agent or a step lands on its page, in every kind of run. The page says who the agent is, why it started, its brief and what came back, and its composer targets that agent. The panel beside a chat reads Steps and keeps the error a Failed here points at.
+
+A failed Auto child has one Retry, in the dock. Chat cards are named by noun, and Earlier in this reply folds only what is off screen.
+
+#### One dock for every conversation
+<!-- gb area=sessions image=one-dock pr=2114,2103 -->
+
+Session, agent, step and Auto conversations share one dock joined to the box. Permission asks and questions read one at a time, with a record left in the transcript, and Failed, Stopped and limit states read there too.
+
+One labeled Stop names what it stops, such as Stop Auto and 2 agents. A message sent over an open permission ask denies it, with the text as the reason.
+
+#### One word per state
+<!-- gb area=sessions pr=2118 -->
+
+Every state reads one word from one table, in the glance, rows, tails, the sidebar and the Agents panel. An error reads Failed, a limit reads Paused, and a stopped Auto or agent reads Needs you with one sentence.
+
+An Auto that stopped replying raises the same sidebar mark, banner and dock badge as a failed agent. In Overview, one Auto is one block, with its agents folded under it.
+
+#### Every run has one page
+<!-- gb area=workflows image=every-run-one-page pr=2116 -->
+
+Preset and orchestrated runs share one head and one step list, and a step opens as its own page for both. The run page reads the step state in one word, and step verbs sit in the step head.
+
+The Runs list groups by branch or by state, renames a row in place and says what each run needs. The Agents panel reads top down, and a folded parent says 1 of 2 helpers failed.
+
+#### A blocked step reaches you
+<!-- gb area=workflows image=blocked-step-reaches-you pr=2122 -->
+
+A halted step raises Needs you in Sessions, Overview and the glance, and the notification names the agent with Not finished. The run page shows one word and Open step N. The reason lives on the step page.
+
+On the step page the dock is the only field. Text answers the step, no text asks it to go on, and the draft comes back if the send fails.
+
+#### Context and linked work
+<!-- gb area=sessions image=context-and-linked-work pr=2115 -->
+
+Context is one column: goal, decisions with their marks, summary and explanations. Marks stay until Mark as read, in every window. Questions name their asker and run, and Answered folds behind its count when nothing waits.
+
+Linked work lives in the rail, and a record opens with a way back. A record that left the session or lost its connection says so. The branch tab reads Changes.
+
+#### Questions and artifacts by branch
+<!-- gb area=artifacts image=by-branch pr=2120 -->
+
+Questions and Artifacts group by branch, the way Runs does. A branch with a waiting question goes first, answered ones fold into a count, and work with no branch goes to No branch.
+
+Artifacts show their state as a word on the row, and used ones fold into a count. The Branch page links N runs and N questions, each landing with its group open.
+
+#### The branch page shows one next step
+<!-- gb area=review image=branch-next-step pr=2112 -->
+
+The Branch page has one primary button picked by state: Mark ready, Merge, Fix comments, Fix checks, Remove worktree or Archive. Five tabs hold the facts: Pull request, Comments, Changes, Commits and Checks.
+
+Merge asks for a confirm that names the target. Remove worktree says what goes and what stays, and has an Undo. Fix checks starts one agent and shows its work inline.
+
+#### Errors say what to do next
+<!-- gb area=app pr=2117,2121 -->
+
+Every reported error ends with what to do next: nothing was changed, your work is kept, check the state before trying again, try loading again, or a settings action. Turn errors read plain and name the agent's provider, with the raw text under Show details.
+
+Each action keeps one name: Retry, Continue, Skip step, Decline, Mark as read and Fix with an agent. Reply replaces turn in the chat controls.
+
+#### Five rows in every menu
+<!-- gb area=app image=five-row-menus pr=2123 -->
+
+Every menu behind the three dots holds five rows at most, in any state. Artifact, record, comment drawer, branch, commit, worktree and port menus were cut to five, and the least needed rows go first.
+
+Every cut row stays on right click and in the palette. A nested port row keeps Stop and Force stop.
+
+#### Titles come from the goal
+<!-- gb area=sessions pr=2113 -->
+
+Generated titles for runs, agents and sessions come from a closed title tag or from the words of the goal. A model thinking aloud no longer becomes a title, and a title you edited is never replaced.
+
+A run with an old bad title shows the goal derived one, and your stored data stays as it is.
+
+#### One hover shows one thing
+<!-- gb area=app pr=2111 -->
+
+A tooltip stays quiet while a hover card is open, on rail session dots, board cards and the project dot. Tooltips show plain text, so raw markdown markers leave the rail summary and session titles.
+
+#### Session pages go back where they came from
+<!-- gb area=sessions pr=2103,2104,2109 -->
+
+A back row names the parent on every session page, and Back lands exactly on it, also from a deep link. Esc walks one ladder: leave a box with text, close the panel, then what the back row does.
+
+Tools stay open when you move inside a session. Every door to a question opens it in Questions, and when nothing is left, Close returns to where you came from.
+
+#### One head for every tool
+<!-- gb area=sessions pr=2108 -->
+
+Every tool drawer wears one head: icon, name, one action and an Open page arrow before Close. Ask moves above the line, a suggested script runs in one press, and Explore says how many files changed with one Changed only switch.
+
+#### Messages and stops never get lost
+<!-- gb area=sessions pr=2106 -->
+
+Stop has one path, and a stopped step reads Stopped with Continue to resume it. A sent message is kept until the agent starts. If it cannot start, it stays above the box as Not delivered with Retry.
+
+Closing the window with live work opens one sheet. Composer and question drafts survive a reload and an archive.
+
+#### The plan reader loses nothing
+<!-- gb area=artifacts pr=2110 -->
+
+The plan page has one filled button and one confirm when comments are not sent. A typed comment is kept as a draft on blur, Esc and a press. After a run, unsent comments go to the agent that ran the plan, or you copy them.
+
+#### One overview line, notifications that land
+<!-- gb area=sessions pr=2105 -->
+
+Overview puts the status line and the summary in one block under the title. A notification opens the place it talks about, from the bell, the toast and the Notifications page, and its button names that place.
+
+### Fixed
+
+- A reload keeps the row, the scope and the archived page you were on. <!-- gb area=sessions pr=2107 -->
+- The board reads every fact before its first paint, and a failed read shows one line with Retry above the lanes. <!-- gb area=sessions pr=2107 -->
+- A waiting permission survives a reload and a relaunch, and Auto waits reach the board from a hidden window. <!-- gb area=agents pr=2107 -->
+- A plan needs you only for its own planner. <!-- gb area=agents pr=2107 -->
+- Opening Settings no longer moves the text you are reading, and a drawer reveal no longer pushes rows out of view. <!-- gb area=sessions pr=2103 -->
+- Holding Enter no longer chains answers, and a late Send as message does not pull you back. <!-- gb area=sessions pr=2109 -->
+- A notice with three or more actions wraps them under the text in a narrow window. <!-- gb area=app pr=2111 -->
+- A queued pull request reads gray, apart from the blue of an open one. <!-- gb area=review pr=2111 -->
+- Two mounts in a series no longer show a branch switch with a single group. <!-- gb area=review pr=2120 -->
+- The agent cost footer now shows the same cost as the agent header. <!-- gb area=agents -->
+
 ## Goodboy v0.31.11
 
 Commits on your machine go up before anything else.

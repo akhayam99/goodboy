@@ -8,10 +8,10 @@ Ask about the workspace without starting a session. **Chat**, in the sidebar aft
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the sessions rail on the left: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Duplicate credit path: a table of three source files with Read 3 files and Sonnet 5.5 Medium, then the question Where should the check go? answered on GPT-6.1 Sol High, above a message box that reads Read only. Nothing is changed.">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, with the sessions rail on the left: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the chat Where is the consent step defined?: a table of three source files, Read 4 files, Start work from chat and Sonnet 5.5 Medium, above a message box that reads Read only. Nothing is changed.">
 </picture>
 
-<sub>Screenshot from Goodboy 0.31.10</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Ask in a session
 
@@ -33,6 +33,10 @@ Give each agent the job it is good at. Nine roles come with the app, **Scout**, 
 
 Find an agent, then read who it is before you read its work. **Runs** in a session lists every run and every agent you started on one aligned grid: state dot, kind, name, origin, state word, progress, cost and age. The groups are **Needs you**, **Running**, **Idle**, **Finished** and **Archived**, newest first inside each, and a group header counts its rows from two. The group name is bold and the agent's name leads its row; every other cell is smaller and gray. The grid, the page count, the Running card and the Agents tree use the same words, so an agent waiting for a permission reads **Needs permission** in all four instead of Running, one with an open question reads **Needs you**, and one that stopped without asking reads **Needs you** in the amber of a warning. An agent you or a restart stopped stays under **Idle** as **Stopped** until you close it, its row shows **Continue** (**Connect** when its provider is signed out), and **Continue all** at the top of the page brings back two or more that a restart stopped. **Finished** holds the done and closed agents, newest first, and a reply you have not read lifts its row and shows a dot. A row opens the agent, its other actions are in the right click menu; a new agent starts from **Start a run** on Runs, or with `@` and a role in its field. On the agent, its role, its task and the mark of the provider it runs on share one row with its menu, which holds at most five actions: **Rename**, **Let Auto take it from here** (or **Detach from Auto**, or **Mark finished** on Auto), **Copy last reply** and **Delete agent**. The model control stays on the page. **Show its changes**, **Message this agent**, **Copy name** and **Change model** stay in the right click menu. An agent still named by its role is titled by its brief, and a click on the title opens the full text. A double click on the title renames the agent, a run step or Auto. A step keeps the new name in that run only. A save that fails keeps the old name and shows the error. The header never repeats the agent's state or model: the state is the line at the end of the conversation, and a footer names the model when it changes.
 
+### One page per agent
+
+Open any agent or step on its own page, in every kind of run. Every door lands there: the Runs grid, the Agents panel, a chat card and a notification. The page says who the agent is, why it started, its brief and what came back. Its composer talks to that agent. The panel beside a chat reads **Steps** and keeps the error that **Failed here** points at. A failed Auto child has one **Retry** in the dock. The agent menu holds five rows at most.
+
 ### What the agent received
 
 Check exactly what an agent was told. The top of each chat shows the message and who sent it, and opening it lists the **Goal**, **Plan** and files it carried. **View as sent to** the provider shows the exact text.
@@ -50,10 +54,10 @@ Follow one agent's work as one conversation you can write in. Each finished turn
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An Implementer agent in a session of Harborline: its turns each reduced to one line such as Read package.json, ran a command, the checklist Remove node_modules in payments-api, Install with pnpm and Run the export tests, and the Transcript drawer open beside the conversation with each step of the turn">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An Implementer agent in a session of Harborline: its turns each reduced to one line such as Read package.json, ran a command, the checklist Remove node_modules in payments-api, Install with pnpm and Run the export tests, and the Steps drawer open beside the conversation with each step of the turn">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.1</sub>
+<sub>Screenshot from Goodboy 0.31.12</sub>
 
 ### Agent suggests
 

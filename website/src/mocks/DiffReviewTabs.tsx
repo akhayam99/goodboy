@@ -11,7 +11,7 @@ const TABS: readonly Tab[] = [
   { label: 'Pull request' },
   { label: 'Comments', end: <span className="dfrTabCount">2</span> },
   {
-    label: 'Files',
+    label: 'Changes',
     end: (
       <>
         <span className="dfrTabCount">{DIFF_REVIEW_FILES.length}</span>

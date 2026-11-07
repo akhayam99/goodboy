@@ -4,7 +4,7 @@
     "recipe": "--scene 'features-composer-menu&brand=1' --window 1280x800 --wait 8000"
   },
   "features/agents-transcript": {
-    "version": "0.27.1",
+    "version": "0.31.12",
     "recipe": "--scene 'c06-agent-transcript&brand=1' --window 1280x800 --wait 8000"
   },
   "features/agents-what-received": {
@@ -12,7 +12,7 @@
     "recipe": "--scene 'brand-slack&brand=1' --click 'Also received' --clip 290,60,940,232 --window 1280x800 --wait 8000"
   },
   "features/agents-workspace-chat": {
-    "version": "0.31.10",
+    "version": "0.31.12",
     "recipe": "--scene 'chat-room&brand=1' --window 1500x720 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/artifact-compare": {
@@ -24,8 +24,8 @@
     "recipe": "--scene 'artifact-create-wireframe&brand=1' --window 1280x700 --wait 8000"
   },
   "features/artifact-list": {
-    "version": "0.27.1",
-    "recipe": "--scene 'artifacts-rows&brand=1' --window 1280x800 --wait 8000"
+    "version": "0.31.12",
+    "recipe": "--scene 'u36-c19-artifacts-by-branch&brand=1' --window 1280x800 --wait 8000"
   },
   "features/artifact-report": {
     "version": "0.27.1",
@@ -44,15 +44,15 @@
     "recipe": "--scene 'board-shell&brand=1' --window 1920x620 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-decisions": {
-    "version": "0.27.1",
+    "version": "0.31.12",
     "recipe": "--scene 'brand-context&brand=1' --window 1280x800 --wait 8000"
   },
   "features/context-drawer": {
-    "version": "0.31.10",
+    "version": "0.31.12",
     "recipe": "--scene 'context-drawer&brand=1' --window 1680x890 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/context-summary": {
-    "version": "0.27.1",
+    "version": "0.31.12",
     "recipe": "--scene 'r4-context-summary&brand=1' --window 1280x800 --wait 8000"
   },
   "features/history-backups": {
@@ -120,11 +120,11 @@
     "recipe": "--scene 'activity-groups&brand=1' --clip 491,133,741,917 --window 1280x1050 --wait 8000"
   },
   "features/overview-next": {
-    "version": "0.27.1",
-    "recipe": "--scene 'c05-overview-merged-next&brand=1' --selector '[data-next-stack]' --pad 48 --window 1280x800 --wait 8000"
+    "version": "0.31.12",
+    "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 499,289,725,328 --window 1280x800 --wait 8000"
   },
   "features/overview-session": {
-    "version": "0.27.1",
+    "version": "0.31.12",
     "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x540 --wait 8000"
   },
   "features/providers-codex-reset": {
@@ -156,11 +156,11 @@
     "recipe": "--scene 'comments-groups&brand=1' --selector 'nav[class*=\"select-list\"]' --pad 20 --window 1100x900 --wait 8000"
   },
   "features/review-diff": {
-    "version": "0.27.1",
-    "recipe": "--scene 'c04-worktree-files&brand=1' --window 1500x760 --wait 8000"
+    "version": "0.31.12",
+    "recipe": "--scene 'branch-files-docked&brand=1' --window 1500x760 --wait 8000"
   },
   "features/review-pr-page": {
-    "version": "0.31.10",
+    "version": "0.31.12",
     "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x850 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
   },
   "features/review-push-confirm": {
@@ -276,28 +276,28 @@
     "recipe": "--scene 'board-shell&brand=1' --click 2 --window 1500x600 --wait 8000"
   },
   "features/switch-rail": {
-    "version": "0.27.1",
-    "recipe": "--scene 'session-hover&brand=1' --window 1280x720 --clip 0,0,680,720 --wait 8000"
+    "version": "0.31.12",
+    "recipe": "--scene 'session-hover&brand=1' --clip 0,0,640,720 --window 1800x720 --wait 8000"
   },
   "features/workflow-hints": {
     "version": "0.27.1",
     "recipe": "--scene 'workflow-run-step-question&brand=1' --clip 300,600,930,190 --window 1280x800 --wait 8000"
   },
   "features/workflow-question-agent": {
-    "version": "0.27.1",
-    "recipe": "--scene 'r4-questions-drawer&brand=1' --click 'Let an agent decide' --window 1500x800 --wait 8000"
+    "version": "0.31.12",
+    "recipe": "--scene 'r4-questions-drawer&brand=1' --click 'More,Let an agent decide' --window 1500x800 --wait 8000"
   },
   "features/workflow-questions": {
-    "version": "0.27.1",
+    "version": "0.31.12",
     "recipe": "--scene 'r4-questions-drawer&brand=1' --window 1500x800 --wait 8000"
   },
   "features/workflow-recap": {
-    "version": "0.27.1",
+    "version": "0.31.12",
     "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x900 --wait 8000"
   },
   "features/workflow-run": {
-    "version": "0.31.10",
-    "recipe": "--scene 'workflow-run&run=finished&brand=1' --window 1500x820 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
+    "version": "0.31.12",
+    "recipe": "--scene 'workflow-run&run=finished&brand=1' --window 1500x1000 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/workflow-studio-steps": {
     "version": "0.27.1",
@@ -328,7 +328,7 @@
     "recipe": "--scene 'mounts&brand=1' --window 1280x700 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.31.10",
+    "version": "0.31.12",
     "recipe": "pnpm readme:hero"
   }
 }
