@@ -167,7 +167,7 @@ describe('NextActionStrip', () => {
     expect(toneOf(strip)).toBe('danger');
     expect(within(strip).getByText('Implement stopped before finishing.')).toBeDefined();
     expect(within(strip).getByText('Test waits on this step.')).toBeDefined();
-    expect(within(strip).getByRole('button', { name: 'Ask it to continue' })).toBeDefined();
+    expect(within(strip).getByRole('button', { name: 'Continue' })).toBeDefined();
     within(strip).getByRole('button', { name: 'Skip' });
   });
 
@@ -177,7 +177,7 @@ describe('NextActionStrip', () => {
 
     const strip = screen.getByRole('region', { name: 'Next action: recover the step' });
     expect(toneOf(strip)).toBe('warning');
-    expect(within(strip).getByRole('button', { name: 'Ask it to continue' })).toBeDefined();
+    expect(within(strip).getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
   it('draws nothing for a step you stopped', () => {
@@ -191,7 +191,7 @@ describe('NextActionStrip', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'failed')] };
     renderStrip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask it to continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(store.recoverStuckStep).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -205,9 +205,9 @@ describe('NextActionStrip', () => {
     store.recoverStuckStep.mockReturnValue(new Promise<void>(() => undefined));
     renderStrip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask it to continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    screen.getByRole('button', { name: 'Asking' });
+    screen.getByRole('button', { name: 'Continuing' });
     expect(screen.getByRole('button', { name: 'Skip' }).hasAttribute('disabled')).toBe(true);
   });
 

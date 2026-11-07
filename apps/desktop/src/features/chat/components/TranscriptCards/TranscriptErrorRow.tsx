@@ -90,7 +90,7 @@ export const TranscriptErrorRow = ({
             {runId !== null && <LimitContinueAction runId={runId} />}
             {canViewTranscript && (
               <Button size="sm" variant="quiet" onClick={viewTranscript}>
-                View transcript
+                Open transcript
               </Button>
             )}
           </>

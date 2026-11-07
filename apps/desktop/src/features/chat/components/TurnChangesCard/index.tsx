@@ -185,7 +185,7 @@ export const TurnChangesCard = ({ sessionId, runId }: Props) => {
           <span className="text-muted-foreground"> · saved before this turn</span>
         </p>
         <Button variant="secondary" size="xs" onClick={onReview}>
-          Review changes
+          Open changes
         </Button>
         <Button
           variant="ghost"

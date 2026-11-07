@@ -87,7 +87,7 @@ describe('the u28 run page scenes', () => {
     }
   });
 
-  it('u28-run-step-blocked shows the question inline with Answer first and Restart step second', async () => {
+  it('u28-run-step-blocked shows the question inline with Answer first and Retry step second', async () => {
     await mount('u28-run-step-blocked');
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('step-failed');
@@ -101,12 +101,12 @@ describe('the u28 run page scenes', () => {
     const verbs = within(tail())
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(verbs.indexOf('Restart step')).toBeGreaterThan(-1);
-    expect(verbs).toContain('Open agent chat');
+    expect(verbs.indexOf('Retry step')).toBeGreaterThan(-1);
+    expect(verbs).toContain('Open agent');
     const answer = within(form).getByRole('button', { name: 'Keep working' });
     expect(answer.hasAttribute('disabled')).toBe(true);
-    within(tail()).getByRole('button', { name: 'Restart step' });
-    expect(header().textContent).not.toContain('Restart step');
+    within(tail()).getByRole('button', { name: 'Retry step' });
+    expect(header().textContent).not.toContain('Retry step');
   });
 
   it('u28-run-step-blocked sends the answer to the blocked step and clears the field', async () => {
@@ -139,7 +139,7 @@ describe('the u28 run page scenes', () => {
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('needs-answer');
     expect(tail().textContent).toContain('Which export size should the benchmark treat');
-    expect(within(tail()).queryByRole('button', { name: 'Restart step' })).toBeNull();
+    expect(within(tail()).queryByRole('button', { name: 'Retry step' })).toBeNull();
     const answer = within(tail()).getByRole('button', { name: 'Answer' });
     expect(answer.hasAttribute('disabled')).toBe(true);
     within(tail()).getByText('Recommended');

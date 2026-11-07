@@ -166,10 +166,10 @@ describe('the Done card lists what finished last', () => {
     expect(noteOf()).toBeNull();
     expect(latestRows().map((row) => row.hasAttribute('data-unread'))).toEqual([true, true, false]);
     expect(within(doneCard()).getAllByRole('img', { name: 'Unread reply' })).toHaveLength(2);
-    expect(within(doneCard()).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    expect(within(doneCard()).queryByRole('button', { name: 'Mark as read' })).toBeNull();
   });
 
-  it('lists every unread item in a New since you last looked card above Done, with Mark all seen', async () => {
+  it('lists every unread item in a New since you last looked card above Done, with Mark as read', async () => {
     seedCentralColumn({ kind: 'finished' });
     markUnread({ agentIds: [CI_FIX, LAST_STEP] });
     render(
@@ -186,7 +186,7 @@ describe('the Done card lists what finished last', () => {
     expect(cards).toContain('done');
     expect(newSinceRows()).toHaveLength(0);
     expect(newSinceCard().querySelector('[data-new-since-count]')?.textContent).toBe('2');
-    within(newSinceCard()).getByRole('button', { name: 'Mark all seen' });
+    within(newSinceCard()).getByRole('button', { name: 'Mark as read' });
     fireEvent.click(within(newSinceCard()).getByRole('button', { name: 'Show' }));
     expect(newSinceRows()).toHaveLength(2);
   });
@@ -204,7 +204,7 @@ describe('the Done card lists what finished last', () => {
     expect(document.querySelector('[data-overview-card="new-since"]')).toBeNull();
   });
 
-  it('draws no dot, no note and no Mark all seen once everything is seen', async () => {
+  it('draws no dot, no note and no Mark as read once everything is seen', async () => {
     seedCentralColumn({ kind: 'finished' });
     markUnread({ agentIds: [] });
     render(
@@ -216,11 +216,11 @@ describe('the Done card lists what finished last', () => {
 
     expect(noteOf()).toBeNull();
     expect(within(doneCard()).queryByRole('img', { name: 'Unread reply' })).toBeNull();
-    expect(within(doneCard()).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    expect(within(doneCard()).queryByRole('button', { name: 'Mark as read' })).toBeNull();
     expect(doneCard().querySelector('[data-done-latest] .size-4')).toBeNull();
   });
 
-  it('clears the dots and the note from Mark all seen', async () => {
+  it('clears the dots and the note from Mark as read', async () => {
     seedCentralColumn({ kind: 'finished' });
     markUnread({ agentIds: [CI_FIX] });
     render(
@@ -232,7 +232,7 @@ describe('the Done card lists what finished last', () => {
     expect(within(doneCard()).getAllByRole('img', { name: 'Unread reply' })).toHaveLength(1);
 
     await act(async () => {
-      fireEvent.click(within(newSinceCard()).getByRole('button', { name: 'Mark all seen' }));
+      fireEvent.click(within(newSinceCard()).getByRole('button', { name: 'Mark as read' }));
       await Promise.resolve();
     });
     await settle();

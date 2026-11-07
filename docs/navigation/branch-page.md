@@ -127,7 +127,7 @@ Retry, kept per branch and named with the branch when the session has more than 
 running on one branch never locks another). A rebase that is in progress in the worktree with no
 Goodboy stop (started in a terminal) draws one minimal row, `GitRebaseRow`: Continue rebase, Open
 terminal, Abort rebase. The other states keep the strip (Stash and rebase, Bring them back, Undo rewrite, Retry
-with a note, Open providers, See what it did). A failed push after
+with a note, Open providers, Open agent). A failed push after
 a rebase offers `Fix with an agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
 pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its

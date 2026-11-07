@@ -258,7 +258,7 @@ describe('the Auto chat scenes', () => {
     expect(
       within(card).getAllByText('Revise Retry-safe credit retries to v2').length,
     ).toBeGreaterThan(0);
-    expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Decline' })).toBeDefined();
   });
 
   it('auto-chat-refused turns a refused hand over into the project ask, nothing started', async () => {

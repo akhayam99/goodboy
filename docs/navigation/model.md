@@ -222,7 +222,7 @@ drawer instead of the Terminal page.
   3. **Runs**: only when the session has a run or a workflow exists. The run on
      screen, else the one that needs you, is live, or is queued, as a row with its
      state; its verbs in state order (Answer, Start run, Continue step, Start next
-     step, Restart step, Stop run); and **Open Runs**. ⌘K also offers **Start from** each
+     step, Retry step, Stop run); and **Open Runs**. ⌘K also offers **Start from** each
      preset (`startRunFromPresetEntries`), which opens the Start a run field
      with `~` and the preset name.
   4. **Recent**, agents of this session first; then four fixed groups, each

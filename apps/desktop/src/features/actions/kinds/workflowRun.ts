@@ -317,7 +317,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.restartStep',
-      label: 'Restart step',
+      label: NAMES.retryStep,
       icon: RotateCcw,
       group: 'act',
       when: ({ facts }) => facts.state === 'failed',

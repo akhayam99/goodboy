@@ -151,7 +151,7 @@ describe('a reply-only answer in the thread', () => {
     await mountReply({ variant: 'posted' });
 
     expect(within(comment()).getByText('Replied on GitHub.')).toBeDefined();
-    expect(within(comment()).getByRole('button', { name: 'View on GitHub' })).toBeDefined();
+    expect(within(comment()).getByRole('button', { name: 'Open on GitHub' })).toBeDefined();
     expect(within(comment()).queryByRole('button', { name: 'Publish reply' })).toBeNull();
     expect(within(comment()).queryByRole('button', { name: 'Rewrite reply' })).toBeNull();
   });

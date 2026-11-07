@@ -180,7 +180,7 @@ the rail's **Folder** card names the folder and what agents do there
 has a folder card under Branches (where agents write, what is saved before each turn,
 the changes so far from `turnChanges`, and the read only kinds of a Documents
 folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
-chat ends in a card with Review changes and Restore turn
+chat ends in a card with Open changes and Restore turn
 (`features/chat/components/TurnChangesCard/`). The git verbs are not
 registered for a session without a branch: Comments (`session.review`) and
 Files (`session.diff`) leave the menus and the palette, and **Changes**
@@ -656,7 +656,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   why (`payments-api · 5 commits ahead`); it leads with the branch whose Scribe text is under way, then the most commits
   ahead, then project and branch name, skips a branch put away with **Not
   now**, and lists every branch without a pull request in **⋯** once there
-  are two; **Open PR** opens the worktree the payload names, never one looked
+  are two; **Create pull request** opens the worktree the payload names, never one looked
   up at click time), mark a green draft ready, merge an approved
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
@@ -671,7 +671,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   `mountId`), never the session's active mount. One simplification from the
   design: the demotion window (above) reads the session, not the workspace. A failed
   workflow step has no suggestion: its own row in Activity carries the one
-  **Restart the step**, which opens the step where Ask it to continue and
+  **Retry step**, which opens the step where Continue and
   Skip live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
   same `goodboy:open-settings` event the palette's "Connect a provider"
@@ -797,7 +797,7 @@ pick it when you start the agent.
   `settleScribe` hands the text to `openScribePullRequest`, and the work moves
   `writing`, `creating`, then `created` with the request number, or `failed`
   with the reason and the text kept, and `Retry` runs the same step again. The
-  Next row's Open PR opens the create form and never creates; while the job
+  Next row's Create pull request opens the create form and never creates; while the job
   writes or creates its line shows the state with no button, and `Review text`
   once it is ready. It can also
   write a commit message for a squash or a reword and a changelog entry. It
@@ -1337,7 +1337,7 @@ for this session`, else `Resolver default`); launching does not turn the
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push
-  result there offers `Sync and try again`. The comment keeps `Open` (the host logo, named `Open on GitHub`)
+  result there offers `Sync and retry`. The comment keeps `Open` (the host logo, named `Open on GitHub`)
   when Goodboy could not confirm the reply landed
 - A fix run is one agent in its own copy of the branch, so it never fights the
   branch you are on. Separate runs go up to four at a time (the session limit)
@@ -1994,7 +1994,7 @@ before a change adds a word.
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
 - **Push**: sends commits (**Push 2 commits**, **Retry push** after a failure).
-  **Publish 2 replies** sends replies without a push. **Sync and try again** is
+  **Publish 2 replies** sends replies without a push. **Sync and retry** is
   about the remote branch that moved, not the base.
 - **Apply**: accepts the fixes a run made (**Apply 3 fixes**, **Apply fix** for one),
   in the Branch header and in the selection bar. The old **Apply and resolve** is retired.

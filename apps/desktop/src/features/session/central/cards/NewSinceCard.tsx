@@ -9,6 +9,7 @@ import type { TimelineTopLevelEntry } from '../../timeline/buildTimelineGroups';
 import type { LatestDone } from './latestDoneOf';
 import { LatestDoneRow } from './LatestDoneRow';
 import { useLeadAgentOf } from '../../hooks/useLeadAgentOf';
+import { NAMES } from '../../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -48,7 +49,7 @@ export const NewSinceCard = ({ sessionId, latest, entries }: Props) => {
         })
       }
     >
-      Mark all seen
+      {NAMES.markAsRead}
     </Button>
   );
   if (!isOpen) {

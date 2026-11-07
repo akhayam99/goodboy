@@ -107,15 +107,15 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           size="xs"
           variant="secondary"
           isBusy={isBusy}
-          busyLabel="Restarting"
+          busyLabel="Retrying"
           onClick={() =>
             void press({
               task: () => recoverStuckStep({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't restart the step",
+              failure: "Couldn't retry the step",
             })
           }
         >
-          Restart step
+          {NAMES.retryStep}
         </Button>
       );
     case 'viewTranscript':
@@ -127,7 +127,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             openDrawer({ kind: 'transcript', sessionId, payload: { agentId: verb.agentId } })
           }
         >
-          View transcript
+          Open transcript
         </button>
       );
     case 'openAgentChat':
@@ -156,7 +156,7 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             })
           }
         >
-          {verb.isStopped ? `Continue and read ${verb.count} queued` : `Read ${verb.count} queued`}
+          {verb.isStopped ? NAMES.continue : `Read ${verb.count} queued`}
         </Button>
       );
     case 'quiet':
@@ -165,15 +165,15 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           size="xs"
           variant="secondary"
           isBusy={isBusy}
-          busyLabel="Asking"
+          busyLabel="Continuing"
           onClick={() =>
             void press({
               task: () => askAgentToContinue({ sessionId, agentId: verb.agentId }),
-              failure: "Couldn't ask the step to continue",
+              failure: "Couldn't continue the step",
             })
           }
         >
-          Ask it to continue
+          {NAMES.continue}
         </Button>
       );
     case 'resumeAll':

@@ -40,7 +40,7 @@ describe('the activity-run-hover scene', () => {
     expect(MOCK_SCENES['activity-run-hover']).toBe(U21_KEYS_ROWS_SCENES['activity-run-hover']);
   });
 
-  it('shows run rows in the full log with one Mark all seen and no menu', async () => {
+  it('shows run rows in the full log with one Mark as read and no menu', async () => {
     renderHoverScene();
 
     const activity = await screen.findByRole('region', { name: 'Log entries' });
@@ -48,6 +48,6 @@ describe('the activity-run-hover scene', () => {
 
     expect(rows.length).toBeGreaterThan(1);
     expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
-    expect(within(activity).getByRole('button', { name: 'Mark all seen' })).toBeDefined();
+    expect(within(activity).getByRole('button', { name: 'Mark as read' })).toBeDefined();
   });
 });

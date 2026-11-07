@@ -100,7 +100,7 @@ export const AutoNextAction = ({ sessionId, rootAgentId, action, untold, onUntol
                   disabled={model.isBusy}
                   onClick={() => void model.notNow()}
                 >
-                  Not now
+                  {NAMES.decline}
                 </Button>
                 {hasHint ? null : (
                   <Button

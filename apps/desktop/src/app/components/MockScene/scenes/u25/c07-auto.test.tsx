@@ -328,7 +328,7 @@ describe('c07 Auto scenes', () => {
     ).toBeGreaterThan(0);
     expect(screen.getByText('1 file changed')).toBeDefined();
     expect(screen.getByText('Not checked: timed out')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Run checks again' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry checks' })).toBeDefined();
   });
 
   it('c07-auto-child-push says the push did not go out and offers one more try', async () => {
@@ -337,7 +337,7 @@ describe('c07 Auto scenes', () => {
     expect(
       (await screen.findAllByText('Not pushed: connection reset', undefined, WAIT)).length,
     ).toBeGreaterThan(0);
-    expect(screen.getAllByRole('button', { name: 'Try the push again' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Retry push' }).length).toBeGreaterThan(0);
   });
 
   it('c07-auto-project asks where the Implementer works and names the primary by the choice', async () => {
@@ -355,10 +355,10 @@ describe('c07 Auto scenes', () => {
     const actions = list
       .closest('[data-dock-ask="project"]')
       ?.querySelector('[data-slot="form-actions"]');
-    expect(actions?.textContent).toContain('Discard request');
-    expect(
-      screen.getByRole('button', { name: 'Discard request' }).getAttribute('data-variant'),
-    ).toBe('quiet');
+    expect(actions?.textContent).toContain('Decline');
+    expect(screen.getByRole('button', { name: 'Decline' }).getAttribute('data-variant')).toBe(
+      'quiet',
+    );
     expect(screen.queryByRole('button', { name: 'More request actions' })).toBeNull();
     const dock = ask.closest<HTMLElement>('[data-conversation-dock]');
     fireEvent.click(within(dock ?? list).getByRole('button', { name: 'Add project' }));
@@ -427,14 +427,14 @@ describe('c07 Auto scenes', () => {
     expect(within(popover).getByRole('form', { name: 'Limit for this Auto' })).toBeDefined();
   });
 
-  it('c07-auto-working titles the Auto root with its goal and keeps View transcript in the menu', async () => {
+  it('c07-auto-working titles the Auto root with its goal and keeps Open transcript in the menu', async () => {
     mount({ id: 'c07-auto-working' });
 
     const title = await screen.findByTestId('agent-header-title-row', undefined, WAIT);
     expect(within(title).queryByText(/^Auto$/)).toBeNull();
-    expect(within(title).queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(within(title).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(within(title).getByRole('button', { name: 'More agent actions' }));
-    expect(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT)).toBeDefined();
+    expect(await screen.findByRole('menuitem', { name: 'Open transcript' }, WAIT)).toBeDefined();
   });
 
   it('closes the Agents panel and opens it again from the tools column, Runs stays selected', async () => {
@@ -519,10 +519,10 @@ describe('c07 Auto scenes', () => {
     expect(within(tail).queryByRole('alert')).toBeNull();
   });
 
-  it('c07-auto-blocked offers View transcript in the dock and opens the root conversation', async () => {
+  it('c07-auto-blocked offers Open transcript in the dock and opens the root conversation', async () => {
     mount({ id: 'c07-auto-blocked' });
 
-    const verb = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
+    const verb = await screen.findByRole('button', { name: 'Open transcript' }, WAIT);
     expect(verb.closest('[data-conversation-dock]')).not.toBeNull();
     fireEvent.click(verb);
 

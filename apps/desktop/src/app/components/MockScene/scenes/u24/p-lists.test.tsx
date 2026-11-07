@@ -64,12 +64,12 @@ describe('the list scenes', () => {
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeDefined();
   });
 
-  it('activity-mark-seen shows Mark all seen as a button, with no menu', async () => {
+  it('activity-mark-seen shows Mark as read as a button, with no menu', async () => {
     mount({ name: 'activity-mark-seen' });
 
     const activity = await screen.findByRole('region', { name: 'Log entries' }, WAIT);
-    await within(activity).findByRole('button', { name: 'Mark all seen' }, WAIT);
-    expect(within(activity).getByRole('button', { name: 'Mark all seen' })).toBeDefined();
+    await within(activity).findByRole('button', { name: 'Mark as read' }, WAIT);
+    expect(within(activity).getByRole('button', { name: 'Mark as read' })).toBeDefined();
     expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
   });
 

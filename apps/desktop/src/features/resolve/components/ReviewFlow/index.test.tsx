@@ -595,7 +595,7 @@ describe('Review as one flow', () => {
     expect(drawer.queryAllByRole('button', { name: /^Apply fix|^Edit|^Reply/ })).toEqual([]);
     expect(drawer.queryByRole('button', { name: 'Open transcript' })).toBeNull();
     const line = within(screen.getByTestId('resolve-run-status'));
-    expect(line.getByRole('button', { name: 'View transcript' })).toBeDefined();
+    expect(line.getByRole('button', { name: 'Open transcript' })).toBeDefined();
     fireEvent.click(line.getByRole('button', { name: 'Stop' }));
     expect(await screen.findByText('Stop this fix run?')).toBeDefined();
   });
@@ -616,7 +616,7 @@ describe('Review as one flow', () => {
     const pushed = within(comment());
     expect(pushed.getByText(/^Nothing was pushed\. The branch on origin moved/)).toBeDefined();
     expect(pushed.queryByRole('button', { name: 'Push again' })).toBeNull();
-    expect(pushed.queryByRole('button', { name: 'Sync and try again' })).toBeNull();
+    expect(pushed.queryByRole('button', { name: 'Sync and retry' })).toBeNull();
     expect(pushed.queryByRole('button', { name: /^Push/ })).toBeNull();
   });
 

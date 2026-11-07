@@ -29,14 +29,14 @@ describe('skip a workflow step: the confirmation', () => {
     );
   });
 
-  it('says nothing starts until you resume when the run is paused', () => {
+  it('says nothing starts until you continue when the run is paused', () => {
     const run = aWorkflowRun({
       autoRun: true,
       orchestrationStop: { kind: 'paused', message: 'Paused by you.' },
     });
 
     expect(skipStepDescription({ run, agent: REVIEW, agents: [REVIEW, IMPLEMENT] })).toBe(
-      `${BODY} Nothing new starts until you resume.`,
+      `${BODY} Nothing new starts until you continue.`,
     );
   });
 

@@ -120,7 +120,7 @@ describe('resolveOrchestratorState', () => {
     expect(state.tone).toBe('warning');
     expect(state.sentence).toBe('Paused by you');
     expect(state.detail).toBe(
-      'Reviewer finishes its turn. Nothing new starts until you resume. The pause survives a restart.',
+      'Reviewer finishes its turn. Nothing new starts until you continue. The pause survives a restart.',
     );
   });
 
@@ -132,7 +132,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('paused');
-    expect(state.detail).toBe('Nothing new starts until you resume. Next: Tester.');
+    expect(state.detail).toBe('Nothing new starts until you continue. Next: Tester.');
   });
 
   it('never claims the run is stopped before the decision returns', () => {

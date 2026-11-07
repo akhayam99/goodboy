@@ -62,10 +62,10 @@ describe('u34 stuck step scenes', () => {
     expect(screen.queryByText(/without saying why/)).toBeNull();
   });
 
-  it('shows Skip and go on on the blocked row and Keep working in the input', async () => {
+  it('shows Skip step on the blocked row and Keep working in the input', async () => {
     renderScene({ id: 'u34-p25-blocked' });
 
-    await screen.findByRole('button', { name: /Skip and go on after/ }, WAIT);
+    await screen.findByRole('button', { name: /Skip step after/ }, WAIT);
     const keepWorking = screen.getAllByRole('button', { name: 'Keep working' })[0];
     expect(keepWorking).toBeDefined();
     expect(keepWorking?.hasAttribute('disabled')).toBe(true);

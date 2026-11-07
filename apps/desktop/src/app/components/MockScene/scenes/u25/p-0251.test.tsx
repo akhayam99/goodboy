@@ -71,9 +71,9 @@ describe('the p-0251 scenes', () => {
       </ToastProvider>,
     );
 
-    await screen.findByRole('region', { name: 'Context' }, WAIT);
+    const context = await screen.findByRole('region', { name: 'Context' }, WAIT);
     expect(screen.queryByRole('region', { name: 'Changed since you last looked' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Mark as read' })).toBeNull();
+    expect(within(context).queryByRole('button', { name: 'Mark as read' })).toBeNull();
   });
 
   it('ask-reset shows a two turn chat with New question in the header', async () => {

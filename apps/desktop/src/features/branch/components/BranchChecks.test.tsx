@@ -255,7 +255,7 @@ describe('Checks tab when nothing has reported', () => {
 
     expect(screen.getByText('No checks have reported on this pull request.')).toBeDefined();
     expect(screen.queryByText(/runs no checks/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /View on GitHub/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Open on GitHub/ }));
     expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/pull/318'));
   });
 });

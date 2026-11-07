@@ -138,13 +138,13 @@ type PausedParams = {
 const pausedDetail = ({ ordered }: PausedParams): string => {
   const running = ordered.find((agent) => agent.status === 'running');
   if (running != null) {
-    return `${running.name} finishes its turn. Nothing new starts until you resume. The pause survives a restart.`;
+    return `${running.name} finishes its turn. Nothing new starts until you continue. The pause survives a restart.`;
   }
   const next = ordered.find((agent) => agent.status === 'pending');
   if (next != null) {
-    return `Nothing new starts until you resume. Next: ${next.name}.`;
+    return `Nothing new starts until you continue. Next: ${next.name}.`;
   }
-  return 'Nothing new starts until you resume.';
+  return 'Nothing new starts until you continue.';
 };
 
 const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {

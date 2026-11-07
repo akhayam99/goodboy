@@ -214,7 +214,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
     expect(queued.getByRole('button', { name: 'Remove' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('Read N queued on a finished run, Continue and read N queued after Stop step', async () => {
+  it('Read N queued on a finished run, Continue after Stop step', async () => {
     await mount('c09-orch-done');
     patchRun({
       patch: {
@@ -234,7 +234,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
       },
     });
     await settle();
-    expect(tail().getByRole('button', { name: 'Continue and read 1 queued' })).toBeDefined();
+    expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
   it('Why each step: the latest reason folded under the tail, older ones in the step pane', async () => {

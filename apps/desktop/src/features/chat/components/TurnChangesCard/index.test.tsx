@@ -105,7 +105,7 @@ describe('TurnChangesCard', () => {
     expect(await screen.findByText('Changed 2 files in acme-notes')).toBeDefined();
     expect(screen.getByText('new file')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Review changes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open changes' }));
 
     expect(useAppStore.getState().sessionFileVersionSelectedPath[session.id]).toBe(
       folderChangeKey({ folderPath: NOTES_PATH, runId: RUN_ID, relativePath: 'launch-memo.md' }),

@@ -220,7 +220,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
                 FOCUS_RING,
               )}
             >
-              Go to chat
+              Open agent
             </button>
           </>
         )}

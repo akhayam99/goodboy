@@ -377,22 +377,21 @@ read top to bottom at the conversation measure:
   `run-step`, `RunStepDrawer`): the step conversation (`AgentDetailPane`,
   pinned to that agent) under the reason the orchestrator gave for it when that
   reason is not the latest decision (the latest sits under the tail), with
-  **View transcript** and **Open full** in its `⋯` (the `runStep` kind of the
+  **Open transcript** and **Open agent** in its `⋯` (the `runStep` kind of the
   action registry). The page keeps the one composer; you
-  talk to the step from **Open full**.
+  talk to the step from **Open agent**.
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
   end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and **Stop step
   3** (asks first, `stopWorkflowRunNow`), "Choosing the next step", "Waiting
   for your go", "Waiting for your answer on step 4", "Paused at the limit",
   "Last decision failed: ..." (model ids read as display
-  names, `modelNamesIn`) with **View
-  transcript**; the move each of those waits for is the header primary, never a
-  second button on the tail, a failed step with **Restart step**, a step blocked
+  names, `modelNamesIn`) with **Open transcript**; the move each of those waits for is the header primary, never a
+  second button on the tail, a failed step with **Retry step**, a step blocked
   on a question with the question inline (what the step agent closed with,
   `blockedQuestionOf` on its last reply, as markdown), an **Answer the step**
-  field with **Answer** as its primary action, **Restart step** as a secondary
-  button and **Open agent chat** next to it. A real open question (phase
+  field with **Answer** as its primary action, **Retry step** as a secondary
+  button and **Open agent** next to it. A real open question (phase
   `needs-answer`, a preset run's tail too) shows the same card as the transcript
   (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
   recommended one tagged, one pick or many, **Something else** for free text and
@@ -418,16 +417,16 @@ read top to bottom at the conversation measure:
   blocking questions of that run: they close as "Resolved by the agent" and are
   never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
   The header **Answer** still opens the drawer. A preset run's blocked step gets the inline question and a
-  secondary **Restart step**, and the restart prompt asks the agent to repeat a
+  secondary **Retry step**, and the restart prompt asks the agent to repeat a
   question it had asked. **Answer** sends the text to the
   step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
   send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
-  **Continue**, "No output for 15 min" with **Ask it to continue**, agents
+  **Continue**, "No output for 15 min" with **Continue**, agents
   a restart stopped with **Continue**, "Run complete" on a
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
-  **Stop step** the verb is **Continue and read 2 queued**. A run the
+  **Stop step** the verb is **Continue**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
-  no folded reason, **View transcript** on its tail (`orchestratedTailOf`, the
+  no folded reason, **Open transcript** on its tail (`orchestratedTailOf`, the
   last step's agent, same as a failed decision) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
@@ -496,7 +495,7 @@ stays with the orchestrator for the rest of the run. It waits for the next
 decision until it is read; then it shows as a gray row in the checklist at
 the step where the orchestrator first read it.
 
-- **Queue** is the primary button and waits until the next decision. You may queue several messages and remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the tail shows **Read 2 queued**, and one click starts one new decision with all of them in order. On a run you stopped the same verb reads **Continue and read 2 queued**
+- **Queue** is the primary button and waits until the next decision. You may queue several messages and remove them until they are read, and they survive a reload. On a finished run, nothing starts by itself: the tail shows **Read 2 queued**, and one click starts one new decision with all of them in order. On a run you stopped the same verb reads **Continue**
 - **Send now** is the quiet button. It restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
 - The help sits in each button's tooltip, not in a sentence under the field. Send now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter sends now. **Preview** shows it as markdown
@@ -642,8 +641,8 @@ an agent, with its role glyph), never a joined tooltip line.
 - **The run tail** (`RunTail`, phrases in `runTailOf`) speaks for the run at
   the end of the content, once: nothing while the step on screen runs (its
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open
-  step 2**, "No output for 15 min" with **Ask it to continue**, the open
-  question, a failed or stuck step with **Restart step**, "Paused
+  step 2**, "No output for 15 min" with **Continue**, the open
+  question, a failed or stuck step with **Retry step**, "Paused
   at the limit" (a step that never started also reads "Not
   started, the run paused at the limit."), the step that is ready, a stopped
   step with **Continue**, "Run finished" or "Stopped by you"
@@ -687,7 +686,7 @@ its Answer then opens the asking agent at that question.
 
 A failed, blocked or stopped step works the same way. The run row names it
 ("Step 4 failed", "Step 4 stopped by you") and offers nothing; the step's own
-row carries the one **Restart the step** or **Continue**. The run row keeps the
+row carries the one **Retry step** or **Continue**. The run row keeps the
 Restart only when the run is held on a failed step that no row of the run
 shows.
 
@@ -802,15 +801,15 @@ the workflow run row and at the top of the agent detail body, right under its
 header, and the conversation does not repeat it at the bottom. Every door
 (Activity, Workflow, the board, a toast) opens the agent on its one
 conversation (`AgentDetailPane`, `ChatView` `mode="conversation"`); there is no
-Brief and no Transcript tab, and **View transcript** opens the full record in
+Brief and no Transcript tab, and **Open transcript** opens the full record in
 the `transcript` drawer. The conversation stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs say the same states on
 their tail ([The orchestrated document](#the-orchestrated-document)), with **Skip step N** in the
 run `⋯` and **Answer** when the run waits on a question.
 
-- A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
-- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
-- A quiet step: "No output for 20 min" with the last event the turn sent ("Last event: read_file src/retry/backoff.ts") once a running step has said nothing for 15 minutes. **Ask it to continue** stops the silent turn and sends the agent a message to check where it stands and finish; **Skip** skips it. The clock is the shared `useNow` tick, no timer per agent, and it holds while a tool call or a permission request is still open, because a build or a test suite can print nothing for minutes (`quietSignal.ts`, `useQuietStep`). Goodboy never skips on its own
+- A failed step: "Implement stopped before finishing." with the steps that wait on it. **Continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
+- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
+- A quiet step: "No output for 20 min" with the last event the turn sent ("Last event: read_file src/retry/backoff.ts") once a running step has said nothing for 15 minutes. **Continue** stops the silent turn and sends the agent a message to check where it stands and finish; **Skip** skips it. The clock is the shared `useNow` tick, no timer per agent, and it holds while a tool call or a permission request is still open, because a build or a test suite can print nothing for minutes (`quietSignal.ts`, `useQuietStep`). Goodboy never skips on its own
 - A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrated tail says "Step 2 stopped by you" with **Continue**
 - An open question that no row of the run tree shows, such as one the orchestrator holds or one a question delegate asked: "Answer for Implement asks: ...", or "An agent asks: ..." when no agent asked, with the step that waits on it, and **Answer**, which opens the agent that asked at its question, or the questions view when no agent asked. A question a run tree agent asked stays on that agent's row, which already carries the question mark and **Answer**, so the strip never repeats it. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
@@ -987,7 +986,7 @@ while the run waited. So a workflow never runs it.
   out of the review facts, so the run tree shows the step state
 - A step that ends without its step-done marker keeps the same path as any
   other role: one automatic continue, then a blocked step with a notification and
-  the Next action strip (**Ask it to continue**, **Skip**)
+  the Next action strip (**Continue**, **Skip**)
 - Branch, Comments and the resolve lane are unchanged. The Resolve agent still
   runs there, one fix run per review thread
 
@@ -1561,4 +1560,3 @@ shows "Couldn't mark the step as ended" and leaves the step as it was.
 When the orchestrator creates the next step, the hints it read are marked read
 after the step exists (`consumeReadOrchestratorHints`). A failed write of that
 mark does not stop the step from starting: the hints stay unread and
-"Couldn't mark the hints as read" is shown.

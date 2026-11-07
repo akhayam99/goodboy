@@ -16,6 +16,7 @@ import { TimelineSkeleton } from '../../components/SessionWorkspace/parts/Timeli
 import { ActionColumnContext } from '../../components/SessionWorkspace/parts/TimelinePane/ActionColumnContext';
 import { useTimelineRowProps } from '../../components/SessionWorkspace/parts/TimelinePane/useTimelineRowProps';
 import { useTimelineRows } from '../../components/SessionWorkspace/parts/TimelinePane/useTimelineRows';
+import { NAMES } from '../../../../shared/utils/names';
 
 const MARK_SEEN_KEY = 'mark-all-seen';
 
@@ -100,7 +101,7 @@ export const LogPane = ({ session, focusEntryId = null }: Props) => {
               }
             >
               <CheckCheck size={ICON_SIZE.row} aria-hidden />
-              Mark all seen
+              {NAMES.markAsRead}
             </Button>
           ) : null}
         </div>

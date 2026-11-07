@@ -126,7 +126,7 @@ included, adds no description line.
 A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
 fixed `h-8` row) through the custom `header` slot. The agent detail passes
 `AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
-name on hover) and the provider mark, then the actions, **View transcript** and the
+name on hover) and the provider mark, then the actions, **Open transcript** and the
 overflow menu. No meta line, no state, no model and no tabs (the state is the
 conversation tail, the model sits in each turn footer), and the conversation under it
 starts 8px down (`ChatView` `topInset="tight"`, `mode="conversation"`). A page that must show a banner

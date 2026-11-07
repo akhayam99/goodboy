@@ -92,7 +92,7 @@ export const NextGroup = ({
       <Button
         size="sm"
         variant="secondary"
-        aria-label={`Retry the ${bulk.cards.length} stuck agents`}
+        aria-label={`Retry ${bulk.cards.length} agents`}
         isBusy={retries.some((actions) => actions.isBusy)}
         onClick={() => {
           for (const actions of retries) {

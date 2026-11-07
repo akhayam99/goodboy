@@ -87,7 +87,7 @@ describe('the next step scene', () => {
       within(card)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Not now', 'Add a hint', expect.any(String)]);
+    ).toEqual(['Decline', 'Add a hint', expect.any(String)]);
     expect(card.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
     expect(card.querySelectorAll('.bg-warning')).toHaveLength(1);
   });
@@ -121,7 +121,7 @@ describe('the next step scene', () => {
     mount();
 
     const card = await screen.findByRole('region', { name: 'Next step' }, WAIT);
-    fireEvent.click(within(card).getByRole('button', { name: 'Not now' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Decline' }));
 
     await waitFor(() =>
       expect(port).toHaveBeenCalledWith(expect.objectContaining({ decision: 'decline' })),
