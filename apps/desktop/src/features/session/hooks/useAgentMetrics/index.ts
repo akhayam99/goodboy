@@ -1,17 +1,11 @@
 import { useMemo } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core/providers';
-import type {
-  Agent,
-  AgentId,
-  ProviderName,
-  ProviderRunId,
-  SessionId,
-  TelemetryRecord,
-} from '@goodboy/types';
+import type { Agent, AgentId, ProviderName, SessionId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../components/AgentTree/ContextWindowBar';
 import type { AgentAggregate } from '../../agentAggregate';
+import { useSessionRunHistory } from '../useSessionRunHistory';
+import { agentSpendById } from '../../timeline/agentSpendById';
 import { childAgentsByParent } from '../../../../shared/utils/childAgentsByParent';
 
 export type AgentMetrics = {
@@ -71,7 +65,6 @@ const aggregatesByRunId = ({ telemetry }: TelemetryParams): Map<string, MutableA
       estimatedCostUsd: 0,
       turns: 0,
     };
-    aggregate.estimatedCostUsd += record.estimatedCostUsd;
     map.set(record.runId, aggregate);
     if (record.kind !== 'turn') {
       continue;
@@ -105,22 +98,7 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
   const messages = useAppStore((s) => s.messages[sessionId] ?? EMPTY_ARRAY);
-  const agentRunHistory = useAppStore(
-    useShallow((s) => {
-      const out: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      const runs = s.sessionPhaseRuns[sessionId];
-      if (runs == null) {
-        return out;
-      }
-      for (const run of runs) {
-        const history = s.agentRunHistory[run.id];
-        if (history != null) {
-          out[run.id] = history;
-        }
-      }
-      return out;
-    }),
-  );
+  const agentRunHistory = useSessionRunHistory({ sessionId });
 
   const telemetryByRunId = useMemo(() => latestTurnTelemetryByRunId({ telemetry }), [telemetry]);
 
@@ -153,7 +131,6 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         }
         totals.inputTokens += rec.inputTokens;
         totals.outputTokens += rec.outputTokens;
-        totals.estimatedCostUsd += rec.estimatedCostUsd;
         totals.turns += rec.turns;
       }
       map.set(run.id, totals);
@@ -177,12 +154,22 @@ export const useAgentMetrics = ({ sessionId }: Params): AgentMetrics => {
         }
         self.inputTokens += child.inputTokens;
         self.outputTokens += child.outputTokens;
-        self.estimatedCostUsd += child.estimatedCostUsd;
         self.turns += child.turns;
       }
     };
     for (const run of phaseRuns) {
       rollup(run.id);
+    }
+    const spendByAgentId = agentSpendById({
+      records: telemetry,
+      agents: phaseRuns,
+      agentRunHistory,
+    });
+    for (const run of phaseRuns) {
+      const totals = map.get(run.id);
+      if (totals !== undefined) {
+        totals.estimatedCostUsd = spendByAgentId.get(run.id) ?? 0;
+      }
     }
     return map;
   }, [telemetry, phaseRuns, agentRunHistory]);

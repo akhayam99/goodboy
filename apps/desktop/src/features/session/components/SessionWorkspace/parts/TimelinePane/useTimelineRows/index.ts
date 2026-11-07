@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import type { SessionWorktree } from '@goodboy/db';
-import type {
-  Agent,
-  ProviderRunId,
-  Session,
-  SessionId,
-  Step,
-  TelemetryRecord,
-} from '@goodboy/types';
+import type { Session, SessionId, Step, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../../store';
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
+import { useSessionRunHistory } from '../../../../../hooks/useSessionRunHistory';
 import { useSessionWorkModel } from '../../../../../central/useSessionWorkModel';
 import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
 import { logEntriesMatching } from '../../../../../timeline/logSearch';
@@ -99,18 +92,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const telemetry = useAppStore(
     (s) => s.sessionTelemetry[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>),
   );
-  const agentRunHistory = useAppStore(
-    useShallow((s) => {
-      const history: Record<string, ReadonlyArray<ProviderRunId>> = {};
-      for (const agent of s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>)) {
-        const runIds = s.agentRunHistory[agent.id];
-        if (runIds != null) {
-          history[agent.id] = runIds;
-        }
-      }
-      return history;
-    }),
-  );
+  const agentRunHistory = useSessionRunHistory({ sessionId });
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const [measuredHeights, setMeasuredHeights] = useState<ReadonlyMap<string, number>>(new Map());
 
