@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, IsoDateTime, TurnState } from '@goodboy/types';
+import type { Agent, IsoDateTime, TurnProviderOverride, TurnState } from '@goodboy/types';
 import { aSession, anAgent, nextProviderRunId } from '@goodboy/types/testing';
-import type { SendTurnResult } from '../turn/types';
+import type { SendTurnInput, SendTurnResult } from '../turn/types';
+import { claimWorkflowTurn, resetWorkflowTurnBreaker } from '../turn/workflowTurnBreaker';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -28,7 +29,10 @@ const session = aSession();
 const blockedAgent: Agent = anAgent({ sessionId: session.id, status: 'blocked' });
 
 let useAppStore: StoryStore;
-const sendTurn = vi.fn(async (): Promise<SendTurnResult> => ({ blockedOverBudget: false }));
+const sendTurn = vi.fn(async (input: SendTurnInput): Promise<SendTurnResult> => {
+  input.onStarted?.();
+  return { blockedOverBudget: false };
+});
 
 const STARTED_AT: IsoDateTime = JSON.parse('"2026-10-16T15:00:00.000Z"');
 
@@ -57,6 +61,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
+  resetWorkflowTurnBreaker();
   seed({ agent: blockedAgent });
 });
 
@@ -146,5 +151,51 @@ describe('answerBlockedStep', () => {
         .getState()
         .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
     ).rejects.toThrow('provider unavailable');
+  });
+
+  it('refuses and tells the user when the send starts no turn', async () => {
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: false });
+
+    await expect(
+      useAppStore
+        .getState()
+        .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
+    ).rejects.toThrow('did not start a turn');
+  });
+
+  it('keeps the answer when the lane queued it behind another turn', async () => {
+    sendTurn.mockResolvedValueOnce({ blockedOverBudget: false, isLaneQueued: true });
+
+    await expect(
+      useAppStore
+        .getState()
+        .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('treats the answer as attended, so a tripped unattended breaker does not eat it', async () => {
+    for (let count = 0; count < 4; count += 1) {
+      claimWorkflowTurn({ agentId: blockedAgent.id, nowMs: Date.now() });
+    }
+    expect(claimWorkflowTurn({ agentId: blockedAgent.id, nowMs: Date.now() })).toBe('tripped');
+
+    await useAppStore
+      .getState()
+      .answerBlockedStep({ sessionId: session.id, agentId: blockedAgent.id, text: 'Go on' });
+
+    expect(claimWorkflowTurn({ agentId: blockedAgent.id, nowMs: Date.now() })).toBe('granted');
+  });
+
+  it('sends the answer on the route the composer picked', async () => {
+    const override: TurnProviderOverride = { providerId: 'codex', model: 'gpt-6' };
+
+    await useAppStore.getState().answerBlockedStep({
+      sessionId: session.id,
+      agentId: blockedAgent.id,
+      text: 'Go on',
+      override,
+    });
+
+    expect(sendTurn).toHaveBeenCalledWith(expect.objectContaining({ override }));
   });
 });

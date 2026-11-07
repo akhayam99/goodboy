@@ -8,6 +8,7 @@ import { ArmedActionPopover } from '../../../../shared/components/HeaderConfirm/
 import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ArtifactHeaderMenuContext, artifactViewingOf } from './artifactHeaderMenu';
 import { ArtifactOverflowMenu } from './ArtifactOverflowMenu';
+import { artifactHeaderOmitOf } from './artifactHeaderOmitOf';
 import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 
 type Props = {
@@ -104,6 +105,7 @@ export const ArtifactShellActions = ({ target, details = null }: Props) => {
                   label="More"
                   size="control"
                   viewing={viewing}
+                  omit={artifactHeaderOmitOf({ actions })}
                   onArm={(next) => setArmed({ armed: next, origin: MENU_ORIGIN })}
                 />
               )}

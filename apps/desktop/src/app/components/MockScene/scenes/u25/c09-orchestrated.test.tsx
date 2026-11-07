@@ -140,7 +140,7 @@ describe('the c09 orchestrated scenes', () => {
     ]);
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
     expect(within(tail()).getByText(/^Step 3 is running: Tester/)).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Stop step 3' })).toBeDefined();
+    expect(within(tail()).queryByRole('button', { name: /^Stop step/ })).toBeNull();
     expect(within(tail()).queryByRole('button', { name: 'Why this step' })).toBeNull();
     const queued = screen.getByRole('list', { name: 'Queued hints' });
     expect(screen.getAllByText('Queued, read at the next decision')).toHaveLength(1);

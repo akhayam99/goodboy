@@ -378,16 +378,20 @@ read top to bottom at the conversation measure:
   orchestrator gave for it at the top (`stepReasonOf`).
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
-  end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and **Stop step
-  3** (asks first, `stopWorkflowRunNow`), "Choosing the next step", "Waiting
+  end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and no Stop verb (the one Stop is in the dock; **Continue** brings the cut step back), "Choosing the next step", "Waiting
   for your go", "Waiting for your answer on step 4", "Paused at the limit",
-  "Last decision failed: ..." (model ids read as display
-  names, `modelNamesIn`) with **Open transcript**; the move each of those waits for is the header primary, never a
-  second button on the tail, a failed step with **Retry step**, a step blocked
-  on a question reads **Not finished** with **Retry step** and **Open agent** next to it, an **Answer the step** field with **Keep working**, and no
-  reason: the question (what the step agent closed with, `blockedQuestionOf` on
-  its last reply, as markdown) and the "This step ended without a result" notice
-  show only on the step page (`OrchestratedBlockedStep` `isReasonShown`). A real
+  "Last decision failed: ..." (the stop message, or "no reason was recorded.", through `decisionFailureOf`; model ids read as display
+  names, `modelNamesIn`; the run glance says it too) with **Open
+  transcript**; the move each of those waits for is the header primary, never a
+  second button on the tail. A halted step (failed, or blocked on a question
+  or an ended turn) reads **Needs you** once on the run page (the glance; the
+  tail line stays out, `phase` `step-failed`) and **Open step 3** in the
+  header (`runPrimaryOf` kind `open-step`, step number from
+  `OrchestratorState.haltedStepNumber`), with no reason, no field and no step
+  verb on the run page. The step page keeps the question once, in the
+  transcript, and holds one state line in the conversation dock
+  (`ConversationDock/DockStepLine`, the word from `runStateFromKind`
+  `halted-blocked`) with **Retry** and **Continue**. A real
   open question (phase
   `needs-answer`, a preset run's tail too) shows the same card as the transcript
   (`RunOpenQuestion` renders `OpenQuestionCluster`): the suggestions, the
@@ -413,19 +417,20 @@ read top to bottom at the conversation measure:
   to continue, and a step that asks again in a later turn replaces its earlier
   blocking questions of that run: they close as "Resolved by the agent" and are
   never sent (`holdForUserQuestion`, `supersedeEarlierBlockingQuestions`).
-  The header **Answer** still opens the drawer. A preset run's blocked step reads **Not finished** with a
-  secondary **Retry step** on the run page, and gets the inline question on its
-  own step page. The restart prompt asks the agent to repeat a
-  question it had asked. **Answer** sends the text to the
-  step agent as a workflow turn (`answerBlockedStep`) and continues the step; a
-  send that fails, or that the session budget or a busy folder stops before the turn starts, keeps the text and says so inline. A stopped step with
+  The header **Answer** still opens the drawer. A preset run's halted step reads **Needs you** with **Open step 2** on the run page (`runPrimaryOf` gives a static run an `open-step` primary through `haltedStepOf`), and gets
+  **Not finished**, the inline question, one **Continue** field and **Retry** on its own step
+  page. The restart prompt asks the agent to repeat a
+  question it had asked. **Continue** with text sends the text to the
+  step agent as a workflow turn (`answerBlockedStep`) and continues the step, with no text it asks
+  the step to continue (`askAgentToContinue`); a
+  send that fails, that the session budget or a busy folder stops, or that starts no turn (`answerBlockedStep` waits for `onStarted`), keeps the text and says so inline. A stopped step with
   **Continue**, "No output for 15 min" with **Continue**, agents
   a restart stopped with **Continue**. A finished run has no tail, only the
   result under the list. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
-  **Stop step** the verb is **Continue**, and its tooltip counts the queued hints it goes on with. A run the
+  a stop the verb is **Continue and read 2 queued**. A run the
   orchestrator stopped on a human call shows its reason inline as markdown, with
   no folded reason, **Open transcript** on its tail (`orchestratedTailOf`, the
-  last step's page, same as a failed decision) and **Add a hint and continue** at the dock
+  last step's page, same as a failed decision); that page carries the reason as its "Why:" line (`stepReasonOf`) and **Add a hint and continue** at the dock
   (`continueWithHint` clears the block, then the orchestrator decides again with
   the hint; a hint is marked read only once a step started with it, so a
   blocked decision, a step that was not created and a next step the routing
@@ -600,7 +605,7 @@ the row before the title is cut, then the model (below 920) and the origin
 (below 928, only while no row has a model, `yieldsTo`) (`runsGridColumns.ts`). A row is the button;
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
-of the Agents panel reads. The page opens on the list with a quiet **Start a run** row that opens
+of the Agents panel reads. `runRowFactsOf` computes no word of its own: it reads `runStateOf`, the one function that holds the word, the page word, the tone, the primary kind and whether the run needs you for every way a run stops. The run tail and the glance read the same table (`runStateOfPrimary`), so a halted step is **Needs you** on the run page and **Not finished** or **Failed** in the list, from one place. The page opens on the list with a quiet **Start a run** row that opens
 the field (`StartRun`, see [Start a run](features/start.md#start-a-run)) in place and **Esc** closes it;
 a session with no run shows the field alone.
 
@@ -711,8 +716,8 @@ tooltip line.
   the end of the content, once: nothing while the step on screen runs (its
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open
   step 2**, "No output for 15 min" with **Continue**, the open
-  question, a failed step with **Retry step** (a blocked one reads **Not finished**, one
-  word: its reason is on its step page), "Paused
+  question, a halted step with **Open step N** and the word **Needs you** (on its step page a blocked
+  one reads **Not finished** with **Retry**: its reason is on its step page), "Paused
   at the limit" (a step that never started also reads "Not
   started, the run paused at the limit."), the step that is ready, a stopped
   step with **Continue**, or "Stopped by you" with no verb. A finished run and an
@@ -961,7 +966,7 @@ the session.
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
 - **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Continue** starts where the run left off, static or orchestrated, and never changes when to ask
-- **Stop step N**, on the orchestrated tail, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The run reads **Stopping** until the step's process has exited, then **Stopped**; the cut step reads **Not finished** and **Continue** picks that same step up, with everything it already wrote kept. If the process does not exit, the run stays running, a warning says the step did not stop, and **Stop step N** is there again (`stopWorkflowRunNow`, `cancelRunningSteps`). **Stop run** in the run header ends the run ([Closing a workflow](#closing-a-workflow))
+- **Stop** in the dock (**Stop all running agents** in the session menu) stops the step that is running and holds the run; the orchestrated tail has no **Stop step N** verb. The run reads **Stopping** until the step's process has exited, then **Stopped**; the cut step reads **Not finished** and **Continue** picks that same step up, with everything it already wrote kept. If the process does not exit, the run stays running, a warning says the step did not stop, and the dock **Stop** is there again. **Stop run** in the run header ends the run ([Closing a workflow](#closing-a-workflow))
 - **Continue** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
@@ -1615,12 +1620,24 @@ two states:
   to continue and Skip.
 
 A step that `watchStepEnd` set to `blocked` reads "This step ended without a result" on
-its step page (`OrchestratedBlockedStep` in `RunTail`, only for the step on screen)
-and on the agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. The run
-page reads only **Not finished** for it, with the answer field and **Retry step**. It offers
-**Continue** (`askAgentToContinue`) and **Mark step done** (`markStepDone`,
-which finalizes the step with `force` from the agent's last words and lets the
-run advance). `watchStepEnd` records the end time it set in
+the agent page (`WorkflowAdvanceStack`), through `StepEndedNotice`. The run
+page reads only **Needs you** for it, with **Open step N**. The notice offers
+**Mark step done** (`markStepDone`, which finalizes the step with `force` from
+the agent's last words and lets the run advance). **Continue** and **Retry**
+live only in the dock of a blocked step (`DockStepLine`). The composer reads
+"Answer the step"; with text, **Continue** or Enter answers the step
+(`answerBlockedStep`, through `useBlockedStepAnswer`), with no text
+**Continue** asks it to go on (`askAgentToContinue`). The text leaves the
+field before the turn starts and comes back (`restoreDraftOnFailedSend`) with
+the failure on the dock line when the answer fails; one press at a time goes
+through. With attachments in the field the answer is not sent and the dock line
+says to remove them. An open ask, a live turn of the step or a blocked composer (archived session,
+provider signed out) hides the line or disables **Continue**, and Enter then goes through
+the normal composer path (queue, permission answer). The press counts as attended: both
+commands clear the unattended-turn count of the step (`clearWorkflowTurns`) and carry
+the route the composer shows (`routingOverride`) to `sendTurn`. The Sessions
+reason of a run with a halted step reads the word of `runStateOf` for that run
+(**Not finished** or **Failed**), through `stoppedRunWord`. `watchStepEnd` records the end time it set in
 `silentlyEndedSteps`, and the notice shows only while the agent's `completedAt`
 still equals it. A step blocked for any other reason (a missing artifact, a
 question, the unattended-turn breaker, a budget stop) keeps its own copy.

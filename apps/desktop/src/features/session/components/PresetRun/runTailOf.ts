@@ -1,8 +1,9 @@
-import { NAMES } from '../../../../shared/utils/names';
+import { isAgentStatusHalted } from '@goodboy/core/workflows';
 import type { Agent, AgentId, OpenQuestion, Workflow, WorkflowRun } from '@goodboy/types';
 import type { TailState } from '../../../live-state/tailFacts';
 import type { NextAction } from '../../../workflows/resolveNextAction';
-import type { RunPrimary } from '../../../workflows/runPrimaryOf';
+import { openStepLabelOf, type RunPrimary } from '../../../workflows/runPrimaryOf';
+import { runStateOfPrimary } from '../../../workflows/runStateOf';
 import { NOT_FINISHED } from '../../../workTreeModel/rowStateCopy';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { stepNumberOf } from './stepNumberOf';
@@ -66,12 +67,28 @@ type DynamicWord = {
   readonly phrase: string;
 };
 
-const DYNAMIC_WORDS = {
-  continue: { state: 'stopped', phrase: 'Stopped' },
-  retry: { state: 'failed', phrase: 'Failed' },
-  hint: { state: 'needsYou', phrase: NAMES.needsYou },
-  'decide-next': { state: 'idle', phrase: 'Ready' },
-} as const satisfies Readonly<Record<string, DynamicWord>>;
+type DynamicParams = {
+  readonly kind: 'continue' | 'retry' | 'hint' | 'decide-next';
+};
+
+const dynamicStateOf = ({ kind }: DynamicParams): TailState => {
+  if (kind === 'continue') {
+    return 'stopped';
+  }
+  return kind === 'retry' ? 'failed' : 'needsYou';
+};
+
+const DECIDE_NEXT_WORD: DynamicWord = { state: 'idle', phrase: 'Ready' };
+
+const dynamicWordOf = ({ kind }: DynamicParams): DynamicWord => {
+  if (kind === 'decide-next') {
+    return DECIDE_NEXT_WORD;
+  }
+  return {
+    state: dynamicStateOf({ kind }),
+    phrase: runStateOfPrimary({ primary: kind }).pageWord,
+  };
+};
 
 type PrimaryParams = {
   readonly run: WorkflowRun;
@@ -138,13 +155,25 @@ const primaryTailOf = ({
         verb,
       };
     case 'answer':
-      return { state: 'waiting', phrase: NAMES.needsYou, stepAgentId: null, verb };
+      return {
+        state: 'waiting',
+        phrase: runStateOfPrimary({ primary: 'answer' }).pageWord,
+        stepAgentId: null,
+        verb,
+      };
+    case 'open-step':
+      return {
+        state: 'needsYou',
+        phrase: runStateOfPrimary({ primary: 'open-step' }).pageWord,
+        stepAgentId: null,
+        verb: isStepPage ? { kind: 'openRun' } : verb,
+      };
     case 'continue':
     case 'retry':
     case 'hint':
     case 'decide-next':
       return {
-        ...DYNAMIC_WORDS[primary.kind],
+        ...dynamicWordOf({ kind: primary.kind }),
         stepAgentId: null,
         verb: isStepPage ? { kind: 'openRun' } : verb,
       };
@@ -221,7 +250,7 @@ export const runTailOf = ({
   if (question !== null) {
     return {
       state: stoppedTail?.state ?? 'waiting',
-      phrase: stoppedTail?.phrase ?? NAMES.needsYou,
+      phrase: stoppedTail?.phrase ?? runStateOfPrimary({ primary: 'answer' }).pageWord,
       stepAgentId: null,
       verb: { kind: 'answer', question },
     };
@@ -235,8 +264,21 @@ export const runTailOf = ({
     };
   }
   if (nextAction.kind === 'recover') {
+    const halted = steps.find((agent) => isAgentStatusHalted({ status: agent.status })) ?? null;
+    if (selectedRootId === null && halted !== null) {
+      return {
+        state: 'needsYou',
+        phrase: runStateOfPrimary({ primary: 'open-step' }).pageWord,
+        stepAgentId: null,
+        verb: {
+          kind: 'openStep',
+          agentId: halted.id,
+          label: openStepLabelOf({ number: stepNumberOf({ workflow, agent: halted }) }),
+        },
+      };
+    }
     return {
-      state: 'failed',
+      state: nextAction.isBlocked ? 'needsYou' : 'failed',
       phrase: nextAction.isBlocked ? NOT_FINISHED : nextAction.sentence,
       stepAgentId: null,
       verb: { kind: 'recover' },

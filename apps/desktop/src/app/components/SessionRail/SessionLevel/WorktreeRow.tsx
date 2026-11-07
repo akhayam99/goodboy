@@ -18,6 +18,7 @@ import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { BranchRowAnchors } from './BranchRowAnchors';
 import { BranchRowLine } from './BranchRowLine';
 import { branchRowChipOf } from './branchRowChipOf';
+import { MOUNT_ROW_CUTS } from './mountRowCuts';
 import { useWorktreeCheckRuns } from './useWorktreeCheckRuns';
 import { useWorktreeRowState } from './useWorktreeRowState';
 
@@ -136,6 +137,7 @@ export const WorktreeRow = ({
             label={`${row.projectName} · ${facts.branch} actions`}
             tooltip={ROW_MENU_TOOLTIP}
             size="compact"
+            cuts={MOUNT_ROW_CUTS}
             hideWhenEmpty
           />
         </span>

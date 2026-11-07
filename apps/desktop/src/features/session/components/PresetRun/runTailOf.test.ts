@@ -237,48 +237,62 @@ describe('runTailOf', () => {
     });
   });
 
-  it('reads a blocked step as Not finished and keeps the Retry step door', () => {
+  const recoverOf = ({ isBlocked }: { readonly isBlocked: boolean }) => {
     const step = WORKFLOW.steps[1];
     if (step === undefined) {
       throw new Error('no step');
     }
+    return {
+      kind: 'recover',
+      subjectAgentId: IMPLEMENTER,
+      step,
+      isBlocked,
+      sentence: 'Fix stopped before finishing.',
+      cause: 'The run finishes once this step is done.',
+    } as const;
+  };
+
+  it.each([
+    ['blocked', true],
+    ['failed', false],
+  ] as const)(
+    'reads a %s step on the run page as Needs you with Open step',
+    (status, isBlocked) => {
+      expect(
+        tailOf({
+          agents: agentsOf({ scout: 'completed', implementer: status }),
+          nextAction: recoverOf({ isBlocked }),
+        }),
+      ).toEqual({
+        state: 'needsYou',
+        phrase: 'Needs you',
+        stepAgentId: null,
+        verb: { kind: 'openStep', agentId: IMPLEMENTER, label: 'Open step 2' },
+      });
+    },
+  );
+
+  it('reads a blocked step on its own page as Not finished and keeps Retry', () => {
     expect(
       tailOf({
         agents: agentsOf({ scout: 'completed', implementer: 'blocked' }),
-        nextAction: {
-          kind: 'recover',
-          subjectAgentId: IMPLEMENTER,
-          step,
-          isBlocked: true,
-          sentence:
-            'Fix stopped without finishing and without asking you anything. Tell it what to do next.',
-          cause: 'The run finishes once this step is done.',
-        },
+        selectedRootId: IMPLEMENTER,
+        nextAction: recoverOf({ isBlocked: true }),
       }),
     ).toEqual({
-      state: 'failed',
+      state: 'needsYou',
       phrase: 'Not finished',
       stepAgentId: null,
       verb: { kind: 'recover' },
     });
   });
 
-  it('keeps the sentence of a failed step', () => {
-    const step = WORKFLOW.steps[1];
-    if (step === undefined) {
-      throw new Error('no step');
-    }
+  it('keeps the sentence of a failed step on its own page', () => {
     expect(
       tailOf({
         agents: agentsOf({ scout: 'completed', implementer: 'failed' }),
-        nextAction: {
-          kind: 'recover',
-          subjectAgentId: IMPLEMENTER,
-          step,
-          isBlocked: false,
-          sentence: 'Fix stopped before finishing.',
-          cause: 'The run finishes once this step is done.',
-        },
+        selectedRootId: IMPLEMENTER,
+        nextAction: recoverOf({ isBlocked: false }),
       }),
     ).toMatchObject({ phrase: 'Fix stopped before finishing.', verb: { kind: 'recover' } });
   });

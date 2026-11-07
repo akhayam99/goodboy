@@ -168,7 +168,7 @@ Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim,
 
 ### Explore
 
-Browse the session folder as a file tree, with a preview of the selected file beside it, **Open** and **Copy**. Files that changed against the base branch carry a letter, and **Changed** lists only those. **Ask about this file** on a file row opens **Start a run** with the file attached: write the ask, and Auto routes it like any other.
+Browse the session folder as a file tree, with a preview of the selected file beside it, **Open** and **Copy**. Files that changed against the base branch carry a letter, and the **Changed only** switch beside the project chip lists only those. **Ask about this file** on a file row opens **Start a run** with the file attached: write the ask, and Auto routes it like any other.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-dark.webp">
@@ -188,5 +188,6 @@ This part is for contributors and agents who change the feature.
 - One spelling per key: hints read the shortcut registry through the `shortcut` prop or `shortcutGlyphs`.
 - Stop the running agent: the registry id is `agent.stop`.
 - Service usage: `serviceUsageCardOf` builds the card with CPU and memory.
+- Explore: `ExplorePane` draws the `Changed only` switch beside the project chip, only while the folder has changed files or the switch is on.
 
 - Context entry: `togglePane` and `openContextDrawer` default to Goal; `withoutRemovedPages` restores former Context addresses beside Overview.

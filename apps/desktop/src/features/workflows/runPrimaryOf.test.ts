@@ -16,11 +16,13 @@ const dynamic = ({
   phase,
   hasQuestion = false,
   isAutoRun = false,
+  haltedStepNumber = null,
 }: {
   readonly phase: OrchestratorPhase;
   readonly hasQuestion?: boolean;
   readonly isAutoRun?: boolean;
-}): RunFlow => ({ kind: 'dynamic', phase, hasQuestion, isAutoRun });
+  readonly haltedStepNumber?: number | null;
+}): RunFlow => ({ kind: 'dynamic', phase, hasQuestion, isAutoRun, haltedStepNumber });
 
 const EXPECTED_BY_PHASE: Readonly<Record<OrchestratorPhase, RunPrimaryKind | null>> = {
   deciding: null,
@@ -38,7 +40,7 @@ const EXPECTED_BY_PHASE: Readonly<Record<OrchestratorPhase, RunPrimaryKind | nul
   'plan-revising': null,
   'plan-question': 'answer',
   failed: 'retry',
-  'step-failed': null,
+  'step-failed': 'open-step',
   stopped: 'continue',
   done: null,
 };
@@ -74,6 +76,7 @@ describe('runPrimaryOf over every orchestrator phase', () => {
       new Set([
         'Continue',
         'Decide next step',
+        'Open step',
         'Answer',
         'Raise limit',
         'Retry',
@@ -82,6 +85,41 @@ describe('runPrimaryOf over every orchestrator phase', () => {
         'Continue',
       ]),
     );
+  });
+});
+
+describe('runPrimaryOf on a halted step', () => {
+  it('names the step to open', () => {
+    const primary = live({
+      flow: dynamic({ phase: 'step-failed', haltedStepNumber: 3 }),
+    });
+
+    expect(primary).toEqual({ kind: 'open-step', label: 'Open step 3' });
+  });
+
+  it('opens a step without a number when none is known', () => {
+    expect(live({ flow: dynamic({ phase: 'step-failed' }) })).toEqual({
+      kind: 'open-step',
+      label: 'Open step',
+    });
+  });
+});
+
+describe('runPrimaryOf on a static run with a halted step', () => {
+  it('names the step to open instead of the next step', () => {
+    const primary = live({
+      flow: { kind: 'static', isPaused: false, nextStepNumber: 3, haltedStep: { number: 2 } },
+    });
+
+    expect(primary).toEqual({ kind: 'open-step', label: 'Open step 2' });
+  });
+
+  it('lets a pause by the user come first', () => {
+    const primary = live({
+      flow: { kind: 'static', isPaused: true, nextStepNumber: 3, haltedStep: { number: 2 } },
+    });
+
+    expect(primary?.kind).toBe('resume');
   });
 });
 

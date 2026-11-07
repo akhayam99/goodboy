@@ -4,7 +4,6 @@ import type { ComposerControlSlots } from './composerControlSlots';
 import { ConversationColumn } from '../ConversationColumn';
 import { ConversationDock } from '../ConversationDock';
 import type { ConversationDockSlots } from '../ConversationDock/conversationDockSlots';
-import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions/QuickActionsPopover';
 import { useAttachments } from './hooks/useAttachments';
@@ -23,17 +22,18 @@ import { useComposerSend } from './hooks/useComposerSend';
 import { useComposerSuggestions } from './hooks/useComposerSuggestions';
 import { useFirstMessageFocus } from './hooks/useFirstMessageFocus';
 import { useConversationStop } from './hooks/useConversationStop';
+import { useBlockedStepAnswer } from './hooks/useBlockedStepAnswer';
 import { composerKeyDown } from './composerKeyDown';
 import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
 import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
 import { ComposerBox } from './parts/ComposerBox';
-import { ComposerCliGate } from './parts/ComposerCliGate';
-import { WriterWaitBand } from '../WriteDestinationControl/WriterWaitBand';
+import { ComposerGates } from './parts/ComposerGates';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
 import { ComposerToolbar } from './parts/ComposerToolbar';
+import { ComposerRoutingHint } from './parts/ComposerRoutingHint';
 import { ComposerTray } from './parts/ComposerTray';
 import { autoTreeOfAgent } from '../../../auto/autoTreeOfAgent';
 import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
@@ -77,9 +77,9 @@ export const ChatInput = ({
     isDragging,
     composerRef,
     fileInputRef,
-    onPaste,
     onFileInputChange,
     removeAttachment,
+    files,
     cleanupSentAttachments,
     isRestored,
     attachOutputHandoffs,
@@ -185,8 +185,20 @@ export const ChatInput = ({
     attachmentCount: attachments.length,
   });
 
-  const placeholder =
-    isBlocked || placeholderOverride === undefined ? defaultPlaceholder : placeholderOverride;
+  const {
+    step: blockedStep,
+    placeholder,
+    sendDraft,
+  } = useBlockedStepAnswer({
+    sessionId: session.id,
+    agentId: selectedAgentId,
+    hasDraft: !isEmpty,
+    hasAttachments: attachments.length > 0,
+    isBlocked,
+    override: routing.routingOverride,
+    basePlaceholder: isBlocked ? defaultPlaceholder : (placeholderOverride ?? defaultPlaceholder),
+    onSend,
+  });
 
   useFirstMessageFocus({ wrapperRef, selectedAgentId, shouldFocusFirstMessage });
 
@@ -206,14 +218,12 @@ export const ChatInput = ({
 
   return (
     <ConversationColumn className="flex flex-col gap-2 pb-4 pt-2">
-      {!isRunning && !providerDisconnected && (
-        <RoutingIndicator
-          sessionPreference={session.providerPreference}
-          turnOverride={routing.routingOverride}
-          connectedProviders={routing.connectedProviderIds}
-          onSendAnyway={canSend ? () => void onSendAnyway() : (sendHeldAnyway ?? undefined)}
-        />
-      )}
+      <ComposerRoutingHint
+        session={session}
+        routing={routing}
+        isShown={!isRunning && !providerDisconnected}
+        onSendAnyway={canSend ? () => void onSendAnyway() : (sendHeldAnyway ?? undefined)}
+      />
       <div className="flex flex-col">
         {hasTray && (
           <ComposerTray
@@ -235,12 +245,9 @@ export const ChatInput = ({
             stop={stop}
             isStopArmed={isArmed}
             failure={dock?.failure ?? null}
+            step={blockedStep}
           />
-          <ComposerCliGate
-            provider={routing.effectiveProvider}
-            modelId={routing.effectiveModelId}
-          />
-          <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
+          <ComposerGates sessionId={session.id} agentId={selectedAgentId} routing={routing} />
           <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
           <div className="relative" ref={wrapperRef} data-composer-field="">
             {popoverOpen ? (
@@ -257,19 +264,11 @@ export const ChatInput = ({
               label="Message to the agent"
               value={value}
               onChange={onValueChange}
-              onSubmit={(mode) => void (mode === 'now' && isRunning ? onSendNow() : onSend())}
+              onSubmit={(mode) => (mode === 'now' && isRunning ? void onSendNow() : sendDraft())}
               canSendNow={isRunning}
               isSubmitBlocked={popoverOpen}
               onKeyDown={onKeyDown}
-              files={{
-                attachments,
-                isDragging,
-                composerRef,
-                fileInputRef,
-                onPaste,
-                onFileInputChange,
-                onRemove: removeAttachment,
-              }}
+              files={files}
               placeholder={placeholder}
               disabled={isBlocked}
               minRows={1}
@@ -290,7 +289,7 @@ export const ChatInput = ({
             canSend={canSend}
             isDenying={deniedAgentId !== null}
             sendDisabledTitle={sendDisabledTitle}
-            onSend={() => void onSend()}
+            onSend={sendDraft}
             onSendNow={() => void onSendNow()}
           />
         </ComposerBox>

@@ -69,7 +69,6 @@ const setup = ({
   closing = 'Traced the rounding to post_line.',
   silentEndMark = ENDED_AT,
 }: SetupParams = {}) => {
-  const askAgentToContinue = vi.fn<StoryState['askAgentToContinue']>(async () => undefined);
   const markStepDone = vi.fn<StoryState['markStepDone']>(async () => undefined);
   useAppStore.setState({
     sessions: [SESSION],
@@ -78,10 +77,9 @@ const setup = ({
     sessionArtifacts: {},
     agentKindOverride: {},
     silentlyEndedSteps: { [AGENT_ID]: silentEndMark },
-    askAgentToContinue,
     markStepDone,
   });
-  return { askAgentToContinue, markStepDone };
+  return { markStepDone };
 };
 
 beforeAll(async () => {
@@ -95,24 +93,13 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('StepEndedNotice', () => {
-  it('says the step ended without a result and offers Continue and Mark step done', () => {
+  it('says the step ended without a result and offers Mark step done', () => {
     setup();
     render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
 
     screen.getByText('This step ended without a result');
-    screen.getByRole('button', { name: 'Continue' });
     screen.getByRole('button', { name: 'Mark step done' });
-  });
-
-  it('asks the same agent to continue', async () => {
-    const { askAgentToContinue } = setup();
-    render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-    await waitFor(() =>
-      expect(askAgentToContinue).toHaveBeenCalledWith({ sessionId: SESSION.id, agentId: AGENT_ID }),
-    );
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
   it('marks the step done once', async () => {
@@ -127,6 +114,32 @@ describe('StepEndedNotice', () => {
     expect(markStepDone).toHaveBeenCalledTimes(1);
   });
 
+  it('names the failure of Mark step done, keeps the notice and lets the same button try again', async () => {
+    const { markStepDone } = setup();
+    const reportError = vi.fn<StoryState['reportError']>(async () => undefined);
+    useAppStore.setState({ reportError });
+    markStepDone.mockRejectedValueOnce(new Error('The step is no longer waiting.'));
+    render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark step done' }));
+
+    await waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't mark the step done", sessionId: SESSION.id }),
+      ),
+    );
+    screen.getByText('This step ended without a result');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Mark step done' }).hasAttribute('disabled')).toBe(
+        false,
+      ),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark step done' }));
+
+    await waitFor(() => expect(markStepDone).toHaveBeenCalledTimes(2));
+  });
+
   it('shows nothing for a block the silent end watch did not record, so the real reason stays', () => {
     setup({ silentEndMark: '2026-10-18T08:00:00.000Z' });
     const { container } = render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
@@ -136,19 +149,6 @@ describe('StepEndedNotice', () => {
     useAppStore.setState({ silentlyEndedSteps: {} });
     const none = render(<StepEndedNotice sessionId={SESSION.id} agentId={AGENT_ID} />);
     expect(none.container.textContent).toBe('');
-  });
-
-  it('shows the fallback of the caller for a block it did not record', () => {
-    setup({ silentEndMark: '2026-10-18T08:00:00.000Z' });
-    render(
-      <StepEndedNotice
-        sessionId={SESSION.id}
-        agentId={AGENT_ID}
-        fallback={<p>The agent stopped itself after three unattended turns.</p>}
-      />,
-    );
-
-    screen.getByText('The agent stopped itself after three unattended turns.');
   });
 
   it('shows nothing when the step asked the user something', () => {

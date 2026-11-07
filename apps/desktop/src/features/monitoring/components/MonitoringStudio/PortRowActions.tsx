@@ -12,6 +12,6 @@ type Props = {
 export const PortRowActions = ({ target, hasStop, hasMenu }: Props) => (
   <ActionsCell
     stop={hasStop ? <PortStopControl target={target} /> : null}
-    menu={hasMenu ? <PortRowMenu target={target} /> : null}
+    menu={hasMenu ? <PortRowMenu target={target} hasStop={hasStop} /> : null}
   />
 );

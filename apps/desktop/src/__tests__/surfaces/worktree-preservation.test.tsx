@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../features/actions/components/ObjectMenuProvider';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 import { resetWorktreeStatusCache } from '../../store/runtime/worktreeStatuses/cache';
 import { clearSceneInvoke } from '../../test/sceneInvoke';
@@ -47,7 +48,9 @@ const mount = async (name: SceneName): Promise<void> => {
   const Scene = U25_C04_WORKTREE_SCENES[name];
   render(
     <ToastProvider>
-      <Scene />
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
   await advance();
@@ -67,7 +70,8 @@ const entry = async (name: RegExp): Promise<void> => {
 };
 
 const worktreeMenu = async (): Promise<ReadonlyArray<string>> => {
-  fireEvent.click(level().getByRole('button', { name: /actions$/ }));
+  const dots = level().getByRole('button', { name: /actions$/ });
+  fireEvent.contextMenu(dots.closest('[data-worktree-actions]')?.parentElement ?? dots);
   await advance();
   return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
 };
@@ -132,9 +136,7 @@ describe('Branch page capabilities from the branch tree', () => {
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     await advance();
 
-    fireEvent.click(level().getByRole('button', { name: / actions$/ }));
-    await advance();
-    const worktree = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    const worktree = await worktreeMenu();
     expect(worktree.some((label) => /Copy branch name/.test(label))).toBe(true);
   });
 

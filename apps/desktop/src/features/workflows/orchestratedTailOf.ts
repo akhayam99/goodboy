@@ -3,16 +3,13 @@ import type { Agent, AgentId } from '@goodboy/types';
 import type { MountBlockedStep } from '../../store/slices/workflows/runMount/selectMountBlockedStep';
 import type { TailState } from '../live-state/tailFacts';
 import type { OrchestratorPhase, OrchestratorState } from './orchestratorState';
-import { NOT_FINISHED } from '../workTreeModel/rowStateCopy';
-import { modelNamesIn } from './modelNamesIn';
+import { NAMES } from '../../shared/utils/names';
+import { decisionFailureOf } from './decisionFailureOf';
 import type { RunPrimary } from './runPrimaryOf';
 
 export type OrchestratedVerb =
   | { readonly kind: 'primary'; readonly primary: RunPrimary }
-  | { readonly kind: 'stopStep'; readonly agent: Agent; readonly number: number }
   | { readonly kind: 'continueStep'; readonly agentId: AgentId }
-  | { readonly kind: 'restartStep' }
-  | { readonly kind: 'openAgentChat'; readonly agentId: AgentId }
   | { readonly kind: 'viewTranscript'; readonly agentId: AgentId }
   | { readonly kind: 'readQueued'; readonly count: number; readonly isStopped: boolean }
   | { readonly kind: 'quiet'; readonly agentId: AgentId }
@@ -57,7 +54,7 @@ const TAIL_STATE: Readonly<Record<OrchestratorPhase, TailState>> = {
   paused: 'stopped',
   'paused-budget': 'paused',
   stopped: 'stopped',
-  'step-failed': 'failed',
+  'step-failed': 'needsYou',
   failed: 'failed',
   blocked: 'failed',
   done: 'idle',
@@ -77,11 +74,8 @@ type PhraseParams = {
 };
 
 const phraseOf = ({ orchestrator }: PhraseParams): string => {
-  const detail = orchestrator.detail?.trim() ?? '';
-  if (orchestrator.phase !== 'failed' || detail === '') {
-    return orchestrator.sentence;
-  }
-  return `${orchestrator.sentence}: ${modelNamesIn({ text: detail })}`;
+  const failure = decisionFailureOf({ orchestrator });
+  return failure === null ? orchestrator.sentence : `${orchestrator.sentence}: ${failure}`;
 };
 
 export const orchestratedTailOf = ({
@@ -129,14 +123,13 @@ export const orchestratedTailOf = ({
     blockedAgentId: null,
   };
   if (phase === 'waiting') {
-    const runningIndex = roots.findIndex((agent) => agent.status === 'running');
-    const running = roots[runningIndex];
+    const running = roots.find((agent) => agent.status === 'running');
     if (running !== undefined && orchestrator.waitingOnAgentId === running.id) {
       return {
         ...base,
         state: 'working',
         stepAgentId: running.id,
-        verbs: [{ kind: 'stopStep', agent: running, number: runningIndex + 1 }],
+        verbs: [],
       };
     }
     const stopped = roots.find((agent) => agent.status === 'stopped');
@@ -149,18 +142,14 @@ export const orchestratedTailOf = ({
     const halted = [...agents]
       .sort((left, right) => left.ordinal - right.ordinal)
       .find((agent) => isAgentStatusHalted({ status: agent.status }));
-    if (halted?.status === 'blocked' && mountBlock?.agentId === halted.id) {
-      return { ...base, blockedAgentId: halted.id, verbs: [] };
-    }
-    if (halted?.status === 'blocked') {
-      return {
-        ...base,
-        phrase: NOT_FINISHED,
-        blockedAgentId: halted.id,
-        verbs: [{ kind: 'restartStep' }, { kind: 'openAgentChat', agentId: halted.id }],
-      };
-    }
-    return { ...base, verbs: [{ kind: 'restartStep' }] };
+    const isMountBlocked =
+      halted !== undefined && halted.status === 'blocked' && mountBlock?.agentId === halted.id;
+    return {
+      ...base,
+      phrase: NAMES.needsYou,
+      blockedAgentId: isMountBlocked ? halted.id : null,
+      verbs: [],
+    };
   }
   if (phase === 'failed' || phase === 'blocked') {
     const last = roots.at(-1);

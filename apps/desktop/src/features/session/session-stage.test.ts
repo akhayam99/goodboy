@@ -121,7 +121,7 @@ describe('the reason table', () => {
     ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],
     ['pr-approved', 'approved', 'success', 'Approved, ready to merge'],
     ['unread-reply', 'none', 'info', 'New reply'],
-    ['run-stopped', '!', 'danger', 'A run stopped'],
+    ['run-stopped', '!', 'danger', 'Failed'],
     ['run-paused-at-limit', '!', 'warning', 'A run paused at its limit'],
     ['run-waits-for-go', 'approval', 'warning', 'Step is ready'],
     ['auto-needs-you', 'approval', 'warning', 'Auto needs you'],
