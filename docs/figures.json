@@ -277,7 +277,7 @@
   },
   "features/switch-rail": {
     "version": "0.31.12",
-    "recipe": "--scene 'session-hover&brand=1' --window 1800x720 --scale 2 --wait 8000"
+    "recipe": "--scene 'session-hover&brand=1' --clip 0,0,640,720 --window 1800x720 --wait 8000"
   },
   "features/workflow-hints": {
     "version": "0.27.1",
@@ -297,7 +297,7 @@
   },
   "features/workflow-run": {
     "version": "0.31.12",
-    "recipe": "--scene 'u36-p12-orch-done&brand=1' --click 'Show guidance' --window 1500x900 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 12000"
+    "recipe": "--scene 'workflow-run&run=finished&brand=1' --window 1500x1000 --scale 2 --frozen-at 2026-11-05T16:00:00 --wait 30000"
   },
   "features/workflow-studio-steps": {
     "version": "0.27.1",

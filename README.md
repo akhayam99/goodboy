@@ -43,7 +43,7 @@ A workflow splits a task into steps, such as scout, plan, implement and review. 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="A finished workflow run, Duplicate credit fix: five steps done, the orchestrator on GPT-6.1 Sol and a summary of the result">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="A finished workflow run, Duplicate credit fix: Done with five steps, two queued hints, a summary of the result and Create report">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>

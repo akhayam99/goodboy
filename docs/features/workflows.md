@@ -85,7 +85,7 @@ While the session's workflows load, the run page draws its goal, its facts and t
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of a finished run, Speed up the export end to end, with its guidance open, Done, 4 steps done and $1.21, the four steps with a scout, an implementer, a tester with two scouts and docs, the hints read at step 3 and step 4, the result with Done and Left lists, Create report and Create wireframe, and the Continue with a hint box">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Runs page of a finished run, Duplicate credit fix, writing to payments-api on hl/fix-duplicate-credit, Done with 5 steps done, three scouts under step 1, a planner, two implementers and a tester, the hints read at step 1 and step 2, two queued hints with Read 2 queued, the summary and the Create report and Create wireframe buttons">
 </picture>
 
 <sub>Screenshot from Goodboy 0.31.12</sub>
