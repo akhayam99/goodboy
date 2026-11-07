@@ -174,7 +174,6 @@
     "apps/desktop/src/store/slices/session-sync/index.test.ts": 3,
     "apps/desktop/src/store/slices/session-view/artifactConversation.test.ts": 1,
     "apps/desktop/src/store/slices/session-view/isSessionGroupCollapsed.test.ts": 1,
-    "apps/desktop/src/store/slices/session-view/resolveSurface.test.ts": 1,
     "apps/desktop/src/store/slices/sessions/createSession.autorun.test.ts": 2,
     "apps/desktop/src/store/slices/sessions/createSession.routing.test.ts": 2,
     "apps/desktop/src/store/slices/sessions/index.test.ts": 19,
