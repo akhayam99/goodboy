@@ -15,7 +15,7 @@ describe('runGlanceOf', () => {
   it('counts the steps of a running preset run', () => {
     const glance = runGlanceOf(BASE);
 
-    expect(glance.state).toBe('working');
+    expect(glance.state).toBe('running');
     expect(glance.sentence).toBe('1 of 3 steps');
     expect(glance.isLive).toBe(true);
   });
@@ -46,11 +46,25 @@ describe('runGlanceOf', () => {
   it.each([
     ['approve-plan', 'waiting'],
     ['answer', 'waiting'],
-    ['retry', 'stuck'],
-    ['raise-cap', 'stuck'],
-    ['start-step', 'idle'],
+    ['retry', 'failed'],
+    ['hint', 'waiting'],
+    ['raise-cap', 'paused'],
+    ['resume', 'paused'],
+    ['start-step', 'ready'],
+    ['start-run', 'ready'],
   ] as const)('reads the %s primary as %s', (primary, state) => {
     expect(runGlanceOf({ ...BASE, primary }).state).toBe(state);
+  });
+
+  it.each([
+    ['retry', 'Failed', "Couldn't pick the next step"],
+    ['hint', 'Needs you', 'The run needs a hint'],
+    ['raise-cap', 'Paused', 'At the limit'],
+    ['resume', 'Paused', 'Nothing new starts until you continue'],
+    ['start-step', 'Ready', 'Next step is ready'],
+    ['approve-plan', 'Needs approval', 'The plan needs approval'],
+  ] as const)('says %s with the word %s and one sentence', (primary, word, sentence) => {
+    expect(runGlanceOf({ ...BASE, primary })).toMatchObject({ word, sentence });
   });
 
   it('reads a discarded run as stopped before anything else', () => {

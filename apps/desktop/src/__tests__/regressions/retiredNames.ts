@@ -138,6 +138,11 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bWaiting for your approval\b/,
     use: NAMES.waitingForPermission,
   },
+  {
+    id: 'waiting-for-permission',
+    pattern: /^Waiting for your permission$/,
+    use: NAMES.waitingForPermission,
+  },
   { id: 'lowercase-notifications', pattern: /^notifications$/, use: NAMES.notifications },
   { id: 'inbox-door', pattern: /(?<![-\w])Inbox\b(?!-)/i, use: NAMES.tasks },
   { id: 'launch-session', pattern: /\bLaunch(?:ing)? session\b/, use: NAMES.start },

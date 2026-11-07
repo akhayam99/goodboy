@@ -55,8 +55,8 @@ afterEach(() => {
 });
 
 describe('autoWaitRootsOf', () => {
-  it('counts an Auto that is blocked or asks you, never one that runs or rests', () => {
-    expect(waitsOf({ view: aView({ phase: 'blocked' }) })).toEqual([FIXTURE_ROOT]);
+  it('counts an Auto that asks you or sits at its limit, never one that runs, rests or failed', () => {
+    expect(waitsOf({ view: aView({ phase: 'blocked' }) })).toEqual([]);
     expect(waitsOf({ view: aView({ phase: 'waiting', capUsd: 1, spentUsd: 1 }) })).toEqual([
       FIXTURE_ROOT,
     ]);

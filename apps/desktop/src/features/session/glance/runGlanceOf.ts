@@ -32,12 +32,12 @@ const PRIMARY_GLANCE: Readonly<Record<Exclude<RunPrimaryKind, 'continue'>, Glanc
   'approve-plan': PLAN_HOLD,
   answer: glanceOf({ state: 'waiting', sentence: 'A question needs your answer' }),
   'decide-next': glanceOf({ state: 'waiting', sentence: 'Decide what happens next' }),
-  resume: glanceOf({ state: 'idle', sentence: 'The run is paused' }),
-  'start-step': glanceOf({ state: 'idle', sentence: 'Ready for the next step' }),
-  'start-run': glanceOf({ state: 'idle', sentence: 'Ready to start' }),
-  retry: glanceOf({ state: 'stuck', sentence: 'A step failed' }),
-  hint: glanceOf({ state: 'stuck', sentence: 'The run needs a hint' }),
-  'raise-cap': glanceOf({ state: 'stuck', sentence: 'Paused at the limit' }),
+  resume: glanceOf({ state: 'paused', sentence: 'Nothing new starts until you continue' }),
+  'start-step': glanceOf({ state: 'ready', sentence: 'Next step is ready' }),
+  'start-run': glanceOf({ state: 'ready', sentence: 'Ready to start' }),
+  retry: glanceOf({ state: 'failed', sentence: "Couldn't pick the next step" }),
+  hint: glanceOf({ state: 'waiting', sentence: 'The run needs a hint' }),
+  'raise-cap': glanceOf({ state: 'paused', sentence: 'At the limit' }),
   restore: glanceOf({ state: 'stopped', sentence: 'This run was discarded' }),
 };
 
@@ -69,7 +69,7 @@ export const runGlanceOf = ({
   }
   const isStarting = isDynamic && doneCount === 0;
   return glanceOf({
-    state: 'working',
+    state: 'running',
     sentence: isStarting ? 'Getting started' : stepsSentenceOf({ doneCount, stepCount, isDynamic }),
   });
 };

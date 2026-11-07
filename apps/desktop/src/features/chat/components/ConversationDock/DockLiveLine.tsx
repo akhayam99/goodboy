@@ -11,7 +11,7 @@ type Props = {
   readonly isStopArmed: boolean;
 };
 
-const RUNNING_TONE = glanceOf({ state: 'working', sentence: '' }).tone;
+const RUNNING_TONE = glanceOf({ state: 'running', sentence: '' }).tone;
 
 export const DockLiveLine = ({ live, stop, isStopArmed }: Props) => {
   const isStopIdle = stop.phase === 'idle';

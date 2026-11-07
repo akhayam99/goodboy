@@ -36,7 +36,7 @@ describe('autoGlanceOf', () => {
     expect(glance.sentence).toBe('Plan v2 needs approval');
   });
 
-  it('says Planning while the Planner revises the plan', () => {
+  it('says Running while the Planner revises the plan', () => {
     const glance = autoGlanceOf({
       view: aView({
         phase: 'waiting',
@@ -46,8 +46,8 @@ describe('autoGlanceOf', () => {
     });
 
     expect(glance).toMatchObject({
-      state: 'planning',
-      word: 'Planning',
+      state: 'running',
+      word: 'Running',
       sentence: 'The Planner is revising plan v1',
       isLive: true,
     });
@@ -66,23 +66,52 @@ describe('autoGlanceOf', () => {
     });
 
     expect(glance).toMatchObject({
-      state: 'working',
+      state: 'running',
       sentence: 'Implementer running, Tester queued',
       isLive: true,
     });
   });
 
-  it('says Stuck when blocked', () => {
-    expect(glanceOf('blocked')).toMatchObject({ state: 'stuck', word: 'Stuck', tone: 'danger' });
+  it('says Failed when Auto stopped replying, never Stuck or Blocked', () => {
+    expect(glanceOf('blocked')).toMatchObject({
+      state: 'failed',
+      word: 'Failed',
+      tone: 'danger',
+      sentence: "Auto couldn't reply",
+    });
   });
 
-  it('says Stuck when the limit is spent', () => {
+  it('keeps the reason Auto gave as the sentence under Failed', () => {
+    const view = aView({ phase: 'blocked' });
+    const glance = autoGlanceOf({
+      view: {
+        ...view,
+        tree: { ...view.tree, blockedReason: 'Auto stopped answering before it replied.' },
+      },
+      rootTurn: null,
+    });
+
+    expect(glance).toMatchObject({
+      word: 'Failed',
+      sentence: 'Auto stopped answering before it replied.',
+    });
+  });
+
+  it('says Stopping for the moment after Stop and Stopped once it ends', () => {
+    expect(glanceOf('stopping')).toMatchObject({
+      state: 'stopping',
+      word: 'Stopping',
+      sentence: '',
+    });
+  });
+
+  it('says Paused when the limit is spent', () => {
     const glance = autoGlanceOf({
       view: aView({ phase: 'waiting', capUsd: 10, spentUsd: 10 }),
       rootTurn: null,
     });
 
-    expect(glance).toMatchObject({ state: 'stuck', sentence: 'Paused at the limit' });
+    expect(glance).toMatchObject({ state: 'paused', word: 'Paused', sentence: 'At the limit' });
   });
 
   it('says Stopped, Done and Idle for the resting phases', () => {

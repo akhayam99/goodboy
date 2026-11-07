@@ -188,9 +188,12 @@ type AutoDotParams = {
 const autoDotOf = ({ state }: AutoDotParams): DotState => {
   switch (state) {
     case 'asking':
-    case 'blocked':
+    case 'paused':
       return 'needsYou';
+    case 'failed':
+      return 'failed';
     case 'running':
+    case 'stopping':
       return 'running';
     case 'done':
       return 'done';
