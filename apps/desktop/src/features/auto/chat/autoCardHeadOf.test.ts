@@ -31,6 +31,13 @@ describe('autoCardHeadOf', () => {
       }),
     ).toEqual({ name: 'Build', meta: '2 agents', word: 'Running', isOpen: true });
   });
+  it.each(['ci-fixer', 'docs', 'scribe'])('names a %s batch Build', (role) => {
+    expect(
+      autoCardHeadOf({
+        delegations: [aDelegation({ key: role, role, state: 'settled', outcome: 'completed' })],
+      }).name,
+    ).toBe('Build');
+  });
   it('names a reviewer card Review', () => {
     expect(
       autoCardHeadOf({

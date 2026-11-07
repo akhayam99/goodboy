@@ -10,6 +10,8 @@ import { useObjectActions } from '../../actions/useObjectActions';
 const STATE_BUTTONS = ['agent.stop', 'agent.close', 'agent.reopen'];
 const MENU_ACTIONS = [
   'agent.rename',
+  'agent.close',
+  'agent.reopen',
   'agent.moveToAuto',
   'agent.detachFromAuto',
   'agent.markAutoFinished',

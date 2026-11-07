@@ -258,7 +258,8 @@ export const TranscriptRows = ({
       lastFooterRunId = row.item.runId;
     }
     const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
-    const stepHead = isStepHeadDue ? { 'data-turn-heading': Math.max(0, turnIndex) } : null;
+    const turn = Math.max(0, turnIndex);
+    const stepHead = isStepHeadDue ? { 'data-turn-heading': turn } : null;
     isStepHeadDue = false;
     out.push(
       <li
@@ -275,7 +276,7 @@ export const TranscriptRows = ({
         {row.kind !== 'item' ? (
           <TranscriptSteps
             row={row}
-            turn={Math.max(0, turnIndex)}
+            turn={turn}
             onOpenTranscript={onOpenTranscript}
             isStepsOnly={isStepsOnly}
             sessionId={sessionId}
@@ -317,6 +318,7 @@ export const TranscriptRows = ({
                 : undefined
             }
             previousRunId={previousRunId}
+            turn={turn}
           />
         )}
       </li>,
@@ -326,12 +328,10 @@ export const TranscriptRows = ({
 
   flushOrdinal(userTurnOrdinal);
   flushInsertions({ beforeMs: null });
-  const remainingOrdinals = [...oqByTurnOrdinal.keys()]
+  [...oqByTurnOrdinal.keys()]
     .filter((ordinal): ordinal is number => ordinal !== null && ordinal > userTurnOrdinal)
-    .sort((a, b) => a - b);
-  for (const ordinal of remainingOrdinals) {
-    flushOrdinal(ordinal);
-  }
+    .sort((a, b) => a - b)
+    .forEach((ordinal) => flushOrdinal(ordinal));
   for (const [runId, node] of suggestions) {
     if (placedRunIds.has(runId) || isStepsOnly) {
       continue;

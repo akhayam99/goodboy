@@ -277,7 +277,7 @@ describe('one run page', () => {
     within(menu).getByRole('menuitem', { name: 'Copy run summary' });
   });
 
-  it('keeps View transcript on the subagent page with one composer', async () => {
+  it('leaves View transcript out of the page it would only reopen', async () => {
     render(
       <ToastProvider>
         <ObjectMenuProvider>
@@ -293,15 +293,10 @@ describe('one run page', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
-    fireEvent.click(
-      within(screen.getByRole('menu')).getByRole('menuitem', { name: 'View transcript' }),
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
 
-    expect(useAppStore.getState().selectedAgentId[C08_SESSION_ID]).toBe(HELPER_ID);
-    expect(useAppStore.getState().drawer).toBeNull();
+    expect(
+      within(screen.getByRole('menu')).queryByRole('menuitem', { name: 'View transcript' }),
+    ).toBeNull();
     expect(screen.getAllByRole('textbox')).toHaveLength(1);
   });
 

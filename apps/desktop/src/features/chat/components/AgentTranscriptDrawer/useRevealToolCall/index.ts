@@ -6,9 +6,10 @@ const GIVE_UP_MS = 2000;
 type Params = {
   readonly bodyRef: RefObject<HTMLElement | null>;
   readonly toolUseId: string | null;
+  readonly request: object | null;
 };
 
-export const useRevealToolCall = ({ bodyRef, toolUseId }: Params): void => {
+export const useRevealToolCall = ({ bodyRef, toolUseId, request }: Params): void => {
   useEffect(() => {
     const body = bodyRef.current;
     if (toolUseId === null || body === null) {
@@ -37,5 +38,5 @@ export const useRevealToolCall = ({ bodyRef, toolUseId }: Params): void => {
       clearTimeout(giveUp);
       observer.disconnect();
     };
-  }, [bodyRef, toolUseId]);
+  }, [bodyRef, toolUseId, request]);
 };

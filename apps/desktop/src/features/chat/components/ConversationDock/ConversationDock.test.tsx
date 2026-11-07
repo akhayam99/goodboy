@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ComponentProps } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
@@ -306,4 +307,100 @@ describe('Auto child recovery through the dock', () => {
       expect(repeated.childAgentId).toBe(agentId);
     },
   );
+});
+
+describe('Auto child recovery by outcome', () => {
+  const ROOT_ID = brandId<AgentId>({ value: 'agent-auto' });
+
+  const renderChild = ({
+    outcome,
+    failure = null,
+  }: {
+    readonly outcome: 'failed' | 'blocked' | 'timed_out' | 'completed';
+    readonly failure?: ComponentProps<typeof ConversationDock>['failure'];
+  }) => {
+    const continueStoppedAgent = vi.fn(async () => undefined);
+    useAppStore.setState({
+      continueStoppedAgent,
+      sessionPhaseRuns: {
+        [session.id]: [
+          anAgent({ id: ROOT_ID, kind: 'auto', status: 'running' }),
+          anAgent({ id: AGENT_ID, status: 'failed', parentAgentId: ROOT_ID }),
+        ],
+      },
+      autoTreeViews: {
+        [session.id]: [
+          aView({
+            delegations: [
+              aDelegation({ key: 'implementer', role: 'implementer', state: 'settled', outcome }),
+            ],
+          }),
+        ],
+      },
+    });
+    render(
+      <ConversationDock
+        session={session}
+        agentId={AGENT_ID}
+        lead={null}
+        hasAsks={false}
+        isMessageTyped={false}
+        live={null}
+        stop={null}
+        isStopArmed={false}
+        failure={failure}
+      />,
+    );
+    return continueStoppedAgent;
+  };
+
+  it.each(['failed', 'blocked', 'timed_out'] as const)(
+    'gives a child that ended %s one Retry through Auto',
+    async (outcome) => {
+      const continueStoppedAgent = renderChild({ outcome });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+      });
+
+      expect(continueStoppedAgent).toHaveBeenCalledWith({
+        sessionId: session.id,
+        agentId: AGENT_ID,
+      });
+    },
+  );
+
+  it('retries a failed message with its own run after the delegation completed', async () => {
+    const retry = vi.fn();
+    const continueStoppedAgent = renderChild({
+      outcome: 'completed',
+      failure: { message: 'The provider failed.', runId: RUN_ID, isRetrying: false, retry },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    });
+
+    expect(retry).toHaveBeenCalledOnce();
+    expect(continueStoppedAgent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the message of the failure with one Retry', () => {
+    renderChild({
+      outcome: 'failed',
+      failure: { message: 'The provider failed.', runId: RUN_ID, isRetrying: false, retry: null },
+    });
+
+    screen.getByText('The provider failed.');
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
+  });
+
+  it('hides Retry while Auto is working, so a second click cannot queue twice', () => {
+    useAppStore.setState({
+      agentTurnState: { [ROOT_ID]: { kind: 'running', runId: RUN_ID, startedAt: AT } },
+    });
+    renderChild({ outcome: 'failed' });
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
 });

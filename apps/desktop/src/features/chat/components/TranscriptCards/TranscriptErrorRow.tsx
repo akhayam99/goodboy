@@ -11,6 +11,7 @@ type Props = {
   readonly sessionId?: SessionId | null;
   readonly agentId?: AgentId | null;
   readonly failedToolUseId?: string | null;
+  readonly turn?: number | null;
   readonly onRetry?: () => void;
   readonly isRetrying?: boolean;
   readonly dockRunId?: ProviderRunId | null;
@@ -24,6 +25,7 @@ export const TranscriptErrorRow = ({
   sessionId = null,
   agentId = null,
   failedToolUseId = null,
+  turn = null,
   onRetry,
   isRetrying = false,
   dockRunId = null,
@@ -48,7 +50,11 @@ export const TranscriptErrorRow = ({
     openDrawer({
       kind: 'transcript',
       sessionId,
-      payload: { agentId, ...(failedToolUseId !== null && { toolUseId: failedToolUseId }) },
+      payload: {
+        agentId,
+        ...(failedToolUseId !== null && { toolUseId: failedToolUseId }),
+        ...(failedToolUseId === null && turn !== null && { turn }),
+      },
     });
   };
 

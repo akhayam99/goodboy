@@ -62,8 +62,14 @@ export const AgentTranscriptDrawer = ({
       ? (drawer.payload.toolUseId ?? null)
       : null;
   });
+  const request = useAppStore((s) => {
+    const drawer = selectOpenDrawer(s);
+    return drawer?.kind === 'transcript' && drawer.payload.agentId === agentId
+      ? drawer.payload
+      : null;
+  });
   const bodyRef = useRef<HTMLDivElement>(null);
-  useRevealToolCall({ bodyRef, toolUseId });
+  useRevealToolCall({ bodyRef, toolUseId, request });
   const draft = useAppStore((s) => s.agentDraft?.[agentId] ?? '');
   const isEnded = useAppStore(
     (s) =>
@@ -136,7 +142,7 @@ export const AgentTranscriptDrawer = ({
     bodyRef.current
       ?.querySelector(`[data-turn-heading="${turn}"]`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [turn]);
+  }, [turn, request]);
 
   const title = agent === null ? null : agentTranscriptTitle({ agent });
   const shownTitle = isConversationCenter

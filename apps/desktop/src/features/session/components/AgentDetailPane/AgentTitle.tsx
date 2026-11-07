@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { InteractiveRow, Tooltip, cn, TruncatedText } from '@goodboy/ui';
+import { InteractiveRow, ScrollFade, Tooltip, cn, TruncatedText } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
@@ -68,15 +68,20 @@ export const AgentTitle = ({ agent, sessionId, brief = null, heading }: Props) =
         frameClassName="min-w-0"
         className="min-w-0"
       >
-        <TruncatedText
-          className={cn(
-            'block min-w-0 text-left',
-            isBriefOpen ? 'whitespace-pre-wrap break-words' : 'truncate',
-          )}
-          onDoubleClick={rename.start}
-        >
-          {isBriefOpen ? brief : (firstLineOf({ text: brief }) ?? brief)}
-        </TruncatedText>
+        {isBriefOpen ? (
+          <ScrollFade className="max-h-48" fadeSize="h-6">
+            <TruncatedText
+              className="block min-w-0 whitespace-pre-wrap break-words text-left"
+              onDoubleClick={rename.start}
+            >
+              {brief}
+            </TruncatedText>
+          </ScrollFade>
+        ) : (
+          <TruncatedText className="block min-w-0 truncate text-left" onDoubleClick={rename.start}>
+            {firstLineOf({ text: brief }) ?? brief}
+          </TruncatedText>
+        )}
       </InteractiveRow>
     );
   }

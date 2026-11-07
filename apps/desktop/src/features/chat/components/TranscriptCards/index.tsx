@@ -48,6 +48,7 @@ type TranscriptCardProps = {
   readonly previousRunId?: ProviderRunId | null;
   readonly isReadOnly?: boolean;
   readonly clampLines?: number;
+  readonly turn?: number | null;
 };
 
 const TranscriptCardImpl = ({
@@ -68,6 +69,7 @@ const TranscriptCardImpl = ({
   isReadOnly = false,
   clampLines,
   errorDock = null,
+  turn = null,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -159,6 +161,7 @@ const TranscriptCardImpl = ({
           sessionId={sessionId}
           agentId={agentId}
           failedToolUseId={item.failedToolUseId ?? null}
+          turn={turn}
           onRetry={
             item.retryable === true && errorRunId != null && onRetryRun != null
               ? () => onRetryRun({ runId: errorRunId, model: null })
@@ -238,5 +241,6 @@ export const TranscriptCard = memo(
     prev.turnStartedAt === next.turnStartedAt &&
     prev.previousRunId === next.previousRunId &&
     prev.isReadOnly === next.isReadOnly &&
-    prev.clampLines === next.clampLines,
+    prev.clampLines === next.clampLines &&
+    prev.turn === next.turn,
 );

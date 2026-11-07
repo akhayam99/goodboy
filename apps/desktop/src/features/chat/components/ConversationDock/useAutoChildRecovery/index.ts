@@ -23,9 +23,12 @@ export const useAutoChildRecovery = ({
   const turn = useAppStore((state) =>
     agentId === null ? null : (state.agentTurnState[agentId] ?? null),
   );
+  const tree = agentId === null ? null : autoTreeOfAgent({ views, agentId });
+  const rootTurn = useAppStore((state) =>
+    tree === null ? null : (state.agentTurnState[tree.view.tree.rootAgentId] ?? null),
+  );
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const pending = usePendingAction({ sessionId });
-  const tree = agentId === null ? null : autoTreeOfAgent({ views, agentId });
   if (
     tree?.kind !== 'child' ||
     agentId === null ||
@@ -36,21 +39,29 @@ export const useAutoChildRecovery = ({
     return failure;
   }
   const delegation = tree.delegation;
-  if (delegation.state !== 'settled' || (delegation.outcome !== 'failed' && failure === null)) {
+  if (
+    delegation.state !== 'settled' ||
+    (delegation.outcome !== 'failed' &&
+      delegation.outcome !== 'blocked' &&
+      delegation.outcome !== 'timed_out')
+  ) {
     return failure;
   }
+  const isRootLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
   return {
     message:
       failure?.message ??
       delegationReasonTextOf({ reason: delegation.reason }) ??
       'The agent ended with an error.',
-    runId: null,
+    runId: failure?.runId ?? null,
     isRetrying: pending.pendingKeys.has(agentId),
-    retry: () =>
-      void pending.run({
-        key: agentId,
-        failureTitle: "Couldn't retry the agent",
-        task: () => continueStoppedAgent({ sessionId, agentId }),
-      }),
+    retry: isRootLive
+      ? null
+      : () =>
+          void pending.run({
+            key: agentId,
+            failureTitle: "Couldn't retry the agent",
+            task: () => continueStoppedAgent({ sessionId, agentId }),
+          }),
   };
 };

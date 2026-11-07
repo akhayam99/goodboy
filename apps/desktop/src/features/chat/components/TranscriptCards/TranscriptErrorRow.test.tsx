@@ -168,6 +168,26 @@ describe('View transcript on a failed turn', () => {
     });
   });
 
+  it('anchors the drawer to the turn when no failing call is known', () => {
+    render(
+      <TranscriptErrorRow
+        message="The provider closed the connection."
+        runId={RUN}
+        sessionId={SESSION}
+        agentId={AGENT}
+        turn={2}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'View transcript' }));
+
+    expect(useAppStore.getState().drawer).toEqual({
+      kind: 'transcript',
+      sessionId: SESSION,
+      payload: { agentId: AGENT, turn: 2 },
+    });
+  });
+
   it('is offered without Retry when the turn cannot be retried', () => {
     render(
       <TranscriptErrorRow

@@ -182,6 +182,20 @@ describe('AgentTitle', () => {
     screen.getByRole('textbox', { name: 'Rename agent' });
   });
 
+  it('caps the opened brief in a scroll region, so a long one never squeezes the chat', () => {
+    render(
+      <AgentTitle
+        agent={{ ...agent, name: 'Implementer' }}
+        sessionId={sessionId}
+        brief={`Check ledger-core.\n${'Keep the second credit out of payments-api. '.repeat(80)}`}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Read full brief' }));
+
+    const region = screen.getByText(/Keep the second credit/).closest('.max-h-48');
+    expect(region).not.toBeNull();
+  });
+
   it('keeps the title a plain name, with no brief button, once the agent is named', () => {
     render(
       <AgentTitle
