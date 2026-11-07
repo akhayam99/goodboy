@@ -5,7 +5,6 @@ import type {
   Agent,
   ProviderRunId,
   Session,
-  SessionEvent,
   SessionId,
   Step,
   TelemetryRecord,
@@ -33,7 +32,6 @@ import {
   historyBatchDetailOf,
   type HistoryBatchDetail,
 } from '../../../../../timeline/historyBatchDetail';
-import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
 import {
   layoutTimelineRail,
@@ -57,7 +55,6 @@ type Params = {
 export type TimelineRows = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly viewEntries: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly events: ReadonlyArray<SessionEvent>;
   readonly worktrees: ReadonlyArray<SessionWorktree>;
   readonly isLoaded: boolean;
   readonly stream: TimelineStream;
@@ -65,9 +62,7 @@ export type TimelineRows = {
   readonly rail: RailLayout;
   readonly laneGutter: number;
   readonly laneRuns: TimelineLaneRuns;
-  readonly owners: ReadonlyArray<NeedsYouOwner>;
   readonly unreadAgentIds: ReadonlySet<string>;
-  readonly liveAgentIds: ReadonlySet<string> | undefined;
   readonly stepById: ReadonlyMap<string, Step>;
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
@@ -339,7 +334,6 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   return {
     entries: modelEntries,
     viewEntries,
-    events,
     worktrees,
     isLoaded,
     stream,
@@ -347,9 +341,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     rail,
     laneGutter,
     laneRuns,
-    owners,
     unreadAgentIds,
-    liveAgentIds,
     stepById,
     spendByAgentId,
     spendByRunId,

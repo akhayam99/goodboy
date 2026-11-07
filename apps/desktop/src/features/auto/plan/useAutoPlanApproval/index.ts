@@ -3,7 +3,6 @@ import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { artifactApprovalOf, type ArtifactApprovalView } from '../../chat/artifactApprovalOf';
-import { autoPlanOutlineOf, type AutoPlanOutline } from '../../chat/autoPlanOutlineOf';
 import { useAutoTreeViews } from '../../useAutoTreeViews';
 import { approveAutoPlan } from '../approveAutoPlan';
 
@@ -15,7 +14,6 @@ type Params = {
 export type AutoPlanApprovalModel = Readonly<{
   approval: ArtifactApprovalView;
   version: number;
-  outline: AutoPlanOutline | null;
   rootAgentId: AgentId;
   isBusy: boolean;
   isToldFailed: boolean;
@@ -142,7 +140,6 @@ export const useAutoPlanApproval = ({
   return {
     approval,
     version,
-    outline: autoPlanOutlineOf({ sourceText: found.row.sourceText }),
     rootAgentId,
     isBusy,
     isToldFailed: toldFailedRevision !== null,
