@@ -16,7 +16,7 @@ describe('limit continue scene', () => {
     const Scene = U27_LIMIT_CONTINUE_SCENES['limit-continue'];
     render(<Scene />);
 
-    expect(screen.queryByText('The turn stopped')).not.toBeNull();
+    expect(screen.queryByText('Stopped')).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeNull();
     expect(await screen.findByRole('button', { name: /^Continue at / })).not.toBeNull();
   });

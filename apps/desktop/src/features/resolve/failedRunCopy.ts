@@ -41,7 +41,7 @@ export const failedVerbOf = ({ action }: { readonly action: ResolveRowAction }):
   ROW_ACTION_VERB[action];
 
 export const SYNC_COPY = {
-  action: 'Sync and try again',
+  action: 'Sync and retry',
   confirmTitle: 'Bring the new commits in first?',
   confirmDescription:
     'This fetches origin and rebases your unpushed commits on top of it. If they conflict, nothing is touched.',

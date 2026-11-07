@@ -73,7 +73,7 @@ describe('planRunToast', () => {
     expect(toast).toMatchObject({
       kind: 'warning',
       title: 'Plan not started',
-      action: { label: 'Open the run' },
+      action: { label: 'Follow' },
     });
     expect(toast).not.toHaveProperty('dedupeKey');
     expect(isUserStart({ key: 'run-plan-refused' })).toBe(false);

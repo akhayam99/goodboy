@@ -4,6 +4,7 @@ import { isAwaitingFirstMessage } from '../../workTreeModel/rowState';
 import { effectiveAgentStatusOf } from '../../workTreeModel/agentStateOf';
 import { glanceOf, type Glance } from './glanceOf';
 import { stoppedSentenceOf } from './stoppedSentenceOf';
+import { humanTurnErrorOf } from '../../chat/humanTurnErrorOf';
 
 type Params = {
   readonly agent: Agent;
@@ -30,7 +31,10 @@ export const agentGlanceOf = ({ agent, turnState }: Params): Glance => {
     return glanceOf({ state: 'waiting', sentence: 'Tell it what to do next' });
   }
   if (turnState?.kind === 'error') {
-    return glanceOf({ state: 'failed', sentence: turnState.message });
+    return glanceOf({
+      state: 'failed',
+      sentence: humanTurnErrorOf({ message: turnState.message, agent }),
+    });
   }
   if (turnState?.kind === 'starting') {
     return glanceOf({ state: 'running', sentence: 'Starting' });

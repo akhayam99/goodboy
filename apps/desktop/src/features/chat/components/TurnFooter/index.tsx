@@ -89,8 +89,6 @@ export const TurnFooter = ({
         <TurnFooterDetail
           data={data}
           duration={duration}
-          startedAt={startedAt}
-          endedAt={item.at}
           outcome={outcome === 'done' ? null : OUTCOME_LABEL[outcome]}
         />
       </AnchoredPopover>

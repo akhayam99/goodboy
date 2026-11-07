@@ -462,7 +462,7 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
 - **A stopped rebase says so in the Overview notices.** Only `rebase-merge/` or
   `rebase-apply/` count, as git reads them. The Overview notices slot
   (`OverviewNotices`, one `MountNotices` per open mount) shows a
-  `Rebase stopped` notice with `Hand it to an agent` (a `Rebase on <base>`
+  `Rebase stopped` notice with `Fix with an agent` (a `Rebase on <base>`
   agent on that mount finishes it), `Open terminal`, and `Abort rebase`
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).

@@ -8,6 +8,7 @@ import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { currentWithdrawPort } from '../../withdrawPort';
 import type { RailRow } from '../railRowsOf';
+import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -60,7 +61,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     try {
       const port = currentTreeStopPort();
       if (port === null) {
-        throw new Error('Auto is not running yet. Stop it again in a moment.');
+        throw new Error(AUTO_STARTING_SENTENCE);
       }
       const result = await port({ treeId: view.tree.id });
       if (result === 'stuck') {
@@ -85,7 +86,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     try {
       const port = currentTreeRetryPort();
       if (port === null) {
-        throw new Error('Auto is not running yet. Retry again in a moment.');
+        throw new Error(AUTO_STARTING_SENTENCE);
       }
       const result = await port({ treeId: view.tree.id });
       if (result.kind === 'refused') {
@@ -105,7 +106,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     try {
       const port = currentSendNowPort();
       if (port === null) {
-        throw new Error("Auto isn't running yet. Send it again in a moment.");
+        throw new Error(AUTO_STARTING_SENTENCE);
       }
       const result = await port({ treeId: view.tree.id, rowId });
       if (result.kind === 'refused') {
@@ -126,7 +127,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
       try {
         const port = currentWithdrawPort();
         if (port === null) {
-          throw new Error("Auto isn't running yet. Try again in a moment.");
+          throw new Error(AUTO_STARTING_SENTENCE);
         }
         const result = await port({ treeId: view.tree.id, rowId });
         if (result.kind === 'refused') {

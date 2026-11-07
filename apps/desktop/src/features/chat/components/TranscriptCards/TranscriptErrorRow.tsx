@@ -69,7 +69,7 @@ export const TranscriptErrorRow = ({
     <Notice
       tone="danger"
       placement="transcript"
-      title={hasLimitStop ? 'The turn stopped' : 'The turn failed'}
+      title={hasLimitStop ? 'Stopped' : 'Failed'}
       body={body}
       detail={detail}
       iconTestId="transcript-error-icon"
@@ -90,7 +90,7 @@ export const TranscriptErrorRow = ({
             {runId !== null && <LimitContinueAction runId={runId} />}
             {canViewTranscript && (
               <Button size="sm" variant="quiet" onClick={viewTranscript}>
-                View transcript
+                Open transcript
               </Button>
             )}
           </>

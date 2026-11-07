@@ -13,10 +13,10 @@ const OTHER_AGENT = 'Another agent is writing in this folder.';
 
 const whenLine = ({ minutes }: Pick<WriterWaitView, 'minutes'>): string => {
   if (minutes === null) {
-    return 'This turn starts by itself when it finishes.';
+    return 'This reply starts by itself when it finishes.';
   }
   const unit = minutes === 1 ? 'minute' : 'minutes';
-  return `This turn starts by itself when it finishes, in about ${minutes} ${unit}.`;
+  return `This reply starts by itself when it finishes, in about ${minutes} ${unit}.`;
 };
 
 const writerName = ({ writer }: Pick<WriterWaitView, 'writer'>): string => {

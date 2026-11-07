@@ -87,15 +87,15 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
           size="sm"
           variant={isSecondary ? 'secondary' : 'primary'}
           isBusy={isBusy}
-          busyLabel="Restarting"
+          busyLabel="Retrying"
           onClick={() =>
             void press({
               task: () => recoverStuckStep({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't restart the step",
+              failure: "Couldn't retry the step",
             })
           }
         >
-          Restart step
+          {NAMES.retryStep}
         </Button>
       );
     case 'quiet':
@@ -104,15 +104,15 @@ export const RunTailVerb = ({ session, view, verb, isSecondary = false }: Props)
           size="sm"
           variant="secondary"
           isBusy={isBusy}
-          busyLabel="Asking"
+          busyLabel="Continuing"
           onClick={() =>
             void press({
               task: () => askAgentToContinue({ sessionId, agentId: verb.agentId }),
-              failure: "Couldn't ask the step to continue",
+              failure: "Couldn't continue the step",
             })
           }
         >
-          Ask it to continue
+          {NAMES.continue}
         </Button>
       );
     case 'openStep':

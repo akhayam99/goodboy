@@ -32,7 +32,7 @@ const row = (id: string, overrides: Partial<QueuedRow> = {}): QueuedRow => ({
   imageCount: 0,
   override: undefined,
   status: 'queued',
-  statusText: 'Waits for this turn',
+  statusText: 'Waits for this reply',
   reason: null,
   action: 'sendNow',
   ...overrides,
@@ -116,7 +116,7 @@ describe('QueuedMessages', () => {
   it('says a queued message waits for this turn and can be sent now', () => {
     const { onSendNow } = renderQueue([row('a'), row('b')]);
 
-    expect(screen.getAllByText('Waits for this turn')).toHaveLength(2);
+    expect(screen.getAllByText('Waits for this reply')).toHaveLength(2);
     fireEvent.click(screen.getAllByRole('button', { name: 'Send now' })[1]!);
 
     expect(onSendNow).toHaveBeenCalledWith('b');

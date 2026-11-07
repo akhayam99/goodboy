@@ -64,7 +64,7 @@ describe('the u25 push fix scenes', () => {
     await renderScene({ name: 'push-fixing' });
 
     expect(screen.getByText('Rebased, fixing the push')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'See what it did' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open agent' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Fix with an agent' })).toBeNull();
   });
 });

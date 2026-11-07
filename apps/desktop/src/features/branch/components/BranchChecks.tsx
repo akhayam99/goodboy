@@ -139,11 +139,11 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label={`View on ${label}`}
+                aria-label={`Open on ${label}`}
                 onClick={() => void openUrl(url)}
               >
                 <HostLogo size={ICON_SIZE.row} aria-hidden />
-                View
+                Open
               </Button>
             )
           }

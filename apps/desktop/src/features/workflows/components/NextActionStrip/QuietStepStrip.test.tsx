@@ -178,7 +178,7 @@ describe('QuietStepStrip', () => {
     seed({ events: [readFile, readDone] });
     renderAt({ minutesAfterLastEvent: 20 });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask it to continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(askAgentToContinue).toHaveBeenCalledWith({ sessionId: SESSION_ID, agentId: REVIEWER });
   });

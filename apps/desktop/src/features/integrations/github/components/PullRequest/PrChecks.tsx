@@ -60,11 +60,11 @@ export const PrChecks = ({
           <Button
             variant="ghost"
             size="sm"
-            aria-label={`View on ${REVIEW_SOURCE_LABEL[host]}`}
+            aria-label={`Open on ${REVIEW_SOURCE_LABEL[host]}`}
             onClick={() => onOpenUrl(fallbackUrl)}
           >
             <HostLogo size={ICON_SIZE.row} aria-hidden />
-            View
+            Open
           </Button>
         }
       />

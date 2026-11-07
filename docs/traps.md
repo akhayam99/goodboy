@@ -118,7 +118,7 @@ The Rust files with the most comments lost them in one pass. What a reader would
   also not the union the pull-request screens switch on. That one is
   `PullRequestProvider`, which already has `'bitbucket'`. So Bitbucket pull
   requests do not need a `RemoteHostKind` member to work.
-- `syncBranchWithRemote` (the `Sync and try again` of a push that failed on a
+- `syncBranchWithRemote` (the `Sync and retry` of a push that failed on a
   moved remote) has no Rust command of its own. It calls `history_rebase_plan`
   with the branch itself as the base, which fetches `origin/<branch>` and
   plans the rebase of the unpushed commits on it, then replays that plan in a

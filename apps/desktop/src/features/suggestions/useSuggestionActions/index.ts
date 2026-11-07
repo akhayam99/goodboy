@@ -449,8 +449,8 @@ export const useSuggestionActions = ({
       const mountPath = suggestion.payload.worktreePath;
       return {
         primary: {
-          label: scribe === 'ready' ? 'Review text' : 'Open PR',
-          shortLabel: scribe === 'ready' ? 'Review' : 'Open',
+          label: scribe === 'ready' ? 'Review text' : 'Create pull request',
+          shortLabel: scribe === 'ready' ? 'Review' : 'Create',
           isDisabled: false,
           failureTitle: "Couldn't open the pull request form",
           run: async () => {

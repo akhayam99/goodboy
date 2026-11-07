@@ -219,7 +219,7 @@ describe('AgentFollowUps after a spawn', () => {
   it('opens the spawned child from its row', async () => {
     renderFollowUps({ followUps: [makeChild({})] });
 
-    screen.getByRole('button', { name: 'Go to chat' }).click();
+    screen.getByRole('button', { name: 'Open agent' }).click();
     await vi.waitFor(() => expect(state.navigate).toHaveBeenCalledTimes(1));
 
     expect(state.navigate).toHaveBeenCalledWith({

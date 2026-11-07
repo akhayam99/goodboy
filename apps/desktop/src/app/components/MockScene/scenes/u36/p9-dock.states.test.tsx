@@ -124,7 +124,7 @@ describe('the dock after a failure', () => {
     expect(retry.getAttribute('data-variant')).toBe('primary');
     expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(1);
     screen.getByRole('button', { name: 'Failed here' });
-    expect(screen.queryByText('The turn failed')).toBeNull();
+    expect(screen.getAllByText('Failed')).toHaveLength(1);
   });
 
   it('keeps the failure on screen when the retry fails too', async () => {

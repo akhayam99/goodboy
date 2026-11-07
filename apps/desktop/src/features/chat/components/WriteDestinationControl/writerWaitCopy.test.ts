@@ -15,7 +15,7 @@ describe('writerWaitCopy', () => {
       }),
     ).toEqual({
       title: 'Waiting to write in acme-notes.',
-      body: 'Tighten the launch memo is writing there now. One session writes in a folder at a time. This turn starts by itself when it finishes, in about 2 minutes. Until then, agents here can read and answer.',
+      body: 'Tighten the launch memo is writing there now. One session writes in a folder at a time. This reply starts by itself when it finishes, in about 2 minutes. Until then, agents here can read and answer.',
     });
   });
 
@@ -29,7 +29,7 @@ describe('writerWaitCopy', () => {
       'when it finishes, in about 1 minute.',
     );
     expect(writerWaitCopy({ view: { ...view, minutes: null } }).body).toContain(
-      'This turn starts by itself when it finishes. Until then',
+      'This reply starts by itself when it finishes. Until then',
     );
   });
 
@@ -51,7 +51,7 @@ describe('writerWaitCopy', () => {
       writerWaitCopy({ view: { folderName: null, writer: { kind: 'unknown' }, minutes: null } }),
     ).toEqual({
       title: 'Waiting for the writer.',
-      body: 'Another agent is writing in this folder. This turn starts by itself when it finishes. Until then, agents here can read and answer.',
+      body: 'Another agent is writing in this folder. This reply starts by itself when it finishes. Until then, agents here can read and answer.',
     });
   });
 
@@ -67,7 +67,7 @@ describe('writerWaitCopy', () => {
       }),
     ).toEqual({
       title: 'Waiting for Move the route table.',
-      body: 'It is still running and works on files this part also changes. This turn starts by itself when it finishes, in about 3 minutes.',
+      body: 'It is still running and works on files this part also changes. This reply starts by itself when it finishes, in about 3 minutes.',
     });
   });
 });

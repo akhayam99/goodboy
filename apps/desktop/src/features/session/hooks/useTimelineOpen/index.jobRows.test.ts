@@ -195,7 +195,7 @@ describe('the verb of a job row', () => {
 
     expect(
       result.current({ entry: agentEntry({ id: 'agent-other', kind: 'implementer' }) })?.label,
-    ).toBe('Open chat');
+    ).toBe('Open agent');
   });
 
   describe('a saved history event', () => {

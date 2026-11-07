@@ -119,7 +119,7 @@ describe('the u30 blocked mount step scene', () => {
     expect(actions).toEqual([`Reattach ${BLOCKED_BRANCH_A}`, `Use ${BLOCKED_BRANCH_B}`]);
     expect(within(nodeOf('[data-orchestrated-tail]')).queryByRole('form')).toBeNull();
     expect(
-      within(nodeOf('[data-orchestrated-tail]')).queryByRole('button', { name: 'Restart step' }),
+      within(nodeOf('[data-orchestrated-tail]')).queryByRole('button', { name: 'Retry step' }),
     ).toBeNull();
   });
 

@@ -192,7 +192,7 @@ describe('the Auto chat scenes', () => {
     const rows = await screen.findAllByTestId('queued-message-row', undefined, WAIT);
     expect(rows.map((row) => row.getAttribute('data-source'))).toEqual(['auto', 'agent']);
     expect(rows[0]?.textContent).toMatch(/Waits for /);
-    expect(rows[1]?.textContent).toContain('Waits for this turn');
+    expect(rows[1]?.textContent).toContain('Waits for this reply');
     expect(rows[0]?.querySelectorAll('[data-attachment-control]')).toHaveLength(2);
     expect(rows[1]?.querySelectorAll('[data-attachment-control]')).toHaveLength(1);
     expect(queueRows().getAllByRole('button', { name: 'Send now' })).toHaveLength(2);
@@ -258,7 +258,7 @@ describe('the Auto chat scenes', () => {
     expect(
       within(card).getAllByText('Revise Retry-safe credit retries to v2').length,
     ).toBeGreaterThan(0);
-    expect(within(card).getByRole('button', { name: 'Not now' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Decline' })).toBeDefined();
   });
 
   it('auto-chat-refused turns a refused hand over into the project ask, nothing started', async () => {

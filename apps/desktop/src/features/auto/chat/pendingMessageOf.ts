@@ -20,7 +20,7 @@ const STOPPED_REASON = 'Auto was stopped.';
 
 const NOT_DELIVERED = 'Not delivered';
 
-const WAITS_FOR_TURN = 'Waits for this turn';
+const WAITS_FOR_TURN = 'Waits for this reply';
 
 const waitingForOf = ({ view }: Params): string => {
   const open = view.delegations.filter(

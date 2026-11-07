@@ -11,6 +11,7 @@ import type { ProjectCandidate } from './projectCandidate';
 import { useProjectCandidates } from './hooks/useProjectCandidates';
 import { ProjectPickList } from './ProjectPickList';
 import { ObjectActionVerb } from '../../actions/ObjectActionVerb';
+import { NAMES } from '../../../shared/utils/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -201,7 +202,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
                   isBusy,
                   onDiscard: () =>
                     void run({
-                      label: 'Discard request',
+                      label: NAMES.decline,
                       work: () =>
                         reply({
                           content: 'Discard that request. Start nothing.',

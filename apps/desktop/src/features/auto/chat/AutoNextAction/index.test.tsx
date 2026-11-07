@@ -297,7 +297,7 @@ describe('the next step card', () => {
     const sendTurn = mockSend();
     renderCard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
 
     await waitFor(() =>
       expect(port).toHaveBeenCalledWith({ delegationId: 'delegation-impl', decision: 'decline' }),

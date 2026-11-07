@@ -71,7 +71,7 @@ export const ARTIFACT_GENERATION_PRESENTATION: Record<
     waiting: WAITING,
     unproduced: {
       label: 'No report',
-      reason: 'The turn ended without a report to read',
+      reason: 'The agent ended without a report',
       tone: 'warning',
       icon: CONCEPT_ICONS.runFailed,
     },
@@ -81,7 +81,7 @@ export const ARTIFACT_GENERATION_PRESENTATION: Record<
     waiting: WAITING,
     unproduced: {
       label: "Couldn't read wireframe",
-      reason: 'The turn ended without a wireframe to read',
+      reason: 'The agent ended without a wireframe',
       tone: 'warning',
       icon: CONCEPT_ICONS.runFailed,
     },

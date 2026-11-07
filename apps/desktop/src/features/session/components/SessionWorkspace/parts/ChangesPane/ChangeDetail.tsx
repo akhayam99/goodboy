@@ -65,7 +65,7 @@ export const ChangeDetail = ({
           ],
         };
   const restoreLabel =
-    file.change === 'added' ? 'Remove this new file' : `Restore to before turn ${turn.number}`;
+    file.change === 'added' ? 'Remove this new file' : `Restore to before reply ${turn.number}`;
 
   const onOpen = () => {
     void pending.run({

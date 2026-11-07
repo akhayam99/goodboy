@@ -157,9 +157,11 @@ const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {
 const UNKNOWN_STOP: StopPresentation = {
   phase: 'failed',
   tone: 'danger',
-  sentence: 'Stopped · reason not recognized',
+  sentence: 'Stopped.',
   showsMessage: true,
 };
+
+const UNKNOWN_STOP_WITHOUT_REASON = 'Stopped. No reason given.';
 
 const PLAN_REVISING_SENTENCE = 'The planner is revising the plan';
 
@@ -292,11 +294,15 @@ export const resolveOrchestratorState = ({
     const known: StopPresentation | undefined = STOP_PRESENTATION[stop.kind];
     const presentation = known ?? UNKNOWN_STOP;
     const isSpendStop = stop.kind === 'budget' && stop.message.startsWith('Paused at the ');
+    const isUnknownWithoutReason = known === undefined && stop.message.trim() === '';
+    const stopSentence = isUnknownWithoutReason
+      ? UNKNOWN_STOP_WITHOUT_REASON
+      : presentation.sentence;
     return {
       ...base,
       phase: presentation.phase,
       tone: presentation.tone,
-      sentence: isSpendStop ? stop.message : presentation.sentence,
+      sentence: isSpendStop ? stop.message : stopSentence,
       detail: presentation.showsMessage ? stop.message : null,
     };
   }

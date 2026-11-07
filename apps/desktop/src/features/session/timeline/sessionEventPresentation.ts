@@ -421,7 +421,7 @@ export const sessionEventLabel = ({
       ];
     }
     case 'project_materialization_refused': {
-      const reason = payload?.reason ?? 'unknown failure';
+      const reason = payload?.reason ?? 'No reason given';
       if (payload?.projectName == null) {
         return [{ kind: 'text', text: `Couldn't add a folder: ${reason}` }];
       }

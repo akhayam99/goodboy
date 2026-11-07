@@ -20,7 +20,7 @@ export const ChangeBody = ({ file, turnNumber, view, isCode }: Props) => {
         text={
           file.change === 'added'
             ? 'This new file was removed from the folder. Undo restore puts it back.'
-            : `This file is back to its text from before turn ${turnNumber}. Nothing differs from that version.`
+            : `This file is back to its text from before reply ${turnNumber}. Nothing differs from that version.`
         }
       />
     );

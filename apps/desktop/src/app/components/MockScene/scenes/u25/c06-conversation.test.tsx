@@ -75,7 +75,7 @@ describe('the c06 conversation scenes', () => {
     expect(mark.getAttribute('aria-label')).toBe('Claude');
     expect(mark.textContent).toBe('');
     expect(within(row).queryByRole('button', { name: 'Rename agent' })).toBeNull();
-    expect(within(row).queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(within(row).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
     expect(within(row).queryByText('Running')).toBeNull();
     expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
@@ -293,9 +293,9 @@ describe('the c06 conversation scenes', () => {
   it('c06-agent-transcript opens the transcript from the header menu, not from a header button', async () => {
     await mount({ name: 'c06-agent-finished' });
 
-    expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'View transcript' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open transcript' }));
     expect(useAppStore.getState().drawer?.kind).toBe('transcript');
   });
 

@@ -82,7 +82,7 @@ describe('runTailOf', () => {
     });
   });
 
-  it('offers Ask it to continue after a quiet stretch', () => {
+  it('offers Continue after a quiet stretch', () => {
     expect(tailOf({ quiet: { agentId: IMPLEMENTER, minutes: 15 } })).toMatchObject({
       phrase: 'No output for 15 min',
       verb: { kind: 'quiet', agentId: IMPLEMENTER },
@@ -237,7 +237,7 @@ describe('runTailOf', () => {
     });
   });
 
-  it('reads a blocked step as Not finished and keeps the Restart step door', () => {
+  it('reads a blocked step as Not finished and keeps the Retry step door', () => {
     const step = WORKFLOW.steps[1];
     if (step === undefined) {
       throw new Error('no step');

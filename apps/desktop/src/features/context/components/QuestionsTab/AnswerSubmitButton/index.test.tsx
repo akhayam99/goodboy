@@ -130,7 +130,7 @@ describe('AnswerSubmitButton', () => {
     expect(screen.queryByRole('button', { name: 'Send as message' })).toBeNull();
   });
 
-  it('reads Hand off when an agent decides', () => {
+  it('reads Send to agent when an agent decides', () => {
     render(
       <AnswerSubmitButton
         inputMode="one"
@@ -141,6 +141,6 @@ describe('AnswerSubmitButton', () => {
         onSkip={null}
       />,
     );
-    screen.getByRole('button', { name: 'Hand off' });
+    screen.getByRole('button', { name: 'Send to agent' });
   });
 });

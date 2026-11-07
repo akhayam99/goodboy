@@ -64,7 +64,7 @@ export const AnswerSubmitButton = ({
       data-demo-anchor="question-answer"
       className="min-w-18"
     >
-      {isHandOff ? 'Hand off' : 'Answer'}
+      {isHandOff ? 'Send to agent' : 'Answer'}
     </Button>
   </FormActions>
 );

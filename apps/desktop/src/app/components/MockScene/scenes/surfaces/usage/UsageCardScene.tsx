@@ -95,13 +95,7 @@ export const UsageCardScene = ({ theme }: Props) => {
           className="w-max"
           style={{ maxWidth: USAGE_CARD_MAX_WIDTH }}
         >
-          <TurnFooterDetail
-            data={card.data}
-            duration={card.duration}
-            startedAt={null}
-            endedAt={null}
-            turns={card.turns}
-          />
+          <TurnFooterDetail data={card.data} duration={card.duration} turns={card.turns} />
         </Popover>
       ))}
     </main>

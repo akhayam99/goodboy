@@ -30,7 +30,7 @@ type Params = {
   readonly nowMs: number;
 };
 
-const AGENT_QUEUED_TEXT = 'Waits for this turn';
+const AGENT_QUEUED_TEXT = 'Waits for this reply';
 
 const AGENT_SENDING_TEXT = 'Sending now';
 

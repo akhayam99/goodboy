@@ -37,7 +37,7 @@ describe('decision bylines', () => {
         replaces: 5,
         nowMs: NOW_MS,
       }),
-    ).toBe('Implementer · turn 14 · 1h ago · replaces 5');
+    ).toBe('Implementer · reply 14 · 1h ago · replaces 5');
   });
 
   it('keeps your own decisions to you and the age', () => {

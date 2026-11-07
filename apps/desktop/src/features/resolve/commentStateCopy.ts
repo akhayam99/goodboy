@@ -6,7 +6,7 @@ export const BAR_COPY = {
   more: 'More actions',
   retryPush: NAMES.retryPush,
   openTranscript: 'Open transcript',
-  viewOn: ({ host }: { readonly host: string }): string => `View on ${host}`,
+  viewOn: ({ host }: { readonly host: string }): string => `Open on ${host}`,
 } as const;
 
 export const PUSH_FAILED_TITLE = 'Push failed';

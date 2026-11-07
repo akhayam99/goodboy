@@ -25,7 +25,7 @@ export const skipStepTitle = ({ agent }: Pick<Params, 'agent'>): string => `Skip
 export const skipStepDescription = ({ run, agent, agents }: Params): string => {
   const next = nextNameOf({ agent, agents });
   if (isRunPaused({ run })) {
-    return `${SKIP_BODY} Nothing new starts until you resume.`;
+    return `${SKIP_BODY} Nothing new starts until you continue.`;
   }
   if (next === null && run.executionMode !== 'dynamic') {
     return `${SKIP_BODY} It was the last step.`;

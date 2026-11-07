@@ -162,10 +162,10 @@ describe('the c09 orchestrated scenes', () => {
       'The batching must be proven on 12,000 rows before any CSV work.',
     );
     const pane = nodeOf('[data-run-step-pane]');
-    expect(within(pane).queryByRole('button', { name: 'View transcript' })).toBeNull();
+    expect(within(pane).queryByRole('button', { name: 'Open transcript' })).toBeNull();
     fireEvent.click(within(pane).getByRole('button', { name: 'More actions' }));
-    expect(screen.getByRole('menuitem', { name: 'Open full' })).toBeDefined();
-    expect(screen.getAllByRole('menuitem', { name: 'View transcript' })).toHaveLength(1);
+    expect(screen.getByRole('menuitem', { name: 'Open agent' })).toBeDefined();
+    expect(screen.getAllByRole('menuitem', { name: 'Open transcript' })).toHaveLength(1);
     expect(screen.queryByPlaceholderText(/^Message/)).toBeNull();
     expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
@@ -215,14 +215,14 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.getAllByRole('button', { name: 'Decide next step' })).toHaveLength(1);
   });
 
-  it('c09-orch-failed says why and offers Retry and View transcript', async () => {
+  it('c09-orch-failed says why and offers Retry and Open transcript', async () => {
     await mount('c09-orch-failed');
 
     expect(
       within(tail()).getByText('Last decision failed: the orchestrator returned no step.'),
     ).toBeDefined();
     expect(within(header()).getByRole('button', { name: 'Retry' })).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'View transcript' })).toBeDefined();
+    expect(within(tail()).getByRole('button', { name: 'Open transcript' })).toBeDefined();
   });
 
   it('c09-orch-done shows the result with Done, Left and the next moves', async () => {

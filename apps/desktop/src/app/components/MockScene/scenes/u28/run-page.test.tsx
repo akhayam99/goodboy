@@ -98,13 +98,13 @@ describe('the u28 run page scenes', () => {
     const verbs = within(tail())
       .getAllByRole('button')
       .map((button) => button.textContent);
-    expect(verbs).toContain('Restart step');
-    expect(verbs).toContain('Open agent chat');
+    expect(verbs).toContain('Retry step');
+    expect(verbs).toContain('Open agent');
     expect(
       within(form).getByRole('button', { name: 'Keep working' }).hasAttribute('disabled'),
     ).toBe(true);
-    within(checklist()).getByRole('button', { name: /^Skip and go on/ });
-    expect(header().textContent).not.toContain('Restart step');
+    within(checklist()).getByRole('button', { name: /^Skip step/ });
+    expect(header().textContent).not.toContain('Retry step');
   });
 
   it('u28-run-step-blocked sends the answer to the blocked step and clears the field', async () => {
@@ -137,7 +137,7 @@ describe('the u28 run page scenes', () => {
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('needs-answer');
     expect(tail().textContent).toContain('Which export size should the benchmark treat');
-    expect(within(tail()).queryByRole('button', { name: 'Restart step' })).toBeNull();
+    expect(within(tail()).queryByRole('button', { name: 'Retry step' })).toBeNull();
     const answer = within(tail()).getByRole('button', { name: 'Answer' });
     expect(answer.hasAttribute('disabled')).toBe(true);
     within(tail()).getByText('Recommended');

@@ -92,7 +92,7 @@ describe('the resolver runtime scenes', () => {
         'Running on Cursor because you picked it for this turn. Cursor is Off in Settings.',
       ),
     ).toBeDefined();
-    expect(screen.queryByText('The turn stopped')).toBeNull();
+    expect(screen.queryByText('Stopped')).toBeNull();
   });
 
   it.each(Object.keys(U24_RESOLVER_RUNTIME_SCENES))(
