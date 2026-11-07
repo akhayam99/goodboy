@@ -51,7 +51,11 @@ describe('the busy act of an Auto port', () => {
     });
 
     expect(work).not.toHaveBeenCalled();
-    expect(reportError).toHaveBeenCalledWith({ title: TITLE, error: new Error(NOT_READY) });
+    expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'nothing-changed' },
+      title: TITLE,
+      error: new Error(NOT_READY),
+    });
     expect(result.current.busyIds).toEqual([]);
   });
 
@@ -115,7 +119,11 @@ describe('the busy act of an Auto port', () => {
       });
     });
 
-    expect(reportError).toHaveBeenCalledWith({ title: TITLE, error: failure });
+    expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
+      title: TITLE,
+      error: failure,
+    });
     expect(result.current.busyIds).toEqual([]);
   });
 });

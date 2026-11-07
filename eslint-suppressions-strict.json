@@ -784,11 +784,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/mount-request/createMrForSession.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/issue-briefs/issueBriefKey.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
@@ -812,6 +807,11 @@
   "apps/desktop/src/store/slices/monitoring/selectPortRows.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
+    }
+  },
+  "apps/desktop/src/store/slices/mount-request/createMrForSession.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
     }
   },
   "apps/desktop/src/store/slices/nudges/acceptSessionNudgeHandoff.ts": {
@@ -1359,6 +1359,11 @@
       "count": 3
     }
   },
+  "website/src/hooks/useReveal/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
   "website/src/mocks/kit/RunTree.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -1367,11 +1372,6 @@
   "website/src/mocks/kit/railGeometry.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
-    }
-  },
-  "website/src/hooks/useReveal/index.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
     }
   }
 }

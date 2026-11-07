@@ -67,6 +67,7 @@ describe('answering an Auto question', () => {
     });
 
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
       title: 'Auto has already moved on',
       error: new Error('This question is no longer open.'),
     });
@@ -85,7 +86,11 @@ describe('answering an Auto question', () => {
       await result.current.decide({ delegationId: 'delegation-export', decision: 'confirm' });
     });
 
-    expect(reportError).toHaveBeenCalledWith({ title: "Couldn't answer Auto", error: failure });
+    expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'check-state' },
+      title: "Couldn't answer Auto",
+      error: failure,
+    });
     expect(result.current.busyId).toBeNull();
   });
 
@@ -97,6 +102,7 @@ describe('answering an Auto question', () => {
     });
 
     expect(reportError).toHaveBeenCalledWith({
+      recovery: { clause: 'nothing-changed' },
       title: "Couldn't answer Auto",
       error: new Error("Auto can't take this answer here yet."),
     });
