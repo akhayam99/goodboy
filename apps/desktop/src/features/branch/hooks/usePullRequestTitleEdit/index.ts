@@ -22,7 +22,6 @@ export type PullRequestTitleEdit = {
   readonly error: string | null;
   readonly setDraft: (value: string) => void;
   readonly start: () => void;
-  readonly cancel: () => void;
   readonly save: () => void;
 };
 
@@ -113,5 +112,5 @@ export const usePullRequestTitleEdit = ({
   useShortcut('pullRequest.edit', start, isKeyActive && isAllowed && !isEditing);
   useEscapeLayer(cancel, isEditing);
 
-  return { canEdit: isAllowed, isEditing, isBusy, draft, error, setDraft, start, cancel, save };
+  return { canEdit: isAllowed, isEditing, isBusy, draft, error, setDraft, start, save };
 };

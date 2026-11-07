@@ -44,7 +44,6 @@
     "apps/desktop/src/app/components/MockScene/scenes/BoardScene.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/BoardShellScene.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/CardRailsScene.tsx": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/LensSwitcherScenes.tsx": 2,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 9,
     "apps/desktop/src/app/components/MockScene/scenes/SurfaceAuditScenes.tsx": 3,
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 1,

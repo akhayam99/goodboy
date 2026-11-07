@@ -1,4 +1,5 @@
 import type { TreeRetryResult } from './treeRetryPort';
+import { createPort } from './createPort';
 
 type SendNowResult = TreeRetryResult;
 
@@ -9,18 +10,8 @@ type SendNowParams = {
 
 export type SendNowPort = (params: SendNowParams) => Promise<SendNowResult>;
 
-type Registry = {
-  port: SendNowPort | null;
-};
+const slot = createPort<SendNowPort>();
 
-const registry: Registry = { port: null };
+export const registerSendNowPort = slot.register;
 
-type RegisterParams = {
-  readonly port: SendNowPort | null;
-};
-
-export const registerSendNowPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentSendNowPort = (): SendNowPort | null => registry.port;
+export const currentSendNowPort = slot.current;

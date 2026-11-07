@@ -265,7 +265,6 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Fix');
-    expect(actions.primary?.runsOn).toBeUndefined();
     await actions.primary?.run();
 
     expect(spies.requestReviewLaunch).toHaveBeenCalledWith({
@@ -798,7 +797,6 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Continue with Reviewer');
-    expect(actions.primary?.runsOn).toBeUndefined();
     actions.primary?.run();
     expect(continueWithRole).toHaveBeenCalledWith({
       sessionId: SESSION_ID,

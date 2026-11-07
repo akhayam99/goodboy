@@ -22,7 +22,7 @@ import type {
 } from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
-import type { BranchTab } from '../navigation/types';
+import type { SessionViewState } from './state';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -181,34 +181,7 @@ export type SessionCreation = {
   readonly startedAt: IsoDateTime;
 };
 
-type SessionViewSliceState = {
-  readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
-  readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
-  readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
-  readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  readonly awaitedArtifactAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  readonly focusedRunAgentId: Readonly<Record<SessionId, AgentId | null>>;
-  readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
-  readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
-  readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
-  readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
-  readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveItemDrafts: Readonly<
-    Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
-  >;
-  readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
-  readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
-  readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
-  readonly sessionDismissedNextSteps: Readonly<Record<SessionId, ReadonlySet<string>>>;
-  readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
-  readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
-  readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
-  readonly exploreExpanded: Readonly<
-    Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
-  >;
-  readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
-};
+type SessionViewSliceState = Omit<SessionViewState, 'selectedAgentId'>;
 
 type DismissCheckProposalParams = {
   readonly sessionId: SessionId;
@@ -261,13 +234,6 @@ type SessionViewSliceActions = {
   setResolveQueueView(params: {
     readonly sessionId: SessionId;
     readonly patch: Partial<ResolveQueueView>;
-  }): void;
-  openResolveDiff(params: {
-    readonly sessionId: SessionId;
-    readonly sha: string;
-    readonly path: string | null;
-    readonly order: ReadonlyArray<string>;
-    readonly scrollTop: number;
   }): void;
   setResolveItemDraft(params: {
     readonly sessionId: SessionId;

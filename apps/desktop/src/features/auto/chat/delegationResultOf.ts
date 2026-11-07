@@ -42,8 +42,6 @@ export type DelegationResultView = Readonly<{
   checks: ReadonlyArray<ResultCheckView>;
   artifacts: ReadonlyArray<ResultArtifactView>;
   questions: ReadonlyArray<string>;
-  costUsd: number | null;
-  isCostEstimated: boolean;
   reason: string | null;
   reasonText: string | null;
   remoteText: string | null;
@@ -128,7 +126,6 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
   }
   const declared = recordField({ source: result, key: 'declared' });
   const verified = recordField({ source: result, key: 'verified' });
-  const cost = recordField({ source: result, key: 'cost' });
   const reasonOf = textField({ source: result, key: 'reason' });
   const checks = mapped({ items: listField({ source: verified, key: 'checks' }), read: checkOf });
   const checksRun = checksRunOfResult({ result });
@@ -178,8 +175,6 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
       items: listField({ source: result, key: 'openQuestions' }),
       read: (value) => textField({ source: value, key: 'text' }),
     }),
-    costUsd: numberField({ source: cost, key: 'usd' }),
-    isCostEstimated: textField({ source: cost, key: 'basis' }) !== 'reported',
     reason: reasonOf,
     reasonText,
     remoteText: remoteTextOf({

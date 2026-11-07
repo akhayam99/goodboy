@@ -132,7 +132,6 @@ vi.mock('../../../../store', async () => ({
     agent.status !== 'skipped' &&
     agent.lastFinishedAt != null &&
     (agent.lastViewedAt == null || agent.lastFinishedAt > agent.lastViewedAt),
-  readPersistedLens: () => null,
   useAppStore: Object.assign(<T,>(selector: (state: Store) => T) => selector(store), {
     getState: () => store,
   }),

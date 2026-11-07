@@ -34,11 +34,7 @@ const foldedOf = ({ events }: { readonly events: ReadonlyArray<SessionEvent> }) 
   rowsOf(streamOf({ events })).find((item) => batchOf(item) !== undefined);
 
 const doneRowOf = ({ events }: { readonly events: ReadonlyArray<SessionEvent> }) =>
-  doneRowsOf({
-    model: modelOf({ events }),
-    source: null,
-    costs: { byAgentId: new Map(), byRunId: new Map() },
-  }).flatMap((day) => day.rows)[0];
+  doneRowsOf({ model: modelOf({ events }) }).flatMap((day) => day.rows)[0];
 
 describe('the log folds a batch of history events', () => {
   it('folds the 18 lines of one Rebase all into one entry', () => {

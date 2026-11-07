@@ -717,7 +717,6 @@
     "apps/desktop/src/features/scripts/scripts.ts": 4,
     "apps/desktop/src/features/search/components/SearchMode/index.tsx": 4,
     "apps/desktop/src/features/session/agent-kind.ts": 1,
-    "apps/desktop/src/features/session/agent-row-format.ts": 1,
     "apps/desktop/src/features/session/agentThreadIds.ts": 1,
     "apps/desktop/src/features/session/ask/askButtons.ts": 1,
     "apps/desktop/src/features/session/ask/askHandles.ts": 4,

@@ -424,8 +424,7 @@ writing to it reopens it to **Deciding**.
   `declined`) is the child state `stopped`, which `autoStuckKindOf` does not
   count: it leaves Next and the Running card's stuck actions, reads **Stopped** on the
   rail, and shows among the latest finished items of the Done card and in
-  the full log, with **Retry** in its detail (`doneRowsOf`, the same continue
-  as the Next retry). A settled
+  the full log (`doneRowsOf`). A settled
   child that did not complete is superseded, state `retried`, when a later
   delegation takes the same role on the same branch (`target.mountId`), with or
   without `retryOf` (`autoGroupOf`).

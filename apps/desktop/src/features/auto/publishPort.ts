@@ -1,3 +1,5 @@
+import { createPort } from './createPort';
+
 export type PublishAct = 'confirm' | 'decline' | 'retry' | 'put_back';
 
 type PublishRowState =
@@ -21,18 +23,8 @@ type ActParams = {
 
 export type PublishPort = (params: ActParams) => Promise<PublishResult>;
 
-type Registry = {
-  port: PublishPort | null;
-};
+const slot = createPort<PublishPort>();
 
-const registry: Registry = { port: null };
+export const registerPublishPort = slot.register;
 
-type RegisterParams = {
-  readonly port: PublishPort | null;
-};
-
-export const registerPublishPort = ({ port }: RegisterParams): void => {
-  registry.port = port;
-};
-
-export const currentPublishPort = (): PublishPort | null => registry.port;
+export const currentPublishPort = slot.current;

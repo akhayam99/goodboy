@@ -14,7 +14,7 @@ import type {
 } from '@goodboy/types';
 import { repointWorkflowRunTemplate, type WorkflowRunStepRepoint } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
+import { uniqueNameOf } from '../../../features/workflows/uniqueNameOf';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import {
@@ -137,7 +137,10 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       id: stepId,
       role,
       ordinal,
-      name: uniqueStepName({ requested: trimmedName, steps: workflow.steps }),
+      name: uniqueNameOf({
+        requested: trimmedName,
+        taken: workflow.steps.map((step) => step.name),
+      }),
       promptPrefix: promptPrefix?.trim() ?? '',
       ...(expectedOutput != null &&
         expectedOutput.trim() !== '' && { expectedOutput: expectedOutput.trim() }),

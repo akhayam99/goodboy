@@ -21,6 +21,5 @@
   "apps/desktop/src/shared/components/PromptField/index.tsx": 1,
   "apps/desktop/src/shared/components/RoutingPicker/index.tsx": 2,
   "apps/desktop/src/shared/components/RoutingPicker/PickerChip.tsx": 1,
-  "apps/desktop/src/shared/components/RunsOn/index.tsx": 1,
   "packages/ui/src/components/SelectionCheckbox.tsx": 1
 }

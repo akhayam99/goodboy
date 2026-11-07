@@ -1,4 +1,5 @@
 import type { Agent, AgentId } from '@goodboy/types';
+import { childAgentsByParent } from '../../shared/utils/childAgentsByParent';
 
 type Params = {
   readonly agents: ReadonlyArray<Agent>;
@@ -6,21 +7,21 @@ type Params = {
 };
 
 export const descendantAgentsOf = ({ agents, rootId }: Params): ReadonlyArray<Agent> => {
+  const childrenOf = childAgentsByParent({ agents });
+  const positionOf = new Map<AgentId, number>(agents.map((agent, index) => [agent.id, index]));
   const found: Array<Agent> = [];
-  const seen = new Set<string>([rootId]);
-  let frontier: ReadonlyArray<string> = [rootId];
+  const seen = new Set<AgentId>([rootId]);
+  let frontier: ReadonlyArray<AgentId> = [rootId];
   while (frontier.length > 0) {
-    const children = agents.filter(
-      (agent) =>
-        agent.parentAgentId != null &&
-        frontier.includes(agent.parentAgentId) &&
-        !seen.has(agent.id),
-    );
-    for (const child of children) {
+    const level = frontier
+      .flatMap((parentId) => childrenOf.get(parentId) ?? [])
+      .filter((child) => !seen.has(child.id))
+      .sort((first, second) => (positionOf.get(first.id) ?? 0) - (positionOf.get(second.id) ?? 0));
+    for (const child of level) {
       seen.add(child.id);
       found.push(child);
     }
-    frontier = children.map((child) => child.id);
+    frontier = level.map((child) => child.id);
   }
   return found;
 };

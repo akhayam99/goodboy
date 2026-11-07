@@ -136,4 +136,24 @@ describe('Linked work record', () => {
     });
     expect(captureLocation({ state: store.getState() }).place).toEqual(BOARD_PLACE);
   });
+
+  it('keeps a drawer opened while the unlink was running', async () => {
+    let finish: (isCommitted: boolean) => void = () => undefined;
+    h.replaceLinks.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    mount();
+    await requestUnlink();
+    act(() => {
+      store.getState().openDrawer({ kind: 'ask', sessionId: SESSION_ID, payload: null });
+    });
+    await act(async () => {
+      finish(true);
+    });
+    expect(store.getState().drawer?.kind).toBe('ask');
+    expect(store.getState().focusedExternalTask[SESSION_ID]?.externalId).toBe(TASK.externalId);
+  });
 });

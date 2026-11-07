@@ -64,7 +64,7 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     return {
       kind: 'branch',
       mountPath,
-      tab: branchTabOf({ state, sessionId, mountPath }),
+      tab: branchTabOf({ state, sessionId }),
       threadId: openThreadOf({ state, sessionId }),
       focus: state.diffFocus[sessionId] ?? null,
     };

@@ -38,7 +38,7 @@ export const PartCommentFrame = ({ index, title, children }: Props) => {
         ) : null}
       </div>
       {comments.length === 0 && !isComposing ? null : (
-        <div className="pl-9">
+        <div className="pl-9 pr-2">
           <CommentThread comments={comments} isComposing={isComposing} />
         </div>
       )}

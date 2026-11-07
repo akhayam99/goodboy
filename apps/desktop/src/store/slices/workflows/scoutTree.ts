@@ -7,6 +7,7 @@ import type {
   WorkflowRoutingProposal,
 } from '@goodboy/types';
 import { isoNow } from '@goodboy/types/helpers';
+import { orderedChildAgentsOf } from '../../../shared/utils/orderedChildAgentsOf';
 import { extractFanOut, type ExtractedFanOutArea } from '@goodboy/core/context';
 import {
   FAN_OUT_MAX_CHILDREN,
@@ -49,11 +50,10 @@ const TERMINAL: ReadonlyArray<Agent['status']> = [
   'stopped',
 ];
 
-const childrenOf = (runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArray<Agent> => {
-  return runs
-    .filter((r) => r.parentAgentId === parentId && !isQuestionDelegate({ agent: r }))
-    .sort((a, b) => a.ordinal - b.ordinal);
-};
+const scoutChildrenOf = (runs: ReadonlyArray<Agent>, parentId: AgentId): ReadonlyArray<Agent> =>
+  orderedChildAgentsOf({ agents: runs, parentId }).filter(
+    (agent) => !isQuestionDelegate({ agent }),
+  );
 
 type ChildLiveParams = Readonly<{
   get: GetFn;
@@ -360,7 +360,7 @@ export const startFanOutChildren = async ({
   readonly specs: ReadonlyArray<FanOutChildSpec>;
 }): Promise<FanOutStartResult> => {
   const existing = get().sessionPhaseRuns[sessionId] ?? [];
-  if (childrenOf(existing, container.id).length > 0) {
+  if (scoutChildrenOf(existing, container.id).length > 0) {
     return { kind: 'skipped' };
   }
 
@@ -534,7 +534,7 @@ const maybeSynthesizeParent = async ({
     return;
   }
 
-  const siblings = childrenOf(runs, parentId);
+  const siblings = scoutChildrenOf(runs, parentId);
   if (siblings.some((s) => !TERMINAL.includes(s.status) || hasLiveRun({ get, childId: s.id }))) {
     return;
   }

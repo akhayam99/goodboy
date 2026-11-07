@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, AgentId, MeasuredTurnSpan, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Agent, MeasuredTurnSpan, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { useNow } from '../../../shared/hooks/useNow';
+import { childAgentsByParent } from '../../../shared/utils/childAgentsByParent';
 import { listQuietRuns } from '../../chat/turn';
 import { WorkTimeContext, type WorkTimeSource } from '../workTimeSource';
 
@@ -96,21 +97,16 @@ export const WorkTimeProvider = ({ sessionId, workspaceId, children }: Props) =>
     return quiet;
   }, [liveRuns, quietByRun]);
 
-  const childrenOf = useMemo(() => {
-    const children = new Map<string, Array<AgentId>>();
-    for (const agent of agents) {
-      if (agent.parentAgentId == null) {
-        continue;
-      }
-      const siblings = children.get(agent.parentAgentId);
-      if (siblings === undefined) {
-        children.set(agent.parentAgentId, [agent.id]);
-        continue;
-      }
-      siblings.push(agent.id);
-    }
-    return children;
-  }, [agents]);
+  const childrenOf = useMemo(
+    () =>
+      new Map(
+        [...childAgentsByParent({ agents })].map(([parentId, children]) => [
+          parentId,
+          children.map((child) => child.id),
+        ]),
+      ),
+    [agents],
+  );
 
   const liveStartMs = useMemo(() => {
     const starts = new Map<string, number>();

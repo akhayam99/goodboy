@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { brandId, type AgentId, type MeasuredTurnSpan } from '@goodboy/types';
+import { brandId, type AgentId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
   aDelegation,
@@ -8,14 +8,8 @@ import {
   FIXTURE_ROOT,
   FIXTURE_SESSION,
 } from '../../../auto/testing/autoViewFixtures';
-import { agentWorkTime, estimateKeyOf } from '../../../workTreeModel/agentWorkTime';
-import type { WorkTimeSource } from '../../../workTreeModel/workTimeSource';
-import { KIND_TO_ROLE } from '../../agent-kind';
 import { doneRowsOf } from './doneRowsOf';
-import type { DoneCosts } from './doneTypes';
 import { at, eventOf, modelOf, NOW, stepAgent, workflowOf } from './testing/doneFixtures';
-
-const NO_COSTS: DoneCosts = { byAgentId: new Map(), byRunId: new Map() };
 
 const done = (overrides: Parameters<typeof anAgent>[0] = {}) =>
   anAgent({
@@ -27,29 +21,9 @@ const done = (overrides: Parameters<typeof anAgent>[0] = {}) =>
   });
 
 const rowsOf = (model: Parameters<typeof doneRowsOf>[0]['model']) =>
-  doneRowsOf({ model, source: null, costs: NO_COSTS }).flatMap((day) => day.rows);
+  doneRowsOf({ model }).flatMap((day) => day.rows);
 
 describe('doneRowsOf', () => {
-  it('puts the files a turn wrote in the row of the agent that wrote them, and none in another', () => {
-    const model = modelOf({
-      agents: [
-        done({ id: brandId<AgentId>({ value: 'writer' }), kind: 'scribe', name: 'a' }),
-        done({ id: brandId<AgentId>({ value: 'reader' }), kind: 'planner', name: 'b' }),
-      ],
-    });
-    const files = {
-      own: [
-        { path: 'src/webhooks/retry.ts', status: 'modified' as const, additions: 4, deletions: 1 },
-      ],
-      fromBase: ['src/ledger/post.ts'],
-    };
-
-    const rows = rowsOf({ ...model, turnFiles: new Map([['writer', files]]) });
-
-    expect(rows.find((row) => row.entryId === 'agent:writer')?.detail.files).toEqual(files);
-    expect(rows.find((row) => row.entryId === 'agent:reader')?.detail.files).toBeNull();
-  });
-
   it('lists finished work only', () => {
     const model = modelOf({
       agents: [
@@ -84,7 +58,7 @@ describe('doneRowsOf', () => {
       ],
     });
 
-    const days = doneRowsOf({ model, source: null, costs: NO_COSTS });
+    const days = doneRowsOf({ model });
 
     expect(days.map((day) => day.rows.map((row) => row.entryId))).toEqual([
       ['agent:second', 'agent:first'],
@@ -112,10 +86,7 @@ describe('doneRowsOf', () => {
       title: 'Wrote the tests first',
       by: 'Build · steps 1 and 2 of 6',
     });
-    expect(rows[0]?.detail.steps.map((step) => step.title)).toEqual([
-      'Scoped the change',
-      'Wrote the tests first',
-    ]);
+    expect([...(rows[0]?.agentIds ?? [])].sort()).toEqual(['agent-step-1', 'agent-step-2']);
   });
 
   it('gives a live run one row per day', () => {
@@ -128,7 +99,7 @@ describe('doneRowsOf', () => {
       runs: [workflowOf({ total: 6 })],
     });
 
-    const days = doneRowsOf({ model, source: null, costs: NO_COSTS });
+    const days = doneRowsOf({ model });
 
     expect(days.map((day) => day.rows.map((row) => row.by))).toEqual([
       ['Build · step 2 of 6'],
@@ -178,7 +149,6 @@ describe('doneRowsOf', () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.entryId).toBe(`agent:${FIXTURE_ROOT}`);
-    expect(rows[0]?.detail.auto?.children).toHaveLength(2);
   });
 
   it('keeps a running Auto tree out of the list', () => {
@@ -188,7 +158,7 @@ describe('doneRowsOf', () => {
     expect(rowsOf(modelOf({ agents: [root], autoTrees: [view] }))).toEqual([]);
   });
 
-  it('lists a child you stopped or declined in a live Auto tree, with its retry target', () => {
+  it('lists a child you stopped or declined in a live Auto tree', () => {
     const settledAt = NOW.getTime() - 60_000;
     const view = aView({
       phase: 'waiting',
@@ -226,9 +196,9 @@ describe('doneRowsOf', () => {
 
     const rows = rowsOf(modelOf({ agents: [root], autoTrees: [view] }));
 
-    expect(rows.map((row) => [row.title, row.by, row.retryAgentId, row.mountId])).toEqual([
-      ['You stopped the reviewer', 'Auto', 'agent-billing', 'mount-billing'],
-      ['You declined the implementer', 'Auto', 'agent-settings', null],
+    expect(rows.map((row) => [row.title, row.by])).toEqual([
+      ['You stopped the reviewer', 'Auto'],
+      ['You declined the implementer', 'Auto'],
     ]);
     expect(rows[0]?.entryId).toBe(`agent:${FIXTURE_ROOT}`);
   });
@@ -250,90 +220,5 @@ describe('doneRowsOf', () => {
 
     expect(rowsOf(lone).map((row) => row.by)).toEqual(['Rebase']);
     expect(rowsOf(owned).map((row) => row.entryId)).toEqual(['agent:rebaser']);
-  });
-
-  it('reads duration and cost from their owners', () => {
-    const agent = done({ id: brandId<AgentId>({ value: 'scribe' }), kind: 'scribe' });
-    const span: MeasuredTurnSpan = {
-      agentId: agent.id,
-      parentAgentId: null,
-      agentStatus: 'completed',
-      workflowRunId: null,
-      isOrchestratedRunDone: false,
-      stepRole: 'scribe',
-      provider: 'anthropic',
-      model: 'claude-opus-5-5',
-      effort: 'high',
-      startedAtMs: new Date(at({ hour: 9 })).getTime(),
-      endedAtMs: new Date(at({ hour: 9, minute: 12 })).getTime(),
-      endReason: 'succeeded',
-      costUsd: 0.4,
-      touchedMountIds: null,
-    };
-    const source: WorkTimeSource = {
-      nowMs: NOW.getTime(),
-      spans: [span],
-      history: null,
-      liveStartMs: new Map(),
-      childrenOf: new Map(),
-    };
-    const costs: DoneCosts = {
-      byAgentId: new Map([[agent.id, 0.4]]),
-      byRunId: new Map(),
-    };
-
-    const [row] = doneRowsOf({ model: modelOf({ agents: [agent] }), source, costs }).flatMap(
-      (day) => day.rows,
-    );
-
-    const owned = agentWorkTime({
-      agentId: agent.id,
-      key: estimateKeyOf({
-        role: KIND_TO_ROLE.scribe,
-        provider: null,
-        model: null,
-        effort: null,
-        size: null,
-      }),
-      unit: 'turn',
-      phase: 'done',
-      source,
-    });
-    expect(row?.detail.duration).toBe(owned?.label);
-    expect(row?.detail.duration).toBe('12m');
-    expect(row?.detail.costUsd).toBe(costs.byAgentId.get(agent.id));
-    expect(row?.detail.model).not.toBeNull();
-  });
-});
-
-describe('doneRowsOf full text', () => {
-  it('titles the row with the first step and keeps the whole summary for the detail', () => {
-    const summary = 'apply fix -> verify tsc -> lint -> ready for push';
-    const [row] = rowsOf(
-      modelOf({ agents: [done({ kind: 'implementer', outputSummary: summary })] }),
-    );
-
-    expect(row?.title).toBe('Apply fix');
-    expect(row?.detail.fullText).toBe(summary);
-  });
-
-  it('keeps no full text when the title says it all or the summary is a recap', () => {
-    const [plain] = rowsOf(
-      modelOf({ agents: [done({ kind: 'implementer', outputSummary: 'Wrote the retry tests' })] }),
-    );
-    const [recap] = rowsOf(
-      modelOf({
-        agents: [
-          done({
-            kind: 'implementer',
-            outputSummary: JSON.stringify({ done: ['Wrote the tests'] }),
-          }),
-        ],
-      }),
-    );
-
-    expect(plain?.detail.fullText).toBeNull();
-    expect(recap?.title).toBe('Wrote the tests');
-    expect(recap?.detail.fullText).toBeNull();
   });
 });

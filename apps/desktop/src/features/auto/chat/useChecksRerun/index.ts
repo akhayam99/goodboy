@@ -1,9 +1,10 @@
-import { CHECK_STATE, NOTHING_CHANGED } from '../../../../store/slices/notifications/errorRecovery';
-import { useCallback, useState } from 'react';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
+import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { currentChecksRerunPort } from '../../checksRerunPort';
+import { currentChecksRerunPort, type ChecksRerunPort } from '../../checksRerunPort';
 import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
+import { useBusyAct } from '../../hooks/useBusyAct';
 
 const FAILED_TITLE = "Couldn't run the checks again";
 
@@ -20,38 +21,30 @@ export type ChecksRerunModel = Readonly<{
 export const useChecksRerun = (): ChecksRerunModel => {
   const reportError = useAppStore((state) => state.reportError);
   const loadAutoTrees = useAppStore((state) => state.loadAutoTrees);
-  const [runningId, setRunningId] = useState<string | null>(null);
+  const { busyIds, run } = useBusyAct<ChecksRerunPort>({
+    title: FAILED_TITLE,
+    notReadyMessage: AUTO_STARTING_SENTENCE,
+    currentPort: currentChecksRerunPort,
+  });
 
   const rerun = useCallback(
-    async ({ delegationId, sessionId }: RerunParams): Promise<void> => {
-      const port = currentChecksRerunPort();
-      if (port === null) {
-        await reportError({
-          recovery: NOTHING_CHANGED,
-          title: FAILED_TITLE,
-          error: new Error(AUTO_STARTING_SENTENCE),
-        });
-        return;
-      }
-      setRunningId(delegationId);
-      try {
-        const result = await port({ delegationId });
-        if (result.kind === 'refused') {
-          await reportError({
-            recovery: CHECK_STATE,
-            title: FAILED_TITLE,
-            error: new Error(result.message),
-          });
-        }
-        await loadAutoTrees({ sessionId });
-      } catch (error) {
-        await reportError({ recovery: CHECK_STATE, title: FAILED_TITLE, error });
-      } finally {
-        setRunningId(null);
-      }
-    },
-    [loadAutoTrees, reportError],
+    ({ delegationId, sessionId }: RerunParams): Promise<void> =>
+      run({
+        busyIds: [delegationId],
+        work: async ({ port }) => {
+          const result = await port({ delegationId });
+          if (result.kind === 'refused') {
+            await reportError({
+              recovery: CHECK_STATE,
+              title: FAILED_TITLE,
+              error: new Error(result.message),
+            });
+          }
+          await loadAutoTrees({ sessionId });
+        },
+      }),
+    [loadAutoTrees, reportError, run],
   );
 
-  return { runningId, rerun };
+  return { runningId: busyIds[0] ?? null, rerun };
 };

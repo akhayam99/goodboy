@@ -28,7 +28,6 @@
   "apps/desktop/src/shared/components/RoutingPicker/recommendationSummary.ts": 1,
   "apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx": 6,
   "apps/desktop/src/shared/components/RoutingPicker/routingSummary.ts": 3,
-  "apps/desktop/src/shared/components/RunsOn/index.tsx": 1,
   "apps/desktop/src/shared/components/SavedVersionsMeter.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordDetailEmptyState.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordDetailSkeleton/index.tsx": 1,

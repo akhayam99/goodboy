@@ -90,7 +90,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/onboarding/HomeScene.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/onboarding/NewWorkspaceScene.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/PlannerTranscriptScene.test.tsx": 1,
-  "apps/desktop/src/app/components/MockScene/scenes/RunsOnScene.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/ScribeProposalScenes.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/SessionAskScene.test.tsx": 1,
   "apps/desktop/src/app/components/MockScene/scenes/sessions/SessionColumnScene.test.tsx": 1,

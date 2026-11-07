@@ -23,20 +23,7 @@ const rowOf = ({ id, agents }: RowParams): DoneRowModel => ({
   kind: 'implementer',
   leadAgentId: null,
   at: '2026-10-18T09:00:00.000Z',
-  mountId: null,
-  retryAgentId: null,
   agentIds: agents.map((agent) => brandId<AgentId>({ value: agent })),
-  detail: {
-    model: null,
-    effort: null,
-    duration: null,
-    costUsd: null,
-    fullText: null,
-    steps: [],
-    auto: null,
-    branches: [],
-    files: null,
-  },
 });
 
 type AgentParams = {

@@ -7,7 +7,6 @@ import { currentSendNowPort } from '../../sendNowPort';
 import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { currentWithdrawPort } from '../../withdrawPort';
-import type { RailRow } from '../railRowsOf';
 import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
 
 type Params = {
@@ -41,16 +40,13 @@ export type AutoTreeActions = Readonly<{
   retry: (params: ViewParams) => Promise<void>;
   sendNow: (params: SendNowParams) => Promise<void>;
   withdraw: (params: SendNowParams) => Promise<WithdrawOutcome>;
-  openAgent: (agentId: AgentId) => void;
   openChild: (agentId: AgentId) => void;
-  openRow: (row: Pick<RailRow, 'kind' | 'agentId'>) => void;
   openArtifact: (artifactId: string) => void;
 }>;
 
 export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   const navigate = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
-  const closeDrawer = useAppStore((state) => state.closeDrawer);
   const loadAutoTrees = useAppStore((state) => state.loadAutoTrees);
   const [stoppingTreeId, setStoppingTreeId] = useState<AutoTreeId | null>(null);
   const [failure, setFailure] = useState<AutoTreeActionFailure | null>(null);
@@ -153,28 +149,9 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     [loadAutoTrees, sessionId],
   );
 
-  const openAgent = useCallback(
-    (agentId: AgentId) => {
-      closeDrawer();
-      navigate({ to: agentPlace({ sessionId, agentId }) });
-    },
-    [closeDrawer, navigate, sessionId],
-  );
-
   const openChild = useCallback(
     (agentId: AgentId) => navigate({ to: agentPlace({ sessionId, agentId }) }),
     [navigate, sessionId],
-  );
-
-  const openRow = useCallback(
-    (row: Pick<RailRow, 'kind' | 'agentId'>) => {
-      if (row.kind === 'child') {
-        openChild(row.agentId);
-        return;
-      }
-      openAgent(row.agentId);
-    },
-    [openAgent, openChild],
   );
 
   const openArtifact = useCallback(
@@ -195,9 +172,7 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     retry,
     sendNow,
     withdraw,
-    openAgent,
     openChild,
-    openRow,
     openArtifact,
   };
 };

@@ -12,8 +12,6 @@ const resultWith = ({ summary }: { readonly summary: string | null }): Delegatio
   checks: [],
   artifacts: [],
   questions: [],
-  costUsd: null,
-  isCostEstimated: false,
   reason: null,
   reasonText: null,
   remoteText: null,
