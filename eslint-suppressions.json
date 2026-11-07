@@ -7480,11 +7480,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/shared/hooks/useFollowToast/callers.test.ts": {
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/shared/hooks/useInlineRename/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2

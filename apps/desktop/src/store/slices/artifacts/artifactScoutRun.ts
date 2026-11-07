@@ -125,10 +125,9 @@ const TERMINAL: ReadonlyArray<Agent['status']> = ['completed', 'failed', 'skippe
 
 const RECOVERABLE_KINDS: ReadonlyArray<Agent['kind']> = ['wireframe', 'report'];
 
-const liveChildrenOf = ({
-  agents,
-  containerId,
-}: Readonly<{ agents: ReadonlyArray<Agent>; containerId: AgentId }>): ReadonlyArray<Agent> =>
+type ChildrenParams = Readonly<{ agents: ReadonlyArray<Agent>; containerId: AgentId }>;
+
+const liveChildrenOf = ({ agents, containerId }: ChildrenParams): ReadonlyArray<Agent> =>
   orderedChildAgentsOf({ agents, parentId: containerId }).filter(
     (agent) => agent.deletedAt == null,
   );

@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { currentPublishPort, type PublishAct, type PublishPort } from '../../publishPort';
 import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
-import { useBusyAct } from '../useBusyAct';
+import { useBusyAct } from '../../hooks/useBusyAct';
 
 const FAILED_TITLE = "Couldn't finish the push";
 

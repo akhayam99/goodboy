@@ -3,7 +3,7 @@ import type { SessionWorktree } from '@goodboy/db';
 import type { Session, SessionId, Step, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../../store';
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
-import { useSessionRunHistory } from '../../../../../hooks/useSessionRunHistory';
+import { useSessionRunHistory } from '../../../../../../../shared/hooks/useSessionRunHistory';
 import { useSessionWorkModel } from '../../../../../central/useSessionWorkModel';
 import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
 import { logEntriesMatching } from '../../../../../timeline/logSearch';

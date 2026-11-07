@@ -2,7 +2,7 @@ import type { Session } from '@goodboy/types';
 
 import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
 import { useAppStore } from '../../../../../store';
-import { StartAnywayButton } from '../../../../workflows/components/StartAnywayButton';
+import { StartAnywayButton } from '../../../../workflows/StartAnywayButton';
 import type { RunView } from '../useRunView';
 import type { RunPrimaryVariant } from './RunPrimaryAction';
 

@@ -1,7 +1,7 @@
 import { TriangleAlert, Play } from 'lucide-react';
 import { Button, ConfirmPopover, ICON_SIZE } from '@goodboy/ui';
-import type { WorkflowBlockReason } from '../../advanceGate';
-import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
+import type { WorkflowBlockReason } from './advanceGate';
+import { useStartAnywayConfirm } from './useStartAnywayConfirm';
 
 type StartParams = {
   readonly isConfirmed: boolean;

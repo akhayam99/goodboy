@@ -218,8 +218,8 @@ describe('WorkflowRunStartButton', () => {
     await pressStart();
 
     expect(onStart).not.toHaveBeenCalled();
-    expect(screen.getByText('Start this run anyway?')).toBeDefined();
-    expect(screen.getByText('Open questions are waiting for an answer.')).toBeDefined();
+    screen.getByText('Start this run anyway?');
+    screen.getByText('Open questions are waiting for an answer.');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start anyway' }));

@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { currentChecksRerunPort, type ChecksRerunPort } from '../../checksRerunPort';
 import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
-import { useBusyAct } from '../useBusyAct';
+import { useBusyAct } from '../../hooks/useBusyAct';
 
 const FAILED_TITLE = "Couldn't run the checks again";
 

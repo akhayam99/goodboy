@@ -39,7 +39,7 @@
   "session -> inbox": 3,
   "session -> plans": 1,
   "session -> suggestions": 3,
-  "session -> workflows": 17,
+  "session -> workflows": 15,
   "session -> worktree": 2,
   "settings -> integrations": 2,
   "settings -> storage": 2,

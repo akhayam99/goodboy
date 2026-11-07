@@ -1,8 +1,12 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { useAppStore } from '../../../../store';
+import {
+  importStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { makeGate } from '../../../../store/runtime/auto/testing/makeGate';
 import { useBusyAct } from './index';
 
@@ -11,7 +15,13 @@ type TestPort = (params: { readonly value: number }) => Promise<void>;
 const TITLE = "Couldn't do it";
 const NOT_READY = 'Not ready yet.';
 
+let useAppStore: StoryStore;
+
 const reportError = vi.fn(async () => undefined);
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {
   reportError.mockClear();

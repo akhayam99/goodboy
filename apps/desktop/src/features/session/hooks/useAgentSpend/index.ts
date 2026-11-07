@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { Agent, AgentId, SessionId, TelemetryRecord } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { agentSpendById } from '../../timeline/agentSpendById';
-import { useSessionRunHistory } from '../useSessionRunHistory';
+import { useSessionRunHistory } from '../../../../shared/hooks/useSessionRunHistory';
 
 type Params = {
   readonly sessionId: SessionId;

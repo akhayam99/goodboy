@@ -33,6 +33,9 @@ import { clusterOrderBlocks } from './clusterWaves/clusterOrderBlocks';
 import { launchableChildren } from './clusterWaves/launchableChildren';
 import { composeClusterChecks } from './clusterWaves/composeClusterChecks';
 
+const childrenIn = (runs: ReadonlyArray<Agent>, id: AgentId) =>
+  orderedChildAgentsOf({ agents: runs, parentId: id });
+
 export const clusterBoundaryMarker = (childId: AgentId): string =>
   `<<cluster-done id="${childId}">>`;
 
@@ -120,7 +123,7 @@ export const fanOutClusters = async (
     return;
   }
   const existing = get().sessionPhaseRuns[sessionId] ?? [];
-  if (orderedChildAgentsOf({ agents: existing, parentId: container.id }).length > 0) {
+  if (childrenIn(existing, container.id).length > 0) {
     return;
   }
 
@@ -212,7 +215,7 @@ export const fanOutClusters = async (
     };
   });
 
-  const children = orderedChildAgentsOf({ agents: materialized.agents, parentId: container.id });
+  const children = childrenIn(materialized.agents, container.id);
   for (const child of launchableChildren({ children, clusters })) {
     const index = children.indexOf(child);
     clusterLaunching.claim({ childId: child.id });
@@ -363,9 +366,7 @@ export const unsettledClusterChildren = (
   runs: ReadonlyArray<Agent>,
   containerId: AgentId,
 ): ReadonlyArray<Agent> =>
-  orderedChildAgentsOf({ agents: runs, parentId: containerId }).filter(
-    (child) => !isAgentStatusSettled({ status: child.status }),
-  );
+  childrenIn(runs, containerId).filter((child) => !isAgentStatusSettled({ status: child.status }));
 
 type ResumeClusterChildrenParams = {
   readonly set: SetFn;
@@ -381,7 +382,7 @@ export const resumeClusterChildren = async ({
   container,
 }: ResumeClusterChildrenParams): Promise<boolean> => {
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
-  const children = orderedChildAgentsOf({ agents: runs, parentId: container.id });
+  const children = childrenIn(runs, container.id);
   if (!children.some((child) => child.status === 'pending')) {
     return false;
   }
@@ -479,9 +480,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     });
     const clusters = plan?.clusters ?? [];
     const goalTitle = plan?.title ?? 'the plan';
-    const found = orderedChildAgentsOf({ agents: runs, parentId: containerId }).findIndex(
-      (c) => c.id === childAgentId,
-    );
+    const found = childrenIn(runs, containerId).findIndex((c) => c.id === childAgentId);
     const index = Math.max(0, found);
 
     let justDoneId: AgentId | undefined = childAgentId;
@@ -516,7 +515,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       if (outcome !== 'stuck') {
         return;
       }
-      const siblings = orderedChildAgentsOf({ agents: runs, parentId: containerId });
+      const siblings = childrenIn(runs, containerId);
       await invokeAgentUpdateStatus(childAgentId, {
         status: 'skipped',
         completedAt: isoNow(),
@@ -554,7 +553,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
-    const children = orderedChildAgentsOf({ agents: refreshed, parentId: containerId });
+    const children = childrenIn(refreshed, containerId);
     const isDone = (c: Agent): boolean =>
       c.id === childAgentId || isAgentStatusSettled({ status: c.status });
     const settledCount = children.filter(isDone).length;

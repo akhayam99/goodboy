@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { WorkflowAutonomy } from '@goodboy/types';
-import { makeGate } from '../../../store/runtime/auto/testing/makeGate';
+import { makeGate } from '../../../../store/runtime/auto/testing/makeGate';
 import { useAutonomyPick } from './index';
 
 type SaveParams = {

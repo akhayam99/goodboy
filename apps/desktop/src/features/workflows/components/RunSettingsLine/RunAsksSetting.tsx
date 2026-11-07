@@ -1,7 +1,7 @@
 import type { SessionId, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { runAutonomyOf } from '../../runAutonomy';
-import { useAutonomyPick } from '../../useAutonomyPick';
+import { useAutonomyPick } from '../../hooks/useAutonomyPick';
 import { AsksYouChip } from '../../AsksYouChip';
 import type { RunSettingWords } from './runSettingsOf';
 

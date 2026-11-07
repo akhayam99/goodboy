@@ -13,8 +13,12 @@ import {
   type TelemetryRecordId,
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
-import { useAppStore } from '../../../store';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../store/storyHarness';
 import { sumSessionCost } from '../../../store/slices/sessions/sumSessionCost';
 import { useAgentSpendById } from '../../workflows/hooks/useAgentSpendById';
 import { agentSpendById } from '../timeline/agentSpendById';
@@ -59,8 +63,10 @@ const RECORDS: ReadonlyArray<TelemetryRecord> = [
 
 const LEAD_AND_SCOUT_USD = 0.875;
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

@@ -1,6 +1,6 @@
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
-import { StartAnywayButton } from '../../../workflows/components/StartAnywayButton';
+import { StartAnywayButton } from '../../../workflows/StartAnywayButton';
 
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../../shared/lib/userStarts';

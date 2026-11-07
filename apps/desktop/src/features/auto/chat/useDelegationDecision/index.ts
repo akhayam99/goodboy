@@ -5,7 +5,7 @@ import {
   type DelegationDecision,
   type DelegationDecisionPort,
 } from '../../delegationDecisionPort';
-import { useBusyAct } from '../useBusyAct';
+import { useBusyAct } from '../../hooks/useBusyAct';
 
 const NOT_READY_TITLE = "Couldn't answer Auto";
 const LOST_TITLE = 'Auto has already moved on';

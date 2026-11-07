@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, ProviderRunId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore } from '../../../store';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 

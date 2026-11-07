@@ -1,7 +1,7 @@
 import { SegmentedTabs, useDropdown } from '@goodboy/ui';
 import type { WorkflowAutonomy, WorkflowRules } from '@goodboy/types';
 import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../runAutonomy';
-import { useAutonomyPick } from '../../useAutonomyPick';
+import { useAutonomyPick } from '../../hooks/useAutonomyPick';
 import { SettingChip } from '../../../../shared/components/SettingChip';
 
 type PatchRules = (next: Partial<WorkflowRules>) => Promise<void>;

@@ -4,7 +4,7 @@ import type { Agent, AgentId, ProviderName, SessionId, TelemetryRecord } from '@
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { ProviderContextUsage } from '../../components/AgentTree/ContextWindowBar';
 import type { AgentAggregate } from '../../agentAggregate';
-import { useSessionRunHistory } from '../useSessionRunHistory';
+import { useSessionRunHistory } from '../../../../shared/hooks/useSessionRunHistory';
 import { agentSpendById } from '../../timeline/agentSpendById';
 import { childAgentsByParent } from '../../../../shared/utils/childAgentsByParent';
 
