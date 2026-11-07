@@ -1,5 +1,4 @@
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
-import type { IsoDateTime } from '@goodboy/types';
 import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import type { TurnFooterData } from './useTurnFooter';
@@ -19,20 +18,11 @@ const providerLabelFor = (provider: TurnFooterData['provider']): string | null =
 type Props = {
   readonly data: TurnFooterData;
   readonly duration: string | null;
-  readonly startedAt: IsoDateTime | null;
-  readonly endedAt: IsoDateTime | null;
   readonly outcome?: string | null;
   readonly turns?: number | null;
 };
 
-export const TurnFooterDetail = ({
-  data,
-  duration,
-  startedAt,
-  endedAt,
-  outcome = null,
-  turns = null,
-}: Props) => {
+export const TurnFooterDetail = ({ data, duration, outcome = null, turns = null }: Props) => {
   const providerLabel = providerLabelFor(data.provider);
   const heading = [
     data.model !== null
@@ -47,8 +37,6 @@ export const TurnFooterDetail = ({
     data,
     figures: usageFigures({ data }),
     duration,
-    startedAt,
-    endedAt,
     outcome,
     turns,
   });

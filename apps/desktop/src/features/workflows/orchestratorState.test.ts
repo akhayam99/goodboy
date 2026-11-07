@@ -217,6 +217,22 @@ describe('resolveOrchestratorState', () => {
     );
   });
 
+  it('reads an unrecognized stop as Stopped with its message below, and says so when there is none', () => {
+    type SavedStopParams = { readonly message: string };
+    const savedStop = ({ message }: SavedStopParams): WorkflowOrchestrationStop =>
+      Object.assign({ kind: 'failure' as const, message }, { kind: 'retired-kind' });
+    const withMessage = resolve({
+      run: makeRun({ orchestrationStop: savedStop({ message: 'The planner lost the thread' }) }),
+    });
+    const withoutMessage = resolve({
+      run: makeRun({ orchestrationStop: savedStop({ message: '' }) }),
+    });
+
+    expect(withMessage.sentence).toBe('Stopped.');
+    expect(withMessage.detail).toBe('The planner lost the thread');
+    expect(withoutMessage.sentence).toBe('Stopped. No reason given.');
+  });
+
   it('reads a limit stop in its own words', () => {
     const state = resolve({
       run: makeRun({

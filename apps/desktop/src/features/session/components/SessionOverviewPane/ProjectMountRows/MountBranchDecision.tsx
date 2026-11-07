@@ -92,7 +92,7 @@ export const MountBranchDecision = ({
       await resolveMountBranchMismatch({ sessionId, mountId, resolution });
       onDismiss();
     } catch (error) {
-      void reportError({ title: "Couldn't settle the branch mismatch", error, sessionId });
+      void reportError({ title: "Couldn't change the branch", error, sessionId });
     } finally {
       setIsBusy(false);
     }

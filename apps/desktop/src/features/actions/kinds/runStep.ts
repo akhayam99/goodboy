@@ -15,7 +15,7 @@ export const RUN_STEP_KIND: ObjectKindDefinition<RunStepActionTarget, RunStepFac
   actions: [
     {
       id: 'runStep.transcript',
-      label: 'View transcript',
+      label: 'Open transcript',
       icon: ScrollText,
       group: 'open',
       when: () => true,
@@ -28,7 +28,7 @@ export const RUN_STEP_KIND: ObjectKindDefinition<RunStepActionTarget, RunStepFac
     },
     {
       id: 'runStep.openFull',
-      label: 'Open full',
+      label: 'Open agent',
       icon: SquareArrowOutUpRight,
       group: 'open',
       when: () => true,

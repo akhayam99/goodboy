@@ -63,7 +63,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
         </button>
       }
     >
-      <TurnFooterDetail data={data} duration={null} startedAt={null} endedAt={null} turns={turns} />
+      <TurnFooterDetail data={data} duration={null} turns={turns} />
     </AnchoredPopover>
   );
 };

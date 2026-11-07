@@ -26,8 +26,8 @@ export const SendControl = ({
       <DeliveryActions
         canSend={canSend}
         readNowLabel="Send now"
-        readNowHint="Stop the turn and read this now"
-        queueHint="Waits for this turn to end"
+        readNowHint="Stop and read this now"
+        queueHint="Waits for the reply"
         queueKeys={formatCombo('Enter')}
         readNowKeys={shortcutGlyphs('composer.submit')}
         onQueue={onSend}

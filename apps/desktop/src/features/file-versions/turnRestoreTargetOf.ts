@@ -8,7 +8,7 @@ export const turnRestoreTargetOf = ({ turn }: Params): RestoreTarget => ({
   scope: 'turn',
   runId: turn.runId,
   fileKey: null,
-  subject: `turn ${turn.number}`,
+  subject: `reply ${turn.number}`,
   turnNumber: turn.number,
   isNewFile: false,
   steps: Array.from(new Set(turn.folderPaths)).map((folderPath) => ({

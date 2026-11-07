@@ -6,6 +6,7 @@ import {
   FOCUS_RING,
   HeaderActions,
   ICON_SIZE,
+  StatusDot,
   Tooltip,
   TruncatedText,
   cn,
@@ -21,6 +22,7 @@ import { LiveGlyph } from '../now/LiveGlyph';
 import { ROW_COLUMNS } from '../rowColumns';
 import type { ActionCardModel } from './actionCardsOf';
 import { cardIconOf } from './cardIconOf';
+import { cardStateWordOf } from './cardStateWordOf';
 import type { CardActions, CardVerb } from './useActionCardActions';
 
 type Props = {
@@ -75,6 +77,7 @@ export const ActionCard = ({
   const [previewKind, setPreviewKind] = useState<AgentKind | null>(null);
   const { main, second, failure, menu, foldedTarget, stop = null } = actions;
   const Icon = cardIconOf({ card });
+  const stateWord = cardStateWordOf({ card });
   const glyphKind = previewKind ?? actions.agentKind;
   const palette = glyphKind === null ? null : agentKindPalette({ kind: glyphKind });
 
@@ -204,6 +207,14 @@ export const ActionCard = ({
               </TruncatedText>
             )}
             {chip}
+            {stateWord === null ? null : (
+              <span data-card-state-word="" className="flex shrink-0 items-center gap-2">
+                <StatusDot tone={stateWord.tone} size="sm" />
+                <span className="whitespace-nowrap text-ui text-muted-foreground">
+                  {stateWord.word}
+                </span>
+              </span>
+            )}
           </div>
           {card.detail === null ? null : (
             <TruncatedText className="text-meta text-muted-foreground">{card.detail}</TruncatedText>

@@ -47,9 +47,7 @@ const tagOf = ({
     <Chip
       tone="neutral"
       kind="state"
-      label={
-        comment.revision < revision ? `Not changed in v${revision}` : 'No new version in this turn'
-      }
+      label={comment.revision < revision ? `Not changed in v${revision}` : 'No new version'}
     />
   );
 };

@@ -382,7 +382,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.startTurnsHere',
-    label: 'Start new turns here',
+    label: 'Start replies here',
     icon: Play,
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && facts.canStartTurnsHere,

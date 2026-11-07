@@ -278,7 +278,7 @@ describe('Retry all from Fix', () => {
   it('offers no bulk retry for one stuck row', () => {
     mount({ group: groupOf({ autoTargets: [HOME_CHILD] }) });
 
-    expect(screen.queryByRole('button', { name: /Retry \d+ agents/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Retry \d+ agents$/ })).toBeNull();
   });
 });
 

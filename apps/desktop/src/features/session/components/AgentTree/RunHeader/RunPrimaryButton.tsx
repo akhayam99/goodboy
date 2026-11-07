@@ -87,7 +87,7 @@ export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props)
     resume: {
       icon: Play,
       hint: 'Start where the run left off',
-      failure: "Couldn't resume the run",
+      failure: "Couldn't continue the run",
       run: () => resumeWorkflowRun(sessionId, runId),
     },
     continue: {

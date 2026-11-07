@@ -50,8 +50,8 @@ const subOf = ({ child }: ChildParams): string | null => {
   if (child.state === 'done') {
     return null;
   }
-  const showsReason = STATE_COPY[child.state].isDanger || child.state === 'blocked';
-  return showsReason && child.reason !== null ? child.reason : askedOf({ child });
+  const shouldShowReason = STATE_COPY[child.state].isDanger || child.state === 'blocked';
+  return shouldShowReason && child.reason !== null ? child.reason : askedOf({ child });
 };
 
 export const autoChildCopyOf = ({ child }: ChildParams): AutoChildCopy => {

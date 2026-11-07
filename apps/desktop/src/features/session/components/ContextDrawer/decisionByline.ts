@@ -54,7 +54,7 @@ export const activeDecisionByline = ({
     decisionAuthorLabel({ author: decision.author, agentId: decision.agentId, agentNames }),
     decision.turnOrdinal === null || decision.author === 'user'
       ? null
-      : `turn ${decision.turnOrdinal}`,
+      : `reply ${decision.turnOrdinal}`,
     decisionAge({ iso: decision.createdAt, nowMs }),
     replaces === null ? null : `replaces ${replaces}`,
   ]

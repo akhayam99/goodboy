@@ -5,7 +5,12 @@ import type { AutoPhase } from '@goodboy/db';
 import { aPlanRow, aView } from './testing/autoViewFixtures';
 import { autoTreeWordOf } from './autoTreeWordOf';
 
-const wordOf = (phase: AutoPhase) => autoTreeWordOf({ view: aView({ phase }), rootTurn: null });
+type PhaseParams = {
+  readonly phase: AutoPhase;
+};
+
+const wordOf = ({ phase }: PhaseParams) =>
+  autoTreeWordOf({ view: aView({ phase }), rootTurn: null });
 
 describe('autoTreeWordOf', () => {
   it.each([
@@ -17,11 +22,11 @@ describe('autoTreeWordOf', () => {
     ['deciding', 'running', 'Running'],
     ['delegating', 'running', 'Running'],
   ] as const)('reads the phase %s as the state %s and the word %s', (phase, state, word) => {
-    expect(wordOf(phase)).toMatchObject({ state, word });
+    expect(wordOf({ phase })).toMatchObject({ state, word });
   });
 
   it('never says Stuck or Blocked for an Auto that stopped replying: it failed', () => {
-    const tree = wordOf('blocked');
+    const tree = wordOf({ phase: 'blocked' });
 
     expect(tree.word).toBe('Failed');
     expect(tree.node).toBe('failed');
@@ -29,7 +34,7 @@ describe('autoTreeWordOf', () => {
   });
 
   it('says Stopping for the moment after Stop, not Running', () => {
-    expect(wordOf('stopping').isLive).toBe(false);
+    expect(wordOf({ phase: 'stopping' }).isLive).toBe(false);
   });
 
   it('reads a plan that waits as Needs you', () => {

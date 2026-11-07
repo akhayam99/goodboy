@@ -365,7 +365,7 @@ describe('one run page', () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
     fireEvent.click(
-      within(screen.getByRole('menu')).getByRole('menuitem', { name: 'View transcript' }),
+      within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Open transcript' }),
     );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);

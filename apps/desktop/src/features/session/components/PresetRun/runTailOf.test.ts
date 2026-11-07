@@ -82,7 +82,7 @@ describe('runTailOf', () => {
     });
   });
 
-  it('offers Ask it to continue after a quiet stretch', () => {
+  it('offers Continue after a quiet stretch', () => {
     expect(tailOf({ quiet: { agentId: IMPLEMENTER, minutes: 15 } })).toMatchObject({
       phrase: 'No output for 15 min',
       verb: { kind: 'quiet', agentId: IMPLEMENTER },

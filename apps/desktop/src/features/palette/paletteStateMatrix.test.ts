@@ -606,12 +606,12 @@ describe('the run verbs follow the run state', () => {
       verbs: verbs(
         ['workflowRun.close', 'Stop run'],
         ['workflowRun.copySummary', 'Copy run summary'],
-        ['workflowRun.restartStep', 'Restart step'],
+        ['workflowRun.restartStep', 'Retry step'],
         ['workflowRun.continue', 'Continue'],
         ['workflowRun.answer', 'Answer'],
       ),
     }).map((entry) => entry.label);
 
-    expect(ordered).toEqual(['Answer', 'Continue', 'Restart step', 'Stop run']);
+    expect(ordered).toEqual(['Answer', 'Continue', 'Retry step', 'Stop run']);
   });
 });

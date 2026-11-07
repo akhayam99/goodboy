@@ -154,8 +154,7 @@ export type RunTurnHooks = {
   readonly owner?: TurnOwner;
 };
 
-export const RELOAD_GAP_MESSAGE =
-  'Part of this output was written while the window reloaded and could not be recovered.';
+export const RELOAD_GAP_MESSAGE = 'Part of this reply was lost in a reload.';
 const RUN_GONE_MESSAGE = 'This run ended while the window reloaded.';
 
 const turnEvents = createRunEventRouter<RawTurnEnvelope>({ eventName: EVENT_NAME });

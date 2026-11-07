@@ -193,7 +193,7 @@ describe('PushBanner', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sync and try again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sync and retry' }));
     expect(askSync).toHaveBeenCalledOnce();
   });
 

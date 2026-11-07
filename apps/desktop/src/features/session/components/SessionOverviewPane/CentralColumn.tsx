@@ -23,6 +23,7 @@ import { NeedsYouCard } from '../../central/cards/NeedsYouCard';
 import { RunningCard } from '../../central/cards/RunningCard';
 import { useDoneRows } from '../../central/done/useDoneRows';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
+import { failedCardCountOf } from '../../central/next/failedCardCountOf';
 import { nextRowCountOf } from '../../central/next/nextRowCountOf';
 import { useNextCards } from '../../central/next/useNextCards';
 import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
@@ -110,11 +111,9 @@ export const CentralColumn = ({ session }: Props) => {
   const stopRowFor = useRebaseStopRows({ sessionId });
   const waiting = useMemo(() => waitingGroupsOf({ groups, cards: nextCards }), [groups, nextCards]);
   const waitingCount = uncardedGroupsOf({ groups: waiting, cards: nextCards }).length;
-  const stuckCount = groups.filter((group) => liveSectionIdOf({ group }) === 'stopped').length;
-  const glanceStuckCount = uncardedGroupsOf({
-    groups: groups.filter((group) => liveSectionIdOf({ group }) === 'stopped'),
-    cards: nextCards,
-  }).length;
+  const listed = useMemo(() => uncardedGroupsOf({ groups, cards: nextCards }), [groups, nextCards]);
+  const stuckCount = listed.filter((group) => liveSectionIdOf({ group }) === 'stopped').length;
+  const failedCount = failedCardCountOf({ cards: nextCards });
   const rootTurns = useAppStore(
     useShallow((state) =>
       model.autoTrees.map((view) => state.agentTurnState[view.tree.rootAgentId]),
@@ -142,7 +141,8 @@ export const CentralColumn = ({ session }: Props) => {
   const seenSubjects = useAppStore((state) => state.nextSeenSubjects[sessionId] ?? EMPTY_ARRAY);
   const glance = overviewGlanceOf({
     cards: shown,
-    stuckCount: glanceStuckCount,
+    stuckCount,
+    failedCount,
     autoGlances,
     nextTitle: nextLeadTitleOf({
       cards: nextCards,
@@ -190,7 +190,7 @@ export const CentralColumn = ({ session }: Props) => {
             key={card.id}
             session={session}
             card={card}
-            groups={groups}
+            groups={listed}
             whereOf={whereOf}
             leadRunId={leadRunId}
           />

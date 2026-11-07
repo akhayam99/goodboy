@@ -6,7 +6,7 @@ import type { StatePresentation } from '../../shared/utils/statePresentation';
 export const AGENT_STATUS_PRESENTATION = {
   pending: {
     label: NAMES.queued,
-    reason: 'Starts on its own',
+    reason: 'It has not started yet',
     tone: 'neutral',
     icon: CONCEPT_ICONS.runPending,
   },

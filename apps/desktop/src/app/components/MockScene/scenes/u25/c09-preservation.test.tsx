@@ -231,7 +231,7 @@ describe('orchestrated rows stay reachable from the orchestrated document', () =
       },
     });
     await settle();
-    expect(tail().getByRole('button', { name: 'Continue and read 1 queued' })).toBeDefined();
+    expect(tail().getByRole('button', { name: 'Continue' })).toBeDefined();
   });
 
   it('Why each step: the reason reads in the step, never on the run page', async () => {

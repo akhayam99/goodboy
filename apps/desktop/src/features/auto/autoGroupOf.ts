@@ -315,14 +315,14 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
       ? { ...child, isGone: true }
       : child,
   );
-  const isFailed = facts.phase === 'failed';
-  const isLive = facts.phase === 'running' || facts.phase === 'waiting' || isFailed;
+  const isRunning = facts.phase === 'running';
+  const isLive = isRunning || facts.phase === 'failed';
   const isStuck = isLive && children.some((child) => isAutoChildStuck({ child }));
   return {
     sessionId: view.tree.sessionId,
     rootAgentId,
     title: textOf({ value: byId.get(rootAgentId)?.name }),
-    word: isStuck && !isFailed ? NAMES.needsYou : facts.word,
+    word: isStuck && isRunning ? NAMES.needsYou : facts.word,
     phase: facts.phase,
     isStuck,
     children,

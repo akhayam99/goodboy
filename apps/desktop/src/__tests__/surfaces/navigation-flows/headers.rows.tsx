@@ -131,7 +131,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'agent page: one conversation with no Brief or Transcript tabs, View transcript opens the transcript pane',
+    name: 'agent page: one conversation with no Brief or Transcript tabs, Open transcript opens the transcript pane',
     covers: ['navigate'],
     open: async (ctx) => {
       const agents = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).filter(
@@ -172,10 +172,10 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       const menu = await screen.findByRole('button', { name: 'More agent actions' }, WAIT);
       expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
       expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'View transcript' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
 
       await click(menu);
-      await click(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT));
+      await click(await screen.findByRole('menuitem', { name: 'Open transcript' }, WAIT));
       await waitFor(() => {
         const drawer = state().drawer;
         expect(drawer?.kind).toBe('transcript');

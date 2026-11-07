@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Button, FOCUS_RING, cn } from '@goodboy/ui';
+import { Button, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/utils/names';
+import { pluralize } from '../../../../shared/utils/pluralize';
 import type { OrchestratedVerb } from '../../../workflows/orchestratedTailOf';
 import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import type { RunView } from '../AgentTree/useRunView';
@@ -76,11 +77,11 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
             openDrawer({ kind: 'transcript', sessionId, payload: { agentId: verb.agentId } })
           }
         >
-          View transcript
+          Open transcript
         </button>
       );
-    case 'readQueued':
-      return (
+    case 'readQueued': {
+      const button = (
         <Button
           size="xs"
           variant="secondary"
@@ -88,28 +89,37 @@ export const OrchestratedTailVerb = ({ session, view, verb }: Props) => {
           onClick={() =>
             void press({
               task: () => readQueuedWorkflowHints({ sessionId, workflowRunId: runId }),
-              failure: "Couldn't read the queued hints",
+              failure: verb.isStopped
+                ? "Couldn't continue the step"
+                : "Couldn't read the queued hints",
             })
           }
         >
-          {verb.isStopped ? `Continue and read ${verb.count} queued` : `Read ${verb.count} queued`}
+          {verb.isStopped ? NAMES.continue : `Read ${verb.count} queued`}
         </Button>
       );
+      if (verb.isStopped === false) {
+        return button;
+      }
+      return (
+        <Tooltip content={`Goes on with ${pluralize(verb.count, 'queued hint')}`}>{button}</Tooltip>
+      );
+    }
     case 'quiet':
       return (
         <Button
           size="xs"
           variant="secondary"
           isBusy={isBusy}
-          busyLabel="Asking"
+          busyLabel="Continuing"
           onClick={() =>
             void press({
               task: () => askAgentToContinue({ sessionId, agentId: verb.agentId }),
-              failure: "Couldn't ask the step to continue",
+              failure: "Couldn't continue the step",
             })
           }
         >
-          Ask it to continue
+          {NAMES.continue}
         </Button>
       );
     case 'resumeAll':

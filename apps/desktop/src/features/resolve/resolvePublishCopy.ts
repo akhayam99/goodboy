@@ -37,7 +37,7 @@ export const driftSentence = ({
   if (drift.every((entry) => entry.threadId !== null)) {
     return null;
   }
-  return drift.length === 0 ? null : 'Something changed while you were looking';
+  return drift.length === 0 ? null : 'The branch changed. Check it, then push.';
 };
 
 export type BlockerCopy = {

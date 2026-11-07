@@ -1,13 +1,25 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { brandId, type AgentId, type IsoDateTime, type ProviderRunId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type StepId,
+} from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { agentGlanceOf } from './agentGlanceOf';
 
 const AGENT = brandId<AgentId>({ value: 'agent-ledger-core' });
 const RUN = brandId<ProviderRunId>({ value: 'run-1' });
 const AT = brandId<IsoDateTime>({ value: '2026-11-05T10:00:00.000Z' });
+const STEP = brandId<StepId>({ value: 'step-build' });
 const CUT_SENTENCE = 'Skipped while it ran, what it wrote is kept';
+
+type SentenceParams = {
+  readonly parentAgentId: AgentId | undefined;
+  readonly stepId: StepId | undefined;
+};
 
 describe('agentGlanceOf', () => {
   it.each([
@@ -51,7 +63,7 @@ describe('agentGlanceOf', () => {
     expect(rested).toMatchObject({ word: 'Needs you', sentence: 'Tell it what to do next' });
   });
 
-  it('says a failed agent ended on an error, a queued one starts on its own', () => {
+  it('says a failed agent ended on an error, a queued one waits for you to write', () => {
     const failed = agentGlanceOf({
       agent: anAgent({ id: AGENT, status: 'failed' }),
       turnState: null,
@@ -62,7 +74,18 @@ describe('agentGlanceOf', () => {
     });
 
     expect(failed).toMatchObject({ word: 'Failed', sentence: 'The agent ended on an error' });
-    expect(queued).toMatchObject({ word: 'Queued', sentence: 'Starts on its own' });
+    expect(queued).toMatchObject({ word: 'Queued', sentence: 'Write to start' });
+  });
+
+  it('promises an automatic start only to a pending agent a parent will start', () => {
+    const sentenceOf = ({ parentAgentId, stepId }: SentenceParams) =>
+      agentGlanceOf({
+        agent: anAgent({ id: AGENT, status: 'pending', parentAgentId, stepId }),
+        turnState: null,
+      }).sentence;
+
+    expect(sentenceOf({ parentAgentId: AGENT, stepId: undefined })).toBe('Starts on its own');
+    expect(sentenceOf({ parentAgentId: undefined, stepId: STEP })).toBe('Not started yet');
   });
 
   it('says who stopped an agent: a restart is not you', () => {

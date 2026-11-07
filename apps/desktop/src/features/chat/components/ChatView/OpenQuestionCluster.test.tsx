@@ -321,16 +321,18 @@ describe('OpenQuestionCluster delegation', () => {
     renderCluster([dbQuestion]);
     chooseDelegate();
     expect(state.spawnQuestionDelegates).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Hand off' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Send to agent' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 
-  it('spawns the delegate on Hand off, carrying the hints the user wrote', () => {
+  it('spawns the delegate on Send to agent, carrying the hints the user wrote', () => {
     renderCluster([dbQuestion]);
     chooseDelegate();
     fireEvent.change(screen.getByLabelText('Hints for the delegated agent'), {
       target: { value: 'weigh the migration cost' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Hand off' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send to agent' }));
     const call = state.spawnQuestionDelegates.mock.calls[0]?.[0] as {
       requests: ReadonlyArray<{ question: { id: string }; hints: string; model: string }>;
     };

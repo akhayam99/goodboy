@@ -206,7 +206,7 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
             verbs: [
               {
                 key: 'see-auto',
-                label: 'See what Auto did',
+                label: 'Open Auto',
                 variant: 'ghost',
                 run: controls.seeWhatItDid,
               },

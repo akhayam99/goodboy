@@ -211,7 +211,7 @@ describe('the u23 comments scenes', () => {
     const home = line === null ? bar() : line;
     expect(
       within(home).getByRole('button', {
-        name: line === null ? 'Open transcript' : 'View transcript',
+        name: 'Open transcript',
       }),
     ).toBeDefined();
     fireEvent.click(within(home).getByRole('button', { name: 'Stop' }));

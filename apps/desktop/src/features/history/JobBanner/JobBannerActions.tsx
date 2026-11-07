@@ -16,7 +16,7 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
   const seeWhatItDid =
     agentId === null ? null : (
       <Button size="sm" variant="ghost" onClick={controls.seeWhatItDid}>
-        See what it did
+        Open agent
       </Button>
     );
   const dismiss = (

@@ -8,6 +8,7 @@ import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { currentWithdrawPort } from '../../withdrawPort';
 import type { RailRow } from '../railRowsOf';
+import { AUTO_STARTING_SENTENCE } from '../../autoStartingSentence';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -24,13 +25,17 @@ type SendNowParams = {
 
 export type WithdrawOutcome = 'withdrawn' | 'delivered' | 'failed';
 
+type AutoTreeId = AutoTreeView['tree']['id'];
+
 type AutoTreeActionFailure = Readonly<{
+  treeId: AutoTreeId;
   title: string;
   message: string;
 }>;
 
 export type AutoTreeActions = Readonly<{
   isStopping: boolean;
+  stoppingTreeId: AutoTreeId | null;
   failure: AutoTreeActionFailure | null;
   stop: (params: ViewParams) => Promise<void>;
   retry: (params: ViewParams) => Promise<void>;
@@ -47,16 +52,16 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   const openDrawer = useAppStore((state) => state.openDrawer);
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   const loadAutoTrees = useAppStore((state) => state.loadAutoTrees);
-  const [isStopping, setIsStopping] = useState(false);
+  const [stoppingTreeId, setStoppingTreeId] = useState<AutoTreeId | null>(null);
   const [failure, setFailure] = useState<AutoTreeActionFailure | null>(null);
 
   const stop = useCallback(async ({ view }: ViewParams): Promise<void> => {
-    setIsStopping(true);
+    setStoppingTreeId(view.tree.id);
     setFailure(null);
     try {
       const port = currentTreeStopPort();
       if (port === null) {
-        throw new Error('Auto is not running yet. Stop it again in a moment.');
+        throw new Error(AUTO_STARTING_SENTENCE);
       }
       const result = await port({ treeId: view.tree.id });
       if (result === 'stuck') {
@@ -66,9 +71,13 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
         throw new Error('Another window runs this conversation. Stop it there.');
       }
     } catch (error) {
-      setFailure({ title: "Couldn't stop the Auto agents", message: formatError(error) });
+      setFailure({
+        treeId: view.tree.id,
+        title: "Couldn't stop the Auto agents",
+        message: formatError(error),
+      });
     } finally {
-      setIsStopping(false);
+      setStoppingTreeId(null);
     }
   }, []);
 
@@ -77,14 +86,18 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     try {
       const port = currentTreeRetryPort();
       if (port === null) {
-        throw new Error('Auto is not running yet. Retry again in a moment.');
+        throw new Error(AUTO_STARTING_SENTENCE);
       }
       const result = await port({ treeId: view.tree.id });
       if (result.kind === 'refused') {
         throw new Error(result.message);
       }
     } catch (error) {
-      setFailure({ title: "Couldn't retry Auto", message: formatError(error) });
+      setFailure({
+        treeId: view.tree.id,
+        title: "Couldn't retry Auto",
+        message: formatError(error),
+      });
     }
   }, []);
 
@@ -93,14 +106,18 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     try {
       const port = currentSendNowPort();
       if (port === null) {
-        throw new Error("Auto isn't running yet. Send it again in a moment.");
+        throw new Error(AUTO_STARTING_SENTENCE);
       }
       const result = await port({ treeId: view.tree.id, rowId });
       if (result.kind === 'refused') {
         throw new Error(result.message);
       }
     } catch (error) {
-      setFailure({ title: "Couldn't send the message now", message: formatError(error) });
+      setFailure({
+        treeId: view.tree.id,
+        title: "Couldn't send the message now",
+        message: formatError(error),
+      });
     }
   }, []);
 
@@ -110,18 +127,26 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
       try {
         const port = currentWithdrawPort();
         if (port === null) {
-          throw new Error("Auto isn't running yet. Try again in a moment.");
+          throw new Error(AUTO_STARTING_SENTENCE);
         }
         const result = await port({ treeId: view.tree.id, rowId });
         if (result.kind === 'refused') {
           throw new Error(result.message);
         }
         await loadAutoTrees({ sessionId }).catch((error: unknown) => {
-          setFailure({ title: "Couldn't refresh the queue", message: formatError(error) });
+          setFailure({
+            treeId: view.tree.id,
+            title: "Couldn't refresh the queue",
+            message: formatError(error),
+          });
         });
         return result.kind;
       } catch (error) {
-        setFailure({ title: "Couldn't take the message back", message: formatError(error) });
+        setFailure({
+          treeId: view.tree.id,
+          title: "Couldn't take the message back",
+          message: formatError(error),
+        });
         return 'failed';
       }
     },
@@ -163,7 +188,8 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   );
 
   return {
-    isStopping,
+    isStopping: stoppingTreeId !== null,
+    stoppingTreeId,
     failure,
     stop,
     retry,

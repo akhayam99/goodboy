@@ -111,7 +111,7 @@ describe('the u28 run page scenes', () => {
 
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('needs-answer');
     expect(tail().textContent).toContain('Which export size should the benchmark treat');
-    expect(within(tail()).queryByRole('button', { name: 'Restart step' })).toBeNull();
+    expect(within(tail()).queryByRole('button', { name: 'Retry step' })).toBeNull();
     const answer = within(tail()).getByRole('button', { name: 'Answer' });
     expect(answer.hasAttribute('disabled')).toBe(true);
     within(tail()).getByText('Recommended');

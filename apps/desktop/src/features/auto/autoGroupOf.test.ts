@@ -379,6 +379,21 @@ describe('autoGroupOf', () => {
       expect(group?.children[0]?.isGone).toBeUndefined();
     });
 
+    it('keeps Paused for a tree spent at its limit, whatever its child did', () => {
+      const group = autoGroupOf({
+        view: aView({
+          phase: 'waiting',
+          capUsd: 1,
+          spentUsd: 1,
+          delegations: [aDelegation({ key: 'fixer', role: 'implementer', state: 'settled' })],
+        }),
+        agents: [ROOT, anAgent({ id: childId('fixer'), parentAgentId: FIXTURE_ROOT })],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group).toMatchObject({ word: 'Paused', phase: 'waiting', isStuck: false });
+    });
+
     it('never counts a child that has not started, since it has no agent yet', () => {
       const group = autoGroupOf({
         view: aView({

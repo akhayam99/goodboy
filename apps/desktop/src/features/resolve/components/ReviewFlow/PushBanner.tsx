@@ -37,8 +37,8 @@ type Props = {
 
 const RECOVERY_LABEL = {
   open_diff: `Open ${NAMES.changes}`,
-  view_work: 'View the agent',
-  see_missing: 'See the comment',
+  view_work: 'Open agent',
+  see_missing: 'Open comment',
   sync: SYNC_COPY.action,
 } as const;
 

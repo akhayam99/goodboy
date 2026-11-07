@@ -66,6 +66,7 @@ describe('autoGlancesBesideCardsOf', () => {
         isArchived: false,
       }),
       stuckCount: 0,
+      failedCount: 0,
       nextTitle: null,
       autoGlances: autoGlancesBesideCardsOf({ views: [WAITING_VIEW], rootTurns: [null], cards }),
     });

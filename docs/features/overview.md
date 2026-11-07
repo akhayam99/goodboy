@@ -84,7 +84,7 @@ See what needs you, what runs, what is next, where each branch stands and what f
 - Resting on the bar shows the step, the workflow, the role, the model, the time in and what comes next. A click opens the step.
 - The run's next move is the run page's own button (**Start step 2**, **Review plan**, **Answer**). **Answer** opens the question in the side drawer and the page stays. That move is not repeated in **Needs you**.
 - The agents a run or an agent started hang under it on one thin line. Auto shows one row with a button such as **2 agents**, which opens its agents.
-- When an agent Auto started is stuck, the Needs you card draws one block for that Auto. It holds the sentence and, on its right, **Open Auto**, **Stop** and **Retry**. Its agents fold sits under it, with no second row or state word. **Answer** is gone, **Open Auto** opens the same chat. An Auto without a card, such as a tree that stopped replying and reads Failed, keeps a line with **Answer** and **Stop** under its row. An Auto that a card already speaks for counts once. One stuck child reads "1 needs you", and a failed Auto adds no "1 stopped".
+- When an agent Auto started is stuck, the Needs you card draws one block for that Auto. It holds the sentence and, on its right, **Open Auto**, **Stop** and **Retry**. Its agents fold sits under it, with no second row. **Answer** is gone. An Auto that a card already speaks for counts once, with no second card. One stuck child reads "1 needs you". A tree that stopped replying reads Failed on its one Needs you row. The glance reads "Auto failed", never "1 needs you" beside it. An Auto without a card keeps its own row.
 - **Retry** on the Fix row retries the stuck agent. When it fails, the card keeps the error. **Answer** opens the Auto chat.
 
 **Next**
@@ -247,12 +247,12 @@ See and undo what agents changed in a session without a branch.
 - In a plain folder agents edit in place. Every writing turn saves what it may change first, shell commands such as `rm` and `mv` and new files included.
 - **Changes** in the session rail lists each turn, newest first, with the files it added, changed or removed and their line counts.
 - Pick a file to see its text before and after, with the changed words marked.
-- **Restore to before turn 3** puts one file back. **Restore turn 3** puts back the whole turn. **Remove this new file** takes out a file the agent created.
+- **Restore to before reply 3** puts one file back. **Undo changes from this reply** puts back the whole reply. **Remove this new file** takes out a file the agent created.
 - Each restore first saves the text you have now, so **Undo restore** puts it back.
 - A restore over text that changed after the turn asks in place before it writes. It names the other agent when a later turn of one wrote the same file (**Scout wrote there after turn 3.**).
 - The rail's **Folder** group names the folder and what agents do there.
 - The Overview has a card that says where agents write and what is saved. It sits under **Branches**.
-- Each writing turn in the chat ends in a card with **Review changes** and **Restore turn**.
+- Each writing turn in the chat ends in a card with **Open changes** and **Undo changes from this reply**.
 - Versions are kept until 30 days after the session ends. The cap per folder is 1 GB or the folder's own size, whichever is larger.
 - The page shows how much they use and what was left out: files over 15 MB, links that leave the folder, dependencies and build output.
 - Storage shows their size under **Saved versions**.

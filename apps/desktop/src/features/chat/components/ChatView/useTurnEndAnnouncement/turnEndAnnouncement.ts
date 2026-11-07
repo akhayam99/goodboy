@@ -11,7 +11,7 @@ type Params = {
   readonly rows: ReadonlyArray<AnyRow>;
 };
 
-const TURN_FINISHED = 'Turn finished';
+const TURN_FINISHED = 'Reply finished';
 
 export const turnEndAnnouncement = ({ rows }: Params): string => {
   const lastSteps = rows.flatMap((row) =>

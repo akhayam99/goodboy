@@ -37,6 +37,16 @@ describe('agentNowState', () => {
     );
   });
 
+  it('reads a turn error in plain words, not as the raw message', () => {
+    const now = agentNowState({
+      agent: { ...agent, providerSessionProviderId: 'anthropic' },
+      turnState: { kind: 'error', message: 'Error: 429 Too Many Requests', failedAt: TEST_NOW },
+      transcript: [],
+    });
+
+    expect(now.label).toBe('Claude is limiting requests right now. Wait a moment, then retry.');
+  });
+
   it('reads a failed agent without a turn error as failed, not ready', () => {
     const failed = { ...agent, status: 'failed' } as Agent;
 

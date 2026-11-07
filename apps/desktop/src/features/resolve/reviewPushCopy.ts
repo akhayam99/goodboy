@@ -165,7 +165,7 @@ export const PUSH_ONLY_LABEL = 'Push only this one';
 
 export const PUSH_MISSING = 'The push was already handled or cancelled. Nothing changed.';
 
-export const PUSH_STALE_FALLBACK = 'Something changed since the preview';
+export const PUSH_STALE_FALLBACK = 'The branch changed. Check it, then push.';
 
 export const PUSH_BUSY = 'Another push is already running for this pull request.';
 
