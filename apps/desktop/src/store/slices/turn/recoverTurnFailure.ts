@@ -276,6 +276,9 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
           provider,
           resetAtMs: usageLimitResetAtMs,
           isScheduled: false,
+          ...(childTurn !== null && {
+            autoChild: { delegationId: childTurn.delegationId, treeId: childTurn.treeId },
+          }),
           input: {
             sessionId,
             agentId: activeAgentId,

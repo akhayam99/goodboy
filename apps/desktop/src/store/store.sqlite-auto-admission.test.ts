@@ -10,6 +10,7 @@ import {
   connectedAnthropicState,
   emptyTurnStream,
   importStore,
+  injectDbFault,
   openStorySqlite,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
@@ -216,5 +217,26 @@ describe('a turn and an adoption from another window never cross', () => {
 
     expect(adopted).toMatchObject({ kind: 'refused', code: 'turn_running' });
     expect(storySpies.runTurn.mock.calls[0]?.[0]).not.toHaveProperty('isAutoChild');
+  });
+
+  it('frees the agent when its status write fails after the claim', async () => {
+    injectDbFault({ match: /last_finished_at = CASE WHEN/ });
+
+    await expect(
+      useAppStore.getState().sendTurn({
+        sessionId: first.sessionId,
+        agentId: first.agentId,
+        content: 'Also list the migrations.',
+        origin: 'operator',
+      }),
+    ).rejects.toThrow('injected db fault');
+
+    const rows = await storySqlite().select<{ readonly status: string }>(
+      'SELECT status FROM agents WHERE id = ?',
+      [first.agentId],
+    );
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect(rows[0]?.status).not.toBe('running');
+    expect((await adoptInOtherWindow(first)).kind).toBe('adopted');
   });
 });

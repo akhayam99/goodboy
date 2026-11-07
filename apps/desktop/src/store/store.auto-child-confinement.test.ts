@@ -552,10 +552,21 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
     );
   });
 
-  it('keeps a usage-limit continuation that is refused and tells Auto why', async () => {
-    const { sessionId, rootAgentId, agentId } = await childSession({ kind: 'scout' });
-    const delegation = delegationOf({ childAgentId: agentId, role: 'scout' });
-    stored = delegation;
+  type ContinuationParams = Readonly<{
+    sessionId: SessionId;
+    agentId: AgentId;
+    rootAgentId: AgentId;
+    delegation: AutoDelegation;
+    runId: ProviderRunId;
+  }>;
+
+  const continueRefused = async ({
+    sessionId,
+    agentId,
+    rootAgentId,
+    delegation,
+    runId,
+  }: ContinuationParams) => {
     const dbMod = await import('@goodboy/db');
     vi.mocked(dbMod.getAutoTree).mockResolvedValue({
       ...aView({}).tree,
@@ -563,9 +574,6 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
       rootAgentId,
       sessionId,
     });
-    const notes = vi.fn(async (): Promise<'queued'> => 'queued');
-    registerAutoUserTurnPort({ port: notes });
-    const runId = brandId<ProviderRunId>({ value: 'run-limit-1' });
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {
       useAppStore.getState().recordLimitStop({
@@ -576,30 +584,61 @@ describe('every turn on an Auto child runs confined, from the stored delegation'
           provider: 'anthropic',
           resetAtMs: 0,
           isScheduled: false,
+          autoChild: { delegationId: delegation.id, treeId: delegation.treeId },
           input: {
             sessionId,
             agentId,
             content: 'Find where the rounding drifts.',
             origin: 'delegation',
             confinedRole: 'scout',
-            retry: { attempt: 0, provider: 'anthropic', model: OTHER_MODEL, attachmentRefs: [] },
+            retry: { attempt: 0, provider: 'anthropic', model: ROUTED_MODEL, attachmentRefs: [] },
           },
         },
       });
       useAppStore.getState().continueAfterLimit({ runId });
       await vi.advanceTimersByTimeAsync(1_000);
-      await vi.waitFor(() => expect(notes).toHaveBeenCalledOnce());
+      await vi.waitFor(() =>
+        expect(useAppStore.getState().limitStops[runId]).toMatchObject({ isScheduled: false }),
+      );
     } finally {
       vi.useRealTimers();
     }
+  };
+
+  it('keeps a refused usage-limit continuation and tells Auto why without reading the delegation again', async () => {
+    const { sessionId, rootAgentId, agentId } = await childSession({ kind: 'scout' });
+    const delegation = delegationOf({ childAgentId: agentId, role: 'scout' });
+    stored = new Error('database is locked');
+    const notes = vi.fn(async (): Promise<'queued'> => 'queued');
+    registerAutoUserTurnPort({ port: notes });
+    const runId = brandId<ProviderRunId>({ value: 'run-limit-1' });
+
+    await continueRefused({ sessionId, agentId, rootAgentId, delegation, runId });
+    await vi.waitFor(() => expect(notes).toHaveBeenCalledOnce());
 
     expect(spawns()).toEqual([]);
-    expect(useAppStore.getState().limitStops[runId]).toMatchObject({ isScheduled: false });
     expect(notes).toHaveBeenCalledWith(
       expect.objectContaining({
         agentId: rootAgentId,
-        text: expect.stringContaining(turnRefusalMessage({ refusal: 'auto_child_off_route' })),
+        text: expect.stringContaining(turnRefusalMessage({ refusal: 'auto_child_unread' })),
       }),
     );
+  });
+
+  it('shows in the transcript that Auto did not get the note of a refused continuation', async () => {
+    const { sessionId, rootAgentId, agentId } = await childSession({ kind: 'scout' });
+    const delegation = delegationOf({ childAgentId: agentId, role: 'scout' });
+    stored = new Error('database is locked');
+    registerAutoUserTurnPort({ port: async (): Promise<'lost'> => 'lost' });
+    const runId = brandId<ProviderRunId>({ value: 'run-limit-2' });
+
+    await continueRefused({ sessionId, agentId, rootAgentId, delegation, runId });
+
+    await vi.waitFor(() =>
+      expect(errorTexts({ agentId })).toContain(
+        "Auto didn't get word that this continuation didn't start. Tell Auto in its chat what happened.",
+      ),
+    );
+    expect(spawns()).toEqual([]);
   });
 });

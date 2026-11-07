@@ -3,6 +3,7 @@ import { findReusableAgent, runsForWorkflowRun } from '@goodboy/core/workflows';
 import {
   insertMessage,
   insertProviderRun,
+  revertAgentStart,
   updateProviderRunStatus,
   updateSessionState,
 } from '@goodboy/db';
@@ -29,6 +30,7 @@ import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, isTurnStartCancelled } from './turnStartWindow';
 import { claimTurnAdmission } from './childTurn/claimTurnAdmission';
 import { turnRefusalMessage } from './refusal/turnRefusalMessage';
+import { CHECK_STATE } from '../notifications/errorRecovery';
 import { releaseUnstartedTurn } from './unstartedTurn/releaseUnstartedTurn';
 import { hasOwnTurnRun } from './hasOwnTurnRun';
 import { resolvePhaseAgent } from './resolvePhaseAgent';
@@ -211,49 +213,79 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
     }
   }
-  if (!phaseDefinition) {
-    const isAdmitted = await claimTurnAdmission({
+  const claimedFrom = agentBefore;
+  const releaseClaim = (): Promise<void> =>
+    revertAgentStart({
+      db: tauriDatabase,
       agentId: activeAgentId,
-      delegationId: ctx.childTurn?.delegationId ?? null,
-    });
-    if (!isAdmitted) {
-      const message = turnRefusalMessage({ refusal: 'auto_child_changed' });
-      releaseUnstartedTurn({ set, get, sessionId, agentId: activeAgentId });
-      await updateProviderRunStatus(tauriDatabase, runId, {
-        kind: 'failed',
-        finishedAt: now(),
-        error: message,
+      runId,
+      agentBefore: claimedFrom,
+    }).catch((revertError: unknown) =>
+      get().reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't free the agent after its turn failed to start",
+        error: revertError,
+        sessionId,
+      }),
+    );
+  let isClaimed = false;
+  try {
+    if (!phaseDefinition) {
+      const isAdmitted = await claimTurnAdmission({
+        agentId: activeAgentId,
+        delegationId: ctx.childTurn?.delegationId ?? null,
+        runId,
       });
-      get().appendTurnEvent(activeAgentId, sessionId, { kind: 'error', runId, message, at: now() });
-      return turnDone({
-        result: { blockedOverBudget: false, autoChildRefusal: 'auto_child_changed' },
+      if (!isAdmitted) {
+        const message = turnRefusalMessage({ refusal: 'auto_child_changed' });
+        releaseUnstartedTurn({ set, get, sessionId, agentId: activeAgentId });
+        await updateProviderRunStatus(tauriDatabase, runId, {
+          kind: 'failed',
+          finishedAt: now(),
+          error: message,
+        });
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'error',
+          runId,
+          message,
+          at: now(),
+        });
+        return turnDone({
+          result: { blockedOverBudget: false, autoChildRefusal: 'auto_child_changed' },
+        });
+      }
+      isClaimed = true;
+      await invokeAgentUpdateStatus(activeAgentId, {
+        status: 'running',
+        providerRunId: runId,
+        startedAt: now(),
       });
+      resolvedAgentId = activeAgentId;
+      const refreshedRuns = await invokeAgentList(sessionId);
+      set((state) => ({
+        sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+      }));
     }
-    await invokeAgentUpdateStatus(activeAgentId, {
-      status: 'running',
-      providerRunId: runId,
-      startedAt: now(),
-    });
-    resolvedAgentId = activeAgentId;
-    const refreshedRuns = await invokeAgentList(sessionId);
-    set((state) => ({
-      sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
-    }));
-  }
 
-  let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
-    kind: 'idle',
-    lastActivityAt: now(),
-  };
-  if (nextAgentState.kind === 'draft') {
-    nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
+    let nextAgentState: TurnState = get().agentTurnState[activeAgentId] ?? {
+      kind: 'idle',
+      lastActivityAt: now(),
+    };
+    if (nextAgentState.kind === 'draft') {
+      nextAgentState = turnReducer(nextAgentState, { kind: 'start', at: now() });
+    }
+    if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
+      nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
+    }
+    nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
+    const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
+    await updateSessionState(tauriDatabase, sessionId, derived, now());
+  } catch (error) {
+    if (isClaimed) {
+      await releaseClaim();
+    }
+    throw error;
   }
-  if (nextAgentState.kind === 'error' || nextAgentState.kind === 'blocked') {
-    nextAgentState = turnReducer(nextAgentState, { kind: 'retry', at: now() });
-  }
-  nextAgentState = turnReducer(nextAgentState, { kind: 'send', runId, at: now() });
-  const derived = applyAgentTurnState(set, sessionId, activeAgentId, nextAgentState, now());
-  await updateSessionState(tauriDatabase, sessionId, derived, now());
   return turnReady({
     value: {
       runId,

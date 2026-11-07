@@ -314,13 +314,14 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
           sourceTurnId: ended.runId,
         }
       : null;
+  const failure = ended.exit === 'error' ? ended.failure : undefined;
   const settled = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,
     ending: {
       kind: 'ended',
       outcome: parsed.kind === 'ok' ? 'completed' : 'failed',
-      endReason: parsed.kind === 'ok' ? null : parsed.reason,
+      endReason: parsed.kind === 'ok' ? null : (failure ?? parsed.reason),
       costUsd: ended.costUsd,
       resultSnapshot: { envelope, landing },
     },
@@ -335,7 +336,8 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
       generation: ended.generation,
       artifactId: brandId<ArtifactId>({ value: artifactId }),
       reason: parsed.reason,
-      result: { ...envelope, outcome: 'failed', reason: parsed.reason },
+      ...(failure !== undefined && { failure }),
+      result: { ...envelope, outcome: 'failed', reason: failure ?? parsed.reason },
     });
     return { kind: 'ended', outcome: 'failed', landing: 'failed' };
   }

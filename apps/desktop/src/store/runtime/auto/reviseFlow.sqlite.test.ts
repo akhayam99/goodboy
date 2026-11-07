@@ -154,6 +154,26 @@ describe('revising an artifact the tree already has', () => {
     expect(world.state.ports.autoTurns[1]?.text).toContain('no_new_version');
   });
 
+  it('keeps the sentence of a refused retry as the reason of the failed revise', async () => {
+    const world = await revisingWorld();
+    const refusal =
+      "Goodboy couldn't check whether this agent works for Auto, so the turn didn't start. Try again in a moment.";
+
+    await childTurnEnds({
+      world,
+      index: 0,
+      text: '',
+      overrides: { exit: 'error', failure: refusal },
+    });
+
+    expect(await planOf(world)).toMatchObject({ revision: 1 });
+    const delegation = (
+      await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
+    ).find((row) => row.reviseOf === 'plan-1');
+    expect(delegation).toMatchObject({ state: 'settled', outcome: 'failed', reason: refusal });
+    expect(world.state.ports.autoTurns[1]?.text).toContain(refusal);
+  });
+
   it('drops the result for a base the user edited meanwhile and keeps the edit', async () => {
     const world = await revisingWorld();
     const edit = await writeArtifactRevision({

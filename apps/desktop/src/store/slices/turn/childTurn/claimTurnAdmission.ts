@@ -1,9 +1,10 @@
-import type { AgentId, AutoDelegationId } from '@goodboy/types';
+import type { AgentId, AutoDelegationId, ProviderRunId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 
 type Params = Readonly<{
   agentId: AgentId;
   delegationId: AutoDelegationId | null;
+  runId: ProviderRunId;
 }>;
 
 const MEMBERSHIP_CHANGED = 'auto_membership_changed';
@@ -13,7 +14,11 @@ const LATEST_DELEGATION_IS = `SELECT 1 WHERE (
   ORDER BY created_at DESC, rowid DESC LIMIT 1
 ) IS ?`;
 
-export const claimTurnAdmission = async ({ agentId, delegationId }: Params): Promise<boolean> => {
+export const claimTurnAdmission = async ({
+  agentId,
+  delegationId,
+  runId,
+}: Params): Promise<boolean> => {
   const outcome = await tauriDatabase.transaction({
     statements: [
       {
@@ -23,8 +28,8 @@ export const claimTurnAdmission = async ({ agentId, delegationId }: Params): Pro
         abortCode: MEMBERSHIP_CHANGED,
       },
       {
-        sql: "UPDATE agents SET status = 'running' WHERE id = ? AND deleted_at IS NULL",
-        params: [agentId],
+        sql: "UPDATE agents SET status = 'running', provider_run_id = ? WHERE id = ? AND deleted_at IS NULL",
+        params: [runId, agentId],
       },
     ],
   });

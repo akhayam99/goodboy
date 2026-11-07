@@ -560,9 +560,14 @@ writing to it reopens it to **Deciding**.
   row stands and runs normally once a detach deleted it. What was read is
   claimed in one transaction before the agent is marked running
   (`claimTurnAdmission` in `startTurnRun`): the claim checks that the newest
-  delegation of the agent is still the one read and sets the agent running, so
-  an adoption or a detach from another window either lands first and refuses
-  the turn, or comes after and is refused itself as a running turn. The turn
+  delegation of the agent is still the one read and sets the agent running
+  on the turn's run id, so an adoption or a detach from another window either
+  lands first and refuses the turn, or comes after and is refused itself as a
+  running turn. A startup failure after the claim gives it back
+  (`revertAgentStart` on that run id), so the agent is never left running
+  without its turn. Still open for 0.31.14: another window that loads the
+  workspace between the claim and the spawn can stop the claimed agent
+  (`reconcileLoadedAgent`), which reopens adoption for that moment. The turn
   runs only on the routed provider and model, and only on a provider in
   `AUTO_CHILD_PROVIDERS`: a model picked in the child's composer or a retry
   aimed elsewhere is refused, agent pins are ignored, a provider fallback that
@@ -573,9 +578,12 @@ writing to it reopens it to **Deciding**.
   Auto to continue it; the agent joined or left Auto while the turn started,
   send it again. A refused or failed retry reaches Auto as a failed end that
   carries the sentence (`startDeliveredTurn` `failure`, the attempt reason in
-  `finishAttempt`), never as an empty success. A usage-limit continuation that
-  is refused keeps its saved stop, so **Continue** stays, and Auto gets a note
-  with the sentence (`continueAfterLimit`, `noticeAutoOfRefusedContinue`). A reading role (Scout, Planner,
+  `finishAttempt`, a revise included), never as an empty success. A usage-limit
+  continuation of a child saves the delegation and tree it belongs to with its
+  stop; when it is refused it keeps the stop, so **Continue** stays, and Auto
+  gets a note with the sentence without reading the delegation again
+  (`continueAfterLimit`, `noticeAutoOfRefusedContinue`). A note Auto did not
+  take shows in the child's transcript. A reading role (Scout, Planner,
   Investigator, Reviewer) cannot write: on Claude it keeps Read, Grep and Glob
   in plan mode with no shell; on Codex it runs in the read-only sandbox, which
   blocks writes but can still run read-only commands.

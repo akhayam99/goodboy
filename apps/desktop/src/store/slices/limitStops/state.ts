@@ -1,4 +1,11 @@
-import type { AgentId, ProviderId, ProviderRunId, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  AutoDelegationId,
+  AutoTreeId,
+  ProviderId,
+  ProviderRunId,
+  SessionId,
+} from '@goodboy/types';
 import type { SendTurnInput } from '../turn/types';
 
 export type LimitStop = Readonly<{
@@ -9,6 +16,7 @@ export type LimitStop = Readonly<{
   resetAtMs: number;
   isScheduled: boolean;
   input: SendTurnInput;
+  autoChild?: Readonly<{ delegationId: AutoDelegationId; treeId: AutoTreeId }>;
 }>;
 
 export type LimitStopsState = {
