@@ -159,7 +159,7 @@ describe('the c04 worktree level scenes', () => {
     if (toolbar === null) {
       throw new Error('the folded scene draws no diff toolbar');
     }
-    expect(within(toolbar).getAllByRole('button')[0]?.textContent).toBe('Files6');
+    expect(within(toolbar).getAllByRole('button')[0]?.textContent).toBe('Files6+53 -24');
     expect(screen.queryByText('Split needs a wider window')).toBeNull();
   });
 
