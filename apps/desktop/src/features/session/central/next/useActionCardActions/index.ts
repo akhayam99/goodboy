@@ -20,6 +20,7 @@ import type {
   SuggestionActionTarget,
 } from '../../../../actions/types';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
+import { useAutoTreeActions } from '../../../../auto/chat/useAutoTreeActions';
 import { autoUnavailableReason } from '../../../../auto/autoUnavailableReason';
 import type { RebaseStopRow } from '../../../../history/rebaseStopRowOf';
 import { useRebaseStopRows } from '../../../../history/useRebaseStopRows';
@@ -71,6 +72,7 @@ export type CardActions = {
   readonly agentKind: AgentKind | null;
   readonly menu: CardMenu | null;
   readonly foldedTarget: ActionCardActionTarget | null;
+  readonly stop?: CardVerb | null;
 };
 
 export type ActionCardActions = {
@@ -214,6 +216,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   const loadAutoTrees = useAppStore((s) => s.loadAutoTrees);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const isAutoOn = useIsAutoOn();
+  const treeActions = useAutoTreeActions({ sessionId });
   const openTargetFor = useTimelineOpen({ sessionId });
   const openNeedsYou = useOpenNeedsYou({ sessionId, openTargetFor });
   const stopRowFor = useRebaseStopRows({ sessionId });
@@ -412,15 +415,35 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     const open = verbOf({ label: 'Open Auto', run: () => openAuto({ target }) });
     const review = verbOf({ label: 'Review plan', run: () => openAuto({ target }) });
     const canRetry = target.canRetry && target.kind !== 'approve' && target.kind !== 'blocked';
+    const view =
+      target.kind === 'approve' || target.kind === 'blocked'
+        ? null
+        : ((useAppStore.getState().autoTreeViews[sessionId] ?? EMPTY_ARRAY).find(
+            (candidate) => candidate.tree.rootAgentId === target.rootAgentId,
+          ) ?? null);
+    const stop =
+      view === null
+        ? null
+        : verbOf({
+            label: 'Stop',
+            ariaLabel: 'Stop Auto and its agents',
+            isBusy: treeActions.isStopping,
+            run: () => void treeActions.stop({ view }),
+          });
+    const treeFailure =
+      stop === null || treeActions.failure === null
+        ? null
+        : `${treeActions.failure.title}. ${treeActions.failure.message}`;
     if (!canRetry) {
       return {
         main: target.kind === 'approve' ? review : open,
         second: null,
-        failure,
+        failure: failure ?? treeFailure,
         isBusy: false,
         agentKind: null,
         menu: null,
         foldedTarget: null,
+        stop,
       };
     }
     return {
@@ -431,11 +454,12 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
         run: () => void runOnce({ key, task: () => retryAuto({ card, target }) }),
       }),
       second: open,
-      failure,
+      failure: failure ?? treeFailure,
       isBusy,
       agentKind: null,
       menu: null,
       foldedTarget: null,
+      stop,
     };
   };
 

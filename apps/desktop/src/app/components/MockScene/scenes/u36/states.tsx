@@ -23,8 +23,12 @@ const AutoStateScene = ({ theme, seed }: AutoProps) => {
 export const U36_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   'u36-states-overview-needs-you-light': () => <CentralColumnScene theme="light" kind="stuck" />,
   'u36-states-overview-needs-you-dark': () => <CentralColumnScene theme="dark" kind="stuck" />,
-  'u36-states-overview-failed-light': () => <CentralColumnScene theme="light" kind="failed" />,
-  'u36-states-overview-failed-dark': () => <CentralColumnScene theme="dark" kind="failed" />,
+  'u36-states-overview-timed-out-child-light': () => (
+    <CentralColumnScene theme="light" kind="failed" />
+  ),
+  'u36-states-overview-timed-out-child-dark': () => (
+    <CentralColumnScene theme="dark" kind="failed" />
+  ),
   'u36-states-overview-blocked-child-light': () => (
     <CentralColumnScene theme="light" kind="blocked" />
   ),

@@ -98,18 +98,20 @@ describe('the central column scenes', () => {
     expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 
-  it('says Needs you once on the Auto row and offers the stuck line under it on the blocked scene', async () => {
+  it('draws the stuck Auto as one block on the blocked scene, Needs you said once', async () => {
     await show({ name: 'u26-central-blocked-light' });
 
     const needsYou = screen.getByRole('region', { name: 'Needs you' });
     expect(needsYou.querySelector('[data-now-sentence]')).toBeNull();
-    expect(needsYou.querySelector('[data-auto-word]')?.textContent).toBe('Needs you');
+    expect(needsYou.querySelector('[data-live-group="auto"]')).toBeNull();
+    expect(needsYou.querySelector('[data-now-actions]')).toBeNull();
     expect(needsYou.textContent).not.toContain('Stuck');
     expect(needsYou.textContent).not.toContain('Deciding');
     expect(needsYou.textContent).not.toContain('declared_blocked');
     expect(screen.queryByRole('region', { name: 'Running' })).toBeNull();
     const inCard = within(needsYou);
-    inCard.getByRole('button', { name: 'Answer Auto in its chat' });
+    inCard.getByRole('button', { name: 'Open Auto' });
+    expect(inCard.queryByRole('button', { name: 'Answer Auto in its chat' })).toBeNull();
     inCard.getByRole('button', { name: 'Stop Auto and its agents' });
     inCard.getByRole('button', { name: 'Retry "Fix the two doc mismatches in ledger-core"' });
   });

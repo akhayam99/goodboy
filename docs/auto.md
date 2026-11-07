@@ -417,8 +417,9 @@ writing to it reopens it to **Deciding**.
   nothing. A done child shows the result it declared in `delegation.result`,
   then the summary Auto accepted, never the working `outputSummary`, and no
   "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
-  and Auto is live, the Auto row reads **Needs you** and sits in the Needs you
-  card, with **Answer** and **Stop** under it (`AutoGroup.isStuck`), not Auto's own phase.
+  and Auto is live, Auto sits in the Needs you card as one block: the sentence,
+  **Open Auto**, **Stop** and **Retry** on its right, and its agents fold under it
+  (`AutoGroup.isStuck`), not Auto's own phase.
 - **Stopped and replaced children are not stuck.** A delegation that settled
   `stopped` (you or Auto stopped it, or you declined its start, reason
   `declined`) is the child state `stopped`, which `autoStuckKindOf` does not

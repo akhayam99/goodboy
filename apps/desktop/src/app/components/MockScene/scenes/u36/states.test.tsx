@@ -72,15 +72,20 @@ describe('the u36 states scenes', () => {
   });
 
   it.each(['light', 'dark'])(
-    'u36-states-overview-needs-you-%s puts the stuck Auto under Needs you, never under Stuck',
+    'u36-states-overview-needs-you-%s draws one block for the stuck Auto with Open Auto, Stop and Retry, never Answer',
     async (theme) => {
       await show({ name: `u36-states-overview-needs-you-${theme}` });
 
       const card = document.querySelector('[data-overview-card="needs-you"]');
-      expect(card?.querySelector('[data-live-group="auto"]')?.getAttribute('data-state')).toBe(
-        'waiting',
+      expect(card?.querySelector('[data-live-group="auto"]')).toBeNull();
+      expect(card?.querySelector('[data-now-actions]')).toBeNull();
+      expect(card?.querySelectorAll('[data-action-card]')).toHaveLength(1);
+      const buttons = [...(card?.querySelectorAll('[data-action-card] button') ?? [])].map(
+        (button) => button.textContent,
       );
-      expect(card?.querySelector('[data-now-actions]')).not.toBeNull();
+      expect(buttons).toEqual(['Open Auto', 'Stop', 'Retry']);
+      expect(card?.textContent).not.toContain('Answer');
+      expect(card?.textContent).toContain('2 agents');
       for (const word of WORDS) {
         expect(document.body.textContent).not.toContain(word);
       }
@@ -88,9 +93,9 @@ describe('the u36 states scenes', () => {
   );
 
   it.each(['light', 'dark'])(
-    'u36-states-overview-failed-%s reads a timed out child as Needs you and keeps Stuck and Blocked off the screen',
+    'u36-states-overview-timed-out-child-%s reads a timed out child as Needs you and keeps Stuck and Blocked off the screen',
     async (theme) => {
-      await show({ name: `u36-states-overview-failed-${theme}` });
+      await show({ name: `u36-states-overview-timed-out-child-${theme}` });
 
       const card = document.querySelector('[data-overview-card="needs-you"]');
       expect(card?.textContent).toContain('Needs you');

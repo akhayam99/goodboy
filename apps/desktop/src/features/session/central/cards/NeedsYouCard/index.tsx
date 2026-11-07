@@ -7,7 +7,10 @@ import type { NextBranchName } from '../../next/nextRowCopyOf';
 import { NextStackView } from '../../next/NextStackView';
 import type { ActionCardActions } from '../../next/useActionCardActions';
 import { LiveGroup } from '../../now/LiveGroup';
-import type { LiveGroupModel } from '../../now/liveGroupsOf';
+import type { LiveAutoGroup, LiveGroupModel } from '../../now/liveGroupsOf';
+import { LiveAutoAgents } from '../../now/LiveAutoAgents';
+import { uncardedGroupsOf } from '../../now/uncardedGroupsOf';
+import { cardedAutoRootsOf } from '../../cardedAutoRootsOf';
 import { StuckActions } from '../../now/StuckActions';
 import { stuckAutoOf } from '../../now/stuckAutoOf';
 import type { WhereOf } from '../../now/useWhereOf';
@@ -54,14 +57,23 @@ export const NeedsYouCard = ({
   if (card.count === 0) {
     return null;
   }
+  const carded = cardedAutoRootsOf({ cards });
   const stuck = stuckAutoOf({ groups, views: autoViews });
+  const isStuckCarded = stuck !== null && carded.has(stuck.group.group.rootAgentId);
+  const rows = uncardedGroupsOf({ groups: waiting, cards });
+  const folds = groups.filter(
+    (group): group is LiveAutoGroup =>
+      group.kind === 'auto' &&
+      carded.has(group.group.rootAgentId) &&
+      (group.group.isStuck || waiting.includes(group)),
+  );
   const live =
-    waiting.length === 0 && stuck === null ? null : (
+    rows.length === 0 && folds.length === 0 && (stuck === null || isStuckCarded) ? null : (
       <div data-needs-you-live="" className="flex min-w-0 flex-col gap-1">
-        {stuck === null ? null : (
+        {stuck === null || isStuckCarded ? null : (
           <StuckActions sessionId={session.id} group={stuck.group} view={stuck.view} />
         )}
-        {waiting.map((group) => (
+        {rows.map((group) => (
           <EntryWash
             key={`${group.kind}:${group.id}`}
             isWashed={washed.has(`${group.kind}:${group.id}`)}
@@ -74,6 +86,9 @@ export const NeedsYouCard = ({
               isLead={group.id === leadRunId}
             />
           </EntryWash>
+        ))}
+        {folds.map((group) => (
+          <LiveAutoAgents key={group.group.rootAgentId} sessionId={session.id} group={group} />
         ))}
       </div>
     );

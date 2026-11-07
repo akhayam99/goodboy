@@ -73,7 +73,7 @@ export const ActionCard = ({
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [previewKind, setPreviewKind] = useState<AgentKind | null>(null);
-  const { main, second, failure, menu, foldedTarget } = actions;
+  const { main, second, failure, menu, foldedTarget, stop = null } = actions;
   const Icon = cardIconOf({ card });
   const glyphKind = previewKind ?? actions.agentKind;
   const palette = glyphKind === null ? null : agentKindPalette({ kind: glyphKind });
@@ -218,9 +218,16 @@ export const ActionCard = ({
         <HeaderActions
           className="@max-[360px]:col-start-2 @max-[360px]:justify-start"
           secondary={
-            second === null || isQuiet
-              ? null
-              : verbButton({ verb: second, variant: 'secondary', onClick: second.run })
+            isQuiet || (second === null && stop === null) ? null : (
+              <>
+                {second === null
+                  ? null
+                  : verbButton({ verb: second, variant: 'secondary', onClick: second.run })}
+                {stop === null
+                  ? null
+                  : verbButton({ verb: stop, variant: 'secondary', onClick: stop.run })}
+              </>
+            )
           }
           button={isFirst ? null : mainNode}
           primary={isFirst ? mainNode : null}

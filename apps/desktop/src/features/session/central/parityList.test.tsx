@@ -139,15 +139,12 @@ describe('the parity list of the Overview, walked on the cards', () => {
   it('1: a stuck agent is reachable from Needs you, with its state and the way to open it', async () => {
     await show({ kind: 'stuck' });
 
-    const auto = within(cardOf({ name: 'Needs you' })).getByRole('region', {
-      name: /^Auto agent: Harden retries/,
-    });
-    expect(auto.getAttribute('data-state')).toBe('waiting');
-    expect(auto.textContent).toContain('Needs you');
-    expect(auto.textContent).not.toContain('Stuck');
-    fireEvent.click(within(auto).getByRole('button', { name: /agents?$/ }));
-    expect(auto.textContent).toContain('Not started');
-    within(auto).getByRole('button', { name: 'Open Auto chat' });
+    const needsYou = cardOf({ name: 'Needs you' });
+    expect(needsYou.textContent).toContain('Auto needs you');
+    expect(needsYou.textContent).not.toContain('Stuck');
+    fireEvent.click(within(needsYou).getByRole('button', { name: /^\d+ agents?$/ }));
+    expect(needsYou.textContent).toContain('Not started');
+    within(needsYou).getByRole('button', { name: 'Open Auto' });
   });
 
   it('1: an agent that timed out asks in Needs you, never under the word Stuck', async () => {
@@ -238,19 +235,16 @@ describe('the parity list of the Overview, walked on the cards', () => {
     expect(run.textContent).toMatch(/\d+m/);
   });
 
-  it('5: the stuck Auto line offers Answer and Stop, and Retry sits once in Needs you', async () => {
+  it('5: the stuck Auto is one block with Open Auto, Stop and Retry once, and no Answer line', async () => {
     await show({ kind: 'stuck' });
 
-    const line = document.querySelector<HTMLElement>('[data-now-actions]');
-    if (line === null) {
-      throw new Error('The stuck line must be drawn');
-    }
-    const actions = within(line);
-    expect(actions.queryByRole('button', { name: /^Retry "/ })).toBeNull();
+    expect(document.querySelector('[data-now-actions]')).toBeNull();
     expect(screen.getAllByRole('button', { name: /^Retry "/ })).toHaveLength(1);
-    within(cardOf({ name: 'Needs you' })).getByRole('button', { name: /^Retry "/ });
-    actions.getByRole('button', { name: 'Answer Auto in its chat' });
-    actions.getByRole('button', { name: 'Stop Auto and its agents' });
+    const card = within(cardOf({ name: 'Needs you' }));
+    card.getByRole('button', { name: /^Retry "/ });
+    card.getByRole('button', { name: 'Open Auto' });
+    card.getByRole('button', { name: 'Stop Auto and its agents' });
+    expect(card.queryByRole('button', { name: 'Answer Auto in its chat' })).toBeNull();
   });
 
   it('6: an archived session keeps the Done card and its Full log, nothing else', async () => {
